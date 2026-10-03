@@ -1,0 +1,147 @@
+{
+  "Schema": 1,
+  "Snapshot": "noctveil-v43-three-pose-study",
+  "Status": "FIX_FIRST_THREE_STATIC_POSE_RESEARCH_SOURCE_SNAPSHOT",
+  "CapturedUtc": "2026-10-03T16:23:00.819434+00:00",
+  "SourceType": "Fixed hash-listed non-Git research checkpoint",
+  "FixedManifestMembersMatched": 11,
+  "OriginalUnchanged": true,
+  "EntryBytesVerified": true,
+  "ModelSha256": "6f1e5458bf90b37e46891bb02e51646c3a759bbf0e82200a157b1c75f8beb2f4",
+  "RelatedLibrary": {
+    "ComparisonPng": {
+      "LibraryFileId": "libfile_ed212a4ca3e081918c41f704f4196e07",
+      "Version": 0
+    }
+  },
+  "OwnerReportedLimits": {
+    "ResearchScope": "Three separate static study clips only. Original3 source clips exact. Native07 verification does not cover v43. Current textures/UV/geometry/hierarchy exact original. No full motion or idle return claim.",
+    "ReviewVerdict": "FIX-FIRST: closed-wing load removes initial wide spread; contact hand direction+forward wrist and chest drop improve oblique exposure, but hand remains small and front contact not clearly readable; oblique exit hand still0 visiblepixels. Counts diagnostic only, no artistic pass.",
+    "CurrentV42ParentRejection": "Across all25 frames versus Gore64 frames: membrane dominates0.92-1.25s and hides palm/wrist/claw route; outside spread lacks readable chest load; exit1.5-2.0s held; idle recovery absent. Independent parent visual verdict FIX-FIRST.",
+    "FiniteChecks": {
+      "head_crown_crossings_three_poses": [
+        0,
+        0,
+        0
+      ],
+      "minimum_all_y": 0.0029999999997805103,
+      "contact_target": "At selected contact, hook overlaps fixed target, membrane_panel05 also overlaps. This is a late contact pose, not proof of hook-first timing. Palm/radius overlap false. Target unchangedX[-5,5]Y[0,18]Z[-32,-28].",
+      "new_nonadjacent_wing_crossings": [
+        [
+          "contact_pose_v43",
+          "right_v24_tension_panel_15_0",
+          "right_v24_tension_panel_16_2"
+        ]
+      ],
+      "full_body_pass": false
+    },
+    "Remaining": [
+      "Improve exit hand exposure and front crossing silhouette without changing protected shape.",
+      "Rebuild connected wrist arc and body-drive timing; prove observed hook-before-membrane order on actual saved interpolation.",
+      "Construct closed idle entry + non-striking recovery and foot return; not simple backwards replay.",
+      "Check full-body interactions including opposite wing through real interpolation and ordinary front/oblique motion.",
+      "Native final current model check only when needed; no old-version native pass carryover."
+    ],
+    "ArtPass": false,
+    "WholeBodyGesturePass": false,
+    "GameConnected": false,
+    "GuiRuntimeUsed": false
+  },
+  "IndependentSourceChecks": {
+    "GeometryElementsEqualSavedV42": true,
+    "HierarchyEqualSavedV42": true,
+    "TexturesEqualSavedV42": true,
+    "ThreeOriginalClipsExactAgainstSavedV42": true,
+    "EmbeddedTextureCount": 2,
+    "AnimationNames": [
+      "load_pose_v43",
+      "contact_pose_v43",
+      "exit_pose_v43",
+      "idle_threat_store_review_v32",
+      "closed_idle_breath_v32",
+      "threat_then_tipfirst_storage_v32"
+    ],
+    "NativeOrGameRuntimeLaunched": false
+  },
+  "SourceDependencies": "Delivered model is self-contained for editing with embedded PNG textures. Historical work/ research builders use the producer workspace helper/intermediate chain and are archival logic, not portable standalone regeneration. Existing GUI-free transform/renderer helpers are retained in sibling noctveil-v42-iteration09/recovery; no native or game equivalence is inferred.",
+  "Files": [
+    {
+      "Path": "outputs/v43_gesture_study/projects_noctveil_v43_three_pose_study.bbmodel",
+      "Bytes": 9216389,
+      "Sha256": "6f1e5458bf90b37e46891bb02e51646c3a759bbf0e82200a157b1c75f8beb2f4",
+      "Role": "fixed_research_source_or_evidence"
+    },
+    {
+      "Path": "outputs/v43_gesture_study/noctveil_v43_three_pose_comparison.png",
+      "Bytes": 125804,
+      "Sha256": "319be943ca517f9c4ec7e774129dc2199722eb043a191a37535590b13fb7d1ee",
+      "Role": "fixed_research_source_or_evidence"
+    },
+    {
+      "Path": "outputs/v43_gesture_study/v43_three_pose_evidence.json",
+      "Bytes": 16944,
+      "Sha256": "df4b3196ca7445794561dfc4da728094787f9cee5032b3cc1350b48b4315c118",
+      "Role": "fixed_research_source_or_evidence"
+    },
+    {
+      "Path": "outputs/v43_gesture_study/v43_three_pose_full_body_surface_audit.json",
+      "Bytes": 330245,
+      "Sha256": "8105fafe5d692b7e23619d625b4fb82c4130932101d46d0e83ad56d90b8d6480",
+      "Role": "fixed_research_source_or_evidence"
+    },
+    {
+      "Path": "outputs/v43_gesture_study/v43_three_gesture_probe.json",
+      "Bytes": 133564,
+      "Sha256": "adfa29ae5d28e96b4c5b4de486590c4bcecd4e863e42211ac6eec77bf10b5f96",
+      "Role": "fixed_research_source_or_evidence"
+    },
+    {
+      "Path": "outputs/v43_gesture_study/v43_hand_lead_scan.json",
+      "Bytes": 32354,
+      "Sha256": "6cb4f1d8372b926c22d5cf029dfd4a793d513b6184dc9d5fe7660ffdaacb46aa",
+      "Role": "fixed_research_source_or_evidence"
+    },
+    {
+      "Path": "work/probe_v43_three_gestures.py",
+      "Bytes": 3371,
+      "Sha256": "c805cebb285b2d453690e8af649a3036a1680e6eb647331acc60b7d8b712695c",
+      "Role": "owned_authoring_source_archive"
+    },
+    {
+      "Path": "work/probe_v43_hand_leads.py",
+      "Bytes": 3200,
+      "Sha256": "99d22379b0f21881ad9f3f2f008e7b18cd09c985304d56c90a07088749c09b5f",
+      "Role": "owned_authoring_source_archive"
+    },
+    {
+      "Path": "work/save_v43_three_pose_review.py",
+      "Bytes": 5912,
+      "Sha256": "e0d1c76c54d7f1ef802e01c2bcee16a16a985a7d3a663b1954ba64a5b089f04d",
+      "Role": "owned_authoring_source_archive"
+    },
+    {
+      "Path": "work/audit_v43_three_pose_body.py",
+      "Bytes": 1710,
+      "Sha256": "b9c9862e4bbcdfc8c8cab193470d6682e89a1a9de05d1b2c509ce5832b3c3968",
+      "Role": "owned_authoring_source_archive"
+    },
+    {
+      "Path": "work/save_v43_research_checkpoint.py",
+      "Bytes": 4766,
+      "Sha256": "9428f62ec24a93292de4cebf0c14d15ee071ce71a1f2894f446a5a68f4c7dc53",
+      "Role": "owned_authoring_source_archive"
+    },
+    {
+      "Path": "handoff/PARENT_HANDOFF_V43_PUSH_MANIFEST.json",
+      "Bytes": 4304,
+      "Sha256": "821e374f7d5d2ad32dc831a328d5f1a547340467afdbd2854f8dcf59a14b8d9f",
+      "Role": "supplied_fixed_handoff"
+    },
+    {
+      "Path": "handoff/PARENT_HANDOFF_V43_GESTURE_RESEARCH.json",
+      "Bytes": 4131,
+      "Sha256": "7187d99903e84a1f905826448a37f19420d7a8eb43cfc635dc9020b7f75800fa",
+      "Role": "supplied_fixed_handoff"
+    }
+  ]
+}

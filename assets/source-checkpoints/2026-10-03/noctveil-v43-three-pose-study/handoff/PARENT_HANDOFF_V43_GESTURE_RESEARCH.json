@@ -1,0 +1,74 @@
+{
+  "current_motion_candidate": "v42 iteration09; full whole-gesture verdict FIX-FIRST",
+  "latest_motion_gif": {
+    "library_file_id": "libfile_ae6b86115d4c8191aed35fedf3463f94",
+    "file_id": "file_0000000057108209a5adc2db2b35d492",
+    "version": 0,
+    "duration_ms": 2050,
+    "frames": 25
+  },
+  "research_candidate": "outputs\\v43_gesture_study\\projects_noctveil_v43_three_pose_study.bbmodel",
+  "research_model_sha256": "6f1e5458bf90b37e46891bb02e51646c3a759bbf0e82200a157b1c75f8beb2f4",
+  "comparison_library": {
+    "operation": "create_library_file",
+    "status": "succeeded",
+    "path": "/noctveil_v43_three_pose_comparison.png",
+    "file_id": "file_00000000202c8209807ab2ea8b105267",
+    "library_file_id": "libfile_ed212a4ca3e081918c41f704f4196e07",
+    "file_name": "noctveil_v43_three_pose_comparison.png",
+    "current_version_number": 0,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "0"
+      }
+    ],
+    "directory_id": "libdir_52e9179f65688191a2762f0040eefb2d",
+    "mime_type": "image/png",
+    "library_artifact_type": "image",
+    "file_size_bytes": 125804,
+    "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v43_gesture_study\\noctveil_v43_three_pose_comparison.png",
+    "cloud_save_succeeded": true,
+    "local_metadata_supported": false,
+    "do_not_repeat_cloud_write": true,
+    "actual_candidate": "v43 independent3 static poses only",
+    "art_pass": false,
+    "game_connected": false
+  },
+  "research_scope": "Three separate static study clips only. Original3 source clips exact. Native07 verification does not cover v43. Current textures/UV/geometry/hierarchy exact original. No full motion or idle return claim.",
+  "review_verdict": "FIX-FIRST: closed-wing load removes initial wide spread; contact hand direction+forward wrist and chest drop improve oblique exposure, but hand remains small and front contact not clearly readable; oblique exit hand still0 visiblepixels. Counts diagnostic only, no artistic pass.",
+  "current09_parent_rejection": "Across all25 frames versus Gore64 frames: membrane dominates0.92-1.25s and hides palm/wrist/claw route; outside spread lacks readable chest load; exit1.5-2.0s held; idle recovery absent. Independent parent visual verdict FIX-FIRST.",
+  "finite_checks": {
+    "head_crown_crossings_three_poses": [
+      0,
+      0,
+      0
+    ],
+    "minimum_all_y": 0.0029999999997805103,
+    "contact_target": "At selected contact, hook overlaps fixed target, membrane_panel05 also overlaps. This is a late contact pose, not proof of hook-first timing. Palm/radius overlap false. Target unchangedX[-5,5]Y[0,18]Z[-32,-28].",
+    "new_nonadjacent_wing_crossings": [
+      [
+        "contact_pose_v43",
+        "right_v24_tension_panel_15_0",
+        "right_v24_tension_panel_16_2"
+      ]
+    ],
+    "full_body_pass": false
+  },
+  "remaining": [
+    "Improve exit hand exposure and front crossing silhouette without changing protected shape.",
+    "Rebuild connected wrist arc and body-drive timing; prove observed hook-before-membrane order on actual saved interpolation.",
+    "Construct closed idle entry + non-striking recovery and foot return; not simple backwards replay.",
+    "Check full-body interactions including opposite wing through real interpolation and ordinary front/oblique motion.",
+    "Native final current model check only when needed; no old-version native pass carryover."
+  ],
+  "next_authorized_step": "Pose-only exit routing and wrist/hand presentation work continues from this separate checkpoint. Shape edits are not authorized and are not yet shown necessary; no geometry/material changes requested.",
+  "gui_runtime_used": false,
+  "minecraft_windows_or_input_touched": false,
+  "game_connected": false,
+  "whole_body_gesture_pass": false,
+  "art_pass": false,
+  "is_git_repository": false,
+  "push_executor": "Parent task01a1022f-884a-7190-92a6-e08bb1289093; no worker Git mutation/push. Existing v42 delivery/manifest untouched."
+}

@@ -92,5 +92,15 @@
     "Manifest": "noctveil-v42-iteration09/source-snapshot.json",
     "RecoveryInstructions": "noctveil-v42-iteration09/recovery/README.md",
     "CurrentModelRecoveryIndependentOfOriginalWorkspace": true
+  },
+  {
+    "Snapshot": "noctveil-v43-three-pose-study",
+    "Status": "FIX_FIRST_THREE_STATIC_POSE_RESEARCH_SOURCE_SNAPSHOT",
+    "SourceType": "Fixed hash-listed non-Git research checkpoint",
+    "LibraryFileId": "libfile_ed212a4ca3e081918c41f704f4196e07",
+    "LibraryVersion": 0,
+    "FileCount": 13,
+    "Bytes": 9882694,
+    "Manifest": "noctveil-v43-three-pose-study/source-snapshot.json"
   }
 ]

@@ -1,0 +1,5051 @@
+{
+  "rows": [
+    {
+      "pose": 0,
+      "roll": 180,
+      "q": {
+        "name": "spherical interpolation 0",
+        "body": [
+          -5,
+          -22,
+          -5
+        ],
+        "shift": [
+          1.0,
+          -2.0,
+          0.8
+        ],
+        "wrist": [
+          25.056474921430933,
+          25.050861044675187,
+          0.7243808531629332
+        ],
+        "claw_direction": [
+          0.15,
+          -0.25,
+          -1
+        ],
+        "membrane_time": 0.95,
+        "pole": [
+          1,
+          -0.2,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999733534,
+      "head_crown_crossings": 3,
+      "head_details": [
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_descending_throat",
+          "segment_length": 0.7178181347098906,
+          "points": [
+            [
+              6.768833055352165,
+              24.720487977119834,
+              -5.9637708083959655
+            ],
+            [
+              7.437353838669148,
+              24.522206055712832,
+              -6.134144270046487
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_descending_throat",
+          "segment_length": 0.7334678279903274,
+          "points": [
+            [
+              7.77541602230783,
+              23.96263931978609,
+              -5.546136632801908
+            ],
+            [
+              8.249297161106327,
+              23.442036966567635,
+              -5.340260673031719
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_descending_throat",
+          "segment_length": 0.6967107702204397,
+          "points": [
+            [
+              7.775416022312157,
+              23.962639319782284,
+              -5.546136632800296
+            ],
+            [
+              7.239222562623809,
+              24.36873501855632,
+              -5.727764699369938
+            ]
+          ]
+        }
+      ],
+      "support_margin": 11.006470139604259,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -18.00565744267558
+      ],
+      "elbow": [
+        16.122260847973138,
+        18.77658449474243,
+        1.8876833351479965
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {},
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 14.305323046116719,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_0",
+        "lowest_wing_vertex": [
+          20.323007814828635,
+          14.305323046116719,
+          -2.8735737050420567
+        ],
+        "palm_z_front_clearance": 26.563459489977014,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            24.766258176336166,
+            23.557039185202704,
+            -3.41044326559083
+          ],
+          "right_v2_folded_hook_1": [
+            23.765808326971747,
+            23.22184132776952,
+            -3.099408709184436
+          ]
+        },
+        "palm_centre": [
+          24.41230127650338,
+          24.543744833343283,
+          -0.1258388027995702
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 0,
+      "roll": 210,
+      "q": {
+        "name": "spherical interpolation 0",
+        "body": [
+          -5,
+          -22,
+          -5
+        ],
+        "shift": [
+          1.0,
+          -2.0,
+          0.8
+        ],
+        "wrist": [
+          25.056474921430933,
+          25.050861044675187,
+          0.7243808531629332
+        ],
+        "claw_direction": [
+          0.15,
+          -0.25,
+          -1
+        ],
+        "membrane_time": 0.95,
+        "pole": [
+          1,
+          -0.2,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999733534,
+      "head_crown_crossings": 3,
+      "head_details": [
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_descending_throat",
+          "segment_length": 0.8033461790703756,
+          "points": [
+            [
+              6.786124169432824,
+              24.743814473787044,
+              -5.906165080354379
+            ],
+            [
+              7.491876871408123,
+              24.486410183704372,
+              -6.190807379615351
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_descending_throat",
+          "segment_length": 2.096936926646262,
+          "points": [
+            [
+              7.7679330809128775,
+              24.113386628687397,
+              -5.813495370503425
+            ],
+            [
+              8.706741470428335,
+              22.253868541064747,
+              -5.572713801623525
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_descending_throat",
+          "segment_length": 0.4749422905587841,
+          "points": [
+            [
+              7.076566923627404,
+              24.71898884000049,
+              -5.846551245666499
+            ],
+            [
+              7.5095910173497264,
+              24.57889347669407,
+              -5.982321650384273
+            ]
+          ]
+        }
+      ],
+      "support_margin": 11.006470139604259,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -18.00565744267558
+      ],
+      "elbow": [
+        17.305163917199714,
+        17.6145118839285,
+        -1.5467177521701823
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {},
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 15.916087799946006,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_mantle_panel_02",
+        "lowest_wing_vertex": [
+          16.571982747217753,
+          15.916087799946006,
+          -0.8312487799859944
+        ],
+        "palm_z_front_clearance": 26.563459489976843,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            24.76625817633613,
+            23.557039185202726,
+            -3.4104432655910037
+          ],
+          "right_v2_folded_hook_1": [
+            23.765808326971715,
+            23.22184132776956,
+            -3.0994087091845905
+          ]
+        },
+        "palm_centre": [
+          24.412301276503417,
+          24.54374483334332,
+          -0.1258388027997417
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 0,
+      "roll": 240,
+      "q": {
+        "name": "spherical interpolation 0",
+        "body": [
+          -5,
+          -22,
+          -5
+        ],
+        "shift": [
+          1.0,
+          -2.0,
+          0.8
+        ],
+        "wrist": [
+          25.056474921430933,
+          25.050861044675187,
+          0.7243808531629332
+        ],
+        "claw_direction": [
+          0.15,
+          -0.25,
+          -1
+        ],
+        "membrane_time": 0.95,
+        "pole": [
+          1,
+          -0.2,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999733534,
+      "head_crown_crossings": 3,
+      "head_details": [
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_descending_throat",
+          "segment_length": 0.07412471437377247,
+          "points": [
+            [
+              6.870366115714874,
+              24.739558002203875,
+              -5.882458125377662
+            ],
+            [
+              6.937013191812054,
+              24.71691990374549,
+              -5.9056994038897965
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_descending_throat",
+          "segment_length": 0.27609710846698726,
+          "points": [
+            [
+              8.687885691071386,
+              22.696029882924968,
+              -5.075618325929463
+            ],
+            [
+              8.789166375266197,
+              22.442296975038957,
+              -5.115511279800685
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_descending_throat",
+          "segment_length": 1.4619726583561106,
+          "points": [
+            [
+              8.071893639033764,
+              22.884548883724385,
+              -6.5126824935694785
+            ],
+            [
+              7.5984181839128615,
+              24.217679646564694,
+              -6.143972015893968
+            ]
+          ]
+        }
+      ],
+      "support_margin": 11.006470139604259,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -18.00565744267558
+      ],
+      "elbow": [
+        18.500774154304374,
+        18.424239562444658,
+        -5.076539348247972
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {},
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 16.495858289220507,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_mantle_panel_04",
+        "lowest_wing_vertex": [
+          18.08255954824099,
+          16.495858289220507,
+          -5.277877510501732
+        ],
+        "palm_z_front_clearance": 26.56345948997699,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            24.766258176336155,
+            23.557039185202783,
+            -3.4104432655908528
+          ],
+          "right_v2_folded_hook_1": [
+            23.76580832697174,
+            23.221841327769607,
+            -3.0994087091844578
+          ]
+        },
+        "palm_centre": [
+          24.412301276503385,
+          24.543744833343368,
+          -0.125838802799595
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 0,
+      "roll": 270,
+      "q": {
+        "name": "spherical interpolation 0",
+        "body": [
+          -5,
+          -22,
+          -5
+        ],
+        "shift": [
+          1.0,
+          -2.0,
+          0.8
+        ],
+        "wrist": [
+          25.056474921430933,
+          25.050861044675187,
+          0.7243808531629332
+        ],
+        "claw_direction": [
+          0.15,
+          -0.25,
+          -1
+        ],
+        "membrane_time": 0.95,
+        "pole": [
+          1,
+          -0.2,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999733534,
+      "head_crown_crossings": 0,
+      "head_details": [],
+      "support_margin": 11.006470139604259,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -18.00565744267558
+      ],
+      "elbow": [
+        19.388728761792557,
+        20.98880165274338,
+        -7.755968606990405
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {},
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 19.34594915941605,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_mantle_panel_04",
+        "lowest_wing_vertex": [
+          19.276029437581304,
+          19.34594915941605,
+          -8.861603897091449
+        ],
+        "palm_z_front_clearance": 26.56345948997682,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            24.766258176336173,
+            23.557039185202754,
+            -3.41044326559103
+          ],
+          "right_v2_folded_hook_1": [
+            23.765808326971765,
+            23.221841327769567,
+            -3.0994087091846323
+          ]
+        },
+        "palm_centre": [
+          24.41230127650343,
+          24.54374483334328,
+          -0.1258388027997508
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 0,
+      "roll": 285,
+      "q": {
+        "name": "spherical interpolation 0",
+        "body": [
+          -5,
+          -22,
+          -5
+        ],
+        "shift": [
+          1.0,
+          -2.0,
+          0.8
+        ],
+        "wrist": [
+          25.056474921430933,
+          25.050861044675187,
+          0.7243808531629332
+        ],
+        "claw_direction": [
+          0.15,
+          -0.25,
+          -1
+        ],
+        "membrane_time": 0.95,
+        "pole": [
+          1,
+          -0.2,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999733534,
+      "head_crown_crossings": 0,
+      "head_details": [],
+      "support_margin": 11.006470139604259,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -18.00565744267558
+      ],
+      "elbow": [
+        19.63778096246616,
+        22.72841885247073,
+        -8.537585355096914
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {},
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 21.09316937892916,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v2_folded_radius",
+        "lowest_wing_vertex": [
+          19.76324478602165,
+          21.09316937892916,
+          -8.356704211079581
+        ],
+        "palm_z_front_clearance": 26.56345948997688,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            24.766258176336173,
+            23.55703918520265,
+            -3.4104432655909656
+          ],
+          "right_v2_folded_hook_1": [
+            23.765808326971754,
+            23.22184132776948,
+            -3.0994087091845697
+          ]
+        },
+        "palm_centre": [
+          24.412301276503417,
+          24.543744833343208,
+          -0.1258388027996984
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 0,
+      "roll": 300,
+      "q": {
+        "name": "spherical interpolation 0",
+        "body": [
+          -5,
+          -22,
+          -5
+        ],
+        "shift": [
+          1.0,
+          -2.0,
+          0.8
+        ],
+        "wrist": [
+          25.056474921430933,
+          25.050861044675187,
+          0.7243808531629332
+        ],
+        "claw_direction": [
+          0.15,
+          -0.25,
+          -1
+        ],
+        "membrane_time": 0.95,
+        "pole": [
+          1,
+          -0.2,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999733534,
+      "head_crown_crossings": 0,
+      "head_details": [],
+      "support_margin": 11.006470139604259,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -18.00565744267558
+      ],
+      "elbow": [
+        19.731101019672295,
+        24.62102581378965,
+        -8.867054622341115
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {},
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 21.769295303320092,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v2_wing_humerus",
+        "lowest_wing_vertex": [
+          11.351163497107297,
+          21.769295303320092,
+          -6.19118319562962
+        ],
+        "palm_z_front_clearance": 26.563459489976978,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            24.766258176336144,
+            23.557039185202687,
+            -3.410443265590865
+          ],
+          "right_v2_folded_hook_1": [
+            23.765808326971726,
+            23.22184132776951,
+            -3.099408709184469
+          ]
+        },
+        "palm_centre": [
+          24.412301276503385,
+          24.543744833343254,
+          -0.12583880279960158
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 0,
+      "roll": 315,
+      "q": {
+        "name": "spherical interpolation 0",
+        "body": [
+          -5,
+          -22,
+          -5
+        ],
+        "shift": [
+          1.0,
+          -2.0,
+          0.8
+        ],
+        "wrist": [
+          25.056474921430933,
+          25.050861044675187,
+          0.7243808531629332
+        ],
+        "claw_direction": [
+          0.15,
+          -0.25,
+          -1
+        ],
+        "membrane_time": 0.95,
+        "pole": [
+          1,
+          -0.2,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999733534,
+      "head_crown_crossings": 0,
+      "head_details": [],
+      "support_margin": 11.006470139604259,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -18.00565744267558
+      ],
+      "elbow": [
+        19.662329325731044,
+        26.53764449996712,
+        -8.721923622634026
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {},
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 22.42529097404482,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v2_wing_humerus",
+        "lowest_wing_vertex": [
+          11.583953713776253,
+          22.42529097404482,
+          -6.893152552014206
+        ],
+        "palm_z_front_clearance": 26.563459489976946,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            24.766258176336134,
+            23.557039185202505,
+            -3.4104432655909025
+          ],
+          "right_v2_folded_hook_1": [
+            23.76580832697171,
+            23.221841327769337,
+            -3.099408709184508
+          ]
+        },
+        "palm_centre": [
+          24.412301276503385,
+          24.54374483334305,
+          -0.1258388027996309
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 0,
+      "roll": 330,
+      "q": {
+        "name": "spherical interpolation 0",
+        "body": [
+          -5,
+          -22,
+          -5
+        ],
+        "shift": [
+          1.0,
+          -2.0,
+          0.8
+        ],
+        "wrist": [
+          25.056474921430933,
+          25.050861044675187,
+          0.7243808531629332
+        ],
+        "claw_direction": [
+          0.15,
+          -0.25,
+          -1
+        ],
+        "membrane_time": 0.95,
+        "pole": [
+          1,
+          -0.2,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999733534,
+      "head_crown_crossings": 0,
+      "head_details": [],
+      "support_margin": 11.006470139604259,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -18.00565744267558
+      ],
+      "elbow": [
+        19.436152557933905,
+        28.347660514902294,
+        -8.112082793765369
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {},
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 22.930528614663423,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v2_folded_hook_1",
+        "lowest_wing_vertex": [
+          22.986451119988388,
+          22.930528614663423,
+          -2.0230098147928377
+        ],
+        "palm_z_front_clearance": 26.56345948997684,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            24.7662581763362,
+            23.557039185202655,
+            -3.410443265591005
+          ],
+          "right_v2_folded_hook_1": [
+            23.765808326971783,
+            23.221841327769482,
+            -3.0994087091846128
+          ]
+        },
+        "palm_centre": [
+          24.412301276503438,
+          24.543744833343222,
+          -0.12583880279974147
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 1,
+      "roll": 180,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          7.73478180500423,
+          16.118263197699108,
+          -26.15214021190423
+        ],
+        "claw_direction": [
+          -1,
+          -0.2,
+          -0.35
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999576017,
+      "head_crown_crossings": 34,
+      "head_details": [
+        {
+          "a": "right_v24_mantle_panel_04",
+          "b": "v3_deep_cheek_right",
+          "segment_length": 0.5410046601466025,
+          "points": [
+            [
+              0.5749332784430917,
+              13.48900313026291,
+              -18.07963834751527
+            ],
+            [
+              0.8520228717140861,
+              13.461344971540411,
+              -18.543472828615304
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_04",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 0.49084353667468794,
+          "points": [
+            [
+              0.3014018139694016,
+              13.693953421627493,
+              -20.34181187780411
+            ],
+            [
+              0.5395704897886415,
+              13.567206883064916,
+              -19.93176508252797
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_04",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 0.6660477688901841,
+          "points": [
+            [
+              0.36396909711446124,
+              13.662809012754531,
+              -19.429505903290885
+            ],
+            [
+              0.7191225916110724,
+              13.536078415840961,
+              -18.88048406256288
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_03",
+          "b": "v3_descending_throat",
+          "segment_length": 1.327331448423604,
+          "points": [
+            [
+              -1.5339743207308292,
+              17.80046029915743,
+              -15.79130267164124
+            ],
+            [
+              -2.608660093245031,
+              18.56487878358846,
+              -15.941381467578655
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_03",
+          "b": "v3_cranial_crown_left",
+          "segment_length": 1.2660310588705461,
+          "points": [
+            [
+              -3.1610417548755385,
+              18.797402484287336,
+              -17.09278828343653
+            ],
+            [
+              -2.608113750953931,
+              18.211755114743234,
+              -18.06958018709371
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_03",
+          "b": "v3_skull_keel",
+          "segment_length": 0.8593872747077188,
+          "points": [
+            [
+              -1.7119100031529164,
+              17.609802203573096,
+              -18.892139364010806
+            ],
+            [
+              -1.1766627148656101,
+              17.169016023914565,
+              -19.399844369040974
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_03",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 1.7982400180068494,
+          "points": [
+            [
+              -0.8501127683273293,
+              16.975085197553405,
+              -18.982449695602412
+            ],
+            [
+              -2.267612511586641,
+              18.036133142154316,
+              -18.668540633166742
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_02",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 0.5459237020365882,
+          "points": [
+            [
+              0.071241490245182,
+              14.523587166400958,
+              -20.18062850951184
+            ],
+            [
+              0.2091277107602798,
+              14.002020916223913,
+              -20.26422710587357
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_02",
+          "b": "v3_descending_throat",
+          "segment_length": 1.0610360635476346,
+          "points": [
+            [
+              -1.1778656013562703,
+              16.762948993296106,
+              -15.505356319614933
+            ],
+            [
+              -0.9810727445303287,
+              15.760664503687483,
+              -15.218135321878128
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_02",
+          "b": "v3_skull_keel",
+          "segment_length": 0.7239702434685089,
+          "points": [
+            [
+              -0.6110313958483944,
+              16.480856417940117,
+              -19.26644704480317
+            ],
+            [
+              -0.6411883659412932,
+              15.961700196718374,
+              -18.762760347987154
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_02",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 2.009515398507381,
+          "points": [
+            [
+              -0.6087666845443844,
+              16.652640665144617,
+              -19.06982177567473
+            ],
+            [
+              -0.08529048067272282,
+              14.770898453371647,
+              -19.54223160754761
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_02",
+          "b": "v3_short_recessed_jaw",
+          "segment_length": 1.8061531366245094,
+          "points": [
+            [
+              -0.7649095442776837,
+              14.825489982000676,
+              -15.437103109862226
+            ],
+            [
+              -1.265327710799267,
+              16.150254559761468,
+              -14.316045740650463
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_deep_cheek_right",
+          "segment_length": 1.2909098909960461,
+          "points": [
+            [
+              0.9015779976508483,
+              14.281146291478859,
+              -17.23675267658289
+            ],
+            [
+              1.909262271409733,
+              15.062719916064923,
+              -17.437160811252753
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 1.538565674898674,
+          "points": [
+            [
+              0.5943549390925879,
+              22.541701446871432,
+              -12.663537712319439
+            ],
+            [
+              1.120816196620222,
+              22.853710253581976,
+              -11.251916876246984
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 1.0274790646090506,
+          "points": [
+            [
+              1.7391074682014322,
+              16.079648158852788,
+              -17.816365371384542
+            ],
+            [
+              1.1466691936613576,
+              16.883993091944284,
+              -17.576033626332197
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_descending_throat",
+          "segment_length": 2.6310391245876144,
+          "points": [
+            [
+              -0.6871904329972804,
+              21.549425656670657,
+              -13.610661984588791
+            ],
+            [
+              1.1175788658092407,
+              22.949442604214074,
+              -12.304856792461194
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_blind_pit_right",
+          "segment_length": 1.1151968959909708,
+          "points": [
+            [
+              2.0689288014031693,
+              15.888617914321593,
+              -16.995556896161112
+            ],
+            [
+              1.8344290630171338,
+              14.798829394688047,
+              -17.027727876868926
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_skull_keel",
+          "segment_length": 0.6062376904561159,
+          "points": [
+            [
+              -0.006813859460723924,
+              21.66205451070246,
+              -13.70093953370488
+            ],
+            [
+              0.0012251045733343083,
+              21.151256379366803,
+              -14.02735151481284
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 1.4802183506233815,
+          "points": [
+            [
+              -1.4869159337441877,
+              16.48937517083917,
+              -12.652278878694693
+            ],
+            [
+              -0.013945056911615294,
+              16.5527263105394,
+              -12.784149249225639
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_short_recessed_jaw",
+          "segment_length": 2.122923314982857,
+          "points": [
+            [
+              -1.5567088034339152,
+              16.117949614019047,
+              -14.341477606375637
+            ],
+            [
+              -0.6156332071418936,
+              14.666543552179954,
+              -15.57216869963103
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 1.0181995098118357,
+          "points": [
+            [
+              0.7784296183403613,
+              23.17073591989609,
+              -10.132652119231789
+            ],
+            [
+              0.5166596966012725,
+              22.950007388144464,
+              -11.091550270822742
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_descending_throat",
+          "segment_length": 2.8947571988073726,
+          "points": [
+            [
+              -1.0668417070941116,
+              21.175045687448847,
+              -13.959941964382384
+            ],
+            [
+              0.41974906944365253,
+              22.99108183888458,
+              -12.265338825049033
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_cranial_crown_left",
+          "segment_length": 3.4013070357140336,
+          "points": [
+            [
+              -3.1610417554333625,
+              18.797402484777592,
+              -17.092788282608282
+            ],
+            [
+              -1.8411622165059707,
+              20.552950857677686,
+              -14.495701941277591
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_skull_keel",
+          "segment_length": 1.584800736449699,
+          "points": [
+            [
+              -1.2300227338415035,
+              21.14231648527475,
+              -15.25697143444459
+            ],
+            [
+              -1.0366805377193937,
+              21.175719518121962,
+              -13.684363280184034
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 2.5680158242203293,
+          "points": [
+            [
+              -1.4291005861409691,
+              21.173858709107186,
+              -17.31590631844617
+            ],
+            [
+              -1.3840716345631798,
+              20.85449833538238,
+              -14.768223720738957
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_folded_radius",
+          "b": "v3_deep_cheek_right",
+          "segment_length": 1.5089281646228834,
+          "points": [
+            [
+              1.9050463111674532,
+              13.641826347952108,
+              -18.093989551696826
+            ],
+            [
+              2.09126600095176,
+              14.974445542720355,
+              -17.411118762407924
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_folded_radius",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 1.078060611978024,
+          "points": [
+            [
+              0.9169109444150063,
+              16.477828223726856,
+              -17.908277822007246
+            ],
+            [
+              0.4358522411646145,
+              16.254744099401925,
+              -18.84691016781665
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_folded_radius",
+          "b": "v3_blind_pit_right",
+          "segment_length": 1.275495126106092,
+          "points": [
+            [
+              1.9453258391590045,
+              15.251657339664796,
+              -16.986565076054262
+            ],
+            [
+              1.569217284384412,
+              14.066704823022622,
+              -17.271727670110955
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_folded_radius",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 1.3944782028049476,
+          "points": [
+            [
+              0.320474253923257,
+              16.223793697603938,
+              -19.211786757988115
+            ],
+            [
+              -0.086370390903304,
+              14.922802004521245,
+              -19.505840337466232
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_0_segment_0",
+          "b": "v3_integrated_brow_left",
+          "segment_length": 0.6507411723099122,
+          "points": [
+            [
+              -3.4682083092609908,
+              18.369749739429647,
+              -18.12683962261734
+            ],
+            [
+              -3.498607090065283,
+              18.77251360880827,
+              -17.61662275403296
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_0_segment_0",
+          "b": "v3_descending_throat",
+          "segment_length": 0.8566643311469788,
+          "points": [
+            [
+              -3.1311942722133885,
+              18.389215078134455,
+              -15.397887500080554
+            ],
+            [
+              -3.1916736890582733,
+              18.978567855505442,
+              -14.779115070020271
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_0_segment_0",
+          "b": "v3_cranial_crown_left",
+          "segment_length": 0.8256615270553326,
+          "points": [
+            [
+              -2.90580898548102,
+              19.233841125522595,
+              -16.43903561746722
+            ],
+            [
+              -2.886464708243653,
+              18.789951601664125,
+              -17.134955761453732
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_0_segment_0",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 0.7315148137705806,
+          "points": [
+            [
+              -2.563708005153517,
+              19.310522742867104,
+              -13.474575816045633
+            ],
+            [
+              -2.3802856747599597,
+              18.63222445448529,
+              -13.2711511286129
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_skull_keel",
+          "segment_length": 1.493129720917509,
+          "points": [
+            [
+              -1.3891274186452445,
+              22.334448833611123,
+              -17.61334782187702
+            ],
+            [
+              -0.8390197636023041,
+              22.249419310664482,
+              -16.227855883402523
+            ]
+          ]
+        }
+      ],
+      "support_margin": 10.416841472978588,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -10.647244591694
+      ],
+      "elbow": [
+        0.5887306324545689,
+        15.011947149268748,
+        -17.890783335440958
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {
+          "membrane_and_ribs": {
+            "name": "right_v24_tension_panel_15_2",
+            "z": -48.59963786619977
+          },
+          "radius": {
+            "name": "right_v2_folded_radius",
+            "z": -25.45862758109042
+          },
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -26.696575352280387
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -21.903062513919384,
+        "minimum_wing_y": 12.513304426995647,
+        "proxy_triangle_overlap": {
+          "right_v24_mantle_panel_02": 7,
+          "right_v24_mantle_panel_03": 7,
+          "right_v24_mantle_panel_04": 7,
+          "right_v24_mantle_panel_06": 8,
+          "right_v24_mantle_panel_07": 10,
+          "right_v24_mantle_panel_08": 4,
+          "right_v24_tension_panel_9_0": 7,
+          "right_v24_tension_panel_9_1": 7,
+          "right_v24_tension_panel_9_2": 7,
+          "right_v24_wing_digit_1_segment_0": 10,
+          "right_v24_wing_digit_1_segment_1": 10
+        },
+        "lowest_wing_mesh": "right_v24_wing_digit_1_segment_0",
+        "lowest_wing_vertex": [
+          4.042598490725396,
+          12.513304426995647,
+          -23.193657806250993
+        ],
+        "palm_z_front_clearance": 0.9018316726754492,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            3.545780475649715,
+            14.85240767260425,
+            -26.664368337109558
+          ],
+          "right_v2_folded_hook_1": [
+            3.6462660754169667,
+            14.49230093518155,
+            -25.629851163785602
+          ]
+        },
+        "palm_centre": [
+          6.753653760602153,
+          15.653498141433483,
+          -25.68697228205336
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_02",
+          "right_v24_mantle_panel_03",
+          "right_v24_mantle_panel_04",
+          "right_v24_mantle_panel_06",
+          "right_v24_mantle_panel_07",
+          "right_v24_mantle_panel_08",
+          "right_v24_tension_panel_9_0",
+          "right_v24_tension_panel_9_1",
+          "right_v24_tension_panel_9_2",
+          "right_v24_wing_digit_1_segment_0",
+          "right_v24_wing_digit_1_segment_1"
+        ],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 1,
+      "roll": 210,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          7.73478180500423,
+          16.118263197699108,
+          -26.15214021190423
+        ],
+        "claw_direction": [
+          -1,
+          -0.2,
+          -0.35
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999576017,
+      "head_crown_crossings": 15,
+      "head_details": [
+        {
+          "a": "right_v24_mantle_panel_03",
+          "b": "v3_cranial_crown_left",
+          "segment_length": 1.187611028682326,
+          "points": [
+            [
+              -3.2004303650771986,
+              21.564664317365153,
+              -15.288011107273524
+            ],
+            [
+              -2.712791257665688,
+              21.094894873134947,
+              -16.263687654925686
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_03",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 1.3552559024113608,
+          "points": [
+            [
+              -2.7676543683603922,
+              21.08799133599487,
+              -15.905381447965613
+            ],
+            [
+              -2.6544824784164085,
+              21.246976773768782,
+              -17.246513177112
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_02",
+          "b": "v3_integrated_brow_left",
+          "segment_length": 0.3522766963282543,
+          "points": [
+            [
+              -3.464418754317349,
+              20.347117476702653,
+              -14.657169352769333
+            ],
+            [
+              -3.3756108945289918,
+              20.22127501094588,
+              -14.973990609360516
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_02",
+          "b": "v3_cranial_crown_left",
+          "segment_length": 2.4593451917908857,
+          "points": [
+            [
+              -2.3075019118000055,
+              20.592881478634418,
+              -17.254892110580982
+            ],
+            [
+              -2.5434507034435856,
+              18.311393289059918,
+              -18.14231454715725
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_02",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 2.637627429099249,
+          "points": [
+            [
+              -2.4037254538051958,
+              18.044254948893222,
+              -18.660832583377264
+            ],
+            [
+              -2.2008717262254116,
+              20.454325270681736,
+              -17.608459140165248
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 1.0650727086870007,
+          "points": [
+            [
+              1.8195991456991907,
+              21.556872656515566,
+              -14.524340508040412
+            ],
+            [
+              1.7199843779993764,
+              20.553714001210853,
+              -14.180640806071938
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_integrated_brow_left",
+          "segment_length": 1.476742798311449,
+          "points": [
+            [
+              -3.822552500864372,
+              20.567004906177665,
+              -14.398023393648227
+            ],
+            [
+              -3.6113624347118307,
+              20.36493571252634,
+              -15.845550971727594
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_descending_throat",
+          "segment_length": 2.965560271894825,
+          "points": [
+            [
+              -3.442537625356942,
+              20.006148052490634,
+              -13.432798362519355
+            ],
+            [
+              -2.7901705619423733,
+              18.518398412006924,
+              -15.913839665692954
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_cranial_crown_left",
+          "segment_length": 2.0294142885130313,
+          "points": [
+            [
+              -3.4726468553488936,
+              21.025495399640622,
+              -16.33455937924389
+            ],
+            [
+              -2.6560740298630954,
+              20.218801350629025,
+              -18.008171008741087
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_skull_keel",
+          "segment_length": 1.7007483849664284,
+          "points": [
+            [
+              -0.12567256900781687,
+              19.562640839482686,
+              -17.297814976494642
+            ],
+            [
+              -0.5202509359811655,
+              20.98723149226772,
+              -16.456747527784334
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 2.8234715328086093,
+          "points": [
+            [
+              -0.388274249156806,
+              20.833888119553446,
+              -17.496891184464403
+            ],
+            [
+              0.28302384745048514,
+              18.330482928698743,
+              -18.61685226078525
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_descending_throat",
+          "segment_length": 2.123447027025096,
+          "points": [
+            [
+              -1.559716008021006,
+              23.10919575622072,
+              -12.153242097692067
+            ],
+            [
+              -0.1625030486368999,
+              23.796269079588267,
+              -10.709374558397862
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_cranial_crown_left",
+          "segment_length": 1.304544656468003,
+          "points": [
+            [
+              -1.8439057887635395,
+              22.88721700800766,
+              -11.647848976650884
+            ],
+            [
+              -2.491725772339145,
+              22.612814045224653,
+              -12.746424892832934
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_folded_radius",
+          "b": "v3_skull_keel",
+          "segment_length": 0.6346436713540319,
+          "points": [
+            [
+              -0.5571987408699584,
+              16.644420176529955,
+              -18.900182276909486
+            ],
+            [
+              -0.4755976510758858,
+              17.255541083281834,
+              -19.050665129968916
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_folded_radius",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 1.974515440008325,
+          "points": [
+            [
+              0.0283154040093881,
+              17.879641765024857,
+              -18.803222922981742
+            ],
+            [
+              -0.9897265311025298,
+              16.22499839886311,
+              -19.156007803612667
+            ]
+          ]
+        }
+      ],
+      "support_margin": 10.416841472978588,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -10.647244591694
+      ],
+      "elbow": [
+        -1.0365585137752742,
+        17.62027080176393,
+        -19.721933203612462
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {
+          "membrane_and_ribs": {
+            "name": "right_v24_wing_digit_1_segment_1",
+            "z": -33.23502546732469
+          },
+          "radius": {
+            "name": "right_v2_folded_radius",
+            "z": -26.184804154454532
+          },
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -26.69657535228032
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -6.53845011504437,
+        "minimum_wing_y": 13.943242252056365,
+        "proxy_triangle_overlap": {
+          "right_v24_mantle_panel_02": 7,
+          "right_v24_mantle_panel_03": 7,
+          "right_v24_mantle_panel_04": 7,
+          "right_v24_mantle_panel_06": 8,
+          "right_v24_mantle_panel_07": 7,
+          "right_v24_tension_panel_9_0": 7,
+          "right_v24_tension_panel_9_1": 7,
+          "right_v24_tension_panel_9_2": 7,
+          "right_v24_wing_digit_1_segment_0": 10,
+          "right_v24_wing_digit_1_segment_1": 10
+        },
+        "lowest_wing_mesh": "right_v24_wing_digit_1_segment_0",
+        "lowest_wing_vertex": [
+          3.2653722012254214,
+          13.943242252056365,
+          -24.887672733191252
+        ],
+        "palm_z_front_clearance": 0.9018316726754989,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            3.5457804756495532,
+            14.852407672604015,
+            -26.664368337109494
+          ],
+          "right_v2_folded_hook_1": [
+            3.6462660754168095,
+            14.492300935181317,
+            -25.62985116378553
+          ]
+        },
+        "palm_centre": [
+          6.753653760601989,
+          15.653498141433266,
+          -25.686972282053304
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_02",
+          "right_v24_mantle_panel_03",
+          "right_v24_mantle_panel_04",
+          "right_v24_mantle_panel_06",
+          "right_v24_mantle_panel_07",
+          "right_v24_tension_panel_9_0",
+          "right_v24_tension_panel_9_1",
+          "right_v24_tension_panel_9_2",
+          "right_v24_wing_digit_1_segment_0",
+          "right_v24_wing_digit_1_segment_1"
+        ],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 1,
+      "roll": 240,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          7.73478180500423,
+          16.118263197699108,
+          -26.15214021190423
+        ],
+        "claw_direction": [
+          -1,
+          -0.2,
+          -0.35
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999576017,
+      "head_crown_crossings": 4,
+      "head_details": [
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 1.094838506159758,
+          "points": [
+            [
+              1.6136297873603915,
+              20.852986843138257,
+              -13.742329337159346
+            ],
+            [
+              0.5447764630524236,
+              21.065022313702542,
+              -13.636193175044264
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_descending_throat",
+          "segment_length": 2.376017009606036,
+          "points": [
+            [
+              -0.8828018585964801,
+              21.418036093885135,
+              -13.733186143556765
+            ],
+            [
+              1.4250966593251744,
+              21.00625167045557,
+              -14.119831781748921
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_cranial_crown_left",
+          "segment_length": 0.8330490923111505,
+          "points": [
+            [
+              -1.982860628953881,
+              21.9411501856168,
+              -14.666584220106657
+            ],
+            [
+              -1.7356043245490942,
+              22.310306052807938,
+              -13.961914754434362
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_skull_keel",
+          "segment_length": 1.3615743252612904,
+          "points": [
+            [
+              -0.5960199303334691,
+              22.35913035997871,
+              -16.439520474060743
+            ],
+            [
+              -0.11251061536303686,
+              22.284623957457956,
+              -17.710170772738934
+            ]
+          ]
+        }
+      ],
+      "support_margin": 10.416841472978588,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -10.647244591694
+      ],
+      "elbow": [
+        -0.9245467837617345,
+        20.822778233259896,
+        -21.312350271011866
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {
+          "radius": {
+            "name": "right_v2_folded_radius",
+            "z": -26.657027882085444
+          },
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -26.696575352280306
+          },
+          "membrane_and_ribs": {
+            "name": "right_v24_mantle_panel_06",
+            "z": -29.986047618482136
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -3.2894722662018303,
+        "minimum_wing_y": 13.419463237368944,
+        "proxy_triangle_overlap": {
+          "right_v24_mantle_panel_04": 3,
+          "right_v24_mantle_panel_06": 5,
+          "right_v24_wing_digit_1_segment_0": 7
+        },
+        "lowest_wing_mesh": "right_v24_mantle_panel_05",
+        "lowest_wing_vertex": [
+          9.606887355458174,
+          13.419463237368944,
+          -28.957101838133173
+        ],
+        "palm_z_front_clearance": 0.9018316726755131,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            3.5457804756495905,
+            14.852407672604029,
+            -26.664368337109476
+          ],
+          "right_v2_folded_hook_1": [
+            3.6462660754168477,
+            14.49230093518133,
+            -25.629851163785517
+          ]
+        },
+        "palm_centre": [
+          6.753653760602031,
+          15.653498141433273,
+          -25.686972282053294
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_04",
+          "right_v24_mantle_panel_06",
+          "right_v24_wing_digit_1_segment_0"
+        ],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 1,
+      "roll": 270,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          7.73478180500423,
+          16.118263197699108,
+          -26.15214021190423
+        ],
+        "claw_direction": [
+          -1,
+          -0.2,
+          -0.35
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999576017,
+      "head_crown_crossings": 2,
+      "head_details": [
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 1.328689677891533,
+          "points": [
+            [
+              0.715514658533754,
+              22.164019910161162,
+              -14.099919152709866
+            ],
+            [
+              1.843342633987647,
+              21.741126176690468,
+              -14.660794547169541
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_descending_throat",
+          "segment_length": 0.4125718841072619,
+          "points": [
+            [
+              0.12247944993169281,
+              22.294353651904846,
+              -12.915726205640198
+            ],
+            [
+              0.1100672059318768,
+              21.992953088771838,
+              -13.197185254700289
+            ]
+          ]
+        }
+      ],
+      "support_margin": 10.416841472978588,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -10.647244591694
+      ],
+      "elbow": [
+        0.8947523698952426,
+        23.761360163732647,
+        -22.235883568800816
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {
+          "radius": {
+            "name": "right_v2_folded_radius",
+            "z": -26.705028485345256
+          },
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -26.696575352280398
+          },
+          "membrane_and_ribs": {
+            "name": "right_v24_mantle_panel_06",
+            "z": -27.846916092412354
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -1.1503407401319556,
+        "minimum_wing_y": 13.114176363499524,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_mantle_panel_05",
+        "lowest_wing_vertex": [
+          8.955219068104173,
+          13.114176363499524,
+          -29.005577669070778
+        ],
+        "palm_z_front_clearance": 0.901831672675435,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            3.5457804756493894,
+            14.852407672604102,
+            -26.66436833710957
+          ],
+          "right_v2_folded_hook_1": [
+            3.646266075416641,
+            14.492300935181397,
+            -25.629851163785606
+          ]
+        },
+        "palm_centre": [
+          6.753653760601836,
+          15.653498141433305,
+          -25.68697228205337
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 1,
+      "roll": 285,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          7.73478180500423,
+          16.118263197699108,
+          -26.15214021190423
+        ],
+        "claw_direction": [
+          -1,
+          -0.2,
+          -0.35
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999576017,
+      "head_crown_crossings": 0,
+      "head_details": [],
+      "support_margin": 10.416841472978588,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -10.647244591694
+      ],
+      "elbow": [
+        2.307319101337522,
+        24.876689212559608,
+        -22.361016059027975
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -26.696575352280355
+          }
+        },
+        "claw_ahead_of_membrane_in_column": true,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 9.702964066507686,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          33.58987498760073,
+          9.702964066507686,
+          -47.01906710329287
+        ],
+        "palm_z_front_clearance": 0.9018316726754882,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            3.545780475649572,
+            14.85240767260402,
+            -26.66436833710953
+          ],
+          "right_v2_folded_hook_1": [
+            3.6462660754168246,
+            14.492300935181317,
+            -25.629851163785567
+          ]
+        },
+        "palm_centre": [
+          6.753653760602,
+          15.653498141433282,
+          -25.686972282053322
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 1,
+      "roll": 300,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          7.73478180500423,
+          16.118263197699108,
+          -26.15214021190423
+        ],
+        "claw_direction": [
+          -1,
+          -0.2,
+          -0.35
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999576017,
+      "head_crown_crossings": 0,
+      "head_details": [],
+      "support_margin": 10.416841472978588,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -10.647244591694
+      ],
+      "elbow": [
+        3.93385920818265,
+        25.648625938019304,
+        -22.245073095653517
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -26.696575352280302
+          }
+        },
+        "claw_ahead_of_membrane_in_column": true,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 5.188116831991076,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          33.967819699484586,
+          5.188116831991076,
+          -44.57072850727279
+        ],
+        "palm_z_front_clearance": 0.9018316726755096,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            3.545780475649671,
+            14.852407672603995,
+            -26.664368337109472
+          ],
+          "right_v2_folded_hook_1": [
+            3.6462660754169307,
+            14.492300935181305,
+            -25.62985116378551
+          ]
+        },
+        "palm_centre": [
+          6.753653760602098,
+          15.653498141433287,
+          -25.68697228205329
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 1,
+      "roll": 315,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          7.73478180500423,
+          16.118263197699108,
+          -26.15214021190423
+        ],
+        "claw_direction": [
+          -1,
+          -0.2,
+          -0.35
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": 0.0029999999999576017,
+      "head_crown_crossings": 0,
+      "head_details": [],
+      "support_margin": 10.416841472978588,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -10.647244591694
+      ],
+      "elbow": [
+        5.663526670133741,
+        26.024564127957404,
+        -21.89595600002662
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -26.696575352280398
+          }
+        },
+        "claw_ahead_of_membrane_in_column": true,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 0.5957942304626287,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          32.97458484089464,
+          0.5957942304626287,
+          -42.55000810422369
+        ],
+        "palm_z_front_clearance": 0.9018316726754492,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            3.54578047564946,
+            14.852407672604091,
+            -26.66436833710957
+          ],
+          "right_v2_folded_hook_1": [
+            3.646266075416708,
+            14.492300935181385,
+            -25.62985116378561
+          ]
+        },
+        "palm_centre": [
+          6.753653760601897,
+          15.65349814143331,
+          -25.686972282053357
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 1,
+      "roll": 330,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          7.73478180500423,
+          16.118263197699108,
+          -26.15214021190423
+        ],
+        "claw_direction": [
+          -1,
+          -0.2,
+          -0.35
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "minimum_all_y": -3.7594578138585875,
+      "head_crown_crossings": 1,
+      "head_details": [
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_descending_throat",
+          "segment_length": 0.36393707122814767,
+          "points": [
+            [
+              2.556945267767465,
+              24.664331374419827,
+              -8.826649653663313
+            ],
+            [
+              2.868874515831201,
+              24.57208531232454,
+              -8.989870363269743
+            ]
+          ]
+        }
+      ],
+      "support_margin": 10.416841472978588,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        -10.647244591694
+      ],
+      "elbow": [
+        7.378447508069465,
+        25.978884215996867,
+        -21.337456525270966
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -26.696575352280348
+          }
+        },
+        "claw_ahead_of_membrane_in_column": true,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": -3.7594578138585875,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          30.766095942253877,
+          -3.7594578138585875,
+          -41.028952640691806
+        ],
+        "palm_z_front_clearance": 0.9018316726754492,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            3.5457804756495,
+            14.85240767260404,
+            -26.664368337109522
+          ],
+          "right_v2_folded_hook_1": [
+            3.6462660754167593,
+            14.492300935181351,
+            -25.62985116378556
+          ]
+        },
+        "palm_centre": [
+          6.753653760601936,
+          15.653498141433309,
+          -25.686972282053343
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 2,
+      "roll": 180,
+      "q": {
+        "name": "spherical interpolation 4",
+        "body": [
+          -2,
+          30,
+          4
+        ],
+        "shift": [
+          -1.6,
+          -1.8,
+          -0.3
+        ],
+        "wrist": [
+          -18.667372803497265,
+          17.634899329777006,
+          -20.56547598521182
+        ],
+        "claw_direction": [
+          -1,
+          0.05,
+          0.35
+        ],
+        "membrane_time": 1.08,
+        "pole": [
+          1,
+          -0.4,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -25.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.5,
+            3.1840816777831187e-16,
+            -3.0
+          ],
+          "toe_pitch": 9.797174393178826e-16
+        }
+      },
+      "minimum_all_y": 0.0029999999997805103,
+      "head_crown_crossings": 2,
+      "head_details": [
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_descending_throat",
+          "segment_length": 1.9535344639020864,
+          "points": [
+            [
+              -9.710554541504639,
+              22.630877244954956,
+              -7.364587196106619
+            ],
+            [
+              -9.277382009590266,
+              22.570341186918967,
+              -9.268528856170175
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_cranial_crown_left",
+          "segment_length": 1.3632331424811264,
+          "points": [
+            [
+              -8.07440816546281,
+              22.24389742713469,
+              -10.707314358092827
+            ],
+            [
+              -7.460136399645205,
+              22.653074736753798,
+              -9.561169198101668
+            ]
+          ]
+        }
+      ],
+      "support_margin": 10.700933911559074,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        6.023686435242066
+      ],
+      "elbow": [
+        -16.115033662544057,
+        22.465612953385232,
+        -11.04235828163154
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {},
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 15.271697379741411,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_mantle_panel_05",
+        "lowest_wing_vertex": [
+          -21.1952824138414,
+          15.271697379741411,
+          -23.150250576508498
+        ],
+        "palm_z_front_clearance": 6.882704258830017,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            -22.432409267321933,
+            17.3584084229277,
+            -18.293790882804444
+          ],
+          "right_v2_folded_hook_1": [
+            -21.798650477908204,
+            16.906972546935414,
+            -17.516259245693824
+          ]
+        },
+        "palm_centre": [
+          -19.226053142097957,
+          17.36166365426524,
+          -19.561375121309972
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 2,
+      "roll": 210,
+      "q": {
+        "name": "spherical interpolation 4",
+        "body": [
+          -2,
+          30,
+          4
+        ],
+        "shift": [
+          -1.6,
+          -1.8,
+          -0.3
+        ],
+        "wrist": [
+          -18.667372803497265,
+          17.634899329777006,
+          -20.56547598521182
+        ],
+        "claw_direction": [
+          -1,
+          0.05,
+          0.35
+        ],
+        "membrane_time": 1.08,
+        "pole": [
+          1,
+          -0.4,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -25.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.5,
+            3.1840816777831187e-16,
+            -3.0
+          ],
+          "toe_pitch": 9.797174393178826e-16
+        }
+      },
+      "minimum_all_y": 0.0029999999997805103,
+      "head_crown_crossings": 2,
+      "head_details": [
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_descending_throat",
+          "segment_length": 1.429063599517488,
+          "points": [
+            [
+              -8.99309648600011,
+              23.18608785599411,
+              -9.48809410397345
+            ],
+            [
+              -9.155160731380558,
+              23.616487738524334,
+              -8.135055341427043
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_cranial_crown_left",
+          "segment_length": 1.4163057374732357,
+          "points": [
+            [
+              -8.562726158056034,
+              22.757158385690225,
+              -10.44270939553944
+            ],
+            [
+              -8.054510398437152,
+              23.33069023705047,
+              -9.25161750187636
+            ]
+          ]
+        }
+      ],
+      "support_margin": 10.700933911559074,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        6.023686435242066
+      ],
+      "elbow": [
+        -15.969158341539314,
+        24.891540854871025,
+        -12.780824901601058
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {},
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 14.160069184618347,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          -26.16673397618005,
+          14.160069184618347,
+          -53.14738516125086
+        ],
+        "palm_z_front_clearance": 6.882704258829943,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            -22.432409267321923,
+            17.35840842292771,
+            -18.29379088280453
+          ],
+          "right_v2_folded_hook_1": [
+            -21.798650477908197,
+            16.90697254693541,
+            -17.516259245693913
+          ]
+        },
+        "palm_centre": [
+          -19.226053142097943,
+          17.36166365426527,
+          -19.561375121310043
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 2,
+      "roll": 240,
+      "q": {
+        "name": "spherical interpolation 4",
+        "body": [
+          -2,
+          30,
+          4
+        ],
+        "shift": [
+          -1.6,
+          -1.8,
+          -0.3
+        ],
+        "wrist": [
+          -18.667372803497265,
+          17.634899329777006,
+          -20.56547598521182
+        ],
+        "claw_direction": [
+          -1,
+          0.05,
+          0.35
+        ],
+        "membrane_time": 1.08,
+        "pole": [
+          1,
+          -0.4,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -25.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.5,
+            3.1840816777831187e-16,
+            -3.0
+          ],
+          "toe_pitch": 9.797174393178826e-16
+        }
+      },
+      "minimum_all_y": 0.0029999999997805103,
+      "head_crown_crossings": 0,
+      "head_details": [],
+      "support_margin": 10.700933911559074,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        6.023686435242066
+      ],
+      "elbow": [
+        -14.784385105246805,
+        26.336933191407386,
+        -15.112310555273545
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {},
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 4.047828170557677,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          -22.381386939598066,
+          4.047828170557677,
+          -51.08585056356268
+        ],
+        "palm_z_front_clearance": 6.882704258830152,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            -22.432409267322008,
+            17.358408422927596,
+            -18.293790882804274
+          ],
+          "right_v2_folded_hook_1": [
+            -21.798650477908268,
+            16.9069725469353,
+            -17.516259245693664
+          ]
+        },
+        "palm_centre": [
+          -19.226053142098042,
+          17.361663654265204,
+          -19.56137512130983
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 2,
+      "roll": 270,
+      "q": {
+        "name": "spherical interpolation 4",
+        "body": [
+          -2,
+          30,
+          4
+        ],
+        "shift": [
+          -1.6,
+          -1.8,
+          -0.3
+        ],
+        "wrist": [
+          -18.667372803497265,
+          17.634899329777006,
+          -20.56547598521182
+        ],
+        "claw_direction": [
+          -1,
+          0.05,
+          0.35
+        ],
+        "membrane_time": 1.08,
+        "pole": [
+          1,
+          -0.4,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -25.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.5,
+            3.1840816777831187e-16,
+            -3.0
+          ],
+          "toe_pitch": 9.797174393178826e-16
+        }
+      },
+      "minimum_all_y": -5.1130153225770565,
+      "head_crown_crossings": 6,
+      "head_details": [
+        {
+          "a": "right_v24_wing_digit_2_segment_1",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 0.08666732658203091,
+          "points": [
+            [
+              -4.265559240176339,
+              18.851632697985224,
+              -17.985686869650973
+            ],
+            [
+              -4.233977639582563,
+              18.785448261053066,
+              -17.9394976034868
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 0.3176386766285128,
+          "points": [
+            [
+              -3.9914274332397923,
+              18.872467214935455,
+              -17.679387659132708
+            ],
+            [
+              -4.176116212170034,
+              18.67571930414879,
+              -17.846942555893893
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 0.45492254550190525,
+          "points": [
+            [
+              -4.110642059543826,
+              19.67671968883339,
+              -16.522710004817796
+            ],
+            [
+              -4.197341308856505,
+              20.10517060477308,
+              -16.39674344098043
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 2.9764622177608926,
+          "points": [
+            [
+              -4.516008000484751,
+              20.344320052388337,
+              -17.122003855671856
+            ],
+            [
+              -4.576049018023008,
+              22.41748912127551,
+              -14.987128584893593
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 2.2813890932367937,
+          "points": [
+            [
+              -4.270211647512245,
+              21.739307304751105,
+              -14.91265174973747
+            ],
+            [
+              -4.491192859245111,
+              20.53851771489287,
+              -16.839827885872662
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 2.2623179595248937,
+          "points": [
+            [
+              -4.211604122353434,
+              20.332119351963613,
+              -16.31351069886969
+            ],
+            [
+              -4.894956304427748,
+              22.433893509151446,
+              -15.830129133829683
+            ]
+          ]
+        }
+      ],
+      "support_margin": 10.700933911559074,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        6.023686435242066
+      ],
+      "elbow": [
+        -12.878172985545106,
+        26.414498253673276,
+        -17.412095544582716
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {
+          "membrane_and_ribs": {
+            "name": "right_v24_wing_digit_2_segment_1",
+            "z": -20.947306171351407
+          }
+        },
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": -5.1130153225770565,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          -22.516586767862425,
+          -5.1130153225770565,
+          -45.01157176587681
+        ],
+        "palm_z_front_clearance": 6.882704258830177,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            -22.432409267321987,
+            17.358408422927553,
+            -18.293790882804274
+          ],
+          "right_v2_folded_hook_1": [
+            -21.798650477908247,
+            16.906972546935272,
+            -17.516259245693654
+          ]
+        },
+        "palm_centre": [
+          -19.226053142098014,
+          17.361663654265126,
+          -19.561375121309812
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 2,
+      "roll": 285,
+      "q": {
+        "name": "spherical interpolation 4",
+        "body": [
+          -2,
+          30,
+          4
+        ],
+        "shift": [
+          -1.6,
+          -1.8,
+          -0.3
+        ],
+        "wrist": [
+          -18.667372803497265,
+          17.634899329777006,
+          -20.56547598521182
+        ],
+        "claw_direction": [
+          -1,
+          0.05,
+          0.35
+        ],
+        "membrane_time": 1.08,
+        "pole": [
+          1,
+          -0.4,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -25.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.5,
+            3.1840816777831187e-16,
+            -3.0
+          ],
+          "toe_pitch": 9.797174393178826e-16
+        }
+      },
+      "minimum_all_y": -8.543752650339593,
+      "head_crown_crossings": 17,
+      "head_details": [
+        {
+          "a": "right_v24_wing_digit_2_segment_1",
+          "b": "v3_blind_pit_right",
+          "segment_length": 0.6183468941898433,
+          "points": [
+            [
+              -4.434447768265924,
+              17.292634906452317,
+              -16.71834008196123
+            ],
+            [
+              -4.682101827831115,
+              16.82584703332272,
+              -17.03947779359637
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_1",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 0.6996912110158562,
+          "points": [
+            [
+              -4.982791724108563,
+              16.159799198466395,
+              -17.52634185780301
+            ],
+            [
+              -4.632546358148517,
+              16.67726344618402,
+              -17.211497885762288
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_13",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 0.5225685406609076,
+          "points": [
+            [
+              -5.162303044637343,
+              15.980260622240056,
+              -18.357108765706148
+            ],
+            [
+              -5.001133402803222,
+              16.28190005443958,
+              -17.961993745513443
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_13",
+          "b": "v3_blind_pit_right",
+          "segment_length": 0.16135516576953282,
+          "points": [
+            [
+              -4.550065545601246,
+              17.001620028514022,
+              -16.85644036544851
+            ],
+            [
+              -4.602062160688082,
+              16.86140668968418,
+              -16.91703789967403
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_13",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 0.29734975823068327,
+          "points": [
+            [
+              -4.775700924367978,
+              16.23905803685116,
+              -17.319683752386894
+            ],
+            [
+              -4.723495642850292,
+              16.530489744444726,
+              -17.29213294276898
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 0.33902851948330914,
+          "points": [
+            [
+              -3.9863711646962288,
+              21.355752647820257,
+              -12.132986593606674
+            ],
+            [
+              -4.0449695757263795,
+              21.341129134775755,
+              -12.466592223226474
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_descending_throat",
+          "segment_length": 2.088070350032736,
+          "points": [
+            [
+              -4.173604792397649,
+              19.792748122447744,
+              -13.696790626993682
+            ],
+            [
+              -4.036664267405607,
+              21.41910316974583,
+              -12.394387333298226
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_blind_pit_right",
+          "segment_length": 0.3669201734081289,
+          "points": [
+            [
+              -4.28598080583207,
+              17.214254357563878,
+              -16.327371984261873
+            ],
+            [
+              -4.324876974396047,
+              17.572097049305647,
+              -16.398548593424568
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 0.39506660979399433,
+          "points": [
+            [
+              -3.966199002622514,
+              20.5565087389623,
+              -12.962654902207339
+            ],
+            [
+              -4.0512902090691165,
+              20.813816023596466,
+              -12.675200429231575
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 3.0127216327167843,
+          "points": [
+            [
+              -4.975299718385635,
+              19.71972874278794,
+              -16.804925298521034
+            ],
+            [
+              -4.452343309874889,
+              21.161180402201904,
+              -14.211621354782476
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 1.8492348337456932,
+          "points": [
+            [
+              -5.099413037387693,
+              19.71487533814718,
+              -17.227537276811308
+            ],
+            [
+              -4.821299182905585,
+              20.72935067891929,
+              -15.706629016182521
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_descending_throat",
+          "segment_length": 1.6209619411798686,
+          "points": [
+            [
+              -3.814526334996296,
+              22.220110057676077,
+              -11.591466706894773
+            ],
+            [
+              -3.7834682198646883,
+              23.524250115479937,
+              -10.629296390438572
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_blind_pit_right",
+          "segment_length": 0.12060536195459133,
+          "points": [
+            [
+              -4.430363098340652,
+              17.21713812906707,
+              -16.53564067817765
+            ],
+            [
+              -4.449600170812847,
+              17.331659021709136,
+              -16.56820681892785
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 3.7817012207359193,
+          "points": [
+            [
+              -4.967229904351654,
+              18.773252066761465,
+              -17.318878166305456
+            ],
+            [
+              -5.183494774342851,
+              22.319264380047468,
+              -16.022618044668103
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 1.0168909966467432,
+          "points": [
+            [
+              -5.175508135767367,
+              17.711886206474606,
+              -18.366194891436454
+            ],
+            [
+              -5.3380888040522825,
+              16.772993035740654,
+              -18.721320839953854
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_blind_pit_right",
+          "segment_length": 0.18046091447775411,
+          "points": [
+            [
+              -4.505398311450366,
+              17.250858504145736,
+              -16.7598883411501
+            ],
+            [
+              -4.575674821197242,
+              17.138694167783722,
+              -16.88255257995022
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 0.4969289532276047,
+          "points": [
+            [
+              -4.685084297687954,
+              17.098772980559502,
+              -17.303858301867265
+            ],
+            [
+              -4.756589892392548,
+              17.576404385694996,
+              -17.420877852841105
+            ]
+          ]
+        }
+      ],
+      "support_margin": 10.700933911559074,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        6.023686435242066
+      ],
+      "elbow": [
+        -11.81012905785459,
+        25.91866513337225,
+        -18.352461677975985
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {
+          "membrane_and_ribs": {
+            "name": "right_v24_mantle_panel_12",
+            "z": -18.215045154163278
+          }
+        },
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": -8.543752650339593,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          -24.04820171915546,
+          -8.543752650339593,
+          -41.00075371714185
+        ],
+        "palm_z_front_clearance": 6.882704258829989,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            -22.432409267321866,
+            17.358408422927525,
+            -18.29379088280446
+          ],
+          "right_v2_folded_hook_1": [
+            -21.79865047790813,
+            16.90697254693523,
+            -17.516259245693853
+          ]
+        },
+        "palm_centre": [
+          -19.22605314209789,
+          17.361663654265126,
+          -19.561375121309993
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 2,
+      "roll": 300,
+      "q": {
+        "name": "spherical interpolation 4",
+        "body": [
+          -2,
+          30,
+          4
+        ],
+        "shift": [
+          -1.6,
+          -1.8,
+          -0.3
+        ],
+        "wrist": [
+          -18.667372803497265,
+          17.634899329777006,
+          -20.56547598521182
+        ],
+        "claw_direction": [
+          -1,
+          0.05,
+          0.35
+        ],
+        "membrane_time": 1.08,
+        "pole": [
+          1,
+          -0.4,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -25.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.5,
+            3.1840816777831187e-16,
+            -3.0
+          ],
+          "toe_pitch": 9.797174393178826e-16
+        }
+      },
+      "minimum_all_y": -10.88688674932251,
+      "head_crown_crossings": 17,
+      "head_details": [
+        {
+          "a": "right_v24_wing_digit_2_segment_1",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 0.7022011935994428,
+          "points": [
+            [
+              -5.643066069035552,
+              14.654171312744452,
+              -15.495845687027163
+            ],
+            [
+              -5.9153400003760765,
+              14.272735637149959,
+              -16.018779954396045
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_1",
+          "b": "v3_dark_gape",
+          "segment_length": 0.6343775796745876,
+          "points": [
+            [
+              -5.786551586733899,
+              14.190231794425774,
+              -16.173302346553392
+            ],
+            [
+              -5.534484799091157,
+              14.474764132622482,
+              -15.665425790014728
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_1",
+          "b": "v3_short_recessed_jaw",
+          "segment_length": 0.842082343557464,
+          "points": [
+            [
+              -5.571782041815857,
+              14.694744484075127,
+              -15.876730849607133
+            ],
+            [
+              -5.239927867648661,
+              15.145766834691635,
+              -15.24779975666976
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_13",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 1.4508833937172163,
+          "points": [
+            [
+              -6.569717540897088,
+              13.091251127201208,
+              -17.695706120282544
+            ],
+            [
+              -6.083921903738301,
+              13.886030038849157,
+              -16.583325024307978
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_13",
+          "b": "v3_dark_gape",
+          "segment_length": 2.978424237073227,
+          "points": [
+            [
+              -5.9832352200502275,
+              13.992218969811251,
+              -16.280395128222786
+            ],
+            [
+              -6.942743432555783,
+              12.651748867083894,
+              -18.7610190073737
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_13",
+          "b": "v3_short_recessed_jaw",
+          "segment_length": 2.003542550429911,
+          "points": [
+            [
+              -7.053664253668783,
+              12.07195173762351,
+              -18.97848676989909
+            ],
+            [
+              -6.383425418387267,
+              13.346390202450273,
+              -17.585371823301475
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_descending_throat",
+          "segment_length": 1.266435552908332,
+          "points": [
+            [
+              -3.443448553686998,
+              24.61964844865887,
+              -9.067617585017334
+            ],
+            [
+              -3.272214925697993,
+              25.3776746342251,
+              -8.067650407400055
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 0.2677023103974325,
+          "points": [
+            [
+              -4.509334237383319,
+              19.88409354689418,
+              -12.127015993171378
+            ],
+            [
+              -4.487164157232129,
+              20.14198971248217,
+              -12.195299097327714
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 0.7780654116828073,
+          "points": [
+            [
+              -4.918702485908231,
+              23.698782566235515,
+              -11.037778562370747
+            ],
+            [
+              -5.5980057762279545,
+              23.59173816969697,
+              -11.40174878338839
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 2.0269381204642336,
+          "points": [
+            [
+              -5.020610830024907,
+              22.084359401192675,
+              -15.709183969363814
+            ],
+            [
+              -5.405960659702501,
+              21.294883468276588,
+              -17.535850716284227
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 0.6290030667548849,
+          "points": [
+            [
+              -4.913835313058542,
+              22.323021732480175,
+              -15.212093890602437
+            ],
+            [
+              -4.898233589955632,
+              22.437510191182604,
+              -15.830393039111646
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 4.8695474648840475,
+          "points": [
+            [
+              -5.358128727963602,
+              19.695366110745084,
+              -16.776776736533638
+            ],
+            [
+              -4.448973714765325,
+              22.024773814124618,
+              -12.598285450654107
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 2.508239355853618,
+          "points": [
+            [
+              -5.3650641427510495,
+              19.571392189812435,
+              -16.789342231487304
+            ],
+            [
+              -5.746762591498784,
+              17.665784589692716,
+              -18.374974797639535
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_descending_throat",
+          "segment_length": 4.141053311293534,
+          "points": [
+            [
+              -4.9463551058518105,
+              19.59930740618985,
+              -14.674969829232618
+            ],
+            [
+              -4.281312336136744,
+              22.548213883358184,
+              -11.844777038919649
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 2.4192586373653113,
+          "points": [
+            [
+              -5.209848727192963,
+              21.508813535195777,
+              -16.355920097580817
+            ],
+            [
+              -5.485744268708573,
+              19.322835432790555,
+              -17.355016559612054
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 2.392226820566159,
+          "points": [
+            [
+              -5.916317253320697,
+              16.786607087560633,
+              -18.691710957379083
+            ],
+            [
+              -6.641255509952256,
+              14.650305482233792,
+              -19.487593571956154
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 2.082364629193526,
+          "points": [
+            [
+              -6.82375199074979,
+              13.811700053934597,
+              -19.41826964725822
+            ],
+            [
+              -6.144101091287482,
+              15.477800792729303,
+              -18.370211713762128
+            ]
+          ]
+        }
+      ],
+      "support_margin": 10.700933911559074,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        6.023686435242066
+      ],
+      "elbow": [
+        -10.76128998051071,
+        25.103452545873672,
+        -19.063954338877952
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {
+          "membrane_and_ribs": {
+            "name": "right_v24_mantle_panel_01",
+            "z": -15.44961302741741
+          }
+        },
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": -10.88688674932251,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          -26.495033513975347,
+          -10.88688674932251,
+          -36.60016219843368
+        ],
+        "palm_z_front_clearance": 6.882704258830074,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            -22.43240926732186,
+            17.358408422927447,
+            -18.293790882804366
+          ],
+          "right_v2_folded_hook_1": [
+            -21.798650477908126,
+            16.906972546935158,
+            -17.516259245693753
+          ]
+        },
+        "palm_centre": [
+          -19.22605314209789,
+          17.36166365426503,
+          -19.56137512130991
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 2,
+      "roll": 315,
+      "q": {
+        "name": "spherical interpolation 4",
+        "body": [
+          -2,
+          30,
+          4
+        ],
+        "shift": [
+          -1.6,
+          -1.8,
+          -0.3
+        ],
+        "wrist": [
+          -18.667372803497265,
+          17.634899329777006,
+          -20.56547598521182
+        ],
+        "claw_direction": [
+          -1,
+          0.05,
+          0.35
+        ],
+        "membrane_time": 1.08,
+        "pole": [
+          1,
+          -0.4,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -25.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.5,
+            3.1840816777831187e-16,
+            -3.0
+          ],
+          "toe_pitch": 9.797174393178826e-16
+        }
+      },
+      "minimum_all_y": -11.970458414477797,
+      "head_crown_crossings": 22,
+      "head_details": [
+        {
+          "a": "right_v24_wing_digit_2_segment_1",
+          "b": "v3_descending_throat",
+          "segment_length": 0.5399638342231055,
+          "points": [
+            [
+              -6.386885615099332,
+              14.588597120817377,
+              -13.244233137965706
+            ],
+            [
+              -6.217599059448949,
+              15.08016863923583,
+              -13.390042762561357
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_1",
+          "b": "v3_short_recessed_jaw",
+          "segment_length": 0.8196721193601949,
+          "points": [
+            [
+              -6.355636856811018,
+              14.23476329383837,
+              -13.420726824661589
+            ],
+            [
+              -6.698522780609751,
+              13.705690234242322,
+              -13.944533395951794
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_13",
+          "b": "v3_descending_throat",
+          "segment_length": 0.055811248045200386,
+          "points": [
+            [
+              -6.204970898836519,
+              14.808929669895774,
+              -13.330247510860767
+            ],
+            [
+              -6.190116467238373,
+              14.8606612421961,
+              -13.345015235722606
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_13",
+          "b": "v3_short_recessed_jaw",
+          "segment_length": 1.1925680400909209,
+          "points": [
+            [
+              -7.169778783120854,
+              13.094130814250306,
+              -15.244838306449413
+            ],
+            [
+              -6.825720013366159,
+              13.575804882811257,
+              -14.209545021975334
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_descending_throat",
+          "segment_length": 0.6656773803103017,
+          "points": [
+            [
+              -3.6053077647793876,
+              25.41381671700513,
+              -7.835965343363031
+            ],
+            [
+              -3.633300311579114,
+              25.166507088006867,
+              -8.45336370697051
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 0.6265774112832759,
+          "points": [
+            [
+              -5.584433939437281,
+              16.57435935726508,
+              -12.563929867894252
+            ],
+            [
+              -5.5051109733122345,
+              16.93749742022527,
+              -12.059511523060227
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_short_recessed_jaw",
+          "segment_length": 0.40771568492622084,
+          "points": [
+            [
+              -5.655776748730966,
+              17.197131621499153,
+              -12.077257773366032
+            ],
+            [
+              -5.546668257361126,
+              17.572964094143288,
+              -12.191614099610149
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 1.3801266711804545,
+          "points": [
+            [
+              -5.535566176321823,
+              23.242412130831053,
+              -10.896085276578233
+            ],
+            [
+              -5.663660595821773,
+              23.434910156970272,
+              -12.256704972940563
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_descending_throat",
+          "segment_length": 1.5103444424922081,
+          "points": [
+            [
+              -6.499964277247294,
+              23.084851312436637,
+              -11.212873547047774
+            ],
+            [
+              -5.028372706755254,
+              23.41597201703869,
+              -11.289799898889726
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_skull_keel",
+          "segment_length": 0.6778572468553247,
+          "points": [
+            [
+              -6.6763257307617385,
+              23.228069099562966,
+              -12.333613206854892
+            ],
+            [
+              -6.658817644206251,
+              23.123489867613834,
+              -11.664100624251416
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 3.609970477649826,
+          "points": [
+            [
+              -4.611909009792631,
+              21.41528161020629,
+              -17.423798381096475
+            ],
+            [
+              -4.509174264714158,
+              22.198983646183265,
+              -13.901420840221205
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 2.0275251216005143,
+          "points": [
+            [
+              -4.663554709091978,
+              21.747846737412996,
+              -13.785535418635654
+            ],
+            [
+              -4.3336147537281375,
+              21.81441928803642,
+              -15.784926786047041
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 4.937530179823169,
+          "points": [
+            [
+              -5.330815101600146,
+              19.697104306681652,
+              -16.778785046472425
+            ],
+            [
+              -4.448838748026405,
+              22.05936443488782,
+              -12.533664426856443
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 3.7123592693251766,
+          "points": [
+            [
+              -5.443046085589442,
+              19.39692798871589,
+              -16.833223035991757
+            ],
+            [
+              -6.2498929421968645,
+              16.389454580219013,
+              -18.854537754612153
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_descending_throat",
+          "segment_length": 4.473483838662,
+          "points": [
+            [
+              -5.1739389630412225,
+              19.911607803499738,
+              -14.702309219888695
+            ],
+            [
+              -4.276095996900777,
+              22.9552257537198,
+              -11.549163895610024
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 2.1191720931185727,
+          "points": [
+            [
+              -5.253366218787038,
+              18.319526768094445,
+              -11.594928747458377
+            ],
+            [
+              -4.73947325090817,
+              20.28950783931918,
+              -12.18312850675231
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_short_recessed_jaw",
+          "segment_length": 2.525292943874606,
+          "points": [
+            [
+              -5.918071067664225,
+              16.287369009652114,
+              -14.02964514578606
+            ],
+            [
+              -5.397743958610514,
+              18.101259313654598,
+              -12.351501493707234
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 1.6674803937174096,
+          "points": [
+            [
+              -6.280074160924347,
+              15.782379031997108,
+              -18.014240444683676
+            ],
+            [
+              -6.815976020177748,
+              14.425481152001323,
+              -18.821784996980117
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_descending_throat",
+          "segment_length": 0.09003674412033563,
+          "points": [
+            [
+              -6.103299262826266,
+              15.04411748546786,
+              -13.404037531365322
+            ],
+            [
+              -6.129202013560518,
+              14.961309778443406,
+              -13.379984538754377
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 1.6073508061703883,
+          "points": [
+            [
+              -7.49478509823747,
+              13.016306029006472,
+              -17.49827102203468
+            ],
+            [
+              -7.938730849696517,
+              12.360521503946256,
+              -18.896997385749042
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_dark_gape",
+          "segment_length": 4.084246252111121,
+          "points": [
+            [
+              -6.32555766117399,
+              14.862553864903466,
+              -14.297446360738547
+            ],
+            [
+              -7.517760559812771,
+              13.025303839945845,
+              -17.744797813978302
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_short_recessed_jaw",
+          "segment_length": 2.231916132614377,
+          "points": [
+            [
+              -6.166994342013937,
+              15.310125997837655,
+              -15.065174054674856
+            ],
+            [
+              -6.790283706702948,
+              13.921101358392796,
+              -16.697218950474284
+            ]
+          ]
+        }
+      ],
+      "support_margin": 10.700933911559074,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        6.023686435242066
+      ],
+      "elbow": [
+        -9.803132403345927,
+        24.02441588181307,
+        -19.49808647824536
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {},
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": -11.970458414477797,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          -29.658991141589468,
+          -11.970458414477797,
+          -32.16646018661295
+        ],
+        "palm_z_front_clearance": 6.882704258830174,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            -22.432409267322086,
+            17.358408422927766,
+            -18.293790882804256
+          ],
+          "right_v2_folded_hook_1": [
+            -21.798650477908353,
+            16.906972546935467,
+            -17.516259245693647
+          ]
+        },
+        "palm_centre": [
+          -19.226053142098124,
+          17.3616636542653,
+          -19.561375121309812
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "pose": 2,
+      "roll": 330,
+      "q": {
+        "name": "spherical interpolation 4",
+        "body": [
+          -2,
+          30,
+          4
+        ],
+        "shift": [
+          -1.6,
+          -1.8,
+          -0.3
+        ],
+        "wrist": [
+          -18.667372803497265,
+          17.634899329777006,
+          -20.56547598521182
+        ],
+        "claw_direction": [
+          -1,
+          0.05,
+          0.35
+        ],
+        "membrane_time": 1.08,
+        "pole": [
+          1,
+          -0.4,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -25.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.5,
+            3.1840816777831187e-16,
+            -3.0
+          ],
+          "toe_pitch": 9.797174393178826e-16
+        }
+      },
+      "minimum_all_y": -11.720624027513296,
+      "head_crown_crossings": 22,
+      "head_details": [
+        {
+          "a": "right_v24_wing_digit_2_segment_1",
+          "b": "v3_descending_throat",
+          "segment_length": 0.4937091738717848,
+          "points": [
+            [
+              -7.530879617822573,
+              14.236437659661869,
+              -11.806735893515606
+            ],
+            [
+              -7.37769355004445,
+              14.449102104621835,
+              -11.388338222807814
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_13",
+          "b": "v3_descending_throat",
+          "segment_length": 0.23521185884301193,
+          "points": [
+            [
+              -7.652339544507735,
+              14.162680360215159,
+              -11.924792618532884
+            ],
+            [
+              -7.600969874407912,
+              14.26329528829729,
+              -11.718486021979967
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_2_segment_0",
+          "b": "v3_descending_throat",
+          "segment_length": 0.5594473088225852,
+          "points": [
+            [
+              -3.3372836995513775,
+              25.545817009316508,
+              -7.612607372373689
+            ],
+            [
+              -3.2977231484786103,
+              25.3473238936151,
+              -8.13415961056925
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 1.5870301320383224,
+          "points": [
+            [
+              -5.491690676034219,
+              23.024889001132912,
+              -10.515616587121002
+            ],
+            [
+              -5.625945086410326,
+              22.954357208828906,
+              -12.095384183815694
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_descending_throat",
+          "segment_length": 2.155061764975828,
+          "points": [
+            [
+              -7.186280347838089,
+              22.893841960871434,
+              -11.217939054147358
+            ],
+            [
+              -5.096559264391344,
+              23.00091556096835,
+              -11.733586461220428
+            ]
+          ]
+        },
+        {
+          "a": "right_v2_wing_humerus",
+          "b": "v3_skull_keel",
+          "segment_length": 1.2052166352302054,
+          "points": [
+            [
+              -6.231227782629676,
+              22.876017886868162,
+              -13.145211551258225
+            ],
+            [
+              -6.211378704380055,
+              22.924746674765178,
+              -11.94114400449918
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_cranial_crown_right",
+          "segment_length": 0.8109905755185997,
+          "points": [
+            [
+              -4.489330735009874,
+              19.750655039463513,
+              -16.84065751240834
+            ],
+            [
+              -4.4563450080437645,
+              20.13558531947678,
+              -16.127603282405172
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 4.1815940671232,
+          "points": [
+            [
+              -6.0317511594841875,
+              16.040897210359486,
+              -18.957982911234875
+            ],
+            [
+              -4.274683093380093,
+              19.616059691960142,
+              -17.6865058239729
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_descending_throat",
+          "segment_length": 3.7948948263692572,
+          "points": [
+            [
+              -5.071377794573856,
+              19.770868938905018,
+              -14.68998866303769
+            ],
+            [
+              -4.284089442667976,
+              22.33152641877066,
+              -12.00215736904515
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_00",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 2.5918249066822034,
+          "points": [
+            [
+              -4.661594068078137,
+              19.118747050734378,
+              -17.032903607035696
+            ],
+            [
+              -3.750184638080648,
+              21.170569004701196,
+              -15.737945744003214
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_0_segment_0",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 4.038403145138085,
+          "points": [
+            [
+              -5.995119909159668,
+              16.163046441921384,
+              -18.912880256209878
+            ],
+            [
+              -4.458453351457708,
+              19.67746932731622,
+              -17.649477060189454
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 1.228942294742228,
+          "points": [
+            [
+              -6.4509115682014055,
+              15.380196046117758,
+              -18.269510392933164
+            ],
+            [
+              -6.132301794506037,
+              16.45697183921252,
+              -17.770169960645507
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_descending_throat",
+          "segment_length": 2.6113336808430216,
+          "points": [
+            [
+              -5.762857323154223,
+              17.65631184260279,
+              -14.069925930412337
+            ],
+            [
+              -6.865468644687747,
+              15.405054361435592,
+              -13.338385350663007
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 2.208911625448129,
+          "points": [
+            [
+              -5.126328941326198,
+              19.790366849915426,
+              -11.984477992611255
+            ],
+            [
+              -6.040976584588471,
+              17.88735945296214,
+              -11.335422444252144
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_dark_gape",
+          "segment_length": 0.7600933614262941,
+          "points": [
+            [
+              -7.121711309825657,
+              14.565131235889913,
+              -14.86101897829893
+            ],
+            [
+              -7.08056710933447,
+              14.894193923109926,
+              -14.177084170930707
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_01",
+          "b": "v3_short_recessed_jaw",
+          "segment_length": 2.000115410017693,
+          "points": [
+            [
+              -6.766493796588188,
+              16.284069710853476,
+              -11.635953000718645
+            ],
+            [
+              -6.028857418517563,
+              18.050129144998873,
+              -12.21680436053726
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_integrated_brow_right",
+          "segment_length": 0.020818396573711838,
+          "points": [
+            [
+              -6.828952003083693,
+              14.450232605109056,
+              -18.86356915562481
+            ],
+            [
+              -6.834031789251319,
+              14.44379682815689,
+              -18.84443326830769
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_descending_throat",
+          "segment_length": 0.8557163017663523,
+          "points": [
+            [
+              -7.251830876378662,
+              14.616198989185623,
+              -13.082048738263358
+            ],
+            [
+              -7.65100776812172,
+              13.8991406780993,
+              -12.8396945001963
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 1.9629443851393318,
+          "points": [
+            [
+              -7.9147840546220305,
+              13.078298457399212,
+              -17.25406208166411
+            ],
+            [
+              -7.357069696342299,
+              14.155932736889241,
+              -15.71107481231071
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_dark_gape",
+          "segment_length": 3.838361029391681,
+          "points": [
+            [
+              -7.140837483496705,
+              14.572637645178355,
+              -14.599529529250162
+            ],
+            [
+              -7.738260071185705,
+              12.871028844728283,
+              -17.987837238697846
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_mantle_panel_12",
+          "b": "v3_short_recessed_jaw",
+          "segment_length": 3.3062717135774897,
+          "points": [
+            [
+              -7.853922563597961,
+              13.6728542665351,
+              -13.713019043134988
+            ],
+            [
+              -8.295516599868584,
+              12.55669993514156,
+              -16.793705145230476
+            ]
+          ]
+        },
+        {
+          "a": "right_v24_wing_digit_0_segment_1",
+          "b": "v3_compact_blind_cranium",
+          "segment_length": 0.35370864850552614,
+          "points": [
+            [
+              -7.346013438751432,
+              13.626048633559263,
+              -19.460466255385594
+            ],
+            [
+              -7.06153890363229,
+              13.810518321662647,
+              -19.56123818137391
+            ]
+          ]
+        }
+      ],
+      "support_margin": 10.700933911559074,
+      "forearm_rotation": [
+        -0.0,
+        0.0,
+        6.023686435242066
+      ],
+      "elbow": [
+        -9.000953181813758,
+        22.755089706653774,
+        -19.6252727082176
+      ],
+      "audit": {
+        "frontmost_in_fixed_xy_column": {
+          "membrane_and_ribs": {
+            "name": "right_v24_wing_digit_0_segment_0",
+            "z": -18.981276163384873
+          }
+        },
+        "claw_ahead_of_membrane_in_column": null,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": -11.720624027513296,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          -33.32445611836096,
+          -11.720624027513296,
+          -28.00179714674649
+        ],
+        "palm_z_front_clearance": 6.882704258830202,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            -22.432409267321987,
+            17.358408422927596,
+            -18.293790882804203
+          ],
+          "right_v2_folded_hook_1": [
+            -21.798650477908243,
+            16.906972546935304,
+            -17.516259245693597
+          ]
+        },
+        "palm_centre": [
+          -19.22605314209803,
+          17.361663654265136,
+          -19.56137512130979
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    }
+  ],
+  "previous_iteration09_whole_gesture_pass": false,
+  "original_shape_unchanged": true,
+  "native_verified": false,
+  "art_pass": false,
+  "game_connected": false
+}

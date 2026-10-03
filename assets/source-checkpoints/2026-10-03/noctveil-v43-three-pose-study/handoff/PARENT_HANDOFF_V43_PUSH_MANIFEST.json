@@ -1,0 +1,76 @@
+{
+  "workspace": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4",
+  "branch": null,
+  "commit": null,
+  "is_git_repository": false,
+  "parent_push_executor": "Parent task01a1022f-884a-7190-92a6-e08bb1289093; no worker Git mutation/push. Existing v42 delivery/manifest untouched.",
+  "files": [
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v43_gesture_study\\projects_noctveil_v43_three_pose_study.bbmodel",
+      "workspace_relative_path": "outputs/v43_gesture_study/projects_noctveil_v43_three_pose_study.bbmodel",
+      "bytes": 9216389,
+      "sha256": "6f1e5458bf90b37e46891bb02e51646c3a759bbf0e82200a157b1c75f8beb2f4"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v43_gesture_study\\noctveil_v43_three_pose_comparison.png",
+      "workspace_relative_path": "outputs/v43_gesture_study/noctveil_v43_three_pose_comparison.png",
+      "bytes": 125804,
+      "sha256": "319be943ca517f9c4ec7e774129dc2199722eb043a191a37535590b13fb7d1ee"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v43_gesture_study\\v43_three_pose_evidence.json",
+      "workspace_relative_path": "outputs/v43_gesture_study/v43_three_pose_evidence.json",
+      "bytes": 16944,
+      "sha256": "df4b3196ca7445794561dfc4da728094787f9cee5032b3cc1350b48b4315c118"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v43_gesture_study\\v43_three_pose_full_body_surface_audit.json",
+      "workspace_relative_path": "outputs/v43_gesture_study/v43_three_pose_full_body_surface_audit.json",
+      "bytes": 330245,
+      "sha256": "8105fafe5d692b7e23619d625b4fb82c4130932101d46d0e83ad56d90b8d6480"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v43_gesture_study\\v43_three_gesture_probe.json",
+      "workspace_relative_path": "outputs/v43_gesture_study/v43_three_gesture_probe.json",
+      "bytes": 133564,
+      "sha256": "adfa29ae5d28e96b4c5b4de486590c4bcecd4e863e42211ac6eec77bf10b5f96"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\outputs\\v43_gesture_study\\v43_hand_lead_scan.json",
+      "workspace_relative_path": "outputs/v43_gesture_study/v43_hand_lead_scan.json",
+      "bytes": 32354,
+      "sha256": "6cb4f1d8372b926c22d5cf029dfd4a793d513b6184dc9d5fe7660ffdaacb46aa"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\probe_v43_three_gestures.py",
+      "workspace_relative_path": "work/probe_v43_three_gestures.py",
+      "bytes": 3371,
+      "sha256": "c805cebb285b2d453690e8af649a3036a1680e6eb647331acc60b7d8b712695c"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\probe_v43_hand_leads.py",
+      "workspace_relative_path": "work/probe_v43_hand_leads.py",
+      "bytes": 3200,
+      "sha256": "99d22379b0f21881ad9f3f2f008e7b18cd09c985304d56c90a07088749c09b5f"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\save_v43_three_pose_review.py",
+      "workspace_relative_path": "work/save_v43_three_pose_review.py",
+      "bytes": 5912,
+      "sha256": "e0d1c76c54d7f1ef802e01c2bcee16a16a985a7d3a663b1954ba64a5b089f04d"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\audit_v43_three_pose_body.py",
+      "workspace_relative_path": "work/audit_v43_three_pose_body.py",
+      "bytes": 1710,
+      "sha256": "b9c9862e4bbcdfc8c8cab193470d6682e89a1a9de05d1b2c509ce5832b3c3968"
+    },
+    {
+      "local_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-4\\work\\save_v43_research_checkpoint.py",
+      "workspace_relative_path": "work/save_v43_research_checkpoint.py",
+      "bytes": 4766,
+      "sha256": "9428f62ec24a93292de4cebf0c14d15ee071ce71a1f2894f446a5a68f4c7dc53"
+    }
+  ],
+  "exclusions": "Reference originals, Library receipt/internal metadata, runtimes/profiles/cookies, unchanged v42 delivery and unapproved historical models not added. Authoring sources depend on existing Noctveil workspace helpers; delivered bbmodel self-contained."
+}

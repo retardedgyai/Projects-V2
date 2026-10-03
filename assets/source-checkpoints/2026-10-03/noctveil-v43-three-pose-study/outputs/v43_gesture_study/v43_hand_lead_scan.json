@@ -1,0 +1,1244 @@
+{
+  "rows": [
+    {
+      "direction": 0,
+      "roll": 255,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          2.9842746885699016,
+          19.155351918013057,
+          -26.518072368429046
+        ],
+        "claw_direction": [
+          -0.8,
+          -0.4,
+          -0.8
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "head_pairs": 0,
+      "minimum_y": 0.0029999999999576017,
+      "target_audit": {
+        "frontmost_in_fixed_xy_column": {
+          "palm": {
+            "name": "right_v2_folded_knuckle",
+            "z": -27.18586839636611
+          },
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -28.63589564407752
+          },
+          "membrane_and_ribs": {
+            "name": "right_v24_tension_panel_9_2",
+            "z": -32.01297996915031
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -3.3770843250727864,
+        "minimum_wing_y": 16.202777520211995,
+        "proxy_triangle_overlap": {
+          "right_v2_folded_hook_0": 10,
+          "right_v24_mantle_panel_05": 10,
+          "right_v24_mantle_panel_06": 5,
+          "right_v24_tension_panel_9_2": 6
+        },
+        "lowest_wing_mesh": "right_v24_mantle_panel_05",
+        "lowest_wing_vertex": [
+          3.6798031668084032,
+          16.202777520211995,
+          -29.592914592664933
+        ],
+        "palm_z_front_clearance": 0.38614999137355,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            -0.39699033394674266,
+            17.27490488740543,
+            -28.62602535950478
+          ],
+          "right_v2_folded_hook_1": [
+            -0.7199882187168241,
+            16.98567072498404,
+            -27.61507730657503
+          ]
+        },
+        "palm_centre": [
+          1.955051726194226,
+          18.578122298930094,
+          -26.468011799392887
+        ],
+        "hook_overlap": true,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_05",
+          "right_v24_mantle_panel_06",
+          "right_v24_tension_panel_9_2"
+        ],
+        "palm_or_radius_overlap": false
+      },
+      "visible_pixels": {
+        "front": 44,
+        "hero": 60
+      },
+      "rank_for_review_only": 44
+    },
+    {
+      "direction": 0,
+      "roll": 270,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          2.9842746885699016,
+          19.155351918013057,
+          -26.518072368429046
+        ],
+        "claw_direction": [
+          -0.8,
+          -0.4,
+          -0.8
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "head_pairs": 0,
+      "minimum_y": 0.0029999999999576017,
+      "target_audit": {
+        "frontmost_in_fixed_xy_column": {
+          "palm": {
+            "name": "right_v2_folded_knuckle",
+            "z": -27.185868396366107
+          },
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -28.6358956440775
+          },
+          "membrane_and_ribs": {
+            "name": "right_v24_tension_panel_9_2",
+            "z": -31.869058010396703
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -3.2331623663192026,
+        "minimum_wing_y": 15.723415088505588,
+        "proxy_triangle_overlap": {
+          "right_v2_folded_hook_0": 10,
+          "right_v24_mantle_panel_05": 10,
+          "right_v24_mantle_panel_06": 7,
+          "right_v24_tension_panel_9_2": 5
+        },
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          17.760936969722263,
+          15.723415088505588,
+          -55.3555216164375
+        ],
+        "palm_z_front_clearance": 0.3861499913735642,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            -0.39699033394675354,
+            17.274904887405388,
+            -28.626025359504762
+          ],
+          "right_v2_folded_hook_1": [
+            -0.719988218716842,
+            16.985670724984008,
+            -27.61507730657501
+          ]
+        },
+        "palm_centre": [
+          1.955051726194218,
+          18.57812229893005,
+          -26.468011799392873
+        ],
+        "hook_overlap": true,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_05",
+          "right_v24_mantle_panel_06",
+          "right_v24_tension_panel_9_2"
+        ],
+        "palm_or_radius_overlap": false
+      },
+      "visible_pixels": {
+        "front": 51,
+        "hero": 37
+      },
+      "rank_for_review_only": 37
+    },
+    {
+      "direction": 0,
+      "roll": 285,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          2.9842746885699016,
+          19.155351918013057,
+          -26.518072368429046
+        ],
+        "claw_direction": [
+          -0.8,
+          -0.4,
+          -0.8
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "head_pairs": 0,
+      "minimum_y": 0.0029999999999576017,
+      "target_audit": {
+        "frontmost_in_fixed_xy_column": {
+          "palm": {
+            "name": "right_v2_folded_knuckle",
+            "z": -27.18586839636612
+          },
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -28.635895644077543
+          },
+          "membrane_and_ribs": {
+            "name": "right_v24_tension_panel_9_2",
+            "z": -31.693993936258224
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -3.0580982921806807,
+        "minimum_wing_y": 12.11946443080904,
+        "proxy_triangle_overlap": {
+          "right_v2_folded_hook_0": 10,
+          "right_v24_mantle_panel_05": 10,
+          "right_v24_mantle_panel_06": 7,
+          "right_v24_tension_panel_9_2": 7
+        },
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          18.837629685646586,
+          12.11946443080904,
+          -54.13810561521193
+        ],
+        "palm_z_front_clearance": 0.3861499913735571,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            -0.39699033394656746,
+            17.274904887405434,
+            -28.6260253595048
+          ],
+          "right_v2_folded_hook_1": [
+            -0.7199882187166602,
+            16.985670724984047,
+            -27.615077306575056
+          ]
+        },
+        "palm_centre": [
+          1.955051726194383,
+          18.578122298930097,
+          -26.468011799392887
+        ],
+        "hook_overlap": true,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_05",
+          "right_v24_mantle_panel_06",
+          "right_v24_tension_panel_9_2"
+        ],
+        "palm_or_radius_overlap": false
+      },
+      "visible_pixels": {
+        "front": 55,
+        "hero": 0
+      },
+      "rank_for_review_only": 0
+    },
+    {
+      "direction": 0,
+      "roll": 300,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          2.9842746885699016,
+          19.155351918013057,
+          -26.518072368429046
+        ],
+        "claw_direction": [
+          -0.8,
+          -0.4,
+          -0.8
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "head_pairs": 1,
+      "minimum_y": 0.0029999999999576017,
+      "target_audit": {
+        "frontmost_in_fixed_xy_column": {
+          "palm": {
+            "name": "right_v2_folded_knuckle",
+            "z": -27.185868396366114
+          },
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -28.635895644077557
+          },
+          "membrane_and_ribs": {
+            "name": "right_v24_tension_panel_9_2",
+            "z": -31.59207945279346
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -2.9561838087159025,
+        "minimum_wing_y": 8.375486289286226,
+        "proxy_triangle_overlap": {
+          "right_v2_folded_hook_0": 10,
+          "right_v24_mantle_panel_05": 10,
+          "right_v24_mantle_panel_06": 7,
+          "right_v24_tension_panel_9_2": 7
+        },
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          18.787864489611007,
+          8.375486289286226,
+          -52.93283832189431
+        ],
+        "palm_z_front_clearance": 0.3861499913735251,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            -0.3969903339465457,
+            17.27490488740552,
+            -28.62602535950482
+          ],
+          "right_v2_folded_hook_1": [
+            -0.7199882187166267,
+            16.985670724984118,
+            -27.615077306575074
+          ]
+        },
+        "palm_centre": [
+          1.95505172619442,
+          18.57812229893017,
+          -26.468011799392922
+        ],
+        "hook_overlap": true,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_05",
+          "right_v24_mantle_panel_06",
+          "right_v24_tension_panel_9_2"
+        ],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "direction": 1,
+      "roll": 255,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          4.94544278571054,
+          20.10063251912031,
+          -26.622313714244825
+        ],
+        "claw_direction": [
+          -0.8,
+          -0.4,
+          -0.8
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "head_pairs": 1,
+      "minimum_y": 0.0029999999999576017,
+      "target_audit": {
+        "frontmost_in_fixed_xy_column": {
+          "claws": {
+            "name": "right_v2_folded_hook_1",
+            "z": -27.729188936963567
+          }
+        },
+        "claw_ahead_of_membrane_in_column": true,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 17.505205544407758,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_mantle_panel_05",
+        "lowest_wing_vertex": [
+          6.423407727641571,
+          17.505205544407758,
+          -29.74248816319666
+        ],
+        "palm_z_front_clearance": 0.2819086455577384,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            1.56417776319396,
+            18.220185488512733,
+            -28.73026670532058
+          ],
+          "right_v2_folded_hook_1": [
+            1.2411798784238828,
+            17.93095132609134,
+            -27.719318652390825
+          ]
+        },
+        "palm_centre": [
+          3.916219823334918,
+          19.523402900037425,
+          -26.572253145208695
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "direction": 1,
+      "roll": 270,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          4.94544278571054,
+          20.10063251912031,
+          -26.622313714244825
+        ],
+        "claw_direction": [
+          -0.8,
+          -0.4,
+          -0.8
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "head_pairs": 0,
+      "minimum_y": 0.0029999999999576017,
+      "target_audit": {
+        "frontmost_in_fixed_xy_column": {
+          "claws": {
+            "name": "right_v2_folded_hook_1",
+            "z": -27.729188936963602
+          }
+        },
+        "claw_ahead_of_membrane_in_column": true,
+        "membrane_minus_claw_z": null,
+        "minimum_wing_y": 17.305729975479842,
+        "proxy_triangle_overlap": {},
+        "lowest_wing_mesh": "right_v24_mantle_panel_05",
+        "lowest_wing_vertex": [
+          5.954245000457583,
+          17.305729975479842,
+          -29.757110040261615
+        ],
+        "palm_z_front_clearance": 0.2819086455577491,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            1.5641777631941678,
+            18.220185488512698,
+            -28.730266705320613
+          ],
+          "right_v2_folded_hook_1": [
+            1.2411798784240784,
+            17.930951326091304,
+            -27.719318652390864
+          ]
+        },
+        "palm_centre": [
+          3.916219823335082,
+          19.523402900037414,
+          -26.572253145208695
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [],
+        "palm_or_radius_overlap": false
+      },
+      "visible_pixels": {
+        "front": 48,
+        "hero": 51
+      },
+      "rank_for_review_only": 48
+    },
+    {
+      "direction": 1,
+      "roll": 285,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          4.94544278571054,
+          20.10063251912031,
+          -26.622313714244825
+        ],
+        "claw_direction": [
+          -0.8,
+          -0.4,
+          -0.8
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "head_pairs": 0,
+      "minimum_y": 0.0029999999999576017,
+      "target_audit": {
+        "frontmost_in_fixed_xy_column": {
+          "claws": {
+            "name": "right_v2_folded_hook_1",
+            "z": -27.729188936963563
+          },
+          "membrane_and_ribs": {
+            "name": "right_v24_mantle_panel_05",
+            "z": -29.524309331039163
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -1.7951203940755995,
+        "minimum_wing_y": 17.229782653026415,
+        "proxy_triangle_overlap": {
+          "right_v24_mantle_panel_05": 2
+        },
+        "lowest_wing_mesh": "right_v24_mantle_panel_05",
+        "lowest_wing_vertex": [
+          5.452624981581485,
+          17.229782653026415,
+          -29.80933385994131
+        ],
+        "palm_z_front_clearance": 0.2819086455577704,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            1.5641777631939906,
+            18.220185488512755,
+            -28.73026670532057
+          ],
+          "right_v2_folded_hook_1": [
+            1.2411798784239045,
+            17.93095132609136,
+            -27.719318652390825
+          ]
+        },
+        "palm_centre": [
+          3.9162198233349774,
+          19.52340290003737,
+          -26.572253145208677
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_05"
+        ],
+        "palm_or_radius_overlap": false
+      },
+      "visible_pixels": {
+        "front": 56,
+        "hero": 13
+      },
+      "rank_for_review_only": 13
+    },
+    {
+      "direction": 1,
+      "roll": 300,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          4.94544278571054,
+          20.10063251912031,
+          -26.622313714244825
+        ],
+        "claw_direction": [
+          -0.8,
+          -0.4,
+          -0.8
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "head_pairs": 0,
+      "minimum_y": 0.0029999999999576017,
+      "target_audit": {
+        "frontmost_in_fixed_xy_column": {
+          "claws": {
+            "name": "right_v2_folded_hook_1",
+            "z": -27.729188936963588
+          },
+          "membrane_and_ribs": {
+            "name": "right_v24_mantle_panel_05",
+            "z": -29.92919304801152
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -2.2000041110479316,
+        "minimum_wing_y": 14.242814358366795,
+        "proxy_triangle_overlap": {
+          "right_v24_mantle_panel_05": 7
+        },
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          23.83327534959276,
+          14.242814358366795,
+          -52.557512988274226
+        ],
+        "palm_z_front_clearance": 0.28190864555772777,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            1.5641777631939338,
+            18.22018548851277,
+            -28.7302667053206
+          ],
+          "right_v2_folded_hook_1": [
+            1.2411798784238517,
+            17.930951326091378,
+            -27.719318652390847
+          ]
+        },
+        "palm_centre": [
+          3.916219823334893,
+          19.52340290003745,
+          -26.572253145208705
+        ],
+        "hook_overlap": false,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_05"
+        ],
+        "palm_or_radius_overlap": false
+      },
+      "visible_pixels": {
+        "front": 61,
+        "hero": 7
+      },
+      "rank_for_review_only": 7
+    },
+    {
+      "direction": 2,
+      "roll": 255,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          4.927478028714682,
+          19.647804086462315,
+          -26.49794808391295
+        ],
+        "claw_direction": [
+          -0.8,
+          -0.4,
+          -0.8
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "head_pairs": 1,
+      "minimum_y": 0.0029999999999576017,
+      "target_audit": {
+        "frontmost_in_fixed_xy_column": {
+          "palm": {
+            "name": "right_v2_folded_knuckle",
+            "z": -26.971441968434192
+          },
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -28.61577135956143
+          },
+          "membrane_and_ribs": {
+            "name": "right_v24_mantle_panel_05",
+            "z": -29.064881645364622
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -0.4491102858031937,
+        "minimum_wing_y": 16.944596583513956,
+        "proxy_triangle_overlap": {
+          "right_v2_folded_hook_0": 10,
+          "right_v24_mantle_panel_05": 4
+        },
+        "lowest_wing_mesh": "right_v24_mantle_panel_05",
+        "lowest_wing_vertex": [
+          6.353189252694577,
+          16.944596583513956,
+          -29.550181175332472
+        ],
+        "palm_z_front_clearance": 0.4062742758896256,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            1.5462130061981414,
+            17.767357055854724,
+            -28.60590107498869
+          ],
+          "right_v2_folded_hook_1": [
+            1.2232151214280638,
+            17.478122893433333,
+            -27.594953022058938
+          ]
+        },
+        "palm_centre": [
+          3.898255066339113,
+          19.070574467379398,
+          -26.44788751487681
+        ],
+        "hook_overlap": true,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_05"
+        ],
+        "palm_or_radius_overlap": false
+      }
+    },
+    {
+      "direction": 2,
+      "roll": 270,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          4.927478028714682,
+          19.647804086462315,
+          -26.49794808391295
+        ],
+        "claw_direction": [
+          -0.8,
+          -0.4,
+          -0.8
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "head_pairs": 0,
+      "minimum_y": 0.0029999999999576017,
+      "target_audit": {
+        "frontmost_in_fixed_xy_column": {
+          "palm": {
+            "name": "right_v2_folded_knuckle",
+            "z": -26.971441968434185
+          },
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -28.615771359561442
+          },
+          "membrane_and_ribs": {
+            "name": "right_v24_mantle_panel_05",
+            "z": -29.293337660685435
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -0.6775663011239921,
+        "minimum_wing_y": 16.757789270829637,
+        "proxy_triangle_overlap": {
+          "right_v2_folded_hook_0": 10,
+          "right_v24_mantle_panel_05": 4
+        },
+        "lowest_wing_mesh": "right_v24_mantle_panel_05",
+        "lowest_wing_vertex": [
+          5.878807588515107,
+          16.757789270829637,
+          -29.563710073469263
+        ],
+        "palm_z_front_clearance": 0.4062742758896185,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            1.5462130061982335,
+            17.76735705585476,
+            -28.605901074988704
+          ],
+          "right_v2_folded_hook_1": [
+            1.223215121428156,
+            17.478122893433365,
+            -27.594953022058956
+          ]
+        },
+        "palm_centre": [
+          3.898255066339187,
+          19.07057446737946,
+          -26.44788751487682
+        ],
+        "hook_overlap": true,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_05"
+        ],
+        "palm_or_radius_overlap": false
+      },
+      "visible_pixels": {
+        "front": 49,
+        "hero": 47
+      },
+      "rank_for_review_only": 47
+    },
+    {
+      "direction": 2,
+      "roll": 285,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          4.927478028714682,
+          19.647804086462315,
+          -26.49794808391295
+        ],
+        "claw_direction": [
+          -0.8,
+          -0.4,
+          -0.8
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "head_pairs": 0,
+      "minimum_y": 0.0029999999999576017,
+      "target_audit": {
+        "frontmost_in_fixed_xy_column": {
+          "palm": {
+            "name": "right_v2_folded_knuckle",
+            "z": -26.971441968434213
+          },
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -28.615771359561414
+          },
+          "membrane_and_ribs": {
+            "name": "right_v24_mantle_panel_05",
+            "z": -29.516234261638377
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -0.9004629020769634,
+        "minimum_wing_y": 16.387051649586233,
+        "proxy_triangle_overlap": {
+          "right_v2_folded_hook_0": 10,
+          "right_v24_mantle_panel_05": 5
+        },
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          23.048364338016505,
+          16.387051649586233,
+          -53.38153769942363
+        ],
+        "palm_z_front_clearance": 0.40627427588966825,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            1.5462130061982933,
+            17.767357055854553,
+            -28.605901074988676
+          ],
+          "right_v2_folded_hook_1": [
+            1.2232151214282025,
+            17.478122893433174,
+            -27.594953022058927
+          ]
+        },
+        "palm_centre": [
+          3.898255066339214,
+          19.070574467379284,
+          -26.44788751487678
+        ],
+        "hook_overlap": true,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_05"
+        ],
+        "palm_or_radius_overlap": false
+      },
+      "visible_pixels": {
+        "front": 55,
+        "hero": 9
+      },
+      "rank_for_review_only": 9
+    },
+    {
+      "direction": 2,
+      "roll": 300,
+      "q": {
+        "name": "spherical interpolation 2",
+        "body": [
+          -7,
+          8,
+          -4
+        ],
+        "shift": [
+          0.5,
+          -2.2,
+          -0.8
+        ],
+        "wrist": [
+          4.927478028714682,
+          19.647804086462315,
+          -26.49794808391295
+        ],
+        "claw_direction": [
+          -0.8,
+          -0.4,
+          -0.8
+        ],
+        "membrane_time": 1.1,
+        "pole": [
+          1,
+          -0.45,
+          0
+        ],
+        "hand_orientation": "dorsal_up",
+        "stance_clearance": 0.003,
+        "hind_foot_yaw": {
+          "right_hind": -0.0
+        },
+        "foot_step": {
+          "leg": "right_fore",
+          "delta": [
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          "toe_pitch": 0.0
+        }
+      },
+      "head_pairs": 0,
+      "minimum_y": 0.0029999999999576017,
+      "target_audit": {
+        "frontmost_in_fixed_xy_column": {
+          "palm": {
+            "name": "right_v2_folded_knuckle",
+            "z": -26.971441968434185
+          },
+          "claws": {
+            "name": "right_v2_folded_hook_0",
+            "z": -28.61577135956147
+          },
+          "membrane_and_ribs": {
+            "name": "right_v24_mantle_panel_05",
+            "z": -29.79424858943389
+          }
+        },
+        "claw_ahead_of_membrane_in_column": false,
+        "membrane_minus_claw_z": -1.1784772298724207,
+        "minimum_wing_y": 12.703273309462665,
+        "proxy_triangle_overlap": {
+          "right_v2_folded_hook_0": 10,
+          "right_v24_mantle_panel_05": 7
+        },
+        "lowest_wing_mesh": "right_v24_wing_digit_0_segment_3",
+        "lowest_wing_vertex": [
+          23.81165375336932,
+          12.703273309462665,
+          -52.166220589810045
+        ],
+        "palm_z_front_clearance": 0.40627427588960785,
+        "claw_tip_centres": {
+          "right_v2_folded_hook_0": [
+            1.5462130061982438,
+            17.767357055854845,
+            -28.605901074988733
+          ],
+          "right_v2_folded_hook_1": [
+            1.223215121428166,
+            17.47812289343344,
+            -27.594953022058984
+          ]
+        },
+        "palm_centre": [
+          3.8982550663392046,
+          19.070574467379505,
+          -26.447887514876836
+        ],
+        "hook_overlap": true,
+        "non_hook_overlap": [
+          "right_v24_mantle_panel_05"
+        ],
+        "palm_or_radius_overlap": false
+      },
+      "visible_pixels": {
+        "front": 61,
+        "hero": 6
+      },
+      "rank_for_review_only": 6
+    }
+  ],
+  "selected_for_visual_review": [],
+  "metrics_do_not_establish_aesthetic_pass": true,
+  "game_connected": false
+}
