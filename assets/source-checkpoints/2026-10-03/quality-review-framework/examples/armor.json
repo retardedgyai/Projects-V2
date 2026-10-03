@@ -1,0 +1,279 @@
+{
+  "schema_version": 2,
+  "task": {
+    "id": "armor",
+    "revision": "29-to-structure-prototype",
+    "interpretation_id": "interpretation-1",
+    "review_epoch": 1,
+    "request": "頭襟胸の構造から防具を再制作",
+    "source": "本人の今回の引継ぎ依頼。既存制作は未操作",
+    "intended_use": "承認塗りと立体的な頭襟胸が成立する防具",
+    "phase": "representative",
+    "game_required": true,
+    "authority": {
+      "approved": [
+        {
+          "item": "libfile_a09d9058fed88191a189833a23ae26dc の塗り",
+          "reason": "塗りのみ最上位基準。全形状への承認ではない",
+          "source": "本人の今回の引継ぎ依頼",
+          "target": {
+            "kind": "reference",
+            "id": "approved-paint"
+          },
+          "criterion_ids": [
+            "paint"
+          ]
+        }
+      ],
+      "rejected": [
+        {
+          "item": "27",
+          "reason": "本人不採用",
+          "source": "本人の今回の引継ぎ依頼",
+          "target": {
+            "kind": "candidate",
+            "id": "27"
+          },
+          "criterion_ids": [
+            "structure",
+            "paint"
+          ]
+        },
+        {
+          "item": "29",
+          "reason": "貼りパネル風で未達",
+          "source": "本人の今回の引継ぎ依頼",
+          "target": {
+            "kind": "candidate",
+            "id": "29"
+          },
+          "criterion_ids": [
+            "structure",
+            "paint"
+          ]
+        }
+      ],
+      "preserve": [
+        {
+          "item": "承認塗りの最上位順位",
+          "reason": "MatE補助で置換しない",
+          "source": "本人の今回の引継ぎ依頼",
+          "target": {
+            "kind": "constraint",
+            "id": "approved-paint-priority"
+          },
+          "criterion_ids": [
+            "structure",
+            "paint"
+          ]
+        }
+      ]
+    },
+    "representative": {
+      "scope": "頭・襟・胸の接続と塗り",
+      "stop_if": "貼りパネル風が残る"
+    },
+    "whole_quality": {
+      "features": "頭襟胸の厚みと接続が一体の防具として読め、承認塗りが面に成立",
+      "grounding": [
+        {
+          "reference_id": "mate",
+          "criterion_id": "structure"
+        },
+        {
+          "reference_id": "approved-paint",
+          "criterion_id": "paint"
+        }
+      ],
+      "counterexample": "29の貼りパネル風。模様が増えても構造が成立しない"
+    },
+    "criteria": [
+      {
+        "id": "structure",
+        "purpose": "shape",
+        "required_inspection": "image",
+        "target": "頭襟胸の厚み・接続を実見で基準化",
+        "comparison": "同カメラ・大きさ・照明・状態・通常表示／同意味の動作時点",
+        "failure": "貼りパネル風"
+      },
+      {
+        "id": "paint",
+        "purpose": "material",
+        "required_inspection": "image",
+        "target": "承認塗りの面・質感を実見で基準化",
+        "comparison": "同カメラ・大きさ・照明・状態・通常表示／同意味の動作時点",
+        "failure": "塗りだけ似て構造未達"
+      }
+    ],
+    "artifact": {
+      "evidence_id": null,
+      "sha256": null
+    },
+    "saved_diff_id": null,
+    "latest_validation_id": null,
+    "next_action": "頭襟胸だけ再制作し承認塗りの面と比較",
+    "affected_criteria": [
+      "structure",
+      "paint"
+    ]
+  },
+  "references": [
+    {
+      "id": "approved-paint",
+      "title": "ProjectS_material_same_shape_comparison.png",
+      "source_locator": "libfile_a09d9058fed88191a189833a23ae26dc; version_id=1",
+      "original_url": null,
+      "author": {
+        "status": "unknown",
+        "name": null,
+        "note": "未確認。投稿者とは別に記録"
+      },
+      "poster": {
+        "status": "unknown",
+        "name": null,
+        "note": "未確認"
+      },
+      "medium": "image",
+      "inspected": "unconfirmed",
+      "inspected_range": null,
+      "source_version": null,
+      "purposes": [
+        "material"
+      ],
+      "reason": "本人承認塗り最優先。Library版1識別情報のみ確認。ピクセル取得不可",
+      "selected": true,
+      "priority": 1,
+      "analysis_epoch": 1,
+      "observed_features": [],
+      "source": {
+        "kind": "library",
+        "library_file_id": "libfile_a09d9058fed88191a189833a23ae26dc",
+        "version": "1"
+      },
+      "role": "quality_target",
+      "required": true
+    },
+    {
+      "id": "mate",
+      "title": "MatE 防具補助候補",
+      "source_locator": "引継ぎ依頼中の名称。原資料未取得",
+      "original_url": null,
+      "author": {
+        "status": "unknown",
+        "name": null,
+        "note": "未確認。投稿者とは別に記録"
+      },
+      "poster": {
+        "status": "unknown",
+        "name": null,
+        "note": "未確認"
+      },
+      "medium": "image",
+      "inspected": "unconfirmed",
+      "inspected_range": null,
+      "source_version": null,
+      "purposes": [
+        "shape",
+        "material"
+      ],
+      "reason": "頭襟胸の構造・材質の補助。原URLと実見が必要",
+      "selected": true,
+      "priority": 2,
+      "analysis_epoch": 1,
+      "observed_features": [],
+      "source": {
+        "kind": "external"
+      },
+      "role": "support",
+      "required": false
+    }
+  ],
+  "evidence": [],
+  "decision": {
+    "revision": null,
+    "states": {
+      "technical": {
+        "status": "unverified",
+        "reviewer": null,
+        "reason": null,
+        "evidence_id": null
+      },
+      "aesthetic": {
+        "status": "unverified",
+        "reviewer": null,
+        "reason": null,
+        "review_epoch": null
+      },
+      "game": {
+        "status": "unverified",
+        "reviewer": null,
+        "reason": null,
+        "evidence_id": null
+      },
+      "user": {
+        "status": "pending",
+        "source": null
+      }
+    },
+    "comparisons": [],
+    "holistic": {
+      "status": "unverified",
+      "revision": null,
+      "review_epoch": null,
+      "reason": null,
+      "counterexample_present": null,
+      "evidence_ids": []
+    },
+    "integration": {
+      "status": "unverified",
+      "scope": "whole_in_use",
+      "revision": null,
+      "normal_display": true,
+      "reason": null,
+      "reviewer": null,
+      "evidence_id": null
+    },
+    "issues": [
+      {
+        "id": "largest-gap",
+        "severity": "major",
+        "status": "open",
+        "description": "29の貼りパネル構造が未達",
+        "next_action": "頭襟胸だけ再制作し承認塗りの面と比較",
+        "resolution_evidence_id": null
+      }
+    ],
+    "biggest_gap": "頭襟胸の構造",
+    "next_action": "頭襟胸だけ再制作し承認塗りの面と比較",
+    "failure": {
+      "count": 2,
+      "severe": false,
+      "cause": "misunderstanding",
+      "response": "承認塗りの面と立体接続を別角度の実物から読み直し仮説を修正",
+      "source": "27拒否／29未達の本人引継ぎ",
+      "rejected_revision": "29",
+      "rejected_interpretation_id": "panel-reading",
+      "invalidated_epoch": 1,
+      "independent_counterargument": null,
+      "independent_reviewer": null,
+      "status": "active",
+      "resolution_reason": null,
+      "resolution_evidence_id": null,
+      "criterion_ids": [
+        "structure",
+        "paint"
+      ]
+    },
+    "constraint_checks": [
+      {
+        "constraint_id": "approved-paint-priority",
+        "revision": "29-to-structure-prototype",
+        "status": "unverified",
+        "evidence_id": null
+      }
+    ]
+  },
+  "waits": [],
+  "effort_minutes": null,
+  "simplification": "必要な差分だけ更新する"
+}

@@ -1,0 +1,122 @@
+{
+  "source_root": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4",
+  "git_repository": false,
+  "branch": null,
+  "commit": null,
+  "push_owner": "Parent central integration task 01a1022f-884a-7190-92a6-e08bb1289093",
+  "new_push_authorization_acknowledged": true,
+  "this_worker_repo_mutation_push_merge_deploy": false,
+  "game_ready": false,
+  "candidate_client_tested": false,
+  "old_source_and_existing_walk_claw_stop_reentry_keys_unchanged": true,
+  "approved_editable_source_reference": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\outputs\\reentry_direct_first_step\\dragon_v8_REENTRY_OLD_NEW_WALK26_3CLIPS.bbmodel",
+  "files": [
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\outputs\\actual_game_local_autoplay\\ITEM_DISPLAY_TURN_COMPENSATION_CANDIDATE_CHECK.json",
+      "task4_relative_path": "outputs\\actual_game_local_autoplay\\ITEM_DISPLAY_TURN_COMPENSATION_CANDIDATE_CHECK.json",
+      "bytes": 35180,
+      "sha256": "f25f1e2efd6f668dce954279ef53ff77a3c21a27fe7981f59e4e3baaed5cd768",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\outputs\\actual_game_local_autoplay\\saved_surface_diagnosis\\PRIMARY_ITEMDISPLAY_Y180_CAUSE_AND_COMPENSATION_AUDIT.json",
+      "task4_relative_path": "outputs\\actual_game_local_autoplay\\saved_surface_diagnosis\\PRIMARY_ITEMDISPLAY_Y180_CAUSE_AND_COMPENSATION_AUDIT.json",
+      "bytes": 1035,
+      "sha256": "1b961c7230c3c36b3a05af54b6565828977ccf8783881308d9ffb704df0958bf",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\outputs\\actual_game_local_autoplay\\saved_surface_diagnosis\\HANDOFF_DISPLAY_TURN_CAUSE_JA.txt",
+      "task4_relative_path": "outputs\\actual_game_local_autoplay\\saved_surface_diagnosis\\HANDOFF_DISPLAY_TURN_CAUSE_JA.txt",
+      "bytes": 4159,
+      "sha256": "7a957e41dcb2d39510b8248e6f79519e0e29205539f1e0ef5253d98ebb97bc92",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\catalog.json",
+      "task4_relative_path": "outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\catalog.json",
+      "bytes": 2010,
+      "sha256": "6601844d637dca1c436f7cce76e0b0f39f73948438dfbf337ff0595ba7e15af8",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\manifest.json",
+      "task4_relative_path": "outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\manifest.json",
+      "bytes": 773,
+      "sha256": "126cbef1a9c9aa65b31d9c1d970a9da47d733bd95a1b3b3fed8318b53d207fc2",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\mappings.json",
+      "task4_relative_path": "outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\mappings.json",
+      "bytes": 4094,
+      "sha256": "bd7690c24b972d34257cf7087278e1f5958041a815b8bdd1d54232a2854254b7",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\models\\dragon_v8_polish_shared_atlas_study.bbmodel\\model.animation.json",
+      "task4_relative_path": "outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\models\\dragon_v8_polish_shared_atlas_study.bbmodel\\model.animation.json",
+      "bytes": 9760731,
+      "sha256": "2941f583c8d24e5b9d2cc52aeb6a0827f3b4b1276a3504eddd756a7275f59e04",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\models\\dragon_v8_polish_shared_atlas_study.bbmodel\\model.geo.json",
+      "task4_relative_path": "outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\models\\dragon_v8_polish_shared_atlas_study.bbmodel\\model.geo.json",
+      "bytes": 1428050,
+      "sha256": "a2035dfd450362f7bf19c1e9e57e2dd20a3b1810a271b7610cf2310df49b5507",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\motion_reference.json",
+      "task4_relative_path": "outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\motion_reference.json",
+      "bytes": 5164,
+      "sha256": "bc9f3c0f1ea8bbc454bd0385c5349e646577a5ad3251a6075d2f438e70724685",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\pack.zip",
+      "task4_relative_path": "outputs\\actual_game_local_autoplay\\item_display_turn_compensation_candidate\\projects_bundle\\pack.zip",
+      "bytes": 7264987,
+      "sha256": "f33fb6560948407c5d700d49df8abf8d57e5e2cf47024a5a053934c8130a34e6",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\work\\prepare_item_display_turn_compensation.py",
+      "task4_relative_path": "work\\prepare_item_display_turn_compensation.py",
+      "bytes": 2743,
+      "sha256": "dfcb356ae19e1d92389aa56b3b5c1e73ef4beedbac4dc7e7224b358a0ae633d4",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\work\\render_saved_item_display_turn_diagnosis.py",
+      "task4_relative_path": "work\\render_saved_item_display_turn_diagnosis.py",
+      "bytes": 4133,
+      "sha256": "c0a9f21062913f5a0cfa65797133da78dc973d6e7e4f0ccac18574df82d8ca20",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\work\\audit_saved_leg_culling.py",
+      "task4_relative_path": "work\\audit_saved_leg_culling.py",
+      "bytes": 5656,
+      "sha256": "37dc1d0ec38686f30de220dbcd607e7ce91e7b4c5169257825e28e7a744e46f1",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    },
+    {
+      "source_path": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-09-30\\task-4\\work\\audit_actual_ready_display_geometry.py",
+      "task4_relative_path": "work\\audit_actual_ready_display_geometry.py",
+      "bytes": 4544,
+      "sha256": "861c4bcc83f9adf85b23b1d7c8d383180edf3f865c615b6c38bf8b0c38447e48",
+      "classification": "unverified_display_fix_study_and_reproduction"
+    }
+  ],
+  "excluded_from_git_candidates": [
+    "work/actual_game_local_autoplay/dragon_vanilla_private.args",
+    "work/actual_game_local_autoplay/client_profile",
+    "full/large GIF and captured frames",
+    "diagnostic ZIP",
+    "third party reference originals",
+    "single_shin_backface_candidate (weak alternative retained only as diagnosis history)"
+  ],
+  "required_next_game_check": "After magic play test: fixed-camera original vs compensated pack READY, then existing walk/stop/claw/reentry; no key changes."
+}

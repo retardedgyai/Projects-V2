@@ -1,0 +1,39 @@
+原因の切り分け（実機は起動せず）
+
+重大な不足：従来のCPUパック描画とgeometry検査は、Vanilla ItemDisplayRenderer固有のY180度を省いていた。
+既存ローカルVanilla26.2 minecraft-client.jarの DisplayRenderer$ItemDisplayRenderer.submitInner を直接確認。
+Axis.YP.rotation(3.1415927f) -> PoseStack.mulPose -> ItemStackRenderState.submit の順である。
+ItemDisplay metaのrightRotationの後、item model display.fixed変換の前にこのY180度が入る。
+したがって29表示部品のserver metadataが元骨姿勢と一致しても、クライアントの最終頂点が一致する証明にはならない。
+
+同READY、同モデル・キー・texture・cameraでY180度を含む旧パックのCPU描画を作り、実ゲーム保存画面にある脚のV字化/分断と翼の向きの崩れを再現。
+画像はCPU比較3枚+実ゲーム1枚。CPUではGPUの光/影/ミップを再現しておらず、カメラFOV/eyeheightも仮定。画素完全一致を主張しない。
+旧パックの元の意図からの最大頂点変位は18.5655blocks（翼先等を含む）。
+補正パックは全58item modelのdisplay.fixedだけ変更：translationのX/ZとscaleのX/Zの符号を反転。
+J=diag(-1,1,-1) として J*D_new=D_old を満たす。source vertex/normal/UV/texture/bone/14clip/CMD mappingは維持。
+クライアントのY180度を含めた補正後のCPU画は、従来の意図したCPU画とRGBA完全一致、全頂点差0。
+新renderer、client MOD、entity追加、rig拡張、アニメ打ち直しは行っていない。
+
+片面描画候補は弱い：脚だけの同姿勢比較ではcullingで8画素減、すねの裏面追加は1画素回復。
+裏面候補を主因/対策として全身展開しない。履歴として保存。
+同位置へのBossModelActor.move呼び出し前後でもserver metadata/頂点は一致し、移動APIが静止姿勢を壊す証拠は無し。
+READY足裏のroot相対Yは0.024812blocks、fixture rootY1/floorY1。大きな床高の不一致も示されていない。
+
+暗さは未解決と分ける：原tex・shade・brightnessは変更していない。Y180補正は面/形を正しく読むための修正で、光の合格を主張しない。
+現パックのshade=trueはVanilla既定で、ライト最大値設定だけでは方向陰影は無くならない。
+原texを明るく塗る、全shade=falseで平板化する、発光を全身へ広げる変更はしていない。
+MatE静止造形/材質の比較は参照実視認が未達。戦闘/歩行品質をMatE資料から評価したとは記載しない。
+
+次に必要な実機確認（今は魔術プレイテストのため起動しない）：
+1. 同固定カメラ/READYで旧パックと補正パックを順番に比較。足・すね・膝・首・翼の接続、眼/胸texの向きを確認。
+2. 補正側だけ既存歩行1周期→停止→既存爪→同じ復帰を確認。元キーを一切変えず、足滑り/荷重/爪位置を実画面で評価。
+3. 通常/被弾stateが同じ表示変換を使うことを確認。実ゲーム未合格のまま本番導入しない。
+4. 暗さは同昼間ライト/同カメラで評価し、必要ならbody一部品のshade比較を分離する。現時点でshadeの候補は未適用。
+
+Blockbenchを起動せずできる範囲：bbmodel/clip/UV/bone編集、パック変換、source hash、軽いCPU比較、既存Actorの待受無しmetadata検査。
+必要な実表示：最終Blockbench authoring姿勢と実Minecraftの表示/時刻/面/ミップ/陰影。今回のCPU漏れがあるため全面GUI代替可とは断言しない。
+普段はGUIなし、必要な最終確認のみ短く行う。現在自分のBlockbench/Minecraft/Labウィンドウは不要なものを終了済み。
+
+task4は非Git作業領域。集約/push担当へINTEGRATION_SAVED_POINT_MANIFEST.jsonを渡す。
+通常pushの許可更新は把握したが、競合防止のためこの担当ではrepo書込/pushをしない。
+動画/巨大診断ZIP/私有args/profile/他作業差分はGitへ無差別追加しない。

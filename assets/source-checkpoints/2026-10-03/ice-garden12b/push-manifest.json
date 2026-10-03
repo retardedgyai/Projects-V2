@@ -1,0 +1,48 @@
+{
+  "source_type": "isolated non-Git study",
+  "source_root": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-02\\task-5\\art-studies\\ice-garden-contact-12",
+  "repo": null,
+  "branch": null,
+  "commit": null,
+  "push_owner_thread": "01a1022f-884a-7190-92a6-e08bb1289093",
+  "normal_push_user_authorized": true,
+  "this_agent_pushes": false,
+  "candidate_paths": [
+    "author_contact12.py",
+    "scene12.py",
+    "test12.py",
+    "review12.py",
+    "playback12.mjs",
+    "prepare_viewer12.py",
+    "package12.py",
+    "README.md",
+    "reference-plan.json",
+    "protected11.json",
+    "visual-review.json",
+    "asset-validation.json",
+    "render-evidence.json",
+    "browser-evidence.json",
+    "preview/viewer.html",
+    "native-study/contact-break-12-texture.png",
+    "native-study/contact-break-12.mesh.json",
+    "native-study/contact-break-12.model.json",
+    "native-study/contact-break-12.native-faces.json",
+    "native-study/contact-break-12.png",
+    "preview/contact-12.gif",
+    "preview/11c-to-12-contact.gif",
+    "preview/contact-phases.png"
+  ],
+  "frozen_foundation_dependencies": "protected11.json lists unchanged source copies; native-study/context dependencies remain11c bytes",
+  "exclude": [
+    "reference-private/**",
+    "**/__pycache__/**",
+    "native-study/*-basis.*",
+    "deliverables/*.zip",
+    "official reference original media"
+  ],
+  "candidate_bytes": 2062281,
+  "game_worktrees_clean": {
+    "ice-garden": "38d948e4ea1a419f5c0942ee2a369ce4d592a466",
+    "ice-garden-visual": "848709211ce4c659d71640c3659e1fcdb57c118a"
+  }
+}

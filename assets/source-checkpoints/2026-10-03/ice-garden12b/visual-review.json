@@ -1,0 +1,27 @@
+{
+  "verdict": "FIX-FIRST",
+  "iteration": "12b contact only",
+  "personally_inspected_primary_frames": 32,
+  "ordinary_browser_timedscreenshots_inspected": 7,
+  "additional_views_inspected": [
+    "near",
+    "oblique",
+    "dark"
+  ],
+  "improved": [
+    "asymmetric fracture direction",
+    "thick closed mass",
+    "delayed counter piece",
+    "short peak pause",
+    "rigid rotation and accelerated fall"
+  ],
+  "largest_remaining_gap": "broad broken end detail and force transmitted from the foot contact still weaker than the actual reference",
+  "reference_seen": "official Glacial Breaker GIF frames26-49,0.52-0.98s",
+  "reference_interpretation_limit": "model viewer eruption, not confirmed enemy-hit footage or rigid debris physics",
+  "main_and_floor_changed": false,
+  "mate_quality_accepted": false,
+  "game_feel_accepted": false,
+  "game_started": false,
+  "browser_capture_latency_is_not_timing_proof": true,
+  "other_skills_changed": false
+}

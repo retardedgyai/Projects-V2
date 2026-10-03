@@ -1,0 +1,91 @@
+{
+  "Schema": 1,
+  "Snapshot": "quality-review-framework",
+  "FrameworkVersion": 3,
+  "RecordSchemaVersion": 2,
+  "Status": "RECORD_VALIDATOR_V3_SOURCE_SNAPSHOT_TECHNICAL_TESTS_PASS",
+  "CapturedUtc": "2026-10-03T14:59:43.5762761Z",
+  "LibraryFileId": "libfile_21deb3cfc62c81919f46a7544395d229",
+  "LibraryVersion": 2,
+  "SourceZipName": "ProjectS-review-minimal-source-v3.zip",
+  "SourceZipSha256": "b4158a64427cc3f24c787ae32ec3129b312a677bc23cdc391892d78a9e85432e",
+  "SourceZipBytes": 39321,
+  "OriginalUnchanged": true,
+  "EntryBytesVerified": true,
+  "Supersedes": {
+    "Snapshot": "quality-review-framework-v1",
+    "LibraryVersion": 0,
+    "SourceZipName": "ProjectS-review-minimal-source-v1.zip",
+    "SourceZipSha256": "28b16b8152aa1c6564a74d0ad4aff459b12d2de202b113e4a3b24ba4e46d89ff",
+    "PreservedInCommit": "f3931405ccb3aa75591c67de4d5388214137a877"
+  },
+  "Notes": "Frozen saved v3 record-validator source; same Library ID at version2. This archival task reran node --test tests/check.test.mjs: 61 passed, zero failed. Parent reported final independent audit complete, including rejection of the earlier reproduction case. Aesthetic quality, genuine artifact inspection, production adoption, game integration and real production efficacy remain unproven. Original live task files are untouched; saved ZIP bytes are preserved.",
+  "Files": [
+    {
+      "Path": "README.md",
+      "Bytes": 12982,
+      "Sha256": "8e4e276d6606d505f5be873c35c343ffbad65dbcde5d3df5edc6c48c5bc8ab64"
+    },
+    {
+      "Path": "APPLY_NOW.md",
+      "Bytes": 3685,
+      "Sha256": "c65ae144f519294d6df4192da41ce99ccc83208c6b76a1b21d109a5fa274cf83"
+    },
+    {
+      "Path": "templates/packet.json",
+      "Bytes": 4214,
+      "Sha256": "7d81d70169e29369891464c2315b0b0a8b57995a828b1d966090a003cade144b"
+    },
+    {
+      "Path": "scripts/check.mjs",
+      "Bytes": 33825,
+      "Sha256": "55f72f0110ce99957c9a8ed5801db928bec17da9b515cd751f659ca8a9da334a"
+    },
+    {
+      "Path": "tests/check.test.mjs",
+      "Bytes": 29379,
+      "Sha256": "3073529c4f7dc589cc957087d342c1be29e39e83d563e42d7e0f3ca9003da366"
+    },
+    {
+      "Path": "examples/armor.json",
+      "Bytes": 7884,
+      "Sha256": "8edbf8bc0cd58b942c2d0f00fc12c767467d6caea8d7ffc75d6f580487608c55"
+    },
+    {
+      "Path": "examples/noctveil.json",
+      "Bytes": 6413,
+      "Sha256": "832b470b7167e899f2b9087cff17a78ea0ee2cf9536763e1bcc9f1480ca7ffa9"
+    },
+    {
+      "Path": "examples/original-dragon.json",
+      "Bytes": 6285,
+      "Sha256": "720c423f22dcf2b9dce982fb19259478186b747bda178f14b41dfbc626cb4e59"
+    },
+    {
+      "Path": "examples/ice.json",
+      "Bytes": 6358,
+      "Sha256": "608ae6df8d93615df6f7c55017bf3fba3b88017e122a7c62749b6e780f9e1dfd"
+    },
+    {
+      "Path": "examples/tree.json",
+      "Bytes": 6944,
+      "Sha256": "4944a2a041cea3f4b441ec3495a2aef87f8ce3442b5a1c41cd3cd265ab17e8d3"
+    },
+    {
+      "Path": "VERIFICATION.json",
+      "Bytes": 4332,
+      "Sha256": "95521dee0aaeaf5d34eae4f3a069fe0ce93a059dbe70451088d9a81aa0dc6118"
+    }
+  ],
+  "SnapshotTestResult": {
+    "IndependentAudit": "Parent reported complete; earlier reproduction rejected",
+    "RealProductionEfficacyVerified": false,
+    "Passed": 61,
+    "Command": "node --test tests/check.test.mjs",
+    "Tests": 61,
+    "ExitCode": 0,
+    "AestheticQualityVerified": false,
+    "Evidence": "framework-v3-tests.txt in archive owner workspace",
+    "Failed": 0
+  }
+}

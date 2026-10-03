@@ -1,0 +1,102 @@
+{
+  "independent_task": "ProjectS production-review minimal local support",
+  "source_thread_id": "01a0fe65-bcfd-7403-9870-9dbec165f0f5",
+  "saved_at_utc": "2026-10-03T14:55:22.468Z",
+  "state": "implemented_and_technical_tests_passed",
+  "command": "node --test tests/check.test.mjs",
+  "tests": 61,
+  "passed": 61,
+  "failed": 0,
+  "exit_code": 0,
+  "duration_ms": 1541.2953,
+  "evidence_source": "exec_command completed test run, reported TAP summary",
+  "aesthetic_quality_verified": false,
+  "effectiveness_in_real_production_verified": false,
+  "existing_production_files_modified": false,
+  "original_reference_pixels_verified": false,
+  "scope": "This dedicated task folder only. No original/main/public/deployment/permission changes.",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "8e4e276d6606d505f5be873c35c343ffbad65dbcde5d3df5edc6c48c5bc8ab64",
+      "bytes": 12982
+    },
+    {
+      "path": "APPLY_NOW.md",
+      "sha256": "c65ae144f519294d6df4192da41ce99ccc83208c6b76a1b21d109a5fa274cf83",
+      "bytes": 3685
+    },
+    {
+      "path": "templates/packet.json",
+      "sha256": "7d81d70169e29369891464c2315b0b0a8b57995a828b1d966090a003cade144b",
+      "bytes": 4214
+    },
+    {
+      "path": "scripts/check.mjs",
+      "sha256": "55f72f0110ce99957c9a8ed5801db928bec17da9b515cd751f659ca8a9da334a",
+      "bytes": 33825
+    },
+    {
+      "path": "tests/check.test.mjs",
+      "sha256": "3073529c4f7dc589cc957087d342c1be29e39e83d563e42d7e0f3ca9003da366",
+      "bytes": 29379
+    },
+    {
+      "path": "examples/armor.json",
+      "sha256": "8edbf8bc0cd58b942c2d0f00fc12c767467d6caea8d7ffc75d6f580487608c55",
+      "bytes": 7884
+    },
+    {
+      "path": "examples/noctveil.json",
+      "sha256": "832b470b7167e899f2b9087cff17a78ea0ee2cf9536763e1bcc9f1480ca7ffa9",
+      "bytes": 6413
+    },
+    {
+      "path": "examples/original-dragon.json",
+      "sha256": "720c423f22dcf2b9dce982fb19259478186b747bda178f14b41dfbc626cb4e59",
+      "bytes": 6285
+    },
+    {
+      "path": "examples/ice.json",
+      "sha256": "608ae6df8d93615df6f7c55017bf3fba3b88017e122a7c62749b6e780f9e1dfd",
+      "bytes": 6358
+    },
+    {
+      "path": "examples/tree.json",
+      "sha256": "4944a2a041cea3f4b441ec3495a2aef87f8ce3442b5a1c41cd3cd265ab17e8d3",
+      "bytes": 6944
+    }
+  ],
+  "production_processes_started": false,
+  "production_files_touched": false,
+  "framework_version": 3,
+  "schema_version": 2,
+  "previous_library_version": 1,
+  "previous_zip_sha256": "e99a2ac4236577dc8e2bee74a6fc95b5a0895f9b1c664166fed51ced93549bb0",
+  "changes": [
+    "P1 final integration guard: evidence itself must declare scope=whole_in_use, actual medium, inspected coverage and inspected_range; required motion requires video/gameplay full_timeline and full_motion coverage",
+    "One regression case added: full representative motion plus still/partial integration fails in handoff and record; full integration video passes",
+    "No production file changes or new runtime features"
+  ],
+  "changed_files": [
+    "README.md",
+    "scripts/check.mjs",
+    "tests/check.test.mjs"
+  ],
+  "limitations": [
+    "Synthetic record tests verify consistency guards only, not visual quality",
+    "Evidence metadata and unchanged-scope assertions must still be truthful",
+    "All production examples remain unverified; original reference pixels not acquired",
+    "Real-production effectiveness remains unproven"
+  ],
+  "previous_change_summary": [
+    "P1: require candidate video/gameplay full_timeline plus observed range for motion comparison",
+    "P1: link authority to reference/candidate/interpretation/criterion/constraint IDs; enforce required approved top reference and preservation evidence",
+    "P2: active unknown cause blocks completion; resolved history requires reason and current evidence",
+    "P2: holistic and integration passed invariants checked even in record mode",
+    "Accept Library ID + exact version + inspection instead of requiring an HTTP URL",
+    "Link whole-intent grounds to existing reference and criterion IDs and actual comparison",
+    "Allow only unaffected, unchanged criteria to reuse exact prior accepted comparison with prior review bytes and current saved difference; invalidate rejected scopes",
+    "Add 22 adversarial/positive regression tests; all prior 38 tests retained"
+  ]
+}

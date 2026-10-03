@@ -1,0 +1,274 @@
+{
+  "model_id": "dragon_v8_polish_shared_atlas_study.bbmodel",
+  "anchors": {
+    "root": [
+      0,
+      0,
+      0
+    ],
+    "body": [
+      0,
+      23,
+      4
+    ],
+    "neck": [
+      0,
+      28,
+      -14
+    ],
+    "head": [
+      0,
+      26,
+      -27
+    ],
+    "jaw": [
+      0,
+      22.4,
+      -28
+    ],
+    "tail_1": [
+      0,
+      22,
+      19
+    ],
+    "tail_2": [
+      0,
+      21,
+      28
+    ],
+    "tail_3": [
+      0.6,
+      20.3,
+      37
+    ],
+    "tail_4": [
+      1.4,
+      20.5,
+      46
+    ],
+    "tail_5": [
+      2.6,
+      21.4,
+      54
+    ],
+    "tail_6": [
+      3.5,
+      22.5,
+      62
+    ],
+    "tail_7": [
+      3.6,
+      23.3,
+      69
+    ],
+    "wing_l": [
+      -6.6,
+      29,
+      -9
+    ],
+    "wing_l_forearm": [
+      -11.5,
+      39,
+      -11
+    ],
+    "wing_l_fan": [
+      -19,
+      49,
+      -13
+    ],
+    "wing_r": [
+      6.6,
+      29,
+      -9
+    ],
+    "wing_r_forearm": [
+      11.5,
+      39,
+      -11
+    ],
+    "wing_r_fan": [
+      19,
+      49,
+      -13
+    ],
+    "front_l_support": [
+      -6.7,
+      23.0,
+      -9.5
+    ],
+    "front_l": [
+      -6.7,
+      23.0,
+      -9.5
+    ],
+    "front_l_shin": [
+      -8.4,
+      13.0,
+      -5.5
+    ],
+    "front_l_paw": [
+      -8.4,
+      3.15,
+      -13.7
+    ],
+    "front_r_support": [
+      6.7,
+      23.0,
+      -9.5
+    ],
+    "front_r": [
+      6.7,
+      23.0,
+      -9.5
+    ],
+    "front_r_shin": [
+      8.4,
+      13.0,
+      -5.5
+    ],
+    "front_r_paw": [
+      8.4,
+      3.15,
+      -13.7
+    ],
+    "hind_l_support": [
+      -6.7,
+      23.0,
+      16.0
+    ],
+    "hind_l": [
+      -6.7,
+      23.0,
+      16.0
+    ],
+    "hind_l_shin": [
+      -8.4,
+      13.0,
+      10.8
+    ],
+    "hind_l_paw": [
+      -8.4,
+      3.15,
+      18.2
+    ],
+    "hind_r_support": [
+      6.7,
+      23.0,
+      16.0
+    ],
+    "hind_r": [
+      6.7,
+      23.0,
+      16.0
+    ],
+    "hind_r_shin": [
+      8.4,
+      13.0,
+      10.8
+    ],
+    "hind_r_paw": [
+      8.4,
+      3.15,
+      18.2
+    ]
+  },
+  "feet": {
+    "hind_l": {
+      "toe": [
+        -8.4,
+        0.13233113792446652,
+        10.841651909042353
+      ],
+      "ankle": [
+        -8.4,
+        3.15,
+        18.2
+      ],
+      "contact_phase_offset": 0.3,
+      "duty": 0.7
+    },
+    "front_l": {
+      "toe": [
+        -8.4,
+        0.13233113792446652,
+        -21.058348090957644
+      ],
+      "ankle": [
+        -8.4,
+        3.15,
+        -13.7
+      ],
+      "contact_phase_offset": 0.0,
+      "duty": 0.7
+    },
+    "hind_r": {
+      "toe": [
+        8.4,
+        0.13233113792446652,
+        10.841651909042353
+      ],
+      "ankle": [
+        8.4,
+        3.15,
+        18.2
+      ],
+      "contact_phase_offset": 0.8,
+      "duty": 0.7
+    },
+    "front_r": {
+      "toe": [
+        8.4,
+        0.13233113792446652,
+        -21.058348090957644
+      ],
+      "ankle": [
+        8.4,
+        3.15,
+        -13.7
+      ],
+      "contact_phase_offset": 0.5,
+      "duty": 0.7
+    }
+  },
+  "game_yaw0_forward": "+Z",
+  "source_forward": "-Z",
+  "reference_default_scale": 3,
+  "movement_API": "existing BossModelActor.move(Pos) on owning instance thread",
+  "walk_clip": "walk_grounded_stride_receive_hind_push_native_rigid",
+  "walk_cycle_seconds": 3.2,
+  "source_stride_BB": 25.6,
+  "source_speed_BBunits_per_sec": 8.0,
+  "default_speed_blocks_per_sec": 1.5,
+  "default_stride_blocks": 4.8,
+  "stop_clip": "transition_walk26_phase070_stop_to_foreclaw_ready_native_rigid",
+  "stop_alternate_clip": "transition_walk26_phase020_stop_to_ready_native_rigid",
+  "stop_entry_phases": [
+    0.2,
+    0.7
+  ],
+  "stop_seconds": 2.3,
+  "stop_deceleration_seconds": 0.5345875000000002,
+  "stop_actor_travel_BB": 2.138350000000001,
+  "stop_queued_to_nearest_supported_contact_gate": true,
+  "stop_profile_nominal_speed_only": false,
+  "stop_source_rate_formula": "accepted_entry_speed / nominalSpeed",
+  "resume_clip": "transition_ready_moving_first_step_to_approved_walk26_phase000_native_rigid",
+  "resume_seconds": 2.1,
+  "resume_entry_phase": 0.0,
+  "resume_acceleration_seconds": 0.6,
+  "claw_clip": "attack_foreclaw_hook_transverse_rake_native_rigid",
+  "breath_clip": "attack_ground_breath_aimed_native_rigid",
+  "actual_existing_runtime_animation_count": 14,
+  "approved_walk26_and_claw33_unchanged": true,
+  "live_AI_speed_not_measured": true,
+  "client_AI_damage_FX_perf_tested": false,
+  "resume_before_clip": "transition_ready_to_approved_walk26_phase070_native_rigid",
+  "resume_before_seconds": 2.6,
+  "resume_before_entry_phase": 0.7,
+  "resume_actor_travel_BB": 11.4,
+  "resume_source_acceleration_seconds": 1.35,
+  "resume_actor_starts_moving_immediately": true,
+  "resume_source_rate_formula": "commanded_speed/nominalSpeed; accepted root distance inverts profile",
+  "resume_acceleration_seconds_after_join": 0.0,
+  "native_full_visual_pending": true
+}

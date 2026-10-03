@@ -1,0 +1,126 @@
+{
+  "browser": "installed Edge headless, software rendering",
+  "browser_pid": 6128,
+  "game_capture": false,
+  "gpu_fps_measured": false,
+  "human_feel_verified": false,
+  "ordinary_gif_playback": [
+    {
+      "file": "contact-12.gif",
+      "normal_wall_clock": true,
+      "shots": [
+        {
+          "requested_seconds": 0.19,
+          "wall_seconds": 0.25,
+          "file": "contact-12-at-0.19s.png",
+          "sha256": "e99943a4228c926bbcd91a4b8ffc0c29c0ccacfbd9943cd31d88e8fc5b423d65"
+        },
+        {
+          "requested_seconds": 0.25,
+          "wall_seconds": 0.448,
+          "file": "contact-12-at-0.25s.png",
+          "sha256": "d12902bd8bf8cab574f735d4b137e0a6cc1e140136b02f3424092f4b08d25173"
+        },
+        {
+          "requested_seconds": 0.32,
+          "wall_seconds": 0.53,
+          "file": "contact-12-at-0.32s.png",
+          "sha256": "6ac0de7af646caa136532983c62242d75dfd31d66adce9f4c77fc0d39f543197"
+        },
+        {
+          "requested_seconds": 0.4,
+          "wall_seconds": 0.625,
+          "file": "contact-12-at-0.40s.png",
+          "sha256": "0f1354a51b031a6f7d1f13be4dab32097dc45a5da8ec455c8198eed197389a54"
+        },
+        {
+          "requested_seconds": 0.5,
+          "wall_seconds": 0.694,
+          "file": "contact-12-at-0.50s.png",
+          "sha256": "1a019fbb0c38dfa591f536d059fdc75fd897749808d875b4a928c355597abc5c"
+        },
+        {
+          "requested_seconds": 0.6,
+          "wall_seconds": 0.786,
+          "file": "contact-12-at-0.60s.png",
+          "sha256": "950a4e291bd76104c811ac352d587ea7f0ecfaeb86646792bceebea13a458fb3"
+        },
+        {
+          "requested_seconds": 0.72,
+          "wall_seconds": 0.873,
+          "file": "contact-12-at-0.72s.png",
+          "sha256": "662e3deee9da90d18f752eb6451dff3e6733ecba469663c90d99d18530cc1b8c"
+        }
+      ]
+    },
+    {
+      "file": "11c-to-12-contact.gif",
+      "normal_wall_clock": true,
+      "shots": [
+        {
+          "requested_seconds": 0.19,
+          "wall_seconds": 0.237,
+          "file": "11c-to-12-contact-at-0.19s.png",
+          "sha256": "49052802574c15745b5e24a677e927d9ad855161fb8da704447fa2b4e8bc56e4"
+        },
+        {
+          "requested_seconds": 0.32,
+          "wall_seconds": 0.393,
+          "file": "11c-to-12-contact-at-0.32s.png",
+          "sha256": "39e5d8bb67260d7e67341d4d5a215e17198e3ce747e8828b9687425d498c5229"
+        },
+        {
+          "requested_seconds": 0.6,
+          "wall_seconds": 0.696,
+          "file": "11c-to-12-contact-at-0.60s.png",
+          "sha256": "cc74deddb3fa9a441cd3d10fe37406b3eae0efd882f90b718da614fda299c325"
+        },
+        {
+          "requested_seconds": 0.99,
+          "wall_seconds": 1.052,
+          "file": "11c-to-12-contact-at-0.99s.png",
+          "sha256": "e99943a4228c926bbcd91a4b8ffc0c29c0ccacfbd9943cd31d88e8fc5b423d65"
+        },
+        {
+          "requested_seconds": 1.12,
+          "wall_seconds": 1.203,
+          "file": "11c-to-12-contact-at-1.12s.png",
+          "sha256": "96bff54cf70dfced0682ed8e361e20f93b7429ac03c0a191908db0e130f6bd1d"
+        },
+        {
+          "requested_seconds": 1.4,
+          "wall_seconds": 1.487,
+          "file": "11c-to-12-contact-at-1.40s.png",
+          "sha256": "1a019fbb0c38dfa591f536d059fdc75fd897749808d875b4a928c355597abc5c"
+        },
+        {
+          "requested_seconds": 1.52,
+          "wall_seconds": 1.642,
+          "file": "11c-to-12-contact-at-1.52s.png",
+          "sha256": "429c8d875c7f2648014acf99f26d6da45f375598d80744deaf2280a742a95508"
+        }
+      ]
+    }
+  ],
+  "viewer_buttons_verified": [
+    "11c-to-12-contact.gif",
+    "contact-12.gif",
+    "contact-phases.png",
+    "oblique.png",
+    "near.png",
+    "light.png",
+    "dark.png"
+  ],
+  "viewer_keyframes_verified": [
+    0,
+    8,
+    10,
+    12,
+    15,
+    20,
+    26,
+    31
+  ],
+  "success": true,
+  "own_browser_root_exited": true
+}

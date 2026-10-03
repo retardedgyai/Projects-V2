@@ -1,0 +1,1587 @@
+{
+  "scope": "Fixed ItemDisplay context only,58 model files normal/hit",
+  "primary_evidence": "Vanilla26.2 DisplayRenderer$ItemDisplayRenderer.submitInner calls Axis.YP.rotation(3.1415927f) before ItemStackRenderState.submit",
+  "matrix_identity": "J * D_new = D_old; J=diag(-1,1,-1); D_new translation=J*Told and scale=J*Sold",
+  "missing_client_half_turn_in_previous_CPU_checks": true,
+  "client_tested": false,
+  "new_renderer": false,
+  "entities_added": 0,
+  "source_bones_clip_keys_vertices_UV_textures_unchanged": true,
+  "candidate_pack_sha256": "f33fb6560948407c5d700d49df8abf8d57e5e2cf47024a5a053934c8130a34e6",
+  "candidate_pack_bytes": 7264987,
+  "unchanged_nonpack_bundle_files": {
+    "catalog.json": true,
+    "mappings.json": true,
+    "motion_reference.json": true,
+    "models\\dragon_v8_polish_shared_atlas_study.bbmodel\\model.animation.json": true,
+    "models\\dragon_v8_polish_shared_atlas_study.bbmodel\\model.geo.json": true
+  },
+  "changes": [
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/body.json",
+      "before_fixed": {
+        "translation": [
+          -0.12959999999999994,
+          0.7881999999999998,
+          1.5
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.12959999999999994,
+          0.7881999999999998,
+          -1.5
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/front_l.json",
+      "before_fixed": {
+        "translation": [
+          0.6311999999999998,
+          -4.546399999999998,
+          -1.641999999999996
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.6311999999999998,
+          -4.546399999999998,
+          1.641999999999996
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/front_l_paw.json",
+      "before_fixed": {
+        "translation": [
+          0.00460000000000349,
+          -1.4577999999999989,
+          3.2249999999999943
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.00460000000000349,
+          -1.4577999999999989,
+          -3.2249999999999943
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/front_l_shin.json",
+      "before_fixed": {
+        "translation": [
+          0.0,
+          -4.816400000000002,
+          4.100000000000001
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0,
+          -4.816400000000002,
+          -4.100000000000001
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/front_r.json",
+      "before_fixed": {
+        "translation": [
+          -0.6311999999999998,
+          -4.546399999999998,
+          -1.6163999999999987
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.6311999999999998,
+          -4.546399999999998,
+          1.6163999999999987
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/front_r_paw.json",
+      "before_fixed": {
+        "translation": [
+          0.0045999999999999375,
+          -1.4577999999999989,
+          3.2249999999999943
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0045999999999999375,
+          -1.4577999999999989,
+          -3.2249999999999943
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/front_r_shin.json",
+      "before_fixed": {
+        "translation": [
+          0.0,
+          -4.816400000000002,
+          4.100000000000001
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0,
+          -4.816400000000002,
+          -4.100000000000001
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/head.json",
+      "before_fixed": {
+        "translation": [
+          0.0,
+          2.7901999999999987,
+          2.8999999999999986
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0,
+          2.7901999999999987,
+          -2.8999999999999986
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/hind_l.json",
+      "before_fixed": {
+        "translation": [
+          0.4619999999999962,
+          -4.546399999999998,
+          2.200400000000002
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.4619999999999962,
+          -4.546399999999998,
+          -2.200400000000002
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/hind_l_paw.json",
+      "before_fixed": {
+        "translation": [
+          0.00460000000000349,
+          -1.4577999999999989,
+          3.224999999999998
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.00460000000000349,
+          -1.4577999999999989,
+          -3.224999999999998
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/hind_l_shin.json",
+      "before_fixed": {
+        "translation": [
+          0.0,
+          -4.816400000000002,
+          -2.4837999999999987
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0,
+          -4.816400000000002,
+          2.4837999999999987
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/hind_r.json",
+      "before_fixed": {
+        "translation": [
+          -0.46199999999999974,
+          -4.546399999999998,
+          2.235599999999998
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.46199999999999974,
+          -4.546399999999998,
+          -2.235599999999998
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/hind_r_paw.json",
+      "before_fixed": {
+        "translation": [
+          0.0045999999999999375,
+          -1.4577999999999989,
+          3.224999999999998
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0045999999999999375,
+          -1.4577999999999989,
+          -3.224999999999998
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/hind_r_shin.json",
+      "before_fixed": {
+        "translation": [
+          0.0,
+          -4.816400000000002,
+          -2.4837999999999987
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0,
+          -4.816400000000002,
+          2.4837999999999987
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/jaw.json",
+      "before_fixed": {
+        "translation": [
+          0.037599999999997635,
+          -1.4962000000000018,
+          7.0
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.037599999999997635,
+          -1.4962000000000018,
+          -7.0
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/neck.json",
+      "before_fixed": {
+        "translation": [
+          -0.010600000000000165,
+          2.0946,
+          5.549999999999997
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.010600000000000165,
+          2.0946,
+          -5.549999999999997
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/tail_1.json",
+      "before_fixed": {
+        "translation": [
+          0.0,
+          -0.1366000000000014,
+          -4.5
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0,
+          -0.1366000000000014,
+          4.5
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/tail_2.json",
+      "before_fixed": {
+        "translation": [
+          -0.29879999999999995,
+          0.22939999999999827,
+          -4.5
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.29879999999999995,
+          0.22939999999999827,
+          4.5
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/tail_3.json",
+      "before_fixed": {
+        "translation": [
+          -0.3985999999999983,
+          0.740599999999997,
+          -4.5
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.3985999999999983,
+          0.740599999999997,
+          4.5
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/tail_4.json",
+      "before_fixed": {
+        "translation": [
+          -0.5980000000000025,
+          1.2699999999999996,
+          -4.0
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.5980000000000025,
+          1.2699999999999996,
+          4.0
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/tail_5.json",
+      "before_fixed": {
+        "translation": [
+          -0.44879999999999853,
+          1.4644000000000013,
+          -4.0
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.44879999999999853,
+          1.4644000000000013,
+          4.0
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/tail_6.json",
+      "before_fixed": {
+        "translation": [
+          -0.04980000000000118,
+          1.3079999999999998,
+          -3.5
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.04980000000000118,
+          1.3079999999999998,
+          3.5
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/tail_7.json",
+      "before_fixed": {
+        "translation": [
+          0.19920000000000115,
+          0.9282000000000004,
+          -3.5
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.19920000000000115,
+          0.9282000000000004,
+          3.5
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/wing_l.json",
+      "before_fixed": {
+        "translation": [
+          2.6126000000000005,
+          4.018799999999999,
+          -5.4358
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -2.6126000000000005,
+          4.018799999999999,
+          5.4358
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/wing_l_fan.json",
+      "before_fixed": {
+        "translation": [
+          -2.627200000000002,
+          -0.4421999999999997,
+          -18.1
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          2.627200000000002,
+          -0.4421999999999997,
+          18.1
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/wing_l_forearm.json",
+      "before_fixed": {
+        "translation": [
+          1.4671999999999983,
+          -0.9742000000000033,
+          -5.601599999999998
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -1.4671999999999983,
+          -0.9742000000000033,
+          5.601599999999998
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/wing_r.json",
+      "before_fixed": {
+        "translation": [
+          -2.687599999999996,
+          3.9814000000000007,
+          -5.3748000000000005
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          2.687599999999996,
+          3.9814000000000007,
+          5.3748000000000005
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/wing_r_fan.json",
+      "before_fixed": {
+        "translation": [
+          2.5748000000000033,
+          -0.5118000000000009,
+          -18.1
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -2.5748000000000033,
+          -0.5118000000000009,
+          18.1
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/hit/wing_r_forearm.json",
+      "before_fixed": {
+        "translation": [
+          -1.5328000000000017,
+          -1.0253999999999976,
+          -5.596400000000003
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          1.5328000000000017,
+          -1.0253999999999976,
+          5.596400000000003
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/body.json",
+      "before_fixed": {
+        "translation": [
+          -0.12959999999999994,
+          0.7881999999999998,
+          1.5
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.12959999999999994,
+          0.7881999999999998,
+          -1.5
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/front_l.json",
+      "before_fixed": {
+        "translation": [
+          0.6311999999999998,
+          -4.546399999999998,
+          -1.641999999999996
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.6311999999999998,
+          -4.546399999999998,
+          1.641999999999996
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/front_l_paw.json",
+      "before_fixed": {
+        "translation": [
+          0.00460000000000349,
+          -1.4577999999999989,
+          3.2249999999999943
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.00460000000000349,
+          -1.4577999999999989,
+          -3.2249999999999943
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/front_l_shin.json",
+      "before_fixed": {
+        "translation": [
+          0.0,
+          -4.816400000000002,
+          4.100000000000001
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0,
+          -4.816400000000002,
+          -4.100000000000001
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/front_r.json",
+      "before_fixed": {
+        "translation": [
+          -0.6311999999999998,
+          -4.546399999999998,
+          -1.6163999999999987
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.6311999999999998,
+          -4.546399999999998,
+          1.6163999999999987
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/front_r_paw.json",
+      "before_fixed": {
+        "translation": [
+          0.0045999999999999375,
+          -1.4577999999999989,
+          3.2249999999999943
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0045999999999999375,
+          -1.4577999999999989,
+          -3.2249999999999943
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/front_r_shin.json",
+      "before_fixed": {
+        "translation": [
+          0.0,
+          -4.816400000000002,
+          4.100000000000001
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0,
+          -4.816400000000002,
+          -4.100000000000001
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/head.json",
+      "before_fixed": {
+        "translation": [
+          0.0,
+          2.7901999999999987,
+          2.8999999999999986
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0,
+          2.7901999999999987,
+          -2.8999999999999986
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/hind_l.json",
+      "before_fixed": {
+        "translation": [
+          0.4619999999999962,
+          -4.546399999999998,
+          2.200400000000002
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.4619999999999962,
+          -4.546399999999998,
+          -2.200400000000002
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/hind_l_paw.json",
+      "before_fixed": {
+        "translation": [
+          0.00460000000000349,
+          -1.4577999999999989,
+          3.224999999999998
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.00460000000000349,
+          -1.4577999999999989,
+          -3.224999999999998
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/hind_l_shin.json",
+      "before_fixed": {
+        "translation": [
+          0.0,
+          -4.816400000000002,
+          -2.4837999999999987
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0,
+          -4.816400000000002,
+          2.4837999999999987
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/hind_r.json",
+      "before_fixed": {
+        "translation": [
+          -0.46199999999999974,
+          -4.546399999999998,
+          2.235599999999998
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.46199999999999974,
+          -4.546399999999998,
+          -2.235599999999998
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/hind_r_paw.json",
+      "before_fixed": {
+        "translation": [
+          0.0045999999999999375,
+          -1.4577999999999989,
+          3.224999999999998
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0045999999999999375,
+          -1.4577999999999989,
+          -3.224999999999998
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/hind_r_shin.json",
+      "before_fixed": {
+        "translation": [
+          0.0,
+          -4.816400000000002,
+          -2.4837999999999987
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0,
+          -4.816400000000002,
+          2.4837999999999987
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/jaw.json",
+      "before_fixed": {
+        "translation": [
+          0.037599999999997635,
+          -1.4962000000000018,
+          7.0
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.037599999999997635,
+          -1.4962000000000018,
+          -7.0
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/neck.json",
+      "before_fixed": {
+        "translation": [
+          -0.010600000000000165,
+          2.0946,
+          5.549999999999997
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.010600000000000165,
+          2.0946,
+          -5.549999999999997
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/tail_1.json",
+      "before_fixed": {
+        "translation": [
+          0.0,
+          -0.1366000000000014,
+          -4.5
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.0,
+          -0.1366000000000014,
+          4.5
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/tail_2.json",
+      "before_fixed": {
+        "translation": [
+          -0.29879999999999995,
+          0.22939999999999827,
+          -4.5
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.29879999999999995,
+          0.22939999999999827,
+          4.5
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/tail_3.json",
+      "before_fixed": {
+        "translation": [
+          -0.3985999999999983,
+          0.740599999999997,
+          -4.5
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.3985999999999983,
+          0.740599999999997,
+          4.5
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/tail_4.json",
+      "before_fixed": {
+        "translation": [
+          -0.5980000000000025,
+          1.2699999999999996,
+          -4.0
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.5980000000000025,
+          1.2699999999999996,
+          4.0
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/tail_5.json",
+      "before_fixed": {
+        "translation": [
+          -0.44879999999999853,
+          1.4644000000000013,
+          -4.0
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.44879999999999853,
+          1.4644000000000013,
+          4.0
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/tail_6.json",
+      "before_fixed": {
+        "translation": [
+          -0.04980000000000118,
+          1.3079999999999998,
+          -3.5
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          0.04980000000000118,
+          1.3079999999999998,
+          3.5
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/tail_7.json",
+      "before_fixed": {
+        "translation": [
+          0.19920000000000115,
+          0.9282000000000004,
+          -3.5
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -0.19920000000000115,
+          0.9282000000000004,
+          3.5
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/wing_l.json",
+      "before_fixed": {
+        "translation": [
+          2.6126000000000005,
+          4.018799999999999,
+          -5.4358
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -2.6126000000000005,
+          4.018799999999999,
+          5.4358
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/wing_l_fan.json",
+      "before_fixed": {
+        "translation": [
+          -2.627200000000002,
+          -0.4421999999999997,
+          -18.1
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          2.627200000000002,
+          -0.4421999999999997,
+          18.1
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/wing_l_forearm.json",
+      "before_fixed": {
+        "translation": [
+          1.4671999999999983,
+          -0.9742000000000033,
+          -5.601599999999998
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -1.4671999999999983,
+          -0.9742000000000033,
+          5.601599999999998
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/wing_r.json",
+      "before_fixed": {
+        "translation": [
+          -2.687599999999996,
+          3.9814000000000007,
+          -5.3748000000000005
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          2.687599999999996,
+          3.9814000000000007,
+          5.3748000000000005
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/wing_r_fan.json",
+      "before_fixed": {
+        "translation": [
+          2.5748000000000033,
+          -0.5118000000000009,
+          -18.1
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          -2.5748000000000033,
+          -0.5118000000000009,
+          18.1
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "item_model": "assets/worldseed/models/mobs/dragon_v8_polish_shared_atlas_study.bbmodel/normal/wing_r_forearm.json",
+      "before_fixed": {
+        "translation": [
+          -1.5328000000000017,
+          -1.0253999999999976,
+          -5.596400000000003
+        ],
+        "scale": [
+          -4,
+          4,
+          -4
+        ]
+      },
+      "after_fixed": {
+        "translation": [
+          1.5328000000000017,
+          -1.0253999999999976,
+          5.596400000000003
+        ],
+        "scale": [
+          4,
+          4,
+          4
+        ]
+      }
+    }
+  ]
+}

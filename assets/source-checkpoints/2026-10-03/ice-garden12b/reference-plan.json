@@ -1,0 +1,13 @@
+{
+ "study":"ice-garden-contact-12",
+ "scope":"Contact fracture direction, physical thickness and timing only. Frozen11c main geometry, material, placement, quiet hold and floor hierarchy unchanged. No game launch or integration.",
+ "source":"https://mcmodels.net/vi/products/17407/mates-rpg-classes-cryomancer",
+ "observed":"Actual saved public Glacial Breaker GIF frames26-49,0.52-0.98s, inspected. No ice through0.60s; small low blue mass0.62s; thicker volumes with outward fine tips0.64-0.80s; settled silhouette0.82-0.98s. This is a model viewer eruption, not footage proving an enemy hit, physics, terrain or game performance.",
+ "source_sha256":"4513320d603c848b026540101ff4f1ff990998117fcd2ecb3ca60c1eabfb1b70",
+ "apply":"A low contact origin precedes a fast thick asymmetric split. Large surfaces carry weight, fine shape is secondary. Short peak pause before accelerated fall.",
+ "reject":"Reference geometry/textures, full radial cage, extra whole-field particles or permanent stun behavior.",
+ "one_cycle":"Confirmed foot contact0s; low split first, large slab then smaller counter break0.00-0.07s; brief peak pause0.07-0.15s; outward shear and accelerated downward fall0.16-0.46s. The cue stays at the confirmed contact, while the enemy keeps moving.",
+ "numeric_scope":"Durations and dimensions are visual trial values only; damage, CC and gameplay cadence unchanged.",
+ "quality_gate":"Open; compare actual contact frames and ordinary playback with11c before asserting improvement.",
+ "reference_originals_packaged":false
+}

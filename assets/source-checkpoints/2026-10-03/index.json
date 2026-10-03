@@ -36,12 +36,30 @@
     "Manifest": "ice-garden11/source-snapshot.json"
   },
   {
-    "Snapshot": "quality-review-framework-v1",
-    "Status": "FROZEN_V0_LIBRARY_SOURCE_SNAPSHOT_AUDIT_REVISION_PENDING",
+    "Snapshot": "quality-review-framework",
+    "Status": "RECORD_VALIDATOR_V3_SOURCE_SNAPSHOT_TECHNICAL_TESTS_PASS",
     "LibraryFileId": "libfile_21deb3cfc62c81919f46a7544395d229",
-    "LibraryVersion": 0,
+    "LibraryVersion": 2,
     "FileCount": 11,
-    "Bytes": 83168.0,
-    "Manifest": "quality-review-framework-v1/source-snapshot.json"
+    "Bytes": 122301.0,
+    "Manifest": "quality-review-framework/source-snapshot.json"
+  },
+  {
+    "Snapshot": "ice-garden12b",
+    "Status": "FIX_FIRST_CONTACT12B_SOURCE_SNAPSHOT",
+    "LibraryFileId": "libfile_21ec0fe7bed4819189fbf56cb1b3aac7",
+    "LibraryVersion": 0,
+    "FileCount": 218,
+    "Bytes": 3713520.0,
+    "Manifest": "ice-garden12b/source-snapshot.json"
+  },
+  {
+    "Snapshot": "dragon-itemdisplay-y180",
+    "Status": "UNVERIFIED_ITEMDISPLAY_Y180_COMPENSATION_SOURCE_SNAPSHOT",
+    "LibraryFileId": "libfile_f9e042b5099081918c5437d881588f8d",
+    "LibraryVersion": 2,
+    "FileCount": 33,
+    "Bytes": 33257458.0,
+    "Manifest": "dragon-itemdisplay-y180/source-snapshot.json"
   }
 ]

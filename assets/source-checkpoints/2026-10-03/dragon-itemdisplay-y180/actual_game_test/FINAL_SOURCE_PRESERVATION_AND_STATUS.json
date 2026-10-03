@@ -1,0 +1,24 @@
+{
+  "protected15_files_final_unchanged": {
+    "source/abyssal_teal_dragon_v8.bbmodel": true,
+    "outputs/grounded_stride_rebuild/NEW_GROUNDED_STRIDE_GAME_CLIP.json": true,
+    "outputs/grounded_stride_rebuild/dragon_v8_GROUNDED_STRIDE_REBUILD_ROUGH_26CLIPS.bbmodel": true,
+    "outputs/foreclaw_vertical_blade/NEW_VERTICAL_BLADE_FORECLAW_GAME_CLIP.json": true,
+    "outputs/foreclaw_vertical_blade/dragon_v8_VERTICAL_BLADE_CLAW_STUDY_32CLIPS.bbmodel": true,
+    "outputs\\foreclaw_hook_rake\\NEW_HOOK_RAKE_FORECLAW_GAME_CLIP.json": true,
+    "outputs\\foreclaw_hook_rake\\dragon_v8_HOOK_TRANSVERSE_RAKE_STUDY_33CLIPS.bbmodel": true,
+    "outputs\\foreclaw_hook_rake\\dragon_v8_FORECLAW_HOOK_RAKE_NATIVE_REVIEW.bbmodel": true,
+    "outputs\\walk26_to_attack_stop\\NEW_PHASE_SPECIFIC_STOP_GAME_CLIP.json": true,
+    "outputs\\reentry_direct_first_step\\runtime_patch\\DragonActionController.kt": true,
+    "outputs\\reentry_direct_first_step\\runtime_patch\\DragonNumericClip.kt": true,
+    "outputs\\reentry_direct_first_step\\NEW_MOVING_FIRST_STEP_TRANSITION_CLIP.json": true,
+    "outputs\\reentry_direct_first_step\\projects_bundle\\pack.zip": true,
+    "outputs\\reentry_direct_first_step\\projects_bundle\\manifest.json": true,
+    "outputs\\reentry_direct_first_step\\projects_bundle\\models\\dragon_v8_polish_shared_atlas_study.bbmodel\\model.animation.json": true
+  },
+  "offline_kotlin_probe_completed_and_zero_entities": true,
+  "new_game_window_or_input_after_magic_test_request": false,
+  "candidate_not_run_or_promoted": true,
+  "game_visual_pass": false,
+  "main_or_production_repo_written": false
+}

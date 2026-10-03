@@ -1,0 +1,20 @@
+{
+  "primary_local_client_class": "Vanilla26.2 DisplayRenderer$ItemDisplayRenderer.submitInner",
+  "primary_call": "Axis.YP.rotation(3.1415927f) before ItemStackRenderState.submit",
+  "previous_CPU_projection_omitted_this_transform": true,
+  "full_model_visible_quads": 2910,
+  "old_pack_max_vertex_displacement_due_to_missing_turn_blocks": 18.565501545702016,
+  "compensated_pack_max_vertex_error_against_original_intended_geometry_blocks": 0.0,
+  "legacy_intended_and_compensated_client_math_RGBA_identical": true,
+  "visible_pixel_counts": {
+    "LEGACY CPU (MISSED CLIENT Y180)": 26041,
+    "OLD PACK + VANILLA Y180": 18637,
+    "COMPENSATED PACK + VANILLA Y180": 26041
+  },
+  "real_capture_comparison": "Actual READY shown with same assumed camera; no pixel fitting; GPU shading not reproduced",
+  "client_tested_candidate": false,
+  "game_visual_pass": false,
+  "bones_animation_keys_vertices_UV_texture_bytes_unchanged": true,
+  "additional_entity_count": 0,
+  "surface_culling_candidate_not_promoted": true
+}

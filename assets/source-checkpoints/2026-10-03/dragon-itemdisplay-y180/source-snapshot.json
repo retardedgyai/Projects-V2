@@ -1,0 +1,184 @@
+{
+  "Schema": 1,
+  "Snapshot": "dragon-itemdisplay-y180",
+  "Status": "UNVERIFIED_ITEMDISPLAY_Y180_COMPENSATION_SOURCE_SNAPSHOT",
+  "CapturedUtc": "2026-10-03T15:03:43.5515607Z",
+  "LibraryFileId": "libfile_f9e042b5099081918c5437d881588f8d",
+  "LibraryVersion": 2,
+  "SourceZipName": "dragon_ACTUAL_LOCAL_GAME_CASE_EDITABLE_EVIDENCE_VISUAL_NOT_PASSED.zip",
+  "SourceZipSha256": "108da9b37f2e16e96f83974efae529857fa22476e7cb5166335392d04bc17f9f",
+  "SourceZipBytes": 36205457,
+  "OriginalUnchanged": true,
+  "EntryBytesVerified": true,
+  "Notes": "Latest saved ItemDisplay Y180 transform-compensation candidate, Library version2. Corrected candidate is untested in the actual client and is not game ready. Owner reports bones/walk/claw/stop/reentry/UV/texture unchanged. Existing moving-first-step checkpoint is retained. Start with saved_surface_diagnosis/HANDOFF_DISPLAY_TURN_CAUSE_JA.txt and reproduction_scoped/prepare_item_display_turn_compensation.py. Validate at fixed camera after magic play test: original vs compensated READY, then existing walk/stop/claw/reentry, without key changes. No process launch, active magic file edit or game change was performed during this archive update. Texture pack ZIP is retained in Library instead of copied to Git; use recorded source/hash dependencies before reproducing.",
+  "RelatedLibrary": {
+    "ComparisonImage": "libfile_d0bdc3160b58819182710ca36db85646"
+  },
+  "Files": [
+    {
+      "Path": "actual_game_test/ACTUAL_READY_AFTER_NOOP_MOVE_DISPLAY_METADATA.json",
+      "Bytes": 15328,
+      "Sha256": "96bc2455dff00684a2bb5fe7ab035f6c2a857145a7006d73a485d016fe958c95"
+    },
+    {
+      "Path": "actual_game_test/ACTUAL_READY_DISPLAY_METADATA.json",
+      "Bytes": 15330,
+      "Sha256": "7fdc59274b2ab90bcd6f0d3e911d1b79a0973a59d6e67e89ac5b6a90cb1b165d"
+    },
+    {
+      "Path": "actual_game_test/FINAL_SOURCE_PRESERVATION_AND_STATUS.json",
+      "Bytes": 1637,
+      "Sha256": "10a6fe2a8cab80e941b2a83f0df5857ecbde861548f4476cc413351342138dd5"
+    },
+    {
+      "Path": "actual_game_test/INTEGRATION_SAVED_POINT_MANIFEST.json",
+      "Bytes": 8272,
+      "Sha256": "65a82768d7119856b5c07aa57a059090e8c1acfb478eb33fd6e05bb40ff27b37"
+    },
+    {
+      "Path": "actual_game_test/ITEM_DISPLAY_TURN_COMPENSATION_CANDIDATE_CHECK.json",
+      "Bytes": 35180,
+      "Sha256": "f25f1e2efd6f668dce954279ef53ff77a3c21a27fe7981f59e4e3baaed5cd768"
+    },
+    {
+      "Path": "editable_source/dragon_v8_REENTRY_OLD_NEW_WALK26_3CLIPS.bbmodel",
+      "Bytes": 6609962,
+      "Sha256": "b89ef8c025e24be4faa6a0cdc5dbcc07bf8da3f18e3b87b6661ee97815b505bd"
+    },
+    {
+      "Path": "editable_source/NEW_MOVING_FIRST_STEP_TRANSITION_CLIP.json",
+      "Bytes": 2701332,
+      "Sha256": "dbbe020dcc7416e9e91b10c78b5692a88c73f7b364d11d0fb53cc9aba1438bae"
+    },
+    {
+      "Path": "editable_source/WSEE_FIRST_STEP.json",
+      "Bytes": 1409817,
+      "Sha256": "d9ace97ce9e9700bdf70364ed821e4fd90e37f5c418da1a547721f68ee13f464"
+    },
+    {
+      "Path": "runtime_patch/DragonActionController.kt",
+      "Bytes": 15783,
+      "Sha256": "d86a2a5fe39ad6f5ba38d2e2fb3e27145cc31926f36e476c2afb520fec6ba25c"
+    },
+    {
+      "Path": "runtime_patch/DragonNumericClip.kt",
+      "Bytes": 6541,
+      "Sha256": "ad672cf7db934e1894d1f9e1436e2455880be6c7f979009bbbd7501a822fe389"
+    },
+    {
+      "Path": "projects_bundle/catalog.json",
+      "Bytes": 2010,
+      "Sha256": "6601844d637dca1c436f7cce76e0b0f39f73948438dfbf337ff0595ba7e15af8"
+    },
+    {
+      "Path": "projects_bundle/manifest.json",
+      "Bytes": 773,
+      "Sha256": "7574884d9ac2ecbdf916edc88ee406604cdf2c176bc2c0c22be91c6a422e9fe2"
+    },
+    {
+      "Path": "projects_bundle/mappings.json",
+      "Bytes": 4094,
+      "Sha256": "bd7690c24b972d34257cf7087278e1f5958041a815b8bdd1d54232a2854254b7"
+    },
+    {
+      "Path": "projects_bundle/motion_reference.json",
+      "Bytes": 5164,
+      "Sha256": "bc9f3c0f1ea8bbc454bd0385c5349e646577a5ad3251a6075d2f438e70724685"
+    },
+    {
+      "Path": "projects_bundle/models/dragon_v8_polish_shared_atlas_study.bbmodel/model.animation.json",
+      "Bytes": 9760731,
+      "Sha256": "2941f583c8d24e5b9d2cc52aeb6a0827f3b4b1276a3504eddd756a7275f59e04"
+    },
+    {
+      "Path": "projects_bundle/models/dragon_v8_polish_shared_atlas_study.bbmodel/model.geo.json",
+      "Bytes": 1428050,
+      "Sha256": "a2035dfd450362f7bf19c1e9e57e2dd20a3b1810a271b7610cf2310df49b5507"
+    },
+    {
+      "Path": "reproduction_scoped/summarize_actual_dragon_game_test.py",
+      "Bytes": 6290,
+      "Sha256": "9ba28975d9436fe6be6ecd0b53d89753b50aa21ab081fc545baaeb277c964a54"
+    },
+    {
+      "Path": "reproduction_scoped/compress_actual_game_capture.py",
+      "Bytes": 1782,
+      "Sha256": "70c25a25339d152604b41994c86f3b9d48856e0fa6c04b382d5a281f6e8ba6be"
+    },
+    {
+      "Path": "reproduction_scoped/audit_actual_ready_display_geometry.py",
+      "Bytes": 4544,
+      "Sha256": "861c4bcc83f9adf85b23b1d7c8d383180edf3f865c615b6c38bf8b0c38447e48"
+    },
+    {
+      "Path": "reproduction_scoped/prepare_single_shin_backface_candidate.py",
+      "Bytes": 3073,
+      "Sha256": "59681b9fa6dc3eaef31f0753215fab88335ba13d5f58eedb4d804113d42c4d29"
+    },
+    {
+      "Path": "reproduction_scoped/build_ready_display_probe_script.py",
+      "Bytes": 1044,
+      "Sha256": "f85cad82f22b8df45e4a1f428d0b9c5f8534f1aeb52d9bd870cb731620460361"
+    },
+    {
+      "Path": "item_display_turn_compensation_candidate/projects_bundle/catalog.json",
+      "Bytes": 2010,
+      "Sha256": "6601844d637dca1c436f7cce76e0b0f39f73948438dfbf337ff0595ba7e15af8"
+    },
+    {
+      "Path": "item_display_turn_compensation_candidate/projects_bundle/manifest.json",
+      "Bytes": 773,
+      "Sha256": "126cbef1a9c9aa65b31d9c1d970a9da47d733bd95a1b3b3fed8318b53d207fc2"
+    },
+    {
+      "Path": "item_display_turn_compensation_candidate/projects_bundle/mappings.json",
+      "Bytes": 4094,
+      "Sha256": "bd7690c24b972d34257cf7087278e1f5958041a815b8bdd1d54232a2854254b7"
+    },
+    {
+      "Path": "item_display_turn_compensation_candidate/projects_bundle/motion_reference.json",
+      "Bytes": 5164,
+      "Sha256": "bc9f3c0f1ea8bbc454bd0385c5349e646577a5ad3251a6075d2f438e70724685"
+    },
+    {
+      "Path": "item_display_turn_compensation_candidate/projects_bundle/models/dragon_v8_polish_shared_atlas_study.bbmodel/model.animation.json",
+      "Bytes": 9760731,
+      "Sha256": "2941f583c8d24e5b9d2cc52aeb6a0827f3b4b1276a3504eddd756a7275f59e04"
+    },
+    {
+      "Path": "item_display_turn_compensation_candidate/projects_bundle/models/dragon_v8_polish_shared_atlas_study.bbmodel/model.geo.json",
+      "Bytes": 1428050,
+      "Sha256": "a2035dfd450362f7bf19c1e9e57e2dd20a3b1810a271b7610cf2310df49b5507"
+    },
+    {
+      "Path": "saved_surface_diagnosis/HANDOFF_DISPLAY_TURN_CAUSE_JA.txt",
+      "Bytes": 4159,
+      "Sha256": "7a957e41dcb2d39510b8248e6f79519e0e29205539f1e0ef5253d98ebb97bc92"
+    },
+    {
+      "Path": "saved_surface_diagnosis/PRIMARY_ITEMDISPLAY_Y180_CAUSE_AND_COMPENSATION_AUDIT.json",
+      "Bytes": 1035,
+      "Sha256": "1b961c7230c3c36b3a05af54b6565828977ccf8783881308d9ffb704df0958bf"
+    },
+    {
+      "Path": "reproduction_scoped/prepare_item_display_turn_compensation.py",
+      "Bytes": 2743,
+      "Sha256": "dfcb356ae19e1d92389aa56b3b5c1e73ef4beedbac4dc7e7224b358a0ae633d4"
+    },
+    {
+      "Path": "reproduction_scoped/render_saved_item_display_turn_diagnosis.py",
+      "Bytes": 4133,
+      "Sha256": "c0a9f21062913f5a0cfa65797133da78dc973d6e7e4f0ccac18574df82d8ca20"
+    },
+    {
+      "Path": "reproduction_scoped/audit_saved_leg_culling.py",
+      "Bytes": 5656,
+      "Sha256": "37dc1d0ec38686f30de220dbcd607e7ce91e7b4c5169257825e28e7a744e46f1"
+    },
+    {
+      "Path": "reproduction_scoped/create_display_turn_integration_manifest.py",
+      "Bytes": 2173,
+      "Sha256": "d5fb4e64cf080d094153f0b08e93e2c6d7fae0b91adb8bd58c54422560364b76"
+    }
+  ]
+}
