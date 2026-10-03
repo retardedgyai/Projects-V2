@@ -1,0 +1,24 @@
+{
+  "sampleRate": 48000,
+  "channels": 1,
+  "duration": 4.322416666666666,
+  "length": 207476,
+  "event": "block.amethyst_block.chime",
+  "sound": "block/amethyst/shimmer",
+  "assetSha1": "a62c6054fe1ac8137b22f29959b562c0d821b6ed",
+  "assetBytes": 35227,
+  "soundDefinitionVolume": 0.2,
+  "originalStart": {
+    "serverVolume": 0.6,
+    "effectiveAssetGain": 0.12,
+    "pitch": 0.8
+  },
+  "originalCompletion": {
+    "serverVolume": 0.7,
+    "effectiveAssetGain": 0.14,
+    "pitch": 1.3
+  },
+  "nativeSpeakerRecording": false,
+  "actuallyListened": false,
+  "listenLimitation": "This execution environment exposes no listening or audio-perception tool. Decoded file and signal/source comparisons only."
+}

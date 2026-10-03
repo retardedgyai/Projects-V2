@@ -1,5 +1,7 @@
 # Continuous ritual with synchronized audio — offline proposal
 
+**REJECTED by the user after playback.** Feedback: 「音終わりすぎ、これなら前のほうがいい、なんだこれは」. Checkpoint `62fd05fb97c06c572a94b25aecb8919e03e109d5` is not adopted and must not be applied to native runtime. Keep this artifact as rejection evidence. Do not continue increasing sounds or generating synthetic replacements. Existing native amethyst cues, materials-free replay, and accepted visual effects remain unchanged. Follow-up comparisons must start from the original game sound.
+
 `synchronized-reception-with-audio.webm` is the primary preview. It contains VP8 video and Opus audio, 960×744, about 14 seconds, 1,056,856 bytes. The installed browser recorded an owned local page and synthetic audio stream without microphone, speakers, user profile, installation, or external network. Playback metadata and both codec tracks were verified.
 
 This full continuous trace uses the existing fresh recipe, receipt ledger, samplers, actual charge/glow, and original phase timings. The real greatsword model is present from the beginning, as it is in native gameplay; no new item spawning or recipe semantics are proposed. Existing lower circles, short arcs, small role textures and slow idle rotation remain. The white flash is absent.

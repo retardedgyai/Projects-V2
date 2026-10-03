@@ -1,0 +1,46 @@
+{
+  "status": "Preview only, original native audio unchanged",
+  "actuallyListened": false,
+  "method": "Installed sound decoded; source and waveform measurements; no auditory tool exposed",
+  "originalCompletion": {
+    "durationSeconds": 3.3249375,
+    "peakAmplitude": 0.004400922108435459,
+    "rms": 0.0003888511926681295,
+    "aboveMinus60DbIntervalSeconds": 1.0233958333333333
+  },
+  "rejectedSyntheticCompletion": {
+    "durationSeconds": 1.4,
+    "peakAmplitude": 0.1965392010254219,
+    "rms": 0.02553597234941766,
+    "aboveMinus60DbIntervalSeconds": 1.0213958333333333
+  },
+  "originalWholeRitualCueCount": 2,
+  "rejectedWholeRitualCueCount": 9,
+  "synthesisRejected": true,
+  "synthesisUsedInThisPreview": false,
+  "newSoundsAdded": 0,
+  "cueCountPerVariant": 1,
+  "aCompletionTick": 196,
+  "bCompletionTick": 192,
+  "earlierSeconds": 0.2,
+  "basis": "Last existing injection flow sample enters 0.1-block receiver radius at tick192; existing completion circle begins tick196",
+  "sameSoundBytesBeforeScheduling": true,
+  "sameVolumePitchLengthAndCount": true,
+  "baselineVisualSamplesUnchanged": true,
+  "whiteFlash": false,
+  "nativeAudioChanged": false,
+  "nativeReplayPreserved": true,
+  "acceptedVisualsPreserved": true,
+  "originalAssetSha1": "a62c6054fe1ac8137b22f29959b562c0d821b6ed",
+  "actualSpeakerCapture": false,
+  "limit": "Offline resampling and gain reproduce configured pitch/asset/server gain, not a recording of Minecraft/OpenAL or room output",
+  "diagnosis": [
+    "Original game shimmer was replaced with simple oscillators, sweeps and noise, changing the sound identity",
+    "9 cues replaced 2, including additional buildup/absorption and overlapping injection/convergence",
+    "Original pitched completion sample lasts about 3.32 seconds; synthetic completion lasts1.4 seconds",
+    "Native completion already aligns with the circle at tick196; the rejected proposal did not need to replace that cue",
+    "Subjective unpleasantness cannot be diagnosed without listening; these are measured/source differences and possible contributors"
+  ],
+  "previewSeconds": 11.4,
+  "frameCount": 114
+}

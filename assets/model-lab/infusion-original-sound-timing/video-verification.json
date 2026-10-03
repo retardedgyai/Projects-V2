@@ -1,0 +1,17 @@
+{
+  "mime": "video/webm;codecs=vp8,opus",
+  "bytes": 890084,
+  "videoTracks": 1,
+  "audioTracks": 1,
+  "durationSeconds": 11.609,
+  "expectedSeconds": 11.65,
+  "width": 960,
+  "height": 744,
+  "codecsConfirmed": [
+    "V_VP8",
+    "A_OPUS"
+  ],
+  "ownedBrowserPid": 17460,
+  "localOnly": true,
+  "nativeNotApplied": true
+}

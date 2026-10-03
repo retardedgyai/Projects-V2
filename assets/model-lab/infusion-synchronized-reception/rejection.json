@@ -1,0 +1,14 @@
+{
+  "status": "REJECTED",
+  "userFeedback": "音終わりすぎ、これなら前のほうがいい、なんだこれは",
+  "rejectedCheckpoint": "62fd05fb97c06c572a94b25aecb8919e03e109d5",
+  "nativeApplicationProhibited": true,
+  "neverAppliedToNative": true,
+  "oldAudioPreserved": true,
+  "materialsFreeReplayPreserved": true,
+  "acceptedVisualsPreserved": true,
+  "furtherSyntheticAudioStopped": true,
+  "nextScope": "Original audio only; minimal arrival/completion timing comparison; preview first",
+  "originalFileRetained": "synchronized-reception-with-audio.webm",
+  "library_file_id": "libfile_4224598b25788191a6fc2033b91dd8fa"
+}
