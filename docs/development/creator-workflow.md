@@ -10,7 +10,7 @@ ProjectS v2は、repo ownerだけでなく各Creatorが自分のアイデアを�
 - Creator本人が仕様と範囲を決めます。
 - branchは`play/<creator>/<slug>`を使います。
 - Codex / OpenCode等へ「こういうものを作りたい」と伝えるだけで開始できます。
-- prototype品質でよく、最初からproduction cleanupは要求しません。
+- 最初からproduction cleanupは要求しません。代表prototypeで早く品質差を判断し、prototypeの成立や前版比改善を最終品質合格へ持ち上げません。
 - 面白くなければbranchごと捨てて構いません。
 
 Playgroundでも`protocol/`、networking / handshake、persistence format、Particle Framework core、Class runtime共通基盤、build / CI、shared world/save formatは自由変更の対象外です。本編へ取り込む場合はProduction Issue化し、Sol Reviewを通します。
@@ -58,6 +58,7 @@ branch作成の確認は毎回行いません。
 ### GitHubで進捗を見る
 
 Playground branchは作成直後にoriginへpushされます。その後もAgentが意味のあるcheckpointごとに自動でcommit + pushします。
+既存ProjectS repoの既存remoteへの通常pushは許可済みです。意味のある変更を保存して作業branchへこまめにpushし、検証済み・未検証・未完成の範囲を明記します。毎行や未整合な一時ファイルのcommitを強制する規則ではありません。pushは品質合格・完成・本人採用を意味せず、main統合・force push・本番deploy・公開設定変更の許可にもなりません。
 
 checkpointの例:
 
@@ -76,6 +77,7 @@ GitHub CLI `gh`が使えて認証済みなら、最初の実装checkpoint後に�
 ### Playground Review
 
 Creator本人がSolへ次を渡してReviewします。
+Agentは既存Task・repoから取得できる情報を自分で集め、制作ではAGENTSの制作品質比較と反証レビューも行います。内部の代表試作ごとにCreator承認を要求せず、本人採用と実機feelの最終判断はCreatorに残します。
 
 - current branch
 - base

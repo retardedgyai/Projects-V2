@@ -19,6 +19,7 @@ agent: plan
 - ProjectSの現在の設計判断と矛盾していないか
 
 判定は `PASS` / `FIX-FIRST` / `BLOCKED` のいずれかに統一する。Playgroundでは `DROP` も可。細かいstyle好みだけで `FIX-FIRST` にせず、Manual Visual / Feelは人間Creatorの判断とする。
+制作物はAGENTSとSol Reviewの制作品質比較も行う。実参照との比較・反証・修正はAgentの責務であり、コードのPASSを美的合格や本人採用と同一視しない。
 
 細かい好みより、実際に壊れる問題・手戻りになる問題を優先する。
 
