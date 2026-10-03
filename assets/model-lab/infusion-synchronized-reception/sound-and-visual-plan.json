@@ -1,0 +1,93 @@
+{
+  "events": [
+    {
+      "type": "start",
+      "time": 2.0,
+      "duration": 0.55,
+      "gain": 0.15,
+      "charge": 0
+    },
+    {
+      "type": "charge",
+      "time": 3.0,
+      "duration": 0.26,
+      "gain": 0.1,
+      "charge": 0.42857142857142855
+    },
+    {
+      "type": "charge",
+      "time": 4.2,
+      "duration": 0.26,
+      "gain": 0.1,
+      "charge": 0.8571428571428571
+    },
+    {
+      "type": "absorption",
+      "time": 3.7,
+      "duration": 0.19,
+      "gain": 0.13,
+      "charge": 0.42857142857142855
+    },
+    {
+      "type": "absorption",
+      "time": 4.9,
+      "duration": 0.19,
+      "gain": 0.13,
+      "charge": 0.8571428571428571
+    },
+    {
+      "type": "absorption",
+      "time": 6.1,
+      "duration": 0.19,
+      "gain": 0.13,
+      "charge": 1.0
+    },
+    {
+      "type": "injection",
+      "time": 8.6,
+      "duration": 0.7800000000000011,
+      "gain": 0.12,
+      "charge": 0
+    },
+    {
+      "type": "convergence",
+      "time": 9.25,
+      "duration": 0.38,
+      "gain": 0.17,
+      "charge": 0
+    },
+    {
+      "type": "completion",
+      "time": 9.8,
+      "duration": 1.4,
+      "gain": 0.23,
+      "charge": 0
+    }
+  ],
+  "sampleRate": 48000,
+  "durationSeconds": 13.9,
+  "peakAmplitude": 0.1965325339349814,
+  "rms": 0.014481570092741943,
+  "maxVoices": 2,
+  "absorptionCooldownSeconds": 0.3,
+  "distanceFalloffBlocks": 16,
+  "cancelPolicy": "Stop/fade active sounds within 100ms; discard scheduled events immediately. Offline contract, not native tested.",
+  "nativeCurrentAudio": "Existing amethyst start and completion cues verified in source; client master volume 1.0; GIF itself has no audio. No native speaker recording.",
+  "previewAudio": "Entirely original synthetic proposal. Bell cues replace the current start/completion tones in this preview only.",
+  "nativeNotApplied": true,
+  "whiteCompletionFlash": false,
+  "normalLedgerRulesUnchanged": true,
+  "gearPresentThroughout": true,
+  "proposedVisualChanges": [
+    "Last injection column narrows and descends to equipment",
+    "Short pre-completion quiet pause",
+    "Existing short core arcs move closer during injection"
+  ],
+  "approvedLowerCircleSha256": "788d81367c3ce6d5606554723a82c20b3cfbd7ae5db3369e010d94d5b6112edb",
+  "limitations": [
+    "Offline cuboid/UV directional light and depth approximation",
+    "Staged fresh recipe, not user save",
+    "Sounds are original synthetic proposal, not actual Minecraft speaker capture",
+    "Native sound gating and distance are proposed contracts; offline audit only"
+  ]
+}

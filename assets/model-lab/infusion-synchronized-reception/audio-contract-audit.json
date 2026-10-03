@@ -1,0 +1,13 @@
+{
+  "scope": "Offline audio mixer contract, not native runtime test",
+  "sampleRate": 48000,
+  "clippedSamples": 0,
+  "peakAmplitude": 0.1965392010254219,
+  "distance8AmplitudeHalf": true,
+  "distance8EnergyQuarter": true,
+  "distance16Silent": true,
+  "cancelAt4FadeEnds4_1": true,
+  "absorptionCooldownAtLeast0_3": true,
+  "completionCueExactlyOnce": true,
+  "nativeAudioNotApplied": true
+}

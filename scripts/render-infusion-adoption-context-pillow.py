@@ -53,7 +53,7 @@ def project(p):
     q=sub(p,center)
     return ((dot(q,right)-mid[0])*factor+size[0]/2+30,-(dot(q,up)-mid[1])*factor+size[1]/2-40),dot(q,cam)
 light=norm((-.35,.85,-.4))
-def model_polygons(name,at=(0,0,0),yaw=0,glow=1):
+def model_polygons(name,at=(0,0,0),yaw=0,glow=1,scale=1,center_y=False):
     doc=model(name);result=[]
     for e in doc['elements']:
         lo=mul(e['from'],1/16);hi=mul(e['to'],1/16);r=e.get('rotation')
@@ -64,7 +64,7 @@ def model_polygons(name,at=(0,0,0),yaw=0,glow=1):
                     stretch=1/abs(math.cos(math.radians(r['angle'])))
                     p=tuple(v if 'xyz'[i]==r['axis'] else v*stretch for i,v in enumerate(p))
                 p=add(p,origin)
-            return add(add(rotate(sub(p,(.5,0,.5)),'y',yaw),(.5,0,.5)),at)
+            return add(add(mul(rotate(sub(p,(.5,.5 if center_y else 0,.5)),'y',yaw),scale),(.5,0,.5)),at)
         for face,f in e['faces'].items():
             n=normals[face]
             if r:n=rotate(n,r['axis'],r['angle'])
@@ -91,12 +91,13 @@ def model_polygons(name,at=(0,0,0),yaw=0,glow=1):
                     rgb=tuple(round(c*shade*tint) for c in rgba[:3])
                     result.append((dep,points,rgb+(rgba[3],)))
     return result
-def assembly(yaw,glow):
+def assembly(yaw,glow,weapon=False):
     poly=model_polygons('infusion-v6/center')
     for x,z,a in [(-1,-1,135),(1,-1,45),(-1,1,-135),(1,1,-45)]:poly+=model_polygons('infusion-v4/support',(x,0,z),a)
     for x,z in [(3,0),(0,3),(-3,0),(0,-3)]:poly+=model_polygons('infusion-v6/offering',(x,0,z))
     for x,z in [(-4,2),(4,2),(0,5)]:poly+=model_polygons('infusion-v3/jar',(x,0,z))
     poly+=model_polygons('infusion-v7/core_ritual',(0,2.9,0),yaw,glow)
+    if weapon:poly+=model_polygons('item/weapons/greatsword_t2',(0,1.15,0),180,1,.65,True)
     image=Image.new('RGB',size,'#242922');d=ImageDraw.Draw(image,'RGBA')
     depth=Image.new('F',size,-100000);dz=ImageDraw.Draw(depth)
     for dep,points,rgba in sorted(poly,key=lambda p:p[0]):
