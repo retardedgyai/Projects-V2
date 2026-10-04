@@ -45,7 +45,7 @@ class UiSessions(
                           sceneBuilder: Polish05Scene?, factory: ((Player) -> ForgeUiFlow)?) {
         val demo=ForgeDemo()
         val polish: ForgeUiFlow?=factory?.invoke(player) ?: sceneBuilder?.let(::Polish05Flow)
-        val effects=if(polish!=null)Polish05Effects() else null
+        val effects=if(polish!=null && !polish.ownsEffects)Polish05Effects() else null
         var light=ForgeLightPhase.IDLE
         val pointer=UiPointer()
         var scene=polish?.scene()?:requireNotNull(document).layout(demo.values(),demo.flags())
@@ -71,6 +71,7 @@ class UiSessions(
         Thread(task,"polish05-pointer-probe").apply { isDaemon=true }
     }
     val sessionCount get() = sessions.size
+    fun isOpen(player: Player) = sessions.containsKey(player.uuid)
     val entityCount get() = sessions.values.sumOf { it.renderer.size+1 }
     init {
         // A production server ticks at 20 Hz. Probe the external-camera mouse
@@ -117,7 +118,7 @@ class UiSessions(
         val s=Session(player,player.position,document,camera,UiRenderer(player,origin),polishScene,flowFactory)
         // At Vanilla 26.2's presentation FOV, 1.0 crops the approved 1440×920
         // stage on a 1920×1080 client. 0.8 matches the HTML's 1080px-fit scale.
-        if(s.polish!=null)s.renderer.zoom=0.8
+        if(s.polish!=null)s.renderer.zoom=if(s.polish.ownsEffects) ForgeV3Scene.ZOOM else 0.8
         sessions[player.uuid]=s
         camera.setInstance(player.instance!!,origin).whenComplete { _,error ->
             if(error!=null || sessions[player.uuid]!==s) {
@@ -308,6 +309,10 @@ class UiSessions(
                     }
                     s.renderer.render(s.effects.frame(s.scene),s.hover,s.pointer)
                 } else s.effects.clear()
+            } else if(s.polish!=null && s.polish.ownsEffects && s.polish.view=="forge") {
+                // The flow animates the item itself; rebuild every tick so motion advances.
+                s.scene=s.polish.scene()
+                s.renderer.render(s.scene,s.hover,s.pointer)
             }
             paintPointer(s)
         }
@@ -334,7 +339,7 @@ class UiSessions(
                     if(!s.polish.action(action)) continue
                     if(action=="sound" && !oldMuted && s.polish.muted) {
                         POLISH_SOUNDS.forEach { s.player.stopSound(SoundStop.named(Key.key("projects_ui_polish05:ui.$it"))) }
-                    } else if(action=="confirm" && s.polish.operationActive) {
+                    } else if((action=="confirm" || action=="enhance") && s.polish.operationActive) {
                         if(s.polish.view=="forge") {
                             s.effects?.beginStrike()
                             sound(s,"enhance_prepare")

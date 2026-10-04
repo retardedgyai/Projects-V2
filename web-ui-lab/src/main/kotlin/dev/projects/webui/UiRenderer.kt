@@ -118,9 +118,13 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
             } else if(node.sprite!=null) {
                 val sprite=node.sprite
                 entity(id,EntityType.TEXT_DISPLAY).editEntityMeta(TextDisplayMeta::class.java) { m ->
-                    m.setText(Component.text(sprite.char).font(Key.key(sprite.font)))
+                    // Optional tint and fade: white shapes become glows, rings and rounded corners.
+                    val tint=node.style["sprite-color"]?.let(TextColor::fromHexString)
+                    m.setText(Component.text(sprite.char).font(Key.key(sprite.font)).let { if(tint!=null) it.color(tint) else it })
                     m.setLineWidth(4000);m.setUseDefaultBackground(false);m.setBackgroundColor(0)
-                    m.setShadow(false);m.setTextOpacity((-1).toByte())
+                    // Vanilla treats text opacity below 26 as opaque, so faint sprites stop at 26.
+                    val opacity=node.style["opacity"]?.toDouble()?.let { (it.coerceIn(0.0,1.0)*255).toInt().coerceAtLeast(26) } ?: 255
+                    m.setShadow(false);m.setTextOpacity(opacity.toByte())
                     val factor=b.h/sprite.height
                     val scale=factor*geometry.unit(z+0.025)/0.025
                     m.setScale(Vec(scale,scale,scale))
@@ -130,7 +134,7 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
                 }
             } else {
                 entity(id,EntityType.TEXT_DISPLAY).editEntityMeta(TextDisplayMeta::class.java) { m ->
-                    val family=node.style["font-family"]?.takeIf { it in setOf("projects_ui_polish05:sans","projects_ui_polish05:serif") }
+                    val family=node.style["font-family"]?.takeIf { it.startsWith("projects_ui_polish05:") && Polish05FontMetrics.has(it.substringAfter(':')) }
                     var text:Component=Component.text(node.text,TextColor.fromHexString(if(node.enabled) node.color else "#91969b"))
                     if(family!=null)text=text.font(Key.key(family))
                     val bold=node.style["font-weight"]=="bold"

@@ -5,6 +5,8 @@ interface ForgeUiFlow {
     val muted: Boolean
     val view: String
     val operationActive: Boolean
+    /** True when [scene] already animates the forge, so the Polish05 ember overlay must stay off. */
+    val ownsEffects: Boolean get() = false
     fun scene(light: ForgeLightPhase = ForgeLightPhase.IDLE): UiScene
     fun action(action: String): Boolean
     fun takeStrike(nowMs: Long = System.currentTimeMillis()): Boolean = false
