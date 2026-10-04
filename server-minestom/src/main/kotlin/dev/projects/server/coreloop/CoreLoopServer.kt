@@ -97,12 +97,15 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }) },
         { Pos(0.0,100.0,0.0,0f,0f) })
     else null
-    private val atlasSessions = if(uiPack != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
+    private val atlasMap = runCatching {
+        AtlasMapFlow.Atlas(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/atlas-map.json")).use { it.readBytes() })
+    }.onFailure { System.err.println("ATLAS_MAP_DISABLED: ${it.message}") }.getOrNull()
+    private val atlasSessions: UiSessions? = if(uiPack != null && atlasMap != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
         { player -> uiPack.enabled(player) }, null,
-        { player -> AtlasFlow(player, { account(player) }) { region, level, tablets ->
-            player.scheduler().scheduleNextTick { departFromAtlas(player, region, level, tablets) }
-        } },
-        { AtlasDiorama.CAMERA }, AtlasDiorama.PITCH, { AtlasDiorama.CAMERA }, AtlasFlow.ZOOM)
+        { player -> AtlasMapFlow(atlasMap,
+            depart = { tier, style -> player.scheduler().scheduleNextTick { departFromAtlas(player, tier, style) } },
+            leave = { player.scheduler().scheduleNextTick { atlasSessions?.close(player) } }) },
+        { Pos(0.0,100.0,0.0,0f,0f) })
     else null
     private val dungeons = CoreDungeonExpeditions(object : CoreDungeonHost {
         override fun account(player: Player) = this@CoreLoopGame.account(player)
@@ -166,7 +169,6 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     fun register() {
         val events = MinecraftServer.getGlobalEventHandler()
-        AtlasDiorama.preload(hub).whenComplete { _, error -> if (error != null) System.err.println("ATLAS_PRELOAD_FAILURE: $error") }
         events.addListener(AsyncPlayerConfigurationEvent::class.java) { event ->
             connections[event.player.uuid]?.takeIf { it !== event.player }?.let { previous ->
                 disconnect(previous)
@@ -487,22 +489,18 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     override fun warmMap(player: Player, map: CoreOwnedMap): Boolean = preparedMaps.warm(player.uuid, map)
 
-    /** 開拓図 departure: a fresh map of the region's terrain, the chosen tablets, then the usual departure. */
-    private fun departFromAtlas(player: Player, region: AtlasDiorama.Region, level: Int, tablets: Int) {
+    /** 開拓大陸 departure: a fresh map of the zone's terrain at the player's level, then the usual departure. */
+    private fun departFromAtlas(player: Player, tier: Int, style: QuestTerrainStyle) {
         atlasSessions?.close(player)
         val a = account(player) ?: return
         if (!requireHub(player)) return
         val base = java.util.concurrent.ThreadLocalRandom.current().nextLong() ushr 4
         // Quest terrain style is chosen by seed mod 6; the candidate search keeps it.
-        val seed = base - Math.floorMod(base, QuestTerrainStyle.entries.size.toLong()) + region.style.ordinal
-        mutate(player, CoreAction.ClaimMap(region.tier, seed, level), a.revision, { menus.expeditions(player) }) {
+        val seed = base - Math.floorMod(base, QuestTerrainStyle.entries.size.toLong()) + style.ordinal
+        val playable = tier.coerceIn(1, a.unlockedMapTier)
+        mutate(player, CoreAction.ClaimMap(playable, seed), a.revision, { menus.expeditions(player) }) {
             val map = account(player)?.maps?.firstOrNull { it.seed == seed } ?: return@mutate
-            fun next(left: Int) {
-                val current = account(player) ?: return
-                if (left <= 0 || current.amount(CoreResource.GATHERING_TABLET) <= 0) { depart(player, map.id, current.revision); return }
-                applyTablet(player, map.id, current.revision, { account(player)?.let { depart(player, map.id, it.revision) } }) { next(left - 1) }
-            }
-            next(tablets)
+            account(player)?.let { depart(player, map.id, it.revision) }
         }
     }
 

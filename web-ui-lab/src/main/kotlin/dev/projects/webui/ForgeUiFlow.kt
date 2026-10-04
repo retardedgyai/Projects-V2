@@ -13,6 +13,8 @@ interface ForgeUiFlow {
     fun tick(nowMs: Long = System.currentTimeMillis()): ForgeUiReceipt? = null
     /** The node under the pointer changed; flows with world-space markers can react. */
     fun hover(id: String?) {}
+    /** Pointer position in scene units, every tick (edge scrolling). */
+    fun pointer(x: Double, y: Double) {}
     /** True when the scene must be rebuilt every tick (world state changes outside clicks). */
     val live: Boolean get() = false
     /** The session closed; remove anything the flow spawned itself. */

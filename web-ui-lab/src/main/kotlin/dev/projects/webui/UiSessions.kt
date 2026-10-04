@@ -395,6 +395,7 @@ class UiSessions(
     private fun paintPointer(s: Session) {
         val hover=s.scene.hit(s.pointer.x,s.pointer.y)?.id
         if(hover!=s.hover) { s.renderer.hover(s.scene,s.hover,hover);s.hover=hover;s.polish?.hover(hover) }
+        s.polish?.pointer(s.pointer.x,s.pointer.y)
         s.renderer.cursor(s.pointer)
     }
     private fun sound(s:Session,cue:String) {
