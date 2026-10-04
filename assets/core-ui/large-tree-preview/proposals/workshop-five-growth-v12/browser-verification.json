@@ -1,0 +1,4085 @@
+{
+  "status": "PASS",
+  "growthCosts": {
+    "v7g14n2": {
+      "warrior": 8,
+      "tank": 9,
+      "mage": 12,
+      "ranger": 14,
+      "assassin": 11
+    },
+    "v7g14n3": {
+      "warrior": 8,
+      "tank": 9,
+      "mage": 12,
+      "ranger": 14,
+      "assassin": 11
+    },
+    "v7g06n3": {
+      "warrior": 11,
+      "tank": 8,
+      "mage": 9,
+      "ranger": 14,
+      "assassin": 16
+    },
+    "v7g06n5": {
+      "warrior": 11,
+      "tank": 6,
+      "mage": 7,
+      "ranger": 12,
+      "assassin": 16
+    },
+    "v7g07n4": {
+      "warrior": 15,
+      "tank": 14,
+      "mage": 9,
+      "ranger": 12,
+      "assassin": 15
+    },
+    "v7g07n5": {
+      "warrior": 15,
+      "tank": 14,
+      "mage": 9,
+      "ranger": 12,
+      "assassin": 15
+    },
+    "g51n6": {
+      "warrior": 10,
+      "tank": 12,
+      "mage": 7,
+      "ranger": 4,
+      "assassin": 7
+    },
+    "r39_40_3": {
+      "warrior": 9,
+      "tank": 13,
+      "mage": 8,
+      "ranger": 5,
+      "assassin": 8
+    },
+    "r1_51_2": {
+      "warrior": 7,
+      "tank": 12,
+      "mage": 12,
+      "ranger": 9,
+      "assassin": 4
+    },
+    "r1_29_2": {
+      "warrior": 6,
+      "tank": 11,
+      "mage": 11,
+      "ranger": 8,
+      "assassin": 5
+    }
+  },
+  "growth24Examples": [
+    {
+      "id": "warrior-growth-0-24",
+      "baseExampleId": "warrior-direction-0-12",
+      "spent": 24,
+      "stats": {
+        "hp": 25,
+        "armor": 14,
+        "physical": 45,
+        "haste": 20,
+        "attackSpeed": 13,
+        "resource": 24,
+        "efficiency": 4
+      }
+    },
+    {
+      "id": "warrior-growth-1-24",
+      "baseExampleId": "warrior-direction-1-12",
+      "spent": 24,
+      "stats": {
+        "resource": 40,
+        "attackSpeed": 22,
+        "hp": 29,
+        "armor": 14,
+        "physical": 33,
+        "haste": 3
+      }
+    },
+    {
+      "id": "tank-growth-0-24",
+      "baseExampleId": "tank-direction-0-12",
+      "spent": 24,
+      "stats": {
+        "armor": 53,
+        "hp": 65,
+        "resist": 31,
+        "regen": 16,
+        "mana": 6
+      }
+    },
+    {
+      "id": "tank-growth-1-24",
+      "baseExampleId": "tank-direction-1-12",
+      "spent": 24,
+      "stats": {
+        "hp": 51,
+        "armor": 34,
+        "regen": 14,
+        "efficiency": 9,
+        "resist": 16,
+        "haste": 26,
+        "barrier": 16,
+        "resource": 1
+      }
+    },
+    {
+      "id": "mage-growth-0-24",
+      "baseExampleId": "mage-direction-0-12",
+      "spent": 24,
+      "stats": {
+        "regen": 8,
+        "hp": 14,
+        "barrier": 3,
+        "mana": 78,
+        "resist": 2,
+        "efficiency": 24,
+        "resource": 4,
+        "magic": 27
+      }
+    },
+    {
+      "id": "mage-growth-1-24",
+      "baseExampleId": "mage-direction-1-12",
+      "spent": 24,
+      "stats": {
+        "regen": 14,
+        "hp": 13,
+        "resource": 35,
+        "mana": 25,
+        "magic": 14,
+        "haste": 23,
+        "resist": 10,
+        "efficiency": 15
+      }
+    },
+    {
+      "id": "ranger-growth-0-24",
+      "baseExampleId": "ranger-direction-0-12",
+      "spent": 24,
+      "stats": {
+        "crit": 60,
+        "critMulti": 31,
+        "move": 5,
+        "resource": 8,
+        "physical": 32,
+        "damage": 20,
+        "haste": 7,
+        "hp": 11,
+        "resist": 6
+      }
+    },
+    {
+      "id": "ranger-growth-1-24",
+      "baseExampleId": "ranger-direction-1-12",
+      "spent": 24,
+      "stats": {
+        "move": 17,
+        "resource": 33,
+        "damage": 14,
+        "crit": 24,
+        "hp": 11,
+        "haste": 50,
+        "critMulti": 5,
+        "resist": 4,
+        "efficiency": 14,
+        "mana": 6
+      }
+    },
+    {
+      "id": "assassin-growth-0-24",
+      "baseExampleId": "assassin-direction-0-12",
+      "spent": 24,
+      "stats": {
+        "crit": 43,
+        "critMulti": 35,
+        "physical": 50,
+        "hp": 10,
+        "damage": 12,
+        "attackSpeed": 7,
+        "resource": 12,
+        "move": 5,
+        "haste": 4,
+        "resist": 4
+      }
+    },
+    {
+      "id": "assassin-growth-1-24",
+      "baseExampleId": "assassin-direction-1-12",
+      "spent": 24,
+      "stats": {
+        "attackSpeed": 39,
+        "resource": 50,
+        "physical": 32,
+        "hp": 17,
+        "move": 10,
+        "resist": 2,
+        "armor": 6,
+        "critMulti": 9,
+        "haste": 3
+      }
+    }
+  ],
+  "unionCosts": [
+    {
+      "job": "warrior",
+      "unionSpend": 28,
+      "ids": [
+        "warrior-growth-0-24",
+        "warrior-growth-1-24"
+      ]
+    },
+    {
+      "job": "tank",
+      "unionSpend": 37,
+      "ids": [
+        "tank-growth-0-24",
+        "tank-growth-1-24"
+      ]
+    },
+    {
+      "job": "mage",
+      "unionSpend": 37,
+      "ids": [
+        "mage-growth-0-24",
+        "mage-growth-1-24"
+      ]
+    },
+    {
+      "job": "ranger",
+      "unionSpend": 40,
+      "ids": [
+        "ranger-growth-0-24",
+        "ranger-growth-1-24"
+      ]
+    },
+    {
+      "job": "assassin",
+      "unionSpend": 41,
+      "ids": [
+        "assassin-growth-0-24",
+        "assassin-growth-1-24"
+      ]
+    }
+  ],
+  "oldCoordinatesExact": true,
+  "otherOldEdgesExact": true,
+  "centralEdgesExact": true,
+  "addedNodes": 0,
+  "addedRoads": 0,
+  "addedEdges": 0,
+  "removedEdges": 0,
+  "changedRewards": 8,
+  "changedTypes": 4,
+  "allEdgesExact": true,
+  "common92Dominance": {
+    "fixed": {
+      "previous": {
+        "strictMinimumByStart": {
+          "warrior": 35,
+          "tank": 8,
+          "mage": 12,
+          "ranger": 13,
+          "assassin": 15
+        },
+        "sharedMinimumTargets": 9
+      },
+      "current": {
+        "strictMinimumByStart": {
+          "warrior": 35,
+          "tank": 8,
+          "mage": 12,
+          "ranger": 13,
+          "assassin": 15
+        },
+        "sharedMinimumTargets": 9
+      }
+    },
+    "owned": {
+      "previous": {
+        "strictMinimumByStart": {
+          "warrior": 50,
+          "tank": 8,
+          "mage": 26,
+          "ranger": 0,
+          "assassin": 0
+        },
+        "sharedMinimumTargets": 8
+      },
+      "current": {
+        "strictMinimumByStart": {
+          "warrior": 35,
+          "tank": 8,
+          "mage": 13,
+          "ranger": 12,
+          "assassin": 15
+        },
+        "sharedMinimumTargets": 9
+      }
+    }
+  },
+  "legacyOwnedGoals": [
+    {
+      "job": "ranger",
+      "goal": "g51n4",
+      "spent": 6,
+      "flags": [
+        "DAMAGE",
+        "DODGE",
+        "FOURTH_CANDIDATE",
+        "ICE",
+        "MARK_CONSUMER",
+        "MP_CONSUMER",
+        "MULTI",
+        "OPENER",
+        "RESOURCE",
+        "SIGNATURE",
+        "SPEND",
+        "AREA_ATTACK"
+      ],
+      "dead": []
+    },
+    {
+      "job": "assassin",
+      "goal": "v7g09n5",
+      "spent": 17,
+      "flags": [
+        "DAMAGE",
+        "DEFENSE",
+        "DODGE",
+        "GUARD",
+        "MARK",
+        "MARK_CONSUMER",
+        "MELEE",
+        "MP_CONSUMER",
+        "MULTI",
+        "OPENER",
+        "RESOURCE",
+        "SIGNATURE",
+        "SPEND",
+        "AREA_ATTACK"
+      ],
+      "dead": []
+    },
+    {
+      "job": "mage",
+      "goal": "v7g07n4",
+      "spent": 9,
+      "flags": [
+        "AP",
+        "DAMAGE",
+        "DEFENSE",
+        "DODGE",
+        "FIRE_SOURCE",
+        "ICE",
+        "LIGHTNING_SOURCE",
+        "MARK_CONSUMER",
+        "MP_CONSUMER",
+        "MULTI",
+        "OPENER",
+        "RESOURCE",
+        "SHIELD",
+        "SIGNATURE",
+        "SPEND",
+        "AREA_ATTACK"
+      ],
+      "dead": []
+    }
+  ],
+  "candidateSha256": "5e33e318debf79d1f7449ca481286af43b363dc03aa1841367d8051be37f36a8",
+  "preservedV11AndCanonicalSource": true,
+  "initialContentsChanged": false,
+  "fixedAndOwnedAtlasesActualJs": true,
+  "representativeCosts": {
+    "warriorStrike": {
+      "warrior": 9,
+      "tank": 14
+    },
+    "tankDefense": {
+      "warrior": 12,
+      "tank": 9
+    }
+  },
+  "outerProof": "同じ既存外側目標 92点でのWarrior / Tank比較：V11は 54 / 21（同費用17）、今回は 54 / 21（同費用17）。Tankの独立出口で費用の優位が分かれ、Warriorが安い目標も残る。",
+  "cases": [
+    {
+      "id": "warrior-direction-0-12",
+      "spent": 12,
+      "budget": 12,
+      "remaining": 0,
+      "stats": {
+        "physical": 43,
+        "resource": 9,
+        "hp": 14,
+        "haste": 12,
+        "armor": 12
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_warrior",
+              "opening_warrior_0_1",
+              "opening_warrior_0_2",
+              "opening_warrior_0_3",
+              "v9_warrior_0_0",
+              "v9_warrior_0_1",
+              "v9_warrior_0_2",
+              "v9_warrior_0_3",
+              "v9_warrior_0_4",
+              "v9_warrior_0_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "v9_warrior_0_0",
+            "v9_warrior_0_1",
+            "v9_warrior_0_2",
+            "v9_warrior_0_3",
+            "v9_warrior_0_4",
+            "v9_warrior_0_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_warrior",
+              "opening_warrior_1_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_1_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_1_1",
+              "opening_warrior_1_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_1_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_1_2",
+              "opening_warrior_1_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_1_3"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "warrior-direction-1-12",
+      "spent": 12,
+      "budget": 12,
+      "remaining": 0,
+      "stats": {
+        "hp": 16,
+        "armor": 12,
+        "attackSpeed": 16,
+        "resource": 25,
+        "physical": 16
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_warrior",
+              "opening_warrior_1_1",
+              "opening_warrior_1_2",
+              "opening_warrior_1_3",
+              "v9_warrior_1_0",
+              "v9_warrior_1_1",
+              "v9_warrior_1_2",
+              "v9_warrior_1_3",
+              "v9_warrior_1_4",
+              "v9_warrior_1_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_warrior_1_1",
+            "opening_warrior_1_2",
+            "opening_warrior_1_3",
+            "v9_warrior_1_0",
+            "v9_warrior_1_1",
+            "v9_warrior_1_2",
+            "v9_warrior_1_3",
+            "v9_warrior_1_4",
+            "v9_warrior_1_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_warrior",
+              "opening_warrior_0_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_0_1",
+              "opening_warrior_0_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_0_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_0_2",
+              "opening_warrior_0_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_0_3"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "tank-direction-0-12",
+      "spent": 12,
+      "budget": 12,
+      "remaining": 0,
+      "stats": {
+        "hp": 38,
+        "resist": 8,
+        "armor": 45,
+        "regen": 4
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_templar",
+              "opening_templar_0_1",
+              "opening_templar_0_2",
+              "opening_templar_0_3",
+              "v9_tank_0_0",
+              "v9_tank_0_1",
+              "v9_tank_0_2",
+              "v9_tank_0_3",
+              "v9_tank_0_4",
+              "v9_tank_0_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_templar_0_1",
+            "opening_templar_0_2",
+            "opening_templar_0_3",
+            "v9_tank_0_0",
+            "v9_tank_0_1",
+            "v9_tank_0_2",
+            "v9_tank_0_3",
+            "v9_tank_0_4",
+            "v9_tank_0_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_templar",
+              "opening_templar_1_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_templar_1_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_templar_1_1",
+              "opening_templar_1_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_templar_1_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_templar_1_2",
+              "opening_templar_1_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_templar_1_3"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "tank-direction-1-12",
+      "spent": 12,
+      "budget": 12,
+      "remaining": 0,
+      "stats": {
+        "armor": 26,
+        "hp": 24,
+        "haste": 18,
+        "efficiency": 5,
+        "barrier": 16,
+        "resist": 8
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_templar",
+              "opening_templar_1_1",
+              "opening_templar_1_2",
+              "opening_templar_1_3",
+              "v9_tank_1_0",
+              "v9_tank_1_1",
+              "v9_tank_1_2",
+              "v9_tank_1_3",
+              "v9_tank_1_4",
+              "v9_tank_1_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_templar_1_1",
+            "opening_templar_1_2",
+            "opening_templar_1_3",
+            "v9_tank_1_0",
+            "v9_tank_1_1",
+            "v9_tank_1_2",
+            "v9_tank_1_3",
+            "v9_tank_1_4",
+            "v9_tank_1_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_templar",
+              "opening_templar_0_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_templar_0_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_templar_0_1",
+              "opening_templar_0_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_templar_0_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_templar_0_2",
+              "opening_templar_0_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_templar_0_3"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "mage-direction-0-12",
+      "spent": 12,
+      "budget": 12,
+      "remaining": 0,
+      "stats": {
+        "magic": 27,
+        "mana": 44,
+        "hp": 2,
+        "resist": 2,
+        "efficiency": 11,
+        "resource": 4
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_mage",
+              "opening_mage_0_1",
+              "opening_mage_0_2",
+              "opening_mage_0_3",
+              "v9_mage_0_0",
+              "v9_mage_0_1",
+              "v9_mage_0_2",
+              "v9_mage_0_3",
+              "v9_mage_0_4",
+              "v9_mage_0_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_mage_0_1",
+            "opening_mage_0_2",
+            "opening_mage_0_3",
+            "v9_mage_0_0",
+            "v9_mage_0_1",
+            "v9_mage_0_2",
+            "v9_mage_0_3",
+            "v9_mage_0_4",
+            "v9_mage_0_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_mage",
+              "opening_mage_1_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_1_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_1_1",
+              "opening_mage_1_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_1_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_1_2",
+              "opening_mage_1_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_1_3"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "mage-direction-1-12",
+      "spent": 12,
+      "budget": 12,
+      "remaining": 0,
+      "stats": {
+        "mana": 20,
+        "resource": 27,
+        "efficiency": 11,
+        "hp": 2,
+        "haste": 15,
+        "resist": 2,
+        "magic": 11
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_mage",
+              "opening_mage_1_1",
+              "opening_mage_1_2",
+              "opening_mage_1_3",
+              "v9_mage_1_0",
+              "v9_mage_1_1",
+              "v9_mage_1_2",
+              "v9_mage_1_3",
+              "v9_mage_1_4",
+              "v9_mage_1_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_mage_1_1",
+            "opening_mage_1_2",
+            "opening_mage_1_3",
+            "v9_mage_1_0",
+            "v9_mage_1_1",
+            "v9_mage_1_2",
+            "v9_mage_1_3",
+            "v9_mage_1_4",
+            "v9_mage_1_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_mage",
+              "opening_mage_0_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_0_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_0_1",
+              "opening_mage_0_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_0_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_0_2",
+              "opening_mage_0_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_0_3"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "ranger-direction-0-12",
+      "spent": 12,
+      "budget": 12,
+      "remaining": 0,
+      "stats": {
+        "damage": 20,
+        "crit": 36,
+        "resource": 6,
+        "hp": 4,
+        "critMulti": 10,
+        "resist": 2,
+        "move": 5,
+        "haste": 7
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_ranger",
+              "opening_ranger_0_1",
+              "opening_ranger_0_2",
+              "opening_ranger_0_3",
+              "v9_ranger_0_0",
+              "v9_ranger_0_1",
+              "v9_ranger_0_2",
+              "v9_ranger_0_3",
+              "v9_ranger_0_4",
+              "v9_ranger_0_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_ranger_0_1",
+            "opening_ranger_0_2",
+            "opening_ranger_0_3",
+            "v9_ranger_0_0",
+            "v9_ranger_0_1",
+            "v9_ranger_0_2",
+            "v9_ranger_0_3",
+            "v9_ranger_0_4",
+            "v9_ranger_0_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_ranger",
+              "opening_ranger_1_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_1_1",
+              "opening_ranger_1_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_1_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_1_2",
+              "opening_ranger_1_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_1_3"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "ranger-direction-1-12",
+      "spent": 12,
+      "budget": 12,
+      "remaining": 0,
+      "stats": {
+        "move": 14,
+        "resource": 10,
+        "haste": 27,
+        "hp": 4,
+        "resist": 2,
+        "efficiency": 3,
+        "damage": 14,
+        "crit": 8
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_ranger",
+              "opening_ranger_1_1",
+              "opening_ranger_1_2",
+              "opening_ranger_1_3",
+              "v9_ranger_1_0",
+              "v9_ranger_1_1",
+              "v9_ranger_1_2",
+              "v9_ranger_1_3",
+              "v9_ranger_1_4",
+              "v9_ranger_1_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_ranger_1_1",
+            "opening_ranger_1_2",
+            "opening_ranger_1_3",
+            "v9_ranger_1_0",
+            "v9_ranger_1_1",
+            "v9_ranger_1_2",
+            "v9_ranger_1_3",
+            "v9_ranger_1_4",
+            "v9_ranger_1_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_ranger",
+              "opening_ranger_0_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_0_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_0_1",
+              "opening_ranger_0_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_0_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_0_2",
+              "opening_ranger_0_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_0_3"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "assassin-direction-0-12",
+      "spent": 12,
+      "budget": 12,
+      "remaining": 0,
+      "stats": {
+        "physical": 40,
+        "resource": 10,
+        "hp": 4,
+        "critMulti": 16,
+        "resist": 2,
+        "crit": 4,
+        "attackSpeed": 7,
+        "move": 2
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_assassin",
+              "opening_assassin_0_1",
+              "opening_assassin_0_2",
+              "opening_assassin_0_3",
+              "v9_assassin_0_0",
+              "v9_assassin_0_1",
+              "v9_assassin_0_2",
+              "v9_assassin_0_3",
+              "v9_assassin_0_4",
+              "v9_assassin_0_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_assassin_0_1",
+            "opening_assassin_0_2",
+            "opening_assassin_0_3",
+            "v9_assassin_0_0",
+            "v9_assassin_0_1",
+            "v9_assassin_0_2",
+            "v9_assassin_0_3",
+            "v9_assassin_0_4",
+            "v9_assassin_0_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_assassin",
+              "opening_assassin_1_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_assassin_1_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_assassin_1_1",
+              "opening_assassin_1_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_assassin_1_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_assassin_1_2",
+              "opening_assassin_1_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_assassin_1_3"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "assassin-direction-1-12",
+      "spent": 12,
+      "budget": 12,
+      "remaining": 0,
+      "stats": {
+        "attackSpeed": 21,
+        "resource": 24,
+        "move": 8,
+        "hp": 4,
+        "resist": 2,
+        "haste": 3,
+        "physical": 14,
+        "critMulti": 3
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_assassin",
+              "opening_assassin_1_1",
+              "opening_assassin_1_2",
+              "opening_assassin_1_3",
+              "v9_assassin_1_0",
+              "v9_assassin_1_1",
+              "v9_assassin_1_2",
+              "v9_assassin_1_3",
+              "v9_assassin_1_4",
+              "v9_assassin_1_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_assassin_1_1",
+            "opening_assassin_1_2",
+            "opening_assassin_1_3",
+            "v9_assassin_1_0",
+            "v9_assassin_1_1",
+            "v9_assassin_1_2",
+            "v9_assassin_1_3",
+            "v9_assassin_1_4",
+            "v9_assassin_1_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_assassin",
+              "opening_assassin_0_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_assassin_0_1",
+              "opening_assassin_0_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_assassin_0_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_assassin_0_2",
+              "opening_assassin_0_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_assassin_0_3"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "warrior-tank-fusion-24",
+      "spent": 20,
+      "budget": 24,
+      "remaining": 4,
+      "stats": {
+        "physical": 43,
+        "resource": 12,
+        "hp": 37,
+        "haste": 12,
+        "armor": 32,
+        "attackSpeed": 3,
+        "resist": 6,
+        "regen": 4
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_warrior",
+              "opening_warrior_0_1",
+              "opening_warrior_0_2",
+              "opening_warrior_0_3",
+              "v9_warrior_0_0",
+              "v9_warrior_0_1",
+              "v9_warrior_0_2",
+              "v9_warrior_0_3",
+              "v9_warrior_0_4",
+              "v9_warrior_0_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "v9_warrior_0_0",
+            "v9_warrior_0_1",
+            "v9_warrior_0_2",
+            "v9_warrior_0_3",
+            "v9_warrior_0_4",
+            "v9_warrior_0_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_0_3",
+              "opening_warrior_2_3",
+              "opening_warrior_1_3",
+              "link_assassin_0_2",
+              "link_assassin_1_3",
+              "opening_templar_0_3",
+              "v9_tank_0_0",
+              "v9_tank_0_1",
+              "v9_tank_0_2",
+              "v9_tank_0_3",
+              "v9_tank_0_4",
+              "v9_tank_0_5"
+            ],
+            "cost": 11
+          },
+          "added": [
+            "opening_warrior_2_3",
+            "opening_warrior_1_3",
+            "link_assassin_0_2",
+            "link_assassin_1_3",
+            "opening_templar_0_3",
+            "v9_tank_0_0",
+            "v9_tank_0_1",
+            "v9_tank_0_2",
+            "v9_tank_0_3",
+            "v9_tank_0_4",
+            "v9_tank_0_5"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "mage-ranger-fusion-24",
+      "spent": 20,
+      "budget": 24,
+      "remaining": 4,
+      "stats": {
+        "mana": 12,
+        "resource": 33,
+        "efficiency": 14,
+        "hp": 10,
+        "haste": 39,
+        "resist": 4,
+        "crit": 12,
+        "critMulti": 5,
+        "move": 12
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_mage",
+              "opening_mage_1_1",
+              "opening_mage_1_2",
+              "opening_mage_1_3",
+              "v9_mage_1_0",
+              "v9_mage_1_1",
+              "v9_mage_1_2",
+              "v9_mage_1_3",
+              "v9_mage_1_4",
+              "v9_mage_1_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_mage_1_1",
+            "opening_mage_1_2",
+            "opening_mage_1_3",
+            "v9_mage_1_0",
+            "v9_mage_1_1",
+            "v9_mage_1_2",
+            "v9_mage_1_3",
+            "v9_mage_1_4",
+            "v9_mage_1_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_1_3",
+              "r18_26_1",
+              "link_assassin_1_4",
+              "link_assassin_2_8",
+              "g51n6",
+              "opening_ranger_1_3",
+              "v9_ranger_1_0",
+              "v9_ranger_1_1",
+              "v9_ranger_1_2",
+              "v9_ranger_1_3",
+              "v9_ranger_1_4",
+              "v9_ranger_1_5"
+            ],
+            "cost": 11
+          },
+          "added": [
+            "r18_26_1",
+            "link_assassin_1_4",
+            "link_assassin_2_8",
+            "g51n6",
+            "opening_ranger_1_3",
+            "v9_ranger_1_0",
+            "v9_ranger_1_1",
+            "v9_ranger_1_2",
+            "v9_ranger_1_3",
+            "v9_ranger_1_4",
+            "v9_ranger_1_5"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "warrior-growth-0-24",
+      "spent": 24,
+      "budget": 24,
+      "remaining": 0,
+      "stats": {
+        "physical": 45,
+        "resource": 24,
+        "hp": 25,
+        "haste": 20,
+        "armor": 14,
+        "efficiency": 4,
+        "attackSpeed": 13
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_warrior",
+              "opening_warrior_0_1",
+              "opening_warrior_0_2",
+              "opening_warrior_0_3",
+              "v9_warrior_0_0",
+              "v9_warrior_0_1",
+              "v9_warrior_0_2",
+              "v9_warrior_0_3",
+              "v9_warrior_0_4",
+              "v9_warrior_0_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_warrior_0_1",
+            "opening_warrior_0_2",
+            "opening_warrior_0_3",
+            "v9_warrior_0_0",
+            "v9_warrior_0_1",
+            "v9_warrior_0_2",
+            "v9_warrior_0_3",
+            "v9_warrior_0_4",
+            "v9_warrior_0_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_warrior",
+              "opening_warrior_1_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_1_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_1_1",
+              "opening_warrior_1_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_1_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_1_2",
+              "opening_warrior_1_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_1_3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_1_3",
+              "link_assassin_0_2",
+              "link_warrior_2_7",
+              "link_ranger_2_2",
+              "v7g14n1",
+              "v7g14n3"
+            ],
+            "cost": 5
+          },
+          "added": [
+            "link_assassin_0_2",
+            "link_warrior_2_7",
+            "link_ranger_2_2",
+            "v7g14n1",
+            "v7g14n3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_1_3",
+              "v9_warrior_1_0",
+              "v9_warrior_1_1",
+              "v9_warrior_1_2",
+              "v9_warrior_1_3",
+              "v9_warrior_1_4"
+            ],
+            "cost": 5
+          },
+          "added": [
+            "v9_warrior_1_0",
+            "v9_warrior_1_1",
+            "v9_warrior_1_2",
+            "v9_warrior_1_3",
+            "v9_warrior_1_4"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_0_2",
+              "opening_warrior_2_1",
+              "opening_warrior_2_2"
+            ],
+            "cost": 2
+          },
+          "added": [
+            "opening_warrior_2_1",
+            "opening_warrior_2_2"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "warrior-growth-1-24",
+      "spent": 24,
+      "budget": 24,
+      "remaining": 0,
+      "stats": {
+        "hp": 29,
+        "armor": 14,
+        "attackSpeed": 22,
+        "resource": 40,
+        "physical": 33,
+        "haste": 3
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_warrior",
+              "opening_warrior_1_1",
+              "opening_warrior_1_2",
+              "opening_warrior_1_3",
+              "v9_warrior_1_0",
+              "v9_warrior_1_1",
+              "v9_warrior_1_2",
+              "v9_warrior_1_3",
+              "v9_warrior_1_4",
+              "v9_warrior_1_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_warrior_1_1",
+            "opening_warrior_1_2",
+            "opening_warrior_1_3",
+            "v9_warrior_1_0",
+            "v9_warrior_1_1",
+            "v9_warrior_1_2",
+            "v9_warrior_1_3",
+            "v9_warrior_1_4",
+            "v9_warrior_1_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_warrior",
+              "opening_warrior_0_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_0_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_0_1",
+              "opening_warrior_0_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_0_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_0_2",
+              "opening_warrior_0_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_0_3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_1_3",
+              "link_assassin_0_2",
+              "link_warrior_2_7",
+              "link_ranger_2_2",
+              "v7g14n1",
+              "v7g14n2"
+            ],
+            "cost": 5
+          },
+          "added": [
+            "link_assassin_0_2",
+            "link_warrior_2_7",
+            "link_ranger_2_2",
+            "v7g14n1",
+            "v7g14n2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_0_3",
+              "g13n8",
+              "g13n9"
+            ],
+            "cost": 2
+          },
+          "added": [
+            "g13n8",
+            "g13n9"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_0_3",
+              "v9_warrior_0_0",
+              "v9_warrior_0_1",
+              "v9_warrior_0_2",
+              "v9_warrior_0_3"
+            ],
+            "cost": 4
+          },
+          "added": [
+            "v9_warrior_0_0",
+            "v9_warrior_0_1",
+            "v9_warrior_0_2",
+            "v9_warrior_0_3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_warrior_0_2",
+              "opening_warrior_2_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_warrior_2_1"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "tank-growth-0-24",
+      "spent": 24,
+      "budget": 24,
+      "remaining": 0,
+      "stats": {
+        "hp": 65,
+        "resist": 31,
+        "armor": 53,
+        "regen": 16,
+        "mana": 6
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_templar",
+              "opening_templar_0_1",
+              "opening_templar_0_2",
+              "opening_templar_0_3",
+              "v9_tank_0_0",
+              "v9_tank_0_1",
+              "v9_tank_0_2",
+              "v9_tank_0_3",
+              "v9_tank_0_4",
+              "v9_tank_0_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_templar_0_1",
+            "opening_templar_0_2",
+            "opening_templar_0_3",
+            "v9_tank_0_0",
+            "v9_tank_0_1",
+            "v9_tank_0_2",
+            "v9_tank_0_3",
+            "v9_tank_0_4",
+            "v9_tank_0_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_templar",
+              "opening_templar_1_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_templar_1_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_templar_1_1",
+              "opening_templar_1_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_templar_1_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_templar_1_2",
+              "opening_templar_1_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_templar_1_3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_templar_1_3",
+              "link_assassin_2_7",
+              "v7g06n0",
+              "v7g06n1",
+              "v7g06n2",
+              "v7g06n3"
+            ],
+            "cost": 5
+          },
+          "added": [
+            "link_assassin_2_7",
+            "v7g06n0",
+            "v7g06n1",
+            "v7g06n2",
+            "v7g06n3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "v7g06n0",
+              "r25_44_1",
+              "g33n0",
+              "link_ranger_1_1",
+              "r33_37_2",
+              "g46n7",
+              "g46n6"
+            ],
+            "cost": 6
+          },
+          "added": [
+            "r25_44_1",
+            "g33n0",
+            "link_ranger_1_1",
+            "r33_37_2",
+            "g46n7",
+            "g46n6"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "link_assassin_2_7",
+              "v7g06n4"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "v7g06n4"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "tank-growth-1-24",
+      "spent": 24,
+      "budget": 24,
+      "remaining": 0,
+      "stats": {
+        "armor": 34,
+        "hp": 51,
+        "haste": 26,
+        "efficiency": 9,
+        "barrier": 16,
+        "resist": 16,
+        "regen": 14,
+        "resource": 1
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_templar",
+              "opening_templar_1_1",
+              "opening_templar_1_2",
+              "opening_templar_1_3",
+              "v9_tank_1_0",
+              "v9_tank_1_1",
+              "v9_tank_1_2",
+              "v9_tank_1_3",
+              "v9_tank_1_4",
+              "v9_tank_1_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_templar_1_1",
+            "opening_templar_1_2",
+            "opening_templar_1_3",
+            "v9_tank_1_0",
+            "v9_tank_1_1",
+            "v9_tank_1_2",
+            "v9_tank_1_3",
+            "v9_tank_1_4",
+            "v9_tank_1_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_templar",
+              "opening_templar_0_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_templar_0_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_templar_0_1",
+              "opening_templar_0_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_templar_0_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_templar_0_2",
+              "opening_templar_0_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_templar_0_3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_templar_1_3",
+              "link_assassin_2_7",
+              "v7g06n4",
+              "v7g06n5"
+            ],
+            "cost": 3
+          },
+          "added": [
+            "link_assassin_2_7",
+            "v7g06n4",
+            "v7g06n5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_templar_0_3",
+              "link_assassin_1_3",
+              "link_assassin_0_2",
+              "link_warrior_2_7",
+              "link_ranger_2_2",
+              "v7g14n1",
+              "v7g14n3"
+            ],
+            "cost": 6
+          },
+          "added": [
+            "link_assassin_1_3",
+            "link_assassin_0_2",
+            "link_warrior_2_7",
+            "link_ranger_2_2",
+            "v7g14n1",
+            "v7g14n3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "v7g06n4",
+              "v7g06n1",
+              "v7g06n2",
+              "v7g06n3"
+            ],
+            "cost": 3
+          },
+          "added": [
+            "v7g06n1",
+            "v7g06n2",
+            "v7g06n3"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "mage-growth-0-24",
+      "spent": 24,
+      "budget": 24,
+      "remaining": 0,
+      "stats": {
+        "magic": 27,
+        "mana": 78,
+        "hp": 14,
+        "resist": 2,
+        "efficiency": 24,
+        "resource": 4,
+        "regen": 8,
+        "barrier": 3
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_mage",
+              "opening_mage_0_1",
+              "opening_mage_0_2",
+              "opening_mage_0_3",
+              "v9_mage_0_0",
+              "v9_mage_0_1",
+              "v9_mage_0_2",
+              "v9_mage_0_3",
+              "v9_mage_0_4",
+              "v9_mage_0_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_mage_0_1",
+            "opening_mage_0_2",
+            "opening_mage_0_3",
+            "v9_mage_0_0",
+            "v9_mage_0_1",
+            "v9_mage_0_2",
+            "v9_mage_0_3",
+            "v9_mage_0_4",
+            "v9_mage_0_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_mage",
+              "opening_mage_1_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_1_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_1_1",
+              "opening_mage_1_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_1_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_1_2",
+              "opening_mage_1_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_1_3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_1_3",
+              "r18_26_1",
+              "r14_27_1",
+              "v7g07_entry",
+              "v7g07n0",
+              "v7g07n2",
+              "v7g07n4"
+            ],
+            "cost": 6
+          },
+          "added": [
+            "r18_26_1",
+            "r14_27_1",
+            "v7g07_entry",
+            "v7g07n0",
+            "v7g07n2",
+            "v7g07n4"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "r14_27_1",
+              "g33n3",
+              "r19_24_1",
+              "link_warrior_2_1",
+              "g12n3",
+              "g12n2"
+            ],
+            "cost": 5
+          },
+          "added": [
+            "g33n3",
+            "r19_24_1",
+            "link_warrior_2_1",
+            "g12n3",
+            "g12n2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_0_2",
+              "opening_mage_2_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_2_1"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "mage-growth-1-24",
+      "spent": 24,
+      "budget": 24,
+      "remaining": 0,
+      "stats": {
+        "mana": 25,
+        "resource": 35,
+        "efficiency": 15,
+        "hp": 13,
+        "haste": 23,
+        "resist": 10,
+        "magic": 14,
+        "regen": 14
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_mage",
+              "opening_mage_1_1",
+              "opening_mage_1_2",
+              "opening_mage_1_3",
+              "v9_mage_1_0",
+              "v9_mage_1_1",
+              "v9_mage_1_2",
+              "v9_mage_1_3",
+              "v9_mage_1_4",
+              "v9_mage_1_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_mage_1_1",
+            "opening_mage_1_2",
+            "opening_mage_1_3",
+            "v9_mage_1_0",
+            "v9_mage_1_1",
+            "v9_mage_1_2",
+            "v9_mage_1_3",
+            "v9_mage_1_4",
+            "v9_mage_1_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_mage",
+              "opening_mage_0_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_0_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_0_1",
+              "opening_mage_0_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_0_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_0_2",
+              "opening_mage_0_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_mage_0_3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_1_3",
+              "r18_26_1",
+              "r14_27_1",
+              "v7g07_entry",
+              "v7g07n1",
+              "v7g07n3",
+              "v7g07n5"
+            ],
+            "cost": 6
+          },
+          "added": [
+            "r18_26_1",
+            "r14_27_1",
+            "v7g07_entry",
+            "v7g07n1",
+            "v7g07n3",
+            "v7g07n5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_0_3",
+              "link_mage_0_1",
+              "link_assassin_2_7",
+              "v7g06n4",
+              "v7g06n5"
+            ],
+            "cost": 4
+          },
+          "added": [
+            "link_mage_0_1",
+            "link_assassin_2_7",
+            "v7g06n4",
+            "v7g06n5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_mage_0_3",
+              "v9_mage_0_0",
+              "v9_mage_0_1"
+            ],
+            "cost": 2
+          },
+          "added": [
+            "v9_mage_0_0",
+            "v9_mage_0_1"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "ranger-growth-0-24",
+      "spent": 24,
+      "budget": 24,
+      "remaining": 0,
+      "stats": {
+        "damage": 20,
+        "crit": 60,
+        "resource": 8,
+        "hp": 11,
+        "critMulti": 31,
+        "resist": 6,
+        "move": 5,
+        "haste": 7,
+        "physical": 32
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_ranger",
+              "opening_ranger_0_1",
+              "opening_ranger_0_2",
+              "opening_ranger_0_3",
+              "v9_ranger_0_0",
+              "v9_ranger_0_1",
+              "v9_ranger_0_2",
+              "v9_ranger_0_3",
+              "v9_ranger_0_4",
+              "v9_ranger_0_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_ranger_0_1",
+            "opening_ranger_0_2",
+            "opening_ranger_0_3",
+            "v9_ranger_0_0",
+            "v9_ranger_0_1",
+            "v9_ranger_0_2",
+            "v9_ranger_0_3",
+            "v9_ranger_0_4",
+            "v9_ranger_0_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_ranger",
+              "opening_ranger_1_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_1_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_1_1",
+              "opening_ranger_1_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_1_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_1_2",
+              "opening_ranger_1_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_1_3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_1_3",
+              "g51n6"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "g51n6"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_1_3",
+              "j1",
+              "j36",
+              "opening_assassin_0_3",
+              "v9_assassin_0_0",
+              "v9_assassin_0_1",
+              "v9_assassin_0_2",
+              "v9_assassin_0_3",
+              "v9_assassin_0_4",
+              "v9_assassin_0_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "j1",
+            "j36",
+            "opening_assassin_0_3",
+            "v9_assassin_0_0",
+            "v9_assassin_0_1",
+            "v9_assassin_0_2",
+            "v9_assassin_0_3",
+            "v9_assassin_0_4",
+            "v9_assassin_0_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_0_2",
+              "opening_ranger_2_1",
+              "opening_ranger_2_2"
+            ],
+            "cost": 2
+          },
+          "added": [
+            "opening_ranger_2_1",
+            "opening_ranger_2_2"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "ranger-growth-1-24",
+      "spent": 24,
+      "budget": 24,
+      "remaining": 0,
+      "stats": {
+        "move": 17,
+        "resource": 33,
+        "haste": 50,
+        "hp": 11,
+        "resist": 4,
+        "efficiency": 14,
+        "damage": 14,
+        "crit": 24,
+        "critMulti": 5,
+        "mana": 6
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_ranger",
+              "opening_ranger_1_1",
+              "opening_ranger_1_2",
+              "opening_ranger_1_3",
+              "v9_ranger_1_0",
+              "v9_ranger_1_1",
+              "v9_ranger_1_2",
+              "v9_ranger_1_3",
+              "v9_ranger_1_4",
+              "v9_ranger_1_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_ranger_1_1",
+            "opening_ranger_1_2",
+            "opening_ranger_1_3",
+            "v9_ranger_1_0",
+            "v9_ranger_1_1",
+            "v9_ranger_1_2",
+            "v9_ranger_1_3",
+            "v9_ranger_1_4",
+            "v9_ranger_1_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_ranger",
+              "opening_ranger_0_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_0_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_0_1",
+              "opening_ranger_0_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_0_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_0_2",
+              "opening_ranger_0_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_0_3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_1_3",
+              "g51n6",
+              "r39_40_3"
+            ],
+            "cost": 2
+          },
+          "added": [
+            "g51n6",
+            "r39_40_3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_0_3",
+              "link_warrior_1_6",
+              "link_warrior_0_1",
+              "opening_mage_1_3",
+              "v9_mage_1_0",
+              "v9_mage_1_1",
+              "v9_mage_1_2",
+              "v9_mage_1_3",
+              "v9_mage_1_4",
+              "v9_mage_1_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "link_warrior_1_6",
+            "link_warrior_0_1",
+            "opening_mage_1_3",
+            "v9_mage_1_0",
+            "v9_mage_1_1",
+            "v9_mage_1_2",
+            "v9_mage_1_3",
+            "v9_mage_1_4",
+            "v9_mage_1_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_ranger_0_2",
+              "opening_ranger_2_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_ranger_2_1"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "assassin-growth-0-24",
+      "spent": 24,
+      "budget": 24,
+      "remaining": 0,
+      "stats": {
+        "physical": 50,
+        "resource": 12,
+        "hp": 10,
+        "critMulti": 35,
+        "resist": 4,
+        "crit": 43,
+        "attackSpeed": 7,
+        "move": 5,
+        "haste": 4,
+        "damage": 12
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_assassin",
+              "opening_assassin_0_1",
+              "opening_assassin_0_2",
+              "opening_assassin_0_3",
+              "v9_assassin_0_0",
+              "v9_assassin_0_1",
+              "v9_assassin_0_2",
+              "v9_assassin_0_3",
+              "v9_assassin_0_4",
+              "v9_assassin_0_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_assassin_0_1",
+            "opening_assassin_0_2",
+            "opening_assassin_0_3",
+            "v9_assassin_0_0",
+            "v9_assassin_0_1",
+            "v9_assassin_0_2",
+            "v9_assassin_0_3",
+            "v9_assassin_0_4",
+            "v9_assassin_0_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_assassin",
+              "opening_assassin_1_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_assassin_1_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_assassin_1_1",
+              "opening_assassin_1_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_assassin_1_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_assassin_1_2",
+              "opening_assassin_1_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_assassin_1_3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_assassin_1_3",
+              "r1_51_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "r1_51_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_assassin_0_3",
+              "j36",
+              "j1",
+              "opening_ranger_1_3",
+              "opening_ranger_2_3",
+              "opening_ranger_0_3",
+              "v9_ranger_0_0",
+              "v9_ranger_0_1",
+              "v9_ranger_0_2",
+              "v9_ranger_0_3",
+              "v9_ranger_0_4",
+              "v9_ranger_0_5"
+            ],
+            "cost": 11
+          },
+          "added": [
+            "j36",
+            "j1",
+            "opening_ranger_1_3",
+            "opening_ranger_2_3",
+            "opening_ranger_0_3",
+            "v9_ranger_0_0",
+            "v9_ranger_0_1",
+            "v9_ranger_0_2",
+            "v9_ranger_0_3",
+            "v9_ranger_0_4",
+            "v9_ranger_0_5"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    },
+    {
+      "id": "assassin-growth-1-24",
+      "spent": 24,
+      "budget": 24,
+      "remaining": 0,
+      "stats": {
+        "attackSpeed": 39,
+        "resource": 50,
+        "move": 10,
+        "hp": 17,
+        "resist": 2,
+        "haste": 3,
+        "physical": 32,
+        "critMulti": 9,
+        "armor": 6
+      },
+      "actualJsReconstructed": true,
+      "actualAcquisitionOrder": [
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_assassin",
+              "opening_assassin_1_1",
+              "opening_assassin_1_2",
+              "opening_assassin_1_3",
+              "v9_assassin_1_0",
+              "v9_assassin_1_1",
+              "v9_assassin_1_2",
+              "v9_assassin_1_3",
+              "v9_assassin_1_4",
+              "v9_assassin_1_5"
+            ],
+            "cost": 9
+          },
+          "added": [
+            "opening_assassin_1_1",
+            "opening_assassin_1_2",
+            "opening_assassin_1_3",
+            "v9_assassin_1_0",
+            "v9_assassin_1_1",
+            "v9_assassin_1_2",
+            "v9_assassin_1_3",
+            "v9_assassin_1_4",
+            "v9_assassin_1_5"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "origin_assassin",
+              "opening_assassin_0_1"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_assassin_0_1"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_assassin_0_1",
+              "opening_assassin_0_2"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_assassin_0_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_assassin_0_2",
+              "opening_assassin_0_3"
+            ],
+            "cost": 1
+          },
+          "added": [
+            "opening_assassin_0_3"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "opening_assassin_1_3",
+              "r1_51_2",
+              "r1_29_2"
+            ],
+            "cost": 2
+          },
+          "added": [
+            "r1_51_2",
+            "r1_29_2"
+          ]
+        },
+        {
+          "ok": true,
+          "route": {
+            "ids": [
+              "r1_29_2",
+              "r6_35_2",
+              "g13n8",
+              "opening_warrior_0_3",
+              "opening_warrior_2_3",
+              "opening_warrior_1_3",
+              "v9_warrior_1_0",
+              "v9_warrior_1_1",
+              "v9_warrior_1_2",
+              "v9_warrior_1_3",
+              "v9_warrior_1_4"
+            ],
+            "cost": 10
+          },
+          "added": [
+            "r6_35_2",
+            "g13n8",
+            "opening_warrior_0_3",
+            "opening_warrior_2_3",
+            "opening_warrior_1_3",
+            "v9_warrior_1_0",
+            "v9_warrior_1_1",
+            "v9_warrior_1_2",
+            "v9_warrior_1_3",
+            "v9_warrior_1_4"
+          ]
+        }
+      ],
+      "saveRestore": true,
+      "rejectOldStudyAndRollback": true
+    }
+  ],
+  "inputCases": [
+    {
+      "profile": "warrior:basic:plain:standard",
+      "goal": "v9_warrior_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:basic:plain:standard",
+      "goal": "v9_warrior_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:basic:ice:standard",
+      "goal": "v9_warrior_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:basic:ice:standard",
+      "goal": "v9_warrior_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:basic:fire:standard",
+      "goal": "v9_warrior_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:basic:fire:standard",
+      "goal": "v9_warrior_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:basic:lightning:standard",
+      "goal": "v9_warrior_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:basic:lightning:standard",
+      "goal": "v9_warrior_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:support:plain:standard",
+      "goal": "v9_warrior_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:support:plain:standard",
+      "goal": "v9_warrior_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:support:ice:standard",
+      "goal": "v9_warrior_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:support:ice:standard",
+      "goal": "v9_warrior_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:support:fire:standard",
+      "goal": "v9_warrior_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:support:fire:standard",
+      "goal": "v9_warrior_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:support:lightning:standard",
+      "goal": "v9_warrior_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:support:lightning:standard",
+      "goal": "v9_warrior_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:mark:plain:standard",
+      "goal": "v9_warrior_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:mark:plain:standard",
+      "goal": "v9_warrior_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:mark:ice:standard",
+      "goal": "v9_warrior_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:mark:ice:standard",
+      "goal": "v9_warrior_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:mark:fire:standard",
+      "goal": "v9_warrior_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:mark:fire:standard",
+      "goal": "v9_warrior_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:mark:lightning:standard",
+      "goal": "v9_warrior_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "warrior:mark:lightning:standard",
+      "goal": "v9_warrior_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:basic:plain:standard",
+      "goal": "v9_tank_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:basic:plain:standard",
+      "goal": "v9_tank_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:basic:ice:standard",
+      "goal": "v9_tank_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:basic:ice:standard",
+      "goal": "v9_tank_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:basic:fire:standard",
+      "goal": "v9_tank_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:basic:fire:standard",
+      "goal": "v9_tank_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:basic:lightning:standard",
+      "goal": "v9_tank_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:basic:lightning:standard",
+      "goal": "v9_tank_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:support:plain:standard",
+      "goal": "v9_tank_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:support:plain:standard",
+      "goal": "v9_tank_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:support:ice:standard",
+      "goal": "v9_tank_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:support:ice:standard",
+      "goal": "v9_tank_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:support:fire:standard",
+      "goal": "v9_tank_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:support:fire:standard",
+      "goal": "v9_tank_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:support:lightning:standard",
+      "goal": "v9_tank_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:support:lightning:standard",
+      "goal": "v9_tank_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:mark:plain:standard",
+      "goal": "v9_tank_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:mark:plain:standard",
+      "goal": "v9_tank_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:mark:ice:standard",
+      "goal": "v9_tank_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:mark:ice:standard",
+      "goal": "v9_tank_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:mark:fire:standard",
+      "goal": "v9_tank_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:mark:fire:standard",
+      "goal": "v9_tank_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:mark:lightning:standard",
+      "goal": "v9_tank_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "tank:mark:lightning:standard",
+      "goal": "v9_tank_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:basic:plain:standard",
+      "goal": "v9_mage_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:basic:plain:standard",
+      "goal": "v9_mage_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:basic:ice:standard",
+      "goal": "v9_mage_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:basic:ice:standard",
+      "goal": "v9_mage_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:basic:fire:standard",
+      "goal": "v9_mage_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:basic:fire:standard",
+      "goal": "v9_mage_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:basic:lightning:standard",
+      "goal": "v9_mage_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:basic:lightning:standard",
+      "goal": "v9_mage_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:support:plain:standard",
+      "goal": "v9_mage_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:support:plain:standard",
+      "goal": "v9_mage_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:support:ice:standard",
+      "goal": "v9_mage_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:support:ice:standard",
+      "goal": "v9_mage_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:support:fire:standard",
+      "goal": "v9_mage_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:support:fire:standard",
+      "goal": "v9_mage_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:support:lightning:standard",
+      "goal": "v9_mage_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:support:lightning:standard",
+      "goal": "v9_mage_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:mark:plain:standard",
+      "goal": "v9_mage_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:mark:plain:standard",
+      "goal": "v9_mage_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:mark:ice:standard",
+      "goal": "v9_mage_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:mark:ice:standard",
+      "goal": "v9_mage_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:mark:fire:standard",
+      "goal": "v9_mage_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:mark:fire:standard",
+      "goal": "v9_mage_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:mark:lightning:standard",
+      "goal": "v9_mage_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "mage:mark:lightning:standard",
+      "goal": "v9_mage_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:basic:plain:standard",
+      "goal": "v9_ranger_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:basic:plain:standard",
+      "goal": "v9_ranger_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:basic:ice:standard",
+      "goal": "v9_ranger_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:basic:ice:standard",
+      "goal": "v9_ranger_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:basic:fire:standard",
+      "goal": "v9_ranger_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:basic:fire:standard",
+      "goal": "v9_ranger_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:basic:lightning:standard",
+      "goal": "v9_ranger_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:basic:lightning:standard",
+      "goal": "v9_ranger_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:support:plain:standard",
+      "goal": "v9_ranger_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:support:plain:standard",
+      "goal": "v9_ranger_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:support:ice:standard",
+      "goal": "v9_ranger_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:support:ice:standard",
+      "goal": "v9_ranger_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:support:fire:standard",
+      "goal": "v9_ranger_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:support:fire:standard",
+      "goal": "v9_ranger_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:support:lightning:standard",
+      "goal": "v9_ranger_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:support:lightning:standard",
+      "goal": "v9_ranger_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:mark:plain:standard",
+      "goal": "v9_ranger_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:mark:plain:standard",
+      "goal": "v9_ranger_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:mark:ice:standard",
+      "goal": "v9_ranger_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:mark:ice:standard",
+      "goal": "v9_ranger_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:mark:fire:standard",
+      "goal": "v9_ranger_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:mark:fire:standard",
+      "goal": "v9_ranger_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:mark:lightning:standard",
+      "goal": "v9_ranger_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "ranger:mark:lightning:standard",
+      "goal": "v9_ranger_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:basic:plain:standard",
+      "goal": "v9_assassin_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:basic:plain:standard",
+      "goal": "v9_assassin_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:basic:ice:standard",
+      "goal": "v9_assassin_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:basic:ice:standard",
+      "goal": "v9_assassin_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:basic:fire:standard",
+      "goal": "v9_assassin_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:basic:fire:standard",
+      "goal": "v9_assassin_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:basic:lightning:standard",
+      "goal": "v9_assassin_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:basic:lightning:standard",
+      "goal": "v9_assassin_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:support:plain:standard",
+      "goal": "v9_assassin_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:support:plain:standard",
+      "goal": "v9_assassin_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:support:ice:standard",
+      "goal": "v9_assassin_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:support:ice:standard",
+      "goal": "v9_assassin_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:support:fire:standard",
+      "goal": "v9_assassin_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:support:fire:standard",
+      "goal": "v9_assassin_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:support:lightning:standard",
+      "goal": "v9_assassin_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:support:lightning:standard",
+      "goal": "v9_assassin_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:mark:plain:standard",
+      "goal": "v9_assassin_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:mark:plain:standard",
+      "goal": "v9_assassin_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:mark:ice:standard",
+      "goal": "v9_assassin_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:mark:ice:standard",
+      "goal": "v9_assassin_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:mark:fire:standard",
+      "goal": "v9_assassin_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:mark:fire:standard",
+      "goal": "v9_assassin_1_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:mark:lightning:standard",
+      "goal": "v9_assassin_0_5",
+      "reachable": true,
+      "dead": []
+    },
+    {
+      "profile": "assassin:mark:lightning:standard",
+      "goal": "v9_assassin_1_5",
+      "reachable": true,
+      "dead": []
+    }
+  ],
+  "optionalSourceRemovalPassed": true,
+  "focusAudits": [
+    {
+      "id": "warrior-direction-0-12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 5.133373658177119,
+      "minClickGap": 6.975059478927493,
+      "minNodePairPaintGap": 7.0619340701300715,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.537965091194486,
+      "spent": 12,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "warrior-direction-1-12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 5.133373658177119,
+      "minClickGap": 6.975059478927493,
+      "minNodePairPaintGap": 7.0619340701300715,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.537965091194486,
+      "spent": 12,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "tank-direction-0-12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 5.546641250513998,
+      "minClickGap": 7.6800743486393,
+      "minNodePairPaintGap": 7.366952928826539,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 4,
+      "zoom": 0.5703814553472557,
+      "spent": 12,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "tank-direction-1-12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 5.546641250513998,
+      "minClickGap": 7.6800743486393,
+      "minNodePairPaintGap": 7.366952928826539,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 4,
+      "zoom": 0.5703814553472557,
+      "spent": 12,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "mage-direction-0-12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 3.812010170819892,
+      "minClickGap": 4.720876174562024,
+      "minNodePairPaintGap": 6.086680287084313,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 6,
+      "zoom": 0.4343184448602369,
+      "spent": 12,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "mage-direction-1-12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 3.812010170819892,
+      "minClickGap": 4.720876174562024,
+      "minNodePairPaintGap": 6.086680287084313,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 6,
+      "zoom": 0.4343184448602369,
+      "spent": 12,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "ranger-direction-0-12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 4.347399854312494,
+      "minClickGap": 5.634225527261753,
+      "minNodePairPaintGap": 6.481833338629961,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 4,
+      "zoom": 0.47631396366102885,
+      "spent": 12,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "ranger-direction-1-12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 4.347399854312494,
+      "minClickGap": 5.634225527261753,
+      "minNodePairPaintGap": 6.481833338629961,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 4,
+      "zoom": 0.47631396366102885,
+      "spent": 12,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "assassin-direction-0-12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 5.471737437977377,
+      "minClickGap": 7.552292004667278,
+      "minNodePairPaintGap": 7.31166895341793,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.5645060629655445,
+      "spent": 12,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "assassin-direction-1-12",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 5.471737437977377,
+      "minClickGap": 7.552292004667278,
+      "minNodePairPaintGap": 7.31166895341793,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 3,
+      "zoom": 0.5645060629655445,
+      "spent": 12,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "warrior-tank-fusion-24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.7788875799122361,
+      "minClickGap": 2.292572263683741,
+      "minNodePairPaintGap": 4.416734881731388,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 15,
+      "zoom": 0.25684234188575256,
+      "spent": 20,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "mage-ranger-fusion-24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 1.8880330256666356,
+      "minClickGap": 2.424109427116364,
+      "minNodePairPaintGap": 4.522081307047307,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 11,
+      "zoom": 0.26803820072486445,
+      "spent": 20,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "warrior-growth-0-24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.840708696614628,
+      "minClickGap": 3.4825783266816237,
+      "minNodePairPaintGap": 5.369795458450703,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 6,
+      "zoom": 0.3581303699330039,
+      "spent": 24,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "warrior-growth-1-24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.6939309124584088,
+      "minClickGap": 3.3473136691024075,
+      "minNodePairPaintGap": 5.261463730932009,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 6,
+      "zoom": 0.346617243356001,
+      "spent": 24,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "tank-growth-0-24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.029048004990285,
+      "minClickGap": 2.5940543135341074,
+      "minNodePairPaintGap": 4.6581879845643615,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 13,
+      "zoom": 0.2825031542719111,
+      "spent": 24,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "tank-growth-1-24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.22151725207588,
+      "minClickGap": 2.8260095603579027,
+      "minNodePairPaintGap": 4.843957963545797,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 10,
+      "zoom": 0.3022461541410113,
+      "spent": 24,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "mage-growth-0-24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.2457078535251873,
+      "minClickGap": 2.855162981046942,
+      "minNodePairPaintGap": 4.8673065638590245,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 13,
+      "zoom": 0.30472756376087745,
+      "spent": 24,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "mage-growth-1-24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 4.222458973620748,
+      "minClickGap": 5.421082323303805,
+      "minNodePairPaintGap": 6.38961869238166,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 6,
+      "zoom": 0.4665137055203397,
+      "spent": 24,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "ranger-growth-0-24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 3.124056048034212,
+      "minClickGap": 3.7437001489388453,
+      "minNodePairPaintGap": 5.578924573211379,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 6,
+      "zoom": 0.3803558990953674,
+      "spent": 24,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "ranger-growth-1-24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.154895914128108,
+      "minClickGap": 2.7457205317395625,
+      "minNodePairPaintGap": 4.779655511400024,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 8,
+      "zoom": 0.2954123088057271,
+      "spent": 24,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "assassin-growth-0-24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 3.124056048034244,
+      "minClickGap": 3.7437001489388773,
+      "minNodePairPaintGap": 5.578924573211357,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 7,
+      "zoom": 0.3803558990953674,
+      "spent": 24,
+      "usable": true,
+      "connected": true
+    },
+    {
+      "id": "assassin-growth-1-24",
+      "centralLabelIntrusions": [],
+      "minGlyphGap": 2.64731406402892,
+      "minClickGap": 3.30435340725839,
+      "minNodePairPaintGap": 5.227057408811212,
+      "nearest": {
+        "node": "key_02",
+        "edge": [
+          "g12n0",
+          "g12n3"
+        ]
+      },
+      "labelLines": [],
+      "captions": 9,
+      "zoom": 0.34296065677052967,
+      "spent": 24,
+      "usable": true,
+      "connected": true
+    }
+  ],
+  "captures": [
+    "ProjectS_Five_Growth_V12_mage-growth-0-24.png",
+    "ProjectS_Five_Growth_V12_mage-growth-1-24.png",
+    "ProjectS_Five_Growth_V12_ranger-growth-0-24.png",
+    "ProjectS_Five_Growth_V12_ranger-growth-1-24.png",
+    "ProjectS_Five_Growth_V12_assassin-growth-0-24.png",
+    "ProjectS_Five_Growth_V12_assassin-growth-1-24.png",
+    "ProjectS_Five_Growth_V12_Overview.png",
+    "ProjectS_Five_Growth_V12_Start_Costs.png",
+    "ProjectS_Five_Growth_V12_warrior_Comparison.png",
+    "ProjectS_Five_Growth_V12_tank_Comparison.png",
+    "ProjectS_Five_Growth_V12_mage_Comparison.png",
+    "ProjectS_Five_Growth_V12_ranger_Comparison.png",
+    "ProjectS_Five_Growth_V12_assassin_Comparison.png",
+    "ProjectS_Five_Growth_V12_Mobile.png",
+    "ProjectS_Five_Growth_V12_Mobile_Comparison.png"
+  ],
+  "mobileNoHorizontalOverflow": true,
+  "runtimeErrors": []
+}

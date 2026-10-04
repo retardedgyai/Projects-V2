@@ -1,0 +1,758 @@
+{
+  "source": "V11",
+  "runtimeApplied": false,
+  "nodeChanges": [
+    {
+      "id": "v7g07n4",
+      "before": {
+        "id": "v7g07n4",
+        "x": 3490.06079,
+        "y": -2723.2713,
+        "type": "notable",
+        "name": "消費の余裕",
+        "stats": {
+          "mana": 8,
+          "efficiency": 3
+        },
+        "theme": "mana",
+        "icon": "crystal",
+        "group": "v7g07",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "middle_choice_v7_proposal",
+        "sourceRef": "middle-choice-v7:v7g07n4",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "mana": [
+            "MP_CONSUMER"
+          ],
+          "efficiency": [
+            "MP_CONSUMER"
+          ]
+        },
+        "desc": "MP容量側と消費効率側から同費用で目標へ。MPを使う現在の技能を育て、魔術を供給しない。"
+      },
+      "after": {
+        "id": "v7g07n4",
+        "x": 3490.06079,
+        "y": -2723.2713,
+        "type": "notable",
+        "name": "MPの器と消費を支える",
+        "stats": {
+          "mana": 12,
+          "efficiency": 5
+        },
+        "theme": "mana",
+        "icon": "crystal",
+        "group": "v7g07",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "five_growth_v12_proposal",
+        "sourceRef": "middle-choice-v7:v7g07n4",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "mana": [
+            "MP_CONSUMER"
+          ],
+          "efficiency": [
+            "MP_CONSUMER"
+          ]
+        },
+        "desc": "所有技能のMP容量と消費へ投資する。魔法攻撃や元素MODを新規に供給しない。",
+        "description": "所有技能のMP容量と消費へ投資する。魔法攻撃や元素MODを新規に供給しない。",
+        "buildIntent": "所有技能のMP容量と消費へ投資する。魔法攻撃や元素MODを新規に供給しない。"
+      }
+    },
+    {
+      "id": "v7g07n5",
+      "before": {
+        "id": "v7g07n5",
+        "x": 3263.78662,
+        "y": -2398.00218,
+        "type": "notable",
+        "name": "足を止めない",
+        "stats": {
+          "move": 3
+        },
+        "theme": "mana",
+        "icon": "boot",
+        "group": "v7g07",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "middle_choice_v7_proposal",
+        "sourceRef": "middle-choice-v7:v7g07n5",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "move": []
+        },
+        "desc": "MP容量側と消費効率側から同費用で目標へ。MPを使う現在の技能を育て、魔術を供給しない。"
+      },
+      "after": {
+        "id": "v7g07n5",
+        "x": 3263.78662,
+        "y": -2398.00218,
+        "type": "notable",
+        "name": "資源から次の技へ",
+        "stats": {
+          "resource": 8,
+          "haste": 8
+        },
+        "theme": "mana",
+        "icon": "sword",
+        "group": "v7g07",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "five_growth_v12_proposal",
+        "sourceRef": "middle-choice-v7:v7g07n5",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "resource": [
+            "RESOURCE"
+          ],
+          "haste": [
+            "RESOURCE"
+          ]
+        },
+        "desc": "所有する固有資源の獲得と技の再使用へ投資する。元素や残響の追加発動は与えない。",
+        "description": "所有する固有資源の獲得と技の再使用へ投資する。元素や残響の追加発動は与えない。",
+        "buildIntent": "所有する固有資源の獲得と技の再使用へ投資する。元素や残響の追加発動は与えない。"
+      }
+    },
+    {
+      "id": "g51n6",
+      "before": {
+        "id": "g51n6",
+        "x": 2850.91224,
+        "y": -7.98803,
+        "type": "small",
+        "name": "障壁の応用",
+        "stats": {
+          "resist": 5
+        },
+        "group": "g51",
+        "theme": "ward",
+        "icon": "ward",
+        "desc": "",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "historical_proposal",
+        "sourceRef": "v6:g51n6",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "resist": []
+        }
+      },
+      "after": {
+        "id": "g51n6",
+        "x": 2850.91224,
+        "y": -7.98803,
+        "type": "notable",
+        "name": "射撃の一回を重く",
+        "stats": {
+          "crit": 12,
+          "critMulti": 5
+        },
+        "group": "v9_ranger",
+        "theme": "ward",
+        "icon": "target",
+        "desc": "手持ちの攻撃の会心率と会心倍率を育てる。追矢やFocusの追加効果は供給しない。",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "five_growth_v12_proposal",
+        "sourceRef": "v6:g51n6",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "crit": [
+            "DAMAGE"
+          ],
+          "critMulti": [
+            "DAMAGE"
+          ]
+        },
+        "description": "手持ちの攻撃の会心率と会心倍率を育てる。追矢やFocusの追加効果は供給しない。",
+        "buildIntent": "手持ちの攻撃の会心率と会心倍率を育てる。追矢やFocusの追加効果は供給しない。"
+      }
+    },
+    {
+      "id": "r39_40_3",
+      "before": {
+        "id": "r39_40_3",
+        "x": 2378.88203,
+        "y": 470.81543,
+        "type": "road",
+        "name": "選べる基礎",
+        "stats": {},
+        "icon": "crystal",
+        "group": null,
+        "theme": "travel-choice",
+        "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "historical_proposal",
+        "sourceRef": "v6:r39_40_3",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {}
+      },
+      "after": {
+        "id": "r39_40_3",
+        "x": 2378.88203,
+        "y": 470.81543,
+        "type": "notable",
+        "name": "位置を変え、技を回す",
+        "stats": {
+          "move": 3,
+          "haste": 8
+        },
+        "icon": "speed",
+        "group": "v9_ranger",
+        "theme": "travel-choice",
+        "desc": "移動速度と所有技能の再使用へ投資する。回避や設置技能は新規に与えない。",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "five_growth_v12_proposal",
+        "sourceRef": "v6:r39_40_3",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "move": [],
+          "haste": [
+            "RESOURCE"
+          ]
+        },
+        "description": "移動速度と所有技能の再使用へ投資する。回避や設置技能は新規に与えない。",
+        "buildIntent": "移動速度と所有技能の再使用へ投資する。回避や設置技能は新規に与えない。"
+      }
+    },
+    {
+      "id": "r1_51_2",
+      "before": {
+        "id": "r1_51_2",
+        "x": 1133.91598,
+        "y": 687.25897,
+        "type": "road",
+        "name": "選べる基礎",
+        "stats": {},
+        "icon": "crystal",
+        "group": null,
+        "theme": "travel-choice",
+        "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "historical_proposal",
+        "sourceRef": "v6:r1_51_2",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {}
+      },
+      "after": {
+        "id": "r1_51_2",
+        "x": 1133.91598,
+        "y": 687.25897,
+        "type": "notable",
+        "name": "決め手の直撃を育てる",
+        "stats": {
+          "physical": 10,
+          "critMulti": 6
+        },
+        "icon": "sword",
+        "group": "v9_assassin",
+        "theme": "travel-choice",
+        "desc": "手持ちの物理攻撃と会心倍率へ投資する。印の新しい挙動や毒印は与えない。",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "five_growth_v12_proposal",
+        "sourceRef": "v6:r1_51_2",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "physical": [
+            "DAMAGE"
+          ],
+          "critMulti": [
+            "DAMAGE"
+          ]
+        },
+        "description": "手持ちの物理攻撃と会心倍率へ投資する。印の新しい挙動や毒印は与えない。",
+        "buildIntent": "手持ちの物理攻撃と会心倍率へ投資する。印の新しい挙動や毒印は与えない。"
+      }
+    },
+    {
+      "id": "r1_29_2",
+      "before": {
+        "id": "r1_29_2",
+        "x": 1350.0,
+        "y": 1345.0,
+        "type": "road",
+        "name": "選べる基礎",
+        "stats": {},
+        "icon": "crystal",
+        "group": null,
+        "theme": "travel-choice",
+        "desc": "1ポイントごとに、与ダメージ・最大HP・固有資源の獲得から1つ選択。専門クラスタより小さいが、用途のない固定能力を強制しない。",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "historical_proposal",
+        "sourceRef": "v6:r1_29_2",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {}
+      },
+      "after": {
+        "id": "r1_29_2",
+        "x": 1350.0,
+        "y": 1345.0,
+        "type": "notable",
+        "name": "接近後に資源を回収",
+        "stats": {
+          "attackSpeed": 6,
+          "resource": 8,
+          "move": 2
+        },
+        "icon": "speed",
+        "group": "v9_assassin",
+        "theme": "travel-choice",
+        "desc": "通常命中の手数と所有資源の回収、移動へ投資する。吸命や強制魔術を要求しない。",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "five_growth_v12_proposal",
+        "sourceRef": "v6:r1_29_2",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "attackSpeed": [
+            "DAMAGE"
+          ],
+          "resource": [
+            "RESOURCE"
+          ],
+          "move": []
+        },
+        "description": "通常命中の手数と所有資源の回収、移動へ投資する。吸命や強制魔術を要求しない。",
+        "buildIntent": "通常命中の手数と所有資源の回収、移動へ投資する。吸命や強制魔術を要求しない。"
+      }
+    },
+    {
+      "id": "g51n5",
+      "before": {
+        "id": "g51n5",
+        "x": 3293.98948,
+        "y": -393.60434,
+        "type": "small",
+        "name": "障壁の研鑽",
+        "stats": {
+          "barrier": 6
+        },
+        "group": "g51",
+        "theme": "ward",
+        "icon": "ward",
+        "desc": "",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "historical_proposal",
+        "sourceRef": "v6:g51n5",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "barrier": [
+            "SHIELD"
+          ]
+        }
+      },
+      "after": {
+        "id": "g51n5",
+        "x": 3293.98948,
+        "y": -393.60434,
+        "type": "small",
+        "name": "射撃側の防御の備え",
+        "stats": {
+          "barrier": 6,
+          "resist": 2
+        },
+        "group": "g51",
+        "theme": "ward",
+        "icon": "ward",
+        "desc": "魔法防御を育て、障壁を所有する編成ではその容量も育てる。障壁を所有しなくても魔法防御の投資として通れる。",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "five_growth_v12_proposal",
+        "sourceRef": "v6:g51n5",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "barrier": [
+            "SHIELD"
+          ],
+          "resist": []
+        },
+        "description": "魔法防御を育て、障壁を所有する編成ではその容量も育てる。障壁を所有しなくても魔法防御の投資として通れる。",
+        "buildIntent": "魔法防御を育て、障壁を所有する編成ではその容量も育てる。障壁を所有しなくても魔法防御の投資として通れる。"
+      }
+    },
+    {
+      "id": "g51n8",
+      "before": {
+        "id": "g51n8",
+        "x": 1737.05886,
+        "y": 1057.89233,
+        "type": "small",
+        "name": "障壁の研鑽",
+        "stats": {
+          "barrier": 6
+        },
+        "group": "g51",
+        "theme": "ward",
+        "icon": "ward",
+        "desc": "",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "historical_proposal",
+        "sourceRef": "v6:g51n8",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "barrier": [
+            "SHIELD"
+          ]
+        }
+      },
+      "after": {
+        "id": "g51n8",
+        "x": 1737.05886,
+        "y": 1057.89233,
+        "type": "small",
+        "name": "接近側の生命の備え",
+        "stats": {
+          "barrier": 6,
+          "hp": 2
+        },
+        "group": "g51",
+        "theme": "ward",
+        "icon": "heart",
+        "desc": "HP容量を育て、障壁を所有する編成ではその容量も育てる。障壁を所有しなくてもHPの投資として通れる。",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "five_growth_v12_proposal",
+        "sourceRef": "v6:g51n8",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "barrier": [
+            "SHIELD"
+          ],
+          "hp": []
+        },
+        "description": "HP容量を育て、障壁を所有する編成ではその容量も育てる。障壁を所有しなくてもHPの投資として通れる。",
+        "buildIntent": "HP容量を育て、障壁を所有する編成ではその容量も育てる。障壁を所有しなくてもHPの投資として通れる。"
+      }
+    }
+  ],
+  "addedNodes": 0,
+  "addedRoads": 0,
+  "addedEdges": 0,
+  "removedEdges": 0,
+  "upgradedSmallPoints": 1,
+  "convertedRoadsToNotables": 3,
+  "allCoordinatesExact": true,
+  "allEdgesExact": true,
+  "centralContentsExact": true,
+  "groupGoalCosts": {
+    "v7g14n2": {
+      "warrior": 8,
+      "tank": 9,
+      "mage": 12,
+      "ranger": 14,
+      "assassin": 11
+    },
+    "v7g14n3": {
+      "warrior": 8,
+      "tank": 9,
+      "mage": 12,
+      "ranger": 14,
+      "assassin": 11
+    },
+    "v7g06n3": {
+      "warrior": 11,
+      "tank": 8,
+      "mage": 9,
+      "ranger": 14,
+      "assassin": 16
+    },
+    "v7g06n5": {
+      "warrior": 11,
+      "tank": 6,
+      "mage": 7,
+      "ranger": 12,
+      "assassin": 16
+    },
+    "v7g07n4": {
+      "warrior": 15,
+      "tank": 14,
+      "mage": 9,
+      "ranger": 12,
+      "assassin": 15
+    },
+    "v7g07n5": {
+      "warrior": 15,
+      "tank": 14,
+      "mage": 9,
+      "ranger": 12,
+      "assassin": 15
+    },
+    "g51n6": {
+      "warrior": 10,
+      "tank": 12,
+      "mage": 7,
+      "ranger": 4,
+      "assassin": 7
+    },
+    "r39_40_3": {
+      "warrior": 9,
+      "tank": 13,
+      "mage": 8,
+      "ranger": 5,
+      "assassin": 8
+    },
+    "r1_51_2": {
+      "warrior": 7,
+      "tank": 12,
+      "mage": 12,
+      "ranger": 9,
+      "assassin": 4
+    },
+    "r1_29_2": {
+      "warrior": 6,
+      "tank": 11,
+      "mage": 11,
+      "ranger": 8,
+      "assassin": 5
+    }
+  },
+  "goalIdsByJob": {
+    "warrior": [
+      "v7g14n2",
+      "v7g14n3"
+    ],
+    "tank": [
+      "v7g06n3",
+      "v7g06n5"
+    ],
+    "mage": [
+      "v7g07n4",
+      "v7g07n5"
+    ],
+    "ranger": [
+      "g51n6",
+      "r39_40_3"
+    ],
+    "assassin": [
+      "r1_51_2",
+      "r1_29_2"
+    ]
+  },
+  "two24PointUnionCosts": [
+    {
+      "job": "warrior",
+      "unionSpend": 28,
+      "ids": [
+        "warrior-growth-0-24",
+        "warrior-growth-1-24"
+      ]
+    },
+    {
+      "job": "tank",
+      "unionSpend": 37,
+      "ids": [
+        "tank-growth-0-24",
+        "tank-growth-1-24"
+      ]
+    },
+    {
+      "job": "mage",
+      "unionSpend": 37,
+      "ids": [
+        "mage-growth-0-24",
+        "mage-growth-1-24"
+      ]
+    },
+    {
+      "job": "ranger",
+      "unionSpend": 40,
+      "ids": [
+        "ranger-growth-0-24",
+        "ranger-growth-1-24"
+      ]
+    },
+    {
+      "job": "assassin",
+      "unionSpend": 41,
+      "ids": [
+        "assassin-growth-0-24",
+        "assassin-growth-1-24"
+      ]
+    }
+  ],
+  "common92Ids": [
+    "g10n3",
+    "g11n7",
+    "g12n2",
+    "g13n3",
+    "g13n9",
+    "g14n4",
+    "g16n2",
+    "g16n8",
+    "g17n0",
+    "g18n1",
+    "g19n0",
+    "g20n1",
+    "g20n6",
+    "g21n3",
+    "g23n1",
+    "g23n5",
+    "g24n4",
+    "g25n6",
+    "g26n3",
+    "g27n1",
+    "g27n4",
+    "g28n2",
+    "g2n0",
+    "g2n3",
+    "g30n1",
+    "g30n4",
+    "g31n4",
+    "g32n2",
+    "g33n1",
+    "g34n2",
+    "g34n8",
+    "g35n1",
+    "g37n0",
+    "g37n4",
+    "g38n1",
+    "g39n6",
+    "g3n5",
+    "g40n0",
+    "g41n0",
+    "g41n3",
+    "g42n0",
+    "g43n0",
+    "g44n0",
+    "g44n3",
+    "g45n2",
+    "g46n6",
+    "g48n4",
+    "g48n8",
+    "g49n2",
+    "g4n2",
+    "g50n1",
+    "g51n1",
+    "g51n4",
+    "g52n0",
+    "g5n0",
+    "g6n0",
+    "g6n4",
+    "g7n2",
+    "g9n2",
+    "g9n7",
+    "v7g01n3",
+    "v7g01n5",
+    "v7g01n7",
+    "v7g02n4",
+    "v7g02n5",
+    "v7g03n3",
+    "v7g03n5",
+    "v7g04n4",
+    "v7g04n5",
+    "v7g05n2",
+    "v7g05n3",
+    "v7g06n3",
+    "v7g06n5",
+    "v7g07n4",
+    "v7g07n5",
+    "v7g08n3",
+    "v7g08n5",
+    "v7g08n7",
+    "v7g09n3",
+    "v7g09n5",
+    "v7g09n7",
+    "v7g10n4",
+    "v7g10n5",
+    "v7g11n3",
+    "v7g11n5",
+    "v7g12n5",
+    "v7g12n7",
+    "v7g13n4",
+    "v7g13n5",
+    "v7g14n2",
+    "v7g14n3",
+    "v7g15n3"
+  ],
+  "common92Sha256": "88a2a1d212bcac38961f7861b5c2b704c6a8ad86257fb0ee500a53a9ffded436",
+  "common92Dominance": {
+    "fixed": {
+      "previous": {
+        "strictMinimumByStart": {
+          "warrior": 35,
+          "tank": 8,
+          "mage": 12,
+          "ranger": 13,
+          "assassin": 15
+        },
+        "sharedMinimumTargets": 9
+      },
+      "current": {
+        "strictMinimumByStart": {
+          "warrior": 35,
+          "tank": 8,
+          "mage": 12,
+          "ranger": 13,
+          "assassin": 15
+        },
+        "sharedMinimumTargets": 9
+      }
+    },
+    "owned": {
+      "previous": {
+        "strictMinimumByStart": {
+          "warrior": 50,
+          "tank": 8,
+          "mage": 26,
+          "ranger": 0,
+          "assassin": 0
+        },
+        "sharedMinimumTargets": 8
+      },
+      "current": {
+        "strictMinimumByStart": {
+          "warrior": 35,
+          "tank": 8,
+          "mage": 13,
+          "ranger": 12,
+          "assassin": 15
+        },
+        "sharedMinimumTargets": 9
+      }
+    }
+  }
+}

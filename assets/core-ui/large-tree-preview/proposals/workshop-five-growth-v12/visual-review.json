@@ -1,0 +1,27 @@
+{
+  "status": "SELECTED_CAPTURES_VIEWED_UNADOPTED",
+  "reviewedAtUtc": "2026-10-04 00:46 UTC",
+  "candidateSha256": "5e33e318debf79d1f7449ca481286af43b363dc03aa1841367d8051be37f36a8",
+  "observedCaptures": [
+    "ProjectS_Five_Growth_V12_mage-growth-0-24.png",
+    "ProjectS_Five_Growth_V12_mage-growth-1-24.png",
+    "ProjectS_Five_Growth_V12_ranger-growth-0-24.png",
+    "ProjectS_Five_Growth_V12_ranger-growth-1-24.png",
+    "ProjectS_Five_Growth_V12_assassin-growth-0-24.png",
+    "ProjectS_Five_Growth_V12_assassin-growth-1-24.png",
+    "ProjectS_Five_Growth_V12_mage_Comparison.png",
+    "ProjectS_Five_Growth_V12_ranger_Comparison.png",
+    "ProjectS_Five_Growth_V12_assassin_Comparison.png",
+    "ProjectS_Five_Growth_V12_Mobile_Comparison.png"
+  ],
+  "observations": [
+    "Six new 24pt allocations have distinct visible investments and retain the approved pixel artwork.",
+    "Three class comparisons show intact headings, source-unit values, same-target costs and the frozen-92 global count.",
+    "Mobile comparison has no horizontal overflow and accessible close/control buttons."
+  ],
+  "qualityLimits": [
+    "Creator adoption and gameplay feel remain untested.",
+    "Not every generated screenshot was personally reviewed.",
+    "Whole reward distribution and native integration remain unfinished."
+  ]
+}
