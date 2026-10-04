@@ -1,0 +1,90 @@
+{
+  "textures": {
+    "clay": "projects:foundry/clay",
+    "iron": "projects:foundry/iron",
+    "dark": "projects:foundry/dark",
+    "sand": "projects:foundry/sand",
+    "wood": "projects:foundry/wood",
+    "metal": "projects:foundry/metal",
+    "ember": "projects:foundry/ember",
+    "liquid": "projects:foundry/liquid",
+    "cool1": "projects:foundry/cool1",
+    "cool2": "projects:foundry/cool2",
+    "cool3": "projects:foundry/cool3",
+    "cool4": "projects:foundry/cool4",
+    "cool5": "projects:foundry/cool5",
+    "particle": "projects:foundry/clay"
+  },
+  "elements": [
+    {
+      "from": [
+        4.2,
+        2.5,
+        2
+      ],
+      "to": [
+        11.8,
+        4,
+        5.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ember",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#ember",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#ember",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#ember",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#ember",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#ember",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        }
+      },
+      "light_emission": 12,
+      "shade": false
+    }
+  ]
+}

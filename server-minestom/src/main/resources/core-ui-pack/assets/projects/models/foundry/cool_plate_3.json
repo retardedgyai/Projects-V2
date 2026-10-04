@@ -1,0 +1,158 @@
+{
+  "textures": {
+    "clay": "projects:foundry/clay",
+    "iron": "projects:foundry/iron",
+    "dark": "projects:foundry/dark",
+    "sand": "projects:foundry/sand",
+    "wood": "projects:foundry/wood",
+    "metal": "projects:foundry/metal",
+    "ember": "projects:foundry/ember",
+    "liquid": "projects:foundry/liquid",
+    "cool1": "projects:foundry/cool1",
+    "cool2": "projects:foundry/cool2",
+    "cool3": "projects:foundry/cool3",
+    "cool4": "projects:foundry/cool4",
+    "cool5": "projects:foundry/cool5",
+    "particle": "projects:foundry/clay"
+  },
+  "elements": [
+    {
+      "from": [
+        3.1,
+        12,
+        3.1
+      ],
+      "to": [
+        12.9,
+        14.8,
+        12.9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#sand",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#sand",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#sand",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#sand",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#sand",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#sand",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        14.9,
+        5
+      ],
+      "to": [
+        12,
+        15.35,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cool3",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#cool3",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#cool3",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#cool3",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#cool3",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#cool3",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        }
+      },
+      "light_emission": 6,
+      "shade": false
+    }
+  ]
+}

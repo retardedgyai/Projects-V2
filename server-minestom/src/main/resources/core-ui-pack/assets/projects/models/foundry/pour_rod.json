@@ -1,0 +1,158 @@
+{
+  "textures": {
+    "clay": "projects:foundry/clay",
+    "iron": "projects:foundry/iron",
+    "dark": "projects:foundry/dark",
+    "sand": "projects:foundry/sand",
+    "wood": "projects:foundry/wood",
+    "metal": "projects:foundry/metal",
+    "ember": "projects:foundry/ember",
+    "liquid": "projects:foundry/liquid",
+    "cool1": "projects:foundry/cool1",
+    "cool2": "projects:foundry/cool2",
+    "cool3": "projects:foundry/cool3",
+    "cool4": "projects:foundry/cool4",
+    "cool5": "projects:foundry/cool5",
+    "particle": "projects:foundry/clay"
+  },
+  "elements": [
+    {
+      "from": [
+        3.1,
+        12,
+        3.1
+      ],
+      "to": [
+        12.9,
+        14.8,
+        12.9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#sand",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#sand",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#sand",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#sand",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#sand",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#sand",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        14.9,
+        4
+      ],
+      "to": [
+        9,
+        15.35,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#liquid",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#liquid",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#liquid",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#liquid",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#liquid",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#liquid",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        }
+      },
+      "light_emission": 12,
+      "shade": false
+    }
+  ]
+}
