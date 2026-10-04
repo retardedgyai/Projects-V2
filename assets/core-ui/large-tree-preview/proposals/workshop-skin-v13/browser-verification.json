@@ -1,0 +1,169 @@
+{
+  "status": "TECHNICAL_PASS_VISUAL_UNADOPTED",
+  "embeddedPayloadExact": true,
+  "saveStudy": "five-growth-v12",
+  "pairs": [
+    {
+      "name": "Five_Starts",
+      "camera": {
+        "x": 1260.54589,
+        "y": -1350.444835,
+        "z": 0.13212861618387103
+      },
+      "screen": {
+        "w": 1090,
+        "h": 844
+      },
+      "snapshot": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "five-growth-v12",
+        "profileId": "warrior:support:plain:standard",
+        "origin": "warrior",
+        "budget": 12,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "opening_warrior_0_1",
+          "opening_warrior_0_2",
+          "opening_warrior_0_3",
+          "opening_warrior_1_1",
+          "opening_warrior_1_2",
+          "opening_warrior_1_3",
+          "origin_warrior",
+          "v9_warrior_0_0",
+          "v9_warrior_0_1",
+          "v9_warrior_0_2",
+          "v9_warrior_0_3",
+          "v9_warrior_0_4",
+          "v9_warrior_0_5"
+        ]
+      },
+      "selected": "v9_warrior_0_5",
+      "stats": {
+        "physical": 43,
+        "resource": 9,
+        "hp": 14,
+        "armor": 12,
+        "haste": 12
+      },
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 0.9999999999999744,
+        "minClickGap": 1.2642572323677164,
+        "minNodePairPaintGap": 3.2432523129246977,
+        "nearest": {
+          "node": "key_05",
+          "edge": [
+            "r24_42_1",
+            "r19_24_2"
+          ]
+        },
+        "labelLines": [],
+        "captions": 13,
+        "zoom": 0.13212861618387103,
+        "spent": 12,
+        "usable": true,
+        "connected": true
+      },
+      "sameCameraAndCanvas": true
+    },
+    {
+      "name": "Ranger_Growth",
+      "camera": {
+        "x": 2583.52132,
+        "y": -935.50848,
+        "z": 0.20779001382097753
+      },
+      "screen": {
+        "w": 1090,
+        "h": 844
+      },
+      "snapshot": {
+        "version": "projects-large-tree-diff-v2",
+        "study": "five-growth-v12",
+        "profileId": "ranger:support:plain:standard",
+        "origin": "ranger",
+        "budget": 24,
+        "roadChoice": "hp",
+        "siphon": false,
+        "learned": [
+          "opening_ranger_0_1",
+          "opening_ranger_0_2",
+          "opening_ranger_0_3",
+          "opening_ranger_1_1",
+          "opening_ranger_1_2",
+          "opening_ranger_1_3",
+          "origin_ranger",
+          "v9_ranger_1_0",
+          "v9_ranger_1_1",
+          "v9_ranger_1_2",
+          "v9_ranger_1_3",
+          "v9_ranger_1_4",
+          "v9_ranger_1_5"
+        ]
+      },
+      "selected": "r39_40_3",
+      "stats": {
+        "damage": 14,
+        "crit": 8,
+        "resource": 10,
+        "move": 14,
+        "haste": 27,
+        "hp": 4,
+        "resist": 2,
+        "efficiency": 3
+      },
+      "audit": {
+        "centralLabelIntrusions": [],
+        "minGlyphGap": 1.3006894989206077,
+        "minClickGap": 1.716269526562563,
+        "minNodePairPaintGap": 3.9551814190355845,
+        "nearest": {
+          "node": "key_02",
+          "edge": [
+            "g12n0",
+            "g12n3"
+          ]
+        },
+        "labelLines": [],
+        "captions": 8,
+        "zoom": 0.20779001382097753,
+        "spent": 12,
+        "usable": true,
+        "connected": true
+      },
+      "sameCameraAndCanvas": true
+    }
+  ],
+  "cases": [
+    "warrior-direction-0-12",
+    "warrior-direction-1-12",
+    "tank-direction-0-12",
+    "tank-direction-1-12",
+    "mage-direction-0-12",
+    "mage-direction-1-12",
+    "ranger-direction-0-12",
+    "ranger-direction-1-12",
+    "assassin-direction-0-12",
+    "assassin-direction-1-12",
+    "warrior-tank-fusion-24",
+    "mage-ranger-fusion-24",
+    "warrior-growth-0-24",
+    "warrior-growth-1-24",
+    "tank-growth-0-24",
+    "tank-growth-1-24",
+    "mage-growth-0-24",
+    "mage-growth-1-24",
+    "ranger-growth-0-24",
+    "ranger-growth-1-24",
+    "assassin-growth-0-24",
+    "assassin-growth-1-24"
+  ],
+  "realPointerSelection": true,
+  "realAllocateButton": true,
+  "saveRestoreAllExamples": true,
+  "toolsAndComparisonReachable": true,
+  "mobileNoHorizontalOverflow": true,
+  "errors": [],
+  "candidateSha256": "4e04a251fe51c33ef47a9a199a085dcf00e4cea3cc9469ddc75ef8cd9b91cb32"
+}

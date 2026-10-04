@@ -1,0 +1,30 @@
+{
+  "status": "VISUAL_CANDIDATE_UNADOPTED",
+  "inspectedCaptures": [
+    "After_Five_Starts.png",
+    "After_Mage_Desktop.png",
+    "After_Mobile_Acquire.png",
+    "After_Mobile_Detail.png",
+    "After_Mobile_Map.png",
+    "After_Mobile_Tools.png",
+    "After_Ranger_Acquired.png",
+    "After_Ranger_Growth.png",
+    "Before_Five_Starts.png",
+    "Before_Ranger_Growth.png",
+    "Tools_Drawer.png"
+  ],
+  "normalScaleDesktop": "1440x920, 1920x1200",
+  "mobile": "412x915",
+  "improvements": [
+    "dark neutral material palette",
+    "clearer acquired route against muted edges",
+    "32px approved pixel sprite in selected node panel",
+    "cost/QA tables behind on-demand displays",
+    "point and primary action hierarchy"
+  ],
+  "largestRemainingGap": "important node artwork remains small at overview zoom; dense legacy geometry limits glyph size",
+  "geometryAndGameplayUnchanged": true,
+  "referenceReview": "reference-review.md",
+  "creatorAdoption": false,
+  "nativeIntegration": false
+}

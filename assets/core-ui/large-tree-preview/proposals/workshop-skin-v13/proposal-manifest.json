@@ -1,0 +1,14 @@
+{
+  "status": "TECHNICAL_PASS_VISUAL_CANDIDATE_UNADOPTED",
+  "source": "workshop-five-growth-v12/ProjectS_Five_Growth_V12.html",
+  "sourceSha256": "5e33e318debf79d1f7449ca481286af43b363dc03aa1841367d8051be37f36a8",
+  "candidateSha256": "4e04a251fe51c33ef47a9a199a085dcf00e4cea3cc9469ddc75ef8cd9b91cb32",
+  "embeddedPayloadExact": true,
+  "geometryChanged": false,
+  "rewardsChanged": false,
+  "saveStudy": "five-growth-v12",
+  "fontsAndSpritesExact": true,
+  "nativeApplied": false,
+  "actualJsVerification": "browser-verification.json",
+  "visualReview": "visual-review.json"
+}
