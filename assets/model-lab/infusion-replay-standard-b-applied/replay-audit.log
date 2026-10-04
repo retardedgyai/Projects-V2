@@ -1,0 +1,39 @@
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+INFUSION_REPLAY_SOUND_B cue=START tick=0 phase=ESSENTIA event=minecraft:block.amethyst_block.chime volume=0.6 pitch=0.8
+INFUSION_TEST_REPLAY_STARTED tick=0 repositoryWrite=false
+INFUSION_REPLAY_SOUND_B cue=ARRIVAL tick=140 phase=INGREDIENTS event=minecraft:block.enchantment_table.use volume=0.05 pitch=1.0
+INFUSION_REPLAY_SOUND_B cue=COMPLETE tick=160 phase=COMPLETE event=minecraft:block.amethyst_block.resonate volume=0.25 pitch=1.0
+INFUSION_REPLAY_SOUND_B_STOP tick=235 ownNamedBlockCuesOnly=true
+INFUSION_TEST_REPLAY_STOPPED reason=complete tick=235 repositoryWrite=false
+REPLAY_B_PACKET_TIMING_PASS arrivalTick=140 completedTick=160 delta20 startUnchanged .05_1.0 .25_1.0 BLOCK receiverPosition noDuplicateCompletion
+INFUSION_REPLAY_SOUND_B cue=START tick=235 phase=ESSENTIA event=minecraft:block.amethyst_block.chime volume=0.6 pitch=0.8
+INFUSION_TEST_REPLAY_STARTED tick=235 repositoryWrite=false
+INFUSION_REPLAY_SOUND_B_STOP tick=237 ownNamedBlockCuesOnly=true
+INFUSION_TEST_REPLAY_STOPPED reason=command tick=237 repositoryWrite=false
+INFUSION_REPLAY_SOUND_B cue=START tick=243 phase=ESSENTIA event=minecraft:block.amethyst_block.chime volume=0.6 pitch=0.8
+INFUSION_TEST_REPLAY_STARTED tick=243 repositoryWrite=false
+INFUSION_REPLAY_SOUND_B_STOP tick=279 ownNamedBlockCuesOnly=true
+INFUSION_TEST_REPLAY_STOPPED reason=command tick=279 repositoryWrite=false
+INFUSION_REPLAY_SOUND_B cue=START tick=285 phase=ESSENTIA event=minecraft:block.amethyst_block.chime volume=0.6 pitch=0.8
+INFUSION_TEST_REPLAY_STARTED tick=285 repositoryWrite=false
+INFUSION_REPLAY_SOUND_B_STOP tick=406 ownNamedBlockCuesOnly=true
+INFUSION_TEST_REPLAY_STOPPED reason=command tick=406 repositoryWrite=false
+INFUSION_REPLAY_SOUND_B cue=START tick=412 phase=ESSENTIA event=minecraft:block.amethyst_block.chime volume=0.6 pitch=0.8
+INFUSION_TEST_REPLAY_STARTED tick=412 repositoryWrite=false
+INFUSION_REPLAY_SOUND_B cue=ARRIVAL tick=552 phase=INGREDIENTS event=minecraft:block.enchantment_table.use volume=0.05 pitch=1.0
+INFUSION_REPLAY_SOUND_B_STOP tick=558 ownNamedBlockCuesOnly=true
+INFUSION_TEST_REPLAY_STOPPED reason=command tick=558 repositoryWrite=false
+INFUSION_REPLAY_SOUND_B cue=START tick=564 phase=ESSENTIA event=minecraft:block.amethyst_block.chime volume=0.6 pitch=0.8
+INFUSION_TEST_REPLAY_STARTED tick=564 repositoryWrite=false
+INFUSION_REPLAY_SOUND_B cue=ARRIVAL tick=704 phase=INGREDIENTS event=minecraft:block.enchantment_table.use volume=0.05 pitch=1.0
+INFUSION_REPLAY_SOUND_B cue=COMPLETE tick=724 phase=COMPLETE event=minecraft:block.amethyst_block.resonate volume=0.25 pitch=1.0
+INFUSION_REPLAY_SOUND_B_STOP tick=733 ownNamedBlockCuesOnly=true
+INFUSION_TEST_REPLAY_STOPPED reason=command tick=733 repositoryWrite=false
+INFUSION_REPLAY_SOUND_B cue=START tick=739 phase=ESSENTIA event=minecraft:block.amethyst_block.chime volume=0.6 pitch=0.8
+INFUSION_TEST_REPLAY_STARTED tick=739 repositoryWrite=false
+INFUSION_REPLAY_SOUND_B cue=ARRIVAL tick=876 phase=INGREDIENTS event=minecraft:block.enchantment_table.use volume=0.05 pitch=1.0
+INFUSION_REPLAY_SOUND_B_STOP tick=885 ownNamedBlockCuesOnly=true
+INFUSION_TEST_REPLAY_STOPPED reason=close tick=885 repositoryWrite=false
+REPLAY_B_AUDIT_PASS actualSoundAndStopPackets standardEvents countsOnce spam600 noOutputRewardSkill emptyMaterials emptyJars cancel1_35_120_145_168 lateCueSuppressed disconnectStopsOwnedNamedBlockCues visualCleanup repositoryBytesUnchanged

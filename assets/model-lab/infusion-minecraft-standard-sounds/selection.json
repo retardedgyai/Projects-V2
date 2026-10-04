@@ -1,0 +1,9 @@
+{
+  "selectedVariant": "B",
+  "userSelection": "B",
+  "messageSentinel": "messageSentinel_081fd035e0308191bb789e434e986e3a",
+  "testOnlyReplayIntegration": "../infusion-replay-standard-b-applied/README.md",
+  "nativeTestAddress": "127.0.0.1:25587",
+  "originalPreviewRetained": true,
+  "qualityScope": "User preview preference; actual packet/timing/cleanup tests separate; no subjective native listening claim"
+}

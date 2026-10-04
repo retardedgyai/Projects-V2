@@ -1,0 +1,80 @@
+{
+  "selection": "B",
+  "selectionMessage": "messageSentinel_081fd035e0308191bb789e434e986e3a",
+  "appliedToTestOnlyReplay": true,
+  "serverPid": 29244,
+  "address": "127.0.0.1:25587",
+  "packPort": 25588,
+  "serverReady": true,
+  "nativeMinecraftStatusResponded": true,
+  "nativeVersion": {
+    "name": "26.2",
+    "protocol": 776
+  },
+  "packHttpHashVerified": "0e691d6d4b3067a1dac08f1e1a71ee77bbc6989b",
+  "packAndAcceptedVisualsUnchanged": true,
+  "injection": {
+    "event": "block.enchantment_table.use",
+    "volume": 0.05,
+    "pitch": 1.0,
+    "count": 1,
+    "trigger": "First actual existing radiance flow sample within0.30 block of receiver, once per replay"
+  },
+  "completion": {
+    "event": "block.amethyst_block.resonate",
+    "volume": 0.25,
+    "pitch": 1.0,
+    "count": 1,
+    "trigger": "Accepted visual completion pulse, same tick as completion circle"
+  },
+  "existingStartCuePreserved": {
+    "event": "block.amethyst_block.chime",
+    "volume": 0.6,
+    "pitch": 0.8
+  },
+  "actualGameTickPacketAudit": true,
+  "soundWireRoundTripPassed": true,
+  "arrivalTickInAudit": 140,
+  "completionTickInAudit": 160,
+  "deltaTicks": 20,
+  "soundSource": "BLOCK; chosen injection/completion at equipment receiver. Standard built-in event attenuation retained.",
+  "spam600Passed": true,
+  "cancelTicksTested": [
+    1,
+    35,
+    120,
+    145,
+    168
+  ],
+  "stopNamedOwnedBlockCuesOnly": true,
+  "lateCueSuppressed": true,
+  "disconnectCleanupPassed": true,
+  "emptyMaterialsEmptyJarsPassed": true,
+  "noItemRewardSkillProgress": true,
+  "repositoryBytesUnchangedInAudit": true,
+  "normalManufactureAudioUnchanged": true,
+  "originalSaveSha256": "1EC90A2613A42D2A0D21084023D23C1A93400B7FE4721510C79E54A8C3A73B83",
+  "originalSaveUnchanged": true,
+  "oldReplayStagePreserved": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-03\\task-3\\magic-particle-candidates\\native-test-replay",
+  "checkpoint": "C:\\Users\\xgaiz\\Documents\\Codex\\2026-10-03\\task-3\\magic-particle-candidates\\native-test-replay-standard-b\\pre-B-checkpoint",
+  "clientNotRestarted": 10560,
+  "clientLastVerifiedConnection": "127.0.0.1:25585",
+  "originalNativeServerNotTouched": 26732,
+  "startCommand": "/infusionreplay",
+  "stopCommand": "/infusionstop",
+  "alternateStop": "Sneak + cast rod right click",
+  "actuallyListened": false,
+  "qualityLimit": "User selected B from preview. No native speaker/audio perception tool exposed. Tests prove actual game-generated packets and server readiness, not subjective native sound quality or a new client playthrough.",
+  "whiteFlash": false,
+  "synthesis": false,
+  "newAudioAssets": false,
+  "sourceHashes": {
+    "NativeIntegratedFixtureMaker.kt": "57b56b1123dcd32ee51a8f55979da22de7932083c8e608c4c7164fec3042535b",
+    "WorldInfusionConfluence.kt": "82b4fc0a31a9db38e989b63972091dc7f2181ce30b14424ff5ac5d84f135b094",
+    "WorldInfusionCoreArcs.kt": "f1d4ed83df665107754b48cdad7e48e78961d61ea6f40a085d34338d74216589",
+    "WorldInfusionRadiance.kt": "45fb7d3143e7a1d0ccdd1a9ff573005baf9cedd7c16da29d349258b1af3deb86",
+    "WorldInfusionReplaySoundB.kt": "a66235aa044e60e5eb09ce8c54c1c270b60cdbbb5c73f91b7f1a0b5a5f2c9f06",
+    "WorldInfusionServer.kt": "c0c489ecb81c29b3c2c2fade3fada9eba03b97b626c94be407ec245b6935cca0",
+    "WorldInfusionTestReplay.kt": "dfca05df0d6cab7f1babef7e8ce08fe1d838d0bd5541b6b12646fbe3819a619c"
+  }
+}
