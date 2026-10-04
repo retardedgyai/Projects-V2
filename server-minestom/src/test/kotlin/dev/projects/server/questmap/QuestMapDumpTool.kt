@@ -37,7 +37,8 @@ class QuestMapDumpTool {
                     if (column.isNotEmpty()) lines += "$x $z ${column.toString().trim()}"
                 }
                 val route = plan.mainRoute.joinToString(" ") { "${it.x},${it.z}" }
-                Files.write(Path.of(out, "${style.name.lowercase()}.txt"), listOf("size ${plan.size} seed $seed", "route $route") + lines)
+                val contents = plan.contents.joinToString(" ") { "${it.kind}@${it.position.x},${it.position.z}" }
+                Files.write(Path.of(out, "${style.name.lowercase()}.txt"), listOf("size ${plan.size} seed $seed", "route $route", "contents $contents") + lines)
                 println("QUESTMAP_DUMP ${style.name} columns=${lines.size}")
             } finally {
                 runtime.close()
