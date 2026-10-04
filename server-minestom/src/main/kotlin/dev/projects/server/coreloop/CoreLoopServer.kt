@@ -6,7 +6,7 @@ import dev.projects.server.mob.QuestMobRarity
 import dev.projects.server.coreloop.ui.*
 import dev.projects.server.coreloop.adventure.*
 import dev.projects.server.questmap.*
-import dev.projects.webui.Polish05Scene
+import dev.projects.webui.ForgeV3Scene
 import dev.projects.webui.UiSessions
 import dev.projects.webui.UiInputPlayer
 import net.kyori.adventure.bossbar.BossBar
@@ -84,14 +84,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val uiPack = CoreUiPackServer.start()
     private val polishScene = runCatching {
         val loader = javaClass.classLoader
-        Polish05Scene(requireNotNull(loader.getResourceAsStream("polish05/forge_initial.json")).use { it.readBytes() },
-            requireNotNull(loader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
+        ForgeV3Scene(requireNotNull(loader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
     }.onFailure { System.err.println("POLISH05_SCENE_DISABLED: ${it.message}") }.getOrNull()
     private val polishSessions = if(uiPack != null && polishScene != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
         { player -> uiPack.enabled(player) }, null,
         { player -> CorePolish05ForgeFlow(polishScene,
             { account(player) }, { requireHub(player) && connections[player.uuid] === player },
-            { gear, mode, revision, done ->
+            enhance = { gear, mode, revision, done ->
                 if(busy.contains(player.uuid)) done(false)
                 else mutate(player, CoreAction.EnhanceEquipment(gear, mode), revision, { done(false) }, { done(true) })
             }) },

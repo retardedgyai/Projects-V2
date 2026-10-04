@@ -45,7 +45,7 @@ class UiSessions(
                           sceneBuilder: Polish05Scene?, factory: ((Player) -> ForgeUiFlow)?) {
         val demo=ForgeDemo()
         val polish: ForgeUiFlow?=factory?.invoke(player) ?: sceneBuilder?.let(::Polish05Flow)
-        val effects=if(polish!=null)Polish05Effects() else null
+        val effects=if(polish!=null && !polish.ownsEffects)Polish05Effects() else null
         var light=ForgeLightPhase.IDLE
         val pointer=UiPointer()
         var scene=polish?.scene()?:requireNotNull(document).layout(demo.values(),demo.flags())
@@ -308,6 +308,10 @@ class UiSessions(
                     }
                     s.renderer.render(s.effects.frame(s.scene),s.hover,s.pointer)
                 } else s.effects.clear()
+            } else if(s.polish!=null && s.polish.ownsEffects && s.polish.view=="forge") {
+                // The flow animates the item itself; rebuild every tick so motion advances.
+                s.scene=s.polish.scene()
+                s.renderer.render(s.scene,s.hover,s.pointer)
             }
             paintPointer(s)
         }
@@ -334,7 +338,7 @@ class UiSessions(
                     if(!s.polish.action(action)) continue
                     if(action=="sound" && !oldMuted && s.polish.muted) {
                         POLISH_SOUNDS.forEach { s.player.stopSound(SoundStop.named(Key.key("projects_ui_polish05:ui.$it"))) }
-                    } else if(action=="confirm" && s.polish.operationActive) {
+                    } else if((action=="confirm" || action=="enhance") && s.polish.operationActive) {
                         if(s.polish.view=="forge") {
                             s.effects?.beginStrike()
                             sound(s,"enhance_prepare")
