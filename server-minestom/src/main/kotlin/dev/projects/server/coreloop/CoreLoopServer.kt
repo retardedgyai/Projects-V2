@@ -838,6 +838,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }
 
     private fun updateHud(player: Player) {
+        // The smith's forge covers the whole view; the action-bar HUD would sit on top of it.
+        if (polishSessions?.isOpen(player) == true) { player.sendActionBar(Component.empty()); return }
         val a = combatLab.account(player) ?: account(player) ?: return
         val actor = actor(player) ?: return
         player.food = 20

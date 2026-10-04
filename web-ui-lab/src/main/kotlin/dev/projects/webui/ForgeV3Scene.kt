@@ -50,8 +50,10 @@ class ForgeV3Scene(spriteJson: ByteArray) {
         /** 1920x1080 fills the 800px canvas width; the 450px tall stage is centred in 480. */
         const val SCALE = 800.0 / 1920.0
         const val TOP = (480.0 - 1080.0 * SCALE) / 2
-        /** Renderer zoom that shows the 450px stage at full client height (Polish05 used 0.8 for 480px). */
-        const val ZOOM = 0.8 * 480.0 / (1080.0 * SCALE)
+        /** Renderer zoom that shows the 450px stage at full client height (Polish05 used 0.8 for 480px).
+         *  A 1080p screenshot measured 0.9967 screen px per artboard px; nearest-sampled glyphs then lose
+         *  whole columns. The 1.004 margin keeps the stage at or just above one pixel per pixel. */
+        const val ZOOM = 0.8 * 480.0 / (1080.0 * SCALE) * 1.004 / 0.9967
         const val HERO_X = 624.0
         const val HERO_Y = 480.0
 

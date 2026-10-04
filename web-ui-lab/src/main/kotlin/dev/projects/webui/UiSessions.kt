@@ -71,6 +71,7 @@ class UiSessions(
         Thread(task,"polish05-pointer-probe").apply { isDaemon=true }
     }
     val sessionCount get() = sessions.size
+    fun isOpen(player: Player) = sessions.containsKey(player.uuid)
     val entityCount get() = sessions.values.sumOf { it.renderer.size+1 }
     init {
         // A production server ticks at 20 Hz. Probe the external-camera mouse
