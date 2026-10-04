@@ -209,18 +209,24 @@ def atlas(files: dict[str, bytes], metrics: dict, family: str, chars: list[str])
             draw = ImageDraw.Draw(glyph)
             if pixel:
                 draw.fontmode = "1"
-            draw.text((0, round(cell * 0.8)), char, font=font, fill=(255, 255, 255, 255), anchor="ls")
-            if not pixel and px >= 32:
+            # One pixel of left padding keeps negative side bearings (ノ, j) inside the cell.
+            draw.text((1, round(cell * 0.8)), char, font=font, fill=(255, 255, 255, 255), anchor="ls")
+            if not pixel:
+                # A window slightly under 1080px shrinks the stage a little and nearest sampling then
+                # drops whole pixel columns. Small sizes get strokes about two pixels wide so a dropped
+                # column cannot erase them; large sizes only keep a soft fringe.
                 alpha = glyph.getchannel("A")
-                glyph.putalpha(Image.blend(alpha, alpha.filter(ImageFilter.MaxFilter(3)), 0.18))
+                dilate = 0.55 if px <= 15 else 0.3 if px <= 24 else 0.18
+                glyph.putalpha(Image.blend(alpha, alpha.filter(ImageFilter.MaxFilter(3)), dilate))
             # Vanilla derives a bitmap glyph's advance from its rightmost non-transparent column
             # ((rightmost + 1) * scale + 1). An alpha-1 pixel at the browser advance, which the text
             # shader discards, restores the browser's spacing.
-            advance = max(2, min(cell, round(font.getlength(char))))
-            if glyph.getpixel((advance - 2, cell - 1))[3] == 0:
-                glyph.putpixel((advance - 2, cell - 1), (255, 255, 255, 1))
+            advance = max(2, min(cell - 1, round(font.getlength(char))))
+            if glyph.getpixel((advance - 1, cell - 1))[3] == 0:
+                glyph.putpixel((advance - 1, cell - 1), (255, 255, 255, 1))
             ink = glyph.getchannel("A").getbbox()
-            widths[char] = round((ink[2] if ink else advance) * scale + 1)
+            # The padding pixel is part of every glyph, so it cancels out between characters.
+            widths[char] = round(((ink[2] if ink else advance + 1) - 1) * scale + 1)
             image.paste(glyph, ((index % 16) * cell, (index // 16) * cell))
         name = f"v3font/{family}-{page}.png"
         buffer = io.BytesIO()
