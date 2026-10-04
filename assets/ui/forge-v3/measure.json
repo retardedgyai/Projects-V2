@@ -1,0 +1,7713 @@
+[
+{
+"i": 0,
+"tag": "div",
+"cls": "",
+"box": [
+0,
+0,
+1920,
+1080
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(18, 19, 22)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 1,
+"tag": "svg",
+"cls": "pix",
+"box": [
+0,
+0,
+1920,
+1080
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 13,
+"tag": "rect",
+"cls": "",
+"box": [
+0,
+0,
+1920,
+1080
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 14,
+"tag": "rect",
+"cls": "",
+"box": [
+0,
+0,
+1920,
+1080
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 15,
+"tag": "rect",
+"cls": "",
+"box": [
+0,
+0,
+1920,
+1080
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 16,
+"tag": "div",
+"cls": "",
+"box": [
+0,
+0,
+1920,
+1080
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 17,
+"tag": "header",
+"cls": "",
+"box": [
+56,
+30,
+1808,
+60
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 18,
+"tag": "div",
+"cls": "",
+"box": [
+56,
+33.5,
+711.5,
+53
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 19,
+"tag": "span",
+"cls": "slot",
+"box": [
+56,
+37,
+46,
+46
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(13, 14, 16)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 20,
+"tag": "svg",
+"cls": "pix",
+"box": [
+65,
+54,
+28,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 21,
+"tag": "rect",
+"cls": "",
+"box": [
+65,
+54,
+24,
+2
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 22,
+"tag": "rect",
+"cls": "",
+"box": [
+89,
+54,
+4,
+2
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 23,
+"tag": "rect",
+"cls": "",
+"box": [
+71,
+56,
+16,
+4
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 24,
+"tag": "rect",
+"cls": "",
+"box": [
+75,
+60,
+8,
+2
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 25,
+"tag": "rect",
+"cls": "",
+"box": [
+69,
+62,
+20,
+4
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 26,
+"tag": "div",
+"cls": "",
+"box": [
+116,
+33.5,
+154,
+53
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 27,
+"tag": "span",
+"cls": "",
+"box": [
+116,
+33.5,
+154,
+32
+],
+"text": "鍛冶師の仕事場",
+"textBox": [
+116,
+33.5,
+154,
+32
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 22,
+"weight": "700",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 28,
+"tag": "span",
+"cls": "",
+"box": [
+116,
+67.5,
+154,
+19
+],
+"text": "帰還港 · 工房",
+"textBox": [
+116,
+67.5,
+78.125,
+19
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 29,
+"tag": "nav",
+"cls": "",
+"box": [
+791.5,
+30,
+337,
+60
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 30,
+"tag": "a",
+"cls": "",
+"box": [
+791.5,
+50,
+38,
+40
+],
+"text": "強化",
+"textBox": [
+791.5,
+50,
+38,
+40
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 19,
+"weight": "700",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 31,
+"tag": "span",
+"cls": "",
+"box": [
+791.5,
+87,
+38,
+3
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 19,
+"weight": "700",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(240, 122, 42)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 32,
+"tag": "a",
+"cls": "",
+"box": [
+861.5,
+50,
+38,
+40
+],
+"text": "精錬",
+"textBox": [
+861.5,
+50,
+38,
+40
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 19,
+"weight": "500",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 33,
+"tag": "span",
+"cls": "",
+"box": [
+861.5,
+87,
+38,
+3
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 19,
+"weight": "500",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 34,
+"tag": "a",
+"cls": "",
+"box": [
+931.5,
+50,
+38,
+40
+],
+"text": "製作",
+"textBox": [
+931.5,
+50,
+38,
+40
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 19,
+"weight": "500",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 35,
+"tag": "span",
+"cls": "",
+"box": [
+931.5,
+87,
+38,
+3
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 19,
+"weight": "500",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 36,
+"tag": "a",
+"cls": "",
+"box": [
+1001.5,
+50,
+38,
+40
+],
+"text": "修理",
+"textBox": [
+1001.5,
+50,
+38,
+40
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 19,
+"weight": "500",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 37,
+"tag": "span",
+"cls": "",
+"box": [
+1001.5,
+87,
+38,
+3
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 19,
+"weight": "500",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 38,
+"tag": "a",
+"cls": "",
+"box": [
+1071.5,
+50,
+57,
+40
+],
+"text": "装備庫",
+"textBox": [
+1071.5,
+50,
+57,
+40
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 19,
+"weight": "500",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 39,
+"tag": "span",
+"cls": "",
+"box": [
+1071.5,
+87,
+57,
+3
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 19,
+"weight": "500",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 40,
+"tag": "div",
+"cls": "",
+"box": [
+1152.5,
+37,
+711.5,
+46
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 41,
+"tag": "span",
+"cls": "",
+"box": [
+1321.5,
+37,
+241,
+46
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(16, 17, 20, 0.86)",
+"radius": "22px",
+"align": "start",
+"src": null
+},
+{
+"i": 42,
+"tag": "span",
+"cls": "",
+"box": [
+1338.5,
+50,
+96,
+20
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 43,
+"tag": "span",
+"cls": "",
+"box": [
+1338.5,
+50,
+96,
+12
+],
+"text": "鍛冶熟練",
+"textBox": [
+1338.5,
+47,
+48,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 44,
+"tag": "span",
+"cls": "",
+"box": [
+1338.5,
+66,
+96,
+4
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(42, 44, 49)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 45,
+"tag": "span",
+"cls": "",
+"box": [
+1338.5,
+66,
+62.390625,
+4
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(236, 230, 220)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 46,
+"tag": "span",
+"cls": "num",
+"box": [
+1446.5,
+50.5,
+57,
+19
+],
+"text": "Rank 4",
+"textBox": [
+1446.5,
+50.5,
+57,
+19
+],
+"font": "DotGothic16, monospace",
+"size": 19,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 47,
+"tag": "span",
+"cls": "num",
+"box": [
+1515.5,
+54,
+30,
+12
+],
+"text": "13/20",
+"textBox": [
+1515.5,
+54,
+30,
+12
+],
+"font": "DotGothic16, monospace",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 48,
+"tag": "span",
+"cls": "",
+"box": [
+1572.5,
+37,
+126.5,
+46
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(16, 17, 20, 0.86)",
+"radius": "22px",
+"align": "start",
+"src": null
+},
+{
+"i": 49,
+"tag": "img",
+"cls": "pix",
+"box": [
+1589.5,
+48,
+24,
+24
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": "img/affix_dust.png"
+},
+{
+"i": 50,
+"tag": "span",
+"cls": "",
+"box": [
+1623.5,
+50.5,
+39,
+19
+],
+"text": "刻印粉",
+"textBox": [
+1623.5,
+50.5,
+39,
+19
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 51,
+"tag": "span",
+"cls": "num",
+"box": [
+1672.5,
+50.5,
+9.5,
+19
+],
+"text": "5",
+"textBox": [
+1672.5,
+50.5,
+9.5,
+19
+],
+"font": "DotGothic16, monospace",
+"size": 19,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 52,
+"tag": "span",
+"cls": "",
+"box": [
+1709,
+37,
+155,
+46
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(16, 17, 20, 0.86)",
+"radius": "22px",
+"align": "start",
+"src": null
+},
+{
+"i": 53,
+"tag": "svg",
+"cls": "pix",
+"box": [
+1726,
+51,
+18,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 54,
+"tag": "rect",
+"cls": "",
+"box": [
+1730.5,
+53.25,
+9,
+13.5
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 55,
+"tag": "rect",
+"cls": "",
+"box": [
+1728.25,
+55.5,
+13.5,
+9
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 56,
+"tag": "rect",
+"cls": "",
+"box": [
+1730.5,
+55.5,
+4.5,
+4.5
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 57,
+"tag": "span",
+"cls": "",
+"box": [
+1754,
+50.5,
+26,
+19
+],
+"text": "銀貨",
+"textBox": [
+1754,
+50.5,
+26,
+19
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 58,
+"tag": "span",
+"cls": "num",
+"box": [
+1790,
+50.5,
+57,
+19
+],
+"text": "12,480",
+"textBox": [
+1790,
+50.5,
+57,
+19
+],
+"font": "DotGothic16, monospace",
+"size": 19,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 59,
+"tag": "div",
+"cls": "",
+"box": [
+56,
+110,
+1808,
+888
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 60,
+"tag": "section",
+"cls": "panel",
+"box": [
+56,
+110,
+400,
+888
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(16, 17, 20, 0.86)",
+"radius": "14px",
+"align": "start",
+"src": null
+},
+{
+"i": 61,
+"tag": "div",
+"cls": "",
+"box": [
+75,
+129,
+362,
+37
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 62,
+"tag": "h2",
+"cls": "",
+"box": [
+79,
+129,
+51,
+25
+],
+"text": "装備中",
+"textBox": [
+79,
+129,
+51,
+25
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 17,
+"weight": "700",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 63,
+"tag": "span",
+"cls": "",
+"box": [
+335.5625,
+133,
+97.4375,
+17
+],
+"text": "武器1 · 防具4部位",
+"textBox": [
+335.5625,
+133,
+97.4375,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 64,
+"tag": "button",
+"cls": "",
+"box": [
+75,
+170,
+362,
+85
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(239, 230, 210, 0.08)",
+"radius": "10px",
+"align": "left",
+"src": null
+},
+{
+"i": 65,
+"tag": "span",
+"cls": "slot",
+"box": [
+86,
+184.5,
+56,
+56
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(13, 14, 16)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 66,
+"tag": "img",
+"cls": "pix",
+"box": [
+99.66059112548828,
+192.0211944580078,
+28.67882537841797,
+40.957611083984375
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": "img/sword_hero.png"
+},
+{
+"i": 67,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+180,
+232,
+65
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 68,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+180,
+232,
+24
+],
+"text": "熾火の大剣",
+"textBox": [
+156,
+180,
+80,
+24
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "700",
+"color": "rgb(217, 179, 245)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 69,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+208,
+232,
+17
+],
+"text": "武器 · T2 · 攻撃力 148",
+"textBox": [
+156,
+208,
+120.734375,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 70,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+229,
+232,
+16
+],
+"text": "天井 1 / 4",
+"textBox": [
+156,
+229,
+45.921875,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 71,
+"tag": "span",
+"cls": "num",
+"box": [
+402,
+200.5,
+24,
+24
+],
+"text": "+6",
+"textBox": [
+402,
+200.5,
+24,
+24
+],
+"font": "DotGothic16, monospace",
+"size": 24,
+"weight": "400",
+"color": "rgb(217, 86, 58)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 72,
+"tag": "button",
+"cls": "",
+"box": [
+75,
+259,
+362,
+85
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "10px",
+"align": "left",
+"src": null
+},
+{
+"i": 73,
+"tag": "span",
+"cls": "slot",
+"box": [
+86,
+273.5,
+56,
+56
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(13, 14, 16)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 74,
+"tag": "img",
+"cls": "pix",
+"box": [
+89,
+276.5,
+50,
+50
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": "img/warrior_t2_helmet.png"
+},
+{
+"i": 75,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+269,
+232,
+65
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 76,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+269,
+232,
+24
+],
+"text": "黒鉄の兜",
+"textBox": [
+156,
+269,
+64,
+24
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "500",
+"color": "rgb(143, 180, 240)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 77,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+297,
+232,
+17
+],
+"text": "頭 · T2 · 最大HP 43",
+"textBox": [
+156,
+297,
+106.40625,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 78,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+318,
+232,
+16
+],
+"text": "+5までは必ず成功",
+"textBox": [
+156,
+318,
+89.21875,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 79,
+"tag": "span",
+"cls": "num",
+"box": [
+402,
+289.5,
+24,
+24
+],
+"text": "+4",
+"textBox": [
+402,
+289.5,
+24,
+24
+],
+"font": "DotGothic16, monospace",
+"size": 24,
+"weight": "400",
+"color": "rgb(138, 142, 150)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 80,
+"tag": "button",
+"cls": "",
+"box": [
+75,
+348,
+362,
+85
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "10px",
+"align": "left",
+"src": null
+},
+{
+"i": 81,
+"tag": "span",
+"cls": "slot",
+"box": [
+86,
+362.5,
+56,
+56
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(13, 14, 16)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 82,
+"tag": "img",
+"cls": "pix",
+"box": [
+89,
+365.5,
+50,
+50
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": "img/warrior_t2_chestplate.png"
+},
+{
+"i": 83,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+358,
+220,
+65
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 84,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+358,
+220,
+24
+],
+"text": "黒鉄の胸甲",
+"textBox": [
+156,
+358,
+80,
+24
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "500",
+"color": "rgb(217, 179, 245)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 85,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+386,
+220,
+17
+],
+"text": "胴 · T2 · 最大HP 106",
+"textBox": [
+156,
+386,
+113.078125,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 86,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+407,
+220,
+16
+],
+"text": "天井 3 / 6",
+"textBox": [
+156,
+407,
+45.921875,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 87,
+"tag": "span",
+"cls": "num",
+"box": [
+390,
+378.5,
+36,
+24
+],
+"text": "+16",
+"textBox": [
+390,
+378.5,
+36,
+24
+],
+"font": "DotGothic16, monospace",
+"size": 24,
+"weight": "400",
+"color": "rgb(255, 196, 138)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 88,
+"tag": "button",
+"cls": "",
+"box": [
+75,
+437,
+362,
+85
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "10px",
+"align": "left",
+"src": null
+},
+{
+"i": 89,
+"tag": "span",
+"cls": "slot",
+"box": [
+86,
+451.5,
+56,
+56
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(13, 14, 16)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 90,
+"tag": "img",
+"cls": "pix",
+"box": [
+89,
+454.5,
+50,
+50
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": "img/warrior_t2_leggings.png"
+},
+{
+"i": 91,
+"tag": "span",
+"cls": "",
+"box": [
+86,
+451.5,
+56,
+56
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(194, 85, 74, 0.28)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 92,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+447,
+220,
+65
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 93,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+447,
+220,
+24
+],
+"text": "衛士の脚甲",
+"textBox": [
+156,
+447,
+80,
+24
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "500",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 94,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+475,
+220,
+17
+],
+"text": "脚 · T1 · 最大HP 73",
+"textBox": [
+156,
+475,
+106.40625,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 95,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+496,
+220,
+16
+],
+"text": "破損中 · 要修理",
+"textBox": [
+156,
+496,
+77.109375,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(229, 139, 128)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 96,
+"tag": "span",
+"cls": "num",
+"box": [
+390,
+467.5,
+36,
+24
+],
+"text": "+11",
+"textBox": [
+390,
+467.5,
+36,
+24
+],
+"font": "DotGothic16, monospace",
+"size": 24,
+"weight": "400",
+"color": "rgb(242, 138, 60)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 97,
+"tag": "button",
+"cls": "",
+"box": [
+75,
+526,
+362,
+85
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "10px",
+"align": "left",
+"src": null
+},
+{
+"i": 98,
+"tag": "span",
+"cls": "slot",
+"box": [
+86,
+540.5,
+56,
+56
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(13, 14, 16)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 99,
+"tag": "img",
+"cls": "pix",
+"box": [
+89,
+543.5,
+50,
+50
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": "img/warrior_t2_boots.png"
+},
+{
+"i": 100,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+536,
+232,
+65
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 101,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+536,
+232,
+24
+],
+"text": "旅人の長靴",
+"textBox": [
+156,
+536,
+80,
+24
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "500",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 102,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+564,
+232,
+17
+],
+"text": "足 · T2 · 最大HP 18",
+"textBox": [
+156,
+564,
+106.40625,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 103,
+"tag": "span",
+"cls": "",
+"box": [
+156,
+585,
+232,
+16
+],
+"text": "+5までは必ず成功",
+"textBox": [
+156,
+585,
+89.21875,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 104,
+"tag": "span",
+"cls": "num",
+"box": [
+402,
+556.5,
+24,
+24
+],
+"text": "+0",
+"textBox": [
+402,
+556.5,
+24,
+24
+],
+"font": "DotGothic16, monospace",
+"size": 24,
+"weight": "400",
+"color": "rgb(138, 142, 150)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 105,
+"tag": "div",
+"cls": "",
+"box": [
+75,
+615,
+362,
+230
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 106,
+"tag": "div",
+"cls": "",
+"box": [
+75,
+849,
+362,
+130
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 107,
+"tag": "span",
+"cls": "",
+"box": [
+75,
+864,
+362,
+19
+],
+"text": "素材は採取 → 精錬で作ります",
+"textBox": [
+79,
+864,
+174.828125,
+19
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 108,
+"tag": "a",
+"cls": "",
+"box": [
+75,
+891,
+362,
+40
+],
+"text": "精錬へ",
+"textBox": [
+87,
+901,
+338,
+20
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 14,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(255, 255, 255, 0.04)",
+"radius": "8px",
+"align": "start",
+"src": null
+},
+{
+"i": 109,
+"tag": "span",
+"cls": "",
+"box": [
+310.296875,
+902.5,
+114.703125,
+17
+],
+"text": "原料2個 → 加工材1個",
+"textBox": [
+310.296875,
+902.5,
+114.703125,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 110,
+"tag": "a",
+"cls": "",
+"box": [
+75,
+939,
+362,
+40
+],
+"text": "市場で探す",
+"textBox": [
+87,
+949,
+338,
+20
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 14,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(255, 255, 255, 0.04)",
+"radius": "8px",
+"align": "start",
+"src": null
+},
+{
+"i": 111,
+"tag": "span",
+"cls": "",
+"box": [
+317.359375,
+950.5,
+107.640625,
+17
+],
+"text": "他プレイヤーの出品",
+"textBox": [
+317.359375,
+950.5,
+107.640625,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 112,
+"tag": "section",
+"cls": "",
+"box": [
+484,
+110,
+872,
+888
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 113,
+"tag": "div",
+"cls": "",
+"box": [
+484,
+110,
+872,
+781
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 114,
+"tag": "div",
+"cls": "",
+"box": [
+484,
+200.5,
+280,
+600
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 115,
+"tag": "span",
+"cls": "",
+"box": [
+504,
+708.5,
+244,
+60
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(240, 122, 42, 0.08)",
+"radius": "50%",
+"align": "start",
+"src": null
+},
+{
+"i": 116,
+"tag": "span",
+"cls": "",
+"box": [
+549,
+726.5,
+150,
+28
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0.55)",
+"radius": "50%",
+"align": "start",
+"src": null
+},
+{
+"i": 117,
+"tag": "span",
+"cls": "",
+"box": [
+540,
+704.5,
+6,
+6
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(255, 241, 222)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 118,
+"tag": "span",
+"cls": "",
+"box": [
+643.59375,
+683.5,
+4,
+4
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(217, 86, 58)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 119,
+"tag": "span",
+"cls": "",
+"box": [
+579.1875,
+660.5,
+4,
+4
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(217, 86, 58)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 123,
+"tag": "div",
+"cls": "",
+"box": [
+792,
+244.296875,
+564,
+512.390625
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 124,
+"tag": "div",
+"cls": "",
+"box": [
+792,
+244.296875,
+564,
+25
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 125,
+"tag": "span",
+"cls": "",
+"box": [
+792,
+244.296875,
+44,
+25
+],
+"text": "レア",
+"textBox": [
+802,
+248.296875,
+24,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "700",
+"color": "rgb(217, 179, 245)",
+"bg": "rgba(190, 130, 230, 0.16)",
+"radius": "4px",
+"align": "start",
+"src": null
+},
+{
+"i": 126,
+"tag": "span",
+"cls": "",
+"box": [
+844,
+244.296875,
+61.3125,
+25
+],
+"text": "T2 武器",
+"textBox": [
+854,
+248.296875,
+41.3125,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "700",
+"color": "rgb(201, 195, 184)",
+"bg": "rgba(255, 255, 255, 0.07)",
+"radius": "4px",
+"align": "start",
+"src": null
+},
+{
+"i": 127,
+"tag": "span",
+"cls": "",
+"box": [
+913.3125,
+244.296875,
+44,
+25
+],
+"text": "大剣",
+"textBox": [
+923.3125,
+248.296875,
+24,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "700",
+"color": "rgb(201, 195, 184)",
+"bg": "rgba(255, 255, 255, 0.07)",
+"radius": "4px",
+"align": "start",
+"src": null
+},
+{
+"i": 128,
+"tag": "h1",
+"cls": "",
+"box": [
+792,
+285.296875,
+564,
+48.390625
+],
+"text": "熾火の大剣",
+"textBox": [
+792,
+277.296875,
+220,
+64
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 44,
+"weight": "700",
+"color": "rgb(217, 179, 245)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 129,
+"tag": "div",
+"cls": "",
+"box": [
+792,
+349.6875,
+564,
+103
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 130,
+"tag": "div",
+"cls": "",
+"box": [
+792,
+363.6875,
+60.109375,
+75
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 131,
+"tag": "span",
+"cls": "",
+"box": [
+792,
+363.6875,
+60.109375,
+17
+],
+"text": "現在 · 赤熱",
+"textBox": [
+792,
+363.6875,
+60.109375,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 132,
+"tag": "span",
+"cls": "num",
+"box": [
+792,
+382.6875,
+60.109375,
+56
+],
+"text": "+6",
+"textBox": [
+792,
+382.6875,
+56,
+56
+],
+"font": "DotGothic16, monospace",
+"size": 56,
+"weight": "400",
+"color": "rgb(154, 149, 141)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 133,
+"tag": "span",
+"cls": "",
+"box": [
+874.109375,
+349.6875,
+146,
+103
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 134,
+"tag": "svg",
+"cls": "pix",
+"box": [
+874.109375,
+400.1875,
+40,
+20
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 135,
+"tag": "rect",
+"cls": "",
+"box": [
+874.109375,
+405.1875,
+30,
+10
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 136,
+"tag": "rect",
+"cls": "",
+"box": [
+899.109375,
+400.1875,
+5,
+20
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 137,
+"tag": "rect",
+"cls": "",
+"box": [
+904.109375,
+405.1875,
+5,
+10
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 138,
+"tag": "span",
+"cls": "",
+"box": [
+936.109375,
+349.6875,
+84,
+103
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 139,
+"tag": "span",
+"cls": "",
+"box": [
+936.109375,
+349.6875,
+84,
+17
+],
+"text": "成功時 · 赤熱",
+"textBox": [
+936.109375,
+349.6875,
+72.109375,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(217, 86, 58)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 140,
+"tag": "span",
+"cls": "num",
+"box": [
+936.109375,
+368.6875,
+84,
+84
+],
+"text": "+7",
+"textBox": [
+936.109375,
+368.6875,
+84,
+84
+],
+"font": "DotGothic16, monospace",
+"size": 84,
+"weight": "400",
+"color": "rgb(217, 86, 58)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 141,
+"tag": "div",
+"cls": "panel",
+"box": [
+792,
+468.6875,
+564,
+143
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(16, 17, 20, 0.86)",
+"radius": "14px",
+"align": "start",
+"src": null
+},
+{
+"i": 142,
+"tag": "div",
+"cls": "",
+"box": [
+813,
+473.6875,
+522,
+45
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 143,
+"tag": "span",
+"cls": "",
+"box": [
+813,
+485.6875,
+355,
+21
+],
+"text": "攻撃力",
+"textBox": [
+813,
+485.6875,
+45,
+21
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 15,
+"weight": "400",
+"color": "rgb(201, 195, 184)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 144,
+"tag": "span",
+"cls": "num",
+"box": [
+1184,
+484.6875,
+31.5,
+21
+],
+"text": "148",
+"textBox": [
+1184,
+484.6875,
+31.5,
+21
+],
+"font": "DotGothic16, monospace",
+"size": 21,
+"weight": "400",
+"color": "rgb(154, 149, 141)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 145,
+"tag": "span",
+"cls": "num",
+"box": [
+1231.5,
+484.6875,
+31.5,
+21
+],
+"text": "152",
+"textBox": [
+1231.5,
+484.6875,
+31.5,
+21
+],
+"font": "DotGothic16, monospace",
+"size": 21,
+"weight": "400",
+"color": "rgb(217, 86, 58)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 146,
+"tag": "span",
+"cls": "num",
+"box": [
+1279,
+490.6875,
+56,
+14
+],
+"text": "+4",
+"textBox": [
+1321,
+490.6875,
+14,
+14
+],
+"font": "DotGothic16, monospace",
+"size": 14,
+"weight": "400",
+"color": "rgb(217, 86, 58)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "right",
+"src": null
+},
+{
+"i": 147,
+"tag": "div",
+"cls": "",
+"box": [
+813,
+518.6875,
+522,
+45
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 148,
+"tag": "span",
+"cls": "",
+"box": [
+813,
+530.6875,
+313,
+21
+],
+"text": "攻撃速度",
+"textBox": [
+813,
+530.6875,
+60,
+21
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 15,
+"weight": "400",
+"color": "rgb(201, 195, 184)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 149,
+"tag": "span",
+"cls": "num",
+"box": [
+1142,
+529.6875,
+52.5,
+21
+],
+"text": "+4.8%",
+"textBox": [
+1142,
+529.6875,
+52.5,
+21
+],
+"font": "DotGothic16, monospace",
+"size": 21,
+"weight": "400",
+"color": "rgb(154, 149, 141)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 150,
+"tag": "span",
+"cls": "num",
+"box": [
+1210.5,
+529.6875,
+52.5,
+21
+],
+"text": "+5.6%",
+"textBox": [
+1210.5,
+529.6875,
+52.5,
+21
+],
+"font": "DotGothic16, monospace",
+"size": 21,
+"weight": "400",
+"color": "rgb(217, 86, 58)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 151,
+"tag": "span",
+"cls": "num",
+"box": [
+1279,
+535.6875,
+56,
+14
+],
+"text": "+0.8",
+"textBox": [
+1307,
+535.6875,
+28,
+14
+],
+"font": "DotGothic16, monospace",
+"size": 14,
+"weight": "400",
+"color": "rgb(217, 86, 58)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "right",
+"src": null
+},
+{
+"i": 152,
+"tag": "div",
+"cls": "",
+"box": [
+813,
+563.6875,
+522,
+43
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 153,
+"tag": "span",
+"cls": "",
+"box": [
+813,
+575.6875,
+476,
+20
+],
+"text": "状態",
+"textBox": [
+813,
+575.6875,
+28,
+20
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 14,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 154,
+"tag": "span",
+"cls": "",
+"box": [
+1305,
+574.6875,
+30,
+21
+],
+"text": "正常",
+"textBox": [
+1305,
+574.6875,
+30,
+21
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 15,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 155,
+"tag": "div",
+"cls": "",
+"box": [
+792,
+627.6875,
+564,
+129
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 156,
+"tag": "div",
+"cls": "",
+"box": [
+792,
+627.6875,
+564,
+19
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 157,
+"tag": "span",
+"cls": "",
+"box": [
+792,
+627.6875,
+57.421875,
+19
+],
+"text": "MOD 4 / 6",
+"textBox": [
+792,
+627.6875,
+57.421875,
+19
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 158,
+"tag": "span",
+"cls": "",
+"box": [
+1186.40625,
+628.6875,
+169.59375,
+17
+],
+"text": "強化してもMODは変わりません",
+"textBox": [
+1186.40625,
+628.6875,
+169.59375,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 159,
+"tag": "div",
+"cls": "",
+"box": [
+792,
+654.6875,
+564,
+102
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 160,
+"tag": "div",
+"cls": "",
+"box": [
+792,
+654.6875,
+564,
+21
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 161,
+"tag": "span",
+"cls": "",
+"box": [
+792,
+658.6875,
+40,
+16
+],
+"text": "接頭",
+"textBox": [
+792,
+658.6875,
+22,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 162,
+"tag": "span",
+"cls": "",
+"box": [
+842,
+654.6875,
+480,
+21
+],
+"text": "攻撃力 +11%",
+"textBox": [
+842,
+654.6875,
+87.15625,
+21
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 15,
+"weight": "400",
+"color": "rgb(143, 180, 240)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 163,
+"tag": "span",
+"cls": "",
+"box": [
+1332,
+657.6875,
+24,
+17
+],
+"text": "武威",
+"textBox": [
+1332,
+657.6875,
+24,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 164,
+"tag": "div",
+"cls": "",
+"box": [
+792,
+681.6875,
+564,
+21
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 165,
+"tag": "span",
+"cls": "",
+"box": [
+792,
+685.6875,
+40,
+16
+],
+"text": "接頭",
+"textBox": [
+792,
+685.6875,
+22,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 166,
+"tag": "span",
+"cls": "",
+"box": [
+842,
+681.6875,
+480,
+21
+],
+"text": "火炎ダメージ +3",
+"textBox": [
+842,
+681.6875,
+109.265625,
+21
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 15,
+"weight": "400",
+"color": "rgb(143, 180, 240)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 167,
+"tag": "span",
+"cls": "",
+"box": [
+1332,
+684.6875,
+24,
+17
+],
+"text": "火炎",
+"textBox": [
+1332,
+684.6875,
+24,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 168,
+"tag": "div",
+"cls": "",
+"box": [
+792,
+708.6875,
+564,
+21
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 169,
+"tag": "span",
+"cls": "",
+"box": [
+792,
+712.6875,
+40,
+16
+],
+"text": "接尾",
+"textBox": [
+792,
+712.6875,
+22,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 170,
+"tag": "span",
+"cls": "",
+"box": [
+842,
+708.6875,
+480,
+21
+],
+"text": "会心率 +16%",
+"textBox": [
+842,
+708.6875,
+87.15625,
+21
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 15,
+"weight": "400",
+"color": "rgb(143, 180, 240)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 171,
+"tag": "span",
+"cls": "",
+"box": [
+1332,
+711.6875,
+24,
+17
+],
+"text": "会心",
+"textBox": [
+1332,
+711.6875,
+24,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 172,
+"tag": "div",
+"cls": "",
+"box": [
+792,
+735.6875,
+564,
+21
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 173,
+"tag": "span",
+"cls": "",
+"box": [
+792,
+739.6875,
+40,
+16
+],
+"text": "接尾",
+"textBox": [
+792,
+739.6875,
+22,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 174,
+"tag": "span",
+"cls": "",
+"box": [
+842,
+735.6875,
+480,
+21
+],
+"text": "攻撃速度 +4%",
+"textBox": [
+842,
+735.6875,
+93.828125,
+21
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 15,
+"weight": "400",
+"color": "rgb(143, 180, 240)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 175,
+"tag": "span",
+"cls": "",
+"box": [
+1332,
+738.6875,
+24,
+17
+],
+"text": "疾撃",
+"textBox": [
+1332,
+738.6875,
+24,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 176,
+"tag": "div",
+"cls": "panel",
+"box": [
+484,
+907,
+872,
+91
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(16, 17, 20, 0.86)",
+"radius": "14px",
+"align": "start",
+"src": null
+},
+{
+"i": 177,
+"tag": "div",
+"cls": "",
+"box": [
+505,
+922,
+830,
+19
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 178,
+"tag": "span",
+"cls": "",
+"box": [
+505,
+922,
+109.8125,
+19
+],
+"text": "強化段階 +0 〜 +30",
+"textBox": [
+505,
+922,
+109.8125,
+19
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 179,
+"tag": "span",
+"cls": "",
+"box": [
+1079.34375,
+922,
+255.65625,
+19
+],
+"text": "+15以降は失敗時に破損することがあります",
+"textBox": [
+1079.34375,
+922,
+255.65625,
+19
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(229, 139, 128)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 180,
+"tag": "div",
+"cls": "",
+"box": [
+505,
+951,
+830,
+34
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 181,
+"tag": "div",
+"cls": "",
+"box": [
+505,
+951,
+128.328125,
+34
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 182,
+"tag": "div",
+"cls": "",
+"box": [
+505,
+951,
+128.328125,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 183,
+"tag": "span",
+"cls": "",
+"box": [
+505,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(138, 142, 150)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 184,
+"tag": "span",
+"cls": "",
+"box": [
+531.265625,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(138, 142, 150)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 185,
+"tag": "span",
+"cls": "",
+"box": [
+557.53125,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(138, 142, 150)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 186,
+"tag": "span",
+"cls": "",
+"box": [
+583.796875,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(138, 142, 150)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 187,
+"tag": "span",
+"cls": "",
+"box": [
+610.0625,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(138, 142, 150)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 188,
+"tag": "span",
+"cls": "",
+"box": [
+505,
+969,
+128.328125,
+16
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 189,
+"tag": "span",
+"cls": "num",
+"box": [
+505,
+969,
+27.5,
+16
+],
+"text": "+1〜5",
+"textBox": [
+505,
+969,
+27.5,
+11
+],
+"font": "DotGothic16, monospace",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 190,
+"tag": "span",
+"cls": "",
+"box": [
+589.328125,
+969,
+44,
+16
+],
+"text": "必ず成功",
+"textBox": [
+589.328125,
+969,
+44,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 191,
+"tag": "div",
+"cls": "",
+"box": [
+645.328125,
+951,
+128.328125,
+34
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 192,
+"tag": "div",
+"cls": "",
+"box": [
+645.328125,
+951,
+128.328125,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 193,
+"tag": "span",
+"cls": "",
+"box": [
+645.328125,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(217, 86, 58)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 194,
+"tag": "span",
+"cls": "",
+"box": [
+671.59375,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 195,
+"tag": "span",
+"cls": "",
+"box": [
+697.859375,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 196,
+"tag": "span",
+"cls": "",
+"box": [
+724.125,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 197,
+"tag": "span",
+"cls": "",
+"box": [
+750.390625,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 198,
+"tag": "span",
+"cls": "",
+"box": [
+645.328125,
+969,
+128.328125,
+16
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 199,
+"tag": "span",
+"cls": "num",
+"box": [
+645.328125,
+969,
+33,
+16
+],
+"text": "+6〜10",
+"textBox": [
+645.328125,
+969,
+33,
+11
+],
+"font": "DotGothic16, monospace",
+"size": 11,
+"weight": "400",
+"color": "rgb(217, 86, 58)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 200,
+"tag": "span",
+"cls": "",
+"box": [
+751.65625,
+969,
+22,
+16
+],
+"text": "赤熱",
+"textBox": [
+751.65625,
+969,
+22,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 201,
+"tag": "div",
+"cls": "",
+"box": [
+785.65625,
+951,
+128.328125,
+34
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 202,
+"tag": "div",
+"cls": "",
+"box": [
+785.65625,
+951,
+128.328125,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 203,
+"tag": "span",
+"cls": "",
+"box": [
+785.65625,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 204,
+"tag": "span",
+"cls": "",
+"box": [
+811.921875,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 205,
+"tag": "span",
+"cls": "",
+"box": [
+838.1875,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 206,
+"tag": "span",
+"cls": "",
+"box": [
+864.453125,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 207,
+"tag": "span",
+"cls": "",
+"box": [
+890.71875,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 208,
+"tag": "span",
+"cls": "",
+"box": [
+785.65625,
+969,
+128.328125,
+16
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 209,
+"tag": "span",
+"cls": "num",
+"box": [
+785.65625,
+969,
+38.5,
+16
+],
+"text": "+11〜15",
+"textBox": [
+785.65625,
+969,
+38.5,
+11
+],
+"font": "DotGothic16, monospace",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 210,
+"tag": "span",
+"cls": "",
+"box": [
+891.984375,
+969,
+22,
+16
+],
+"text": "橙熱",
+"textBox": [
+891.984375,
+969,
+22,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 211,
+"tag": "div",
+"cls": "",
+"box": [
+925.984375,
+951,
+128.34375,
+34
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 212,
+"tag": "div",
+"cls": "",
+"box": [
+925.984375,
+951,
+128.34375,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 213,
+"tag": "span",
+"cls": "",
+"box": [
+925.984375,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 214,
+"tag": "span",
+"cls": "",
+"box": [
+952.25,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 215,
+"tag": "span",
+"cls": "",
+"box": [
+978.515625,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 216,
+"tag": "span",
+"cls": "",
+"box": [
+1004.78125,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 217,
+"tag": "span",
+"cls": "",
+"box": [
+1031.046875,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 218,
+"tag": "span",
+"cls": "",
+"box": [
+925.984375,
+969,
+128.34375,
+16
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 219,
+"tag": "span",
+"cls": "num",
+"box": [
+925.984375,
+969,
+38.5,
+16
+],
+"text": "+16〜20",
+"textBox": [
+925.984375,
+969,
+38.5,
+11
+],
+"font": "DotGothic16, monospace",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 220,
+"tag": "span",
+"cls": "",
+"box": [
+1010.328125,
+969,
+44,
+16
+],
+"text": "破損あり",
+"textBox": [
+1010.328125,
+969,
+44,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgba(229, 139, 128, 0.8)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 221,
+"tag": "div",
+"cls": "",
+"box": [
+1066.328125,
+951,
+128.328125,
+34
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 222,
+"tag": "div",
+"cls": "",
+"box": [
+1066.328125,
+951,
+128.328125,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 223,
+"tag": "span",
+"cls": "",
+"box": [
+1066.328125,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 224,
+"tag": "span",
+"cls": "",
+"box": [
+1092.59375,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 225,
+"tag": "span",
+"cls": "",
+"box": [
+1118.859375,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 226,
+"tag": "span",
+"cls": "",
+"box": [
+1145.125,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 227,
+"tag": "span",
+"cls": "",
+"box": [
+1171.390625,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 228,
+"tag": "span",
+"cls": "",
+"box": [
+1066.328125,
+969,
+128.328125,
+16
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 229,
+"tag": "span",
+"cls": "num",
+"box": [
+1066.328125,
+969,
+38.5,
+16
+],
+"text": "+21〜25",
+"textBox": [
+1066.328125,
+969,
+38.5,
+11
+],
+"font": "DotGothic16, monospace",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 230,
+"tag": "span",
+"cls": "",
+"box": [
+1150.65625,
+969,
+44,
+16
+],
+"text": "破損あり",
+"textBox": [
+1150.65625,
+969,
+44,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgba(229, 139, 128, 0.8)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 231,
+"tag": "div",
+"cls": "",
+"box": [
+1206.65625,
+951,
+128.328125,
+34
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 232,
+"tag": "div",
+"cls": "",
+"box": [
+1206.65625,
+951,
+128.328125,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 233,
+"tag": "span",
+"cls": "",
+"box": [
+1206.65625,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 234,
+"tag": "span",
+"cls": "",
+"box": [
+1232.921875,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 235,
+"tag": "span",
+"cls": "",
+"box": [
+1259.1875,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 236,
+"tag": "span",
+"cls": "",
+"box": [
+1285.453125,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 237,
+"tag": "span",
+"cls": "",
+"box": [
+1311.71875,
+951,
+23.265625,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(37, 39, 44)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 238,
+"tag": "span",
+"cls": "",
+"box": [
+1206.65625,
+969,
+128.328125,
+16
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 239,
+"tag": "span",
+"cls": "num",
+"box": [
+1206.65625,
+969,
+38.5,
+16
+],
+"text": "+26〜30",
+"textBox": [
+1206.65625,
+969,
+38.5,
+11
+],
+"font": "DotGothic16, monospace",
+"size": 11,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 240,
+"tag": "span",
+"cls": "",
+"box": [
+1290.984375,
+969,
+44,
+16
+],
+"text": "破損あり",
+"textBox": [
+1290.984375,
+969,
+44,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgba(229, 139, 128, 0.8)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 241,
+"tag": "section",
+"cls": "panel",
+"box": [
+1384,
+110,
+480,
+888
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(16, 17, 20, 0.86)",
+"radius": "14px",
+"align": "start",
+"src": null
+},
+{
+"i": 242,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+133,
+434,
+64
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 243,
+"tag": "h2",
+"cls": "",
+"box": [
+1407,
+176,
+45,
+21
+],
+"text": "成功率",
+"textBox": [
+1407,
+176,
+45,
+21
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 15,
+"weight": "500",
+"color": "rgb(201, 195, 184)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 244,
+"tag": "span",
+"cls": "num",
+"box": [
+1700,
+133,
+141,
+64
+],
+"text": "91.5",
+"textBox": [
+1700,
+133,
+141,
+64
+],
+"font": "DotGothic16, monospace",
+"size": 64,
+"weight": "400",
+"color": "rgb(255, 196, 138)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 245,
+"tag": "span",
+"cls": "",
+"box": [
+1828,
+166,
+13,
+26
+],
+"text": "%",
+"textBox": [
+1828,
+166,
+13,
+26
+],
+"font": "DotGothic16, monospace",
+"size": 26,
+"weight": "400",
+"color": "rgb(255, 196, 138)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 246,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+209,
+434,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 247,
+"tag": "span",
+"cls": "",
+"box": [
+1407,
+209,
+18.84375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(142, 43, 28)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 248,
+"tag": "span",
+"cls": "",
+"box": [
+1428.84375,
+209,
+18.84375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(142, 43, 28)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 249,
+"tag": "span",
+"cls": "",
+"box": [
+1450.6875,
+209,
+18.859375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(142, 43, 28)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 250,
+"tag": "span",
+"cls": "",
+"box": [
+1472.546875,
+209,
+18.84375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(142, 43, 28)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 251,
+"tag": "span",
+"cls": "",
+"box": [
+1494.390625,
+209,
+18.859375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(142, 43, 28)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 252,
+"tag": "span",
+"cls": "",
+"box": [
+1516.25,
+209,
+18.84375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(194, 58, 30)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 253,
+"tag": "span",
+"cls": "",
+"box": [
+1538.09375,
+209,
+18.84375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(194, 58, 30)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 254,
+"tag": "span",
+"cls": "",
+"box": [
+1559.9375,
+209,
+18.859375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(194, 58, 30)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 255,
+"tag": "span",
+"cls": "",
+"box": [
+1581.796875,
+209,
+18.84375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(194, 58, 30)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 256,
+"tag": "span",
+"cls": "",
+"box": [
+1603.640625,
+209,
+18.859375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(194, 58, 30)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 257,
+"tag": "span",
+"cls": "",
+"box": [
+1625.5,
+209,
+18.84375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(240, 122, 42)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 258,
+"tag": "span",
+"cls": "",
+"box": [
+1647.34375,
+209,
+18.84375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(240, 122, 42)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 259,
+"tag": "span",
+"cls": "",
+"box": [
+1669.1875,
+209,
+18.859375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(240, 122, 42)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 260,
+"tag": "span",
+"cls": "",
+"box": [
+1691.046875,
+209,
+18.84375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(240, 122, 42)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 261,
+"tag": "span",
+"cls": "",
+"box": [
+1712.890625,
+209,
+18.859375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(240, 122, 42)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 262,
+"tag": "span",
+"cls": "",
+"box": [
+1734.75,
+209,
+18.84375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(255, 196, 138)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 263,
+"tag": "span",
+"cls": "",
+"box": [
+1756.59375,
+209,
+18.84375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(255, 196, 138)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 264,
+"tag": "span",
+"cls": "",
+"box": [
+1778.4375,
+209,
+18.859375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(255, 196, 138)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 265,
+"tag": "span",
+"cls": "",
+"box": [
+1800.296875,
+209,
+18.84375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(42, 44, 49)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 266,
+"tag": "span",
+"cls": "",
+"box": [
+1822.140625,
+209,
+18.859375,
+18
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(42, 44, 49)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 267,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+239,
+434,
+42
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 268,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+239,
+434,
+19
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 269,
+"tag": "span",
+"cls": "",
+"box": [
+1407,
+239,
+118.4375,
+19
+],
+"text": "基礎（+7への強化）",
+"textBox": [
+1407,
+239,
+118.4375,
+19
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 270,
+"tag": "span",
+"cls": "num",
+"box": [
+1806,
+239,
+35,
+19
+],
+"text": "87.5%",
+"textBox": [
+1806,
+239,
+35,
+14
+],
+"font": "DotGothic16, monospace",
+"size": 14,
+"weight": "400",
+"color": "rgb(201, 195, 184)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 271,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+262,
+434,
+19
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 272,
+"tag": "span",
+"cls": "",
+"box": [
+1407,
+262,
+95.640625,
+19
+],
+"text": "鍛冶熟練 Rank 4",
+"textBox": [
+1407,
+262,
+95.640625,
+19
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 273,
+"tag": "span",
+"cls": "num",
+"box": [
+1827,
+262,
+14,
+19
+],
+"text": "+4",
+"textBox": [
+1827,
+262,
+14,
+14
+],
+"font": "DotGothic16, monospace",
+"size": 14,
+"weight": "400",
+"color": "rgb(201, 195, 184)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 274,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+297,
+434,
+114.59375
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 275,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+297,
+212,
+114.59375
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(255, 255, 255, 0.035)",
+"radius": "10px",
+"align": "start",
+"src": null
+},
+{
+"i": 276,
+"tag": "span",
+"cls": "",
+"box": [
+1419,
+309,
+188,
+17
+],
+"text": "天井（連続失敗）",
+"textBox": [
+1419,
+309,
+96,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 277,
+"tag": "div",
+"cls": "",
+"box": [
+1419,
+334,
+188,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 278,
+"tag": "span",
+"cls": "",
+"box": [
+1419,
+334,
+44,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(240, 122, 42)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 279,
+"tag": "span",
+"cls": "",
+"box": [
+1467,
+334,
+44,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(42, 44, 49)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 280,
+"tag": "span",
+"cls": "",
+"box": [
+1515,
+334,
+44,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(42, 44, 49)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 281,
+"tag": "span",
+"cls": "",
+"box": [
+1563,
+334,
+44,
+12
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(42, 44, 49)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 282,
+"tag": "span",
+"cls": "",
+"box": [
+1419,
+354,
+188,
+19
+],
+"text": "失敗 1 / 4 · あと3回で確定",
+"textBox": [
+1419,
+354,
+152.609375,
+19
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 283,
+"tag": "div",
+"cls": "",
+"box": [
+1629,
+297,
+212,
+114.59375
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(255, 255, 255, 0.035)",
+"radius": "10px",
+"align": "start",
+"src": null
+},
+{
+"i": 284,
+"tag": "span",
+"cls": "",
+"box": [
+1641,
+309,
+188,
+17
+],
+"text": "失敗したときの破損",
+"textBox": [
+1641,
+309,
+108,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 285,
+"tag": "span",
+"cls": "num",
+"box": [
+1641,
+332,
+188,
+28
+],
+"text": "なし",
+"textBox": [
+1641,
+332,
+56,
+28
+],
+"font": "DotGothic16, monospace",
+"size": 28,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 286,
+"tag": "span",
+"cls": "",
+"box": [
+1641,
+366,
+188,
+33.59375
+],
+"text": "+15から失敗時に破損抽選があります",
+"textBox": [
+1641,
+365,
+187.984375,
+33.796875
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 287,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+429.59375,
+434,
+21
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 288,
+"tag": "h3",
+"cls": "",
+"box": [
+1407,
+429.59375,
+263.5625,
+21
+],
+"text": "必要な素材 · T1（+7 の段階で決まる）",
+"textBox": [
+1407,
+429.59375,
+263.5625,
+21
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 15,
+"weight": "500",
+"color": "rgb(201, 195, 184)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 289,
+"tag": "span",
+"cls": "",
+"box": [
+1745.359375,
+432.59375,
+95.640625,
+17
+],
+"text": "銀貨は使いません",
+"textBox": [
+1745.359375,
+432.59375,
+95.640625,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 290,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+460.59375,
+434,
+194
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 291,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+460.59375,
+434,
+60
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(255, 255, 255, 0.035)",
+"radius": "10px",
+"align": "start",
+"src": null
+},
+{
+"i": 292,
+"tag": "span",
+"cls": "slot",
+"box": [
+1417,
+468.59375,
+44,
+44
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(13, 14, 16)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 293,
+"tag": "img",
+"cls": "pix",
+"box": [
+1421,
+472.59375,
+36,
+36
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": "img/ingot.png"
+},
+{
+"i": 294,
+"tag": "span",
+"cls": "",
+"box": [
+1473,
+476.09375,
+303.5,
+29
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 295,
+"tag": "span",
+"cls": "",
+"box": [
+1473,
+476.09375,
+303.5,
+20
+],
+"text": "インゴット",
+"textBox": [
+1473,
+476.09375,
+87.34375,
+20
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 14,
+"weight": "500",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 296,
+"tag": "span",
+"cls": "",
+"box": [
+1546.15625,
+478.09375,
+14.1875,
+17
+],
+"text": "T1",
+"textBox": [
+1546.15625,
+478.09375,
+14.1875,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "500",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 297,
+"tag": "span",
+"cls": "",
+"box": [
+1473,
+501.09375,
+303.5,
+4
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(42, 44, 49)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 298,
+"tag": "span",
+"cls": "",
+"box": [
+1473,
+501.09375,
+21.234375,
+4
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(236, 230, 220)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 299,
+"tag": "span",
+"cls": "",
+"box": [
+1788.5,
+471.59375,
+42.5,
+38
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 300,
+"tag": "span",
+"cls": "num",
+"box": [
+1788.5,
+471.59375,
+42.5,
+20
+],
+"text": "2",
+"textBox": [
+1788.5,
+471.59375,
+42.5,
+20
+],
+"font": "DotGothic16, monospace",
+"size": 20,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 301,
+"tag": "span",
+"cls": "",
+"box": [
+1798.5,
+478.59375,
+32.5,
+13
+],
+"text": "/ 30",
+"textBox": [
+1798.5,
+478.59375,
+32.5,
+13
+],
+"font": "DotGothic16, monospace",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 302,
+"tag": "span",
+"cls": "",
+"box": [
+1794.3125,
+493.59375,
+36.6875,
+16
+],
+"text": "残り 28",
+"textBox": [
+1794.3125,
+493.59375,
+36.6875,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 303,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+527.59375,
+434,
+60
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(255, 255, 255, 0.035)",
+"radius": "10px",
+"align": "start",
+"src": null
+},
+{
+"i": 304,
+"tag": "span",
+"cls": "slot",
+"box": [
+1417,
+535.59375,
+44,
+44
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(13, 14, 16)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 305,
+"tag": "img",
+"cls": "pix",
+"box": [
+1421,
+539.59375,
+36,
+36
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": "img/board.png"
+},
+{
+"i": 306,
+"tag": "span",
+"cls": "",
+"box": [
+1473,
+543.09375,
+303.5,
+29
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 307,
+"tag": "span",
+"cls": "",
+"box": [
+1473,
+543.09375,
+303.5,
+20
+],
+"text": "板材",
+"textBox": [
+1473,
+543.09375,
+45.34375,
+20
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 14,
+"weight": "500",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 308,
+"tag": "span",
+"cls": "",
+"box": [
+1504.15625,
+545.09375,
+14.1875,
+17
+],
+"text": "T1",
+"textBox": [
+1504.15625,
+545.09375,
+14.1875,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "500",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 309,
+"tag": "span",
+"cls": "",
+"box": [
+1473,
+568.09375,
+303.5,
+4
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(42, 44, 49)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 310,
+"tag": "span",
+"cls": "",
+"box": [
+1473,
+568.09375,
+24.265625,
+4
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(236, 230, 220)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 311,
+"tag": "span",
+"cls": "",
+"box": [
+1788.5,
+538.59375,
+42.5,
+38
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 312,
+"tag": "span",
+"cls": "num",
+"box": [
+1788.5,
+538.59375,
+42.5,
+20
+],
+"text": "1",
+"textBox": [
+1788.5,
+538.59375,
+42.5,
+20
+],
+"font": "DotGothic16, monospace",
+"size": 20,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 313,
+"tag": "span",
+"cls": "",
+"box": [
+1798.5,
+545.59375,
+32.5,
+13
+],
+"text": "/ 12",
+"textBox": [
+1798.5,
+545.59375,
+32.5,
+13
+],
+"font": "DotGothic16, monospace",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 314,
+"tag": "span",
+"cls": "",
+"box": [
+1794.3125,
+560.59375,
+36.6875,
+16
+],
+"text": "残り 11",
+"textBox": [
+1794.3125,
+560.59375,
+36.6875,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 315,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+594.59375,
+434,
+60
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(255, 255, 255, 0.035)",
+"radius": "10px",
+"align": "start",
+"src": null
+},
+{
+"i": 316,
+"tag": "span",
+"cls": "slot",
+"box": [
+1417,
+602.59375,
+44,
+44
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(13, 14, 16)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 317,
+"tag": "img",
+"cls": "pix",
+"box": [
+1421,
+606.59375,
+36,
+36
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": "img/cut_stone.png"
+},
+{
+"i": 318,
+"tag": "span",
+"cls": "",
+"box": [
+1473,
+610.09375,
+303.5,
+29
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 319,
+"tag": "span",
+"cls": "",
+"box": [
+1473,
+610.09375,
+303.5,
+20
+],
+"text": "加工石材",
+"textBox": [
+1473,
+610.09375,
+73.34375,
+20
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 14,
+"weight": "500",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 320,
+"tag": "span",
+"cls": "",
+"box": [
+1532.15625,
+612.09375,
+14.1875,
+17
+],
+"text": "T1",
+"textBox": [
+1532.15625,
+612.09375,
+14.1875,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "500",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 321,
+"tag": "span",
+"cls": "",
+"box": [
+1473,
+635.09375,
+303.5,
+4
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(42, 44, 49)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 322,
+"tag": "span",
+"cls": "",
+"box": [
+1473,
+635.09375,
+30.34375,
+4
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(236, 230, 220)",
+"radius": "2px",
+"align": "start",
+"src": null
+},
+{
+"i": 323,
+"tag": "span",
+"cls": "",
+"box": [
+1788.5,
+605.59375,
+42.5,
+38
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 324,
+"tag": "span",
+"cls": "num",
+"box": [
+1788.5,
+605.59375,
+42.5,
+20
+],
+"text": "2",
+"textBox": [
+1788.5,
+605.59375,
+42.5,
+20
+],
+"font": "DotGothic16, monospace",
+"size": 20,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 325,
+"tag": "span",
+"cls": "",
+"box": [
+1798.5,
+612.59375,
+32.5,
+13
+],
+"text": "/ 20",
+"textBox": [
+1798.5,
+612.59375,
+32.5,
+13
+],
+"font": "DotGothic16, monospace",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 326,
+"tag": "span",
+"cls": "",
+"box": [
+1794.3125,
+627.59375,
+36.6875,
+16
+],
+"text": "残り 18",
+"textBox": [
+1794.3125,
+627.59375,
+36.6875,
+16
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 11,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 327,
+"tag": "button",
+"cls": "",
+"box": [
+1407,
+664.59375,
+434,
+67
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(255, 255, 255, 0.035)",
+"radius": "10px",
+"align": "left",
+"src": null
+},
+{
+"i": 328,
+"tag": "span",
+"cls": "",
+"box": [
+1424,
+677.59375,
+340,
+41
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 329,
+"tag": "span",
+"cls": "",
+"box": [
+1424,
+677.59375,
+340,
+21
+],
+"text": "集中鍛造（精錬触媒）",
+"textBox": [
+1424,
+677.59375,
+150,
+21
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 15,
+"weight": "500",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 330,
+"tag": "span",
+"cls": "",
+"box": [
+1424,
+701.59375,
+340,
+17
+],
+"text": "成功率 +15 · 加工石材1・布1・刻印粉2 を追加で消費",
+"textBox": [
+1424,
+701.59375,
+285.453125,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(255, 196, 138)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "left",
+"src": null
+},
+{
+"i": 331,
+"tag": "span",
+"cls": "",
+"box": [
+1778,
+685.09375,
+46,
+26
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(58, 60, 66)",
+"radius": "13px",
+"align": "left",
+"src": null
+},
+{
+"i": 332,
+"tag": "span",
+"cls": "",
+"box": [
+1781,
+688.09375,
+20,
+20
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13.3333,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(236, 230, 220)",
+"radius": "10px",
+"align": "left",
+"src": null
+},
+{
+"i": 333,
+"tag": "div",
+"cls": "",
+"box": [
+1407,
+731.59375,
+434,
+144.40625
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 16,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 334,
+"tag": "button",
+"cls": "",
+"box": [
+1407,
+876,
+434,
+72
+],
+"text": "強化する",
+"textBox": [
+1543.75,
+894.5,
+160.5,
+35
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 24,
+"weight": "700",
+"color": "rgb(23, 24, 27)",
+"bg": "rgb(239, 230, 210)",
+"radius": "10px",
+"align": "center",
+"src": null
+},
+{
+"i": 335,
+"tag": "span",
+"cls": "num",
+"box": [
+1655.75,
+902.5,
+48.5,
+19
+],
+"text": "Enter",
+"textBox": [
+1663.75,
+905.5,
+32.5,
+13
+],
+"font": "DotGothic16, monospace",
+"size": 13,
+"weight": "500",
+"color": "rgb(239, 230, 210)",
+"bg": "rgb(23, 24, 27)",
+"radius": "4px",
+"align": "center",
+"src": null
+},
+{
+"i": 336,
+"tag": "p",
+"cls": "",
+"box": [
+1407,
+958,
+434,
+17
+],
+"text": "手持ちの素材で あと 10 回 強化できます",
+"textBox": [
+1515.953125,
+958,
+216.078125,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "center",
+"src": null
+},
+{
+"i": 337,
+"tag": "footer",
+"cls": "",
+"box": [
+56,
+1018,
+1808,
+36
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 338,
+"tag": "span",
+"cls": "",
+"box": [
+56,
+1024.5,
+203.625,
+23
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 339,
+"tag": "span",
+"cls": "",
+"box": [
+56,
+1024.5,
+64,
+23
+],
+"text": "鍛造記録",
+"textBox": [
+64,
+1027.5,
+48,
+17
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 12,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(255, 255, 255, 0.06)",
+"radius": "4px",
+"align": "start",
+"src": null
+},
+{
+"i": 340,
+"tag": "span",
+"cls": "",
+"box": [
+130,
+1026.5,
+129.625,
+19
+],
+"text": "まだ記録はありません",
+"textBox": [
+130,
+1026.5,
+129.625,
+19
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(111, 107, 101)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 341,
+"tag": "span",
+"cls": "",
+"box": [
+1436.5,
+1023,
+427.5,
+26
+],
+"text": null,
+"textBox": null,
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 342,
+"tag": "span",
+"cls": "",
+"box": [
+1436.5,
+1023,
+108.5,
+26
+],
+"text": "部位を切替",
+"textBox": [
+1436.5,
+1023,
+108.5,
+26
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 343,
+"tag": "span",
+"cls": "key",
+"box": [
+1436.5,
+1023,
+35.5,
+26
+],
+"text": "Tab",
+"textBox": [
+1444.5,
+1028.5,
+19.5,
+13
+],
+"font": "DotGothic16, monospace",
+"size": 13,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(30, 32, 37)",
+"radius": "5px",
+"align": "start",
+"src": null
+},
+{
+"i": 344,
+"tag": "span",
+"cls": "",
+"box": [
+1567,
+1023,
+88,
+26
+],
+"text": "集中鍛造",
+"textBox": [
+1567,
+1023,
+88,
+26
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 345,
+"tag": "span",
+"cls": "key",
+"box": [
+1567,
+1023,
+28,
+26
+],
+"text": "C",
+"textBox": [
+1577.75,
+1028.5,
+6.5,
+13
+],
+"font": "DotGothic16, monospace",
+"size": 13,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(30, 32, 37)",
+"radius": "5px",
+"align": "start",
+"src": null
+},
+{
+"i": 346,
+"tag": "span",
+"cls": "",
+"box": [
+1677,
+1023,
+82.5,
+26
+],
+"text": "強化",
+"textBox": [
+1677,
+1023,
+82.5,
+26
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 347,
+"tag": "span",
+"cls": "key",
+"box": [
+1677,
+1023,
+48.5,
+26
+],
+"text": "Enter",
+"textBox": [
+1685,
+1028.5,
+32.5,
+13
+],
+"font": "DotGothic16, monospace",
+"size": 13,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(30, 32, 37)",
+"radius": "5px",
+"align": "start",
+"src": null
+},
+{
+"i": 348,
+"tag": "span",
+"cls": "",
+"box": [
+1781.5,
+1023,
+82.5,
+26
+],
+"text": "閉じる",
+"textBox": [
+1781.5,
+1023,
+82.5,
+26
+],
+"font": "\"M PLUS 2\", sans-serif",
+"size": 13,
+"weight": "400",
+"color": "rgb(162, 158, 151)",
+"bg": "rgba(0, 0, 0, 0)",
+"radius": "0px",
+"align": "start",
+"src": null
+},
+{
+"i": 349,
+"tag": "span",
+"cls": "key",
+"box": [
+1781.5,
+1023,
+35.5,
+26
+],
+"text": "Esc",
+"textBox": [
+1789.5,
+1028.5,
+19.5,
+13
+],
+"font": "DotGothic16, monospace",
+"size": 13,
+"weight": "400",
+"color": "rgb(236, 230, 220)",
+"bg": "rgb(30, 32, 37)",
+"radius": "5px",
+"align": "start",
+"src": null
+}
+]

@@ -40,6 +40,7 @@ object Polish05FontMetrics {
             }
         }
     }
+    fun has(family:String)=family in widths
     fun advance(text:String,family:String):Double {
         val glyphs=widths.getValue(family)
         return text.lineSequence().maxOf { line -> line.codePoints().toArray().sumOf { cp ->

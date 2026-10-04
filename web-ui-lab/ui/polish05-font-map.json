@@ -1018,5 +1018,359 @@
     "width": 229,
     "height": 41,
     "font": "projects_ui_polish05:plates"
+  },
+  "v3_chrome/0_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/256_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/512_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/768_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1024_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1280_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1536_0": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1792_0": {
+    "char": "",
+    "width": 128,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/0_256": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/256_256": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/512_256": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/768_256": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1024_256": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1280_256": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1536_256": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1792_256": {
+    "char": "",
+    "width": 128,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/0_512": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/256_512": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/512_512": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/768_512": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1024_512": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1280_512": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1536_512": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1792_512": {
+    "char": "",
+    "width": 128,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/0_768": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/256_768": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/512_768": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/768_768": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1024_768": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1280_768": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1536_768": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1792_768": {
+    "char": "",
+    "width": 128,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/0_1024": {
+    "char": "",
+    "width": 256,
+    "height": 56,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/256_1024": {
+    "char": "",
+    "width": 256,
+    "height": 56,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/512_1024": {
+    "char": "",
+    "width": 256,
+    "height": 56,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/768_1024": {
+    "char": "",
+    "width": 256,
+    "height": 56,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1024_1024": {
+    "char": "",
+    "width": 256,
+    "height": 56,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1280_1024": {
+    "char": "",
+    "width": 256,
+    "height": 56,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1536_1024": {
+    "char": "",
+    "width": 256,
+    "height": 56,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_chrome/1792_1024": {
+    "char": "",
+    "width": 128,
+    "height": 56,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_round_tl": {
+    "char": "",
+    "width": 64,
+    "height": 64,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_round_tr": {
+    "char": "",
+    "width": 64,
+    "height": 64,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_round_bl": {
+    "char": "",
+    "width": 64,
+    "height": 64,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_round_br": {
+    "char": "",
+    "width": 64,
+    "height": 64,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_ring10_tl": {
+    "char": "",
+    "width": 40,
+    "height": 40,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_ring10_tr": {
+    "char": "",
+    "width": 40,
+    "height": 40,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_ring10_bl": {
+    "char": "",
+    "width": 40,
+    "height": 40,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_ring10_br": {
+    "char": "",
+    "width": 40,
+    "height": 40,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_ring14_tl": {
+    "char": "",
+    "width": 56,
+    "height": 56,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_ring14_tr": {
+    "char": "",
+    "width": 56,
+    "height": 56,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_ring14_bl": {
+    "char": "",
+    "width": 56,
+    "height": 56,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_ring14_br": {
+    "char": "",
+    "width": 56,
+    "height": 56,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_glow": {
+    "char": "",
+    "width": 128,
+    "height": 128,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_ring": {
+    "char": "",
+    "width": 256,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_sword_hero_0": {
+    "char": "",
+    "width": 61,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_sword_hero_1": {
+    "char": "",
+    "width": 61,
+    "height": 23,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_sword_glow_0": {
+    "char": "",
+    "width": 109,
+    "height": 256,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_sword_glow_1": {
+    "char": "",
+    "width": 109,
+    "height": 71,
+    "font": "projects_ui_polish05:v3plates"
+  },
+  "v3_sword_thumb": {
+    "char": "",
+    "width": 39,
+    "height": 48,
+    "font": "projects_ui_polish05:v3plates"
   }
 }

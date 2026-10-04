@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>強化画面 v3 MMO版</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&amp;family=DotGothic16&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0c0e}
+a{color:#EFE6D2}a:hover{color:#FFC48A}
+.pix{image-rendering:pixelated;shape-rendering:crispEdges;display:block}
+.num{font-family:'DotGothic16',monospace}
+.panel{background:rgba(16,17,20,0.86);border:1px solid rgba(255,255,255,0.09);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,0.45)}
+.slot{background:#0D0E10;box-shadow:inset 3px 3px 0 #050506,inset -3px -3px 0 #2C2E34}
+.key{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:26px;padding:0 7px;box-sizing:border-box;border-radius:5px;background:#1E2025;border:1px solid #3A3C42;border-bottom-width:3px;color:#ECE6DC;font-size:13px;font-family:'DotGothic16',monospace}
+button{font-family:inherit}
+button:disabled{cursor:not-allowed}
+/* 装備そのものにかかる強化演出 */
+@keyframes hitA{0%{transform:scale(1);filter:brightness(1)}10%{transform:scale(1.08);filter:brightness(3) saturate(1.5)}35%{transform:scale(1.02);filter:brightness(1.6)}100%{transform:scale(1);filter:brightness(1)}}
+@keyframes hitB{0%{transform:scale(1);filter:brightness(1)}10%{transform:scale(1.08);filter:brightness(3) saturate(1.5)}35%{transform:scale(1.02);filter:brightness(1.6)}100%{transform:scale(1);filter:brightness(1)}}
+@keyframes shakeA{0%,100%{transform:translateX(0)}15%{transform:translateX(-12px)}35%{transform:translateX(10px)}55%{transform:translateX(-7px)}75%{transform:translateX(4px)}}
+@keyframes shakeB{0%,100%{transform:translateX(0)}15%{transform:translateX(-12px)}35%{transform:translateX(10px)}55%{transform:translateX(-7px)}75%{transform:translateX(4px)}}
+@keyframes breakA{0%{transform:translateX(0);filter:brightness(1)}8%{filter:brightness(2.2) sepia(1) hue-rotate(-40deg) saturate(4)}20%{transform:translateX(-14px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}100%{transform:translateX(0);filter:brightness(1)}}
+@keyframes breakB{0%{transform:translateX(0);filter:brightness(1)}8%{filter:brightness(2.2) sepia(1) hue-rotate(-40deg) saturate(4)}20%{transform:translateX(-14px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}100%{transform:translateX(0);filter:brightness(1)}}
+@keyframes charge{0%{filter:brightness(1)}100%{filter:brightness(2) saturate(1.3)}}
+@keyframes jitter{0%,100%{translate:0 0}25%{translate:-2px 1px}50%{translate:2px -1px}75%{translate:-1px -2px}}
+@keyframes spark{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0.3);opacity:0}}
+@keyframes ring{0%{transform:translate(-50%,-50%) scale(0.2);opacity:0.95}100%{transform:translate(-50%,-50%) scale(1.9);opacity:0}}
+@keyframes ember{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-300px);opacity:0}}
+@keyframes popIn{0%{transform:translate(-50%,10px) scale(0.85);opacity:0}100%{transform:translate(-50%,0) scale(1);opacity:1}}
+.fx-hit-a{animation:hitA 1.2s ease-out}
+.fx-hit-b{animation:hitB 1.2s ease-out}
+.fx-shake-a{animation:shakeA .45s ease-out}
+.fx-shake-b{animation:shakeB .45s ease-out}
+.fx-break-a{animation:breakA .8s ease-out}
+.fx-break-b{animation:breakB .8s ease-out}
+.fx-charge{animation:charge .8s ease-in forwards,jitter .09s linear infinite}
+</style>
+</helmet>
+
+<div style="position: relative; width: 1920px; height: 1080px; overflow: hidden; font-family: 'M PLUS 2', sans-serif; color: #ECE6DC; background: #121316">
+
+  <!-- 背景（仮）：実機ではワールドがそのまま見える -->
+  <svg class="pix" width="1920" height="1080" viewBox="0 0 1920 1080" style="position: absolute; inset: 0" aria-hidden="true">
+    <defs>
+      <pattern id="stone3" width="96" height="96" patternUnits="userSpaceOnUse">
+        <rect width="48" height="48" fill="#1E1F23"></rect><rect x="48" width="48" height="48" fill="#232429"></rect>
+        <rect y="48" width="48" height="48" fill="#202125"></rect><rect x="48" y="48" width="48" height="48" fill="#1B1C1F"></rect>
+        <rect x="12" y="12" width="6" height="6" fill="#2A2B30"></rect><rect x="78" y="60" width="6" height="6" fill="#2B2C31"></rect>
+      </pattern>
+      <radialGradient id="forgeGlow3" cx="44%" cy="44%" r="36%">
+        <stop offset="0%" stop-color="#F07A2A" stop-opacity="0.24"></stop>
+        <stop offset="100%" stop-color="#F07A2A" stop-opacity="0"></stop>
+      </radialGradient>
+    </defs>
+    <rect width="1920" height="1080" fill="url(#stone3)"></rect>
+    <rect width="1920" height="1080" fill="#000000" opacity="0.5"></rect>
+    <rect width="1920" height="1080" fill="url(#forgeGlow3)"></rect>
+  </svg>
+
+  <div style="position: absolute; inset: 0; box-sizing: border-box; padding: 30px 56px 26px; display: grid; grid-template-rows: 60px minmax(0, 1fr) 36px; row-gap: 20px">
+
+    <!-- ヘッダー -->
+    <header style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; column-gap: 24px">
+      <div style="display: flex; align-items: center; gap: 14px">
+        <span class="slot" style="width: 46px; height: 46px; display: flex; align-items: center; justify-content: center">
+          <svg class="pix" width="28" height="12" viewBox="0 0 14 6" aria-hidden="true"><rect x="0" y="0" width="12" height="1" fill="#9EA3AB"></rect><rect x="12" y="0" width="2" height="1" fill="#6B7078"></rect><rect x="3" y="1" width="8" height="2" fill="#6B7078"></rect><rect x="5" y="3" width="4" height="1" fill="#4A4D55"></rect><rect x="2" y="4" width="10" height="2" fill="#4A4D55"></rect></svg>
+        </span>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 22px; font-weight: 700">鍛冶師の仕事場</span>
+          <span style="font-size: 13px; color: #A29E97">帰還港 · 工房</span>
+        </div>
+      </div>
+      <nav aria-label="工房メニュー" style="display: flex; gap: 32px; align-items: flex-end; height: 60px">
+        <a href="#" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 10px; text-decoration: none; color: #ECE6DC; font-size: 19px; font-weight: 700">強化<span style="display: block; width: 100%; height: 3px; background: #F07A2A"></span></a>
+        <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 10px; text-decoration: none; color: #A29E97; font-size: 19px; font-weight: 500">精錬<span style="display: block; width: 100%; height: 3px"></span></a>
+        <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 10px; text-decoration: none; color: #A29E97; font-size: 19px; font-weight: 500">製作<span style="display: block; width: 100%; height: 3px"></span></a>
+        <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 10px; text-decoration: none; color: #A29E97; font-size: 19px; font-weight: 500">修理<span style="display: block; width: 100%; height: 3px"></span></a>
+        <a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 10px; text-decoration: none; color: #A29E97; font-size: 19px; font-weight: 500">装備庫<span style="display: block; width: 100%; height: 3px"></span></a>
+      </nav>
+      <div style="display: flex; justify-content: flex-end; gap: 10px">
+        <span style="display: inline-flex; align-items: center; gap: 12px; height: 44px; padding: 0 16px; border-radius: 22px; background: rgba(16,17,20,0.86); border: 1px solid rgba(255,255,255,0.09)">
+          <span style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 12px; color: #A29E97; line-height: 1">鍛冶熟練</span>
+            <span style="display: block; width: 96px; height: 4px; border-radius: 2px; background: #2A2C31"><span style="{{xpBar}}"></span></span>
+          </span>
+          <span class="num" style="font-size: 19px">Rank {{rank}}</span>
+          <span class="num" style="font-size: 12px; color: #A29E97">{{xpText}}</span>
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 16px; border-radius: 22px; background: rgba(16,17,20,0.86); border: 1px solid rgba(255,255,255,0.09)">
+          <img class="pix" src="/_blob/6f72e2c9c8cd497b1c0330ad7b17f526" alt="" style="width: 24px; height: 24px">
+          <span style="font-size: 13px; color: #A29E97">刻印粉</span><span class="num" style="font-size: 19px">{{dustOwned}}</span>
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 16px; border-radius: 22px; background: rgba(16,17,20,0.86); border: 1px solid rgba(255,255,255,0.09)">
+          <svg class="pix" width="18" height="18" viewBox="0 0 8 8" aria-hidden="true"><rect x="2" y="1" width="4" height="6" fill="#9EA3AB"></rect><rect x="1" y="2" width="6" height="4" fill="#9EA3AB"></rect><rect x="2" y="2" width="2" height="2" fill="#E3E6EA"></rect></svg>
+          <span style="font-size: 13px; color: #A29E97">銀貨</span><span class="num" style="font-size: 19px">12,480</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- 本体 -->
+    <div style="display: grid; grid-template-columns: 400px minmax(0, 1fr) 480px; column-gap: 28px; min-height: 0">
+
+      <!-- 左：装備（5部位） -->
+      <section class="panel" style="display: flex; flex-direction: column; padding: 18px; gap: 4px; min-height: 0">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px 12px">
+          <h2 style="margin: 0; font-size: 17px; font-weight: 700">装備中</h2>
+          <span style="font-size: 12px; color: #A29E97">武器1 · 防具4部位</span>
+        </div>
+
+        <sc-for list="{{items}}" as="it" hint-placeholder-count="5">
+          <button type="button" onClick="{{it.pick}}" aria-pressed="{{it.selected}}" style="{{it.rowStyle}}">
+            <span class="slot" style="position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; overflow: hidden">
+              <sc-if value="{{it.isWeapon}}" hint-placeholder-val="{{false}}">
+                <img class="pix" src="/_blob/5c89d10a271a27d7419e3db5bf27b98d" alt="" style="height: 50px; width: auto; transform: rotate(35deg)">
+              </sc-if>
+              <sc-if value="{{it.isArmor}}" hint-placeholder-val="{{false}}">
+                <img class="pix" src="{{it.icon}}" alt="" style="width: 50px; height: 50px">
+              </sc-if>
+              <sc-if value="{{it.broken}}" hint-placeholder-val="{{false}}">
+                <span style="position: absolute; inset: 0; background: rgba(194,85,74,0.28); box-shadow: inset 0 0 0 2px #C2554A"></span>
+              </sc-if>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+              <span style="{{it.nameStyle}}">{{it.name}}</span>
+              <span style="font-size: 12px; color: #A29E97">{{it.sub}}</span>
+              <span style="{{it.tagStyle}}">{{it.tag}}</span>
+            </span>
+            <span class="num" style="{{it.lvStyle}}">+{{it.level}}</span>
+          </button>
+        </sc-for>
+
+        <div style="flex: 1"></div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08)">
+          <span style="font-size: 13px; color: #A29E97; padding: 0 4px">素材は採取 → 精錬で作ります</span>
+          <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.04); text-decoration: none; color: #ECE6DC; font-size: 14px">精錬へ<span style="color: #A29E97; font-size: 12px">原料2個 → 加工材1個</span></a>
+          <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.04); text-decoration: none; color: #ECE6DC; font-size: 14px">市場で探す<span style="color: #A29E97; font-size: 12px">他プレイヤーの出品</span></a>
+        </div>
+      </section>
+
+      <!-- 中央：装備の詳細 -->
+      <section style="position: relative; display: flex; flex-direction: column; gap: 16px; min-height: 0">
+        <div style="display: grid; grid-template-columns: 280px minmax(0, 1fr); column-gap: 28px; align-items: center; flex: 1; min-height: 0">
+
+          <div style="position: relative; height: 600px; display: flex; align-items: center; justify-content: center">
+            <span style="{{haloStyle}}"></span>
+            <span style="position: absolute; left: 50%; bottom: 46px; width: 150px; height: 28px; margin-left: -75px; border-radius: 50%; background: rgba(0,0,0,0.55)"></span>
+            <sc-for list="{{embers}}" as="e" hint-placeholder-count="0">
+              <span aria-hidden="true" style="{{e.style}}"></span>
+            </sc-for>
+            <div style="{{auraStyle}}">
+              <div class="{{fxClass}}">
+                <sc-if value="{{sel.isWeapon}}" hint-placeholder-val="{{true}}">
+                  <img class="pix" src="/_blob/5c89d10a271a27d7419e3db5bf27b98d" alt="{{sel.name}}" style="{{heroImgStyle}}">
+                </sc-if>
+                <sc-if value="{{sel.isArmor}}" hint-placeholder-val="{{false}}">
+                  <img class="pix" src="{{sel.icon}}" alt="{{sel.name}}" style="{{heroSvgStyle}}">
+                </sc-if>
+              </div>
+            </div>
+            <sc-if value="{{sel.broken}}" hint-placeholder-val="{{false}}">
+              <svg class="pix" aria-hidden="true" width="220" height="330" viewBox="0 0 22 33" style="position: absolute; left: 50%; top: 50%; margin: -190px 0 0 -110px; opacity: 0.9">
+                <rect x="10" y="2" width="2" height="4" fill="#E58B80"></rect><rect x="9" y="6" width="2" height="4" fill="#C2554A"></rect><rect x="11" y="10" width="2" height="3" fill="#E58B80"></rect><rect x="13" y="12" width="3" height="1" fill="#C2554A"></rect><rect x="10" y="13" width="2" height="5" fill="#C2554A"></rect><rect x="7" y="17" width="3" height="1" fill="#E58B80"></rect><rect x="11" y="18" width="2" height="5" fill="#E58B80"></rect><rect x="9" y="23" width="2" height="4" fill="#C2554A"></rect><rect x="11" y="27" width="2" height="3" fill="#E58B80"></rect>
+              </svg>
+            </sc-if>
+            <sc-if value="{{hasRing}}" hint-placeholder-val="{{false}}">
+              <span aria-hidden="true" style="{{ringStyle}}"></span>
+            </sc-if>
+            <sc-for list="{{sparks}}" as="sp" hint-placeholder-count="0">
+              <span aria-hidden="true" style="{{sp.style}}"></span>
+            </sc-for>
+            <sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+              <div role="status" style="{{toastStyle}}">
+                <span style="{{toastTitleStyle}}">{{toastTitle}}</span>
+                <span style="font-size: 14px; color: #C9C3B8; white-space: nowrap">{{toastSub}}</span>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap">
+              <span style="{{rarityTagStyle}}">{{sel.rarity}}</span>
+              <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.07); color: #C9C3B8">T{{sel.tier}} {{sel.slotName}}</span>
+              <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.07); color: #C9C3B8">{{sel.kindName}}</span>
+              <sc-if value="{{sel.broken}}" hint-placeholder-val="{{false}}">
+                <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px; background: rgba(194,85,74,0.2); color: #E58B80">破損中 · 要修理</span>
+              </sc-if>
+            </div>
+            <h1 style="{{titleStyle}}">{{sel.name}}</h1>
+
+            <div style="display: flex; align-items: center; gap: 22px">
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <span style="font-size: 12px; color: #A29E97">現在 · {{curHeatName}}</span>
+                <span class="num" style="{{curLvStyle}}">+{{sel.level}}</span>
+              </div>
+              <sc-if value="{{notMaxed}}" hint-placeholder-val="{{true}}">
+                <span style="display: flex; align-items: center; gap: 22px">
+                  <svg class="pix" width="40" height="20" viewBox="0 0 8 4" aria-hidden="true" style="margin-top: 18px"><rect x="0" y="1" width="6" height="2" fill="#6F6B65"></rect><rect x="5" y="0" width="1" height="4" fill="#6F6B65"></rect><rect x="6" y="1" width="1" height="2" fill="#6F6B65"></rect></svg>
+                  <span style="display: flex; flex-direction: column; gap: 2px">
+                    <span style="{{nextCapStyle}}">成功時 · {{nextHeatName}}</span>
+                    <span class="num" style="{{nextLvStyle}}">+{{nextLevel}}</span>
+                  </span>
+                </span>
+              </sc-if>
+            </div>
+
+            <div class="panel" style="padding: 4px 20px; box-shadow: none">
+              <sc-for list="{{stats}}" as="st" hint-placeholder-count="3">
+                <div style="display: grid; grid-template-columns: 1fr auto auto 56px; column-gap: 16px; align-items: baseline; padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,0.06)">
+                  <span style="font-size: 15px; color: #C9C3B8">{{st.label}}</span>
+                  <span class="num" style="font-size: 21px; color: #9A958D">{{st.now}}</span>
+                  <span class="num" style="{{st.nextStyle}}">{{st.next}}</span>
+                  <span class="num" style="{{st.diffStyle}}">{{st.diff}}</span>
+                </div>
+              </sc-for>
+              <div style="display: grid; grid-template-columns: 1fr auto; column-gap: 16px; align-items: baseline; padding: 11px 0">
+                <span style="font-size: 14px; color: #A29E97">状態</span><span style="{{conditionStyle}}">{{condition}}</span>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; justify-content: space-between; align-items: baseline">
+                <span style="font-size: 13px; color: #A29E97">MOD {{modCount}}</span>
+                <span style="font-size: 12px; color: #6F6B65">強化してもMODは変わりません</span>
+              </div>
+              <sc-if value="{{hasMods}}" hint-placeholder-val="{{true}}">
+                <div style="display: flex; flex-direction: column; gap: 6px">
+                  <sc-for list="{{mods}}" as="m" hint-placeholder-count="4">
+                    <div style="display: grid; grid-template-columns: 40px 1fr auto; column-gap: 10px; align-items: baseline">
+                      <span style="font-size: 11px; color: #6F6B65">{{m.kind}}</span>
+                      <span style="font-size: 15px; color: #8FB4F0">{{m.text}}</span>
+                      <span style="font-size: 12px; color: #6F6B65">{{m.src}}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{noMods}}" hint-placeholder-val="{{false}}">
+                <span style="font-size: 14px; color: #6F6B65">ノーマル装備です。刻印工房のオーブでMODを付けられます</span>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+
+        <!-- 強化段階トラック +0〜+30 -->
+        <div class="panel" style="padding: 14px 20px 12px; display: flex; flex-direction: column; gap: 10px; box-shadow: none">
+          <div style="display: flex; justify-content: space-between; font-size: 13px; color: #A29E97">
+            <span>強化段階 +0 〜 +30</span><span style="color: #E58B80">+15以降は失敗時に破損することがあります</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); column-gap: 12px">
+            <sc-for list="{{bands}}" as="b" hint-placeholder-count="6">
+              <div style="display: flex; flex-direction: column; gap: 6px">
+                <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px">
+                  <sc-for list="{{b.cells}}" as="c" hint-placeholder-count="5">
+                    <span style="{{c.style}}"></span>
+                  </sc-for>
+                </div>
+                <span style="display: flex; justify-content: space-between; font-size: 11px">
+                  <span class="num" style="{{b.rangeStyle}}">{{b.range}}</span>
+                  <span style="{{b.noteStyle}}">{{b.note}}</span>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 右：判断 -->
+      <section class="panel" style="display: flex; flex-direction: column; padding: 22px; min-height: 0">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 500; color: #C9C3B8">成功率</h2>
+          <span class="num" style="{{rateStyle}}">{{rateText}}<span style="font-size: 26px">%</span></span>
+        </div>
+        <div aria-hidden="true" style="display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 3px; margin-top: 12px">
+          <sc-for list="{{segments}}" as="seg" hint-placeholder-count="20">
+            <span style="{{seg.style}}"></span>
+          </sc-for>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 12px">
+          <sc-for list="{{breakdown}}" as="r" hint-placeholder-count="3">
+            <div style="display: flex; justify-content: space-between; font-size: 13px">
+              <span style="color: #A29E97">{{r.label}}</span><span class="num" style="{{r.style}}">{{r.value}}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 10px; margin-top: 16px">
+          <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.035)">
+            <span style="font-size: 12px; color: #A29E97">天井（連続失敗）</span>
+            <sc-if value="{{hasPity}}" hint-placeholder-val="{{true}}">
+              <div style="display: flex; gap: 4px">
+                <sc-for list="{{pityPips}}" as="p" hint-placeholder-count="4">
+                  <span style="{{p.style}}"></span>
+                </sc-for>
+              </div>
+            </sc-if>
+            <span style="{{pityTextStyle}}">{{pityText}}</span>
+          </div>
+          <div style="{{breakBoxStyle}}">
+            <span style="font-size: 12px; color: #A29E97">失敗したときの破損</span>
+            <span class="num" style="{{breakNumStyle}}">{{breakText}}</span>
+            <span style="font-size: 12px; color: #A29E97; line-height: 1.4">{{breakSub}}</span>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 18px 0 10px">
+          <h3 style="margin: 0; font-size: 15px; font-weight: 500; color: #C9C3B8">必要な素材 · {{costTier}}</h3>
+          <span style="font-size: 12px; color: #A29E97">銀貨は使いません</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 7px">
+          <sc-for list="{{costs}}" as="m" hint-placeholder-count="3">
+            <div style="{{m.rowStyle}}">
+              <span class="slot" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center">
+                <img class="pix" src="{{m.icon}}" alt="" style="width: 36px; height: 36px">
+              </span>
+              <span style="display: flex; flex-direction: column; gap: 5px; min-width: 0">
+                <span style="font-size: 14px; font-weight: 500">{{m.name}} <span style="font-size: 12px; color: #A29E97">{{m.tierLabel}}</span></span>
+                <span style="display: block; height: 4px; border-radius: 2px; background: #2A2C31"><span style="{{m.barStyle}}"></span></span>
+              </span>
+              <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+                <span class="num" style="{{m.needStyle}}">{{m.need}}<span style="font-size: 13px; color: #A29E97"> / {{m.own}}</span></span>
+                <span style="{{m.afterStyle}}">{{m.after}}</span>
+              </span>
+            </div>
+          </sc-for>
+        </div>
+
+        <button type="button" aria-pressed="{{focus}}" disabled="{{focusDisabled}}" onClick="{{toggleFocus}}" style="{{focusBtnStyle}}">
+          <span style="display: flex; flex-direction: column; gap: 3px">
+            <span style="font-size: 15px; font-weight: 500">集中鍛造（精錬触媒）</span>
+            <span style="{{focusSubStyle}}">{{focusSub}}</span>
+          </span>
+          <span style="{{switchTrack}}"><span style="{{switchKnob}}"></span></span>
+        </button>
+
+        <div style="flex: 1"></div>
+
+        <sc-if value="{{sel.broken}}" hint-placeholder-val="{{false}}">
+          <button type="button" onClick="{{repair}}" style="height: 56px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #C2554A; background: rgba(194,85,74,0.14); color: #F2C2BB; font-size: 17px; font-weight: 700; cursor: pointer">修理する（同Tier・同部位の+0装備を1個消費）</button>
+        </sc-if>
+        <button type="button" disabled="{{btnDisabled}}" onClick="{{attempt}}" style="{{btnStyle}}">
+          {{btnLabel}}
+          <span class="num" style="{{enterStyle}}">Enter</span>
+        </button>
+        <p style="{{hintStyle}}">{{hint}}</p>
+      </section>
+    </div>
+
+    <!-- フッター：記録と操作ガイド -->
+    <footer style="display: flex; justify-content: space-between; align-items: center; gap: 26px; font-size: 13px; color: #A29E97">
+      <span style="display: inline-flex; align-items: center; gap: 10px; min-width: 0">
+        <span style="padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,0.06); font-size: 12px">鍛造記録</span>
+        <span style="{{logStyle}}">{{logText}}</span>
+      </span>
+      <span style="display: inline-flex; gap: 22px">
+        <span style="display: inline-flex; align-items: center; gap: 8px"><span class="key">Tab</span>部位を切替</span>
+        <span style="display: inline-flex; align-items: center; gap: 8px"><span class="key">C</span>集中鍛造</span>
+        <span style="display: inline-flex; align-items: center; gap: 8px"><span class="key">Enter</span>強化</span>
+        <span style="display: inline-flex; align-items: center; gap: 8px"><span class="key">Esc</span>閉じる</span>
+      </span>
+    </footer>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    // 見本データ。数値ルールは ProjectS の CoreEnhancementCatalog に合わせている
+    this.state = {
+      sel: 0,
+      focus: false,
+      xp: 93,
+      toast: null,
+      log: null,
+      spareLegs: 1,
+      mats: {
+        'T1:ingot': 30, 'T1:plank': 12, 'T1:stone': 20, 'T1:leather': 14, 'T1:cloth': 6,
+        'T2:ingot': 3, 'T2:plank': 4, 'T2:stone': 5, 'T2:leather': 8, 'T2:cloth': 2,
+        'T3:ingot': 0, 'T3:plank': 0, 'T3:stone': 6, 'T3:leather': 5, 'T3:cloth': 3,
+        'T4:ingot': 0, 'T4:plank': 0, 'T4:stone': 0, 'T4:leather': 0, 'T4:cloth': 0,
+        dust: 5
+      },
+      items: [
+        { slot: 'weapon', name: '熾火の大剣', kindName: '大剣', tier: 2, rarity: 'レア', level: 6, failures: 1, broken: false, base: 119,
+          mods: [
+            { kind: '接頭', text: '攻撃力 +11%', src: '武威' },
+            { kind: '接頭', text: '火炎ダメージ +3', src: '火炎' },
+            { kind: '接尾', text: '会心率 +16%', src: '会心' },
+            { kind: '接尾', text: '攻撃速度 +4%', src: '疾撃' }
+          ] },
+        { slot: 'head', name: '黒鉄の兜', kindName: '重装', tier: 2, rarity: 'マジック', level: 4, failures: 0, broken: false, base: 40,
+          mods: [ { kind: '接頭', text: '最大HP +12', src: '生命' }, { kind: '接尾', text: '魔法防御 +18', src: '結界' } ] },
+        { slot: 'chest', name: '黒鉄の胸甲', kindName: '重装', tier: 2, rarity: 'レア', level: 16, failures: 3, broken: false, base: 80,
+          mods: [
+            { kind: '接頭', text: '物理防御 +20', src: '鋼壁' },
+            { kind: '接頭', text: '最大HP +14', src: '生命' },
+            { kind: '接尾', text: '物理防御 +15%', src: '堅牢' },
+            { kind: '接尾', text: '魔法防御 +12%', src: '抗魔' }
+          ] },
+        { slot: 'legs', name: '衛士の脚甲', kindName: '重装', tier: 1, rarity: 'ノーマル', level: 11, failures: 2, broken: true, base: 60, mods: [] },
+        { slot: 'feet', name: '旅人の長靴', kindName: '重装', tier: 2, rarity: 'ノーマル', level: 0, failures: 0, broken: false, base: 18, mods: [] }
+      ]
+    };
+  }
+  componentWillUnmount() { [this.timer, this.fxTimer, this.chargeTimer].forEach((t) => { if (t) clearTimeout(t); }); }
+  rgba(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+
+  baseRate(t) {
+    const table = [0, 100, 100, 100, 100, 100, 95, 87.5, 80, 72.5, 65, 55, 50, 45, 40, 35, 30, 26, 22, 18, 14, 10, 8.5, 7, 5.5, 4, 3, 2.5, 2, 1.5, 1];
+    return table[t] || 0;
+  }
+  pity(t) { return t <= 5 ? 0 : t <= 10 ? 4 : t <= 20 ? 6 : 9; }
+  matTier(t) { return t <= 8 ? 1 : t <= 16 ? 2 : t <= 24 ? 3 : 4; }
+  breakOnFail(level) { return level >= 15 ? Math.min(50, 5 + (level - 15) * 3) : 0; }
+  heat(n) {
+    if (n <= 5) return '#8A8E96';
+    if (n <= 10) return '#D9563A';
+    if (n <= 15) return '#F28A3C';
+    if (n <= 20) return '#FFC48A';
+    return '#FFF1DE';
+  }
+  heatName(n) {
+    if (n <= 5) return '鉄';
+    if (n <= 10) return '赤熱';
+    if (n <= 15) return '橙熱';
+    if (n <= 20) return '黄熱';
+    return '白熱';
+  }
+  glow(n) { return n >= 21 ? 'text-shadow:0 0 18px rgba(255,196,138,0.75);' : n >= 11 ? 'text-shadow:0 0 14px rgba(240,122,42,0.45);' : ''; }
+  rank(xp) { return Math.min(10, Math.floor(xp / 20)); }
+  rarityColor(r) { return r === 'レア' ? '#D9B3F5' : r === 'マジック' ? '#8FB4F0' : '#ECE6DC'; }
+  slotName(s) { return { weapon: '武器', head: '頭', chest: '胴', legs: '脚', feet: '足' }[s]; }
+  isArmor(it) { return it.slot !== 'weapon'; }
+  // 実テクスチャ：core-ui-pack の warrior_t2 防具アイコンと forge_materials
+  slotIcon(slot) {
+    return {
+      head: '/_blob/a10adfae1d18be0fb18e71a12fe9bc9f', chest: '/_blob/84bd09111b33a4bf17c0a50268dae3d3',
+      legs: '/_blob/dc7f9ac61123f6c041edfc28045d1237', feet: '/_blob/330c01ece8f5cfe7db66263d51240fdf'
+    }[slot] || '';
+  }
+  matIcon(kind) {
+    return {
+      ingot: '/_blob/44a1a7161e02f5dec8ddd53d1727f3da', plank: '/_blob/88677c8ff023c49dbc43062b4bc9d03d',
+      stone: '/_blob/4cdd55a3fc31a3e653ba2d84e2167628', leather: '/_blob/f8fb12fde50a6fb7b87384bd1f2eaf9b',
+      cloth: '/_blob/39a592a83564420ea58353214906186e', dust: '/_blob/6f72e2c9c8cd497b1c0330ad7b17f526'
+    }[kind] || '';
+  }
+  mainStat(it, lv) {
+    return this.isArmor(it) ? Math.round(it.base * (1 + 0.02 * lv)) : Math.round(it.base * (1 + 0.04 * lv));
+  }
+  costList(it, t, focus) {
+    const tier = this.matTier(t);
+    const u = Math.ceil(t / 5);
+    const half = Math.ceil(u / 2);
+    const list = this.isArmor(it)
+      ? [['leather', 'なめし革', u], ['cloth', '布', half], ['stone', '加工石材', u]]
+      : [['ingot', 'インゴット', u], ['plank', '板材', half], ['stone', '加工石材', u]];
+    const rows = list.map(([k, n, q]) => ({ key: 'T' + tier + ':' + k, kind: k, name: n, need: q, tierLabel: 'T' + tier }));
+    if (focus) {
+      const add = (k, n, q) => {
+        const row = rows.find((r) => r.kind === k);
+        if (row) row.need += q; else rows.push({ key: 'T' + tier + ':' + k, kind: k, name: n, need: q, tierLabel: 'T' + tier });
+      };
+      add('stone', '加工石材', 1);
+      add('cloth', '布', 1);
+      rows.push({ key: 'dust', kind: 'dust', name: '刻印粉', need: 2, tierLabel: '共通' });
+    }
+    return rows;
+  }
+  quote(it, focus, xp) {
+    const t = it.level + 1;
+    const base = this.baseRate(t);
+    const rk = this.rank(xp);
+    const th = this.pity(t);
+    const pityHit = th > 0 && it.failures >= th;
+    const noFocus = pityHit ? 100 : Math.min(100, base + rk);
+    const rate = pityHit ? 100 : Math.min(100, base + rk + (focus ? 15 : 0));
+    return { t, base, rk, th, pityHit, noFocus, rate };
+  }
+  say(toast, log, fx) {
+    if (this.timer) clearTimeout(this.timer);
+    if (this.fxTimer) clearTimeout(this.fxTimer);
+    const seq = (this.state.fxSeq || 0) + 1;
+    this.setState({ toast, log, fx: fx || null, fxSeq: seq, phase: null });
+    this.timer = setTimeout(() => this.setState({ toast: null }), 2600);
+    this.fxTimer = setTimeout(() => this.setState({ fx: null }), 1500);
+  }
+  makeSparks(color, count, power) {
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      const a = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+      const d = power * (0.6 + Math.random() * 0.6);
+      out.push({ dx: Math.round(Math.cos(a) * d), dy: Math.round(Math.sin(a) * d * 0.9 - power * 0.35), size: Math.random() < 0.3 ? 10 : 6,
+        color: Math.random() < 0.35 ? '#FFF1DE' : color, delay: Math.round(Math.random() * 120) });
+    }
+    return out;
+  }
+  doAttempt() {
+    const s = this.state;
+    if (s.phase === 'charge') return;
+    const it0 = s.items[s.sel];
+    if (it0.broken || it0.level >= 30) return;
+    this.setState({ phase: 'charge', toast: null, fx: null });
+    if (this.chargeTimer) clearTimeout(this.chargeTimer);
+    this.chargeTimer = setTimeout(() => this.resolveAttempt(), 800);
+  }
+  resolveAttempt() {
+    const s = this.state;
+    const it = s.items[s.sel];
+    if (it.broken || it.level >= 30) return;
+    const focusOn = s.focus && this.quote(it, false, s.xp).noFocus < 100;
+    const q = this.quote(it, focusOn, s.xp);
+    const costs = this.costList(it, q.t, focusOn);
+    if (costs.some((c) => (s.mats[c.key] || 0) < c.need)) return;
+    const mats = Object.assign({}, s.mats);
+    costs.forEach((c) => { mats[c.key] -= c.need; });
+    const items = s.items.slice();
+    const next = Object.assign({}, it);
+    let toast; let log; let fx;
+    if (Math.random() * 100 < q.rate) {
+      next.level = it.level + 1; next.failures = 0;
+      fx = { kind: 'hit', color: this.heat(next.level), sparks: this.makeSparks(this.heat(next.level), 10 + Math.min(14, next.level), 150 + next.level * 6) };
+      toast = { kind: 'ok', title: '成功！ +' + next.level, sub: it.name + ' が' + this.heatName(next.level) + 'の輝きを帯びた', color: this.heat(next.level) };
+      log = { text: it.name + '  +' + it.level + ' → +' + next.level + '  成功（' + q.rate.toFixed(1) + '%）', color: this.heat(next.level) };
+    } else {
+      next.failures = Math.min(q.th, it.failures + 1);
+      const br = this.breakOnFail(it.level);
+      if (br > 0 && Math.random() * 100 < br) {
+        next.broken = true;
+        fx = { kind: 'break', color: '#C2554A', sparks: this.makeSparks('#C2554A', 14, 170) };
+        toast = { kind: 'break', title: '破損…', sub: '強化値 +' + it.level + ' とMODは残っています。修理すれば元どおり', color: '#E58B80' };
+        log = { text: it.name + '  +' + it.level + '  失敗・破損（要修理）', color: '#E58B80' };
+      } else {
+        const left = q.th - next.failures;
+        fx = { kind: 'shake', color: '#8A8E96', sparks: this.makeSparks('#6F6B65', 6, 90) };
+        toast = { kind: 'fail', title: '失敗', sub: '強化値 +' + it.level + ' は維持' + (q.th ? (left <= 0 ? ' · 次は確定成功' : ' · 天井まであと' + left + '回') : ''), color: '#C9C3B8' };
+        log = { text: it.name + '  +' + it.level + '  失敗（強化値は維持）', color: '#A29E97' };
+      }
+    }
+    items[s.sel] = next;
+    this.setState({ items, mats, xp: Math.min(200, s.xp + 1) });
+    this.say(toast, log, fx);
+  }
+  doRepair() {
+    const s = this.state;
+    const it = s.items[s.sel];
+    if (!it.broken) return;
+    const items = s.items.slice();
+    items[s.sel] = Object.assign({}, it, { broken: false });
+    this.setState({ items, spareLegs: Math.max(0, s.spareLegs - 1) });
+    this.say({ kind: 'ok', title: '修理完了', sub: '強化値・MOD・天井の記録はそのまま', color: '#ECE6DC' },
+      { text: it.name + '  修理（予備装備を1個消費）', color: '#C9C3B8' });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const it = s.items[s.sel];
+    const L = it.level;
+    const maxed = L >= 30;
+    const rk = this.rank(s.xp);
+    const prog = rk >= 10 ? 20 : s.xp % 20;
+    const armor = this.isArmor(it);
+
+    // 左リスト
+    const items = s.items.map((x, i) => {
+      const selected = i === s.sel;
+      const th = this.pity(x.level + 1);
+      let tag = '';
+      let tagCol = '#6F6B65';
+      if (x.broken) { tag = '破損中 · 要修理'; tagCol = '#E58B80'; }
+      else if (x.level >= 30) tag = '最大強化';
+      else if (th > 0 && x.failures >= th) { tag = '次の強化は確定成功'; tagCol = '#FFC48A'; }
+      else if (th > 0) tag = '天井 ' + x.failures + ' / ' + th;
+      else tag = '+5までは必ず成功';
+      return {
+        name: x.name,
+        level: x.level,
+        selected,
+        broken: x.broken,
+        isWeapon: x.slot === 'weapon', isArmor: x.slot !== 'weapon', icon: this.slotIcon(x.slot),
+        sub: this.slotName(x.slot) + ' · T' + x.tier + ' · ' + (this.isArmor(x) ? '最大HP ' : '攻撃力 ') + this.mainStat(x, x.level),
+        tag,
+        tagStyle: 'font-size:11px;color:' + tagCol,
+        nameStyle: 'font-size:16px;font-weight:' + (selected ? 700 : 500) + ';color:' + this.rarityColor(x.rarity) + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis',
+        lvStyle: 'font-size:24px;color:' + this.heat(x.level) + ';' + this.glow(x.level),
+        rowStyle: 'display:grid;grid-template-columns:56px 1fr auto;align-items:center;column-gap:14px;padding:9px 10px;border-radius:10px;text-align:left;cursor:pointer;color:inherit;' +
+          (selected ? 'border:1px solid rgba(239,230,210,0.45);background:rgba(239,230,210,0.08);' : 'border:1px solid transparent;background:transparent;'),
+        pick: () => this.setState({ sel: i, focus: false, toast: null })
+      };
+    });
+
+    // 成功率
+    const autoFull = !maxed && this.quote(it, false, s.xp).noFocus >= 100;
+    const focusOn = s.focus && !autoFull && !maxed && !it.broken;
+    const q = this.quote(it, focusOn, s.xp);
+    const rate = maxed ? 0 : q.rate;
+    const lit = Math.round(rate / 5);
+    const segments = [];
+    for (let i = 0; i < 20; i++) {
+      let c = '#2A2C31';
+      if (i < lit) c = i < 5 ? '#8E2B1C' : i < 10 ? '#C23A1E' : i < 15 ? '#F07A2A' : '#FFC48A';
+      segments.push({ style: 'display:block;height:18px;border-radius:2px;background:' + c });
+    }
+    const breakdown = [];
+    if (!maxed) {
+      breakdown.push({ label: '基礎（+' + q.t + 'への強化）', value: q.base + '%', style: 'font-size:14px;color:#C9C3B8' });
+      breakdown.push({ label: '鍛冶熟練 Rank ' + rk, value: '+' + rk, style: 'font-size:14px;color:#C9C3B8' });
+      if (focusOn) breakdown.push({ label: '集中鍛造', value: '+15', style: 'font-size:14px;color:#FFC48A' });
+      if (q.pityHit) breakdown.push({ label: '天井に到達', value: '確定', style: 'font-size:14px;color:#FFC48A' });
+    }
+
+    // 天井
+    const pityPips = [];
+    for (let i = 0; i < q.th; i++) {
+      pityPips.push({ style: 'display:block;flex:1;height:12px;border-radius:2px;' + (i < it.failures ? 'background:#F07A2A' : 'background:#2A2C31') });
+    }
+    let pityText;
+    if (maxed) pityText = '最大強化に到達';
+    else if (q.th === 0) pityText = '+5までは必ず成功';
+    else if (q.pityHit) pityText = '天井到達 · 次は確定成功';
+    else pityText = '失敗 ' + it.failures + ' / ' + q.th + ' · あと' + (q.th - it.failures) + '回で確定';
+
+    // 破損
+    const bf = maxed ? 0 : this.breakOnFail(L);
+    const per = (1 - rate / 100) * bf;
+    const risky = bf > 0 && rate < 100;
+    let breakText; let breakSub;
+    if (bf === 0) { breakText = 'なし'; breakSub = '+15から失敗時に破損抽選があります'; }
+    else if (rate >= 100) { breakText = 'なし'; breakSub = '確定成功なので壊れません'; }
+    else { breakText = bf + '%'; breakSub = '1回あたり ' + per.toFixed(1) + '% · 壊れても強化値とMODは残ります'; }
+
+    // 素材
+    const costRows = maxed ? [] : this.costList(it, q.t, focusOn);
+    let short = null;
+    const costs = costRows.map((c) => {
+      const own = s.mats[c.key] || 0;
+      const ok = own >= c.need;
+      if (!ok && !short) short = c.name + '（' + c.tierLabel + '）があと' + (c.need - own) + '個';
+      const pct = Math.min(100, own === 0 ? 0 : Math.round((c.need / own) * 100));
+      return {
+        name: c.name, tierLabel: c.tierLabel, need: c.need, own,
+        icon: this.matIcon(c.kind),
+        after: ok ? '残り ' + (own - c.need) : 'あと ' + (c.need - own) + ' 不足',
+        afterStyle: 'font-size:11px;color:' + (ok ? '#A29E97' : '#E58B80'),
+        needStyle: 'font-size:20px;color:' + (ok ? '#ECE6DC' : '#E58B80'),
+        barStyle: 'display:block;height:4px;border-radius:2px;width:' + (ok ? pct : 100) + '%;background:' + (ok ? '#ECE6DC' : '#C2554A'),
+        rowStyle: 'display:grid;grid-template-columns:44px 1fr auto;column-gap:12px;align-items:center;padding:8px 10px;border-radius:10px;' +
+          (ok ? 'background:rgba(255,255,255,0.035)' : 'background:rgba(194,85,74,0.08);box-shadow:inset 0 0 0 1px rgba(194,85,74,0.5)')
+      };
+    });
+    let tries = Infinity;
+    costRows.forEach((c) => { tries = Math.min(tries, Math.floor((s.mats[c.key] || 0) / c.need)); });
+    if (!isFinite(tries)) tries = 0;
+
+    // 集中鍛造
+    const focusDisabled = maxed || it.broken || autoFull;
+    let focusSub = '成功率 +15 · 加工石材1・布1・刻印粉2 を追加で消費';
+    if (autoFull) focusSub = '今回は確定成功なので不要です';
+    if (it.broken) focusSub = '修理してから使えます';
+
+    // ボタン
+    const charging = s.phase === 'charge';
+    let btnLabel = charging ? '鍛造中…' : '強化する';
+    let hint = '手持ちの素材で あと ' + tries + ' 回 強化できます';
+    let disabled = false;
+    if (it.broken) { btnLabel = '破損中は強化できません'; hint = '修理すると強化値・MOD・天井の記録はそのまま戻ります'; disabled = true; }
+    else if (maxed) { btnLabel = '最大強化 +30'; hint = 'これ以上は強化できません'; disabled = true; }
+    else if (short) { btnLabel = '素材が足りません'; hint = short + ' 足りません · 精錬か市場で用意できます'; disabled = true; }
+    else if (risky) { hint = '失敗すると ' + bf + '% の確率で破損します'; }
+
+    // 段階トラック
+    const bands = [];
+    const notes = ['必ず成功', '', '', '破損あり', '破損あり', '破損あり'];
+    for (let b = 0; b < 6; b++) {
+      const cells = [];
+      for (let k = 1; k <= 5; k++) {
+        const n = b * 5 + k;
+        const col = this.heat(n);
+        let st = 'display:block;height:12px;border-radius:2px;';
+        if (n <= L) st += 'background:' + col + ';';
+        else if (n === L + 1) st += 'background:transparent;box-shadow:inset 0 0 0 2px ' + col + ';';
+        else st += 'background:#25272C;';
+        if (n >= 16 && n > L + 1) st += 'box-shadow:inset 0 -3px 0 rgba(194,85,74,0.55);';
+        cells.push({ style: st });
+      }
+      const inBand = L + 1 >= b * 5 + 1 && L + 1 <= b * 5 + 5;
+      bands.push({
+        cells,
+        range: '+' + (b * 5 + 1) + '〜' + (b * 5 + 5),
+        rangeStyle: 'font-size:11px;color:' + (inBand ? this.heat(b * 5 + 1) : '#6F6B65'),
+        note: notes[b] || this.heatName(b * 5 + 1),
+        noteStyle: 'font-size:11px;color:' + (b >= 3 ? 'rgba(229,139,128,0.8)' : '#6F6B65')
+      });
+    }
+
+    // 能力
+    const nowMain = this.mainStat(it, L);
+    const nextMain = this.mainStat(it, L + 1);
+    const nextCol = maxed ? '#9A958D' : this.heat(L + 1);
+    const stats = [{
+      label: armor ? '最大HP（基礎）' : '攻撃力',
+      now: nowMain, next: maxed ? '' : nextMain, diff: maxed ? '' : '+' + (nextMain - nowMain),
+      nextStyle: 'font-size:21px;color:' + nextCol, diffStyle: 'font-size:14px;text-align:right;color:' + nextCol
+    }];
+    if (!armor) {
+      stats.push({
+        label: '攻撃速度', now: '+' + (L * 0.8).toFixed(1) + '%', next: maxed ? '' : '+' + ((L + 1) * 0.8).toFixed(1) + '%', diff: maxed ? '' : '+0.8',
+        nextStyle: 'font-size:21px;color:' + nextCol, diffStyle: 'font-size:14px;text-align:right;color:' + nextCol
+      });
+    }
+
+    // 装備そのものの演出
+    const fx = s.fx;
+    const odd = (s.fxSeq || 0) % 2 === 1;
+    let fxClass = '';
+    if (charging) fxClass = 'fx-charge';
+    else if (fx) fxClass = 'fx-' + fx.kind + (odd ? '-a' : '-b');
+    const hc = this.heat(L);
+    const auraPx = it.broken || L <= 5 ? 0 : Math.min(36, 6 + (L - 5) * 1.3);
+    const auraA = L >= 21 ? 0.85 : L >= 11 ? 0.7 : 0.55;
+    const chargeCol = this.heat(Math.min(30, L + 1));
+    let auraStyle = 'position:relative;transition:filter .4s;';
+    if (charging) auraStyle += 'filter:drop-shadow(0 0 28px ' + this.rgba(chargeCol, 0.9) + ') drop-shadow(0 0 60px ' + this.rgba(chargeCol, 0.5) + ');';
+    else if (auraPx > 0) auraStyle += 'filter:drop-shadow(0 0 ' + Math.round(auraPx / 2) + 'px ' + this.rgba(hc, auraA) + ') drop-shadow(0 0 ' + Math.round(auraPx) + 'px ' + this.rgba(hc, auraA * 0.5) + ');';
+    const emberCount = it.broken ? 0 : L >= 21 ? 10 : L >= 16 ? 7 : L >= 11 ? 5 : L >= 6 ? 3 : 0;
+    const embers = [];
+    for (let i = 0; i < emberCount; i++) {
+      const x = 50 + ((i * 37) % 60) - 30;
+      const dur = 2.6 + ((i * 7) % 5) * 0.35;
+      embers.push({ style: 'position:absolute;left:' + x + '%;bottom:' + (90 + (i * 23) % 60) + 'px;width:' + (i % 3 === 0 ? 6 : 4) + 'px;height:' + (i % 3 === 0 ? 6 : 4) + 'px;background:' + (i % 4 === 0 ? '#FFF1DE' : hc) +
+        ';box-shadow:0 0 8px ' + this.rgba(hc, 0.9) + ';animation:ember ' + dur.toFixed(2) + 's linear ' + (i * 0.37).toFixed(2) + 's infinite;pointer-events:none' });
+    }
+    const sparks = fx ? fx.sparks.map((p) => ({ style: 'position:absolute;left:50%;top:44%;width:' + p.size + 'px;height:' + p.size + 'px;margin:-' + (p.size / 2) + 'px;background:' + p.color +
+      ';box-shadow:0 0 10px ' + p.color + ';--dx:' + p.dx + 'px;--dy:' + p.dy + 'px;animation:spark .9s cubic-bezier(.2,.7,.4,1) ' + p.delay + 'ms both;pointer-events:none' })) : [];
+    const hasRing = !!fx && fx.kind !== 'shake';
+    const ringStyle = hasRing ? 'position:absolute;left:50%;top:44%;width:360px;height:360px;border-radius:50%;border:4px solid ' + fx.color + ';box-shadow:0 0 40px ' + this.rgba(fx.color, 0.6) + ',inset 0 0 40px ' + this.rgba(fx.color, 0.4) + ';animation:ring .8s ease-out both;pointer-events:none' : '';
+
+    const toast = s.toast;
+    const tc = toast ? toast.color : '#ECE6DC';
+    const log = s.log;
+
+    return {
+      items,
+      rank: rk,
+      xpText: prog + '/20',
+      xpBar: 'display:block;height:4px;border-radius:2px;background:#ECE6DC;width:' + Math.round(prog / 20 * 100) + '%',
+      dustOwned: s.mats.dust,
+
+      sel: {
+        name: it.name, level: L, tier: it.tier, rarity: it.rarity, broken: it.broken,
+        slotName: this.slotName(it.slot), kindName: it.kindName,
+        isWeapon: it.slot === 'weapon', isArmor: it.slot !== 'weapon', icon: this.slotIcon(it.slot)
+      },
+      rarityTagStyle: 'font-size:12px;font-weight:700;padding:4px 10px;border-radius:4px;color:' + this.rarityColor(it.rarity) + ';background:' +
+        (it.rarity === 'レア' ? 'rgba(190,130,230,0.16)' : it.rarity === 'マジック' ? 'rgba(111,155,224,0.16)' : 'rgba(255,255,255,0.07)'),
+      titleStyle: 'margin:0;font-size:44px;font-weight:700;line-height:1.1;color:' + this.rarityColor(it.rarity),
+      haloStyle: 'position:absolute;left:50%;bottom:32px;width:240px;height:56px;margin-left:-120px;border-radius:50%;border:2px solid ' +
+        (it.broken ? 'rgba(194,85,74,0.5)' : 'rgba(240,122,42,0.45)') + ';background:' + (it.broken ? 'rgba(194,85,74,0.08)' : 'rgba(240,122,42,0.08)'),
+      heroImgStyle: 'position:relative;height:540px;width:auto;margin-bottom:40px;' + (it.broken ? 'filter:grayscale(0.7) brightness(0.7);' : ''),
+      heroSvgStyle: 'position:relative;width:320px;height:320px;margin-bottom:60px;' + (it.broken ? 'filter:grayscale(0.7) brightness(0.7);' : ''),
+      curHeatName: this.heatName(L),
+      curLvStyle: 'font-size:56px;line-height:1;color:' + (maxed ? this.heat(L) : '#9A958D') + ';' + (maxed ? this.glow(L) : ''),
+      notMaxed: !maxed,
+      nextLevel: L + 1,
+      nextHeatName: this.heatName(L + 1),
+      nextCapStyle: 'font-size:12px;color:' + nextCol,
+      nextLvStyle: 'font-size:84px;line-height:1;color:' + nextCol + ';' + this.glow(L + 1),
+      stats,
+      condition: it.broken ? '破損中（能力が無効）' : '正常',
+      conditionStyle: 'font-size:15px;color:' + (it.broken ? '#E58B80' : '#ECE6DC'),
+      mods: it.mods,
+      hasMods: it.mods.length > 0,
+      noMods: it.mods.length === 0,
+      modCount: it.rarity === 'レア' ? it.mods.length + ' / 6' : it.rarity === 'マジック' ? it.mods.length + ' / 2' : '0 / 0',
+      bands,
+
+      fxClass, auraStyle, embers, sparks, hasRing, ringStyle,
+      hasToast: !!toast,
+      toastTitle: toast ? toast.title : '',
+      toastSub: toast ? toast.sub : '',
+      toastStyle: 'position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 24px;border-radius:12px;background:rgba(10,11,13,0.88);box-shadow:0 0 0 1px ' + this.rgba(tc, 0.6) + ';animation:popIn .25s ease-out both;z-index:2',
+      toastTitleStyle: "font-family:'DotGothic16',monospace;font-size:40px;line-height:1;color:" + tc + ';' + (toast && toast.kind === 'ok' ? 'text-shadow:0 0 20px rgba(255,196,138,0.6);' : ''),
+
+      rateText: maxed ? '—' : rate.toFixed(1),
+      rateStyle: 'font-size:64px;line-height:1;color:' + (rate >= 100 ? '#FFF1DE' : rate >= 60 ? '#FFC48A' : rate >= 25 ? '#F28A3C' : '#D9563A'),
+      segments,
+      breakdown,
+
+      hasPity: q.th > 0 && !maxed,
+      pityPips,
+      pityText,
+      pityTextStyle: 'font-size:13px;color:' + (q.pityHit ? '#FFC48A' : '#ECE6DC'),
+      breakText,
+      breakSub,
+      breakNumStyle: 'font-size:28px;line-height:1;color:' + (risky ? '#E58B80' : '#ECE6DC'),
+      breakBoxStyle: 'display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:10px;' +
+        (risky ? 'background:rgba(194,85,74,0.10);box-shadow:inset 0 0 0 1px rgba(194,85,74,0.45)' : 'background:rgba(255,255,255,0.035)'),
+
+      costTier: maxed ? '—' : 'T' + this.matTier(q.t) + '（+' + q.t + ' の段階で決まる）',
+      costs,
+
+      focus: focusOn,
+      focusDisabled,
+      focusSub,
+      focusSubStyle: 'font-size:12px;color:' + (focusDisabled ? '#6F6B65' : '#FFC48A'),
+      focusBtnStyle: 'display:grid;grid-template-columns:1fr auto;column-gap:14px;align-items:center;margin-top:10px;padding:12px 16px;border-radius:10px;text-align:left;color:inherit;' +
+        (focusDisabled ? 'opacity:0.55;cursor:not-allowed;' : 'cursor:pointer;') +
+        'border:1px solid ' + (focusOn ? 'rgba(240,122,42,0.7)' : 'rgba(255,255,255,0.09)') + ';background:' + (focusOn ? 'rgba(240,122,42,0.10)' : 'rgba(255,255,255,0.035)'),
+      switchTrack: 'position:relative;display:block;width:46px;height:26px;border-radius:13px;background:' + (focusOn ? '#F07A2A' : '#3A3C42'),
+      switchKnob: 'position:absolute;top:3px;left:' + (focusOn ? '23px' : '3px') + ';width:20px;height:20px;border-radius:10px;background:#ECE6DC',
+      toggleFocus: () => { if (!focusDisabled) this.setState({ focus: !s.focus }); },
+
+      btnLabel,
+      btnDisabled: disabled || charging,
+      btnStyle: 'height:72px;border-radius:10px;border:none;font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:16px;' +
+        (disabled ? 'background:#24262B;color:#8A867F;box-shadow:inset 0 0 0 1px #303238;' :
+          risky ? 'background:#EFE6D2;color:#17181B;box-shadow:inset 0 -5px 0 #C9BDA3,0 0 0 2px rgba(194,85,74,0.7);cursor:pointer;' :
+          'background:#EFE6D2;color:#17181B;box-shadow:inset 0 -5px 0 #C9BDA3,0 0 0 1px rgba(255,255,255,0.15);cursor:pointer;'),
+      enterStyle: 'font-size:13px;font-weight:500;padding:3px 8px;border-radius:4px;' + (disabled ? 'background:#303238;color:#8A867F' : 'background:#17181B;color:#EFE6D2'),
+      hint,
+      hintStyle: 'margin:10px 0 0;font-size:12px;text-align:center;color:' + (risky && !disabled ? '#E58B80' : '#A29E97'),
+      attempt: () => this.doAttempt(),
+      repair: () => this.doRepair(),
+
+      logText: log ? log.text : 'まだ記録はありません',
+      logStyle: 'font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + (log ? log.color : '#6F6B65')
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -32,7 +32,8 @@ internal class CorePolish05ForgeFlow(
     private var quotedRevision: Long? = null
     private var receipt: ForgeUiReceipt? = null
     private var history: String? = null
-    private var note = "素材と成功率を確かめてから鍛造を始めます。"
+    /** A transient message from the last action; null shows how many attempts the materials cover. */
+    private var note: String? = null
     private var motion: ForgeV3Motion? = null
     private var banner: ForgeV3Banner? = null
 
@@ -74,7 +75,9 @@ internal class CorePolish05ForgeFlow(
             else -> "minecraft:iron_sword|${CoreArmamentPresentation.model(identity.base, a.journey.job, tier)}"
         }
         val mods = a.equippedAffixes.filter { it.gear == slot }.sortedBy { it.index }.map { affix ->
-            ForgeV3Mod(CoreAffixCatalog.definition(affix.stone)?.group?.displayName ?: "—", CoreAffixCatalog.describe(affix.stone))
+            val definition = CoreAffixCatalog.definition(affix.stone)
+            ForgeV3Mod(definition?.group?.displayName ?: "—", CoreAffixCatalog.describe(affix.stone),
+                definition?.displayName?.removeSuffix("の刻印石") ?: "")
         }
         return ForgeV3Gear(
             id = slot.name.lowercase(),
@@ -93,8 +96,8 @@ internal class CorePolish05ForgeFlow(
             mods = mods,
             modCapacity = CoreAffixCatalog.capacity(a, slot),
             iconItem = icon,
-            heroSprite = if (greatsword) "sword_t2_hero" else null,
-            thumbSprite = if (greatsword) "sword_t2_thumb" else null,
+            weaponArt = greatsword,
+            kindLabel = if (weapon) "大剣".takeIf { greatsword } ?: identity.base.displayName else "防具",
         )
     }
 
@@ -102,7 +105,7 @@ internal class CorePolish05ForgeFlow(
         val q = quote(a)
         val maxed = q.currentLevel >= CoreEnhancementCatalog.MAX_LEVEL
         val costs = q.recipe.costs.map { (material, required) ->
-            ForgeV3Cost(material.displayName, a.amount(material), required, when (material.resource) {
+            ForgeV3Cost(material.resource.displayName, "T${material.tier}", a.amount(material), required, when (material.resource) {
                 CoreResource.WOOD -> "forge_material_wood"
                 CoreResource.ORE -> "forge_material_ore"
                 CoreResource.STONE -> "forge_material_stone"
@@ -116,7 +119,7 @@ internal class CorePolish05ForgeFlow(
                 else -> "forge_material_affix_dust"
             })
         }
-        val shortage = costs.firstOrNull { it.owned < it.required }?.let { "${it.name}があと${it.required - it.owned}個" }
+        val shortage = costs.firstOrNull { it.owned < it.required }?.let { "${it.tierLabel} ${it.name}があと${it.required - it.owned}個" }
         val broken = CoreEconomy.broken(a, selected)
         return ForgeV3State(
             gears = CoreGearSlot.equipSlots.map { gear(a, it) },
@@ -142,7 +145,8 @@ internal class CorePolish05ForgeFlow(
                 else -> null
             },
             history = history,
-            note = shortage?.let { "$it 足りません" } ?: note,
+            note = shortage?.let { "$it 足りません" } ?: note
+                ?: "手持ちの素材で あと ${costs.minOfOrNull { it.owned / it.required.coerceAtLeast(1) } ?: 0} 回 強化できます",
             modal = modal,
             muted = muted,
             busy = operationActive,
@@ -188,7 +192,7 @@ internal class CorePolish05ForgeFlow(
         return when (action) {
             "select:weapon", "select:head", "select:chest", "select:legs", "select:feet" -> {
                 selected = CoreGearSlot.valueOf(action.substringAfter(':').uppercase())
-                focused = false; note = "装備を選択しました。"; banner = null; true
+                focused = false; note = null; banner = null; true
             }
             "catalyst" -> {
                 if (!focused && (CoreEnhancementCatalog.quote(a, selected).guaranteed || CoreEnhancementCatalog.state(a, selected).level >= 30)) false
@@ -197,7 +201,7 @@ internal class CorePolish05ForgeFlow(
             "enhance" -> {
                 val state = project(a)
                 if (!allowed()) false
-                else if (state.blockedReason != null) { note = state.blockedReason ?: note; true }
+                else if (state.blockedReason != null) true
                 else if (state.risky) { modal = true; quotedRevision = a.revision; true }
                 else { begin(a, a.revision); true }
             }

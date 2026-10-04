@@ -29,8 +29,10 @@ class CorePolish05ForgeFlowTest {
         val display = flow.scene()
         fun text(id: String) = display.nodes.single { it.id == id }.text
         assertEquals("123", text("wallet"))
-        assertEquals(recipe.costs.keys.first().displayName, text("cost-name-0"))
-        assertEquals("100.0%", text("chance-value"))
+        assertEquals(recipe.costs.keys.first().resource.displayName, text("cost-name-0"))
+        assertEquals("100.0", text("chance-value"))
+        assertTrue(display.nodes.any { it.sprite?.font == "projects_ui_polish05:v3plates" && it.id.startsWith("chrome-") })
+        assertTrue(display.nodes.filter { it.text.isNotEmpty() }.all { it.style["font-family"]?.startsWith("projects_ui_polish05:v3") == true })
         assertFalse(display.nodes.any { it.text.contains("12,480") || it.text.contains("熾火") })
 
         val revision = current.revision
@@ -45,7 +47,7 @@ class CorePolish05ForgeFlowTest {
         assertFalse(flow.operationActive)
         val after = flow.scene()
         assertEquals("+1", after.nodes.single { it.id == "level-now" }.text)
-        assertTrue(after.nodes.any { it.id == "banner-title" && it.text.contains("+1") })
+        assertTrue(after.nodes.any { it.id == "toast-title" && it.text.contains("+1") })
         assertTrue(after.nodes.any { it.id.startsWith("spark-") })
     }
 
@@ -65,7 +67,7 @@ class CorePolish05ForgeFlowTest {
             done(true)
         }
         val initial = flow.scene()
-        assertEquals(5, initial.nodes.count { it.id.startsWith("gear-row-") && it.action != null })
+        assertEquals(5, initial.nodes.count { it.id.startsWith("row-hit-") && it.action != null })
         val armorIcons = (1..4).map { initial.nodes.single { node -> node.id == "gear-icon-$it" }.item }
         assertEquals(4, armorIcons.distinct().size)
         for (part in listOf("helmet", "chestplate", "leggings", "boots")) {
@@ -96,6 +98,6 @@ class CorePolish05ForgeFlowTest {
         val current = stocked(CoreAccount(UUID.randomUUID()), CoreGearSlot.WEAPON)
         val flow = CorePolish05ForgeFlow(scene(), { current }, { true }, { now }) { _, _, _, _ -> }
         assertFalse(flow.action("catalyst"))
-        assertNull(flow.scene().nodes.single { it.id == "catalyst" }.action)
+        assertFalse(flow.scene().nodes.any { it.action == "catalyst" })
     }
 }
