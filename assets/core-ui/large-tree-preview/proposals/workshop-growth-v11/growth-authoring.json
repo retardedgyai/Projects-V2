@@ -1,0 +1,427 @@
+{
+  "source": "V9",
+  "runtimeApplied": false,
+  "nodeChanges": [
+    {
+      "id": "v7g14n2",
+      "before": {
+        "id": "v7g14n2",
+        "x": -935.0,
+        "y": -1899.05424,
+        "type": "notable",
+        "name": "資源を保つ",
+        "stats": {
+          "resource": 6
+        },
+        "theme": "resource",
+        "icon": "clock",
+        "group": "v7g14",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "middle_choice_v7_proposal",
+        "sourceRef": "middle-choice-v7:v7g14n2",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "desc": "西の中間部で、固有資源を多く得るかMP消費効率を上げるかを選ぶ。今使う技能の運用へ投資する。"
+      },
+      "after": {
+        "id": "v7g14n2",
+        "x": -935.0,
+        "y": -1899.05424,
+        "type": "notable",
+        "name": "命中から資源を回収",
+        "stats": {
+          "resource": 10,
+          "attackSpeed": 4
+        },
+        "theme": "resource",
+        "icon": "speed",
+        "group": "v7g14",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "growth_v11_proposal",
+        "sourceRef": "middle-choice-v7:v7g14n2",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "resource": [
+            "RESOURCE"
+          ],
+          "attackSpeed": [
+            "DAMAGE"
+          ]
+        },
+        "desc": "通常攻撃を挟む手数と、所有する固有資源の獲得へ投資する。追加攻撃や資源の新規供給は行わない。",
+        "description": "通常攻撃を挟む手数と、所有する固有資源の獲得へ投資する。追加攻撃や資源の新規供給は行わない。",
+        "buildIntent": "通常攻撃を挟む手数と、所有する固有資源の獲得へ投資する。追加攻撃や資源の新規供給は行わない。"
+      }
+    },
+    {
+      "id": "v7g14n3",
+      "before": {
+        "id": "v7g14n3",
+        "x": -940.0,
+        "y": -1544.05424,
+        "type": "notable",
+        "name": "消費を抑える",
+        "stats": {
+          "efficiency": 4
+        },
+        "theme": "resource",
+        "icon": "crystal",
+        "group": "v7g14",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "middle_choice_v7_proposal",
+        "sourceRef": "middle-choice-v7:v7g14n3",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "efficiency": [
+            "MP_CONSUMER"
+          ]
+        },
+        "desc": "西の中間部で、固有資源を多く得るかMP消費効率を上げるかを選ぶ。今使う技能の運用へ投資する。"
+      },
+      "after": {
+        "id": "v7g14n3",
+        "x": -940.0,
+        "y": -1544.05424,
+        "type": "notable",
+        "name": "再使用と消費を整える",
+        "stats": {
+          "haste": 8,
+          "efficiency": 4
+        },
+        "theme": "resource",
+        "icon": "sword",
+        "group": "v7g14",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "growth_v11_proposal",
+        "sourceRef": "middle-choice-v7:v7g14n3",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "haste": [
+            "RESOURCE"
+          ],
+          "efficiency": [
+            "MP_CONSUMER"
+          ]
+        },
+        "desc": "手持ちの技能の回転とMP負担へ投資する。追加pulseや新技能は供給しない。",
+        "description": "手持ちの技能の回転とMP負担へ投資する。追加pulseや新技能は供給しない。",
+        "buildIntent": "手持ちの技能の回転とMP負担へ投資する。追加pulseや新技能は供給しない。"
+      }
+    },
+    {
+      "id": "v7g06n3",
+      "before": {
+        "id": "v7g06n3",
+        "x": 1461.91717,
+        "y": -3587.94806,
+        "type": "notable",
+        "name": "蓄える体力",
+        "stats": {
+          "hp": 7
+        },
+        "theme": "life",
+        "icon": "heart",
+        "group": "v7g06",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "middle_choice_v7_proposal",
+        "sourceRef": "middle-choice-v7:v7g06n3",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": []
+        },
+        "desc": "中央外側で容量と再生を分けて育てる。回復地域の購入を前提にしない。"
+      },
+      "after": {
+        "id": "v7g06n3",
+        "x": 1461.91717,
+        "y": -3587.94806,
+        "type": "notable",
+        "name": "容量を積んで前に残る",
+        "stats": {
+          "hp": 12,
+          "armor": 8
+        },
+        "theme": "life",
+        "icon": "ward",
+        "group": "v7g06",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "growth_v11_proposal",
+        "sourceRef": "middle-choice-v7:v7g06n3",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "hp": [],
+          "armor": []
+        },
+        "desc": "HP容量と装甲へ投資する。防具は職業を問わず部位ごとに自由混合できる。",
+        "description": "HP容量と装甲へ投資する。防具は職業を問わず部位ごとに自由混合できる。",
+        "buildIntent": "HP容量と装甲へ投資する。防具は職業を問わず部位ごとに自由混合できる。"
+      }
+    },
+    {
+      "id": "v7g06n5",
+      "before": {
+        "id": "v7g06n5",
+        "x": 1447.11717,
+        "y": -3177.24806,
+        "type": "notable",
+        "name": "戻る体力",
+        "stats": {
+          "regen": 10
+        },
+        "theme": "life",
+        "icon": "leaf",
+        "group": "v7g06",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "middle_choice_v7_proposal",
+        "sourceRef": "middle-choice-v7:v7g06n5",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "regen": []
+        },
+        "desc": "中央外側で容量と再生を分けて育てる。回復地域の購入を前提にしない。"
+      },
+      "after": {
+        "id": "v7g06n5",
+        "x": 1447.11717,
+        "y": -3177.24806,
+        "type": "notable",
+        "name": "回復を待ち、立て直す",
+        "stats": {
+          "regen": 10,
+          "resist": 8
+        },
+        "theme": "life",
+        "icon": "temp_sanctuary",
+        "group": "v7g06",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "growth_v11_proposal",
+        "sourceRef": "middle-choice-v7:v7g06n5",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "regen": [],
+          "resist": []
+        },
+        "desc": "自動再生と魔法防御へ投資する。HEAL技能や味方回復を与えず、再生が無効なKeyでは再生値が働かない。",
+        "description": "自動再生と魔法防御へ投資する。HEAL技能や味方回復を与えず、再生が無効なKeyでは再生値が働かない。",
+        "buildIntent": "自動再生と魔法防御へ投資する。HEAL技能や味方回復を与えず、再生が無効なKeyでは再生値が働かない。"
+      }
+    },
+    {
+      "id": "v7g14n0",
+      "before": {
+        "id": "v7g14n0",
+        "x": -1350.0,
+        "y": -1729.05424,
+        "type": "small",
+        "name": "技能運用の基礎",
+        "stats": {
+          "resource": 1
+        },
+        "theme": "resource",
+        "icon": "clock",
+        "group": "v7g14",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "middle_choice_v7_proposal",
+        "sourceRef": "middle-choice-v7:v7g14n0",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "resource": [
+            "RESOURCE"
+          ]
+        },
+        "desc": "西の中間部で、固有資源を多く得るかMP消費効率を上げるかを選ぶ。今使う技能の運用へ投資する。"
+      },
+      "after": {
+        "id": "v7g14n0",
+        "x": -1350.0,
+        "y": -1729.05424,
+        "type": "small",
+        "name": "外側で回収を補う",
+        "stats": {
+          "resource": 4,
+          "hp": 2
+        },
+        "theme": "resource",
+        "icon": "speed",
+        "group": "v7g14",
+        "cost": 1,
+        "runtimeApplied": false,
+        "sourceState": "growth_v11_proposal",
+        "sourceRef": "middle-choice-v7:v7g14n0",
+        "requirements": [],
+        "effectState": "unimplemented_proposal",
+        "inputPolicy": "any_usable_benefit",
+        "benefitInputs": {
+          "resource": [
+            "RESOURCE"
+          ],
+          "hp": []
+        },
+        "desc": "西側の一般経路から短く拾える資源獲得とHPの備え。近傍の専門群と一般幹線を直結する迂回路にはしない。",
+        "description": "西側の一般経路から短く拾える資源獲得とHPの備え。近傍の専門群と一般幹線を直結する迂回路にはしない。",
+        "buildIntent": "西側の一般経路から短く拾える資源獲得とHPの備え。近傍の専門群と一般幹線を直結する迂回路にはしない。"
+      }
+    }
+  ],
+  "addedEdges": [
+    {
+      "a": "link_ranger_2_2",
+      "b": "v7g14n1",
+      "road": false,
+      "proposalKind": "growth-v11",
+      "role": "回収と再使用の二つの育成目標へ進む。",
+      "points": [
+        [
+          -793.44453,
+          -794.66597
+        ],
+        [
+          -1150.0,
+          -1729.05424
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "link_assassin_2_7",
+      "b": "v7g06n0",
+      "road": false,
+      "proposalKind": "growth-v11",
+      "role": "装甲側から容量の群へ進む。",
+      "points": [
+        [
+          981.22537,
+          -3037.82213
+        ],
+        [
+          940.21717,
+          -3388.14806
+        ]
+      ],
+      "crossingGaps": []
+    },
+    {
+      "a": "link_assassin_2_7",
+      "b": "v7g06n4",
+      "road": false,
+      "proposalKind": "growth-v11",
+      "role": "同じ装甲側から、容量を経由せず立て直しへ進む。",
+      "points": [
+        [
+          981.22537,
+          -3037.82213
+        ],
+        [
+          1280.61717,
+          -3240.14806
+        ]
+      ],
+      "crossingGaps": []
+    }
+  ],
+  "removedEdges": [
+    {
+      "a": "v7g14n0",
+      "b": "v7g14n1",
+      "road": false,
+      "proposalKind": "middle-choice-v7",
+      "role": "optional-middle-investment",
+      "points": [
+        [
+          -1350.0,
+          -1729.05424
+        ],
+        [
+          -1150.0,
+          -1729.05424
+        ]
+      ],
+      "crossingGaps": []
+    }
+  ],
+  "addedNodes": 0,
+  "oldCoordinatesExact": true,
+  "otherOldEdgesExact": true,
+  "centralEdgesExact": true,
+  "sourceFilesChanged": false,
+  "groupGoalCosts": {
+    "v7g14n2": {
+      "warrior": 8,
+      "tank": 9,
+      "mage": 12,
+      "ranger": 14,
+      "assassin": 11
+    },
+    "v7g14n3": {
+      "warrior": 8,
+      "tank": 9,
+      "mage": 12,
+      "ranger": 14,
+      "assassin": 11
+    },
+    "v7g06n3": {
+      "warrior": 11,
+      "tank": 8,
+      "mage": 9,
+      "ranger": 14,
+      "assassin": 16
+    },
+    "v7g06n5": {
+      "warrior": 11,
+      "tank": 6,
+      "mage": 7,
+      "ranger": 12,
+      "assassin": 16
+    }
+  },
+  "two24PointUnionCosts": [
+    {
+      "job": "warrior",
+      "unionSpend": 28,
+      "ids": [
+        "warrior-growth-0-24",
+        "warrior-growth-1-24"
+      ]
+    },
+    {
+      "job": "tank",
+      "unionSpend": 37,
+      "ids": [
+        "tank-growth-0-24",
+        "tank-growth-1-24"
+      ]
+    }
+  ],
+  "rejectedBroadShortcut": "V9 54/21/tie17 became Warrior65/Tank16/tie11; replaced with a local group entrance change."
+}

@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "all850CoordinatesExact": true,
+  "centralPositionsAndIncidentEdgesExact": true,
+  "other1008EdgesExact": true,
+  "removedOuterGroupEntryEdges": 1,
+  "addedEdges": 3,
+  "addedNodes": 0,
+  "addedRoads": 0,
+  "newSegmentsCheckedForCrossingsAndOverlap": true,
+  "minNewWireToNonIncidentNodeDistance": 130.2448886303967,
+  "all850NodesConnected": true,
+  "classRestrictedEdges": 0
+}
