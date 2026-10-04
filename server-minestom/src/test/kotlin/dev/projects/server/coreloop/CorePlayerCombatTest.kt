@@ -875,6 +875,163 @@ class CorePlayerCombatTest {
         assertEquals(0,h.actor.cooldownRemaining(2))
     }
 
+    private fun trapRanger(h: Harness) {
+        h.journey = CoreJourney(job = CoreClass.RANGER, build = CoreClassBuild(first=5, second=0, third=3, fourth=1))
+        h.base = CoreWeaponBase.LONGBOW; h.actor.reset()
+    }
+
+    @Test fun `hunting trap waits for late entry and keeps original four wave damage budget`() = arena(bossDistance=10.0) { h ->
+        trapRanger(h); val definition=h.actor.skillDefinitions[0]
+        assertEquals(18,definition.mana); assertEquals(170,definition.cooldown); assertEquals(6,definition.startup)
+        h.actor.skill(0); h.ticks(6)
+        assertEquals(1,h.actor.activeHuntingTraps); assertEquals(13,h.actor.huntingTrapDisplays)
+        assertEquals(300.0,h.combat.bossHealth()); h.ticks(40)
+        assertEquals(300.0,h.combat.bossHealth())
+        val at=h.actor.huntingTrapOrigin!!
+        h.combat.entities().single().teleport(at).join(); h.ticks(1)
+        assertEquals(1,h.actor.huntingTrapPulses)
+        val resource=h.actor.resource
+        h.ticks(24)
+        assertEquals(300.0-definition.preview(h.actor.sheet)*4,h.combat.bossHealth(),.00001)
+        assertEquals(resource,h.actor.resource,"Concentration gain once per trap, not once per wave")
+        assertEquals(0,h.actor.activeHuntingTraps); assertEquals(0,h.actor.huntingTrapDisplays)
+    }
+
+    @Test fun `planting releases input and another skill cannot replace trap damage or resource context`() = arena(bossDistance=10.0) { h ->
+        trapRanger(h); h.actor.skill(0); h.ticks(6)
+        val trapDefinition=h.actor.skillDefinitions[0]
+        val at=h.actor.huntingTrapOrigin!!
+        h.actor.skill(1) // The aimed shot is casting when the trap is entered.
+        assertTrue(h.actor.cooldownRemaining(1)>0,"No old channel recovery after planting")
+        h.combat.entities().single().teleport(at).join(); h.ticks(1)
+        assertEquals(300.0-trapDefinition.preview(h.actor.sheet),h.combat.bossHealth(),.00001)
+        assertEquals(trapDefinition.gain.toDouble(),h.actor.resource)
+        h.actor.dodge(); assertEquals(1,h.actor.activeHuntingTraps,"Dodge cancels shot, not planted trap")
+        h.ticks(24); assertEquals(0,h.actor.activeHuntingTraps)
+    }
+
+    @Test fun `duplicate trap input and training refill never stack replace or spend twice`() = arena(bossDistance=10.0) { h ->
+        trapRanger(h); h.actor.skill(0); h.actor.skill(0); assertEquals(82,h.actor.mana)
+        h.ticks(6); val at=h.actor.huntingTrapOrigin
+        repeat(100) { h.actor.refillTraining(); h.actor.skill(0) }
+        assertEquals(h.actor.maxMana,h.actor.mana); assertEquals(at,h.actor.huntingTrapOrigin)
+        assertEquals(1,h.actor.activeHuntingTraps); assertEquals(13,h.actor.huntingTrapDisplays); assertEquals(0,h.actor.cooldownRemaining(0))
+        h.ticks(120); assertEquals(300.0,h.combat.bossHealth()); assertEquals(0,h.actor.activeHuntingTraps)
+        h.actor.skill(0); assertTrue(h.actor.cooldownRemaining(0)>0)
+    }
+
+    @Test fun `preplant dodge cancels trap but postplant dodge preserves it`() = arena(bossDistance=10.0) { h ->
+        trapRanger(h); h.actor.skill(0); h.ticks(5); h.actor.dodge(); h.ticks(2)
+        assertEquals(0,h.actor.activeHuntingTraps)
+        h.actor.reset(); h.actor.skill(0); h.ticks(6); h.actor.dodge(); h.ticks(1)
+        assertEquals(1,h.actor.activeHuntingTraps)
+    }
+
+    @Test fun `enemy leaving the footprint avoids later waves without a second trigger`() = arena(bossDistance=10.0) { h ->
+        trapRanger(h); h.actor.skill(0); h.ticks(6); val at=h.actor.huntingTrapOrigin!!
+        val mob=h.combat.entities().single(); mob.teleport(at).join(); h.ticks(1)
+        val hp=h.combat.bossHealth(); mob.teleport(at.add(5.0,0.0,0.0)).join(); h.ticks(15)
+        assertEquals(hp,h.combat.bossHealth())
+        mob.teleport(at).join(); h.ticks(9)
+        assertEquals(0,h.actor.activeHuntingTraps)
+        assertEquals(hp-h.actor.skillDefinitions[0].preview(h.actor.sheet)*2,h.combat.bossHealth(),.00001)
+    }
+
+    @Test fun `wall blocks trap trigger even when feet are inside its footprint`() = arena(bossDistance=10.0) { h ->
+        trapRanger(h); h.actor.skill(0); h.ticks(6); val at=h.actor.huntingTrapOrigin!!
+        for(y in 40..43) h.instance.setBlock(8,y,14,Block.STONE)
+        h.combat.entities().single().teleport(at.add(0.0,0.0,2.5)).join(); h.ticks(16)
+        assertEquals(0,h.actor.huntingTrapPulses); assertEquals(300.0,h.combat.bossHealth())
+    }
+
+    @Test fun `unsupported floor rejects cost and removing support cleans a planted trap`() = arena(bossDistance=10.0) { h ->
+        trapRanger(h)
+        for(x in 7..9) for(z in 11..13) for(y in 37..39) h.instance.setBlock(x,y,z,Block.AIR)
+        h.actor.skill(0); assertEquals(100,h.actor.mana); assertEquals(0,h.actor.cooldownRemaining(0))
+        h.instance.setBlock(8,39,12,Block.STONE); h.actor.skill(0); h.ticks(6)
+        assertEquals(1,h.actor.activeHuntingTraps)
+        h.instance.setBlock(8,39,12,Block.AIR); h.ticks(1)
+        assertEquals(0,h.actor.activeHuntingTraps); assertEquals(0,h.actor.huntingTrapDisplays)
+    }
+
+    @Test fun `trap cleanup covers reset class encounter removal owner death and range exit`() {
+        for(reason in 0..5) arena(bossDistance=10.0) { h ->
+            trapRanger(h); h.actor.skill(0); h.ticks(6); assertEquals(1,h.actor.activeHuntingTraps)
+            when(reason) {
+                0 -> h.actor.resetActions()
+                1 -> h.journey=CoreJourney(job=CoreClass.MAGE)
+                2 -> h.activeEncounter=null
+                3 -> h.player.remove()
+                4 -> h.actor.hurt(100000.0)
+                5 -> h.player.teleport(h.player.position.add(30.0,0.0,0.0)).join()
+            }
+            h.ticks(2); assertEquals(0,h.actor.activeHuntingTraps); assertEquals(0,h.actor.huntingTrapDisplays)
+        }
+    }
+
+    @Test fun `dead enemy never triggers and lethal callback cannot leave trap displays or later hits`() = arena(bossDistance=10.0) { h ->
+        trapRanger(h); h.actor.skill(0); h.ticks(6)
+        val id=h.combat.combatTargets().single().id
+        h.combat.applyEffectDamage(id,h.player,299.0)
+        h.afterKill={ h.actor.resetActions(); h.activeEncounter=null }
+        h.combat.entities().single().teleport(h.actor.huntingTrapOrigin!!).join(); h.ticks(1)
+        assertTrue(h.combat.bossDefeated); assertEquals(0,h.actor.huntingTrapDisplays)
+        assertEquals(0,h.actor.activeHuntingTraps); assertEquals(0,h.actor.activeVisualEffects)
+        h.ticks(40); assertEquals(0,h.actor.activeVisualEffects)
+    }
+
+    @Test fun `boss is slowed with existing resistance and never rooted or moved by trap`() = arena(bossDistance=4.0) { h ->
+        trapRanger(h); val mob=h.combat.entities().single(); val before=mob.position
+        val speed=mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue
+        h.actor.skill(0); h.ticks(6)
+        assertEquals(before,mob.position)
+        assertEquals(speed*(1-.45*.5),mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.000001)
+        h.ticks(24); assertEquals(0,h.actor.activeHuntingTraps)
+    }
+
+    @Test fun `dead enemy does not trigger an armed trap`() = arena(bossDistance=10.0) { h ->
+        trapRanger(h); h.actor.skill(0); h.ticks(6)
+        val mob=h.combat.entities().single(); val at=h.actor.huntingTrapOrigin!!
+        mob.teleport(at).join(); h.combat.applyEffectDamage(mob.uuid,h.player,1000.0); h.ticks(10)
+        assertEquals(0,h.actor.huntingTrapPulses); assertEquals(1,h.actor.activeHuntingTraps)
+        h.ticks(110); assertEquals(0,h.actor.activeHuntingTraps)
+    }
+
+    @Test fun `changing worlds removes trap and pending display registrations`() = arena(bossDistance=10.0) { h ->
+        trapRanger(h); h.actor.skill(0); h.ticks(6)
+        val other=MinecraftServer.getInstanceManager().createInstanceContainer()
+        try {
+            other.loadChunk(0,0).join(); h.player.setInstance(other,Pos(8.5,40.0,8.5)).join()
+            h.ticks(1); assertEquals(0,h.actor.activeHuntingTraps); assertEquals(0,h.actor.huntingTrapDisplays)
+        } finally { h.player.setInstance(h.instance,Pos(8.5,40.0,8.5)).join(); MinecraftServer.getInstanceManager().unregisterInstance(other) }
+    }
+
+    @Test fun `thirty second trap preview is captured from socketless actor fixtures`() {
+        val scenarios=mutableListOf<String>()
+        for(scenario in 0..2) arena(bossDistance=10.0) { h ->
+            trapRanger(h); val frames=mutableListOf<String>(); h.actor.skill(0)
+            for(t in 1..200) {
+                if(scenario==0 && t==10) h.actor.dodge()
+                if(scenario==0 && t==12) h.actor.skill(2)
+                if(scenario==0 && t==60) h.combat.entities().single().teleport(h.actor.huntingTrapOrigin!!).join()
+                if(scenario==2 && t==3) h.actor.dodge()
+                h.ticks(1)
+                val p=h.player.position; val e=h.combat.entities().single().position
+                val at=h.actor.huntingTrapOrigin
+                frames += "{\"tick\":$t,\"active\":${h.actor.activeHuntingTraps},\"pulses\":${h.actor.huntingTrapPulses},\"mana\":${h.actor.mana},\"resource\":${h.actor.resource},\"hp\":${h.combat.bossHealth()},\"player\":[${p.x()},${p.z()}],\"enemy\":[${e.x()},${e.z()}],\"trap\":${at?.let { "[${it.x()},${it.z()}]" } ?: "null"},\"partnerCooldown\":${h.actor.cooldownRemaining(2)}}"
+            }
+            when(scenario) {
+                0 -> { assertTrue(h.combat.bossHealth()<300); assertTrue(frames[11].contains("\"partnerCooldown\":0").not()) }
+                1 -> assertEquals(300.0,h.combat.bossHealth())
+                2 -> { assertEquals(300.0,h.combat.bossHealth()); assertEquals(0,h.actor.activeHuntingTraps) }
+            }
+            scenarios += "[${frames.joinToString(",")}]"
+        }
+        val out=java.nio.file.Path.of("build/hunt-trap-preview/actor-trace.json")
+        java.nio.file.Files.createDirectories(out.parent)
+        java.nio.file.Files.writeString(out,"{\"source\":\"CorePlayerCombat socketless real actors; scripted enemy teleport, not live AI or game capture\",\"baseline\":\"7341fe25\",\"scenarios\":[${scenarios.joinToString(",")}]}")
+    }
+
     private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double,
         weaponEnhancement: Int, armorEnhancement: Int) : AutoCloseable {
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()

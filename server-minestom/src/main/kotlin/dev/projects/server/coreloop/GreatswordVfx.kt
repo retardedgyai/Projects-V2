@@ -189,10 +189,10 @@ internal class GreatswordVfx(private val player: Player) {
         scheduler.start(effect, frame)
     }
 
-    fun playSkill(effect: ParticleEffect) {
+    fun playSkill(effect: ParticleEffect, animateArmament: Boolean = true) {
         if (player.instance !== instance) cancel()
         instance = player.instance
-        if (effect is CoreSkillEffect) CoreArmamentPresentation.skill(player, effect)
+        if (effect is CoreSkillEffect && animateArmament) CoreArmamentPresentation.skill(player, effect)
         if (activeEffects >= MAX_EFFECTS) scheduler.cancelAll() // Shed old normal trails before a skill pulse.
         if (activeEffects < MAX_EFFECTS) {
             if (effect is CoreSkillEffect) effect.solidCompanion = CoreCombatPresentation.packed(player)

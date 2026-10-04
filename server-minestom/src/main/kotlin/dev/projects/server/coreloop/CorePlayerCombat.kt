@@ -57,6 +57,14 @@ internal class CorePlayerCombat(
     private var previousPosition: Pos? = null
     private var moveHasteUntil = -1L
     private var pending: PendingSkill? = null
+    private data class PlantedTrap(val state: CoreHuntingTrap, val action: PendingSkill,
+        val encounter: QuestEncounterCombat, val instance: net.minestom.server.instance.Instance,
+        val display: CoreHuntingTrapDisplay)
+    private var huntingTrap: PlantedTrap? = null
+    internal val activeHuntingTraps get() = if (huntingTrap == null) 0 else 1
+    internal val huntingTrapPulses get() = huntingTrap?.state?.pulses ?: 0
+    internal val huntingTrapOrigin get() = huntingTrap?.state?.origin
+    internal val huntingTrapDisplays get() = huntingTrap?.display?.size ?: 0
     private var queuedSkill: Int? = null
     private var queuedDodge = false
     private var warriorQueued: Int? = null
@@ -101,7 +109,8 @@ internal class CorePlayerCombat(
     private val damageLabels = mutableListOf<Pair<Entity, Long>>()
 
     private data class PendingSkill(val id: Int, val definition: CoreSkillDefinition, val origin: Pos, val direction: Vec, val startup: Int,
-        var elapsed: Int = 0, var gained: Boolean = false, val empowered: Double = 0.0, val counter: Boolean = false)
+        var elapsed: Int = 0, var gained: Boolean = false, val empowered: Double = 0.0, val counter: Boolean = false,
+        val boost: Double = 1.0)
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
@@ -144,6 +153,11 @@ internal class CorePlayerCombat(
         }
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
         val definition = skillDefinitions[id]
+        // Even training refill cannot stack or replace a still-active trap.
+        if (definition.icon == "hunt_trap" && huntingTrap != null) { notice("狩猟罠は既に設置中です"); return }
+        val trapOrigin = if (definition.icon == "hunt_trap") {
+            supportedTrapGround(aimedGround(definition, encounter()!!)) ?: run { notice("罠を置ける地面を狙ってください"); return }
+        } else null
         if (!classState.canCast(definition, journey().build)) { notice("${classId.resourceName}が足りません（必要 ${definition.spend} / 現在 ${resource.toInt()}）"); return }
         val cost = definition.mana
         if (mana < cost) { notice("マナが足りません（必要 $cost）"); return }
@@ -180,9 +194,9 @@ internal class CorePlayerCombat(
         }
         readyAt[id] = tickNumber + cooldownTicks(id)
         val startup = castDefinition.startupTicks(sheet)
-        pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
+        pending = PendingSkill(id, castDefinition, trapOrigin ?: if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
             if (definition.motion == CoreSkillMotion.RAY) player.position.direction() else flatFacing(), startup,
-            empowered = spentFrom, counter = counter)
+            empowered = spentFrom, counter = counter, boost = skillBoost)
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
@@ -219,7 +233,7 @@ internal class CorePlayerCombat(
         previousPosition?.let { if (it.distance(player.position) > .035) classState.stationarySince = tickNumber }
         previousPosition = player.position
         damageLabels.removeAll { (entity, expiry) -> if (tickNumber >= expiry) { entity.remove(); true } else false }
-        if (defeated) return
+        if (defeated || player.isRemoved) { clearHuntingTrap(); return }
         if (tickNumber % 20 == 0L) {
             manaValue = (manaValue + CoreCombatMath.manaRegeneration(statSource(), tickNumber - lastCombat > 100)).coerceAtMost(maxMana.toDouble())
             player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = 0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0 + if (tickNumber < moveHasteUntil) .2 else 0.0)
@@ -251,6 +265,18 @@ internal class CorePlayerCombat(
         normal.tick()?.let { swing -> if (!releaseNormal(enemies, swing)) return }
         pending?.let { action ->
             action.elapsed++
+            if (action.definition.icon == "hunt_trap") {
+                if (action.elapsed >= action.startup) {
+                    pending = null
+                    if (supportedTrapGround(action.origin) == action.origin) {
+                        val state = CoreHuntingTrap(action.origin, action.definition.radius, tickNumber, action.definition.duration)
+                        huntingTrap = PlantedTrap(state, action, enemies, player.instance, CoreHuntingTrapDisplay(player, state))
+                        sound(SoundEvent.BLOCK_TRIPWIRE_ATTACH, .55f, 1.1f)
+                    }
+                    CoreArmamentPresentation.cancel(player)
+                }
+                return@let
+            }
             val pulse = action.elapsed - action.startup
             if (pulse >= 0 && pulse % 8 == 0 && pulse / 8 < action.definition.pulses) {
                 executeSkill(enemies, action)
@@ -264,6 +290,8 @@ internal class CorePlayerCombat(
                 else action.startup + action.definition.pulses * 8 + 3
             if (action.elapsed >= finish) pending = null
         }
+        tickHuntingTrap(enemies, epoch)
+        if (!actionsValid(enemies, epoch)) return
         drainWarriorInput()
         if (!normal.isAttacking && pending == null) {
             if (queuedDodge) { normal.clearBuffer(); queuedDodge = false; dodge() }
@@ -440,12 +468,13 @@ internal class CorePlayerCombat(
         }
     }
 
-    private fun hit(enemies: QuestEncounterCombat, id: UUID, multiplier: Double, skill: Boolean, heavy: Boolean = false, piercing: Boolean = false) {
+    private fun hit(enemies: QuestEncounterCombat, id: UUID, multiplier: Double, skill: Boolean, heavy: Boolean = false, piercing: Boolean = false,
+        skillAction: PendingSkill? = if (skill) pending else null) {
         val epoch = actionEpoch
         val stats = sheet.mods
         val build = journey().build
         val position = enemies.positionOf(id) ?: return
-        val definition = if (skill) pending?.definition ?: return else null
+        val definition = if (skill) skillAction?.definition ?: return else null
         val formula = definition?.formula ?: CoreSkillCatalog.basicFormula
         val type = definition?.type ?: CoreSkillCatalog.basicType(classId)
         val tags = definition?.tags ?: CoreSkillCatalog.basicTags(classId)
@@ -470,7 +499,7 @@ internal class CorePlayerCombat(
             if (classId == CoreClass.ASSASSIN && build.keystone == 0 && info != null && info.health / info.maximumHealth <= .35) classMultiplier *= 1.4
         }
         val damage = CoreCombatMath.outgoing(baseDamage, type, tags, stats, critical) *
-            (if (skill) skillBoost else 1.0) * classMultiplier * (if (tickNumber < whetstoneUntil) 1.2 else 1.0) * (if (weak) 1.25 else 1.0)
+            (if (skill) { if (definition!!.icon == "hunt_trap") skillAction!!.boost else skillBoost } else 1.0) * classMultiplier * (if (tickNumber < whetstoneUntil) 1.2 else 1.0) * (if (weak) 1.25 else 1.0)
         val applied = enemies.applyCalculatedDamage(id, player, damage, type, stats,
             projectile = !classId.melee || definition?.motion == CoreSkillMotion.RAY || definition?.motion == CoreSkillMotion.FIELD || (definition?.radius ?: 0.0) > 7.0) ?: return
         val lesson = if (skill) 1 else 0
@@ -484,7 +513,7 @@ internal class CorePlayerCombat(
                 classState.gain(4.0, classId, build); lastConduitGain = tickNumber
             }
         }
-        else pending?.takeUnless { it.gained }?.let { action ->
+        else skillAction?.takeUnless { it.gained }?.let { action ->
             action.gained = true; classState.skillHit(classId, action.definition, build)
             if (classId == CoreClass.STARWEAVER && action.empowered >= 3 && action.definition.icon == "star_ring") manaValue = min(maxMana.toDouble(), manaValue + 12)
         }
@@ -513,7 +542,8 @@ internal class CorePlayerCombat(
         if (stolen > 0) heal(stolen)
         if (definition != null) {
             if (visualContactsThisTick++ < 3) vfx.playSkill(CoreSkillEffect(classId, definition, position,
-                pending!!.direction, CoreSkillVisualPhase.CONTACT, pulse = (pending!!.elapsed - pending!!.startup) / 8))
+                skillAction!!.direction, CoreSkillVisualPhase.CONTACT, pulse = (skillAction.elapsed - skillAction.startup) / 8),
+                animateArmament = definition.icon != "hunt_trap")
             if (burns.containsKey(DotKey(id, true))) vfx.status(CorePoisonEffect(position, tickNumber, false))
         } else if (classId.melee) {
             vfx.impactSound(heavy)
@@ -579,6 +609,51 @@ internal class CorePlayerCombat(
         val action = pending ?: return
         vfx.playSkill(CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction,
             pulse = (action.elapsed - action.startup) / 8, endpoint = endpoint))
+    }
+
+    private fun supportedTrapGround(aim: Pos): Pos? {
+        val instance = player.instance ?: return null
+        val base = floor(aim.y()).toInt()
+        val y = (base downTo base - 2).firstOrNull { level ->
+            instance.getBlock(Pos(aim.x(), level.toDouble(), aim.z())).isSolid &&
+                !instance.getBlock(Pos(aim.x(), level + 1.0, aim.z())).isSolid &&
+                !instance.getBlock(Pos(aim.x(), level + 2.0, aim.z())).isSolid
+        } ?: return null
+        val floor = Pos(aim.x(), y + 1.0, aim.z())
+        return floor.takeIf { clearLine(player.position, it) }
+    }
+
+    private fun tickHuntingTrap(enemies: QuestEncounterCombat, epoch: Long) {
+        val planted = huntingTrap ?: return
+        val trap = planted.state
+        if (classId != CoreClass.RANGER || player.instance !== planted.instance || enemies !== planted.encounter ||
+            player.position.distanceSquared(trap.origin) > 24.0 * 24.0 ||
+            !planted.instance.getBlock(trap.origin.sub(0.0, .1, 0.0)).isSolid ||
+            planted.instance.getBlock(trap.origin).isSolid) { clearHuntingTrap(); return }
+        // Each cast scans at most 128 targets; dead/returning targets are excluded by the encounter.
+        val targets = enemies.combatTargets().take(128).filter { target ->
+            enemies.positionOf(target.id)?.let { trap.contains(it) && clearLine(trap.origin, it) } == true
+        }
+        if (trap.tick(tickNumber, targets.isNotEmpty())) {
+            val action = planted.action
+            action.elapsed = action.startup + (trap.pulses - 1) * 8
+            vfx.playSkill(CoreSkillEffect(CoreClass.RANGER, action.definition, trap.origin, action.direction,
+                pulse = trap.pulses - 1), animateArmament = false)
+            for (target in targets) {
+                hit(enemies, target.id, 1.0, skill = true, skillAction = action)
+                if (!actionsValid(enemies, epoch) || huntingTrap !== planted) return
+            }
+        }
+        planted.display.tick(tickNumber)
+        if (trap.finished || trap.expired(tickNumber)) {
+            sound(SoundEvent.BLOCK_TRIPWIRE_DETACH, .35f, if (trap.finished) 1.1f else .7f)
+            clearHuntingTrap()
+        }
+    }
+
+    private fun clearHuntingTrap() {
+        huntingTrap?.display?.close()
+        huntingTrap = null
     }
 
     /** Lock a ground cast to the visible aimed enemy/block, not a fixed point seven blocks ahead. */
@@ -688,6 +763,7 @@ internal class CorePlayerCombat(
     fun revive(fraction: Double) { require(fraction in .1..1.0); reset(); health = maxHealth * fraction; syncVanillaHealth() }
     fun resetActions() {
         actionEpoch++
+        clearHuntingTrap()
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; queuedSkill = null; queuedDodge = false; burns.clear()
         normalEmpowerment = 1.0
         warriorQueued = null; warriorQueueUntil = -1; warriorNextNormalAt = -1

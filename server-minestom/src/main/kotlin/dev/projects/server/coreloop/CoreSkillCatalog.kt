@@ -165,7 +165,7 @@ object CoreSkillCatalog {
                 s("矢の嵐", "arrow_rain", "集中40を消費。地点へ四度の矢雨", CoreSkillMotion.FIELD, 3.0, 1.0, mana=22, cd=180, pulses=4, gain=0, spend=40),
                 s("後退射撃", "hunt_retreat", "後ろへ退きながら矢を放つ。逃げと攻撃を両立", CoreSkillMotion.EVADE, 4.0, .8, cd=120, range=-3.5),
                 s("貫き矢", "hunt_pierce", "集中30を消費して三体まで貫通", CoreSkillMotion.RAY, 8.0, 2.6, cd=110, startup=12, gain=0, spend=30, radius=.9),
-                s("狩猟罠", "hunt_trap", "足元前方に減速と毒の罠。誘い込んで撃つ", CoreSkillMotion.FIELD, 3.0, .65, mana=18, cd=170, pulses=4, status=CoreSkillStatus.POISON, range=4.0, radius=3.5, duration=120),
+                s("狩猟罠", "hunt_trap", "前方へ設置し自由に動く。最初の侵入で毒と減速の四波、未侵入なら6秒で消滅（試作値）", CoreSkillMotion.FIELD, 3.0, .65, mana=18, cd=170, pulses=4, status=CoreSkillStatus.POISON, range=4.0, radius=3.5, duration=120),
                 s("獲物の印", "hunt_mark", "遠くの獲物に印。集中消費技が印を使って強化", CoreSkillMotion.RAY, 3.0, .6, mana=8, cd=80, gain=25, status=CoreSkillStatus.MARK),
                 s("速射", "hunt_volley", "集中20を使う三連射。照準を保つ必要がある", CoreSkillMotion.RAY, 2.0, .95, mana=14, cd=110, pulses=3, gain=0, spend=20),
                 s("終の一矢", "hunt_ult", "集中80を消費する精密射撃。長い構えを守り抜く", CoreSkillMotion.RAY, 35.0, 8.0, mana=30, cd=600, startup=28, gain=0, spend=80, range=23.0, ult=true),
