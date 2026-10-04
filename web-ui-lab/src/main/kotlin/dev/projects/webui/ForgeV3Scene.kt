@@ -167,11 +167,13 @@ class ForgeV3Scene(spriteJson: ByteArray) {
         val d = Draw()
         val live = motion?.takeIf { nowMs - it.startMs in 0 until it.kind.durationMs }
         val actions = !state.modal && !state.busy
-        d.rect("viewport-backdrop", -400, -200, 2720, 1480, "#0B0C0E", -1)
+        // Sprites and text sit 5 depth steps in front of panels of the same depth (UiRenderer adds
+        // 0.025 to their z). The plate must stay behind every live panel, so it goes to -6.
+        d.rect("viewport-backdrop", -400, -200, 2720, 1480, "#0B0C0E", -8)
         sprites.keys.filter { it.startsWith("v3_chrome/") }.forEach { key ->
             val (x, y) = key.substringAfter('/').split('_').map(String::toDouble)
             val s = sprites.getValue(key)
-            d.node("chrome-$key", x, y, s.width, s.height, sprite = s, depth = 0)
+            d.node("chrome-$key", x, y, s.width, s.height, sprite = s, depth = -6)
         }
         header(d, state)
         left(d, state, actions)
@@ -497,15 +499,18 @@ class ForgeV3Scene(spriteJson: ByteArray) {
             d.node("cost-icon-$i", 1421, y + 12, 36, 36, sprite = sprites.getValue(c.icon), depth = 4)
             d.text("cost-name-$i", 1473, y + 15, 220, 20, c.name, "v3m", 14.0, "#ECE6DC")
             d.text("cost-tier-$i", 1473 + width(c.name, "v3m", 14.0) + 6, y + 17, 40, 17, c.tierLabel, "v3m", 12.0, "#A29E97")
-            d.round("cost-bar-$i", 1473.0, y + 40, 304.0, 4.0, 2.0, "#2A2C31", 1.0, 2)
-            val fill = if (!ok) 1.0 else if (c.owned == 0L) 0.0 else c.required.toDouble() / c.owned
-            d.round("cost-fill-$i", 1473.0, y + 40, 304.0 * fill.coerceIn(0.0, 1.0), 4.0, 2.0, if (ok) "#ECE6DC" else "#C2554A", 1.0, 3)
             val small = " / ${format.format(c.owned)}"
             val smallW = width(small, "v3num", 13.0)
+            val after = if (ok) "残り ${format.format(c.owned - c.required)}" else "あと ${format.format(c.required - c.owned)} 不足"
+            // The artboard's grid: the bar takes what the right-hand amount column leaves (14px gap).
+            val amountW = maxOf(smallW + width(format.format(c.required), "v3num", 20.0), width(after, "v3r", 11.0), 42.0)
+            val barW = 1830 - amountW - 14 - 1473
+            d.round("cost-bar-$i", 1473.0, y + 40, barW, 4.0, 2.0, "#2A2C31", 1.0, 2)
+            val fill = if (!ok) 1.0 else if (c.owned == 0L) 0.0 else c.required.toDouble() / c.owned
+            d.round("cost-fill-$i", 1473.0, y + 40, barW * fill.coerceIn(0.0, 1.0), 4.0, 2.0, if (ok) "#ECE6DC" else "#C2554A", 1.0, 3)
             d.text("cost-own-$i", 1830 - smallW, y + 18, smallW + 1, 13, small, "v3num", 13.0, "#A29E97")
             d.right("cost-need-$i", 1830 - smallW, y + 11, 20, format.format(c.required), "v3num", 20.0, if (ok) "#ECE6DC" else "#E58B80")
-            d.right("cost-after-$i", 1831.0, y + 33, 16, if (ok) "残り ${format.format(c.owned - c.required)}" else "あと ${format.format(c.required - c.owned)} 不足",
-                "v3r", 11.0, if (ok) "#A29E97" else "#E58B80")
+            d.right("cost-after-$i", 1831.0, y + 33, 16, after, "v3r", 11.0, if (ok) "#A29E97" else "#E58B80")
         }
 
         // Focused forging toggle, right after the cost rows

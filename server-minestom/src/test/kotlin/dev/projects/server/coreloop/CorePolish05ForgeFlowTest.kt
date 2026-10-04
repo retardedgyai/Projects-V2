@@ -32,6 +32,10 @@ class CorePolish05ForgeFlowTest {
         assertEquals(recipe.costs.keys.first().resource.displayName, text("cost-name-0"))
         assertEquals("100.0", text("chance-value"))
         assertTrue(display.nodes.any { it.sprite?.font == "projects_ui_polish05:v3plates" && it.id.startsWith("chrome-") })
+        // UiRenderer puts sprites 0.025 in front of panels of the same depth: the plate must still be behind every live panel.
+        val plate = display.nodes.filter { it.id.startsWith("chrome-") }.maxOf { it.depth * 0.005 + 0.025 }
+        val panels = display.nodes.filter { it.background != null && it.id != "viewport-backdrop" }.minOf { it.depth * 0.005 }
+        assertTrue(plate < panels, "chrome plate z=$plate covers live panels z=$panels")
         assertTrue(display.nodes.filter { it.text.isNotEmpty() }.all { it.style["font-family"]?.startsWith("projects_ui_polish05:v3") == true })
         assertFalse(display.nodes.any { it.text.contains("12,480") || it.text.contains("熾火") })
 
