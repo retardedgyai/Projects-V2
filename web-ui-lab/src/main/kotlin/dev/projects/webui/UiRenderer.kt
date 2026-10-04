@@ -20,7 +20,8 @@ import net.minestom.server.network.packet.server.play.EntityMetaDataPacket
 import java.util.concurrent.ConcurrentHashMap
 
 /** Retained fixed screen; the cursor tip follows input immediately. */
-class UiRenderer(private val player: Player, private val origin: Pos) : AutoCloseable {
+/** [pitch] tilts the whole plane with a camera that looks down, keeping the plane square to the view. */
+class UiRenderer(private val player: Player, private val origin: Pos, private val pitch: Float = 0f) : AutoCloseable {
     private data class Panel(val box: Box, val color: Int, val depth: Double, val zoom: Double)
     private val entities=mutableMapOf<String,Entity>()
     private val panels=mutableMapOf<String,Panel>()
@@ -55,7 +56,9 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
         val pending=unspawned.toList(); unspawned.clear()
         pending.forEach { (id,e) ->
             // First packet contains complete transforms, never a flash at identity scale.
-            e.setInstance(player.instance!!,origin.add(0.0,0.0,UiGeometry.DISTANCE).withView(180f,0f)).thenRun {
+            val tilt=Math.toRadians(pitch.toDouble())
+            val at=origin.add(0.0,-Math.sin(tilt)*UiGeometry.DISTANCE,Math.cos(tilt)*UiGeometry.DISTANCE).withView(180f,-pitch)
+            e.setInstance(player.instance!!,at).thenRun {
                 if(closed || e.isRemoved || entities[id]!==e) e.remove() else {
                     e.addViewer(player)
                     if(id in cursorIds) {
@@ -140,7 +143,7 @@ class UiRenderer(private val player: Player, private val origin: Pos) : AutoClos
                     val bold=node.style["font-weight"]=="bold"
                     if(bold) text=text.decorate(TextDecoration.BOLD)
                     m.setText(text); m.setLineWidth(4000); m.setUseDefaultBackground(false); m.setBackgroundColor(0)
-                    m.setShadow(false); m.setTextOpacity((-1).toByte())
+                    m.setShadow(node.style["text-shadow"]=="true"); m.setTextOpacity((-1).toByte())
                     val pixel=node.fontSize/(if(family!=null)Polish05FontMetrics.SIZE else 8.0)
                     val scale=pixel*geometry.unit(z+0.025)/0.025
                     m.setScale(Vec(scale,scale,scale))

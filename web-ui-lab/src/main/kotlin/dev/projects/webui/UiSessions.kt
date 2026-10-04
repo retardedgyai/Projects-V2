@@ -37,6 +37,11 @@ class UiSessions(
     private val polishScene: Polish05Scene? = null,
     private val flowFactory: ((Player) -> ForgeUiFlow)? = null,
     private val cameraOrigin: (Player) -> Pos = { it.position.add(0.0,it.eyeHeight+4.0,0.0).withView(0f,0f) },
+    /** Degrees the camera looks down. The UI plane tilts with it. */
+    private val cameraPitch: Float = 0f,
+    /** When set, the player is moved here while the UI is open (terrain near the camera must be sent). */
+    private val presentAt: ((Player) -> Pos)? = null,
+    private val zoom: Double? = null,
 ) : AutoCloseable {
     private data class Input(val due: Long, val generation: Int, val yaw: Float?=null, val pitch: Float?=null,
                              val action: String?=null, val clickAt: Pair<Double,Double>?=null)
@@ -115,12 +120,13 @@ class UiSessions(
                 setText(Component.empty());setBackgroundColor(0);setUseDefaultBackground(false)
             }
         }
-        val s=Session(player,player.position,document,camera,UiRenderer(player,origin),polishScene,flowFactory)
+        val s=Session(player,player.position,document,camera,UiRenderer(player,origin,cameraPitch),polishScene,flowFactory)
         // At Vanilla 26.2's presentation FOV, 1.0 crops the approved 1440×920
         // stage on a 1920×1080 client. 0.8 matches the HTML's 1080px-fit scale.
-        if(s.polish!=null)s.renderer.zoom=if(s.polish.ownsEffects) ForgeV3Scene.ZOOM else 0.8
+        if(s.polish!=null)s.renderer.zoom=zoom ?: if(s.polish.ownsEffects) ForgeV3Scene.ZOOM else 0.8
         sessions[player.uuid]=s
-        camera.setInstance(player.instance!!,origin).whenComplete { _,error ->
+        if(presentAt!=null) { player.isInvisible=true; player.teleport(presentAt.invoke(player)) }
+        camera.setInstance(player.instance!!,origin.withView(0f,cameraPitch)).whenComplete { _,error ->
             if(error!=null || sessions[player.uuid]!==s) {
                 camera.remove()
                 if(sessions[player.uuid]===s) close(player)
@@ -150,6 +156,12 @@ class UiSessions(
             player.setHeldItemSlot(player.heldSlot)
             if(teleportBack) player.teleport(s.saved)
         }
+        if(presentAt!=null) {
+            player.isInvisible=false
+            // Never strand the player at the presentation point.
+            if(!(restore && teleportBack) && player.isOnline && player.instance===s.camera.instance && player.position.distance(s.saved)>64.0) player.teleport(s.saved)
+        }
+        s.polish?.dispose()
         s.queue.clear();s.clickAt.clear();s.pending.clear();s.renderer.close();s.camera.remove()
         if(s.polish!=null) POLISH_SOUNDS.forEach { player.stopSound(SoundStop.named(Key.key("projects_ui_polish05:ui.$it"))) }
         }
@@ -309,6 +321,9 @@ class UiSessions(
                     }
                     s.renderer.render(s.effects.frame(s.scene),s.hover,s.pointer)
                 } else s.effects.clear()
+            } else if(s.polish!=null && s.polish.live) {
+                s.scene=s.polish.scene()
+                s.renderer.render(s.scene,s.hover,s.pointer)
             } else if(s.polish!=null && s.polish.ownsEffects && s.polish.view=="forge") {
                 // The flow animates the item itself; rebuild every tick so motion advances.
                 s.scene=s.polish.scene()
@@ -379,7 +394,7 @@ class UiSessions(
     }
     private fun paintPointer(s: Session) {
         val hover=s.scene.hit(s.pointer.x,s.pointer.y)?.id
-        if(hover!=s.hover) { s.renderer.hover(s.scene,s.hover,hover);s.hover=hover }
+        if(hover!=s.hover) { s.renderer.hover(s.scene,s.hover,hover);s.hover=hover;s.polish?.hover(hover) }
         s.renderer.cursor(s.pointer)
     }
     private fun sound(s:Session,cue:String) {
