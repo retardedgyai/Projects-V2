@@ -38,6 +38,31 @@ def cloud() -> Image.Image:
     return small.resize((w * 4, h * 4), Image.NEAREST)
 
 
+def banner() -> Image.Image:
+    """A white pixel banner on a pole; tinted per guild with sprite-color."""
+    rows = [
+        "kkkkkkkkkkkk",
+        "kwwwwwwwwwwk",
+        "kwwwwwwwwwwk",
+        "kwwsswwsswwk",
+        "kwwwssssswwk",
+        "kwwwwsswwwwk",
+        "kwwwwwwwwwwk",
+        "kwwwwwwwwwwk",
+        "kwwwwwwwwwwk",
+        "kwwwwkkwwwwk",
+        "kwwwk..kwwwk",
+        "kwwk....kwwk",
+        "kkk......kkk",
+    ]
+    img = Image.new("RGBA", (12, 13))
+    pal = {"k": (40, 34, 40, 255), "w": (255, 255, 255, 255), "s": (200, 200, 200, 255)}
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            if ch in pal: img.putpixel((x, y), pal[ch])
+    return img.resize((48, 52), Image.NEAREST)
+
+
 def main() -> None:
     files: dict[str, bytes] = {}
     providers: list[dict] = []
@@ -60,6 +85,7 @@ def main() -> None:
             add(name, continent.crop((x, y, min(x + TILE, continent.width), min(y + TILE, continent.height))))
             tiles.append({"name": name, "x": x, "y": y})
     add("fx_cloud", cloud())
+    add("fx_banner", banner())
     for icon in sorted((SOURCE / "icons").glob("*.png")):
         add(f"icon_{icon.stem}", Image.open(icon).convert("RGBA"))
     files[f"assets/{NS}/font/atlas.json"] = json.dumps({"providers": providers}, separators=(",", ":")).encode()
