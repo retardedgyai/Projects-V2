@@ -1,225 +1,336 @@
-"""Hand-authored pixel icons for the continent map (one art pixel = 3 screen pixels at 1080p).
+"""Pixel icons for the continent map, v3: hand-placed glyphs on one shared frame language.
 
-Each icon is a character grid; '.' is transparent. Palette letters are shared so every icon uses the
-same light (top-left), the same dark outline and the same gold. Writes assets/ui/atlas/pixel/*.png at 1x.
+Special zones are 32px medallions (boss / hub octagons, PvP shield) with a gold rim; ordinary zones are 22px
+stone plaques whose rim carries the biome colour; materials are 12px item sprites for the panel's slots.
+Everything is shown at 2x or 3x with nearest-neighbour scaling. Writes assets/ui/atlas/pixel/*.png at 1x.
 """
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageDraw
 
 OUT = Path(__file__).resolve().parents[1] / "assets/ui/atlas/pixel"
-PAL = {
-    "k": "#14101a",  # outline
-    "G": "#ffe9a8", "g": "#e8b84a", "d": "#a8742a", "D": "#6a4418",  # gold light / mid / dark / deep
-    "W": "#fffaf0", "w": "#e8e0cc", "s": "#b8ae98",  # bone
-    "R": "#ff7a5a", "r": "#c8382a", "q": "#7a1e18", "Q": "#3e0e0e",  # red
-    "S": "#ffffff", "i": "#c8d0dc", "I": "#8a92a2", "j": "#555b68",  # steel
-    "E": "#9af0a8", "e": "#3fa84a", "f": "#1e5a2a", "F": "#0e2a16",  # green
-    "B": "#a8d8ff", "b": "#4a8ad8", "n": "#24508f",  # blue
-    "P": "#ffd8ea", "p": "#f4a0c8", "o": "#c8608a",  # pink
-    "O": "#ffd060", "a": "#f08a2a", "A": "#b8401a",  # fire
-    "C": "#f4f4f4", "c": "#a8acb8", "m": "#6a6e7a",  # snow / rock
-    "t": "#8a5a30", "T": "#5a3418",  # wood
-    "x": "#1e1f26", "X": "#2c2e38",  # badge inner dark
-}
-
-ICONS = {
-    # 24x24 crest: gold ring, dark red field, bone skull, crown on top, pointer tail
-    "boss": [
-        "........G..G..G.........",
-        "........gG.gg.Gg........",
-        ".......kgggggggggk......",
-        ".......kdgdgdgdgdk......",
-        "......kkkkkkkkkkkkk.....",
-        ".....kGggggggggggggk....",
-        "....kGgdqqqqqqqqqdggk...",
-        "...kGgqqqWWWWWWqqqdgk...",
-        "...kgqqqWWwwwwWWqqqdk...",
-        "..kGgqqWWwwwwwwWWqqdgk..",
-        "..kgqqqWkkwwwwkkWqqqdk..",
-        "..kgqqqWkkRwwRkkWqqqdk..",
-        "..kgqqqWWwwkkwwWWqqqdk..",
-        "..kgqqqqWWwkkwWWqqqqdk..",
-        "..kdgqqqqWkwkwkWqqqdDk..",
-        "...kdqqqqWWWWWWWqqqDk...",
-        "...kdgqqqqqqqqqqqqdDk...",
-        "....kddqqqqqqqqqqdDk....",
-        ".....kDddgggggggdDk.....",
-        "......kkDDddddDDkk......",
-        "........kkkddkkk........",
-        "..........kdgk..........",
-        "...........kk...........",
-        "........................",
-    ],
-    "pvp": [
-        "........................",
-        "...kkkkkkkkkkkkkkkkk....",
-        "..kSiiiiiiiiiiiiiiIk....",
-        "..kiqqqqqqqqqqqqqqIjk...",
-        "..kiqSkqqqqqqqqqkSqIk...",
-        "..kiqiSkqqqqqqqkSiqIk...",
-        "..kiqqiSkqqqqqkSiqqIk...",
-        "..kiqqqiSkqqqkSiqqqIk...",
-        "..kiqqqqiSkqkSiqqqqIk...",
-        "..kiqqqqqiSkSiqqqqqIk...",
-        "..kiqqqqqqkSkqqqqqqIk...",
-        "..kiqqqqqgkikgqqqqqIk...",
-        "...kiqqqgkSkSkgqqqIk....",
-        "...kiqqgkSkqkSkgqqIk....",
-        "....kiqtkkqqqkktqIk.....",
-        "....kiqTtqqqqqtTqIk.....",
-        ".....kiqqqqqqqqqIk......",
-        "......kiqqqqqqqIk.......",
-        ".......kiiqqqiIk........",
-        "........kkiiikk.........",
-        "..........kkk...........",
-        "..........krk...........",
-        "...........k............",
-        "........................",
-    ],
-    "hub": [
-        "........................",
-        "........kkkkkkkk........",
-        "......kkGGggggddkk......",
-        ".....kGgFFFFFFFFddk.....",
-        "....kGFFfFFeFFfFFFdk....",
-        "...kGFFfFFFeEFFFfFFdk...",
-        "...kgFFFFFFeEFFFFFFdk...",
-        "..kGFFFFFFkeEkFFFFFFdk..",
-        "..kgFfFFFFkrRkFFFFfFdk..",
-        "..kgFFFFFFkrRkFFFFFFdk..",
-        "..kgFeeEEEkWWkGgggdFdk..",
-        "..kgFFFFFFkwskFFFFFFdk..",
-        "..kgFfFFFFkwskFFFFfFdk..",
-        "..kdFFFFFFkwskFFFFFFDk..",
-        "...kdFFFFFFwsFFFFFFDk...",
-        "...kdFFfFFFwsFFFfFFDk...",
-        "....kdFFFFFFFFFFFFDk....",
-        ".....kDdFFFFFFFFdDk.....",
-        "......kkDDddddDDkk......",
-        "........kkkddkkk........",
-        "..........kdgk..........",
-        "...........kk...........",
-        "........................",
-        "........................",
-    ],
-}
-
-# 16x16 pins: gold-rimmed diamond with a terrain emblem, tail at the bottom
-PIN_FRAME = [
-    ".......kk.......",
-    "......kGgk......",
-    ".....kGxxdk.....",
-    "....kGxxxxdk....",
-    "...kGxxxxxxdk...",
-    "..kGxxxxxxxxdk..",
-    ".kGxxxxxxxxxxdk.",
-    "kgxxxxxxxxxxxxDk",
-    ".kdxxxxxxxxxxDk.",
-    "..kdxxxxxxxxDk..",
-    "...kdxxxxxxDk...",
-    "....kdxxxxDk....",
-    ".....kdxxDk.....",
-    "......kddk......",
-    ".......kk.......",
-    "................",
-]
-EMBLEMS = {  # 8x8 emblems placed at (4,3)
-    "verdant": ["..eeee..", ".eEeeee.", "eeEeeeef", "eeeeeeff", ".efeeff.", "...tt...", "...tt...", "..TttT.."],
-    "sakura_grove": ["...pp...", ".ppPPpp.", "pPPOOPPp", "pPOOOOPo", ".pPOOPo.", "..pPPo..", "...oo...", "........"],
-    "saltmarsh": ["..t..t..", "..s.ts..", ".ts.s.t.", ".s..s.s.", "bbbbbbbb", "bBBbbBBb", "nbbbnbbn", "........"],
-    "clifflands": ["........", "...ee...", "..ewwe..", "..wwww..", ".wwsswwe", ".sswwsww", "wwwwssww", "ssssssss"],
-    "highlands": ["...CC...", "..CCCm..", "..CmCmm.", ".cmmcmmm", ".cmcmmcm", "cmmcmmcm", "mmcmmmcm", "mmmmmmmm"],
-    "infernal": ["...O....", "...aO...", "..aaO.a.", ".aAaaOa.", ".AaOOaA.", "AaOOOOaA", "AaaOOaaA", ".AAaaAA."],
-}
-
-TIMER_LIVE = [
-    "..kkkkkkkkkkkkkkkkkkkkkk..",
-    ".kRrrrrrrrrrrrrrrrrrrrrrk.",
-    "krrkkrrrrrrrrrrrrrrrrrrrrk",
-    "krkWWkrrrrrrrrrrrrrrrrrrqk",
-    "krkWSkrrrrrrrrrrrrrrrrrrqk",
-    "krrkkrrrrrrrrrrrrrrrrrrrqk",
-    ".kqqqqqqqqqqqqqqqqqqqqqqk.",
-    "..kkkkkkkkkkkkkkkkkkkkkk..",
-]
-TIMER_SOON = [
-    "..kkkkkkkkkkkkkkkkkkkkkk..",
-    ".kXxxxxxxxxxxxxxxxxxxxxxk.",
-    "kxkgggkxxxxxxxxxxxxxxxxxxk",
-    "kxgxGxgxxxxxxxxxxxxxxxxxxk",
-    "kxgxGggxxxxxxxxxxxxxxxxxxk",
-    "kxkgggkxxxxxxxxxxxxxxxxxxk",
-    ".kxxxxxxxxxxxxxxxxxxxxxxk.",
-    "..kkkkkkkkkkkkkkkkkkkkkk..",
-]
-SELECT = [  # 28x28 corner brackets around a selected marker
-    "GGGGGG..............GGGGGG..",
-]
+C = {k: tuple(int(v[i:i + 2], 16) for i in (1, 3, 5)) + (255,) for k, v in {
+    "k": "#120e16", "G": "#fff0b8", "g": "#f0c050", "d": "#b47c2c", "D": "#6e461a",
+    "W": "#fffaf0", "w": "#d8ccb4", "s": "#a89a80",
+    "R": "#ff7a5a", "r": "#c8382a", "q": "#7e1c16", "Q": "#3a0a0c",
+    "S": "#ffffff", "i": "#c8d0dc", "I": "#8a92a2", "j": "#4e5464",
+    "E": "#9ef0a0", "e": "#3fa84a", "f": "#1d5a2a", "F": "#0e2a16",
+    "B": "#a8dcff", "b": "#3f86d8", "n": "#1f4a88", "h": "#5fd0c0", "H": "#2a8a80",
+    "P": "#ffd6ea", "p": "#f29ac4", "o": "#c05682",
+    "O": "#ffe070", "a": "#f08a2a", "A": "#b03e18",
+    "C": "#f4f8ff", "c": "#b0b6c4", "m": "#6a7080", "M": "#40444f",
+    "t": "#a06e3a", "T": "#5e3818", "y": "#e8d49a", "Y": "#a89060",
+    "x": "#1a1b22", "X": "#262833", "v": "#363a48", "V": "#4c5162",
+}.items()}
 
 
-def draw(rows: list[str]) -> Image.Image:
-    h, w = len(rows), max(len(r) for r in rows)
-    img = Image.new("RGBA", (w, h))
-    for y, row in enumerate(rows):
+def grid(img: Image.Image, rows: str, x0: int, y0: int) -> None:
+    for y, row in enumerate(rows.strip("\n").splitlines()):
         for x, ch in enumerate(row):
-            if ch in PAL:
-                c = PAL[ch]
-                img.putpixel((x, y), (int(c[1:3], 16), int(c[3:5], 16), int(c[5:7], 16), 255))
+            if ch != ".":
+                img.putpixel((x0 + x, y0 + y), C[ch])
+
+
+def outline(img: Image.Image) -> Image.Image:
+    out = img.copy(); px = img.load(); op = out.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            if px[x, y][3]: continue
+            if any(0 <= x + dx < img.width and 0 <= y + dy < img.height and px[x + dx, y + dy][3] for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                op[x, y] = C["k"]
+    return out
+
+
+def octagon(i: int, cut: int = 9):
+    a, b, c = 1 + i, 30 - i, max(2, cut - i // 2)
+    return [(a + c, a), (b - c, a), (b, a + c), (b, b - c), (b - c, b), (a + c, b), (a, b - c), (a, a + c)]
+
+
+def medallion(field: str, light: str, dark: str) -> Image.Image:
+    img = Image.new("RGBA", (32, 32)); d = ImageDraw.Draw(img)
+    o = octagon(0)
+    d.polygon(o, fill=C["d"], outline=C["g"])
+    d.line([o[6], o[7], o[0], o[1]], fill=C["G"])
+    d.polygon(octagon(2), fill=C["k"])
+    d.polygon(octagon(3), fill=C[dark])
+    d.polygon(octagon(4), fill=C[field])
+    i4 = octagon(4)
+    d.polygon([i4[6], i4[7], i4[0], i4[1], (16, 16)], fill=C[light])
+    d.ellipse((7, 7, 24, 24), fill=C[field])
     return img
 
 
-def brackets(size: int = 28, arm: int = 6) -> Image.Image:
-    img = Image.new("RGBA", (size, size))
-    gold, dark = (255, 233, 168, 255), (20, 16, 26, 255)
-    for (cx, cy, sx, sy) in ((0, 0, 1, 1), (size - 1, 0, -1, 1), (0, size - 1, 1, -1), (size - 1, size - 1, -1, -1)):
-        for i in range(arm):
-            for t in (0, 1):
-                for (x, y) in ((cx + sx * i, cy + sy * t), (cx + sx * t, cy + sy * i)):
-                    img.putpixel((x, y), gold)
-            for (x, y) in ((cx + sx * i, cy + sy * 2), (cx + sx * 2, cy + sy * i)):
-                if 0 <= x < size and 0 <= y < size and img.getpixel((x, y))[3] == 0:
-                    img.putpixel((x, y), dark)
-    return img
+SKULL = """
+....wWWWWWw....
+..wWWWWWWWWWw..
+.wWWWWWWWWWWWw.
+.WWWWWWWWWWWWw.
+wWQQQQWWWQQQQWw
+wWQQQQWWWQQQQWw
+wWWQQWWWWWQQWWw
+.wWWWWWQWWWWWw.
+..wwWWQQQWWww..
+...wWWWWWWWw...
+...wQwQwQwQw...
+....wwwwwww....
+"""
+ANCHOR = """
+......SSS......
+.....SiiiS.....
+.....Si.iS.....
+......SSS......
+...SSSSSSSSS...
+...iiiiSiiii...
+.......Si......
+.......Si......
+.S.....Si....S.
+SSS....Si...SSS
+.SS....Si...SS.
+..SS...Si..SS..
+...SSSSSSSSS...
+.....iiiiii....
+"""
+SWORDS = """
+SS..........SS
+SiS........SiS
+.SiS......SiS.
+..SiS....SiS..
+...SiS..SiS...
+....SiSSiS....
+.....SiiS.....
+.....SiiS.....
+....SiSSiS....
+.ggSiS..SiSgg.
+..gdS....Sdg..
+..dTd....dTd..
+.tTd......dTt.
+TT..........TT
+"""
+
+
+def boss() -> Image.Image:
+    img = medallion("q", "r", "Q")
+    grid(img, SKULL, 9, 10)
+    return outline(img)
 
 
 def hub() -> Image.Image:
-    """Compass crest: gold ring, deep green field, 8-point rose with a red north point. Drawn without anti-aliasing."""
-    from PIL import ImageDraw
-    rgb = lambda k: tuple(int(PAL[k][i:i + 2], 16) for i in (1, 3, 5)) + (255,)
-    img = Image.new("RGBA", (24, 24)); d = ImageDraw.Draw(img)
-    d.ellipse((1, 0, 22, 21), fill=rgb("k"))
-    d.ellipse((2, 1, 21, 20), fill=rgb("g"))
-    d.ellipse((2, 1, 20, 19), fill=rgb("G"))
-    d.ellipse((3, 2, 20, 19), fill=rgb("d"))
-    d.ellipse((4, 3, 19, 18), fill=rgb("F"))
-    d.ellipse((5, 4, 18, 17), fill=rgb("f"))
-    cx, cy = 11.5, 10.5
-    d.polygon([(cx, 4), (cx + 1.5, cy - 1.5), (cx, cy)], fill=rgb("R")); d.polygon([(cx, 4), (cx - 1.5, cy - 1.5), (cx, cy)], fill=rgb("r"))
-    d.polygon([(cx, 17), (cx + 1.5, cy + 1.5), (cx, cy)], fill=rgb("w")); d.polygon([(cx, 17), (cx - 1.5, cy + 1.5), (cx, cy)], fill=rgb("W"))
-    d.polygon([(5, cy), (cx - 1.5, cy - 1.5), (cx, cy)], fill=rgb("W")); d.polygon([(5, cy), (cx - 1.5, cy + 1.5), (cx, cy)], fill=rgb("w"))
-    d.polygon([(18, cy), (cx + 1.5, cy - 1.5), (cx, cy)], fill=rgb("W")); d.polygon([(18, cy), (cx + 1.5, cy + 1.5), (cx, cy)], fill=rgb("w"))
-    for (x, y) in ((8, 7), (15, 7), (8, 14), (15, 14)):
-        img.putpixel((x, y), rgb("G"))
-    img.putpixel((11, 10), rgb("k")); img.putpixel((12, 10), rgb("k"))
-    for y, row in enumerate(["........kkkddkkk........", "..........kdgk..........", "...........kk..........."]):
-        for x, ch in enumerate(row):
-            if ch in PAL: img.putpixel((x, 20 + y), rgb(ch))
-    return img
+    img = medallion("f", "e", "F")
+    grid(img, ANCHOR, 9, 9)
+    return outline(img)
+
+
+def pvp() -> Image.Image:
+    img = Image.new("RGBA", (32, 32)); d = ImageDraw.Draw(img)
+    shield = [(2, 2), (29, 2), (29, 17), (26, 23), (16, 30), (5, 23), (2, 17)]
+    d.polygon(shield, fill=C["d"], outline=C["g"]); d.line([(2, 17), (2, 2), (29, 2)], fill=C["G"])
+    d.polygon([(4, 4), (27, 4), (27, 17), (24, 22), (16, 28), (7, 22), (4, 17)], fill=C["k"])
+    d.polygon([(5, 5), (26, 5), (26, 17), (23, 21), (16, 27), (8, 21), (5, 17)], fill=C["q"])
+    d.polygon([(5, 5), (16, 5), (16, 27), (8, 21), (5, 17)], fill=C["r"])
+    grid(img, SWORDS, 9, 7)
+    return outline(img)
+
+
+PLAQUE_RIM = {"verdant": "e", "sakura_grove": "p", "saltmarsh": "h", "clifflands": "y", "highlands": "C", "infernal": "a"}
+EMBLEM = {
+    "verdant": """
+....eEEe....
+..eEEEEeee..
+.eEEeeeeeef.
+.eEeeeeeeff.
+.eeeeeeefff.
+..efeeeffF..
+...fFttFF...
+.....tT.....
+.....tT.....
+....tTTt....
+""",
+    "sakura_grove": """
+....pPPp....
+...pPPPPp...
+.pp.pPPp.pp.
+pPPp.oo.pPPp
+pPPPoOOoPPPp
+.ppoOOOOopp.
+..pPoOOoPp..
+.pPPp.o.pPp.
+.pPp....pPp.
+..p......p..
+""",
+    "saltmarsh": """
+.t..t....t..
+.T..tt..tT..
+.s..s...s...
+.s..s..s....
+..s.s..s....
+..s.s.s.....
+...ss.s.....
+bBbbbbbbBbb.
+.nnbbnnnbbn.
+..nnnnnnnn..
+""",
+    "clifflands": """
+....yyyyy...
+...yWyyyYY..
+...yyyyYYY..
+...YYYYYYY..
+.yyyyy.yyyyy
+yWyyyYyWyyyY
+yyyyYYyyyyYY
+YYYYYYYYYYYY
+yyy.yyyyyy.y
+YYYYYYYYYYYY
+""",
+    "highlands": """
+.....CC.....
+....CCCc....
+...CCcCcm...
+..CcmmCcmm..
+..mmmmmmmM..
+.mmmmMmmmMM.
+.mmmMMmmMMM.
+mmmMMmmmMMMM
+mMMMmmMMMMMM
+MMMMMMMMMMMM
+""",
+    "infernal": """
+.....a......
+....aa...a..
+...aOa..aa..
+...aOaa.aOa.
+..aOOOaaOOa.
+.aaOOOOaOOa.
+.aOOWWOOOOa.
+.aOWWWWOOaA.
+.AaOWWWOaaA.
+..AAaaaaAA..
+""",
+}
+
+
+def plaque(biome: str) -> Image.Image:
+    img = Image.new("RGBA", (22, 26)); d = ImageDraw.Draw(img)
+    d.rectangle((10, 20, 11, 24), fill=C["t"]); img.putpixel((11, 24), C["T"])
+    d.rounded_rectangle((1, 1, 20, 20), radius=3, fill=C[PLAQUE_RIM[biome]])
+    d.rounded_rectangle((2, 2, 19, 19), radius=2, fill=C["k"])
+    d.rectangle((3, 3, 18, 18), fill=C["X"])
+    d.line([(3, 3), (18, 3)], fill=C["V"]); d.line([(3, 3), (3, 18)], fill=C["v"])
+    d.line([(4, 18), (18, 18)], fill=C["x"]); d.line([(18, 4), (18, 18)], fill=C["x"])
+    grid(img, EMBLEM[biome], 5, 6)
+    return outline(img)
+
+
+MATERIAL = {
+    "log": """
+..TTTTTTTT..
+.TttttttttT.
+TtyyYyyyYytT
+TtyYyyYyyytT
+.TttttttttT.
+.TtTtTTtTtT.
+.TTtTtTtTTT.
+.TtTTtTtTtT.
+.TTtTtTTtTT.
+.TtTtTtTtTT.
+.TTTTTTTTTT.
+""",
+    "ore": """
+....mmmm....
+..mmcciimm..
+.mcciiMmimM.
+.mciyymmMMM.
+mmiyyYmmmmM.
+mcmmYmmyymMM
+mmmmmmyyYmMM
+.mMmmmmYmMM.
+.MMMmmmmMM..
+..MMMMMMM...
+""",
+    "herb": """
+.....eE.....
+...eEEe.eE..
+..eEe..eEEe.
+.eEe..eEe...
+.ee..eEe.ee.
+...e.ee.eEe.
+....eeeee...
+.....yy.....
+....yYYy....
+.....yy.....
+.....ff.....
+""",
+    "hide": """
+.tt......tt.
+tttttttttttt
+.tyytttttyt.
+.tyttttttTt.
+..tttttttT..
+..ttttttTT..
+.ttttttTTTt.
+.tttTTTTTTt.
+tt.tTTTTT.tt
+.....TT.....
+""",
+    "stone": """
+.mmmmmmmmmm.
+mccmcccmcccm
+mcmmcmmmcmmM
+mmmMmmMMmmMM
+mcccmmcccmcM
+mcmmMmcmmmMM
+mmmMmmmMMmMM
+mccmccmmccmM
+mmmmmmmmmmMM
+.MMMMMMMMMM.
+""",
+    "shard": """
+.....B......
+....BBb.....
+....BSbn....
+...BBSbn....
+...BSbbnn...
+..BBSbbnn.B.
+..BSbbnn.BBn
+..BbbbnnBSbn
+...bbnn.BBnn
+....nn...nn.
+""",
+}
+
+
+def material(name: str) -> Image.Image:
+    img = Image.new("RGBA", (14, 14))
+    rows = MATERIAL[name].strip("\n").splitlines()
+    grid(img, MATERIAL[name], 1 + (12 - max(map(len, rows))) // 2, 1 + (12 - len(rows)) // 2)
+    return outline(img)
+
+
+def timer(live: bool) -> Image.Image:
+    img = Image.new("RGBA", (40, 12)); d = ImageDraw.Draw(img)
+    body, light, dark = (C["r"], C["R"], C["q"]) if live else (C["x"], C["v"], C["k"])
+    d.rounded_rectangle((0, 0, 39, 11), radius=5, fill=body)
+    d.line([(4, 1), (35, 1)], fill=light); d.line([(4, 10), (35, 10)], fill=dark)
+    if live:
+        d.ellipse((3, 3, 8, 8), fill=C["W"]); d.ellipse((4, 4, 7, 7), fill=C["S"])
+    else:
+        d.ellipse((3, 2, 9, 8), outline=C["g"]); d.line([(6, 3), (6, 5), (8, 5)], fill=C["g"])
+    return outline(img)
+
+
+def select() -> Image.Image:
+    img = Image.new("RGBA", (40, 40)); d = ImageDraw.Draw(img)
+    for (x, y, sx, sy) in ((1, 1, 1, 1), (38, 1, -1, 1), (1, 38, 1, -1), (38, 38, -1, -1)):
+        d.line([(x, y), (x + sx * 7, y)], fill=C["G"], width=2); d.line([(x, y), (x, y + sy * 7)], fill=C["G"], width=2)
+    return outline(img)
 
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, rows in ICONS.items():
-        draw(rows).save(OUT / f"badge_{name}.png")
-    hub().save(OUT / "badge_hub.png")
-    for name, emblem in EMBLEMS.items():
-        pin = draw(PIN_FRAME)
-        pin.alpha_composite(draw(emblem), (4, 3))
-        pin.save(OUT / f"pin_{name}.png")
-    draw(TIMER_LIVE).save(OUT / "timer_live.png")
-    draw(TIMER_SOON).save(OUT / "timer_soon.png")
-    brackets().save(OUT / "select.png")
-    print(f"ATLAS_PIXEL_ICONS {len(ICONS) + len(EMBLEMS) + 3}")
+    for f in OUT.glob("*.png"): f.unlink()
+    boss().save(OUT / "badge_boss.png"); pvp().save(OUT / "badge_pvp.png"); hub().save(OUT / "badge_hub.png")
+    for b in PLAQUE_RIM: plaque(b).save(OUT / f"pin_{b}.png")
+    for m in MATERIAL: material(m).save(OUT / f"mat_{m}.png")
+    timer(True).save(OUT / "timer_live.png"); timer(False).save(OUT / "timer_soon.png"); select().save(OUT / "select.png")
+    print("ATLAS_PIXEL_ICONS v3")
 
 
 if __name__ == "__main__":
