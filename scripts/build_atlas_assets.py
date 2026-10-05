@@ -98,6 +98,10 @@ def main() -> None:
     add("plate", parts.crop((940, 0, 1060, 40)))
     card = parts.crop((460, 360, 836, 436))
     add("card_0", card.crop((0, 0, 256, 76))); add("card_1", card.crop((256, 0, 376, 76)))
+    add("title", parts.crop((460, 460, 716, 524)))
+    add("notice_l", parts.crop((740, 460, 796, 516))); add("notice_m", parts.crop((800, 460, 832, 516))); add("notice_r", parts.crop((840, 460, 864, 516)))
+    add("timer_live", parts.crop((880, 460, 968, 492))); add("timer_soon", parts.crop((880, 500, 968, 532)))
+    add("vignette", parts.crop((460, 560, 716, 704)))
     for i, name in enumerate(("verdant", "sakura_grove", "saltmarsh", "clifflands", "highlands", "infernal")):
         add(f"pin_{name}", parts.crop((460 + i * 80, 260, 540 + i * 80, 340)))
     add("fx_banner", banner())

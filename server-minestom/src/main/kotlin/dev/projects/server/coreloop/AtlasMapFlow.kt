@@ -186,6 +186,7 @@ internal class AtlasMapFlow(
             if (x > viewRight || y > 1080 || x + t.sprite.width < 0 || y + t.sprite.height < 0) continue
             sprite("tile-${t.x}-${t.y}", t.sprite, x, y, t.sprite.width.toDouble(), t.sprite.height.toDouble(), 0)
         }
+        atlas.art["vignette"]?.let { sprite("vignette", it, 0.0, 0.0, 1920.0, 1080.0, 6) }
         // Ordinary zones are a small gold pin and a name; only bosses, wilds and the harbor get an icon badge.
         val live = bossZones.firstOrNull()
         for (z in atlas.zones) {
@@ -213,25 +214,32 @@ internal class AtlasMapFlow(
                 labelY = py + 4
             }
             if (event) {
-                rect("z${z.id}-w", px - 44, labelY, 88.0, 28.0, if (z.id == live) "#ffe0503c" else "#f00a090c", 8)
-                text("z${z.id}-wt", px - 44, labelY + 3, 88.0, if (z.id == live) "出現中" else "12分", 19.0, "#ffffff", 9, "center")
+                val isLive = z.id == live
+                atlas.art[if (isLive) "timer_live" else "timer_soon"]?.let { sprite("z${z.id}-tm", it, px + 14, py - 34, 88.0, 32.0, 9) }
+                text("z${z.id}-tmt", px + 40, py - 29, 58.0, if (isLive) "出現中" else "12分", 15.0, if (isLive) "#ffffff" else "#e8c878", 10, "left", "v3b")
             }
             val name = names.getValue(z.id)
             val nameSize = if (sel) 24.0 else 19.0
             val tagW = name.length * nameSize + 16
-            val tagY = labelY + if (event) 32 else 0
+            val tagY = labelY
             rect("z${z.id}-tag", px - tagW / 2, tagY - 2, tagW, nameSize + 10, if (sel) "#f0201a0e" else "#d8101114", 8)
             rect("z${z.id}-tag-t", px - tagW / 2 + 6, tagY - 3, tagW - 12, 1.5, if (sel) "#ffe8c878" else "#90c8aa6e", 8)
             rect("z${z.id}-tag-b", px - tagW / 2 + 6, tagY + nameSize + 8, tagW - 12, 1.5, if (sel) "#ffe8c878" else "#90c8aa6e", 8)
             text("z${z.id}-n", px - tagW / 2, tagY + 2, tagW, name, nameSize,
                 if (sel) "#f2d48a" else if (z.pvp) "#ffb0a0" else "#f4eedf", 9, "center")
         }
-        // Title and the one important notice.
-        text("title", 34.0, 26.0, 300.0, "開拓大陸", 28.0, "#f4eedf", 22)
+        // Title plate and the one important notice, both drawn from the Chrome-rendered parts.
+        atlas.art["title"]?.let { sprite("title-plate", it, 22.0, 18.0, 256.0, 64.0, 20) }
+        text("title", 66.0, 34.0, 200.0, "開拓大陸", 24.0, "#f4eedf", 21, "left", "v3b")
         live?.let { id ->
-            rect("notice", 760.0, 22.0, 400.0, 40.0, "#e61e0c0c", 20)
-            frame("notice-f", 760.0, 22.0, 400.0, 40.0, "#ffe0503c", 2.0, 21)
-            text("notice-t", 760.0, 31.0, 400.0, "霧氷の騎士 出現中 · ${names.getValue(id)}", 19.0, "#ffd8d0", 22, "center")
+            val message = "霧氷の騎士 出現中 · ${names.getValue(id)}"
+            val middle = kotlin.math.ceil(message.length * 19.0 / 32.0).toInt() + 1
+            val total = 56.0 + middle * 32 + 24
+            val left = 960 - total / 2
+            atlas.art["notice_l"]?.let { sprite("notice-l", it, left, 18.0, 56.0, 56.0, 20) }
+            atlas.art["notice_m"]?.let { m -> for (i in 0 until middle) sprite("notice-m$i", m, left + 56 + i * 32, 18.0, 32.0, 56.0, 20) }
+            atlas.art["notice_r"]?.let { sprite("notice-r", it, left + 56 + middle * 32, 18.0, 24.0, 56.0, 20) }
+            text("notice-t", left + 60, 33.0, middle * 32.0, message, 19.0, "#ffd8d0", 21, "left", "v3m")
         }
         selected?.let { panel(atlas.zones.first { z -> z.id == it }) }
         clouds()
@@ -279,7 +287,8 @@ internal class AtlasMapFlow(
         text("p-x-t", x + w - pad - 40, y + 31, 40.0, "×", 20.0, "#a29e97", 17, "center", "v3b")
 
         // Name.
-        item("p-port-i", itemFor(z), ix + 10, y + 94, 64.0, 13)
+        val portrait = when { z.hub -> "badge_hub"; z.pvp -> "badge_pvp"; z.id in bossZones -> "badge_boss"; else -> "pin_${z.biome.lowercase()}" }
+        atlas.art[portrait]?.let { sprite("p-port-i", it, ix + 2, y + 84, 80.0, 80.0, 13) }
         text("p-name", ix + 102, y + 94, iw - 102, names.getValue(z.id), 26.0, "#f4eedf", 13, "left", "v3b")
         val key = if (z.pvp) "PVP" else z.biome
         text("p-sub", ix + 102, y + 134, iw - 102, "${BIOME[key]} · 特産 ${YIELD[key]}", 15.0, "#a29e97", 13, "left", "v3r")
@@ -310,6 +319,15 @@ internal class AtlasMapFlow(
             if (whenText.isNotEmpty()) text("p-r$i-w", ix + iw - 118, ry + 16, 100.0, whenText, 14.0, "#ff9a8a", 13, "right")
         }
 
+        // Info card.
+        val recommend = listOf("冒険Lv 1〜", "冒険Lv 11〜", "冒険Lv 21〜", "冒険Lv 31〜")[z.tier - 1] + " · 武器 T${z.tier}"
+        val foes = FOES[if (z.pvp) "PVP" else z.biome] ?: "—"
+        listOf("推奨" to recommend, "敵の傾向" to foes, "記録" to "まだ踏破していない").forEachIndexed { i, (k, v) ->
+            val ly = y + 650 + i * 46
+            text("p-i$i-k", ix + 18, ly, 100.0, k, 15.0, "#8a867e", 13, "left", "v3m")
+            text("p-i$i-v", ix + 118, ly, iw - 136, v, 15.0, "#e6e2d8", 13, "left", "v3r")
+        }
+
         // Depart.
         val by = y + h - pad - 72
         val goText = when { z.hub -> "港へ戻る"; z.pvp -> "準備中"; z.id == bossZones.firstOrNull() -> "参戦する"; else -> "遠征に出る" }
@@ -332,6 +350,8 @@ internal class AtlasMapFlow(
         private val TERRAIN_ITEM = mapOf("VERDANT" to "minecraft:oak_sapling", "SAKURA_GROVE" to "minecraft:cherry_sapling",
             "SALTMARSH" to "minecraft:lily_pad", "CLIFFLANDS" to "minecraft:calcite", "HIGHLANDS" to "minecraft:spruce_sapling",
             "INFERNAL" to "minecraft:magma_block")
+        private val FOES = mapOf("VERDANT" to "獣と盗賊 · 素早い", "SAKURA_GROVE" to "妖と影 · 状態異常", "SALTMARSH" to "沼の獣 · 毒",
+            "CLIFFLANDS" to "岩の魔物 · 硬い", "HIGHLANDS" to "氷の騎士 · 凍結", "INFERNAL" to "炎の魔物 · 炎上", "PVP" to "プレイヤー · 季の印")
         private val BIOME = mapOf("VERDANT" to "緑野", "SAKURA_GROVE" to "桜の森", "SALTMARSH" to "塩沼", "CLIFFLANDS" to "断崖",
             "HIGHLANDS" to "高地", "INFERNAL" to "獄炎の地", "PVP" to "荒野")
         private val YIELD = mapOf("VERDANT" to "伐採・植物", "SAKURA_GROVE" to "植物・伐採", "SALTMARSH" to "皮剥ぎ・植物", "CLIFFLANDS" to "採石",
