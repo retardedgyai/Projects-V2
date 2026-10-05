@@ -9,6 +9,7 @@ import dev.projects.webui.ForgeUiFlow
 import dev.projects.webui.UiNode
 import dev.projects.webui.UiScene
 import dev.projects.webui.UiSprite
+import dev.projects.webui.Polish05FontMetrics
 
 /**
  * 開拓大陸: the continent map screen. Drawn in 1920×1080 design units like the forge.
@@ -29,6 +30,7 @@ internal class AtlasMapFlow(
         val height: Int
         val tiles: List<Tile>
         val icons: Map<String, UiSprite>
+        val cloud: UiSprite?
         val zones: List<Zone>
         init {
             val root = JsonParser.parseString(json.toString(Charsets.UTF_8)).asJsonObject
@@ -39,6 +41,7 @@ internal class AtlasMapFlow(
             width = root["width"].asInt; height = root["height"].asInt
             tiles = root.getAsJsonArray("tiles").map { t -> t.asJsonObject.let { Tile(sprites.getValue(it["name"].asString), it["x"].asInt, it["y"].asInt) } }
             icons = sprites.filterKeys { it.startsWith("icon_") }.mapKeys { it.key.removePrefix("icon_") }
+            cloud = sprites["fx_cloud"]
             zones = root.getAsJsonArray("zones").map { e ->
                 val z: JsonObject = e.asJsonObject
                 Zone(z["id"].asInt, z["tier"].asInt, z["biome"].asString, z["pvp"].asBoolean, z["hub"].asBoolean,
@@ -69,6 +72,7 @@ internal class AtlasMapFlow(
     private var panY = (620.0 - home.cy).coerceIn(minY(), 60.0)
     private var vx = 0.0
     private var vy = 0.0
+    private val openedAt = System.currentTimeMillis()
 
     private fun viewWidth() = if (selected != null) PANEL_X - 20.0 else 1920.0
     private fun minX() = viewWidth() - atlas.width - MARGIN
@@ -122,8 +126,10 @@ internal class AtlasMapFlow(
         nodes += UiNode(id, box(x, y, w, h), "", emptyMap(), null, null, true, depth, s)
     }
     private fun text(id: String, x: Double, y: Double, w: Double, value: String, size: Double, color: String, depth: Int, align: String = "left") {
+        val page = "v3num${size.toInt()}".takeIf(Polish05FontMetrics::has) ?: "v3num"
         nodes += UiNode(id, box(x, y, w, size * 1.25), value,
-            mapOf("font-size" to "${size * SCALE}px", "color" to color, "text-align" to align, "text-shadow" to "true"), null, null, true, depth)
+            mapOf("font-size" to "${size * SCALE}px", "color" to color, "text-align" to align, "font-family" to "projects_ui_polish05:$page"),
+            null, null, true, depth)
     }
     private fun frame(id: String, x: Double, y: Double, w: Double, h: Double, color: String, t: Double, depth: Int) {
         rect("$id-t", x, y, w, t, color, depth); rect("$id-b", x, y + h - t, w, t, color, depth)
@@ -145,7 +151,7 @@ internal class AtlasMapFlow(
         for (t in atlas.tiles) {
             val x = panX + t.x; val y = panY + t.y
             if (x > viewRight || y > 1080 || x + t.sprite.width < 0 || y + t.sprite.height < 0) continue
-            sprite("tile-${t.x}-${t.y}", t.sprite, x, y, t.sprite.width.toDouble(), t.sprite.height.toDouble(), 1)
+            sprite("tile-${t.x}-${t.y}", t.sprite, x, y, t.sprite.width.toDouble(), t.sprite.height.toDouble(), 0)
         }
         // One marker per zone.
         val live = bossZones.firstOrNull()
@@ -158,26 +164,46 @@ internal class AtlasMapFlow(
             val edge = when { sel -> GOLD; z.id == live -> "#ffe0503c"; z.pvp -> "#ffe0503c"; z.id in bossZones -> "#ffb8504a"; else -> "#ff5e5546" }
             val icon = when { z.hub -> "flag"; z.pvp -> "pvp"; z.id in bossZones -> "boss"; else -> z.biome.lowercase() }
             val x = px - size / 2; val y = py - size
-            rect("z${z.id}-bg", x, y, size, size, "#ee121317", 3, "zone:${z.id}", "#ff2a2416")
-            frame("z${z.id}-f", x, y, size, size, edge, 3.0, 4)
-            atlas.icons[icon]?.let { sprite("z${z.id}-i", it, x + size * .2, y + size * .2, size * .6, size * .6, 5) }
-            if (z.owner != "white") rect("z${z.id}-g", x + size - 4, y - 8, 8.0, 12.0, GUILD.getValue(z.owner).second, 5)
+            rect("z${z.id}-bg", x, y, size, size, "#ee121317", 7, "zone:${z.id}", "#ff2a2416")
+            frame("z${z.id}-f", x, y, size, size, edge, 3.0, 8)
+            atlas.icons[icon]?.let { sprite("z${z.id}-i", it, x + size * .2, y + size * .2, size * .6, size * .6, 8) }
+            if (z.owner != "white") rect("z${z.id}-g", x + size - 4, y - 8, 8.0, 12.0, GUILD.getValue(z.owner).second, 9)
             if (event) {
-                rect("z${z.id}-w", px - 34, py + 4, 68.0, 20.0, if (z.id == live) "#ffe0503c" else "#ee0a090c", 4)
-                text("z${z.id}-wt", px - 34, py + 6, 68.0, if (z.id == live) "出現中" else "12分", 14.0, "#ffffff", 5, "center")
+                rect("z${z.id}-w", px - 34, py + 4, 68.0, 20.0, if (z.id == live) "#ffe0503c" else "#ee0a090c", 8)
+                text("z${z.id}-wt", px - 34, py + 6, 68.0, if (z.id == live) "出現中" else "12分", 13.0, "#ffffff", 9, "center")
             }
-            text("z${z.id}-n", px - 90, py + if (event) 28 else 6, 180.0, names.getValue(z.id), if (sel) 17.0 else 14.0,
-                if (sel) "#f2d48a" else if (z.pvp) "#ffb0a0" else "#e6e2d8", 5, "center")
+            text("z${z.id}-n", px - 90, py + if (event) 28 else 6, 180.0, names.getValue(z.id), if (sel) 20.0 else 14.0,
+                if (sel) "#f2d48a" else if (z.pvp) "#ffb0a0" else "#e6e2d8", 9, "center")
         }
         // Title and the one important notice.
-        text("title", 34.0, 26.0, 300.0, "開拓大陸", 28.0, "#f4eedf", 6)
+        text("title", 34.0, 26.0, 300.0, "開拓大陸", 28.0, "#f4eedf", 22)
         live?.let { id ->
-            rect("notice", 760.0, 22.0, 400.0, 40.0, "#e61e0c0c", 6)
-            frame("notice-f", 760.0, 22.0, 400.0, 40.0, "#ffe0503c", 2.0, 7)
-            text("notice-t", 760.0, 31.0, 400.0, "霧氷の騎士 出現中 · ${names.getValue(id)}", 17.0, "#ffd8d0", 8, "center")
+            rect("notice", 760.0, 22.0, 400.0, 40.0, "#e61e0c0c", 20)
+            frame("notice-f", 760.0, 22.0, 400.0, 40.0, "#ffe0503c", 2.0, 21)
+            text("notice-t", 760.0, 31.0, 400.0, "霧氷の騎士 出現中 · ${names.getValue(id)}", 19.0, "#ffd8d0", 22, "center")
         }
         selected?.let { panel(atlas.zones.first { z -> z.id == it }) }
+        clouds()
         return UiScene(800.0, 480.0, nodes.toList())
+    }
+
+    /** The map is revealed by a bank of clouds that parts outward when the screen opens. */
+    private fun clouds() {
+        val cloud = atlas.cloud ?: return
+        val t = (System.currentTimeMillis() - openedAt) / 1100.0
+        if (t >= 1.0) return
+        val ease = 1 - (1 - t) * (1 - t) * (1 - t)
+        rect("veil", 0.0, 0.0, 1920.0, 1080.0, String.format("#%02x0a0d1e", ((1 - ease) * 230).toInt().coerceIn(0, 255)), 30)
+        for (i in 0 until 16) {
+            val col = i % 4; val row = i / 4
+            val sx = col * 520.0 - 160 + (row % 2) * 180; val sy = row * 280.0 - 80
+            val dx = sx + 260 - 960; val dy = sy + 146 - 540
+            val len = kotlin.math.max(1.0, kotlin.math.hypot(dx, dy))
+            val push = ease * 1300
+            val x = sx + dx / len * push; val y = sy + dy / len * push
+            val grow = 1.0 + ease * 0.5
+            nodes += UiNode("cloud$i", box(x, y, 640.0 * grow, 352.0 * grow), "", emptyMap(), null, null, true, 32 + (i % 3), cloud)
+        }
     }
 
     private fun panel(z: Atlas.Zone) {
@@ -188,11 +214,11 @@ internal class AtlasMapFlow(
         val pad = 26.0; val ix = x + pad; val iw = w - pad * 2
         val type = if (z.hub) "拠点" else if (z.pvp) "荒野 PvP" else "安全"
         rect("p-type", ix, y + 26, 108.0, 30.0, if (z.pvp) "#ff3a1614" else "#ff14223a", 12)
-        text("p-type-t", ix, y + 31, 108.0, type, 15.0, if (z.pvp) "#ffb0a0" else "#a9c8ff", 13, "center")
+        text("p-type-t", ix, y + 31, 108.0, type, 14.0, if (z.pvp) "#ffb0a0" else "#a9c8ff", 13, "center")
         rect("p-tier", ix + 116, y + 26, 48.0, 30.0, "#ffe8c878", 12)
-        text("p-tier-t", ix + 116, y + 31, 48.0, "T${z.tier}", 15.0, "#2a1a08", 13, "center")
+        text("p-tier-t", ix + 116, y + 31, 48.0, "T${z.tier}", 14.0, "#2a1a08", 13, "center")
         val lv = listOf("1〜10", "11〜20", "21〜30", "31〜40")[z.tier - 1]
-        text("p-lv", ix + 176, y + 31, 160.0, "敵Lv $lv", 15.0, "#f8a090", 13)
+        text("p-lv", ix + 176, y + 31, 160.0, "敵Lv $lv", 14.0, "#f8a090", 13)
         rect("p-x", x + w - pad - 40, y + 22, 40.0, 40.0, "#ff121317", 12, "deselect", "#ff2a2416")
         frame("p-x-f", x + w - pad - 40, y + 22, 40.0, 40.0, "#ff2e3036", 2.0, 13)
         text("p-x-t", x + w - pad - 40, y + 30, 40.0, "×", 20.0, "#a29e97", 14, "center")
@@ -201,9 +227,9 @@ internal class AtlasMapFlow(
         rect("p-port", ix, y + 80, 80.0, 80.0, "#ff1c1d22", 12)
         frame("p-port-f", ix, y + 80, 80.0, 80.0, GOLD, 2.0, 13)
         atlas.icons[icon]?.let { sprite("p-port-i", it, ix + 16, y + 96, 48.0, 48.0, 14) }
-        text("p-name", ix + 96, y + 92, iw - 96, names.getValue(z.id), 30.0, "#f4eedf", 13)
+        text("p-name", ix + 96, y + 92, iw - 96, names.getValue(z.id), 28.0, "#f4eedf", 13)
         val key = if (z.pvp) "PVP" else z.biome
-        text("p-sub", ix + 96, y + 134, iw - 96, "${BIOME[key]} · 特産 ${YIELD[key]}", 15.0, "#8a867e", 13)
+        text("p-sub", ix + 96, y + 134, iw - 96, "${BIOME[key]} · 特産 ${YIELD[key]}", 14.0, "#8a867e", 13)
         rect("p-div", ix, y + 180, iw, 2.0, "#ff3a3324", 12)
         rect("p-div-m", ix + iw / 2 - 16, y + 180, 32.0, 2.0, "#ffc9b27a", 13)
 
@@ -228,9 +254,9 @@ internal class AtlasMapFlow(
             val ry = y + 340 + i * 68
             rect("p-r$i", ix, ry, iw, 60.0, "#ff0e0f13", 12)
             frame("p-r$i-f", ix, ry, iw, 60.0, "#ff1e2026", 2.0, 13)
-            text("p-r$i-n", ix + 16, ry + 10, iw - 120, name, 17.0, "#f4eedf", 13)
+            text("p-r$i-n", ix + 16, ry + 10, iw - 120, name, 19.0, "#f4eedf", 13)
             text("p-r$i-s", ix + 16, ry + 34, iw - 32, sub, 13.0, "#8a867e", 13)
-            if (whenText.isNotEmpty()) text("p-r$i-w", ix + iw - 110, ry + 12, 96.0, whenText, 15.0, "#ff9a8a", 13, "right")
+            if (whenText.isNotEmpty()) text("p-r$i-w", ix + iw - 110, ry + 12, 96.0, whenText, 14.0, "#ff9a8a", 13, "right")
         }
 
         val by = y + h - pad - 72

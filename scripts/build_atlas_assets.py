@@ -18,6 +18,26 @@ FONT = f"{NS}:atlas"
 TILE = 256
 
 
+def cloud() -> Image.Image:
+    """A puffy pixel cloud (4px blocks, like the map), lit from above."""
+    import math, random
+    w, h = 80, 44
+    rnd = random.Random(7)
+    blobs = [(40, 26, 16), (24, 28, 12), (56, 28, 13), (32, 18, 11), (49, 17, 12), (12, 32, 8), (68, 32, 9)]
+    small = Image.new("RGBA", (w, h))
+    px = small.load()
+    for y in range(h):
+        for x in range(w):
+            inside = [b for b in blobs if math.hypot(x - b[0], (y - b[1]) * 1.15) < b[2]]
+            if not inside or y > 38:
+                continue
+            top = min(b[1] - b[2] for b in inside)
+            shade = (y - top) / 26
+            base = 255 - int(min(1.0, max(0.0, shade)) * 70)
+            px[x, y] = (base, base, min(255, base + 12), 255)
+    return small.resize((w * 4, h * 4), Image.NEAREST)
+
+
 def main() -> None:
     files: dict[str, bytes] = {}
     providers: list[dict] = []
@@ -39,6 +59,7 @@ def main() -> None:
             name = f"tile_{x}_{y}"
             add(name, continent.crop((x, y, min(x + TILE, continent.width), min(y + TILE, continent.height))))
             tiles.append({"name": name, "x": x, "y": y})
+    add("fx_cloud", cloud())
     for icon in sorted((SOURCE / "icons").glob("*.png")):
         add(f"icon_{icon.stem}", Image.open(icon).convert("RGBA"))
     files[f"assets/{NS}/font/atlas.json"] = json.dumps({"providers": providers}, separators=(",", ":")).encode()
