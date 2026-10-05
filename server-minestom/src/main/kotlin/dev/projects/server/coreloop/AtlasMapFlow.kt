@@ -170,6 +170,10 @@ internal class AtlasMapFlow(
             mapOf("font-size" to "${size * SCALE}px", "color" to color, "text-align" to align, "font-family" to "projects_ui_polish05:$page"),
             null, null, true, depth)
     }
+    private fun measure(value: String, family: String, size: Double): Double {
+        val page = "$family${size.toInt()}".takeIf(Polish05FontMetrics::has) ?: family
+        return Polish05FontMetrics.advance(value, page) / Polish05FontMetrics.SIZE * size
+    }
     /** Forge-style rounded fill: a cross of panels plus four tinted quarter discs. */
     private fun round(id: String, x: Double, y: Double, w: Double, h: Double, r: Double, color: String, alpha: Double, depth: Int,
                       action: String? = null, hover: String? = null) {
@@ -244,32 +248,34 @@ internal class AtlasMapFlow(
             if (event) {
                 val isLive = z.id == live
                 atlas.art[if (isLive) "timer_live" else "timer_soon"]?.let { sprite("z${z.id}-tm", it, px + w / 2 - 12, top - 8, 80.0, 24.0, 6) }
-                text("z${z.id}-tmt", px + w / 2 + 12, top - 6, 56.0, if (isLive) "出現中" else "12分", 15.0, if (isLive) "#ffffff" else "#e8c878", 7, "left", "v3b")
+                text("z${z.id}-tmt", px + w / 2 + 12, top - 7, 60.0, if (isLive) "出現中" else "12分", 16.0, if (isLive) "#ffffff" else "#e8c878", 7, "left", "v3b")
             }
             if (special || sel || hot) {
                 val name = names.getValue(z.id)
-                val size = if (sel) 21.0 else 17.0
-                val tagW = name.length * size + 22
-                val tagY = ground + 4
-                rect("z${z.id}-tag", px - tagW / 2, tagY, tagW, size + 12, if (sel) "#f0141210" else "#c80c0d10", 9)
-                rect("z${z.id}-tag-t", px - tagW / 2 + 4, tagY, tagW - 8, 1.5, if (sel) "#ffe8c878" else "#70c8aa6e", 9)
-                rect("z${z.id}-tag-b", px - tagW / 2 + 4, tagY + size + 10.5, tagW - 8, 1.5, if (sel) "#ffe8c878" else "#70c8aa6e", 9)
-                text("z${z.id}-n", px - tagW / 2, tagY + 4, tagW, name, size,
-                    if (sel) "#f2d48a" else if (z.pvp) "#ffb0a0" else "#f4eedf", 5, "center", if (sel) "v3b" else "v3m")
+                val family = if (sel) "v3b" else "v3m"
+                val size = if (sel) 20.0 else 18.0
+                val tagW = measure(name, family, size) + 26
+                val tagH = size * 1.25 + 10
+                val tagY = ground + if (sel) 20 else 4
+                rect("z${z.id}-tag", px - tagW / 2, tagY, tagW, tagH, if (sel) "#ff16130e" else "#ff0e0f13", 9)
+                rect("z${z.id}-tag-t", px - tagW / 2, tagY, tagW, 2.0, if (sel) "#ffe8c878" else "#ff5a4c34", 9)
+                rect("z${z.id}-tag-b", px - tagW / 2, tagY + tagH - 2, tagW, 2.0, if (sel) "#ffe8c878" else "#ff5a4c34", 9)
+                text("z${z.id}-n", px - tagW / 2, tagY + 5, tagW, name, size,
+                    if (sel) "#f2d48a" else if (z.pvp) "#ffb0a0" else "#f4eedf", 5, "center", family)
             }
         }
         // Title plate and the one important notice, both drawn from the Chrome-rendered parts.
         atlas.art["title"]?.let { sprite("title-plate", it, 22.0, 18.0, 256.0, 64.0, 20) }
-        text("title", 66.0, 34.0, 200.0, "開拓大陸", 24.0, "#f4eedf", 21, "left", "v3b")
+        text("title", 90.0, 33.0, 180.0, "開拓大陸", 24.0, "#f4eedf", 21, "left", "v3b")
         live?.let { id ->
             val message = "霧氷の騎士 出現中 · ${names.getValue(id)}"
-            val middle = kotlin.math.ceil(message.length * 19.0 / 32.0).toInt() + 1
+            val middle = kotlin.math.ceil((measure(message, "v3m", 18.0) + 16) / 32.0).toInt()
             val total = 56.0 + middle * 32 + 24
             val left = 960 - total / 2
             atlas.art["notice_l"]?.let { sprite("notice-l", it, left, 18.0, 56.0, 56.0, 20) }
             atlas.art["notice_m"]?.let { m -> for (i in 0 until middle) sprite("notice-m$i", m, left + 56 + i * 32, 18.0, 32.0, 56.0, 20) }
             atlas.art["notice_r"]?.let { sprite("notice-r", it, left + 56 + middle * 32, 18.0, 24.0, 56.0, 20) }
-            text("notice-t", left + 60, 33.0, middle * 32.0, message, 19.0, "#ffd8d0", 21, "left", "v3m")
+            text("notice-t", left + 60, 34.0, middle * 32.0, message, 18.0, "#ffd8d0", 21, "left", "v3m")
         }
         selected?.let { panel(atlas.zones.first { z -> z.id == it }) }
         clouds()
@@ -343,6 +349,8 @@ internal class AtlasMapFlow(
                 "〜40人 · ダメージ順位で報酬", if (z.id == bossZones.first()) "出現中" else "12分", "badge_boss"))
             if (!z.hub) add(Row(if (z.pvp) "荒野" else "遠征口", if (z.pvp) "PvP あり · 準備中" else "入るたびに地形が変わる · 道の先にボス", "",
                 if (z.pvp) "badge_pvp" else "pin_${z.biome.lowercase()}"))
+            if (z.id !in bossZones.take(2)) add(if (z.hub) Row("港の施設", "倉庫 · 鍛冶 · 市場 · 仲間募集", "", "badge_hub")
+                else Row("採集", "特産 ${YIELD[if (z.pvp) "PVP" else z.biome]} · 時間で湧き直す", "", "pin_${z.biome.lowercase()}"))
             add(Row(if (z.owner == "white") "砦（持ち主なし）" else "${guild}の砦",
                 if (z.owner == "white") "領地戦でいちばん貢献したギルドのものに" else "ギルド員はここから出発できる", "", "badge_hub"))
         }
@@ -352,8 +360,8 @@ internal class AtlasMapFlow(
             atlas.art["card_1"]?.let { nodes += UiNode("p-r$i-c1", box(ix + 256, ry, 120.0, 72.0), "", emptyMap(), null, null, true, 11, it) }
             val (iw2, ih2) = if (r.icon.startsWith("pin_")) 33.0 to 39.0 else 40.0 to 40.0
             atlas.art[r.icon]?.let { sprite("p-r$i-i", it, ix + 34 - iw2 / 2, ry + 36 - ih2 / 2, iw2, ih2, 13) }
-            text("p-r$i-n", ix + 66, ry + 12, iw - 180, r.name, 18.0, "#f4eedf", 13, "left", "v3b")
-            text("p-r$i-s", ix + 66, ry + 42, iw - 80, r.sub, 13.0, "#8a867e", 13, "left", "v3r")
+            text("p-r$i-n", ix + 66, ry + 13, iw - 180, r.name, 16.0, "#f4eedf", 13, "left", "v3b")
+            text("p-r$i-s", ix + 66, ry + 41, iw - 80, r.sub, 14.0, "#8a867e", 13, "left", "v3r")
             if (r.whenText.isNotEmpty()) text("p-r$i-w", ix + iw - 118, ry + 14, 100.0, r.whenText, 14.0, "#ff9a8a", 13, "right")
         }
 
@@ -383,7 +391,7 @@ internal class AtlasMapFlow(
         val goText = when { z.hub -> "港へ戻る"; z.pvp -> "準備中"; z.id == bossZones.firstOrNull() -> "参戦する"; else -> "遠征に出る" }
         val enabled = !z.pvp
         if (enabled) rect("p-go", ix, by, iw, 72.0, "#00000000", 12, "go", "#30ffffff")
-        else rect("p-go-off", ix, by, iw, 72.0, "#e0141519", 16)
+        else rect("p-go-off", ix + 2, by + 2, iw - 4, 66.0, "#ff1c1d22", 16)
         text("p-go-t", ix, by + 22, iw, goText, 24.0, if (enabled) "#1a1208" else "#5e5a54", 17, "center", "v3b")
     }
 
