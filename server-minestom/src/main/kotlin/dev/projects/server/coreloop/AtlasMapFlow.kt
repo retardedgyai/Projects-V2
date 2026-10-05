@@ -247,8 +247,10 @@ internal class AtlasMapFlow(
             }
             if (event) {
                 val isLive = z.id == live
-                atlas.art[if (isLive) "timer_live" else "timer_soon"]?.let { sprite("z${z.id}-tm", it, px + w / 2 - 12, top - 8, 80.0, 24.0, 6) }
-                text("z${z.id}-tmt", px + w / 2 + 12, top - 7, 60.0, if (isLive) "出現中" else "12分", 16.0, if (isLive) "#ffffff" else "#e8c878", 7, "left", "v3b")
+                // Clear of the selection brackets when this marker is the selected one.
+                val tx = if (sel) 22.0 else 0.0; val ty = if (sel) 10.0 else 0.0
+                atlas.art[if (isLive) "timer_live" else "timer_soon"]?.let { sprite("z${z.id}-tm", it, px + w / 2 - 12 + tx, top - 8 - ty, 80.0, 24.0, 6) }
+                text("z${z.id}-tmt", px + w / 2 + 12 + tx, top - 7 - ty, 60.0, if (isLive) "出現中" else "12分", 16.0, if (isLive) "#ffffff" else "#e8c878", 7, "left", "v3b")
             }
             if (special || sel || hot) {
                 val name = names.getValue(z.id)
