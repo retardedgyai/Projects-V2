@@ -65,6 +65,23 @@ def banner() -> Image.Image:
     return img.resize((48, 52), Image.NEAREST)
 
 
+def pixelize(image: Image.Image, factor: int = 3, colors: int = 20) -> Image.Image:
+    """Turn a smooth vector part into pixel art: box-downsample, hard alpha, few colours, dark outline, nearest upscale."""
+    w, h = image.width // factor, image.height // factor
+    small = image.resize((w, h), Image.BOX)
+    alpha = small.getchannel("A").point(lambda a: 255 if a >= 110 else 0)
+    rgb = small.convert("RGB").quantize(colors=colors, method=Image.Quantize.MEDIANCUT).convert("RGB")
+    out = Image.new("RGBA", (w, h))
+    out.paste(rgb, mask=alpha)
+    px = out.load(); src = alpha.load()
+    for y in range(h):
+        for x in range(w):
+            if src[x, y]: continue
+            if any(0 <= x + dx < w and 0 <= y + dy < h and src[x + dx, y + dy] for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                px[x, y] = (14, 11, 16, 255)
+    return out.resize((w * factor, h * factor), Image.NEAREST)
+
+
 def main() -> None:
     files: dict[str, bytes] = {}
     providers: list[dict] = []
@@ -94,16 +111,16 @@ def main() -> None:
         for x in range(0, panel.width, TILE):
             add(f"panel_{x}_{y}", panel.crop((x, y, min(x + TILE, panel.width), min(y + TILE, panel.height))))
     for i, name in enumerate(("badge_boss", "badge_pvp", "badge_hub", "badge_ring")):
-        add(name, parts.crop((460 + i * 120, 0, 580 + i * 120, 120)))
+        add(name, parts.crop((460 + i * 120, 0, 580 + i * 120, 120)) if name == "badge_ring" else pixelize(parts.crop((460 + i * 120, 0, 580 + i * 120, 120))))
     add("plate", parts.crop((940, 0, 1060, 40)))
     card = parts.crop((460, 360, 836, 436))
     add("card_0", card.crop((0, 0, 256, 76))); add("card_1", card.crop((256, 0, 376, 76)))
     add("title", parts.crop((460, 460, 716, 524)))
     add("notice_l", parts.crop((740, 460, 796, 516))); add("notice_m", parts.crop((800, 460, 832, 516))); add("notice_r", parts.crop((840, 460, 864, 516)))
-    add("timer_live", parts.crop((880, 460, 968, 492))); add("timer_soon", parts.crop((880, 500, 968, 532)))
+    add("timer_live", pixelize(parts.crop((880, 460, 968, 492)), 2, 8)); add("timer_soon", pixelize(parts.crop((880, 500, 968, 532)), 2, 8))
     add("vignette", parts.crop((460, 560, 716, 704)))
     for i, name in enumerate(("verdant", "sakura_grove", "saltmarsh", "clifflands", "highlands", "infernal")):
-        add(f"pin_{name}", parts.crop((460 + i * 80, 260, 540 + i * 80, 340)))
+        add(f"pin_{name}", pixelize(parts.crop((460 + i * 80, 260, 540 + i * 80, 340)), 2, 16))
     add("fx_banner", banner())
     for icon in sorted((SOURCE / "icons").glob("*.png")):
         add(f"icon_{icon.stem}", Image.open(icon).convert("RGBA"))

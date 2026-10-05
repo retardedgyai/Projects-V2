@@ -76,27 +76,32 @@ internal class AtlasMapFlow(
     private val bossZones = atlas.zones.filter { it.kind in setOf("castle", "fortress", "pagoda") }.map { it.id }
     private val home = atlas.zones.firstOrNull { it.hub } ?: atlas.zones.first()
     private var selected: Int? = null
-    private var panX = (960.0 - home.cx).coerceIn(minX(), MARGIN)
-    private var panY = (620.0 - home.cy).coerceIn(minY(), 60.0)
+    private var panX = (960.0 - home.cx).coerceIn(minX(), 0.0)
+    private var panY = (620.0 - home.cy).coerceIn(minY(), 0.0)
+    private var targetVx = 0.0
+    private var targetVy = 0.0
     private var vx = 0.0
     private var vy = 0.0
     private val openedAt = System.currentTimeMillis()
 
     private fun viewWidth() = if (selected != null) PANEL_X - 20.0 else 1920.0
-    private fun minX() = viewWidth() - atlas.width - MARGIN
-    private fun minY() = 1080.0 - atlas.height - MARGIN
+    private fun minX() = minOf(0.0, viewWidth() - atlas.width)
+    private fun minY() = minOf(0.0, 1080.0 - atlas.height)
 
     override fun pointer(x: Double, y: Double) {
         val dx = x / SCALE
         val dy = (y - TOP) / SCALE
         val right = viewWidth()
-        vx = when { dx < EDGE -> SPEED; dx > right - EDGE && dx < right -> -SPEED; else -> 0.0 }
-        vy = when { dy < EDGE -> SPEED; dy > 1080 - EDGE -> -SPEED; else -> 0.0 }
+        fun push(depth: Double) = SPEED * ((EDGE - depth) / EDGE).coerceIn(0.0, 1.0).let { it * it }
+        targetVx = when { dx < EDGE -> push(dx); dx > right - EDGE && dx < right -> -push(right - dx); else -> 0.0 }
+        targetVy = when { dy < EDGE -> push(dy); dy > 1080 - EDGE -> -push(1080 - dy); else -> 0.0 }
     }
 
     override fun tick(nowMs: Long): dev.projects.webui.ForgeUiReceipt? {
-        panX = (panX + vx).coerceIn(minX(), MARGIN)
-        panY = (panY + vy).coerceIn(minY(), 60.0)
+        vx += (targetVx - vx) * 0.25
+        vy += (targetVy - vy) * 0.25
+        panX = (panX + vx).coerceIn(minX(), 0.0)
+        panY = (panY + vy).coerceIn(minY(), 0.0)
         return null
     }
 
@@ -106,7 +111,7 @@ internal class AtlasMapFlow(
                 val id = action.removePrefix("zone:").toIntOrNull() ?: return false
                 if (selected == id) return false
                 selected = id
-                panX = panX.coerceIn(minX(), MARGIN)
+                panX = panX.coerceIn(minX(), 0.0)
             }
             action == "deselect" -> { if (selected == null) return false; selected = null }
             action == "go" -> {
@@ -186,11 +191,10 @@ internal class AtlasMapFlow(
             if (x > viewRight || y > 1080 || x + t.sprite.width < 0 || y + t.sprite.height < 0) continue
             sprite("tile-${t.x}-${t.y}", t.sprite, x, y, t.sprite.width.toDouble(), t.sprite.height.toDouble(), 0)
         }
-        atlas.art["vignette"]?.let { sprite("vignette", it, 0.0, 0.0, 1920.0, 1080.0, 6) }
         // Ordinary zones are a small gold pin and a name; only bosses, wilds and the harbor get an icon badge.
         val live = bossZones.firstOrNull()
         for (z in atlas.zones) {
-            val px = panX + z.cx; val py = panY + z.cy
+            val px = panX + z.ax; val py = panY + z.ay + 8
             if (px < 30 || px > viewRight - 30 || py < 60 || py > 1050) continue
             val sel = z.id == selected
             val event = z.id in bossZones.take(2)
@@ -341,8 +345,8 @@ internal class AtlasMapFlow(
         private const val SCALE = 800.0 / 1920.0
         private const val TOP = (480.0 - 1080.0 * SCALE) / 2
         private const val MARGIN = 40.0
-        private const val EDGE = 70.0
-        private const val SPEED = 22.0
+        private const val EDGE = 56.0
+        private const val SPEED = 28.0
         private const val PANEL_X = 1460.0
         private const val GOLD = "#ffc8aa6e"
         private val GUILD = mapOf("blue" to ("蒼月" to "#ff3a6fd8"), "green" to ("翠嵐" to "#ff3fa84a"), "gold" to ("金獅子" to "#ffe8b83a"),
