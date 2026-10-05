@@ -98,7 +98,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         { Pos(0.0,100.0,0.0,0f,0f) })
     else null
     private val atlasMap = runCatching {
-        AtlasMapFlow.Atlas(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/atlas-map.json")).use { it.readBytes() })
+        val loader = javaClass.classLoader
+        AtlasMapFlow.Atlas(requireNotNull(loader.getResourceAsStream("polish05/atlas-map.json")).use { it.readBytes() },
+            requireNotNull(loader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
     }.onFailure { System.err.println("ATLAS_MAP_DISABLED: ${it.message}") }.getOrNull()
     private val atlasSessions: UiSessions? = if(uiPack != null && atlasMap != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
         { player -> uiPack.enabled(player) }, null,

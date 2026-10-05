@@ -22,7 +22,7 @@ internal class AtlasMapFlow(
     private val leave: () -> Unit,
 ) : ForgeUiFlow {
     /** Parsed once at startup from polish05/atlas-map.json. */
-    class Atlas(json: ByteArray) {
+    class Atlas(json: ByteArray, forgeFontMap: ByteArray) {
         data class Tile(val sprite: UiSprite, val x: Int, val y: Int)
         data class Zone(val id: Int, val tier: Int, val biome: String, val pvp: Boolean, val hub: Boolean, val kind: String?,
                         val owner: String, val cx: Int, val cy: Int, val ox: Int, val oy: Int, val ax: Int, val ay: Int)
@@ -32,6 +32,7 @@ internal class AtlasMapFlow(
         val icons: Map<String, UiSprite>
         val cloud: UiSprite?
         val banner: UiSprite?
+        val round: Map<String, UiSprite>
         val zones: List<Zone>
         init {
             val root = JsonParser.parseString(json.toString(Charsets.UTF_8)).asJsonObject
@@ -44,6 +45,9 @@ internal class AtlasMapFlow(
             icons = sprites.filterKeys { it.startsWith("icon_") }.mapKeys { it.key.removePrefix("icon_") }
             cloud = sprites["fx_cloud"]
             banner = sprites["fx_banner"]
+            round = JsonParser.parseString(forgeFontMap.toString(Charsets.UTF_8)).asJsonObject.entrySet()
+                .filter { it.key.startsWith("v3_round_") }
+                .associate { (k, v) -> v.asJsonObject.let { k.removePrefix("v3_round_") to UiSprite(it["char"].asString, it["font"].asString, it["width"].asInt, it["height"].asInt) } }
             zones = root.getAsJsonArray("zones").map { e ->
                 val z: JsonObject = e.asJsonObject
                 Zone(z["id"].asInt, z["tier"].asInt, z["biome"].asString, z["pvp"].asBoolean, z["hub"].asBoolean,
@@ -127,11 +131,27 @@ internal class AtlasMapFlow(
     private fun sprite(id: String, s: UiSprite, x: Double, y: Double, w: Double, h: Double, depth: Int, tint: String? = null) {
         nodes += UiNode(id, box(x, y, w, h), "", if (tint != null) mapOf("sprite-color" to tint) else emptyMap(), null, null, true, depth, s)
     }
-    private fun text(id: String, x: Double, y: Double, w: Double, value: String, size: Double, color: String, depth: Int, align: String = "left") {
-        val page = "v3num${size.toInt()}".takeIf(Polish05FontMetrics::has) ?: "v3num"
+    private fun text(id: String, x: Double, y: Double, w: Double, value: String, size: Double, color: String, depth: Int,
+                     align: String = "left", family: String = "v3num") {
+        val page = "$family${size.toInt()}".takeIf(Polish05FontMetrics::has) ?: family
         nodes += UiNode(id, box(x, y, w, size * 1.25), value,
             mapOf("font-size" to "${size * SCALE}px", "color" to color, "text-align" to align, "font-family" to "projects_ui_polish05:$page"),
             null, null, true, depth)
+    }
+    /** Forge-style rounded fill: a cross of panels plus four tinted quarter discs. */
+    private fun round(id: String, x: Double, y: Double, w: Double, h: Double, r: Double, color: String, alpha: Double, depth: Int,
+                      action: String? = null, hover: String? = null) {
+        val argb = String.format("#%02x%s", (alpha * 255).toInt().coerceIn(0, 255), color.removePrefix("#"))
+        rect("$id-c", x + r, y, w - 2 * r, h, argb, depth, action, hover)
+        rect("$id-l", x, y + r, r, h - 2 * r, argb, depth)
+        rect("$id-r", x + w - r, y + r, r, h - 2 * r, argb, depth)
+        for ((k, cx, cy) in listOf(Triple("tl", x, y), Triple("tr", x + w - r, y), Triple("bl", x, y + h - r), Triple("br", x + w - r, y + h - r))) {
+            val sprite = atlas.round[k] ?: continue
+            nodes += UiNode("$id-$k", box(cx, cy, r, r), "", buildMap {
+                put("sprite-color", color)
+                if (alpha < 1.0) put("opacity", String.format(java.util.Locale.US, "%.3f", alpha))
+            }, null, null, true, depth, sprite)
+        }
     }
     private fun frame(id: String, x: Double, y: Double, w: Double, h: Double, color: String, t: Double, depth: Int) {
         rect("$id-t", x, y, w, t, color, depth); rect("$id-b", x, y + h - t, w, t, color, depth)
@@ -220,41 +240,40 @@ internal class AtlasMapFlow(
 
     private fun panel(z: Atlas.Zone) {
         val x = PANEL_X; val y = 24.0; val w = 1920.0 - PANEL_X - 28; val h = 1032.0
-        rect("p-bg", x, y, w, h, "#f8141519", 10)
-        frame("p-line", x, y, w, h, "#4dc8aa6e", 1.0, 11)
-        goldCorners("p-c", x, y, w, h, 12)
-        val pad = 26.0; val ix = x + pad; val iw = w - pad * 2
-        val type = if (z.hub) "拠点" else if (z.pvp) "荒野 PvP" else "安全"
-        rect("p-type", ix, y + 26, 108.0, 30.0, if (z.pvp) "#ff3a1614" else "#ff14223a", 12)
-        text("p-type-t", ix, y + 30, 108.0, type, 19.0, if (z.pvp) "#ffb0a0" else "#a9c8ff", 13, "center")
-        rect("p-tier", ix + 116, y + 26, 48.0, 30.0, "#ffe8c878", 12)
-        text("p-tier-t", ix + 116, y + 31, 48.0, "T${z.tier}", 19.0, "#2a1a08", 13, "center")
+        round("p-bg", x, y, w, h, 14.0, "#101114", 0.94, 10)
+        val pad = 28.0; val ix = x + pad; val iw = w - pad * 2
+
+        // Header: kind and tier pills, enemy level, close.
+        val type = if (z.hub) "拠点" else if (z.pvp) "荒野 · PvP" else "安全"
+        val typeColor = if (z.pvp) "#e0503c" else if (z.hub) "#4fc05a" else "#4d7fd0"
+        round("p-type", ix, y + 28, 120.0, 32.0, 14.0, typeColor, 0.22, 12)
+        text("p-type-t", ix, y + 33, 120.0, type, 15.0, if (z.pvp) "#ffb0a0" else if (z.hub) "#9af0a0" else "#a9c8ff", 13, "center", "v3m")
+        round("p-tier", ix + 128, y + 28, 56.0, 32.0, 14.0, "#e8c878", 1.0, 12)
+        text("p-tier-t", ix + 128, y + 33, 56.0, "T${z.tier}", 14.0, "#2a1a08", 13, "center")
         val lv = listOf("1〜10", "11〜20", "21〜30", "31〜40")[z.tier - 1]
-        text("p-lv", ix + 176, y + 31, 160.0, "敵Lv $lv", 19.0, "#f8a090", 13)
-        rect("p-x", x + w - pad - 40, y + 22, 40.0, 40.0, "#ff121317", 12, "deselect", "#ff2a2416")
-        frame("p-x-f", x + w - pad - 40, y + 22, 40.0, 40.0, "#ff2e3036", 2.0, 13)
-        text("p-x-t", x + w - pad - 40, y + 30, 40.0, "×", 20.0, "#a29e97", 14, "center")
+        text("p-lv", ix + 196, y + 33, 160.0, "敵Lv $lv", 14.0, "#f8a090", 13)
+        round("p-x", x + w - pad - 40, y + 24, 40.0, 40.0, 10.0, "#ffffff", 0.06, 12, "deselect", "#ff2a2416")
+        text("p-x-t", x + w - pad - 40, y + 31, 40.0, "×", 20.0, "#a29e97", 13, "center", "v3b")
 
+        // Name.
         val icon = when { z.hub -> "flag"; z.pvp -> "pvp"; z.id in bossZones -> "boss"; else -> z.biome.lowercase() }
-        rect("p-port", ix, y + 80, 80.0, 80.0, "#ff1c1d22", 12)
-        frame("p-port-f", ix, y + 80, 80.0, 80.0, GOLD, 2.0, 13)
-        atlas.icons[icon]?.let { sprite("p-port-i", it, ix + 16, y + 96, 48.0, 48.0, 14) }
-        text("p-name", ix + 96, y + 92, iw - 96, names.getValue(z.id), 28.0, "#f4eedf", 13)
+        round("p-port", ix, y + 84, 84.0, 84.0, 12.0, "#1c1d22", 1.0, 12)
+        atlas.icons[icon]?.let { sprite("p-port-i", it, ix + 22, y + 106, 40.0, 40.0, 13) }
+        text("p-name", ix + 102, y + 94, iw - 102, names.getValue(z.id), 26.0, "#f4eedf", 13, "left", "v3b")
         val key = if (z.pvp) "PVP" else z.biome
-        text("p-sub", ix + 96, y + 134, iw - 96, "${BIOME[key]} · 特産 ${YIELD[key]}", 19.0, "#8a867e", 13)
-        rect("p-div", ix, y + 180, iw, 2.0, "#ff3a3324", 12)
-        rect("p-div-m", ix + iw / 2 - 16, y + 180, 32.0, 2.0, "#ffc9b27a", 13)
+        text("p-sub", ix + 102, y + 134, iw - 102, "${BIOME[key]} · 特産 ${YIELD[key]}", 15.0, "#a29e97", 13, "left", "v3r")
 
-        text("p-land-l", ix, y + 198, iw, "領地", 19.0, "#8a867e", 13)
-        rect("p-land", ix, y + 226, iw, 64.0, "#ff0e0f13", 12)
-        frame("p-land-f", ix, y + 226, iw, 64.0, "#ff1e2026", 2.0, 13)
+        // Territory.
+        text("p-land-l", ix, y + 196, iw, "領地", 14.0, "#8a867e", 13, "left", "v3m")
+        round("p-land", ix, y + 222, iw, 92.0, 10.0, "#ffffff", 0.04, 12)
         val (guild, color) = GUILD.getValue(z.owner)
-        atlas.banner?.let { sprite("p-land-flag", it, ix + 14, y + 234, 44.0, 48.0, 13, "#" + color.takeLast(6)) }
-        text("p-land-o", ix + 70, y + 244, 240.0, if (z.owner == "white") "持ち主なし" else "ギルド「$guild」", 24.0,
-            if (z.owner == "white") "#a29e97" else "#" + color.takeLast(6), 13)
-        text("p-land-w", ix + iw - 130, y + 250, 116.0, "領地戦 土 21:00", 19.0, "#e8c878", 13, "right")
+        atlas.banner?.let { sprite("p-land-flag", it, ix + 16, y + 238, 44.0, 48.0, 13, "#" + color.takeLast(6)) }
+        text("p-land-o", ix + 74, y + 238, iw - 90, if (z.owner == "white") "持ち主なし" else "ギルド「$guild」", 20.0,
+            if (z.owner == "white") "#a29e97" else "#" + color.takeLast(6), 13, "left", "v3b")
+        text("p-land-w", ix + 74, y + 274, iw - 90, "次の領地戦　土 21:00", 14.0, "#e8c878", 13, "left", "v3r")
 
-        text("p-do-l", ix, y + 314, iw, "このゾーンでできること", 19.0, "#8a867e", 13)
+        // What is here.
+        text("p-do-l", ix, y + 340, iw, "このゾーンでできること", 14.0, "#8a867e", 13, "left", "v3m")
         val rows = buildList {
             if (z.id in bossZones.take(2)) add(Triple(if (z.id == bossZones.first()) "ワールドボス" else "フィールドボス",
                 "〜40人 · ダメージ順位で報酬", if (z.id == bossZones.first()) "出現中" else "12分"))
@@ -263,20 +282,20 @@ internal class AtlasMapFlow(
                 if (z.owner == "white") "領地戦でいちばん貢献したギルドのものに" else "ギルド員はここから出発できる", ""))
         }
         rows.forEachIndexed { i, (name, sub, whenText) ->
-            val ry = y + 344 + i * 84
-            rect("p-r$i", ix, ry, iw, 76.0, "#ff0e0f13", 12)
-            frame("p-r$i-f", ix, ry, iw, 76.0, "#ff1e2026", 2.0, 13)
-            text("p-r$i-n", ix + 16, ry + 10, iw - 120, name, 19.0, "#f4eedf", 13)
-            text("p-r$i-s", ix + 16, ry + 42, iw - 32, sub, 19.0, "#8a867e", 13)
-            if (whenText.isNotEmpty()) text("p-r$i-w", ix + iw - 110, ry + 12, 96.0, whenText, 19.0, "#ff9a8a", 13, "right")
+            val ry = y + 366 + i * 86
+            round("p-r$i", ix, ry, iw, 76.0, 10.0, "#ffffff", 0.04, 12)
+            text("p-r$i-n", ix + 18, ry + 14, iw - 130, name, 18.0, "#f4eedf", 13, "left", "v3m")
+            text("p-r$i-s", ix + 18, ry + 44, iw - 36, sub, 14.0, "#8a867e", 13, "left", "v3r")
+            if (whenText.isNotEmpty()) text("p-r$i-w", ix + iw - 118, ry + 16, 100.0, whenText, 14.0, "#ff9a8a", 13, "right")
         }
 
+        // Depart.
         val by = y + h - pad - 72
         val goText = when { z.hub -> "港へ戻る"; z.pvp -> "準備中"; z.id == bossZones.firstOrNull() -> "参戦する"; else -> "遠征に出る" }
         val enabled = !z.pvp
-        rect("p-go", ix, by, iw, 72.0, if (enabled) "#ffd8ae5c" else "#ff121317", 12, if (enabled) "go" else null, "#fff2cc80")
-        frame("p-go-f", ix, by, iw, 72.0, if (enabled) "#fffff2cc" else "#ff24262c", 2.0, 13)
-        text("p-go-t", ix, by + 22, iw, goText, 26.0, if (enabled) "#1a1208" else "#4a4740", 14, "center")
+        round("p-go", ix, by, iw, 72.0, 10.0, if (enabled) "#e2b65e" else "#ffffff", if (enabled) 1.0 else 0.05, 12,
+            if (enabled) "go" else null, if (enabled) "#fff2cc80" else null)
+        text("p-go-t", ix, by + 22, iw, goText, 24.0, if (enabled) "#1a1208" else "#5e5a54", 13, "center", "v3b")
     }
 
     companion object {
