@@ -96,6 +96,8 @@ def main() -> None:
     for i, name in enumerate(("badge_boss", "badge_pvp", "badge_hub", "badge_ring")):
         add(name, parts.crop((460 + i * 120, 0, 580 + i * 120, 120)))
     add("plate", parts.crop((940, 0, 1060, 40)))
+    card = parts.crop((460, 360, 836, 436))
+    add("card_0", card.crop((0, 0, 256, 76))); add("card_1", card.crop((256, 0, 376, 76)))
     for i, name in enumerate(("verdant", "sakura_grove", "saltmarsh", "clifflands", "highlands", "infernal")):
         add(f"pin_{name}", parts.crop((460 + i * 80, 260, 540 + i * 80, 340)))
     add("fx_banner", banner())
@@ -119,7 +121,7 @@ def render() -> None:
     from build_forge_v3_assets import chrome_exe
     out = SOURCE / "parts.png"
     subprocess.run([chrome_exe(), "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
-                    "--default-background-color=00000000", "--window-size=1100,1040", f"--screenshot={out}",
+                    "--default-background-color=00000000", "--window-size=1100,1100", f"--screenshot={out}",
                     (SOURCE / "atlas-ui.html").as_uri()], check=True, capture_output=True, timeout=120)
     print(f"ATLAS_PARTS_RENDERED {out}")
 

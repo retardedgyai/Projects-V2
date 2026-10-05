@@ -269,14 +269,14 @@ internal class AtlasMapFlow(
         // Header: kind and tier pills, enemy level, close.
         val type = if (z.hub) "拠点" else if (z.pvp) "荒野 · PvP" else "安全"
         val typeColor = if (z.pvp) "#3a1a18" else if (z.hub) "#18301c" else "#172338"
-        round("p-type", ix, y + 28, 120.0, 32.0, 14.0, typeColor, 1.0, 14)
-        text("p-type-t", ix, y + 33, 120.0, type, 15.0, if (z.pvp) "#ffb0a0" else if (z.hub) "#9af0a0" else "#a9c8ff", 13, "center", "v3m")
-        round("p-tier", ix + 128, y + 28, 56.0, 32.0, 14.0, "#e8c878", 1.0, 14)
-        text("p-tier-t", ix + 128, y + 33, 56.0, "T${z.tier}", 14.0, "#2a1a08", 13, "center")
+        round("p-type", ix, y + 28, 120.0, 32.0, 14.0, typeColor, 1.0, 16)
+        text("p-type-t", ix, y + 33, 120.0, type, 15.0, if (z.pvp) "#ffb0a0" else if (z.hub) "#9af0a0" else "#a9c8ff", 17, "center", "v3m")
+        round("p-tier", ix + 128, y + 28, 56.0, 32.0, 14.0, "#e8c878", 1.0, 16)
+        text("p-tier-t", ix + 128, y + 33, 56.0, "T${z.tier}", 14.0, "#2a1a08", 17, "center")
         val lv = listOf("1〜10", "11〜20", "21〜30", "31〜40")[z.tier - 1]
         text("p-lv", ix + 196, y + 33, 160.0, "敵Lv $lv", 14.0, "#f8a090", 13)
-        round("p-x", x + w - pad - 40, y + 24, 40.0, 40.0, 10.0, "#202126", 1.0, 14, "deselect", "#ff2a2416")
-        text("p-x-t", x + w - pad - 40, y + 31, 40.0, "×", 20.0, "#a29e97", 13, "center", "v3b")
+        round("p-x", x + w - pad - 40, y + 24, 40.0, 40.0, 10.0, "#202126", 1.0, 16, "deselect", "#ff2a2416")
+        text("p-x-t", x + w - pad - 40, y + 31, 40.0, "×", 20.0, "#a29e97", 17, "center", "v3b")
 
         // Name.
         item("p-port-i", itemFor(z), ix + 10, y + 94, 64.0, 13)
@@ -303,6 +303,8 @@ internal class AtlasMapFlow(
         }
         rows.forEachIndexed { i, (name, sub, whenText) ->
             val ry = y + 366 + i * 86
+            atlas.art["card_0"]?.let { nodes += UiNode("p-r$i-c0", box(ix, ry, 256.0, 76.0), "", emptyMap(), null, null, true, 11, it) }
+            atlas.art["card_1"]?.let { nodes += UiNode("p-r$i-c1", box(ix + 256, ry, 120.0, 76.0), "", emptyMap(), null, null, true, 11, it) }
             text("p-r$i-n", ix + 18, ry + 14, iw - 130, name, 18.0, "#f4eedf", 13, "left", "v3m")
             text("p-r$i-s", ix + 18, ry + 44, iw - 36, sub, 14.0, "#8a867e", 13, "left", "v3r")
             if (whenText.isNotEmpty()) text("p-r$i-w", ix + iw - 118, ry + 16, 100.0, whenText, 14.0, "#ff9a8a", 13, "right")
@@ -313,8 +315,8 @@ internal class AtlasMapFlow(
         val goText = when { z.hub -> "港へ戻る"; z.pvp -> "準備中"; z.id == bossZones.firstOrNull() -> "参戦する"; else -> "遠征に出る" }
         val enabled = !z.pvp
         if (enabled) rect("p-go", ix, by, iw, 72.0, "#00000000", 12, "go", "#30ffffff")
-        else rect("p-go-off", ix, by, iw, 72.0, "#e0141519", 14)
-        text("p-go-t", ix, by + 22, iw, goText, 24.0, if (enabled) "#1a1208" else "#5e5a54", 13, "center", "v3b")
+        else rect("p-go-off", ix, by, iw, 72.0, "#e0141519", 16)
+        text("p-go-t", ix, by + 22, iw, goText, 24.0, if (enabled) "#1a1208" else "#5e5a54", 17, "center", "v3b")
     }
 
     companion object {
