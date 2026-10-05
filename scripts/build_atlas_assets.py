@@ -88,6 +88,16 @@ def main() -> None:
             add(name, continent.crop((x, y, min(x + TILE, continent.width), min(y + TILE, continent.height))))
             tiles.append({"name": name, "x": x, "y": y})
     add("fx_cloud", cloud())
+    parts = Image.open(SOURCE / "parts.png").convert("RGBA")
+    panel = parts.crop((0, 0, 432, 1032))
+    for y in range(0, panel.height, TILE):
+        for x in range(0, panel.width, TILE):
+            add(f"panel_{x}_{y}", panel.crop((x, y, min(x + TILE, panel.width), min(y + TILE, panel.height))))
+    for i, name in enumerate(("badge_boss", "badge_pvp", "badge_hub", "badge_ring")):
+        add(name, parts.crop((460 + i * 120, 0, 580 + i * 120, 120)))
+    add("plate", parts.crop((940, 0, 1060, 40)))
+    for i, name in enumerate(("verdant", "sakura_grove", "saltmarsh", "clifflands", "highlands", "infernal")):
+        add(f"pin_{name}", parts.crop((460 + i * 80, 260, 540 + i * 80, 340)))
     add("fx_banner", banner())
     for icon in sorted((SOURCE / "icons").glob("*.png")):
         add(f"icon_{icon.stem}", Image.open(icon).convert("RGBA"))
@@ -102,5 +112,20 @@ def main() -> None:
     print(f"ATLAS_PACK_BUILT tiles={len(tiles)} sprites={len(sprites)} bytes={(OUT / 'atlas.zip').stat().st_size}")
 
 
+def render() -> None:
+    """Rasterise atlas-ui.html with headless Chrome into parts.png (transparent background)."""
+    import subprocess, sys
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from build_forge_v3_assets import chrome_exe
+    out = SOURCE / "parts.png"
+    subprocess.run([chrome_exe(), "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
+                    "--default-background-color=00000000", "--window-size=1100,1040", f"--screenshot={out}",
+                    (SOURCE / "atlas-ui.html").as_uri()], check=True, capture_output=True, timeout=120)
+    print(f"ATLAS_PARTS_RENDERED {out}")
+
+
 if __name__ == "__main__":
+    import sys
+    if sys.argv[1:] == ["render"]:
+        render()
     main()

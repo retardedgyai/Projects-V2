@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>開拓大陸 UI parts</title>
+<style>
+  html, body { margin: 0; background: transparent; }
+  .part { position: absolute; }
+  svg { display: block; overflow: visible; }
+</style>
+</head>
+<body>
+<!--
+  Static art for the in-game continent map, rendered by headless Chrome (scripts/build_atlas_assets.py render).
+  Every part sits at a fixed position; the build crops them by the same coordinates.
+  Panel 432x1032 at (0,0). Badges in 120x120 cells from x=460. Zone pins in 80x80 cells from y=260.
+-->
+
+<!-- ===== Side panel plate (432 x 1032) ===== -->
+<div class="part" style="left:0;top:0">
+<svg width="432" height="1032" viewBox="0 0 432 1032">
+  <defs>
+    <linearGradient id="pbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1b21"/><stop offset=".55" stop-color="#121317"/><stop offset="1" stop-color="#0d0e11"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#202128"/><stop offset="1" stop-color="#18191e"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6dc94"/><stop offset=".5" stop-color="#e2b65e"/><stop offset="1" stop-color="#b88a3a"/>
+    </linearGradient>
+    <linearGradient id="goldline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c8aa6e" stop-opacity="0"/><stop offset=".2" stop-color="#c8aa6e" stop-opacity=".55"/>
+      <stop offset=".8" stop-color="#c8aa6e" stop-opacity=".55"/><stop offset="1" stop-color="#c8aa6e" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <!-- body -->
+  <rect x="0.5" y="0.5" width="431" height="1031" rx="16" fill="url(#pbg)" stroke="#ffffff" stroke-opacity=".08"/>
+  <rect x="4.5" y="4.5" width="423" height="1023" rx="13" fill="none" stroke="#c8aa6e" stroke-opacity=".18"/>
+  <!-- corner filigree -->
+  <g stroke="#c8aa6e" stroke-width="2" fill="none" stroke-opacity=".75">
+    <path d="M14 46 V22 Q14 14 22 14 H46"/><path d="M386 14 H410 Q418 14 418 22 V46"/>
+    <path d="M14 986 V1010 Q14 1018 22 1018 H46"/><path d="M418 986 V1010 Q418 1018 410 1018 H386"/>
+  </g>
+  <g fill="#e8c878"><rect x="20" y="20" width="4" height="4" transform="rotate(45 22 22)"/><rect x="408" y="20" width="4" height="4" transform="rotate(45 410 22)"/>
+    <rect x="20" y="1008" width="4" height="4" transform="rotate(45 22 1010)"/><rect x="408" y="1008" width="4" height="4" transform="rotate(45 410 1010)"/></g>
+  <!-- portrait frame -->
+  <rect x="28" y="84" width="84" height="84" rx="12" fill="#0f1013" stroke="#c8aa6e" stroke-opacity=".6" stroke-width="1.5"/>
+  <rect x="32" y="88" width="76" height="76" rx="9" fill="none" stroke="#ffffff" stroke-opacity=".05"/>
+  <!-- ornamental divider under the name -->
+  <rect x="28" y="182" width="376" height="1" fill="url(#goldline)"/>
+  <g transform="translate(216 182)"><rect x="-5" y="-5" width="10" height="10" transform="rotate(45)" fill="#121317" stroke="#e8c878" stroke-width="1.5"/></g>
+  <!-- territory card -->
+  <rect x="28" y="222" width="376" height="92" rx="10" fill="url(#card)" stroke="#ffffff" stroke-opacity=".06"/>
+  <rect x="29" y="223" width="374" height="1" fill="#ffffff" fill-opacity=".06"/>
+  <!-- what-is-here cards -->
+  <g>
+    <rect x="28" y="366" width="376" height="76" rx="10" fill="url(#card)" stroke="#ffffff" stroke-opacity=".06"/>
+    <rect x="28" y="452" width="376" height="76" rx="10" fill="url(#card)" stroke="#ffffff" stroke-opacity=".06"/>
+    <rect x="28" y="538" width="376" height="76" rx="10" fill="url(#card)" stroke="#ffffff" stroke-opacity=".06"/>
+    <rect x="28" y="366" width="3" height="76" rx="1.5" fill="#c8aa6e" fill-opacity=".7"/>
+    <rect x="28" y="452" width="3" height="76" rx="1.5" fill="#c8aa6e" fill-opacity=".7"/>
+    <rect x="28" y="538" width="3" height="76" rx="1.5" fill="#c8aa6e" fill-opacity=".7"/>
+  </g>
+  <!-- divider above the button -->
+  <rect x="28" y="910" width="376" height="1" fill="url(#goldline)"/>
+  <!-- depart button -->
+  <rect x="28" y="932" width="376" height="72" rx="12" fill="#0b0c0e"/>
+  <rect x="30" y="934" width="372" height="66" rx="11" fill="url(#gold)"/>
+  <rect x="34" y="937" width="364" height="22" rx="9" fill="#ffffff" fill-opacity=".22"/>
+  <rect x="30.5" y="934.5" width="371" height="65" rx="11" fill="none" stroke="#fff2cc" stroke-opacity=".7"/>
+</svg>
+</div>
+
+<!-- ===== Badges (120x120 cells, drawn 88 wide, tip at bottom centre) ===== -->
+<!-- boss -->
+<div class="part" style="left:460px;top:0">
+<svg width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <radialGradient id="bossin" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#7a2a22"/><stop offset="1" stop-color="#1e0a0a"/></radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe7a4"/><stop offset=".5" stop-color="#d9a446"/><stop offset="1" stop-color="#8a5a1e"/></linearGradient>
+  </defs>
+  <path d="M60 116 L50 98 H70 Z" fill="#0b0a0a"/><path d="M60 112 L53 99 H67 Z" fill="url(#rim)"/>
+  <g transform="translate(0 4)">
+    <path d="M38 22 L44 6 L52 18 L60 2 L68 18 L76 6 L82 22 Z" fill="url(#rim)" stroke="#2a1608" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="60" cy="58" r="38" fill="#0b0a0a"/>
+    <circle cx="60" cy="58" r="35" fill="url(#rim)"/>
+    <circle cx="60" cy="58" r="29" fill="url(#bossin)"/>
+    <circle cx="60" cy="58" r="29" fill="none" stroke="#000" stroke-opacity=".5" stroke-width="2"/>
+    <!-- skull -->
+    <path d="M60 38 C47 38 41 47 41 56 C41 63 45 66 48 68 V74 H72 V68 C75 66 79 63 79 56 C79 47 73 38 60 38 Z" fill="#efe6d2"/>
+    <ellipse cx="52" cy="57" rx="5.5" ry="6" fill="#2a0c0c"/><ellipse cx="68" cy="57" rx="5.5" ry="6" fill="#2a0c0c"/>
+    <path d="M60 62 L57 68 H63 Z" fill="#2a0c0c"/>
+    <path d="M51 74 V70 M56 74 V70 M60 74 V70 M64 74 V70 M69 74 V70" stroke="#2a0c0c" stroke-width="1.6"/>
+    <circle cx="52" cy="57" r="1.6" fill="#ff6a50"/><circle cx="68" cy="57" r="1.6" fill="#ff6a50"/>
+  </g>
+</svg>
+</div>
+<!-- pvp shield -->
+<div class="part" style="left:580px;top:0">
+<svg width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="pvpin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a1e1a"/><stop offset="1" stop-color="#220a0a"/></linearGradient>
+    <linearGradient id="rim2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8e8ec"/><stop offset=".5" stop-color="#9ea2ac"/><stop offset="1" stop-color="#585c66"/></linearGradient>
+    <linearGradient id="blade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#aab2c0"/></linearGradient>
+  </defs>
+  <path d="M60 116 L50 100 H70 Z" fill="#0b0a0a"/><path d="M60 112 L53 101 H67 Z" fill="#c8382a"/>
+  <path d="M60 8 L98 18 V52 C98 76 82 92 60 102 C38 92 22 76 22 52 V18 Z" fill="#0b0a0a"/>
+  <path d="M60 12 L94 21 V52 C94 73 80 88 60 97 C40 88 26 73 26 52 V21 Z" fill="url(#rim2)"/>
+  <path d="M60 18 L88 25.5 V52 C88 70 76 83 60 91 C44 83 32 70 32 52 V25.5 Z" fill="url(#pvpin)"/>
+  <g stroke-linecap="round">
+    <path d="M42 34 L76 72" stroke="#1a1010" stroke-width="7"/><path d="M78 34 L44 72" stroke="#1a1010" stroke-width="7"/>
+    <path d="M42 34 L76 72" stroke="url(#blade)" stroke-width="4"/><path d="M78 34 L44 72" stroke="url(#blade)" stroke-width="4"/>
+    <path d="M70 60 L62 68 M50 60 L58 68" stroke="#e8b83a" stroke-width="5"/>
+    <path d="M78 76 L74 72 M42 76 L46 72" stroke="#8a5a30" stroke-width="5"/>
+  </g>
+</svg>
+</div>
+<!-- harbor compass -->
+<div class="part" style="left:700px;top:0">
+<svg width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <radialGradient id="hubin" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#235a46"/><stop offset="1" stop-color="#0a1c16"/></radialGradient>
+    <linearGradient id="rim3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe7a4"/><stop offset=".5" stop-color="#d9a446"/><stop offset="1" stop-color="#8a5a1e"/></linearGradient>
+  </defs>
+  <path d="M60 116 L50 98 H70 Z" fill="#0b0a0a"/><path d="M60 112 L53 99 H67 Z" fill="url(#rim3)"/>
+  <circle cx="60" cy="56" r="40" fill="#0b0a0a"/><circle cx="60" cy="56" r="37" fill="url(#rim3)"/>
+  <circle cx="60" cy="56" r="31" fill="url(#hubin)"/>
+  <circle cx="60" cy="56" r="24" fill="none" stroke="#e8c878" stroke-opacity=".35" stroke-dasharray="2 4"/>
+  <path d="M60 26 L66 50 L90 56 L66 62 L60 86 L54 62 L30 56 L54 50 Z" fill="#f4eedf"/>
+  <path d="M60 26 L66 50 L60 56 Z M90 56 L66 62 L60 56 Z M60 86 L54 62 L60 56 Z M30 56 L54 50 L60 56 Z" fill="#c8aa6e"/>
+  <path d="M60 26 L66 50 L60 56 L54 50 Z" fill="#e0503c"/>
+  <circle cx="60" cy="56" r="4" fill="#1a1208"/><circle cx="60" cy="56" r="2" fill="#e8c878"/>
+</svg>
+</div>
+<!-- selection ring -->
+<div class="part" style="left:820px;top:0">
+<svg width="120" height="120" viewBox="0 0 120 120">
+  <defs><radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset=".62" stop-color="#ffd86a" stop-opacity="0"/><stop offset=".78" stop-color="#ffd86a" stop-opacity=".55"/><stop offset="1" stop-color="#ffd86a" stop-opacity="0"/></radialGradient></defs>
+  <circle cx="60" cy="60" r="58" fill="url(#glow)"/>
+  <circle cx="60" cy="60" r="45" fill="none" stroke="#ffe7a4" stroke-width="3"/>
+  <g fill="#ffe7a4"><path d="M60 8 L64 16 H56 Z"/><path d="M60 112 L56 104 H64 Z"/><path d="M8 60 L16 56 V64 Z"/><path d="M112 60 L104 64 V56 Z"/></g>
+</svg>
+</div>
+<!-- name plate (stretched horizontally in game: left cap, middle, right cap) -->
+<div class="part" style="left:940px;top:0">
+<svg width="120" height="40" viewBox="0 0 120 40">
+  <defs><linearGradient id="plate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c1d22" stop-opacity=".95"/><stop offset="1" stop-color="#0e0f12" stop-opacity=".95"/></linearGradient></defs>
+  <path d="M10 4 H110 L118 20 L110 36 H10 L2 20 Z" fill="url(#plate)" stroke="#c8aa6e" stroke-opacity=".6" stroke-width="1.5"/>
+</svg>
+</div>
+
+<!-- ===== Zone pins (80x80 cells from y=260): diamond with terrain emblem ===== -->
+<div class="part" style="left:460px;top:260px">
+<svg width="480" height="80" viewBox="0 0 480 80">
+  <defs>
+    <linearGradient id="prim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe7a4"/><stop offset=".5" stop-color="#d9a446"/><stop offset="1" stop-color="#8a5a1e"/></linearGradient>
+    <linearGradient id="pin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26272e"/><stop offset="1" stop-color="#121317"/></linearGradient>
+  </defs>
+  <g id="base">
+    <path d="M40 4 L70 34 L40 64 L10 34 Z" fill="#0b0a0a"/>
+    <path d="M40 8 L66 34 L40 60 L14 34 Z" fill="url(#prim)"/>
+    <path d="M40 13 L61 34 L40 55 L19 34 Z" fill="url(#pin)"/>
+    <path d="M40 76 L35 66 H45 Z" fill="#0b0a0a"/>
+  </g>
+  <use href="#base" x="80"/><use href="#base" x="160"/><use href="#base" x="240"/><use href="#base" x="320"/><use href="#base" x="400"/>
+  <!-- verdant: tree -->
+  <g><rect x="38" y="36" width="4" height="10" fill="#8a5a30"/><circle cx="40" cy="31" r="9" fill="#5ea83a"/><circle cx="37" cy="28" r="4" fill="#8ed05a"/></g>
+  <!-- sakura: blossom -->
+  <g transform="translate(120 34)"><g fill="#f4a8cc">
+    <circle cx="0" cy="-8" r="5"/><circle cx="7.6" cy="-2.5" r="5"/><circle cx="4.7" cy="6.5" r="5"/><circle cx="-4.7" cy="6.5" r="5"/><circle cx="-7.6" cy="-2.5" r="5"/></g>
+    <circle r="3" fill="#ffe08a"/></g>
+  <!-- saltmarsh: reeds and water -->
+  <g transform="translate(200 34)"><path d="M-12 7 Q-6 3 0 7 T12 7" stroke="#6aa8f0" stroke-width="3" fill="none"/>
+    <path d="M-5 5 V-10 M0 5 V-13 M5 5 V-8" stroke="#b8b06a" stroke-width="2.5"/><ellipse cx="0" cy="-14" rx="2" ry="4" fill="#8a5a30"/></g>
+  <!-- clifflands: layered cliff -->
+  <g transform="translate(280 34)"><path d="M-13 10 V-2 H-4 V-9 H6 V-4 H13 V10 Z" fill="#dcd8cc"/><path d="M-13 3 H13 M-4 -4 H6" stroke="#9a9484" stroke-width="2"/>
+    <path d="M-13 -2 H-4 V-6 H-13 Z" fill="#6ea83a"/></g>
+  <!-- highlands: snowy peak -->
+  <g transform="translate(360 34)"><path d="M-14 10 L-3 -10 L3 0 L7 -5 L15 10 Z" fill="#8e929c"/><path d="M-3 -10 L-7 -3 L-3 -5 L1 -3 Z" fill="#f4f8fc"/>
+    <path d="M7 -5 L4 0 L7 -1 L10 0 Z" fill="#f4f8fc"/></g>
+  <!-- infernal: flame -->
+  <g transform="translate(440 34)"><path d="M0 -14 C6 -6 12 -2 10 6 C9 11 4 13 0 13 C-4 13 -9 11 -10 6 C-11 0 -6 -4 -4 -9 C-3 -4 -1 -3 0 -2 C1 -6 -1 -10 0 -14 Z" fill="#f07a2a"/>
+    <path d="M0 0 C3 3 4 6 2 9 C1 10 -1 10 -2 9 C-4 6 -2 3 0 0 Z" fill="#ffe08a"/></g>
+</svg>
+</div>
+</body>
+</html>
