@@ -347,7 +347,7 @@ internal class AtlasMapFlow(
         val rows = buildList {
             if (z.id in bossZones.take(2)) add(Row(if (z.id == bossZones.first()) "ワールドボス" else "フィールドボス",
                 "〜40人 · ダメージ順位で報酬", if (z.id == bossZones.first()) "出現中" else "12分", "badge_boss"))
-            if (!z.hub) add(Row(if (z.pvp) "荒野" else "遠征口", if (z.pvp) "PvP あり · 準備中" else "入るたびに地形が変わる · 道の先にボス", "",
+            if (!z.hub) add(Row(if (z.pvp) "荒野" else "遠征口", if (z.pvp) "PvP あり · 準備中" else "毎回ちがう地形 · 道の先にボス", "",
                 if (z.pvp) "badge_pvp" else "pin_${z.biome.lowercase()}"))
             if (z.id !in bossZones.take(2)) add(if (z.hub) Row("港の施設", "倉庫 · 鍛冶 · 市場 · 仲間募集", "", "badge_hub")
                 else Row("採集", "特産 ${YIELD[if (z.pvp) "PVP" else z.biome]} · 時間で湧き直す", "", "pin_${z.biome.lowercase()}"))
@@ -391,7 +391,7 @@ internal class AtlasMapFlow(
         val goText = when { z.hub -> "港へ戻る"; z.pvp -> "準備中"; z.id == bossZones.firstOrNull() -> "参戦する"; else -> "遠征に出る" }
         val enabled = !z.pvp
         if (enabled) rect("p-go", ix, by, iw, 72.0, "#00000000", 12, "go", "#30ffffff")
-        else rect("p-go-off", ix + 2, by + 2, iw - 4, 66.0, "#ff1c1d22", 16)
+        else rect("p-go-off", ix + 2, by, iw - 4, 70.0, "#ff1c1d22", 16)
         text("p-go-t", ix, by + 22, iw, goText, 24.0, if (enabled) "#1a1208" else "#5e5a54", 17, "center", "v3b")
     }
 
