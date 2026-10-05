@@ -110,17 +110,16 @@ def main() -> None:
     for y in range(0, panel.height, TILE):
         for x in range(0, panel.width, TILE):
             add(f"panel_{x}_{y}", panel.crop((x, y, min(x + TILE, panel.width), min(y + TILE, panel.height))))
-    for i, name in enumerate(("badge_boss", "badge_pvp", "badge_hub", "badge_ring")):
-        add(name, parts.crop((460 + i * 120, 0, 580 + i * 120, 120)) if name == "badge_ring" else pixelize(parts.crop((460 + i * 120, 0, 580 + i * 120, 120))))
+    # Hand-placed pixel art (scripts/atlas_pixel_icons.py), doubled so each art pixel stays square on screen.
+    for f in sorted((SOURCE / "pixel").glob("*.png")):
+        image = Image.open(f).convert("RGBA")
+        add(f.stem, image if f.stem == "band" else image.resize((image.width * 2, image.height * 2), Image.NEAREST))
     add("plate", parts.crop((940, 0, 1060, 40)))
-    card = parts.crop((460, 360, 836, 436))
-    add("card_0", card.crop((0, 0, 256, 76))); add("card_1", card.crop((256, 0, 376, 76)))
+    card = parts.crop((460, 360, 836, 432))
+    add("card_0", card.crop((0, 0, 256, 72))); add("card_1", card.crop((256, 0, 376, 72)))
     add("title", parts.crop((460, 460, 716, 524)))
     add("notice_l", parts.crop((740, 460, 796, 516))); add("notice_m", parts.crop((800, 460, 832, 516))); add("notice_r", parts.crop((840, 460, 864, 516)))
-    add("timer_live", pixelize(parts.crop((880, 460, 968, 492)), 2, 8)); add("timer_soon", pixelize(parts.crop((880, 500, 968, 532)), 2, 8))
     add("vignette", parts.crop((460, 560, 716, 704)))
-    for i, name in enumerate(("verdant", "sakura_grove", "saltmarsh", "clifflands", "highlands", "infernal")):
-        add(f"pin_{name}", pixelize(parts.crop((460 + i * 80, 260, 540 + i * 80, 340)), 2, 16))
     add("fx_banner", banner())
     for icon in sorted((SOURCE / "icons").glob("*.png")):
         add(f"icon_{icon.stem}", Image.open(icon).convert("RGBA"))

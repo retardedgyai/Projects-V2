@@ -323,12 +323,48 @@ def select() -> Image.Image:
     return outline(img)
 
 
+def slot() -> Image.Image:
+    """Minecraft inventory slot: dark well, light bottom-right bevel inverted (sunken)."""
+    img = Image.new("RGBA", (20, 20)); d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, 19, 19), fill=C["k"])
+    d.rectangle((1, 1, 18, 18), fill=(27, 28, 34, 255))
+    d.line([(1, 1), (18, 1)], fill=(12, 12, 15, 255)); d.line([(1, 1), (1, 18)], fill=(12, 12, 15, 255))
+    d.line([(2, 18), (18, 18)], fill=(52, 54, 64, 255)); d.line([(18, 2), (18, 18)], fill=(52, 54, 64, 255))
+    return img
+
+
+def shadow() -> Image.Image:
+    """Ground shadow under a marker: two flat alpha steps (no faint pixels, the renderer drops them)."""
+    img = Image.new("RGBA", (16, 5)); d = ImageDraw.Draw(img)
+    d.ellipse((0, 0, 15, 4), fill=(0, 0, 0, 70)); d.ellipse((3, 1, 12, 3), fill=(0, 0, 0, 120))
+    return img
+
+
+def wave(color: str) -> Image.Image:
+    """Flat ellipse outline that expands under a selected or live marker."""
+    img = Image.new("RGBA", (48, 20)); d = ImageDraw.Draw(img)
+    d.ellipse((0, 0, 47, 19), outline=C[color], width=2)
+    return img
+
+
+def band() -> Image.Image:
+    """Top shade tile (256x150): dark at the top, fading out; tiled across the screen."""
+    img = Image.new("RGBA", (256, 150))
+    for y in range(150):
+        a = int(210 * (1 - y / 150) ** 1.6)
+        if a >= 28:
+            ImageDraw.Draw(img).line([(0, y), (255, y)], fill=(6, 8, 16, a))
+    return img
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     for f in OUT.glob("*.png"): f.unlink()
     boss().save(OUT / "badge_boss.png"); pvp().save(OUT / "badge_pvp.png"); hub().save(OUT / "badge_hub.png")
     for b in PLAQUE_RIM: plaque(b).save(OUT / f"pin_{b}.png")
     for m in MATERIAL: material(m).save(OUT / f"mat_{m}.png")
+    slot().save(OUT / "slot.png"); shadow().save(OUT / "shadow.png"); band().save(OUT / "band.png")
+    wave("G").save(OUT / "wave_gold.png"); wave("R").save(OUT / "wave_red.png")
     timer(True).save(OUT / "timer_live.png"); timer(False).save(OUT / "timer_soon.png"); select().save(OUT / "select.png")
     print("ATLAS_PIXEL_ICONS v3")
 

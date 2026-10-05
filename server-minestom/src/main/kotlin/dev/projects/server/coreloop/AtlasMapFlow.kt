@@ -76,8 +76,12 @@ internal class AtlasMapFlow(
     private val bossZones = atlas.zones.filter { it.kind in setOf("castle", "fortress", "pagoda") }.map { it.id }
     private val home = atlas.zones.firstOrNull { it.hub } ?: atlas.zones.first()
     private var selected: Int? = null
-    private var panX = (960.0 - home.cx).coerceIn(minX(), 0.0)
-    private var panY = (620.0 - home.cy).coerceIn(minY(), 0.0)
+    private var selectedAt = 0L
+    private var hovered: Int? = null
+    private var panX = (960.0 - home.cx).coerceIn(minX(), maxPan())
+    private var panY = (620.0 - home.cy).coerceIn(minY(), maxPan())
+    /** Where the camera glides after a click; cleared as soon as the player edge-scrolls. */
+    private var glide: Pair<Double, Double>? = null
     private var targetVx = 0.0
     private var targetVy = 0.0
     private var vx = 0.0
@@ -85,8 +89,9 @@ internal class AtlasMapFlow(
     private val openedAt = System.currentTimeMillis()
 
     private fun viewWidth() = if (selected != null) PANEL_X - 20.0 else 1920.0
-    private fun minX() = minOf(0.0, viewWidth() - atlas.width)
-    private fun minY() = minOf(0.0, 1080.0 - atlas.height)
+    private fun minX() = minOf(0.0, viewWidth() - atlas.width) - SLACK
+    private fun minY() = minOf(0.0, 1080.0 - atlas.height) - SLACK
+    private fun maxPan() = SLACK
 
     override fun pointer(x: Double, y: Double) {
         val dx = x / SCALE
@@ -100,9 +105,18 @@ internal class AtlasMapFlow(
     override fun tick(nowMs: Long): dev.projects.webui.ForgeUiReceipt? {
         vx += (targetVx - vx) * 0.25
         vy += (targetVy - vy) * 0.25
-        panX = (panX + vx).coerceIn(minX(), 0.0)
-        panY = (panY + vy).coerceIn(minY(), 0.0)
+        if (targetVx != 0.0 || targetVy != 0.0) glide = null
+        glide?.let { (gx, gy) ->
+            panX += (gx - panX) * 0.16; panY += (gy - panY) * 0.16
+            if (kotlin.math.abs(gx - panX) < 0.5 && kotlin.math.abs(gy - panY) < 0.5) glide = null
+        }
+        panX = (panX + vx).coerceIn(minX(), maxPan())
+        panY = (panY + vy).coerceIn(minY(), maxPan())
         return null
+    }
+
+    override fun hover(id: String?) {
+        hovered = id?.takeIf { it.startsWith("z") && it.endsWith("-hit") }?.removePrefix("z")?.removeSuffix("-hit")?.toIntOrNull()
     }
 
     override fun action(action: String): Boolean {
@@ -110,8 +124,10 @@ internal class AtlasMapFlow(
             action.startsWith("zone:") -> {
                 val id = action.removePrefix("zone:").toIntOrNull() ?: return false
                 if (selected == id) return false
+                if (selected == null) selectedAt = System.currentTimeMillis()
                 selected = id
-                panX = panX.coerceIn(minX(), 0.0)
+                val z = atlas.zones.first { it.id == id }
+                glide = (720.0 - z.ax).coerceIn(minX(), maxPan()) to (600.0 - z.ay).coerceIn(minY(), maxPan())
             }
             action == "deselect" -> { if (selected == null) return false; selected = null }
             action == "go" -> {
@@ -191,47 +207,60 @@ internal class AtlasMapFlow(
             if (x > viewRight || y > 1080 || x + t.sprite.width < 0 || y + t.sprite.height < 0) continue
             sprite("tile-${t.x}-${t.y}", t.sprite, x, y, t.sprite.width.toDouble(), t.sprite.height.toDouble(), 0)
         }
-        // Ordinary zones are a small gold pin and a name; only bosses, wilds and the harbor get an icon badge.
+        // Markers follow the v8 mock: medallions for bosses and the harbor, a shield for the wilds,
+        // a biome-rimmed plaque for everything else. Ordinary names appear only on hover or selection.
+        val now = System.currentTimeMillis()
         val live = bossZones.firstOrNull()
         for (z in atlas.zones) {
-            val px = panX + z.ax; val py = panY + z.ay + 8
-            if (px < 30 || px > viewRight - 30 || py < 60 || py > 1050) continue
             val sel = z.id == selected
-            val event = z.id in bossZones.take(2)
+            val hot = z.id == hovered && !sel
             val special = z.hub || z.pvp || z.id in bossZones
-            val labelY: Double
-            if (special) {
-                val badge = atlas.art[when { z.hub -> "badge_hub"; z.pvp -> "badge_pvp"; else -> "badge_boss" }]
-                val size = if (sel) 104.0 else 92.0
-                val x = px - size / 2; val y = py - size * 116 / 120
-                if (sel) atlas.art["badge_ring"]?.let { sprite("z${z.id}-ring", it, px - size * .62, y + size * 56 / 120 - size * .62, size * 1.24, size * 1.24, 7) }
-                rect("z${z.id}-hit", x + size * .15, y + size * .05, size * .7, size * .8, "#00000000", 7, "zone:${z.id}", "#00000000")
-                badge?.let { sprite("z${z.id}-b", it, x, y, size, size, 8) }
-                labelY = py + 6
-            } else {
-                val pin = atlas.art["pin_${z.biome.lowercase()}"] ?: atlas.art["pin_verdant"]
-                val size = if (sel) 72.0 else 60.0
-                val x = px - size / 2; val y = py - size * 76 / 80
-                if (sel) atlas.art["badge_ring"]?.let { sprite("z${z.id}-ring", it, px - size * .7, y + size * 34 / 80 - size * .7, size * 1.4, size * 1.4, 7) }
-                rect("z${z.id}-hit", x + size * .15, y + size * .1, size * .7, size * .75, "#00000000", 7, "zone:${z.id}", "#00000000")
-                pin?.let { sprite("z${z.id}-p", it, x, y, size, size, 8) }
-                labelY = py + 4
+            val event = z.id in bossZones.take(2)
+            val px = panX + z.ax
+            val ground = panY + z.ay + 8
+            if (px < 40 || px > viewRight - 40 || ground < 40 || ground > 1060) continue
+            val grow = if (sel) 1.12 else 1.0
+            val w = (if (special) 64.0 else 44.0) * grow
+            val h = (if (special) 64.0 else 52.0) * grow
+            val lift = when { sel -> 4 + 4 * kotlin.math.sin((now - selectedAt) / 280.0); hot -> 6.0; else -> 0.0 }
+            val top = ground - h - lift
+            atlas.art["shadow"]?.let { sprite("z${z.id}-sh", it, px - w * .5, ground - 10, w, w * 5 / 16, 1) }
+            if (sel || z.id == live) {
+                val ring = atlas.art[if (sel) "wave_gold" else "wave_red"]
+                for (k in 0 until 2) {
+                    val phase = ((now + k * 900) % 1800) / 1800.0
+                    val rw = 60.0 + 100 * phase
+                    if (phase < 0.85) ring?.let { nodes += UiNode("z${z.id}-wv$k", box(px - rw / 2, ground - rw * 20 / 96, rw, rw * 20 / 48), "",
+                        mapOf("opacity" to String.format(java.util.Locale.US, "%.3f", 1 - phase)), null, null, true, 1, it) }
+                }
+            }
+            val art = atlas.art[when { z.hub -> "badge_hub"; z.pvp -> "badge_pvp"; special -> "badge_boss"; else -> "pin_${z.biome.lowercase()}" }]
+            art?.let { sprite("z${z.id}-i", it, px - w / 2, top, w, h, 2) }
+            rect("z${z.id}-hit", px - w / 2, top, w, h, "#00000000", 2, "zone:${z.id}", "#00000000")
+            if (sel) {
+                val body = if (special) h else h * 20 / 26
+                val side = maxOf(w, body) + 32
+                atlas.art["select"]?.let { sprite("z${z.id}-sel", it, px - side / 2, top + body / 2 - side / 2, side, side, 3) }
             }
             if (event) {
                 val isLive = z.id == live
-                atlas.art[if (isLive) "timer_live" else "timer_soon"]?.let { sprite("z${z.id}-tm", it, px + 14, py - 34, 88.0, 32.0, 9) }
-                text("z${z.id}-tmt", px + 40, py - 29, 58.0, if (isLive) "出現中" else "12分", 15.0, if (isLive) "#ffffff" else "#e8c878", 10, "left", "v3b")
+                atlas.art[if (isLive) "timer_live" else "timer_soon"]?.let { sprite("z${z.id}-tm", it, px + w / 2 - 12, top - 8, 80.0, 24.0, 6) }
+                text("z${z.id}-tmt", px + w / 2 + 12, top - 6, 56.0, if (isLive) "出現中" else "12分", 15.0, if (isLive) "#ffffff" else "#e8c878", 7, "left", "v3b")
             }
-            val name = names.getValue(z.id)
-            val nameSize = if (sel) 24.0 else 19.0
-            val tagW = name.length * nameSize + 16
-            val tagY = labelY
-            rect("z${z.id}-tag", px - tagW / 2, tagY - 2, tagW, nameSize + 10, if (sel) "#f0201a0e" else "#d8101114", 8)
-            rect("z${z.id}-tag-t", px - tagW / 2 + 6, tagY - 3, tagW - 12, 1.5, if (sel) "#ffe8c878" else "#90c8aa6e", 8)
-            rect("z${z.id}-tag-b", px - tagW / 2 + 6, tagY + nameSize + 8, tagW - 12, 1.5, if (sel) "#ffe8c878" else "#90c8aa6e", 8)
-            text("z${z.id}-n", px - tagW / 2, tagY + 2, tagW, name, nameSize,
-                if (sel) "#f2d48a" else if (z.pvp) "#ffb0a0" else "#f4eedf", 9, "center")
+            if (special || sel || hot) {
+                val name = names.getValue(z.id)
+                val size = if (sel) 21.0 else 17.0
+                val tagW = name.length * size + 22
+                val tagY = ground + 4
+                rect("z${z.id}-tag", px - tagW / 2, tagY, tagW, size + 12, if (sel) "#f0141210" else "#c80c0d10", 9)
+                rect("z${z.id}-tag-t", px - tagW / 2 + 4, tagY, tagW - 8, 1.5, if (sel) "#ffe8c878" else "#70c8aa6e", 9)
+                rect("z${z.id}-tag-b", px - tagW / 2 + 4, tagY + size + 10.5, tagW - 8, 1.5, if (sel) "#ffe8c878" else "#70c8aa6e", 9)
+                text("z${z.id}-n", px - tagW / 2, tagY + 4, tagW, name, size,
+                    if (sel) "#f2d48a" else if (z.pvp) "#ffb0a0" else "#f4eedf", 5, "center", if (sel) "v3b" else "v3m")
+            }
         }
+        // Shade under the title and notice so markers beneath read as behind the chrome.
+        atlas.art["band"]?.let { band -> var bx = 0.0; while (bx < viewRight) { sprite("band-${bx.toInt()}", band, bx, 0.0, 256.0, 150.0, 8); bx += 256 } }
         // Title plate and the one important notice, both drawn from the Chrome-rendered parts.
         atlas.art["title"]?.let { sprite("title-plate", it, 22.0, 18.0, 256.0, 64.0, 20) }
         text("title", 66.0, 34.0, 200.0, "開拓大陸", 24.0, "#f4eedf", 21, "left", "v3b")
@@ -270,7 +299,9 @@ internal class AtlasMapFlow(
     }
 
     private fun panel(z: Atlas.Zone) {
-        val x = PANEL_X; val y = 24.0; val w = 1920.0 - PANEL_X - 28; val h = 1032.0
+        // Slides in from the right the first time a zone is picked.
+        val t = ((System.currentTimeMillis() - selectedAt) / 320.0).coerceIn(0.0, 1.0)
+        val x = PANEL_X + 56 * (1 - t) * (1 - t) * (1 - t); val y = 24.0; val w = 1920.0 - PANEL_X - 28; val h = 1032.0
         for ((name, sprite) in atlas.art) {
             if (!name.startsWith("panel_")) continue
             val (tx, ty) = name.removePrefix("panel_").split('_').map { it.toDouble() }
@@ -290,46 +321,64 @@ internal class AtlasMapFlow(
         round("p-x", x + w - pad - 40, y + 24, 40.0, 40.0, 10.0, "#202126", 1.0, 16, "deselect", "#ff2a2416")
         text("p-x-t", x + w - pad - 40, y + 31, 40.0, "×", 20.0, "#a29e97", 17, "center", "v3b")
 
-        // Name.
-        val portrait = when { z.hub -> "badge_hub"; z.pvp -> "badge_pvp"; z.id in bossZones -> "badge_boss"; else -> "pin_${z.biome.lowercase()}" }
-        atlas.art[portrait]?.let { sprite("p-port-i", it, ix + 2, y + 84, 80.0, 80.0, 13) }
-        text("p-name", ix + 102, y + 94, iw - 102, names.getValue(z.id), 26.0, "#f4eedf", 13, "left", "v3b")
+        // Portrait (96 frame at 28,84 on the plate) and name.
+        val special = z.hub || z.pvp || z.id in bossZones
+        val portrait = when { z.hub -> "badge_hub"; z.pvp -> "badge_pvp"; special -> "badge_boss"; else -> "pin_${z.biome.lowercase()}" }
+        val (pw, ph) = if (special) 64.0 to 64.0 else 55.0 to 65.0
+        atlas.art[portrait]?.let { sprite("p-port-i", it, ix + 48 - pw / 2, y + 132 - ph / 2, pw, ph, 13) }
+        text("p-name", ix + 116, y + 102, iw - 116, names.getValue(z.id), 26.0, "#f4eedf", 13, "left", "v3b")
         val key = if (z.pvp) "PVP" else z.biome
-        text("p-sub", ix + 102, y + 134, iw - 102, "${BIOME[key]} · 特産 ${YIELD[key]}", 15.0, "#a29e97", 13, "left", "v3r")
+        text("p-sub", ix + 116, y + 142, iw - 116, "${BIOME[key]} · 特産 ${YIELD[key]}", 15.0, "#a29e97", 13, "left", "v3r")
 
-        // Territory.
-        text("p-land-l", ix, y + 196, iw, "領地", 14.0, "#8a867e", 13, "left", "v3m")
+        // Territory (card at 240..316).
+        text("p-land-l", ix, y + 214, iw, "領地", 14.0, "#8a867e", 13, "left", "v3m")
         val (guild, color) = GUILD.getValue(z.owner)
-        atlas.banner?.let { sprite("p-land-flag", it, ix + 16, y + 238, 44.0, 48.0, 13, "#" + color.takeLast(6)) }
-        text("p-land-o", ix + 74, y + 238, iw - 90, if (z.owner == "white") "持ち主なし" else "ギルド「$guild」", 20.0,
+        atlas.banner?.let { sprite("p-land-flag", it, ix + 16, y + 254, 44.0, 48.0, 13, "#" + color.takeLast(6)) }
+        text("p-land-o", ix + 74, y + 252, iw - 90, if (z.owner == "white") "持ち主なし" else "ギルド「$guild」", 20.0,
             if (z.owner == "white") "#a29e97" else "#" + color.takeLast(6), 13, "left", "v3b")
-        text("p-land-w", ix + 74, y + 274, iw - 90, "次の領地戦　土 21:00", 14.0, "#e8c878", 13, "left", "v3r")
+        text("p-land-w", ix + 74, y + 286, iw - 90, "次の領地戦　土 21:00", 14.0, "#e8c878", 13, "left", "v3r")
 
-        // What is here.
-        text("p-do-l", ix, y + 340, iw, "このゾーンでできること", 14.0, "#8a867e", 13, "left", "v3m")
+        // What is here: one card per row, each with its icon.
+        text("p-do-l", ix, y + 336, iw, "このゾーンでできること", 14.0, "#8a867e", 13, "left", "v3m")
+        data class Row(val name: String, val sub: String, val whenText: String, val icon: String)
         val rows = buildList {
-            if (z.id in bossZones.take(2)) add(Triple(if (z.id == bossZones.first()) "ワールドボス" else "フィールドボス",
-                "〜40人 · ダメージ順位で報酬", if (z.id == bossZones.first()) "出現中" else "12分"))
-            if (!z.hub) add(Triple(if (z.pvp) "荒野" else "遠征口", if (z.pvp) "PvP あり · 準備中" else "入るたびに地形が変わる · 道の先にボス", ""))
-            add(Triple(if (z.owner == "white") "砦（持ち主なし）" else "${guild}の砦",
-                if (z.owner == "white") "領地戦でいちばん貢献したギルドのものに" else "ギルド員はここから出発できる", ""))
+            if (z.id in bossZones.take(2)) add(Row(if (z.id == bossZones.first()) "ワールドボス" else "フィールドボス",
+                "〜40人 · ダメージ順位で報酬", if (z.id == bossZones.first()) "出現中" else "12分", "badge_boss"))
+            if (!z.hub) add(Row(if (z.pvp) "荒野" else "遠征口", if (z.pvp) "PvP あり · 準備中" else "入るたびに地形が変わる · 道の先にボス", "",
+                if (z.pvp) "badge_pvp" else "pin_${z.biome.lowercase()}"))
+            add(Row(if (z.owner == "white") "砦（持ち主なし）" else "${guild}の砦",
+                if (z.owner == "white") "領地戦でいちばん貢献したギルドのものに" else "ギルド員はここから出発できる", "", "badge_hub"))
         }
-        rows.forEachIndexed { i, (name, sub, whenText) ->
-            val ry = y + 366 + i * 86
-            atlas.art["card_0"]?.let { nodes += UiNode("p-r$i-c0", box(ix, ry, 256.0, 76.0), "", emptyMap(), null, null, true, 11, it) }
-            atlas.art["card_1"]?.let { nodes += UiNode("p-r$i-c1", box(ix + 256, ry, 120.0, 76.0), "", emptyMap(), null, null, true, 11, it) }
-            text("p-r$i-n", ix + 18, ry + 14, iw - 130, name, 18.0, "#f4eedf", 13, "left", "v3m")
-            text("p-r$i-s", ix + 18, ry + 44, iw - 36, sub, 14.0, "#8a867e", 13, "left", "v3r")
-            if (whenText.isNotEmpty()) text("p-r$i-w", ix + iw - 118, ry + 16, 100.0, whenText, 14.0, "#ff9a8a", 13, "right")
+        rows.forEachIndexed { i, r ->
+            val ry = y + 362 + i * 82
+            atlas.art["card_0"]?.let { nodes += UiNode("p-r$i-c0", box(ix, ry, 256.0, 72.0), "", emptyMap(), null, null, true, 11, it) }
+            atlas.art["card_1"]?.let { nodes += UiNode("p-r$i-c1", box(ix + 256, ry, 120.0, 72.0), "", emptyMap(), null, null, true, 11, it) }
+            val (iw2, ih2) = if (r.icon.startsWith("pin_")) 33.0 to 39.0 else 40.0 to 40.0
+            atlas.art[r.icon]?.let { sprite("p-r$i-i", it, ix + 34 - iw2 / 2, ry + 36 - ih2 / 2, iw2, ih2, 13) }
+            text("p-r$i-n", ix + 66, ry + 12, iw - 180, r.name, 18.0, "#f4eedf", 13, "left", "v3b")
+            text("p-r$i-s", ix + 66, ry + 42, iw - 80, r.sub, 13.0, "#8a867e", 13, "left", "v3r")
+            if (r.whenText.isNotEmpty()) text("p-r$i-w", ix + iw - 118, ry + 14, 100.0, r.whenText, 14.0, "#ff9a8a", 13, "right")
         }
 
-        // Info card.
+        // Info card (620..728 on the plate).
         val recommend = listOf("冒険Lv 1〜", "冒険Lv 11〜", "冒険Lv 21〜", "冒険Lv 31〜")[z.tier - 1] + " · 武器 T${z.tier}"
-        val foes = FOES[if (z.pvp) "PVP" else z.biome] ?: "—"
+        val foes = FOES[key] ?: "—"
         listOf("推奨" to recommend, "敵の傾向" to foes, "記録" to "まだ踏破していない").forEachIndexed { i, (k, v) ->
-            val ly = y + 650 + i * 46
+            val ly = y + 628 + i * 36
             text("p-i$i-k", ix + 18, ly, 100.0, k, 15.0, "#8a867e", 13, "left", "v3m")
-            text("p-i$i-v", ix + 118, ly, iw - 136, v, 15.0, "#e6e2d8", 13, "left", "v3r")
+            text("p-i$i-v", ix + 118, ly, iw - 136, v, 15.0, if (i == 2) "#a29e97" else "#e6e2d8", 13, "left", "v3r")
+        }
+
+        // Materials: Minecraft inventory slots.
+        text("p-mat-l", ix, y + 750, 200.0, "主な素材", 14.0, "#8a867e", 13, "left", "v3m")
+        text("p-mat-r", ix + iw - 200, y + 752, 200.0, "1回の遠征で", 13.0, "#6e6a64", 13, "right", "v3r")
+        (MATS[key] ?: MATS.getValue("VERDANT")).forEachIndexed { i, m ->
+            val sx = ix + i * 66; val sy = y + 776
+            atlas.art["slot"]?.let { sprite("p-m$i-s", it, sx, sy, 60.0, 60.0, 12) }
+            atlas.art["mat_$m"]?.let { sprite("p-m$i-i", it, sx + 9, sy + 9, 42.0, 42.0, 13) }
+            nodes += UiNode("p-m$i-n", box(sx + 4, sy + 38, 52.0, 17.5), listOf("×24", "×12", "×6", "×2")[i],
+                mapOf("font-size" to "${14 * SCALE}px", "color" to "#ffffff", "text-align" to "right", "text-shadow" to "true",
+                    "font-family" to "projects_ui_polish05:" + ("v3num14".takeIf(Polish05FontMetrics::has) ?: "v3num")), null, null, true, 14)
         }
 
         // Depart.
@@ -349,6 +398,10 @@ internal class AtlasMapFlow(
         private const val SPEED = 28.0
         private const val PANEL_X = 1460.0
         private const val GOLD = "#ffc8aa6e"
+        private const val SLACK = 140.0
+        private val MATS = mapOf("VERDANT" to listOf("log", "herb", "hide", "shard"), "SAKURA_GROVE" to listOf("herb", "log", "shard"),
+            "SALTMARSH" to listOf("hide", "herb", "log"), "CLIFFLANDS" to listOf("stone", "ore", "shard"),
+            "HIGHLANDS" to listOf("stone", "ore", "hide", "shard"), "INFERNAL" to listOf("ore", "stone", "shard"), "PVP" to listOf("ore", "shard"))
         private val GUILD = mapOf("blue" to ("蒼月" to "#ff3a6fd8"), "green" to ("翠嵐" to "#ff3fa84a"), "gold" to ("金獅子" to "#ffe8b83a"),
             "purple" to ("紫電" to "#ff8a4ad8"), "red" to ("紅蓮" to "#ffc8382a"), "white" to ("空き" to "#ffe8e4da"))
         private val TERRAIN_ITEM = mapOf("VERDANT" to "minecraft:oak_sapling", "SAKURA_GROVE" to "minecraft:cherry_sapling",
