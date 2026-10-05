@@ -224,14 +224,13 @@ internal class AtlasMapFlow(
             val h = (if (special) 64.0 else 52.0) * grow
             val lift = when { sel -> 4 + 4 * kotlin.math.sin((now - selectedAt) / 280.0); hot -> 6.0; else -> 0.0 }
             val top = ground - h - lift
-            atlas.art["shadow"]?.let { sprite("z${z.id}-sh", it, px - w * .5, ground - 10, w, w * 5 / 16, 1) }
             if (sel || z.id == live) {
                 val ring = atlas.art[if (sel) "wave_gold" else "wave_red"]
                 for (k in 0 until 2) {
                     val phase = ((now + k * 900) % 1800) / 1800.0
                     val rw = 60.0 + 100 * phase
-                    if (phase < 0.85) ring?.let { nodes += UiNode("z${z.id}-wv$k", box(px - rw / 2, ground - rw * 20 / 96, rw, rw * 20 / 48), "",
-                        mapOf("opacity" to String.format(java.util.Locale.US, "%.3f", 1 - phase)), null, null, true, 1, it) }
+                    // Opaque only: a translucent glyph hides whatever is drawn behind it after it.
+                    if (phase < 0.8) ring?.let { sprite("z${z.id}-wv$k", it, px - rw / 2, ground - rw * 20 / 96, rw, rw * 20 / 48, 1) }
                 }
             }
             val art = atlas.art[when { z.hub -> "badge_hub"; z.pvp -> "badge_pvp"; special -> "badge_boss"; else -> "pin_${z.biome.lowercase()}" }]
@@ -259,8 +258,6 @@ internal class AtlasMapFlow(
                     if (sel) "#f2d48a" else if (z.pvp) "#ffb0a0" else "#f4eedf", 5, "center", if (sel) "v3b" else "v3m")
             }
         }
-        // Shade under the title and notice so markers beneath read as behind the chrome.
-        atlas.art["band"]?.let { band -> var bx = 0.0; while (bx < viewRight) { sprite("band-${bx.toInt()}", band, bx, 0.0, 256.0, 150.0, 8); bx += 256 } }
         // Title plate and the one important notice, both drawn from the Chrome-rendered parts.
         atlas.art["title"]?.let { sprite("title-plate", it, 22.0, 18.0, 256.0, 64.0, 20) }
         text("title", 66.0, 34.0, 200.0, "開拓大陸", 24.0, "#f4eedf", 21, "left", "v3b")

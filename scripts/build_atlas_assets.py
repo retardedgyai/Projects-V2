@@ -113,7 +113,7 @@ def main() -> None:
     # Hand-placed pixel art (scripts/atlas_pixel_icons.py), doubled so each art pixel stays square on screen.
     for f in sorted((SOURCE / "pixel").glob("*.png")):
         image = Image.open(f).convert("RGBA")
-        add(f.stem, image if f.stem == "band" else image.resize((image.width * 2, image.height * 2), Image.NEAREST))
+        add(f.stem, image.resize((image.width * 2, image.height * 2), Image.NEAREST))
     add("plate", parts.crop((940, 0, 1060, 40)))
     card = parts.crop((460, 360, 836, 432))
     add("card_0", card.crop((0, 0, 256, 72))); add("card_1", card.crop((256, 0, 376, 72)))
