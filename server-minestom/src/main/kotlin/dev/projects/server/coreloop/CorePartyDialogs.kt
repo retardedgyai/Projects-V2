@@ -10,7 +10,8 @@ import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
-import net.minestom.server.component.DataComponents
+import net.kyori.adventure.text.`object`.ObjectContents
+import net.kyori.adventure.text.`object`.PlayerHeadObjectContents
 import net.minestom.server.dialog.Dialog
 import net.minestom.server.dialog.DialogAction
 import net.minestom.server.dialog.DialogActionButton
@@ -19,10 +20,6 @@ import net.minestom.server.dialog.DialogBody
 import net.minestom.server.dialog.DialogInput
 import net.minestom.server.dialog.DialogMetadata
 import net.minestom.server.entity.Player
-import net.minestom.server.item.ItemStack
-import net.minestom.server.item.Material
-import net.minestom.server.network.player.GameProfile
-import net.minestom.server.network.player.ResolvableProfile
 import java.util.UUID
 
 /**
@@ -173,76 +170,93 @@ internal class CorePartyDialogs(private val online: (UUID) -> Player?, private v
     private fun dialog(player: Player): Dialog {
         val p = of(player.uuid)
         val body = mutableListOf<DialogBody>()
-        notices.remove(player.uuid)?.let { body += DialogBody.PlainMessage(it, WIDTH) }
+        fun line(text: Component) { body += DialogBody.PlainMessage(text, WIDTH) }
+        notices.remove(player.uuid)?.let { line(it.font(FONT)) }
         val buttons = mutableListOf<DialogActionButton>()
         val inputs = mutableListOf<DialogInput>()
         if (p == null) {
-            body += DialogBody.PlainMessage(Component.text("まだパーティに入っていません。\n作って仲間を招待するか、届いた招待に参加しましょう。", NamedTextColor.GRAY), WIDTH)
+            line(t("まだパーティに入っていません", TEXT, bold = true))
+            line(t("作って仲間を招待するか、届いた招待に参加しましょう。", MUTED))
             val pending = invites[player.uuid].orEmpty().mapNotNull { leader -> of(leader)?.takeIf { it.leader == leader } }
             if (pending.isNotEmpty()) {
-                body += DialogBody.PlainMessage(Component.text("届いている招待", GOLD), WIDTH)
+                line(DIVIDER)
+                line(t("届いている招待", GOLD, bold = true))
                 pending.forEach { party ->
-                    body += member(party.leader, Component.text()
-                        .append(Component.text(name(party.leader), NamedTextColor.WHITE))
-                        .append(Component.text("  のパーティ  ${party.members.size}/$MAX", NamedTextColor.GRAY)).build())
-                    buttons += button("${name(party.leader)} のパーティに参加", "join", party.leader.toString(), primary = true)
+                    line(Component.text().append(head(party.leader)).append(t("  ${name(party.leader)}", TEXT, bold = true))
+                        .append(t("  のパーティ · ${party.members.size}/$MAX", MUTED)).build())
+                    buttons += button("${name(party.leader)} に参加", "join", party.leader.toString(), primary = true)
                 }
                 buttons += button("招待をすべて断る", "decline")
             }
             buttons += button("パーティを作る", "create", primary = true)
         } else {
             val leader = p.leader == player.uuid
-            body += DialogBody.PlainMessage(Component.text()
-                .append(Component.text("メンバー  ", GOLD)).append(Component.text("${p.members.size}/$MAX", NamedTextColor.WHITE))
-                .append(Component.text("    準備OK  ", GOLD)).append(Component.text("${p.ready.size}/${p.members.size}", NamedTextColor.WHITE))
-                .build(), WIDTH)
+            line(Component.text().append(t("メンバー ", MUTED)).append(t("${p.members.size}/$MAX", TEXT, bold = true))
+                .append(t("　　準備OK ", MUTED)).append(t("${p.ready.size}/${p.members.size}", if (p.ready.size == p.members.size) READY else TEXT, bold = true))
+                .build())
+            line(DIVIDER)
             p.members.forEach { id ->
-                val line = Component.text()
-                if (id == p.leader) line.append(Component.text("★ ", GOLD))
-                line.append(Component.text(name(id), if (id == player.uuid) NamedTextColor.YELLOW else NamedTextColor.WHITE))
-                if (id in mates) line.append(Component.text("（試し）", NamedTextColor.DARK_GRAY))
-                line.append(Component.newline())
-                line.append(if (id in p.ready) Component.text("✔ 準備OK", NamedTextColor.GREEN) else Component.text("… 準備中", NamedTextColor.GRAY))
-                body += member(id, line.build())
+                val row = Component.text().append(head(id)).append(Component.text("  "))
+                if (id == p.leader) row.append(t("★ ", GOLD))
+                row.append(t(name(id), if (id == player.uuid) GOLD_LIGHT else TEXT, bold = true))
+                if (id in mates) row.append(t(" 試し", FAINT))
+                row.append(t("　　"))
+                row.append(if (id in p.ready) t("✔ 準備OK", READY, bold = true) else t("準備中…", MUTED))
+                line(row.build())
             }
-            repeat(MAX - p.members.size) { body += DialogBody.PlainMessage(Component.text("・ 空き", NamedTextColor.DARK_GRAY), WIDTH) }
-            body += DialogBody.PlainMessage(Component.text("全員が準備OKになったら、リーダーが地図から出発します（一緒に出発は次の段階で実装）。", NamedTextColor.DARK_GRAY), WIDTH)
+            repeat(MAX - p.members.size) { line(Component.text().append(Component.text("\uE001").font(ART)).append(t("  空き", FAINT)).build()) }
+            line(DIVIDER)
+            line(t("全員が準備OKになったら、リーダーが地図から出発します。", MUTED))
+            line(t("（一緒に出発は次の段階で実装）", FAINT))
             if (leader && p.members.size < MAX) {
-                inputs += DialogInput.Text("name", 200, Component.text("招待するプレイヤー名"), true, "", 16, null)
-                buttons += DialogActionButton(Component.text("招待を送る", NamedTextColor.GREEN), Component.text("入力した名前の人に招待を送る"), 150,
+                inputs += DialogInput.Text("name", 200, t("招待するプレイヤー名", MUTED), true, "", 16, null)
+                buttons += DialogActionButton(t("招待を送る", READY, bold = true), t("入力した名前の人に招待を送る"), 150,
                     DialogAction.DynamicCustom(Key.key(NS, "invite"), CompoundBinaryTag.empty()))
             }
             val ready = player.uuid in p.ready
             buttons += button(if (ready) "準備を取り消す" else "準備OK", "ready", primary = !ready)
             if (leader) p.members.filter { it != player.uuid }.forEach { buttons += button("${name(it)} をはずす", "kick", it.toString()) }
             if (leader && p.members.size < MAX) buttons += button("試しの仲間を追加", "mate")
-            buttons += button("パーティを抜ける", "leave")
+            buttons += button("パーティを抜ける", "leave", danger = true)
         }
-        val meta = DialogMetadata(Component.text("パーティ"), Component.text("パーティ"), false, false,
+        val meta = DialogMetadata(t("パーティ", GOLD, bold = true), t("パーティ"), false, false,
             DialogAfterAction.WAIT_FOR_RESPONSE, body, inputs)
-        val exit = DialogActionButton(Component.text("閉じる"), null, 150, DialogAction.Custom(Key.key(NS, "close"), null))
+        val exit = DialogActionButton(t("閉じる", MUTED), null, 150, DialogAction.Custom(Key.key(NS, "close"), null))
         return Dialog.MultiAction(meta, buttons, exit, 2)
     }
 
-    private fun button(label: String, action: String, arg: String? = null, primary: Boolean = false) =
-        DialogActionButton(Component.text(label, if (primary) NamedTextColor.GREEN else NamedTextColor.WHITE), null, 150,
+    private fun t(text: String, color: TextColor = TEXT, bold: Boolean = false): Component =
+        Component.text(text, color).font(if (bold) FONT_BOLD else FONT)
+
+    private fun button(label: String, action: String, arg: String? = null, primary: Boolean = false, danger: Boolean = false) =
+        DialogActionButton(t(label, when { primary -> GOLD_LIGHT; danger -> DANGER; else -> TEXT }, bold = primary), null, 150,
             DialogAction.Custom(Key.key(NS, action), arg?.let { StringBinaryTag.stringBinaryTag(it) }))
 
-    /** One roster line: the member's head beside their name and state. */
-    private fun member(id: UUID, text: Component): DialogBody {
-        val head = online(id)?.let { player ->
-            val skin = player.skin
-            val props = if (skin != null) listOf(GameProfile.Property("textures", skin.textures(), skin.signature())) else emptyList()
-            ItemStack.of(Material.PLAYER_HEAD).with(DataComponents.PROFILE, ResolvableProfile(ResolvableProfile.Partial(player.username, player.uuid, props)))
-        } ?: ItemStack.of(Material.SKELETON_SKULL)
-        return DialogBody.Item(head, DialogBody.PlainMessage(text, WIDTH - 40), false, false, 16, 16)
+    /** The member's face drawn inline in the text line (vanilla player-head object); stand-ins get the default face. */
+    private fun head(id: UUID): Component {
+        val builder = ObjectContents.playerHead().name(name(id).take(16)).hat(true)
+        online(id)?.let { player ->
+            builder.id(player.uuid)
+            player.skin?.let { builder.profileProperty(PlayerHeadObjectContents.property("textures", it.textures(), it.signature())) }
+        }
+        return Component.`object`(builder.build())
     }
 
     companion object {
         const val NS = "projects_party"
         private const val MAX = 4
-        private const val WIDTH = 300
+        private const val WIDTH = 260
+        private val FONT = Key.key("projects_ui_polish05", "dialog")
+        private val FONT_BOLD = Key.key("projects_ui_polish05", "dialog_b")
+        private val ART = Key.key("projects_ui_polish05", "dialog_art")
+        private val DIVIDER: Component = Component.text("\uE000").font(ART)
         private val GOLD = TextColor.color(0xE8C878)
+        private val GOLD_LIGHT = TextColor.color(0xF6DC94)
+        private val TEXT = TextColor.color(0xECE6DC)
+        private val MUTED = TextColor.color(0x9A968F)
+        private val FAINT = TextColor.color(0x5E5A54)
+        private val READY = TextColor.color(0x8EE09A)
+        private val DANGER = TextColor.color(0xF2A090)
         private val MATE_NAMES = listOf("練習相手A", "練習相手B", "練習相手C")
     }
 }

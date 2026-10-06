@@ -21,6 +21,13 @@ internal object CoreUiPackPolicy {
         }
     }
 
+    /** Vanilla button and text-field frames in the ProjectS style, so server dialogs match the game (asked 2026-10-07). */
+    val dialogWidgets: Set<String> = buildSet {
+        for (name in listOf("button", "button_highlighted", "button_disabled", "text_field", "text_field_highlighted")) {
+            add("assets/minecraft/textures/gui/sprites/widget/$name.png"); add("assets/minecraft/textures/gui/sprites/widget/$name.png.mcmeta")
+        }
+    }
+
     fun allowedPath(path: String): Boolean = !path.startsWith('/') && ".." !in path && '\\' !in path &&
-        (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions)
+        (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions || path in dialogWidgets)
 }
