@@ -6,6 +6,8 @@ ProjectS v2 は、Minecraft Javaの世界/操作/プロトコルを土台にし�
 
 Minecraft特有の一人称の没入感は残すが、Vanillaの戦闘ルールへゲーム全体を合わせることはしない。
 
+UIのデザインコンセプトは「Minecraftの素材 × 2026年のMMOのUI」。画面の組み立て・文字・余白は今のゲームとして作り、Minecraftらしさはドット絵の素材で出す。詳細は[UIデザインコンセプト](assets/ui-design-concept.md)。
+
 ## 初期ゲーム構造
 
 初期版は巨大オープンワールドMMOではない。
