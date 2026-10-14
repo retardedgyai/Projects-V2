@@ -59,11 +59,7 @@ Server:
 ./gradlew :server-minestom:run
 ```
 
-Client（別ターミナル）:
-
-```bash
-./gradlew :client-fabric:runClient
-```
+Client: Vanilla Minecraft 26.2を起動し、マルチプレイで `localhost` に接続します。
 
 ## First Playground
 

@@ -1,3 +1,5 @@
+> **2026-10-14: 本書は現行の基準ではありません。** 構成と方向は [2026-10-14-current-state.md](2026-10-14-current-state.md)、戦闘・ビルドは [2026-09-19-combat-build-direction.md](2026-09-19-combat-build-direction.md) を見てください。本書は当時の記録として残します。
+
 # ProjectS v2 現在の決定事項
 
 最終更新: 2026-08-19

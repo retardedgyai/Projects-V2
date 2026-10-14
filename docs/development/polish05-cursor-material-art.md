@@ -12,7 +12,7 @@ material-row size. Direct Vanilla items were legible but lacked ProjectS's
 identity. Both rejected concepts remain in Git history or the D drive archive.
 
 The creator's [X reference list](https://x.com/i/lists/2097375828187496504)
-is recorded in [the earlier reference review](slash-reference-finish-2026-09-09.md).
+is recorded in [the earlier reference review](../archive/2026-09/slash-reference-finish-2026-09-09.md).
 The list and linked posts currently reject direct unauthenticated access; do
 not claim this pass directly inspected those posts. The first 16 px candidate
 downsampled ProjectS's existing relic sheet. The user's screenshot confirmed
