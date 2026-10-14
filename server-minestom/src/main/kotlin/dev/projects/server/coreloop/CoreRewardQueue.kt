@@ -5,7 +5,11 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-/** Pending rewards survive disconnect in memory until the same ledger executor has committed them. */
+/**
+ * Each reward is handed to the ledger executor immediately and committed through the durable transact
+ * path (fsync + atomic rename). Only in-flight or failing-disk retries live here, in memory; a separate
+ * journal would be a new save format on the same failing disk, so shutdown logs anything still unsaved.
+ */
 class CoreRewardQueue(
     private val ledger: CoreAccountService,
     private val executor: ScheduledExecutorService,
@@ -44,6 +48,7 @@ class CoreRewardQueue(
     }
 
     fun isPending(playerId: UUID): Boolean = synchronized(lock) { jobs.keys.any { it.playerId == playerId } }
+    fun pending(): List<Pair<UUID, CoreAction>> = synchronized(lock) { jobs.values.map { it.key.playerId to it.action } }
 
     /** Stop new gameplay producers before calling. Never join this future on the supplied executor. */
     fun drain(playerId: UUID): CompletableFuture<Void> = synchronized(lock) {

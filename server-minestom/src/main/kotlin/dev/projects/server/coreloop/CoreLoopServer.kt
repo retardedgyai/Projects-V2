@@ -882,12 +882,34 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }, io)
     }
 
+    /** Called from the shutdown hook: world objects are touched only on the tick thread; this thread only persists. */
     fun close() {
+        val world = CompletableFuture<Void>()
+        try {
+            MinecraftServer.getSchedulerManager().scheduleNextTick {
+                try { closeWorld(); world.complete(null) } catch (failure: Throwable) { world.completeExceptionally(failure) }
+            }
+        } catch (failure: Exception) { world.completeExceptionally(failure) }
+        try { world.get(5, TimeUnit.SECONDS) }
+        catch (failure: Exception) { System.err.println("CORE_SHUTDOWN_WORLD_SKIPPED: $failure") }
+        mapBuilder.shutdown()
+        try {
+            CompletableFuture.allOf(*accounts.keys.map { rewards.drain(it) }.toTypedArray()).get(15, TimeUnit.SECONDS)
+        } catch (failure: Exception) {
+            System.err.println("CORE_SHUTDOWN_PENDING_REWARDS: $failure")
+            rewards.pending().forEach { (player, action) -> System.err.println("CORE_REWARD_UNSAVED player=$player action=$action") }
+        } finally {
+            uiPack?.close()
+            io.shutdown()
+            io.awaitTermination(5, TimeUnit.SECONDS)
+        }
+    }
+
+    private fun closeWorld() {
         actors.values.forEach { it.resetActions() }
         connections.values.forEach { CoreCombatPresentation.forget(it) }
         combatLab.close()
         preparedMaps.close()
-        mapBuilder.shutdown()
         sessions.values.forEach { session ->
             session.returning = true
             session.adventures?.failAll(); session.adventures?.dispose()
@@ -896,16 +918,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             session.loot.collectAll()
             session.loot.dispose(); session.caches?.dispose()
         }
-        try {
-            CompletableFuture.allOf(*accounts.keys.map { rewards.drain(it) }.toTypedArray()).get(15, TimeUnit.SECONDS)
-        } catch (failure: Exception) {
-            System.err.println("CORE_SHUTDOWN_PENDING_REWARDS: $failure")
-        } finally {
-            polishSessions?.close()
-            uiPack?.close()
-            io.shutdown()
-            io.awaitTermination(5, TimeUnit.SECONDS)
-        }
+        polishSessions?.close()
     }
 
     private fun disciplineResource(discipline: QuestGatheringDiscipline): CoreResource = when (discipline) {
