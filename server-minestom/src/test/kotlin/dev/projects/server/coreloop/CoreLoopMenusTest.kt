@@ -5,7 +5,6 @@ import dev.projects.server.coreloop.ui.CoreForgeLayout
 import dev.projects.server.coreloop.ui.CoreMenuCanvas
 import dev.projects.server.coreloop.ui.CoreMenuCanvas.TextStyle
 import dev.projects.server.questmap.*
-import dev.projects.server.coreloop.adventure.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import net.minestom.server.Auth
@@ -34,16 +33,6 @@ class CoreLoopMenusTest {
         override fun market() = marketEntries
         val requests = mutableListOf<Pending>()
         val departures = mutableListOf<Pair<UUID, Long>>()
-        var partySnapshots = emptyList<DungeonParty>()
-        var dungeonState: DungeonRunView? = null
-        val lobbyActions = mutableListOf<DungeonLobbyAction>()
-        val boons = mutableListOf<DungeonBoon>()
-        val routes = mutableListOf<Int>()
-        override fun dungeonParties() = partySnapshots
-        override fun dungeonView(player: Player) = dungeonState
-        override fun dungeonLobby(player: Player, action: DungeonLobbyAction) { lobbyActions += action }
-        override fun dungeonBoon(player: Player, boon: DungeonBoon) { boons += boon }
-        override fun dungeonRoute(player: Player, roomId: Int) { routes += roomId }
         var trialDepartures = 0
         var returns = 0
         var masteryUnlocks = 0
@@ -80,29 +69,6 @@ class CoreLoopMenusTest {
 
     @BeforeTest fun initializeMinestom() { MinecraftServer.init(Auth.Offline()) }
 
-    @Test fun `retired dungeon entry redirects to journal while legacy run routes and return remain safe in both pack modes`() {
-        for (packed in listOf(false, true)) {
-            val f = fixture(account(), packed)
-            f.menus.dungeons(f.player)
-            assertFalse(f.title().contains("星環"))
-            assertTrue(f.host.lobbyActions.isEmpty())
-            assertTrue(f.snapshot().cards.none { it.label == "深殿" })
-            val plan = DungeonPlan.generate(1, 1, 0)
-            f.host.dungeonState = DungeonRunView(UUID.randomUUID(), f.player.uuid, plan.choices(1).first(),
-                plan.stages, 0, DungeonRunPhase.CHOOSING, "加護を選ぶ", 2, plan.choices(2),
-                listOf(DungeonBoon.FORCE, DungeonBoon.GUARD, DungeonBoon.FLAME), false, emptyMap(), 2)
-            f.menus.dungeonRun(f.player); assertTrue(auditSnapshot(f.snapshot()).isEmpty(), auditSnapshot(f.snapshot()).toString())
-            f.click(36); assertTrue(f.host.routes.isEmpty())
-            f.click(9); assertEquals(listOf(DungeonBoon.FORCE), f.host.boons)
-            f.host.dungeonState = f.host.dungeonState!!.copy(chosen = true, waitingFor = 0)
-            f.menus.dungeonRun(f.player); f.click(36); assertEquals(listOf(plan.choices(2).first().id), f.host.routes)
-            f.click(45)
-            assertTrue(f.snapshot().leftPanel!!.lines.any { it.text == "仲間の探索は継続" })
-            assertEquals(0, f.host.returns)
-            f.click(51); assertEquals(1, f.host.returns)
-        }
-    }
-
     @Test fun `old astral confirmation cannot retain a selection or emit a crafting request`() {
         for (packed in listOf(false, true)) {
             val f = fixture(account().copy(currencies = mapOf(CoreCraftingCurrency.ASTRAL to 9L)), packed)
@@ -118,7 +84,7 @@ class CoreLoopMenusTest {
             assertTrue(f.host.requests.isEmpty())
             assertEquals(9, f.host.current.amount(CoreCraftingCurrency.ASTRAL))
             CoreLoopItems.refresh(f.player, f.host.current, packed = packed)
-            assertTrue((16..35).all { f.player.inventory.getItemStack(it).isAir })
+            assertTrue((0 until 36).none { CoreLoopItems.currencyId(f.player.inventory.getItemStack(it)) == CoreCraftingCurrency.ASTRAL })
             val oldStack = CoreLoopItems.currency(CoreCraftingCurrency.ASTRAL, 9, packed)
             assertEquals(CoreCraftingCurrency.ASTRAL, CoreLoopItems.currencyId(oldStack))
             val lore = oldStack.get(DataComponents.LORE)!!.joinToString("\n") { decode(it) }
@@ -271,7 +237,7 @@ class CoreLoopMenusTest {
         val maps = List(9) { index -> CoreOwnedMap(id("map/$index"), index.toLong(), tier, listOf(
             CoreMapModifier("woodcutting", "amount", 200), CoreMapModifier("mining", "dense_regions", 200),
             CoreMapModifier("herbalism", "quality", 200))) }
-        var result = CoreAccount(id("player"), revision = 41, balances = balances, weaponTier = tier, armorTier = tier,
+        var result = CoreAccount(id("player"), revision = 41, balances = balances, journey = CoreJourney.legacy(), weaponTier = tier, armorTier = tier,
             unlockedMapTier = tier, maps = maps, currencies = if (wealthy) CoreCraftingCurrency.entries.associateWith { 500_000L } else emptyMap(),
             fragments = if (wealthy) CoreActivityKind.entries.associateWith { 500_000L } else emptyMap(),
             weaponEnhancement = CoreEnhancementState(if (maximum) 30 else 6), armorEnhancement = CoreEnhancementState(if (maximum) 30 else 6),
@@ -332,7 +298,6 @@ class CoreLoopMenusTest {
             for (discipline in QuestGatheringDiscipline.entries) check("mastery $discipline") { f.menus.mastery(f.player, discipline) }
             for (section in 0..3) check("guide$section") { f.menus.guide(f.player, section) }
             check("help") { f.menus.journal(f.player); f.click(8) }
-            check("dungeon") { f.menus.dungeons(f.player, tier) }
             check("trials") { f.menus.trials(f.player, tier) }
             for (index in 0..2) check("trial confirmation$index") { f.menus.trials(f.player, tier); f.click(9 + index * 3) }
             f.host.current.affixStones.firstOrNull()?.let { stone -> check("legacy stone") { f.menus.stoneDetail(f.player, stone.id) } }
@@ -344,7 +309,7 @@ class CoreLoopMenusTest {
     @Test fun `all class skill tree ultimate and second weapon page layouts fit vanilla hitboxes`() {
         val failures=mutableListOf<String>()
         for(job in CoreClass.entries) for(packed in listOf(false,true)) {
-            val f=fixture(account(4).copy(journey=CoreJourney(job=job)),packed)
+            val f=fixture(account(4).copy(journey=CoreJourney.legacy(job=job)),packed)
             fun check(name:String,show:()->Unit) {
                 show();auditSnapshot(f.snapshot()).forEach { failures+="$job $name packed=$packed: $it" }
             }
@@ -416,7 +381,7 @@ class CoreLoopMenusTest {
             f.menus.skillBuild(f.player,0,7)
             assertEquals("港で変更可能",f.snapshot().buttons.single { it.firstSlot==49 }.label)
             f.click(49);assertTrue(f.host.requests.isEmpty())
-            f.host.current=f.host.current.copy(activeRun=null,journey=CoreJourney(legacy=false))
+            f.host.current=f.host.current.copy(activeRun=null,journey=CoreJourney.legacy().copy(legacy=false))
             f.menus.skillBuild(f.player,4,1)
             assertEquals("成長で解放",f.snapshot().buttons.single { it.firstSlot==49 }.label)
             f.click(49);assertTrue(f.host.requests.isEmpty())
@@ -439,12 +404,12 @@ class CoreLoopMenusTest {
     }
 
     @Test fun `every slot of the three journal illustrations opens the same intended destination`() {
-        for ((start, destination) in listOf(9 to "地図台", 12 to "開拓工房", 15 to "素材倉庫")) {
+        for ((start, destination) in listOf(9 to "地図台", 12 to "開拓工房", 15 to "所持品目録")) {
             for (row in 0..2) for (column in 0..2) {
                 val f = fixture(account())
                 f.menus.journal(f.player)
                 val original = f.snapshot()
-                assertEquals(listOf("遠征", "工房", "保管庫"), original.cards.filter { it.rows == 3 }.map { it.label })
+                assertEquals(listOf("遠征", "工房", "所持品"), original.cards.filter { it.rows == 3 }.map { it.label })
                 assertNotNull(original.leftPanel?.hero)
                 f.click(start + row * 9 + column, right = column == 1)
                 assertTrue(f.snapshot().title.contains(destination), "Card at $start did not own row=$row column=$column")
@@ -487,7 +452,7 @@ class CoreLoopMenusTest {
             val f = fixture(a, packed)
             f.menus.storage(f.player, 2)
             val inventory = assertNotNull(f.player.openInventory)
-            assertEquals("素材倉庫 / T2", f.title())
+            assertEquals("所持品目録 / T2", f.title())
             assertFalse(plain((inventory as Inventory).title).any { it.code in 0xE000..0xF8FF })
             assertNull(f.snapshot().leftPanel)
             assertNull(f.snapshot().rightPanel)
@@ -515,7 +480,7 @@ class CoreLoopMenusTest {
         assertTrue(inventory.getItemStack(9).get(DataComponents.LORE).orEmpty().any { plain(it) == "所持 999999 個" })
         assertTrue(inventory.getItemStack(8).get(DataComponents.LORE).orEmpty().any { plain(it).contains("最大64") })
         f.click(6)
-        assertEquals("素材倉庫 / T4", f.title())
+        assertEquals("所持品目録 / T4", f.title())
         assertTrue(f.host.requests.isEmpty())
         val empty = fixture(account(wealthy = false))
         empty.menus.storage(empty.player)
@@ -537,7 +502,7 @@ class CoreLoopMenusTest {
         assertTrue(shift.isCancelled)
         f.click(9)
         f.click(53)
-        assertEquals("素材倉庫 / T1", f.title())
+        assertEquals("所持品目録 / T1", f.title())
         assertEquals(before, inventory.getItemStack(9))
         assertTrue(f.host.requests.isEmpty())
     }
@@ -713,7 +678,7 @@ class CoreLoopMenusTest {
         val title = f.title()
         f.host.usePack = false
         f.menus.refreshTheme(f.player)
-        assertEquals("素材倉庫 / T3", f.title())
+        assertEquals("所持品目録 / T3", f.title())
         f.host.usePack = true
         f.menus.refreshTheme(f.player)
         assertEquals(title, f.title())
@@ -752,13 +717,6 @@ class CoreLoopMenusTest {
             Files.writeString(output.resolve("$name.json"), gson.toJson(exported))
             auditSnapshot(snapshot).forEach { failures += "$name: $it" }
         }
-        capture("dungeon-entry") { f.menus.dungeons(f.player, 3) }
-        val dungeonPlan = DungeonPlan.generate(32, 3, 0)
-        f.host.dungeonState = DungeonRunView(UUID.randomUUID(), f.player.uuid, dungeonPlan.choices(4).first(),
-            dungeonPlan.stages, 0, DungeonRunPhase.CHOOSING, "次の道を選ぶ", 2, dungeonPlan.choices(5),
-            listOf(DungeonBoon.FORCE, DungeonBoon.GUARD, DungeonBoon.FLAME), false, mapOf(DungeonBoon.VITALITY to 2, DungeonBoon.HASTE to 1), 2)
-        capture("dungeon-boons") { f.menus.dungeonRun(f.player) }
-        f.host.dungeonState = null
         capture("journal") { f.menus.journal(f.player) }
         capture("career") { f.menus.career(f.player) }
         capture("class-skills") { f.menus.skillBuild(f.player) }

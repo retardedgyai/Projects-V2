@@ -26,7 +26,7 @@ class CoreArmorPresentationTest {
         val player=Player(connection,GameProfile(UUID.randomUUID(),"ArmorReview")).also { connection.player=it }
         val slots=listOf(EquipmentSlot.HELMET,EquipmentSlot.CHESTPLATE,EquipmentSlot.LEGGINGS,EquipmentSlot.BOOTS)
         for(job in CoreClass.entries) for(tier in 1..4) {
-            val a=CoreAccount(player.uuid,armorTier=tier,journey=CoreJourney(job=job))
+            val a=CoreAccount(player.uuid,armorTier=tier,journey=CoreJourney.legacy(job=job))
             CoreLoopItems.refresh(player,a,packed=true)
             for(slot in slots) assertTrue(player.getEquipment(slot).get(DataComponents.ITEM_MODEL)!!.startsWith("projects:armor/${job.name.lowercase(Locale.ROOT)}_t$tier"))
             CoreLoopItems.refresh(player,a,packed=false)
@@ -44,7 +44,7 @@ class CoreArmorPresentationTest {
         val pieces = listOf(Material.IRON_HELMET, Material.IRON_CHESTPLATE, Material.IRON_LEGGINGS, Material.IRON_BOOTS)
         val seen = mutableSetOf<String>()
         for (job in CoreClass.entries) for (tier in 1..4) for (material in pieces) {
-            val account = CoreAccount(UUID.randomUUID(), armorTier=tier, journey=CoreJourney(job=job))
+            val account = CoreAccount(UUID.randomUUID(), armorTier=tier, journey=CoreJourney.legacy(job=job))
             val ordinary = CoreLoopItems.gear(account, CoreGearSlot.ARMOR, false, material)
             val skin = CoreArmorPresentation.skin(ordinary, job, tier, true)
             val equipped = skin.get(DataComponents.EQUIPPABLE)!!

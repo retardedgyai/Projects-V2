@@ -17,7 +17,7 @@ import java.util.concurrent.Executor
 
 /** Deliberately separate from CoreAccountService: no test loadout can enter the ledger. */
 internal class CoreLabLoadout(private val id: UUID, job: CoreClass) {
-    var journey = CoreJourney(job = job, xp = CoreJourneyRules.threshold(40))
+    var journey = CoreJourney.legacy(job, CoreJourneyRules.threshold(40))
         private set
     var free = true
     var retaliation = false
@@ -90,7 +90,7 @@ internal class CoreCombatLab(
                     entry.transferring = false
                     if (entries[player.uuid] !== entry || !player.isOnline) {
                         if (!player.isOnline && player.instance === runtime.instance) player.remove()
-                        closeWhenEmpty(runtime); return@nextTick
+                        runtime.close(); return@nextTick
                     }
                     if (entry.returning) { returnEntry(entry); return@nextTick }
                     if (transferError != null) { leave(player); return@nextTick }
@@ -221,10 +221,10 @@ internal class CoreCombatLab(
     private fun returnEntry(entry: Entry) {
         val player = entry.player
         harbor(player).whenComplete { success, failure -> nextTick {
-            if (entries[player.uuid] !== entry) { entry.runtime?.let(::closeWhenEmpty); return@nextTick }
+            if (entries[player.uuid] !== entry) { entry.runtime?.close(); return@nextTick }
             if (success == true && failure == null) {
                 entries.remove(player.uuid, entry); screens.forget(player.uuid)
-                entry.runtime?.let(::closeWhenEmpty)
+                entry.runtime?.close()
                 resetOriginal(player); restored(player)
                 println("CORE_SKILL_LAB_RETURNED player=${player.username}")
             } else player.kick(CoreLoopItems.text("帰還先へ移動できませんでした。再接続してください。保存データは変更していません。"))
@@ -235,13 +235,13 @@ internal class CoreCombatLab(
         val entry = entries[player.uuid]?.takeIf { it.player === player } ?: return
         entries.remove(player.uuid, entry); screens.forget(player.uuid)
         entry.returning = true; entry.actor?.resetActions(); entry.combat?.dispose()
+        // While transferring, the transfer callback sees the removed entry and closes the map itself.
         entry.runtime?.takeUnless { entry.transferring }?.let { runtime -> nextTick {
             if (!player.isOnline && player.instance === runtime.instance) player.remove()
-            closeWhenEmpty(runtime)
+            runtime.close()
         } }
     }
 
     fun close() { entries.values.toList().forEach { disconnect(it.player) } }
-    private fun closeWhenEmpty(runtime: VerdantRoadQuestRuntime) { if (runtime.instance.players.isEmpty()) runtime.close() }
     private fun nextTick(action: () -> Unit) { MinecraftServer.getSchedulerManager().scheduleNextTick { action() } }
 }

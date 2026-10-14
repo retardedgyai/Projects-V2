@@ -1,6 +1,6 @@
 package dev.projects.server.coreloop
 
-import dev.projects.server.CombatTarget
+import dev.projects.server.mob.CombatTarget
 import dev.projects.server.particle.RecordingParticleSink
 import net.minestom.server.coordinate.Vec
 import java.util.UUID

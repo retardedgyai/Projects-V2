@@ -12,6 +12,7 @@ import net.minestom.server.entity.Player
 import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
 import net.minestom.server.entity.metadata.display.ItemDisplayMeta
 import net.minestom.server.entity.metadata.display.TextDisplayMeta
+import net.minestom.server.entity.metadata.other.InteractionMeta
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
@@ -22,7 +23,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Real visible, proximity-collected loot. The display is never the ownership record. */
+/** Visible loot that the owner must deliberately right-click to claim. */
 internal class CoreWorldLoot(
     private val owner: Player,
     private val instance: InstanceContainer,
@@ -62,14 +63,21 @@ internal class CoreWorldLoot(
             setNoGravity(true); setHasPhysics(false)
             editEntityMeta(TextDisplayMeta::class.java) { meta ->
                 meta.setText(CoreLoopItems.text(summary, if (currencies.isEmpty()) NamedTextColor.GOLD else NamedTextColor.LIGHT_PURPLE)
-                    .append(Component.newline()).append(CoreLoopItems.text("近づいて回収", NamedTextColor.GRAY)))
+                    .append(Component.newline()).append(CoreLoopItems.text("右クリックで回収", NamedTextColor.GRAY)))
                 meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
                 meta.setScale(Vec(0.65, 0.65, 0.65)); meta.setShadow(true); meta.setBackgroundColor(0x880e1020.toInt())
                 meta.setViewRange(0.5f)
             }
             setInstance(this@CoreWorldLoot.instance, position.add(0.0, 0.75, 0.0))
         }
-        val drop = Drop(source, kind, position, currencies, listOf(item, label))
+        val hitbox = Entity(EntityType.INTERACTION).apply {
+            setNoGravity(true); setHasPhysics(false)
+            editEntityMeta(InteractionMeta::class.java) { meta ->
+                meta.setWidth(1.2f); meta.setHeight(1.1f); meta.setResponse(true)
+            }
+            setInstance(this@CoreWorldLoot.instance, position)
+        }
+        val drop = Drop(source, kind, position, currencies, listOf(item, label, hitbox))
         if (drops.putIfAbsent(source, drop) != null) drop.entities.forEach { it.remove() }
         else owner.playSound(Sound.sound(if (currencies.isEmpty()) SoundEvent.ENTITY_ITEM_PICKUP else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME,
             Sound.Source.PLAYER, 0.65f, if (kind == CoreLootKind.BOSS) 0.8f else 1.2f), position.x(), position.y(), position.z())
@@ -79,11 +87,29 @@ internal class CoreWorldLoot(
         if (disposed) return
         ticks++
         drops.values.forEach { drop ->
-            if (owner.isOnline && owner.instance === instance && owner.position.distanceSquared(drop.position) < 2.6 * 2.6) collect(drop)
             if (ticks % 16 == 0L && drop.currencies.isNotEmpty() && !drop.collecting.get()) {
                 instance.sendGroupedPacket(ParticlePacket(Particle.END_ROD, drop.position.add(0.0, 0.5, 0.0), Vec(0.05, 0.5, 0.05), 0.001f, 3))
             }
         }
+    }
+
+    fun interact(player: Player, target: Entity): Boolean {
+        val drop = drops.values.firstOrNull { target in it.entities } ?: return false
+        if (!disposed && player === owner && owner.isOnline && owner.instance === instance &&
+            owner.position.distanceSquared(drop.position) < 5.0 * 5.0) {
+            if (!hasInventoryRoom(drop)) owner.sendMessage(CoreLoopItems.text("インベントリがいっぱいです。空きを作ってから回収してください", NamedTextColor.YELLOW))
+            else collect(drop)
+        }
+        return true
+    }
+
+    private fun hasInventoryRoom(drop: Drop): Boolean {
+        val heldResources = (0 until 36).mapNotNull { CoreLoopItems.resourceId(owner.inventory.getItemStack(it)) }.toSet()
+        val heldCurrencies = (0 until 36).mapNotNull { CoreLoopItems.currencyId(owner.inventory.getItemStack(it)) }.toSet()
+        val outputs = setOf(CoreMaterial(CoreResource.AFFIX_DUST), CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier))
+        val currencyOutputs = drop.currencies.keys + CoreCraftingCurrency.TRANSMUTATION
+        val required = outputs.count { it !in heldResources } + currencyOutputs.count { it !in heldCurrencies }
+        return required <= (16..35).count { owner.inventory.getItemStack(it).isAir }
     }
 
     @Synchronized
@@ -111,8 +137,8 @@ internal class CoreWorldLoot(
         return future
     }
 
-    /** Stop combat producers first. Return/disconnect auto-recover visible, uncollected drops. */
-    fun collectAll(): CompletableFuture<Void> = CompletableFuture.allOf(*drops.values.map(::collect).toTypedArray())
+    /** Wait for already clicked rewards; never turn untouched displays into automatic rewards. */
+    fun collectAll(): CompletableFuture<Void> = CompletableFuture.allOf(*drops.values.mapNotNull { it.future }.toTypedArray())
     fun remainingCount(): Int = drops.size
     fun dispose() { disposed = true; drops.values.forEach { d -> d.entities.forEach { it.remove() } }; drops.clear(); seenSources.clear() }
 }

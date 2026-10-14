@@ -10,11 +10,16 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from class_armament_geometry import ASSETS, KINDS, FRAMES
+def _font(path,size):
+    # Windows-only system fonts; fall back so headless/Linux builds still run.
+    try: return ImageFont.truetype(path,size)
+    except OSError: return ImageFont.load_default(size)
+
 
 ROOT=ASSETS.parents[6]
 OUT=Path(__file__).resolve().parents[1]/'.tools/armament-review'
 W,H=224,368
-FONT=ImageFont.truetype('C:/Windows/Fonts/meiryob.ttc',13)
+FONT=_font('C:/Windows/Fonts/meiryob.ttc',13)
 LABELS=('戦士 / 大剣','メイジ / 杖','レンジャー / 長弓','アサシン / 短剣','テンプラー / 戦槌','ヒーラー / 聖典','星織り師 / 星環杖')
 
 

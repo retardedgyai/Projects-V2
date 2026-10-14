@@ -7,6 +7,11 @@ import json
 import math
 from PIL import Image, ImageDraw, ImageFont
 from build_core_combat_models import scene_models, scene_rows
+def _font(path,size):
+    # Windows-only system fonts; fall back so headless/Linux builds still run.
+    try: return ImageFont.truetype(path,size)
+    except OSError: return ImageFont.load_default(size)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
@@ -53,7 +58,7 @@ def main():
         assert all(all(-16 <= n <= 32 for n in e["from"] + e["to"]) for e in model["elements"])
         assert all(e["to"][i] > e["from"][i] for e in model["elements"] for i in range(3))
     poses = json.loads((ROOT / ".tools/skill-scene-poses.json").read_text(encoding="utf-8"))
-    font = ImageFont.truetype("C:/Windows/Fonts/meiryob.ttc", 13)
+    font = _font("C:/Windows/Fonts/meiryob.ttc",13)
     for page in range(7):
         image = Image.new("RGB", (1080, 1740), "#17202b")
         draw = ImageDraw.Draw(image)

@@ -16,7 +16,7 @@
 - `src/main/java/io/github/gyai/projects/player/StatType.java`：旧ステータス一覧。
 - `src/main/java/io/github/gyai/projects/combat/stat/StatCalculator.java`：攻撃、防御、貫通、速度、回復、資源。
 - `src/main/java/io/github/gyai/projects/combat/damage/DamageCalculator.java` / `DamageMode.java`：計算順序、ダメージ軽減、実HPダメージ、吸収。
-- `docs/development/astra-core-loop-source-audit.md` / `astra-core-loop-legacy-system-audit.md`：既存V2への監査引継ぎ。
+- `docs/archive/2026-09/astra-core-loop-source-audit.md` / `astra-core-loop-legacy-system-audit.md`：既存V2への監査引継ぎ。
 
 旧コードのPvE会心は175%、後のMOD仕様書は150%で不一致。今回は仕様書と従来V2に合わせ150%を採用。旧版のJavaランタイムそのものはコピーしない。
 

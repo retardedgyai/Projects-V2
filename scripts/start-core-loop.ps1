@@ -51,7 +51,7 @@ $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $stdout = Join-Path $runDirectory "core-loop-$stamp.log"
 $stderr = Join-Path $runDirectory "core-loop-$stamp.error.log"
 $arguments = @("-Xmx${MaxMemoryMb}m", '-XX:ActiveProcessorCount=4', '-Dfile.encoding=UTF-8',
-    "-Dprojects.port=$Port", '-cp', "`"$classPath`"", 'dev.projects.server.ProjectSServerKt')
+    "-Dprojects.port=$Port", "-Dprojects.devCommands=true", '-cp', "`"$classPath`"", 'dev.projects.server.ProjectSServerKt')
 $serverProcess = Start-Process -FilePath $java -ArgumentList $arguments -WorkingDirectory $runDirectory `
     -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
 for ($attempt = 0; $attempt -lt 60; $attempt++) {

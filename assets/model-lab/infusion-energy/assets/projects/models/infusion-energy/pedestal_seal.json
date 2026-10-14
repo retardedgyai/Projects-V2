@@ -1,0 +1,35 @@
+{
+  "credit": "ProjectS original success-only 16px seal; approved bowl geometry/pixels preserved",
+  "ambientocclusion": false,
+  "textures": {
+    "seal": "projects:infusion-energy/pedestal_seal"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        12.04,
+        3
+      ],
+      "to": [
+        13,
+        12.05,
+        13
+      ],
+      "shade": false,
+      "light_emission": 15,
+      "faces": {
+        "up": {
+          "texture": "#seal",
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ],
+          "tintindex": 0
+        }
+      }
+    }
+  ]
+}

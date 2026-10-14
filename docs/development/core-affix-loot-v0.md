@@ -21,7 +21,7 @@ UI、地面の戦利品表示、実際の戦闘への接続は統合側の担当
 - `docs/beta/contracts/item-metadata-contract.md`：見た目を正本にしない、UUIDと操作IDを区別する。
 - `docs/beta/contracts/recipe-transaction-contract.md`：支払い・出力・保存・確定を一度だけ行い、失敗時に半消費しない。
 
-V2の `docs/development/astra-core-loop-playtest.md` と `coreloop`、`equipment/Equipment.kt`、`mod/Mod.kt`を確認した。
+V2の `docs/archive/2026-09/astra-core-loop-playtest.md` と `coreloop`、`equipment/Equipment.kt`、`mod/Mod.kt`を確認した。
 旧共有EquipmentTierはT3までで、現在のコアループはT4まであるため、共有MODモデルを破壊せず
 専用の `CoreAffixCatalog` と台帳を拡張する。既存の採取・素材・装備Tier・地図は維持する。
 

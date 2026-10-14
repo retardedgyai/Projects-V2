@@ -128,6 +128,8 @@ class CoreHudLayoutTest {
         assertFalse(CoreUiPackPolicy.allowedPath("assets/minecraft/textures/gui/sprites/hud/heart/vehicle_full.png"))
         assertFalse(CoreUiPackPolicy.allowedPath("assets/minecraft/textures/gui/sprites/hud/air.png"))
         assertFalse(CoreUiPackPolicy.allowedPath("../invalid"))
+        assertTrue(CoreUiPackPolicy.allowedPath("assets/minecraft/textures/gui/sprites/widget/button.png"))
+        assertFalse(CoreUiPackPolicy.allowedPath("assets/minecraft/textures/gui/sprites/widget/slider.png"))
         assertTrue(CoreUiPackPolicy.allowedPath("assets/minecraft/textures/gui/sprites/hud/heart/full.png"))
     }
 

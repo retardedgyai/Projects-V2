@@ -4,6 +4,7 @@ import dev.projects.server.mob.QuestEncounterCombat
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
+import net.minestom.server.coordinate.Vec
 import net.minestom.server.component.DataComponents
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
@@ -49,7 +50,7 @@ class CorePlayerCombatTest {
         CoreCombatPresentation.pack(h.player,true)
         try {
             for(job in CoreClass.entries) {
-                h.journey=CoreJourney(job=job);h.base=CoreWeaponBase.entries.first { it.usable(job) };h.actor.reset()
+                h.journey=CoreJourney.legacy(job=job);h.base=CoreWeaponBase.entries.first { it.usable(job) };h.actor.reset()
                 val a=CoreAccount(h.player.uuid,journey=h.journey,
                     weaponIdentity=CoreGearIdentity(UUID.randomUUID(),h.player.uuid,base=h.base))
                 h.player.setItemInMainHand(CoreLoopItems.gear(a,CoreGearSlot.WEAPON,true))
@@ -68,7 +69,7 @@ class CorePlayerCombatTest {
     @Test fun `rejected casts and target contact do not invent or restart weapon release`() = arena { h ->
         CoreCombatPresentation.pack(h.player,true)
         try {
-            h.journey=CoreJourney(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+            h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
             val a=CoreAccount(h.player.uuid,journey=h.journey,
                 weaponIdentity=CoreGearIdentity(UUID.randomUUID(),h.player.uuid,base=h.base))
             h.player.setItemInMainHand(CoreLoopItems.gear(a,CoreGearSlot.WEAPON,true))
@@ -111,7 +112,7 @@ class CorePlayerCombatTest {
     }
 
     @Test fun `Starweaver weaves three normal hits then consumes them in four enhanced starfall pulses`() = arena(bossDistance = 7.0) { h ->
-        h.journey = CoreJourney(job=CoreClass.STARWEAVER); h.base=CoreWeaponBase.STAFF
+        h.journey = CoreJourney.legacy(job=CoreClass.STARWEAVER); h.base=CoreWeaponBase.STAFF
         repeat(3) { h.actor.attack(); h.ticks(20) }
         assertEquals(3,h.actor.chargeCount)
         val before=h.combat.bossHealth(); h.actor.skill(2); assertEquals(0,h.actor.chargeCount)
@@ -120,7 +121,7 @@ class CorePlayerCombatTest {
     }
     @Test fun `bow and mage projectile hit at twelve blocks but not through a wall`() {
         for (job in listOf(CoreClass.RANGER, CoreClass.MAGE, CoreClass.STARWEAVER)) arena(bossDistance = 12.0) { h ->
-            h.journey = CoreJourney(job = job); h.base = if (job == CoreClass.RANGER) CoreWeaponBase.LONGBOW else CoreWeaponBase.STAFF
+            h.journey = CoreJourney.legacy(job = job); h.base = if (job == CoreClass.RANGER) CoreWeaponBase.LONGBOW else CoreWeaponBase.STAFF
             h.actor.attack(); h.ticks(3); assertEquals(300.0, h.combat.bossHealth())
             h.ticks(1); assertTrue(h.combat.bossHealth() < 300.0, "$job cannot hit at range")
             val hp = h.combat.bossHealth(); h.ticks(20)
@@ -591,7 +592,7 @@ class CorePlayerCombatTest {
     @Test fun `real Mage spell gains AP not AD and matches the tooltip preview`() {
         for (mod in listOf(CoreAffixStat.AD_FLAT, CoreAffixStat.AP_FLAT)) arena(
             stats = CoreAffixStats(additional = mapOf(mod to 20.0))) { h ->
-            h.journey = CoreJourney(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+            h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
             val expected = 8.0 + (12 * .92 + if (mod == CoreAffixStat.AP_FLAT) 20 else 0) * 1.4
             assertEquals(expected, h.actor.skillDefinitions[0].preview(h.actor.sheet), .000001)
             h.actor.skill(0); h.ticks(5)
@@ -602,7 +603,7 @@ class CorePlayerCombatTest {
     @Test fun `real Mage auto still scales only with AD`() {
         for (mod in listOf(CoreAffixStat.AD_FLAT, CoreAffixStat.AP_FLAT)) arena(
             stats = CoreAffixStats(additional = mapOf(mod to 20.0))) { h ->
-            h.journey = CoreJourney(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+            h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
             h.actor.attack(); h.ticks(4)
             assertEquals(300 - 12 * .92 - if (mod == CoreAffixStat.AD_FLAT) 20 else 0, h.combat.bossHealth(), .000001)
         }
@@ -630,19 +631,19 @@ class CorePlayerCombatTest {
 
     @Test fun `only cast speed shortens a Mage skill while physical attack speed does not`() {
         arena(stats = CoreAffixStats(castReductionPercent = 100.0)) { h ->
-            h.journey = CoreJourney(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+            h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
             h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(4); assertEquals(300.0, h.combat.bossHealth())
             h.ticks(1); assertTrue(h.combat.bossHealth() < 300)
         }
         arena(stats = CoreAffixStats(attackSpeedPercent = 100.0)) { h ->
-            h.journey = CoreJourney(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+            h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
             h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(9); assertEquals(300.0, h.combat.bossHealth())
             h.ticks(1); assertTrue(h.combat.bossHealth() < 300)
         }
     }
 
     @Test fun `resource rejection costs no mana cooldown or enemy health`() = arena { h ->
-        h.journey = CoreJourney(build=CoreClassBuild(second=5));h.actor.reset()
+        h.journey = CoreJourney.legacy(build=CoreClassBuild(second=5));h.actor.reset()
         h.actor.skill(1);h.ticks(30)
         assertEquals(100,h.actor.mana);assertEquals(0,h.actor.cooldownRemaining(1));assertEquals(300.0,h.combat.bossHealth())
         repeat(3) { h.actor.attack();h.ticks(24) }
@@ -652,7 +653,7 @@ class CorePlayerCombatTest {
         assertEquals(before-30,h.actor.resource);assertEquals(88,h.actor.mana)
     }
     @Test fun `warrior feint no longer places a mark or requires detonation`() = arena(bossDistance=2.0) { h ->
-        h.journey=CoreJourney(build=CoreClassBuild(first=4,second=1,third=2,fourth=0));h.actor.reset()
+        h.journey=CoreJourney.legacy(build=CoreClassBuild(first=4,second=1,third=2,fourth=0));h.actor.reset()
         h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
         assertEquals(0,h.actor.activeMarkLabels)
         assertFalse(h.actor.classState.marked(h.combat.combatTargets().first().id, 3))
@@ -664,7 +665,7 @@ class CorePlayerCombatTest {
         h.actor.resetActions();assertEquals(0,h.actor.activeMarkLabels)
     }
     @Test fun `warrior timed guard reduces real incoming damage and rewards a strong counter`() = arena { h ->
-        h.journey=CoreJourney(build=CoreClassBuild(first=3,second=5,third=2,fourth=0,nodes=8248))
+        h.journey=CoreJourney.legacy(build=CoreClassBuild(first=3,second=5,third=2,fourth=0,nodes=8248))
         h.actor.reset();h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
         assertTrue(h.actor.combatCue.startsWith("防御 "))
         h.actor.hurt(50.0);assertEquals(90.0,h.actor.health)
@@ -675,7 +676,7 @@ class CorePlayerCombatTest {
         assertEquals(before-(10+12*2.8)*1.6,h.combat.bossHealth(),.00001)
     }
     @Test fun `assassin mark consumption enhances one real hit and shadow keystone resets dodge`() = arena(bossDistance=2.0) { h ->
-        h.journey=CoreJourney(job=CoreClass.ASSASSIN,build=CoreClassBuild(nodes=8248));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.ASSASSIN,build=CoreClassBuild(nodes=8248));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
         h.actor.skill(0);h.ticks(18)
         val id=h.combat.combatTargets().single().id;assertTrue(h.actor.classState.marked(id,18))
         h.actor.classState.gain(40.0,h.journey.job,h.journey.build)
@@ -686,7 +687,7 @@ class CorePlayerCombatTest {
     }
     @Test fun `mage echo adds an actual pulse and full spell damage matches the modified preview`() = arena(bossDistance=7.0,
         stats=CoreAffixStats(additional=mapOf(CoreAffixStat.MAGE_ECHO to 4.0))) { h ->
-        h.journey=CoreJourney(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
         h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
         val spell=h.actor.skillDefinitions[2];assertEquals(4,spell.pulses)
         h.actor.skill(2);h.ticks(42)
@@ -694,7 +695,7 @@ class CorePlayerCombatTest {
         assertEquals(40.0,h.actor.resource)
     }
     @Test fun `healer can damage alone then spend the same faith pool on actual self recovery`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.HEALER);h.base=CoreWeaponBase.TOME;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.HEALER);h.base=CoreWeaponBase.TOME;h.actor.reset()
         h.actor.hurt(60.0)
         h.actor.skill(0);h.ticks(20);assertTrue(h.combat.bossHealth()<300);assertEquals(20.0,h.actor.resource)
         h.actor.attack();h.ticks(20);h.actor.attack();h.ticks(20);assertTrue(h.actor.resource>=30)
@@ -703,7 +704,7 @@ class CorePlayerCombatTest {
         assertEquals(before+heal.preview(h.actor.sheet),h.actor.health,.00001)
     }
     @Test fun `healing conversion splits real recovery and shield and cannot extend a stronger shield`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.HEALER,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.TOME;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.HEALER,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.TOME;h.actor.reset()
         h.actor.hurt(60.0);h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
         val value=h.actor.skillDefinitions[1].preview(h.actor.sheet);val before=h.actor.health
         h.actor.skill(1);h.ticks(6)
@@ -712,7 +713,7 @@ class CorePlayerCombatTest {
         h.ticks(100);assertEquals(0.0,h.actor.shield)
     }
     @Test fun `templar shielding supports nearby allies but never passes walls`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=65984));h.base=CoreWeaponBase.MACE;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=65984));h.base=CoreWeaponBase.MACE;h.actor.reset()
         val ally=h.addAlly(Pos(10.5,40.0,8.5))
         val blocked=h.addAlly(Pos(5.5,40.0,8.5))
         for(y in 40..43) h.instance.setBlock(6,y,8,Block.STONE)
@@ -722,14 +723,14 @@ class CorePlayerCombatTest {
         h.actor.resetActions();assertEquals(0.0,h.actor.shield)
     }
     @Test fun `star shield releases its charge and the added protection expires`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.STARWEAVER,build=CoreClassBuild(first=6,second=1,third=2,fourth=3));h.base=CoreWeaponBase.STAFF;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.STARWEAVER,build=CoreClassBuild(first=6,second=1,third=2,fourth=3));h.base=CoreWeaponBase.STAFF;h.actor.reset()
         h.actor.classState.gain(3.0,h.journey.job,h.journey.build)
         val value=h.actor.skillDefinitions[0].preview(h.actor.sheet)
         h.actor.skill(0);assertEquals(0.0,h.actor.resource);h.ticks(6)
         assertEquals(value*1.45,h.actor.shield,.00001);h.ticks(120);assertEquals(0.0,h.actor.shield)
     }
     @Test fun `dodging a channeled field cancels remaining pulses but never refunds its cost`() = arena(bossDistance=7.0) { h ->
-        h.journey=CoreJourney(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
         h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
         h.actor.skill(2);h.ticks(12);val before=h.combat.bossHealth();assertTrue(before<300)
         h.actor.dodge();h.ticks(35);assertEquals(before,h.combat.bossHealth());assertEquals(40.0,h.actor.resource)
@@ -743,11 +744,11 @@ class CorePlayerCombatTest {
     }
     @Test fun `new melee classes have shorter dagger impact and full height mace contact`() {
         arena(bossDistance=2.5) { h ->
-            h.journey=CoreJourney(job=CoreClass.ASSASSIN);h.base=CoreWeaponBase.DAGGERS
+            h.journey=CoreJourney.legacy(job=CoreClass.ASSASSIN);h.base=CoreWeaponBase.DAGGERS
             h.actor.attack();h.ticks(4);assertTrue(h.combat.bossHealth()<300)
         }
         arena { h ->
-            h.journey=CoreJourney(job=CoreClass.TEMPLAR);h.base=CoreWeaponBase.MACE
+            h.journey=CoreJourney.legacy(job=CoreClass.TEMPLAR);h.base=CoreWeaponBase.MACE
             h.actor.attack();h.ticks(10);assertTrue(h.combat.bossHealth()<300)
         }
     }
@@ -769,19 +770,19 @@ class CorePlayerCombatTest {
         assertTrue(h.combat.pull(id,h.player))
     }
     @Test fun `shield keystone enhances the next normal mace attack once`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.MACE;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.MACE;h.actor.reset()
         h.actor.skill(2);h.ticks(20);h.actor.attack();h.ticks(10)
         assertEquals(300-12*.95*1.08*1.35,h.combat.bossHealth(),.00001)
         assertEquals(-1,h.actor.classState.counterUntil)
     }
     @Test fun `poison and fire coexist as separate nonrecursive effects`() = arena(bossDistance=2.0,stats=CoreAffixStats(fireFlat=10.0)) { h ->
-        h.journey=CoreJourney(job=CoreClass.ASSASSIN,build=CoreClassBuild(first=4,second=1,third=2,fourth=3));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.ASSASSIN,build=CoreClassBuild(first=4,second=1,third=2,fourth=3));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
         h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
         val before=h.combat.bossHealth();h.ticks(20)
         assertEquals(before-(3+12*.78*.8)*.3-3.0,h.combat.bossHealth(),.00001)
     }
     @Test fun `ground field follows a visible aimed enemy beyond the old fixed seven block centre`() = arena(bossDistance=15.0) { h ->
-        h.journey=CoreJourney(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
         h.actor.classState.gain(100.0,h.journey.job,h.journey.build);h.actor.skill(2);h.ticks(12)
         assertTrue(h.combat.bossHealth()<300)
     }
@@ -875,6 +876,251 @@ class CorePlayerCombatTest {
         assertEquals(0,h.actor.cooldownRemaining(2))
     }
 
+    @Test fun `garden deploy frees input and owns its context while firebolt earns a separate element gain`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.actor.skill(1)
+        assertEquals(80,h.actor.mana)
+        h.ticks(6);assertEquals(1,h.actor.activeGardens);assertEquals(15.0,h.actor.resource)
+        val planted=h.combat.bossHealth()
+        h.actor.skill(0);assertTrue(h.actor.cooldownRemaining(0)>0)
+        h.ticks(5);assertTrue(h.combat.bossHealth()<planted);assertEquals(45.0,h.actor.resource)
+        h.ticks(28);assertEquals(45.0,h.actor.resource,"Further garden hits must not overwrite fire's resource context")
+    }
+    @Test fun `garden welcomes a late enemy after old channel end and never refunds reentry hit budget`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val mob=h.combat.entities().single();val original=mob.position
+        h.actor.skill(1);mob.teleport(original.add(8.0,0.0,0.0)).join();h.ticks(46)
+        assertEquals(300.0,h.combat.bossHealth());assertEquals(0.0,h.actor.resource)
+        mob.teleport(original).join();h.ticks(4)
+        val one=300.0-h.combat.bossHealth();assertTrue(one>0);assertEquals(15.0,h.actor.resource)
+        repeat(3) { mob.teleport(original.add(8.0,0.0,0.0)).join();h.ticks(8);mob.teleport(original).join();h.ticks(12) }
+        assertEquals(300.0-one*4,h.combat.bossHealth(),.00001)
+        h.ticks(100);assertEquals(0,h.actor.activeGardens);assertEquals(300.0-one*4,h.combat.bossHealth(),.00001)
+    }
+    @Test fun `dodge after formation preserves garden including cancelling another cast`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
+        h.actor.skill(0);h.actor.dodge();h.ticks(20)
+        assertEquals(1,h.actor.activeGardens);assertTrue(h.combat.bossHealth()<first);assertEquals(15.0,h.actor.resource)
+    }
+    @Test fun `dodge during formation spends once but prevents delayed garden and all hits`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.ticks(3);h.actor.dodge();h.ticks(140)
+        assertEquals(0,h.actor.activeGardens);assertEquals(300.0,h.combat.bossHealth());assertEquals(0.0,h.actor.resource)
+        assertTrue(h.actor.cooldownRemaining(1)>0)
+    }
+    @Test fun `training cooldown refill cannot place overlapping gardens or pay again`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.ticks(6);h.actor.refillTraining()
+        repeat(30) { h.actor.skill(1) }
+        assertEquals(h.actor.maxMana,h.actor.mana);assertEquals(1,h.actor.activeGardens)
+        h.ticks(121);h.actor.skill(1);assertEquals(h.actor.maxMana-20,h.actor.mana);h.ticks(6);assertEquals(1,h.actor.activeGardens)
+    }
+    @Test fun `garden ends on reset encounter leave defeat and class change`() {
+        for(reason in 0..3) arena(bossDistance=7.0) { h ->
+            h.mageGarden();h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
+            when(reason) { 0->h.actor.resetActions();1->h.activeEncounter=null;2->h.actor.hurt(10000.0);3->h.journey=CoreJourney.legacy() }
+            h.ticks(30);assertEquals(0,h.actor.activeGardens);assertEquals(first,h.combat.bossHealth())
+        }
+    }
+    @Test fun `garden clears immediately on player disconnect`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
+        h.player.remove();h.ticks(30);assertEquals(0,h.actor.activeGardens);assertEquals(first,h.combat.bossHealth())
+    }
+    @Test fun `garden rejects unsupported ground without cost and never damages across a wall or raised floor`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val mob=h.combat.entities().single();val original=mob.position
+        for(x in 7..9) for(z in 14..16) for(y in 36..39) h.instance.setBlock(x,y,z,Block.AIR)
+        h.actor.skill(1);assertEquals(100,h.actor.mana);assertEquals(0,h.actor.cooldownRemaining(1))
+        for(x in 7..9) for(z in 14..16) for(y in 36..39) h.instance.setBlock(x,y,z,Block.STONE)
+        h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
+        mob.teleport(original.add(2.0,0.0,0.0)).join()
+        for(z in 12..18) for(y in 40..42) h.instance.setBlock(9,y,z,Block.STONE)
+        h.ticks(30);assertEquals(first,h.combat.bossHealth())
+        mob.teleport(original.add(0.0,1.0,0.0)).join();h.ticks(30);assertEquals(first,h.combat.bossHealth())
+    }
+    @Test fun `garden slows boss by ten percent only and exit cannot erase another stronger slow`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val mob=h.combat.entities().single();val start=System.currentTimeMillis()
+        h.combat.tick(start);val speed=mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue
+        h.actor.skill(1);h.ticks(6);assertEquals(speed*.9,mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.00001)
+        h.combat.applySlow(mob.uuid,.6,3000);assertEquals(speed*.7,mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.00001)
+        mob.teleport(mob.position.add(8.0,0.0,0.0)).join();h.ticks(12);h.combat.tick(start+400)
+        assertEquals(speed*.7,mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.00001)
+        h.combat.tick(start+3100);assertEquals(speed,mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.00001)
+    }
+    @Test fun `enemy death callback can reset garden without stale later hits or effects`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val id=h.combat.entities().single().uuid
+        h.combat.applyDamage(id,h.player,299.0);h.afterKill={h.actor.resetActions()}
+        h.actor.skill(1);h.ticks(6);assertEquals(0,h.actor.activeGardens);h.ticks(130);assertEquals(0.0,h.combat.bossHealth())
+    }
+    @Test fun `two mages own separate gardens gains and four hit budgets with strongest slow only`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val ally=h.addAlly(h.player.position,CoreClass.MAGE)
+        h.actor.skill(1);ally.skill(1);h.ticks(6);repeat(6) { ally.tick() }
+        assertEquals(1,h.actor.activeGardens);assertEquals(1,ally.activeGardens)
+        assertEquals(15.0,h.actor.resource);assertEquals(15.0,ally.resource)
+        val one=(300.0-h.combat.bossHealth())/2
+        repeat(80) { h.actor.tick();ally.tick() }
+        assertEquals(300.0-one*8,h.combat.bossHealth(),.00001)
+        assertEquals(15.0,h.actor.resource);assertEquals(15.0,ally.resource)
+    }
+    @Test fun `planted garden keeps damaging from its origin while caster takes cover and returns`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.ticks(6)
+        val one=300.0-h.combat.bossHealth();val start=h.player.position
+        for(z in 9..15) for(y in 40..43) h.instance.setBlock(10,y,z,Block.STONE)
+        h.player.teleport(start.add(5.0,0.0,0.0)).join()
+        h.ticks(60)
+        assertEquals(300.0-one*4,h.combat.bossHealth(),.00001,"Caster cover cannot reject a source-validated field hit")
+        h.player.teleport(start).join();h.ticks(30)
+        assertEquals(300.0-one*4,h.combat.bossHealth(),.00001);assertEquals(15.0,h.actor.resource)
+    }
+    @Test fun `supported visible plate works at its edge beside a hole without centring a new support sample on enemy`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val mob=h.combat.entities().single();val start=mob.position
+        for(x in 12..14) for(z in 11..19) for(y in 36..39) h.instance.setBlock(x,y,z,Block.AIR)
+        h.actor.skill(1);mob.teleport(start.add(3.1,0.0,0.0)).join();h.ticks(6)
+        assertTrue(h.combat.bossHealth()<300.0,"Feet x=11.6 lie on the supported plate centred at x=11")
+        val first=h.combat.bossHealth()
+        mob.teleport(start.add(3.6,0.0,0.0)).join();h.ticks(30)
+        assertEquals(first,h.combat.bossHealth(),.00001)
+        mob.teleport(start.add(3.1,0.0,0.0)).join();h.ticks(4)
+        assertTrue(h.combat.bossHealth()<first)
+    }
+    @Test fun `sealed boss damage rejections never spend garden hit budget before the seal opens`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.combat.sealBoss(true);h.ticks(46)
+        assertEquals(300.0,h.combat.bossHealth());assertEquals(0.0,h.actor.resource)
+        h.combat.sealBoss(false);h.ticks(4)
+        val one=300.0-h.combat.bossHealth();assertTrue(one>0)
+        h.ticks(60);assertEquals(300.0-one*4,h.combat.bossHealth(),.00001);assertEquals(15.0,h.actor.resource)
+    }
+    @Test fun `occupied garden refresh cannot extend another stronger slow through its expiry`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val mob=h.combat.entities().single();val start=System.currentTimeMillis()
+        h.combat.tick(start);val base=mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue
+        h.combat.applySlow(mob.uuid,.6,1000)
+        h.actor.skill(1);h.ticks(6)
+        h.combat.tick(start+900);h.ticks(4)
+        h.combat.tick(start+1001);h.ticks(4)
+        assertEquals(base*.9,mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.00001)
+        h.combat.applySlow(mob.uuid,.15,2000)
+        mob.teleport(mob.position.add(8.0,0.0,0.0)).join();h.ticks(4)
+        h.combat.tick(start+1400)
+        assertEquals(base*.925,mob.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,.00001,"Only the independent ice MOD remains after garden exit")
+    }
+    @Test fun `full display budget never creates an invisible active garden and refunds its cost`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();CoreCombatPresentation.pack(h.player,true)
+        val fillers=List(8) { CoreCombatMeshes(h.player) }
+        val skill=CoreSkillCatalog.skills(CoreClass.WARRIOR).first()
+        try {
+            for(mesh in fillers) repeat(48) { mesh.play(CoreSkillEffect(CoreClass.WARRIOR,skill,h.player.position,Vec(0.0,0.0,1.0))) }
+            assertEquals(384,fillers.sumOf { it.size })
+            h.actor.skill(1);h.ticks(6)
+            assertEquals(0,h.actor.activeGardens);assertEquals(300.0,h.combat.bossHealth());assertEquals(0.0,h.actor.resource)
+            assertEquals(100,h.actor.mana);assertEquals(0,h.actor.cooldownRemaining(1))
+            fillers.first().cancel();h.actor.skill(1);h.ticks(6)
+            assertEquals(1,h.actor.activeGardens);assertTrue(h.combat.bossHealth()<300.0)
+        } finally { fillers.forEach { it.cancel() };CoreCombatPresentation.forget(h.player) }
+    }
+    @Test fun `unpacked garden preparation is visible every tick before the first accepted hit`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();val packets=(h.player.playerConnection as MemoryConnection).packets
+        h.actor.skill(1)
+        repeat(5) {
+            packets.clear();h.ticks(1)
+            assertEquals(300.0,h.combat.bossHealth());assertEquals(0,h.actor.activeGardens)
+            assertTrue(packets.any { it.javaClass.simpleName=="ParticlePacket" })
+        }
+        packets.clear();h.ticks(1)
+        assertEquals(1,h.actor.activeGardens);assertTrue(h.combat.bossHealth()<300.0)
+        assertTrue(packets.any { it.javaClass.simpleName=="ParticlePacket" })
+    }
+    @Test fun `instance transfer clears garden even when encounter reference was not changed yet`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
+        val map=MinecraftServer.getInstanceManager().createInstanceContainer()
+        map.viewDistance(2)
+        map.setGenerator { it.modifier().fillHeight(0,40,Block.STONE) }
+        for(x in -3..3) for(z in -3..3) map.loadChunk(x,z).get(10,TimeUnit.SECONDS)
+        try {
+            h.player.setInstance(map,Pos(8.5,40.0,8.5)).get(10,TimeUnit.SECONDS)
+            assertTrue(h.player.instance === map)
+            h.ticks(30);assertEquals(0,h.actor.activeGardens);assertEquals(first,h.combat.bossHealth())
+        } finally {
+            if(h.player.instance !== h.instance) h.player.setInstance(h.instance,Pos(8.5,40.0,8.5)).get(10,TimeUnit.SECONDS)
+            MinecraftServer.getInstanceManager().unregisterInstance(map)
+        }
+    }
+    @Test fun `bloom first contact follows accepted damage and never repeats on later hits or reentry`() = arena(bossDistance=7.0) { h ->
+        h.mageGarden();CoreCombatPresentation.pack(h.player,true)
+        val mob=h.combat.entities().single();val original=mob.position
+        fun contacts()=h.instance.entities.count { e ->
+            (e.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta)?.itemStack
+                ?.get(net.minestom.server.component.DataComponents.ITEM_MODEL)?.startsWith("projects:combat_vfx/garden_bloom/contact_")==true }
+        try {
+            h.actor.skill(1);h.combat.sealBoss(true);h.ticks(26)
+            assertEquals(0,contacts());assertEquals(300.0,h.combat.bossHealth())
+            h.combat.sealBoss(false);h.ticks(4);assertTrue(h.combat.bossHealth()<300);assertEquals(1,contacts())
+            h.ticks(10);assertEquals(0,contacts())
+            mob.teleport(original.add(0.0,0.0,4.0)).join();h.ticks(8);mob.teleport(original).join();h.ticks(24)
+            assertEquals(0,contacts());assertTrue(h.combat.bossHealth()<300)
+        } finally { CoreCombatPresentation.forget(h.player) }
+    }
+
+    @Test fun `export garden bloom from real combat input damage lifecycle and viewer packets`() {
+        val scenes=mutableListOf<Map<String,Any>>()
+        for(reason in listOf("natural","cancel_prepare","clear_reset","sealed_then_accept")) arena(bossDistance=7.0) { h ->
+            h.mageGarden();CoreCombatPresentation.pack(h.player,true)
+            val viewer=h.addAlly(Pos(9.5,40.0,14.5)).player
+            val ownerPackets=(h.player.playerConnection as MemoryConnection).packets
+            val viewerPackets=(viewer.playerConnection as MemoryConnection).packets
+            val mob=h.combat.entities().single();val centre=mob.position
+            val seenContact=mutableSetOf<Int>();val seenGarden=mutableSetOf<Int>()
+            val frames=mutableListOf<Map<String,Any>>();val events=mutableListOf<Map<String,Any>>()
+            fun xyz(v:net.minestom.server.coordinate.Point)=listOf(v.x(),v.y(),v.z())
+            var previousHealth=h.combat.bossHealth()
+            fun snapshot(tick:Int) {
+                val parts=h.instance.entities.mapNotNull { entity ->
+                    val meta=entity.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta ?: return@mapNotNull null
+                    val model=meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL) ?: return@mapNotNull null
+                    if(!model.startsWith("projects:combat_vfx/garden")) return@mapNotNull null
+                    seenGarden+=entity.entityId
+                    if(model.contains("/contact_") && seenContact.add(entity.entityId)) events+=mapOf("tick" to tick,"event" to "first_contact","origin" to xyz(entity.position.sub(centre)))
+                    mapOf<String,Any>("model" to model.removePrefix("projects:"),"offset" to xyz(entity.position.sub(centre).add(meta.translation)),
+                        "scale" to xyz(meta.scale),"quaternion" to meta.leftRotation.toList(),"yaw" to 0.0,"pitch" to 0.0,"roll" to 0.0)
+                }
+                val health=h.combat.bossHealth()
+                if(health<previousHealth) events+=mapOf("tick" to tick,"event" to "accepted_damage","amount" to previousHealth-health)
+                previousHealth=health
+                val particles=viewerPackets.filterIsInstance<net.minestom.server.network.packet.server.play.ParticlePacket>().map { p ->
+                    val dust=p.particle() as? net.minestom.server.particle.Particle.DustColorTransition
+                    val rgb=dust?.color()
+                    mapOf<String,Any>("position" to xyz(Pos(p.x(),p.y(),p.z()).sub(centre)),"kind" to p.particle().key().asString(),
+                        "color" to if(rgb==null) 0xe0eeee else (rgb.red() shl 16)+(rgb.green() shl 8)+rgb.blue(),"count" to p.particleCount())
+                }
+                val metadata=ownerPackets.map { SendablePacket.extractServerPacket(ConnectionState.PLAY,it) }
+                    .filterIsInstance<net.minestom.server.network.packet.server.play.EntityMetaDataPacket>().filter { it.entityId() in seenGarden }
+                frames+=mapOf("tick" to tick,"parts" to parts,"particles" to particles,"enemy" to xyz(mob.position.sub(centre)),
+                    "health" to health,"resource" to h.actor.resource,"activeGardens" to h.actor.activeGardens,
+                    "metadataPackets" to metadata.size,"metadataBodyBytes" to metadata.sumOf { net.minestom.server.network.NetworkBuffer.makeArray(net.minestom.server.network.packet.server.play.EntityMetaDataPacket.SERIALIZER,it).size })
+            }
+            try {
+                h.actor.skill(1);events+=mapOf("tick" to 0,"event" to "input_garden")
+                mob.teleport(centre.add(0.0,0.0,4.0)).join()
+                if(reason=="sealed_then_accept") h.combat.sealBoss(true)
+                snapshot(0)
+                for(tick in 1..140) {
+                    ownerPackets.clear();viewerPackets.clear()
+                    when {
+                        reason=="cancel_prepare" && tick==3 -> { h.actor.dodge();events+=mapOf("tick" to tick,"event" to "cancel_prepare") }
+                        reason=="clear_reset" && tick==54 -> { h.actor.resetActions();events+=mapOf("tick" to tick,"event" to "reset_actions") }
+                        reason=="natural" && tick==20 -> { h.actor.skill(0);events+=mapOf("tick" to tick,"event" to "input_firebolt") }
+                        reason=="natural" && tick==22 -> { h.actor.dodge();events+=mapOf("tick" to tick,"event" to "cancel_fire_preserve_garden") }
+                        reason=="sealed_then_accept" && tick==60 -> { h.combat.sealBoss(false);events+=mapOf("tick" to tick,"event" to "unseal") }
+                    }
+                    if(tick==44) mob.teleport(centre).join()
+                    h.ticks(1);snapshot(tick)
+                }
+                assertEquals(if(reason=="cancel_prepare") 0 else 1,seenContact.size)
+                assertTrue(frames.all { (it["parts"] as List<*>).size<=22 })
+                assertEquals(0,h.actor.activeGardens)
+                if(reason=="natural") assertEquals(4,events.count { it["event"]=="accepted_damage" })
+                scenes+=mapOf("id" to reason,"events" to events,"frames" to frames,"input" to "real CorePlayerCombat / QuestEncounterCombat / GreatswordVfx / ItemDisplayMeta")
+            } finally { CoreCombatPresentation.forget(h.player);CoreCombatPresentation.forget(viewer) }
+        }
+        val cwd=java.nio.file.Path.of(System.getProperty("user.dir"));val root=if(cwd.fileName.toString()=="server-minestom")cwd.parent else cwd
+        java.nio.file.Files.createDirectories(root.resolve(".tools"))
+        java.nio.file.Files.writeString(root.resolve(".tools/ice-garden-bloom-events.json"),com.google.gson.Gson().toJson(mapOf("fps" to 20,"scenes" to scenes)))
+    }
+
     private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double,
         weaponEnhancement: Int, armorEnhancement: Int) : AutoCloseable {
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
@@ -884,17 +1130,21 @@ class CorePlayerCombatTest {
         val actor: CorePlayerCombat
         var weaponBroken = false
         var armorBroken = false
-        var journey = CoreJourney()
+        var journey = CoreJourney.legacy()
         var base = CoreWeaponBase.STANDARD
         var deaths = 0
         val incomingHits = mutableListOf<Double>()
         var afterKill: () -> Unit = {}
+        fun mageGarden() {
+            journey=CoreJourney.legacy(job=CoreClass.MAGE,build=CoreClassBuild(second=5));base=CoreWeaponBase.STAFF;actor.reset()
+        }
         val otherActors = mutableListOf<CorePlayerCombat>()
-        fun addAlly(at:Pos):CorePlayerCombat {
+        fun addAlly(at:Pos,job:CoreClass=CoreClass.WARRIOR):CorePlayerCombat {
             val c=MemoryConnection();c.setClientState(ConnectionState.PLAY);c.setServerState(ConnectionState.PLAY)
             val p=Player(c,GameProfile(UUID.randomUUID(),"AllyTest"));c.player=p;p.gameMode=GameMode.ADVENTURE
             p.setInstance(instance,at).get(10,TimeUnit.SECONDS)
-            return CorePlayerCombat(p,{1},{1},{activeEncounter}) {}.also { it.reset();otherActors+=it }
+            val allyJourney=if(job==CoreClass.MAGE) CoreJourney.legacy(job=job,build=CoreClassBuild(second=5)) else CoreJourney.legacy()
+            return CorePlayerCombat(p,{1},{1},{activeEncounter},criticalRoll={1.0},journey={allyJourney},weaponBase={if(job==CoreClass.MAGE)CoreWeaponBase.STAFF else CoreWeaponBase.STANDARD}) {}.also { it.reset();otherActors+=it }
         }
 
         init {
@@ -921,7 +1171,7 @@ class CorePlayerCombatTest {
             actor.reset()
         }
 
-        fun ticks(count: Int) = repeat(count) { actor.tick() }
+        fun ticks(count: Int) = repeat(count) { instance.worldAge++;actor.tick() }
 
         override fun close() {
             actor.resetActions();otherActors.forEach { it.resetActions();it.player.remove() }
@@ -932,7 +1182,8 @@ class CorePlayerCombatTest {
     }
 
     private class MemoryConnection : PlayerConnection() {
-        override fun sendPacket(packet: SendablePacket) = Unit
+        val packets=mutableListOf<SendablePacket>()
+        override fun sendPacket(packet: SendablePacket) { packets+=packet }
         override fun getRemoteAddress(): SocketAddress = InetSocketAddress("127.0.0.1", 0)
     }
 }

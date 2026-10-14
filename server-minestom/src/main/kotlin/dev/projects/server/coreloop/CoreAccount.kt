@@ -36,10 +36,11 @@ class CoreOwnedMap(val id: UUID, val seed: Long, val tier: Int, modifiers: List<
     override fun toString() = "CoreOwnedMap($id,$seed,$tier,$modifiers,$level)"
 }
 
-data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: Boolean = false, val trialId: String? = null, val dungeon: CoreDungeonEntry? = null) {
-    init { require(trialId == null || CoreActivityKind.entries.any { it.bossId == trialId }); require(trialId == null || dungeon == null) }
+data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: Boolean = false, val trialId: String? = null) {
+    init { require(trialId == null || CoreActivityKind.entries.any { it.bossId == trialId }) }
 }
 data class CoreReceipt(val fingerprint: String, val revision: Long, val message: String)
+private val RECEIPT_FINGERPRINT = Regex("[0-9a-f]{64}")
 
 data class CoreArmorPiece(val identity: CoreGearIdentity, val tier: Int = 1,
     val rarity: CoreGearRarity = CoreGearRarity.NORMAL,
@@ -82,8 +83,7 @@ class CoreAccount(
     professions: Map<CoreProfession, CoreProfessionProgress> = emptyMap(),
     val surveyPoints: Long = 0,
     buyOrders: List<CoreBuyOrder> = emptyList(),
-    dungeonRecords: Map<Int, Int> = emptyMap(),
-    val journey: CoreJourney = CoreJourney(),
+    val journey: CoreJourney = CoreJourney.fresh(),
     armorParts: Map<CoreGearSlot, CoreArmorPiece> = CoreGearSlot.armorSlots.filterNot { it == CoreGearSlot.CHEST }
         .associateWith { slot -> CoreArmorPiece(CoreGearIdentity.legacy(playerId, slot).copy(quality = armorIdentity.quality),
             armorTier, CoreCraftingCatalog.inferRarity(equippedAffixes, slot), armorEnhancement, armorBroken) },
@@ -102,7 +102,6 @@ class CoreAccount(
     }
     val professions = Collections.unmodifiableMap(professions.toMap())
     val buyOrders = Collections.unmodifiableList(buyOrders.toList())
-    val dungeonRecords = Collections.unmodifiableMap(dungeonRecords.toMap())
     val storedGear = Collections.unmodifiableList(storedGear.toList())
     val offers = Collections.unmodifiableList(offers.toList())
     val balances: Map<CoreMaterial, Long> = Collections.unmodifiableMap(LinkedHashMap(balances))
@@ -117,7 +116,6 @@ class CoreAccount(
     init {
         require(surveyPoints in 0..1_000_000_000L)
         require(buyOrders.size <= CoreEconomy.MAX_OFFERS && buyOrders.map { it.id }.distinct().size == buyOrders.size)
-        require(dungeonRecords.all { it.key in 1..4 && it.value in 0..20 })
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
         require(smithingXp in 0..CoreEnhancementCatalog.MAX_SMITHING_XP)
         require(silver in 0..CoreEconomy.MAX_SILVER && deliveries in 0..CoreEconomy.DAILY_DELIVERIES && deliveryDay >= 0)
@@ -143,7 +141,7 @@ class CoreAccount(
         require(maps.size <= CoreLoopCatalog.MAX_MAPS && maps.map { it.id }.distinct().size == maps.size)
         require(activeRun == null || maps.none { it.id == activeRun.map.id })
         require(receipts.size <= CoreLoopCatalog.MAX_RECEIPTS && claimedSources.size <= CoreLoopCatalog.MAX_SOURCES)
-        require(receipts.values.all { it.revision in 1..revision && it.fingerprint.matches(Regex("[0-9a-f]{64}")) && it.message.length <= 256 })
+        require(receipts.values.all { it.revision in 1..revision && it.fingerprint.matches(RECEIPT_FINGERPRINT) && it.message.length <= 256 })
         require(claimedSources.all { it.length in 1..192 && '\n' !in it && '\t' !in it && '\r' !in it })
         require(affixStones.size <= CoreAffixCatalog.MAX_STONES && equippedAffixes.size <= 30)
         require(currencies.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE } && fragments.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE })
@@ -192,12 +190,11 @@ class CoreAccount(
         professions: Map<CoreProfession, CoreProfessionProgress> = this.professions,
         surveyPoints: Long = this.surveyPoints,
         buyOrders: List<CoreBuyOrder> = this.buyOrders,
-        dungeonRecords: Map<Int, Int> = this.dungeonRecords,
         journey: CoreJourney = this.journey,
         armorParts: Map<CoreGearSlot, CoreArmorPiece> = this.armorParts,
     ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes,
         weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed, weaponEnhancement, armorEnhancement, smithingXp,
-        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, dungeonRecords, journey, armorParts)
+        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, journey, armorParts)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)
@@ -214,8 +211,6 @@ sealed interface CoreAction {
     data class PlaceBuyOrder(val resource: CoreResource?, val slot: CoreGearSlot?, val tier: Int, val quantity: Int, val unitPrice: Long) : CoreAction
     data class CancelBuyOrder(val id: UUID) : CoreAction
     data class FillBuyOrder(val buyer: UUID, val id: UUID, val unitPrice: Long, val quantity: Int = 1, val gearId: UUID? = null) : CoreAction
-    data class StartDungeon(val runId: UUID, val tier: Int, val ascension: Int, val seed: Long) : CoreAction
-    data class DungeonReward(val runId: UUID, val stage: Int, val boss: Boolean, val treasury: Boolean = false) : CoreAction
     data class Manufacture(val slot: CoreGearSlot, val tier: Int, val count: Int = 1, val base: CoreWeaponBase = CoreWeaponBase.STANDARD) : CoreAction
     data class Equip(val id: UUID) : CoreAction
     data class Repair(val slot: CoreGearSlot, val input: UUID) : CoreAction
@@ -275,6 +270,8 @@ object CoreLoopCatalog {
     const val MAX_MAPS = 32
     const val MAX_RECEIPTS = 16_384
     const val MAX_SOURCES = 16_384
+    /** Finished run ids kept to reject reuse; older markers are pruned on the next start/finish. */
+    const val RUN_HISTORY = 1_024
     val refined = mapOf(CoreResource.WOOD to CoreResource.BOARD, CoreResource.ORE to CoreResource.INGOT,
         CoreResource.STONE to CoreResource.STONE_BLOCK, CoreResource.HIDE to CoreResource.LEATHER, CoreResource.FIBER to CoreResource.CLOTH)
     fun weaponDamage(tier: Int): Double { require(tier in 1..4); return 1.65.pow(tier - 1) }

@@ -35,23 +35,33 @@ internal class CoreCombatMeshes(private val owner: Player) {
     private val live=mutableListOf<Live>()
     internal val size get()=live.size
 
-    fun play(effect: CoreSkillEffect) {
-        val instance=owner.instance ?: return
-        val immediateContour=effect.job==CoreClass.WARRIOR &&
+    fun play(effect: CoreSkillEffect): Boolean {
+        val instance=owner.instance ?: return false
+        val immediateContour=effect.sceneId=="mage_garden" || effect.job==CoreClass.WARRIOR &&
             (effect.sceneId in CoreApprovedNormalV3.sceneIds || effect.sceneId in CoreWarriorBladeChoreography.sceneIds && effect.sceneId!="dash" ||
                 effect.sceneId in CoreWarriorSupportChoreography.sceneIds)
         val parts=CoreSkillChoreography.parts(effect)+CoreWarriorCompanions.parts(effect)
-        if(!instance.players.any { CoreCombatPresentation.packed(it) &&
-            (CoreCombatPresentation.detail(it)!=CoreCombatPresentation.Detail.MINIMAL || parts.any(CoreWarriorCompanions::boundary)) && it.position.distanceSquared(effect.origin)<1600 }) return
+        if(effect.sceneId!="mage_garden" && !instance.players.any { CoreCombatPresentation.packed(it) &&
+            (CoreCombatPresentation.detail(it)!=CoreCombatPresentation.Detail.MINIMAL || parts.any(::boundary)) && it.position.distanceSquared(effect.origin)<1600 }) return true
+        val gardenBody=effect.sceneId=="mage_garden" && effect.phase!=CoreSkillVisualPhase.CONTACT
+        if(gardenBody) {
+            // A field never has a partial native footprint. Retire its preparation/old ending first.
+            clearGarden()
+            while(live.size+parts.size>OWNER_LIMIT) {
+                val tail=live.firstOrNull { !gardenBoundary(it.part) && (it.part.secondary || it.age>it.part.durationTicks*.65) } ?: return false
+                tail.cancelled.set(true);tail.entity.remove();release(tail.instance);live.remove(tail)
+            }
+            if(!reserve(instance,parts.size)) return false
+        }
         for(authored in parts.sortedBy { it.secondary }) {
-            if(live.size>=OWNER_LIMIT) {
+            if(!gardenBody && live.size>=OWNER_LIMIT) {
                 // A new strike must not silently vanish behind old secondary afterglow.
-                val tail=live.firstOrNull { it.part.secondary || it.age>it.part.durationTicks*.65 }
+                val tail=live.firstOrNull { !gardenBoundary(it.part) && (it.part.secondary || it.age>it.part.durationTicks*.65) }
                 if(tail!=null && !authored.secondary) {
                     tail.cancelled.set(true);tail.entity.remove();release(tail.instance);live.remove(tail)
                 } else continue
             }
-            if(!reserve(instance)) continue
+            if(!gardenBody && !reserve(instance)) continue
             var part=authored
             if(part.ground) {
                 val x=effect.origin.x()+part.offset.x(); val z=effect.origin.z()+part.offset.z()
@@ -86,7 +96,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
             entity.setInstance(instance,Pos(effect.origin.x(),effect.origin.y(),effect.origin.z())).whenComplete { _,failure ->
                 if(failure!=null || record.cancelled.get() || entity.isRemoved || owner.instance!==instance) entity.remove()
                 else if(immediateContour && CoreCombatPresentation.packed(owner) &&
-                    (CoreCombatPresentation.detail(owner)!=CoreCombatPresentation.Detail.MINIMAL || CoreWarriorCompanions.boundary(part)) &&
+                    (CoreCombatPresentation.detail(owner)!=CoreCombatPresentation.Detail.MINIMAL || boundary(part)) &&
                     (!part.secondary || CoreCombatPresentation.detail(owner)==CoreCombatPresentation.Detail.FULL) &&
                     owner.position.distanceSquared(effect.origin)<1600) {
                     // Send the authored phase's first frame as soon as registration completes.
@@ -95,6 +105,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 }
             }
         }
+        return true
     }
 
     fun tick() {
@@ -105,10 +116,14 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 emptySet<Entity>()
             else live.asReversed().asSequence().filter { v ->
                 !v.part.secondary && !v.entity.isRemoved && v.entity.instance===owner.instance &&
-                    (CoreCombatPresentation.detail(viewer)!=CoreCombatPresentation.Detail.MINIMAL || CoreWarriorCompanions.boundary(v.part)) &&
+                    (CoreCombatPresentation.detail(viewer)!=CoreCombatPresentation.Detail.MINIMAL || boundary(v.part)) &&
                     v.age>=v.part.delayTicks && v.age<removalAge(v.part) &&
                     viewer.position.distanceSquared(v.entity.position)<=256.0
-            }.take(8).map { it.entity }.toSet()
+            }.toList().let { candidates ->
+                // Keep the old eight transient slots; additionally retain the full static footprint.
+                (candidates.filter { gardenBoundary(it.part) }.take(21) +
+                    candidates.filterNot { gardenBoundary(it.part) }.take(8)).map { it.entity }.toSet()
+            }
         } ?: emptyMap()
         val iterator=live.iterator()
         while(iterator.hasNext()) {
@@ -125,7 +140,9 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 .add(owner.position.sub(v.ownerStart).asVec()) else at
             // Let the final zero-width target finish. Restarting its interpolation
             // during drain ticks or removing at the authored endpoint cuts off the fade.
-            if(v.age<p.delayTicks+p.durationTicks) v.entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
+            // Planted plates are static: send only opening/warning/breakup phase changes.
+            val staticGarden=gardenBoundary(p) || p.shape=="ice_garden:contact"
+            if(v.age<p.delayTicks+p.durationTicks && (!staticGarden || v.model!=pose.model)) v.entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
                 if(traced(p)) {
                     val now=System.nanoTime()
                     if(v.lastUpdateNanos!=0L) v.maxUpdateGapNanos=maxOf(v.maxUpdateGapNanos,now-v.lastUpdateNanos)
@@ -142,7 +159,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
             if(v.entity.instance===v.instance) {
                 val allowed=v.instance.players.filter { viewer ->
                     val detail=CoreCombatPresentation.detail(viewer)
-                    CoreCombatPresentation.packed(viewer) && (detail!=CoreCombatPresentation.Detail.MINIMAL || CoreWarriorCompanions.boundary(p)) &&
+                    CoreCombatPresentation.packed(viewer) && (detail!=CoreCombatPresentation.Detail.MINIMAL || boundary(p)) &&
                         (!p.secondary || detail==CoreCombatPresentation.Detail.FULL && viewer===owner) &&
                         viewer.position.distanceSquared(v.entity.position)<=(if(viewer===owner) 1600.0 else 256.0) &&
                         (viewer===owner || v.entity in observerParts[viewer].orEmpty())
@@ -154,7 +171,20 @@ internal class CoreCombatMeshes(private val owner: Player) {
         }
     }
 
-    fun cancel() { live.forEach { it.cancelled.set(true);it.entity.remove();release(it.instance) };live.clear() }
+    // Dodge cancels the current cast, while an already planted garden remains.
+    fun cancel(preserveGarden: Boolean = false) {
+        live.removeAll { v ->
+            if(preserveGarden && v.part.shape.startsWith("ice_garden:tile")) false
+            else { v.cancelled.set(true);v.entity.remove();release(v.instance);true }
+        }
+    }
+    fun clearGarden() {
+        live.removeAll { v -> if(CoreIceGardenChoreography.owns(v.part)) {
+            v.cancelled.set(true);v.entity.remove();release(v.instance);true
+        } else false }
+    }
+    private fun boundary(p: CoreCombatMeshPart)=CoreWarriorCompanions.boundary(p) || CoreIceGardenChoreography.owns(p)
+    private fun gardenBoundary(p: CoreCombatMeshPart)=p.shape.startsWith("ice_garden:tile") || p.shape.startsWith("ice_garden:prepare")
     companion object {
         // Opt-in server-side cadence evidence, not client FPS or packet-arrival telemetry.
         private val traceTiming=java.lang.Boolean.getBoolean("projects.vfx.traceTiming")
@@ -174,9 +204,9 @@ internal class CoreCombatMeshes(private val owner: Player) {
         const val OWNER_LIMIT=48
         const val SCENE_LIMIT=384
         private val sceneCounts=WeakHashMap<Instance,Int>()
-        private fun reserve(instance: Instance): Boolean=synchronized(sceneCounts) {
+        private fun reserve(instance: Instance,count: Int=1): Boolean=synchronized(sceneCounts) {
             val n=sceneCounts[instance] ?: 0
-            if(n>=SCENE_LIMIT) false else { sceneCounts[instance]=n+1;true }
+            if(n+count>SCENE_LIMIT) false else { sceneCounts[instance]=n+count;true }
         }
         private fun release(instance: Instance)=synchronized(sceneCounts) {
             val n=(sceneCounts[instance] ?: 1)-1

@@ -1,6 +1,6 @@
 package dev.projects.server.coreloop
 
-import dev.projects.server.CombatTarget
+import dev.projects.server.mob.CombatTarget
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import kotlin.math.*

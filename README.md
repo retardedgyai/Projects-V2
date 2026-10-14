@@ -8,46 +8,31 @@ ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り
 
 基本ループ:
 
-`港町 → クエスト選択 → 1〜4人専用討伐空間 → Boss → 個人素材 → Craft/強化 → より難しい討伐`
+`港町 → 遠征（クエストマップ） → 戦闘/採取 → Boss → 素材 → 市場/製造/強化 → より難しい遠征`
 
-巨大オープンワールドは、この一周が面白く安定してから後続で検討します。
+戦闘だけでなく、採取・製造・魔術がそれぞれ自分の目標とお金の使い道を持つ「道」になり、プレイヤー同士が市場でお互いの目標を作り合うことを目指します（詳細は2026-10の基準書）。
 
 ## 技術方向
 
-- Minecraft Java Edition 26.2。
-- Java 25。
-- Kotlin-first。
-- Gradle Kotlin DSL。
-- Server: Minestom 26.2系。
-- Client: Fabric 26.2を内部基盤とした専用ProjectS Client。
+- Minecraft Java Edition 26.2 / Java 25 / Kotlin-first / Gradle Kotlin DSL。
+- Server: Minestom 26.2系（`server-minestom/`）。入口は `CoreLoopServer`。
+- Client: Vanilla Minecraft 26.2 + Serverが配布するリソースパック。専用Fabric Clientとprotocolは2026-10に廃止。
 - ServerがDamage/Hit/Reward/Progressionを最終判定。
-- 人間向けEditorはMob Editorのみ。
-- Skill/VFX/Studio/World Builder/Balance Editorはv2では作らない。
-- VFXはコード/データ/AIで制作し、Clientで描画する。
-- 統合版対応は初期Scopeに入れない。
-
-## 最初の完成単位
-
-`起動 → 港町 → 1クエスト受注 → 1討伐Map → 1Boss撃破 → 1素材入手 → 1武器Craft/強化 → 再挑戦、永続保存あり`
-
-ただしその前に、一日のCombat Spikeで「戦闘そのものが本当に面白いか」を確認します。
+- VFXはコード/データ/AIで制作し、ServerからParticle/Display Entity/リソースパックで描画する。
+- `web-ui-lab/` は名前に反してServerが使うUI部品（工房v3等）を含む。
 
 ## まず読む文書
 
-- [`docs/development/onboarding.md`](docs/development/onboarding.md) — 新しいCreatorのcloneから開始まで。
-- [`docs/development/creator-workflow.md`](docs/development/creator-workflow.md) — PlaygroundとProductionの使い分け。
-- [`docs/development/sol-review.md`](docs/development/sol-review.md) — 共通Sol Review手順。
-- [`docs/decisions/2026-08-19-current-decisions.md`](docs/decisions/2026-08-19-current-decisions.md) — **現在決まっていること全部の基準書**。
+- [`docs/decisions/2026-10-14-current-state.md`](docs/decisions/2026-10-14-current-state.md) — **今の基準書**（構成・設計の軸・次の優先順位）。
+- [`docs/decisions/2026-09-19-combat-build-direction.md`](docs/decisions/2026-09-19-combat-build-direction.md) — 戦闘・職業・ビルドの決定記録。
+- [`docs/development/onboarding.md`](docs/development/onboarding.md) — cloneから開始まで。
+- [`docs/development/creator-workflow.md`](docs/development/creator-workflow.md) — branchの作り方からmainへの統合まで。
 - [`docs/game/combat-principles.md`](docs/game/combat-principles.md) — 一人称、通常攻撃、攻撃判定、Mob攻撃、回避等。
 - [`docs/game/mana-and-class-resources.md`](docs/game/mana-and-class-resources.md) — マナ/Cooldown/固有ゲージ。
-- [`docs/development/environment.md`](docs/development/environment.md) — Minecraft/Java/Minestom/Fabric/Gradle環境。
 - [`docs/architecture/hunt-session-lifecycle.md`](docs/architecture/hunt-session-lifecycle.md) — 討伐空間の寿命。
 - [`docs/research/minestom-case-studies.md`](docs/research/minestom-case-studies.md) — Minestom事例から持ってくる設計。
-- [`docs/research/ai-boss-model-pipeline.md`](docs/research/ai-boss-model-pipeline.md) — AI大型Mob制作の研究方針。
 - [`docs/future/gvg-principles.md`](docs/future/gvg-principles.md) — 将来のAlbion型大規模GvG方向。
-- [`docs/development/day-1-combat-spike.md`](docs/development/day-1-combat-spike.md) — 初日の戦闘実験。
-- [`docs/development/rewrite-rules.md`](docs/development/rewrite-rules.md) — リライト規則。
-- [`legacy/README.md`](legacy/README.md) — 旧ProjectSの扱い。
+- `docs/archive/` — 終わった計画・日付付きの制作メモ（当時の記録）。
 
 ## 最重要原則
 
@@ -58,5 +43,5 @@ ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り
 ## 開発起動
 
 - Server: `./gradlew :server-minestom:run`
-- Client: `./gradlew :client-fabric:runClient`
+- Client: Vanilla Minecraft 26.2で `localhost` に接続
 - Test / Build: `./gradlew build`

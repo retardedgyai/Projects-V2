@@ -13,10 +13,15 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 from preview_core_combat_models import COLORS
+def _font(path,size):
+    # Windows-only system fonts; fall back so headless/Linux builds still run.
+    try: return ImageFont.truetype(path,size)
+    except OSError: return ImageFont.load_default(size)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / 'server-minestom/src/main/resources/core-ui-pack/assets/projects'
-FONT = ImageFont.truetype('C:/Windows/Fonts/meiryob.ttc', 14)
+FONT = _font('C:/Windows/Fonts/meiryob.ttc',14)
 W, H = 360, 260
 
 def clip_near(points, near_z=-.6):

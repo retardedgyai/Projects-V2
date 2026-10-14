@@ -11,7 +11,7 @@ import kotlin.test.*
 
 class CoreBreakRepairTest {
     private val weapon = CoreGearSlot.WEAPON
-    private fun rich(tier: Int = 3, level: Int = 20) = CoreAccount(UUID.randomUUID(), revision = 1,
+    private fun rich(tier: Int = 3, level: Int = 20) = CoreAccount(UUID.randomUUID(), revision = 1, journey = CoreJourney.legacy(),
         weaponTier = tier, armorTier = tier, craftingSeed = 23456,
         weaponEnhancement = CoreEnhancementState(level), armorEnhancement = CoreEnhancementState(level),
         balances = CoreLoopCatalog.refined.values.flatMap { r -> (1..4).map { CoreMaterial(r, it) to 999L } }.toMap(),

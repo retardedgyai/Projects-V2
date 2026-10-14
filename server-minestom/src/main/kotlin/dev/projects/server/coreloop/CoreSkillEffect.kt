@@ -74,6 +74,7 @@ internal class CoreSkillEffect(
     internal val clippedRay: Boolean = false,
     internal val sceneId: String = skill.icon,
     internal val endpoint: CoreSkillEndpoint = CoreSkillEndpoint.NONE,
+    internal val gardenCells: List<net.minestom.server.coordinate.Pos>? = null,
 ) : ParticleEffect {
     internal var solidCompanion: Boolean = false
     internal val valid = listOf(origin.x(), origin.y(), origin.z(), direction.x(), direction.y(), direction.z(), skill.radius, rayLength).all(Double::isFinite)
@@ -87,6 +88,21 @@ internal class CoreSkillEffect(
 
     override fun emit(tick: Int, sink: ParticleSink) {
         if (!valid || tick !in 0 until durationTicks) return
+        // Packed plates carry the field; occupancy supplies the unpacked-viewer boundary.
+        if (sceneId == "mage_garden") {
+            if(phase==CoreSkillVisualPhase.PREPARE) {
+                val size=CoreIceGarden.cellSize(skill.radius)
+                val cells=gardenCells ?: CoreIceGarden.offsets.map { (x,z)->net.minestom.server.coordinate.Pos(origin.x()+x*size,origin.y(),origin.z()+z*size) }
+                val edge=size/2-.03
+                for(cell in cells.take(21)) for(x in listOf(-edge,edge)) for(z in listOf(-edge,edge))
+                    sink.spawn(ParticleSpawn(dustTransition(0x9ee5ed,0x496ca5,.6f),cell.add(x,.08,z),
+                        category=ParticleCategory.OWN_ACTIVE,importance=ParticleImportance.COMBAT_FEEDBACK))
+            }
+            if(!solidCompanion && phase==CoreSkillVisualPhase.CONTACT && tick<3)
+                sink.spawn(ParticleSpawn(Particle.SNOWFLAKE,origin.add(0.0,.3,0.0),4,Vec(.2,.2,.2),
+                    category=ParticleCategory.OWN_ACTIVE,importance=ParticleImportance.COMBAT_FEEDBACK))
+            return
+        }
         if (solidCompanion) { CoreSceneParticles.emit(this,tick,sink); return }
         val t = tick.toDouble() / durationTicks
         val bright = 0xfff4d9

@@ -44,6 +44,11 @@ data class CoreSkillDefinition(
         add("発生 ${CoreCombatMath.number(startupTicks(sheet) / 20.0)}秒 / ${if (type == CoreDamageType.MAGICAL) "詠唱速度" else "攻撃速度"}で短縮")
         if(motion == CoreSkillMotion.GUARD) add("最初の0.6秒：被害80%軽減 / 以降55%軽減 / ${duration/20.0}秒")
         if(status != CoreSkillStatus.NONE) add(when(status) { CoreSkillStatus.MARK -> "印6秒：消費技の最初の命中が35%強化"; CoreSkillStatus.EXPOSE -> "防御崩し4秒：敵のAR・MRを20%低下"; CoreSkillStatus.POISON -> "毒3秒：1秒ごとに係数の30%（重複しない）"; else -> "減速：敵の移動を40%低下" })
+        if(icon=="mage_garden") {
+            add("床板が有効範囲 / 壁・段差・穴へは広がらない / 同時設置1つ")
+            add("1体へ1秒間隔・最大4打 / 術式獲得は最初の命中だけ")
+            add("在域中40%減速（氷大成50%） / ボス10% / 退出後最大0.35秒")
+        }
         if (journey?.job == CoreClass.WARRIOR) {
             if (icon == "war_guard") add("成功時：叩きつけの再使用を回復 / 3秒以内の叩きつけ・返し刃を反撃化")
             if (CoreWarriorCombatRules.counterSkill(icon)) {
@@ -154,7 +159,7 @@ object CoreSkillCatalog {
                 s("流星雨", "meteor", "術式60を消費。狙った地点へ三度の流星", CoreSkillMotion.FIELD, 7.0, 1.3, mana=25, cd=180, startup=12, pulses=3, gain=0, spend=60, element=1),
                 s("閃光歩", "mage_blink", "前方へ安全に転移。周囲の敵を遅らせる", CoreSkillMotion.EVADE, 0.0, 0.0, mana=15, cd=140, gain=0, status=CoreSkillStatus.SLOW, range=4.5, element=3),
                 s("雷の刻印", "mage_mark", "射線に雷印を残す。起爆技は印を消費して強化", CoreSkillMotion.RAY, 5.0, 1.1, cd=80, status=CoreSkillStatus.MARK, element=3),
-                s("氷の庭", "mage_garden", "狙った場所を凍結域にする。敵を留めて術式を組む", CoreSkillMotion.FIELD, 2.0, .45, mana=20, cd=180, pulses=4, status=CoreSkillStatus.SLOW, element=2, duration=120),
+                s("氷の庭", "mage_garden", "狙った床に6秒の氷庭。設置後は自由に動ける。敵を誘い減速中に他の術を重ねる（1体4打まで・ボスは減速耐性）", CoreSkillMotion.FIELD, 2.0, .45, mana=20, cd=180, pulses=4, status=CoreSkillStatus.SLOW, radius=3.65, element=2, duration=120),
                 s("術式起爆", "mage_burst", "術式を40消費。印のある敵なら威力+35%", CoreSkillMotion.NOVA, 12.0, 2.5, mana=20, cd=120, gain=0, spend=40, radius=6.0, element=3),
                 s("魔力障壁", "mage_ward", "魔力で短い障壁を作る。攻撃に使うマナと競合する", CoreSkillMotion.SHIELD, 10.0, 1.2, mana=25, cd=200, gain=0, radius=0.0, duration=100, element=3),
                 s("天火の大術式", "mage_ult", "術式80を消費。広い範囲に四度の大爆発", CoreSkillMotion.FIELD, 15.0, 2.0, mana=35, cd=640, startup=22, pulses=4, gain=0, spend=80, radius=7.0, element=1, ult=true),

@@ -146,7 +146,7 @@ class CoreCombatMeshTest {
         val state=CoreClassState()
         val observer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"MarkObserver")
         val id=UUID.randomUUID()
-        val target=dev.projects.server.CombatTarget(id,owner.position.add(0.0,1.0,2.0),Vec(.4,1.0,.4))
+        val target=dev.projects.server.mob.CombatTarget(id,owner.position.add(0.0,1.0,2.0),Vec(.4,1.0,.4))
         try {
             CoreCombatPresentation.pack(owner,true)
             state.mark(id,10);display.update(listOf(target),state,10)
@@ -535,6 +535,182 @@ class CoreCombatMeshTest {
             listOf(owner,near,far).forEach { CoreCombatPresentation.forget(it) }
             near.remove();far.remove()
         }
+    }
+
+    @Test fun `garden footprint reaches owner and observer even at minimal and survives cast cancel`() = player { owner ->
+        val viewer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"GardenViewer")
+        val meshes=CoreCombatMeshes(owner)
+        try {
+            listOf(owner,viewer).forEach { CoreCombatPresentation.pack(it,true);CoreCombatPresentation.cycle(it);CoreCombatPresentation.cycle(it) }
+            val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+            meshes.play(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0)))
+            meshes.tick();assertEquals(21,meshes.size)
+            val plates=owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }
+            assertEquals(21,plates.size);assertTrue(plates.all { owner in it.viewers && viewer in it.viewers })
+            meshes.cancel(preserveGarden=true);assertEquals(21,meshes.size)
+            repeat(100) { meshes.tick() };assertEquals(21,meshes.size)
+            repeat(30) { meshes.tick() };assertEquals(0,meshes.size)
+        } finally { meshes.cancel();listOf(owner,viewer).forEach(CoreCombatPresentation::forget);viewer.remove() }
+    }
+    @Test fun `accepting the resource pack after planting reveals the already active field`() = player { owner ->
+        val meshes=CoreCombatMeshes(owner)
+        try {
+            val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+            meshes.play(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0)))
+            repeat(25) { meshes.tick() }
+            val plates=owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }
+            assertEquals(21,plates.size);assertTrue(plates.none { owner in it.viewers })
+            CoreCombatPresentation.pack(owner,true);meshes.tick()
+            assertTrue(plates.all { owner in it.viewers },"A persistent hazard must become visible when the pack finishes loading")
+        } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
+    }
+    @Test fun `garden holds static plates without per tick transformation packets`() {
+        val packets=mutableListOf<SendablePacket>()
+        player(packets) { owner ->
+            val meshes=CoreCombatMeshes(owner);CoreCombatPresentation.pack(owner,true)
+            try {
+                val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+                meshes.play(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0)))
+                repeat(10) { meshes.tick() };packets.clear()
+                repeat(60) { meshes.tick() }
+                assertTrue(packets.none { SendablePacket.extractServerPacket(ConnectionState.PLAY,it) is net.minestom.server.network.packet.server.play.EntityMetaDataPacket },"A held plate has no changing transform or material, including cached notifications")
+            } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
+        }
+    }
+    @Test fun `unpacked observer gets bounded garden footprint even after another cast is cancelled`() = player { owner ->
+        val packets=mutableListOf<SendablePacket>()
+        val viewer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"GardenViewer",packets)
+        val vfx=GreatswordVfx(owner);CoreCombatPresentation.pack(owner,true)
+        val cells=CoreIceGarden.offsets.map { (x,z)->owner.position.add(x*1.25,0.0,z*1.25) }
+        try {
+            val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+            vfx.playSkill(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0),gardenCells=cells))
+            packets.clear();vfx.gardenBoundary(cells,1.25);vfx.tick()
+            assertTrue(packets.any { it.javaClass.simpleName=="ParticlePacket" })
+            assertTrue(packets.count { it.javaClass.simpleName=="ParticlePacket" }<=84)
+            vfx.cancel(preserveGarden=true);packets.clear();vfx.gardenBoundary(cells,1.25);vfx.tick()
+            assertTrue(packets.any { it.javaClass.simpleName=="ParticlePacket" })
+        } finally { vfx.cancel();CoreCombatPresentation.forget(owner);viewer.remove() }
+    }
+    @Test fun `garden reserves its whole native boundary or none when only six scene slots remain`() = player { owner ->
+        CoreCombatPresentation.pack(owner,true)
+        val fillers=List(8) { CoreCombatMeshes(owner) };val garden=CoreCombatMeshes(owner)
+        val ordinary=CoreSkillCatalog.skills(CoreClass.WARRIOR).first()
+        val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+        try {
+            for(mesh in fillers) repeat(48) { mesh.play(CoreSkillEffect(CoreClass.WARRIOR,ordinary,owner.position,Vec(0.0,0.0,1.0))) }
+            assertEquals(384,fillers.sumOf { it.size })
+            fillers.last().cancel()
+            repeat(42) { fillers.last().play(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0),CoreSkillVisualPhase.CONTACT)) }
+            assertEquals(378,fillers.sumOf { it.size })
+            val field=CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0))
+            assertFalse(garden.play(field));assertEquals(0,garden.size)
+            fillers.last().cancel()
+            assertTrue(garden.play(field));garden.tick();assertEquals(21,garden.size)
+            val all=owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }
+            assertEquals(357,all.size)
+            assertTrue(all.count { owner in it.viewers }>=21)
+        } finally { garden.cancel();fillers.forEach { it.cancel() };CoreCombatPresentation.forget(owner) }
+    }
+    @Test fun `sampled preparation boundary reaches unpacked and mixed viewers before field deployment`() {
+        for((ownerPacked,viewerPacked) in listOf(false to false,true to false,false to true)) {
+            val ownerPackets=mutableListOf<SendablePacket>();val viewerPackets=mutableListOf<SendablePacket>()
+            player(ownerPackets) { owner ->
+                val viewer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"PrepViewer",viewerPackets)
+                val vfx=GreatswordVfx(owner)
+                val cells=CoreIceGarden.offsets.map { (x,z)->owner.position.add(x*1.25,0.0,z*1.25) }
+                val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+                try {
+                    CoreCombatPresentation.pack(owner,ownerPacked);CoreCombatPresentation.pack(viewer,viewerPacked)
+                    assertTrue(vfx.playSkill(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0),
+                        CoreSkillVisualPhase.PREPARE,prepareTicks=5,gardenCells=cells)))
+                    repeat(5) {
+                        owner.instance.worldAge++;ownerPackets.clear();viewerPackets.clear();vfx.tick()
+                        if(!ownerPacked) assertEquals(84,ownerPackets.count { it.javaClass.simpleName=="ParticlePacket" })
+                        if(!viewerPacked) assertEquals(84,viewerPackets.count { it.javaClass.simpleName=="ParticlePacket" })
+                        val plates=owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }
+                        assertEquals(21,plates.size)
+                        if(ownerPacked) assertTrue(plates.all { owner in it.viewers })
+                        if(viewerPacked) assertTrue(plates.all { viewer in it.viewers })
+                    }
+                    assertTrue(vfx.playSkill(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0),gardenCells=cells)))
+                    owner.instance.worldAge++;ownerPackets.clear();viewerPackets.clear();vfx.gardenBoundary(cells,1.25);vfx.tick()
+                    if(!ownerPacked) assertEquals(84,ownerPackets.count { it.javaClass.simpleName=="ParticlePacket" })
+                    if(!viewerPacked) assertEquals(84,viewerPackets.count { it.javaClass.simpleName=="ParticlePacket" })
+                    vfx.cancel();ownerPackets.clear();viewerPackets.clear();vfx.tick()
+                    assertTrue(ownerPackets.none { it.javaClass.simpleName=="ParticlePacket" })
+                    assertTrue(viewerPackets.none { it.javaClass.simpleName=="ParticlePacket" })
+                } finally { vfx.cancel();listOf(owner,viewer).forEach(CoreCombatPresentation::forget);viewer.remove() }
+            }
+        }
+    }
+    @Test fun `bloom contact native frames and unpacked observer cues share split fly and settle clock`() {
+        val packets=mutableListOf<SendablePacket>()
+        player(packets) { owner ->
+            val observerPackets=mutableListOf<SendablePacket>()
+            val viewer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"BloomContact",observerPackets)
+            val vfx=GreatswordVfx(owner);CoreCombatPresentation.pack(owner,true)
+            var updates=0
+            try {
+                val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+                assertTrue(vfx.playSkill(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0),CoreSkillVisualPhase.CONTACT)))
+                for(age in 0 until 10) {
+                    owner.instance.worldAge++;packets.clear();observerPackets.clear();vfx.tick()
+                    val native=owner.instance.entities.single { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }
+                    val meta=native.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+                    assertEquals("projects:combat_vfx/garden_bloom/contact_${if(age<3)0 else if(age<7)1 else 2}",meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL))
+                    assertEquals(if(age in listOf(0,3,7))1 else 0,observerPackets.count { it is net.minestom.server.network.packet.server.play.ParticlePacket })
+                    assertTrue(packets.none { it is net.minestom.server.network.packet.server.play.ParticlePacket })
+                    updates+=packets.count { SendablePacket.extractServerPacket(ConnectionState.PLAY,it) is net.minestom.server.network.packet.server.play.EntityMetaDataPacket }
+                }
+                assertEquals(2,updates)
+                vfx.tick();assertTrue(owner.instance.entities.none { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY })
+            } finally { vfx.cancel();CoreCombatPresentation.forget(owner);viewer.remove() }
+        }
+    }
+    @Test fun `bloom warning expiry and preserve cancel keep unpacked cue clock without extra active boundary`() = player { owner ->
+        val packets=mutableListOf<SendablePacket>()
+        val viewer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"BloomExpiry",packets)
+        val vfx=GreatswordVfx(owner);CoreCombatPresentation.pack(owner,true)
+        val cells=CoreIceGarden.offsets.map { (x,z)->owner.position.add(x*1.25,0.0,z*1.25) }
+        val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+        try {
+            assertTrue(vfx.playSkill(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0),gardenCells=cells)))
+            for(age in 0 until 130) {
+                owner.instance.worldAge++;packets.clear()
+                if(age==40) vfx.cancel(preserveGarden=true)
+                if(age<120 && age%10==0) vfx.gardenBoundary(cells,1.25)
+                vfx.tick()
+                val particle=packets.filterIsInstance<net.minestom.server.network.packet.server.play.ParticlePacket>()
+                val expected=if(age<120 && age%10==0)84 else if(age in listOf(120,123))5 else 0
+                assertEquals(expected,particle.size,"age=$age")
+                if(age in listOf(0,100,110)) {
+                    val rgb=(particle.first().particle() as net.minestom.server.particle.Particle.DustColorTransition).color()
+                    val ink=(rgb.red() shl 16)+(rgb.green() shl 8)+rgb.blue()
+                    assertEquals(CoreIceGardenChoreography.boundaryInk(age,120),ink)
+                }
+                if(age==120) assertTrue(owner.instance.entities.any { e ->
+                    (e.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta)?.itemStack
+                        ?.get(net.minestom.server.component.DataComponents.ITEM_MODEL)=="projects:combat_vfx/garden_bloom/collapse_0" })
+            }
+            vfx.tick();assertTrue(owner.instance.entities.none { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY })
+        } finally { vfx.cancel();CoreCombatPresentation.forget(owner);viewer.remove() }
+    }
+    @Test fun `clearing bloom removes every native and queued unpacked cue without delayed expiry`() = player { owner ->
+        val packets=mutableListOf<SendablePacket>()
+        val viewer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"BloomClear",packets)
+        val vfx=GreatswordVfx(owner);CoreCombatPresentation.pack(owner,true)
+        val cells=CoreIceGarden.offsets.map { (x,z)->owner.position.add(x*1.25,0.0,z*1.25) }
+        val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_garden" }
+        try {
+            vfx.playSkill(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0),gardenCells=cells))
+            repeat(118) { owner.instance.worldAge++;vfx.tick() }
+            vfx.playSkill(CoreSkillEffect(CoreClass.MAGE,skill,owner.position,Vec(0.0,0.0,1.0),CoreSkillVisualPhase.CONTACT))
+            vfx.clearGarden();packets.clear()
+            repeat(20) { owner.instance.worldAge++;vfx.tick() }
+            assertTrue(packets.none { it is net.minestom.server.network.packet.server.play.ParticlePacket })
+            assertTrue(owner.instance.entities.none { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY })
+        } finally { vfx.cancel();CoreCombatPresentation.forget(owner);viewer.remove() }
     }
 
     private fun connect(map: net.minestom.server.instance.Instance,at: Pos,name: String,packets:MutableList<SendablePacket>?=null): Player {

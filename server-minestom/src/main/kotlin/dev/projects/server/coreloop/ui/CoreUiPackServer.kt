@@ -163,6 +163,10 @@ class CoreUiPackServer private constructor(
             val polishBytes = requireNotNull(loader.getResourceAsStream("polish05/pack.zip")) {
                 "Missing Polish05 private-namespace pack"
             }.use { it.readBytes() }
+            // The 開拓大陸 map sprites ship as a second private-namespace archive.
+            val atlasBytes = loader.getResourceAsStream("polish05/atlas.zip")?.use { it.readBytes() }
+            // Dialog look: ProjectS widget frames plus the private dialog fonts.
+            val dialogBytes = loader.getResourceAsStream("polish05/dialog.zip")?.use { it.readBytes() }
             val output = ByteArrayOutputStream()
             ZipOutputStream(output).use { zip ->
                 paths.sorted().forEach { path ->
@@ -173,12 +177,13 @@ class CoreUiPackServer private constructor(
                 // Vanilla client reload twice and could leave the forge unavailable until rejoin.
                 val seen = paths.toMutableSet()
                 var privateAssets = 0
-                ZipInputStream(polishBytes.inputStream()).use { source ->
+                listOfNotNull(polishBytes, atlasBytes, dialogBytes).forEach { archive -> ZipInputStream(archive.inputStream()).use { source ->
                     while (true) {
                         val entry = source.nextEntry ?: break
                         val path = entry.name
                         if (!entry.isDirectory && path != "pack.mcmeta") {
-                            require(path.startsWith("assets/projects_ui_polish05/") || path == "LICENSES/Noto-OFL.txt") {
+                            require(path.startsWith("assets/projects_ui_polish05/") || path == "LICENSES/Noto-OFL.txt" ||
+                                path in CoreUiPackPolicy.dialogWidgets) {
                                 "Polish05 pack must only add private assets: $path"
                             }
                             require(CoreUiPackPolicy.allowedPath(path) && seen.add(path)) { "Duplicate or unsafe Polish05 asset: $path" }
@@ -189,7 +194,7 @@ class CoreUiPackServer private constructor(
                         }
                         source.closeEntry()
                     }
-                }
+                } }
                 require(privateAssets > 0) { "Polish05 assets missing from combined pack" }
             }
             return output.toByteArray()

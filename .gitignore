@@ -14,3 +14,23 @@ replay_pid*.log
 
 # Local PixelLab requests, raw candidates, and previews.
 /.projects-local/
+
+# Generated at build time by scripts/gen_resource_pack.py (Gradle :server-minestom:generateResourcePack).
+# Keep in sync with generatedPackDirs/generatedPackFiles in server-minestom/build.gradle.kts.
+/server-minestom/src/main/resources/core-ui-pack/index.txt
+/server-minestom/src/main/resources/core-ui-pack/pack.mcmeta
+/server-minestom/src/main/resources/core-ui-pack/assets/minecraft/
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/font/
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/menu/
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/items/combat_vfx/
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/items/core_ui/
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/items/forge_materials/
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/models/combat_vfx/
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/models/core_ui/
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/models/item/forge_materials/
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/combat_vfx/
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/gui/core/*
+!/server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/gui/core/skill_charge.png
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/gui/skills/
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/item/core_ui/
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/item/forge_materials/

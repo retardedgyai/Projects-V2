@@ -40,9 +40,14 @@ data class ParticleQuality(
     }
 }
 
-data class ParticleBudget(val particlesPerTick: Int = Int.MAX_VALUE) {
+data class ParticleBudget(val particlesPerTick: Int = DEFAULT_PARTICLES_PER_TICK) {
     init {
         require(particlesPerTick >= 0)
+    }
+
+    companion object {
+        /** Per viewer per tick. Callers with a tuned budget (e.g. GreatswordVfx) pass their own. */
+        const val DEFAULT_PARTICLES_PER_TICK = 1_024
     }
 }
 
@@ -192,7 +197,13 @@ class ParticleManager(
         if (viewer.player != null) {
             return playerViewerIds.getOrPut(viewer.player.uuid) { "viewer-${++nextViewerId}" }
         }
+        // Anonymous viewers are usually one-off snapshots; keep the identity map from growing forever.
+        if (snapshotViewerIds.size >= MAX_SNAPSHOT_VIEWER_IDS && viewer !in snapshotViewerIds) snapshotViewerIds.clear()
         return snapshotViewerIds.getOrPut(viewer) { "viewer-${++nextViewerId}" }
+    }
+
+    private companion object {
+        const val MAX_SNAPSHOT_VIEWER_IDS = 256
     }
 }
 

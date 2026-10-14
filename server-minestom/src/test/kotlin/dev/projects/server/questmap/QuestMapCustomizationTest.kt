@@ -13,31 +13,8 @@ import net.minestom.server.item.Material
 
 class QuestMapCustomizationTest {
     @Test
-    fun `quest map item preserves seed and gathering modifiers`() {
+    fun `gathering tools are non-animated long consumables`() {
         MinecraftServer.init(Auth.Offline())
-        val data = QuestMapItemData(
-            seed = 91_337L,
-            customization = QuestMapCustomization(
-                listOf(
-                    QuestMapGatheringModifier(null, QuestMapGatheringStat.AMOUNT, 14),
-                    QuestMapGatheringModifier(
-                        QuestGatheringDiscipline.WOODCUTTING,
-                        QuestMapGatheringStat.QUALITY,
-                        31,
-                    ),
-                    QuestMapGatheringModifier(
-                        QuestGatheringDiscipline.MINING,
-                        QuestMapGatheringStat.DENSE_REGIONS,
-                        44,
-                    ),
-                ),
-            ),
-        )
-
-        assertEquals(data, QuestMapItems.read(QuestMapItems.questMap(data)))
-        assertNull(QuestMapItems.read(QuestMapItems.gatheringTablet()))
-        assertTrue(QuestMapItems.isGatheringTablet(QuestMapItems.gatheringTablet()))
-
         QuestGatheringDiscipline.entries.forEach { discipline ->
             val tool = discipline.toolItem()
             val consumable = assertNotNull(tool.get(DataComponents.CONSUMABLE))

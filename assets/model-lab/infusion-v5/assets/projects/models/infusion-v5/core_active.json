@@ -1,0 +1,3566 @@
+{
+  "credit": "ProjectS original engineered seal / manually drawn pixel textures",
+  "ambientocclusion": false,
+  "textures": {
+    "basalt": "projects:infusion-v3/basalt",
+    "limestone": "projects:infusion-v3/limestone",
+    "brass": "projects:infusion-v3/brass",
+    "well": "projects:infusion-v5/seal_well",
+    "glass": "projects:infusion-v3/glass",
+    "carved": "projects:infusion-v5/sealed_carved",
+    "glow": "projects:infusion-v5/seal_active",
+    "leak": {
+      "sprite": "projects:infusion-v5/leak_active",
+      "force_translucent": true
+    }
+  },
+  "elements": [
+    {
+      "name": "sealed flank 0",
+      "from": [
+        -7,
+        0,
+        2
+      ],
+      "to": [
+        4,
+        22,
+        14
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#carved",
+          "uv": [
+            12,
+            -6,
+            23,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#carved",
+          "uv": [
+            -7,
+            -6,
+            4,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#basalt",
+          "uv": [
+            2,
+            -6,
+            14,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#basalt",
+          "uv": [
+            2,
+            -6,
+            14,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#basalt",
+          "uv": [
+            -7,
+            2,
+            4,
+            14
+          ]
+        },
+        "down": {
+          "texture": "#basalt",
+          "uv": [
+            -7,
+            2,
+            4,
+            14
+          ]
+        }
+      }
+    },
+    {
+      "name": "bevel flank 0",
+      "from": [
+        -8,
+        4,
+        4
+      ],
+      "to": [
+        -7,
+        18,
+        12
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#basalt",
+          "uv": [
+            23,
+            -2,
+            24,
+            12
+          ]
+        },
+        "south": {
+          "texture": "#basalt",
+          "uv": [
+            -8,
+            -2,
+            -7,
+            12
+          ]
+        },
+        "west": {
+          "texture": "#basalt",
+          "uv": [
+            4,
+            -2,
+            12,
+            12
+          ]
+        },
+        "east": {
+          "texture": "#basalt",
+          "uv": [
+            4,
+            -2,
+            12,
+            12
+          ]
+        },
+        "up": {
+          "texture": "#basalt",
+          "uv": [
+            -8,
+            4,
+            -7,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#basalt",
+          "uv": [
+            -8,
+            4,
+            -7,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "name": "sealed flank 1",
+      "from": [
+        12,
+        0,
+        2
+      ],
+      "to": [
+        23,
+        22,
+        14
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#carved",
+          "uv": [
+            -7,
+            -6,
+            4,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#carved",
+          "uv": [
+            12,
+            -6,
+            23,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#basalt",
+          "uv": [
+            2,
+            -6,
+            14,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#basalt",
+          "uv": [
+            2,
+            -6,
+            14,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#basalt",
+          "uv": [
+            12,
+            2,
+            23,
+            14
+          ]
+        },
+        "down": {
+          "texture": "#basalt",
+          "uv": [
+            12,
+            2,
+            23,
+            14
+          ]
+        }
+      }
+    },
+    {
+      "name": "bevel flank 1",
+      "from": [
+        23,
+        4,
+        4
+      ],
+      "to": [
+        24,
+        18,
+        12
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#basalt",
+          "uv": [
+            -8,
+            -2,
+            -7,
+            12
+          ]
+        },
+        "south": {
+          "texture": "#basalt",
+          "uv": [
+            23,
+            -2,
+            24,
+            12
+          ]
+        },
+        "west": {
+          "texture": "#basalt",
+          "uv": [
+            4,
+            -2,
+            12,
+            12
+          ]
+        },
+        "east": {
+          "texture": "#basalt",
+          "uv": [
+            4,
+            -2,
+            12,
+            12
+          ]
+        },
+        "up": {
+          "texture": "#basalt",
+          "uv": [
+            23,
+            4,
+            24,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#basalt",
+          "uv": [
+            23,
+            4,
+            24,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "name": "upper bridge",
+      "from": [
+        -4,
+        22,
+        3
+      ],
+      "to": [
+        20,
+        26,
+        13
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#carved",
+          "uv": [
+            -4,
+            -10,
+            20,
+            -6
+          ]
+        },
+        "south": {
+          "texture": "#carved",
+          "uv": [
+            -4,
+            -10,
+            20,
+            -6
+          ]
+        },
+        "west": {
+          "texture": "#basalt",
+          "uv": [
+            3,
+            -10,
+            13,
+            -6
+          ]
+        },
+        "east": {
+          "texture": "#basalt",
+          "uv": [
+            3,
+            -10,
+            13,
+            -6
+          ]
+        },
+        "up": {
+          "texture": "#basalt",
+          "uv": [
+            -4,
+            3,
+            20,
+            13
+          ]
+        },
+        "down": {
+          "texture": "#basalt",
+          "uv": [
+            -4,
+            3,
+            20,
+            13
+          ]
+        }
+      }
+    },
+    {
+      "name": "upper crown",
+      "from": [
+        -1,
+        26,
+        4
+      ],
+      "to": [
+        17,
+        28,
+        12
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#carved",
+          "uv": [
+            -1,
+            -12,
+            17,
+            -10
+          ]
+        },
+        "south": {
+          "texture": "#carved",
+          "uv": [
+            -1,
+            -12,
+            17,
+            -10
+          ]
+        },
+        "west": {
+          "texture": "#basalt",
+          "uv": [
+            4,
+            -12,
+            12,
+            -10
+          ]
+        },
+        "east": {
+          "texture": "#basalt",
+          "uv": [
+            4,
+            -12,
+            12,
+            -10
+          ]
+        },
+        "up": {
+          "texture": "#basalt",
+          "uv": [
+            -1,
+            4,
+            17,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#basalt",
+          "uv": [
+            -1,
+            4,
+            17,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "name": "lower bridge",
+      "from": [
+        -4,
+        -4,
+        3
+      ],
+      "to": [
+        20,
+        0,
+        13
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#carved",
+          "uv": [
+            -4,
+            16,
+            20,
+            20
+          ]
+        },
+        "south": {
+          "texture": "#carved",
+          "uv": [
+            -4,
+            16,
+            20,
+            20
+          ]
+        },
+        "west": {
+          "texture": "#basalt",
+          "uv": [
+            3,
+            16,
+            13,
+            20
+          ]
+        },
+        "east": {
+          "texture": "#basalt",
+          "uv": [
+            3,
+            16,
+            13,
+            20
+          ]
+        },
+        "up": {
+          "texture": "#basalt",
+          "uv": [
+            -4,
+            3,
+            20,
+            13
+          ]
+        },
+        "down": {
+          "texture": "#basalt",
+          "uv": [
+            -4,
+            3,
+            20,
+            13
+          ]
+        }
+      }
+    },
+    {
+      "name": "lower keel",
+      "from": [
+        -1,
+        -6,
+        4
+      ],
+      "to": [
+        17,
+        -4,
+        12
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#carved",
+          "uv": [
+            -1,
+            20,
+            17,
+            22
+          ]
+        },
+        "south": {
+          "texture": "#carved",
+          "uv": [
+            -1,
+            20,
+            17,
+            22
+          ]
+        },
+        "west": {
+          "texture": "#basalt",
+          "uv": [
+            4,
+            20,
+            12,
+            22
+          ]
+        },
+        "east": {
+          "texture": "#basalt",
+          "uv": [
+            4,
+            20,
+            12,
+            22
+          ]
+        },
+        "up": {
+          "texture": "#basalt",
+          "uv": [
+            -1,
+            4,
+            17,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#basalt",
+          "uv": [
+            -1,
+            4,
+            17,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "name": "recess bed",
+      "from": [
+        -4,
+        3,
+        0.6
+      ],
+      "to": [
+        -2,
+        19,
+        2
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            18,
+            -3,
+            20,
+            13
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            -4,
+            -3,
+            -2,
+            13
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            0.6,
+            -3,
+            2,
+            13
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            14,
+            -3,
+            15.4,
+            13
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            -4,
+            0.6,
+            -2,
+            2
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            -4,
+            14,
+            -2,
+            15.4
+          ]
+        }
+      }
+    },
+    {
+      "name": "channel lip",
+      "from": [
+        -5,
+        2,
+        0.2
+      ],
+      "to": [
+        -4,
+        20,
+        2
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#basalt",
+          "uv": [
+            20,
+            -4,
+            21,
+            14
+          ]
+        },
+        "south": {
+          "texture": "#basalt",
+          "uv": [
+            -5,
+            -4,
+            -4,
+            14
+          ]
+        },
+        "west": {
+          "texture": "#basalt",
+          "uv": [
+            0.2,
+            -4,
+            2,
+            14
+          ]
+        },
+        "east": {
+          "texture": "#basalt",
+          "uv": [
+            14,
+            -4,
+            15.8,
+            14
+          ]
+        },
+        "up": {
+          "texture": "#basalt",
+          "uv": [
+            -5,
+            0.2,
+            -4,
+            2
+          ]
+        },
+        "down": {
+          "texture": "#basalt",
+          "uv": [
+            -5,
+            14,
+            -4,
+            15.8
+          ]
+        }
+      }
+    },
+    {
+      "name": "channel lip",
+      "from": [
+        -2,
+        2,
+        0.2
+      ],
+      "to": [
+        -1,
+        20,
+        2
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#basalt",
+          "uv": [
+            17,
+            -4,
+            18,
+            14
+          ]
+        },
+        "south": {
+          "texture": "#basalt",
+          "uv": [
+            -2,
+            -4,
+            -1,
+            14
+          ]
+        },
+        "west": {
+          "texture": "#basalt",
+          "uv": [
+            0.2,
+            -4,
+            2,
+            14
+          ]
+        },
+        "east": {
+          "texture": "#basalt",
+          "uv": [
+            14,
+            -4,
+            15.8,
+            14
+          ]
+        },
+        "up": {
+          "texture": "#basalt",
+          "uv": [
+            -2,
+            0.2,
+            -1,
+            2
+          ]
+        },
+        "down": {
+          "texture": "#basalt",
+          "uv": [
+            -2,
+            14,
+            -1,
+            15.8
+          ]
+        }
+      }
+    },
+    {
+      "name": "sealed incision",
+      "from": [
+        -3.35,
+        4,
+        0.55
+      ],
+      "to": [
+        -2.65,
+        7,
+        0.7
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "sealed incision",
+      "from": [
+        -3.35,
+        10,
+        0.55
+      ],
+      "to": [
+        -2.65,
+        13,
+        0.7
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "sealed incision",
+      "from": [
+        -3.35,
+        16,
+        0.55
+      ],
+      "to": [
+        -2.65,
+        19,
+        0.7
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "recess bed",
+      "from": [
+        17,
+        3,
+        0.6
+      ],
+      "to": [
+        19,
+        19,
+        2
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            -3,
+            -3,
+            -1,
+            13
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            17,
+            -3,
+            19,
+            13
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            0.6,
+            -3,
+            2,
+            13
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            14,
+            -3,
+            15.4,
+            13
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            17,
+            0.6,
+            19,
+            2
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            17,
+            14,
+            19,
+            15.4
+          ]
+        }
+      }
+    },
+    {
+      "name": "channel lip",
+      "from": [
+        16,
+        2,
+        0.2
+      ],
+      "to": [
+        17,
+        20,
+        2
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#basalt",
+          "uv": [
+            -1,
+            -4,
+            0,
+            14
+          ]
+        },
+        "south": {
+          "texture": "#basalt",
+          "uv": [
+            16,
+            -4,
+            17,
+            14
+          ]
+        },
+        "west": {
+          "texture": "#basalt",
+          "uv": [
+            0.2,
+            -4,
+            2,
+            14
+          ]
+        },
+        "east": {
+          "texture": "#basalt",
+          "uv": [
+            14,
+            -4,
+            15.8,
+            14
+          ]
+        },
+        "up": {
+          "texture": "#basalt",
+          "uv": [
+            16,
+            0.2,
+            17,
+            2
+          ]
+        },
+        "down": {
+          "texture": "#basalt",
+          "uv": [
+            16,
+            14,
+            17,
+            15.8
+          ]
+        }
+      }
+    },
+    {
+      "name": "channel lip",
+      "from": [
+        19,
+        2,
+        0.2
+      ],
+      "to": [
+        20,
+        20,
+        2
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#basalt",
+          "uv": [
+            -4,
+            -4,
+            -3,
+            14
+          ]
+        },
+        "south": {
+          "texture": "#basalt",
+          "uv": [
+            19,
+            -4,
+            20,
+            14
+          ]
+        },
+        "west": {
+          "texture": "#basalt",
+          "uv": [
+            0.2,
+            -4,
+            2,
+            14
+          ]
+        },
+        "east": {
+          "texture": "#basalt",
+          "uv": [
+            14,
+            -4,
+            15.8,
+            14
+          ]
+        },
+        "up": {
+          "texture": "#basalt",
+          "uv": [
+            19,
+            0.2,
+            20,
+            2
+          ]
+        },
+        "down": {
+          "texture": "#basalt",
+          "uv": [
+            19,
+            14,
+            20,
+            15.8
+          ]
+        }
+      }
+    },
+    {
+      "name": "sealed incision",
+      "from": [
+        17.65,
+        4,
+        0.55
+      ],
+      "to": [
+        18.35,
+        7,
+        0.7
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "sealed incision",
+      "from": [
+        17.65,
+        10,
+        0.55
+      ],
+      "to": [
+        18.35,
+        13,
+        0.7
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "sealed incision",
+      "from": [
+        17.65,
+        16,
+        0.55
+      ],
+      "to": [
+        18.35,
+        19,
+        0.7
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            0,
+            0,
+            4,
+            12
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "inner channel",
+      "from": [
+        4,
+        2,
+        4
+      ],
+      "to": [
+        4.5,
+        20,
+        12
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            11.5,
+            -4,
+            12,
+            14
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            4,
+            -4,
+            4.5,
+            14
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            4,
+            -4,
+            12,
+            14
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            4,
+            -4,
+            12,
+            14
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            4,
+            4,
+            4.5,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            4,
+            4,
+            4.5,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "name": "inner emission",
+      "from": [
+        4.12,
+        3,
+        4.5
+      ],
+      "to": [
+        4.38,
+        19,
+        11.5
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            11.620000000000001,
+            -3,
+            11.879999999999999,
+            13
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            4.12,
+            -3,
+            4.38,
+            13
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            4.5,
+            -3,
+            11.5,
+            13
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            4.5,
+            -3,
+            11.5,
+            13
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            4.12,
+            4.5,
+            4.38,
+            11.5
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            4.12,
+            4.5,
+            4.38,
+            11.5
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "inner channel",
+      "from": [
+        11.5,
+        2,
+        4
+      ],
+      "to": [
+        12.0,
+        20,
+        12
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            4.0,
+            -4,
+            4.5,
+            14
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            11.5,
+            -4,
+            12.0,
+            14
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            4,
+            -4,
+            12,
+            14
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            4,
+            -4,
+            12,
+            14
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            11.5,
+            4,
+            12.0,
+            12
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            11.5,
+            4,
+            12.0,
+            12
+          ]
+        }
+      }
+    },
+    {
+      "name": "inner emission",
+      "from": [
+        11.62,
+        3,
+        4.5
+      ],
+      "to": [
+        11.88,
+        19,
+        11.5
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            4.119999999999999,
+            -3,
+            4.380000000000001,
+            13
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            11.62,
+            -3,
+            11.88,
+            13
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            4.5,
+            -3,
+            11.5,
+            13
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            4.5,
+            -3,
+            11.5,
+            13
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            11.62,
+            4.5,
+            11.88,
+            11.5
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            11.62,
+            4.5,
+            11.88,
+            11.5
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "contained seal",
+      "from": [
+        7.5,
+        2,
+        6
+      ],
+      "to": [
+        8.5,
+        5,
+        10
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            7.5,
+            11,
+            8.5,
+            14
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            7.5,
+            11,
+            8.5,
+            14
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            6,
+            11,
+            10,
+            14
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            6,
+            11,
+            10,
+            14
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            7.5,
+            6,
+            8.5,
+            10
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            7.5,
+            6,
+            8.5,
+            10
+          ]
+        }
+      }
+    },
+    {
+      "name": "seal filament",
+      "from": [
+        7.8,
+        2.2,
+        5.8
+      ],
+      "to": [
+        8.2,
+        4.8,
+        6
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "contained seal",
+      "from": [
+        7.0,
+        5,
+        6
+      ],
+      "to": [
+        9.0,
+        9,
+        10
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            7.0,
+            7,
+            9.0,
+            11
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            7.0,
+            7,
+            9.0,
+            11
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            6,
+            7,
+            10,
+            11
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            6,
+            7,
+            10,
+            11
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            7.0,
+            6,
+            9.0,
+            10
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            7.0,
+            6,
+            9.0,
+            10
+          ]
+        }
+      }
+    },
+    {
+      "name": "seal filament",
+      "from": [
+        7.8,
+        5.2,
+        5.8
+      ],
+      "to": [
+        8.2,
+        8.8,
+        6
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "contained seal",
+      "from": [
+        6.5,
+        9,
+        6
+      ],
+      "to": [
+        9.5,
+        13,
+        10
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            6.5,
+            3,
+            9.5,
+            7
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            6.5,
+            3,
+            9.5,
+            7
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            6,
+            3,
+            10,
+            7
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            6,
+            3,
+            10,
+            7
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            6.5,
+            6,
+            9.5,
+            10
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            6.5,
+            6,
+            9.5,
+            10
+          ]
+        }
+      }
+    },
+    {
+      "name": "seal filament",
+      "from": [
+        7.8,
+        9.2,
+        5.8
+      ],
+      "to": [
+        8.2,
+        12.8,
+        6
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "contained seal",
+      "from": [
+        7.0,
+        13,
+        6
+      ],
+      "to": [
+        9.0,
+        17,
+        10
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            7.0,
+            -1,
+            9.0,
+            3
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            7.0,
+            -1,
+            9.0,
+            3
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            6,
+            -1,
+            10,
+            3
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            6,
+            -1,
+            10,
+            3
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            7.0,
+            6,
+            9.0,
+            10
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            7.0,
+            6,
+            9.0,
+            10
+          ]
+        }
+      }
+    },
+    {
+      "name": "seal filament",
+      "from": [
+        7.8,
+        13.2,
+        5.8
+      ],
+      "to": [
+        8.2,
+        16.8,
+        6
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "contained seal",
+      "from": [
+        7.5,
+        17,
+        6
+      ],
+      "to": [
+        8.5,
+        20,
+        10
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            7.5,
+            -4,
+            8.5,
+            -1
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            7.5,
+            -4,
+            8.5,
+            -1
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            6,
+            -4,
+            10,
+            -1
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            6,
+            -4,
+            10,
+            -1
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            7.5,
+            6,
+            8.5,
+            10
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            7.5,
+            6,
+            8.5,
+            10
+          ]
+        }
+      }
+    },
+    {
+      "name": "seal filament",
+      "from": [
+        7.8,
+        17.2,
+        5.8
+      ],
+      "to": [
+        8.2,
+        19.8,
+        6
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#glow",
+          "uv": [
+            4,
+            0,
+            8,
+            16
+          ]
+        }
+      },
+      "light_emission": 15,
+      "shade": false
+    },
+    {
+      "name": "aperture light sprite",
+      "from": [
+        4.8,
+        2,
+        8
+      ],
+      "to": [
+        11.2,
+        20,
+        8
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "shade": false,
+      "light_emission": 15,
+      "faces": {
+        "north": {
+          "texture": "#leak",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#leak",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        }
+      }
+    },
+    {
+      "name": "restraint catch",
+      "from": [
+        -6,
+        0,
+        0.2
+      ],
+      "to": [
+        -4,
+        2,
+        4
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#brass",
+          "uv": [
+            20,
+            14,
+            22,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#brass",
+          "uv": [
+            -6,
+            14,
+            -4,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#brass",
+          "uv": [
+            0.2,
+            14,
+            4,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#brass",
+          "uv": [
+            12,
+            14,
+            15.8,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#brass",
+          "uv": [
+            -6,
+            0.2,
+            -4,
+            4
+          ]
+        },
+        "down": {
+          "texture": "#brass",
+          "uv": [
+            -6,
+            12,
+            -4,
+            15.8
+          ]
+        }
+      }
+    },
+    {
+      "name": "stone over catch",
+      "from": [
+        -5.5,
+        0.45,
+        -0.1
+      ],
+      "to": [
+        -4.5,
+        1.55,
+        0.2
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            20.5,
+            14.45,
+            21.5,
+            15.55
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            -5.5,
+            14.45,
+            -4.5,
+            15.55
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            -0.1,
+            14.45,
+            0.2,
+            15.55
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            15.8,
+            14.45,
+            16.1,
+            15.55
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            -5.5,
+            -0.1,
+            -4.5,
+            0.2
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            -5.5,
+            15.8,
+            -4.5,
+            16.1
+          ]
+        }
+      }
+    },
+    {
+      "name": "restraint catch",
+      "from": [
+        -6,
+        20,
+        0.2
+      ],
+      "to": [
+        -4,
+        22,
+        4
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#brass",
+          "uv": [
+            20,
+            -6,
+            22,
+            -4
+          ]
+        },
+        "south": {
+          "texture": "#brass",
+          "uv": [
+            -6,
+            -6,
+            -4,
+            -4
+          ]
+        },
+        "west": {
+          "texture": "#brass",
+          "uv": [
+            0.2,
+            -6,
+            4,
+            -4
+          ]
+        },
+        "east": {
+          "texture": "#brass",
+          "uv": [
+            12,
+            -6,
+            15.8,
+            -4
+          ]
+        },
+        "up": {
+          "texture": "#brass",
+          "uv": [
+            -6,
+            0.2,
+            -4,
+            4
+          ]
+        },
+        "down": {
+          "texture": "#brass",
+          "uv": [
+            -6,
+            12,
+            -4,
+            15.8
+          ]
+        }
+      }
+    },
+    {
+      "name": "stone over catch",
+      "from": [
+        -5.5,
+        20.45,
+        -0.1
+      ],
+      "to": [
+        -4.5,
+        21.55,
+        0.2
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            20.5,
+            -5.550000000000001,
+            21.5,
+            -4.449999999999999
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            -5.5,
+            -5.550000000000001,
+            -4.5,
+            -4.449999999999999
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            -0.1,
+            -5.550000000000001,
+            0.2,
+            -4.449999999999999
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            15.8,
+            -5.550000000000001,
+            16.1,
+            -4.449999999999999
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            -5.5,
+            -0.1,
+            -4.5,
+            0.2
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            -5.5,
+            15.8,
+            -4.5,
+            16.1
+          ]
+        }
+      }
+    },
+    {
+      "name": "back binding",
+      "from": [
+        -5.5,
+        -1,
+        14
+      ],
+      "to": [
+        -4.5,
+        23,
+        14.7
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#brass",
+          "uv": [
+            20.5,
+            -7,
+            21.5,
+            17
+          ]
+        },
+        "south": {
+          "texture": "#brass",
+          "uv": [
+            -5.5,
+            -7,
+            -4.5,
+            17
+          ]
+        },
+        "west": {
+          "texture": "#brass",
+          "uv": [
+            14,
+            -7,
+            14.7,
+            17
+          ]
+        },
+        "east": {
+          "texture": "#brass",
+          "uv": [
+            1.3000000000000007,
+            -7,
+            2,
+            17
+          ]
+        },
+        "up": {
+          "texture": "#brass",
+          "uv": [
+            -5.5,
+            14,
+            -4.5,
+            14.7
+          ]
+        },
+        "down": {
+          "texture": "#brass",
+          "uv": [
+            -5.5,
+            1.3000000000000007,
+            -4.5,
+            2
+          ]
+        }
+      }
+    },
+    {
+      "name": "restraint catch",
+      "from": [
+        18,
+        0,
+        0.2
+      ],
+      "to": [
+        20,
+        2,
+        4
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#brass",
+          "uv": [
+            -4,
+            14,
+            -2,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#brass",
+          "uv": [
+            18,
+            14,
+            20,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#brass",
+          "uv": [
+            0.2,
+            14,
+            4,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#brass",
+          "uv": [
+            12,
+            14,
+            15.8,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#brass",
+          "uv": [
+            18,
+            0.2,
+            20,
+            4
+          ]
+        },
+        "down": {
+          "texture": "#brass",
+          "uv": [
+            18,
+            12,
+            20,
+            15.8
+          ]
+        }
+      }
+    },
+    {
+      "name": "stone over catch",
+      "from": [
+        18.5,
+        0.45,
+        -0.1
+      ],
+      "to": [
+        19.5,
+        1.55,
+        0.2
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            -3.5,
+            14.45,
+            -2.5,
+            15.55
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            18.5,
+            14.45,
+            19.5,
+            15.55
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            -0.1,
+            14.45,
+            0.2,
+            15.55
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            15.8,
+            14.45,
+            16.1,
+            15.55
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            18.5,
+            -0.1,
+            19.5,
+            0.2
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            18.5,
+            15.8,
+            19.5,
+            16.1
+          ]
+        }
+      }
+    },
+    {
+      "name": "restraint catch",
+      "from": [
+        18,
+        20,
+        0.2
+      ],
+      "to": [
+        20,
+        22,
+        4
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#brass",
+          "uv": [
+            -4,
+            -6,
+            -2,
+            -4
+          ]
+        },
+        "south": {
+          "texture": "#brass",
+          "uv": [
+            18,
+            -6,
+            20,
+            -4
+          ]
+        },
+        "west": {
+          "texture": "#brass",
+          "uv": [
+            0.2,
+            -6,
+            4,
+            -4
+          ]
+        },
+        "east": {
+          "texture": "#brass",
+          "uv": [
+            12,
+            -6,
+            15.8,
+            -4
+          ]
+        },
+        "up": {
+          "texture": "#brass",
+          "uv": [
+            18,
+            0.2,
+            20,
+            4
+          ]
+        },
+        "down": {
+          "texture": "#brass",
+          "uv": [
+            18,
+            12,
+            20,
+            15.8
+          ]
+        }
+      }
+    },
+    {
+      "name": "stone over catch",
+      "from": [
+        18.5,
+        20.45,
+        -0.1
+      ],
+      "to": [
+        19.5,
+        21.55,
+        0.2
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#well",
+          "uv": [
+            -3.5,
+            -5.550000000000001,
+            -2.5,
+            -4.449999999999999
+          ]
+        },
+        "south": {
+          "texture": "#well",
+          "uv": [
+            18.5,
+            -5.550000000000001,
+            19.5,
+            -4.449999999999999
+          ]
+        },
+        "west": {
+          "texture": "#well",
+          "uv": [
+            -0.1,
+            -5.550000000000001,
+            0.2,
+            -4.449999999999999
+          ]
+        },
+        "east": {
+          "texture": "#well",
+          "uv": [
+            15.8,
+            -5.550000000000001,
+            16.1,
+            -4.449999999999999
+          ]
+        },
+        "up": {
+          "texture": "#well",
+          "uv": [
+            18.5,
+            -0.1,
+            19.5,
+            0.2
+          ]
+        },
+        "down": {
+          "texture": "#well",
+          "uv": [
+            18.5,
+            15.8,
+            19.5,
+            16.1
+          ]
+        }
+      }
+    },
+    {
+      "name": "back binding",
+      "from": [
+        18.5,
+        -1,
+        14
+      ],
+      "to": [
+        19.5,
+        23,
+        14.7
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "z",
+        "angle": 22.5,
+        "rescale": false
+      },
+      "faces": {
+        "north": {
+          "texture": "#brass",
+          "uv": [
+            -3.5,
+            -7,
+            -2.5,
+            17
+          ]
+        },
+        "south": {
+          "texture": "#brass",
+          "uv": [
+            18.5,
+            -7,
+            19.5,
+            17
+          ]
+        },
+        "west": {
+          "texture": "#brass",
+          "uv": [
+            14,
+            -7,
+            14.7,
+            17
+          ]
+        },
+        "east": {
+          "texture": "#brass",
+          "uv": [
+            1.3000000000000007,
+            -7,
+            2,
+            17
+          ]
+        },
+        "up": {
+          "texture": "#brass",
+          "uv": [
+            18.5,
+            14,
+            19.5,
+            14.7
+          ]
+        },
+        "down": {
+          "texture": "#brass",
+          "uv": [
+            18.5,
+            1.3000000000000007,
+            19.5,
+            2
+          ]
+        }
+      }
+    }
+  ]
+}
