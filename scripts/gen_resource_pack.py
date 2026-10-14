@@ -1,0 +1,43 @@
+"""Regenerate the build-time part of server-minestom's core-ui-pack.
+
+Generated files are not committed (see .gitignore); Gradle's
+`:server-minestom:generateResourcePack` runs this before processResources.
+Order matters: build_warrior_hud reads the menu glyph atlas written by
+build_core_ui_assets, and the Ice Garden builders are independent leaves.
+The final step rewrites index.txt from every file in the pack (committed and
+generated), which is what CoreUiPackServer bundles.
+
+Requires Pillow + numpy (scripts/requirements.txt). The menu builder downloads
+one pinned, sha256-checked font into .tools/core-menu/ on first run.
+"""
+from pathlib import Path
+import subprocess
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = ROOT / "scripts"
+PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
+
+CHAIN = [
+    "build_core_ui_assets.py",   # HUD, menu atlas (charset from */src/main/kotlin), combat VFX models
+    "build_warrior_hud.py",      # must follow: reads menu/glyphs-emphasis.tsv + core_menu_emphasis_y30
+    "build_ice_garden.py",       # combat_vfx/garden
+    "build_ice_garden_bloom.py", # combat_vfx/garden_bloom
+]
+
+
+def write_index():
+    paths = sorted(p.relative_to(PACK).as_posix() for p in PACK.rglob("*") if p.is_file() and p.name != "index.txt")
+    (PACK / "index.txt").write_text("\n".join(paths) + "\n", encoding="utf-8")
+    return len(paths)
+
+
+def main():
+    for name in CHAIN:
+        print(f"[gen_resource_pack] {name}", flush=True)
+        subprocess.run([sys.executable, str(SCRIPTS / name)], cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
+    print(f"[gen_resource_pack] indexed {write_index()} files under {PACK.relative_to(ROOT).as_posix()}")
+
+
+if __name__ == "__main__":
+    main()

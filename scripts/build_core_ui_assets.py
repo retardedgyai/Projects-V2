@@ -65,6 +65,7 @@ def item_model(name, source):
 
 
 def build():
+    (ASSETS / "textures/gui/skills").mkdir(parents=True, exist_ok=True)
     for name in SKILLS:
         master = SOURCE / f"skills/{name}.png"
         with Image.open(master) as original:

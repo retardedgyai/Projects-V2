@@ -1,6 +1,9 @@
 name: Build
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -20,5 +23,20 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: gradle
+      # core-ui-pack assets are generated at build time (:server-minestom:generateResourcePack).
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+      - name: Install resource-pack generator dependencies
+        run: pip install -r scripts/requirements.txt
+      - name: Cache pinned menu font
+        uses: actions/cache@v4
+        with:
+          path: .tools/core-menu
+          key: core-menu-${{ hashFiles('scripts/build_core_menu_assets.py') }}
+          restore-keys: core-menu-
       - name: Build
         run: ./gradlew build
