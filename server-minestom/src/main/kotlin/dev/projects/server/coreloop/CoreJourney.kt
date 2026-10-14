@@ -78,6 +78,12 @@ object CoreJourneyRules {
     fun rank(identity: CoreGearIdentity, tier: Int) = itemLevel(identity, tier) - floor(tier)
     fun power(identity: CoreGearIdentity, tier: Int) = 1.0 + rank(identity, tier) * CoreMmoTuning.balance.equipmentRankPermille / 1000.0
     fun base(a: CoreAccount) = a.weaponIdentity.base
+    /** Single source of truth for the star-weaver change; null when eligible. */
+    fun starweaverBlocker(a: CoreAccount): String? = when {
+        a.journey.job != CoreClass.MAGE && a.journey.job != CoreClass.STARWEAVER -> "メイジから転職してください"
+        a.journey.level < 20 || a.amount(CoreResource.BOSS_SIGIL, 2) < 2 -> "Lv20とT2討伐証2枚が必要です（証は消費しません）"
+        else -> null
+    }
     fun skillUnlocked(a: CoreAccount, index: Int) = a.journey.legacy || a.journey.level >= CoreSkillCatalog.unlockLevels[index]
     fun reward(tier: Int, boss: Boolean = false): Long = (if (boss) 300L else 35L) * tier
     fun next(a: CoreAccount): String = when {

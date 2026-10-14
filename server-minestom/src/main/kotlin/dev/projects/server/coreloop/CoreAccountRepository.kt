@@ -31,43 +31,52 @@ sealed interface CoreRepositorySave {
 /** Dedicated core-loop directory. Existing progression files are never opened or migrated. */
 class CoreAccountRepository(
     directory: Path,
+    private val readBytes: (Path) -> ByteArray = Files::readAllBytes,
+    private val nanoTime: () -> Long = System::nanoTime,
     private val atomicReplace: (Path, Path) -> Unit = { source, target -> Files.move(source, target, ATOMIC_MOVE, REPLACE_EXISTING); Unit },
 ) {
     private val directory = directory.toAbsolutePath().normalize()
-    private val blocked = mutableSetOf<UUID>()
+    /** Corrupt content is re-checked after a cool-down; transient I/O failures never block. */
+    private val blocked = mutableMapOf<UUID, Long>()
 
     @Synchronized
     fun load(playerId: UUID): CoreRepositoryLoad = try {
-        exclusive { recoverTrade(); loadInternal(playerId) }
+        exclusive { if (playerId in recoverTrade()) CoreRepositoryLoad.Invalid("取引の復旧待ちです。管理者に連絡してください") else loadInternal(playerId) }
     } catch (failure: Exception) { CoreRepositoryLoad.Invalid("取引の復旧が必要です: ${failure.message?.take(120)}") }
 
+    private fun isBlocked(playerId: UUID): Boolean {
+        val since = blocked[playerId] ?: return false
+        if (nanoTime() - since < BLOCK_NANOS) return true
+        blocked.remove(playerId); return false
+    }
+
     private fun loadInternal(playerId: UUID): CoreRepositoryLoad {
-        if (playerId in blocked) return CoreRepositoryLoad.Invalid("このデータは破損または未対応の形式です")
+        if (isBlocked(playerId)) return CoreRepositoryLoad.Invalid("このデータは破損または未対応の形式です")
         return try {
             requireSafeDirectory()
             val file = fileFor(playerId)
             if (!Files.exists(file, NOFOLLOW_LINKS)) CoreRepositoryLoad.Missing else {
                 require(Files.isRegularFile(file, NOFOLLOW_LINKS)) { "保存先が通常ファイルではありません" }
                 require(Files.size(file) <= MAX_FILE_BYTES) { "保存データが上限を超えています" }
-                val bytes = Files.readAllBytes(file)
+                val bytes = readBytes(file)
                 require(bytes.size <= MAX_FILE_BYTES)
                 val text = UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString()
                 CoreRepositoryLoad.Loaded(CoreAccountCodec.decode(text, playerId))
             }
         } catch (failure: Exception) {
-            blocked += playerId
+            if (corrupt(failure)) blocked[playerId] = nanoTime()
             CoreRepositoryLoad.Invalid(failure.message?.take(256) ?: "保存データを読み込めません")
         }
     }
 
     @Synchronized
     fun commit(expectedRevision: Long, next: CoreAccount): CoreRepositorySave = try {
-        exclusive { recoverTrade(); commitInternal(expectedRevision, next) }
+        exclusive { if (next.playerId in recoverTrade()) CoreRepositorySave.Failed("取引の復旧待ちです") else commitInternal(expectedRevision, next) }
     } catch (failure: Exception) { CoreRepositorySave.Failed(failure.message ?: "保存できません") }
 
     private fun commitInternal(expectedRevision: Long, next: CoreAccount): CoreRepositorySave {
-        if (next.playerId in blocked) return CoreRepositorySave.Failed("破損データを上書きできません")
+        if (isBlocked(next.playerId)) return CoreRepositorySave.Failed("破損データを上書きできません")
         if (expectedRevision < 0 || expectedRevision == Long.MAX_VALUE || next.revision != expectedRevision + 1) return CoreRepositorySave.Conflict
         var temporary: Path? = null
         var encoded: ByteArray? = null
@@ -118,7 +127,7 @@ class CoreAccountRepository(
     @Synchronized
     fun commitTrade(buyer: CoreAccount, seller: CoreAccount): CoreRepositorySave = try {
         exclusive {
-            recoverTrade()
+            require(recoverTrade().isEmpty()) { "未復旧の取引があります" }
             require(buyer.playerId != seller.playerId)
             val pair = listOf(buyer, seller)
             if (pair.any { next -> (loadInternal(next.playerId) as? CoreRepositoryLoad.Loaded)?.account?.revision != next.revision - 1 })
@@ -138,35 +147,56 @@ class CoreAccountRepository(
 
     @Synchronized
     fun marketAccounts(): List<CoreAccount> = exclusive {
-        recoverTrade()
+        val stuck = recoverTrade()
         Files.newDirectoryStream(directory, "*.account").use { files -> files.mapNotNull { file ->
             val id = runCatching { UUID.fromString(file.fileName.toString().removeSuffix(".account")) }.getOrNull()
-            id?.let { (loadInternal(it) as? CoreRepositoryLoad.Loaded)?.account }
+            id?.takeUnless { it in stuck }?.let { (loadInternal(it) as? CoreRepositoryLoad.Loaded)?.account }
         } }
     }
 
-    private fun recoverTrade() {
+    /**
+     * Installs a pending two-party intent. Returns the parties still waiting on it (their saves are
+     * unreadable); every other player proceeds. An intent that can never apply is quarantined.
+     */
+    private fun recoverTrade(): Set<UUID> {
         val pending = directory.resolve("market.pending")
-        if (!Files.exists(pending, NOFOLLOW_LINKS)) return
-        require(Files.isRegularFile(pending, NOFOLLOW_LINKS) && Files.size(pending) <= MAX_FILE_BYTES * 3L)
-        val rows = Files.readString(pending, UTF_8).trimEnd('\n').split('\n')
-        require(rows.size == 2)
-        val next = rows.map { row ->
-            val parts = row.split('\t'); require(parts.size == 2)
-            CoreAccountCodec.decode(String(Base64.getDecoder().decode(parts[1]), UTF_8), UUID.fromString(parts[0]))
+        if (!Files.exists(pending, NOFOLLOW_LINKS)) return emptySet()
+        val next = try {
+            require(Files.isRegularFile(pending, NOFOLLOW_LINKS) && Files.size(pending) <= MAX_FILE_BYTES * 3L)
+            val rows = strictUtf8(readBytes(pending)).trimEnd('\n').split('\n')
+            require(rows.size == 2)
+            rows.map { row ->
+                val parts = row.split('\t'); require(parts.size == 2)
+                CoreAccountCodec.decode(strictUtf8(Base64.getDecoder().decode(parts[1])), UUID.fromString(parts[0]))
+            }.also { require(it[0].playerId != it[1].playerId) }
+        } catch (failure: Exception) {
+            if (!corrupt(failure)) throw failure
+            quarantine(pending, failure); return emptySet()
         }
-        require(next[0].playerId != next[1].playerId)
         // Validate BOTH before installing either; never overwrite an unrelated later revision.
-        next.forEach { target ->
-            val current = (loadInternal(target.playerId) as? CoreRepositoryLoad.Loaded)?.account ?: error("取引元の保存がありません")
-            require(current.revision == target.revision - 1 || CoreAccountCodec.encode(current) == CoreAccountCodec.encode(target))
+        val current = next.map { loadInternal(it.playerId) }
+        if (current.any { it is CoreRepositoryLoad.Invalid }) return next.mapTo(linkedSetOf()) { it.playerId }
+        val applicable = next.zip(current).all { (target, loaded) ->
+            val account = (loaded as? CoreRepositoryLoad.Loaded)?.account
+            account != null && (account.revision == target.revision - 1 || CoreAccountCodec.encode(account) == CoreAccountCodec.encode(target))
         }
+        if (!applicable) { quarantine(pending, IllegalStateException("取引元の保存が一致しません")); return emptySet() }
         next.forEach { target ->
             preserveLegacyBackup(target.playerId)
             durableReplace(fileFor(target.playerId), CoreAccountCodec.encode(target).toByteArray(UTF_8))
         }
         Files.delete(pending)
+        return emptySet()
     }
+
+    private fun quarantine(pending: Path, failure: Exception) {
+        val target = directory.resolve("market.pending.${System.currentTimeMillis()}.corrupt")
+        Files.move(pending, target, ATOMIC_MOVE)
+        System.err.println("CORE_MARKET_PENDING_QUARANTINED file=${target.fileName}: ${failure.message?.take(200)}")
+    }
+    private fun corrupt(failure: Exception) = failure !is java.io.IOException || failure is java.nio.charset.CharacterCodingException
+    private fun strictUtf8(bytes: ByteArray): String = UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+        .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString()
 
     private fun durableReplace(target: Path, bytes: ByteArray) {
         val temp = Files.createTempFile(directory, ".market-", ".tmp")
@@ -227,7 +257,10 @@ class CoreAccountRepository(
             output.force(true)
         }
     }
-    companion object { const val MAX_FILE_BYTES = 8 * 1024 * 1024 }
+    companion object {
+        const val MAX_FILE_BYTES = 8 * 1024 * 1024
+        private const val BLOCK_NANOS = 60_000_000_000L
+    }
 }
 
 /** Strict UTF-8 schema, canonical rows, and whole-record checksum; display text is never authority. */

@@ -40,6 +40,7 @@ data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: 
     init { require(trialId == null || CoreActivityKind.entries.any { it.bossId == trialId }); require(trialId == null || dungeon == null) }
 }
 data class CoreReceipt(val fingerprint: String, val revision: Long, val message: String)
+private val RECEIPT_FINGERPRINT = Regex("[0-9a-f]{64}")
 
 data class CoreArmorPiece(val identity: CoreGearIdentity, val tier: Int = 1,
     val rarity: CoreGearRarity = CoreGearRarity.NORMAL,
@@ -143,7 +144,7 @@ class CoreAccount(
         require(maps.size <= CoreLoopCatalog.MAX_MAPS && maps.map { it.id }.distinct().size == maps.size)
         require(activeRun == null || maps.none { it.id == activeRun.map.id })
         require(receipts.size <= CoreLoopCatalog.MAX_RECEIPTS && claimedSources.size <= CoreLoopCatalog.MAX_SOURCES)
-        require(receipts.values.all { it.revision in 1..revision && it.fingerprint.matches(Regex("[0-9a-f]{64}")) && it.message.length <= 256 })
+        require(receipts.values.all { it.revision in 1..revision && it.fingerprint.matches(RECEIPT_FINGERPRINT) && it.message.length <= 256 })
         require(claimedSources.all { it.length in 1..192 && '\n' !in it && '\t' !in it && '\r' !in it })
         require(affixStones.size <= CoreAffixCatalog.MAX_STONES && equippedAffixes.size <= 30)
         require(currencies.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE } && fragments.values.all { it in 0..CoreLoopCatalog.MAX_BALANCE })
@@ -275,6 +276,8 @@ object CoreLoopCatalog {
     const val MAX_MAPS = 32
     const val MAX_RECEIPTS = 16_384
     const val MAX_SOURCES = 16_384
+    /** Finished run ids kept to reject reuse; older markers are pruned on the next start/finish. */
+    const val RUN_HISTORY = 1_024
     val refined = mapOf(CoreResource.WOOD to CoreResource.BOARD, CoreResource.ORE to CoreResource.INGOT,
         CoreResource.STONE to CoreResource.STONE_BLOCK, CoreResource.HIDE to CoreResource.LEATHER, CoreResource.FIBER to CoreResource.CLOTH)
     fun weaponDamage(tier: Int): Double { require(tier in 1..4); return 1.65.pow(tier - 1) }

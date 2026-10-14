@@ -65,7 +65,7 @@ class CoreMmoExpansionTest {
         val o = f.commit(buyer, CoreAction.PlaceBuyOrder(CoreResource.HIDE, null, 2, 5, 10)).buyOrders.single()
         var writes = 0
         val failing = CoreAccountService(CoreAccountRepository(f.dir) { from, to ->
-            if (to.toString().endsWith(".account") && ++writes == 2) error("power loss")
+            if (to.toString().endsWith(".account") && ++writes >= 2) error("power loss")
             Files.move(from, to, ATOMIC_MOVE, REPLACE_EXISTING); Unit
         })
         failing.open(seller)
