@@ -271,7 +271,7 @@ class CoreLoopMenusTest {
         val maps = List(9) { index -> CoreOwnedMap(id("map/$index"), index.toLong(), tier, listOf(
             CoreMapModifier("woodcutting", "amount", 200), CoreMapModifier("mining", "dense_regions", 200),
             CoreMapModifier("herbalism", "quality", 200))) }
-        var result = CoreAccount(id("player"), revision = 41, balances = balances, weaponTier = tier, armorTier = tier,
+        var result = CoreAccount(id("player"), revision = 41, balances = balances, journey = CoreJourney.legacy(), weaponTier = tier, armorTier = tier,
             unlockedMapTier = tier, maps = maps, currencies = if (wealthy) CoreCraftingCurrency.entries.associateWith { 500_000L } else emptyMap(),
             fragments = if (wealthy) CoreActivityKind.entries.associateWith { 500_000L } else emptyMap(),
             weaponEnhancement = CoreEnhancementState(if (maximum) 30 else 6), armorEnhancement = CoreEnhancementState(if (maximum) 30 else 6),
@@ -344,7 +344,7 @@ class CoreLoopMenusTest {
     @Test fun `all class skill tree ultimate and second weapon page layouts fit vanilla hitboxes`() {
         val failures=mutableListOf<String>()
         for(job in CoreClass.entries) for(packed in listOf(false,true)) {
-            val f=fixture(account(4).copy(journey=CoreJourney(job=job)),packed)
+            val f=fixture(account(4).copy(journey=CoreJourney.legacy(job=job)),packed)
             fun check(name:String,show:()->Unit) {
                 show();auditSnapshot(f.snapshot()).forEach { failures+="$job $name packed=$packed: $it" }
             }
@@ -416,7 +416,7 @@ class CoreLoopMenusTest {
             f.menus.skillBuild(f.player,0,7)
             assertEquals("港で変更可能",f.snapshot().buttons.single { it.firstSlot==49 }.label)
             f.click(49);assertTrue(f.host.requests.isEmpty())
-            f.host.current=f.host.current.copy(activeRun=null,journey=CoreJourney(legacy=false))
+            f.host.current=f.host.current.copy(activeRun=null,journey=CoreJourney.legacy().copy(legacy=false))
             f.menus.skillBuild(f.player,4,1)
             assertEquals("成長で解放",f.snapshot().buttons.single { it.firstSlot==49 }.label)
             f.click(49);assertTrue(f.host.requests.isEmpty())

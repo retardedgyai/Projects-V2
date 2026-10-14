@@ -49,7 +49,7 @@ class CorePlayerCombatTest {
         CoreCombatPresentation.pack(h.player,true)
         try {
             for(job in CoreClass.entries) {
-                h.journey=CoreJourney(job=job);h.base=CoreWeaponBase.entries.first { it.usable(job) };h.actor.reset()
+                h.journey=CoreJourney.legacy(job=job);h.base=CoreWeaponBase.entries.first { it.usable(job) };h.actor.reset()
                 val a=CoreAccount(h.player.uuid,journey=h.journey,
                     weaponIdentity=CoreGearIdentity(UUID.randomUUID(),h.player.uuid,base=h.base))
                 h.player.setItemInMainHand(CoreLoopItems.gear(a,CoreGearSlot.WEAPON,true))
@@ -68,7 +68,7 @@ class CorePlayerCombatTest {
     @Test fun `rejected casts and target contact do not invent or restart weapon release`() = arena { h ->
         CoreCombatPresentation.pack(h.player,true)
         try {
-            h.journey=CoreJourney(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+            h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
             val a=CoreAccount(h.player.uuid,journey=h.journey,
                 weaponIdentity=CoreGearIdentity(UUID.randomUUID(),h.player.uuid,base=h.base))
             h.player.setItemInMainHand(CoreLoopItems.gear(a,CoreGearSlot.WEAPON,true))
@@ -111,7 +111,7 @@ class CorePlayerCombatTest {
     }
 
     @Test fun `Starweaver weaves three normal hits then consumes them in four enhanced starfall pulses`() = arena(bossDistance = 7.0) { h ->
-        h.journey = CoreJourney(job=CoreClass.STARWEAVER); h.base=CoreWeaponBase.STAFF
+        h.journey = CoreJourney.legacy(job=CoreClass.STARWEAVER); h.base=CoreWeaponBase.STAFF
         repeat(3) { h.actor.attack(); h.ticks(20) }
         assertEquals(3,h.actor.chargeCount)
         val before=h.combat.bossHealth(); h.actor.skill(2); assertEquals(0,h.actor.chargeCount)
@@ -120,7 +120,7 @@ class CorePlayerCombatTest {
     }
     @Test fun `bow and mage projectile hit at twelve blocks but not through a wall`() {
         for (job in listOf(CoreClass.RANGER, CoreClass.MAGE, CoreClass.STARWEAVER)) arena(bossDistance = 12.0) { h ->
-            h.journey = CoreJourney(job = job); h.base = if (job == CoreClass.RANGER) CoreWeaponBase.LONGBOW else CoreWeaponBase.STAFF
+            h.journey = CoreJourney.legacy(job = job); h.base = if (job == CoreClass.RANGER) CoreWeaponBase.LONGBOW else CoreWeaponBase.STAFF
             h.actor.attack(); h.ticks(3); assertEquals(300.0, h.combat.bossHealth())
             h.ticks(1); assertTrue(h.combat.bossHealth() < 300.0, "$job cannot hit at range")
             val hp = h.combat.bossHealth(); h.ticks(20)
@@ -591,7 +591,7 @@ class CorePlayerCombatTest {
     @Test fun `real Mage spell gains AP not AD and matches the tooltip preview`() {
         for (mod in listOf(CoreAffixStat.AD_FLAT, CoreAffixStat.AP_FLAT)) arena(
             stats = CoreAffixStats(additional = mapOf(mod to 20.0))) { h ->
-            h.journey = CoreJourney(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+            h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
             val expected = 8.0 + (12 * .92 + if (mod == CoreAffixStat.AP_FLAT) 20 else 0) * 1.4
             assertEquals(expected, h.actor.skillDefinitions[0].preview(h.actor.sheet), .000001)
             h.actor.skill(0); h.ticks(5)
@@ -602,7 +602,7 @@ class CorePlayerCombatTest {
     @Test fun `real Mage auto still scales only with AD`() {
         for (mod in listOf(CoreAffixStat.AD_FLAT, CoreAffixStat.AP_FLAT)) arena(
             stats = CoreAffixStats(additional = mapOf(mod to 20.0))) { h ->
-            h.journey = CoreJourney(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+            h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
             h.actor.attack(); h.ticks(4)
             assertEquals(300 - 12 * .92 - if (mod == CoreAffixStat.AD_FLAT) 20 else 0, h.combat.bossHealth(), .000001)
         }
@@ -630,19 +630,19 @@ class CorePlayerCombatTest {
 
     @Test fun `only cast speed shortens a Mage skill while physical attack speed does not`() {
         arena(stats = CoreAffixStats(castReductionPercent = 100.0)) { h ->
-            h.journey = CoreJourney(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+            h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
             h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(4); assertEquals(300.0, h.combat.bossHealth())
             h.ticks(1); assertTrue(h.combat.bossHealth() < 300)
         }
         arena(stats = CoreAffixStats(attackSpeedPercent = 100.0)) { h ->
-            h.journey = CoreJourney(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+            h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
             h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(9); assertEquals(300.0, h.combat.bossHealth())
             h.ticks(1); assertTrue(h.combat.bossHealth() < 300)
         }
     }
 
     @Test fun `resource rejection costs no mana cooldown or enemy health`() = arena { h ->
-        h.journey = CoreJourney(build=CoreClassBuild(second=5));h.actor.reset()
+        h.journey = CoreJourney.legacy(build=CoreClassBuild(second=5));h.actor.reset()
         h.actor.skill(1);h.ticks(30)
         assertEquals(100,h.actor.mana);assertEquals(0,h.actor.cooldownRemaining(1));assertEquals(300.0,h.combat.bossHealth())
         repeat(3) { h.actor.attack();h.ticks(24) }
@@ -652,7 +652,7 @@ class CorePlayerCombatTest {
         assertEquals(before-30,h.actor.resource);assertEquals(88,h.actor.mana)
     }
     @Test fun `warrior feint no longer places a mark or requires detonation`() = arena(bossDistance=2.0) { h ->
-        h.journey=CoreJourney(build=CoreClassBuild(first=4,second=1,third=2,fourth=0));h.actor.reset()
+        h.journey=CoreJourney.legacy(build=CoreClassBuild(first=4,second=1,third=2,fourth=0));h.actor.reset()
         h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
         assertEquals(0,h.actor.activeMarkLabels)
         assertFalse(h.actor.classState.marked(h.combat.combatTargets().first().id, 3))
@@ -664,7 +664,7 @@ class CorePlayerCombatTest {
         h.actor.resetActions();assertEquals(0,h.actor.activeMarkLabels)
     }
     @Test fun `warrior timed guard reduces real incoming damage and rewards a strong counter`() = arena { h ->
-        h.journey=CoreJourney(build=CoreClassBuild(first=3,second=5,third=2,fourth=0,nodes=8248))
+        h.journey=CoreJourney.legacy(build=CoreClassBuild(first=3,second=5,third=2,fourth=0,nodes=8248))
         h.actor.reset();h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
         assertTrue(h.actor.combatCue.startsWith("防御 "))
         h.actor.hurt(50.0);assertEquals(90.0,h.actor.health)
@@ -675,7 +675,7 @@ class CorePlayerCombatTest {
         assertEquals(before-(10+12*2.8)*1.6,h.combat.bossHealth(),.00001)
     }
     @Test fun `assassin mark consumption enhances one real hit and shadow keystone resets dodge`() = arena(bossDistance=2.0) { h ->
-        h.journey=CoreJourney(job=CoreClass.ASSASSIN,build=CoreClassBuild(nodes=8248));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.ASSASSIN,build=CoreClassBuild(nodes=8248));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
         h.actor.skill(0);h.ticks(18)
         val id=h.combat.combatTargets().single().id;assertTrue(h.actor.classState.marked(id,18))
         h.actor.classState.gain(40.0,h.journey.job,h.journey.build)
@@ -686,7 +686,7 @@ class CorePlayerCombatTest {
     }
     @Test fun `mage echo adds an actual pulse and full spell damage matches the modified preview`() = arena(bossDistance=7.0,
         stats=CoreAffixStats(additional=mapOf(CoreAffixStat.MAGE_ECHO to 4.0))) { h ->
-        h.journey=CoreJourney(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
         h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
         val spell=h.actor.skillDefinitions[2];assertEquals(4,spell.pulses)
         h.actor.skill(2);h.ticks(42)
@@ -694,7 +694,7 @@ class CorePlayerCombatTest {
         assertEquals(40.0,h.actor.resource)
     }
     @Test fun `healer can damage alone then spend the same faith pool on actual self recovery`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.HEALER);h.base=CoreWeaponBase.TOME;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.HEALER);h.base=CoreWeaponBase.TOME;h.actor.reset()
         h.actor.hurt(60.0)
         h.actor.skill(0);h.ticks(20);assertTrue(h.combat.bossHealth()<300);assertEquals(20.0,h.actor.resource)
         h.actor.attack();h.ticks(20);h.actor.attack();h.ticks(20);assertTrue(h.actor.resource>=30)
@@ -703,7 +703,7 @@ class CorePlayerCombatTest {
         assertEquals(before+heal.preview(h.actor.sheet),h.actor.health,.00001)
     }
     @Test fun `healing conversion splits real recovery and shield and cannot extend a stronger shield`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.HEALER,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.TOME;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.HEALER,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.TOME;h.actor.reset()
         h.actor.hurt(60.0);h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
         val value=h.actor.skillDefinitions[1].preview(h.actor.sheet);val before=h.actor.health
         h.actor.skill(1);h.ticks(6)
@@ -712,7 +712,7 @@ class CorePlayerCombatTest {
         h.ticks(100);assertEquals(0.0,h.actor.shield)
     }
     @Test fun `templar shielding supports nearby allies but never passes walls`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=65984));h.base=CoreWeaponBase.MACE;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=65984));h.base=CoreWeaponBase.MACE;h.actor.reset()
         val ally=h.addAlly(Pos(10.5,40.0,8.5))
         val blocked=h.addAlly(Pos(5.5,40.0,8.5))
         for(y in 40..43) h.instance.setBlock(6,y,8,Block.STONE)
@@ -722,14 +722,14 @@ class CorePlayerCombatTest {
         h.actor.resetActions();assertEquals(0.0,h.actor.shield)
     }
     @Test fun `star shield releases its charge and the added protection expires`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.STARWEAVER,build=CoreClassBuild(first=6,second=1,third=2,fourth=3));h.base=CoreWeaponBase.STAFF;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.STARWEAVER,build=CoreClassBuild(first=6,second=1,third=2,fourth=3));h.base=CoreWeaponBase.STAFF;h.actor.reset()
         h.actor.classState.gain(3.0,h.journey.job,h.journey.build)
         val value=h.actor.skillDefinitions[0].preview(h.actor.sheet)
         h.actor.skill(0);assertEquals(0.0,h.actor.resource);h.ticks(6)
         assertEquals(value*1.45,h.actor.shield,.00001);h.ticks(120);assertEquals(0.0,h.actor.shield)
     }
     @Test fun `dodging a channeled field cancels remaining pulses but never refunds its cost`() = arena(bossDistance=7.0) { h ->
-        h.journey=CoreJourney(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
         h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
         h.actor.skill(2);h.ticks(12);val before=h.combat.bossHealth();assertTrue(before<300)
         h.actor.dodge();h.ticks(35);assertEquals(before,h.combat.bossHealth());assertEquals(40.0,h.actor.resource)
@@ -743,11 +743,11 @@ class CorePlayerCombatTest {
     }
     @Test fun `new melee classes have shorter dagger impact and full height mace contact`() {
         arena(bossDistance=2.5) { h ->
-            h.journey=CoreJourney(job=CoreClass.ASSASSIN);h.base=CoreWeaponBase.DAGGERS
+            h.journey=CoreJourney.legacy(job=CoreClass.ASSASSIN);h.base=CoreWeaponBase.DAGGERS
             h.actor.attack();h.ticks(4);assertTrue(h.combat.bossHealth()<300)
         }
         arena { h ->
-            h.journey=CoreJourney(job=CoreClass.TEMPLAR);h.base=CoreWeaponBase.MACE
+            h.journey=CoreJourney.legacy(job=CoreClass.TEMPLAR);h.base=CoreWeaponBase.MACE
             h.actor.attack();h.ticks(10);assertTrue(h.combat.bossHealth()<300)
         }
     }
@@ -769,19 +769,19 @@ class CorePlayerCombatTest {
         assertTrue(h.combat.pull(id,h.player))
     }
     @Test fun `shield keystone enhances the next normal mace attack once`() = arena { h ->
-        h.journey=CoreJourney(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.MACE;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.MACE;h.actor.reset()
         h.actor.skill(2);h.ticks(20);h.actor.attack();h.ticks(10)
         assertEquals(300-12*.95*1.08*1.35,h.combat.bossHealth(),.00001)
         assertEquals(-1,h.actor.classState.counterUntil)
     }
     @Test fun `poison and fire coexist as separate nonrecursive effects`() = arena(bossDistance=2.0,stats=CoreAffixStats(fireFlat=10.0)) { h ->
-        h.journey=CoreJourney(job=CoreClass.ASSASSIN,build=CoreClassBuild(first=4,second=1,third=2,fourth=3));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.ASSASSIN,build=CoreClassBuild(first=4,second=1,third=2,fourth=3));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
         h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
         val before=h.combat.bossHealth();h.ticks(20)
         assertEquals(before-(3+12*.78*.8)*.3-3.0,h.combat.bossHealth(),.00001)
     }
     @Test fun `ground field follows a visible aimed enemy beyond the old fixed seven block centre`() = arena(bossDistance=15.0) { h ->
-        h.journey=CoreJourney(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
         h.actor.classState.gain(100.0,h.journey.job,h.journey.build);h.actor.skill(2);h.ticks(12)
         assertTrue(h.combat.bossHealth()<300)
     }
@@ -884,7 +884,7 @@ class CorePlayerCombatTest {
         val actor: CorePlayerCombat
         var weaponBroken = false
         var armorBroken = false
-        var journey = CoreJourney()
+        var journey = CoreJourney.legacy()
         var base = CoreWeaponBase.STANDARD
         var deaths = 0
         val incomingHits = mutableListOf<Double>()

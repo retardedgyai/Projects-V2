@@ -21,7 +21,7 @@ class CoreWarriorSkillPresentationTest {
             assertEquals("",CoreWarriorSkillPresentation.combatCue(job,10,70,40))
     }
     @Test fun `tooltip keeps actual coefficients costs status and modifier notes`() {
-        val j=CoreJourney(job=CoreClass.WARRIOR)
+        val j=CoreJourney.legacy(job=CoreClass.WARRIOR)
         val sheet=CoreCombatSheet.from(CoreAccount(java.util.UUID.randomUUID()))
         for(s in CoreSkillCatalog.skills(CoreClass.WARRIOR)) {
             val modified=CoreSkillCatalog.modify(s,j,sheet.mods)

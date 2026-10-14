@@ -6,6 +6,16 @@ import java.util.UUID
 import kotlin.test.*
 
 class CoreJourneyTest {
+    @Test fun `default journey is fresh and locked while full unlock is explicit`() {
+        assertEquals(CoreJourney.fresh(), CoreJourney())
+        assertFalse(CoreJourney().legacy || CoreJourney().chosen || CoreJourney().lessons != 0)
+        val fallback = CoreAccount(UUID.randomUUID())
+        assertEquals(CoreJourney.fresh(), fallback.journey)
+        assertTrue(CoreJourneyRules.skillUnlocked(fallback, 0))
+        assertTrue((1..4).none { CoreJourneyRules.skillUnlocked(fallback, it) })
+        assertTrue((0..4).all { CoreJourneyRules.skillUnlocked(fallback.copy(journey = CoreJourney.legacy()), it) })
+    }
+
     @Test fun `completed T4 careers guide every eligible class to playable expeditions and forge`() {
         for (job in CoreClass.entries) for (level in listOf(1, 19, 20, 40)) {
             if (job == CoreClass.MAGE && level >= 20) continue // Ascension guidance takes priority.
@@ -147,7 +157,7 @@ class CoreJourneyTest {
     }
     @Test fun `temper preserves mods quality enhancement crafter and ID and rejects past Tier cap`() {
         val id = UUID.randomUUID()
-        val original = CoreAccount(id, balances = mapOf(CoreMaterial(CoreResource.INGOT) to 64L, CoreMaterial(CoreResource.STONE_BLOCK) to 64L),
+        val original = CoreAccount(id, journey = CoreJourney.legacy(), balances = mapOf(CoreMaterial(CoreResource.INGOT) to 64L, CoreMaterial(CoreResource.STONE_BLOCK) to 64L),
             weaponIdentity = CoreGearIdentity(UUID.randomUUID(), id, quality = 17, base = CoreWeaponBase.CLEAVER), weaponEnhancement = CoreEnhancementState(12))
         val f = Fixture(original)
         repeat(9) { f.act(CoreAction.TemperEquipment(CoreGearSlot.WEAPON)) }

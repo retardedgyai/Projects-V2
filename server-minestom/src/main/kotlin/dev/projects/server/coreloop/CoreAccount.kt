@@ -84,7 +84,7 @@ class CoreAccount(
     val surveyPoints: Long = 0,
     buyOrders: List<CoreBuyOrder> = emptyList(),
     dungeonRecords: Map<Int, Int> = emptyMap(),
-    val journey: CoreJourney = CoreJourney(),
+    val journey: CoreJourney = CoreJourney.fresh(),
     armorParts: Map<CoreGearSlot, CoreArmorPiece> = CoreGearSlot.armorSlots.filterNot { it == CoreGearSlot.CHEST }
         .associateWith { slot -> CoreArmorPiece(CoreGearIdentity.legacy(playerId, slot).copy(quality = armorIdentity.quality),
             armorTier, CoreCraftingCatalog.inferRarity(equippedAffixes, slot), armorEnhancement, armorBroken) },

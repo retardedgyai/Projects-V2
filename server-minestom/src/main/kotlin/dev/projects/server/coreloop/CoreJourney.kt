@@ -48,8 +48,9 @@ enum class CoreWeaponBase(val displayName: String, val detail: String, val power
     }
 }
 
-data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boolean = true,
-    val xp: Long = 0, val lessons: Int = 63, val legacy: Boolean = true, val build: CoreClassBuild = CoreClassBuild(),
+/** Defaults are a fresh, locked character; full unlock must be requested via [legacy]. */
+data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boolean = false,
+    val xp: Long = 0, val lessons: Int = 0, val legacy: Boolean = false, val build: CoreClassBuild = CoreClassBuild(),
     val savedBuilds: Map<CoreClass, CoreClassBuild> = emptyMap()) {
     init {
         require(xp in 0..1_000_000_000L && lessons in 0..63)
@@ -65,7 +66,12 @@ data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boole
         require(amount in 0..1_000_000_000L)
         return copy(xp = (xp + amount * CoreMmoTuning.balance.journeyXpPercent / 100).coerceAtMost(1_000_000_000))
     }
-    companion object { fun fresh() = CoreJourney(chosen = false, lessons = 0, legacy = false) }
+    companion object {
+        fun fresh() = CoreJourney()
+        /** Explicit full unlock: pre-journey saves (format < 8) and the skill-test lab only. */
+        fun legacy(job: CoreClass = CoreClass.WARRIOR, xp: Long = 0, build: CoreClassBuild = CoreClassBuild()) =
+            CoreJourney(job, chosen = true, xp = xp, lessons = 63, legacy = true, build = build)
+    }
 }
 
 object CoreJourneyRules {

@@ -218,7 +218,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     armorBroken = { accounts[player.uuid]?.armorBroken ?: false },
                     weaponQuality = { accounts[player.uuid]?.weaponIdentity?.quality ?: 0 },
                     armorQuality = { accounts[player.uuid]?.armorIdentity?.quality ?: 0 },
-                    journey = { accounts[player.uuid]?.journey ?: CoreJourney() },
+                    journey = { accounts[player.uuid]?.journey ?: CoreJourney.fresh() },
                     weaponBase = { accounts[player.uuid]?.weaponIdentity?.base ?: CoreWeaponBase.STANDARD },
                     weaponLevelPower = { accounts[player.uuid]?.let { CoreJourneyRules.power(it.weaponIdentity, it.weaponTier) } ?: 1.0 },
                     armorLevelPower = { accounts[player.uuid]?.let { CoreJourneyRules.power(it.armorIdentity, it.armorTier) } ?: 1.0 },

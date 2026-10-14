@@ -439,7 +439,7 @@ internal object CoreAccountCodec {
             val migratedAffixes = equipped.map { if (it.gear == CoreGearSlot.ARMOR) it.copy(gear = CoreGearSlot.CHEST) else it }
             return CoreAccount(playerId, header[3].toLong(), balances, weaponTier, armorTier, gear[3].toInt(), maps, active, receipts, sources, stones, migratedAffixes,
                 armorRarity = armorRarity,
-                craftingSeed = CoreCraftingCatalog.legacySeed(playerId),
+                craftingSeed = CoreCraftingCatalog.legacySeed(playerId), journey = CoreJourney.legacy(),
                 armorParts = CoreGearSlot.armorSlots.filterNot { it == CoreGearSlot.CHEST }.associateWith { slot ->
                     CoreArmorPiece(CoreGearIdentity.legacy(playerId, slot), armorTier, armorRarity)
                 })
@@ -536,7 +536,7 @@ internal object CoreAccountCodec {
             weaponBroken = economy?.get(4)?.let { readBroken(it, version) } ?: false,
             armorBroken = economy?.get(5)?.let { readBroken(it, version) } ?: false,
             professions = professions, surveyPoints = survey ?: 0, buyOrders = migratedOrders, dungeonRecords = records,
-            journey = journey ?: CoreJourney(xp = CoreJourneyRules.threshold(CoreJourneyRules.floor(gear[3].toInt()))), armorParts = parts)
+            journey = journey ?: CoreJourney.legacy(xp = CoreJourneyRules.threshold(CoreJourneyRules.floor(gear[3].toInt()))), armorParts = parts)
     }
 
     /** Retired v5 wear is validated but never reinterpreted as enhancement damage. */
