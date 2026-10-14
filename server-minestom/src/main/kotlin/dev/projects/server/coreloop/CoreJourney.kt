@@ -1,6 +1,6 @@
 package dev.projects.server.coreloop
 
-/** Concrete character progression; separate from tradable gear and temporary dungeon blessings. */
+/** Concrete character progression; separate from tradable gear and temporary run boons. */
 enum class CoreClass(val displayName: String, val description: String) {
     WARRIOR("戦士", "集団を薙ぎ、攻撃を受け流して大剣を叩き込む"),
     RANGER("レンジャー", "射線を通し、距離を保って狙い撃つ"),
@@ -48,8 +48,9 @@ enum class CoreWeaponBase(val displayName: String, val detail: String, val power
     }
 }
 
-data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boolean = true,
-    val xp: Long = 0, val lessons: Int = 63, val legacy: Boolean = true, val build: CoreClassBuild = CoreClassBuild(),
+/** Defaults are a fresh, locked character; full unlock must be requested via [legacy]. */
+data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boolean = false,
+    val xp: Long = 0, val lessons: Int = 0, val legacy: Boolean = false, val build: CoreClassBuild = CoreClassBuild(),
     val savedBuilds: Map<CoreClass, CoreClassBuild> = emptyMap()) {
     init {
         require(xp in 0..1_000_000_000L && lessons in 0..63)
@@ -65,7 +66,12 @@ data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boole
         require(amount in 0..1_000_000_000L)
         return copy(xp = (xp + amount * CoreMmoTuning.balance.journeyXpPercent / 100).coerceAtMost(1_000_000_000))
     }
-    companion object { fun fresh() = CoreJourney(chosen = false, lessons = 0, legacy = false) }
+    companion object {
+        fun fresh() = CoreJourney()
+        /** Explicit full unlock: pre-journey saves (format < 8) and the skill-test lab only. */
+        fun legacy(job: CoreClass = CoreClass.WARRIOR, xp: Long = 0, build: CoreClassBuild = CoreClassBuild()) =
+            CoreJourney(job, chosen = true, xp = xp, lessons = 63, legacy = true, build = build)
+    }
 }
 
 object CoreJourneyRules {
@@ -78,6 +84,12 @@ object CoreJourneyRules {
     fun rank(identity: CoreGearIdentity, tier: Int) = itemLevel(identity, tier) - floor(tier)
     fun power(identity: CoreGearIdentity, tier: Int) = 1.0 + rank(identity, tier) * CoreMmoTuning.balance.equipmentRankPermille / 1000.0
     fun base(a: CoreAccount) = a.weaponIdentity.base
+    /** Single source of truth for the star-weaver change; null when eligible. */
+    fun starweaverBlocker(a: CoreAccount): String? = when {
+        a.journey.job != CoreClass.MAGE && a.journey.job != CoreClass.STARWEAVER -> "メイジから転職してください"
+        a.journey.level < 20 || a.amount(CoreResource.BOSS_SIGIL, 2) < 2 -> "Lv20とT2討伐証2枚が必要です（証は消費しません）"
+        else -> null
+    }
     fun skillUnlocked(a: CoreAccount, index: Int) = a.journey.legacy || a.journey.level >= CoreSkillCatalog.unlockLevels[index]
     fun reward(tier: Int, boss: Boolean = false): Long = (if (boss) 300L else 35L) * tier
     fun next(a: CoreAccount): String = when {

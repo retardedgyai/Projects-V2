@@ -65,7 +65,7 @@ class CoreMmoExpansionTest {
         val o = f.commit(buyer, CoreAction.PlaceBuyOrder(CoreResource.HIDE, null, 2, 5, 10)).buyOrders.single()
         var writes = 0
         val failing = CoreAccountService(CoreAccountRepository(f.dir) { from, to ->
-            if (to.toString().endsWith(".account") && ++writes == 2) error("power loss")
+            if (to.toString().endsWith(".account") && ++writes >= 2) error("power loss")
             Files.move(from, to, ATOMIC_MOVE, REPLACE_EXISTING); Unit
         })
         failing.open(seller)
@@ -117,35 +117,6 @@ class CoreMmoExpansionTest {
         assertTrue(unlocked.claimedSources.all { it.startsWith("run/") })
     }
 
-    @Test fun `legacy dungeon rewards follow checkpoints without issuing astral or allowing a new departure`() {
-        val f = Fixture(); val id = f.create(); val run = UUID.randomUUID()
-        assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.StartDungeon(run, 1, 1, 9)).status)
-        val before = f.a(id)
-        assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.StartDungeon(run, 1, 0, 9)).status)
-        assertEquals(before, f.a(id))
-        // Load a pre-retirement checkpoint instead of using the retired entry operation.
-        val legacy = before.copy(revision = before.revision + 1,
-            currencies = mapOf(CoreCraftingCurrency.ASTRAL to 7L),
-            activeRun = CoreActiveRun(run, CoreOwnedMap(UUID.randomUUID(), 9, 1),
-                dungeon = CoreDungeonEntry(0, CoreMmoTuning.balance.dungeonStages, CoreMmoTuning.balance.dungeonRoomsPerFloor)))
-        assertEquals(CoreRepositorySave.Saved, f.repo.commit(before.revision, legacy))
-        f.service.forget(id); f.service.open(id)
-        var a = f.a(id)
-        val d = a.activeRun!!.dungeon!!
-        assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.DungeonReward(run, 2, false)).status)
-        assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.BossReward(run)).status)
-        for (stage in 1..d.stages) {
-            val action = CoreAction.DungeonReward(run, stage, stage % d.roomsPerFloor == 0)
-            a = f.commit(id, action); assertEquals(CoreTransactionStatus.REJECTED, f.send(id, action).status)
-        }
-        assertTrue(a.activeRun!!.bossDefeated); assertEquals(0, a.dungeonRecords[1]); assertTrue(a.amount(CoreCraftingCurrency.DIVINE) > 0)
-        assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.AbortRun(run)).status)
-        assertEquals(7, a.amount(CoreCraftingCurrency.ASTRAL))
-        f.commit(id, CoreAction.FinishRun(run)); f.service.forget(id); f.service.open(id)
-        assertNull(f.a(id).activeRun); assertEquals(7, f.a(id).amount(CoreCraftingCurrency.ASTRAL))
-        assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.StartDungeon(UUID.randomUUID(), 1, 1, 4)).status)
-    }
-
     @Test fun `v6 upgrade preserves exact backup equipment and enhancement`() {
         val f = Fixture(); val id = f.create()
         val original = f.a(id).copy(weaponEnhancement = CoreEnhancementState(25, 2), weaponBroken = true)
@@ -177,5 +148,7 @@ class CoreMmoExpansionTest {
         assertFailsWith<IllegalArgumentException> { CoreMmoBalance.load(path) }
         Files.writeString(path, "profesion.craft-xp=20\n")
         assertFailsWith<IllegalArgumentException> { CoreMmoBalance.load(path) }
+        Files.writeString(path, "dungeon.floors=2\nboss.mechanic-seconds=9\nsurvey.map-cost=5\n")
+        assertEquals(CoreMmoBalance(surveyMapCost = 5), CoreMmoBalance.load(path))
     }
 }

@@ -33,7 +33,7 @@ class CoreAccountTest {
 
     @Test fun `gather refine manufacture equip loop reaches T4 without combat material exchange`() {
         val f = Fixture()
-        assertEquals(CoreRepositorySave.Saved, f.repository.commit(0, f.account.copy(revision = 1, journey = CoreJourney())))
+        assertEquals(CoreRepositorySave.Saved, f.repository.commit(0, f.account.copy(revision = 1, journey = CoreJourney.legacy())))
         f.service.forget(f.player); f.service.open(f.player)
         for (tier in 1..4) {
             val run = f.start(tier)
@@ -194,5 +194,57 @@ class CoreAccountTest {
         val snapshot = CoreAccount(f.player, balances = external)
         external.clear()
         assertEquals(4, snapshot.amount(CoreResource.WOOD))
+    }
+
+    @Test fun `finished runs keep a bounded window of run ids that still rejects reuse`() {
+        val dir = Files.createTempDirectory("projects-core-run-history")
+        val player = UUID.randomUUID()
+        val old = List(CoreLoopCatalog.MAX_SOURCES) { "run/${UUID.randomUUID()}/started" }
+        val repository = CoreAccountRepository(dir)
+        assertEquals(CoreRepositorySave.Saved, repository.commit(0, CoreAccount(player, revision = 1, claimedSources = old.toSet())))
+        val service = CoreAccountService(repository)
+        assertIs<CoreAccountLoadResult.Ready>(service.open(player))
+        fun send(action: CoreAction) = service.transact(player, CoreOperation(UUID.randomUUID(), service.snapshot(player)!!.revision, action))
+        val map = assertNotNull(send(CoreAction.ClaimMap(1, 3)).account).maps.single()
+        val run = UUID.randomUUID()
+        assertEquals(CoreTransactionStatus.COMMITTED, send(CoreAction.StartRun(map.id, run)).status)
+        assertEquals(CoreTransactionStatus.COMMITTED, send(CoreAction.Gather(run, "ore", CoreResource.ORE, 2)).status)
+        val finished = assertNotNull(send(CoreAction.FinishRun(run)).account)
+        assertTrue(finished.claimedSources.size <= CoreLoopCatalog.RUN_HISTORY)
+        assertTrue("run/$run/started" in finished.claimedSources)
+        assertFalse(old.first() in finished.claimedSources)
+        assertTrue(old.last() in finished.claimedSources)
+        val again = assertNotNull(send(CoreAction.ClaimMap(1, 4)).account).maps.single()
+        assertEquals(CoreTransactionStatus.REJECTED, send(CoreAction.StartRun(again.id, run)).status)
+        service.forget(player)
+        assertEquals(finished.claimedSources, assertIs<CoreAccountLoadResult.Ready>(service.open(player)).account.claimedSources)
+    }
+
+    @Test fun `transient read failures retry while corrupt saves stay refused until re-checked`() {
+        val dir = Files.createTempDirectory("projects-core-transient")
+        val player = UUID.randomUUID()
+        var locked = 1
+        var now = 0L
+        val repository = CoreAccountRepository(dir, readBytes = { path ->
+            if (locked-- > 0) throw java.nio.file.AccessDeniedException(path.toString()) else Files.readAllBytes(path)
+        }, nanoTime = { now })
+        assertEquals(CoreRepositorySave.Saved, repository.commit(0, CoreAccount(player, revision = 1)))
+        locked = 1
+        assertIs<CoreRepositoryLoad.Invalid>(repository.load(player))
+        assertEquals(1, assertIs<CoreRepositoryLoad.Loaded>(repository.load(player)).account.revision)
+
+        val file = dir.resolve("$player.account")
+        val good = Files.readString(file)
+        Files.writeString(file, "corrupt")
+        assertIs<CoreRepositoryLoad.Invalid>(repository.load(player))
+        Files.writeString(file, good)
+        assertIs<CoreRepositoryLoad.Invalid>(repository.load(player))
+        assertIs<CoreRepositorySave.Failed>(repository.commit(1, CoreAccount(player, revision = 2)))
+        now += 61_000_000_000L
+        assertIs<CoreRepositoryLoad.Loaded>(repository.load(player))
+        Files.writeString(file, "corrupt")
+        now += 61_000_000_000L
+        assertIs<CoreRepositorySave.Failed>(repository.commit(1, CoreAccount(player, revision = 2)))
+        assertEquals("corrupt", Files.readString(file))
     }
 }

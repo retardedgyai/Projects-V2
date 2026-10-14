@@ -10,10 +10,21 @@ class CoreAccountService(private val repository: CoreAccountRepository,
     private val accounts = mutableMapOf<UUID, CoreAccount>()
     @Volatile private var market = emptyList<CoreMarketEntry>()
     @Volatile private var buyOrders = emptyList<CoreBuyOrderEntry>()
+    /** Every listing mutation goes through this service, so the full directory scan runs only once. */
+    private var marketIndex: LinkedHashMap<UUID, CoreAccount>? = null
     fun buyOrderSnapshot(): List<CoreBuyOrderEntry> = buyOrders
     fun marketSnapshot(): List<CoreMarketEntry> = market
     private fun refreshMarket() {
-        val saved = repository.marketAccounts()
+        marketIndex = repository.marketAccounts().associateByTo(LinkedHashMap()) { it.playerId }
+        publishMarket()
+    }
+    private fun indexMarket(vararg changed: CoreAccount) {
+        val index = marketIndex ?: return
+        changed.forEach { index[it.playerId] = it }
+        publishMarket()
+    }
+    private fun publishMarket() {
+        val saved = marketIndex.orEmpty().values
         buyOrders = saved.flatMap { a -> a.buyOrders.map { CoreBuyOrderEntry(a.playerId, it) } }
         market = saved.flatMap { a -> a.offers.map { CoreMarketEntry(a.playerId, it,
             it.gearId?.let { id -> a.storedGear.single { gear -> gear.identity.id == id } }) } }
@@ -21,7 +32,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
 
     @Synchronized
     fun open(playerId: UUID): CoreAccountLoadResult {
-        runCatching { refreshMarket() }.getOrElse { return CoreAccountLoadResult.Invalid("市場の取引を復旧できません") }
+        if (marketIndex == null) runCatching { refreshMarket() }.getOrElse { return CoreAccountLoadResult.Invalid("市場の取引を復旧できません") }
         accounts[playerId]?.let { return CoreAccountLoadResult.Ready(it, false) }
         return when (val result = repository.load(playerId)) {
             CoreRepositoryLoad.Missing -> CoreAccount(playerId, journey = CoreJourney.fresh()).let {
@@ -30,6 +41,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             }
             is CoreRepositoryLoad.Loaded -> {
                 accounts[playerId] = result.account
+                indexMarket(result.account)
                 CoreAccountLoadResult.Ready(result.account, false)
             }
             is CoreRepositoryLoad.Invalid -> CoreAccountLoadResult.Invalid(result.reason)
@@ -70,7 +82,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         return when (val saved = repository.commit(current.revision, next)) {
             CoreRepositorySave.Saved -> {
                 accounts[playerId] = next
-                if (next.offers != current.offers || next.buyOrders != current.buyOrders) runCatching { refreshMarket() }
+                if (next.offers != current.offers || next.buyOrders != current.buyOrders) indexMarket(next)
                 CoreTransactionResult(CoreTransactionStatus.COMMITTED, next, proposal.second)
             }
             CoreRepositorySave.Conflict -> {
@@ -98,10 +110,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         }
         is CoreAction.ChooseClass -> {
             requireHub(account)
-            if (action.job == CoreClass.STARWEAVER) {
-                require(account.journey.job == CoreClass.MAGE || account.journey.job == CoreClass.STARWEAVER) { "メイジから転職してください" }
-                require(account.journey.level >= 20 && account.amount(CoreResource.BOSS_SIGIL, 2) >= 2) { "Lv20とT2討伐証2枚が必要です（証は消費しません）" }
-            }
+            if (action.job == CoreClass.STARWEAVER) CoreJourneyRules.starweaverBlocker(account)?.let { throw IllegalArgumentException(it) }
             var selected = account.copy(journey = account.journey.changeClass(action.job))
             if (!selected.weaponIdentity.base.usable(action.job)) {
                 val old = CoreEconomy.capture(selected, CoreGearSlot.WEAPON)
@@ -152,25 +161,6 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             val paid = recipe(account, CoreProfessions.surveyMap(action.tier, action.raw)).first
             paid.copy(unlockedMapTier = maxOf(account.unlockedMapTier, action.tier),
                 maps = account.maps + CoreOwnedMap(derived(requestId, "survey-map"), action.seed, action.tier)) to "採取実績でT${action.tier}の地図を用意しました。討伐は不要です"
-        }
-        is CoreAction.StartDungeon -> error(CoreDungeonEntry.RETIRED_MESSAGE)
-        is CoreAction.DungeonReward -> {
-            val run = requireRun(account, action.runId)
-            val d = requireNotNull(run.dungeon) { "深殿の遠征ではありません" }
-            require(action.stage == d.rewardedStage + 1 && action.stage <= d.stages) { "この部屋の報酬は受取済みか、順序が不正です" }
-            require(action.boss == (action.stage % d.roomsPerFloor == 0)) { "部屋の報酬区分が不正です" }
-            val b = CoreMmoTuning.balance
-            val count = b.dungeonRoomTokens.toLong() + d.ascension / 4
-            var updated = recipe(addSource(account, source("dungeon", run.id, action.stage.toString())),
-                CoreRecipe("深殿の戦利品を保管しました", emptyMap(), mapOf(CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier) to count))).first
-            val orbs = if (action.boss) mapOf(CoreCraftingCurrency.CHAOS to b.dungeonBossOrbs.toLong(),
-                CoreCraftingCurrency.EXALTED to 1L) else mapOf((if (action.treasury) CoreCraftingCurrency.CHAOS else CoreCraftingCurrency.ALTERATION) to 1L)
-            updated = grantCurrencies(updated, orbs)
-            val complete = action.stage == d.stages
-            if (complete) updated = grantCurrencies(updated, mapOf(CoreCraftingCurrency.DIVINE to (1L + d.ascension / 5)))
-            updated.copy(journey = updated.journey.gain(CoreJourneyRules.reward(run.map.tier, action.boss)).learn(2), activeRun = run.copy(dungeon = d.copy(rewardedStage = action.stage), bossDefeated = complete),
-                dungeonRecords = if (complete) account.dungeonRecords + (run.map.tier to maxOf(account.dungeonRecords[run.map.tier] ?: -1, d.ascension)) else account.dungeonRecords) to
-                if (complete) "旧深殿を踏破。神聖のオーブを獲得しました" else "第${action.stage}の間を突破。報酬は保管済みです"
         }
         is CoreAction.Manufacture -> {
             requireHub(account)
@@ -319,7 +309,6 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         }
         is CoreAction.BossReward -> {
             val run = requireRun(account, action.runId)
-            require(run.dungeon == null) { "深殿の段階報酬を使用してください" }
             require(!run.bossDefeated) { "この討伐報酬は受取済みです" }
             if (run.trialId == null) require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
             val nextTier = if (account.journey.legacy || run.map.level >= CoreJourneyRules.ceiling(run.map.tier)) (run.map.tier + 1).coerceAtMost(4) else run.map.tier
@@ -397,7 +386,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             require(account.claimedSources.none { it.startsWith("run/${action.runId}/") }) { "その遠征番号は使用済みです" }
             val map = account.maps.singleOrNull { it.id == action.mapId } ?: error("地図が見つかりません")
             require(map.tier <= account.unlockedMapTier) { "そのTierはまだ解放されていません" }
-            addSource(account, source("run", action.runId, "started")).copy(
+            addSource(recentRuns(account), source("run", action.runId, "started")).copy(
                 maps = account.maps.filterNot { it.id == map.id }, activeRun = CoreActiveRun(action.runId, map)) to "遠征を準備しています"
         }
         is CoreAction.StartTrial -> {
@@ -407,7 +396,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             require(account.claimedSources.none { it.startsWith("run/${action.runId}/") }) { "その遠征番号は使用済みです" }
             require(account.amount(kind) >= CoreCraftingCatalog.TRIAL_ENTRY_FRAGMENTS) { "${kind.displayName}の欠片が3個必要です" }
             val map = CoreOwnedMap(derived(requestId, "trial-map"), account.craftingSeed xor requestId.leastSignificantBits, action.tier)
-            addSource(account, source("run", action.runId, "started")).copy(
+            addSource(recentRuns(account), source("run", action.runId, "started")).copy(
                 fragments = account.fragments + (kind to account.amount(kind) - CoreCraftingCatalog.TRIAL_ENTRY_FRAGMENTS),
                 activeRun = CoreActiveRun(action.runId, map, trialId = kind.bossId)) to "${kind.displayName}の専用ボス戦を準備しています"
         }
@@ -416,8 +405,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             require(!run.bossDefeated && account.claimedSources.none { it.startsWith("gather/${run.id}/") || it.startsWith("combat/${run.id}/") || it.startsWith("affix/${run.id}/") || it.startsWith("activity/${run.id}/") || it.startsWith("dungeon/${run.id}/") }) {
                 "開始済みの遠征は中断返却できません"
             }
-            if (run.dungeon != null) account.copy(activeRun = null) to "深殿の準備を中止しました（入場料なし）"
-            else if (run.trialId == null) {
+            if (run.trialId == null) {
                 require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
                 account.copy(maps = account.maps + run.map, activeRun = null) to "遠征の準備に失敗したため地図を返却しました"
             } else {
@@ -428,7 +416,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         is CoreAction.FinishRun -> {
             requireRun(account, action.runId)
             account.copy(activeRun = null, journey = if (account.journey.knows(2)) account.journey.learn(3) else account.journey,
-                claimedSources = account.claimedSources.filterTo(linkedSetOf()) { it.startsWith("run/") }) to "拠点へ帰還しました。獲得品は保管済みです"
+                claimedSources = recentRuns(account).claimedSources.filterTo(linkedSetOf()) { it.startsWith("run/") }) to "拠点へ帰還しました。獲得品は保管済みです"
         }
         is CoreAction.Consume -> {
             require(action.resource in setOf(CoreResource.POTION, CoreResource.WHETSTONE)) { "使用できないアイテムです" }
@@ -476,15 +464,24 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             CoreRepositorySave.Saved -> {
                 accounts[buyer.playerId] = proposal.first
                 if (action.seller in accounts) accounts[action.seller] = proposal.second
-                runCatching { refreshMarket() }
+                indexMarket(proposal.first, proposal.second)
                 CoreTransactionResult(CoreTransactionStatus.COMMITTED, proposal.first, proposal.third)
             }
-            else -> {
-                // A durable intent may already exist: never claim rollback or continue with stale balances.
-                accounts.clear(); market = emptyList(); buyOrders = emptyList()
-                CoreTransactionResult(CoreTransactionStatus.UNAVAILABLE, null, "取引結果を確認できません。再接続すると保存済みの取引を復旧します")
-            }
+            else -> unresolvedTrade(buyer.playerId, action.seller, operation.requestId, "取引結果を確認できません。再接続すると保存済みの取引を復旧します")
         }
+    }
+
+    /** A durable intent may already exist: never claim rollback or continue with stale balances of either party. */
+    private fun unresolvedTrade(self: UUID, other: UUID, requestId: UUID, message: String): CoreTransactionResult {
+        val reloaded = listOf(self, other).associateWith { id ->
+            if (accounts.remove(id) == null) null
+            else (repository.load(id) as? CoreRepositoryLoad.Loaded)?.account?.also { accounts[id] = it }
+        }
+        runCatching { refreshMarket() }.onFailure { marketIndex = null; market = emptyList(); buyOrders = emptyList() }
+        val account = reloaded[self] ?: return CoreTransactionResult(CoreTransactionStatus.UNAVAILABLE, null, message)
+        val receipt = account.receipts[requestId]
+        return if (receipt != null) CoreTransactionResult(CoreTransactionStatus.COMMITTED, account, receipt.message)
+        else CoreTransactionResult(CoreTransactionStatus.SAVE_FAILED, account, "取引を保存できませんでした。銀貨と品物は移動していません")
     }
 
     // Old requests remain STALE by expectedRevision after this bounded replay window.
@@ -524,13 +521,10 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             CoreRepositorySave.Saved -> {
                 accounts[seller.playerId] = proposal.first
                 if (action.buyer in accounts) accounts[action.buyer] = proposal.second
-                runCatching { refreshMarket() }
+                indexMarket(proposal.first, proposal.second)
                 CoreTransactionResult(CoreTransactionStatus.COMMITTED, proposal.first, proposal.third)
             }
-            else -> {
-                accounts.clear(); market = emptyList(); buyOrders = emptyList()
-                CoreTransactionResult(CoreTransactionStatus.UNAVAILABLE, null, "取引結果を確認できません。再接続で復旧します")
-            }
+            else -> unresolvedTrade(seller.playerId, action.buyer, operation.requestId, "取引結果を確認できません。再接続で復旧します")
         }
     }
 
@@ -567,6 +561,13 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         return run
     }
     private fun requireHub(account: CoreAccount) { require(account.activeRun == null) { "拠点で操作してください" } }
+    /** Run ids are random per departure; a bounded recent window still rejects replayed or reused ids. */
+    private fun recentRuns(account: CoreAccount): CoreAccount {
+        val runs = account.claimedSources.filter { it.startsWith("run/") }
+        if (runs.size < CoreLoopCatalog.RUN_HISTORY) return account
+        val expired = runs.dropLast(CoreLoopCatalog.RUN_HISTORY - 1).toSet()
+        return account.copy(claimedSources = account.claimedSources.filterTo(linkedSetOf()) { it !in expired })
+    }
     private fun addSource(account: CoreAccount, source: String): CoreAccount {
         require(source !in account.claimedSources) { "この報酬は受取済みです" }
         require(account.claimedSources.size < CoreLoopCatalog.MAX_SOURCES) { "報酬履歴の上限に達しました" }

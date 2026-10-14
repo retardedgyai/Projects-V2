@@ -17,7 +17,7 @@ import java.util.concurrent.Executor
 
 /** Deliberately separate from CoreAccountService: no test loadout can enter the ledger. */
 internal class CoreLabLoadout(private val id: UUID, job: CoreClass) {
-    var journey = CoreJourney(job = job, xp = CoreJourneyRules.threshold(40))
+    var journey = CoreJourney.legacy(job, CoreJourneyRules.threshold(40))
         private set
     var free = true
     var retaliation = false

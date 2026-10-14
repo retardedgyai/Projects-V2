@@ -121,7 +121,7 @@ class CoreEconomyTest {
         val offer = f.commit(seller, CoreAction.ListMaterial(CoreMaterial(CoreResource.ORE), 3, 40)).offers.single()
         var accountWrites = 0
         val failing = CoreAccountRepository(f.dir) { source, target ->
-            if (target.toString().endsWith(".account") && ++accountWrites == 2) error("simulated interruption")
+            if (target.toString().endsWith(".account") && ++accountWrites >= 2) error("simulated interruption")
             Files.move(source, target, ATOMIC_MOVE, REPLACE_EXISTING); Unit
         }
         val service = CoreAccountService(failing)
@@ -224,5 +224,73 @@ class CoreEconomyTest {
         assertTrue(CoreWeaponPresentation.damage(repaired) > damageBefore)
         assertFalse(repaired.storedGear.any { it.identity.id == spare.identity.id })
         assertEquals(CoreTransactionStatus.REJECTED, f.send(id, CoreAction.Repair(CoreGearSlot.WEAPON, spare.identity.id)).status)
+    }
+
+    @Test fun `failed trade invalidates only both parties and an immediate reload reports the durable outcome`() {
+        val f = Fixture(); val seller = f.create(); val buyer = f.create(100); val bystander = f.create()
+        val offer = f.commit(seller, CoreAction.ListMaterial(CoreMaterial(CoreResource.ORE), 3, 40)).offers.single()
+        var accountWrites = 0
+        var failing = true
+        val repo = CoreAccountRepository(f.dir) { source, target ->
+            if (failing && target.toString().endsWith(".account") && ++accountWrites >= 2) error("simulated interruption")
+            Files.move(source, target, ATOMIC_MOVE, REPLACE_EXISTING); Unit
+        }
+        val service = CoreAccountService(repo)
+        listOf(seller, buyer, bystander).forEach { assertIs<CoreAccountLoadResult.Ready>(service.open(it)) }
+        val request = CoreOperation(UUID.randomUUID(), service.snapshot(buyer)!!.revision, CoreAction.BuyOffer(seller, offer.id, 40))
+        assertEquals(CoreTransactionStatus.UNAVAILABLE, service.transact(buyer, request).status)
+        assertNull(service.snapshot(buyer)); assertNull(service.snapshot(seller))
+        failing = false
+        val other = service.transact(bystander, CoreOperation(UUID.randomUUID(), service.snapshot(bystander)!!.revision, CoreAction.ClaimMap(1, 5)))
+        assertEquals(CoreTransactionStatus.COMMITTED, other.status, other.message)
+        assertIs<CoreAccountLoadResult.Ready>(service.open(buyer))
+        assertEquals(60, service.snapshot(buyer)?.silver)
+        assertEquals(CoreTransactionStatus.REPLAYED, service.transact(buyer, request).status)
+        assertTrue(service.marketSnapshot().none { it.offer.id == offer.id })
+
+        f.service.forget(seller); assertIs<CoreAccountLoadResult.Ready>(f.service.open(seller))
+        val second = f.commit(seller, CoreAction.ListMaterial(CoreMaterial(CoreResource.ORE), 1, 10)).offers.single()
+        accountWrites = 0; failing = true
+        val retry = CoreAccountService(CoreAccountRepository(f.dir) { source, target ->
+            if (failing && target.toString().endsWith(".account") && ++accountWrites == 2) error("simulated interruption")
+            Files.move(source, target, ATOMIC_MOVE, REPLACE_EXISTING); Unit
+        })
+        retry.open(buyer); retry.open(seller)
+        val resolved = retry.transact(buyer, CoreOperation(UUID.randomUUID(), retry.snapshot(buyer)!!.revision, CoreAction.BuyOffer(seller, second.id, 10)))
+        assertEquals(CoreTransactionStatus.COMMITTED, resolved.status, resolved.message)
+        assertEquals(50, retry.snapshot(buyer)?.silver)
+        assertTrue(retry.snapshot(seller)!!.offers.isEmpty())
+        assertFalse(Files.exists(f.dir.resolve("market.pending")))
+    }
+
+    @Test fun `corrupt pending trade is quarantined without blocking unrelated logins`() {
+        val f = Fixture(); val id = f.create()
+        val pending = f.dir.resolve("market.pending")
+        Files.writeString(pending, "garbage\tnot-base64\n")
+        val service = CoreAccountService(CoreAccountRepository(f.dir))
+        assertIs<CoreAccountLoadResult.Ready>(service.open(id))
+        assertFalse(Files.exists(pending))
+        Files.list(f.dir).use { files -> assertTrue(files.anyMatch { it.fileName.toString().let { n -> n.startsWith("market.pending.") && n.endsWith(".corrupt") } }) }
+        assertEquals(CoreTransactionStatus.COMMITTED, service.transact(id, CoreOperation(UUID.randomUUID(), service.snapshot(id)!!.revision, CoreAction.ClaimMap(1, 3))).status)
+    }
+
+    @Test fun `pending trade for an unreadable party blocks only that trade's parties`() {
+        val f = Fixture(); val seller = f.create(); val buyer = f.create(100); val bystander = f.create()
+        val targets = listOf(f.a(seller).copy(revision = f.a(seller).revision + 1, silver = 5), f.a(buyer).copy(revision = f.a(buyer).revision + 1, silver = 1))
+        Files.writeString(f.dir.resolve("market.pending"), targets.joinToString("\n", postfix = "\n") {
+            "${it.playerId}\t" + java.util.Base64.getEncoder().encodeToString(CoreAccountCodec.encode(it).toByteArray())
+        })
+        val sellerFile = f.dir.resolve("$seller.account")
+        val good = Files.readString(sellerFile)
+        Files.writeString(sellerFile, "corrupt")
+        val repo = CoreAccountRepository(f.dir)
+        assertIs<CoreRepositoryLoad.Loaded>(repo.load(bystander))
+        assertIs<CoreRepositoryLoad.Invalid>(repo.load(buyer))
+        assertIs<CoreRepositorySave.Failed>(repo.commit(f.a(buyer).revision, f.a(buyer).copy(revision = f.a(buyer).revision + 1)))
+        assertTrue(Files.exists(f.dir.resolve("market.pending")))
+        Files.writeString(sellerFile, good)
+        val later = CoreAccountRepository(f.dir)
+        assertEquals(1, assertIs<CoreRepositoryLoad.Loaded>(later.load(buyer)).account.silver)
+        assertFalse(Files.exists(f.dir.resolve("market.pending")))
     }
 }

@@ -14,7 +14,7 @@ class CoreArmamentPresentationTest {
     @Test fun `bow firing poses are assigned to arrows and rain never traps guards or blink`() {
         MinecraftServer.init(Auth.Offline())
         val id=UUID.randomUUID()
-        val a=CoreAccount(id,journey=CoreJourney(job=CoreClass.RANGER),
+        val a=CoreAccount(id,journey=CoreJourney.legacy(job=CoreClass.RANGER),
             weaponIdentity=CoreGearIdentity(UUID.randomUUID(),id,base=CoreWeaponBase.LONGBOW))
         val item=CoreLoopItems.gear(a,CoreGearSlot.WEAPON,true)
         for(motif in CoreSkillMotif.entries) assertEquals(motif in setOf(CoreSkillMotif.ARROW,CoreSkillMotif.RAIN),CoreArmamentPresentation.usesWeapon(item,motif))
@@ -38,7 +38,7 @@ class CoreArmamentPresentationTest {
         MinecraftServer.init(Auth.Offline())
         for(job in CoreClass.entries) for(tier in 1..4) {
             val id=UUID.randomUUID(); val base=CoreWeaponBase.entries.first { it.usable(job) }
-            val a=CoreAccount(id,weaponTier=tier,journey=CoreJourney(job=job),
+            val a=CoreAccount(id,weaponTier=tier,journey=CoreJourney.legacy(job=job),
                 weaponIdentity=CoreGearIdentity(UUID.randomUUID(),id,base=base))
             val item=CoreLoopItems.gear(a,CoreGearSlot.WEAPON,true)
                 .with(DataComponents.CUSTOM_MODEL_DATA,CustomModelData(listOf(0f,42f),listOf(true),listOf("keep"),emptyList()))
@@ -61,7 +61,7 @@ class CoreArmamentPresentationTest {
         for (job in CoreClass.entries) for (tier in 1..4) {
             val id=UUID.randomUUID()
             val base=CoreWeaponBase.entries.first { it.usable(job) }
-            val a=CoreAccount(id,weaponTier=tier,journey=CoreJourney(job=job),
+            val a=CoreAccount(id,weaponTier=tier,journey=CoreJourney.legacy(job=job),
                 weaponIdentity=CoreGearIdentity(UUID.randomUUID(),id,base=base))
             val item=CoreLoopItems.gear(a,CoreGearSlot.WEAPON,true)
             val key=CoreArmamentPresentation.model(base,job,tier)

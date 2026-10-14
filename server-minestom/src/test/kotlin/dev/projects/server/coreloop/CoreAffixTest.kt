@@ -14,7 +14,7 @@ import kotlin.test.*
 
 class CoreAffixTest {
     private class Fixture(
-        val initial: CoreAccount = CoreAccount(UUID.randomUUID(), revision = 1),
+        val initial: CoreAccount = CoreAccount(UUID.randomUUID(), revision = 1, journey = CoreJourney.legacy()),
         val repository: CoreAccountRepository = CoreAccountRepository(Files.createTempDirectory("projects-affix")),
     ) {
         val player = initial.playerId

@@ -32,7 +32,7 @@ internal class CorePlayerCombat(
     private val armorBroken: () -> Boolean = { false },
     private val weaponQuality: () -> Int = { 0 },
     private val armorQuality: () -> Int = { 0 },
-    private val journey: () -> CoreJourney = { CoreJourney() },
+    private val journey: () -> CoreJourney = { CoreJourney.fresh() },
     private val weaponBase: () -> CoreWeaponBase = { CoreWeaponBase.STANDARD },
     private val weaponLevelPower: () -> Double = { 1.0 },
     private val armorLevelPower: () -> Double = { 1.0 },
