@@ -76,5 +76,6 @@ application {
 
 tasks.named<JavaExec>("run") {
     workingDir = file("run")
+    systemProperty("projects.devCommands", "true")
     doFirst { workingDir.mkdirs() }
 }

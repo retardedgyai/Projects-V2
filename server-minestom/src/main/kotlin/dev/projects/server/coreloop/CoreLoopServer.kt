@@ -457,7 +457,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         MinecraftServer.getCommandManager().register(Command("colony").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { enterColony(it) } }
         })
-        MinecraftServer.getCommandManager().register(Command("researchtest").apply {
+        // Test-only: refills every research material and ink. Local dev launchers pass -Dprojects.devCommands=true.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("researchtest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
                 val colony = colonies[player.uuid]?.takeIf { it.instance === player.instance }
                 when {
