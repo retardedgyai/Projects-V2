@@ -1,6 +1,7 @@
 package dev.projects.server.particle
 
 import net.minestom.server.entity.Player
+import java.util.concurrent.atomic.AtomicLong
 
 class ParticleAnimationScheduler {
     private data class Active(val handle: ParticleEffectHandle, val sink: ParticleSink)
@@ -12,7 +13,7 @@ class ParticleAnimationScheduler {
     fun start(
         effect: ParticleEffect,
         sink: ParticleSink,
-        id: String = "particle-effect-${nextId++}",
+        id: String = "particle-effect-${nextId.getAndIncrement()}",
         anchors: List<ParticleAnchor> = emptyList(),
         onComplete: (() -> Unit)? = null,
     ): ParticleEffectHandle {
@@ -59,7 +60,7 @@ class ParticleAnimationScheduler {
     }
 
     companion object {
-        private var nextId = 0L
+        private val nextId = AtomicLong()
     }
 
     private fun defaultAnchors(effect: ParticleEffect): List<ParticleAnchor> = when (effect) {
