@@ -110,7 +110,8 @@ The panel uses a restrained gold edge, charcoal socket recesses and a contrastin
 Most of the pack is generated, not committed. `:server-minestom:generateResourcePack` (a dependency of
 `processResources`, so every `gradlew build`/`test`/`run`) executes `python scripts/gen_resource_pack.py`,
 which runs `build_core_ui_assets.py` → `build_warrior_hud.py` → `build_ice_garden.py` →
-`build_ice_garden_bloom.py` and then rewrites `index.txt` from every file in the pack. Requirements:
+`build_ice_garden_bloom.py` → `build_first_magic_assets.py --fonts-only` and then rewrites `index.txt`
+from every file in the pack. Requirements:
 Python 3.12 on `PATH` (override with `-PpythonExe=...`) and `pip install -r scripts/requirements.txt`.
 The first run downloads one pinned, sha256-checked font into `.tools/core-menu/`.
 
@@ -119,7 +120,9 @@ Generated paths (`index.txt`, `pack.mcmeta`, `assets/minecraft/`, `font/`, `menu
 are listed in `.gitignore` and in `server-minestom/build.gradle.kts`; keep both in sync when a generator
 writes a new folder. Hand-authored or non-reproducible pack files (armour, weapons, infusion, tooltip/stat
 sprites, `CREDITS.txt`, `textures/gui/core/skill_charge.png`) and `polish05/*.zip`/`font-map.json` stay
-committed. Kotlin sources are task inputs because the menu atlas covers their CJK characters.
+committed. The `first_magic` item/model/texture/GUI folders also stay committed: two models and four
+model textures were finished by hand after `build_first_magic_assets.py`, so only its four canvas font
+files (`font/first_magic_canvas_*.json`) are produced at build time. See [first-magic-art.md](first-magic-art.md). Kotlin sources are task inputs because the menu atlas covers their CJK characters.
 
 ## Reproducible checks
 

@@ -3,7 +3,8 @@
 Generated files are not committed (see .gitignore); Gradle's
 `:server-minestom:generateResourcePack` runs this before processResources.
 Order matters: build_warrior_hud reads the menu glyph atlas written by
-build_core_ui_assets, and the Ice Garden builders are independent leaves.
+build_core_ui_assets; the Ice Garden and first-magic font builders are
+independent leaves.
 The final step rewrites index.txt from every file in the pack (committed and
 generated), which is what CoreUiPackServer bundles.
 
@@ -23,6 +24,8 @@ CHAIN = [
     "build_warrior_hud.py",      # must follow: reads menu/glyphs-emphasis.tsv + core_menu_emphasis_y30
     "build_ice_garden.py",       # combat_vfx/garden
     "build_ice_garden_bloom.py", # combat_vfx/garden_bloom
+    # Only font/first_magic_canvas_*.json; the first_magic art itself is committed (partly hand-finished).
+    ["build_first_magic_assets.py", "--fonts-only"],
 ]
 
 
@@ -33,9 +36,10 @@ def write_index():
 
 
 def main():
-    for name in CHAIN:
+    for step in CHAIN:
+        name, *args = [step] if isinstance(step, str) else step
         print(f"[gen_resource_pack] {name}", flush=True)
-        subprocess.run([sys.executable, str(SCRIPTS / name)], cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
+        subprocess.run([sys.executable, str(SCRIPTS / name), *args], cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
     print(f"[gen_resource_pack] indexed {write_index()} files under {PACK.relative_to(ROOT).as_posix()}")
 
 

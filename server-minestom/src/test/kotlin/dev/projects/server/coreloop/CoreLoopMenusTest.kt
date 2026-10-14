@@ -84,7 +84,7 @@ class CoreLoopMenusTest {
             assertTrue(f.host.requests.isEmpty())
             assertEquals(9, f.host.current.amount(CoreCraftingCurrency.ASTRAL))
             CoreLoopItems.refresh(f.player, f.host.current, packed = packed)
-            assertTrue((16..35).all { f.player.inventory.getItemStack(it).isAir })
+            assertTrue((0 until 36).none { CoreLoopItems.currencyId(f.player.inventory.getItemStack(it)) == CoreCraftingCurrency.ASTRAL })
             val oldStack = CoreLoopItems.currency(CoreCraftingCurrency.ASTRAL, 9, packed)
             assertEquals(CoreCraftingCurrency.ASTRAL, CoreLoopItems.currencyId(oldStack))
             val lore = oldStack.get(DataComponents.LORE)!!.joinToString("\n") { decode(it) }
@@ -404,12 +404,12 @@ class CoreLoopMenusTest {
     }
 
     @Test fun `every slot of the three journal illustrations opens the same intended destination`() {
-        for ((start, destination) in listOf(9 to "地図台", 12 to "開拓工房", 15 to "素材倉庫")) {
+        for ((start, destination) in listOf(9 to "地図台", 12 to "開拓工房", 15 to "所持品目録")) {
             for (row in 0..2) for (column in 0..2) {
                 val f = fixture(account())
                 f.menus.journal(f.player)
                 val original = f.snapshot()
-                assertEquals(listOf("遠征", "工房", "保管庫"), original.cards.filter { it.rows == 3 }.map { it.label })
+                assertEquals(listOf("遠征", "工房", "所持品"), original.cards.filter { it.rows == 3 }.map { it.label })
                 assertNotNull(original.leftPanel?.hero)
                 f.click(start + row * 9 + column, right = column == 1)
                 assertTrue(f.snapshot().title.contains(destination), "Card at $start did not own row=$row column=$column")
@@ -452,7 +452,7 @@ class CoreLoopMenusTest {
             val f = fixture(a, packed)
             f.menus.storage(f.player, 2)
             val inventory = assertNotNull(f.player.openInventory)
-            assertEquals("素材倉庫 / T2", f.title())
+            assertEquals("所持品目録 / T2", f.title())
             assertFalse(plain((inventory as Inventory).title).any { it.code in 0xE000..0xF8FF })
             assertNull(f.snapshot().leftPanel)
             assertNull(f.snapshot().rightPanel)
@@ -480,7 +480,7 @@ class CoreLoopMenusTest {
         assertTrue(inventory.getItemStack(9).get(DataComponents.LORE).orEmpty().any { plain(it) == "所持 999999 個" })
         assertTrue(inventory.getItemStack(8).get(DataComponents.LORE).orEmpty().any { plain(it).contains("最大64") })
         f.click(6)
-        assertEquals("素材倉庫 / T4", f.title())
+        assertEquals("所持品目録 / T4", f.title())
         assertTrue(f.host.requests.isEmpty())
         val empty = fixture(account(wealthy = false))
         empty.menus.storage(empty.player)
@@ -502,7 +502,7 @@ class CoreLoopMenusTest {
         assertTrue(shift.isCancelled)
         f.click(9)
         f.click(53)
-        assertEquals("素材倉庫 / T1", f.title())
+        assertEquals("所持品目録 / T1", f.title())
         assertEquals(before, inventory.getItemStack(9))
         assertTrue(f.host.requests.isEmpty())
     }
@@ -678,7 +678,7 @@ class CoreLoopMenusTest {
         val title = f.title()
         f.host.usePack = false
         f.menus.refreshTheme(f.player)
-        assertEquals("素材倉庫 / T3", f.title())
+        assertEquals("所持品目録 / T3", f.title())
         f.host.usePack = true
         f.menus.refreshTheme(f.player)
         assertEquals(title, f.title())
