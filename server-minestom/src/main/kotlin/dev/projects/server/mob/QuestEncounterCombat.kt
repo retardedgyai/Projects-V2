@@ -1,6 +1,5 @@
 package dev.projects.server.mob
 
-import dev.projects.server.CombatTarget
 import dev.projects.server.coreloop.CoreDamageType
 import dev.projects.server.coreloop.CoreCombatMath
 import dev.projects.server.coreloop.CoreAffixStats

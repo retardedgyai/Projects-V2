@@ -1,6 +1,6 @@
 package dev.projects.server.coreloop
 
-import dev.projects.server.CombatTarget
+import dev.projects.server.mob.CombatTarget
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.key.Key

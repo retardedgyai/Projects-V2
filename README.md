@@ -19,11 +19,11 @@ ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り
 - Kotlin-first。
 - Gradle Kotlin DSL。
 - Server: Minestom 26.2系。
-- Client: Fabric 26.2を内部基盤とした専用ProjectS Client。
+- Client: Vanilla Minecraft 26.2 + Serverが配布するリソースパック（専用Fabric Clientは2026-10に廃止）。
 - ServerがDamage/Hit/Reward/Progressionを最終判定。
 - 人間向けEditorはMob Editorのみ。
 - Skill/VFX/Studio/World Builder/Balance Editorはv2では作らない。
-- VFXはコード/データ/AIで制作し、Clientで描画する。
+- VFXはコード/データ/AIで制作し、Server側からParticle/Display Entity/リソースパックで描画する。
 - 統合版対応は初期Scopeに入れない。
 
 ## 最初の完成単位
@@ -57,5 +57,5 @@ ProjectS v2 は、旧ProjectSを引き継ぎつつコードはゼロから作り
 ## 開発起動
 
 - Server: `./gradlew :server-minestom:run`
-- Client: `./gradlew :client-fabric:runClient`
+- Client: Vanilla Minecraft 26.2で `localhost` に接続
 - Test / Build: `./gradlew build`
