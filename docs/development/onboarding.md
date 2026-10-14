@@ -97,8 +97,4 @@ GitHubのBranchesまたはDraft PRを見ると、現在の作業branchと途中�
 
 明らかに壊れた一時状態や数行単位の細切れ変更は通常commitせず、最小prototype完成、Skill完成、fix完了、Manual Smoke前などの分かりやすい単位で公開します。
 
-実装後は`docs/development/sol-review.md`のpromptで自分のSol Reviewを行い、`PASS`ならManual Smoke、`FIX-FIRST`なら修正、`DROP`ならbranchを破棄します。Gameplayの操作とfeel判定はCreator本人が行います。
-
-## Mainline feature
-
-本編へ入れる場合は、Playgroundの成果または新しいGitHub IssueをProduction workflowへ昇格し、Issueのacceptance、Test、Sol Review、必要なManual Smoke、PRを通します。
+Gameplayの操作とfeel判定はCreator本人が行います。良ければCreatorが「マージしていい」と伝え、AgentがTestを確認してmainへ統合します。面白くなければbranchごと捨てて構いません。
