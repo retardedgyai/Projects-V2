@@ -1,6 +1,5 @@
 pluginManagement {
     repositories {
-        maven("https://maven.fabricmc.net/")
         gradlePluginPortal()
         mavenCentral()
     }
@@ -8,6 +7,5 @@ pluginManagement {
 
 rootProject.name = "projects-v2"
 
-include("protocol", "server-minestom", "client-fabric")
-include("model-lab")
+include("server-minestom")
 include("web-ui-lab")

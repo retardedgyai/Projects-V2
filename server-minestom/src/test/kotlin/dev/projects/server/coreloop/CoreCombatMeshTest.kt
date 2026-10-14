@@ -146,7 +146,7 @@ class CoreCombatMeshTest {
         val state=CoreClassState()
         val observer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"MarkObserver")
         val id=UUID.randomUUID()
-        val target=dev.projects.server.CombatTarget(id,owner.position.add(0.0,1.0,2.0),Vec(.4,1.0,.4))
+        val target=dev.projects.server.mob.CombatTarget(id,owner.position.add(0.0,1.0,2.0),Vec(.4,1.0,.4))
         try {
             CoreCombatPresentation.pack(owner,true)
             state.mark(id,10);display.update(listOf(target),state,10)
