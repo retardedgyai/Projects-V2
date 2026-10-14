@@ -38,6 +38,8 @@ internal class VerdantRoadQuestService(
     private val activeByPlayer = ConcurrentHashMap<UUID, VerdantRoadQuestRuntime>()
     private val gatheringMasteries = ConcurrentHashMap<UUID, QuestGatheringMastery>()
     private val activeGathering = ConcurrentHashMap<UUID, ActiveGathering>()
+    /** Runtimes whose incoming transfer is in flight; their transfer callback, not disconnect, closes them. */
+    private val transferring = ConcurrentHashMap.newKeySet<VerdantRoadQuestRuntime>()
 
     private data class ActiveGathering(
         val runtime: VerdantRoadQuestRuntime,
@@ -181,7 +183,9 @@ internal class VerdantRoadQuestService(
         when (val result = current.unlock(discipline, node)) {
             is QuestGatheringMasteryUnlockResult.Unlocked -> {
                 gatheringMasteries[player.uuid] = result.mastery
-                masteryRepository.save(player.uuid, result.mastery)
+                if (!masteryRepository.save(player.uuid, result.mastery)) {
+                    System.err.println("GATHERING_MASTERY_SAVE_FAILURE player=${player.uuid}")
+                }
                 player.sendMessage(Component.text("${discipline.displayName}: ${node.displayName}を取得しました。", NamedTextColor.GREEN))
             }
             QuestGatheringMasteryUnlockResult.AlreadyUnlocked -> player.sendMessage(Component.text("そのノードは取得済みです。", NamedTextColor.YELLOW))
@@ -399,14 +403,30 @@ internal class VerdantRoadQuestService(
         runtime: VerdantRoadQuestRuntime,
     ): CompletableFuture<Boolean> {
         activeByPlayer[player.uuid] = runtime
+        transferring += runtime
         player.setVelocity(Vec.ZERO)
         val transferStartedAt = System.nanoTime()
-        return player.setInstance(runtime.instance, runtime.spawn).handle { _, failure ->
+        val transfer = try {
+            player.setInstance(runtime.instance, runtime.spawn)
+        } catch (failure: Exception) {
+            CompletableFuture.failedFuture(failure)
+        }
+        return transfer.handle { _, failure ->
+            // Order matters: leave the transferring set before reading activeByPlayer so a concurrent
+            // disconnect() either sees the transfer and defers, or this callback sees the disconnect.
+            transferring -= runtime
             if (failure != null) {
                 activeByPlayer.remove(player.uuid, runtime)
-                if (runtime.instance.players.isEmpty()) runtime.close()
-                player.sendMessage(Component.text("クエストマップへの転送に失敗しました: ${failure.message}", NamedTextColor.RED))
+                runtime.close()
+                if (player.isOnline) {
+                    player.sendMessage(Component.text("クエストマップへの転送に失敗しました: ${failure.message}", NamedTextColor.RED))
+                }
                 println("Quest map transfer failed for ${player.username}: ${failure.message}")
+                false
+            } else if (!player.isOnline || activeByPlayer[player.uuid] !== runtime) {
+                // Disconnected (or was cleaned up) while the transfer was in flight.
+                activeByPlayer.remove(player.uuid, runtime)
+                runtime.close()
                 false
             } else {
                 val transferMillis = (System.nanoTime() - transferStartedAt) / 1_000_000
@@ -454,10 +474,11 @@ internal class VerdantRoadQuestService(
         cancelGathering(player)
         player.setVelocity(Vec.ZERO)
         return player.setInstance(hubInstance, hubSpawn).handle { _, failure ->
-            if (failure == null) {
+            if (failure == null || !player.isOnline) {
+                // A disconnect during the return already ran disconnect(); never re-register the map then.
                 runtime.close()
-                player.sendMessage(Component.text("ProjectSの拠点へ戻りました。", NamedTextColor.GREEN))
-                true
+                if (failure == null) player.sendMessage(Component.text("ProjectSの拠点へ戻りました。", NamedTextColor.GREEN))
+                failure == null
             } else {
                 activeByPlayer[player.uuid] = runtime
                 player.sendMessage(Component.text("拠点への転送に失敗しました: ${failure.message}", NamedTextColor.RED))
@@ -469,19 +490,9 @@ internal class VerdantRoadQuestService(
     fun disconnect(playerId: UUID) {
         removeActiveGathering(playerId)
         gatheringMasteries.remove(playerId)?.let { masteryRepository.save(playerId, it) }
-        activeByPlayer.remove(playerId)?.let { closeAfterDisconnect(it, attemptsRemaining = 20) }
-    }
-
-    private fun closeAfterDisconnect(runtime: VerdantRoadQuestRuntime, attemptsRemaining: Int) {
-        MinecraftServer.getSchedulerManager().scheduleNextTick {
-            if (runtime.instance.players.isEmpty()) {
-                runtime.close()
-            } else if (attemptsRemaining > 1) {
-                closeAfterDisconnect(runtime, attemptsRemaining - 1)
-            } else {
-                System.err.println("Quest map ${runtime.plan.seed} still owns players after disconnect cleanup window")
-            }
-        }
+        val runtime = activeByPlayer.remove(playerId) ?: return
+        // An in-flight incoming transfer closes the map from its own callback once it settles.
+        if (runtime !in transferring) runtime.close()
     }
 
     private companion object {

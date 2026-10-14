@@ -17,6 +17,8 @@ import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 internal class VerdantRoadQuestRuntime private constructor(
     val requestedSeed: Long,
@@ -59,11 +61,15 @@ internal class VerdantRoadQuestRuntime private constructor(
             }
         }
     }
-    private val gatheringInteractionByNode = mutableMapOf<Int, Entity>()
-    private val gatheringNodeByEntityId = mutableMapOf<Int, QuestGatheringNode>()
-    private val gatheringLabelByNode = mutableMapOf<Int, Entity>()
+    private val gatheringNodesById = gatheringNodes.associateBy { it.id }
+    // Read lock-free from event threads; every mutation happens under this runtime's monitor.
+    private val gatheringInteractionByNode = ConcurrentHashMap<Int, Entity>()
+    private val gatheringNodeByEntityId = ConcurrentHashMap<Int, QuestGatheringNode>()
+    private val gatheringLabelByNode = ConcurrentHashMap<Int, Entity>()
     private val gatheringRespawnAtMillis = mutableMapOf<Int, Long>()
-    private val closed = java.util.concurrent.atomic.AtomicBoolean()
+    @Volatile private var nextRespawnCheckAtMillis = Long.MIN_VALUE
+    private val closeRequested = AtomicBoolean()
+    private val closed = AtomicBoolean()
 
     init {
         gatheringNodes.forEach(::spawnGatheringLabel)
@@ -98,17 +104,31 @@ internal class VerdantRoadQuestRuntime private constructor(
     fun restoreGatheringNode(node: QuestGatheringNode) {
         if (node.id !in gatheringRespawnAtMillis) return
         gatheringRespawnAtMillis[node.id] = 0L
-        respawnGatheringNodes(System.currentTimeMillis())
+        respawnReadyGatheringNodes(System.currentTimeMillis())
+    }
+
+    /** Called from every player tick, so the actual scan runs at most once per [RESPAWN_CHECK_INTERVAL_MILLIS]. */
+    fun respawnGatheringNodes(nowMillis: Long) {
+        if (nowMillis < nextRespawnCheckAtMillis) return
+        synchronized(this) {
+            if (nowMillis < nextRespawnCheckAtMillis) return
+            nextRespawnCheckAtMillis = nowMillis + RESPAWN_CHECK_INTERVAL_MILLIS
+            respawnReadyGatheringNodes(nowMillis)
+        }
     }
 
     @Synchronized
-    fun respawnGatheringNodes(nowMillis: Long) {
-        val ready = gatheringRespawnAtMillis.filterValues { it <= nowMillis }.keys.toList()
-        ready.forEach { nodeId ->
-            val node = gatheringNodes.single { it.id == nodeId }
+    private fun respawnReadyGatheringNodes(nowMillis: Long) {
+        if (gatheringRespawnAtMillis.isEmpty()) return
+        val pending = gatheringRespawnAtMillis.entries.iterator()
+        while (pending.hasNext()) {
+            val (nodeId, respawnAt) = pending.next()
+            if (respawnAt > nowMillis) continue
+            val node = gatheringNodesById.getValue(nodeId)
             val gathering = gatheringObjects.getValue(node.id)
             gathering.blocks.forEach { (position, block) -> instance.setBlock(position, block) }
-            gatheringRespawnAtMillis.remove(nodeId)
+            // Remove before spawning: a synchronous spawn callback treats a present entry as "still depleted".
+            pending.remove()
             if (gathering.visualKind == QuestMapStructureAssets.GatheringVisualKind.ANIMAL_CORPSE) {
                 spawnGatheringInteraction(node)
             }
@@ -164,9 +184,11 @@ internal class VerdantRoadQuestRuntime private constructor(
             gathering.interactionPosition.z(),
         )
         label.setInstance(instance, labelPosition).whenComplete { _, failure ->
-            if (failure != null || gatheringRespawnAtMillis.containsKey(node.id)) {
-                gatheringLabelByNode.remove(node.id, label)
-                label.remove()
+            synchronized(this) {
+                if (failure != null || closed.get() || gatheringRespawnAtMillis.containsKey(node.id)) {
+                    gatheringLabelByNode.remove(node.id, label)
+                    label.remove()
+                }
             }
         }
     }
@@ -183,10 +205,12 @@ internal class VerdantRoadQuestRuntime private constructor(
         gatheringInteractionByNode[node.id] = interaction
         gatheringNodeByEntityId[interaction.entityId] = node
         interaction.setInstance(instance, gathering.interactionPosition).whenComplete { _, failure ->
-            if (failure != null || gatheringRespawnAtMillis.containsKey(node.id)) {
-                gatheringNodeByEntityId.remove(interaction.entityId)
-                gatheringInteractionByNode.remove(node.id, interaction)
-                interaction.remove()
+            synchronized(this) {
+                if (failure != null || closed.get() || gatheringRespawnAtMillis.containsKey(node.id)) {
+                    gatheringNodeByEntityId.remove(interaction.entityId)
+                    gatheringInteractionByNode.remove(node.id, interaction)
+                    interaction.remove()
+                }
             }
         }
     }
@@ -202,16 +226,47 @@ internal class VerdantRoadQuestRuntime private constructor(
         gatheringLabelByNode.remove(nodeId)?.remove()
     }
 
+    val isClosed: Boolean get() = closed.get()
+
+    /**
+     * Idempotent and never leaks the instance. An empty map unregisters immediately; otherwise the map
+     * waits for in-flight outgoing transfers, drops disconnected players a late transfer stranded inside,
+     * and after [CLOSE_EVICT_AFTER_TICKS] removes (kicks) whoever is still there before unregistering.
+     */
     fun close() {
-        check(instance.players.isEmpty()) { "Cannot close a quest map while players are inside" }
-        if (!closed.compareAndSet(false, true)) return
-        gatheringInteractionByNode.keys.toList().forEach(::removeGatheringInteraction)
-        gatheringLabelByNode.keys.toList().forEach(::removeGatheringLabel)
-        MinecraftServer.getInstanceManager().unregisterInstance(instance)
+        if (!closeRequested.compareAndSet(false, true)) return
+        if (!tryFinishClose()) closeWhenVacated(waitedTicks = 0)
+    }
+
+    private fun closeWhenVacated(waitedTicks: Int) {
+        MinecraftServer.getSchedulerManager().scheduleNextTick {
+            instance.players.filterNot { it.isOnline }.forEach { it.remove() }
+            if (waitedTicks >= CLOSE_EVICT_AFTER_TICKS && instance.players.isNotEmpty()) {
+                System.err.println(
+                    "QUEST_MAP_CLOSE_EVICT seed=${plan.seed} players=${instance.players.map { it.username }}",
+                )
+                instance.players.toList().forEach { it.remove() }
+            }
+            if (!tryFinishClose()) closeWhenVacated(waitedTicks + 1)
+        }
+    }
+
+    private fun tryFinishClose(): Boolean {
+        if (closed.get()) return true
+        if (instance.players.isNotEmpty()) return false
+        synchronized(this) {
+            if (!closed.compareAndSet(false, true)) return true
+            gatheringInteractionByNode.keys.toList().forEach(::removeGatheringInteraction)
+            gatheringLabelByNode.keys.toList().forEach(::removeGatheringLabel)
+        }
+        if (instance.isRegistered) MinecraftServer.getInstanceManager().unregisterInstance(instance)
+        return true
     }
 
     companion object {
         private const val GATHERING_RESPAWN_MILLIS = 90_000L
+        private const val RESPAWN_CHECK_INTERVAL_MILLIS = 1_000L
+        internal const val CLOSE_EVICT_AFTER_TICKS = 100
 
         private fun isWoodGatheringBlock(block: Block): Boolean {
             val name = block.name().toString()
