@@ -7,6 +7,7 @@ import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.metadata.display.BlockDisplayMeta
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.block.Block
+import java.util.concurrent.CompletableFuture
 import kotlin.math.*
 
 /** Original articulated voxel sculpture. Native block textures also work with the pack declined. */
@@ -43,17 +44,24 @@ internal class WardenModel(private val instance: InstanceContainer, private val 
             m.setTransformationInterpolationDuration(3); m.setPosRotInterpolationDuration(3)
             m.setViewRange(1.2f); m.setShadowRadius(.3f)
         }
-        entity.setInstance(instance, origin).join()
         part to entity
     }
+    @Volatile private var removed = false
+    /**
+     * Completes once every part is placed. Never joined: the model is built from a spawn callback that
+     * may run on a tick or chunk thread, so waiting here could stall that thread.
+     */
+    val ready: CompletableFuture<Void> = CompletableFuture.allOf(*pieces.map { (_, entity) ->
+        entity.setInstance(instance, origin).whenComplete { _, _ -> if (removed) entity.remove() }
+    }.toTypedArray())
     val count get() = pieces.count { !it.second.isRemoved }
-    private var removed = false
     private var lastUpdate = Long.MIN_VALUE
     fun tick(at: Pos, now: Long, attacking: Boolean, healthFraction: Double) {
         if (removed || (lastUpdate != Long.MIN_VALUE && now - lastUpdate < 100)) return
         lastUpdate = now
         val phase = now / (if (healthFraction < .4) 180.0 else 300.0)
         pieces.forEach { (part, e) ->
+            if (e.instance !== instance) return@forEach
             val lift = if (abs(part.joint) == 1 && attacking) .35 + .25 * sin(phase) else 0.0
             val sway = if (part.joint == 0) 0.0 else sin(phase * part.joint.sign) * if (abs(part.joint) == 2) .12 else .06
             e.editEntityMeta(BlockDisplayMeta::class.java) { m ->
