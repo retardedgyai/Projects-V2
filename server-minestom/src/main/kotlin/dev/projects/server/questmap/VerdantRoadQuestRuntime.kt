@@ -22,7 +22,6 @@ import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
 import net.minestom.server.instance.generator.GenerationUnit
 import net.minestom.server.instance.generator.Generator
-import net.minestom.server.inventory.AbstractInventory
 import net.minestom.server.item.ItemStack
 import net.minestom.server.network.packet.server.play.ParticlePacket
 import net.minestom.server.network.packet.server.play.EntityAnimationPacket
@@ -34,9 +33,6 @@ import java.util.Random
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.roundToInt
 
 internal class VerdantRoadQuestGenerator(
@@ -1504,9 +1500,6 @@ internal class VerdantRoadQuestRuntime private constructor(
 
     fun gatheringLabelFor(node: QuestGatheringNode): Entity? = gatheringLabelByNode[node.id]
 
-    fun gatheringBlockAt(position: BlockVec): Block? =
-        gatheringNodeAt(position)?.let { node -> gatheringObjects.getValue(node.id).blocks[position] }
-
     @Synchronized
     fun isGatheringNodeAvailable(node: QuestGatheringNode, nowMillis: Long): Boolean =
         (gatheringRespawnAtMillis[node.id] ?: Long.MIN_VALUE) <= nowMillis
@@ -1702,33 +1695,20 @@ internal fun questMapRenderChunkRange(mapSize: Int, viewDistance: Int): IntRange
     return -renderBuffer..lastMapChunk + renderBuffer
 }
 
-internal data class VerdantRoadQuestServiceStatus(
-    val readyMaps: Int,
-    val preparingMaps: Int,
-    val activeMaps: Int,
-)
-
-/** Concrete prewarmed service for the first generated ProjectS quest, not a generic quest framework. */
+/** Concrete service for the generated ProjectS quest map, not a generic quest framework. */
 internal class VerdantRoadQuestService(
     private val hubInstance: Instance,
     private val hubSpawn: Pos,
     private val masteryRepository: QuestGatheringMasteryRepository = QuestGatheringMasteryRepository(
         Path.of("config", "projects", "gathering-mastery"),
     ),
-    seedBase: Long = System.currentTimeMillis(),
     private val durableGatheringReward: ((Player, QuestGatheringNode, Int) -> CompletableFuture<Boolean>)? = null,
     private val respawnResources: Boolean = true,
     private val technicalMessages: Boolean = true,
 ) {
-    private val ready = ConcurrentLinkedQueue<VerdantRoadQuestRuntime>()
     private val activeByPlayer = ConcurrentHashMap<UUID, VerdantRoadQuestRuntime>()
-    private val preparing = AtomicInteger()
-    private val nextSeed = AtomicLong(seedBase)
     private val gatheringMasteries = ConcurrentHashMap<UUID, QuestGatheringMastery>()
     private val activeGathering = ConcurrentHashMap<UUID, ActiveGathering>()
-    private val gatheringSmokeIndices = ConcurrentHashMap<UUID, Int>()
-    private val pendingItemMaps = ConcurrentHashMap.newKeySet<UUID>()
-    private val itemSeeds = AtomicLong(seedBase xor 0x5EED5EED5EED5EEDL)
 
     private data class ActiveGathering(
         val runtime: VerdantRoadQuestRuntime,
@@ -1740,10 +1720,6 @@ internal class VerdantRoadQuestService(
         var elapsedTicks: Int = 0,
     )
 
-    fun prewarmInitial(): CompletableFuture<Void> = CompletableFuture.allOf(
-        *Array(PREWARM_TARGET) { prepareOne() },
-    )
-
     fun currentRuntime(playerId: UUID): VerdantRoadQuestRuntime? = activeByPlayer[playerId]
 
     /** The caller prepares the map off-thread and owns the durable expedition reservation. */
@@ -1752,127 +1728,10 @@ internal class VerdantRoadQuestService(
             if (runtime.instance.players.isEmpty()) runtime.close()
             return CompletableFuture.completedFuture(false)
         }
-        return enterRuntime(player, runtime, returnToReadyOnFailure = false)
+        return enterRuntime(player, runtime)
     }
-
-    fun isGathering(playerId: UUID): Boolean = activeGathering.containsKey(playerId)
 
     fun masterySnapshot(playerId: UUID): QuestGatheringMastery = gatheringMastery(playerId)
-
-    fun enter(player: Player): CompletableFuture<Boolean> {
-        if (activeByPlayer.containsKey(player.uuid)) {
-            player.sendMessage(Component.text("すでに生成済みクエストマップ内にいます。", NamedTextColor.YELLOW))
-            return CompletableFuture.completedFuture(false)
-        }
-        val runtime = ready.poll()
-        if (runtime == null) {
-            replenish()
-            player.sendMessage(Component.text("クエストマップを準備中です。少し待ってからもう一度お試しください。", NamedTextColor.RED))
-            return CompletableFuture.completedFuture(false)
-        }
-        return enterRuntime(player, runtime, returnToReadyOnFailure = true).whenComplete { _, _ -> replenish() }
-    }
-
-    fun enterSeed(player: Player, seed: Long): CompletableFuture<Boolean> {
-        if (activeByPlayer.containsKey(player.uuid)) {
-            player.sendMessage(Component.text("すでに生成済みクエストマップ内にいます。", NamedTextColor.YELLOW))
-            return CompletableFuture.completedFuture(false)
-        }
-        player.sendMessage(Component.text("手動確認用マップを準備しています（seed=$seed）…", NamedTextColor.GRAY))
-        return VerdantRoadQuestRuntime.prepare(seed, candidateCount = 1).thenCompose { runtime ->
-            enterRuntime(player, runtime, returnToReadyOnFailure = false)
-        }
-    }
-
-    fun questMapItemData(item: ItemStack): QuestMapItemData? = QuestMapItems.read(item)
-
-    fun applyGatheringTablet(
-        player: Player,
-        inventory: AbstractInventory,
-        slot: Int,
-        clickedItem: ItemStack,
-    ): Boolean {
-        val tablet = player.inventory.cursorItem
-        if (!QuestMapItems.isGatheringTablet(tablet)) return false
-        val mapData = QuestMapItems.read(clickedItem) ?: return false
-        val updated = QuestMapItems.applyTablet(mapData, itemSeeds.getAndIncrement())
-        if (updated == null) {
-            player.sendActionBar(
-                Component.text("このマップにはすでに最大数のMODが付いています。", NamedTextColor.YELLOW),
-            )
-            return true
-        }
-        inventory.setItemStack(slot, QuestMapItems.questMap(updated))
-        player.inventory.cursorItem = tablet.consume(1)
-        val added = updated.customization.modifiers.last()
-        player.sendMessage(Component.text("採取の石板: ${added.displayName()}", NamedTextColor.LIGHT_PURPLE))
-        return true
-    }
-
-    fun enterMapItem(
-        player: Player,
-        data: QuestMapItemData,
-        hand: PlayerHand,
-    ): CompletableFuture<Boolean> {
-        if (activeByPlayer.containsKey(player.uuid)) {
-            player.sendMessage(Component.text("すでに生成済みクエストマップ内にいます。", NamedTextColor.YELLOW))
-            return CompletableFuture.completedFuture(false)
-        }
-        if (!pendingItemMaps.add(player.uuid)) {
-            player.sendActionBar(Component.text("クエストマップを準備中です。", NamedTextColor.YELLOW))
-            return CompletableFuture.completedFuture(false)
-        }
-        val consumedItem = player.getItemInHand(hand)
-        player.setItemInHand(hand, consumedItem.consume(1))
-        player.sendMessage(Component.text("クエストマップを展開しています…", NamedTextColor.GOLD))
-        return VerdantRoadQuestRuntime.prepare(
-            seed = data.seed,
-            customization = data.customization,
-        ).thenCompose { runtime ->
-            enterRuntime(player, runtime, returnToReadyOnFailure = false)
-        }.handle { entered, failure ->
-            pendingItemMaps.remove(player.uuid)
-            if (failure != null || entered != true) {
-                giveGatheringReward(player, QuestMapItems.questMap(data))
-                if (failure != null) {
-                    player.sendMessage(
-                        Component.text("クエストマップの生成に失敗しました: ${failure.message}", NamedTextColor.RED),
-                    )
-                }
-                false
-            } else {
-                true
-            }
-        }
-    }
-
-    fun grantBossMapLoot(player: Player) {
-        giveGatheringReward(player, createQuestMapDrop())
-        giveGatheringReward(player, QuestMapItems.gatheringTablet())
-        player.sendMessage(Component.text("クエストマップと採取の石板を獲得しました。", NamedTextColor.GOLD))
-    }
-
-    fun grantMapCustomizationTestItems(player: Player) {
-        giveGatheringReward(player, createQuestMapDrop())
-        repeat(3) { giveGatheringReward(player, QuestMapItems.gatheringTablet()) }
-        player.sendMessage(
-            Component.text("テスト用クエストマップ1枚と採取の石板3枚を渡しました。", NamedTextColor.GREEN),
-        )
-    }
-
-    fun rollMobMapLoot(entityId: Int): List<ItemStack> {
-        val rollSeed = itemSeeds.getAndIncrement() xor (entityId * 0x9E3779B9L)
-        val mapRoll = Math.floorMod(rollSeed xor (rollSeed ushr 29), 100L).toInt()
-        val tabletRoll = Math.floorMod((rollSeed * 31L) xor (rollSeed ushr 17), 100L).toInt()
-        return buildList {
-            if (mapRoll < 8) add(createQuestMapDrop())
-            if (tabletRoll < 14) add(QuestMapItems.gatheringTablet())
-        }
-    }
-
-    private fun createQuestMapDrop(): ItemStack = QuestMapItems.questMap(
-        QuestMapItemData(seed = itemSeeds.getAndIncrement()),
-    )
 
     fun startGathering(player: Player, blockPosition: BlockVec): Boolean {
         val runtime = activeByPlayer[player.uuid] ?: return false
@@ -1942,12 +1801,6 @@ internal class VerdantRoadQuestService(
         player.refreshActiveHand(true, false, false)
     }
 
-    fun protectGatheringNode(player: Player, blockPosition: BlockVec): Block? {
-        val runtime = activeByPlayer[player.uuid] ?: return null
-        runtime.gatheringNodeAt(blockPosition) ?: return null
-        return runtime.gatheringBlockAt(blockPosition)
-    }
-
     fun tick(player: Player) {
         val runtime = activeByPlayer[player.uuid] ?: return
         val now = System.currentTimeMillis()
@@ -1988,61 +1841,6 @@ internal class VerdantRoadQuestService(
         completeGathering(player, active.node)
     }
 
-    fun gatheringMasterySummary(player: Player) {
-        val mastery = gatheringMastery(player.uuid)
-        player.sendMessage(Component.text("採取マスタリー", NamedTextColor.GOLD))
-        QuestGatheringDiscipline.entries.forEach { discipline ->
-            player.sendMessage(
-                Component.text(
-                    "${discipline.displayName}: Lv ${mastery.level(discipline)}（経験値 ${mastery.experience(discipline)}）",
-                    NamedTextColor.GRAY,
-                ),
-            )
-            player.sendMessage(
-                Component.text(
-                    "  ツリーポイント: 残り ${mastery.availableTreePoints(discipline)} / " +
-                        "獲得 ${mastery.earnedTreePoints(discipline)}、" +
-                        "取得済み=${mastery.unlockedNodes(discipline).joinToString { it.id }.ifEmpty { "なし" }}",
-                    NamedTextColor.DARK_GRAY,
-                ),
-            )
-        }
-        player.sendMessage(Component.text("確認: /gathering tree <系統>　取得: /gathering unlock <系統> <ノード>", NamedTextColor.GRAY))
-    }
-
-    fun gatheringMasteryTree(player: Player, disciplineId: String?) {
-        val mastery = gatheringMastery(player.uuid)
-        val disciplines = if (disciplineId == null) {
-            QuestGatheringDiscipline.entries
-        } else {
-            listOfNotNull(QuestGatheringDiscipline.entries.firstOrNull { it.id == disciplineId.lowercase() }).also {
-                if (it.isEmpty()) player.sendMessage(Component.text("不明な採取系統です: $disciplineId", NamedTextColor.RED))
-            }
-        }
-        disciplines.forEach { discipline ->
-            val unlocked = mastery.unlockedNodes(discipline)
-            player.sendMessage(
-                Component.text(
-                    "${discipline.displayName}ツリー — 使用可能ポイント ${mastery.availableTreePoints(discipline)}",
-                    NamedTextColor.GOLD,
-                ),
-            )
-            QuestGatheringMasteryNode.entries.forEach { node ->
-                val state = when {
-                    node in unlocked -> "取得済み"
-                    node.prerequisite != null && node.prerequisite !in unlocked -> "前提: ${node.prerequisite.id}"
-                    else -> "必要ポイント: ${node.cost}"
-                }
-                player.sendMessage(
-                    Component.text(
-                        "  ${node.id} [$state] — ${node.description}",
-                        if (node in unlocked) NamedTextColor.GREEN else NamedTextColor.GRAY,
-                    ),
-                )
-            }
-        }
-    }
-
     fun unlockGatheringMasteryNode(player: Player, disciplineId: String, nodeId: String) {
         val discipline = QuestGatheringDiscipline.entries.firstOrNull { it.id == disciplineId.lowercase() }
         val node = QuestGatheringMasteryNode.byId(nodeId.lowercase())
@@ -2062,37 +1860,6 @@ internal class VerdantRoadQuestService(
             QuestGatheringMasteryUnlockResult.KeystoneConflict -> player.sendMessage(Component.text("各採取系統で選べるキーストーンは1つだけです。", NamedTextColor.RED))
             QuestGatheringMasteryUnlockResult.NotEnoughPoints -> player.sendMessage(Component.text("マスタリーツリーポイントが足りません。", NamedTextColor.RED))
         }
-    }
-
-    fun prepareGatheringSmokeTest(player: Player) {
-        val runtime = activeByPlayer[player.uuid]
-        if (runtime == null) {
-            player.sendMessage(Component.text("採取テストを使う前にクエストマップへ入ってください。", NamedTextColor.RED))
-            return
-        }
-        val index = gatheringSmokeIndices.getOrDefault(player.uuid, 0).mod(runtime.gatheringNodes.size)
-        gatheringSmokeIndices[player.uuid] = (index + 1).mod(runtime.gatheringNodes.size)
-        val node = runtime.gatheringNodes[index]
-        val gathering = runtime.gatheringObjects.getValue(node.id)
-        val standDistance = gathering.interactionWidth / 2.0 + 2.5
-        val standX = gathering.interactionPosition.blockX().coerceIn(1, runtime.plan.size - 2)
-        val standZ = (gathering.interactionPosition.z() + standDistance).toInt().coerceIn(1, runtime.plan.size - 2)
-        player.itemInMainHand = node.discipline.toolItem()
-        player.teleport(
-            Pos(
-                standX + 0.5,
-                runtime.plan.heightAt(standX, standZ) + 1.0,
-                standZ + 0.5,
-                180f,
-                0f,
-            ),
-        )
-        player.sendMessage(
-            Component.text(
-                "採取テスト ${index + 1}/${runtime.gatheringNodes.size}: 正面の${node.discipline.displayName}対象を右クリック長押ししてください。もう一度 /gathering test で次へ進みます。",
-                NamedTextColor.GOLD,
-            ),
-        )
     }
 
     private fun completeGathering(player: Player, node: QuestGatheringNode) {
@@ -2301,7 +2068,6 @@ internal class VerdantRoadQuestService(
     private fun enterRuntime(
         player: Player,
         runtime: VerdantRoadQuestRuntime,
-        returnToReadyOnFailure: Boolean,
     ): CompletableFuture<Boolean> {
         activeByPlayer[player.uuid] = runtime
         player.setVelocity(Vec.ZERO)
@@ -2309,11 +2075,7 @@ internal class VerdantRoadQuestService(
         return player.setInstance(runtime.instance, runtime.spawn).handle { _, failure ->
             if (failure != null) {
                 activeByPlayer.remove(player.uuid, runtime)
-                if (returnToReadyOnFailure) {
-                    ready += runtime
-                } else if (runtime.instance.players.isEmpty()) {
-                    runtime.close()
-                }
+                if (runtime.instance.players.isEmpty()) runtime.close()
                 player.sendMessage(Component.text("クエストマップへの転送に失敗しました: ${failure.message}", NamedTextColor.RED))
                 println("Quest map transfer failed for ${player.username}: ${failure.message}")
                 false
@@ -2381,37 +2143,6 @@ internal class VerdantRoadQuestService(
         activeByPlayer.remove(playerId)?.let { closeAfterDisconnect(it, attemptsRemaining = 20) }
     }
 
-    fun status(): VerdantRoadQuestServiceStatus = VerdantRoadQuestServiceStatus(
-        readyMaps = ready.size,
-        preparingMaps = preparing.get(),
-        activeMaps = activeByPlayer.size,
-    )
-
-    private fun replenish() {
-        while (ready.size + preparing.get() < PREWARM_TARGET) {
-            prepareOne().exceptionally { failure ->
-                System.err.println("Quest map background prewarm failed: ${failure.message}")
-                null
-            }
-        }
-    }
-
-    private fun prepareOne(): CompletableFuture<Void> {
-        preparing.incrementAndGet()
-        return VerdantRoadQuestRuntime.prepare(nextSeed.getAndIncrement()).whenComplete { _, _ ->
-            preparing.decrementAndGet()
-        }.thenAccept { runtime ->
-            ready += runtime
-            println(
-                "QUEST_MAP_READY seed=${runtime.plan.seed} style=${runtime.plan.style} " +
-                    "layout=${runtime.plan.routeLayout} terrain=${runtime.plan.terrainProfile} " +
-                    "size=${runtime.plan.size} chunks=${runtime.loadedChunkCount} " +
-                    "candidates=${runtime.candidateCount} score=${"%.2f".format(runtime.candidateScore.total)} " +
-                    "preparation=${runtime.preparationMillis}ms",
-            )
-        }
-    }
-
     private fun closeAfterDisconnect(runtime: VerdantRoadQuestRuntime, attemptsRemaining: Int) {
         MinecraftServer.getSchedulerManager().scheduleNextTick {
             if (runtime.instance.players.isEmpty()) {
@@ -2425,7 +2156,6 @@ internal class VerdantRoadQuestService(
     }
 
     private companion object {
-        const val PREWARM_TARGET = 2
         const val GATHERING_BAR_SEGMENTS = 12
         const val GATHERING_SWING_INTERVAL_TICKS = 6
         const val GATHERING_HOLD_DURATION_TICKS = 72_000L
