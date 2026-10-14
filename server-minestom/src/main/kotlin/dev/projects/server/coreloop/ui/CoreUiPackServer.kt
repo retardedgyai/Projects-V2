@@ -163,6 +163,8 @@ class CoreUiPackServer private constructor(
             val polishBytes = requireNotNull(loader.getResourceAsStream("polish05/pack.zip")) {
                 "Missing Polish05 private-namespace pack"
             }.use { it.readBytes() }
+            // The 開拓大陸 map sprites ship as a second private-namespace archive.
+            val atlasBytes = loader.getResourceAsStream("polish05/atlas.zip")?.use { it.readBytes() }
             val output = ByteArrayOutputStream()
             ZipOutputStream(output).use { zip ->
                 paths.sorted().forEach { path ->
@@ -173,7 +175,7 @@ class CoreUiPackServer private constructor(
                 // Vanilla client reload twice and could leave the forge unavailable until rejoin.
                 val seen = paths.toMutableSet()
                 var privateAssets = 0
-                ZipInputStream(polishBytes.inputStream()).use { source ->
+                listOfNotNull(polishBytes, atlasBytes).forEach { archive -> ZipInputStream(archive.inputStream()).use { source ->
                     while (true) {
                         val entry = source.nextEntry ?: break
                         val path = entry.name
@@ -189,7 +191,7 @@ class CoreUiPackServer private constructor(
                         }
                         source.closeEntry()
                     }
-                }
+                } }
                 require(privateAssets > 0) { "Polish05 assets missing from combined pack" }
             }
             return output.toByteArray()

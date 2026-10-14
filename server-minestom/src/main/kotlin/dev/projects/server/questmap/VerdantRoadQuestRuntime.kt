@@ -143,7 +143,8 @@ internal class VerdantRoadQuestGenerator(
                 QuestTerrainStyle.VERDANT -> when {
                     core && variation < 2 -> Block.GRAVEL
                     core -> Block.DIRT_PATH
-                    variation < 5 -> Block.COARSE_DIRT
+                    // Worn shoulders in coherent patches, not a salt-and-pepper fringe.
+                    questClump(plan.seed, x, z, 3.0, 31) > 0.25 -> Block.COARSE_DIRT
                     else -> Block.DIRT_PATH
                 }
                 QuestTerrainStyle.CLIFFLANDS -> when {
@@ -259,6 +260,7 @@ internal class VerdantRoadQuestGenerator(
                 else -> if (patch == 0) Block.WARPED_NYLIUM else Block.CRIMSON_NYLIUM
             }
         }
+        if (plan.style == QuestTerrainStyle.VERDANT) verdantSurface(x, z)?.let { return it }
         return when (plan.groundCoverAt(x, z)) {
             QuestGroundCover.MEADOW -> when {
                 patch == 0 && variation < 13 -> Block.MOSS_BLOCK
@@ -305,6 +307,30 @@ internal class VerdantRoadQuestGenerator(
         }
     }
 
+    /** Verdant ground in coherent clumps: moss pools, podzol under canopies, worn heath. Null = default rules. */
+    private fun verdantSurface(x: Int, z: Int): Block? {
+        val broad = questClump(plan.seed, x, z, 9.0, 11)
+        val fine = questClump(plan.seed, x, z, 4.5, 12)
+        return when (plan.groundCoverAt(x, z)) {
+            QuestGroundCover.MEADOW -> when {
+                fine > 0.58 && broad > 0.0 -> Block.MOSS_BLOCK
+                else -> Block.GRASS_BLOCK
+            }
+            QuestGroundCover.FOREST_FLOOR -> when {
+                broad > 0.5 && fine > -0.2 -> Block.PODZOL
+                fine > 0.4 -> Block.MOSS_BLOCK
+                broad < -0.62 && fine < -0.2 -> Block.ROOTED_DIRT
+                else -> Block.GRASS_BLOCK
+            }
+            QuestGroundCover.HEATH -> when {
+                broad > 0.38 -> Block.COARSE_DIRT
+                fine > 0.45 -> Block.MOSS_BLOCK
+                else -> Block.GRASS_BLOCK
+            }
+            else -> null
+        }
+    }
+
     private fun outerSeaBlock(x: Int, y: Int, z: Int): Block {
         val floorVariation = Math.floorMod(plan.seed xor (x * 341_873L) xor (z * 712_619L), 3L).toInt() - 1
         val floor = QUEST_WATER_LEVEL - 3 + floorVariation
@@ -336,6 +362,7 @@ internal object VerdantRoadQuestDecorator {
         decorateLandscapeScenes(instance, plan)
         decorateTrees(instance, plan, plan.landscapeScenes)
         decorateTerrainDetail(instance, plan, plan.landscapeScenes)
+        QuestMapFlora.decorate(instance, plan, plan.landscapeScenes)
         decorateWaterEdges(instance, plan)
         decorateRoadGuidance(instance, plan)
         plan.contents.forEachIndexed { ordinal, content ->

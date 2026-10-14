@@ -8,6 +8,7 @@ import dev.projects.server.coreloop.adventure.*
 import dev.projects.server.questmap.*
 import dev.projects.webui.ForgeV3Scene
 import dev.projects.webui.UiSessions
+import dev.projects.server.questmap.QuestTerrainStyle
 import dev.projects.webui.UiInputPlayer
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.sound.Sound
@@ -62,7 +63,7 @@ object CoreLoopServer {
 
 internal class CoreLoopGame(private val hub: InstanceContainer, private val harbor: HarborScene.Result) : CoreMenuHost {
     internal fun consumeImmediateUiPacket(player: Player, packet: ClientPacket): Boolean =
-        polishSessions?.consumeImmediateUiPacket(player,packet) == true
+        polishSessions?.consumeImmediateUiPacket(player,packet) == true || atlasSessions?.consumeImmediateUiPacket(player,packet) == true
     private val io = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "projects-core-ledger").apply { isDaemon = true } }
     private val mapBuilder = Executors.newSingleThreadExecutor { r -> Thread(r, "projects-core-map-builder").apply { isDaemon = true } }
     private val preparedMaps = CoreMapPreparation(mapBuilder)
@@ -94,6 +95,18 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 if(busy.contains(player.uuid)) done(false)
                 else mutate(player, CoreAction.EnhanceEquipment(gear, mode), revision, { done(false) }, { done(true) })
             }) },
+        { Pos(0.0,100.0,0.0,0f,0f) })
+    else null
+    private val atlasMap = runCatching {
+        val loader = javaClass.classLoader
+        AtlasMapFlow.Atlas(requireNotNull(loader.getResourceAsStream("polish05/atlas-map.json")).use { it.readBytes() },
+            requireNotNull(loader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
+    }.onFailure { System.err.println("ATLAS_MAP_DISABLED: ${it.message}") }.getOrNull()
+    private val atlasSessions: UiSessions? = if(uiPack != null && atlasMap != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
+        { player -> uiPack.enabled(player) }, null,
+        { player -> AtlasMapFlow(atlasMap,
+            depart = { tier, style -> player.scheduler().scheduleNextTick { departFromAtlas(player, tier, style) } },
+            leave = { player.scheduler().scheduleNextTick { atlasSessions?.close(player) } }) },
         { Pos(0.0,100.0,0.0,0f,0f) })
     else null
     private val dungeons = CoreDungeonExpeditions(object : CoreDungeonHost {
@@ -394,7 +407,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }
 
     private fun openFacility(player: Player, kind: HarborFacilityKind) = when (kind) {
-        HarborFacilityKind.EXPEDITIONS -> menus.expeditions(player)
+        HarborFacilityKind.EXPEDITIONS ->
+            if (atlasSessions != null && uiPack?.enabled(player) == true && requireHub(player)) atlasSessions.open(player) else menus.expeditions(player)
         HarborFacilityKind.WORKSHOP -> menus.workshop(player)
         HarborFacilityKind.STORAGE -> menus.storage(player)
         HarborFacilityKind.SUPPLIES -> menus.supplies(player)
@@ -476,6 +490,21 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }
 
     override fun warmMap(player: Player, map: CoreOwnedMap): Boolean = preparedMaps.warm(player.uuid, map)
+
+    /** 開拓大陸 departure: a fresh map of the zone's terrain at the player's level, then the usual departure. */
+    private fun departFromAtlas(player: Player, tier: Int, style: QuestTerrainStyle) {
+        atlasSessions?.close(player)
+        val a = account(player) ?: return
+        if (!requireHub(player)) return
+        val base = java.util.concurrent.ThreadLocalRandom.current().nextLong() ushr 4
+        // Quest terrain style is chosen by seed mod 6; the candidate search keeps it.
+        val seed = base - Math.floorMod(base, QuestTerrainStyle.entries.size.toLong()) + style.ordinal
+        val playable = tier.coerceIn(1, a.unlockedMapTier)
+        mutate(player, CoreAction.ClaimMap(playable, seed), a.revision, { menus.expeditions(player) }) {
+            val map = account(player)?.maps?.firstOrNull { it.seed == seed } ?: return@mutate
+            account(player)?.let { depart(player, map.id, it.revision) }
+        }
+    }
 
     private fun refresh(player: Player) {
         if (combatLab.refresh(player)) return
@@ -839,7 +868,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     private fun updateHud(player: Player) {
         // The smith's forge covers the whole view; the action-bar HUD would sit on top of it.
-        if (polishSessions?.isOpen(player) == true) { player.sendActionBar(Component.empty()); return }
+        if (polishSessions?.isOpen(player) == true || atlasSessions?.isOpen(player) == true) { player.sendActionBar(Component.empty()); return }
         val a = combatLab.account(player) ?: account(player) ?: return
         val actor = actor(player) ?: return
         player.food = 20
@@ -884,6 +913,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         preparedMaps.forget(player.uuid)
         uiPack?.forget(player)
         polishSessions?.close(player,false)
+        atlasSessions?.close(player,false)
         departing.remove(player.uuid)
         sessions.remove(player.uuid)?.let { session ->
             if (session.combat.bossDefeated && accounts[player.uuid]?.activeRun?.bossDefeated != true) {
@@ -932,6 +962,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             System.err.println("CORE_SHUTDOWN_PENDING_REWARDS: $failure")
         } finally {
             polishSessions?.close()
+            atlasSessions?.close()
             uiPack?.close()
             io.shutdown()
             io.awaitTermination(5, TimeUnit.SECONDS)
