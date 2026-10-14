@@ -10,14 +10,19 @@ import argparse, hashlib, json, math, sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from build_ice_garden import garden_art, OFFSETS
+def _font(path,size):
+    # Windows-only system fonts; fall back so headless/Linux builds still run.
+    try: return ImageFont.truetype(path,size)
+    except OSError: return ImageFont.load_default(size)
+
 
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'.tools/ice-garden-visual-study'
 LAB=OUT/'pack/assets/projects'
 CURRENT=ROOT/'server-minestom/src/main/resources/core-ui-pack/assets/projects'
 FONT_PATH='C:/Windows/Fonts/meiryob.ttc'
-FONT=ImageFont.truetype(FONT_PATH,14)
-SMALL=ImageFont.truetype(FONT_PATH,12)
+FONT=_font(FONT_PATH,14)
+SMALL=_font(FONT_PATH,12)
 PALETTE=['#192e42','#244d68','#458798','#8fc7ce','#d4ece9',
          '#333e49','#52616b','#78868c','#a3b0b1','#bbc4c2']
 ANCHORS={(0,2),(-2,0),(1,-2),(2,1),(-1,1)}

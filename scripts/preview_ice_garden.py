@@ -4,6 +4,11 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 from preview_skill_choreography import render, model_for, texture_for
 from preview_core_combat_models import COLORS
+def _font(path,size):
+    # Windows-only system fonts; fall back so headless/Linux builds still run.
+    try: return ImageFont.truetype(path,size)
+    except OSError: return ImageFont.load_default(size)
+
 
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'.tools/ice-garden-review'
@@ -14,7 +19,7 @@ def main():
     OUT.mkdir(parents=True,exist_ok=True)
     # Twelve small projections, using shipped model faces and exact pixel UVs.
     sheet=Image.new('RGB',(1080,850),'#1b222a');d=ImageDraw.Draw(sheet)
-    font=ImageFont.truetype('C:/Windows/Fonts/meiryob.ttc',15)
+    font=_font('C:/Windows/Fonts/meiryob.ttc',15)
     d.text((12,8),'氷の庭 / 実装ポーズとパックのCPU投影。実機録画・手触り合格ではありません。',font=font,fill='#e9eadb')
     ticks=[0,14,50,106,126,136]
     for row,key in enumerate(['old','new']):
