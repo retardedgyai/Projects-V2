@@ -36,7 +36,7 @@ def default_uv(fr, to, face):
     return [x0, z0, x1, z1]
 
 
-def render(model, textures, size=128, rot_x=30, rot_y=225, scale=0.625, pad=0.0, shade=True, light=None):
+def render(model, textures, size=128, rot_x=30, rot_y=225, scale=0.625, pad=0.0, shade=True, light=None, center=(8, 8, 8)):
     """model: dict with 'elements'; textures: name -> PIL RGBA 16x16 (or any square)."""
     img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     zbuf = [[-1e9] * size for _ in range(size)]
@@ -44,7 +44,7 @@ def render(model, textures, size=128, rot_x=30, rot_y=225, scale=0.625, pad=0.0,
     ry, rx = math.radians(rot_y), math.radians(rot_x)
 
     def tf(p):
-        x, y, z = p[0] - 8, p[1] - 8, p[2] - 8
+        x, y, z = p[0] - center[0], p[1] - center[1], p[2] - center[2]
         # rotate around Y
         x, z = x * math.cos(ry) + z * math.sin(ry), -x * math.sin(ry) + z * math.cos(ry)
         # rotate around X (tilt camera down)

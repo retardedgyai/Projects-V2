@@ -93,7 +93,7 @@ g = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
 gp = g.load()
 for i in range(16):
     for (x, y) in ((i, 0), (i, 15), (0, i), (15, i)):
-        gp[x, y] = (205, 235, 245, 150) if (x == 0 or y == 0) else (140, 180, 200, 140)
+        gp[x, y] = (175, 210, 225, 105) if (x == 0 or y == 0) else (110, 150, 170, 115)
 for y in range(1, 15):
     for x in range(1, 15):
         gp[x, y] = (200, 230, 245, 18)
@@ -143,6 +143,7 @@ def JAR():
     E = [
         box((4.5, 0.5, 4.5), (11.5, 9.5, 11.5), 'ess', emissive=True),
         box((3, 0, 3), (13, 12, 13), 'jar_glass', uv={k: full for k in ('north', 'south', 'east', 'west', 'up', 'down')}),
+        box((4.6, 11.6, 4.6), (11.4, 12.4, 11.4), 'brass'),
         box((5, 12, 5), (11, 14, 11), {'north': 'lid', 'south': 'lid', 'east': 'lid', 'west': 'lid', 'up': 'lid_top', 'down': 'lid'}, uv={'up': full}),
         box((4.5, 3, 13.02), (11.5, 10, 13.12), 'label', faces=('south',), uv={'south': full}),
     ]
