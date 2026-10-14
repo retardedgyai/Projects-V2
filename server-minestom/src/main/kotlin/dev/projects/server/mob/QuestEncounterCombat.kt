@@ -108,7 +108,7 @@ class QuestEncounterCombat(
         var pullImmuneUntil = 0L
         var guardianIds = emptySet<UUID>()
         @Volatile var spawnFailure: Throwable? = null
-        var model: WardenModel? = null
+        @Volatile var model: WardenModel? = null
     }
 
     private val mobs = linkedMapOf<UUID, Mob>()
@@ -415,10 +415,12 @@ class QuestEncounterCombat(
             if (disposed) entity.remove()
             else if (error == null && WardenModel.supports(archetype)) {
                 runCatching {
-                    mob.model = WardenModel(instance, archetype, position)
+                    val model = WardenModel(instance, archetype, position)
+                    model.ready.whenComplete { _, modelError -> if (modelError != null) mob.spawnFailure = modelError }
+                    mob.model = model
                     entity.isInvisible = true
                     EquipmentSlot.entries.forEach { entity.setEquipment(it, ItemStack.AIR) }
-                    if (disposed || !mob.life.isAlive) mob.model?.dispose()
+                    if (disposed || !mob.life.isAlive) model.dispose()
                 }.onFailure { mob.spawnFailure = it }
             }
         }
