@@ -1,6 +1,6 @@
 package dev.projects.server.coreloop
 
-/** Concrete character progression; separate from tradable gear and temporary dungeon blessings. */
+/** Concrete character progression; separate from tradable gear and temporary run boons. */
 enum class CoreClass(val displayName: String, val description: String) {
     WARRIOR("戦士", "集団を薙ぎ、攻撃を受け流して大剣を叩き込む"),
     RANGER("レンジャー", "射線を通し、距離を保って狙い撃つ"),

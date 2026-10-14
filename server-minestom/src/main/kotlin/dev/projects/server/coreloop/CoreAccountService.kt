@@ -162,25 +162,6 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             paid.copy(unlockedMapTier = maxOf(account.unlockedMapTier, action.tier),
                 maps = account.maps + CoreOwnedMap(derived(requestId, "survey-map"), action.seed, action.tier)) to "採取実績でT${action.tier}の地図を用意しました。討伐は不要です"
         }
-        is CoreAction.StartDungeon -> error(CoreDungeonEntry.RETIRED_MESSAGE)
-        is CoreAction.DungeonReward -> {
-            val run = requireRun(account, action.runId)
-            val d = requireNotNull(run.dungeon) { "深殿の遠征ではありません" }
-            require(action.stage == d.rewardedStage + 1 && action.stage <= d.stages) { "この部屋の報酬は受取済みか、順序が不正です" }
-            require(action.boss == (action.stage % d.roomsPerFloor == 0)) { "部屋の報酬区分が不正です" }
-            val b = CoreMmoTuning.balance
-            val count = b.dungeonRoomTokens.toLong() + d.ascension / 4
-            var updated = recipe(addSource(account, source("dungeon", run.id, action.stage.toString())),
-                CoreRecipe("深殿の戦利品を保管しました", emptyMap(), mapOf(CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier) to count))).first
-            val orbs = if (action.boss) mapOf(CoreCraftingCurrency.CHAOS to b.dungeonBossOrbs.toLong(),
-                CoreCraftingCurrency.EXALTED to 1L) else mapOf((if (action.treasury) CoreCraftingCurrency.CHAOS else CoreCraftingCurrency.ALTERATION) to 1L)
-            updated = grantCurrencies(updated, orbs)
-            val complete = action.stage == d.stages
-            if (complete) updated = grantCurrencies(updated, mapOf(CoreCraftingCurrency.DIVINE to (1L + d.ascension / 5)))
-            updated.copy(journey = updated.journey.gain(CoreJourneyRules.reward(run.map.tier, action.boss)).learn(2), activeRun = run.copy(dungeon = d.copy(rewardedStage = action.stage), bossDefeated = complete),
-                dungeonRecords = if (complete) account.dungeonRecords + (run.map.tier to maxOf(account.dungeonRecords[run.map.tier] ?: -1, d.ascension)) else account.dungeonRecords) to
-                if (complete) "旧深殿を踏破。神聖のオーブを獲得しました" else "第${action.stage}の間を突破。報酬は保管済みです"
-        }
         is CoreAction.Manufacture -> {
             requireHub(account)
             val slot = CoreGearSlot.equipped(action.slot)
@@ -328,7 +309,6 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         }
         is CoreAction.BossReward -> {
             val run = requireRun(account, action.runId)
-            require(run.dungeon == null) { "深殿の段階報酬を使用してください" }
             require(!run.bossDefeated) { "この討伐報酬は受取済みです" }
             if (run.trialId == null) require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
             val nextTier = if (account.journey.legacy || run.map.level >= CoreJourneyRules.ceiling(run.map.tier)) (run.map.tier + 1).coerceAtMost(4) else run.map.tier
@@ -425,8 +405,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             require(!run.bossDefeated && account.claimedSources.none { it.startsWith("gather/${run.id}/") || it.startsWith("combat/${run.id}/") || it.startsWith("affix/${run.id}/") || it.startsWith("activity/${run.id}/") || it.startsWith("dungeon/${run.id}/") }) {
                 "開始済みの遠征は中断返却できません"
             }
-            if (run.dungeon != null) account.copy(activeRun = null) to "深殿の準備を中止しました（入場料なし）"
-            else if (run.trialId == null) {
+            if (run.trialId == null) {
                 require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
                 account.copy(maps = account.maps + run.map, activeRun = null) to "遠征の準備に失敗したため地図を返却しました"
             } else {

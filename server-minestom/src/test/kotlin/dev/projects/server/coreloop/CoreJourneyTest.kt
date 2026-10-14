@@ -126,7 +126,7 @@ class CoreJourneyTest {
             assertEquals(listOf(3,5,7,9,10,11)[index], f.a.maps.last().level)
         }
     }
-    @Test fun `T1 through T4 campaign remains durable while retired dungeon departure stays unavailable`() {
+    @Test fun `T1 through T4 campaign remains durable across reloads`() {
         val f = Fixture(); f.act(CoreAction.ChooseClass(CoreClass.WARRIOR)); f.act(CoreAction.ClaimMap(1, 43))
         repeat(24) {
             val run = f.start()
@@ -137,7 +137,6 @@ class CoreJourneyTest {
         assertEquals(4, f.a.unlockedMapTier); assertEquals(40, f.a.maps.last().level)
         assertTrue(f.a.journey.level > 1); assertTrue((0..3).all(f.a.journey::knows))
         val before = CoreAccountCodec.encode(f.a)
-        assertEquals(CoreTransactionStatus.REJECTED, f.send(CoreAction.StartDungeon(UUID.randomUUID(), 4, 0, 91)).status)
         f.reload(); assertEquals(before, CoreAccountCodec.encode(f.a))
     }
     @Test fun `repeat loot cannot duplicate character XP even through legacy callback`() {

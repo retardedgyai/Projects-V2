@@ -158,7 +158,6 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         if (game.isDeparting(player)) { player.sendMessage(CoreLoopItems.text("遠征を準備しています。しばらくお待ちください。")); return }
         journey(player).clear()
         val run = a.activeRun
-        if (run?.dungeon != null && game.dungeonView(player) != null) { dungeonRun(player); return }
         view(player, if (run == null) "開拓港 / 手帳" else "遠征 / 手帳", { journal(player) }) { v ->
             help(v, player) { journal(player) }
             tile(v, 0, 8, "${a.journey.job.displayName} Lv${a.journey.level} / 成長と職業", CoreLoopItems.icon(Material.EXPERIENCE_BOTTLE, CoreJourneyRules.next(a))) { career(player) }
@@ -1312,7 +1311,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
 
     private fun confirmReturn(player: Player) {
         view(player, "遠征 / 帰還の確認", { confirmReturn(player) }) { v ->
-            v.canvas.left("港へ帰還", if (game.dungeonView(player) != null) lines("自分だけ探索を終了", "仲間の探索は継続", "この深殿へ戻れません") else lines("今の遠征を終了", "このマップは閉鎖", "同じ地図へ戻れません"), hero = CoreMenuArt.RETURN)
+            v.canvas.left("港へ帰還", lines("今の遠征を終了", "このマップは閉鎖", "同じ地図へ戻れません"), hero = CoreMenuArt.RETURN)
             v.canvas.right("獲得物は保持", lines("採取素材は保存済み", "未回収の戦利品も", "まとめて保管します"), hero = CoreMenuArt.STORAGE)
             card(v, 12, 3, 3, "探索再開", CoreMenuArt.EXPEDITION, CoreLoopItems.icon(Material.MAP, "閉じて探索を続ける")) { player.closeInventory() }
             back(v, player)
@@ -1418,36 +1417,6 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             card(v, 19, 3, 3, "道具箱", CoreMenuArt.GATHER, CoreLoopItems.icon(Material.WOODEN_AXE, "採取道具を選ぶ")) { tools(player) }
             card(v, 23, 3, 3, "手帳へ", CoreMenuArt.HELP, CoreLoopItems.icon(Material.NETHER_STAR, "冒険の手帳へ戻る"), Tone.PRIMARY) { journal(player) }
             back(v, player)
-        }
-    }
-
-    @Suppress("UNUSED_PARAMETER")
-    fun dungeons(player: Player, tier: Int = 1, ascension: Int = 0) {
-        if (game.dungeonView(player) != null) { dungeonRun(player); return }
-        player.sendMessage(CoreLoopItems.text(CoreDungeonEntry.RETIRED_MESSAGE))
-        journal(player)
-    }
-
-    fun dungeonRun(player: Player) {
-        val state = game.dungeonView(player) ?: return
-        val ready = state.phase == DungeonRunPhase.CHOOSING
-        view(player, "深殿 / ${state.room.stage}の間 / 深度${state.ascension}", { dungeonRun(player) }) { v ->
-            if (ready && !state.chosen) v.canvas.text(8, 20, "加護は1つ選択・周回限定", CoreUiComponents.GOLD, 160)
-            v.canvas.left("探索の記録", lines("${state.room.stage} / ${state.stages} 部屋", state.room.theme.displayName, "復活 残り${state.revives}", "", "隊長 ${game.playerName(state.leader)}".take(18),
-                if (ready) "加護は自分で選ぶ" else if (state.phase == DungeonRunPhase.COMPLETE) "踏破報酬を保存済み" else "獲得済み報酬は保持", if (ready) "未選択 ${state.waitingFor}人" else "途中帰還できます"), hero = CoreMenuArt.EXPEDITION)
-            v.canvas.right("今回の加護", (if (state.blessings.isEmpty()) lines("まだありません") else state.blessings.entries.take(9).map { Line("${it.key.displayName} ×${it.value}") }) + lines("", "港へ戻ると消えます"), hero = CoreMenuArt.ORB)
-            if (ready && !state.chosen) state.boonOffers.forEachIndexed { i, boon ->
-                card(v, 9 + i * 3, 3, 3, boon.displayName, when (boon) { DungeonBoon.VITALITY, DungeonBoon.GUARD -> CoreMenuArt.ARMOR; DungeonBoon.FLAME, DungeonBoon.FROST, DungeonBoon.STORM -> CoreMenuArt.ORB; else -> CoreMenuArt.WEAPON },
-                    CoreLoopItems.icon(Material.AMETHYST_SHARD, boon.displayName, boon.description, if (state.room.kind in setOf(DungeonRoomKind.BOSS, DungeonRoomKind.ELITE)) "強い加護：2段階分" else "1段階分", "この周回だけ有効 / クリックで確定"), Tone.PRIMARY) { game.dungeonBoon(player, boon) }
-            } else card(v, 12, 3, 3, if (ready) "選択済み" else if (state.phase == DungeonRunPhase.COMPLETE) "踏破" else "探索再開", CoreMenuArt.EXPEDITION,
-                CoreLoopItems.icon(Material.BOOK, state.objective, "画面を閉じて続ける")) { player.closeInventory() }
-            if (ready) state.choices.forEachIndexed { i, room -> card(v, 36 + i * 3, 3, 1, room.kind.displayName.removeSuffix("の間"),
-                if (room.kind == DungeonRoomKind.BOSS) CoreMenuArt.BOSS else CoreMenuArt.EXPEDITION,
-                CoreLoopItems.icon(Material.ENDER_PEARL, "次：${room.kind.displayName}", room.kind.description, "全員の加護選択後、隊長が進路を決定"),
-                if (state.waitingFor == 0 && state.leader == player.uuid) Tone.PRIMARY else Tone.DISABLED) { game.dungeonRoute(player, room.id) } }
-            tile(v, 45, 3, "港へ帰還", CoreLoopItems.icon(Material.COMPASS, "途中帰還の確認", "この深殿には戻れません")) { confirmReturn(player) }
-            tile(v, 48, 3, "更新", CoreLoopItems.icon(Material.PAPER, "仲間の選択状況を更新")) { dungeonRun(player) }
-            tile(v, 51, 3, "閉じる", CoreLoopItems.icon(Material.BARRIER, "画面を閉じる")) { player.closeInventory() }
         }
     }
 
