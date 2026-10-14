@@ -10,6 +10,7 @@ data class CoreBuyOrder(val id: UUID, val unitPrice: Long, val remaining: Int, v
         require(unitPrice in 1..CoreEconomy.MAX_SILVER && remaining in 1..999 && tier in 1..4)
         require((resource == null) != (slot == null))
         require(resource == null || CoreEconomy.tradeable(resource))
+        require(resource == null || !resource.research || tier == 1) { "研究素材はT1のみです" }
         require(slot == null || remaining <= 16)
         require(escrow <= CoreEconomy.MAX_SILVER)
         require(if (slot == CoreGearSlot.WEAPON) family in CoreWeaponBase.entries.map { it.family }.toSet() else family == null)

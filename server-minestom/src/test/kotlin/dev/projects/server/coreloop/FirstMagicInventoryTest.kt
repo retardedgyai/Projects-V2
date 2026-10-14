@@ -12,47 +12,33 @@ import java.net.SocketAddress
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class FirstMagicInventoryTest {
-    @Test fun `collected material is a stack that survives an ordinary inventory refresh and is consumed`() {
+    @Test fun `samples are ledger stacks with the first-magic icon and survive an ordinary refresh`() {
         MinecraftServer.init(Auth.Offline())
         val connection = MemoryConnection()
         connection.setClientState(ConnectionState.PLAY)
         connection.setServerState(ConnectionState.PLAY)
         val player = Player(connection, GameProfile(UUID.randomUUID(), "Researcher"))
         connection.player = player
-        val material = AnomalousMaterial.MOONBELL
-        assertTrue(FirstMagicInventory.add(player, material, packed = true))
-        assertEquals(1, FirstMagicInventory.count(player, material))
-        assertTrue((0 until 36).any { FirstMagicInventory.kind(player.inventory.getItemStack(it)) == material })
-        CoreLoopItems.refresh(player, CoreAccount(player.uuid), packed = true)
-        assertEquals(1, FirstMagicInventory.count(player, material))
-        val origin = (0 until 36).first { FirstMagicInventory.kind(player.inventory.getItemStack(it)) == material }
-        player.inventory.setItemStack(5, player.inventory.getItemStack(origin))
-        player.inventory.setItemStack(origin, net.minestom.server.item.ItemStack.AIR)
-        CoreLoopItems.refresh(player, CoreAccount(player.uuid), packed = true)
-        assertEquals(1, FirstMagicInventory.count(player, material), "Combat HUD refresh must preserve a moved real item")
-        assertTrue(FirstMagicInventory.remove(player, material))
-        assertEquals(0, FirstMagicInventory.count(player, material))
-        assertFalse(FirstMagicInventory.remove(player, material))
+        val account = CoreAccount(player.uuid, balances = mapOf(CoreMaterial(CoreResource.MOONBELL) to 3L, CoreMaterial(CoreResource.ARCANE_CATALYST) to 1L))
+        CoreLoopItems.refresh(player, account, initial = true, packed = true)
+        CoreLoopItems.refresh(player, account, packed = true)
+        val stacks = (0 until 36).map(player.inventory::getItemStack)
+        val sample = stacks.single { CoreLoopItems.resourceId(it) == CoreMaterial(CoreResource.MOONBELL) }
+        assertEquals(3, sample.amount())
+        assertEquals("projects:first_magic/icon_moonbell", sample.get(net.minestom.server.component.DataComponents.ITEM_MODEL))
+        assertTrue(stacks.any { CoreLoopItems.resourceId(it) == CoreMaterial(CoreResource.ARCANE_CATALYST) })
     }
 
-    @Test fun `saved materials restore as real inventory stacks`() {
+    @Test fun `colony furniture items are issued once`() {
         MinecraftServer.init(Auth.Offline())
         val connection = MemoryConnection()
         connection.setClientState(ConnectionState.PLAY)
         connection.setServerState(ConnectionState.PLAY)
         val player = Player(connection, GameProfile(UUID.randomUUID(), "Researcher"))
         connection.player = player
-        val state = FirstMagicState(materialCounts = mapOf(AnomalousMaterial.EMBER_MOSS to 3))
-        FirstMagicInventory.restore(player, state, packed = true)
-        assertEquals(3, FirstMagicInventory.count(player, AnomalousMaterial.EMBER_MOSS))
-        assertEquals(0, FirstMagicInventory.count(player, AnomalousMaterial.MOONBELL))
-        FirstMagicInventory.reskin(player, packed = false)
-        FirstMagicInventory.reskin(player, packed = true)
-        assertEquals(3, FirstMagicInventory.count(player, AnomalousMaterial.EMBER_MOSS))
         FirstMagicColonyItems.issueMissing(player, listOf(ColonyPlaceable.DESK), packed = true)
         assertEquals(1, (0 until 36).count {
             FirstMagicColonyItems.kind(player.inventory.getItemStack(it)) == ColonyPlaceable.DESK

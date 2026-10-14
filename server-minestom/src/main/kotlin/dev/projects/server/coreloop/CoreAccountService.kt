@@ -239,12 +239,14 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         }
         is CoreAction.Gather -> {
             val run = requireRun(account, action.runId)
-            require(action.resource.raw && action.quantity in 1..1024) { "採取内容が不正です" }
+            val sample = ResearchGoods.sample(action.resource) != null
+            require((action.resource.raw || sample) && action.quantity in 1..1024) { "採取内容が不正です" }
             val source = source("gather", run.id, action.nodeId)
             val updated = addSource(account, source).copy(surveyPoints = (account.surveyPoints + run.map.tier).coerceAtMost(1_000_000_000),
                 journey = account.journey.gain(20L * run.map.tier))
+            // Anomalous samples are one tier-1 market good regardless of the map.
             recipe(updated, CoreRecipe("${action.resource.displayName}を${action.quantity}個保管しました", emptyMap(),
-                mapOf(CoreMaterial(action.resource, run.map.tier) to action.quantity.toLong())))
+                mapOf(CoreMaterial(action.resource, if (sample) 1 else run.map.tier) to action.quantity.toLong())))
         }
         is CoreAction.CombatReward -> {
             val run = requireRun(account, action.runId)
@@ -418,6 +420,44 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             account.copy(activeRun = null, journey = if (account.journey.knows(2)) account.journey.learn(3) else account.journey,
                 claimedSources = recentRuns(account).claimedSources.filterTo(linkedSetOf()) { it.startsWith("run/") }) to "拠点へ帰還しました。獲得品は保管済みです"
         }
+        is CoreAction.ResearchDistill -> {
+            requireHub(account)
+            val sample = ResearchGoods.sample(action.material) ?: error("蒸留できない素材です")
+            val fee = CoreMmoTuning.balance.researchDistillSilver.toLong()
+            val paid = recipe(account, CoreRecipe("${sample.label}を蒸留", mapOf(ResearchGoods.material(sample) to 1L), emptyMap())).first
+            burnSilver(paid, fee) to "${sample.label}を蒸留器へ投入（燃料 銀貨${fee}枚）"
+        }
+        is CoreAction.ResearchInk -> {
+            requireHub(account)
+            val sample = ResearchGoods.sample(action.material) ?: error("インクにできない素材です")
+            val fee = CoreMmoTuning.balance.researchInkSilver.toLong()
+            val paid = recipe(account, CoreRecipe("${sample.label}でインクを調合", mapOf(ResearchGoods.material(sample) to 1L), emptyMap())).first
+            burnSilver(paid, fee) to "${sample.label}で研究インクを調合（溶剤 銀貨${fee}枚）"
+        }
+        is CoreAction.ResearchCraft -> {
+            requireHub(account)
+            val unit = ResearchRecipes.byResearch[action.researchId] ?: error("この研究から作れる品はありません")
+            val fee = CoreMmoTuning.balance.researchCraftSilver.toLong()
+            val crafted = recipe(account, unit.ledgerRecipe())
+            burnSilver(crafted.first, fee) to "${unit.product.displayName}を${unit.output}個調合しました（調合料 銀貨${fee}枚）。市場で売れます"
+        }
+        is CoreAction.SealRepair -> {
+            requireHub(account)
+            val slot = CoreGearSlot.equipped(action.slot)
+            require(CoreEconomy.broken(account, slot)) { "この装備は破損していません" }
+            val seals = CoreAffixCatalog.gearTier(account, slot).toLong() * CoreMmoTuning.balance.researchSealsPerTier
+            recipe(account, CoreRecipe("修復の封蝋で修理", mapOf(CoreMaterial(CoreResource.MENDING_SEAL) to seals), emptyMap())).first
+                .copy(weaponBroken = if (slot == CoreGearSlot.WEAPON) false else account.weaponBroken)
+                .let { if (slot == CoreGearSlot.WEAPON) it else it.withArmor(slot, it.armor(slot).copy(broken = false)) } to
+                "修復の封蝋${seals}個で修理しました。MOD・強化値・成功保証は維持しています"
+        }
+        is CoreAction.GrantResearchMaterials -> {
+            require(action.materials.all { (resource, amount) -> resource.research && amount in 1..999 }) { "研究素材の内容が不正です" }
+            require(action.silverFloor in 0..10_000) { "銀貨の指定が不正です" }
+            val granted = recipe(account, CoreRecipe("研究素材を保管しました", emptyMap(),
+                action.materials.mapKeys { CoreMaterial(it.key) })).first
+            granted.copy(silver = maxOf(granted.silver, action.silverFloor)) to "研究素材を保管しました"
+        }
         is CoreAction.Consume -> {
             require(action.resource in setOf(CoreResource.POTION, CoreResource.WHETSTONE)) { "使用できないアイテムです" }
             require(account.activeRun != null) { "遠征中のみ使用できます" }
@@ -541,6 +581,12 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         val next = Math.addExact(account.amount(kind), amount)
         require(next in 0..CoreLoopCatalog.MAX_BALANCE) { "入場の欠片の保管上限です" }
         return account.copy(fragments = account.fragments + (kind to next))
+    }
+
+    /** A sink: the fee leaves the economy instead of moving to another player. */
+    private fun burnSilver(account: CoreAccount, fee: Long): CoreAccount {
+        require(account.silver >= fee) { "銀貨が${fee - account.silver}枚不足しています" }
+        return account.copy(silver = account.silver - fee)
     }
 
     private fun recipe(account: CoreAccount, recipe: CoreRecipe): Pair<CoreAccount, String> {

@@ -73,7 +73,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val mapBuilder = Executors.newSingleThreadExecutor { r -> Thread(r, "projects-core-map-builder").apply { isDaemon = true } }
     private val preparedMaps = CoreMapPreparation(mapBuilder)
     private val ledger = CoreAccountService(CoreAccountRepository(Path.of("config", "projects", "core-loop")))
-    private val firstMagic = FirstMagicService(Path.of("config", "projects", "first-magic"), io)
+    private val firstMagic = FirstMagicService(Path.of("config", "projects", "first-magic"))
+    private val researchDesk = ResearchDesk(ledger, firstMagic)
     private val colonyLayouts = FirstMagicColonyLayoutRepository(Path.of("config", "projects", "first-magic"))
     private val colonies = ConcurrentHashMap<UUID, FirstMagicColony>()
     private val magicBusy = ConcurrentHashMap.newKeySet<UUID>()
@@ -93,8 +94,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val menus = CoreLoopMenus(this)
     private val partyDialogs = CorePartyDialogs({ connections[it] }, { name -> connections.values.firstOrNull { it.username.equals(name, ignoreCase = true) } })
     private val magicMenus = FirstMagicWorkshop(
-        state = { player -> firstMagic.snapshot(player.uuid)?.copy(materialCounts = AnomalousMaterial.entries
-            .associateWith { FirstMagicInventory.count(player, it) }.filterValues { it > 0 }) },
+        state = { player -> firstMagic.snapshot(player.uuid)?.copy(materialCounts = ResearchGoods.counts(account(player))) },
+        silver = { player -> account(player)?.silver ?: 0L },
         change = ::changeMagic,
         inColony = { player -> colonies[player.uuid]?.instance === player.instance },
         exit = ::leaveColony,
@@ -213,13 +214,21 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                             if (!starter.successful) return@supplyAsync CoreAccountLoadResult.Invalid(starter.message)
                             a = requireNotNull(starter.account)
                         }
+                        // Samples saved in the old first-magic sidecar become ledger (market) goods once.
+                        val migrated = runCatching { researchDesk.migrateLegacyMaterials(a.playerId) }.getOrElse { failure ->
+                            return@supplyAsync CoreAccountLoadResult.Invalid("魔術素材を移行できません: ${failure.message}")
+                        }
+                        if (migrated != null) {
+                            if (!migrated.successful) return@supplyAsync CoreAccountLoadResult.Invalid(migrated.message)
+                            a = requireNotNull(migrated.account)
+                        }
                         accounts[a.playerId] = a
                         CoreAccountLoadResult.Ready(a, opened.newlyCreated)
                     }
                 }
             }, io).join()
             if (loaded is CoreAccountLoadResult.Invalid) {
-                firstMagic.forget(event.player.uuid)
+                io.execute { firstMagic.forget(event.player.uuid) }
                 event.player.kick(CoreLoopItems.text("保存データを読み込めません。既存データは保持されています。${loaded.reason}", NamedTextColor.RED))
                 return@addListener
             }
@@ -257,10 +266,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     returnToHarbor(player)
                 }
                 CoreLoopItems.refresh(player, a, initial = true, packed = packed(player), combatSheet = combatSheet(player) ?: CoreCombatSheet.from(a))
-                // Prioritize the colony's unique equipment and saved anomalies before filling
-                // the remaining backpack slots with the older core economy's item balances.
+                // Prioritize the colony's unique equipment before filling the remaining
+                // backpack slots with the core economy's item balances (samples included).
                 for (slot in 16..35) player.inventory.setItemStack(slot, ItemStack.AIR)
-                firstMagic.snapshot(player.uuid)?.let { FirstMagicInventory.restore(player, it, packed(player)) }
                 runCatching { colonyLayouts.load(player.uuid) }.onSuccess { saved ->
                     FirstMagicColonyItems.issueMissing(player, ColonyPlaceable.entries.filter { kind ->
                         saved.none { it.kind == kind }
@@ -326,7 +334,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
         }
         events.addListener(ItemDropEvent::class.java) { event ->
-            if (combatLab.contains(event.player) || FirstMagicColonyItems.kind(event.itemStack) != null || FirstMagicInventory.kind(event.itemStack) != null || CoreLoopItems.resourceId(event.itemStack) != null || CoreLoopItems.fragmentId(event.itemStack) != null || CoreLoopItems.isSilver(event.itemStack) || event.itemStack.getTag(CoreLoopItems.actionTag) != null || event.itemStack.getTag(QUEST_GATHERING_TOOL_TAG) != null || CoreLoopItems.mapId(event.itemStack) != null) event.isCancelled = true
+            if (combatLab.contains(event.player) || FirstMagicColonyItems.kind(event.itemStack) != null || CoreLoopItems.resourceId(event.itemStack) != null || CoreLoopItems.fragmentId(event.itemStack) != null || CoreLoopItems.isSilver(event.itemStack) || event.itemStack.getTag(CoreLoopItems.actionTag) != null || event.itemStack.getTag(QUEST_GATHERING_TOOL_TAG) != null || CoreLoopItems.mapId(event.itemStack) != null) event.isCancelled = true
         }
         events.addListener(PlayerBlockInteractEvent::class.java) { event ->
             if (event.hand != PlayerHand.MAIN) return@addListener
@@ -625,46 +633,37 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 FirstMagicColonyItems.issue(player, colony, packed(player))
                 player.showTitle(Title.title(CoreLoopItems.text("自分のコロニー", NamedTextColor.GOLD),
                     CoreLoopItems.text("古い観測工房が庭の奥に眠っている", NamedTextColor.AQUA)))
-                if (state.hasMaterial && !state.reacted) changeMagic(player, FirstMagicAction.React) {
+                val hasSamples = ResearchGoods.counts(account(player)).isNotEmpty()
+                if (hasSamples && !state.reacted) changeMagic(player, FirstMagicAction.React) {
                     player.sendMessage(CoreLoopItems.text("持ち帰った素材に古い区画が反応した。研究机を手に持って、庭へ置こう", NamedTextColor.AQUA))
                 }
-                else player.sendMessage(CoreLoopItems.text(if (state.hasMaterial) "手持ちの設備を庭へ置き、研究机から未知を調べよう" else "設備を手に持って右クリックで配置。遠征で異質素材を拾い、この庭へ持ち帰ろう", NamedTextColor.AQUA))
+                else player.sendMessage(CoreLoopItems.text(if (hasSamples) "手持ちの設備を庭へ置き、研究机から未知を調べよう" else "設備を手に持って右クリックで配置。遠征で異質素材を拾い、この庭へ持ち帰ろう", NamedTextColor.AQUA))
             }
         }
     }
 
     private fun prepareResearchTest(player: Player, colony: FirstMagicColony) {
         if (!magicBusy.add(player.uuid)) return
-        val missing = AnomalousMaterial.entries.filter { FirstMagicInventory.count(player, it) == 0 }
-        val freeSlots = (0 until 36).count { player.inventory.getItemStack(it).isAir }
-        if (missing.size > freeSlots) {
-            magicBusy.remove(player.uuid)
-            player.sendMessage(CoreLoopItems.text("素材用にインベントリを${missing.size - freeSlots}枠空けて、/researchtest をもう一度使ってください", NamedTextColor.YELLOW))
-            return
-        }
-        firstMagic.change(player.uuid, FirstMagicAction.PrepareResearchTest).whenComplete { result, failure ->
+        CompletableFuture.supplyAsync({ researchDesk.perform(player.uuid, FirstMagicAction.PrepareResearchTest) }, io).whenComplete { result, failure ->
             player.scheduler().scheduleNextTick {
                 magicBusy.remove(player.uuid)
                 if (connections[player.uuid] !== player || colonies[player.uuid] !== colony || player.instance !== colony.instance) return@scheduleNextTick
-                if (failure != null || result == null) {
-                    player.sendMessage(CoreLoopItems.text("研究テストの準備を保存できませんでした", NamedTextColor.RED))
+                if (failure != null || result == null || !result.committed) {
+                    player.sendMessage(CoreLoopItems.text(result?.message ?: "研究テストの準備を保存できませんでした", NamedTextColor.RED))
                     System.err.println("RESEARCH_TEST_PREPARE_FAILURE player=${player.uuid}: $failure")
                     return@scheduleNextTick
                 }
-                val notIssued = missing.filterNot { FirstMagicInventory.add(player, it, packed(player)) }
-                if (notIssued.isNotEmpty()) {
-                    player.sendMessage(CoreLoopItems.text("素材を収納できませんでした。空きを作って /researchtest を再実行してください", NamedTextColor.YELLOW))
-                    return@scheduleNextTick
-                }
+                result.ledger?.account?.let { accounts[player.uuid] = it }
+                refresh(player)
                 val deskWasPlaced = colony.has(ColonyPlaceable.DESK)
                 val deskSpots = listOf(BlockVec(8, 41, 4), BlockVec(2, 41, 2), BlockVec(-2, 41, 2)) +
                     (-4..6).flatMap { z -> (-7..9).map { x -> BlockVec(x, 41, z) } }
                 val deskReady = deskWasPlaced || runCatching { deskSpots.any { colony.place(ColonyPlaceable.DESK, it, BlockFace.SOUTH) } }
                     .onFailure { System.err.println("RESEARCH_TEST_DESK_FAILURE player=${player.uuid}: $it") }.getOrDefault(false)
                 if (deskReady && !deskWasPlaced) FirstMagicColonyItems.removeOne(player, ColonyPlaceable.DESK)
-                colony.update(result.state)
+                colony.update(result.change.state)
                 FirstMagicColonyItems.issue(player, colony, packed(player))
-                player.sendMessage(CoreLoopItems.text("/researchtest：6素材を用意し、研究を始められます。インクは再実行で補充できます", NamedTextColor.AQUA))
+                player.sendMessage(CoreLoopItems.text("/researchtest：${result.message}。再実行で補充できます", NamedTextColor.AQUA))
                 if (deskReady) magicMenus.desk(player)
                 else player.sendMessage(CoreLoopItems.text("研究机の自動設置場所がありません。手持ちの研究机を庭に置いてください", NamedTextColor.YELLOW))
             }
@@ -706,24 +705,20 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     private fun changeMagic(player: Player, action: FirstMagicAction, after: () -> Unit) {
         if (colonies[player.uuid]?.instance !== player.instance || !magicBusy.add(player.uuid)) return
-        if (action is FirstMagicAction.Analyze && FirstMagicInventory.count(player, action.material) == 0 ||
-            action is FirstMagicAction.Distill && FirstMagicInventory.count(player, action.material) == 0) {
-            magicBusy.remove(player.uuid)
-            player.sendMessage(CoreLoopItems.text("素材をインベントリに持っていません", NamedTextColor.YELLOW))
-            return
-        }
-        firstMagic.change(player.uuid, action).whenComplete { result, failure ->
+        CompletableFuture.supplyAsync({ researchDesk.perform(player.uuid, action) }, io).whenComplete { step, failure ->
             player.scheduler().scheduleNextTick {
                 magicBusy.remove(player.uuid)
                 if (connections[player.uuid] !== player || colonies[player.uuid]?.instance !== player.instance) return@scheduleNextTick
-                if (failure != null || result == null) {
-                    player.sendMessage(CoreLoopItems.text("魔術記録を保存できませんでした。素材は消費されていません", NamedTextColor.RED))
-                    System.err.println("FIRST_MAGIC_SAVE_FAILURE player=${player.uuid}: $failure")
+                if (failure != null || step == null) {
+                    player.sendMessage(CoreLoopItems.text("魔術記録を保存できませんでした", NamedTextColor.RED))
+                    System.err.println("FIRST_MAGIC_SAVE_FAILURE player=${player.uuid} action=$action: $failure")
                     return@scheduleNextTick
                 }
-                colonies[player.uuid]?.update(result.state)
-                if (result.changed && action is FirstMagicAction.Distill)
-                    FirstMagicInventory.remove(player, action.material)
+                step.ledger?.account?.let { accounts[player.uuid] = it }
+                if (step.ledger != null) refresh(player)
+                // Only a fully committed step (ledger and sidecar) counts as changed.
+                val result = step.change.copy(changed = step.committed, message = step.message)
+                if (step.committed) colonies[player.uuid]?.update(result.state)
                 player.sendMessage(CoreLoopItems.text(result.message, if (result.changed) NamedTextColor.AQUA else NamedTextColor.YELLOW))
                 if (result.changed) player.playSound(Sound.sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, Sound.Source.PLAYER, 0.65f, 1.0f))
                 if (result.changed && action == FirstMagicAction.React) {
@@ -1036,7 +1031,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val session = Session(player, runId, runtime, combat, bar, loot)
         try {
             session.anomalies = FirstMagicField(player, runtime,
-                { material -> firstMagic.change(player.uuid, FirstMagicAction.Collect(material)) }, ::packed)
+                { material -> rewards.submit(player.uuid, CoreAction.Gather(run.id, "anomaly-${material.name.lowercase()}", material.resource, 1)) },
+                ::packed) { if (connections[player.uuid] === player && player.isOnline) refresh(player) }
             session.caches = CoreMapCaches(player, runtime.instance,
             plan.contents.filter { it.kind == QuestMapContentKind.DISCOVERY }.map { pos(it.position) },
             guarded = { at -> combat.combatTargets().any { it.position.distance(at) < 12.0 } },
@@ -1248,7 +1244,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             if (player.instance === colony.instance) player.remove()
             if (colony.instance.players.isEmpty()) colony.dispose()
         } }
-        firstMagic.forget(player.uuid)
+        io.execute { firstMagic.forget(player.uuid) }
         CoreCombatPresentation.forget(player)
         combatLab.disconnect(player)
         preparedMaps.forget(player.uuid)

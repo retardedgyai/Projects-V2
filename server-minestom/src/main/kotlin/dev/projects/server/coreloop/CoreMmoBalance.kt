@@ -19,6 +19,13 @@ data class CoreMmoBalance(
     val equipmentRankPermille: Int = 45,
     val mobRankHealthPermille: Int = 70,
     val mobRankDamagePermille: Int = 35,
+    // Magic path (docs/development/research-economy-v0.md). Silver fees are destroyed, not paid to anyone.
+    val researchDistillSilver: Int = 5,
+    val researchInkSilver: Int = 15,
+    val researchInkYield: Int = 4,
+    val researchCraftSilver: Int = 40,
+    val researchCatalystBonusPercent: Int = 25,
+    val researchSealsPerTier: Int = 1,
 ) {
     init {
         require(professionXpScale in 1..10_000 && refineXp in 1..1000 && craftXp in 1..10_000)
@@ -27,6 +34,8 @@ data class CoreMmoBalance(
         require(surveyMapCost in 1..64)
         require(journeyXpPercent in 10..1000 && equipmentRankPermille in 0..100)
         require(mobRankHealthPermille in 0..200 && mobRankDamagePermille in 0..100)
+        require(researchDistillSilver in 0..10_000 && researchInkSilver in 0..10_000 && researchCraftSilver in 0..100_000)
+        require(researchInkYield in 1..64 && researchCatalystBonusPercent in 0..100 && researchSealsPerTier in 1..16)
     }
 
     companion object {
@@ -41,12 +50,16 @@ data class CoreMmoBalance(
             properties.stringPropertyNames().filter { it.startsWith("dungeon.") || it == "boss.mechanic-seconds" }.forEach { properties.remove(it) }
             val names = setOf("profession.xp-scale", "profession.refine-xp", "profession.craft-xp", "profession.refine-return-max-percent", "profession.craft-quality-max",
                 "survey.tier2", "survey.tier3", "survey.tier4", "survey.map-cost",
-                "journey.xp-percent", "journey.equipment-rank-permille", "journey.mob-health-rank-permille", "journey.mob-damage-rank-permille")
+                "journey.xp-percent", "journey.equipment-rank-permille", "journey.mob-health-rank-permille", "journey.mob-damage-rank-permille",
+                "research.distill-silver", "research.ink-silver", "research.ink-yield", "research.craft-silver",
+                "research.catalyst-bonus-percent", "research.seals-per-tier")
             require(properties.stringPropertyNames() == names) { "MMO設定に未知または不足した項目があります" }
             fun n(key: String) = properties.getProperty(key).trim().toInt()
             return CoreMmoBalance(n("profession.xp-scale"), n("profession.refine-xp"), n("profession.craft-xp"), n("profession.refine-return-max-percent"),
                 n("profession.craft-quality-max"), n("survey.tier2"), n("survey.tier3"), n("survey.tier4"), n("survey.map-cost"),
-                n("journey.xp-percent"), n("journey.equipment-rank-permille"), n("journey.mob-health-rank-permille"), n("journey.mob-damage-rank-permille"))
+                n("journey.xp-percent"), n("journey.equipment-rank-permille"), n("journey.mob-health-rank-permille"), n("journey.mob-damage-rank-permille"),
+                n("research.distill-silver"), n("research.ink-silver"), n("research.ink-yield"), n("research.craft-silver"),
+                n("research.catalyst-bonus-percent"), n("research.seals-per-tier"))
         }
     }
 }

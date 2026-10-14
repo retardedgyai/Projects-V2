@@ -78,7 +78,10 @@ object CoreEnhancementCatalog {
         val threshold = if (maximum) 0 else pityThreshold(target)
         val base = if (maximum) 0.0 else baseChancePercent(target)
         val mastery = masteryRank(account.smithingXp).toDouble()
-        val catalyst = if (mode == CoreEnhancementMode.FOCUSED) CATALYST_BONUS_PERCENT else 0.0
+        // A research product is the better catalyst; when held, the focused mode spends it instead of dust.
+        val arcane = mode == CoreEnhancementMode.FOCUSED && account.amount(CoreResource.ARCANE_CATALYST) > 0
+        val catalyst = if (arcane) CoreMmoTuning.balance.researchCatalystBonusPercent.toDouble()
+            else if (mode == CoreEnhancementMode.FOCUSED) CATALYST_BONUS_PERCENT else 0.0
         val pityGuaranteed = !maximum && state.failures >= threshold
         val chance = if (maximum) 0.0 else if (pityGuaranteed) 100.0 else (base + mastery + catalyst).coerceAtMost(100.0)
         val guaranteed = !maximum && chance == 100.0
@@ -91,7 +94,8 @@ object CoreEnhancementCatalog {
             costs[CoreMaterial(primary, tier)] = unit
             costs[CoreMaterial(secondary, tier)] = (unit + 1) / 2
             costs[CoreMaterial(CoreResource.STONE_BLOCK, tier)] = unit
-            if (mode == CoreEnhancementMode.FOCUSED) {
+            if (arcane) costs[CoreMaterial(CoreResource.ARCANE_CATALYST)] = 1
+            else if (mode == CoreEnhancementMode.FOCUSED) {
                 costs.merge(CoreMaterial(CoreResource.STONE_BLOCK, tier), 1, Long::plus)
                 costs.merge(CoreMaterial(CoreResource.CLOTH, tier), 1, Long::plus)
                 costs[CoreMaterial(CoreResource.AFFIX_DUST)] = 2

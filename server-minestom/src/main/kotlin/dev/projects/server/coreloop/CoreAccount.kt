@@ -4,11 +4,16 @@ import java.util.Collections
 import java.util.UUID
 import kotlin.math.pow
 
-enum class CoreResource(val displayName: String, val raw: Boolean = false) {
+/** `research` goods are tier-1 market items of the magic path: anomalous samples and research products. */
+enum class CoreResource(val displayName: String, val raw: Boolean = false, val research: Boolean = false) {
     WOOD("木材", true), ORE("鉱石", true), STONE("石材", true), HIDE("獣皮", true), FIBER("植物繊維", true),
     BOARD("板材"), INGOT("インゴット"), STONE_BLOCK("加工石材"), LEATHER("なめし革"), CLOTH("布"),
     BOSS_SIGIL("討伐証"), COMBAT_TOKEN("戦利品券"), POTION("回復薬"), GATHERING_TABLET("採取の石板"), WHETSTONE("砥石"),
     AFFIX_DUST("刻印粉"),
+    // Names match AnomalousMaterial so the first-magic sidecar migrates by name.
+    MOONBELL("月鈴草", research = true), EMBER_MOSS("熾火苔", research = true), HOLLOW_CRYSTAL("空洞水晶", research = true),
+    WARM_ORE("微熱鉱片", research = true), TIDEWING_FEATHER("潮羽", research = true), WITHERED_CORE("枯れた核", research = true),
+    ARCANE_CATALYST("星鉄の触媒", research = true), MENDING_SEAL("修復の封蝋", research = true),
 }
 
 data class CoreMaterial(val resource: CoreResource, val tier: Int = 1) {
@@ -247,6 +252,14 @@ sealed interface CoreAction {
     data class AbortRun(val runId: UUID) : CoreAction
     data class FinishRun(val runId: UUID) : CoreAction
     data class Consume(val resource: CoreResource) : CoreAction
+    /** Magic path. Each spends ledger goods and destroys a silver fee; the first-magic sidecar is updated after commit. */
+    data class ResearchDistill(val material: CoreResource) : CoreAction
+    data class ResearchInk(val material: CoreResource) : CoreAction
+    /** The caller (server) has verified the personal research unlock and Essentia in the sidecar. */
+    data class ResearchCraft(val researchId: String) : CoreAction
+    data class SealRepair(val slot: CoreGearSlot) : CoreAction
+    /** Server-only: legacy sidecar materials at login, and the dev-only /researchtest top-up. */
+    data class GrantResearchMaterials(val materials: Map<CoreResource, Long>, val silverFloor: Long = 0) : CoreAction
 }
 
 enum class CoreTransactionStatus { COMMITTED, REPLAYED, REJECTED, STALE, CONFLICT, UNAVAILABLE, SAVE_FAILED }
@@ -266,7 +279,7 @@ data class CoreRecipe(val displayName: String, val costs: Map<CoreMaterial, Long
 /** Explicit provisional benchmark balance, shared by transaction validation and the hub UI. */
 object CoreLoopCatalog {
     const val MAX_BALANCE = 1_000_000L
-    const val MAX_BALANCES = 64
+    const val MAX_BALANCES = 128 // Raised from 64 when research goods joined the ledger; old saves are below either cap.
     const val MAX_MAPS = 32
     const val MAX_RECEIPTS = 16_384
     const val MAX_SOURCES = 16_384
