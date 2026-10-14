@@ -914,7 +914,7 @@ class CorePlayerCombatTest {
     @Test fun `garden ends on reset encounter leave defeat and class change`() {
         for(reason in 0..3) arena(bossDistance=7.0) { h ->
             h.mageGarden();h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
-            when(reason) { 0->h.actor.resetActions();1->h.activeEncounter=null;2->h.actor.hurt(10000.0);3->h.journey=CoreJourney() }
+            when(reason) { 0->h.actor.resetActions();1->h.activeEncounter=null;2->h.actor.hurt(10000.0);3->h.journey=CoreJourney.legacy() }
             h.ticks(30);assertEquals(0,h.actor.activeGardens);assertEquals(first,h.combat.bossHealth())
         }
     }
@@ -1136,14 +1136,14 @@ class CorePlayerCombatTest {
         val incomingHits = mutableListOf<Double>()
         var afterKill: () -> Unit = {}
         fun mageGarden() {
-            journey=CoreJourney(job=CoreClass.MAGE,build=CoreClassBuild(second=5));base=CoreWeaponBase.STAFF;actor.reset()
+            journey=CoreJourney.legacy(job=CoreClass.MAGE,build=CoreClassBuild(second=5));base=CoreWeaponBase.STAFF;actor.reset()
         }
         val otherActors = mutableListOf<CorePlayerCombat>()
         fun addAlly(at:Pos,job:CoreClass=CoreClass.WARRIOR):CorePlayerCombat {
             val c=MemoryConnection();c.setClientState(ConnectionState.PLAY);c.setServerState(ConnectionState.PLAY)
             val p=Player(c,GameProfile(UUID.randomUUID(),"AllyTest"));c.player=p;p.gameMode=GameMode.ADVENTURE
             p.setInstance(instance,at).get(10,TimeUnit.SECONDS)
-            val allyJourney=if(job==CoreClass.MAGE) CoreJourney(job=job,build=CoreClassBuild(second=5)) else CoreJourney()
+            val allyJourney=if(job==CoreClass.MAGE) CoreJourney.legacy(job=job,build=CoreClassBuild(second=5)) else CoreJourney.legacy()
             return CorePlayerCombat(p,{1},{1},{activeEncounter},criticalRoll={1.0},journey={allyJourney},weaponBase={if(job==CoreClass.MAGE)CoreWeaponBase.STAFF else CoreWeaponBase.STANDARD}) {}.also { it.reset();otherActors+=it }
         }
 
