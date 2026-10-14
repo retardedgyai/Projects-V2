@@ -82,6 +82,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val potionReady = ConcurrentHashMap<UUID, Long>()
     private val lastUseAt = ConcurrentHashMap<UUID, Long>()
     private val menus = CoreLoopMenus(this)
+    private val partyDialogs = CorePartyDialogs({ connections[it] }, { name -> connections.values.firstOrNull { it.username.equals(name, ignoreCase = true) } })
     private val uiPack = CoreUiPackServer.start()
     private val polishScene = runCatching {
         val loader = javaClass.classLoader
@@ -256,6 +257,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             println("Player connected: ${player.username} uuid=${player.uuid} firstSpawn=${event.isFirstSpawn} coreLoop=true")
         }
         events.addListener(PlayerDisconnectEvent::class.java) { event -> disconnect(event.player) }
+        events.addListener(PlayerCustomClickEvent::class.java) { event -> partyDialogs.click(event.player, event.key, event.payload) }
         events.addListener(InventoryPreClickEvent::class.java) { event ->
             if (combatLab.click(event)) return@addListener
             if (menus.click(event)) return@addListener
@@ -370,6 +372,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         })
         MinecraftServer.getCommandManager().register(Command("skilltest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR) } }
+        })
+        MinecraftServer.getCommandManager().register(Command("party", "p").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { partyDialogs.show(it) } }
+            val leader = net.minestom.server.command.builder.arguments.ArgumentType.Word("leader")
+            addSyntax({ sender, context -> (sender as? Player)?.let { partyDialogs.joinByName(it, context.get(leader)) } },
+                net.minestom.server.command.builder.arguments.ArgumentType.Literal("join"), leader)
         })
         MinecraftServer.getCommandManager().register(Command("hub").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { returnToHarbor(it) } }
@@ -906,6 +914,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }
 
     private fun disconnect(player: Player) {
+        partyDialogs.disconnect(player.uuid)
         if (!connections.remove(player.uuid, player)) return
         CoreCombatPresentation.forget(player)
         combatLab.disconnect(player)
