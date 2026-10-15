@@ -94,7 +94,8 @@ PALETTES = {
     "inner": ((46, 28, 68), (70, 42, 102), (112, 76, 156)),
     "spar": ((66, 60, 78), (100, 92, 114), (148, 140, 160)),
     "feeler": ((60, 46, 80), (100, 80, 128), (152, 126, 188)),
-    "glow": ((188, 156, 240), (222, 200, 255), (246, 238, 255)),
+    "glow": ((176, 120, 255), (212, 170, 255), (246, 230, 255)),
+    "fang": ((150, 132, 170), (212, 198, 226), (244, 236, 250)),
     "mouth": ((72, 18, 36), (112, 32, 54), (152, 52, 74)),
 }
 VEIN = (88, 60, 120)
@@ -125,16 +126,11 @@ def painter(material, motif="plain", inner_face=None):
                 c = pal[0]
             if motif == "scales" and big:
                 # Overlapping 6x4 plates: a light lip on top, a dark gap underneath.
-                row = y // 4
-                cell = (x + (row % 2) * 3) // 6
-                lx = (x + (row % 2) * 3) % 6
-                lit = noise(cell, row, seed + 2) % 3 == 0
-                if lit and y % 4 == 0 and 0 < lx < 5:
-                    c = pal[2]
-                elif lit and y % 4 == 1 and 0 < lx < 5:
-                    c = pal[1]
-                elif y % 4 == 3 and noise(cell, row, seed + 4) % 2 == 0:
-                    c = pal[0]
+                stroke = noise((x + y * 7) // 3, y, seed + 2)
+                if stroke % 9 == 0:
+                    c = pal[2]                       # short light stroke (scale edge catching light)
+                elif noise(x, y, seed + 4) % 11 == 0:
+                    c = darker(pal[0], .8)           # dark fleck
             elif motif == "belly" and big:
                 c = pal[0] if y % 5 == 4 else pal[2] if y % 5 == 0 else pal[1]
             elif motif == "bone":
@@ -156,7 +152,7 @@ def painter(material, motif="plain", inner_face=None):
                 if y >= h - 4 - strand % 2:
                     c = pal[2]                       # pale hair tips
             elif motif == "glow":
-                c = pal[2 if (x + y) % 3 == 0 else 1]
+                c = pal[2] if 0 < x < w - 1 and 0 < y < h - 1 else pal[1]
             # Ragged hem: notches cut into the lower edge of membranes and hair.
             if motif in ("membrane", "fringe") and big and h >= 6:
                 depth = noise(x // 2, 7, seed) % (6 if motif == "membrane" else 4)
@@ -207,59 +203,100 @@ def build():
     rig.world["skull"] = _mul(rig.world["neck"], euler_matrix(*SKULL))
 
     # ---------- head ----------
+    def part(name, parent, pivot, rotation, spec, sign=1, suffix="", children=()):
+        """A bone holding cubes: angles live on bones so the server can verify them (see the rest-pose test)."""
+        piv = [pivot[0] * sign, pivot[1], pivot[2]]
+        rotation = [rotation[0], rotation[1] * sign, rotation[2] * sign]
+        return rig.bone(name, piv, rotation, cubes(spec, sign, suffix), parent, list(children))
+
+    def spike(name, parent, base, rotation, length, width, sign=1, glow=True):
+        """A tapered spike pointing along -Z from `base` before rotation: thick root, thin glowing tip."""
+        x, y, z = base
+        w2, w3 = width * .65, width * .35
+        spec = [(f"{name}_root", [x - width / 2, y, z - length * .5], [x + width / 2, y + width, z], p("scale", "scales")),
+                (f"{name}_mid", [x - w2 / 2, y + (width - w2) / 2, z - length * .8], [x + w2 / 2, y + (width + w2) / 2, z - length * .5], p("hide")),
+                (f"{name}_glow", [x - w3 / 2, y + (width - w3) / 2, z - length], [x + w3 / 2, y + (width + w3) / 2, z - length * .8],
+                 p("glow", "glow") if glow else p("bone", "bone"))]
+        return part(name, parent, base, rotation, spec, sign)
+
+    # ---------- head: a ridged helmet with a glowing mouth and a swept-back crown ----------
     def head():
-        jaw = cubes([
-            ("jaw", [-7, 25, 46], [7, 31, 78], p("hide")),
-            ("jaw_plate", [-7.5, 24, 50], [7.5, 25, 76], p("belly", "belly")),
-            ("lower_fang_l", [4, 31, 72], [6, 34, 75], p("bone", "bone")),
-            ("lower_fang_r", [-6, 31, 72], [-4, 34, 75], p("bone", "bone")),
-            ("tongue", [-3, 30.5, 48], [3, 31, 60], p("mouth")),
-        ])
-        skull_items = cubes([
-            ("cranium", [-11, 30, 40], [11, 48, 58], p("hide")),
-            ("snout", [-7.5, 31, 58], [7.5, 42, 74], p("hide")),
-            ("snout_tip", [-6, 32, 74], [6, 41, 80], p("hide")),
-            # The eyeless face: one pale bone mask over the brow and the top of the snout.
-            ("mask_brow", [-10, 46, 50], [10, 51, 62], p("bone", "bone")),
-            ("mask_snout", [-7, 42, 62], [7, 46, 78], p("bone", "bone")),
-            ("nose", [-5, 38, 78], [5, 46, 81], p("bone", "bone")),
-            ("fang_l", [4.5, 27, 74], [6.5, 31, 77], p("bone", "bone")),
-            ("fang_r", [-6.5, 27, 74], [-4.5, 31, 77], p("bone", "bone")),
-            # Shaggy hood behind the mask.
-            ("hood_top", [-12, 48, 30], [12, 54, 50], p("fringe", "fringe")),
-            ("hood_back", [-12, 32, 22], [12, 52, 32], p("fringe", "fringe")),
-        ])
-        for sign, s in ((1, "_l"), (-1, "_r")):
-            skull_items += cubes([
-                # Swept-back crown of hair, stepping up and back: the head's silhouette.
-                ("crown_a", [4, 52, 32], [12, 60, 46], p("fringe", "fringe")),
-                ("crown_b", [5, 57, 20], [11, 65, 34], p("fringe", "fringe")),
-                ("crown_c", [6, 62, 8], [10, 70, 22], p("fringe", "fringe")),
-                ("crown_tip", [7, 67, -2], [9, 72, 10], p("bone", "bone")),
-                ("hood_side", [11, 30, 30], [15, 50, 52], p("fringe", "fringe")),
-                ("hood_flap", [15, 34, 34], [19, 48, 48], p("fringe", "fringe")),
-            ], sign, s)
-        jaw_b = rig.bone("jaw", [0, 32, 46], [0, 0, 0], jaw, "skull")
+        jaw_items = [
+            ("jaw", [-7, 27, 48], [7, 33, 72], p("hide")),
+            ("jaw_tip", [-5, 27.5, 72], [5, 32.5, 82], p("hide")),
+            ("jaw_plate", [-7.5, 26, 50], [7.5, 27, 74], p("belly", "belly")),
+            ("chin_spike", [-1, 24, 58], [1, 26, 70], p("bone", "bone")),
+            ("tongue", [-4, 32.5, 50], [4, 33.5, 74], p("mouth")),
+            ("throat_glow", [-3, 31.5, 48], [3, 33, 56], p("glow", "glow")),
+        ]
+        for k, z in enumerate((60, 65, 70, 75)):
+            for sx in (1, -1):
+                x = (5.5 - k * .4) * sx
+                jaw_items.append((f"lower_tooth_glow_{k}_{'l' if sx > 0 else 'r'}", [x - .75, 33, z], [x + .75, 35.5, z + 1.5], p("fang", "bone")))
+        jaw_b = part("jaw", "skull", [0, 33, 48], [9, 0, 0], jaw_items)
+
+        skull_items = [
+            ("cranium", [-10, 32, 36], [10, 48, 56], p("hide")),
+            ("skull_back", [-11, 30, 26], [11, 50, 37], p("fringe", "fringe")),
+            ("snout_base", [-8, 33, 56], [8, 45, 70], p("hide")),
+            ("snout_mid", [-6, 34, 70], [6, 43, 79], p("hide")),
+            ("snout_tip", [-4, 35, 79], [4, 41, 86], p("hide")),
+            ("beak", [-2.5, 32, 84], [2.5, 37, 88], p("scale", "scales")),
+            ("palate", [-5.5, 32.5, 52], [5.5, 33.5, 84], p("mouth")),
+        ]
+        for k, z in enumerate((58, 63, 68, 73, 78)):
+            for sx in (1, -1):
+                x = (6 - k * .45) * sx
+                skull_items.append((f"upper_tooth_{k}_{'l' if sx > 0 else 'r'}", [x - .75, 30.5, z], [x + .75, 33.5, z + 1.5], p("fang", "bone")))
+        skull_parts = [jaw_b]
+        # Helmet: two stepped dome plates leaning down to the nose, and a ridged nasal plate.
+        skull_parts.append(part("helm", "skull", [0, 48, 58], [12, 0, 0], [
+            ("helm_dome", [-11, 47, 34], [11, 52, 60], p("scale", "scales")),
+            ("helm_crest", [-7, 51, 36], [7, 54.5, 56], p("scale", "scales")),
+            ("helm_seam_glow", [-1, 54.5, 38], [1, 55, 54], p("glow", "glow")),
+        ]))
+        skull_parts.append(part("nasal", "skull", [0, 45, 70], [8, 0, 0], [
+            ("nasal_plate", [-6, 44, 58], [6, 47, 84], p("scale", "scales")),
+            ("nasal_ridge", [-2, 46.5, 60], [2, 48.5, 82], p("scale", "scales")),
+            ("nasal_seam_glow", [-.5, 48.5, 62], [.5, 49, 80], p("glow", "glow")),
+        ]))
+        for sign, s in ((1, "l"), (-1, "r")):
+            # Cheek guard flaring out toward the back, with the glowing sense slit where an eye would be.
+            skull_parts.append(part(f"cheek_{s}", "skull", [10, 40, 60], [0, -16, 0], [
+                ("cheek", [9, 33, 40], [12, 45, 60], p("scale", "scales")),
+                ("cheek_rim", [11.5, 43, 38], [13, 46.5, 58], p("hide")),
+                ("sense_glow", [12, 39, 48], [12.6, 41, 57], p("glow", "glow")),
+            ], sign, "_" + s))
+            # Ragged hood of hair flaring out behind the cheeks.
+            skull_parts.append(part(f"hood_{s}", "skull", [10, 40, 38], [0, -38, 8], [
+                ("hood_flap", [9.5, 28, 18], [11, 52, 38], p("fringe", "fringe")),
+            ], sign, "_" + s))
+            # Helmet rim spikes and the long crown, all swept back and up.
+            for k, (base, rot, length, width) in enumerate((
+                    ([11, 46, 44], [10, -24, 0], 9, 3), ([10.5, 42, 34], [4, -30, 0], 8, 2.5))):
+                skull_parts.append(spike(f"rim_spike{k}_{s}", "skull", base, rot, length, width, sign))
+            for k, (base, rot, length, width) in enumerate((
+                    ([4, 52, 42], [16, -8, 0], 30, 5), ([7, 49, 32], [10, -18, 0], 26, 4))):
+                skull_parts.append(spike(f"crown{k}_{s}", "skull", base, rot, length, width, sign))
         feelers, horns = [], []
         for sign, s in ((1, "l"), (-1, "r")):
-            items = cubes([
-                ("feeler", [2, 54, 8], [4.5, 56, 46], p("feeler")),
-                ("feeler_tip", [2.25, 54.5, 2], [4.25, 55.5, 8], p("glow", "glow")),
-            ], sign, "_" + s)
-            feelers.append(rig.bone(f"antenna_{s}", [3.25 * sign, 55, 44], [0, 0, 0], items, "skull"))
-            items = cubes([
-                ("horn_base", [9, 44, 50], [13, 50, 58], p("bone", "bone")),
-                ("horn_mid", [10, 48, 56], [13, 53, 64], p("bone", "bone")),
-                ("horn_tip", [10.5, 52, 62], [12.5, 55, 70], p("bone", "bone")),
-            ], sign, "_" + s)
-            horns.append(rig.bone(f"horn_{s}", [11 * sign, 47, 52], [0, 0, 0], items, "skull"))
-        skull = rig.bone("skull", [0, 38, 44], SKULL, skull_items, "neck", [jaw_b] + feelers + horns)
+            feelers.append(part(f"antenna_{s}", "skull", [1.5, 55, 52], [0, 0, 0], [
+                ("feeler", [0.5, 55, 26], [2.5, 57, 52], p("feeler")),
+                ("feeler_glow", [0.75, 55.25, 20], [2.25, 56.75, 26], p("glow", "glow")),
+            ], sign, "_" + s))
+            horns.append(part(f"horn_{s}", "skull", [10, 47, 58], [-24, 0, 0], [
+                ("horn_base", [8.5, 45, 56], [12, 49, 66], p("bone", "bone")),
+                ("horn_mid", [9, 45.5, 64], [11.5, 48.5, 74], p("bone", "bone")),
+                ("horn_glow", [9.5, 46, 72], [11, 48, 80], p("glow", "glow")),
+            ], sign, "_" + s))
+        skull = rig.bone("skull", [0, 38, 44], SKULL, cubes(skull_items), "neck", skull_parts + feelers + horns)
+        neck_parts = [spike(f"neck_spike{k}", "neck", [0, 48, z], [20, 0, 0], 12, 4) for k, z in enumerate((42, 32, 22))]
         neck_items = cubes([
             ("neck", [-9, 30, 18], [9, 48, 46], p("scale", "scales")),
             ("throat", [-7, 28.5, 20], [7, 30, 44], p("belly", "belly")),
-            ("neck_mane", [-10, 46, 16], [10, 52, 40], p("fringe", "fringe")),
+            ("neck_mane", [-10, 44, 16], [10, 50, 40], p("fringe", "fringe")),
         ])
-        return rig.bone("neck", [0, 40, 22], NECK, neck_items, "body", [skull])
+        return rig.bone("neck", [0, 40, 22], NECK, neck_items, "body", [skull] + neck_parts)
 
     # ---------- wing-arms (front legs) and the cloak ----------
     def wing(sign, s):
