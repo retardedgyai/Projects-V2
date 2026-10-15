@@ -55,6 +55,7 @@ def export(model, textures, title, path):
         for face in ('north', 'east', 'south', 'west', 'up', 'down'):
             fd = el['faces'].get(face)
             if not fd:
+                faces[face] = {"uv": [0, 0, 0, 0], "texture": None}
                 continue
             emis = emis or fd.get('emissive', False)
             faces[face] = {"uv": _uv(el, face, fd), "texture": tex_id(fd['texture'].lstrip('#'), fd.get('emissive', False))}
