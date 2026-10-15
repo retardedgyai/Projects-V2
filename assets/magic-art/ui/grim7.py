@@ -7,6 +7,8 @@ f7_page.png 408x568    parchment with burnt edge steps and a pin.
 f7_div.png 360x9       ornamental divider.   f7_tab.png / f7_tab_on.png 56x52 leather tabs."""
 import math
 import random
+import sys
+OPT = set(sys.argv[1:])
 from PIL import Image, ImageDraw
 
 WD = ['#0c0705', '#1a100b', '#28180f', '#382216', '#4a2e1e', '#5e3c28', '#764e34']
@@ -86,11 +88,11 @@ def stud(cx, cy):
                 px[cx + x, cy + y] = hx(c)
 
 
-for x in range(FX0 + 40, FX1 - 40, 32):
+for x in (range(FX0 + 40, FX1 - 40, 32) if 'nostuds' not in OPT else []):
     if not (440 < x < 840):
         stud(x, FY0 + 16)
     stud(x, FY1 - 17)
-for y in range(FY0 + 48, FY1 - 40, 32):
+for y in (range(FY0 + 48, FY1 - 40, 32) if 'nostuds' not in OPT else []):
     stud(FX0 + 16, y); stud(FX1 - 17, y)
 
 # window bevels: inner wood bevel lit from top-left -> the window looks recessed
@@ -141,8 +143,9 @@ def corner(cx, cy, sx, sy):
     stud(cx + sx * 22, cy + sy * 3); stud(cx + sx * 3, cy + sy * 22)
 
 
-corner(FX0 + 3, FY0 + 3, 1, 1); corner(FX1 - 4, FY0 + 3, -1, 1)
-corner(FX0 + 3, FY1 - 4, 1, -1); corner(FX1 - 4, FY1 - 4, -1, -1)
+if 'nocorners' not in OPT:
+    corner(FX0 + 3, FY0 + 3, 1, 1); corner(FX1 - 4, FY0 + 3, -1, 1)
+    corner(FX0 + 3, FY1 - 4, 1, -1); corner(FX1 - 4, FY1 - 4, -1, -1)
 
 # plaque in the top band
 PX0, PX1, PY0, PY1 = 470, 810, 62, 106
@@ -153,7 +156,7 @@ frame_rect(PX0 + 3, PY0 + 3, PX1 - 3, PY1 - 3, WD[0], WD[2], 1)
 for (x, y) in ((PX0 + 8, PY0 + 8), (PX1 - 9, PY0 + 8), (PX0 + 8, PY1 - 9), (PX1 - 9, PY1 - 9)):
     stud(x, y)
 # flourish ends on the plaque
-for s in (-1, 1):
+for s in ((-1, 1) if 'noflourish' not in OPT else ()):
     bx = PX0 - 2 if s < 0 else PX1 + 1
     for i in range(14):
         y = (PY0 + PY1) // 2 + int(5 * math.sin(i / 14 * math.pi * 2))
@@ -161,7 +164,7 @@ for s in (-1, 1):
 
 # crest: feathered wings + faceted gem, breaking out above the frame
 CX, CYc = 640, 30
-for s in (-1, 1):
+for s in ((-1, 1) if 'nowings' not in OPT else ()):
     for k in range(7):                                    # back feathers first (longest)
         k2 = 6 - k
         L = 76 + k2 * 18
@@ -187,7 +190,7 @@ for s in (-1, 1):
         d.line([(root[0] + nx, root[1] + ny), (q1[0] - nx, q1[1] - ny), tip], fill=hx(BRS[2]))
         d.line([tip, (q1[0] + nx * wid, q1[1] + ny * wid), (root[0] + nx * wid * 0.9, root[1] + ny * wid * 0.9)], fill=hx(IRN[1]))
 # gem setting + faceted gem
-for y in range(-26, 27):
+for y in (range(-26, 27) if 'nogem' not in OPT else []):
     for x in range(-24, 25):
         dd = abs(x) * 1.0 + abs(y) * 0.92
         if dd <= 25:
@@ -211,12 +214,14 @@ for y in range(-26, 27):
             px[CX + x, CYc + y] = hx(c)
 px[CX - 6, CYc - 8] = hx('#ffffff'); px[CX - 5, CYc - 8] = hx('#ffffff'); px[CX - 6, CYc - 7] = hx('#ffffff')
 # pendant at the bottom
-for y in range(0, 12):
+for y in (range(0, 12) if 'nogem' not in OPT else []):
     for x in range(-8, 9):
         if abs(x) + y <= 10:
             px[640 + x, 708 + y] = hx(IRN[4] if x < 0 else IRN[2]) if abs(x) + y < 9 else hx(IRN[1])
 px[640, 712] = hx(CY[3]); px[640, 713] = hx(CY[2])
-im.save('f7_frame.png')
+im.save('f7_frame' + ('_' + sys.argv[-1] if len(sys.argv) > 1 else '') + '.png')
+if len(sys.argv) > 1:
+    raise SystemExit
 
 # =====================================================================  nebulas
 PAL = {

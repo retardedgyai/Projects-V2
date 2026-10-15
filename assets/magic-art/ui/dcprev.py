@@ -35,7 +35,7 @@ class DCLogic{constructor(p){this.props=p||{};this.state={};} setState(p){Object
 var COMP;
 function render(){var root=document.getElementById('root');root.innerHTML='';walk(document.getElementById('tpl').content,COMP.renderVals(),root);}
 window.addEventListener('load',function(){
- COMP=new Component({}); if(window.INIT)Object.assign(COMP.state,window.INIT); render();
+ COMP=new Component(window.PROPS||{}); if(window.INIT)Object.assign(COMP.state,window.INIT); render();
  (window.CLICKS||[]).forEach(function(sel,i){setTimeout(function(){var el=document.querySelectorAll(sel.q)[sel.i||0]; if(el)el.click();},300+i*300);});
 });
 '''
@@ -58,9 +58,10 @@ def build(src, state, clicks):
 if __name__ == '__main__':
     src, out = sys.argv[1], sys.argv[2]
     state = json.loads(sys.argv[3]) if len(sys.argv) > 3 else {}
+    props = json.loads(os.environ.get('DCPROPS', '{}'))
     clicks = [json.loads(c) for c in sys.argv[4:]]
     html = os.path.join(HERE, '_prev.html')
-    open(html, 'w', encoding='utf-8').write(build(src, state, clicks))
+    open(html, 'w', encoding='utf-8').write(build(src, state, clicks).replace('<script>window.BLOBS=', '<script>window.PROPS=' + json.dumps(props) + ';window.BLOBS=', 1))
     w, h = 1280, 720
     m = re.search(r'"\$preview":\{"width":(\d+),"height":(\d+)\}', open(src, encoding='utf-8').read())
     if m:
