@@ -33,14 +33,16 @@ def solid(base, light, dark, up, down=None):
             return Image.new('RGBA', (W, H), hx(up))
         if face == 'down':
             return Image.new('RGBA', (W, H), hx(down or dark))
-        if W >= H and H >= 3:
+        if W >= H and H >= 2:
             for x in range(W):
                 px[x, 0] = hx(light)
-                px[x, H - 1] = hx(dark)
-        elif H > W and W >= 3:
+                if H >= 3:
+                    px[x, H - 1] = hx(dark)
+        elif H > W and W >= 2:
             for y in range(H):
                 px[0, y] = hx(light)
-                px[W - 1, y] = hx(dark)
+                if W >= 3:
+                    px[W - 1, y] = hx(dark)
         return im
     return paint
 
@@ -152,18 +154,18 @@ def model():
     E.append(P(X, 18.0, 0.4, 14.0, inlay, z=(8.6, 8.7), emissive=True, name='inlay'))
     E.append(P(X, 26.4, 2.4, 1.4, GOLD, name='collar'))
     hx_, hy = X, 30.0
-    E += ring(hx_, hy, 3.0, 1.0)
+    E += ring(hx_, hy, 3.0, 1.4)
     E.append(P(hx_, hy, 3.6, 3.6, PLATE, ang=0, z=(8.2, 8.5), name='plate'))
     E.append(P(hx_, hy, 2.0, 2.0, crystal, ang=0, z=(7.1, 8.9), emissive=True, name='crystal'))
     # horns: four longer segments each, constant width, thin tip
     horn = [(1.8, 2.4), (3.8, 4.6), (4.2, 7.4), (2.9, 9.2), (1.4, 9.6)]
-    th = [1.2, 1.2, 1.0, 0.8]
+    th = [1.6, 1.4, 1.2, 0.9]
     for s in (-1, 1):
         pts = [(hx_ + s * px, hy + py) for (px, py) in horn]
         for i in range(len(pts) - 1):
             E.append(seg(pts[i], pts[i + 1], th[i], name=f'horn{s}_{i}'))
     # sparkle beside the crystal (transparent except during the flash)
-    E.append(P(hx_ + 2.6, hy + 2.6, 2.5, 2.5, sparkle, ang=-G, z=(8.9, 8.95), emissive=True, name='sparkle'))
+    E.append(P(hx_ + 2.8, hy + 2.8, 2.5, 2.5, sparkle, ang=-G, z=(8.9, 8.95), emissive=True, res=2, name='sparkle'))
     return E
 
 

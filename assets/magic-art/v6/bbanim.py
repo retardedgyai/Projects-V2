@@ -41,6 +41,8 @@ def export(elements, F, title, path, png_dir=None):
     for i, el in enumerate(elements):
         for face in FACES:
             w, h = face_size(el['fr'], el['to'], face)
+            r = el.get('res', 1)                      # texels per unit (2 = finer detail, e.g. sparkles)
+            w, h = w * r, h * r
             W, H = max(1, math.ceil(w - 1e-6)), max(1, math.ceil(h - 1e-6))
             sizes[(i, face)] = (w, h, W, H)
             cells[bool(el.get('emissive'))].append(((i, face), W, H))
