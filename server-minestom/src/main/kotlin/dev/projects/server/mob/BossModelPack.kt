@@ -1,5 +1,8 @@
 package dev.projects.server.mob
 
+import com.google.gson.JsonElement
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
 import net.minestom.server.item.Material
 import net.worldseed.multipart.ModelEngine
 import net.worldseed.resourcepack.PackBuilder
@@ -12,6 +15,7 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteRecursively
 import kotlin.io.path.exists
 import kotlin.io.path.isRegularFile
+import kotlin.io.path.readText
 import kotlin.io.path.relativeTo
 import kotlin.io.path.walk
 import kotlin.io.path.writeText
@@ -36,6 +40,27 @@ object BossModelPack {
         println("[generateBossModels] $count bbmodel(s) -> ${args[1]}/assets/worldseed, ${args[2]}")
     }
 
+    /**
+     * WSEE 13.0.4 mirrors the cubes on X but rotates each bone about its un-mirrored pivot with Y/Z rest
+     * rotations un-mirrored too, so a bone off the centre line (a wing) swings about the wrong side. Mirroring
+     * every bone pivot's X and flipping its Y/Z rest rotation here makes the game match Blockbench (as a mirror
+     * image, like before). Checked by ShadeWyrmBossTest's rest-pose test.
+     */
+    fun forWseeRuntime(bbmodel: String): String {
+        val root = JsonParser.parseString(bbmodel).asJsonObject
+        fun fix(node: JsonElement) {
+            if (!node.isJsonObject) return
+            val group = node.asJsonObject
+            group.getAsJsonArray("origin")?.let { it.set(0, JsonPrimitive(-it[0].asDouble)) }
+            group.getAsJsonArray("rotation")?.let {
+                it.set(1, JsonPrimitive(-it[1].asDouble)); it.set(2, JsonPrimitive(-it[2].asDouble))
+            }
+            group.getAsJsonArray("children")?.forEach(::fix)
+        }
+        root.getAsJsonArray("outliner").forEach(::fix)
+        return root.toString()
+    }
+
     /** Replaces pack/assets/worldseed and the data dir completely; returns the number of models. */
     @OptIn(ExperimentalPathApi::class)
     fun generate(source: Path, pack: Path, data: Path): Int {
@@ -44,8 +69,10 @@ object BossModelPack {
         val staging = Files.createTempDirectory("projects-boss-pack")
         try {
             ModelEngine.setModelMaterial(CARRIER)
+            val sources = staging.resolve("bbmodels").createDirectories()
+            for (model in models) sources.resolve(model.fileName.toString()).writeText(forWseeRuntime(model.readText()))
             val modelData = staging.resolve("data")
-            val config = PackBuilder.generate(source, staging.resolve("pack"), modelData)
+            val config = PackBuilder.generate(sources, staging.resolve("pack"), modelData)
             val target = pack.resolve("assets/worldseed")
             if (target.exists()) target.deleteRecursively()
             if (data.exists()) data.deleteRecursively()

@@ -1,22 +1,27 @@
-"""First version of the 黒翳竜 (shade wyrm) Blockbench model.
+"""黒翳竜 (shade wyrm) Blockbench model, second pass ("外套の死神" direction chosen by the creator).
 
     python scripts/build_boss_shade_wyrm.py   # writes assets/bosses/shade_wyrm.bbmodel
 
 The written .bbmodel is the committed source. Once someone edits it in Blockbench, do not re-run
-this script over it without merging by hand. Original design: a blind wyrm that walks on its
-wing-arms, wraps itself in a black membrane cloak, senses with two long feelers and sheds a
-shade scale-dust. Enraged it rears up, opens the cloak and grows two horns.
+this script over it without merging by hand.
 
-Front is +Z, +X is the wyrm's left, 16 px = 1 block. Animation names are the server contract:
-idle / walk / idle_enraged / walk_enraged / enrage / death, plus one `once` animation per
-ability id whose length is telegraph+recovery and whose impact pose sits at the telegraph time.
+Read of the design: a blind wyrm that walks on its wing-arms. It crouches front-low: hips high,
+chest and head low, the wing elbows up over the shoulders. The membranes hang from the elbows like
+a torn black cloak, and a pale eyeless brow looks out from under a shaggy hood. Enraged it opens
+the cloak (violet inside), raises two feelers and grows two horns.
+
+Front is +Z, +X is the wyrm's left, 16 px = 1 block. Cubes are axis-aligned inside their bone;
+every angle lives on a bone (rest rotation, Blockbench editor convention: euler ZYX, right-handed).
+Animation names are the server contract: idle / walk / idle_enraged / walk_enraged / enrage /
+death, plus one `once` animation per ability id (length = telegraph+recovery, impact at telegraph).
 """
+import math
+
 from boss_models import Model, ROOT
 
-# Semantic rotation helpers, checked against the WSEE runtime by ShadeWyrmBossTest:
+# Animation rotation helpers, checked against the WSEE runtime by ShadeWyrmBossTest:
 # pitch>0 lowers the +Z end (raw Bedrock 4.x X rotation lifts it, hence -1); roll>0 raises the
-# +X side, so spread(+) opens both membranes outward. WSEE mirrors Blockbench X in game, so the
-# "_l" bones appear on the wyrm's right; the model is symmetric, only the sweep arm notices.
+# +X side. WSEE mirrors Blockbench X in game, so "_l" bones appear on the wyrm's right.
 PITCH, YAW, ROLL = -1, 1, 1
 
 
@@ -24,19 +29,76 @@ def rot(pitch=0.0, yaw=0.0, roll=0.0):
     return (PITCH * pitch, YAW * yaw, ROLL * roll)
 
 
+# --- rest-pose math (Blockbench editor: R = Rz * Ry * Rx, degrees, right-handed) ---------------
+IDENTITY = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+
+
+def _mul(a, b):
+    return [[sum(a[i][k] * b[k][j] for k in range(3)) for j in range(3)] for i in range(3)]
+
+
+def _t(a):
+    return [list(r) for r in zip(*a)]
+
+
+def _apply(m, v):
+    return [sum(m[i][k] * v[k] for k in range(3)) for i in range(3)]
+
+
+def euler_matrix(x, y, z):
+    x, y, z = (math.radians(v) for v in (x, y, z))
+    rx = [[1, 0, 0], [0, math.cos(x), -math.sin(x)], [0, math.sin(x), math.cos(x)]]
+    ry = [[math.cos(y), 0, math.sin(y)], [0, 1, 0], [-math.sin(y), 0, math.cos(y)]]
+    rz = [[math.cos(z), -math.sin(z), 0], [math.sin(z), math.cos(z), 0], [0, 0, 1]]
+    return _mul(rz, _mul(ry, rx))
+
+
+def matrix_euler(m):
+    """Inverse of euler_matrix (ZYX)."""
+    y = math.asin(max(-1.0, min(1.0, -m[2][0])))
+    x = math.atan2(m[2][1], m[2][2])
+    z = math.atan2(m[1][0], m[0][0])
+    return [round(math.degrees(v), 2) for v in (x, y, z)]
+
+
+def aim(direction, along=(0, -1, 0), parent=None):
+    """Rest rotation (x, 0, z) that turns the local axis `along` (±Y) to the world `direction`."""
+    if parent is not None:
+        direction = _apply(_t(parent), direction)
+    n = math.sqrt(sum(c * c for c in direction))
+    dx, dy, dz = (c / n for c in direction)
+    if along[1] > 0:
+        dx, dy, dz = -dx, -dy, -dz
+    # Rz(b) Rx(a) (0,-1,0) = (cos a sin b, -cos a cos b, -sin a)
+    a = -math.asin(max(-1.0, min(1.0, dz)))
+    ca = math.cos(a)
+    b = math.atan2(dx / ca, -dy / ca)
+    return [round(math.degrees(a), 2), 0, round(math.degrees(b), 2)]
+
+
+def length(v):
+    return math.sqrt(sum(c * c for c in v))
+
+
+# --- texture ------------------------------------------------------------------------------------
+# Large, calm areas of colour with clear value steps; detail only where it explains the form.
 PALETTES = {
-    # shadow, base, light. Black-violet hide; the dust glint is the only bright accent.
-    "hide": ((16, 12, 21), (29, 22, 36), (46, 35, 57)),
-    "scale": ((22, 16, 28), (38, 28, 48), (62, 47, 78)),
-    "belly": ((40, 33, 47), (58, 48, 64), (78, 66, 84)),
-    "membrane": ((17, 10, 23), (33, 19, 43), (55, 33, 70)),
-    "bone": ((112, 104, 97), (170, 162, 150), (219, 211, 197)),
-    "feeler": ((64, 48, 86), (108, 84, 138), (150, 120, 186)),
-    "glow": ((168, 132, 220), (206, 176, 250), (240, 226, 255)),
-    "mouth": ((60, 12, 28), (92, 22, 42), (128, 40, 62)),
+    # shadow, base, light
+    "hide": ((24, 21, 30), (38, 34, 46), (58, 52, 70)),
+    "scale": ((32, 28, 40), (50, 45, 60), (82, 74, 96)),
+    "belly": ((80, 72, 88), (108, 98, 114), (140, 130, 146)),
+    "bone": ((128, 118, 106), (192, 182, 166), (234, 226, 212)),
+    "fringe": ((16, 14, 22), (32, 28, 40), (116, 102, 136)),
+    "cloak": ((15, 12, 21), (25, 21, 33), (62, 48, 84)),
+    "hem": ((40, 32, 54), (62, 50, 82), (96, 80, 122)),
+    "inner": ((46, 28, 68), (70, 42, 102), (112, 76, 156)),
+    "spar": ((66, 60, 78), (100, 92, 114), (148, 140, 160)),
+    "feeler": ((60, 46, 80), (100, 80, 128), (152, 126, 188)),
+    "glow": ((188, 156, 240), (222, 200, 255), (246, 238, 255)),
+    "mouth": ((72, 18, 36), (112, 32, 54), (152, 52, 74)),
 }
-DUST = (184, 156, 222)
-VEIN = (98, 64, 128)
+VEIN = (88, 60, 120)
+INNER_VEIN = (56, 32, 84)
 
 
 def noise(x, y, seed):
@@ -45,291 +107,295 @@ def noise(x, y, seed):
     return (n ^ (n >> 16)) & 0xffff
 
 
-def painter(material, motif="plain"):
+def darker(c, k=.72):
+    return tuple(int(v * k) for v in c)
+
+
+def painter(material, motif="plain", inner_face=None):
+    """inner_face: the face of a membrane slab that faces the body (violet when the cloak opens)."""
     def make(side, w, h):
-        seed = sum(ord(c) * (i + 1) for i, c in enumerate(material + motif + side[:1]))
-        palette = PALETTES[material]
+        seed = sum(ord(c) * (i + 1) for i, c in enumerate(material + motif + side))
+        big = side not in ("up", "down")
 
         def paint(x, y, w, h):
-            tone = 1
-            cluster = noise(x // 2, y // 2, seed)
-            if cluster % 11 == 0:
-                tone = 0
-            elif cluster % 17 == 0:
-                tone = 2
-            colour = palette[tone]
-            if motif == "scales" and side != "down":
-                # Offset rows of small overlapping scales: light top edge, dark lower edge.
-                row, col = y // 3, (x + (y // 3) * 2) // 4
-                if y % 3 == 0:
-                    colour = palette[2]
-                elif (x + (y // 3) * 2) % 4 == 0:
-                    colour = palette[0]
-                if noise(col, row, seed + 3) % 29 == 0:
-                    colour = DUST
-            elif motif == "membrane":
-                # Sparse veins radiating from the leading (top) edge plus dust specks.
-                if (x + y // 3) % 9 == 0 or (y == 0):
-                    colour = VEIN
-                elif noise(x, y, seed + 9) % 53 == 0:
-                    colour = DUST
+            mat = "inner" if side == inner_face else material
+            pal = PALETTES[mat]
+            c = pal[1]
+            if noise(x // 3, y // 3, seed) % 6 == 0:   # soft 3x3 blotches, never single-pixel noise
+                c = pal[0]
+            if motif == "scales" and big:
+                # Overlapping 6x4 plates: a light lip on top, a dark gap underneath.
+                row = y // 4
+                cell = (x + (row % 2) * 3) // 6
+                lx = (x + (row % 2) * 3) % 6
+                lit = noise(cell, row, seed + 2) % 3 == 0
+                if lit and y % 4 == 0 and 0 < lx < 5:
+                    c = pal[2]
+                elif lit and y % 4 == 1 and 0 < lx < 5:
+                    c = pal[1]
+                elif y % 4 == 3 and noise(cell, row, seed + 4) % 2 == 0:
+                    c = pal[0]
+            elif motif == "belly" and big:
+                c = pal[0] if y % 5 == 4 else pal[2] if y % 5 == 0 else pal[1]
             elif motif == "bone":
-                colour = palette[2 if y < h // 3 else 1 if y < 2 * h // 3 else 0]
+                c = pal[2] if y < max(1, h // 3) else pal[1] if y < 2 * h // 3 else pal[0]
+            elif motif == "membrane" and big:
+                # Dark at the top, smoky and dusted toward the torn hem.
+                t = y / max(1, h - 1)
+                if mat != "inner" and t > .62 + (noise(x // 3, 2, seed) % 4) * .05:
+                    c = PALETTES["hem"][1] if noise(x // 2, y // 2, seed + 3) % 4 else PALETTES["hem"][2]
+                if y < 2:
+                    c = pal[2]                       # leading edge along the finger
+                elif (x + y // 3) % 8 in (0, 1) and noise(x // 8, 1, seed) % 3:
+                    c = INNER_VEIN if mat == "inner" else VEIN
+                elif noise(x, y, seed + 9) % (23 if mat == "inner" else 47) == 0:
+                    c = PALETTES["glow"][0]          # shade dust caught in the membrane
+            elif motif == "fringe" and big:
+                strand = noise(x // 2, 3, seed) % 4
+                c = pal[0] if strand == 0 else pal[1]
+                if y >= h - 4 - strand % 2:
+                    c = pal[2]                       # pale hair tips
             elif motif == "glow":
-                colour = palette[2 if (x + y) % 3 == 0 else 1]
-            if w >= 4 and h >= 4 and motif not in ("membrane", "glow"):
-                if y == h - 1 or x == w - 1:
-                    colour = tuple(max(0, c - 8) for c in palette[0])
-            return (*colour, 255)
-        return paint, (material, motif, side in ("up", "down"), w, h)
+                c = pal[2 if (x + y) % 3 == 0 else 1]
+            # Ragged hem: notches cut into the lower edge of membranes and hair.
+            if motif in ("membrane", "fringe") and big and h >= 6:
+                depth = noise(x // 2, 7, seed) % (6 if motif == "membrane" else 4)
+                if y >= h - depth:
+                    return (0, 0, 0, 0)
+            # Bevel: light top edge, dark bottom/right edge so every block reads as a block.
+            if w >= 3 and h >= 3 and motif not in ("glow", "membrane", "fringe"):
+                if y == 0:
+                    c = pal[2]
+                elif y == h - 1 or x == w - 1:
+                    c = darker(pal[0], .75)
+            return (*c, 255)
+        return paint, (material, motif, inner_face, side, w, h)
     return make
+
+
+# --- model --------------------------------------------------------------------------------------
+class Rig:
+    """Tracks world rotations so child bones can be aimed in world terms."""
+
+    def __init__(self, m):
+        self.m = m
+        self.world = {}
+
+    def bone(self, name, pivot, rotation, items, parent=None, children=()):
+        local = euler_matrix(*rotation)
+        self.world[name] = _mul(self.world.get(parent, IDENTITY), local) if parent else local
+        return lambda: self.m.bone(name, pivot, items + [c() for c in children], rotation)
 
 
 def build():
     m = Model("shade_wyrm", size=512)
+    rig = Rig(m)
     p = painter
 
-    def mirror(start, end):
-        return [-end[0], start[1], start[2]], [-start[0], end[1], end[2]]
+    def cubes(spec, sign=1, suffix=""):
+        """spec: [(name, from, to, paint)]; sign -1 mirrors across X for the right side."""
+        items = []
+        for name, a, b, paint in spec:
+            if sign < 0:
+                a, b = [-b[0], a[1], a[2]], [-a[0], b[1], b[2]]
+            m.cube(f"{name}{suffix}", a, b, items, paint)
+        return items
 
-    def side_pair(name_l, name_r, pivot, parts, rotation=(0, 0, 0), children=None):
-        """Left (+X) and mirrored right bone with the same parts."""
-        children = children or (lambda side: [])
-        bones = []
-        for side, sign in (("l", 1), ("r", -1)):
-            items = []
-            for name, start, end, paint in parts:
-                if sign < 0:
-                    start, end = mirror(start, end)
-                m.cube(f"{name}_{side}", start, end, items, paint)
-            items += children(side)
-            bones.append(m.bone(name_l if sign > 0 else name_r, [pivot[0] * sign, pivot[1], pivot[2]], items, rotation))
-        return bones
+    rig.world["body"] = IDENTITY
+    NECK, SKULL = (12, 0, 0), (-10, 0, 0)
+    rig.world["neck"] = euler_matrix(*NECK)
+    rig.world["skull"] = _mul(rig.world["neck"], euler_matrix(*SKULL))
 
-    # --- head ---------------------------------------------------------------------------------
-    jaw = []
-    m.cube("jaw", [-5, 36, 40], [5, 41, 60], jaw, p("hide"))
-    m.cube("teeth", [-4, 41, 52], [4, 42, 60], jaw, p("bone", "bone"))
-    m.cube("tongue_glow", [-2, 41, 44], [2, 41.5, 52], jaw, p("mouth"))
+    # ---------- head ----------
+    def head():
+        jaw = cubes([
+            ("jaw", [-7, 25, 46], [7, 31, 78], p("hide")),
+            ("jaw_plate", [-7.5, 24, 50], [7.5, 25, 76], p("belly", "belly")),
+            ("lower_fang_l", [4, 31, 72], [6, 34, 75], p("bone", "bone")),
+            ("lower_fang_r", [-6, 31, 72], [-4, 34, 75], p("bone", "bone")),
+            ("tongue", [-3, 30.5, 48], [3, 31, 60], p("mouth")),
+        ])
+        skull_items = cubes([
+            ("cranium", [-11, 30, 40], [11, 48, 58], p("hide")),
+            ("snout", [-7.5, 31, 58], [7.5, 42, 74], p("hide")),
+            ("snout_tip", [-6, 32, 74], [6, 41, 80], p("hide")),
+            # The eyeless face: one pale bone mask over the brow and the top of the snout.
+            ("mask_brow", [-10, 46, 50], [10, 51, 62], p("bone", "bone")),
+            ("mask_snout", [-7, 42, 62], [7, 46, 78], p("bone", "bone")),
+            ("nose", [-5, 38, 78], [5, 46, 81], p("bone", "bone")),
+            ("fang_l", [4.5, 27, 74], [6.5, 31, 77], p("bone", "bone")),
+            ("fang_r", [-6.5, 27, 74], [-4.5, 31, 77], p("bone", "bone")),
+            # Shaggy hood behind the mask.
+            ("hood_top", [-12, 48, 30], [12, 54, 50], p("fringe", "fringe")),
+            ("hood_back", [-12, 32, 22], [12, 52, 32], p("fringe", "fringe")),
+        ])
+        for sign, s in ((1, "_l"), (-1, "_r")):
+            skull_items += cubes([
+                # Swept-back crown of hair, stepping up and back: the head's silhouette.
+                ("crown_a", [4, 52, 32], [12, 60, 46], p("fringe", "fringe")),
+                ("crown_b", [5, 57, 20], [11, 65, 34], p("fringe", "fringe")),
+                ("crown_c", [6, 62, 8], [10, 70, 22], p("fringe", "fringe")),
+                ("crown_tip", [7, 67, -2], [9, 72, 10], p("bone", "bone")),
+                ("hood_side", [11, 30, 30], [15, 50, 52], p("fringe", "fringe")),
+                ("hood_flap", [15, 34, 34], [19, 48, 48], p("fringe", "fringe")),
+            ], sign, s)
+        jaw_b = rig.bone("jaw", [0, 32, 46], [0, 0, 0], jaw, "skull")
+        feelers, horns = [], []
+        for sign, s in ((1, "l"), (-1, "r")):
+            items = cubes([
+                ("feeler", [2, 54, 8], [4.5, 56, 46], p("feeler")),
+                ("feeler_tip", [2.25, 54.5, 2], [4.25, 55.5, 8], p("glow", "glow")),
+            ], sign, "_" + s)
+            feelers.append(rig.bone(f"antenna_{s}", [3.25 * sign, 55, 44], [0, 0, 0], items, "skull"))
+            items = cubes([
+                ("horn_base", [9, 44, 50], [13, 50, 58], p("bone", "bone")),
+                ("horn_mid", [10, 48, 56], [13, 53, 64], p("bone", "bone")),
+                ("horn_tip", [10.5, 52, 62], [12.5, 55, 70], p("bone", "bone")),
+            ], sign, "_" + s)
+            horns.append(rig.bone(f"horn_{s}", [11 * sign, 47, 52], [0, 0, 0], items, "skull"))
+        skull = rig.bone("skull", [0, 38, 44], SKULL, skull_items, "neck", [jaw_b] + feelers + horns)
+        neck_items = cubes([
+            ("neck", [-9, 30, 18], [9, 48, 46], p("scale", "scales")),
+            ("throat", [-7, 28.5, 20], [7, 30, 44], p("belly", "belly")),
+            ("neck_mane", [-10, 46, 16], [10, 52, 40], p("fringe", "fringe")),
+        ])
+        return rig.bone("neck", [0, 40, 22], NECK, neck_items, "body", [skull])
 
-    antennae = side_pair("antenna_l", "antenna_r", [4, 54, 45], [
-        ("feeler_stalk", [3, 54, 44], [5, 62, 46], p("feeler")),
-        ("feeler", [3, 61, 46], [5, 63, 70], p("feeler")),
-        ("feeler_tip", [2.5, 60.5, 70], [5.5, 63.5, 74], p("glow", "glow")),
+    # ---------- wing-arms (front legs) and the cloak ----------
+    def wing(sign, s):
+        shoulder = [16 * sign, 48, 14]
+        elbow_world = [21 * sign, 74, 4]
+        wrist_world = [40 * sign, 4, 38]
+        up = [e - b for e, b in zip(elbow_world, shoulder)]
+        upper_rot = aim(up, along=(0, 1, 0))
+        upper_len = length(up)
+        name = f"wing_{s}"
+        rig.world[name] = euler_matrix(*upper_rot)
+        ey = shoulder[1] + upper_len   # the elbow, in the upper arm's local frame
+        top = [16 * sign, ey, 14]
+        upper = cubes([
+            ("humerus", [11, 46, 9], [21, ey, 19], p("scale", "scales")),
+            ("shoulder_plate", [9, 42, 6], [23, 56, 22], p("scale", "scales")),
+            # Elbow knuckle and spike: the tallest point of the silhouette.
+            ("elbow", [10.5, ey - 6, 8], [21.5, ey + 5, 20], p("hide")),
+            ("elbow_spike", [14, ey + 5, 11], [18, ey + 15, 15], p("bone", "bone")),
+            ("elbow_hook", [14.5, ey - 1, 4], [17.5, ey + 3, 8], p("bone", "bone")),
+        ], sign, "_" + s)
+        # Forearm: elbow -> wrist planted forward on the ground.
+        down = [w - e for w, e in zip(wrist_world, elbow_world)]
+        fore_len = length(down)
+        fore_rot = aim(down, parent=rig.world[name])
+        fore_name = f"wing_{s}_fore"
+        rig.world[fore_name] = _mul(rig.world[name], euler_matrix(*fore_rot))
+        fore = cubes([
+            ("forearm", [11.5, ey - fore_len, 9.5], [20.5, ey, 18.5], p("hide")),
+            ("forearm_ridge", [13, ey - fore_len * .75, 18.5], [19, ey - 8, 21], p("scale", "scales")),
+        ], sign, "_" + s)
+        wy = ey - fore_len
+        hand = cubes([
+            ("hand", [10, wy - 5, 6], [22, wy + 4, 22], p("scale", "scales")),
+            ("talon_a", [10.5, wy - 5, 22], [13, wy - 2, 28], p("bone", "bone")),
+            ("talon_b", [14.5, wy - 5, 22], [17.5, wy - 1.5, 30], p("bone", "bone")),
+            ("talon_c", [19, wy - 5, 21], [21.5, wy - 2, 26], p("bone", "bone")),
+        ], sign, "_" + s)
+        # The hand cancels the arm's rotation so it sits flat on the ground.
+        hand_b = rig.bone(f"wing_{s}_hand", [16 * sign, wy, 14], matrix_euler(_t(rig.world[fore_name])), hand, fore_name)
+        fore_b = rig.bone(fore_name, top, fore_rot, fore, name, [hand_b])
+
+        # Cloak: three finger spars fan back from the elbow; each carries the membrane behind it.
+        inner = "west" if sign > 0 else "east"
+        mem_name = f"wing_{s}_membrane"
+        rig.world[mem_name] = rig.world[name]
+        fingers = []
+        # (finger, world direction of the spar from the elbow, spar length, membrane width behind it)
+        layout = ((1, [16 * sign, -64, 8], 70, 24), (2, [16 * sign, -60, -26], 70, 28), (3, [14 * sign, -44, -52], 66, 30))
+        for idx, (i, direction, size, width) in enumerate(layout):
+            x0 = top[0] + sign * (3 + idx * .4)
+            items = cubes([
+                ("membrane", [x0 - .6, ey - size + 2, 14 - width], [x0 + .6, ey - 2, 13], p("cloak", "membrane", inner)),
+                ("spar", [x0 - 1.5, ey - size, 12.5], [x0 + 1.5, ey, 15.5], p("spar", "bone")),
+            ], 1, f"_{s}{i}")
+            fingers.append(rig.bone(f"wing_{s}_finger{i}", top, aim(direction, parent=rig.world[mem_name]), items, mem_name))
+        # Mantle: the folded part of the membrane lying over the back between the elbows.
+        # It cancels the arm's tilt so it lies level over the hips, and still opens with the wing.
+        mantle = cubes([("mantle", [-4, ey - 14, -40], [16, ey - 12, 18], p("cloak", "plain", "down"))], sign, "_" + s)
+        mantle_b = rig.bone(f"wing_{s}_mantle", top, matrix_euler(_t(rig.world[mem_name])), mantle, mem_name)
+        mem_b = rig.bone(mem_name, top, [0, 0, 0], [], name, fingers + [mantle_b])
+        return rig.bone(name, shoulder, upper_rot, upper, "body", [fore_b, mem_b])
+
+    # ---------- hind legs ----------
+    def leg(sign, s):
+        name = f"leg_h{s}"
+        foot = cubes([
+            ("foot", [9, -1, -33], [20, 6, -18], p("scale", "scales")),
+            ("toe_a", [9.5, -1, -18], [12, 2, -13], p("bone", "bone")),
+            ("toe_b", [13.5, -1, -18], [16, 2, -12], p("bone", "bone")),
+            ("toe_c", [17, -1, -18], [19.5, 2, -13], p("bone", "bone")),
+            ("spur", [13.5, 2, -36], [15.5, 5, -32], p("bone", "bone")),
+        ], sign, "_" + s)
+        foot_b = rig.bone(f"{name}_foot", [14.5 * sign, 5, -26], [-26, 0, 0], foot, f"{name}_shin")
+        shin = cubes([("shin", [10.5, 4, -30], [18.5, 28, -22], p("hide"))], sign, "_" + s)
+        shin_b = rig.bone(f"{name}_shin", [14.5 * sign, 26, -26], [26, 0, 0], shin, name, [foot_b])
+        thigh = cubes([
+            ("thigh", [7, 22, -38], [22, 52, -12], p("scale", "scales")),
+            ("thigh_plate", [21.5, 30, -32], [22.5, 46, -18], p("bone", "bone")),
+        ], sign, "_" + s)
+        return rig.bone(name, [14.5 * sign, 44, -24], [0, 0, 0], thigh, "body", [shin_b])
+
+    # ---------- tail ----------
+    def tail():
+        tip = cubes([
+            ("tail_tip", [-4, 38.5, -114], [4, 46.5, -89], p("scale", "scales")),
+            ("tail_blade", [-1, 37, -126], [1, 48, -112], p("bone", "bone")),
+            ("tail_fin_l", [3.5, 41, -112], [8, 44, -100], p("bone", "bone")),
+            ("tail_fin_r", [-8, 41, -112], [-3.5, 44, -100], p("bone", "bone")),
+        ])
+        mid = cubes([
+            ("tail_mid", [-6, 37, -90], [6, 49, -63], p("scale", "scales")),
+            ("tail_mid_spike", [-1, 48, -82], [1, 53, -74], p("bone", "bone")),
+        ])
+        base = cubes([
+            ("tail_base", [-9, 35, -64], [9, 53, -34], p("scale", "scales")),
+            ("tail_base_spike", [-1.5, 52, -56], [1.5, 59, -48], p("bone", "bone")),
+        ])
+        for sign, sfx in ((1, "_l"), (-1, "_r")):
+            mid += cubes([("tail_mid_barb", [5.5, 41, -84], [9, 44, -76], p("bone", "bone"))], sign, sfx)
+            base += cubes([("tail_base_barb", [8, 42, -58], [12, 46, -50], p("bone", "bone"))], sign, sfx)
+        end = rig.bone("tail_end", [0, 43, -89], [-14, 0, 0], tip, "tail_mid")
+        midb = rig.bone("tail_mid", [0, 43, -63], [-12, 0, 0], mid, "tail", [end])
+        return rig.bone("tail", [0, 44, -36], [12, 0, 0], base, "body", [midb])
+
+    # ---------- body: hips high, chest low ----------
+    body_items = cubes([
+        ("chest", [-17, 20, -6], [17, 48, 24], p("scale", "scales")),
+        ("breast", [-13, 18, 16], [13, 40, 26], p("belly", "belly")),
+        ("hips", [-15, 28, -40], [15, 56, -6], p("scale", "scales")),
+        ("belly_front", [-12, 16, -6], [12, 21, 18], p("belly", "belly")),
+        ("belly_back", [-12, 24, -36], [12, 29, -6], p("belly", "belly")),
+        ("collar", [-20, 40, 0], [20, 54, 28], p("fringe", "fringe")),
+        ("collar_top", [-15, 54, 2], [15, 58, 20], p("fringe", "fringe")),
     ])
-    horns = side_pair("horn_l", "horn_r", [7, 53, 40], [
-        ("horn_base", [5, 52, 36], [9, 58, 43], p("bone", "bone")),
-        ("horn_mid", [6, 57, 29], [9, 61, 37], p("bone", "bone")),
-        ("horn_tip", [6.5, 60, 24], [8.5, 62, 30], p("bone", "bone")),
-    ])
-    skull_items = []
-    m.cube("cranium", [-8, 41, 34], [8, 54, 50], skull_items, p("scale", "scales"))
-    m.cube("snout", [-5, 41, 50], [5, 48, 63], skull_items, p("hide"))
-    m.cube("hood", [-9, 50, 38], [9, 55, 55], skull_items, p("scale", "scales"))
-    m.cube("hood_glow", [-7, 49, 54.5], [7, 50, 55.5], skull_items, p("glow", "glow"))
-    m.cube("nostril_ridge", [-3, 48, 54], [3, 49.5, 62], skull_items, p("scale", "scales"))
-    skull = m.bone("skull", [0, 46, 36], skull_items + [m.bone("jaw", [0, 42, 40], jaw)] + antennae + horns)
-
-    neck_items = []
-    m.cube("neck", [-6, 38, 18], [6, 50, 37], neck_items, p("hide"))
-    m.cube("mane", [-7, 48, 20], [7, 53, 35], neck_items, p("scale", "scales"))
-    neck = m.bone("neck", [0, 44, 20], neck_items + [skull])
-
-    # --- wing-arms (forelegs) and their membrane cloak ---------------------------------------
-    def wing_children(side):
-        sign = 1 if side == "l" else -1
-        hand, membrane = [], []
-        for name, start, end, paint in (
-            ("forearm", [13, 6, 9], [18, 24, 15], p("hide")),
-            ("claw", [11, 0, 8], [19, 6, 19], p("scale", "scales")),
-            ("talon_a", [11.5, 0, 19], [13.5, 2, 24], p("bone", "bone")),
-            ("talon_b", [16, 0, 19], [18, 2, 24], p("bone", "bone")),
-        ):
-            if sign < 0:
-                start, end = mirror(start, end)
-            m.cube(f"{name}_{side}", start, end, hand, paint)
-        for name, start, end, paint in (
-            ("membrane", [18, 20, -34], [19.5, 55, 13], p("membrane", "membrane")),
-            ("spar_lead", [17.5, 54, -32], [20, 57, 14], p("hide")),
-            ("spar_mid", [17.5, 30, -26], [20, 54, -23], p("hide")),
-            ("spar_aft", [17.5, 24, -36], [20, 52, -33], p("hide")),
-            ("membrane_dust", [19.5, 40, -20], [19.8, 41, 6], p("glow", "glow")),
-        ):
-            if sign < 0:
-                start, end = mirror(start, end)
-            m.cube(f"{name}_{side}", start, end, membrane, paint)
-        return [m.bone(f"wing_{side}_hand", [15 * sign, 22, 12], hand),
-                m.bone(f"wing_{side}_membrane", [17 * sign, 52, 12], membrane)]
-
-    wings = side_pair("wing_l", "wing_r", [15, 48, 12], [
-        ("humerus", [12, 22, 8], [18, 50, 16], p("scale", "scales")),
-        ("shoulder", [11, 44, 6], [19, 52, 18], p("scale", "scales")),
-    ], children=wing_children)
-
-    # --- hind legs ----------------------------------------------------------------------------
-    def leg_children(side):
-        sign = 1 if side == "l" else -1
-        foot = []
-        for name, start, end, paint in (
-            ("shin", [6, 0, -23], [11, 15, -15], p("hide")),
-            ("toes", [5, 0, -15], [12, 3, -10], p("bone", "bone")),
-        ):
-            if sign < 0:
-                start, end = mirror(start, end)
-            m.cube(f"{name}_{side}", start, end, foot, paint)
-        return [m.bone(f"leg_h{side}_foot", [8.5 * sign, 15, -19], foot)]
-
-    legs = side_pair("leg_hl", "leg_hr", [8, 30, -18], [
-        ("thigh", [5, 14, -25], [12, 33, -12], p("scale", "scales")),
-    ], children=leg_children)
-
-    # --- tail ---------------------------------------------------------------------------------
-    tip = []
-    m.cube("tail_tip", [-3.5, 32, -70], [3.5, 39, -47], tip, p("hide"))
-    m.cube("tail_spade", [-7, 33, -79], [7, 37, -69], tip, p("membrane", "membrane"))
-    m.cube("tail_spine", [-1, 39, -64], [1, 42, -52], tip, p("bone", "bone"))
-    tail_items = []
-    m.cube("tail", [-5, 31, -48], [5, 42, -25], tail_items, p("scale", "scales"))
-    m.cube("tail_ridge", [-1.5, 42, -44], [1.5, 45, -30], tail_items, p("bone", "bone"))
-    tail = m.bone("tail", [0, 37, -26], tail_items + [m.bone("tail_end", [0, 36, -48], tip)])
-
-    # --- body ---------------------------------------------------------------------------------
-    body_items = []
-    m.cube("chest", [-12, 28, -2], [12, 50, 22], body_items, p("hide"))
-    m.cube("hump", [-10, 50, 0], [10, 56, 18], body_items, p("scale", "scales"))
-    m.cube("abdomen", [-10, 24, -26], [10, 44, -2], body_items, p("scale", "scales"))
-    m.cube("belly", [-8, 22, -22], [8, 28, 18], body_items, p("belly"))
-    for index, (z, y) in enumerate(((13, 56), (5, 56), (-6, 44), (-15, 44), (-23, 44))):
-        m.cube(f"ridge_{index}", [-1.5, y, z], [1.5, y + 5, z + 4], body_items, p("bone", "bone"))
-    body = m.bone("body", [0, 34, 0], body_items + [neck, tail] + wings + legs)
-
+    for index, (z, y, h) in enumerate(((-10, 56, 9), (-20, 56, 8), (-30, 56, 7), (-38, 55, 5))):
+        body_items += cubes([(f"spine_{index}", [-1.5, y, z - 3], [1.5, y + h, z + 2], p("bone", "bone"))])
+    parts = [head(), tail(), wing(1, "l"), wing(-1, "r"), leg(1, "l"), leg(-1, "r")]
+    body = rig.bone("body", [0, 36, 0], [0, 0, 0], body_items, None, parts)
+    outliner = [body()]
     animate(m)
-    return m, [body]
+    return m, outliner
 
 
 def animate(m):
-    def spread(degrees, fan=0.0):
-        return {"wing_l_membrane": rot(roll=degrees, yaw=-fan), "wing_r_membrane": rot(roll=-degrees, yaw=fan)}
-
-    def pose_track(times_poses):
-        """[(t, {bone: rotation})] -> rotation tracks; bones absent at a time are left unkeyed."""
-        tracks = {}
-        for time, pose in times_poses:
-            for bone, value in pose.items():
-                tracks.setdefault(bone, []).append((time, value))
-        return tracks
-
-    def merge(*parts):
-        merged = {}
-        for part in parts:
-            for bone, frames in part.items():
-                merged.setdefault(bone, []).extend(frames)
-        for frames in merged.values():
-            frames.sort(key=lambda frame: (frame[2] if len(frame) > 2 else "rotation", frame[0]))
-        return merged
-
+    """Placeholder clips that keep the server contract; the motion pass comes after the shape OK."""
     zero = (0, 0, 0)
-
-    def idle(open_degrees):
-        base = pose_track([(t, {
-            "neck": rot(pitch=-8 if open_degrees else 0) if t != 1.0 else rot(pitch=(-8 if open_degrees else 0) + 3),
-            "antenna_l": rot(yaw=a, pitch=(-20 if open_degrees else 0) + b),
-            "antenna_r": rot(yaw=-a, pitch=(-20 if open_degrees else 0) + b),
-            "tail": rot(yaw=c), "tail_end": rot(yaw=c * 1.5),
-            **spread(open_degrees + d, 20 if open_degrees else 0),
-        }) for t, a, b, c, d in ((0, 0, 0, 0, 0), (0.5, 8, -3, 6, 2), (1.0, 2, -6, 0, 4), (1.5, -4, -3, -6, 2), (2.0, 0, 0, 0, 0))])
-        breathing = {"body": [(0, zero, "position"), (1.0, (0, -0.6, 0), "position"), (2.0, zero, "position")]}
-        return merge(base, breathing)
-
-    def walk(open_degrees):
-        frames = []
-        for t, s in ((0, 1), (0.3, 0), (0.6, -1), (0.9, 0), (1.2, 1)):
-            frames.append((t, {
-                "wing_l": rot(pitch=-18 * s), "wing_r": rot(pitch=18 * s),
-                "leg_hl": rot(pitch=18 * s), "leg_hr": rot(pitch=-18 * s),
-                "leg_hl_foot": rot(pitch=-10 * max(s, 0)), "leg_hr_foot": rot(pitch=-10 * max(-s, 0)),
-                "tail": rot(yaw=10 * s), "tail_end": rot(yaw=-8 * s),
-                "neck": rot(yaw=3 * s, pitch=-8 if open_degrees else 0),
-                "antenna_l": rot(pitch=(-20 if open_degrees else 4)), "antenna_r": rot(pitch=(-20 if open_degrees else 4)),
-                **spread(open_degrees, 15 if open_degrees else 0),
-            }))
-        bob = {"body": [(t, (0, -1 if t in (0.3, 0.9) else 0, 0), "position") for t in (0, 0.3, 0.6, 0.9, 1.2)]}
-        return merge(pose_track(frames), bob)
-
-    m.anim("idle", 2.0, idle(0), "loop")
-    m.anim("walk", 1.2, walk(0), "loop")
-    m.anim("idle_enraged", 2.0, idle(75), "loop")
-    m.anim("walk_enraged", 1.2, walk(60), "loop")
-
-    # Ability animations: length = (telegraph + recovery) / 1000, impact at telegraph / 1000.
-    rest = {"body": zero, "neck": zero, "skull": zero, "jaw": zero, "wing_l": zero, "wing_r": zero,
-            "wing_l_membrane": zero, "wing_r_membrane": zero, "leg_hl": zero, "leg_hr": zero,
-            "antenna_l": zero, "antenna_r": zero, "tail": zero}
-
-    def ability(name, length, keys, position=None):
-        poses = [(0, dict(rest))] + keys + [(length, dict(rest))]
-        tracks = pose_track(poses)
-        if position:
-            tracks = merge(tracks, {"body": [(t, v, "position") for t, v in [(0, zero)] + position + [(length, zero)]]})
-        m.anim(name, length, tracks)
-
-    ability("shade-sweep", 2.0, [
-        (0.9, {"body": rot(yaw=-25), "wing_l": rot(pitch=-50, roll=40), "neck": rot(yaw=-15), "tail": rot(yaw=20)}),
-        (1.1, {"body": rot(yaw=30), "wing_l": rot(pitch=30, roll=10), "neck": rot(yaw=20), "tail": rot(yaw=-25)}),
-        (1.4, {"body": rot(yaw=20), "wing_l": rot(pitch=15), "neck": rot(yaw=10), "tail": rot(yaw=-15)}),
-    ])
-    ability("shade-pounce", 2.6, [
-        (1.2, {"body": rot(pitch=-8), "leg_hl": rot(pitch=25), "leg_hr": rot(pitch=25),
-               "wing_l": rot(pitch=20), "wing_r": rot(pitch=20), "neck": rot(pitch=-12)}),
-        (1.4, {"body": rot(pitch=12), "wing_l": rot(pitch=-50), "wing_r": rot(pitch=-50),
-               "leg_hl": rot(pitch=-20), "leg_hr": rot(pitch=-20), "neck": rot(pitch=8), "jaw": rot(pitch=25)}),
-        (1.6, {"body": rot(pitch=8), "wing_l": rot(pitch=-10), "wing_r": rot(pitch=-10), "jaw": rot(pitch=10)}),
-    ], position=[(1.2, (0, -6, -2)), (1.4, (0, 4, 18)), (1.6, (0, 0, 18)), (2.2, (0, 0, 6))])
-    ability("shade-dust", 2.6, [
-        (1.0, spread(50)), (1.2, spread(58)), (1.4, spread(46)), (1.6, spread(56)),
-        (1.7, {**spread(85), "neck": rot(pitch=-10)}), (2.0, spread(20)),
-    ], position=[(1.7, (0, 1.5, 0)), (2.0, zero)])
-    ability("shade-pulse", 2.3, [
-        (0.9, {"antenna_l": rot(yaw=35, pitch=-25), "antenna_r": rot(yaw=-35, pitch=-25), "neck": rot(pitch=-20)}),
-        (1.2, {"antenna_l": rot(yaw=40, pitch=-30), "antenna_r": rot(yaw=-40, pitch=-30), "neck": rot(pitch=10), **spread(25)}),
-        (1.6, {"antenna_l": rot(yaw=20), "antenna_r": rot(yaw=-20), "neck": rot(pitch=5)}),
-    ], position=[(1.2, (0, -2, 0)), (1.6, zero)])
-    ability("shade-breath", 2.6, [
-        (1.3, {"neck": rot(pitch=-30), "skull": rot(pitch=-15), "jaw": rot(pitch=15)}),
-        (1.6, {"neck": rot(pitch=10), "skull": rot(pitch=5), "jaw": rot(pitch=32)}),
-        (2.2, {"neck": rot(pitch=8), "skull": rot(pitch=4), "jaw": rot(pitch=28)}),
-    ], position=[(1.6, (0, 0, 4)), (2.2, (0, 0, 4))])
-    ability("shade-storm", 3.5, [
-        (1.4, {"body": rot(pitch=-25), "wing_l": rot(pitch=-40, roll=30), "wing_r": rot(pitch=-40, roll=-30),
-               **spread(100, 10), "neck": rot(pitch=-15)}),
-        (2.2, {"body": rot(pitch=0), "wing_l": rot(pitch=-10), "wing_r": rot(pitch=-10), **spread(40, -10),
-               "neck": rot(pitch=10), "jaw": rot(pitch=25)}),
-        (2.6, {**spread(60), "jaw": rot(pitch=10)}),
-    ], position=[(1.4, (0, 6, -2)), (2.2, zero)])
-
-    # Enrage ends in the idle_enraged pose; the horns grow while the cloak opens.
-    enraged = {"neck": rot(pitch=-8), "antenna_l": rot(pitch=-20), "antenna_r": rot(pitch=-20), **spread(75, 20)}
-    enrage = pose_track([
-        (0, dict(rest)),
-        (0.9, {"body": rot(pitch=-30), "wing_l": rot(pitch=-50, roll=35), "wing_r": rot(pitch=-50, roll=-35),
-               **spread(110, 25), "neck": rot(pitch=-35), "jaw": rot(pitch=40), "antenna_l": rot(pitch=-40), "antenna_r": rot(pitch=-40)}),
-        (2.0, {"body": rot(pitch=-25), "wing_l": rot(pitch=-45, roll=30), "wing_r": rot(pitch=-45, roll=-30),
-               **spread(105, 25), "neck": rot(pitch=-30), "jaw": rot(pitch=35), "antenna_l": rot(pitch=-35), "antenna_r": rot(pitch=-35)}),
-        (2.6, {**{bone: zero for bone in ("body", "wing_l", "wing_r", "jaw")}, **enraged}),
-    ])
-    enrage = merge(enrage, {
-        "body": [(0, zero, "position"), (0.9, (0, 8, -2), "position"), (2.0, (0, 7, -2), "position"), (2.6, zero, "position")],
-        "horn_l": [(0, (0.1, 0.1, 0.1), "scale"), (0.3, (0.1, 0.1, 0.1), "scale"), (1.2, (1, 1, 1), "scale")],
-        "horn_r": [(0, (0.1, 0.1, 0.1), "scale"), (0.3, (0.1, 0.1, 0.1), "scale"), (1.2, (1, 1, 1), "scale")],
-    })
-    m.anim("enrage", 2.6, enrage)
-    m.anim("death", 2.4, merge(pose_track([
-        (0, dict(rest)),
-        (0.8, {"body": rot(roll=20, pitch=-10), "neck": rot(pitch=-25), "jaw": rot(pitch=30), **spread(60)}),
-        (2.0, {"body": rot(roll=70), "neck": rot(pitch=30, yaw=20), "jaw": rot(pitch=10), **spread(15),
-               "leg_hl": rot(pitch=-30), "leg_hr": rot(pitch=20), "tail": rot(yaw=25)}),
-        (2.4, {"body": rot(roll=72), "neck": rot(pitch=32, yaw=20), **spread(12)}),
-    ]), {"body": [(0, zero, "position"), (0.8, (0, 3, 0), "position"), (2.0, (0, -10, 0), "position"), (2.4, (0, -10, 0), "position")]}))
+    breathe = {"body": [(0, zero, "position"), (1.0, (0, -0.6, 0), "position"), (2.0, zero, "position")]}
+    bob = {"body": [(t, (0, -1 if t in (0.3, 0.9) else 0, 0), "position") for t in (0, 0.3, 0.6, 0.9, 1.2)]}
+    m.anim("idle", 2.0, breathe, "loop")
+    m.anim("walk", 1.2, bob, "loop")
+    m.anim("idle_enraged", 2.0, breathe, "loop")
+    m.anim("walk_enraged", 1.2, bob, "loop")
+    for name, seconds in (("shade-sweep", 2.0), ("shade-pounce", 2.6), ("shade-dust", 2.6), ("shade-pulse", 2.3),
+                          ("shade-breath", 2.6), ("shade-storm", 3.5), ("enrage", 2.6), ("death", 2.4)):
+        m.anim(name, seconds, {"body": [(0, zero), (seconds, zero)]})
 
 
 if __name__ == "__main__":

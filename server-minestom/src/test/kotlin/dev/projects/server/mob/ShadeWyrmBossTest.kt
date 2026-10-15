@@ -58,6 +58,41 @@ class ShadeWyrmBossTest {
     }
 
     @Test
+    fun `rest pose bone rotations land where the build script aims them`() {
+        MinecraftServer.init(Auth.Offline())
+        assertTrue(BossModelView.available("shade_wyrm"))
+        val arena = BossArenaFactory.create("shade", 1)
+        val origin = arena.bossSpawn.withView(0f, 0f)
+        val model = Probe()
+        model.init(arena.instance, origin)
+        val handler = AnimationHandlerImpl(model)
+        try {
+            model.setGlobalRotation(BossModelView.modelYaw(origin.yaw()))
+            handler.playRepeat("idle")
+            repeat(2) { MinecraftServer.getSchedulerManager().processTick() }
+            // (bone, Blockbench point on that bone, where build_boss_shade_wyrm.py's rest pose puts it) in px.
+            // X is compared by distance from the centre line because WSEE mirrors Blockbench X.
+            val checks = listOf(
+                Triple("body", Vec(10.0, 56.0, 20.0), Vec(10.0, 56.0, 20.0)),           // unrotated reference
+                Triple("neck", Vec(0.0, 40.0, 46.0), Vec(0.0, 34.8, 45.4)),
+                Triple("wing_l", Vec(16.0, 91.3, 13.0), Vec(23.6, 87.4, -2.2)),        // elbow spike
+                Triple("wing_l_hand", Vec(16.0, -8.8, 30.0), Vec(40.0, -1.0, 54.0)),   // planted talon
+                Triple("wing_l_finger3", Vec(19.8, 10.3, 14.0), Vec(37.3, 34.4, -46.4)), // rear cloak spar
+                Triple("skull", Vec(0.0, 42.0, 81.0), Vec(0.0, 36.2, 80.2)),             // nose
+                Triple("tail_end", Vec(0.0, 42.0, -126.0), Vec(0.0, 38.7, -124.3)),      // tail blade
+            )
+            val misses = checks.mapNotNull { (bone, local, expected) ->
+                val actual = requireNotNull(model.getBonePoint(bone, local.mul(0.25)))
+                val got = Vec(kotlin.math.abs(actual.x() - origin.x()), actual.y() - origin.y(), actual.z() - origin.z()).mul(16.0)
+                if (got.distance(Vec(kotlin.math.abs(expected.x()), expected.y(), expected.z())) < 3.0) null else "$bone: $got px vs $expected px"
+            }
+            assertTrue(misses.isEmpty(), misses.joinToString("; "))
+        } finally {
+            handler.destroy(); model.destroy(); arena.dispose()
+        }
+    }
+
+    @Test
     fun `wsee runtime faces the carrier and the authored rotation signs mean what the script says`() {
         MinecraftServer.init(Auth.Offline())
         assertTrue(BossModelView.available("shade_wyrm"))
