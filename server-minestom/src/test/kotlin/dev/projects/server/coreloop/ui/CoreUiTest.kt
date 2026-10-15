@@ -59,7 +59,8 @@ class CoreUiTest {
         assertFalse(fallback.any { it.code in 0xE000..0xF8FF })
         val packed = CoreUiComponents.hud(state, true)
         val skillGlyphs = children(packed).filterIsInstance<TextComponent>()
-            .filter { it.style().font()?.asString() == "projects:hud_skills" }.map { it.content() }
+            .filter { it.style().font()?.asString() == "projects:hud_skills" }
+            .flatMap { run -> run.content().filter { it.code !in CoreHudLine.SPACE_POSITIVE..CoreHudLine.SPACE_NEGATIVE + 11 }.map(Char::toString) }
         assertEquals(listOf(CoreHudGlyphs["skill_0_0"].char.toString(), CoreHudGlyphs["skill_1_${CoreHudLayout.skillVisual(state.skills[1], 50.0).frame}"].char.toString(),
             CoreHudGlyphs["skill_2_${CoreHudLayout.skillVisual(state.skills[2], 50.0).frame}"].char.toString()), skillGlyphs)
     }

@@ -2,6 +2,7 @@ package dev.projects.server.coreloop.ui
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -24,7 +25,8 @@ class CoreHudLayoutTest {
                     in 0xE180..0xE18B -> -(1 shl (char.code - 0xE180))
                     else -> error("Unexpected space glyph")
                 } else requireNotNull(CoreHudGlyphs.advanceOf(key, char)) { "Unknown glyph ${key.asString()} U+${char.code.toString(16)}" }
-                if (key != CoreUiComponents.SPACE_FONT) glyphs += Placed(key.asString(), char.code, x, width, tint)
+                val space = key == CoreUiComponents.SPACE_FONT || char.code in CoreHudLine.SPACE_POSITIVE..CoreHudLine.SPACE_NEGATIVE + 11
+                if (!space) glyphs += Placed(key.asString(), char.code, x, width, tint)
                 x += width
             }
             c.children().forEach { visit(it, font, tint) }
@@ -68,9 +70,11 @@ class CoreHudLayoutTest {
         for ((surface, name, component) in surfaces) {
             val (glyphs, net) = layout(component)
             assertEquals(0, net, "$surface/$name must return to its anchor")
+            assertTrue(GsonComponentSerializer.gson().serialize(component).length < 6000, "$surface/$name update stays small")
             assertTrue(glyphs.isNotEmpty())
             java.nio.file.Files.writeString(output.resolve("$surface-$name.json"), com.google.gson.Gson().toJson(mapOf(
                 "surface" to surface, "state" to name, "netAdvance" to net,
+                "jsonBytes" to GsonComponentSerializer.gson().serialize(component).length,
                 "glyphs" to glyphs.map { mapOf("font" to it.font, "code" to it.code, "x" to it.x, "advance" to it.advance, "color" to it.color) })))
         }
     }

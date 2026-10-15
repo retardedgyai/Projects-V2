@@ -144,7 +144,7 @@ class FontBuilder:
             chars.append(chr(self.code))
             self.code += 1
         grid = ["".join(chars[r * columns:(r + 1) * columns]) for r in range(rows)]
-        assert self.code <= 0xF8FF
+        assert self.code < SPACE_BASE
         self.providers.append((sheet_name, sheet, {"type": "bitmap", "file": f"projects:gui/core/{sheet_name}.png",
                                                    "height": height, "ascent": ascent, "chars": grid}))
 
@@ -220,6 +220,7 @@ def segments(prefix, rows, widths, textured=False):
 
 
 BINARY = (1, 2, 4, 8, 16, 32, 64, 128)
+SPACE_BASE = 0xF800  # +2^n at F800+n, -2^n at F810+n, in every projects:hud* font (CoreHudLine)
 
 
 # ---------------------------------------------------------------- plate
@@ -645,7 +646,9 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     # -- write ------------------------------------------------------------
     rows = []
     for builder in fonts:
-        providers = []
+        # Signed binary spaces in every HUD font let the server keep one text run per colour.
+        providers = [{"type": "space", "advances": {chr(SPACE_BASE + bit): 1 << bit for bit in range(12)} |
+                      {chr(SPACE_BASE + 16 + bit): -(1 << bit) for bit in range(12)}}]
         for sheet_name, sheet, provider in builder.providers:
             sheet.save(output / f"{sheet_name}.png", optimize=True)
             providers.append(provider)

@@ -78,6 +78,9 @@ def verify():
         providers = json.loads((PACK / f"assets/projects/font/{font.split(':')[1]}.json").read_text())["providers"]
         seen = 0
         for provider in providers:
+            if provider["type"] == "space":
+                assert provider["advances"] == {**{chr(0xF800 + b): 1 << b for b in range(12)}, **{chr(0xF810 + b): -(1 << b) for b in range(12)}}
+                continue
             filename = provider["file"].replace("projects:", "assets/projects/textures/")
             with Image.open(PACK / filename) as sheet:
                 cell_w, cell_h = sheet.width // len(provider["chars"][0]), sheet.height // len(provider["chars"])
