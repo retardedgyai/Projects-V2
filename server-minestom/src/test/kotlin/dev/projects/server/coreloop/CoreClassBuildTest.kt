@@ -99,9 +99,9 @@ class CoreClassBuildTest {
     }
     @Test fun `guard resource cannot multiply from simultaneous hits`() {
         val s=CoreClassState();s.perfectUntil=12
-        repeat(20) { s.guarded(CoreClass.WARRIOR,1,CoreClassBuild()) }
+        repeat(20) { s.guarded(CoreClass.TEMPLAR,1,CoreClassBuild()) }
         assertEquals(30.0,s.resource);assertEquals(61,s.counterUntil)
-        s.guarded(CoreClass.WARRIOR,20,CoreClassBuild());assertEquals(45.0,s.resource)
+        s.guarded(CoreClass.TEMPLAR,20,CoreClassBuild());assertEquals(45.0,s.resource)
     }
     @Test fun `echo and returning modifiers change pulses and their displayed coefficients`() {
         for((job,stat,index) in listOf(Triple(CoreClass.MAGE,CoreAffixStat.MAGE_ECHO,2),Triple(CoreClass.RANGER,CoreAffixStat.HUNT_RETURN,0))) {
@@ -123,7 +123,7 @@ class CoreClassBuildTest {
         assertContains(CoreSkillCatalog.skills(j.job)[1].tooltip(conversion,j).joinToString("\n"),"/ 障壁")
     }
     @Test fun `profession changes retain independent skill and talent configurations through disk codec`() {
-        val warrior=CoreClassBuild(first=4,second=5,third=6,nodes=1031,ultimate=1)
+        val warrior=CoreClassBuild(first=4,second=0,third=1,nodes=1031)
         var j=CoreJourney.legacy(build=warrior).changeClass(CoreClass.MAGE)
         val mage=CoreClassBuild(first=4,third=6,nodes=8248)
         j=j.copy(build=mage).changeClass(CoreClass.WARRIOR)

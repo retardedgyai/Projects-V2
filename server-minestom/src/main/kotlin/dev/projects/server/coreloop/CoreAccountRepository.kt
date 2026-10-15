@@ -460,7 +460,9 @@ internal object CoreAccountCodec {
             val build = requireNotNull(classBuild) { "職業の構成データがありません" }
             require(build.points <= CoreClassTrees.budget(existingJourney)) { "技能ポイントが不正です" }
             require(existingJourney.job !in savedBuilds) { "現在の職業の構成が重複しています" }
-            journey = existingJourney.copy(build = build, savedBuilds = savedBuilds.toMap())
+            // 2026-10 class rework: retired skill indices are replaced on load (same columns, so no new version).
+            journey = existingJourney.copy(build = CoreSkillCatalog.migrate(existingJourney.job, build),
+                savedBuilds = savedBuilds.mapValues { (job, saved) -> CoreSkillCatalog.migrate(job, saved) })
         }
         if (version >= 8) {
             require(journey != null && bases.keys == qualities.keys)

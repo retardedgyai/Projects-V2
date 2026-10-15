@@ -60,7 +60,8 @@ internal class CoreClassState {
         if (tick - lastGuardGain < 10) return
         lastGuardGain = tick
         gain(if (tick <= perfectUntil) 30.0 else 15.0, job, build)
-        if (tick <= perfectUntil) counterUntil = tick + 60
+        // Only the templar turns a read into a retaliation; the warrior guard just holds the line (D06).
+        if (tick <= perfectUntil && job == CoreClass.TEMPLAR) counterUntil = tick + 60
     }
     fun mark(id: UUID, tick: Long) { marks[id] = tick + 120 }
     fun marked(id: UUID, tick: Long) = (marks[id] ?: -1) >= tick

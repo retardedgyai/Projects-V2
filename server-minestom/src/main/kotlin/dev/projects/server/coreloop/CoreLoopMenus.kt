@@ -292,10 +292,13 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val equipped = CoreSkillCatalog.equipped(a.journey, sheet.mods)
         val current = equipped[slot]
         val candidates = if (slot == 4) CoreSkillCatalog.skills(a.journey.job).drop(8) else CoreSkillCatalog.skills(a.journey.job).take(8)
-        val choice = candidate.takeIf { it in candidates.indices }
+        // Retired catalog entries stay in the list for old saves but are never offered.
+        val choices = if (slot == 4) CoreSkillCatalog.ultimateChoices(a.journey.job) else CoreSkillCatalog.normalChoices(a.journey.job)
+        val pages = (choices.size + 3) / 4
+        val choice = candidate.takeIf { it in choices }
         val preview = choice?.let { CoreSkillCatalog.modify(candidates[it],a.journey,sheet.mods) } ?: current
         val target = if(slot==4) "奥義" else "技能${slot+1}"
-        val selectedPage=if(slot==4)0 else page.coerceIn(0,1)
+        val selectedPage=page.coerceIn(0,pages-1)
         val canEquip=a.activeRun==null && CoreJourneyRules.skillUnlocked(a,slot) && choice!=null
         view(player, "${a.journey.job.displayName} / 技能編成", { skillBuild(player, slot, candidate, selectedPage) }) { v ->
             v.canvas.left("変更先：$target", lines("1. 上段で枠を選ぶ", "2. 候補で詳細を見る", "3. 右下で装備する", "", "現在の技能") + paragraph(current.name) + lines("", if(a.activeRun!=null) "遠征中は変更不可" else "港で無料変更", "重複する技は入替"))
@@ -307,7 +310,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 val item = CoreSkillTooltip.item(skill,sheet,a.journey,v.packed,!CoreJourneyRules.skillUnlocked(a,i))
                 tile(v, at, if (i == 4) 1 else 2, if (i == 4) "" else "${i+1}", item, if(i==slot) Tone.SELECTED else Tone.NEUTRAL, icon=true) { skillBuild(player, i) }
             }
-            candidates.withIndex().drop(selectedPage*4).take(4).forEachIndexed { shown, (i,raw) ->
+            choices.map { IndexedValue(it, candidates[it]) }.drop(selectedPage*4).take(4).forEachIndexed { shown, (i,raw) ->
                 val skill = CoreSkillCatalog.modify(raw, a.journey, sheet.mods)
                 val item = CoreSkillTooltip.item(skill,sheet,a.journey,v.packed)
                 val owned = if(slot == 4) a.journey.build.ultimate == i else a.journey.build.skills[slot] == i
@@ -317,10 +320,10 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                     skillBuild(player,slot,i,selectedPage)
                 }
             }
-            if(slot!=4) {
-                tile(v,36,3,"前の候補",tone=if(selectedPage==0)Tone.DISABLED else Tone.NEUTRAL) { skillBuild(player,slot,choice?:-1,0) }
-                tile(v,42,3,"次の候補",tone=if(selectedPage==1)Tone.DISABLED else Tone.NEUTRAL) { skillBuild(player,slot,choice?:-1,1) }
-                v.canvas.text(64,92,"${selectedPage+1} / 2",CoreUiComponents.GOLD,48)
+            if(pages>1) {
+                tile(v,36,3,"前の候補",tone=if(selectedPage==0)Tone.DISABLED else Tone.NEUTRAL) { skillBuild(player,slot,choice?:-1,selectedPage-1) }
+                tile(v,42,3,"次の候補",tone=if(selectedPage==pages-1)Tone.DISABLED else Tone.NEUTRAL) { skillBuild(player,slot,choice?:-1,selectedPage+1) }
+                v.canvas.text(64,92,"${selectedPage+1} / $pages",CoreUiComponents.GOLD,48)
             }
             back(v,player) { career(player) }
             tile(v,49,5,if(canEquip) "$target に装備" else if(a.activeRun!=null) "港で変更可能" else if(!CoreJourneyRules.skillUnlocked(a,slot)) "成長で解放" else "候補を選ぶ",tone=if(canEquip)Tone.PRIMARY else Tone.DISABLED) {
@@ -336,7 +339,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val sheet=game.combatSheet(player) ?: CoreCombatSheet.from(a)
         val equipped=CoreSkillCatalog.equipped(a.journey,sheet.mods)
         val candidates=CoreSkillCatalog.skills(CoreClass.WARRIOR).let { if(slot==4) it.drop(8) else it.take(8) }
-        val choice=candidate.takeIf { it in candidates.indices }
+        val choice=candidate.takeIf { CoreSkillCatalog.selectable(CoreClass.WARRIOR,slot,it) }
         val preview=choice?.let { CoreSkillCatalog.modify(candidates[it],a.journey,sheet.mods) } ?: equipped[slot]
         val identity=CoreWarriorSkillPresentation.skills.getValue(preview.icon)
         val target="キー${slot+2}"
@@ -377,7 +380,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                     CoreSkillTooltip.item(s,sheet,a.journey,v.packed,!CoreJourneyRules.skillUnlocked(a,i),
                         footer="キー${i+2} / この枠の技を変更"),if(i==slot)Tone.SELECTED else Tone.NEUTRAL,icon=true) { warriorSkills(player,i,-1) }
             }
-            val order=if(slot==4) listOf(0,1) else CoreWarriorSkillPresentation.candidateOrder
+            val order=if(slot==4) CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR) else CoreWarriorSkillPresentation.candidateOrder
             order.forEachIndexed { index,i ->
                 val skill=CoreSkillCatalog.modify(candidates[i],a.journey,sheet.mods)
                 val equippedHere=if(slot==4) a.journey.build.ultimate==i else a.journey.build.skills[slot]==i
@@ -419,7 +422,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             nodes.forEachIndexed { i, node ->
                 val learned=build.has(i)
                 val available=runCatching { build.toggle(i,budget) }.isSuccess
-                val art=CoreSkillCatalog.skills(a.journey.job)[when(i) { 2,5,8 -> 8+i/3%2;9,10,14 -> CoreClassTrees.signature(a.journey.job);11,13 -> 0;12 -> 3;15 -> 5;16,17 -> 9;else -> i.coerceAtMost(7) }].icon
+                val art=CoreSkillCatalog.skills(a.journey.job)[when(i) { 2,5,8 -> 8+i/3%2;9,10,14 -> CoreClassTrees.signature(a.journey.job);11,13 -> 0;12 -> 3;15 -> CoreClassTrees.support(a.journey.job);16,17 -> 9;else -> i.coerceAtMost(7) }].icon
                 var item=CoreLoopItems.icon(if(learned)Material.ENCHANTED_BOOK else Material.BOOK,node.name,node.description,
                     if(learned) "習得済み" else if(available) "習得可能 / 1ポイント" else "前提未達・ポイント不足・最終パッシブの排他", "クリック：詳細を確認")
                 if(v.packed)item=item.withItemModel("projects:core_ui/$art")

@@ -12,7 +12,11 @@ data class CoreSkillDefinition(
     val motion: CoreSkillMotion = CoreSkillMotion.RAY, val range: Double = 18.0, val radius: Double = 4.5,
     val gain: Int = 0, val spend: Int = 0, val status: CoreSkillStatus = CoreSkillStatus.NONE,
     val element: Int = 0, val duration: Int = 60, val ultimate: Boolean = false,
+    /** Kept for old saves and art order only; never selectable. */
+    val retired: Boolean = false,
 ) {
+    /** 主力 is paced by the class resource; 状況 by a long cooldown. */
+    val role get() = when { ultimate -> "奥義"; cooldown <= 60 -> "主力技"; else -> "状況技" }
     val tags get() = buildSet {
         add(CoreAttackTag.SKILL)
         if (projectile) add(CoreAttackTag.PROJECTILE)
@@ -49,14 +53,10 @@ data class CoreSkillDefinition(
             add("1体へ1秒間隔・最大4打 / 術式獲得は最初の命中だけ")
             add("在域中40%減速（氷大成50%） / ボス10% / 退出後最大0.35秒")
         }
-        if (journey?.job == CoreClass.WARRIOR) {
-            if (icon == "war_guard") add("成功時：叩きつけの再使用を回復 / 3秒以内の叩きつけ・返し刃を反撃化")
-            if (CoreWarriorCombatRules.counterSkill(icon)) {
-                val boost = if(journey.build.keystone == 1) 1.6 else 1.35
-                val counterTicks = copy(startup = minOf(3, startup)).startupTicks(sheet)
-                add("反撃時：発生${CoreCombatMath.number(counterTicks/20.0)}秒 / 威力+${((boost-1)*100).toInt()}%")
-            }
-            add("後隙 ${CoreWarriorCombatRules.recovery(icon)/20.0}秒 / 次の入力は0.3秒先行受付")
+        if (journey != null) {
+            if (journey.job == CoreClass.WARRIOR && journey.build.keystone == 1 && spend > 0 && !ultimate)
+                add("剣聖：連撃3段目の直後なら発生${CoreCombatMath.number(this@CoreSkillDefinition.copy(startup = minOf(3, startup)).startupTicks(sheet)/20.0)}秒 / 威力+30%")
+            add("$role / 後隙 ${CoreCombatFeel.recovery(journey.job, this@CoreSkillDefinition)/20.0}秒 / 次の入力は${CoreCombatFeel.profile(journey.job).bufferTicks/20.0}秒先行受付")
         }
     }
 }
@@ -122,7 +122,7 @@ object CoreSkillCatalog {
             if (j.build.has(13)) { mana = (mana * .6).toInt(); gain = kotlin.math.ceil(gain * 1.25).toInt(); notes += "始動の備え" }
         }
         if (index == 3 && j.build.has(12)) { cooldown = (cooldown * .75).toInt(); notes += "軽やかな構え" }
-        if (index == 5 && j.build.has(15)) { radius += 1.5; mana = (mana * .6).toInt(); notes += "広い備え" }
+        if (index == CoreClassTrees.support(j.job) && j.build.has(15)) { radius += 1.5; mana = (mana * .6).toInt(); notes += "広い備え" }
         if (s.ultimate) {
             if (j.build.has(16)) { spend = kotlin.math.ceil(spend * .8).toInt(); notes += "奥義の備え" }
             if (j.build.has(17)) { cooldown = (cooldown * .85).toInt(); power *= .9; notes += "奥義の循環" }
@@ -132,91 +132,111 @@ object CoreSkillCatalog {
             pulses = pulses.coerceAtMost(8), radius = radius.coerceAtMost(10.5), spend = kotlin.math.ceil(spend * if (j.build.has(1)) .85 else 1.0).toInt(),
             description = s.description + if (notes.isEmpty()) "" else " / ${notes.joinToString("・")}適用")
     }
+    /** Selectable catalog indices: normal 0..7 and ultimate 0..1, without retired entries. */
+    fun normalChoices(job: CoreClass) = (0..7).filterNot { skills(job)[it].retired }
+    fun ultimateChoices(job: CoreClass) = (0..1).filterNot { skills(job)[8 + it].retired }
+    fun selectable(job: CoreClass, slot: Int, choice: Int) =
+        if (slot == 4) choice in ultimateChoices(job) else slot in 0..3 && choice in normalChoices(job)
+    /**
+     * Old saves store catalog indices. A retired pick becomes the first selectable skill not already equipped,
+     * keeping slot order, tree nodes and every still-valid pick. Idempotent; the save columns are unchanged.
+     */
+    fun migrate(job: CoreClass, build: CoreClassBuild): CoreClassBuild {
+        val picks = build.skills.toMutableList()
+        for (slot in picks.indices) if (picks[slot] !in normalChoices(job))
+            picks[slot] = normalChoices(job).first { it !in picks }
+        val ultimate = if (build.ultimate in ultimateChoices(job)) build.ultimate else ultimateChoices(job).first()
+        return build.copy(first = picks[0], second = picks[1], third = picks[2], fourth = picks[3], ultimate = ultimate)
+    }
     val artNames: List<String> = CoreClass.entries.flatMap { skills(it).map(CoreSkillDefinition::icon) }
     fun artIndex(skill: CoreSkillDefinition) = artNames.indexOf(skill.icon)
     private fun buildSkills(job: CoreClass): List<CoreSkillDefinition> {
         fun s(name: String, icon: String, description: String, motion: CoreSkillMotion, base: Double, coefficient: Double,
             mana: Int = 12, cd: Int = 100, startup: Int = 6, pulses: Int = 1, gain: Int = 15, spend: Int = 0,
             status: CoreSkillStatus = CoreSkillStatus.NONE, range: Double = 18.0, radius: Double = 4.5,
-            element: Int = 0, duration: Int = 60, ult: Boolean = false) = skill(name, icon, description, job.magic, motion,
+            element: Int = 0, duration: Int = 60, ult: Boolean = false, retired: Boolean = false) = skill(name, icon, description, job.magic, motion,
                 base, coefficient, mana, cd, startup, pulses, gain, spend, status, range, radius, element, duration, ult)
                 .let { if (job == CoreClass.RANGER && coefficient > 0) it.copy(projectile = true) else it }
+                .let { if (retired) it.copy(retired = true) else it }
+        // 主力 = limited by the class resource with a short CD / 状況 = situational, long CD / 奥義.
+        // Retired entries keep their catalog index, icon and art for old saves and the later animation pass,
+        // but can no longer be selected; see [migrate]. Design table: docs/development/class-rework-2026-10.md.
         return when (job) {
             CoreClass.WARRIOR -> listOf(
-                s("踏み込み斬り", "dash", "敵の手前へ踏み込み、闘気を得る", CoreSkillMotion.LUNGE, 6.0, 1.2, cd=80, startup=5),
-                s("叩きつけ", "slam", "正面の狭い範囲へ重撃。受け流し成功後は素早い反撃に変化", CoreSkillMotion.CONE, 14.0, 2.2, mana=20, cd=120, startup=12, gain=0, status=CoreSkillStatus.EXPOSE),
-                s("薙ぎ払い", "whirl", "前方180度を一度で薙ぐ。正面の集団をまとめて捉える", CoreSkillMotion.CONE, 6.0, 1.4, mana=12, cd=70, startup=4, radius=4.2),
-                s("受け流し", "war_guard", "攻撃直前に構えると叩きつけが再使用可能。攻撃すると構え解除", CoreSkillMotion.GUARD, 0.0, 0.0, mana=8, cd=120, startup=1, gain=0, duration=30),
-                s("牽制斬り", "war_wound", "素早い一撃で敵を減速。間合いを取り直すための選択技", CoreSkillMotion.CONE, 3.0, .9, cd=65, startup=3, status=CoreSkillStatus.SLOW),
-                s("返し刃", "war_counter", "闘気を使う強い返し。受け流し直後はさらに強化", CoreSkillMotion.CONE, 10.0, 2.8, cd=130, startup=4, gain=0, spend=30),
-                s("雄叫び", "war_cry", "仲間に短い障壁。足を止めず次の交戦に備える", CoreSkillMotion.SHIELD, 12.0, .5, mana=18, cd=240, gain=0, radius=7.0, duration=100),
-                s("破城突き", "war_breach", "長い踏み込み。横には狭いが防御を崩せる", CoreSkillMotion.LUNGE, 8.0, 1.5, mana=18, cd=160, startup=8, status=CoreSkillStatus.EXPOSE, range=4.0),
-                s("天断", "war_ult", "闘気を解放し斬り上げ・返し・叩きつけ。途中の回避で中断可", CoreSkillMotion.CONE, 20.0, 2.4, mana=30, cd=600, startup=18, pulses=3, gain=0, spend=80, radius=7.0, ult=true),
-                s("不屈の旗", "war_banner", "仲間全員に大きな障壁。自分は3秒防御姿勢", CoreSkillMotion.SHIELD, 50.0, 1.5, mana=25, cd=700, gain=0, spend=70, radius=10.0, duration=160, ult=true))
+                s("踏み込み斬り", "dash", "最大4m踏み込んで斬り、敵の防御を4秒崩す。闘気を得る", CoreSkillMotion.LUNGE, 6.0, 1.2, mana=8, cd=160, startup=5, status=CoreSkillStatus.EXPOSE, range=4.0),
+                s("叩きつけ", "slam", "闘気25で正面の狭い範囲へ重撃。発生は遅いが一撃が重い", CoreSkillMotion.CONE, 12.0, 2.0, mana=0, cd=30, startup=12, gain=0, spend=25),
+                s("薙ぎ払い", "whirl", "闘気20で前方180度を一度で薙ぐ。集団へ向けた主力", CoreSkillMotion.CONE, 5.0, 1.1, mana=0, cd=30, startup=4, gain=0, spend=20, radius=4.2),
+                s("踏ん張り", "war_guard", "2秒構えて被害を減らし、受けた攻撃で闘気を得る。攻撃すると解除。反撃は付かない", CoreSkillMotion.GUARD, 0.0, 0.0, mana=8, cd=200, startup=1, gain=0, duration=40),
+                s("剣風", "war_wound", "前方7mの細い直線を斬る。近づけない敵に届き、闘気を得る", CoreSkillMotion.CONE, 4.0, 1.0, mana=6, cd=120, startup=6, radius=7.0),
+                s("返し刃", "war_counter", "（廃止）受け流し専用の反撃", CoreSkillMotion.CONE, 10.0, 2.8, cd=130, startup=4, gain=0, spend=30, retired=true),
+                s("雄叫び", "war_cry", "（廃止）仲間に短い障壁", CoreSkillMotion.SHIELD, 12.0, .5, mana=18, cd=240, gain=0, radius=7.0, duration=100, retired=true),
+                s("破城突き", "war_breach", "（廃止）踏み込み斬りへ統合", CoreSkillMotion.LUNGE, 8.0, 1.5, mana=18, cd=160, startup=8, status=CoreSkillStatus.EXPOSE, range=4.0, retired=true),
+                s("天断", "war_ult", "闘気80を解放し斬り上げ・返し・叩きつけ。途中の回避で中断可", CoreSkillMotion.CONE, 20.0, 2.4, mana=20, cd=600, startup=18, pulses=3, gain=0, spend=80, radius=7.0, ult=true),
+                s("不屈の旗", "war_banner", "（廃止）仲間全員に大きな障壁", CoreSkillMotion.SHIELD, 50.0, 1.5, mana=25, cd=700, gain=0, spend=70, radius=10.0, duration=160, ult=true, retired=true))
             CoreClass.MAGE -> listOf(
-                s("火炎弾", "firebolt", "火の術式を刻む。直前と違う属性なら獲得量増加", CoreSkillMotion.RAY, 8.0, 1.4, cd=60, startup=5, element=1),
-                s("霜の波紋", "frost_nova", "周囲を凍てつかせる。火や雷からつなぐと術式が育つ", CoreSkillMotion.NOVA, 10.0, 1.0, cd=110, startup=10, status=CoreSkillStatus.SLOW, element=2),
-                s("流星雨", "meteor", "術式60を消費。狙った地点へ三度の流星", CoreSkillMotion.FIELD, 7.0, 1.3, mana=25, cd=180, startup=12, pulses=3, gain=0, spend=60, element=1),
-                s("閃光歩", "mage_blink", "前方へ安全に転移。周囲の敵を遅らせる", CoreSkillMotion.EVADE, 0.0, 0.0, mana=15, cd=140, gain=0, status=CoreSkillStatus.SLOW, range=4.5, element=3),
-                s("雷の刻印", "mage_mark", "射線に雷印を残す。起爆技は印を消費して強化", CoreSkillMotion.RAY, 5.0, 1.1, cd=80, status=CoreSkillStatus.MARK, element=3),
+                s("火炎弾", "firebolt", "火の術式を刻む。直前と違う属性なら獲得量増加", CoreSkillMotion.RAY, 8.0, 1.4, mana=8, cd=20, startup=5, element=1),
+                s("霜の波紋", "frost_nova", "周囲を凍てつかせる。火や雷からつなぐと術式が育つ", CoreSkillMotion.NOVA, 10.0, 1.0, mana=12, cd=60, startup=10, status=CoreSkillStatus.SLOW, element=2),
+                s("流星雨", "meteor", "術式50を消費。狙った地点へ三度の流星", CoreSkillMotion.FIELD, 7.0, 1.3, mana=20, cd=40, startup=12, pulses=3, gain=0, spend=50, element=1),
+                s("閃光歩", "mage_blink", "前方へ安全に転移。周囲の敵を遅らせる", CoreSkillMotion.EVADE, 0.0, 0.0, mana=12, cd=200, gain=0, status=CoreSkillStatus.SLOW, range=4.5, element=3),
+                s("雷の刻印", "mage_mark", "射線に雷印を残す。消費技は印を消費して強化", CoreSkillMotion.RAY, 5.0, 1.1, mana=8, cd=40, status=CoreSkillStatus.MARK, element=3),
                 s("氷の庭", "mage_garden", "狙った床に6秒の氷庭。設置後は自由に動ける。敵を誘い減速中に他の術を重ねる（1体4打まで・ボスは減速耐性）", CoreSkillMotion.FIELD, 2.0, .45, mana=20, cd=180, pulses=4, status=CoreSkillStatus.SLOW, radius=3.65, element=2, duration=120),
-                s("術式起爆", "mage_burst", "術式を40消費。印のある敵なら威力+35%", CoreSkillMotion.NOVA, 12.0, 2.5, mana=20, cd=120, gain=0, spend=40, radius=6.0, element=3),
-                s("魔力障壁", "mage_ward", "魔力で短い障壁を作る。攻撃に使うマナと競合する", CoreSkillMotion.SHIELD, 10.0, 1.2, mana=25, cd=200, gain=0, radius=0.0, duration=100, element=3),
+                s("術式起爆", "mage_burst", "術式を40消費。印のある敵なら威力+35%", CoreSkillMotion.NOVA, 12.0, 2.5, mana=15, cd=30, gain=0, spend=40, radius=6.0, element=3),
+                s("魔力障壁", "mage_ward", "（廃止）魔力で短い障壁", CoreSkillMotion.SHIELD, 10.0, 1.2, mana=25, cd=200, gain=0, radius=0.0, duration=100, element=3, retired=true),
                 s("天火の大術式", "mage_ult", "術式80を消費。広い範囲に四度の大爆発", CoreSkillMotion.FIELD, 15.0, 2.0, mana=35, cd=640, startup=22, pulses=4, gain=0, spend=80, radius=7.0, element=1, ult=true),
                 s("絶対零界", "mage_zero", "術式70を消費。広範囲を減速する五連波", CoreSkillMotion.NOVA, 7.0, 1.3, mana=30, cd=600, startup=12, pulses=5, gain=0, spend=70, status=CoreSkillStatus.SLOW, radius=8.0, element=2, duration=160, ult=true))
             CoreClass.RANGER -> listOf(
-                s("狙い射ち", "pierce", "同じ獲物を狙い続けるほど集中を得る", CoreSkillMotion.RAY, 6.0, 1.7, cd=70, startup=8, radius=.5),
-                s("霜矢の扇", "frost_fan", "前方の扇を減速。距離を作り、射線を確保する", CoreSkillMotion.CONE, 5.0, 1.0, cd=130, status=CoreSkillStatus.SLOW, radius=6.5, element=2),
-                s("矢の嵐", "arrow_rain", "集中40を消費。地点へ四度の矢雨", CoreSkillMotion.FIELD, 3.0, 1.0, mana=22, cd=180, pulses=4, gain=0, spend=40),
-                s("後退射撃", "hunt_retreat", "後ろへ退きながら矢を放つ。逃げと攻撃を両立", CoreSkillMotion.EVADE, 4.0, .8, cd=120, range=-3.5),
-                s("貫き矢", "hunt_pierce", "集中30を消費して三体まで貫通", CoreSkillMotion.RAY, 8.0, 2.6, cd=110, startup=12, gain=0, spend=30, radius=.9),
-                s("狩猟罠", "hunt_trap", "足元前方に減速と毒の罠。誘い込んで撃つ", CoreSkillMotion.FIELD, 3.0, .65, mana=18, cd=170, pulses=4, status=CoreSkillStatus.POISON, range=4.0, radius=3.5, duration=120),
-                s("獲物の印", "hunt_mark", "遠くの獲物に印。集中消費技が印を使って強化", CoreSkillMotion.RAY, 3.0, .6, mana=8, cd=80, gain=25, status=CoreSkillStatus.MARK),
-                s("速射", "hunt_volley", "集中20を使う三連射。照準を保つ必要がある", CoreSkillMotion.RAY, 2.0, .95, mana=14, cd=110, pulses=3, gain=0, spend=20),
-                s("終の一矢", "hunt_ult", "集中80を消費する精密射撃。長い構えを守り抜く", CoreSkillMotion.RAY, 35.0, 8.0, mana=30, cd=600, startup=28, gain=0, spend=80, range=23.0, ult=true),
-                s("狩場の支配者", "hunt_storm", "集中70を消費。広い範囲を六度撃ち、減速させる", CoreSkillMotion.FIELD, 5.0, 1.2, mana=32, cd=680, pulses=6, gain=0, spend=70, status=CoreSkillStatus.SLOW, radius=7.0, ult=true))
+                s("狙い射ち", "pierce", "集中20で重い一矢。同じ獲物を撃ち続けて集中を貯める", CoreSkillMotion.RAY, 6.0, 1.7, mana=0, cd=30, startup=8, gain=0, spend=20, radius=.5),
+                s("霜矢の扇", "frost_fan", "前方の扇を減速。距離を作り、射線を確保する", CoreSkillMotion.CONE, 5.0, 1.0, mana=8, cd=160, gain=10, status=CoreSkillStatus.SLOW, radius=6.5, element=2),
+                s("矢の嵐", "arrow_rain", "集中30を消費。地点へ四度の矢雨", CoreSkillMotion.FIELD, 3.0, 1.0, mana=0, cd=40, pulses=4, gain=0, spend=30),
+                s("後退射撃", "hunt_retreat", "後ろへ退きながら矢を放つ。逃げと攻撃を両立", CoreSkillMotion.EVADE, 4.0, .8, mana=6, cd=160, range=-3.5),
+                s("貫き矢", "hunt_pierce", "集中30を消費して三体まで貫通", CoreSkillMotion.RAY, 6.0, 2.0, mana=0, cd=40, startup=12, gain=0, spend=30, radius=.9),
+                s("狩猟罠", "hunt_trap", "足元前方に減速と毒の罠。誘い込んで撃つ", CoreSkillMotion.FIELD, 3.0, .65, mana=10, cd=200, pulses=4, status=CoreSkillStatus.POISON, range=4.0, radius=3.5, duration=120),
+                s("獲物の印", "hunt_mark", "（廃止）遠くの獲物に印", CoreSkillMotion.RAY, 3.0, .6, mana=8, cd=80, gain=25, status=CoreSkillStatus.MARK, retired=true),
+                s("速射", "hunt_volley", "（廃止）集中20の三連射", CoreSkillMotion.RAY, 2.0, .95, mana=14, cd=110, pulses=3, gain=0, spend=20, retired=true),
+                s("終の一矢", "hunt_ult", "集中80を消費する精密射撃。長い構えを守り抜く", CoreSkillMotion.RAY, 35.0, 8.0, mana=20, cd=600, startup=28, gain=0, spend=80, range=23.0, ult=true),
+                s("狩場の支配者", "hunt_storm", "集中70を消費。広い範囲を六度撃ち、減速させる", CoreSkillMotion.FIELD, 5.0, 1.2, mana=20, cd=680, pulses=6, gain=0, spend=70, status=CoreSkillStatus.SLOW, radius=7.0, ult=true))
             CoreClass.ASSASSIN -> listOf(
-                s("影刺し", "ass_stab", "敵へ接近し印を刻む。機会を得る", CoreSkillMotion.LUNGE, 4.0, 1.0, cd=65, startup=3, status=CoreSkillStatus.MARK, radius=3.0),
-                s("断命", "ass_execute", "機会30を消費。印を消して威力を増す短い一撃", CoreSkillMotion.CONE, 10.0, 2.8, mana=16, cd=100, startup=4, gain=0, spend=30, radius=3.2),
-                s("刃の輪", "ass_fan", "周囲に二度斬りつけ、複数の敵へ印を仕込む", CoreSkillMotion.SPIN, 3.0, .65, cd=130, pulses=2, status=CoreSkillStatus.MARK, radius=3.5),
-                s("影抜け", "ass_escape", "後方へ離脱し、周囲を減速。移動を攻撃に使い切らない", CoreSkillMotion.EVADE, 0.0, 0.0, mana=10, cd=100, gain=0, status=CoreSkillStatus.SLOW, range=-4.0),
-                s("毒牙", "ass_poison", "毒を仕込み、接近できない時間も削る", CoreSkillMotion.CONE, 3.0, .8, cd=80, status=CoreSkillStatus.POISON, radius=3.0),
-                s("追影", "ass_chase", "遠めの敵へ飛び込む。離脱と同じ機会を消費", CoreSkillMotion.LUNGE, 8.0, 1.7, cd=130, gain=0, spend=20, range=5.0, radius=3.5),
-                s("影の針", "ass_needle", "遠くから印を付ける。正面しか狙えないボスにも使える", CoreSkillMotion.RAY, 2.0, .75, cd=75, gain=12, status=CoreSkillStatus.MARK, range=12.0),
-                s("残像", "ass_guard", "短時間だけ身を守る。早いタイミングで受けると機会獲得", CoreSkillMotion.GUARD, 0.0, 0.0, mana=12, cd=160, startup=1, gain=0, duration=20),
-                s("無明連刃", "ass_ult", "機会80を消費し五連撃。印のある敵を先に狙う", CoreSkillMotion.SPIN, 8.0, 1.4, mana=25, cd=600, startup=8, pulses=5, gain=0, spend=80, radius=4.0, ult=true),
-                s("死の契約", "ass_contract", "機会70を消費する刺突。防御を崩し次の追撃も通す", CoreSkillMotion.LUNGE, 30.0, 6.0, mana=25, cd=620, gain=0, spend=70, status=CoreSkillStatus.EXPOSE, range=5.0, ult=true))
+                s("影刺し", "ass_stab", "敵へ接近し印を刻む。機会を得る", CoreSkillMotion.LUNGE, 4.0, 1.0, mana=6, cd=100, startup=3, status=CoreSkillStatus.MARK, radius=3.0),
+                s("断命", "ass_execute", "機会30を消費。印を消して威力を増す短い一撃", CoreSkillMotion.CONE, 10.0, 2.4, mana=0, cd=30, startup=4, gain=0, spend=30, radius=3.2),
+                s("刃の輪", "ass_fan", "周囲に二度斬りつけ、複数の敵へ印を仕込む", CoreSkillMotion.SPIN, 3.0, .65, mana=8, cd=140, pulses=2, status=CoreSkillStatus.MARK, radius=3.5),
+                s("影抜け", "ass_escape", "後方へ離脱し、周囲を減速。移動を攻撃に使い切らない", CoreSkillMotion.EVADE, 0.0, 0.0, mana=6, cd=160, gain=0, status=CoreSkillStatus.SLOW, range=-4.0),
+                s("毒牙", "ass_poison", "機会20を消費。毒を仕込み、離れている間も削る", CoreSkillMotion.CONE, 3.0, .8, mana=0, cd=30, gain=0, spend=20, status=CoreSkillStatus.POISON, radius=3.0),
+                s("追影", "ass_chase", "（廃止）遠めの敵へ飛び込む", CoreSkillMotion.LUNGE, 8.0, 1.7, cd=130, gain=0, spend=20, range=5.0, radius=3.5, retired=true),
+                s("影の針", "ass_needle", "遠くから印を付ける。正面しか狙えないボスにも使える", CoreSkillMotion.RAY, 2.0, .75, mana=6, cd=100, gain=12, status=CoreSkillStatus.MARK, range=12.0),
+                s("残像", "ass_guard", "（廃止）短時間だけ身を守る", CoreSkillMotion.GUARD, 0.0, 0.0, mana=12, cd=160, startup=1, gain=0, duration=20, retired=true),
+                s("無明連刃", "ass_ult", "機会80を消費し五連撃。印のある敵を先に狙う", CoreSkillMotion.SPIN, 8.0, 1.4, mana=20, cd=600, startup=8, pulses=5, gain=0, spend=80, radius=4.0, ult=true),
+                s("死の契約", "ass_contract", "機会70を消費する刺突。防御を崩し次の追撃も通す", CoreSkillMotion.LUNGE, 30.0, 6.0, mana=20, cd=620, gain=0, spend=70, status=CoreSkillStatus.EXPOSE, range=5.0, ult=true))
             CoreClass.TEMPLAR -> listOf(
-                s("裁きの槌", "temp_mace", "重い一撃で印を付け、決意を得る", CoreSkillMotion.CONE, 5.0, 1.0, cd=80, startup=7, status=CoreSkillStatus.MARK),
-                s("集束", "temp_pull", "近くの敵を引き寄せる。ボスは移動せず短く行動阻害", CoreSkillMotion.PULL, 5.0, .6, mana=18, cd=170, gain=20, radius=6.0),
-                s("護りの誓い", "temp_ward", "周囲の味方へ障壁。自分も防御姿勢を取る", CoreSkillMotion.SHIELD, 18.0, .7, mana=18, cd=200, gain=0, radius=7.0, duration=100),
-                s("守護の構え", "temp_guard", "2.5秒防御。受けた攻撃から決意を得る", CoreSkillMotion.GUARD, 0.0, 0.0, mana=8, cd=130, startup=1, gain=0, duration=50),
-                s("報復", "temp_rebuke", "決意40を使う反撃。集めた敵にまとめて当てる", CoreSkillMotion.NOVA, 12.0, 2.2, cd=120, gain=0, spend=40, radius=5.0),
-                s("封鎖線", "temp_field", "敵を遅らせる陣。味方の射線を支える", CoreSkillMotion.FIELD, 2.0, .4, mana=18, cd=170, pulses=4, status=CoreSkillStatus.SLOW, range=6.0, radius=5.0),
-                s("破魔槌", "temp_break", "敵のARとMRを短時間低下させる", CoreSkillMotion.CONE, 6.0, 1.3, cd=120, status=CoreSkillStatus.EXPOSE),
-                s("援護突進", "temp_dash", "敵へ踏み込み、周囲の敵の狙いを自分に向ける", CoreSkillMotion.LUNGE, 4.0, .9, cd=120, range=4.0),
-                s("空間圧縮", "temp_ult", "決意80を消費。広範囲を三度吸引してまとめる", CoreSkillMotion.PULL, 10.0, 1.4, mana=30, cd=640, startup=12, pulses=3, gain=0, spend=80, radius=9.0, ult=true),
-                s("不落の聖域", "temp_sanctuary", "決意70を消費。仲間へ大きな障壁と自分へ防御姿勢", CoreSkillMotion.SHIELD, 70.0, 1.5, mana=30, cd=680, gain=0, spend=70, radius=10.0, duration=180, ult=true))
+                s("裁きの槌", "temp_mace", "重い一撃で印を付け、決意を得る", CoreSkillMotion.CONE, 5.0, 1.0, mana=6, cd=100, startup=7, status=CoreSkillStatus.MARK),
+                s("集束", "temp_pull", "近くの敵を引き寄せる。ボスは移動せず短く行動阻害", CoreSkillMotion.PULL, 5.0, .6, mana=12, cd=240, gain=20, radius=6.0),
+                s("護りの誓い", "temp_ward", "周囲の味方へ障壁。自分も防御姿勢を取る", CoreSkillMotion.SHIELD, 18.0, .7, mana=14, cd=300, gain=0, radius=7.0, duration=100),
+                s("守護の構え", "temp_guard", "2.5秒防御。受けた攻撃から決意を得る", CoreSkillMotion.GUARD, 0.0, 0.0, mana=6, cd=160, startup=1, gain=0, duration=50),
+                s("報復", "temp_rebuke", "決意30を使う反撃。集めた敵にまとめて当てる", CoreSkillMotion.NOVA, 10.0, 1.8, mana=0, cd=30, gain=0, spend=30, radius=5.0),
+                s("封鎖線", "temp_field", "（廃止）敵を遅らせる陣", CoreSkillMotion.FIELD, 2.0, .4, mana=18, cd=170, pulses=4, status=CoreSkillStatus.SLOW, range=6.0, radius=5.0, retired=true),
+                s("破魔槌", "temp_break", "決意25で敵のARとMRを短時間低下させる単体の主力", CoreSkillMotion.CONE, 6.0, 1.3, mana=0, cd=30, gain=0, spend=25, status=CoreSkillStatus.EXPOSE),
+                s("援護突進", "temp_dash", "敵へ踏み込み、周囲の敵の狙いを自分に向ける", CoreSkillMotion.LUNGE, 4.0, .9, mana=8, cd=200, range=4.0),
+                s("空間圧縮", "temp_ult", "決意80を消費。広範囲を三度吸引してまとめる", CoreSkillMotion.PULL, 10.0, 1.4, mana=20, cd=640, startup=12, pulses=3, gain=0, spend=80, radius=9.0, ult=true),
+                s("不落の聖域", "temp_sanctuary", "決意70を消費。仲間へ大きな障壁と自分へ防御姿勢", CoreSkillMotion.SHIELD, 70.0, 1.5, mana=20, cd=680, gain=0, spend=70, radius=10.0, duration=180, ult=true))
             CoreClass.HEALER -> listOf(
-                s("裁きの光", "heal_light", "敵を撃ち信仰を得る。ソロでも主力になる", CoreSkillMotion.RAY, 8.0, 1.4, cd=60, startup=5, gain=20),
-                s("救いの輪", "heal_ring", "信仰30を回復に回す。周囲の傷ついた仲間を救う", CoreSkillMotion.HEAL, 20.0, .9, mana=18, cd=120, gain=0, spend=30, radius=7.0),
-                s("断罪の柱", "heal_pillar", "信仰40を攻撃に回す。回復と同じ資源を取り合う", CoreSkillMotion.FIELD, 8.0, 1.6, mana=18, cd=140, pulses=2, gain=0, spend=40, radius=4.0),
-                s("光の歩み", "heal_step", "前へ移動し、周囲に小さな障壁を渡す", CoreSkillMotion.EVADE, 0.0, 0.0, mana=12, cd=140, gain=0, range=3.5),
-                s("灯火", "heal_lamp", "地点に三度の光。敵を削り信仰を得る", CoreSkillMotion.FIELD, 3.0, .65, mana=16, cd=130, pulses=3, gain=20, radius=4.0),
-                s("祈りの盾", "heal_shield", "信仰25を予防に回す。回復できない大技に備える", CoreSkillMotion.SHIELD, 20.0, 1.0, mana=16, cd=140, gain=0, spend=25, radius=7.0, duration=120),
-                s("導きの印", "heal_mark", "敵へ印を刻み、信仰を得る。裁きの起点になる", CoreSkillMotion.RAY, 4.0, .8, mana=8, cd=70, gain=20, status=CoreSkillStatus.MARK),
-                s("清めの風", "heal_wind", "信仰20で軽く回復し、自分の回避を再使用可能に", CoreSkillMotion.HEAL, 12.0, .5, mana=12, cd=120, gain=0, spend=20, radius=5.0),
+                s("裁きの光", "heal_light", "敵を撃ち信仰を得る。ソロでも主力になる", CoreSkillMotion.RAY, 8.0, 1.4, mana=6, cd=20, startup=5, gain=20),
+                s("救いの輪", "heal_ring", "信仰30を回復に回す。周囲の傷ついた仲間を救う", CoreSkillMotion.HEAL, 20.0, .9, mana=12, cd=40, gain=0, spend=30, radius=7.0),
+                s("断罪の柱", "heal_pillar", "信仰40を攻撃に回す。回復と同じ資源を取り合う", CoreSkillMotion.FIELD, 8.0, 1.6, mana=12, cd=40, pulses=2, gain=0, spend=40, radius=4.0),
+                s("光の歩み", "heal_step", "前へ移動し、周囲に小さな障壁を渡す", CoreSkillMotion.EVADE, 0.0, 0.0, mana=10, cd=200, gain=0, range=3.5),
+                s("灯火", "heal_lamp", "地点に三度の光。敵を削り信仰を得る", CoreSkillMotion.FIELD, 3.0, .65, mana=10, cd=60, pulses=3, gain=20, radius=4.0),
+                s("祈りの盾", "heal_shield", "信仰25を予防に回す。回復できない大技に備える", CoreSkillMotion.SHIELD, 20.0, 1.0, mana=12, cd=160, gain=0, spend=25, radius=7.0, duration=120),
+                s("導きの印", "heal_mark", "（廃止）敵へ印を刻む", CoreSkillMotion.RAY, 4.0, .8, mana=8, cd=70, gain=20, status=CoreSkillStatus.MARK, retired=true),
+                s("清めの風", "heal_wind", "（廃止）軽く回復し回避を再使用可能に", CoreSkillMotion.HEAL, 12.0, .5, mana=12, cd=120, gain=0, spend=20, radius=5.0, retired=true),
                 s("救済", "heal_ult", "信仰80を使い、周囲の仲間を大きく回復", CoreSkillMotion.HEAL, 70.0, 2.8, mana=30, cd=650, startup=16, gain=0, spend=80, radius=10.0, ult=true),
                 s("最後の審判", "heal_judgment", "信仰80を攻撃へ全投入。四度の広域の裁き", CoreSkillMotion.FIELD, 12.0, 1.8, mana=30, cd=620, startup=18, pulses=4, gain=0, spend=80, radius=6.5, ult=true))
             CoreClass.STARWEAVER -> listOf(
-                s("星糸", "star_thread", "星を解放。三蓄積なら三体まで貫通", CoreSkillMotion.RAY, 6.0, 1.4, cd=80, startup=5, gain=0),
-                s("星環", "star_ring", "星を解放して減速。三蓄積ならマナ12回復", CoreSkillMotion.NOVA, 8.0, 1.1, cd=140, status=CoreSkillStatus.SLOW, gain=0),
-                s("星降る夜", "starfall", "星を解放。三蓄積なら四回に増加", CoreSkillMotion.FIELD, 4.0, 1.1, mana=25, cd=200, pulses=3, gain=0),
-                s("星渡り", "star_step", "前方へ星の道を渡る。攻撃と離脱の位置を作る", CoreSkillMotion.EVADE, 0.0, 0.0, mana=15, cd=140, gain=0, range=4.0),
-                s("星の針", "star_needle", "星を消費せず印を付ける。次の解放を準備", CoreSkillMotion.RAY, 3.0, .65, mana=8, cd=65, gain=1, status=CoreSkillStatus.MARK),
-                s("星雲", "star_cloud", "星を解放し、地点へ四度の減速波", CoreSkillMotion.FIELD, 2.0, .6, mana=20, cd=180, pulses=4, gain=0, status=CoreSkillStatus.SLOW),
-                s("星衣", "star_shield", "星を解放して仲間を保護する", CoreSkillMotion.SHIELD, 15.0, 1.0, mana=18, cd=200, gain=0, radius=7.0, duration=120),
-                s("星砕き", "star_break", "星を解放して印を起爆。集団より単体に強い", CoreSkillMotion.RAY, 10.0, 2.2, mana=20, cd=160, gain=0, spend=1),
+                s("星糸", "star_thread", "星を解放。三蓄積なら三体まで貫通", CoreSkillMotion.RAY, 6.0, 1.4, mana=8, cd=30, startup=5, gain=0),
+                s("星環", "star_ring", "星を解放して減速。三蓄積ならマナ12回復", CoreSkillMotion.NOVA, 8.0, 1.1, mana=10, cd=60, status=CoreSkillStatus.SLOW, gain=0),
+                s("星降る夜", "starfall", "星を解放。三蓄積なら四回に増加", CoreSkillMotion.FIELD, 4.0, 1.1, mana=18, cd=60, pulses=3, gain=0),
+                s("星渡り", "star_step", "前方へ星の道を渡る。攻撃と離脱の位置を作る", CoreSkillMotion.EVADE, 0.0, 0.0, mana=12, cd=200, gain=0, range=4.0),
+                s("星の針", "star_needle", "星を消費せず印を付け、星を一つ編む。次の解放を準備", CoreSkillMotion.RAY, 3.0, .65, mana=6, cd=80, gain=1, status=CoreSkillStatus.MARK),
+                s("星雲", "star_cloud", "（廃止）地点へ四度の減速波", CoreSkillMotion.FIELD, 2.0, .6, mana=20, cd=180, pulses=4, gain=0, status=CoreSkillStatus.SLOW, retired=true),
+                s("星衣", "star_shield", "星を解放して仲間を保護する", CoreSkillMotion.SHIELD, 15.0, 1.0, mana=14, cd=240, gain=0, radius=7.0, duration=120),
+                s("星砕き", "star_break", "（廃止）星を解放して印を起爆", CoreSkillMotion.RAY, 10.0, 2.2, mana=20, cd=160, gain=0, spend=1, retired=true),
                 s("天球崩壊", "star_ult", "星3を使う五連星雨。星の残響ならさらに一回", CoreSkillMotion.FIELD, 12.0, 1.8, mana=30, cd=620, startup=16, pulses=5, gain=0, spend=3, radius=7.0, ult=true),
                 s("星座の守り", "star_constellation", "星3を使い仲間へ大きな障壁を編む", CoreSkillMotion.SHIELD, 60.0, 2.0, mana=25, cd=680, gain=0, spend=3, radius=10.0, duration=160, ult=true))
         }
