@@ -204,4 +204,15 @@ class ResearchEconomyTest {
         assertEquals(300, f.a(id).silver)
         assertTrue(FirstMagicRepository(f.magicDir).load(id).materialCounts.isEmpty())
     }
+
+    @Test fun `an account holding every good at every tier saves and reloads above the old 64 balance cap`() {
+        val f = Fixture()
+        val all = CoreResource.entries.flatMap { r -> (if (r.research) 1..1 else 1..4).map { CoreMaterial(r, it) to 1L } }.toMap()
+        assertTrue(all.size > 64, "research goods push the ledger past the old cap")
+        assertTrue(all.size <= CoreLoopCatalog.MAX_BALANCES)
+        val id = f.create(balances = all)
+        f.service.forget(id)
+        assertIs<CoreAccountLoadResult.Ready>(f.service.open(id))
+        assertEquals(all, f.a(id).balances.filterValues { it > 0 })
+    }
 }
