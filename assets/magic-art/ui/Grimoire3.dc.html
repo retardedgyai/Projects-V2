@@ -35,7 +35,7 @@ body{margin:0}
 </style>
 </helmet>
 <div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #0B0A10; font-family: 'DotGothic16', monospace">
-<img class="px" src="/_blob/6a6b69bba6abb7b4260120a75d285cac" alt="" width="1280" height="720" style="position: absolute; left: 0; top: 0">
+<img class="px" src="/_blob/a7809b09967f3cd0b6f64936e7c0684f" alt="" width="1280" height="720" style="position: absolute; left: 0; top: 0">
 
 <div style="position: absolute; left: 92px; top: 90px; display: flex; align-items: baseline; gap: 14px">
 <span class="ink" style="font-size: 24px; line-height: 32px">幹 ・ 基礎魔術</span>
@@ -44,7 +44,7 @@ body{margin:0}
 <sc-for list="{{chapters}}" as="c" hint-placeholder-count="5">
 <div style="{{c.style}}">{{c.name}}</div>
 </sc-for>
-<div style="position: absolute; left: 462px; top: 196px; width: 136px; font-size: 16px; line-height: 24px; color: #b8a078; text-align: center; white-space: pre-line">{{fogText}}</div>
+<div style="position: absolute; left: 448px; top: 214px; width: 140px; font-size: 16px; line-height: 24px; color: #b8a078; text-align: center; white-space: pre-line">{{fogText}}</div>
 <sc-for list="{{dots}}" as="p" hint-placeholder-count="40">
 <span class="dot" style="{{p.style}}"></span>
 </sc-for>
@@ -82,7 +82,11 @@ body{margin:0}
 <sc-if value="{{isTrunk}}" hint-placeholder-val="{{ true }}">
 <div style="display: flex; justify-content: space-between; align-items: baseline; padding-right: 250px"><span style="font-size: 16px; color: #7a5a3a">{{d.chapter}}</span></div>
 <div style="display: flex; gap: 16px; align-items: stretch">
-<div style="width: 210px; height: 180px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #d2bb90; box-shadow: inset 0 0 0 2px #7a5a3a, inset 4px 4px 0 #b8a078">
+<div style="position: relative; width: 210px; height: 180px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #d2bb90; box-shadow: inset 0 0 0 2px #7a5a3a, inset 4px 4px 0 #b8a078">
+<span style="position: absolute; left: -4px; top: -4px; width: 16px; height: 16px; background: #9c8460; clip-path: polygon(0 0, 100% 0, 0 100%)"></span>
+<span style="position: absolute; right: -4px; top: -4px; width: 16px; height: 16px; background: #9c8460; clip-path: polygon(0 0, 100% 0, 100% 100%)"></span>
+<span style="position: absolute; left: -4px; bottom: -4px; width: 16px; height: 16px; background: #9c8460; clip-path: polygon(0 0, 0 100%, 100% 100%)"></span>
+<span style="position: absolute; right: -4px; bottom: -4px; width: 16px; height: 16px; background: #9c8460; clip-path: polygon(100% 0, 0 100%, 100% 100%)"></span>
 <sc-if value="{{d.showHero}}" hint-placeholder-val="{{ true }}"><img class="px" src="{{d.hero}}" alt="" style="{{d.heroStyle}}"></sc-if>
 <sc-if value="{{d.hidden}}" hint-placeholder-val="{{ false }}"><span style="font-size: 48px; color: #9c8460">?</span></sc-if>
 </div>
@@ -163,7 +167,7 @@ var N = [
 { id: 'n12', c: 7, r: 2, icon: I.scroll, big: false, goal: true, title: '帰還の巻物', ch: '終章 最初の儀式', base: '', concept: '幹のゴール。初めての実用品。遠征先から、魔術で帰ってくる。ここまで来ると専門の枝の封が解ける。', goals: [['小さな祭壇で帰還の巻物を作る', 0]], unlocks: [['開く', '専門の枝すべて']], reward: '' }
 ];
 var E = [['n1', 'n2'], ['n1', 'n3'], ['n2', 'n4'], ['n3', 'n4'], ['n4', 'n5'], ['n4', 'n6'], ['n5', 'n7'], ['n6', 'n7'], ['n6', 'n8'], ['n7', 'n9'], ['n7', 'n10'], ['n9', 'n11'], ['n10', 'n11'], ['n11', 'n12']];
-var OX = 96, OY = 170, SX = 62, SY = 92, S = 60;
+var OX = 92, OY = 176, SX = 64, SY = 92, S = 60;
 var self = this, st = this.state, byId = {};
 N.forEach(function (n) { n.x = OX + n.c * SX; n.y = OY + n.r * SY; n.parents = []; byId[n.id] = n; });
 E.forEach(function (e) { byId[e[1]].parents.push(e[0]); });
@@ -177,26 +181,18 @@ else n.st = n.goal ? 'goal' : 'locked';
 });
 var P = st.tick % 2 ? 'B' : 'A';
 var dots = [];
-function run(x0, y0, x1, y1, col, anim, base) {
-var len = Math.abs(x1 - x0) + Math.abs(y1 - y0), k = 0;
-for (var t = 4; t < len - 2; t += 8) {
-var x = x0 === x1 ? x0 : x0 + (x1 > x0 ? t : -t);
-var y = y0 === y1 ? y0 : y0 + (y1 > y0 ? t : -t);
-var a = anim ? 'animation:dot' + P + ' .18s steps(2) both;animation-delay:' + (base + k * 35) + 'ms;' : '';
-dots.push({ style: 'left:' + (x - 2) + 'px;top:' + (y - 2) + 'px;background:' + col + ';' + a });
-k++;
-}
-return k;
-}
 E.forEach(function (e) {
 var a = byId[e[0]], b = byId[e[1]];
-var col = a.st === 'done' ? (b.st === 'done' ? '#4a3020' : (b.st === 'side' ? '#8a6ab0' : (b.st === 'locked' || b.st === 'goal' || b.st === 'hidden' ? '#4a3020' : '#49b4d9'))) : '#c4ad82';
+var col = a.st === 'done' ? (b.st === 'done' ? '#4a3020' : (b.st === 'side' ? '#8a6ab0' : (b.st === 'locked' || b.st === 'goal' || b.st === 'hidden' ? '#7a5a3a' : '#49b4d9'))) : '#c4ad82';
 var anim = st.fresh === a.id;
-var ay = a.y + S / 2, by = b.y + S / 2, mx = Math.round((a.x + S + b.x) / 2);
-if (a.r === b.r) { run(a.x + S, ay, b.x, by, col, anim, 300); return; }
-var k1 = run(a.x + S, ay, mx, ay, col, anim, 300);
-var k2 = run(mx, ay, mx, by, col, anim, 300 + k1 * 35);
-run(mx, by, b.x, by, col, anim, 300 + (k1 + k2) * 35);
+var ax = a.x + S / 2, ay = a.y + S / 2, bx = b.x + S / 2, by = b.y + S / 2;
+var L = Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay)), k = 0;
+for (var t = 34; t < L - 33; t += 7) {
+var x = Math.round((ax + (bx - ax) * t / L) / 2) * 2, y = Math.round((ay + (by - ay) * t / L) / 2) * 2;
+var an = anim ? 'animation:dot' + P + ' .18s steps(2) both;animation-delay:' + (300 + k * 45) + 'ms;' : '';
+dots.push({ style: 'left:' + (x - 2) + 'px;top:' + (y - 2) + 'px;background:' + col + ';' + an });
+k++;
+}
 });
 var LAB = { done: ['完了', '#8a5a10', '#d4a838'], open: ['進められる', '#14506e', '#49b4d9'], goalOpen: ['進められる', '#14506e', '#49b4d9'], locked: ['未解放', '#7a5a3a', '#9c8460'], side: ['寄り道', '#5e4880', '#8a6ab0'], hidden: ['まだ読めない', '#9c8460', '#b8a078'], goal: ['幹のゴール', '#a03024', '#a03024'] };
 var nodes = N.map(function (n) {
@@ -228,8 +224,8 @@ reward: sn.st === 'hidden' ? '' : sn.reward
 };
 d.hasGoals = d.goals.length > 0; d.hasUnlocks = d.unlocks.length > 0; d.hasReward = !!d.reward;
 d.canAct = sn.st === 'open' || sn.st === 'goalOpen' || sn.st === 'side';
-var CH = [['序章', 0], ['一章', 3], ['二章', 5], ['三章', 6], ['終章', 7]];
-var chapters = CH.map(function (c) { return { name: c[0], style: 'position:absolute;left:' + (OX + c[1] * SX + 8) + 'px;top:136px;font-size:16px;line-height:24px;color:#9c8460;' }; });
+var CH = [['序章', 1], ['一章', 3.5], ['二章', 5], ['三章', 6], ['終章', 7]];
+var chapters = CH.map(function (c) { return { name: c[0], style: 'position:absolute;left:' + (OX + c[1] * SX + 30) + 'px;top:140px;transform:translateX(-50%);font-size:16px;line-height:24px;color:#9c8460;' }; });
 var BR = [['幹', '#49b4d9', ''], ['刻印術', '#c8a040', '帰還・加速・転移などの巻物。使えば消える、魔術の効果そのもの。'], ['注入', '#b04a3a', '武器や防具に、魔術ならではの性質を与える・付け替える。'], ['召喚', '#7a5aa8', 'ボスを呼ぶ封印の鍵を作る。戦闘職がボスに挑むための入口。'], ['錬金', '#5a8a4a', '薬や食べ物。体に入れる魔術。'], ['地脈術', '#8a6a42', '領地の結界、天候、転移の網。世界そのものに手を出す。'], ['魔導工学', '#4a6a9a', '仕分けや自動化の装置。工房を工場のように組む。']];
 var ribbons = BR.map(function (b, i) {
 var on = (i === 0 && st.tab === 'trunk') || st.tab === 'b' + i;
