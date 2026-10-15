@@ -134,7 +134,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         { Pos(0.0,100.0,0.0,0f,0f) })
     else null
     private val grimoireArt = runCatching {
-        GrimoireFlow.Art(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/grimoire.json")).use { it.readBytes() })
+        GrimoireFlow.Art(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/grimoire.json")).use { it.readBytes() },
+            requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
     }.onFailure { System.err.println("GRIMOIRE_DISABLED: ${it.message}") }.getOrNull()
     private val grimoireSessions: UiSessions? = if(uiPack != null && grimoireArt != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
         { player -> uiPack.enabled(player) }, null,

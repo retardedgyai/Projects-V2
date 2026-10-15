@@ -2,12 +2,13 @@
 
     python scripts/build_grimoire_assets.py
 
-Reads assets/ui/grimoire/source/*.png (the v7 art, drawn for a 1280x720 frame) and writes
+Reads assets/ui/grimoire/source/*.png (item icons and illustrations) and writes
 server-minestom/src/main/resources/polish05/grimoire.zip (private-namespace sprites, merged into
 the UI pack by CoreUiPackServer) and polish05/grimoire.json (sprite chars and tile layouts).
 
 Images wider or taller than 256 px are split into tiles because larger font glyphs do not render.
 Alpha is snapped to fully opaque or fully clear: a translucent glyph hides what is drawn after it.
+The one exception is a single alpha-1 pixel that keeps a tile's advance at its full width.
 """
 import io, json, zipfile
 from pathlib import Path
@@ -37,6 +38,13 @@ def main() -> None:
 
     def add(name: str, image: Image.Image) -> None:
         assert image.width <= TILE and image.height <= TILE, (name, image.size)
+        # Vanilla measures a bitmap glyph's advance up to its last non-clear column, and the UI centres
+        # glyphs by that advance: a tile whose right edge is clear would shift right and leave a gap.
+        alpha = image.getchannel("A")
+        if not any(alpha.getpixel((image.width - 1, y)) for y in range(image.height)):
+            image = image.copy()
+            r, g, b, _ = image.getpixel((image.width - 1, 0))
+            image.putpixel((image.width - 1, 0), (r, g, b, 1))
         char = chr(code[0]); code[0] += 1
         rel = f"grimoire/{name}.png"
         buffer = io.BytesIO(); image.save(buffer, "PNG", optimize=True)

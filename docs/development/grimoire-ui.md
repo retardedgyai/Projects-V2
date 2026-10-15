@@ -8,29 +8,29 @@ Open it in the harbor with `/grimoire`. It needs the ProjectS UI pack.
 
 ## What it shows
 
-- **Tabs** (left): the trunk and the six specialist branches. Branch tabs show their own night-sky
-  colour and a wax seal; the branches open after the trunk's goal (帰還の巻物).
-- **Quest map** (middle): entries on a nebula, joined by dotted light. Gold is done, cyan pulses when it
-  can be worked on, violet is a side entry, grey is locked, `?` is not visible yet. A red `!` marks a
-  reward that has not been claimed; a blue pin marks the pinned entry.
-- **Page** (right): the selected entry on pinned parchment — illustration, text, goals, what it unlocks,
-  the reward, and the actions (claim the reward, pin it).
+It follows the forge and the map: a header with the title, the branch tabs in the middle and the
+wallet pills on the right, rounded panels, M PLUS 2 text and the key hints bottom right. The magic is
+in the colour: a night sky with soft cyan clouds, ring medallions for entries (gold done, cyan workable
+and breathing, violet side entries, grey locked, `?` not visible yet), a red `!` for an unclaimed reward
+and a cyan dot for the pinned entry. The right panel shows the selected entry: illustration, text,
+goals, unlocks, reward, and the claim or pin button. Branch tabs show their sealed state.
 
 Quest progress is sample data for now. Completion will come from the world (FTB Quests style), so the
-page only has a `試し：ワールドで達成させる` shortcut for trying the ink-spread unlock.
+panel only has a `試し：ワールドで達成させる` shortcut for trying the unlock animation.
 
 ## Art and rebuild
 
-The art is the approved v7 "magic window" set in `assets/ui/grimoire/source`, drawn for a 1280×720
-frame. `GrimoireFlow` places it at 1.5× in the 1920×1080 design space so every sprite shares one texel
-size. Translucent pixels are snapped to opaque or clear because a translucent glyph hides what is drawn
-after it.
+Only item icons and illustrations are pixel art (`assets/ui/grimoire/source`), as in the forge. Panels,
+rings and glows reuse the forge's shared shapes (`v3_round_*`, `v3_ring*`, `v3_glow` from
+`polish05/font-map.json`). Fills are drawn 5 depth steps behind glyphs by UiRenderer, so the flow lifts
+every fill by that much to keep one depth per layer. Bitmap glyph advances stop at the last non-clear
+column, so the sprite builder keeps one alpha-1 pixel in a clear right column.
 
 ```powershell
-python scripts/build_grimoire_assets.py          # sprites -> polish05/grimoire.zip + grimoire.json
+python scripts/build_grimoire_assets.py          # icons -> polish05/grimoire.zip + grimoire.json
 python scripts/build_forge_v3_assets.py fonts --source <dir with MPLUS2.ttf and DotGothic16-Regular.ttf>
 python scripts/build_forge_v3_assets.py pack     # glyph pages now include GrimoireFlow.kt's text
 ```
 
-Text uses the DotGothic16 pages (`v3num*`), the font the v7 art was drawn against. When you add text to
-`GrimoireFlow.kt`, rerun the two font commands; `GrimoireFlowTest` fails on any missing glyph.
+When you add text to `GrimoireFlow.kt`, rerun the two font commands; `GrimoireFlowTest` fails on any
+missing glyph.
