@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>魔術書 v5 クエストの本</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.px{image-rendering:pixelated;display:block}
+.node{position:absolute;width:60px;height:60px;padding:0;border:0;background:transparent;cursor:pointer}
+.node .ring{position:absolute;left:0;top:0;width:60px;height:60px}
+.node .ic{position:absolute;left:14px;top:14px;width:32px;height:32px}
+.dot{position:absolute;width:4px;height:4px}
+.mark{position:absolute;width:10px;height:10px;border-color:#2a1a10;border-style:solid;border-width:0}
+.rib{position:absolute;top:18px;width:26px;padding:0;border:0;cursor:pointer;clip-path:polygon(0 0,100% 0,100% 100%,50% calc(100% - 8px),0 100%)}
+.ink{color:#2a1a10}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:44px;padding:0 14px;font-family:'DotGothic16',monospace;font-size:16px;cursor:pointer;border:0}
+@keyframes stamp{0%{transform:scale(1.6);opacity:0}60%{transform:scale(.95);opacity:1}100%{transform:scale(1)}}
+.stampIn{animation:stamp .35s steps(4) both}
+@keyframes pulse{0%,100%{opacity:.15}50%{opacity:1}}
+.glow{animation:pulse 1.6s steps(4) infinite}
+@keyframes inkA{0%{transform:scale(.2);opacity:0}55%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes inkB{0%{transform:scale(.2);opacity:0}55%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:1}}
+.spreadA{animation:inkA .5s steps(5) both}
+.spreadB{animation:inkB .5s steps(5) both}
+@keyframes dotA{0%{opacity:0;transform:scale(2.5)}100%{opacity:1;transform:scale(1)}}
+@keyframes dotB{0%{opacity:0;transform:scale(2.5)}100%{opacity:1;transform:scale(1)}}
+@keyframes turnA{0%{opacity:0;transform:translateX(-16px)}100%{opacity:1;transform:translateX(0)}}
+@keyframes turnB{0%{opacity:0;transform:translateX(-16px)}100%{opacity:1;transform:translateX(0)}}
+.turnA{animation:turnA .3s steps(3) both}
+.turnB{animation:turnB .3s steps(3) both}
+</style>
+</helmet>
+<div style="width: 1280px; height: 720px; position: relative; overflow: hidden; background: #0B0A10; font-family: 'DotGothic16', monospace">
+<img class="px" src="/_blob/a7809b09967f3cd0b6f64936e7c0684f" alt="" width="1280" height="720" style="position: absolute; left: 0; top: 0">
+
+<div style="position: absolute; left: 92px; top: 90px; display: flex; align-items: baseline; gap: 14px">
+<span class="ink" style="font-size: 24px; line-height: 32px">幹 ・ 基礎魔術</span>
+<span style="font-size: 16px; color: #7a5a3a">{{doneCount}} / {{total}}</span>
+<sc-if value="{{hasClaims}}" hint-placeholder-val="{{ false }}"><span style="font-size: 16px; color: #a03024">! 受け取れる報酬 {{claimCount}}</span></sc-if>
+</div>
+<sc-for list="{{chapters}}" as="c" hint-placeholder-count="5">
+<div style="{{c.style}}">{{c.name}}</div>
+</sc-for>
+<div style="position: absolute; left: 448px; top: 214px; width: 140px; font-size: 16px; line-height: 24px; color: #b8a078; text-align: center; white-space: pre-line">{{fogText}}</div>
+<sc-for list="{{dots}}" as="p" hint-placeholder-count="40">
+<span class="dot" style="{{p.style}}"></span>
+</sc-for>
+<sc-for list="{{nodes}}" as="n" hint-placeholder-count="12">
+<button type="button" class="node" aria-label="{{n.aria}}" onClick="{{n.pick}}" style="{{n.pos}}">
+<span class="{{n.anim}}" style="position: absolute; inset: 0">
+<img class="px ring" src="{{n.ring}}" alt="">
+<sc-if value="{{n.isOpen}}" hint-placeholder-val="{{ false }}"><img class="px ring glow" src="/_blob/e49ce506dc96f658e753eb1eb4391dd2" alt=""></sc-if>
+<sc-if value="{{n.showIcon}}" hint-placeholder-val="{{ true }}"><img class="px ic" src="{{n.icon}}" alt="" style="{{n.iconStyle}}"></sc-if>
+<sc-if value="{{n.hidden}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; left: 0; right: 0; top: 18px; text-align: center; font-size: 16px; color: #b8a078">?</span></sc-if>
+<sc-if value="{{n.claim}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; right: -6px; top: -6px; width: 20px; height: 20px; background: #a03024; color: #fff4e0; font-size: 16px; line-height: 20px; text-align: center; box-shadow: inset 0 0 0 2px #6a1c16">!</span></sc-if>
+<sc-if value="{{n.pinned}}" hint-placeholder-val="{{ false }}"><svg class="px" width="14" height="20" viewBox="0 0 7 10" aria-hidden="true" style="position: absolute; left: -2px; top: -10px"><rect x="1" y="0" width="5" height="4" fill="#1f6fa8"></rect><rect x="2" y="1" width="2" height="1" fill="#a8ecf6"></rect><rect x="3" y="4" width="1" height="6" fill="#4a3020"></rect></svg></sc-if>
+<sc-if value="{{n.isGoal}}" hint-placeholder-val="{{ false }}"><img class="px" src="/_blob/62d3671c9ff14e0acd3975e6f7710a69" alt="" width="28" height="28" style="position: absolute; right: -6px; bottom: -6px"></sc-if>
+</span>
+<sc-if value="{{n.sel}}" hint-placeholder-val="{{ false }}">
+<span class="mark" style="left: -8px; top: -8px; border-left-width: 2px; border-top-width: 2px"></span>
+<span class="mark" style="right: -8px; top: -8px; border-right-width: 2px; border-top-width: 2px"></span>
+<span class="mark" style="left: -8px; bottom: -8px; border-left-width: 2px; border-bottom-width: 2px"></span>
+<span class="mark" style="right: -8px; bottom: -8px; border-right-width: 2px; border-bottom-width: 2px"></span>
+</sc-if>
+</button>
+</sc-for>
+<div style="position: absolute; left: 92px; top: 618px; display: flex; gap: 18px; font-size: 16px; line-height: 24px; color: #7a5a3a">
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; background: #d4a838"></span>完了</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; background: #49b4d9"></span>進められる</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; background: #8a6ab0"></span>寄り道</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; box-shadow: inset 0 0 0 2px #9c8460"></span>未解放</span>
+</div>
+
+<sc-for list="{{ribbons}}" as="r" hint-placeholder-count="7">
+<button type="button" class="rib" aria-label="{{r.aria}}" onClick="{{r.pick}}" style="{{r.style}}">
+<sc-if value="{{r.sealed}}" hint-placeholder-val="{{ true }}"><img class="px" src="/_blob/62d3671c9ff14e0acd3975e6f7710a69" alt="" width="20" height="20" style="position: absolute; left: 3px; bottom: 10px"></sc-if>
+</button>
+</sc-for>
+
+<div class="{{turn}}" style="position: absolute; left: 702px; top: 96px; width: 490px; height: 556px; display: flex; flex-direction: column; gap: 10px">
+<sc-if value="{{isTrunk}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding-right: 250px"><span style="font-size: 16px; color: #7a5a3a">{{d.chapter}}</span></div>
+<div style="display: flex; gap: 16px; align-items: stretch">
+<div style="position: relative; width: 210px; height: 180px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #d2bb90; box-shadow: inset 0 0 0 2px #7a5a3a, inset 4px 4px 0 #b8a078">
+<span style="position: absolute; left: -4px; top: -4px; width: 16px; height: 16px; background: #9c8460; clip-path: polygon(0 0, 100% 0, 0 100%)"></span>
+<span style="position: absolute; right: -4px; top: -4px; width: 16px; height: 16px; background: #9c8460; clip-path: polygon(0 0, 100% 0, 100% 100%)"></span>
+<span style="position: absolute; left: -4px; bottom: -4px; width: 16px; height: 16px; background: #9c8460; clip-path: polygon(0 0, 0 100%, 100% 100%)"></span>
+<span style="position: absolute; right: -4px; bottom: -4px; width: 16px; height: 16px; background: #9c8460; clip-path: polygon(100% 0, 0 100%, 100% 100%)"></span>
+<sc-if value="{{d.showHero}}" hint-placeholder-val="{{ true }}"><img class="px" src="{{d.hero}}" alt="" style="{{d.heroStyle}}"></sc-if>
+<sc-if value="{{d.hidden}}" hint-placeholder-val="{{ false }}"><span style="font-size: 48px; color: #9c8460">?</span></sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; min-width: 0; padding-top: 4px">
+<span style="{{d.stampStyle}}">{{d.stateLabel}}</span>
+<span class="ink" style="font-size: 32px; line-height: 40px">{{d.title}}</span>
+</div>
+</div>
+<div style="font-size: 16px; line-height: 24px; color: #4a3020">{{d.concept}}</div>
+<sc-if value="{{d.hasGoals}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 2px; padding-top: 8px; box-shadow: inset 0 2px 0 #b8a078">
+<span style="font-size: 16px; line-height: 24px; color: #7a5a3a">目標</span>
+<sc-for list="{{d.goals}}" as="g" hint-placeholder-count="2">
+<div style="display: flex; gap: 10px; font-size: 16px; line-height: 24px; color: {{g.color}}"><span style="width: 16px">{{g.mark}}</span><span>{{g.text}}</span></div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{d.hasUnlocks}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 2px; padding-top: 8px; box-shadow: inset 0 2px 0 #b8a078">
+<span style="font-size: 16px; line-height: 24px; color: #7a5a3a">できるようになること</span>
+<sc-for list="{{d.unlocks}}" as="u" hint-placeholder-count="2">
+<div style="display: flex; gap: 10px; font-size: 16px; line-height: 24px; color: #2a1a10"><span style="width: 56px; flex-shrink: 0; color: #1f6fa8">{{u.kind}}</span><span>{{u.text}}</span></div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{d.hasReward}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; justify-content: space-between; padding-top: 8px; box-shadow: inset 0 2px 0 #b8a078; font-size: 16px; line-height: 24px"><span style="color: #7a5a3a">報酬</span><span style="color: #8a5a10">{{d.reward}}</span></div>
+</sc-if>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; gap: 12px; align-items: center">
+<sc-if value="{{d.canClaim}}" hint-placeholder-val="{{ false }}">
+<button type="button" class="btn" onClick="{{claim}}" style="background: #f4d870; color: #2a1a10; box-shadow: inset 0 0 0 2px #8a5a10, inset 4px 4px 0 #fff4b8">報酬を受け取る <span style="padding: 0 6px; box-shadow: inset 0 0 0 2px #8a5a10">{{d.reward}}</span></button>
+</sc-if>
+<sc-if value="{{d.claimed}}" hint-placeholder-val="{{ false }}">
+<span class="{{stampAnim}}" style="font-size: 16px; line-height: 40px; padding: 0 12px; color: #8a5a10; box-shadow: inset 0 0 0 2px #8a5a10">受け取り済み</span>
+</sc-if>
+<sc-if value="{{d.canAct}}" hint-placeholder-val="{{ true }}">
+<button type="button" class="btn" onClick="{{togglePin}}" style="{{d.pinStyle}}">{{d.pinLabel}}</button>
+</sc-if>
+<button type="button" class="btn" onClick="{{reset}}" style="margin-left: auto; background: transparent; color: #7a5a3a">最初から</button>
+</div>
+<sc-if value="{{d.canAct}}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{unlock}}" style="align-self: flex-start; border: 0; background: transparent; padding: 0; min-height: 32px; font-family: 'DotGothic16', monospace; font-size: 16px; line-height: 24px; color: #9c8460; cursor: pointer; text-decoration: underline">試し：ワールドで達成させる</button>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{isBranch}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 16px; color: #7a5a3a">専門の枝</span>
+<span class="ink" style="font-size: 32px; line-height: 40px">{{branch.name}}</span>
+<div style="font-size: 16px; line-height: 24px; color: #4a3020">{{branch.line}}</div>
+<div style="display: flex; align-items: center; gap: 20px; padding-top: 24px">
+<img class="px" src="/_blob/62d3671c9ff14e0acd3975e6f7710a69" alt="" width="84" height="84">
+<div style="font-size: 16px; line-height: 24px; color: #7a5a3a">このしおりは封蝋で留められている。<br>幹の最後に「帰還の巻物」を作ると、<br>封が割れて読めるようになる。</div>
+</div>
+</sc-if>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+constructor(props) {
+super(props);
+this.state = { sel: 'n4', tab: 'trunk', extra: [], fresh: '', tick: 0, turn: 0, claimed: [], pin: 'n5', stampTick: 0 };
+}
+renderVals() {
+var B = '/_blob/';
+var A = { aqua: '46d80cbcd671f6bfdd38eeb3863b5090', lux: '33413563419dc2405818e363bda97638', motus: '567d58ab81398326ac89c83ccceaa504', vacuos: 'fcd824dbc73d0cb53dae9c158b333cb1' };
+var I = {
+book: B + '2c25c6074c9621ffcae05883a1f0f221', goggles: B + 'f59cd6e362f54112e1c7390fe0563f91', scroll: B + '59e7260dc4d657d2fdff164b8ac52ddb', wand: B + '04af3c202693351e1ec52dc62725ec27',
+desk: B + 'f8c39c51d8f6c329f450e5161082b276', distiller: B + '2ae12397a4c732bd3186b14999fc82d8', jar: B + 'ccfaf76ce2520f1efa6acd7ff7dcd0c8'
+};
+var H = { desk: B + '25e96ea39ca9477e064516353c8e34eb', distiller: B + 'c271094235f2920b7076173081b6957d', jar: B + '9b08ce57d64adede66326b2ed631dbf3' };
+var R = { done: B + '0160b2cf8df699184cb29213525463ac', open: B + 'b6fad1d922a71481656d2f50cea3b15a', locked: B + '241a1202c7b1349f2030f004ae01e7e7', side: B + '53c7c39cb756a01a73c32b3b0e99a15e', goal: B + '08a21e6099b8c922ed618d2177d44690', hidden: B + 'ef366e35a8b2add0b133e71a2bb082e3' };
+function asp(n) { return B + A[n]; }
+var N = [
+{ id: 'n1', c: 0, r: 2, icon: I.book, big: false, title: '古い手帳', ch: '序章 観測', base: 'done', concept: '光る草に挟まっていた手帳。最初のページには一文だけ。「すべての物は、目に見えない性質（相）でできている」', goals: [['光る素材を拾う', 1]], unlocks: [['開く', '魔術書']], reward: '' },
+{ id: 'n2', c: 1, r: 1, icon: I.goggles, big: false, title: '観測の眼鏡', ch: '序章 観測', base: 'done', concept: 'かぶっている間だけ、見ている物の相が見える。知識を道具にする最初の一歩。', goals: [['眼鏡を作る（ガラス2・銅1）', 1]], unlocks: [['見える', '照準の先の相']], reward: '' },
+{ id: 'n3', c: 1, r: 3, icon: I.desk, big: true, hero: H.desk, title: '研究机', ch: '序章 観測', base: 'done', concept: '読めない相は、机の上で考えると分かる。最初の「自分の魔術の場所」。', goals: [['研究机を置く（木材・本・イカ墨）', 1]], unlocks: [['置ける', '研究机'], ['開く', '研究盤']], reward: '' },
+{ id: 'n4', c: 2, r: 2, icon: asp('lux'), big: false, title: '最初の研究「光」', ch: '序章 観測', base: 'done', concept: '相は2つ合わさって新しい相になる。松明の読めなかった相は、Aer と Ignis が合わさった Lux だった。', goals: [['研究盤で Lux を解く', 1]], unlocks: [['見える', '珍しい物の光']], reward: '銀貨 20' },
+{ id: 'n5', c: 3, r: 1, icon: I.distiller, big: true, hero: H.distiller, title: '蒸留器', ch: '1章 抽出', base: '', concept: '相は取り出して液体（Essentia）にできる。素材を窯で溶かすと、中の相が分かれて出てくる。', goals: [['蒸留器を作って工房に置く', 0], ['材料：石12・粘土4・葦2', 0]], unlocks: [['置ける', '蒸留器'], ['見える', '素材が溶けていく様子']], reward: 'インク ×4' },
+{ id: 'n6', c: 3, r: 3, icon: I.jar, big: true, hero: H.jar, title: '瓶', ch: '1章 抽出', base: '', concept: 'Essentia は瓶に溜まる。瓶ひとつにつき相はひとつ。ラベルの滴の色で中身が分かる。', goals: [['瓶を3つ置く（ガラス）', 0]], unlocks: [['置ける', '瓶'], ['見える', '瓶の液面']], reward: '' },
+{ id: 'n7', c: 4, r: 2, icon: asp('aqua'), big: false, title: '相を溜める', ch: '1章 抽出', base: '', concept: '蒸留器と瓶がそろうと、相が溜まっていく。', goals: [['ひとつの瓶に Essentia を16溜める', 0]], unlocks: [['作れる', '瓶詰めの Essentia']], reward: '銀貨 40' },
+{ id: 'n8', c: 4, r: 4, icon: asp('vacuos'), big: false, side: true, title: '寄り道：相の図鑑', ch: '1章 抽出', base: '', concept: '本筋には要らない。いろんな物を見て、相を集める。', goals: [['相を12種類観察する 7/12', 0]], unlocks: [['もらえる', '眼鏡の見た目（真鍮の縁）']], reward: '' },
+{ id: 'n9', c: 5, r: 1, icon: I.wand, big: false, title: '杖', ch: '2章 流れ', base: '', concept: '杖は工房をつなぐレンチ。顎で管をはさみ、弁の向きを決める。', goals: [['杖を作る', 0]], unlocks: [['作れる', '杖']], reward: '' },
+{ id: 'n10', c: 5, r: 3, icon: asp('motus'), big: false, title: '管と弁', ch: '2章 流れ', base: '', concept: '相は、引っ張る力の強いほうへ流れる。', goals: [['蒸留器から瓶へ管でつなぐ', 0]], unlocks: [['置ける', '管、弁']], reward: '' },
+{ id: 'n11', c: 6, r: 2, icon: asp('vacuos'), big: false, mystery: true, title: '地脈', ch: '3章 地脈', base: '', concept: '足もとを流れる、見えない川がある。', goals: [['地脈の上に研究机を置く', 0]], unlocks: [['見える', '地脈の流れ']], reward: '' },
+{ id: 'n12', c: 7, r: 2, icon: I.scroll, big: false, goal: true, title: '帰還の巻物', ch: '終章 最初の儀式', base: '', concept: '幹のゴール。初めての実用品。遠征先から、魔術で帰ってくる。ここまで来ると専門の枝の封が解ける。', goals: [['小さな祭壇で帰還の巻物を作る', 0]], unlocks: [['開く', '専門の枝すべて']], reward: '' }
+];
+var E = [['n1', 'n2'], ['n1', 'n3'], ['n2', 'n4'], ['n3', 'n4'], ['n4', 'n5'], ['n4', 'n6'], ['n5', 'n7'], ['n6', 'n7'], ['n6', 'n8'], ['n7', 'n9'], ['n7', 'n10'], ['n9', 'n11'], ['n10', 'n11'], ['n11', 'n12']];
+var OX = 92, OY = 176, SX = 64, SY = 92, S = 60;
+var self = this, st = this.state, byId = {};
+N.forEach(function (n) { n.x = OX + n.c * SX; n.y = OY + n.r * SY; n.parents = []; byId[n.id] = n; });
+E.forEach(function (e) { byId[e[1]].parents.push(e[0]); });
+function isDone(n) { return n.base === 'done' || st.extra.indexOf(n.id) >= 0; }
+N.forEach(function (n) {
+var ready = n.parents.every(function (p) { return isDone(byId[p]); });
+if (isDone(n)) n.st = 'done';
+else if (ready) n.st = n.side ? 'side' : (n.goal ? 'goalOpen' : 'open');
+else if (n.mystery) n.st = 'hidden';
+else n.st = n.goal ? 'goal' : 'locked';
+});
+var P = st.tick % 2 ? 'B' : 'A';
+var dots = [];
+E.forEach(function (e) {
+var a = byId[e[0]], b = byId[e[1]];
+var col = a.st === 'done' ? (b.st === 'done' ? '#4a3020' : (b.st === 'side' ? '#8a6ab0' : (b.st === 'locked' || b.st === 'goal' || b.st === 'hidden' ? '#7a5a3a' : '#49b4d9'))) : '#c4ad82';
+var anim = st.fresh === a.id;
+var ax = a.x + S / 2, ay = a.y + S / 2, bx = b.x + S / 2, by = b.y + S / 2;
+var L = Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay)), k = 0;
+for (var t = 34; t < L - 33; t += 7) {
+var x = Math.round((ax + (bx - ax) * t / L) / 2) * 2, y = Math.round((ay + (by - ay) * t / L) / 2) * 2;
+var an = anim ? 'animation:dot' + P + ' .18s steps(2) both;animation-delay:' + (300 + k * 45) + 'ms;' : '';
+dots.push({ style: 'left:' + (x - 2) + 'px;top:' + (y - 2) + 'px;background:' + col + ';' + an });
+k++;
+}
+});
+var CL = ['n1', 'n2', 'n3'].concat(st.claimed);
+function canClaim(n) { return n.st === 'done' && !!n.reward && CL.indexOf(n.id) < 0; }
+var LAB = { done: ['完了', '#8a5a10', '#d4a838'], open: ['進められる', '#14506e', '#49b4d9'], goalOpen: ['進められる', '#14506e', '#49b4d9'], locked: ['未解放', '#7a5a3a', '#9c8460'], side: ['寄り道', '#5e4880', '#8a6ab0'], hidden: ['まだ読めない', '#9c8460', '#b8a078'], goal: ['幹のゴール', '#a03024', '#a03024'] };
+var nodes = N.map(function (n) {
+var ring = R[n.st === 'goalOpen' ? 'open' : n.st];
+var faded = n.st === 'locked' || n.st === 'goal';
+var anim = '';
+if (st.fresh === n.id) anim = 'spread' + P;
+else if (st.fresh && n.parents.indexOf(st.fresh) >= 0 && n.st !== 'locked') anim = 'spread' + P;
+var delay = (st.fresh && n.id !== st.fresh && n.parents.indexOf(st.fresh) >= 0) ? 'animation-delay:900ms;' : '';
+return {
+pos: 'left:' + n.x + 'px;top:' + n.y + 'px;', claim: canClaim(n), pinned: st.pin === n.id && n.st !== 'done', ring: ring, anim: anim, icon: n.icon,
+showIcon: n.st !== 'hidden', hidden: n.st === 'hidden', isOpen: n.st === 'open' || n.st === 'goalOpen' || n.st === 'side',
+isGoal: !!n.goal, sel: st.sel === n.id && st.tab === 'trunk',
+iconStyle: (n.big ? 'left:6px;top:6px;width:48px;height:48px;' : '') + (faded ? 'filter:grayscale(1) sepia(1) brightness(0.9);opacity:0.35;' : '') + delay,
+aria: (n.st === 'hidden' ? 'まだ読めない項目' : n.title) + ' ' + LAB[n.st][0],
+pick: function () { self.setState({ sel: n.id, tab: 'trunk', turn: st.turn + 1 }); }
+};
+});
+var sn = byId[st.sel], lab = LAB[sn.st];
+var d = {
+chapter: sn.ch, stateLabel: lab[0],
+stampStyle: 'align-self:flex-start;font-size:16px;line-height:24px;padding:0 8px;color:' + lab[1] + ';box-shadow:inset 0 0 0 2px ' + lab[2] + ';',
+title: sn.st === 'hidden' ? '？？？' : sn.title, concept: sn.st === 'hidden' ? 'インクがかすれていて読めない。前の項目を終えると、文字が浮かんでくる。' : sn.concept,
+showHero: sn.st !== 'hidden', hidden: sn.st === 'hidden', hero: sn.big ? sn.hero : sn.icon,
+heroStyle: (sn.big ? 'max-width:190px;max-height:164px;' : 'width:96px;height:96px;') + (sn.st === 'locked' || sn.st === 'goal' ? 'filter:grayscale(1) sepia(1);opacity:0.35;' : ''),
+goals: sn.st === 'hidden' ? [] : sn.goals.map(function (g) { var ok = g[1] || sn.st === 'done'; return { text: g[0], mark: ok ? '✓' : '□', color: ok ? '#9c8460' : '#2a1a10' }; }),
+unlocks: sn.st === 'hidden' ? [] : sn.unlocks.map(function (u) { return { kind: u[0], text: u[1] }; }),
+reward: sn.st === 'hidden' ? '' : sn.reward
+};
+d.canClaim = canClaim(sn); d.claimed = sn.st === 'done' && !!sn.reward && !d.canClaim;
+var pinnedHere = st.pin === sn.id;
+d.pinLabel = pinnedHere ? 'ピン留め中' : 'ピン留めする';
+d.pinStyle = pinnedHere ? 'background:#1f6fa8;color:#e6f2ee;box-shadow:inset 0 0 0 2px #14506e,inset 4px 4px 0 #49b4d9;' : 'background:#cfe4e0;color:#14506e;box-shadow:inset 0 0 0 2px #1f6fa8,inset 4px 4px 0 #e6f2ee;';
+d.hasGoals = d.goals.length > 0; d.hasUnlocks = d.unlocks.length > 0; d.hasReward = !!d.reward;
+d.canAct = sn.st === 'open' || sn.st === 'goalOpen' || sn.st === 'side';
+var CH = [['序章', 1], ['一章', 3.5], ['二章', 5], ['三章', 6], ['終章', 7]];
+var chapters = CH.map(function (c) { return { name: c[0], style: 'position:absolute;left:' + (OX + c[1] * SX + 30) + 'px;top:140px;transform:translateX(-50%);font-size:16px;line-height:24px;color:#9c8460;' }; });
+var BR = [['幹', '#49b4d9', ''], ['刻印術', '#c8a040', '帰還・加速・転移などの巻物。使えば消える、魔術の効果そのもの。'], ['注入', '#b04a3a', '武器や防具に、魔術ならではの性質を与える・付け替える。'], ['召喚', '#7a5aa8', 'ボスを呼ぶ封印の鍵を作る。戦闘職がボスに挑むための入口。'], ['錬金', '#5a8a4a', '薬や食べ物。体に入れる魔術。'], ['地脈術', '#8a6a42', '領地の結界、天候、転移の網。世界そのものに手を出す。'], ['魔導工学', '#4a6a9a', '仕分けや自動化の装置。工房を工場のように組む。']];
+var ribbons = BR.map(function (b, i) {
+var on = (i === 0 && st.tab === 'trunk') || st.tab === 'b' + i;
+var h = on ? 92 : 62;
+return {
+aria: b[0] + (i === 0 ? '' : '（封印）'), sealed: i > 0,
+style: 'left:' + (986 + i * 32) + 'px;height:' + h + 'px;background:' + b[1] + ';box-shadow:inset 2px 0 0 rgba(255,255,255,0.25),inset -2px 0 0 rgba(0,0,0,0.3);',
+pick: function () { self.setState({ tab: i === 0 ? 'trunk' : 'b' + i, turn: st.turn + 1 }); }
+};
+});
+var bi = st.tab.charAt(0) === 'b' ? Number(st.tab.slice(1)) : -1;
+var done = N.filter(function (n) { return n.st === 'done'; }).length;
+return {
+nodes: nodes, dots: dots, chapters: chapters, ribbons: ribbons, d: d,
+doneCount: done, total: N.length,
+fogText: byId.n11.st === 'hidden' ? 'インクが\nかすれている' : '',
+turn: st.turn % 2 ? 'turnB' : 'turnA',
+isTrunk: st.tab === 'trunk', isBranch: bi > 0, branch: bi > 0 ? { name: BR[bi][0], line: BR[bi][2] } : { name: '', line: '' },
+claim: function () { if (canClaim(sn)) self.setState({ claimed: st.claimed.concat([sn.id]), stampTick: st.stampTick + 1 }); },
+togglePin: function () { self.setState({ pin: st.pin === sn.id ? '' : sn.id }); },
+hasClaims: N.filter(canClaim).length > 0, claimCount: N.filter(canClaim).length,
+stampAnim: st.stampTick ? 'stampIn' : '',
+unlock: function () { if (st.extra.indexOf(sn.id) < 0) self.setState({ extra: st.extra.concat([sn.id]), fresh: sn.id, tick: st.tick + 1 }); },
+reset: function () { self.setState({ claimed: [], pin: 'n5', extra: [], fresh: '', sel: 'n4', tab: 'trunk', tick: st.tick + 1, turn: st.turn + 1 }); }
+};
+}
+}
+</script>
+</body>
+</html>
