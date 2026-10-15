@@ -158,7 +158,7 @@ body{margin:0}
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"frame":{"editor":"enum","options":["装飾あり","控えめ","なし"],"default":"装飾あり"},"$preview":{"width":1280,"height":720}}'>
+<script type="text/x-dc" data-dc-script data-props='{"frame":{"editor":"enum","options":["装飾あり","控えめ","なし"],"default":"控えめ"},"$preview":{"width":1280,"height":720}}'>
 class Component extends DCLogic {
 constructor(props) {
 super(props);
@@ -270,7 +270,7 @@ pick: function () { self.setState({ tab: i, turn: st.turn + 1 }); }
 });
 var done = N.filter(function (n) { return n.st === 'done'; }).length;
 return {
-frameSrc: FR[this.props.frame] || FR['装飾あり'],
+frameSrc: FR[this.props.frame] || FR['控えめ'],
 tabs: tabs, neb: NEB[st.tab], isTrunk: st.tab === 0, isBranch: st.tab > 0,
 branch: st.tab > 0 ? { name: BR[st.tab][0], line: BR[st.tab][2] } : { name: '', line: '' },
 nodes: nodes, dots: dots, chapters: chapters, d: d,
