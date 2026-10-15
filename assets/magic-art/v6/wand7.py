@@ -35,12 +35,12 @@ def solid(base, light, dark, up, down=None):
             return Image.new('RGBA', (W, H), hx(down or dark))
         if W >= H and H >= 2:
             for x in range(W):
-                px[x, 0] = hx(light)
+                px[x, 0] = hx(light if H >= 3 else up)
                 if H >= 3:
                     px[x, H - 1] = hx(dark)
         elif H > W and W >= 2:
             for y in range(H):
-                px[0, y] = hx(light)
+                px[0, y] = hx(light if W >= 3 else up)
                 if W >= 3:
                     px[W - 1, y] = hx(dark)
         return im
