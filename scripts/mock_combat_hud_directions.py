@@ -449,9 +449,149 @@ def design_c():
     return cv
 
 
+# ---- C2: C rebuilt on the Wynncraft 2.0 structure, gunmetal near-future material --------------
+# Reference studied: Wynncraft 2.0 HUD (Modrinth "The Wynncraft Pack" gallery). One material for
+# everything; HP/MP each in a bevelled plaque (number above a thin bar); a hex level badge between
+# them; a segmented strip over a reskinned hotbar.
+
+M = {"out": rgba("07090c"), "body": rgba("1f2730"), "hi": rgba("526170"), "lo": rgba("12171d"),
+     "inset": rgba("0c1015"), "inset_hi": rgba("2c3540"), "cyan": rgba("63e6ff")}
+
+
+def plaque(cv, box):
+    x0, y0, x1, y1 = box
+    over(cv, (x0 + 1, y0, x1 - 1, y1), M["out"])
+    over(cv, (x0, y0 + 1, x1, y1 - 1), M["out"])
+    over(cv, (x0 + 1, y0 + 1, x1 - 1, y1 - 1), M["body"])
+    over(cv, (x0 + 2, y0 + 1, x1 - 2, y0 + 2), M["hi"])
+    over(cv, (x0 + 1, y0 + 2, x0 + 2, y1 - 2), M["hi"][:3] + (120,))
+    over(cv, (x0 + 2, y1 - 2, x1 - 2, y1 - 1), M["lo"])
+
+
+def inset(cv, box):
+    x0, y0, x1, y1 = box
+    over(cv, (x0, y0, x1, y1), M["inset"])
+    over(cv, (x0, y1 - 1, x1, y1), M["inset_hi"])
+    over(cv, (x1 - 1, y0, x1, y1), M["inset_hi"])
+
+
+def thin_bar(cv, x, y, w, frac, col, back, extra=0.0, extra_col=None, trail=0.0):
+    inset(cv, (x - 1, y - 1, x + w + 1, y + 4))
+    over(cv, (x, y, x + w, y + 3), back)
+    f = round(w * frac)
+    if trail:
+        over(cv, (x, y, x + min(w, round(w * (frac + extra + trail))), y + 3), rgba("f3d6c8"))
+    if extra:
+        over(cv, (x + f, y, x + min(w, f + round(w * extra)), y + 3), extra_col)
+    over(cv, (x, y, x + f, y + 3), col)
+    over(cv, (x, y, x + f, y + 1), tuple(min(255, v + 80) for v in col[:3]) + (255,))
+
+
+def mark(cv, x, y, rows, col):
+    for j, row in enumerate(rows):
+        for i, v in enumerate(row):
+            if v == "1":
+                px(cv, x + i + 1, y + j + 1, rgba("000000", 150))
+                px(cv, x + i, y + j, col)
+
+
+HEART = ["01010", "11111", "11111", "01110", "00100"]
+DROP = ["00100", "01110", "11111", "11111", "01110"]
+
+
+def hex_badge(cv, cx, top, text):
+    rows = [2, 4, 6, 8, 10, 11, 11, 11, 11, 11, 11, 10, 8, 6, 4, 2]
+    for j, half in enumerate(rows):
+        over(cv, (cx - half - 1, top + j, cx + half + 1, top + j + 1), M["out"])
+    for j, half in enumerate(rows[1:-1], start=1):
+        hw = half - 1
+        over(cv, (cx - hw, top + j, cx + hw, top + j + 1), M["body"] if j > 2 else M["hi"])
+    for j, half in enumerate(rows[2:-2], start=2):
+        hw = half - 3
+        over(cv, (cx - hw, top + j, cx + hw, top + j + 1), M["inset"])
+    over(cv, (cx - 5, top + 13, cx + 5, top + 14), M["cyan"][:3] + (200,))
+    mc_text(cv, cx - mc_width(text) // 2, top + 4, text, rgba("e9fbff"))
+
+
+def hotbar_skin(cv, icons, cds):
+    x0, y0 = HB_X, HB_Y
+    plaque(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    for i in range(9):
+        sx = x0 + 2 + 20 * i
+        inset(cv, (sx, y0 + 2, sx + 18, y0 + 20))
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for i, ic in icons.items():
+        cv.alpha_composite(ic, (x0 + 3 + 20 * i, y0 + 3))
+    for i, (cd, total) in cds.items():
+        x, y = x0 + 3 + 20 * i, y0 + 3
+        h = round(16 * cd / total)
+        over(cv, (x, y + 16 - h, x + 16, y + 16), (255, 255, 255, 127))
+        s = str(cd)
+        mc_text(cv, x + 17 - mc_width(s), y + 9, s, rgba("ffffff"))
+    # selection: cyan frame around slot 1
+    sx = x0 + 1
+    for (a, b, c, d) in ((sx, y0 + 1, sx + 20, y0 + 2), (sx, y0 + 20, sx + 20, y0 + 21),
+                         (sx, y0 + 1, sx + 1, y0 + 21), (sx + 19, y0 + 1, sx + 20, y0 + 21)):
+        over(cv, (a, b, c, d), M["cyan"])
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+
+
+def design_c2():
+    cv = world()
+    icons, cds = {}, {}
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        ic = icon(name)
+        icons[k - 1] = darken(ic, .45) if state == "nomana" else ic
+        if state == "cd":
+            cds[k - 1] = (cd, total)
+    hotbar_skin(cv, icons, cds)
+    # segmented class-resource strip spanning the hotbar
+    sy = HB_Y - 6
+    plaque(cv, (HB_X - 1, sy, HB_X + 183, sy + 6))
+    for i in range(20):
+        x = HB_X + 2 + i * 9
+        over(cv, (x, sy + 2, x + 8, sy + 4), rgba("ffb545") if i < RAGE * 20 // 100 else rgba("3a2c16"))
+    # HP / MP plaques
+    py, pw = HB_Y - 26, 70
+    for x0, val, mx, col, back, glyph, extra in (
+            (HB_X - 1, HP, HP_MAX, rgba("e5414e"), rgba("3a1016"), HEART, BARRIER / HP_MAX),
+            (HB_X + 183 - pw, MP, MP_MAX, rgba("3b8cff"), rgba("0e1a36"), DROP, 0)):
+        plaque(cv, (x0, py, x0 + pw, py + 20))
+        s = f"{val} / {mx}"
+        mc_text(cv, x0 + pw // 2 - mc_width(s) // 2, py + 3, s, rgba("eef6ff"))
+        thin_bar(cv, x0 + 10, py + 13, pw - 14, val / mx, col, back, extra, rgba("dfe9f7"),
+                 trail=HP_LOST / HP_MAX if glyph is HEART else 0)
+        mark(cv, x0 + 3, py + 12, glyph, col)
+    # bridge + hex level badge
+    over(cv, (HB_X - 1 + pw, py + 8, HB_X + 183 - pw, py + 11), M["out"])
+    over(cv, (HB_X - 1 + pw, py + 9, HB_X + 183 - pw, py + 10), M["hi"])
+    hex_badge(cv, C, py + 1, "12")
+    # buffs: small plaques above the HP plaque
+    bx = HB_X - 1
+    for label, name, sec in BUFFS:
+        plaque(cv, (bx, py - 15, bx + 30, py - 2))
+        cv.alpha_composite(icon(name).resize((9, 9), Image.NEAREST), (bx + 2, py - 13))
+        mc_text(cv, bx + 13, py - 12, f"{sec}", rgba("e9fbff"))
+        bx += 32
+    # notice
+    jp_text(cv, C - jp_width(NOTICE) // 2, py - 30, NOTICE, rgba("8fc3ff"), style="outline")
+    # boss plaque
+    bw = 200
+    x0 = C - bw // 2
+    plaque(cv, (x0, 2, x0 + bw, 26))
+    name = "裂け目の執行官"
+    jp_text(cv, x0 + 5, 4, name, rgba("ffffff"))
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, x0 + bw - 5 - mc_width(pct), 6, pct, rgba("e9fbff"))
+    thin_bar(cv, x0 + 5, 19, bw - 10, BOSS / BOSS_MAX, rgba("e5414e"), rgba("3a1016"), trail=BOSS_LOST / BOSS_MAX)
+    over(cv, (C, 18, C + 1, 23), rgba("ffffff", 200))
+    return cv
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c)):
+    for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c), ("C2-wynn-structure", design_c2)):
         img = fn()
         for s in (2, 4):
             img.resize((W * s, H * s), Image.NEAREST).save(OUT / f"{name}-{s}x.png")
