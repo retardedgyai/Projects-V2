@@ -243,6 +243,7 @@ class CoreAccountRepository(
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t8\t") -> 8
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t9\t") -> 9
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t10\t") -> 10
+            bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t11\t") -> 11
             else -> return
         }
         val backup = directory.resolve("$playerId.account.v$version.bak")
@@ -267,7 +268,7 @@ class CoreAccountRepository(
 internal object CoreAccountCodec {
     fun encode(account: CoreAccount): String {
         val body = buildString {
-            append("PROJECTS_CORE_LOOP\t11\t${account.playerId}\t${account.revision}\n")
+            append("PROJECTS_CORE_LOOP\t12\t${account.playerId}\t${account.revision}\n")
             append("gear\t${account.weaponTier}\t${account.armorTier}\t${account.unlockedMapTier}\n")
             append("crafting\t${account.weaponRarity}\t${account.armorRarity}\t${account.craftingSeed}\n")
             append("enhancement\t${account.weaponEnhancement.level}\t${account.weaponEnhancement.failures}\t${account.armorEnhancement.level}\t${account.armorEnhancement.failures}\t${account.smithingXp}\n")
@@ -292,6 +293,8 @@ internal object CoreAccountCodec {
             }
             (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity + account.armorParts.values.map { it.identity }).forEach { append("gear-base\t${it.id}\t${it.base}\t${it.itemLevel}\n") }
             (account.maps + listOfNotNull(account.activeRun?.map)).forEach { append("map-level\t${it.id}\t${it.level}\n") }
+            (account.maps + listOfNotNull(account.activeRun?.map)).forEach { map -> map.zone?.let { append("map-zone\t${map.id}\t$it\n") } }
+            account.zoneRecords.forEach { (zone, record) -> append("zone-record\t$zone\t${record.clears}\t${record.bestLevel}\n") }
             account.offers.forEach { append("offer\t${it.id}\t${it.price}\t${it.material?.resource ?: ""}\t${it.material?.tier ?: 1}\t${it.quantity}\t${it.gearId ?: ""}\n") }
             account.currencies.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("currency\t$key\t$amount\n") }
             account.fragments.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("fragment\t$key\t$amount\n") }
@@ -317,7 +320,7 @@ internal object CoreAccountCodec {
         require(text.substring(checksumAt) == "checksum\t${digest(body)}\n") { "保存データの検証に失敗しました" }
         val rows = body.trimEnd('\n').split('\n').map { it.split('\t') }
         val header = rows.first()
-        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in (1..11).map(Int::toString)) { "未対応の保存形式です" }
+        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in (1..12).map(Int::toString)) { "未対応の保存形式です" }
         val version = header[1].toInt()
         require(UUID.fromString(header[2]) == playerId) { "保存データのプレイヤーが一致しません" }
         val gear = rows.getOrNull(1) ?: error("装備データがありません")
@@ -356,6 +359,8 @@ internal object CoreAccountCodec {
         val savedBuilds = mutableMapOf<CoreClass, CoreClassBuild>()
         val bases = linkedMapOf<UUID, Pair<CoreWeaponBase, Int>>()
         val mapLevels = linkedMapOf<UUID, Int>()
+        val mapZones = linkedMapOf<UUID, Int>()
+        val zoneRecords = linkedMapOf<Int, CoreZoneRecord>()
         rows.drop(2).forEach { row -> when (row[0]) {
             "class-build" -> { require(version >= 9 && row.size == 7 && classBuild == null); classBuild = CoreClassBuild(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), readTreeMask(row[6])) }
             "class-loadout" -> {
@@ -365,6 +370,10 @@ internal object CoreAccountCodec {
             }
             "journey" -> { require(version >= 8 && row.size == 6 && journey == null); journey = CoreJourney(CoreClass.valueOf(row[1]), row[2].toBooleanStrict(), row[3].toLong(), row[4].toInt(), row[5].toBooleanStrict()) }
             "gear-base" -> { require(version >= 8 && row.size == 4); require(bases.put(UUID.fromString(row[1]), CoreWeaponBase.valueOf(row[2]) to row[3].toInt()) == null) }
+            // v12: the 開拓大陸 zone a map was drawn for, and the player's clears per zone. Older saves have neither.
+            "map-zone" -> { require(version >= 12 && row.size == 3); require(mapZones.put(UUID.fromString(row[1]), row[2].toInt()) == null) }
+            "zone-record" -> { require(version >= 12 && row.size == 4 && zoneRecords.size <= CoreZoneRecord.MAX_ZONE_ID)
+                require(zoneRecords.put(row[1].toInt(), CoreZoneRecord(row[2].toInt(), row[3].toInt())) == null) }
             "map-level" -> { require(version >= 8 && row.size == 3); require(mapLevels.put(UUID.fromString(row[1]), row[2].toInt()) == null) }
             "survey" -> { require(version >= 7 && row.size == 2 && survey == null); survey = row[1].toLong() }
             "profession" -> { require(version >= 7 && row.size == 4); require(professions.put(CoreProfession.valueOf(row[1]), CoreProfessionProgress(row[2].toLong(), row[3].toInt())) == null) }
@@ -466,7 +475,8 @@ internal object CoreAccountCodec {
             require(journey != null && bases.keys == qualities.keys)
             require(mapLevels.keys == (maps.map { it.id } + listOfNotNull(active?.map?.id)).toSet())
             identities.replaceAll { _, id -> val b = bases.getValue(id.id); id.copy(base = b.first, itemLevel = b.second) }
-            fun leveled(map: CoreOwnedMap) = CoreOwnedMap(map.id, map.seed, map.tier, map.modifiers, mapLevels.getValue(map.id))
+            require(mapZones.keys.all { it in mapLevels })
+            fun leveled(map: CoreOwnedMap) = CoreOwnedMap(map.id, map.seed, map.tier, map.modifiers, mapLevels.getValue(map.id), mapZones[map.id])
             val upgradedMaps = maps.map(::leveled); maps.clear(); maps.addAll(upgradedMaps)
             active = active?.let { it.copy(map = leveled(it.map)) }
         }
@@ -531,7 +541,8 @@ internal object CoreAccountCodec {
             weaponBroken = economy?.get(4)?.let { readBroken(it, version) } ?: false,
             armorBroken = economy?.get(5)?.let { readBroken(it, version) } ?: false,
             professions = professions, surveyPoints = survey ?: 0, buyOrders = migratedOrders,
-            journey = journey ?: CoreJourney.legacy(xp = CoreJourneyRules.threshold(CoreJourneyRules.floor(gear[3].toInt()))), armorParts = parts)
+            journey = journey ?: CoreJourney.legacy(xp = CoreJourneyRules.threshold(CoreJourneyRules.floor(gear[3].toInt()))), armorParts = parts,
+            zoneRecords = zoneRecords)
     }
 
     /** Retired v5 wear is validated but never reinterpreted as enhancement damage. */

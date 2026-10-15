@@ -13,7 +13,8 @@ internal class CoreMapPreparation(private val executor: Executor) {
         private val discarded = AtomicBoolean()
         val future: CompletableFuture<VerdantRoadQuestRuntime> = CompletableFuture.supplyAsync({
             if (discarded.get()) throw CancellationException("Map selection changed")
-            VerdantRoadQuestRuntime.prepare(map.seed, customization = CoreLoopItems.customization(map), resourceTier = map.tier).join()
+            VerdantRoadQuestRuntime.prepare(map.seed, customization = CoreLoopItems.customization(map), resourceTier = map.tier,
+                specialty = CoreFrontierZones.zone(map.zone)?.specialty).join()
         }, executor)
         fun discard() {
             discarded.set(true)

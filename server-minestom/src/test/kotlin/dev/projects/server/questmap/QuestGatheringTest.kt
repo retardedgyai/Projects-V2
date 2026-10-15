@@ -12,6 +12,19 @@ import kotlin.test.assertTrue
 
 class QuestGatheringTest {
     @Test
+    fun `a zone specialty takes four of the eight base sites and keeps one of each other discipline`() {
+        val plan = VerdantRoadQuestPlanner.generate(91_337L)
+        for (specialty in QuestGatheringDiscipline.entries) {
+            val base = questGatheringNodes(plan, specialty = specialty).filter { it.id in 0 until 8 }
+            val counts = base.groupingBy { it.discipline }.eachCount()
+            assertEquals(4, counts[specialty])
+            assertEquals(QuestGatheringDiscipline.entries.toSet(), counts.keys)
+            assertTrue(counts.filterKeys { it != specialty }.values.all { it == 1 })
+        }
+        assertEquals(questGatheringNodes(plan).map { it.discipline }, questGatheringNodes(plan, specialty = null).map { it.discipline })
+    }
+
+    @Test
     fun `eight base gathering locations cover every discipline`() {
         val plan = VerdantRoadQuestPlanner.generate(91_337L)
         val nodes = questGatheringNodes(plan)

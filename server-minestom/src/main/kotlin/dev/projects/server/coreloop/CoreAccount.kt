@@ -25,15 +25,28 @@ data class CoreMapModifier(val discipline: String?, val stat: String, val percen
     val key: String get() = "${discipline ?: "all"}:$stat"
 }
 
-class CoreOwnedMap(val id: UUID, val seed: Long, val tier: Int, modifiers: List<CoreMapModifier> = emptyList(), val level: Int = CoreJourneyRules.floor(tier)) {
+/** [zone] is the atlas zone the map was drawn for (null for maps from rewards, surveys and trials). */
+class CoreOwnedMap(val id: UUID, val seed: Long, val tier: Int, modifiers: List<CoreMapModifier> = emptyList(), val level: Int = CoreJourneyRules.floor(tier),
+    val zone: Int? = null) {
     val modifiers: List<CoreMapModifier> = Collections.unmodifiableList(modifiers.toList())
     init {
         require(tier in 1..4)
         require(level in CoreJourneyRules.floor(tier)..CoreJourneyRules.ceiling(tier))
         require(modifiers.size <= 3 && modifiers.map { it.key }.distinct().size == modifiers.size)
+        require(zone == null || zone in 0..CoreZoneRecord.MAX_ZONE_ID)
     }
-    fun withModifier(modifier: CoreMapModifier) = CoreOwnedMap(id, seed, tier, modifiers + modifier, level)
-    override fun toString() = "CoreOwnedMap($id,$seed,$tier,$modifiers,$level)"
+    fun withModifier(modifier: CoreMapModifier) = CoreOwnedMap(id, seed, tier, modifiers + modifier, level, zone)
+    override fun toString() = "CoreOwnedMap($id,$seed,$tier,$modifiers,$level,$zone)"
+}
+
+/** A player's own record of one atlas zone: boss clears there and the highest enemy level cleared. */
+data class CoreZoneRecord(val clears: Int, val bestLevel: Int) {
+    init { require(clears in 1..MAX_CLEARS && bestLevel in 1..CoreJourneyRules.MAX_LEVEL) }
+    fun cleared(level: Int) = CoreZoneRecord((clears + 1).coerceAtMost(MAX_CLEARS), maxOf(bestLevel, level))
+    companion object {
+        const val MAX_ZONE_ID = 255
+        const val MAX_CLEARS = 1_000_000
+    }
 }
 
 data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: Boolean = false, val trialId: String? = null) {
@@ -87,7 +100,10 @@ class CoreAccount(
     armorParts: Map<CoreGearSlot, CoreArmorPiece> = CoreGearSlot.armorSlots.filterNot { it == CoreGearSlot.CHEST }
         .associateWith { slot -> CoreArmorPiece(CoreGearIdentity.legacy(playerId, slot).copy(quality = armorIdentity.quality),
             armorTier, CoreCraftingCatalog.inferRarity(equippedAffixes, slot), armorEnhancement, armorBroken) },
+    zoneRecords: Map<Int, CoreZoneRecord> = emptyMap(),
 ) {
+    /** Atlas clears by zone id. Unknown ids are kept so a removed zone never corrupts a save. */
+    val zoneRecords: Map<Int, CoreZoneRecord> = Collections.unmodifiableMap(LinkedHashMap(zoneRecords.toSortedMap()))
     /** CHEST owns the v10 armor fields so older callers and fixtures remain readable. */
     val armorParts = Collections.unmodifiableMap(armorParts.toMap())
     fun armor(slot: CoreGearSlot): CoreArmorPiece = when (CoreGearSlot.equipped(slot)) {
@@ -115,6 +131,7 @@ class CoreAccount(
     val legacyLayouts: Set<CoreGearSlot> = Collections.unmodifiableSet(legacyLayouts.toSet())
     init {
         require(surveyPoints in 0..1_000_000_000L)
+        require(zoneRecords.keys.all { it in 0..CoreZoneRecord.MAX_ZONE_ID })
         require(buyOrders.size <= CoreEconomy.MAX_OFFERS && buyOrders.map { it.id }.distinct().size == buyOrders.size)
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
         require(smithingXp in 0..CoreEnhancementCatalog.MAX_SMITHING_XP)
@@ -192,9 +209,10 @@ class CoreAccount(
         buyOrders: List<CoreBuyOrder> = this.buyOrders,
         journey: CoreJourney = this.journey,
         armorParts: Map<CoreGearSlot, CoreArmorPiece> = this.armorParts,
+        zoneRecords: Map<Int, CoreZoneRecord> = this.zoneRecords,
     ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes,
         weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed, weaponEnhancement, armorEnhancement, smithingXp,
-        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, journey, armorParts)
+        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, journey, armorParts, zoneRecords)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)
@@ -240,7 +258,8 @@ sealed interface CoreAction {
     data class UpgradeArmorPart(val slot: CoreGearSlot) : CoreAction
     data class Exchange(val resource: CoreResource, val tier: Int, val batches: Int = 1) : CoreAction
     data class Craft(val resource: CoreResource, val batches: Int = 1, val tier: Int = 1) : CoreAction
-    data class ClaimMap(val tier: Int, val seed: Long, val level: Int? = null) : CoreAction
+    /** [zone]: the atlas zone the map is drawn for; its tier must match. */
+    data class ClaimMap(val tier: Int, val seed: Long, val level: Int? = null, val zone: Int? = null) : CoreAction
     data class ApplyTablet(val mapId: UUID, val modifier: CoreMapModifier) : CoreAction
     data class StartRun(val mapId: UUID, val runId: UUID) : CoreAction
     /** Only failed generation/transfer refunds a map. Normal withdrawal/death/disconnect does not. */

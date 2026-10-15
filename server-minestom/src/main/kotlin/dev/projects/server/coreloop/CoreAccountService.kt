@@ -312,7 +312,9 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             require(!run.bossDefeated) { "この討伐報酬は受取済みです" }
             if (run.trialId == null) require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
             val nextTier = if (account.journey.legacy || run.map.level >= CoreJourneyRules.ceiling(run.map.tier)) (run.map.tier + 1).coerceAtMost(4) else run.map.tier
-            val message = if (run.trialId == null) "討伐完了！ T$nextTier の地図・討伐証・試練の欠片を獲得しました"
+            val zone = CoreFrontierZones.expedition(run.map.zone ?: -1)?.takeIf { run.trialId == null }
+            val firstClear = zone != null && zone.id !in account.zoneRecords
+            val message = if (run.trialId == null) (if (firstClear) "${zone?.name}を初踏破！ " else "") + "討伐完了！ T$nextTier の地図・討伐証・試練の欠片を獲得しました"
                 else "専用ボス討伐！ 専用オーブ2個・高揚1個・討伐証を獲得しました"
             val outputs = if (run.trialId == null)
                 mapOf(CoreMaterial(CoreResource.BOSS_SIGIL, run.map.tier) to 2L,
@@ -321,7 +323,9 @@ class CoreAccountService(private val repository: CoreAccountRepository,
                     CoreMaterial(CoreResource.POTION) to 2L)
                 else mapOf(CoreMaterial(CoreResource.BOSS_SIGIL, run.map.tier) to 2L, CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier) to 12L)
             val rewarded = recipe(addSource(account, source("boss", run.id, "defeat")), CoreRecipe(message, emptyMap(), outputs)).first
-                .copy(journey = account.journey.gain(CoreJourneyRules.reward(run.map.tier, true)))
+                .copy(journey = account.journey.gain(CoreJourneyRules.reward(run.map.tier, true)),
+                    zoneRecords = if (zone == null) account.zoneRecords else account.zoneRecords +
+                        (zone.id to (account.zoneRecords[zone.id]?.cleared(run.map.level) ?: CoreZoneRecord(1, run.map.level))))
             if (run.trialId == null) {
                 val rewardMap = CoreOwnedMap(derived(requestId, "boss-map"), run.map.seed xor requestId.leastSignificantBits, nextTier,
                     level = if (nextTier != run.map.tier) CoreJourneyRules.floor(nextTier) else (run.map.level + 2).coerceAtMost(CoreJourneyRules.ceiling(nextTier)))
@@ -367,11 +371,12 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             requireHub(account)
             require(action.tier in 1..account.unlockedMapTier) { "そのTierはまだ解放されていません" }
             require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
+            if (action.zone != null) require(CoreFrontierZones.expedition(action.zone)?.tier == action.tier) { "その地域へは出発できません" }
             val cost = if (action.tier == 1) emptyMap() else mapOf(CoreMaterial(CoreResource.COMBAT_TOKEN, action.tier - 1) to 1L)
             val claimed = recipe(account, CoreRecipe("T${action.tier} の遠征地図を受け取りました", cost, emptyMap()))
             val level = action.level ?: account.journey.level.coerceIn(CoreJourneyRules.floor(action.tier), CoreJourneyRules.ceiling(action.tier))
             require(account.journey.legacy || level <= maxOf(CoreJourneyRules.floor(action.tier), account.journey.level + 2)) { "その地図レベルはまだ高すぎます" }
-            claimed.first.copy(maps = account.maps + CoreOwnedMap(derived(requestId, "map"), action.seed, action.tier, level = level)) to claimed.second
+            claimed.first.copy(maps = account.maps + CoreOwnedMap(derived(requestId, "map"), action.seed, action.tier, level = level, zone = action.zone)) to claimed.second
         }
         is CoreAction.ApplyTablet -> {
             requireHub(account)
