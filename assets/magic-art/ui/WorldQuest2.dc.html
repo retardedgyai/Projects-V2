@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>ワールドの魔術HUD v7</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.px{image-rendering:pixelated;display:block}
+.ink{color:#2a1a10}
+.hud{font-family:'DotGothic16',monospace;color:#ECE6DC;text-shadow:1px 1px 0 #000}
+.slot{width:40px;height:40px;background:rgba(13,14,16,0.85);box-shadow:inset 2px 2px 0 #050506,inset -2px -2px 0 #2C2E34;display:flex;align-items:center;justify-content:center}
+@keyframes dropIn{0%{transform:translateY(-130px)}70%{transform:translateY(6px)}100%{transform:translateY(0)}}
+@keyframes ink{0%{transform:scale(.2);opacity:0}55%{transform:scale(1.25);opacity:1}100%{transform:scale(1)}}
+@keyframes fill{0%{background:#cdb68c}100%{background:#49b4d9}}
+.toast{animation:dropIn .5s steps(6) both}
+.inkring{animation:ink .5s steps(5) .5s both}
+.seg3{animation:fill .3s steps(2) 1.2s both}
+</style>
+</helmet>
+<div style="position: relative; width: 1280px; height: 720px; overflow: hidden; background: #1a1a1e">
+<svg class="px" width="1280" height="720" viewBox="0 0 1280 720" aria-hidden="true" style="position: absolute; inset: 0">
+<defs>
+<pattern id="wall" width="96" height="48" patternUnits="userSpaceOnUse"><rect width="96" height="48" fill="#2a2a30"></rect><rect x="0" y="0" width="46" height="22" fill="#34343b"></rect><rect x="48" y="0" width="46" height="22" fill="#303037"></rect><rect x="-24" y="24" width="46" height="22" fill="#2e2e35"></rect><rect x="24" y="24" width="46" height="22" fill="#36363d"></rect><rect x="72" y="24" width="46" height="22" fill="#313138"></rect></pattern>
+<pattern id="floor" width="128" height="32" patternUnits="userSpaceOnUse"><rect width="128" height="32" fill="#4a3220"></rect><rect width="128" height="14" fill="#5a3e28"></rect><rect y="14" width="128" height="2" fill="#2e1e12"></rect><rect y="30" width="128" height="2" fill="#2e1e12"></rect><rect x="64" y="0" width="2" height="14" fill="#2e1e12"></rect><rect x="26" y="16" width="2" height="14" fill="#2e1e12"></rect><rect x="100" y="16" width="2" height="14" fill="#2e1e12"></rect></pattern>
+<radialGradient id="lamp" cx="40%" cy="62%" r="45%"><stop offset="0%" stop-color="#F0A85A" stop-opacity="0.26"></stop><stop offset="100%" stop-color="#000000" stop-opacity="0"></stop></radialGradient>
+</defs>
+<rect width="1280" height="430" fill="url(#wall)"></rect>
+<rect y="430" width="1280" height="290" fill="url(#floor)"></rect>
+<rect y="426" width="1280" height="6" fill="#1e140c"></rect>
+<rect width="1280" height="720" fill="url(#lamp)"></rect>
+<rect width="1280" height="720" fill="#000000" opacity="0.16"></rect>
+</svg>
+<img class="px" src="/_blob/c271094235f2920b7076173081b6957d" alt="" width="228" height="230" style="position: absolute; left: 300px; top: 270px">
+<img class="px" src="/_blob/9b08ce57d64adede66326b2ed631dbf3" alt="" width="84" height="118" style="position: absolute; left: 560px; top: 400px">
+<img class="px" src="/_blob/9b08ce57d64adede66326b2ed631dbf3" alt="" width="84" height="118" style="position: absolute; left: 610px; top: 420px">
+<img class="px" src="/_blob/25e96ea39ca9477e064516353c8e34eb" alt="" width="308" height="298" style="position: absolute; left: 720px; top: 268px">
+<div style="position: absolute; left: 639px; top: 352px; width: 2px; height: 16px; background: rgba(255,255,255,0.85)"></div>
+<div style="position: absolute; left: 632px; top: 359px; width: 16px; height: 2px; background: rgba(255,255,255,0.85)"></div>
+
+<div class="hud" style="position: absolute; left: 20px; top: 18px; display: flex; align-items: center; gap: 10px">
+<span class="slot" style="width: 36px; height: 36px"><span style="width: 24px; height: 24px; background: #c89a72; box-shadow: inset 0 8px 0 #3a2416"></span></span>
+<span style="display: flex; flex-direction: column"><span style="font-size: 16px; line-height: 20px">gyai</span><span style="font-size: 16px; line-height: 20px; color: #A29E97">自分の工房</span></span>
+</div>
+
+<div class="toast" style="position: absolute; left: 400px; top: 16px; width: 480px; height: 104px">
+<img class="px" src="/_blob/c221ead54aa2497e20cfbc792bde6c8b" alt="" width="480" height="104" style="position: absolute; left: 0; top: 0">
+<span class="inkring" style="position: absolute; left: 30px; top: 28px; width: 48px; height: 48px">
+<img class="px" src="/_blob/9ddba6f362b9c79722cdf78517ecfd8b" alt="" width="48" height="48">
+<img class="px" src="/_blob/1515a70cffd15352c0990cc1dbb012da" alt="" width="32" height="32" style="position: absolute; left: 8px; top: 8px">
+</span>
+<div style="position: absolute; left: 112px; top: 14px; display: flex; flex-direction: column; gap: 0">
+<span style="font-family: 'DotGothic16', monospace; font-size: 16px; line-height: 20px; color: #8a5a10">クエスト達成 ・ 一章 抽出</span>
+<span class="ink" style="font-family: 'DotGothic16', monospace; font-size: 32px; line-height: 40px">蒸留器</span>
+<span style="font-family: 'DotGothic16', monospace; font-size: 16px; line-height: 20px; color: #7a5a3a">報酬は魔術書で受け取れる <span style="padding: 0 5px; box-shadow: inset 0 0 0 2px #7a5a3a">B</span></span>
+</div>
+</div>
+
+<div style="position: absolute; left: 916px; top: 92px; width: 344px; height: 112px">
+<img class="px" src="/_blob/926c70c56adf94e196fe7070a80d2a99" alt="" width="344" height="112" style="position: absolute; left: 0; top: 0">
+<span style="position: absolute; left: 22px; top: 36px; width: 48px; height: 48px">
+<img class="px" src="/_blob/332688f4d24600d143d97997c6c5f336" alt="" width="48" height="48">
+<img class="px" src="/_blob/b446653a8db7f64fdd66f4014f0b7ee6" alt="" width="32" height="32" style="position: absolute; left: 8px; top: 8px">
+</span>
+<div style="position: absolute; left: 92px; top: 12px; right: 18px; display: flex; flex-direction: column; font-family: 'DotGothic16', monospace">
+<span style="font-size: 16px; line-height: 20px; color: #7a5a3a">ピン留め ・ 一章</span>
+<span style="display: flex; align-items: baseline; justify-content: space-between"><span class="ink" style="font-size: 32px; line-height: 40px">瓶</span><span style="font-size: 16px; color: #14506e">2 / 3</span></span>
+<span class="ink" style="display: flex; align-items: center; gap: 6px; font-size: 16px; line-height: 20px"><img class="px" src="/_blob/5b509d56670a8209125f6408e04c040b" alt="" width="16" height="16">瓶を3つ置く</span>
+<span style="display: flex; gap: 4px; padding-top: 6px"><span style="flex: 1; height: 6px; background: #49b4d9"></span><span style="flex: 1; height: 6px; background: #49b4d9"></span><span style="flex: 1; height: 6px; background: #cdb68c"></span></span>
+</div>
+</div>
+
+<div class="hud" style="position: absolute; left: 0; right: 0; bottom: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px">
+<div style="display: flex; gap: 12px; align-items: center">
+<span style="display: block; width: 200px; height: 10px; background: #0E1014; box-shadow: inset 0 0 0 2px #050506"><span style="display: block; width: 86%; height: 10px; background: #E34B43; box-shadow: inset 0 2px 0 #F07A70"></span></span>
+<span style="font-size: 16px; line-height: 16px">172 / 200</span>
+<span style="display: block; width: 200px; height: 10px; background: #0E1014; box-shadow: inset 0 0 0 2px #050506"><span style="display: block; width: 64%; height: 10px; background: #49b4d9; box-shadow: inset 0 2px 0 #a8ecf6"></span></span>
+</div>
+<div style="display: flex; gap: 2px">
+<span class="slot" style="box-shadow: inset 2px 2px 0 #050506, inset -2px -2px 0 #2C2E34, 0 0 0 2px #ECE6DC"><img class="px" src="/_blob/04af3c202693351e1ec52dc62725ec27" alt="" width="32" height="32"></span>
+<span class="slot"><img class="px" src="/_blob/f59cd6e362f54112e1c7390fe0563f91" alt="" width="32" height="32"></span>
+<span class="slot"><img class="px" src="/_blob/b446653a8db7f64fdd66f4014f0b7ee6" alt="" width="32" height="32"></span>
+<span class="slot"></span><span class="slot"></span><span class="slot"></span>
+<span class="slot"><img class="px" src="/_blob/59e7260dc4d657d2fdff164b8ac52ddb" alt="" width="32" height="32"></span>
+<span class="slot"></span>
+<span class="slot"><img class="px" src="/_blob/2c25c6074c9621ffcae05883a1f0f221" alt="" width="32" height="32"></span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
