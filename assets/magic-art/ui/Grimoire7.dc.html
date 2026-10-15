@@ -66,7 +66,7 @@ body{margin:0}
 <img class="px ring" src="{{n.ring}}" alt="">
 <sc-if value="{{n.isOpen}}" hint-placeholder-val="{{ false }}"><img class="px ring glow" src="/_blob/a6eafa31c383f9d7d3e0c1fa86358705" alt=""></sc-if>
 <sc-if value="{{n.showIcon}}" hint-placeholder-val="{{ true }}"><img class="px ic" src="{{n.icon}}" alt="" style="{{n.iconStyle}}"></sc-if>
-<sc-if value="{{n.hidden}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; left: 0; right: 0; top: 12px; text-align: center; font-size: 16px; color: #5a6278">?</span></sc-if>
+<sc-if value="{{n.hidden}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; left: 0; right: 0; top: 12px; text-align: center; font-size: 16px; color: #8a96c0">?</span></sc-if>
 </span>
 <sc-if value="{{n.claim}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; right: -6px; top: -6px; width: 20px; height: 20px; background: #b04a3a; color: #fff4e0; font-size: 16px; line-height: 20px; text-align: center; box-shadow: inset 0 0 0 2px #6a1c16, 0 0 0 2px #05060c">!</span></sc-if>
 <sc-if value="{{n.pinned}}" hint-placeholder-val="{{ false }}"><svg class="px" width="14" height="20" viewBox="0 0 7 10" aria-hidden="true" style="position: absolute; left: -2px; top: -12px"><rect x="1" y="0" width="5" height="4" fill="#49b4d9"></rect><rect x="2" y="1" width="2" height="1" fill="#f0ffff"></rect><rect x="3" y="4" width="1" height="6" fill="#a0a0aa"></rect></svg></sc-if>
@@ -79,6 +79,12 @@ body{margin:0}
 <span class="sh" style="{{n.labelStyle}}">{{n.label}}</span>
 </button>
 </sc-for>
+<div class="sh" style="position: absolute; left: 20px; bottom: 12px; display: flex; gap: 16px; font-size: 16px; line-height: 20px; color: #c8d0e0">
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; background: #d4a838; box-shadow: 0 0 0 1px #05060c"></span>完了</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; background: #a8ecf6; box-shadow: 0 0 0 1px #05060c"></span>進められる</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; background: #b090e0; box-shadow: 0 0 0 1px #05060c"></span>寄り道</span>
+<span style="display: flex; align-items: center; gap: 6px"><span style="width: 10px; height: 10px; background: #6a6a76; box-shadow: 0 0 0 1px #05060c"></span>未解放</span>
+</div>
 </sc-if>
 <sc-if value="{{isBranch}}" hint-placeholder-val="{{ false }}">
 <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px">
@@ -89,7 +95,7 @@ body{margin:0}
 </sc-if>
 </div>
 
-<img class="px" src="/_blob/119650d01a283dd485d01b93630d8410" alt="" width="1280" height="720" style="position: absolute; left: 0; top: 0; pointer-events: none">
+<img class="px" src="/_blob/718835e2b226b4a7cd261b3a0127ac51" alt="" width="1280" height="720" style="position: absolute; left: 0; top: 0; pointer-events: none">
 <div class="sh" style="position: absolute; left: 470px; top: 62px; width: 340px; height: 44px; display: flex; align-items: center; justify-content: center; gap: 14px; pointer-events: none">
 <span style="font-family: 'Jacquard 12', serif; font-size: 24px; line-height: 24px; color: #f0cc5a">Grimoire</span>
 <span style="font-size: 16px; color: #f4d870">魔術書</span>
@@ -167,7 +173,7 @@ book: B + '2c25c6074c9621ffcae05883a1f0f221', goggles: B + 'f59cd6e362f54112e1c7
 desk: B + 'a78cb39eac137046918875f67d0f331a', distiller: B + '1515a70cffd15352c0990cc1dbb012da', jar: B + 'b446653a8db7f64fdd66f4014f0b7ee6'
 };
 var H = { desk: B + '25e96ea39ca9477e064516353c8e34eb', distiller: B + 'c271094235f2920b7076173081b6957d', jar: B + '9b08ce57d64adede66326b2ed631dbf3' };
-var R = { done: B + '9ddba6f362b9c79722cdf78517ecfd8b', open: B + '332688f4d24600d143d97997c6c5f336', locked: B + '4bb7e29104edfd1ca793e8b4aee7c581', side: B + 'b499577d4442aa1b2ad1261ad5a524a6', goal: B + 'e0ce260706c6868edf716e93d6c26532', hidden: B + '0c42df9778ae7e57a1a96e2a9eec928e' };
+var R = { done: B + '9ddba6f362b9c79722cdf78517ecfd8b', open: B + '332688f4d24600d143d97997c6c5f336', locked: B + '6421f27f3a4158a20098184ee39aa2bc', side: B + 'b499577d4442aa1b2ad1261ad5a524a6', goal: B + 'e0ce260706c6868edf716e93d6c26532', hidden: B + 'b114c757642b137cf0c16c70550de07e' };
 var NEB = [B + '4b8bbd97cee550d4f7f55e0f9433d1db', B + 'f30528859d08f774426a1f16a5b7be56', B + '388b8ac78b04c647ad9530769d933b8e', B + 'e4d36a55d7ea7f8deebcd59f1a8151ae', B + 'a24b1d542e83b077362724bdaaf0864b', B + 'bb6d093377dd59a1f106803d1ee73588', B + '4afbf4858b5e8db406b3e0a2a8266932'];
 var N = [
 { id: 'n1', c: 0, r: 2, icon: I.book, big: false, title: '古い手帳', ch: '序章 観測', base: 'done', concept: '光る草に挟まっていた手帳。最初のページには一文だけ。「すべての物は、目に見えない性質（相）でできている」', goals: [['光る素材を拾う', 1]], unlocks: [['開く', '魔術書']], reward: '' },
@@ -184,7 +190,7 @@ var N = [
 { id: 'n12', c: 7, r: 2, icon: I.scroll, big: false, goal: true, title: '帰還の巻物', ch: '終章 最初の儀式', base: '', concept: '幹のゴール。遠征先から、魔術で帰ってくる。ここまで来ると専門の枝の封が解ける。', goals: [['小さな祭壇で帰還の巻物を作る', 0]], unlocks: [['開く', '専門の枝すべて']], reward: '' }
 ];
 var E = [['n1', 'n2'], ['n1', 'n3'], ['n2', 'n4'], ['n3', 'n4'], ['n4', 'n5'], ['n4', 'n6'], ['n5', 'n7'], ['n6', 'n7'], ['n6', 'n8'], ['n7', 'n9'], ['n7', 'n10'], ['n9', 'n11'], ['n10', 'n11'], ['n11', 'n12']];
-var OX = 36, OY = 10, SX = 86, SY = 116, S = 48;
+var OX = 36, OY = 4, SX = 86, SY = 118, S = 48;
 var self = this, st = this.state, byId = {};
 N.forEach(function (n) { n.x = OX + n.c * SX; n.y = OY + n.r * SY; n.parents = []; byId[n.id] = n; });
 E.forEach(function (e) { byId[e[1]].parents.push(e[0]); });
@@ -223,7 +229,7 @@ return {
 pos: 'left:' + n.x + 'px;top:' + n.y + 'px;', ring: R[n.st === 'goalOpen' ? 'open' : n.st], anim: anim, icon: n.icon,
 showIcon: n.st !== 'hidden', hidden: n.st === 'hidden', isOpen: n.st === 'open' || n.st === 'goalOpen' || n.st === 'side',
 claim: canClaim(n), pinned: st.pin === n.id && n.st !== 'done', sel: st.sel === n.id,
-iconStyle: (faded ? 'filter:grayscale(1) brightness(0.55);opacity:0.6;' : ''),
+iconStyle: (faded ? 'filter:grayscale(1) brightness(0.85);opacity:0.8;' : ''),
 label: showLabel ? n.title.replace('寄り道：', '') : '',
 labelStyle: 'position:absolute;left:-40px;right:-40px;top:52px;text-align:center;font-size:16px;line-height:20px;white-space:nowrap;color:' + (n.st === 'done' ? '#d8c8a0' : '#c8f0f8') + ';',
 aria: (n.st === 'hidden' ? 'まだ見えない項目' : n.title) + ' ' + LAB[n.st][0],

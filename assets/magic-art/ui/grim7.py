@@ -164,22 +164,28 @@ CX, CYc = 640, 30
 for s in (-1, 1):
     for k in range(7):                                    # back feathers first (longest)
         k2 = 6 - k
-        L = 70 + k2 * 20
-        ang = math.radians(8 + k2 * 6)                   # fan upward a little
-        root = (CX + s * 22, CYc + 4 + k2 * 2)
-        tip = (root[0] + s * L * math.cos(ang), root[1] - L * math.sin(ang) + k2 * 6)
-        wid = 9 - k2 // 2
+        L = 76 + k2 * 18
+        ang = math.radians(3 + k2 * 4)
+        root = (CX + s * 20, CYc + 6 + k2 * 2)
+        tip = (root[0] + s * L * math.cos(ang), root[1] - L * math.sin(ang) + k2 * 5)
+        wid = 13 - k2
         nx, ny = -(tip[1] - root[1]), (tip[0] - root[0])
         nl = math.hypot(nx, ny); nx, ny = nx / nl, ny / nl
         if s < 0:
             nx, ny = -nx, -ny
-        mid = ((root[0] + tip[0]) / 2, (root[1] + tip[1]) / 2)
-        poly = [root, (mid[0] - nx * wid * 0.2, mid[1] - ny * wid * 0.2), tip,
-                (mid[0] + nx * wid, mid[1] + ny * wid), (root[0] + nx * wid * 0.8, root[1] + ny * wid * 0.8)]
-        fill = IRN[3] if k % 2 else IRN[4]
-        d.polygon(poly, fill=hx(fill), outline=hx(IRN[1]))
-        d.line([root, (mid[0] - nx * wid * 0.2, mid[1] - ny * wid * 0.2), tip], fill=hx(IRN[6]))
-        d.line([(root[0] + nx * 2, root[1] + ny * 2), (tip[0] + nx * 1, tip[1] + ny * 1)], fill=hx(IRN[2]))
+        q1 = (root[0] + (tip[0] - root[0]) * 0.55, root[1] + (tip[1] - root[1]) * 0.55)
+        poly = [root, (q1[0] - nx * 2, q1[1] - ny * 2), tip,
+                (q1[0] + nx * wid, q1[1] + ny * wid), (root[0] + nx * wid * 0.9, root[1] + ny * wid * 0.9)]
+        sh = [(x + nx * 2, y + ny * 2) for (x, y) in poly]
+        d.polygon(sh, fill=hx(IRN[0]))                    # dark backing so it reads on the night sky
+        d.polygon(poly, fill=hx(IRN[4] if k % 2 else IRN[5]))
+        # inner shade toward the lower edge, gold leading edge, dark outline
+        inner = [(q1[0] + nx * wid * 0.45, q1[1] + ny * wid * 0.45), tip, (q1[0] + nx * wid, q1[1] + ny * wid),
+                 (root[0] + nx * wid * 0.9, root[1] + ny * wid * 0.9), (root[0] + nx * wid * 0.45, root[1] + ny * wid * 0.45)]
+        d.polygon(inner, fill=hx(IRN[3]))
+        d.line([root, (q1[0] - nx * 2, q1[1] - ny * 2), tip], fill=hx(BRS[4]))
+        d.line([(root[0] + nx, root[1] + ny), (q1[0] - nx, q1[1] - ny), tip], fill=hx(BRS[2]))
+        d.line([tip, (q1[0] + nx * wid, q1[1] + ny * wid), (root[0] + nx * wid * 0.9, root[1] + ny * wid * 0.9)], fill=hx(IRN[1]))
 # gem setting + faceted gem
 for y in range(-26, 27):
     for x in range(-24, 25):
@@ -298,10 +304,10 @@ SILV = ['#1f4a6a', '#49b4d9', '#a8ecf6', '#f0ffff']
 mount('done', GOLD, ('#140f06', '#1e170a'), halo=('#d4a838', 90))
 mount('open', SILV, ('#06141e', '#0a2030'), halo=('#49b4d9', 130))
 mount('glow', ['#49b4d9', '#a8ecf6', '#f0ffff', '#ffffff'], None, halo=('#a8ecf6', 200), studs=False)
-mount('locked', ['#16161c', '#2a2a32', '#3c3c46', '#54545e'], ('#08080c', '#0c0c12'))
+mount('locked', ['#2a2a34', '#4a4a56', '#6a6a76', '#9a9aa6'], ('#121218', '#181820'))
 mount('side', ['#3a2460', '#7a5aa8', '#b090e0', '#e0d0ff'], ('#0e0818', '#140c22'), halo=('#8a6ab0', 110), dash=True)
 mount('goal', ['#5a1810', '#a03024', '#e07a60', '#ffc0a0'], ('#140606', '#1e0a0a'), halo=('#b04a3a', 120))
-mount('hidden', ['#14182a', '#20263c', '#2c3450', '#3a4466'], None, dash=True, studs=False)
+mount('hidden', ['#2a3048', '#3a4466', '#4c5880', '#6a78a0'], None, dash=True, studs=False)
 
 # =====================================================================  parchment page
 PW, PH = 408, 568
