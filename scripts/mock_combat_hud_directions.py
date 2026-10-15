@@ -589,9 +589,176 @@ def design_c2():
     return cv
 
 
+# ---- C3: C2 layout in a PSO2 NGS-like material ---------------------------------------------------
+# Reference studied: PSO2 NGS menus/HUD (official manual + player screenshots): deep navy glass
+# panels, a cyan header strip with a small diamond, thin bright rims, gold for rank/level.
+
+N = {"glass": (10, 22, 38, 215), "glass2": (16, 34, 56, 215), "rim": rgba("4fd8ff", 150),
+     "rim_hi": rgba("b8f3ff"), "line": rgba("2a6b8a"), "gold": rgba("ffd36b"), "gold_d": rgba("8a5a12"),
+     "text": rgba("eaf8ff"), "sub": rgba("8fb8cc")}
+
+
+def hgrad(cv, box, c0, c1):
+    x0, y0, x1, y1 = box
+    for x in range(x0, x1):
+        t = (x - x0) / max(1, x1 - x0 - 1)
+        over(cv, (x, y0, x + 1, y1), tuple(int(a + (b - a) * t) for a, b in zip(c0, c1)))
+
+
+def diamond(cv, cx, cy, col, r=2):
+    for j in range(-r, r + 1):
+        w = r - abs(j)
+        over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), col)
+
+
+def glass(cv, box, header=0, cut=3):
+    """Navy glass plate; top-left and bottom-right corners cut, bright top rim."""
+    x0, y0, x1, y1 = box
+    for j in range(y0, y1):
+        d = cut - (j - y0) if j - y0 < cut else 0
+        d2 = cut - (y1 - 1 - j) if y1 - 1 - j < cut else 0
+        over(cv, (x0 + d, j, x1 - d2, j + 1), N["glass"])
+        px(cv, x0 + d, j, N["rim"])
+        px(cv, x1 - 1 - d2, j, N["rim"])
+    over(cv, (x0 + cut, y0, x1, y0 + 1), N["rim_hi"])
+    over(cv, (x0, y1 - 1, x1 - cut, y1), N["rim"])
+    if header:
+        hgrad(cv, (x0 + 1, y0 + 1, x1 - 1, y0 + 1 + header), (40, 150, 200, 200), (20, 60, 100, 40))
+
+
+def gauge(cv, x, y, w, h, frac, c0, c1, back, ticks=10, extra=0.0, extra_col=None, trail=0.0):
+    over(cv, (x - 1, y - 1, x + w + 1, y + h + 1), (0, 0, 0, 200))
+    over(cv, (x, y, x + w, y + h), back)
+    f = round(w * frac)
+    if trail:
+        over(cv, (x + f, y, x + min(w, f + round(w * (extra + trail))), y + h), rgba("fff1e0", 220))
+    if extra:
+        over(cv, (x + f, y, x + min(w, f + round(w * extra)), y + h), extra_col)
+    hgrad(cv, (x, y, x + f, y + h), c0, c1)
+    over(cv, (x, y, x + f, y + 1), (255, 255, 255, 110))
+    if f:
+        over(cv, (x + f - 1, y - 1, x + f, y + h + 1), (255, 255, 255, 230))  # bright head
+    for i in range(1, ticks):
+        tx = x + w * i // ticks
+        over(cv, (tx, y + h - 1, tx + 1, y + h), (0, 0, 0, 120))
+
+
+def design_c3():
+    cv = world()
+    # hotbar: glass tray; skill keys 2..6 get a cyan cap, item slots stay plain
+    x0, y0 = HB_X, HB_Y
+    glass(cv, (x0 - 2, y0, x0 + 184, y0 + 22), cut=3)
+    for i in range(9):
+        sx = x0 + 2 + 20 * i
+        over(cv, (sx, y0 + 2, sx + 18, y0 + 20), N["glass2"])
+        over(cv, (sx, y0 + 19, sx + 18, y0 + 20), N["line"])
+        if 1 <= i <= 5:
+            over(cv, (sx, y0 + 2, sx + 18, y0 + 3), N["rim"])
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        i = k - 1
+        ic = icon(name)
+        x, y = x0 + 3 + 20 * i, y0 + 3
+        cv.alpha_composite(darken(ic, .45) if state == "nomana" else ic, (x, y))
+        if state == "cd":
+            h = round(16 * cd / total)
+            over(cv, (x, y + 16 - h, x + 16, y + 16), (255, 255, 255, 127))
+            s = str(cd)
+            mc_text(cv, x + 17 - mc_width(s), y + 9, s, rgba("ffffff"))
+        if state == "nomana":
+            over(cv, (x - 1, y + 16, x + 17, y + 17), rgba("3b8cff"))
+    sx = x0 + 1
+    for a, b, c, d in ((sx, y0 + 1, sx + 20, y0 + 2), (sx, y0 + 20, sx + 20, y0 + 21),
+                       (sx, y0 + 1, sx + 1, y0 + 21), (sx + 19, y0 + 1, sx + 20, y0 + 21)):
+        over(cv, (a, b, c, d), N["gold"])
+    diamond(cv, sx + 10, y0, N["gold"], 1)
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # class resource strip: ember gradient segments
+    sy = HB_Y - 6
+    glass(cv, (HB_X - 2, sy, HB_X + 184, sy + 6), cut=2)
+    lit = RAGE * 20 // 100
+    for i in range(20):
+        x = HB_X + 2 + i * 9
+        if i < lit:
+            hgrad(cv, (x, sy + 2, x + 8, sy + 4), (255, 120, 40, 255), (255, 214, 90, 255))
+        else:
+            over(cv, (x, sy + 2, x + 8, sy + 4), (70, 40, 20, 200))
+    over(cv, (HB_X + 2 + lit * 9 - 1, sy + 1, HB_X + 2 + lit * 9, sy + 5), rgba("fff4c0"))
+    # HP / MP glass plaques with a header strip
+    py, pw = HB_Y - 27, 72
+    for px0, label, val, mx, c0, c1, back, extra in (
+            (HB_X - 2, "HP", HP, HP_MAX, (200, 30, 60, 255), (255, 110, 120, 255), (50, 10, 20, 230), BARRIER / HP_MAX),
+            (HB_X + 184 - pw, "MP", MP, MP_MAX, (40, 90, 255, 255), (90, 200, 255, 255), (10, 20, 50, 230), 0)):
+        glass(cv, (px0, py, px0 + pw, py + 21), header=10)
+        mc_text(cv, px0 + 4, py + 2, label, rgba("bfe9ff"))
+        s = str(val)
+        x = px0 + pw - 4 - mc_width(f"/{mx}") - mc_width(s) - 1
+        mc_text(cv, x, py + 2, s, N["text"])
+        mc_text(cv, px0 + pw - 4 - mc_width(f"/{mx}"), py + 2, f"/{mx}", rgba("a9c8d8"))
+        gauge(cv, px0 + 4, py + 12, pw - 8, 5, val / mx, c0, c1, back, extra=extra,
+              extra_col=rgba("e8f2ff"), trail=HP_LOST / HP_MAX if label == "HP" else 0)
+    # class tab above the HP plaque
+    tab = "戦士"
+    tw = jp_width(tab) + 14
+    glass(cv, (HB_X - 2, py - 15, HB_X - 2 + tw, py - 1), cut=2)
+    diamond(cv, HB_X + 3, py - 8, N["gold"], 2)
+    jp_text(cv, HB_X + 8, py - 14, tab, N["text"])
+
+    # buffs above the MP plaque: green buff rim + timer
+    bx = HB_X + 184
+    for label, name, sec in BUFFS:
+        bx -= 30
+        glass(cv, (bx, py - 15, bx + 28, py - 1), cut=2)
+        over(cv, (bx + 2, py - 13, bx + 13, py - 3), rgba("6dffa8", 160))
+        cv.alpha_composite(icon(name).resize((9, 9), Image.NEAREST), (bx + 3, py - 12))
+        mc_text(cv, bx + 15, py - 11, f"{sec}", N["text"], shadow=False)
+    # centre: hex with the class emblem, gold rim
+    cx, top = C, py + 1
+    rows = [2, 4, 6, 8, 10, 11, 11, 11, 11, 11, 11, 10, 8, 6, 4, 2]
+    for j, half in enumerate(rows):
+        over(cv, (cx - half - 1, top + j, cx + half + 1, top + j + 1), N["gold_d"])
+    for j, half in enumerate(rows[1:-1], start=1):
+        over(cv, (cx - half + 1, top + j, cx + half - 1, top + j + 1), N["gold"] if j < 3 else (10, 22, 38, 255))
+    for j, half in enumerate(rows[3:-2], start=3):
+        over(cv, (cx - half + 2, top + j, cx + half - 2, top + j + 1), (20, 40, 66, 255))
+    mc_text(cv, cx - mc_width("12") // 2, top + 4, "12", N["gold"])
+    for side in (-1, 1):
+        a = cx + side * 13
+        b = HB_X - 2 + pw if side < 0 else HB_X + 184 - pw
+        lo, hi = min(a, b), max(a, b)
+        over(cv, (lo, py + 9, hi, py + 10), N["rim"])
+        diamond(cv, (lo + hi) // 2, py + 9, N["rim_hi"], 1)
+    # notice: navy band fading at the ends, cyan top line, diamond marks
+    nw = jp_width(NOTICE)
+    w = nw + 70
+    for i in range(w):
+        a = int(200 * (1 - abs(i - w / 2) / (w / 2)) ** .7)
+        over(cv, (C - w // 2 + i, py - 34, C - w // 2 + i + 1, py - 20), (10, 40, 70, a))
+        over(cv, (C - w // 2 + i, py - 34, C - w // 2 + i + 1, py - 33), (80, 220, 255, a))
+    diamond(cv, C - nw // 2 - 8, py - 27, N["rim_hi"])
+    diamond(cv, C + nw // 2 + 7, py - 27, N["rim_hi"])
+    jp_text(cv, C - nw // 2, py - 33, NOTICE, rgba("9fd0ff"))
+    # boss: glass plate, red rank diamond, gold Lv, ticked gauge with phase notch
+    bw = 220
+    bx0 = C - bw // 2
+    glass(cv, (bx0, 2, bx0 + bw, 28), header=13, cut=4)
+    diamond(cv, bx0 + 8, 8, rgba("ff4060"), 3)
+    name = "裂け目の執行官"
+    jp_text(cv, bx0 + 15, 2, name, rgba("ffffff"))
+    mc_text(cv, bx0 + 19 + jp_width(name), 5, "Lv30", N["gold"])
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - 6 - mc_width(pct), 5, pct, N["text"])
+    gauge(cv, bx0 + 6, 18, bw - 12, 5, BOSS / BOSS_MAX, (170, 20, 50, 255), (255, 90, 90, 255),
+          (50, 10, 20, 230), ticks=20, trail=BOSS_LOST / BOSS_MAX)
+    over(cv, (C, 16, C + 1, 25), N["gold"])
+    return cv
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c), ("C2-wynn-structure", design_c2)):
+    for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c),
+                     ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3)):
         img = fn()
         for s in (2, 4):
             img.resize((W * s, H * s), Image.NEAREST).save(OUT / f"{name}-{s}x.png")
