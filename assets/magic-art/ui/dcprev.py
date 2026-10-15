@@ -28,7 +28,7 @@ function walk(node, s, out){
   var e=document.createElementNS(c.namespaceURI,c.localName);
   Array.from(c.attributes).forEach(function(a){
    if(/^on/.test(a.name)){var f=interp(a.value,s);if(typeof f==='function')e.addEventListener(a.name.slice(2),f);return;}
-   var v=interp(a.value,s); v=v==null?'':String(v); if(a.name==='src'&&v.indexOf('/_blob/')===0&&window.BLOBS[v.slice(7)])v=window.BLOBS[v.slice(7)]; e.setAttribute(a.name,v);});
+   var v=interp(a.value,s); v=v==null?'':String(v); if(a.name==='src'&&v.indexOf('/_blob/')===0&&window.BLOBS[v.slice(7)])v=window.BLOBS[v.slice(7)]; if(a.name==='style')v=v.replace(/url\(\/_blob\/([0-9a-f]+)\)/g,function(_,id){return 'url('+(window.BLOBS[id]||'')+')';}); e.setAttribute(a.name,v);});
   walk(c.content||c,s,e); out.appendChild(e);});
 }
 class DCLogic{constructor(p){this.props=p||{};this.state={};} setState(p){Object.assign(this.state,typeof p==='function'?p(this.state):p);render();} forceUpdate(){render();}}
