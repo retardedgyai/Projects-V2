@@ -6,7 +6,7 @@ from boss_models import SOURCE, validate_model
 
 class ModelValidationTest(unittest.TestCase):
     def setUp(self):
-        self.model = json.loads((SOURCE / "vesper.bbmodel").read_text(encoding="utf-8"))
+        self.model = json.loads((SOURCE / "shade_wyrm.bbmodel").read_text(encoding="utf-8"))
 
     def test_all_imported_models(self):
         for path in SOURCE.glob("*.bbmodel"):
@@ -35,6 +35,21 @@ class ModelValidationTest(unittest.TestCase):
         extra["uuid"] = "extra"
         self.model["elements"].append(extra)
         with self.assertRaisesRegex(ValueError, "unparented"):
+            validate_model(self.model)
+
+    def test_reserved_wsee_bone_name_rejected(self):
+        self.model["outliner"][0]["name"] = "head"
+        with self.assertRaisesRegex(ValueError, "reserved"):
+            validate_model(self.model)
+
+    def test_unknown_format_version_rejected(self):
+        self.model["meta"]["format_version"] = "3.6"
+        with self.assertRaisesRegex(ValueError, "format_version"):
+            validate_model(self.model)
+
+    def test_idle_must_loop(self):
+        next(a for a in self.model["animations"] if a["name"] == "idle")["loop"] = "once"
+        with self.assertRaisesRegex(ValueError, "looping animation: idle"):
             validate_model(self.model)
 
     def test_nonfinite_cube_rejected(self):
