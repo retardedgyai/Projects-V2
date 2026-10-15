@@ -47,6 +47,9 @@ import java.util.UUID
 import java.util.concurrent.*
 import kotlin.math.roundToInt
 
+/** Recovery potion reuse delay; also the length of its HUD cooldown icon. */
+private const val POTION_COOLDOWN_MILLIS = 10_000L
+
 /** Entry point for the playable solo loop. The original combat laboratory remains opt-in. */
 object CoreLoopServer {
     fun start() {
@@ -89,6 +92,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     // Own arenas during asynchronous transfer too; a disconnect can precede a late spawn callback.
     private val pendingTrialArenas = ConcurrentHashMap<UUID, BossArena>()
     private val potionReady = ConcurrentHashMap<UUID, Long>()
+    private val hudTrails = ConcurrentHashMap<UUID, CoreHudTrail>()
     private val lastUseAt = ConcurrentHashMap<UUID, Long>()
     private val menus = CoreLoopMenus(this)
     private val partyDialogs = CorePartyDialogs({ connections[it] }, { name -> connections.values.firstOrNull { it.username.equals(name, ignoreCase = true) } })
@@ -170,6 +174,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         var caches: CoreMapCaches? = null
         var adventures: AdventureRuntime? = null
         var anomalies: FirstMagicField? = null
+        val bossTrail = CoreHudTrail()
     }
 
     override fun account(player: Player): CoreAccount? = accounts[player.uuid]
@@ -252,6 +257,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     armorLevelPower = { accounts[player.uuid]?.let { CoreJourneyRules.power(it.armorIdentity, it.armorTier) } ?: 1.0 },
                     allies = { actors.values.toList() },
                     gearSource = { accounts[player.uuid]?.let(CoreCombatGear::from) },
+                    packed = { packed(player) },
                     onLesson = { bit -> if (accounts[player.uuid]?.journey?.knows(bit) == false) transact(player.uuid, CoreAction.LearnCombat(bit)) }) {
                     player.showTitle(Title.title(CoreLoopItems.text("力尽きた…", NamedTextColor.RED), CoreLoopItems.text("獲得素材を持って港へ戻ります")))
                     returnToHarbor(player)
@@ -431,7 +437,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             combatLab.beforeTick(player)
             actor(player)?.tick()
             CoreArmamentPresentation.tick(player, packed(player))
-            if (player.aliveTicks % 5 == 0L) updateHud(player)
+            // A notice refreshes the HUD at once; otherwise every 5 ticks.
+            val hudDirty = actor(player)?.consumeHudDirty() == true
+            if (hudDirty || player.aliveTicks % 5 == 0L) updateHud(player)
             if (player.instance === hub && player.position.y() < 38) { player.teleport(harbor.spawn); actors[player.uuid]?.reset() }
             colonies[player.uuid]?.let { colony -> if (player.instance === colony.instance && player.position.y() < 37) player.teleport(colony.spawn) }
             if (player.instance !== hub && player.position.y() < 15 && !isDeparting(player)) returnToHarbor(player)
@@ -983,7 +991,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     private fun attachTrial(player: Player, arena: BossArena, runId: UUID, tier: Int) {
         val run = requireNotNull(account(player)?.activeRun).also { check(it.id == runId && it.trialId == arena.bossId) }
-        val bar = BossBar.bossBar(CoreLoopItems.text(arena.displayName, NamedTextColor.RED), 1f, BossBar.Color.RED, BossBar.Overlay.PROGRESS)
+        val bar = BossBar.bossBar(CoreLoopItems.text(arena.displayName, NamedTextColor.RED), 1f, bossBarColor(player), BossBar.Overlay.PROGRESS)
         val combat = QuestEncounterCombat(arena.instance, tier, emptyList(), arena.bossSpawn,
             onMobDefeated = { _, boss -> onMobDefeated(player, boss) },
             damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
@@ -992,6 +1000,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) })
         try {
             val loot = CoreWorldLoot(player, arena.instance, run, { rewards.submit(player.uuid, it) }, { refresh(player) })
+            combat.pixelNameplates = packed(player)
             sessions[player.uuid] = Session(player, runId, null, combat, bar, loot, arena)
         } catch (failure: Exception) { combat.dispose(); throw failure }
     }
@@ -1023,7 +1032,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
             QuestCombatEncounter(positions)
         }
-        val bar = BossBar.bossBar(CoreLoopItems.text("裂け目の執行官", NamedTextColor.RED), 1f, BossBar.Color.RED, BossBar.Overlay.PROGRESS)
+        val bar = BossBar.bossBar(Component.empty(), 1f, bossBarColor(player), BossBar.Overlay.PROGRESS)
         val combat = QuestEncounterCombat(runtime.instance, tier, groups, QuestCombatPlacement.resolve(runtime.instance, pos(plan.boss)),
             onMobDefeated = { _, boss -> onMobDefeated(player, boss) }, damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
             canTarget = { target -> target.uuid == player.uuid && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
@@ -1033,6 +1042,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val loot = CoreWorldLoot(player, runtime.instance, run,
             reward = { rewards.submit(player.uuid, it) },
             inventoryChanged = { refresh(player) })
+        combat.pixelNameplates = packed(player)
+        updateBossBar(player, combat, bar, null)
         val session = Session(player, runId, runtime, combat, bar, loot)
         try {
             session.anomalies = FirstMagicField(player, runtime,
@@ -1117,6 +1128,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         session.loot.tick()
         session.ticks++
         if (session.combat.bossDefeated && session.ticks % 100 == 0L) awardBoss(session)
+        if (session.ticks % 5 == 0L && !session.combat.bossDefeated) updateBossBar(session.owner, session.combat, session.bossBar, session)
         if (session.ticks % 20 != 0L) return
         if (actors[session.owner.uuid]?.defeated == true && !session.rewardPending) {
             returnToHarbor(session.owner)
@@ -1125,10 +1137,26 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val p = session.owner
         if (session.combat.bossDefeated) p.hideBossBar(session.bossBar)
         else if (session.arena != null || p.position.distanceSquared(requireNotNull(session.runtime).plan.boss.let { Pos(it.x.toDouble(), p.position.y(), it.z.toDouble()) }) < 45 * 45) {
-            session.bossBar.name(CoreLoopItems.text("${session.combat.bossName()}  ${session.combat.bossHealth().roundToInt()} / ${session.combat.bossMaxHealth().roundToInt()}", NamedTextColor.RED))
-            session.bossBar.progress((session.combat.bossHealth() / session.combat.bossMaxHealth()).toFloat().coerceIn(0f, 1f))
             p.showBossBar(session.bossBar)
         } else p.hideBossBar(session.bossBar)
+    }
+
+    private fun bossBarColor(player: Player) = if (packed(player)) BossBar.Color.PINK else BossBar.Color.RED
+
+    /** The pack blanks the pink vanilla bar; its name component then draws the pixel boss bar. */
+    private fun updateBossBar(player: Player, combat: QuestEncounterCombat, bar: BossBar, session: Session?) {
+        val name = combat.bossName()
+        val health = combat.bossHealth()
+        val maximum = combat.bossMaxHealth()
+        bar.progress((health / maximum).toFloat().takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f)
+        if (packed(player)) {
+            val trail = session?.bossTrail?.update(health, maximum, System.currentTimeMillis()) ?: health
+            bar.color(BossBar.Color.PINK)
+            bar.name(CoreBossBarHud.render(name, health, maximum, trail))
+        } else {
+            bar.color(BossBar.Color.RED)
+            bar.name(CoreLoopItems.text("$name  ${health.roundToInt()} / ${maximum.roundToInt()}", NamedTextColor.RED))
+        }
     }
 
     override fun returnToHarbor(player: Player) {
@@ -1185,7 +1213,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (actor.defeated || sessions[player.uuid]?.returning != false || !busy.add(player.uuid)) return
         if (resource == CoreResource.POTION && (actor.health >= actor.maxHealth || System.currentTimeMillis() < (potionReady[player.uuid] ?: 0L))) {
             busy.remove(player.uuid)
-            player.sendActionBar(CoreLoopItems.text("HPが満タン、または回復薬の再使用待ちです。", NamedTextColor.YELLOW))
+            actor.notice("HPが満タン、または回復薬の再使用待ちです")
             return
         }
         transact(player.uuid, CoreAction.Consume(resource)).whenComplete { result, _ ->
@@ -1193,7 +1221,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 if (connections[player.uuid] !== player) return@scheduleNextTick
                 busy.remove(player.uuid)
                 if (result?.status == CoreTransactionStatus.COMMITTED) {
-                    if (resource == CoreResource.POTION) { actor.healPotion(); potionReady[player.uuid] = System.currentTimeMillis() + 10_000 }
+                    if (resource == CoreResource.POTION) { actor.healPotion(); potionReady[player.uuid] = System.currentTimeMillis() + POTION_COOLDOWN_MILLIS }
                     else actor.sharpen()
                     refresh(player)
                 } else player.sendMessage(CoreLoopItems.text(result?.message ?: "使用できませんでした。", NamedTextColor.RED))
@@ -1208,10 +1236,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val actor = actor(player) ?: return
         player.food = 20
         player.foodSaturation = 20f
-        player.level = a.journey.level
         val currentXp = CoreJourneyRules.threshold(a.journey.level)
         val nextXp = CoreJourneyRules.threshold((a.journey.level + 1).coerceAtMost(40))
-        player.exp = if (nextXp == currentXp) 1f else ((a.journey.xp - currentXp).toFloat() / (nextXp - currentXp)).coerceIn(0f, 1f)
+        val progress = if (nextXp == currentXp) 1f else ((a.journey.xp - currentXp).toFloat() / (nextXp - currentXp)).coerceIn(0f, 1f)
+        val packed = packed(player)
+        // With the pack, level and progress live in the HUD plate; level 0 hides the vanilla number.
+        player.level = if (packed) 0 else a.journey.level
+        player.exp = if (packed) 0f else progress
         val session = sessions[player.uuid]
         val message = combatLab.summary(player) ?: if (isDeparting(player)) "遠征先を準備中…"
         else if (session == null) "開拓港  武器T${a.weaponTier} / 防具T${CoreGearSlot.armorSlots.minOf { a.armor(it).tier }}  手帳 [9]"
@@ -1219,10 +1250,16 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         else if (session.arena != null) "${session.arena.displayName} — ${session.combat.bossName()}"
         else "道の先のボスへ  戦利品 ${session.loot.remainingCount()}"
         val icons = listOf(CoreUiIcon.DASH, CoreUiIcon.SLAM, CoreUiIcon.WHIRL, CoreUiIcon.DEFENSE, CoreUiIcon.MAGIC)
+        val now = System.currentTimeMillis()
+        val potion = ((potionReady[player.uuid] ?: 0L) - now).coerceAtLeast(0L)
+        val buffs = actor.hudBuffs() + listOfNotNull(potion.takeIf { it > 0 }?.let {
+            CoreHudBuff(CoreHudBuffKind.POTION, it / 1000.0, POTION_COOLDOWN_MILLIS / 1000.0, cooldown = true) })
+        val trail = hudTrails.getOrPut(player.uuid) { CoreHudTrail() }.update(actor.health, actor.maxHealth.toDouble(), now)
         player.sendActionBar(CoreUiComponents.hud(CoreHudState(actor.health, actor.maxHealth.toDouble(), actor.mana.toDouble(), actor.maxMana.toDouble(),
             icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0,
                 actor.skillDefinitions[i].mana, CoreSkillCatalog.artIndex(actor.skillDefinitions[i]), actor.skillAvailable(i), actor.resourceAvailable(i)) },
-            message + " / ${actor.weaponHint}", actor.chargeCount, actor.resource, actor.resourceMax, actor.shield,actor.combatCue), packed(player)))
+            message + " / ${actor.weaponHint}", actor.chargeCount, actor.resource, actor.resourceMax, actor.shield, actor.combatCue,
+            notice = actor.activeNotice, level = a.journey.level, experience = progress.toDouble(), healthTrail = trail, buffs = buffs), packed))
     }
 
     override fun sessionSummary(player: Player): String = sessions[player.uuid]?.let {
@@ -1272,7 +1309,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
         questMaps.disconnect(player.uuid)
         actors.remove(player.uuid)?.resetActions()
-        busy.remove(player.uuid); potionReady.remove(player.uuid); lastUseAt.remove(player.uuid); menus.forget(player.uuid)
+        busy.remove(player.uuid); potionReady.remove(player.uuid); hudTrails.remove(player.uuid); lastUseAt.remove(player.uuid); menus.forget(player.uuid)
         rewards.drain(player.uuid).thenRunAsync({
             if (connections.containsKey(player.uuid)) return@thenRunAsync
             ledger.snapshot(player.uuid)?.activeRun?.let { run ->

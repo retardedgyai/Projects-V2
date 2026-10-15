@@ -2,8 +2,8 @@
 
 Generated files are not committed (see .gitignore); Gradle's
 `:server-minestom:generateResourcePack` runs this before processResources.
-Order matters: build_warrior_hud reads the menu glyph atlas written by
-build_core_ui_assets; the Ice Garden and first-magic font builders are
+build_core_ui_assets also builds the pixel combat HUD (build_combat_hud.py)
+after the menu font; the Ice Garden and first-magic font builders are
 independent leaves.
 The final step rewrites index.txt from every file in the pack (committed and
 generated), which is what CoreUiPackServer bundles.
@@ -20,8 +20,7 @@ SCRIPTS = ROOT / "scripts"
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
 
 CHAIN = [
-    "build_core_ui_assets.py",   # HUD, menu atlas (charset from */src/main/kotlin), combat VFX models
-    "build_warrior_hud.py",      # must follow: reads menu/glyphs-emphasis.tsv + core_menu_emphasis_y30
+    "build_core_ui_assets.py",   # menu atlas (charset from */src/main/kotlin), pixel combat HUD, combat VFX models
     "build_ice_garden.py",       # combat_vfx/garden
     "build_ice_garden_bloom.py", # combat_vfx/garden_bloom
     # Only font/first_magic_canvas_*.json; the first_magic art itself is committed (partly hand-finished).

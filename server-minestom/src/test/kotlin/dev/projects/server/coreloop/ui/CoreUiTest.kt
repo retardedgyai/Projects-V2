@@ -57,9 +57,11 @@ class CoreUiTest {
         val fallback = plain(CoreUiComponents.hud(state, false))
         assertTrue(fallback.contains("HP 70/100")); assertTrue(fallback.contains("3:4秒"))
         assertFalse(fallback.any { it.code in 0xE000..0xF8FF })
-        val packed = plain(CoreUiComponents.hud(state, true))
-        assertTrue(packed.any { it.code in 0xE400..0xE415 }); assertTrue(packed.any { it.code in 0xE420..0xE435 })
-        assertTrue(packed.any { it.code in 0xE440..0xE455 })
+        val packed = CoreUiComponents.hud(state, true)
+        val skillGlyphs = children(packed).filterIsInstance<TextComponent>()
+            .filter { it.style().font()?.asString() == "projects:hud_skills" }.map { it.content() }
+        assertEquals(listOf(CoreHudGlyphs["skill_0_0"].char.toString(), CoreHudGlyphs["skill_1_${CoreHudLayout.skillVisual(state.skills[1], 50.0).frame}"].char.toString(),
+            CoreHudGlyphs["skill_2_${CoreHudLayout.skillVisual(state.skills[2], 50.0).frame}"].char.toString()), skillGlyphs)
     }
 
     @Test fun `inventory titles fit their frame using bold Japanese pixel width`() {
