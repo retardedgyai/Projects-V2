@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>本を閉じたとき</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@500;700;800&amp;family=DotGothic16&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.px{image-rendering:pixelated;display:block}
+.num{font-family:'DotGothic16',monospace}
+.hud{background:rgba(16,17,20,0.86);border:1px solid rgba(255,255,255,0.09);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,0.45)}
+.pill{display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 16px;border-radius:22px;background:rgba(16,17,20,0.86);border:1px solid rgba(255,255,255,0.09)}
+.slot{background:#0D0E10;box-shadow:inset 3px 3px 0 #050506,inset -3px -3px 0 #2C2E34;display:flex;align-items:center;justify-content:center}
+.key{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:24px;padding:0 6px;box-sizing:border-box;border-radius:5px;background:#1E2025;border:1px solid #3A3C42;border-bottom-width:3px;color:#ECE6DC;font-size:13px;font-family:'DotGothic16',monospace}
+.btn{display:flex;align-items:center;justify-content:center;gap:12px;min-height:56px;padding:0 28px;border-radius:10px;font-family:'M PLUS 2',sans-serif;font-size:18px;font-weight:700;cursor:pointer}
+@keyframes rise{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{0%{opacity:0}100%{opacity:1}}
+</style>
+</helmet>
+<div style="position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #121316; font-family: 'M PLUS 2', sans-serif; color: #ECE6DC">
+<svg class="px" width="1920" height="1080" viewBox="0 0 1920 1080" aria-hidden="true" style="position: absolute; inset: 0">
+<defs>
+<pattern id="sstone" width="96" height="96" patternUnits="userSpaceOnUse"><rect width="48" height="48" fill="#1E1F23"></rect><rect x="48" width="48" height="48" fill="#232429"></rect><rect y="48" width="48" height="48" fill="#202125"></rect><rect x="48" y="48" width="48" height="48" fill="#1B1C1F"></rect><rect x="12" y="12" width="6" height="6" fill="#2A2B30"></rect><rect x="78" y="60" width="6" height="6" fill="#2B2C31"></rect></pattern>
+<radialGradient id="dawn" cx="50%" cy="0%" r="70%"><stop offset="0%" stop-color="#F0A85A" stop-opacity="0.22"></stop><stop offset="100%" stop-color="#F0A85A" stop-opacity="0"></stop></radialGradient>
+</defs>
+<rect width="1920" height="1080" fill="url(#sstone)"></rect><rect width="1920" height="1080" fill="#000000" opacity="0.5"></rect><rect width="1920" height="1080" fill="url(#dawn)"></rect>
+</svg>
+
+<header style="position: absolute; left: 56px; right: 56px; top: 30px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center">
+<div style="display: flex; align-items: center; gap: 14px">
+<span class="slot" style="width: 52px; height: 52px"><span style="width: 32px; height: 32px; background: #c89a72; box-shadow: inset 0 10px 0 #3a2416"></span></span>
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 22px; font-weight: 700">gyai</span><span style="font-size: 13px; color: #A29E97">魔術師見習い ・ 帰還港の工房</span></div>
+</div>
+<div style="font-size: 15px; color: #A29E97">夜が明けた ・ 6:12</div>
+<div style="display: flex; justify-content: flex-end; gap: 10px">
+<span class="pill"><span style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #A29E97; line-height: 1">魔術熟練</span><span style="display: block; width: 96px; height: 4px; border-radius: 2px; background: #2A2C31"><span style="display: block; width: 84%; height: 4px; border-radius: 2px; background: #49b4d9"></span></span></span><span class="num" style="font-size: 19px">Rank 3</span><span class="num" style="font-size: 13px; color: #49b4d9">+220</span></span>
+<span class="pill"><span style="font-size: 13px; color: #A29E97">インク</span><span class="num" style="font-size: 19px">22</span><span class="num" style="font-size: 13px; color: #A29E97">−14</span></span>
+<span class="pill"><svg class="px" width="18" height="18" viewBox="0 0 8 8" aria-hidden="true"><rect x="2" y="1" width="4" height="6" fill="#9EA3AB"></rect><rect x="1" y="2" width="6" height="4" fill="#9EA3AB"></rect><rect x="2" y="2" width="2" height="2" fill="#E3E6EA"></rect></svg><span style="font-size: 13px; color: #A29E97">銀貨</span><span class="num" style="font-size: 19px">12,556</span><span class="num" style="font-size: 13px; color: #F5C451">+76</span></span>
+</div>
+</header>
+
+<main style="position: absolute; left: 200px; right: 200px; top: 200px; display: grid; grid-template-columns: 760px minmax(0, 1fr); column-gap: 40px">
+
+<section class="hud" style="padding: 36px 40px 32px; display: flex; flex-direction: column; gap: 28px; animation: rise .6s ease-out both">
+<div style="display: flex; align-items: center; gap: 20px">
+<img class="px" src="/_blob/2c25c6074c9621ffcae05883a1f0f221" alt="" width="96" height="96">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 16px; color: #A29E97">本を閉じた</span>
+<span style="font-size: 44px; font-weight: 800; line-height: 1.15">気づいたら <span class="num" style="font-weight: 400">2</span>時間<span class="num" style="font-weight: 400">12</span>分</span>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px">
+<sc-for list="{{stats}}" as="s" hint-placeholder-count="3">
+<div style="{{s.style}}">
+<span style="font-size: 14px; color: #A29E97">{{s.label}}</span>
+<span class="num" style="font-size: 44px; line-height: 1">{{s.value}}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 12px">
+<span style="font-size: 14px; color: #A29E97">この間に開いた項目</span>
+<div style="display: flex; gap: 14px">
+<sc-for list="{{opened}}" as="o" hint-placeholder-count="5">
+<div style="{{o.style}}">
+<span class="slot" style="width: 72px; height: 72px; box-shadow: inset 3px 3px 0 #050506, inset -3px -3px 0 #2C2E34, 0 0 0 2px #D4A838"><img class="px" src="{{o.icon}}" alt="" width="{{o.size}}" height="{{o.size}}"></span>
+<span style="font-size: 13px; color: #C9C3B8; text-align: center">{{o.name}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; font-size: 15px"><span>幹 ・ 基礎魔術</span><span><span class="num" style="font-size: 18px">9</span><span style="color: #A29E97"> / 12</span></span></div>
+<div style="display: flex; gap: 4px">
+<sc-for list="{{trunk}}" as="t" hint-placeholder-count="12">
+<span style="{{t.style}}"></span>
+</sc-for>
+</div>
+<span style="font-size: 14px; color: #A29E97">あと3つで、専門の枝の封が解ける</span>
+</div>
+</section>
+
+<section class="hud" style="padding: 28px 30px; display: flex; flex-direction: column; gap: 6px; animation: rise .6s ease-out .25s both">
+<span style="font-size: 18px; font-weight: 700; padding-bottom: 8px">その間に世界では</span>
+<sc-for list="{{world}}" as="w" hint-placeholder-count="6">
+<div style="{{w.style}}">
+<span style="{{w.dot}}"></span>
+<span style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1; min-width: 0">
+<span style="font-size: 13px; color: #A29E97">{{w.kind}}</span>
+<span style="font-size: 16px; line-height: 1.5">{{w.text}}</span>
+</span>
+<span style="font-size: 13px; color: #8A867F; white-space: nowrap">{{w.when}}</span>
+</div>
+</sc-for>
+</section>
+</main>
+
+<div style="position: absolute; left: 0; right: 0; bottom: 150px; display: flex; justify-content: center; gap: 16px; animation: fadeIn .6s ease-out .9s both">
+<button type="button" class="btn" style="background: #F07A2A; color: #1A0E06; border: 0">工房へ戻る</button>
+<button type="button" class="btn" style="background: rgba(16,17,20,0.86); color: #ECE6DC; border: 1px solid rgba(255,255,255,0.14)">市場で売れた瓶を見る</button>
+<button type="button" class="btn" style="background: transparent; color: #C9C3B8; border: 1px solid rgba(255,255,255,0.14)">本をもう一度開く <span class="key">B</span></button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+renderVals() {
+var B = '/_blob/';
+var stats = [['開いた項目', '5'], ['解いた相', '2'], ['自分の書き込み', '5']].map(function (s, i) {
+return { label: s[0], value: s[1], style: 'display:flex;flex-direction:column;gap:10px;padding:16px 18px;border-radius:10px;background:rgba(255,255,255,0.04);animation:rise .5s ease-out both;animation-delay:' + (0.3 + i * 0.12) + 's;' };
+});
+var OP = [['蒸留器', B + '2ae12397a4c732bd3186b14999fc82d8', 56], ['瓶', B + 'ccfaf76ce2520f1efa6acd7ff7dcd0c8', 56], ['相を溜める', B + '46d80cbcd671f6bfdd38eeb3863b5090', 32], ['杖', B + '04af3c202693351e1ec52dc62725ec27', 32], ['管と弁', B + '567d58ab81398326ac89c83ccceaa504', 32]];
+var opened = OP.map(function (o, i) {
+return { name: o[0], icon: o[1], size: o[2], style: 'display:flex;flex-direction:column;align-items:center;gap:8px;width:88px;animation:rise .4s ease-out both;animation-delay:' + (0.6 + i * 0.1) + 's;' };
+});
+var trunk = [];
+for (var i = 0; i < 12; i++) {
+var c = i < 4 ? '#8A6E2E' : (i < 9 ? '#F5C451' : '#2A2C31');
+trunk.push({ style: 'flex:1;height:10px;border-radius:2px;background:' + c + ';' });
+}
+var W = [
+['市場', 'あなたの Aqua の瓶が 2本売れた　＋76 銀貨', '12分前', '#F5C451'],
+['工房仲間', 'shika258 があなたの工房に来ている', 'いま', '#49b4d9'],
+['工房仲間', 'mare が「瓶」を完成させた', '45分前', '#49b4d9'],
+['サーバー初', 'Lumi が三章「地脈」を最初に解いた', '1時間前', '#E58B80'],
+['研究依頼', '今週：Ignis の瓶 ×5　2/5 ・ 残り2日', '', '#B49AD8'],
+['天気', '帰還港に霧が出て、夜が明けた', '20分前', '#8A867F']
+];
+var world = W.map(function (w, i) {
+return { kind: w[0], text: w[1], when: w[2], dot: 'width:10px;height:10px;margin-top:6px;flex-shrink:0;border-radius:2px;background:' + w[3] + ';', style: 'display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-top:1px solid rgba(255,255,255,0.06);animation:rise .4s ease-out both;animation-delay:' + (0.5 + i * 0.12) + 's;' };
+});
+return { stats: stats, opened: opened, trunk: trunk, world: world };
+}
+}
+</script>
+</body>
+</html>
