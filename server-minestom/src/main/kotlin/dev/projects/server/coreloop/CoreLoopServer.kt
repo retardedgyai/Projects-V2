@@ -468,6 +468,10 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 }
             } }
         })
+        // Test-only: the Blockbench boss in its own arena via the skill lab (no reward, no save).
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("bosstest").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR, "shade") } }
+        })
         MinecraftServer.getCommandManager().register(Command("effects").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let {
                 it.sendMessage(CoreLoopItems.text("戦闘演出：${CoreCombatPresentation.cycle(it).label}（/effects で切替。自分の表示だけ変更）"))

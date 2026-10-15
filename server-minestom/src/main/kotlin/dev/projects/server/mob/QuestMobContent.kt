@@ -23,6 +23,7 @@ enum class QuestMobArchetype(val displayName: String, val rarity: QuestMobRarity
     FORGE_SENTINEL("熔星の番人", QuestMobRarity.BOSS, "ice"),
     TIDE_ARCHIVIST("蒼潮の記録者", QuestMobRarity.BOSS, "fire"),
     ECLIPSE_REGENT("星蝕の王", QuestMobRarity.BOSS, "lightning"),
+    SHADE_WYRM("黒翳竜", QuestMobRarity.BOSS, "fire"),
 }
 
 data class QuestMobInfo(
@@ -62,6 +63,13 @@ internal data class QuestMobDefinition(
     val chestplate: Material = Material.AIR,
     val frontalDamageMultiplier: Double = 1.0,
     val abilities: List<MobAbility>,
+    /** Blockbench model id under assets/bosses/ (null = vanilla body or WardenModel). */
+    val model: String? = null,
+    /** At or below this health ratio the mob enrages once: a held roar, then [enragedSpeedMultiplier]. 0 = never. */
+    val enrageHealthRatio: Double = 0.0,
+    val enragedSpeedMultiplier: Double = 1.0,
+    /** Model bones shown only after enraging (e.g. horns). */
+    val enragedBones: Set<String> = emptySet(),
 ) {
     val name: String get() = archetype.displayName
     val boss: Boolean get() = archetype.rarity == QuestMobRarity.BOSS
@@ -70,6 +78,7 @@ internal data class QuestMobDefinition(
         QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE, QuestMobArchetype.TEMPEST_HIEROPHANT, QuestMobArchetype.TIDE_ARCHIVIST -> "evoker"
         QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.CINDER_REGENT, QuestMobArchetype.FORGE_SENTINEL -> "piglin_brute"
         QuestMobArchetype.ECLIPSE_REGENT -> "wither_skeleton"
+        QuestMobArchetype.SHADE_WYRM -> "ravager"
         else -> "vindicator"
     }
     val dropKind: QuestMobDropKind get() = when (archetype) {
@@ -109,7 +118,8 @@ internal object QuestMobContent {
             minimumRange, if (target) MobAbilityAnchor.TARGET else MobAbilityAnchor.CASTER, health,
             if (id in setOf("rift-bolt", "rift-pulse", "oracle-mark", "oracle-ray", "oracle-pulse",
                     "forge-cross", "forge-mark", "tide-ray", "tide-ring", "tide-center", "eclipse-mark", "eclipse-cross",
-                    "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross"))
+                    "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross",
+                    "shade-dust", "shade-pulse", "shade-breath", "shade-storm"))
                 dev.projects.server.coreloop.CoreDamageType.MAGICAL else dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
         )
         fun sweep(radius: Double = 3.4, damage: Double = 10.0) = attack(
@@ -126,6 +136,24 @@ internal object QuestMobContent {
             distance, scale, weapon, offhand, helmet, chest, guard, attacks,
         )
         return when (archetype) {
+            // Blind wyrm on wing-arms (docs/development/shade-wyrm-boss.md). Animation lengths in
+            // assets/bosses/shade_wyrm.bbmodel equal telegraph+recovery of each ability below.
+            QuestMobArchetype.SHADE_WYRM -> definition(EntityType.RAVAGER, 560.0, .13, 3.0, 1.0,
+                Material.AIR, attacks = listOf(
+                    attack("shade-sweep", "翼脚薙ぎ・背後か距離を取れ", MobAttackShape.Sweep(5.2, 75.0), 4.8, 22.0,
+                        1100, 400, 900, 2200, weight = 3),
+                    attack("shade-pounce", "飛びかかり・横へ", MobAttackShape.Slam(10.0, 1.7), 9.5, 27.0,
+                        1400, 500, 1200, 3400, minimumRange = 3.0, weight = 2),
+                    attack("shade-dust", "鱗粉炸裂・足元から離れろ", MobAttackShape.Ring(3.2), 16.0, 23.0,
+                        1700, 500, 900, 2800, target = true, weight = 2),
+                    attack("shade-pulse", "触角の共鳴・竜から離れろ", MobAttackShape.Ring(4.6), 4.5, 20.0,
+                        1200, 0, 1100, 3600),
+                    attack("shade-breath", "翳の吐息・横へ", MobAttackShape.Slam(18.0, 1.4), 17.0, 30.0,
+                        1600, 450, 1000, 3600, health = .5, weight = 3),
+                    attack("shade-storm", "鱗粉嵐・竜の懐へ", MobAttackShape.Ring(15.0, 4.0), 15.0, 32.0,
+                        2200, 0, 1300, 6000, health = .5, weight = 2),
+                )).copy(model = "shade_wyrm", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2,
+                    enragedBones = setOf("horn_l", "horn_r"))
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,
                 Material.IRON_AXE, attacks = listOf(sweep(), slam()))
             QuestMobArchetype.SHIELD_GUARD -> definition(EntityType.HUSK, 66.0, 0.105, 2.0, 1.0,

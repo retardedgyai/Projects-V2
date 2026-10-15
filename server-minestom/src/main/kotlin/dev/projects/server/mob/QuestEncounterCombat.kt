@@ -60,6 +60,9 @@ internal class QuestMobLife(val maximumHealth: Double) {
     }
 }
 
+/** How long an enraging boss holds its roar before attacking again (matches the `enrage` model clip). */
+private const val ENRAGE_HOLD_MILLIS = 2600L
+
 /**
  * One map owns one instance of this runtime. Invoke tick on the map's server tick, and dispose before unloading it.
  * Player attack packets never enter this class: applyDamage accepts targets already resolved by server hit shapes.
@@ -109,6 +112,10 @@ class QuestEncounterCombat(
         var guardianIds = emptySet<UUID>()
         @Volatile var spawnFailure: Throwable? = null
         @Volatile var model: WardenModel? = null
+        /** Blockbench (WSEE) body, created after the carrier entity is in the instance. */
+        @Volatile var view: BossModelView? = null
+        var enraged = false
+        var enrageHoldUntil = 0L
     }
 
     private val mobs = linkedMapOf<UUID, Mob>()
@@ -129,7 +136,8 @@ class QuestEncounterCombat(
     var latestDefeat: QuestMobDefeat? = null
         private set
     internal val groundDisplayCount: Int get() = telegraphs.displayCount
-    internal val modelDisplayCount: Int get() = mobs.values.sumOf { it.model?.count ?: 0 }
+    internal val modelDisplayCount: Int get() = mobs.values.sumOf { (it.model?.count ?: 0) + (it.view?.partCount ?: 0) }
+    internal fun isEnraged(targetId: UUID): Boolean = mobs[targetId]?.enraged == true
 
     init {
         require(tier in 1..4)
@@ -247,7 +255,10 @@ class QuestEncounterCombat(
         .filter { it.life.isAlive && it.life.phase != QuestMobPhase.RETURNING && isSpawned(it) }
         .map { mob ->
             val scale = mob.definition.scale
-            if (mob.model != null) CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 1.8, 0.0), Vec(1.2, 1.8, .6))
+            // The wyrm's body reaches ~1 block ahead of its carrier; its box covers chest, wings and hips.
+            if (mob.view != null) CombatTarget(mob.entity.uuid, mob.entity.position.add(normalizeHorizontal(mob.entity.position.direction()))
+                .add(0.0, 1.8, 0.0), Vec(2.0, 1.8, 2.0))
+            else if (mob.model != null) CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 1.8, 0.0), Vec(1.2, 1.8, .6))
             else CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 0.9 * scale, 0.0), Vec(0.35 * scale, 0.9 * scale, 0.35 * scale))
         }
 
@@ -326,12 +337,14 @@ class QuestEncounterCombat(
                 mob.definition.archetype.rarity, mob.definition.dropKind, tier, mob.entity.position, attacker.uuid)
             mob.entity.kill()
             mob.model?.dispose()
+            mob.view?.die()
             // Health is already terminal before this callback can re-enter the runtime.
             onMobDefeated(attacker, mob.boss)
         } else {
             if(now >= mob.tauntedUntil || mob.target?.let { !canTarget(it) || it.instance !== instance } != false) mob.target = attacker
             if (mob.life.phase == QuestMobPhase.IDLE) mob.life.phase = QuestMobPhase.CHASING
             updateName(mob)
+            mob.view?.hurt(now)
             sound(mob.entity.position, if (guarded) "minecraft:item.shield.block" else "minecraft:entity.${mob.definition.soundFamily}.hurt", 0.6f, 1.0f)
             particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.DAMAGE_INDICATOR, 4)
         }
@@ -352,6 +365,7 @@ class QuestEncounterCombat(
             if (!mob.life.isAlive || !isSpawned(mob)) continue
             tickMob(mob, players, nowMillis)
             mob.model?.tick(mob.entity.position, nowMillis, mob.life.phase == QuestMobPhase.ATTACKING, mob.life.health / mob.life.maximumHealth)
+            mob.view?.tick(mob.entity.position, nowMillis)
             if (actionsStoppedForReturn || disposed) return
         }
     }
@@ -387,6 +401,7 @@ class QuestEncounterCombat(
             mob.lastAttacker = null
             mob.entity.remove()
             mob.model?.dispose()
+            mob.view?.dispose()
         }
     }
 
@@ -396,7 +411,8 @@ class QuestEncounterCombat(
         val balance = dev.projects.server.coreloop.CoreMmoTuning.balance
         val definition = base.copy(maximumHealth = base.maximumHealth * healthMultiplier * (1 + rank * balance.mobRankHealthPermille / 1000.0),
             abilities = base.abilities.map { it.copy(damage = it.damage * damageMultiplier * (1 + rank * balance.mobRankDamagePermille / 1000.0)) })
-        val entity = EntityCreature(definition.entityType)
+        val modelled = definition.model?.takeIf { BossModelView.available(it) }
+        val entity = if (modelled != null) ModelCarrier(definition.entityType) else EntityCreature(definition.entityType)
         entity.isInvulnerable = true
         entity.isCustomNameVisible = true
         entity.setCanPickupItem(false)
@@ -413,6 +429,17 @@ class QuestEncounterCombat(
         entity.setInstance(instance, position).whenComplete { _, error ->
             if (error != null) mob.spawnFailure = error
             if (disposed) entity.remove()
+            else if (error == null && modelled != null && entity is ModelCarrier) {
+                runCatching {
+                    val view = BossModelView(modelled, instance, position, definition.enragedBones)
+                    entity.view = view
+                    entity.isInvisible = true
+                    // Viewers that arrived before the model existed.
+                    entity.viewers.forEach(view::show)
+                    mob.view = view
+                    if (disposed || !mob.life.isAlive) view.dispose()
+                }.onFailure { mob.spawnFailure = it }
+            }
             else if (error == null && WardenModel.supports(archetype)) {
                 runCatching {
                     val model = WardenModel(instance, archetype, position)
@@ -473,6 +500,7 @@ class QuestEncounterCombat(
         }
         (mob.entity.entityMeta as MobMeta).isAggressive = true
         if (tickChallengeBarrier(mob, now)) return
+        if (tickEnrage(mob, now)) return
         if (mob.abilities.isActive) {
             for (event in mob.abilities.tick(now, target.position)) {
                 if (!handleAbilityEvent(mob, event, players)) return
@@ -560,6 +588,30 @@ class QuestEncounterCombat(
         return true
     }
 
+    /** One-way rage at the definition's health ratio: a held roar (no attacks), then faster with new abilities. */
+    private fun tickEnrage(mob: Mob, now: Long): Boolean {
+        val threshold = mob.definition.enrageHealthRatio
+        if (!mob.enraged) {
+            if (threshold <= 0.0 || mob.life.health / mob.life.maximumHealth > threshold) return false
+            mob.enraged = true
+            mob.enrageHoldUntil = now + ENRAGE_HOLD_MILLIS
+            mob.abilities.cancel()
+            telegraphs.clear(mob.entity.uuid)
+            castingPose(mob, false)
+            stopNavigation(mob)
+            mob.view?.enrage()
+            mob.warningRetryAt = mob.enrageHoldUntil
+            updateName(mob, "怒り・翼を広げた")
+            sound(mob.entity.position, "minecraft:entity.ravager.roar", 1.2f, 0.6f)
+            particle(mob.entity.position.add(0.0, 2.0, 0.0), Particle.DUST.withColor(NamedTextColor.DARK_PURPLE).withScale(2.0f), 40)
+            updateMovementSpeed(mob, now)
+            return true
+        }
+        if (now >= mob.enrageHoldUntil) return false
+        stopNavigation(mob)
+        return true
+    }
+
     private fun guarding(mob: Mob): Boolean = mob.definition.frontalDamageMultiplier < 1.0 &&
         mob.life.phase in listOf(QuestMobPhase.IDLE, QuestMobPhase.CHASING)
 
@@ -581,7 +633,8 @@ class QuestEncounterCombat(
         mob.slows.values.removeAll { now >= it.until }
         mob.slowPercent = mob.slows.values.maxOfOrNull { it.strength } ?: 0.0
         mob.slowedUntil = mob.slows.values.maxOfOrNull { it.until } ?: 0L
-        val speed = mob.definition.movementSpeed * (1.0 - mob.slowPercent)
+        val speed = mob.definition.movementSpeed * (1.0 - mob.slowPercent) *
+            if (mob.enraged) mob.definition.enragedSpeedMultiplier else 1.0
         if (mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue != speed) {
             mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = speed
         }
@@ -601,6 +654,7 @@ class QuestEncounterCombat(
         when (event) {
             is MobAbilityEvent.Started -> {
                 updateName(mob, event.frame.ability.displayName)
+                mob.view?.ability(event.frame.ability.id)
                 if (!drawWarning(mob, event.frame, false)) {
                     cancelWarning(mob)
                     return false
@@ -668,7 +722,8 @@ class QuestEncounterCombat(
     }
 
     private fun particle(position: Pos, type: Particle, count: Int = 1) {
-        val packet = ParticlePacket(type, position.x(), position.y(), position.z(), 0f, 0f, 0f, 0f, count)
+        val spread = if (count > 8) 1.5f else 0f
+        val packet = ParticlePacket(type, position.x(), position.y(), position.z(), spread, spread, spread, 0f, count)
         instance.players.filter { it.position.distanceSquared(position) < 56.0 * 56.0 }.forEach { it.sendPacket(packet) }
     }
 

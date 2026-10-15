@@ -27,8 +27,8 @@ class QuestMobContentTest {
     @Test
     fun `all content has actual distinct equipment abilities weaknesses and tier scaling`() {
         val definitions = QuestMobArchetype.entries.map { QuestMobContent.definition(1, it) }
-        assertEquals(13, definitions.size)
-        assertEquals(5, definitions.map { it.entityType }.distinct().size)
+        assertEquals(14, definitions.size)
+        assertEquals(6, definitions.map { it.entityType }.distinct().size)
         assertEquals(setOf("fire", "ice", "lightning"), definitions.map { it.archetype.weakness }.toSet())
         for (definition in definitions) {
             val tier4 = QuestMobContent.definition(4, definition.archetype)
