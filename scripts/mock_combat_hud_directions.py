@@ -1423,6 +1423,176 @@ def design_c7():
     return cv, icons, top
 
 
+# ---- C9: C8 pushed toward AION2 / Lost Ark -------------------------------------------------------
+# From the references: the hotbar is grouped (weapon | 5 skills | consumables) with raised skill
+# frames; HP/MP numbers sit inside thicker gauges (AION2); the crest grows iron wings; plates end
+# in small iron tips; buff timers sit under the icon (Lost Ark); boss bar in an ornate frame with a
+# medallion (AION2).
+
+def dark_plate(cv, box):
+    """Sleeker plate than C6: darker, mostly translucent stone, same Minecraft bevel."""
+    global STONE
+    STONE = STONE or _stone_tile()
+    x0, y0, x1, y1 = box
+    over(cv, (x0 + 1, y0, x1 - 1, y1), G["out"])
+    over(cv, (x0, y0 + 1, x1, y1 - 1), G["out"])
+    for ty in range(y0 + 1, y1 - 1, 16):
+        for tx in range(x0 + 1, x1 - 1, 16):
+            tile = STONE.crop((0, 0, min(16, x1 - 1 - tx), min(16, y1 - 1 - ty)))
+            tile = Image.blend(tile, Image.new("RGBA", tile.size, (8, 8, 10, 235)), .45)
+            cv.alpha_composite(tile, (tx, ty))
+    over(cv, (x0 + 1, y0 + 1, x1 - 1, y0 + 2), IRON[3])
+    over(cv, (x0 + 1, y1 - 2, x1 - 1, y1 - 1), (0, 0, 0, 220))
+
+
+def plate_tip(cv, x, y, h, side):
+    """Small iron arrow tip on a plate's outer end; side=-1 points left, +1 right."""
+    mid = h // 2
+    for j in range(h):
+        d = abs(j - mid)
+        n = 4 - d if d < 4 else 0
+        for i in range(n + 1):
+            xx = x + side * i
+            px(cv, xx, y + j, G["out"] if i == n else IRON[1] if j < mid else IRON[2])
+
+
+def wings(cv, cx, y, reach):
+    """Two solid tapered iron blades off each side of the crest (light top edge, dark outline)."""
+    for side in (-1, 1):
+        for dy, length, thick in ((0, reach, 4), (5, reach - 8, 3)):
+            for i in range(length):
+                t = max(1, round(thick * (1 - i / length)))
+                xx = cx + side * (13 + i)
+                top_y = y + dy + (thick - t) // 2
+                over(cv, (xx, top_y - 1, xx + 1, top_y + t + 1), G["out"])
+                over(cv, (xx, top_y, xx + 1, top_y + t), IRON[2])
+                px(cv, xx, top_y, IRON[0] if dy == 0 else IRON[1])
+
+
+def skill_frame(cv, sx, y0):
+    over(cv, (sx - 1, y0 + 1, sx + 19, y0 + 21), G["out"])
+    over(cv, (sx, y0 + 2, sx + 18, y0 + 3), IRON[1])
+    over(cv, (sx, y0 + 2, sx + 1, y0 + 20), IRON[1])
+    over(cv, (sx, y0 + 19, sx + 18, y0 + 20), IRON[3])
+    over(cv, (sx + 17, y0 + 2, sx + 18, y0 + 20), IRON[3])
+    over(cv, (sx + 1, y0 + 3, sx + 17, y0 + 19), G["inset"])
+    for cx, cy in ((sx, y0 + 2), (sx + 17, y0 + 2), (sx, y0 + 19), (sx + 17, y0 + 19)):
+        px(cv, cx, cy, IRON[0])
+
+
+def key_tag(cv, x, y, s):
+    over(cv, (x, y, x + 4 * len(s) + 1, y + 7), (0, 0, 0, 210))
+    caps(cv, x + 1, y + 1, s, (225, 225, 225, 255))
+
+
+def design_c9():
+    cv = world()
+    top = Image.new("RGBA", (W, H))
+    icons = []
+    x0, y0 = HB_X, HB_Y
+    # hotbar: weapon | skills 2-6 | consumables, with iron dividers
+    dark_plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    for i in range(9):
+        sx = x0 + 2 + 20 * i
+        if 1 <= i <= 5:
+            skill_frame(cv, sx, y0)
+        else:
+            inset_slot(cv, (sx, y0 + 2, sx + 18, y0 + 20))
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        icons.append((name, x, y, state))
+        if state == "cd":
+            s = str(cd)
+            bold(top, x + 8 - bold_width(s) // 2, y + 4, s, G["text"])
+        if state == "nomana":
+            over(top, (x, y + 15, x + 16, y + 16), G["mp"][2])
+    for i in range(9):
+        key_tag(top, x0 + 2 + 20 * i, y0 + 2, str(i + 1))
+    sx = x0 + 1
+    for a, b, c, d, col in ((sx, y0 + 1, sx + 20, y0 + 2, IRON[0]), (sx, y0 + 1, sx + 1, y0 + 21, IRON[0]),
+                            (sx, y0 + 20, sx + 20, y0 + 21, IRON[1]), (sx + 19, y0 + 1, sx + 20, y0 + 21, IRON[1])):
+        over(cv, (a, b, c, d), col)
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # class resource strip
+    ry = y0 - 5
+    dark_plate(cv, (x0 - 1, ry, x0 + 183, ry + 6))
+    lit = RAGE * 20 // 100
+    for i in range(20):
+        cx0 = x0 + 2 + i * 9
+        col = G["rage"] if i < lit else None
+        over(cv, (cx0, ry + 2, cx0 + 8, ry + 4), col[1] if col else (44, 30, 20, 255))
+        if col:
+            over(cv, (cx0, ry + 2, cx0 + 8, ry + 3), col[2])
+    # HP / MP plates: thick gauges with the number inside, iron tips on the outer ends
+    ph = 15
+    py = ry - ph - 1
+    dark_plate(cv, (x0 + 3, py, C - 10, py + ph))
+    dark_plate(cv, (C + 10, py, x0 + 179, py + ph))
+    plate_tip(cv, x0 + 2, py, ph, -1)
+    plate_tip(cv, x0 + 180, py, ph, 1)
+    ramp_gauge(cv, x0 + 6, C - 13, py + 3, 9, HP / HP_MAX, G["hp"], (34, 10, 14, 255),
+               extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX)
+    ramp_gauge(cv, C + 13, x0 + 176, py + 3, 9, MP / MP_MAX, G["mp"], (10, 16, 36, 255))
+    s = f"{HP}/{HP_MAX}"
+    mc_text(cv, (x0 + 6 + C - 13) // 2 - mc_width(s) // 2, py + 4, s, G["text"], outline=True)
+    s = f"{MP}/{MP_MAX}"
+    mc_text(cv, (C + 13 + x0 + 176) // 2 - mc_width(s) // 2, py + 4, s, G["text"], outline=True)
+    # crest with wings over the plates
+    wings(cv, C, py - 5, 30)
+    iron_crest(cv, C, py - 9, "12")
+    # buffs: tiles with timers under the icon
+    bx = x0 + 3
+    for label, name, sec in BUFFS:
+        over(cv, (bx, py - 25, bx + 14, py - 11), G["out"])
+        over(cv, (bx + 1, py - 24, bx + 13, py - 12), G["buff"])
+        over(cv, (bx + 2, py - 23, bx + 12, py - 13), G["inset"])
+        icons.append((name, bx + 2, py - 23, "buff10"))
+        s = str(sec)
+        caps(cv, bx + 7 - (4 * len(s) - 1) // 2, py - 9, s, G["text"])
+        bx += 17
+    # notice
+    nw = jp_width(NOTICE)
+    dark_plate(cv, (C - nw // 2 - 8, py - 44, C + nw // 2 + 8, py - 28))
+    plate_tip(cv, C - nw // 2 - 9, py - 44, 16, -1)
+    plate_tip(cv, C + nw // 2 + 8, py - 44, 16, 1)
+    jp_text(cv, C - nw // 2, py - 43, NOTICE, rgba("9cc6ff"))
+    # boss: name over an ornate iron frame with arrow tips and a medallion
+    name = "裂け目の執行官"
+    bw = 220
+    bx0 = C - bw // 2
+    lvw = 12
+    nx = C - (jp_width(name) + lvw + 3) // 2
+    for j in range(-5, 6):  # Lv disc: iron rim, dark face
+        hw = int((30 - j * j) ** .5)
+        over(cv, (nx + 5 - hw - 1, 8 + j, nx + 5 + hw + 2, 9 + j), G["out"])
+        if abs(j) < 5:
+            over(cv, (nx + 5 - hw, 8 + j, nx + 5 + hw + 1, 9 + j), IRON[2])
+        if abs(j) < 4:
+            over(cv, (nx + 5 - hw + 1, 8 + j, nx + 5 + hw, 9 + j), (24, 24, 28, 255))
+    tiny(cv, nx + 2, 6, "30", rgba("e8c46a"))
+    jp_text(cv, nx + lvw + 3, 2, name, G["text"], style="outline")
+    dark_plate(cv, (bx0, 17, bx0 + bw, 28))
+    plate_tip(cv, bx0 - 1, 17, 11, -1)
+    plate_tip(cv, bx0 + bw, 17, 11, 1)
+    ramp_gauge(cv, bx0 + 3, bx0 + bw - 3, 20, 5, BOSS / BOSS_MAX, G["boss"], (36, 10, 8, 255),
+               trail=BOSS_LOST / BOSS_MAX)
+    for q in (1, 2, 3):
+        qx = bx0 + 3 + (bw - 6) * q // 4
+        over(cv, (qx, 20, qx + 1, 25), (0, 0, 0, 170))
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - mc_width(pct), 7, pct, G["text"], outline=True)
+    for j in range(-4, 5):  # medallion
+        w = 4 - abs(j)
+        over(cv, (C - w - 1, 31 + j, C + w + 2, 32 + j), G["out"])
+    for j in range(-3, 4):
+        w = 3 - abs(j)
+        over(cv, (C - w, 31 + j, C + w + 1, 32 + j), IRON[1] if j < 0 else IRON[2])
+    gem(cv, C, 31, G["ruby"], 1)
+    return cv, icons, top
+
+
 def compose(result, s):
     """Scale the GUI canvas, then lay item-slot icons at their real 32-texel resolution."""
     if not isinstance(result, tuple):
@@ -1447,7 +1617,7 @@ def main():
     for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c),
                      ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4),
                      ("C5-pixel-crosscode", design_c5), ("C6-modern-mmo-minecraft", design_c6),
-                     ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True))):
+                     ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True)), ("C9-modern-mmo", design_c9)):
         img = fn()
         for s in (2, 4):
             compose(img, s).save(OUT / f"{name}-{s}x.png")
