@@ -745,12 +745,55 @@ def build():
                 p0 = a + d * i / n; p1 = a + d * (i + 1) / n
                 w = w0 + (w1 - w0) * (i + .5) / n
                 oriented(f"{nm}_{i}", name, (p0 + p1) / 2, [w / 2, w / 2, ln / n / 2 + .3], _no_roll(np, d / ln), box_painter(mat, i))
-        bar(f"{name}_humerus", S0, E, 11, 10, "plate")
-        bar(f"{name}_radius", E, K + np.array([0, 4, 0]), 10, 7, "hide", 3)
-        oriented(f"{name}_carpal", name, K + np.array([0, 3, 0]), [3.5, 3.5, 4], np.eye(3), box_painter("plate", 3))
-        for k, d in enumerate((np.array([0, -.25, 1.0]), np.array([.5 * sign, -.25, .9]), np.array([-.4 * sign, -.25, .9]))):
+        # The wing-arm as a limb, not a stick: a plated, bulging upper arm, a knobbed elbow with a spur, a
+        # forearm that is thick at the elbow and narrow at the wrist with a row of backward spines and a fur
+        # fringe along its back, a knuckled carpal and three big hooked claws planted in front.
+        def frame(d):
+            z = d / np.linalg.norm(d)
+            out = np.cross(np.array([0, 1.0, 0]), z); out = out if out @ np.array([sign, 0, 0]) >= 0 else -out
+            out /= np.linalg.norm(out); upv = np.cross(z, out)
+            return out, upv, z
+        def seg(nm, a, b, w0, w1, mat, n, bulge=0.0):
+            d = b - a; ln = float(np.linalg.norm(d)); out, upv, z = frame(d)
+            for i in range(n):
+                t = (i + .5) / n
+                w = w0 + (w1 - w0) * t + bulge * math.sin(math.pi * t)
+                c = a + d * t
+                oriented(f"{nm}_{i}", name, c, [w / 2, w * .44, ln / n / 2 + .5], np.column_stack([out, upv, z]), box_painter(mat, i))
+            return out, upv, z
+        o1, u1, z1 = seg(f"{name}_humerus", S0, E, 12, 9, "plate", 3, bulge=3)
+        for i, t in enumerate((.25, .55)):            # overlapping shoulder plates on the outside of the upper arm
+            c = S0 + (E - S0) * t + o1 * 5
+            oriented(f"{name}_pauldron{i}", name, c, [1.6, 5.5 - i, 6 - i], np.column_stack([o1, u1, z1]), box_painter("plate", 9 + i))
+        oriented(f"{name}_elbow", name, E, [6, 5.5, 6], np.column_stack([o1, u1, z1]), box_painter("plate", 4))
+        sp = -z1 * .6 + u1 * .8; sp /= np.linalg.norm(sp)
+        for i, (ln_, w_) in enumerate(((7, 2.6), (5, 1.6))):   # elbow spur, root then tip
+            oriented(f"{name}_spur{i}", name, E + sp * (3 + i * 6), [w_ / 2, w_ / 2, ln_ / 2], _no_roll(np, sp), box_painter("talon" if i else "plate", i))
+        W = K + np.array([0, 5, 0])
+        o2, u2, z2 = seg(f"{name}_radius", E, W, 10, 6, "hide", 4, bulge=1.5)
+        back = o2 * .7 + u2 * .7                        # the spines rise from the forearm's outer back edge
+        back -= z2 * (back @ z2); back /= np.linalg.norm(back)
+        for i, t in enumerate((.2, .4, .6, .8)):
+            c = E + (W - E) * t
+            dsp = back * .75 - z2 * .65; dsp /= np.linalg.norm(dsp)
+            ln_ = 11 - i * 1.5
+            oriented(f"{name}_spine{i}", name, c + back * (3.5 - i * .4) + dsp * ln_ * .35, [1.7, 1.7, ln_ * .35], _no_roll(np, dsp), box_painter("plate", i))
+            oriented(f"{name}_spinetip{i}", name, c + back * (3.5 - i * .4) + dsp * ln_ * .85, [.9, .9, ln_ * .17], _no_roll(np, dsp), box_painter("talon", i))
+        # fur fringe hanging from the back of the forearm
+        mid = (E + W) / 2 + back * 3.5
+        hang = -u2 * .4 - o2 * .9; hang /= np.linalg.norm(hang)
+        Xp = np.cross(-hang, z2); Xp /= np.linalg.norm(Xp)
+        oriented(f"{name}_armfur", name, mid + hang * 6, [.05, 7, float(np.linalg.norm(W - E)) * .45], np.column_stack([Xp, -hang, z2]), fur_painter(7 + (sign > 0)))
+        oriented(f"{name}_carpal", name, K + np.array([0, 3.5, 0]), [4.2, 3.8, 4.6], np.eye(3), box_painter("plate", 3))
+        oriented(f"{name}_knuckle", name, K + np.array([0, 7.5, 1.0]), [2.6, 1.6, 3.0], np.eye(3), box_painter("bone", 3))
+        for k, d in enumerate((np.array([0, 0, 1.0]), np.array([.6 * sign, 0, .8]), np.array([-.5 * sign, 0, .85]))):
             d = d / np.linalg.norm(d)
-            oriented(f"{name}_claw{k}", name, K + d * 5 + np.array([0, -1, 0]), [1.3, 1.3, 4], _no_roll(np, d), box_painter("talon", k))
+            root = K + d * 3.5 + np.array([0, 2.5, 0])
+            dn = d * .7 - np.array([0, .7, 0]); dn /= np.linalg.norm(dn)   # hooked: the tip curls down to the ground
+            big = 1.25 if k == 0 else 1.0
+            oriented(f"{name}_claw{k}a", name, root + d * 3 * big, [1.6 * big, 1.6 * big, 3.2 * big], _no_roll(np, d), box_painter("talon", k))
+            oriented(f"{name}_claw{k}b", name, root + d * 6 * big + dn * 2.4 * big, [1.1 * big, 1.1 * big, 2.6 * big], _no_roll(np, dn), box_painter("talon", k + 3))
+            oriented(f"{name}_claw{k}c", name, root + d * 6 * big + dn * 5 * big, [.6, .6, 1.2], _no_roll(np, dn), box_painter("glow", k))
         for k, t in enumerate(tips):                      # the fingers, mostly hidden in the fur
             bar(f"{name}_finger{k}", K + np.array([0, 4, 0]), K + (t - K) * .8, 2.6, 1.0, "hide", 3)
         # Puffy fan: lobes between finer sub-fingers, each lobe several fur layers fanned slightly apart
