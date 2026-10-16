@@ -38,7 +38,8 @@ GLYPH_SOURCES = [
     ROOT / "web-ui-lab/src/main/kotlin/dev/projects/webui/ForgeV3Scene.kt",
     *(ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop" / f for f in (
         "CorePolish05ForgeFlow.kt", "CoreAccount.kt", "CoreEnhancementCatalog.kt", "CoreAffixCatalog.kt",
-        "CoreJourney.kt", "CoreCraftingCurrency.kt", "CoreEconomy.kt", "AtlasMapFlow.kt", "GrimoireFlow.kt")),
+        "CoreJourney.kt", "CoreCraftingCurrency.kt", "CoreEconomy.kt", "AtlasMapFlow.kt", "GrimoireFlow.kt",
+        "GrimoireBook.kt")),
 ]
 # Glyph pages per family and CSS pixel size. Vanilla samples font textures without mipmaps, so each size the
 # artboard uses gets a page rasterised at exactly that size: at 1080p one artboard pixel is one screen pixel.
@@ -189,7 +190,9 @@ def corners(sprites: Sprites, name: str, size: int, ring: float | None) -> None:
     sprites.add(f"{name}_br", tl.transpose(Image.ROTATE_180))
 
 
-def atlas(files: dict[str, bytes], metrics: dict, family: str, chars: list[str]) -> None:
+def atlas(files: dict[str, bytes], metrics: dict, family: str, chars: list[str], cut: int | None = None) -> None:
+    """One family's glyph pages. With `cut`, glyph alpha is snapped to clear/opaque at that level: the client
+    draws every texel above its 0.1 text cutoff fully opaque, so anti-aliased small text thickens and smears."""
     filename, weight, pixel, px = FAMILIES[family]
     cell = math.ceil(px * 1.25)
     scale = 40 / cell  # Vanilla scale of this page: every page declares height 40, ascent 32
@@ -214,6 +217,8 @@ def atlas(files: dict[str, bytes], metrics: dict, family: str, chars: list[str])
             if not pixel and px >= 32:
                 alpha = glyph.getchannel("A")
                 glyph.putalpha(Image.blend(alpha, alpha.filter(ImageFilter.MaxFilter(3)), 0.18))
+            if cut is not None:
+                glyph.putalpha(glyph.getchannel("A").point(lambda a: 255 if a >= cut else 0))
             # Vanilla derives a bitmap glyph's advance from its rightmost non-transparent column
             # ((rightmost + 1) * scale + 1). An alpha-1 pixel at the browser advance, which the text
             # shader discards, restores the browser's spacing.

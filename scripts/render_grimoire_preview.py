@@ -32,13 +32,13 @@ for z in ("server-minestom/src/main/resources/polish05/pack.zip", "server-minest
                 for r, row in enumerate(rows):
                     for c, ch in enumerate(row):
                         if ch != "\0":
-                            cells[(font, ch)] = (z, path, r, c, len(rows), len(row))
+                            cells[(font, ch)] = (z, path, r, c, len(rows), len(row), p.get("height", 8), p.get("ascent", 7))
 images = {}
 def cell(font, ch):
     key = cells.get((font, ch))
     if not key:
         return None
-    z, path, r, c, nr, nc = key
+    z, path, r, c, nr, nc = key[:6]
     if (z, path) not in images:
         with zipfile.ZipFile(f"{repo}/{z}") as a:
             images[(z, path)] = Image.open(io.BytesIO(a.read(path))).convert("RGBA")
@@ -46,6 +46,11 @@ def cell(font, ch):
     w, h = im.width // nc, im.height // nr
     return im.crop((c * w, r * h, c * w + w, r * h + h))
 
+# Alpha at which a glyph texel counts as ink: the client's text cutoff is 0.1 (26). Set GRIMOIRE_TEXT_CUT=128
+# to preview glyph pages that were thresholded at 0.5 when built.
+import os
+CUT = int(os.environ.get("GRIMOIRE_TEXT_CUT", "26"))
+METRICS = json.load(open(f"{repo}/web-ui-lab/src/main/resources/polish05-font-metrics.json", encoding="utf-8"))
 FONT = f"{repo}/web-ui-lab/ui/forge-v3-fonts/MPLUS2.ttf"
 DOT = f"{repo}/web-ui-lab/ui/forge-v3-fonts/DotGothic16.ttf"
 fonts = {}
@@ -103,24 +108,45 @@ for _, _, kind, n in items:
             t = color(st["sprite-color"])
             r, g, bb, a = im.split()
             im = Image.merge("RGBA", (r.point(lambda v: v * t[0] // 255), g.point(lambda v: v * t[1] // 255), bb.point(lambda v: v * t[2] // 255), a))
+        # Sprites are glyphs too: every texel above the 0.1 cutoff is drawn fully opaque (soft glows become discs).
+        im.putalpha(im.getchannel("A").point(lambda v: 255 if v >= 26 else 0))
         if "opacity" in st:
             o = max(26, int(float(st["opacity"]) * 255)) / 255
             im.putalpha(im.getchannel("A").point(lambda v: int(v * o)))
         cx = x + w / 2
         canvas.alpha_composite(im, (round(cx - sw / 2), round(y)))
     else:
-        fs = float(st.get("font-size", "8px").rstrip("px")) * K
-        f = tfont(st.get("font-family", "v3r"), fs)
-        text = n["text"]; c = color(st.get("color", "#ffffff"))
-        tw = f.getlength(text)
+        # Text as the client draws it: the pack's bitmap glyph pages, nearest-sampled, and cut out at alpha 0.1
+        # (the text shader keeps every texel above the cutoff fully opaque, so anti-aliased edges thicken).
+        fs = float(st.get("font-size", "8px").rstrip("px"))
+        family = st.get("font-family", "")
+        pixel = fs / 32.0
+        c = color(st.get("color", "#ffffff"))
+        widths = METRICS.get(family.split(":")[-1], {})
+        text = n["text"]
+        adv = sum(widths.get(str(ord(ch)), 32 if ord(ch) > 255 else 18) for ch in text) * pixel
         align = st.get("text-align", "center" if n.get("action") else "left")
-        tx = x + w / 2 - tw / 2 if align == "center" else (x + w - tw if align == "right" else x)
-        base = y + (h - fs) / 2 + fs * 0.9
-        d = ImageDraw.Draw(canvas)
+        bx, bw = b["x"], b["w"]
+        left = bx + bw / 2 - adv / 2 if align == "center" else (bx + bw - adv if align == "right" else bx)
+        top = b["y"] + (b["h"] - fs) / 2 + pixel
+        layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        def draw_line(ox, oy, col):
+            x0 = left
+            for ch in text:
+                key = cells.get((family, ch))
+                if key is not None:
+                    g = cell(family, ch)
+                    gh = key[6] * pixel; gw = gh * g.width / g.height
+                    gx, gy = round((x0 + ox) * K), round((top + oy) * K)
+                    sz = (max(1, round(gw * K)), max(1, round(gh * K)))
+                    a = g.getchannel("A").point(lambda v: 255 if v >= CUT else 0).resize(sz, Image.NEAREST)
+                    solid = Image.new("RGBA", sz, col); solid.putalpha(a)
+                    layer.alpha_composite(solid, (gx, gy))
+                x0 += widths.get(str(ord(ch)), 32 if ord(ch) > 255 else 18) * pixel
         if st.get("text-shadow") == "true":
-            o = fs / 16
-            d.text((tx + o, base + o), text, font=f, fill=(c[0] // 4, c[1] // 4, c[2] // 4, 255), anchor="ls")
-        d.text((tx, base), text, font=f, fill=c, anchor="ls")
+            draw_line(pixel, pixel, (c[0] // 4, c[1] // 4, c[2] // 4, 255))
+        draw_line(0, 0, c)
+        canvas.alpha_composite(layer)
 
 canvas.convert("RGB").save(out)
 print(out)

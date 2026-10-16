@@ -60,4 +60,7 @@ missing glyph.
 
 In the client the display's fills and sprites are not drawn back to front, so anything translucent can be
 drawn before what is behind it and show the world's sky. Fills are therefore pre-blended over the colour
-under them and drawn opaque (`GrimoireFlow.solid`); glow sprites are kept to places over an opaque fill.
+under them and drawn opaque (`GrimoireFlow.solid`). The client also draws every glyph texel above its 0.1
+alpha cutoff fully opaque: soft glow sprites become flat discs (the book uses none) and anti-aliased small
+text thickens. The book therefore has its own crisp text pages (`gmv3m15` …, alpha snapped at 0.5), built
+by `build_grimoire_assets.py`; `render_grimoire_preview.py` draws text and sprites the same way.

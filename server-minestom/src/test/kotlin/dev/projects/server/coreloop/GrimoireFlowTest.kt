@@ -19,9 +19,15 @@ class GrimoireFlowTest {
         assertTrue(files.all { it.startsWith("assets/projects_ui_polish05/") }, "private namespace only")
         val drawn = GrimoireBook.ENTRIES.flatMap { listOfNotNull(it.icon, it.hero) } + GrimoireBook.BRANCHES.map { it.second } +
             listOf("i16_coin", "i16_ink", "i16_box", "i16_check", "i16_open", "i16_see", "i16_place", "i16_craft", "i16_get",
-                "v3_glow", "v3_ring", "v3_round_tl", "v3_ring10_tl", "v3_ring14_br")
+                "v3_ring", "v3_round_tl", "v3_ring10_tl", "v3_ring14_br")
         for (name in drawn) assertNotNull(art.sprites[name], name)
         for (s in art.sprites.values) assertTrue(s.width <= 256 && s.height <= 256, "glyphs above 256px do not render")
+    }
+
+    private val packFiles: Set<String> by lazy {
+        val files = mutableSetOf<String>()
+        ZipInputStream(bytes("/polish05/grimoire.zip").inputStream()).use { zip -> while (true) { files += (zip.nextEntry ?: break).name } }
+        files
     }
 
     @Test fun `every text uses a font page that has its glyphs`() {
@@ -32,6 +38,7 @@ class GrimoireFlowTest {
             for (node in f.scene().nodes.filter { it.text.isNotEmpty() }) {
                 val page = assertNotNull(node.style["font-family"]).substringAfter(':')
                 assertTrue(Polish05FontMetrics.has(page), "missing page $page")
+                if (page.startsWith("gm")) assertTrue("assets/projects_ui_polish05/font/$page.json" in packFiles, "crisp page $page not in grimoire.zip")
                 for (c in node.text) if (c.code > 32) assertTrue(Polish05FontMetrics.advance(c.toString(), page) > 0, "'$c' in ${node.id}")
             }
         }

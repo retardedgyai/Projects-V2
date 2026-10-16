@@ -40,7 +40,7 @@ internal class GrimoireFlow(
                 .let { if (section != null) it.getAsJsonObject(section) else it }.entrySet()
                 .filter { it.value.isJsonObject && it.value.asJsonObject.has("char") }
                 .associate { (name, v) -> v.asJsonObject.let { name to UiSprite(it["char"].asString, it["font"].asString, it["width"].asInt, it["height"].asInt) } }
-            sprites = parse(json, "sprites") + parse(forgeFontMap, null).filterKeys { it.startsWith("v3_round_") || it.startsWith("v3_ring") || it == "v3_glow" }
+            sprites = parse(json, "sprites") + parse(forgeFontMap, null).filterKeys { it.startsWith("v3_round_") || it.startsWith("v3_ring") }
         }
     }
 
@@ -150,7 +150,9 @@ internal class GrimoireFlow(
         }
         nodes += UiNode(id, box(x, y, w, h), "", style, null, null, true, depth, s)
     }
-    private fun page(family: String, size: Double) = "$family${size.toInt()}".takeIf(Polish05FontMetrics::has) ?: family
+    /** The 魔術書's own crisp page for this face and size ("gmv3m15", built by build_grimoire_assets.py), else the forge's. */
+    private fun page(family: String, size: Double) =
+        listOf("gm$family${size.toInt()}", "$family${size.toInt()}").firstOrNull(Polish05FontMetrics::has) ?: family
     private fun text(id: String, x: Double, y: Double, w: Double, value: String, family: String, size: Double, color: String, depth: Int,
                      align: String = "left", shadow: Boolean = false) {
         if (value.isEmpty()) return
@@ -324,12 +326,6 @@ internal class GrimoireFlow(
         }
         val grow = if (fresh == e.id) ((now - freshAt) / 450.0).coerceIn(0.25, 1.0) else 1.0
         val r = R * grow * if (sel) 1.08 else 1.0
-        // Soft halo: breathing for workable entries, steady under the selected one.
-        if (workable(st) || sel) {
-            val breath = 0.5 + 0.5 * kotlin.math.sin(now / 520.0 + e.col)
-            val s = r * (if (sel) 3.6 else 3.0)
-            sprite("n-${e.id}-halo", "v3_glow", cx - s / 2, cy - s / 2, s, s, 3, if (sel) "#ffffffff" else ring, if (sel) 0.35 else 0.22 + 0.25 * breath)
-        }
         round("n-${e.id}-disc", cx - r, cy - r, r * 2, r * 2, r, if (st == State.DONE) "#1a1608" else "#0c1222", 1.0, 4)
         sprite("n-${e.id}-ring", "v3_ring", cx - r, cy - r, r * 2, r * 2, 9, if (st == State.HIDDEN) "#ff2e3446" else ring)
         if (sel) sprite("n-${e.id}-ring2", "v3_ring", cx - r - 8, cy - r - 8, r * 2 + 16, r * 2 + 16, 9, "#ffeafcff", 0.7)
@@ -397,7 +393,6 @@ internal class GrimoireFlow(
     private fun sealedBranch() {
         val (name, icon) = BRANCHES[tab]
         val cx = MAP_X + MAP_W / 2; val cy = MAP_Y + MAP_H / 2 - 40
-        sprite("seal-halo", "v3_glow", cx - 180, cy - 180, 360.0, 360.0, 3, "#ff6f5aa8", 0.35)
         round("seal-disc", cx - 64, cy - 64, 128.0, 128.0, 64.0, "#0c1222", 1.0, 4)
         sprite("seal-ring", "v3_ring", cx - 64, cy - 64, 128.0, 128.0, 9, "#ff6f6b65")
         sprite("seal-i", icon, cx - 32, cy - 32, 64.0, 64.0, 10, "#ff8a8a96")
@@ -418,7 +413,6 @@ internal class GrimoireFlow(
         // Illustration card and title.
         round("e-card", x, y, w, 196.0, 12.0, "#0c1222", 1.0, 3)
         border("e-card-l", x, y, w, 196.0, 12.0, "#ffffff", 0.08, 4)
-        sprite("e-card-halo", "v3_glow", x + w / 2 - 150, y + 98 - 150, 300.0, 300.0, 5, if (st == State.DONE) GOLD else CYAN, 0.18)
         if (st != State.HIDDEN) {
             val hero = e.hero?.let { art.sprites[it] }
             if (hero != null) {

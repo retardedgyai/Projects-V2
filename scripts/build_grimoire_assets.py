@@ -6,13 +6,21 @@ Reads assets/ui/grimoire/source/*.png (item icons and illustrations) and writes
 server-minestom/src/main/resources/polish05/grimoire.zip (private-namespace sprites, merged into
 the UI pack by CoreUiPackServer) and polish05/grimoire.json (sprite chars and tile layouts).
 
+It also builds crisp text pages for the 魔術書 only (families `gmv3r15` etc., same faces and advances as
+the forge's `v3r15`): glyph alpha is snapped at 0.5, because the client draws every texel above its 0.1
+text cutoff fully opaque and small anti-aliased kanji smear. Their widths go into
+web-ui-lab/src/main/resources/polish05-font-metrics.json, which the UI renderer reads.
+
 Images wider or taller than 256 px are split into tiles because larger font glyphs do not render.
 Alpha is snapped to fully opaque or fully clear: a translucent glyph hides what is drawn after it.
 The one exception is a single alpha-1 pixel that keeps a tile's advance at its full width.
 """
-import io, json, zipfile
+import io, json, sys, zipfile
 from pathlib import Path
 from PIL import Image
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import build_forge_v3_assets as forge  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/ui/grimoire/source"
@@ -20,6 +28,26 @@ OUT = ROOT / "server-minestom/src/main/resources/polish05"
 NS = "projects_ui_polish05"
 FONT = f"{NS}:grimoire"
 TILE = 256
+METRICS = ROOT / "web-ui-lab/src/main/resources/polish05-font-metrics.json"
+TEXT_SOURCES = [ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop" / f for f in ("GrimoireFlow.kt", "GrimoireBook.kt")]
+# The M PLUS 2 weights and sizes GrimoireFlow draws ("v3m15" -> crisp "gmv3m15").
+CRISP = {"r": (12, 13, 14, 15), "m": (13, 14, 15, 16, 18), "b": (11, 15, 16, 17, 20, 24, 26, 44)}
+
+
+def crisp_text(files: dict[str, bytes]) -> None:
+    chars = {chr(c) for c in range(33, 127)}
+    for source in TEXT_SOURCES:
+        chars.update(c for c in source.read_text(encoding="utf-8") if ord(c) >= 127 and not c.isspace())
+    chars = sorted(c for c in chars if not 0xE000 <= ord(c) <= 0xF8FF)
+    metrics = json.loads(METRICS.read_text(encoding="utf-8"))
+    for family in [f for f in metrics if f.startswith("gm")]:
+        del metrics[family]
+    for key, sizes in CRISP.items():
+        for size in sizes:
+            family = f"gmv3{key}{size}"
+            forge.FAMILIES[family] = (*forge.SOURCES[key], size)
+            forge.atlas(files, metrics, family, chars, cut=128)
+    METRICS.write_text(json.dumps(metrics, ensure_ascii=False, sort_keys=True, separators=(",", ":")), encoding="utf-8")
 
 
 def snap_alpha(image: Image.Image) -> Image.Image:
@@ -65,6 +93,7 @@ def main() -> None:
                 add(part, image.crop((x, y, min(x + TILE, image.width), min(y + TILE, image.height))))
                 parts.append({"name": part, "x": x, "y": y})
         layouts[name] = {"width": image.width, "height": image.height, "tiles": parts}
+    crisp_text(files)
     files[f"assets/{NS}/font/grimoire.json"] = json.dumps({"providers": providers}, separators=(",", ":")).encode()
 
     OUT.mkdir(parents=True, exist_ok=True)
