@@ -224,11 +224,11 @@ def ordered(face):
 # Tuned against the Creator's in-game look (2026-10-16: "front legs too long, lower like Gore Magala, more slender").
 POSE = {
     "drop": 14.0,            # px the body comes down
-    "pitch": 6.0,            # degrees the front tips down, about the hips
+    "pitch": 10.0,           # degrees the front tips down, about the hips
     "hips": (0.0, 40.0, -40.0),
     "slim": .62,             # body, neck, head, tail and wings: width (X) scale about the centre line
     "legs": {               # chain, length scale per segment, limb thickness, foot shrink, knee hint
-        "leg_fl": (("leg_fl", "leg_fl_fore", "leg_fl_paw"), (.74, .80), .82, .9, (0.15, 0, -1.0)),
+        "leg_fl": (("leg_fl", "leg_fl_fore", "leg_fl_paw"), (.62, .68), .82, .9, (0.15, 0, -1.0)),
         "leg_hl": (("leg_hl", "leg_hl_shin", "leg_hl_foot"), (.95, .95), .82, .9, (0.15, 0, 1.0)),
     },
     "foot_x": .9,
@@ -725,7 +725,7 @@ def build():
         S0 = np.array(pivots[f"wing_{s}"], float)
         E = S0 + np.array(spec["elbow"]) * M3
         K = E + np.array(spec["carpal"]) * M3
-        K[1] = max(K[1], 7.0)
+        K[1] = 6.0                                  # the carpal is planted on the ground
         tips = [K + np.array(t) * M3 for t in spec["tips"]]
 
         def bar(nm, a, b, w0, w1, mat, n=2):
