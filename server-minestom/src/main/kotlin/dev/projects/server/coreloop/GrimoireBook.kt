@@ -16,9 +16,6 @@ internal object GrimoireBook {
         val hero: String? = null,
     )
 
-    /** Mastery points from one 魔術熟練 rank to the next. */
-    const val RANK_XP = 1000
-
     fun entry(id: String) = ENTRIES.first { it.id == id }
 
     val BRANCHES = listOf("幹" to "ic_book", "刻印術" to "ic_scroll", "注入" to "ic_ignis", "召喚" to "ic_mortuus",

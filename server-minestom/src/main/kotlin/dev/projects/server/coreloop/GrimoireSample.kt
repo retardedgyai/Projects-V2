@@ -8,7 +8,6 @@ internal object GrimoireSample {
         claimed = mutableSetOf("n1", "n2", "n3"),
         pinned = "n5",
         counts = mutableMapOf("n8:0" to 7),
-        rank = 3, rankXp = 620,
         ink = mutableMapOf("aqua" to 14, "ignis" to 9, "aer" to 8, "terra" to 5),
         silver = 12_480,
     )

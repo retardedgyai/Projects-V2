@@ -9,7 +9,6 @@ import dev.projects.webui.UiNode
 import dev.projects.webui.UiScene
 import dev.projects.webui.UiSprite
 import java.util.Locale
-import kotlin.math.roundToInt
 import dev.projects.server.coreloop.GrimoireBook.BRANCHES
 import dev.projects.server.coreloop.GrimoireBook.BRANCH_LINES
 import dev.projects.server.coreloop.GrimoireBook.CHAPTERS
@@ -219,7 +218,7 @@ internal class GrimoireFlow(
         text("h-title", 124.0, 30.0, 300.0, "魔術書", "v3b", 24.0, "#ECE6DC", 8)
         text("h-sub", 124.0, 64.0, 300.0, "帰還港 · 研究室", "v3r", 13.0, "#A29E97", 8)
         // Branch tabs in the middle, like 強化 / 精錬 / 製作, each with its branch icon; sealed branches are grey.
-        var x = 920 - BRANCHES.sumOf { width(it.first, "v3b", 20.0) + 28 + 30 } / 2
+        var x = 960 - BRANCHES.sumOf { width(it.first, "v3b", 20.0) + 28 + 30 } / 2
         BRANCHES.forEachIndexed { i, (name, icon) ->
             val on = i == tab
             val w = 28 + width(name, "v3b", 20.0)
@@ -231,12 +230,6 @@ internal class GrimoireFlow(
         }
         // Wallet pills on the right.
         fun pill(id: String, x: Double, w: Double) { round(id, x, 34.0, w, 44.0, 22.0, "#101114", 0.86, 2); border("$id-l", x, 34.0, w, 44.0, 22.0, "#ffffff", 0.09, 3) }
-        pill("p-rank", 1300.0, 240.0)
-        text("p-rank-k", 1320.0, 42.0, 100.0, "魔術熟練", "v3r", 12.0, "#A29E97", 8)
-        round("p-rank-bar", 1320.0, 62.0, 96.0, 4.0, 2.0, "#2A2C31", 1.0, 3)
-        round("p-rank-fill", 1320.0, 62.0, (96.0 * progress.rankXp / GrimoireBook.RANK_XP).roundToInt().toDouble(), 4.0, 2.0, CYAN, 1.0, 4)
-        text("p-rank-v", 1430.0, 44.0, 80.0, "Rank ${progress.rank}", "v3num", 19.0, "#ECE6DC", 8)
-        text("p-rank-x", 1500.0, 49.0, 40.0, "${progress.rankXp}", "v3num", 12.0, "#A29E97", 8)
         pill("p-ink", 1552.0, 140.0)
         sprite("p-ink-i", "i16_ink", 1570.0, 44.0, 24.0, 24.0, 8)
         text("p-ink-k", 1600.0, 47.0, 50.0, "インク", "v3r", 13.0, "#A29E97", 8)

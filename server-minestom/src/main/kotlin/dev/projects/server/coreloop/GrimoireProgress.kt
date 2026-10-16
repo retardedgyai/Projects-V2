@@ -11,8 +11,6 @@ internal class GrimoireProgress(
     var pinned: String? = null,
     /** Counted goals by "entryId:goalIndex"; goals with a target of 1 are not counted. */
     val counts: MutableMap<String, Int> = mutableMapOf(),
-    var rank: Int = 1,
-    var rankXp: Int = 0,
     val ink: MutableMap<String, Int> = mutableMapOf(),
     var silver: Long = 0,
 ) {
