@@ -779,7 +779,7 @@ def build():
                 cen = cen0 + yy * (max(ly) + min(ly)) / 2 + zz * (max(lz) + min(lz)) / 2
                 half = [.05, (max(ly) - min(ly)) / 2 + .2, (max(lz) - min(lz)) / 2 + .2]
                 lp = [[float((q - cen) @ yy), float((q - cen) @ zz)] for q in pts]
-                inner = "west" if n[0] > 0 else "east"
+                inner = "west"                            # local +X (east) points away from the body on both sides
                 oriented(f"{name}_fan{k}_{layer}", name, cen, half, np.column_stack([n, yy, zz]),
                          fan_painter(lp, half, inner, 17 * k + 5 * layer + (sign > 0)))
         # Fill: the membrane also runs along the arm (elbow and shoulder) and back to the flank, so there is
@@ -799,7 +799,7 @@ def build():
                 cen = cen0 + yy * (max(ly) + min(ly)) / 2 + zz * (max(lz) + min(lz)) / 2
                 half = [.05, (max(ly) - min(ly)) / 2 + .2, (max(lz) - min(lz)) / 2 + .2]
                 lp = [[float((v - cen) @ yy), float((v - cen) @ zz)] for v in q]
-                inner = "west" if n[0] > 0 else "east"
+                inner = "west"                            # local +X (east) points away from the body on both sides
                 oriented(f"{name}_fill{k}_{layer}", name, cen, half, np.column_stack([n, yy, zz]),
                          fan_painter(lp, half, inner, 91 * k + layer + (sign > 0)))
         order.append((name, "body"))
