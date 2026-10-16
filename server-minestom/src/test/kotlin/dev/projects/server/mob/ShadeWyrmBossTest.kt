@@ -77,9 +77,9 @@ class ShadeWyrmBossTest {
                 Triple("neck", Vec(0.0, 40.0, 46.0), Vec(0.0, 34.8, 45.4)),
                 Triple("wing_l", Vec(16.0, 91.3, 13.0), Vec(23.6, 87.4, -2.2)),        // elbow spike
                 Triple("wing_l_hand", Vec(16.0, -8.8, 30.0), Vec(40.0, -1.0, 54.0)),   // planted talon
-                Triple("wing_l_finger3", Vec(19.8, 10.3, 14.0), Vec(37.3, 34.4, -46.4)), // rear cloak spar
+                Triple("wing_l_finger3", Vec(19.8, 10.3, 14.0), Vec(37.7, 41.0, -50.8)), // rear cloak spar
                 Triple("skull", Vec(0.0, 42.0, 81.0), Vec(0.0, 36.2, 80.2)),             // nose
-                Triple("tail_end", Vec(0.0, 42.0, -126.0), Vec(0.0, 38.7, -124.3)),      // tail blade
+                Triple("tail_end", Vec(0.0, 44.0, -140.0), Vec(0.0, 41.1, -138.7)),      // tail blade
             )
             val misses = checks.mapNotNull { (bone, local, expected) ->
                 val actual = requireNotNull(model.getBonePoint(bone, local.mul(0.25)))
