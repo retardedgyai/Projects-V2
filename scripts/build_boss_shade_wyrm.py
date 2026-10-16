@@ -199,7 +199,7 @@ def build():
         return items
 
     rig.world["body"] = IDENTITY
-    NECK, SKULL = (12, 0, 0), (-10, 0, 0)
+    NECK, SKULL = (24, 0, 0), (-10, 0, 0)
     rig.world["neck"] = euler_matrix(*NECK)
     rig.world["skull"] = _mul(rig.world["neck"], euler_matrix(*SKULL))
 
@@ -313,9 +313,9 @@ def build():
 
     # ---------- wing-arms (front legs) and the cloak ----------
     def wing(sign, s):
-        shoulder = [16 * sign, 48, 14]
-        elbow_world = [21 * sign, 74, 4]
-        wrist_world = [40 * sign, 4, 38]
+        shoulder = [16 * sign, 54, 14]
+        elbow_world = [22 * sign, 70, 0]
+        wrist_world = [28 * sign, 9, 60]
         up = [e - b for e, b in zip(elbow_world, shoulder)]
         upper_rot = aim(up, along=(0, 1, 0))
         upper_len = length(up)
@@ -323,14 +323,14 @@ def build():
         rig.world[name] = euler_matrix(*upper_rot)
         ey = shoulder[1] + upper_len   # the elbow, in the upper arm's local frame
         top = [16 * sign, ey, 14]
+        sy = shoulder[1]
         upper = cubes([
-            ("humerus", [10.5, 44, 8], [21.5, 44 + upper_len * .6, 20], p("scale", "scales")),
-            ("humerus_upper", [11.5, 44 + upper_len * .6, 9], [20.5, ey, 19], p("scale", "scales")),
-            ("shoulder_plate", [9, 42, 5], [23, 55, 22], p("scale", "scales")),
-            ("elbow", [10.5, ey - 6, 8], [21.5, ey + 5, 20], p("hide")),
+            ("humerus", [10, sy - 6, 7], [22, ey, 21], p("scale", "scales")),
+            ("shoulder_plate", [8.5, sy - 10, 4], [23.5, sy + 4, 23], p("scale", "scales")),
+            ("elbow", [10, ey - 6, 6], [22, ey + 6, 20], p("hide")),
         ], sign, "_" + s)
-        elbow_spikes = [spike(f"elbow_spike_{s}", name, [16, ey + 3, 12], [-50, 0, 0], 16, 5, sign),
-                        spike(f"elbow_barb_{s}", name, [16, ey - 2, 8], [10, 0, 0], 10, 3.5, sign)]
+        elbow_spikes = [spike(f"elbow_spike_{s}", name, [16, ey + 4, 10], [40, 0, 0], 16, 5, sign),
+                        spike(f"elbow_barb_{s}", name, [16, ey - 2, 7], [10, 0, 0], 10, 3.5, sign)]
         # Forearm: elbow -> wrist planted forward on the ground, thick at the elbow, thin at the wrist.
         down = [w - e for w, e in zip(wrist_world, elbow_world)]
         fore_len = length(down)
@@ -362,8 +362,8 @@ def build():
         fingers = []
         # (finger, world direction of the spar from the elbow, spar length, membrane width behind it)
         # Each finger carries the membrane on its trailing side; the rear ones run back toward the tail.
-        layout = ((1, [16 * sign, -64, 4], 72, 24, -1), (2, [18 * sign, -52, -36], 80, 30, -1),
-                  (3, [16 * sign, -40, -60], 88, 34, -1), (4, [12 * sign, -28, -76], 84, 30, -1))
+        layout = ((1, [8 * sign, -40, -20], 60, 22, -1), (2, [12 * sign, -34, -60], 84, 28, -1),
+                  (3, [12 * sign, -14, -92], 100, 30, -1), (4, [6 * sign, -2, -100], 104, 24, -1))
         for idx, (i, direction, size, width, side) in enumerate(layout):
             x0 = top[0] + sign * (3 + idx * .4)
             z0, z1 = (14 - width, 13) if side < 0 else (15, 14 + width)
@@ -381,29 +381,75 @@ def build():
         mem_b = rig.bone(mem_name, top, [0, 0, 0], [], name, fingers + [mantle_b])
         return rig.bone(name, shoulder, upper_rot, upper, "body", [fore_b, mem_b] + elbow_spikes)
 
-    # ---------- hind legs: thick thigh, thin shin, clawed foot ----------
+    def limb(names, joints, widths, parent, sign, extras=()):
+        """Bones `names[i]` from joints[i] to joints[i+1] (world, +X side), laid out straight down from joints[0].
+        Returns (root bone, end pivot in the straight layout, world matrix of the last segment)."""
+        root = joints[0]
+        world, y, segs = rig.world.get(parent, IDENTITY), root[1], []
+        for i, (a, b) in enumerate(zip(joints, joints[1:])):
+            d = [(b[0] - a[0]) * 1.0, b[1] - a[1], b[2] - a[2]]
+            ln = length(d)
+            r = aim([d[0] * sign, d[1], d[2]], parent=world)
+            world = _mul(world, euler_matrix(*r))
+            rig.world[names[i]] = world
+            w = widths[i]
+            spec = [(names[i] + "_seg", [root[0] - w / 2, y - ln - 1, root[2] - w / 2], [root[0] + w / 2, y + 1, root[2] + w / 2],
+                     p("scale", "scales") if i == 0 else p("hide"))]
+            spec += [(n, [a2[0], y - ln + a2[1], a2[2]], [b2[0], y - ln + b2[1], b2[2]], q) for k, n, a2, b2, q in extras if k == i]
+            segs.append((names[i], [root[0] * sign, y, root[2]], [r[0], r[1], r[2]], cubes(spec, sign, "")))
+            y -= ln
+        child = None
+        for i in range(len(segs) - 1, -1, -1):
+            n, piv, r, items = segs[i]
+            child = rig.bone(n, piv, r, items, parent if i == 0 else segs[i - 1][0], [child] if child else [])
+        return child, [root[0] * sign, y, root[2]], world
+
+    # ---------- front legs (Gore has six limbs): short and thick under the chest ----------
+    def front_leg(sign, s):
+        name = f"leg_f{s}"
+        joints = [[13, 34, 16], [14, 17, 9], [14, 5, 22]]
+        paw_name = f"{name}_paw"
+        rig.world[paw_name] = IDENTITY
+        # Paw cubes are authored in the straight layout around the end pivot.
+        bone, end, world = limb([name, f"{name}_fore"], joints, [11, 8], "body", sign)
+        ex, ey2, ez = end
+        paw = cubes([("paw", [9, ey2 - 5, ez - 7], [19, ey2 + 2, ez + 6], p("scale", "scales"))], sign, "_" + s)
+        toes = [claw(f"ftoe{k}_{s}", paw_name, [tx, ey2 - 5, ez + 5], sign, .75, 28) for k, tx in enumerate((10.5, 14, 17.5))]
+        paw_b = rig.bone(paw_name, end, matrix_euler(_t(world)), paw, f"{name}_fore", toes)
+        return attach(bone, f"{name}_fore", paw_b)
+
+    def attach(root_factory, bone_name, child_factory):
+        """Re-wrap a lazy bone tree so `child_factory` lands under `bone_name`."""
+        def build_tree():
+            node = root_factory()
+
+            def walk(n):
+                if n["name"] == bone_name:
+                    n["children"].append(child_factory())
+                    return True
+                return any(walk(c) for c in n["children"] if isinstance(c, dict))
+            walk(node)
+            return node
+        return build_tree
+
+    # ---------- hind legs: thick thigh, bent knee, clawed foot ----------
     def leg(sign, s):
         name = f"leg_h{s}"
         foot_name = f"{name}_foot"
-        toes = [claw(f"toe{k}_{s}", foot_name, [tx, -1, -18], sign, .8, 26)
-                for k, tx in enumerate((10.5, 14.5, 18.5))]
+        joints = [[15, 46, -30], [16, 22, -16], [16, 7, -34]]
+        # Extra cubes per segment, in the straight layout relative to the segment's lower end.
+        extras = [(0, "thigh_muscle", [7, 6, -40], [23, 26, -20], p("scale", "scales")),
+                  (0, "thigh_seam_glow", [22.8, 10, -34], [23.4, 20, -26], p("glow", "glow"))]
+        bone, end, world = limb([name, f"{name}_shin"], joints, [13, 8], "body", sign, extras)
+        ex, ey2, ez = end
         foot = cubes([
-            ("foot", [9, -1, -33], [20, 6, -18], p("scale", "scales")),
-            ("spur", [13.5, 2, -37], [15.5, 5, -32], p("talon")),
+            ("foot", [10, ey2 - 6, ez - 8], [21, ey2 + 2, ez + 8], p("scale", "scales")),
+            ("spur", [14.5, ey2 - 3, ez - 12], [16.5, ey2, ez - 7], p("talon")),
         ], sign, "_" + s)
-        foot_b = rig.bone(foot_name, [14.5 * sign, 5, -26], [-26, 0, 0], foot, f"{name}_shin", toes)
-        shin = cubes([
-            ("shin", [10.5, 14, -30], [18.5, 28, -21], p("hide")),
-            ("shin_low", [11.5, 4, -29], [17.5, 14, -22], p("hide")),
-        ], sign, "_" + s)
-        shin_b = rig.bone(f"{name}_shin", [14.5 * sign, 26, -26], [26, 0, 0], shin, name, [foot_b])
-        thigh = cubes([
-            ("thigh", [7, 30, -38], [22, 54, -12], p("scale", "scales")),
-            ("thigh_low", [9, 20, -34], [20, 30, -16], p("scale", "scales")),
-            ("thigh_plate", [21.5, 34, -32], [22.5, 48, -18], p("scale", "scales")),
-            ("thigh_seam_glow", [22.5, 38, -28], [23, 46, -22], p("glow", "glow")),
-        ], sign, "_" + s)
-        return rig.bone(name, [14.5 * sign, 44, -24], [0, 0, 0], thigh, "body", [shin_b])
+        rig.world[foot_name] = IDENTITY
+        toes = [claw(f"toe{k}_{s}", foot_name, [tx, ey2 - 6, ez + 7], sign, .8, 26) for k, tx in enumerate((11.5, 15.5, 19.5))]
+        foot_b = rig.bone(foot_name, end, matrix_euler(_t(world)), foot, f"{name}_shin", toes)
+        return attach(bone, f"{name}_shin", foot_b)
 
     # ---------- tail: five tapering segments in an S-curve, spiked along the top ----------
     def tail():
@@ -450,7 +496,8 @@ def build():
         body_parts.append(part(f"mane_{s}", "body", [12, 50, 20], [0, -30, 12], [
             ("mane_flap", [11.5, 32, -2], [13, 56, 24], p("fringe", "fringe")),
         ], sign, "_" + s))
-    parts = [head(), tail(), wing(1, "l"), wing(-1, "r"), leg(1, "l"), leg(-1, "r")] + body_parts
+    parts = [head(), tail(), wing(1, "l"), wing(-1, "r"), leg(1, "l"), leg(-1, "r"),
+             front_leg(1, "l"), front_leg(-1, "r")] + body_parts
     body = rig.bone("body", [0, 36, 0], [0, 0, 0], body_items, None, parts)
     outliner = [body()]
     animate(m)

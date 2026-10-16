@@ -73,13 +73,15 @@ class ShadeWyrmBossTest {
             // (bone, Blockbench point on that bone, where build_boss_shade_wyrm.py's rest pose puts it) in px.
             // X is compared by distance from the centre line because WSEE mirrors Blockbench X.
             val checks = listOf(
-                Triple("body", Vec(10.0, 56.0, 20.0), Vec(10.0, 56.0, 20.0)),           // unrotated reference
-                Triple("neck", Vec(0.0, 40.0, 46.0), Vec(0.0, 34.8, 45.4)),
-                Triple("wing_l", Vec(16.0, 91.3, 13.0), Vec(23.6, 87.4, -2.2)),        // elbow spike
-                Triple("wing_l_hand", Vec(16.0, -8.8, 30.0), Vec(40.0, -1.0, 54.0)),   // planted talon
-                Triple("wing_l_finger3", Vec(19.8, 10.3, 14.0), Vec(37.7, 41.0, -50.8)), // rear cloak spar
-                Triple("skull", Vec(0.0, 42.0, 81.0), Vec(0.0, 36.2, 80.2)),             // nose
-                Triple("tail_end", Vec(0.0, 44.0, -140.0), Vec(0.0, 41.1, -138.7)),      // tail blade
+                Triple("body", Vec(10.0, 56.0, 20.0), Vec(10.0, 56.0, 20.0)), // unrotated reference
+                Triple("neck", Vec(0.0, 40.0, 46.0), Vec(0.0, 30.2, 43.9)), // neck
+                Triple("wing_l", Vec(16.0, 80.0, 13.0), Vec(22.8, 72.2, -3.3)), // elbow
+                Triple("wing_l_hand", Vec(16.0, -8.0, 30.0), Vec(28.0, 10.7, 76.0)), // wing claw
+                Triple("wing_l_finger3", Vec(19.8, 10.3, 14.0), Vec(27.3, 62.3, -65.2)), // rear cloak spar
+                Triple("skull", Vec(0.0, 42.0, 81.0), Vec(0.0, 24.2, 78.2)), // nose
+                Triple("tail_end", Vec(0.0, 44.0, -140.0), Vec(0.0, 41.1, -138.7)), // tail blade
+                Triple("leg_hl_foot", Vec(15.0, -20.0, -20.0), Vec(16.0, -7.8, -24.0)), // hind foot
+                Triple("leg_fl_paw", Vec(14.0, -10.0, 22.0), Vec(15.0, -2.9, 28.0)), // front paw
             )
             val misses = checks.mapNotNull { (bone, local, expected) ->
                 val actual = requireNotNull(model.getBonePoint(bone, local.mul(0.25)))
