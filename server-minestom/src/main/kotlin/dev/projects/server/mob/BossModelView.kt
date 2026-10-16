@@ -71,6 +71,8 @@ internal class BossModelView(
     instance: Instance,
     origin: Pos,
     private val hiddenUntilEnraged: Set<String>,
+    /** Bones hidden, with every bone under them, once the enrage clip has shrunk them away. */
+    private val hiddenOnceEnraged: Set<String> = emptySet(),
 ) {
     private class Model(private val id: String) : GenericModelImpl() {
         override fun getId(): String = "$id.bbmodel"
@@ -84,6 +86,8 @@ internal class BossModelView(
     private var loop = "idle"
     private var last: Pos = origin
     private var hurtUntil = 0L
+    private var revealAt = 0L
+    private var foldAt = 0L
 
     init {
         model.init(instance, origin)
@@ -102,6 +106,8 @@ internal class BossModelView(
     fun tick(at: Pos, now: Long) {
         if (disposed || dying) return
         if (hurtUntil != 0L && now >= hurtUntil) { hurtUntil = 0L; model.setState("normal") }
+        if (revealAt != 0L && now >= revealAt) { revealAt = 0L; hiddenUntilEnraged.forEach { model.setBoneVisible(it, true) } }
+        if (foldAt != 0L && now >= foldAt) { foldAt = 0L; hideFolded() }
         val moved = at.distanceSquared(last) > 0.03 * 0.03
         last = at
         model.setPosition(at)
@@ -124,13 +130,30 @@ internal class BossModelView(
         if (!disposed && !dying && has(abilityId)) animations.playOnce(abilityId, 2) {}
     }
 
-    fun enrage() {
+    /**
+     * The enrage clip grows the rage bones from scale 0, so they are shown a moment after it starts (not while
+     * WSEE still blends from the loop at full scale), and the bones it shrinks away are hidden after.
+     */
+    fun enrage(now: Long) {
         if (disposed || dying || enraged) return
         enraged = true
-        hiddenUntilEnraged.forEach { model.setBoneVisible(it, true) }
         loop = if (has("idle_enraged")) "idle_enraged" else "idle"
         animations.playRepeat(loop)
-        if (has("enrage")) animations.playOnce("enrage", 2) {}
+        if (has("enrage")) {
+            animations.playOnce("enrage", 2) {}
+            revealAt = now + ENRAGE_REVEAL_MILLIS
+            foldAt = now + ENRAGE_FOLD_MILLIS
+        } else {
+            hiddenUntilEnraged.forEach { model.setBoneVisible(it, true) }
+            hideFolded()
+        }
+    }
+
+    private fun hideFolded() {
+        for (part in model.getParts()) {
+            val name = part.name
+            if (hiddenOnceEnraged.any { name == it || name.startsWith("${it}_") }) part.setVisible(false)
+        }
     }
 
     /** Plays the death clip, then removes the bones even if the carrier is already gone. */
@@ -150,6 +173,9 @@ internal class BossModelView(
     private fun has(animation: String) = animations.getAnimation(animation) != null
 
     companion object {
+        /** shade_wyrm `enrage`: the fans and horns start growing at 2.15 s, the folded wings are gone by 2.4 s. */
+        private const val ENRAGE_REVEAL_MILLIS = 300L
+        private const val ENRAGE_FOLD_MILLIS = 2500L
         fun available(modelId: String) = modelId in BossModelLibrary.models()
         /**
          * Entity yaw -> WSEE model rotation. WSEE turns a model by (180 - rotation), so a Blockbench +Z front

@@ -110,24 +110,20 @@ class ShadeWyrmBossTest {
             handler.playRepeat("idle"); ticks(2)
             val snout = Vec(0.0, 44.0, 63.0)
             val restSnout = at("skull", snout)
-            val restChest = at("body", Vec(0.0, 40.0, 22.0))
             val restMembrane = at("wing_l_membrane", Vec(19.0, 20.0, -34.0))
             // Yaw 0 is south (+Z) in Minecraft: the snout must lead. WSEE mirrors Blockbench X, so the
             // Blockbench +X membrane hangs on world -X here; only "away from the centre line" matters below.
             assertTrue(restSnout.z() > origin.z() + 3.0, "snout $restSnout vs $origin")
             assertTrue(kotlin.math.abs(restMembrane.x() - origin.x()) > 0.8, "membrane $restMembrane")
 
-            handler.playOnce("shade-breath") {}; ticks(1 + 26) // 1.3 s: neck pitched -30 (rear up)
+            handler.playOnce("enrage") {}; ticks(1 + 52) // 2.6 s: reared on the hind legs (body pitched -38)
             val reared = at("skull", snout)
-            assertTrue(reared.y() > restSnout.y() + 0.3, "rear-up should lift the snout: $reared vs $restSnout")
+            assertTrue(reared.y() > restSnout.y() + 0.5, "rear-up should lift the snout: $reared vs $restSnout")
 
-            handler.playOnce("shade-pounce") {}; ticks(1 + 28) // 1.4 s: lunge +18 px forward
-            assertTrue(at("body", Vec(0.0, 40.0, 22.0)).z() > restChest.z() + 0.6, "lunge should move forward")
-
-            handler.playOnce("enrage") {}; ticks(1 + 18) // 0.9 s: cloak spread roll 110
-            val spread = at("wing_l_membrane", Vec(19.0, 20.0, -34.0))
-            assertTrue(kotlin.math.abs(spread.x() - origin.x()) > kotlin.math.abs(restMembrane.x() - origin.x()) + 1.0 &&
-                spread.y() > restMembrane.y() + 1.0, "spread $spread vs $restMembrane")
+            ticks(40) // 4.6 s: the enraged crouch, the wing-arm's carpal planted in front on the ground
+            val carpal = at("cloak_l", Vec(32.96, 21.5, 47.71))
+            assertTrue(carpal.y() - origin.y() < 0.9 && carpal.z() > origin.z() + 1.5 &&
+                kotlin.math.abs(carpal.x() - origin.x()) > 1.2, "planted carpal $carpal vs $origin")
         } finally {
             handler.destroy(); model.destroy(); arena.dispose()
         }

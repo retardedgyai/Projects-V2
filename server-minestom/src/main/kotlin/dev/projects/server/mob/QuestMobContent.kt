@@ -70,6 +70,8 @@ internal data class QuestMobDefinition(
     val enragedSpeedMultiplier: Double = 1.0,
     /** Model bones shown only after enraging (e.g. horns). */
     val enragedBones: Set<String> = emptySet(),
+    /** Model bones (with the bones under them) hidden once enraged, e.g. folded wings replaced by opened ones. */
+    val foldedBones: Set<String> = emptySet(),
 ) {
     val name: String get() = archetype.displayName
     val boss: Boolean get() = archetype.rarity == QuestMobRarity.BOSS
@@ -153,7 +155,7 @@ internal object QuestMobContent {
                     attack("shade-storm", "鱗粉嵐・竜の懐へ", MobAttackShape.Ring(15.0, 4.0), 15.0, 32.0,
                         2200, 0, 1300, 6000, health = .5, weight = 2),
                 )).copy(model = "shade_wyrm", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2,
-                    enragedBones = setOf("horn_l", "horn_r"))
+                    enragedBones = setOf("horn_l", "horn_r", "cloak_l", "cloak_r"), foldedBones = setOf("wing_l", "wing_r"))
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,
                 Material.IRON_AXE, attacks = listOf(sweep(), slam()))
             QuestMobArchetype.SHIELD_GUARD -> definition(EntityType.HUSK, 66.0, 0.105, 2.0, 1.0,

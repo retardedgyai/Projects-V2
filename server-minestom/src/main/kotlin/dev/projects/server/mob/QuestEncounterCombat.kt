@@ -61,7 +61,7 @@ internal class QuestMobLife(val maximumHealth: Double) {
 }
 
 /** How long an enraging boss holds its roar before attacking again (matches the `enrage` model clip). */
-private const val ENRAGE_HOLD_MILLIS = 2600L
+private const val ENRAGE_HOLD_MILLIS = 5000L
 
 /**
  * One map owns one instance of this runtime. Invoke tick on the map's server tick, and dispose before unloading it.
@@ -431,7 +431,7 @@ class QuestEncounterCombat(
             if (disposed) entity.remove()
             else if (error == null && modelled != null && entity is ModelCarrier) {
                 runCatching {
-                    val view = BossModelView(modelled, instance, position, definition.enragedBones)
+                    val view = BossModelView(modelled, instance, position, definition.enragedBones, definition.foldedBones)
                     entity.view = view
                     entity.isInvisible = true
                     // Viewers that arrived before the model existed.
@@ -599,7 +599,7 @@ class QuestEncounterCombat(
             telegraphs.clear(mob.entity.uuid)
             castingPose(mob, false)
             stopNavigation(mob)
-            mob.view?.enrage()
+            mob.view?.enrage(now)
             mob.warningRetryAt = mob.enrageHoldUntil
             updateName(mob, "怒り・翼を広げた")
             sound(mob.entity.position, "minecraft:entity.ravager.roar", 1.2f, 0.6f)

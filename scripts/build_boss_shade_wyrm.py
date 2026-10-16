@@ -971,7 +971,7 @@ def animate(m):
     m.anim("idle_enraged", 2.0, breathe, "loop")
     m.anim("walk_enraged", 1.2, bob, "loop")
     for name, seconds in (("shade-sweep", 2.0), ("shade-pounce", 2.6), ("shade-dust", 2.6), ("shade-pulse", 2.3),
-                          ("shade-breath", 2.6), ("shade-storm", 3.5), ("enrage", 2.6), ("death", 2.4)):
+                          ("shade-breath", 2.6), ("shade-storm", 3.5), ("enrage", 5.0), ("death", 2.4)):
         m.anim(name, seconds, {"body": [(0, zero), (seconds, zero)]})
 
 
@@ -981,4 +981,4 @@ if __name__ == "__main__":
     data = model.write(out, outliner)
     print(f"{out.relative_to(ROOT)}: {len(data['elements'])} cubes, {len(model.bones)} bones, {len(data['animations'])} animations")
     import animate_boss_shade_wyrm
-    animate_boss_shade_wyrm.main(out)
+    animate_boss_shade_wyrm.main(out, FAN_WING["drop"])
