@@ -236,8 +236,8 @@ POSE = {
     "fit_legs": .62,
     "fur": .6,              # fur fringe length scale
     "crown": .8,            # crown spikes length scale about their joint
-    "fan_cup": 18.0,         # opened wing: front and rear lobes swing in toward the body (degrees)
-    "fan_curl": 24.0,        # opened wing: the outer half of each lobe curls in over the body (degrees)
+    "fan_cup": 10.0,         # opened wing: front and rear lobes swing in toward the body (degrees)
+    "fan_curl": -14.0,        # opened wing: the outer half of each lobe curls in over the body (degrees)
     "horn_style": "ridged",  # frenzy horns: "swept" | "ridged" | "forked" (Creator chose ridged)
     "horn_len": 21.0,
     "head": .76,             # head (skull, jaw, crown) scale about the skull joint (2026-10-16: "face too big")
@@ -488,7 +488,7 @@ def membrane_painter(outline, half, inner_side, seed):
     return make
 
 
-def fan_painter(poly, half, inner_side, seed, root=None, radius=None):
+def fan_painter(poly, half, inner_side, seed, root=None, radius=None, solid=False):
     """One fur lobe of the opened wing: a polygon (carpal, finger a, outer bulge, finger b) in the plate's
     local (y, z). Strands of fur run outward from the carpal; the outer edge is torn into tufts (transparent);
     near-black on the outside, violet on the side facing the body, with sparse glowing scale dust."""
@@ -525,6 +525,8 @@ def fan_painter(poly, half, inner_side, seed, root=None, radius=None):
             lock = math.floor(q); frac = q - lock
             r1 = _h(seed, lock, 5)
             tip = .86 + .04 * r1 + .10 * math.sqrt(max(0.0, math.sin(math.pi * frac)))
+            if solid:
+                tip = .97                                 # backing sheet: fills the lobe behind the locks
             if f > tip:
                 return (0, 0, 0, 0)
             if _h(seed, x, y) < .005:
@@ -548,7 +550,7 @@ def fan_painter(poly, half, inner_side, seed, root=None, radius=None):
 # height. Offsets are for the left side, in px, from the shoulder joint (elbow, carpal) and from the carpal
 # (finger tips), Creator-confirmed reading of Gore Magala in frenzy (2026-10-16).
 FAN_WING = dict(elbow=(18, 6, -4), carpal=(8, -50, 22),
-                tips=((8, 140, -2), (46, 148, -18), (82, 130, -38), (98, 92, -58), (80, 50, -76)),
+                tips=((10, 108, -4), (52, 116, -18), (92, 98, -38), (110, 62, -58), (92, 26, -76)),
                 hip=(10, -22, -64))   # where the rearmost membrane meets the flank, from the shoulder
 
 
@@ -769,7 +771,7 @@ def build():
         nf = len(fine)
         fine = [K + turn(q - K, up, -sign * cup * (2 * i / (nf - 1) - 1)) for i, q in enumerate(fine)]
 
-        def plate(nm, pts, root, radius, seed):
+        def plate(nm, pts, root, radius, seed, solid=False):
             n = np.cross(pts[1] - pts[0], pts[-1] - pts[0]); n /= np.linalg.norm(n)
             if n[0] * sign < 0:
                 n = -n                                    # +n points away from the body
@@ -780,12 +782,12 @@ def build():
             half = [.05, (max(ly) - min(ly)) / 2 + .2, (max(lz) - min(lz)) / 2 + .2]
             lp = [[float((q - cen) @ yy), float((q - cen) @ zz)] for q in pts]
             r2 = [float((root - cen) @ yy), float((root - cen) @ zz)]
-            oriented(nm, name, cen, half, np.column_stack([n, yy, zz]), fan_painter(lp, half, "west", seed, r2, radius))
+            oriented(nm, name, cen, half, np.column_stack([n, yy, zz]), fan_painter(lp, half, "west", seed, r2, radius, solid))
 
         for k, (a, b) in enumerate(zip(fine, fine[1:])):
             # Neighbouring lobes overlap (each reaches a quarter into the next) so no gaps open between them.
             a0 = a + (a - b) * .25; b0 = b + (b - a) * .25
-            for layer, (scale, ang) in enumerate(((1.0, 0), (.92, 5), (.92, -5), (.8, 10), (.8, -9), (.66, 14))):
+            for layer, (scale, ang) in enumerate(((.9, 0), (1.0, 0), (.92, 5), (.92, -5), (.8, 10), (.8, -9), (.66, 14))):
                 axis = (a + b) / 2 - K
                 va = turn((a0 - K) * scale, axis, math.radians(ang)); vb = turn((b0 - K) * scale, axis, math.radians(ang))
                 m2 = (va + vb) / 2
@@ -797,14 +799,14 @@ def build():
                 h = .5                                    # the bend line, as a fraction of the way out
                 ia, ib, im = K + va * h, K + vb * h, K + vm * h
                 seed = 17 * k + 5 * layer + (sign > 0)
-                plate(f"{name}_fan{k}_{layer}a", [K, ia, im, ib], K, radius, seed)
+                plate(f"{name}_fan{k}_{layer}a", [K, ia, im, ib], K, radius, seed, layer == 0)
                 # outer band: rotated about the bend line so it curls toward the body (-n0)
                 hinge = ib - ia
                 def bend(v, base):
                     return base + turn(v - base, hinge, -curl * (1 if np.cross(hinge, n0) @ (v - base) > 0 else -1))
                 oa, ob, om = (bend(K + v, base) for v, base in ((va, ia), (vb, ib), (vm, im)))
                 root = bend(K, ia) if False else K
-                plate(f"{name}_fan{k}_{layer}b", [ia, oa, om, ob, ib], K, radius, seed)
+                plate(f"{name}_fan{k}_{layer}b", [ia, oa, om, ob, ib], K, radius, seed, layer == 0)
         # Fill: the membrane also runs along the arm (elbow and shoulder) and back to the flank, so there is
         # no gap between the fan, the arm and the body.
         fills = [(E, [E, S0 + np.array([0, 10, -6]) * M3 + np.array([0, 0, 0]), fine[0]]),
