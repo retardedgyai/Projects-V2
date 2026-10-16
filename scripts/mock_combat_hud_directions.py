@@ -1222,8 +1222,11 @@ def iron_crest(cv, cx, top, level):
     bold(cv, cx - bold_width(level) // 2, top + 9, level, G["text"])
 
 
-def design_c6():
+def design_c6(crisp=False):
+    """crisp=True (C8): same plates, item-slot icons at their real 32-texel resolution."""
     cv = world()
+    top = Image.new("RGBA", (W, H)) if crisp else None
+    icons = []
     x0, y0 = HB_X, HB_Y
     stone_plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
     for i in range(9):
@@ -1232,17 +1235,20 @@ def design_c6():
     cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
     for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
         x, y = x0 + 3 + 20 * (k - 1), y0 + 3
-        ic = icon(name)
-        if state == "cd":
-            ic = darken(ic, .35)
-        elif state == "nomana":
-            ic = darken(ic, .6, tint=(110, 150, 255))
-        cv.alpha_composite(ic, (x, y))
+        if crisp:
+            icons.append((name, x, y, state))
+        else:
+            ic = icon(name)
+            if state == "cd":
+                ic = darken(ic, .35)
+            elif state == "nomana":
+                ic = darken(ic, .6, tint=(110, 150, 255))
+            cv.alpha_composite(ic, (x, y))
         if state == "cd":
             s = str(cd)
-            bold(cv, x + 8 - bold_width(s) // 2, y + 4, s, G["text"])
+            bold(top or cv, x + 8 - bold_width(s) // 2, y + 4, s, G["text"])
     for i in range(9):
-        caps(cv, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (190, 190, 190, 220))
+        caps(top or cv, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (190, 190, 190, 220))
     sx = x0 + 1  # selection: iron frame
     for a, b, c, d, col in ((sx, y0 + 1, sx + 20, y0 + 2, IRON[0]), (sx, y0 + 1, sx + 1, y0 + 21, IRON[0]),
                             (sx, y0 + 20, sx + 20, y0 + 21, IRON[2]), (sx + 19, y0 + 1, sx + 20, y0 + 21, IRON[2])):
@@ -1282,7 +1288,10 @@ def design_c6():
         s = str(sec)
         tw = 15 + mc_width(s) + 3
         stone_plate(cv, (bx, py - 14, bx + tw, py - 1))
-        cv.alpha_composite(icon(name, 10), (bx + 2, py - 12))
+        if crisp:
+            icons.append((name, bx + 2, py - 12, "buff10"))
+        else:
+            cv.alpha_composite(icon(name, 10), (bx + 2, py - 12))
         over(cv, (bx + 2, py - 3, bx + 12, py - 2), G["buff"])
         mc_text(cv, bx + 14, py - 11, s, G["text"])
         bx += tw + 2
@@ -1307,7 +1316,7 @@ def design_c6():
     for q in (1, 2, 3):
         qx = bx0 + 5 + (bw - 10) * q // 4
         over(cv, (qx, 19, qx + 1, 24), (0, 0, 0, 160))
-    return cv
+    return (cv, icons, top) if crisp else cv
 
 
 # ---- C7: C6 with fewer boxes and real-resolution skill icons ----------------------------------
@@ -1438,7 +1447,7 @@ def main():
     for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c),
                      ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4),
                      ("C5-pixel-crosscode", design_c5), ("C6-modern-mmo-minecraft", design_c6),
-                     ("C7-modern-mmo-open", design_c7)):
+                     ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True))):
         img = fn()
         for s in (2, 4):
             compose(img, s).save(OUT / f"{name}-{s}x.png")
