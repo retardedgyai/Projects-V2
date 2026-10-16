@@ -1222,15 +1222,20 @@ def iron_crest(cv, cx, top, level):
     bold(cv, cx - bold_width(level) // 2, top + 9, level, G["text"])
 
 
-def design_c6(crisp=False):
-    """crisp=True (C8): same plates, item-slot icons at their real 32-texel resolution."""
+def design_c6(crisp=False, dungeons=False):
+    """crisp=True (C8): same plates, item-slot icons at their real 32-texel resolution.
+    dungeons=True (D2): C8 layout drawn with D1's charcoal stepped plates, plain notice text."""
     cv = world()
+    plate = (lambda c, box, bevel=True: step_plate(c, box)) if dungeons else stone_plate
     top = Image.new("RGBA", (W, H)) if crisp else None
     icons = []
     x0, y0 = HB_X, HB_Y
-    stone_plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
     for i in range(9):
-        inset_slot(cv, (x0 + 2 + 20 * i, y0 + 2, x0 + 20 + 20 * i, y0 + 20))
+        if dungeons:
+            d_slot(cv, x0 + 2 + 20 * i, y0 + 2)
+        else:
+            inset_slot(cv, (x0 + 2 + 20 * i, y0 + 2, x0 + 20 + 20 * i, y0 + 20))
     cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
     cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
     for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
@@ -1256,7 +1261,7 @@ def design_c6(crisp=False):
     cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
     # class resource: ember cells between plate and hotbar
     ry = y0 - 5
-    stone_plate(cv, (x0 - 1, ry, x0 + 183, ry + 6), bevel=False)
+    plate(cv, (x0 - 1, ry, x0 + 183, ry + 6), bevel=False)
     lit = RAGE * 20 // 100
     for i in range(20):
         cx0 = x0 + 2 + i * 9
@@ -1267,8 +1272,8 @@ def design_c6(crisp=False):
             over(cv, (cx0, ry + 2, cx0 + 8, ry + 4), (44, 30, 20, 255))
     # HP / MP plates running into the iron crest
     py, ph = y0 - 24, 20
-    stone_plate(cv, (x0 - 1, py, C - 9, py + ph))
-    stone_plate(cv, (C + 9, py, x0 + 183, py + ph))
+    plate(cv, (x0 - 1, py, C - 9, py + ph))
+    plate(cv, (C + 9, py, x0 + 183, py + ph))
     mc_text(cv, x0 + 3, py + 3, "HP", G["label"])
     s = str(HP)
     bold(cv, x0 + 17, py + 3, s, G["text"])
@@ -1287,7 +1292,7 @@ def design_c6(crisp=False):
     for label, name, sec in BUFFS:
         s = str(sec)
         tw = 15 + mc_width(s) + 3
-        stone_plate(cv, (bx, py - 14, bx + tw, py - 1))
+        plate(cv, (bx, py - 14, bx + tw, py - 1))
         if crisp:
             icons.append((name, bx + 2, py - 12, "buff10"))
         else:
@@ -1297,14 +1302,15 @@ def design_c6(crisp=False):
         bx += tw + 2
     # notice: stone strip, text in the creator's 12px font
     nw = jp_width(NOTICE)
-    stone_plate(cv, (C - nw // 2 - 8, py - 33, C + nw // 2 + 8, py - 17))
-    gem(cv, C - nw // 2 - 4, py - 25, G["mp"], 1)
-    gem(cv, C + nw // 2 + 3, py - 25, G["mp"], 1)
+    if not dungeons:
+        plate(cv, (C - nw // 2 - 8, py - 33, C + nw // 2 + 8, py - 17))
+        gem(cv, C - nw // 2 - 4, py - 25, G["mp"], 1)
+        gem(cv, C + nw // 2 + 3, py - 25, G["mp"], 1)
     jp_text(cv, C - nw // 2, py - 32, NOTICE, rgba("9cc6ff"))
     # boss: stone plate with a ruby rank gem, name, Lv, framed gauge with iron caps
     bw = 230
     bx0 = C - bw // 2
-    stone_plate(cv, (bx0, 2, bx0 + bw, 28))
+    plate(cv, (bx0, 2, bx0 + bw, 28))
     gem(cv, bx0 + 8, 9, G["ruby"], 3)
     name = "裂け目の執行官"
     jp_text(cv, bx0 + 16, 3, name, G["text"])
@@ -1781,7 +1787,7 @@ def main():
     for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c),
                      ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4),
                      ("C5-pixel-crosscode", design_c5), ("C6-modern-mmo-minecraft", design_c6),
-                     ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True)), ("C9-modern-mmo", design_c9), ("C10-modern-mmo-plain", lambda: design_c9(plain=True)), ("D1-dungeons-mmo", design_d1)):
+                     ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True)), ("C9-modern-mmo", design_c9), ("C10-modern-mmo-plain", lambda: design_c9(plain=True)), ("D1-dungeons-mmo", design_d1), ("D2-c8-layout-dungeons", lambda: design_c6(crisp=True, dungeons=True))):
         img = fn()
         for s in (2, 4):
             compose(img, s).save(OUT / f"{name}-{s}x.png")
