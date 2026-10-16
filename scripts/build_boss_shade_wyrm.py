@@ -236,8 +236,8 @@ POSE = {
     "fit_legs": .62,
     "fur": .6,              # fur fringe length scale
     "crown": .8,            # crown spikes length scale about their joint
-    "horn_style": "ridged",  # frenzy horns: "swept" | "ridged" | "forked"
-    "horn_len": 26.0,
+    "horn_style": "ridged",  # frenzy horns: "swept" | "ridged" | "forked" (Creator chose ridged)
+    "horn_len": 21.0,
     "head": .76,             # head (skull, jaw, crown) scale about the skull joint (2026-10-16: "face too big")
     "head_shift": (0.0, 0.0, 15.0),   # and moved forward so the smaller head clears the collar
 }
@@ -391,6 +391,39 @@ def box_painter(mat, seed=0):
                 t = max(0, t - 1)
             return ramp[t] + (255,)
         return paint, key
+    return make
+
+
+def _mix(a, b, t):
+    return tuple(int(a[k] + (b[k] - a[k]) * t) for k in range(3))
+
+
+def horn_painter(t, seed=0):
+    """A frenzy horn segment at position t (0 root .. 1 tip): the root keeps the dark hide, the colour
+    climbs into glowing magenta toward the tip, with ring bands so the horn reads as grown in sections."""
+    hide, fz, glow = RAMPS["plate"], RAMPS["frenzy"], RAMPS["glow"]
+
+    def make(side, w, h):
+        def paint(x, y, w, h):
+            # Position along the horn on the side faces (local z runs along the face's width there).
+            if side in ("east", "west"):
+                u = x / max(1, w - 1)
+                u = u if side == "west" else 1 - u
+            elif side in ("north", "south"):
+                u = 1.0 if side == "south" else 0.0
+            else:
+                u = y / max(1, h - 1)
+                u = u if side == "down" else 1 - u
+            tt = max(0.0, min(1.0, t + (u - .5) * .22))
+            k = tt ** 1.4
+            ramp = [_mix(hide[j], fz[j], min(1, k * 1.6)) if k < .62 else _mix(fz[j], glow[j], (k - .62) / .38) for j in range(4)]
+            band = (x if side in ("east", "west") else y) % 5 == 0
+            tone = 3 if side == "up" else 0 if side == "down" else 2
+            c = ramp[tone]
+            if band or _h(seed, x, y, len(side)) < .08:
+                c = _mix(c, ramp[max(0, tone - 1)], .55)   # faint growth rings, not stripes
+            return c + (255,)
+        return paint, ("horn", round(t, 2), seed, side, w, h)
     return make
 
 
@@ -635,7 +668,8 @@ def build():
     style = POSE["horn_style"]
     L = POSE["horn_len"]
     for sign, s in ((1, "l"), (-1, "r")):
-        base = np.array(pivots["crown_l"], float) * [sign, 1, 1] + np.array([0, 1.5, -1.0])
+        # The root sits inside the skull so the horn grows out of it.
+        base = np.array(pivots["crown_l"], float) * [sign, 1, 1] + np.array([0, -1.0, -1.0])
         bend = {"swept": ((.10, .70, -.25), (.22, .80, -.95)), "ridged": ((.10, .75, -.20), (.20, .85, -.90)),
                 "forked": ((.12, .80, -.05), (.28, .95, -.70))}[style]
         p0 = base; p1 = base + L * np.array([bend[0][0] * sign, bend[0][1], bend[0][2]])
@@ -651,13 +685,18 @@ def build():
             x = np.cross(up, z); x /= np.linalg.norm(x); y = np.cross(z, x)
             R = np.column_stack([x, y, z])
             w = 3.8 * (1 - i / n) ** .8 + .8
-            mat = "glow" if i == n - 1 else "frenzy"
-            oriented(f"{name}_seg{i}", name, (a + b) / 2, [w / 2, w / 2, ln / 2 + .35], R, box_painter(mat, i))
-            if style == "ridged" and 0 < i < n - 1:
+            oriented(f"{name}_seg{i}", name, (a + b) / 2, [w / 2, w / 2, ln / 2 + .35], R, horn_painter(i / (n - 1), i))
+            if i == 0:
+                # Scale sheath at the root: the skull's own plates closing around the horn.
+                for k, ang in enumerate((0, 120, 240)):
+                    t = math.radians(ang)
+                    off = (x * math.cos(t) + y * math.sin(t)) * (w * .45)
+                    oriented(f"{name}_sheath{k}", name, a + off + z * .6, [w * .32, w * .32, 1.6], R, box_painter("plate", 20 + k))
+            if style == "ridged" and 1 < i < n - 1:
                 # A barb on the back of each segment, pointing back along the curve.
                 bc = (a + b) / 2 - y * (w / 2) + z * (ln * .1)
                 bd = _no_roll(np, z * .4 - y)
-                oriented(f"{name}_barb{i}", name, bc - y * 1.2, [w * .3, w * .3, 2.0], bd, box_painter("frenzy", i + 7))
+                oriented(f"{name}_barb{i}", name, bc - y * 1.2, [w * .3, w * .3, 2.0], bd, horn_painter(min(1.0, i / (n - 1) + .1), i + 7))
         if style == "forked":
             tip, prev = pts[-1], pts[-2]
             z = (tip - prev) / np.linalg.norm(tip - prev)
