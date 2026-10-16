@@ -236,6 +236,7 @@ POSE = {
     "fit_legs": .62,
     "fur": .6,              # fur fringe length scale
     "crown": .8,            # crown spikes length scale about their joint
+    "open_wing": "curtain",  # opened cloak when enraged: "curtain" | "hood" | "wide"
     "horn_style": "ridged",  # frenzy horns: "swept" | "ridged" | "forked" (Creator chose ridged)
     "horn_len": 21.0,
     "head": .76,             # head (skull, jaw, crown) scale about the skull joint (2026-10-16: "face too big")
@@ -486,6 +487,53 @@ def membrane_painter(outline, half, inner_side, seed):
     return make
 
 
+def open_membrane_painter(outline, half, inner_side, seed):
+    """An opened wing panel (triangle carpal -> finger tip -> next tip): cut to the triangle, the far edge
+    between the two tips torn ragged, near-black outside and violet inside, with sparse glowing dust."""
+    ys, zs = half[1], half[2]
+    (ay, az), (by, bz), (cy, cz) = outline[0]
+
+    def bary(py, pz):
+        d = (by - ay) * (cz - az) - (bz - az) * (cy - ay)
+        u = ((py - ay) * (cz - az) - (pz - az) * (cy - ay)) / d
+        v = ((by - ay) * (pz - az) - (bz - az) * (py - ay)) / d
+        return 1 - u - v, u, v      # weight of the carpal corner, tip a, tip b
+
+    def make(side, w, h):
+        if side not in ("east", "west"):
+            return (lambda x, y, w, h: (0, 0, 0, 0)), ("clear",)
+        pal = RAMPS["inner" if side == inner_side else "cloak"]
+
+        def paint(x, y, w, h):
+            pz = (zs - (x + .5) / w * 2 * zs) if side == "east" else (-zs + (x + .5) / w * 2 * zs)
+            py = ys - (y + .5) / h * 2 * ys
+            k, u, v = bary(py, pz)
+            if k < -.02 or u < -.02 or v < -.02:
+                return (0, 0, 0, 0)
+            col = (x if side == "east" else w - 1 - x) // 2
+            if k < .16 * _h(seed, col, y // 3):          # torn trailing edge
+                return (0, 0, 0, 0)
+            r = _h(seed, x, y)
+            if r < .01:
+                return RAMPS["glow"][2] + (255,)
+            t = 2 if k > .85 else 1 if r < .6 else 2 if r < .92 else 0
+            if min(u, v) < .03:
+                t = 3                                    # the finger's edge catches light
+            return pal[t] + (255,)
+        return paint, ("open", seed, side, w, h)
+    return make
+
+
+# The opened cloak (enraged): wing-arm raised out of the fold, fingers fanned, membranes between them.
+# Points are offsets (left side, px) from the shoulder joint: elbow, carpal, finger tips (from the carpal),
+# and the anchor on the flank where the last membrane meets the body.
+OPEN_WINGS = {
+    "curtain": dict(elbow=(18, 10, -4), carpal=(14, -6, 8), tips=((6, -40, -6), (2, -44, -30), (-4, -36, -56)), anchor=(8, -26, -78)),
+    "hood": dict(elbow=(14, 20, -6), carpal=(8, 10, 18), tips=((-8, -10, 24), (6, -32, 12), (8, -44, -18)), anchor=(8, -26, -72)),
+    "wide": dict(elbow=(20, 14, -6), carpal=(22, 8, 6), tips=((18, 26, -14), (28, 0, -26), (16, -26, -38)), anchor=(6, -22, -78)),
+}
+
+
 # --- fitting the reference's mesh parts with oriented boxes -----------------------------------------------
 def _no_roll(np, major):
     a = major / np.linalg.norm(major)
@@ -658,6 +706,47 @@ def build():
         build_part(el, 1, el["bone"], "")
         if el["sided"]:
             build_part(el, -1, right(el["bone"]), "_r")
+
+    # ---------- rage parts: the opened cloak (hidden until enraged; the folded wing hides then) ----------
+    spec = OPEN_WINGS[POSE["open_wing"]]
+    for sign, s in ((1, "l"), (-1, "r")):
+        name = f"cloak_{s}"
+        kids[name] = []
+        M3 = np.array([sign, 1, 1.0])
+        S0 = np.array(pivots[f"wing_{s}"], float)
+        E = S0 + np.array(spec["elbow"]) * M3 * 1.35
+        K = E + np.array(spec["carpal"]) * M3 * 1.35
+        tips = [K + np.array(t) * M3 * 2.0 for t in spec["tips"]]
+        anchor = K + np.array(spec["anchor"]) * M3 * 1.5
+
+        def bar(nm, a, b, w0, w1, mat):
+            d = b - a; ln = float(np.linalg.norm(d)); n = 2
+            for i in range(n):
+                p0 = a + d * i / n; p1 = a + d * (i + 1) / n
+                w = w0 + (w1 - w0) * (i + .5) / n
+                oriented(f"{nm}_{i}", name, (p0 + p1) / 2, [w / 2, w / 2, ln / n / 2 + .3], _no_roll(np, d / ln), box_painter(mat, i))
+        bar(f"{name}_humerus", S0, E, 7, 6, "plate")
+        bar(f"{name}_radius", E, K, 5.5, 4, "hide")
+        oriented(f"{name}_carpal", name, K, [3, 3, 3], np.eye(3), box_painter("plate", 3))
+        for k, d in enumerate((np.array([0, -.6, .8]), np.array([.3, -.8, .5]))):   # the carpal claws
+            d = d * M3; d = d / np.linalg.norm(d)
+            oriented(f"{name}_claw{k}", name, K + d * 4, [1.2, 1.2, 3.2], _no_roll(np, d), box_painter("talon", k))
+        for k, t in enumerate(tips):
+            bar(f"{name}_finger{k}", K, t, 3.4, 1.4, "spar")
+        ring = tips + [anchor]
+        for k, (a, b) in enumerate(zip(ring, ring[1:])):
+            n = np.cross(a - K, b - K); n /= np.linalg.norm(n)
+            zz = (a - K) / np.linalg.norm(a - K); yy = np.cross(zz, n)
+            pts = [K, a, b]
+            ly = [(q - K) @ yy for q in pts]; lz = [(q - K) @ zz for q in pts]
+            cen = K + yy * (max(ly) + min(ly)) / 2 + zz * (max(lz) + min(lz)) / 2
+            half = [.05, (max(ly) - min(ly)) / 2 + .2, (max(lz) - min(lz)) / 2 + .2]
+            outline = [[[float((q - cen) @ yy), float((q - cen) @ zz)] for q in pts]]
+            inner = "west" if n[0] * cen[0] > 0 else "east"
+            oriented(f"{name}_membrane{k}", name, cen, half, np.column_stack([n, yy, zz]),
+                     open_membrane_painter(outline, half, inner, 31 * k + sign))
+        order.append((name, "body"))
+        pivots[name] = [float(v) for v in S0]
 
     # ---------- rage parts: the frenzy horns, hidden until enraged ----------
     # Gore Magala's frenzy feelers: two glowing, segmented horns rise from the crown and sweep back.
