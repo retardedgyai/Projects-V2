@@ -9,6 +9,7 @@ import dev.projects.webui.UiNode
 import dev.projects.webui.UiScene
 import dev.projects.webui.UiSprite
 import java.util.Locale
+import kotlin.math.roundToInt
 import dev.projects.server.coreloop.GrimoireBook.BRANCHES
 import dev.projects.server.coreloop.GrimoireBook.BRANCH_LINES
 import dev.projects.server.coreloop.GrimoireBook.CHAPTERS
@@ -138,7 +139,7 @@ internal class GrimoireFlow(
     /** UiRenderer puts glyphs (sprites, text) 5 depth steps in front of fills; fills are lifted so one depth is one layer. */
     private fun rect(id: String, x: Double, y: Double, w: Double, h: Double, color: String, depth: Int, action: String? = null, hover: String? = null) {
         if (w <= 0 || h <= 0) return
-        val style = buildMap { put("background-color", color); if (hover != null) put("hover-background-color", hover) }
+        val style = buildMap { put("background-color", solid(color)); if (hover != null) put("hover-background-color", solid(hover)) }
         nodes += UiNode(id, box(x, y, w, h), "", style, action, null, true, depth + GLYPH_LIFT)
     }
     private fun sprite(id: String, name: String, x: Double, y: Double, w: Double, h: Double, depth: Int, tint: String? = null, opacity: Double = 1.0) {
@@ -162,6 +163,22 @@ internal class GrimoireFlow(
     private fun width(value: String, family: String, size: Double) =
         Polish05FontMetrics.advance(value, page(family, size)) / Polish05FontMetrics.SIZE * size
     private fun argb(hex: String, a: Double) = String.format("#%02x%s", (a * 255).toInt().coerceIn(0, 255), hex.takeLast(6))
+    /**
+     * The colour [ground] shows through a translucent fill, as an opaque fill. The client draws the display's fills in
+     * entity order, not back to front, so a translucent fill can land before what is behind it and show the world's
+     * sky instead (the map turned pale blue in the client). Fully clear fills stay clear: they only catch clicks.
+     */
+    private var ground = BACKDROP
+    private fun solid(color: String): String {
+        val hex = color.removePrefix("#")
+        val a = if (hex.length == 8) hex.take(2).toInt(16) else 255
+        if (a == 0 || a == 255) return color
+        val over = hex.takeLast(6); val under = ground.takeLast(6)
+        return "#ff" + (0..2).joinToString("") { i ->
+            val o = over.substring(i * 2, i * 2 + 2).toInt(16); val u = under.substring(i * 2, i * 2 + 2).toInt(16)
+            "%02x".format((u + (o - u) * a / 255.0).roundToInt())
+        }
+    }
     /** Forge-style rounded fill: a cross of fills plus four tinted quarter discs. */
     private fun round(id: String, x: Double, y: Double, w: Double, h: Double, r: Double, color: String, alpha: Double, depth: Int,
                       action: String? = null, hover: String? = null) {
@@ -171,7 +188,7 @@ internal class GrimoireFlow(
         rect("$id-l", x, y + rr, rr, h - 2 * rr, c, depth)
         rect("$id-r", x + w - rr, y + rr, rr, h - 2 * rr, c, depth)
         for ((k, cx, cy) in listOf(Triple("tl", x, y), Triple("tr", x + w - rr, y), Triple("bl", x, y + h - rr), Triple("br", x + w - rr, y + h - rr)))
-            sprite("$id-$k", "v3_round_$k", cx, cy, rr, rr, depth + GLYPH_LIFT, color, alpha)
+            sprite("$id-$k", "v3_round_$k", cx, cy, rr, rr, depth + GLYPH_LIFT, solid(c))
     }
     /** Forge-style 1px outline on a rounded box. */
     private fun border(id: String, x: Double, y: Double, w: Double, h: Double, r: Double, color: String, alpha: Double, depth: Int, t: Double = 1.0) {
@@ -180,7 +197,7 @@ internal class GrimoireFlow(
         rect("$id-l", x, y + r, t, h - 2 * r, c, depth); rect("$id-r", x + w - t, y + r, t, h - 2 * r, c, depth)
         val ring = if (r >= 12) "v3_ring14" else "v3_ring10"
         for ((k, cx, cy) in listOf(Triple("tl", x, y), Triple("tr", x + w - r, y), Triple("bl", x, y + h - r), Triple("br", x + w - r, y + h - r)))
-            sprite("$id-$k", "${ring}_$k", cx, cy, r, r, depth + GLYPH_LIFT, color, alpha)
+            sprite("$id-$k", "${ring}_$k", cx, cy, r, r, depth + GLYPH_LIFT, solid(c))
     }
     private fun panel(id: String, x: Double, y: Double, w: Double, h: Double, r: Double, depth: Int, fill: String = PANEL, alpha: Double = 0.9) {
         round(id, x, y, w, h, r, fill, alpha, depth)
@@ -190,13 +207,18 @@ internal class GrimoireFlow(
     override fun scene(light: ForgeLightPhase): UiScene {
         nodes.clear()
         val now = clock()
-        rect("backdrop", -400.0, -200.0, 2720.0, 1480.0, "#ff090b14", -8)
+        ground = BACKDROP
+        rect("backdrop", -400.0, -200.0, 2720.0, 1480.0, "#ff" + BACKDROP.takeLast(6), -8)
         sky(now)
         header(now)
         panel("map", MAP_X, MAP_Y, MAP_W, MAP_H, 18.0, 1, "#0c1020", 0.55)
+        ground = solid(argb("#0c1020", 0.55))
         if (tab == 0) trunkMap(now) else sealedBranch()
+        ground = BACKDROP
         panel("side", SIDE_X, MAP_Y, SIDE_W, MAP_H, 18.0, 1)
+        ground = solid(argb(PANEL, 0.9))
         if (tab == 0) entryPanel(GrimoireBook.entry(selected), now) else branchPanel()
+        ground = BACKDROP
         footer()
         claimEffect(now)
         return UiScene(800.0, 480.0, nodes.toList())
@@ -207,7 +229,10 @@ internal class GrimoireFlow(
         for ((i, c) in CLOUDS.withIndex()) sprite("cloud$i", "v3_glow", c.x - c.s / 2, c.y - c.s / 2, c.s, c.s, -7, c.color, c.a)
         for ((i, s) in STARS.withIndex()) {
             val twinkle = ((now / 600 + i) % 7 == 0L)
-            rect("star$i", s.first, s.second, s.third, s.third, if (twinkle) "#ffeafcff" else if (i % 3 == 0) "#ff9fe7f4" else "#ff5e7aa8", -7)
+            // Stars over the map sit on its (opaque) fill, so the map keeps its night sky.
+            val onMap = s.first in MAP_X + 12..MAP_X + MAP_W - 16 && s.second in MAP_Y + 12..MAP_Y + MAP_H - 16
+            val color = if (twinkle) "#ffeafcff" else if (i % 3 == 0) "#ff9fe7f4" else "#ff5e7aa8"
+            rect("star$i", s.first, s.second, s.third, s.third, if (onMap && !twinkle) "#ff3a4a6e" else color, if (onMap) 2 else -7)
         }
     }
 
@@ -561,6 +586,7 @@ internal class GrimoireFlow(
         private const val FLY_END = 900L
         private const val COUNT_MS = 600L
         private const val PANEL = "#141518"
+        private const val BACKDROP = "#090b14"
         private const val GOLD = "#ffe8c878"
         private const val CYAN = "#ff7fe3f0"
         private const val VIOLET = "#ffb49ae8"
