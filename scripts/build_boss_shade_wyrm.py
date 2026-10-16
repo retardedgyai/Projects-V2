@@ -521,8 +521,8 @@ def fan_painter(poly, half, inner_side, seed):
             q = ang * 5 + _h(seed, 1, 1) * 3
             lock = math.floor(q); frac = q - lock
             r1 = _h(seed, lock, 5)
-            tip = .78 + .08 * r1 + .16 * math.sqrt(max(0.0, math.sin(math.pi * frac)))
-            if f > tip + (.012 if _h(seed, x, y, 2) < .3 else 0):
+            tip = .86 + .04 * r1 + .10 * math.sqrt(max(0.0, math.sin(math.pi * frac)))
+            if f > tip:
                 return (0, 0, 0, 0)
             if _h(seed, x, y) < .005:
                 return RAMPS["glow"][2] + (255,)
@@ -760,11 +760,13 @@ def build():
             ax = ax / np.linalg.norm(ax); c, s_ = math.cos(ang), math.sin(ang)
             return v * c + np.cross(ax, v) * s_ + ax * (ax @ v) * (1 - c)
         for k, (a, b) in enumerate(zip(fine, fine[1:])):
-            for layer, (scale, ang) in enumerate(((1.0, 0), (.9, 10), (.9, -10), (.76, 20), (.76, -18), (.6, 28))):
+            # Neighbouring lobes overlap (each reaches a quarter into the next) so no gaps open between them.
+            a0 = a + (a - b) * .25; b0 = b + (b - a) * .25
+            for layer, (scale, ang) in enumerate(((1.0, 0), (.92, 5), (.92, -5), (.8, 10), (.8, -9), (.66, 14))):
                 mid = (a + b) / 2
                 axis = mid - K
-                aa = K + turn((a - K) * scale, axis, math.radians(ang))
-                bb = K + turn((b - K) * scale, axis, math.radians(ang))
+                aa = K + turn((a0 - K) * scale, axis, math.radians(ang))
+                bb = K + turn((b0 - K) * scale, axis, math.radians(ang))
                 n = np.cross(aa - K, bb - K); n /= np.linalg.norm(n)
                 if n[0] * sign < 0:
                     n = -n                                # +n points away from the body
