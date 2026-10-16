@@ -937,10 +937,196 @@ def design_c4():
     return cv
 
 
+# ---- C5: pixel near-future (CrossCode grammar) carrying the MMO crest layout ------------------
+# Reference studied: CrossCode boss/HUD screenshot (radicalfishgames.com): 45-degree cut black
+# plates, a big bold pixel number, tiny caps labels, a diamond emblem, slanted segmented gauges,
+# flat 2-3 tone ramps instead of gradients. Layout keeps C2 / AION2: gauges run into a centre crest.
+
+P = {"plate": (12, 12, 17, 236), "plate2": (26, 27, 36, 240), "white": rgba("f4f4f6"), "label": rgba("9c9cae"),
+     "slot": (20, 21, 28, 240), "rim": rgba("4a4b5c"),
+     "hp": (rgba("7c1428"), rgba("dc2a40"), rgba("ff7068")), "mp": (rgba("153c8c"), rgba("2f7ef0"), rgba("74c6ff")),
+     "rage": (rgba("8a3c08"), rgba("ff9420"), rgba("ffd860")), "boss": (rgba("a04400"), rgba("ff8a00"), rgba("ffc650"))}
+BOLD = {
+    "0": [".####.", "##..##", "##..##", "##..##", "##..##", "##..##", "##..##", ".####."],
+    "1": ["..##..", ".###..", "..##..", "..##..", "..##..", "..##..", "..##..", ".####."],
+    "2": [".####.", "##..##", "....##", "...##.", "..##..", ".##...", "##....", "######"],
+    "3": [".####.", "##..##", "....##", "..###.", "....##", "....##", "##..##", ".####."],
+    "4": ["...##.", "..###.", ".####.", "##.##.", "##.##.", "######", "...##.", "...##."],
+    "5": ["######", "##....", "#####.", "....##", "....##", "....##", "##..##", ".####."],
+    "6": [".####.", "##....", "##....", "#####.", "##..##", "##..##", "##..##", ".####."],
+    "7": ["######", "....##", "...##.", "...##.", "..##..", "..##..", ".##...", ".##..."],
+    "8": [".####.", "##..##", "##..##", ".####.", "##..##", "##..##", "##..##", ".####."],
+    "9": [".####.", "##..##", "##..##", "##..##", ".#####", "....##", "....##", ".####."]}
+CAPS = {"H": "101101111101101", "P": "110101110100100", "M": "101111111101101", "L": "100100100100111",
+        "V": "101101101101010", "B": "110101110101110", "O": "111101101101111", "S": "111100111001111",
+        "%": "101001010100101"}
+
+
+def bold_width(s):
+    return len(s) * 7 - 1
+
+
+def bold(cv, x, y, s, col):
+    for ch in s:
+        rows = BOLD[ch]
+        for j, row in enumerate(rows):
+            for i, v in enumerate(row):
+                if v == "#":
+                    px(cv, x + i + 1, y + j + 1, (0, 0, 0, 255))
+        for j, row in enumerate(rows):
+            for i, v in enumerate(row):
+                if v == "#":
+                    px(cv, x + i, y + j, col)
+        x += 7
+
+
+def caps(cv, x, y, s, col):
+    for ch in s:
+        bits = CAPS.get(ch) or DIGIT3[ch]
+        for j in range(5):
+            for i in range(3):
+                if bits[j * 3 + i] == "1":
+                    px(cv, x + i, y + j, col)
+        x += 4
+
+
+def slant(cv, x0, x1, y, h, col, left="/", right="|"):
+    """Row-wise parallelogram: '/' leans right at the top, '\\' leans left at the top."""
+    for j in range(h):
+        a = x0 + (h - 1 - j if left == "/" else j if left == "\\" else 0)
+        b = x1 - (j if right == "/" else h - 1 - j if right == "\\" else 0)
+        over(cv, (a, y + j, b, y + j + 1), col)
+
+
+def slant_gauge(cv, x0, x1, y, frac, ramp, empty, left="/", right="|", grow="right", extra=0.0, trail=0.0):
+    h = 4
+    dark, base, light = ramp
+    for j in range(h):
+        a = x0 + (h - 1 - j if left == "/" else j if left == "\\" else 0)
+        b = x1 - (j if right == "/" else h - 1 - j if right == "\\" else 0)
+        w = b - a
+        f = round(w * frac)
+        over(cv, (a, y + j, b, y + j + 1), empty)
+        fa, fb = (a, a + f) if grow == "right" else (b - f, b)
+        if trail:
+            t = round(w * (frac + extra + trail))
+            over(cv, (a, y + j, a + t, y + j + 1), rgba("ffe8dc"))
+        if extra:
+            over(cv, (fb, y + j, fb + round(w * extra), y + j + 1), rgba("dfe6f0"))
+        over(cv, (fa, y + j, fb, y + j + 1), light if j == 0 else dark if j == h - 1 else base)
+        if f and 0 < f < w:
+            px(cv, fb - 1 if grow == "right" else fa, y + j, P["white"])
+
+
+def design_c5():
+    cv = world()
+    x0, y0 = HB_X, HB_Y
+    # hotbar: black plate, dark slots, 1px rims, key numbers baked in
+    over(cv, (x0 - 1, y0, x0 + 183, y0 + 22), P["plate"])
+    for i in range(9):
+        sx = x0 + 2 + 20 * i
+        over(cv, (sx, y0 + 2, sx + 18, y0 + 20), P["slot"])
+        over(cv, (sx, y0 + 2, sx + 18, y0 + 3), P["rim"])
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        ic = icon(name)
+        if state == "cd":
+            ic = darken(ic, .35)
+        elif state == "nomana":
+            ic = darken(ic, .6, tint=(110, 150, 255))
+        cv.alpha_composite(ic, (x, y))
+        if state == "cd":
+            s = str(cd)
+            bold(cv, x + 8 - bold_width(s) // 2, y + 4, s, P["white"])
+        if state == "nomana":
+            over(cv, (x - 1, y + 16, x + 17, y + 17), P["mp"][2])
+    for i in range(9):
+        caps(cv, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (170, 172, 190, 220))
+    sx = x0 + 1
+    for a, b, c, d in ((sx, y0 + 1, sx + 20, y0 + 2), (sx, y0 + 20, sx + 20, y0 + 21),
+                       (sx, y0 + 1, sx + 1, y0 + 21), (sx + 19, y0 + 1, sx + 20, y0 + 21)):
+        over(cv, (a, b, c, d), P["white"])
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # class resource: slanted pips above the hotbar
+    pip_y = y0 - 5
+    lit = RAGE * 20 // 100
+    for i in range(20):
+        px0 = x0 + 1 + i * 9
+        if i < lit:
+            slant(cv, px0, px0 + 8, pip_y, 4, P["rage"][1], left="/", right="/")
+            slant(cv, px0 + 3, px0 + 8, pip_y, 1, P["rage"][2], left="|", right="|")
+        else:
+            slant(cv, px0, px0 + 8, pip_y, 4, (40, 30, 24, 220), left="/", right="/")
+    # HP / MP plates: 45-degree outer cut, run into the crest
+    py, ph = y0 - 24, 18
+    slant(cv, x0 - 1, C - 8, py, ph, P["plate"], left="/", right="|")
+    slant(cv, C + 8, x0 + 183, py, ph, P["plate"], left="|", right="\\")
+    over(cv, (x0 + ph - 1, py, C - 8, py + 1), P["white"])        # bright top edges
+    over(cv, (C + 8, py, x0 + 183 - ph + 1, py + 1), P["white"])
+    caps(cv, x0 + ph + 1, py + 3, "HP", P["label"])
+    s = str(HP)
+    bold(cv, x0 + ph + 11, py + 2, s, P["white"])
+    mc_text(cv, x0 + ph + 12 + bold_width(s) + 1, py + 3, f"/{HP_MAX}", P["label"], shadow=False)
+    slant_gauge(cv, x0 + 3, C - 12, py + 12, HP / HP_MAX, P["hp"], (44, 14, 22, 255),
+                left="/", right="|", extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX)
+    caps(cv, C + 19, py + 3, "MP", P["label"])
+    s = str(MP)
+    bold(cv, C + 29, py + 2, s, P["white"])
+    mc_text(cv, C + 30 + bold_width(s) + 1, py + 3, f"/{MP_MAX}", P["label"], shadow=False)
+    slant_gauge(cv, C + 12, x0 + 179, py + 12, MP / MP_MAX, P["mp"], (14, 22, 50, 255),
+                left="|", right="\\")
+    # centre crest: black diamond, white rim, level in bold
+    cx, cy, r = C, py + 7, 15
+    for j in range(-r, r + 1):
+        w = r - abs(j)
+        over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), P["white"])
+        if w >= 1:
+            over(cv, (cx - w + 1, cy + j, cx + w, cy + j + 1), P["plate"][:3] + (255,))
+        if w >= 3:
+            px(cv, cx - w + 2, cy + j, P["rim"])
+            px(cv, cx + w - 2, cy + j, P["rim"])
+    caps(cv, cx - 3, cy - 9, "LV", P["label"])
+    bold(cv, cx - bold_width("12") // 2, cy - 3, "12", P["white"])
+    # buffs: slanted black tags above the HP plate, green top edge = buff
+    bx = x0 + ph - 4
+    for label, name, sec in BUFFS:
+        s = str(sec)
+        tw = 26 + 4 * len(s)
+        slant(cv, bx, bx + tw, py - 14, 12, P["plate"], left="/", right="/")
+        over(cv, (bx + 11, py - 14, bx + tw, py - 13), rgba("5fe08a"))
+        cv.alpha_composite(icon(name, 10), (bx + 10, py - 12))
+        caps(cv, bx + 22, py - 9, s, P["white"])
+        bx += tw - 6
+    # notice: black slanted strip
+    nw = jp_width(NOTICE)
+    slant(cv, C - nw // 2 - 14, C + nw // 2 + 14, py - 34, 15, P["plate"], left="/", right="/")
+    over(cv, (C - nw // 2 - 14 + 14, py - 34, C + nw // 2 + 14, py - 33), P["mp"][2])
+    jp_text(cv, C - nw // 2 - 1, py - 33, NOTICE, rgba("a9d2ff"), style="none")
+    # boss: slanted black strip with BOSS label + name, orange segmented gauge under it
+    bw = 240
+    bx0 = C - bw // 2
+    slant(cv, bx0, bx0 + bw, 2, 15, P["plate"], left="/", right="/")
+    over(cv, (bx0 + 15, 2, bx0 + bw, 3), P["white"])
+    caps(cv, bx0 + 16, 7, "BOSS", P["boss"][1])
+    jp_text(cv, bx0 + 36, 3, "裂け目の執行官", P["white"], style="none")
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    caps(cv, bx0 + bw - 18 - 4 * len(pct), 7, pct, P["white"])
+    slant(cv, bx0 - 2, bx0 + bw - 14, 17, 7, P["plate"], left="\\", right="\\")
+    slant_gauge(cv, bx0 + 2, bx0 + bw - 18, 18, BOSS / BOSS_MAX, P["boss"], (50, 26, 10, 255),
+                left="\\", right="\\", trail=BOSS_LOST / BOSS_MAX)
+    for q in (1, 2, 3):
+        qx = bx0 + 2 + (bw - 20) * q // 4
+        for j in range(4):
+            px(cv, qx + j, 18 + j, P["plate"][:3] + (255,))
+    return cv
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c),
-                     ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4)):
+                     ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4), ("C5-pixel-crosscode", design_c5)):
         img = fn()
         for s in (2, 4):
             img.resize((W * s, H * s), Image.NEAREST).save(OUT / f"{name}-{s}x.png")
