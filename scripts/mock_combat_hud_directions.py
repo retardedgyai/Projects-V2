@@ -1900,11 +1900,126 @@ def design_e(variant):
     return cv, icons, top
 
 
+# ---- F1: E2 in Minecraft's own vocabulary ------------------------------------------------------
+# References studied: Wynncraft Rekindled World HUD (every number in the Minecraft font, white with
+# the vanilla shadow, "13726 / 13726"); Njol's HUD used on Monumenta (one segmented HP bar with
+# absorption appended in vanilla gold, vanilla icons on the bar ends, level shown like the vanilla XP
+# number: green with a black outline). So: no custom digits, no MaruMinya — Minecraft font only;
+# Japanese is drawn like vanilla's unifont (16 px glyph in 8 GUI px; DotGothic16 stands in here).
+
+# Unifont is not on this machine; a 16 px aliased gothic stands in (same cell size as vanilla).
+DOT16 = ImageFont.truetype("C:/Windows/Fonts/BIZ-UDGothicR.ttc", 15)
+MANA_ICON = ["000010000", "000111000", "001111100", "011101110", "111000111", "011101110", "001111100", "000111000", "000010000"]
+
+
+def design_f1():
+    cv = world()
+    top = Image.new("RGBA", (W, H))
+    icons, jp = [], []
+    x0, y0 = HB_X, HB_Y
+    # hotbar as in E2, minus the key captions (vanilla shows none)
+    step_plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    for i in range(9):
+        d_slot(cv, x0 + 2 + 20 * i, y0 + 2)
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        icons.append((name, x, y, state))
+        if state == "cd":
+            s = str(cd)
+            mc_text(top, x + 9 - mc_width(s) // 2, y + 4, s, rgba("ffffff"))
+    sx = x0 + 1
+    for a, b, c, d, col in ((sx, y0 + 1, sx + 20, y0 + 2, IRON[0]), (sx, y0 + 1, sx + 1, y0 + 21, IRON[0]),
+                            (sx, y0 + 20, sx + 20, y0 + 21, IRON[2]), (sx + 19, y0 + 1, sx + 20, y0 + 21, IRON[2])):
+        over(cv, (a, b, c, d), col)
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # resource cells
+    ry = y0 - 5
+    step_plate(cv, (x0 - 1, ry, x0 + 183, ry + 6))
+    _e_cells(cv, x0 + 2, x0 + 181, ry + 2)
+    # HP / MP: thick gauges, number inside in the Minecraft font, vanilla-style icons on the ends
+    ph = 13
+    py = ry - ph
+    step_plate(cv, (x0 - 1, py, C - 1, py + ph))
+    step_plate(cv, (C + 1, py, x0 + 183, py + ph))
+    gx0, gx1 = x0 + 13, C - 4
+    ramp_gauge(cv, gx0, gx1, py + 2, 9, HP / HP_MAX, G["hp"], (34, 10, 14, 255), trail=HP_LOST / HP_MAX)
+    w = gx1 - gx0
+    f = round(w * HP / HP_MAX)
+    over(cv, (gx0 + f, py + 2, gx0 + f + round(w * BARRIER / HP_MAX), py + 11), rgba("e3a91c"))   # absorption gold
+    over(cv, (gx0 + f, py + 2, gx0 + f + round(w * BARRIER / HP_MAX), py + 3), rgba("ffe066"))
+    for seg in range(40, HP_MAX, 40):  # a divider every 40 HP
+        sxp = gx0 + round(w * seg / HP_MAX)
+        over(cv, (sxp, py + 2, sxp + 1, py + 11), (0, 0, 0, 150))
+    cv.alpha_composite(tex("gui/sprites/hud/heart/container"), (x0 + 2, py + 2))
+    cv.alpha_composite(tex("gui/sprites/hud/heart/full"), (x0 + 2, py + 2))
+    mx0, mx1 = C + 4, x0 + 170
+    ramp_gauge(cv, mx0, mx1, py + 2, 9, MP / MP_MAX, G["mp"], (10, 16, 36, 255))
+    for j, row in enumerate(MANA_ICON):
+        for i, v in enumerate(row):
+            if v == "1":
+                px(cv, x0 + 172 + i, py + 2 + j, rgba("000000") if i in (0, 8) or j in (0, 8) else rgba("4aa8ff"))
+    px(cv, x0 + 175, py + 5, rgba("cfeaff"))
+    s = f"{HP} / {HP_MAX}"
+    mc_text(cv, (gx0 + gx1) // 2 - mc_width(s) // 2, py + 3, s, rgba("ffffff"))
+    s = f"{MP} / {MP_MAX}"
+    mc_text(cv, (mx0 + mx1) // 2 - mc_width(s) // 2, py + 3, s, rgba("ffffff"))
+    lv = "12"
+    mc_text(cv, C - mc_width(lv) // 2, py - 5, lv, rgba("80ff20"), outline=True)   # vanilla XP-level look
+    # buffs
+    by = py - 15
+    bx = x0 - 1
+    for label, name, sec in BUFFS:
+        s = f"{sec}s"
+        tw = 15 + mc_width(s) + 3
+        step_plate(cv, (bx, by, bx + tw, by + 13))
+        icons.append((name, bx + 2, by + 2, "buff10"))
+        over(cv, (bx + 2, by + 11, bx + 12, by + 12), G["buff"])
+        mc_text(cv, bx + 14, by + 3, s, rgba("ffffff"))
+        bx += tw + 2
+    # notice + boss name in vanilla-style Japanese (8 GUI px tall)
+    nw = len(NOTICE) * 8
+    jp.append((NOTICE, C - nw // 2, by - 14, rgba("a8d0ff")))
+    bw = 230
+    bx0 = C - bw // 2
+    step_plate(cv, (bx0, 2, bx0 + bw, 26))
+    gem(cv, bx0 + 8, 9, G["ruby"], 3)
+    name = "裂け目の執行官"
+    jp.append((name, bx0 + 16, 5, rgba("ffffff")))
+    mc_text(cv, bx0 + 20 + len(name) * 8, 5, "Lv.30", rgba("80ff20"), outline=True)
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - 5 - mc_width(pct), 5, pct, rgba("ffffff"))
+    ramp_gauge(cv, bx0 + 5, bx0 + bw - 5, 17, 5, BOSS / BOSS_MAX, G["boss"], (36, 10, 8, 255),
+               trail=BOSS_LOST / BOSS_MAX)
+    for q in (1, 2, 3):
+        qx = bx0 + 5 + (bw - 10) * q // 4
+        over(cv, (qx, 17, qx + 1, 22), (0, 0, 0, 160))
+    return cv, icons, top, jp
+
+
+def vanilla_jp(out, jp, s):
+    """Japanese the way vanilla draws it: a 16 px bitmap glyph in 8 GUI px, 1 GUI px shadow."""
+    for text, x, y, col in jp:
+        for k, ch in enumerate(text):
+            mask = Image.new("L", (16, 16))
+            d = ImageDraw.Draw(mask)
+            d.fontmode = "1"
+            d.text((0, -DOT16.getbbox("国")[1] + 1), ch, font=DOT16, fill=255)
+            mask = mask.resize((8 * s, 8 * s), Image.NEAREST)
+            gx = (x + k * 8) * s
+            for off, c in ((s, tuple(v // 4 for v in col[:3]) + (255,)), (0, col)):
+                layer = Image.new("RGBA", mask.size, c)
+                layer.putalpha(mask)
+                out.alpha_composite(layer, (gx + off, y * s + off))
+
+
 def compose(result, s):
     """Scale the GUI canvas, then lay item-slot icons at their real 32-texel resolution."""
     if not isinstance(result, tuple):
         return result.resize((W * s, H * s), Image.NEAREST)
-    base, icons, top = result
+    base, icons, top = result[:3]
+    jp = result[3] if len(result) > 3 else []
     out = base.resize((W * s, H * s), Image.NEAREST)
     for name, x, y, state in icons:
         size = 10 if state == "buff10" else 16
@@ -1916,6 +2031,7 @@ def compose(result, s):
             ic = darken(ic, .6, tint=(110, 150, 255))
         out.alpha_composite(ic, (x * s, y * s))
     out.alpha_composite(top.resize((W * s, H * s), Image.NEAREST))
+    vanilla_jp(out, jp, s)
     return out
 
 
@@ -1925,7 +2041,8 @@ def main():
                      ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4),
                      ("C5-pixel-crosscode", design_c5), ("C6-modern-mmo-minecraft", design_c6),
                      ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True)), ("C9-modern-mmo", design_c9), ("C10-modern-mmo-plain", lambda: design_c9(plain=True)), ("D1-dungeons-mmo", design_d1), ("D2-c8-layout-dungeons", lambda: design_c6(crisp=True, dungeons=True)),
-                     ("E1-compact", lambda: design_e(1)), ("E2-compact", lambda: design_e(2)), ("E3-compact", lambda: design_e(3))):
+                     ("E1-compact", lambda: design_e(1)), ("E2-compact", lambda: design_e(2)), ("E3-compact", lambda: design_e(3)),
+                     ("F1-vanilla-vocab", design_f1)):
         img = fn()
         for s in (2, 4):
             compose(img, s).save(OUT / f"{name}-{s}x.png")
