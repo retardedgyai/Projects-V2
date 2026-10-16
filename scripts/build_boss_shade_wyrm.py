@@ -226,13 +226,17 @@ POSE = {
     "drop": 14.0,            # px the body comes down
     "pitch": 6.0,            # degrees the front tips down, about the hips
     "hips": (0.0, 40.0, -40.0),
-    "slim": .84,             # body, neck, head, tail and wings: width (X) scale about the centre line
+    "slim": .62,             # body, neck, head, tail and wings: width (X) scale about the centre line
     "legs": {               # chain, length scale per segment, limb thickness, foot shrink, knee hint
         "leg_fl": (("leg_fl", "leg_fl_fore", "leg_fl_paw"), (.74, .80), .82, .9, (0.15, 0, -1.0)),
         "leg_hl": (("leg_hl", "leg_hl_shin", "leg_hl_foot"), (.95, .95), .82, .9, (0.15, 0, 1.0)),
     },
     "foot_x": .9,
-    "head": .68,             # head (skull, jaw, crown) scale about the skull joint (2026-10-16: "face too big")
+    "fit": .7,               # body / tail boxes: thickness against the reference surface (lower = slenderer)
+    "fit_legs": .62,
+    "fur": .6,              # fur fringe length scale
+    "crown": 1.1,            # crown spikes length scale about their joint
+    "head": .76,             # head (skull, jaw, crown) scale about the skull joint (2026-10-16: "face too big")
     "head_shift": (0.0, 0.0, 15.0),   # and moved forward so the smaller head clears the collar
 }
 
@@ -301,10 +305,14 @@ def repose(ref):
     St = np.eye(3) + (stretch - 1) * np.outer(ax, ax)
     xf["neck"] = lambda v: body(npv + St @ (np.asarray(v, float) - npv))
     piv["neck"] = body(npv)
+    cp = piv["crown_l"].copy()
     for name in list(piv):
         if name == "neck":
             continue
-        if name in head:
+        if name == "crown_l":
+            xf[name] = lambda v, hp=hp, cp=cp: body(hp + k * (cp + POSE["crown"] * (np.asarray(v, float) - cp) - hp) + np.array(POSE["head_shift"]))
+            piv[name] = xf[name](piv[name])
+        elif name in head:
             xf[name] = lambda v, hp=hp: body(hp + k * (np.asarray(v, float) - hp) + np.array(POSE["head_shift"]))
             piv[name] = xf[name](piv[name])
         elif name not in leg_bones:
@@ -324,6 +332,7 @@ RAMPS = {
     "bone": ((112, 102, 94), (160, 150, 138), (204, 196, 182), (236, 230, 218)),
     "talon": ((48, 22, 46), (82, 38, 76), (124, 64, 112), (176, 112, 160)),
     "spar": ((30, 30, 42), (50, 48, 66), (74, 70, 94), (108, 102, 132)),
+    "crest": ((70, 60, 92), (118, 104, 146), (170, 156, 198), (226, 216, 244)),
     "fur": ((12, 12, 20), (26, 24, 38), (46, 42, 62), (112, 102, 142)),
     "cloak": ((10, 10, 16), (20, 18, 28), (32, 28, 44), (54, 46, 72)),
     "inner": ((44, 26, 64), (66, 40, 94), (92, 58, 128), (132, 94, 176)),
@@ -488,7 +497,7 @@ def fit_boxes(faces, slim=.9):
 
 
 MATERIAL = (("pit", "glow"), ("gape", "mouth"), ("fang", "bone"), ("hook", "talon"), ("toe", "talon"),
-            ("shear", "talon"), ("digit", "spar"), ("keel", "plate"), ("crown", "plate"), ("brow", "plate"),
+            ("shear", "talon"), ("digit", "spar"), ("keel", "plate"), ("crown", "crest"), ("brow", "plate"),
             ("collar", "plate"), ("carapace", "plate"), ("knuckle", "plate"), ("jaw", "belly"))
 FUR_BONES = {"body": 1.0, "neck": 1.0, "skull": .45, "tail": .8, "tail_2": .7, "tail_mid": .55,
              "wing_l": .7, "wing_r": .7}
@@ -553,7 +562,7 @@ def build():
     def fur_for(bone, name, c, half, R, scale, sign, seed):
         """Fringe plates hanging from both upper side edges of a box, tilted out, plus a crest on top."""
         x, y, z = R[:, 0], R[:, 1], R[:, 2]
-        ln = max(4.0, half[1] * 2 * .75 * scale)
+        ln = max(3.0, half[1] * 2 * .75 * scale * POSE["fur"])
         for side in (1, -1):
             for k, (tilt, inset, f) in enumerate(((30, .0, 1.0), (14, .45, .75))):   # outer skirt, then an inner layer
                 a = math.radians(tilt)
@@ -576,7 +585,8 @@ def build():
             return membrane(el, sign, bone, suffix)
         mat = material_of(name)
         faces = [{"v": [[q[0] * sign, q[1], q[2]] for q in f["v"]]} for f in el["faces"]]
-        slim = .82 if bone.startswith("leg_") else .7 if bone.startswith("wing_") else .6 if bone == "neck" else .9
+        slim = (POSE["fit_legs"] if bone.startswith("leg_") else .7 if bone.startswith("wing_")
+                else .6 if bone == "neck" else POSE["fit"])
         for k, (c, half, R) in enumerate(fit_boxes(faces, slim)):
             seed = int(_h(len(name), k, sign) * 9973)
             oriented(f"{name}_{k}{suffix}", bone, c, half, R, box_painter(mat, seed))
