@@ -755,10 +755,192 @@ def design_c3():
     return cv
 
 
+# ---- C4: C2 layout in the AION2 / Lost Ark / Black Desert idiom --------------------------------
+# References studied (real screenshots): AION2 (Famitsu play report) — silver crest with the level
+# between thin HP/MP bars that run into it, dark slots with thin silver rims, boss bar in a silver
+# frame with arrow ends and a medallion; Lost Ark (Icy Veins raid shot) — saturated icons, darkened
+# cooldown with a big centred number, buff tiles with timers; Black Desert — diamond level badge
+# anchoring the bars.
+
+S = {"dark": rgba("0a0b0d"), "panel": (22, 24, 29, 225), "slot": (14, 15, 18, 235), "rim": rgba("8a929c"),
+     "rim_hi": rgba("d6dce2"), "rim_lo": rgba("3d424a"), "text": rgba("f2f4f7"), "sub": rgba("9aa2ab")}
+DIGIT3 = {"0": "111101101101111", "1": "010110010010111", "2": "111001111100111", "3": "111001111001111",
+          "4": "101101111001001", "5": "111100111001111", "6": "111100111101111", "7": "111001001010010",
+          "8": "111101111101111", "9": "111101111001111"}
+
+
+def tiny(cv, x, y, s, col):
+    for ch in s:
+        bits = DIGIT3[ch]
+        for j in range(5):
+            for i in range(3):
+                if bits[j * 3 + i] == "1":
+                    px(cv, x + i, y + j, col)
+        x += 4
+
+
+def arrow_bar(cv, x0, x1, y, h, frac, c0, c1, back, point="left", extra=0.0, trail=0.0):
+    """Thin silver-rimmed bar; the outer end is an arrow point, the inner end runs into the crest."""
+    total = h + 2
+    mid = (total - 1) / 2
+    w = x1 - x0
+    for j in range(total):
+        ind = int(abs(j - mid))
+        a, b = (x0 + ind, x1) if point == "left" else (x0, x1 - ind)
+        over(cv, (a, y + j, b, y + j + 1), S["dark"])
+    fx0, fx1 = x0 + total // 2 + 1, x1 - 1
+    if point == "right":
+        fx0, fx1 = x0 + 1, x1 - total // 2 - 1
+    fw = fx1 - fx0
+    over(cv, (fx0, y + 1, fx1, y + h + 1), back)
+    f = round(fw * frac)
+    if point == "left":  # HP fills from the crest outward? no: from the outer end inward, like AION2
+        start = fx0
+    else:
+        start = fx0
+    if trail or extra:
+        e = min(fw, f + round(fw * (extra + trail)))
+        over(cv, (start, y + 1, start + e, y + h + 1), rgba("fff0e6", 220) if trail else rgba("e8eef5"))
+    if extra:
+        over(cv, (start + f, y + 1, start + min(fw, f + round(fw * extra)), y + h + 1), rgba("e8eef5"))
+    hgrad(cv, (start, y + 1, start + f, y + h + 1), c0, c1)
+    over(cv, (start, y + 1, start + f, y + 2), (255, 255, 255, 90))
+    over(cv, (start, y + h, start + f, y + h + 1), (0, 0, 0, 70))
+    over(cv, (fx0, y, fx1, y + 1), S["rim"])
+    over(cv, (fx0, y + h + 1, fx1, y + h + 2), S["rim_lo"])
+
+
+def crest(cv, cx, top, level):
+    halves = [1, 3, 5, 7, 9, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+    for j, hw in enumerate(halves):
+        over(cv, (cx - hw - 1, top + j, cx + hw + 1, top + j + 1), S["dark"])
+    for j, hw in enumerate(halves[1:-1], start=1):
+        hw -= 1
+        hgrad(cv, (cx - hw, top + j, cx + hw, top + j + 1), (225, 230, 236, 255), (110, 118, 128, 255))
+    for j, hw in enumerate(halves[4:-4], start=4):
+        hw -= 4
+        if hw > 0:
+            over(cv, (cx - hw, top + j, cx + hw, top + j + 1), (24, 27, 32, 255))
+    # small blade emblem + level
+    over(cv, (cx, top + 5, cx + 1, top + 11), S["rim_hi"])
+    over(cv, (cx - 2, top + 9, cx + 3, top + 10), S["rim_hi"])
+    mc_text(cv, cx - mc_width(level) // 2 + 1, top + 12, level, S["text"])
+
+
+def design_c4():
+    cv = world()
+    x0, y0 = HB_X, HB_Y
+    # hotbar: charcoal tray, silver rim, dark slots with key numbers baked into the texture
+    over(cv, (x0 - 1, y0, x0 + 183, y0 + 22), S["dark"])
+    over(cv, (x0, y0 + 1, x0 + 182, y0 + 21), S["panel"])
+    over(cv, (x0, y0 + 1, x0 + 182, y0 + 2), S["rim"])
+    for i in range(9):
+        sx = x0 + 2 + 20 * i
+        over(cv, (sx, y0 + 2, sx + 18, y0 + 20), S["slot"])
+        over(cv, (sx, y0 + 2, sx + 18, y0 + 3), S["rim_lo"])
+        over(cv, (sx, y0 + 19, sx + 18, y0 + 20), S["rim_lo"])
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        ic = icon(name)
+        if state == "cd":
+            ic = darken(ic, .45)
+        elif state == "nomana":
+            ic = darken(ic, .55, tint=(110, 150, 255))
+        cv.alpha_composite(ic, (x, y))
+        if state == "cd":
+            s = str(cd)
+            mc_text(cv, x + 8 - mc_width(s) // 2 + 1, y + 4, s, S["text"], outline=True)
+    for i in range(9):
+        tiny(cv, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (200, 206, 214, 200))
+    sx = x0 + 1
+    for a, b, c, d in ((sx, y0 + 1, sx + 20, y0 + 2), (sx, y0 + 20, sx + 20, y0 + 21),
+                       (sx, y0 + 1, sx + 1, y0 + 21), (sx + 19, y0 + 1, sx + 20, y0 + 21)):
+        over(cv, (a, b, c, d), S["rim_hi"])
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # class resource: ember line between silver hairlines right above the hotbar
+    ry = y0 - 4
+    over(cv, (x0 - 1, ry, x0 + 183, ry + 4), S["dark"])
+    over(cv, (x0, ry + 1, x0 + 182, ry + 3), (60, 32, 14, 255))
+    hgrad(cv, (x0, ry + 1, x0 + 182 * RAGE // 100, ry + 3), (220, 90, 20, 255), (255, 210, 90, 255))
+    px(cv, x0 + 182 * RAGE // 100, ry + 1, rgba("fff6d0"))
+    px(cv, x0 + 182 * RAGE // 100, ry + 2, rgba("fff6d0"))
+    # HP / MP: arrow-ended bars running into the crest, number inside
+    by, bh = y0 - 16, 9
+    arrow_bar(cv, x0 - 1, C - 11, by, bh, HP / HP_MAX, (150, 20, 35, 255), (235, 60, 70, 255),
+              (40, 10, 14, 255), "left", extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX)
+    arrow_bar(cv, C + 11, x0 + 183, by, bh, MP / MP_MAX, (20, 80, 200, 255), (60, 170, 255, 255),
+              (10, 18, 40, 255), "right")
+    s = f"{HP}/{HP_MAX}"
+    mc_text(cv, (x0 + C - 11) // 2 - mc_width(s) // 2 + 3, by + 2, s, S["text"], outline=True)
+    s = f"{MP}/{MP_MAX}"
+    mc_text(cv, (C + 11 + x0 + 183) // 2 - mc_width(s) // 2 - 3, by + 2, s, S["text"], outline=True)
+    crest(cv, C, by - 9, "12")
+    # buffs: Lost Ark-style tiles above the HP bar, timers under
+    bx = x0 + 4
+    for label, name, sec in BUFFS:
+        over(cv, (bx, by - 15, bx + 12, by - 3), rgba("2f8f4e"))
+        over(cv, (bx + 1, by - 14, bx + 11, by - 4), S["slot"])
+        cv.alpha_composite(icon(name, 10), (bx + 1, by - 14))
+        tiny(cv, bx + 14, by - 11, str(sec), S["text"])
+        bx += 14 + 4 * len(str(sec)) + 4
+    # notice
+    nw = jp_width(NOTICE)
+    w = nw + 80
+    for i in range(w):
+        a = int(170 * (1 - abs(i - w / 2) / (w / 2)) ** .5)
+        over(cv, (C - w // 2 + i, by - 40, C - w // 2 + i + 1, by - 25), (8, 9, 12, a))
+    for side in (-1, 1):
+        ex = C + side * (nw // 2 + 6)
+        over(cv, (min(ex, ex + side * 18), by - 33, max(ex, ex + side * 18), by - 32), S["rim"])
+        diamond(cv, ex, by - 33, S["rim_hi"], 1)
+    jp_text(cv, C - nw // 2, by - 39, NOTICE, rgba("a8c4ff"))
+    # boss: silver frame with arrow ends, gold gauge, medallion, Lv disc
+    bw, top = 220, 16
+    bx0 = C - bw // 2
+    name = "裂け目の執行官"
+    lv = "30"
+    nx = C - (jp_width(name) + 16) // 2
+    for j in range(-5, 6):  # Lv disc
+        hw = int((30 - j * j) ** .5)
+        over(cv, (nx + 5 - hw - 1, 8 + j, nx + 5 + hw + 2, 8 + j + 1), S["dark"])
+        if abs(j) < 5:
+            over(cv, (nx + 5 - hw + 1, 8 + j, nx + 5 + hw, 8 + j + 1), (60, 64, 72, 255))
+    tiny(cv, nx + 2, 6, lv, S["text"])
+    jp_text(cv, nx + 14, 1, name, S["text"], style="outline")
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - 8 - mc_width(pct), 6, pct, S["text"], outline=True)
+    for j in range(9):  # frame with arrow ends both sides
+        ind = abs(j - 4)
+        over(cv, (bx0 + ind, top + j, bx0 + bw - ind, top + j + 1), S["dark"])
+    over(cv, (bx0 + 5, top + 1, bx0 + bw - 5, top + 2), S["rim_hi"])
+    over(cv, (bx0 + 5, top + 7, bx0 + bw - 5, top + 8), S["rim"])
+    gx0, gx1 = bx0 + 6, bx0 + bw - 6
+    gw = gx1 - gx0
+    over(cv, (gx0, top + 2, gx1, top + 7), (40, 30, 10, 255))
+    over(cv, (gx0, top + 2, gx0 + gw * (BOSS + BOSS_LOST) // BOSS_MAX, top + 7), rgba("fff0d8"))
+    hgrad(cv, (gx0, top + 2, gx0 + gw * BOSS // BOSS_MAX, top + 7), (200, 140, 20, 255), (255, 228, 90, 255))
+    over(cv, (gx0, top + 2, gx0 + gw * BOSS // BOSS_MAX, top + 3), (255, 255, 255, 110))
+    for q in (1, 2, 3):
+        qx = gx0 + gw * q // 4
+        over(cv, (qx, top + 2, qx + 1, top + 7), (0, 0, 0, 140))
+    for side in (bx0 + 2, bx0 + bw - 3):
+        diamond(cv, side, top + 4, S["rim_hi"], 2)
+    for j in range(-4, 5):  # medallion with a red gem under the centre
+        hw = 4 - abs(j)
+        over(cv, (C - hw - 1, top + 9 + j + 4, C + hw + 2, top + 10 + j + 4), S["dark"])
+    for j in range(-3, 4):
+        hw = 3 - abs(j)
+        over(cv, (C - hw, top + 13 + j, C + hw + 1, top + 14 + j), S["rim"])
+    diamond(cv, C, top + 13, rgba("e8344a"), 1)
+    return cv
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c),
-                     ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3)):
+                     ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4)):
         img = fn()
         for s in (2, 4):
             img.resize((W * s, H * s), Image.NEAREST).save(OUT / f"{name}-{s}x.png")
