@@ -549,7 +549,7 @@ def fan_painter(poly, half, inner_side, seed, root=None, radius=None, solid=Fals
 # ground with its claws, and a tall fan of fur rises from the carpal, up and back, about twice the body's
 # height. Offsets are for the left side, in px, from the shoulder joint (elbow, carpal) and from the carpal
 # (finger tips), Creator-confirmed reading of Gore Magala in frenzy (2026-10-16).
-FAN_WING = dict(elbow=(18, 6, -4), carpal=(8, -50, 22),
+FAN_WING = dict(elbow=(26, 14, -16), carpal=(4, -50, 40),
                 tips=((10, 108, -4), (52, 116, -18), (92, 98, -38), (110, 62, -58), (92, 26, -76)),
                 hip=(10, -22, -64))   # where the rearmost membrane meets the flank, from the shoulder
 
@@ -761,7 +761,24 @@ def build():
                 c = a + d * t
                 oriented(f"{nm}_{i}", name, c, [w / 2, w * .44, ln / n / 2 + .5], np.column_stack([out, upv, z]), box_painter(mat, i))
             return out, upv, z
-        o1, u1, z1 = seg(f"{name}_humerus", S0, E, 12, 9, "plate", 3, bulge=3)
+        def chain(nm, p0, p1, p2, widths, n, mat):
+            """Short overlapping segments along a curve (quadratic Bezier), like a limb with muscle, not a pole.
+            widths(t) gives the thickness along it. Returns the frame at the middle."""
+            pts = [(1 - t) ** 2 * p0 + 2 * (1 - t) * t * p1 + t * t * p2 for t in np.linspace(0, 1, n + 1)]
+            mid = None
+            for i in range(n):
+                a, b = pts[i], pts[i + 1]; d = b - a; ln = float(np.linalg.norm(d))
+                out, upv, z = frame(d)
+                w = widths((i + .5) / n)
+                oriented(f"{nm}_{i}", name, (a + b) / 2, [w / 2, w * .46, ln / 2 + w * .22], np.column_stack([out, upv, z]),
+                         box_painter(mat if i % 3 else "plate", i))
+                if i == n // 2:
+                    mid = (out, upv, z)
+            return mid
+        outv = np.array([sign, 0, 0]); fwd = np.array([0, 0, 1.0]); upw = np.array([0, 1.0, 0])
+        # upper arm: arcs out and up from the shoulder, thick biceps in the middle
+        o1, u1, z1 = chain(f"{name}_humerus", S0, (S0 + E) / 2 + outv * 6 + upw * 5, E,
+                           lambda t: 10 + 4 * math.sin(math.pi * t) - 2 * t, 6, "hide")
         for i, t in enumerate((.25, .55)):            # overlapping shoulder plates on the outside of the upper arm
             c = S0 + (E - S0) * t + o1 * 5
             oriented(f"{name}_pauldron{i}", name, c, [1.6, 5.5 - i, 6 - i], np.column_stack([o1, u1, z1]), box_painter("plate", 9 + i))
@@ -769,8 +786,14 @@ def build():
         sp = -z1 * .6 + u1 * .8; sp /= np.linalg.norm(sp)
         for i, (ln_, w_) in enumerate(((7, 2.6), (5, 1.6))):   # elbow spur, root then tip
             oriented(f"{name}_spur{i}", name, E + sp * (3 + i * 6), [w_ / 2, w_ / 2, ln_ / 2], _no_roll(np, sp), box_painter("talon" if i else "plate", i))
-        W = K + np.array([0, 5, 0])
-        o2, u2, z2 = seg(f"{name}_radius", E, W, 10, 6, "hide", 4, bulge=1.5)
+        # forearm: from the elbow down and forward to a wrist joint above and behind the hand, muscled near the
+        # elbow; then the wrist bends and the hand reaches forward onto the ground.
+        Wr = K + np.array([0, 10, -7])
+        o2, u2, z2 = chain(f"{name}_radius", E, (E + Wr) / 2 + fwd * 6 + outv * 3, Wr,
+                           lambda t: 10 - 4 * t + 2.5 * math.sin(math.pi * min(1, t * 2)), 6, "hide")
+        oriented(f"{name}_wrist", name, Wr, [4.2, 3.8, 4.2], np.column_stack(frame(K - Wr)), box_painter("plate", 6))
+        chain(f"{name}_hand", Wr, (Wr + K) / 2 + fwd * 2, K + np.array([0, 3, 2]), lambda t: 7 - t, 2, "plate")
+        W = Wr
         back = o2 * .7 + u2 * .7                        # the spines rise from the forearm's outer back edge
         back -= z2 * (back @ z2); back /= np.linalg.norm(back)
         for i, t in enumerate((.2, .4, .6, .8)):
