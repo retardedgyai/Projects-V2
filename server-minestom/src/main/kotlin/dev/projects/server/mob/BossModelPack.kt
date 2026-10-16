@@ -61,22 +61,6 @@ object BossModelPack {
         return root.toString()
     }
 
-    /**
-     * Bosses whose textures carry their own (smooth) lighting. Minecraft shades every item-model face flat by its
-     * direction, which shows each facet plate of a faceted model as a seam; `shade: false` leaves only the baked light.
-     */
-    val BAKED_LIGHT = setOf("shade_wyrm")
-
-    @OptIn(ExperimentalPathApi::class)
-    private fun unshade(models: Path) {
-        if (!models.exists()) return
-        for (file in models.walk().filter { it.isRegularFile() && it.toString().endsWith(".json") }) {
-            val json = JsonParser.parseString(file.readText()).asJsonObject
-            json.getAsJsonArray("elements")?.forEach { it.asJsonObject.addProperty("shade", false) }
-            file.writeText(json.toString())
-        }
-    }
-
     /** Replaces pack/assets/worldseed and the data dir completely; returns the number of models. */
     @OptIn(ExperimentalPathApi::class)
     fun generate(source: Path, pack: Path, data: Path): Int {
@@ -95,7 +79,6 @@ object BossModelPack {
             target.parent.createDirectories()
             // Copy, not move: the staging directory is usually on another drive than the repository.
             staging.resolve("pack/assets/worldseed").copyToRecursively(target, followLinks = false)
-            for (id in BAKED_LIGHT) unshade(target.resolve("models/mobs/$id.bbmodel"))
             target.resolve("items").createDirectories()
             val binding = staging.resolve("pack/assets/minecraft/items/${CARRIER.key().value()}.json")
             Files.copy(binding, target.resolve("items/boss_bones.json"), StandardCopyOption.REPLACE_EXISTING)
