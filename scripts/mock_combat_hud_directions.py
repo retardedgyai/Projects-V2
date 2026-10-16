@@ -1966,9 +1966,9 @@ def design_f1(center=0, emblem=None):
     mc_text(cv, (gx0 + gx1) // 2 - mc_width(s) // 2, py + 3, s, rgba("ffffff"))
     s = f"{MP} / {MP_MAX}"
     mc_text(cv, (mx0 + mx1) // 2 - mc_width(s) // 2, py + 3, s, rgba("ffffff"))
-    if center:
+    if center > 0:
         centre_emblem(cv, icons, top, center, py, emblem)
-    else:
+    elif center == 0:
         lv = "12"
         mc_text(cv, C - mc_width(lv) // 2, py - 5, lv, rgba("80ff20"), outline=True)   # vanilla XP-level look
     # buffs
