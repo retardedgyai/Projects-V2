@@ -1364,24 +1364,22 @@ def design_c7():
             over(cv, (cx0, ry + 1, cx0 + 8, ry + 3), (48, 32, 20, 255))
     # HP / MP: long iron-framed bars wider than the hotbar, plugging into the crest
     by, bh = y0 - 14, 5
-    iron_bar(cv, x0 - 26, C - 12, by, bh, HP / HP_MAX, G["hp"], (34, 10, 14, 255),
+    iron_bar(cv, x0 + 3, C - 12, by, bh, HP / HP_MAX, G["hp"], (34, 10, 14, 255),
              extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX, caps_at=("l",))
-    iron_bar(cv, C + 12, x0 + 183 + 26, by, bh, MP / MP_MAX, G["mp"], (10, 16, 36, 255), caps_at=("r",))
+    iron_bar(cv, C + 12, x0 + 179, by, bh, MP / MP_MAX, G["mp"], (10, 16, 36, 255), caps_at=("r",))
     s = str(HP)
-    mc_text(cv, x0 - 26, by - 12, "HP", G["label"])
-    bold(cv, x0 - 26 + mc_width("HP") + 4, by - 13, s, G["text"])
-    mc_text(cv, x0 - 26 + mc_width("HP") + 5 + bold_width(s) + 1, by - 12, f"/{HP_MAX}", G["label"])
-    mc_text(cv, x0 - 26 + mc_width("HP") + 5 + bold_width(s) + 2 + mc_width(f"/{HP_MAX}") + 3, by - 12,
-            f"+{BARRIER}", rgba("e6e6e6"))
+    mc_text(cv, x0 + 3, by - 12, "HP", G["label"])
+    bold(cv, x0 + 3 + mc_width("HP") + 4, by - 13, s, G["text"])
+    mc_text(cv, x0 + 3 + mc_width("HP") + 5 + bold_width(s) + 1, by - 12, f"/{HP_MAX}", G["label"])
     s = str(MP)
-    right = x0 + 183 + 26
+    right = x0 + 179
     tw = bold_width(s) + 2 + mc_width(f"/{MP_MAX}")
     mc_text(cv, right - mc_width("MP"), by - 12, "MP", G["label"])
     bold(cv, right - mc_width("MP") - 5 - tw, by - 13, s, G["text"])
     mc_text(cv, right - mc_width("MP") - 5 - tw + bold_width(s) + 2, by - 12, f"/{MP_MAX}", G["label"])
     iron_crest(cv, C, by - 13, "12")
     # buffs: iron-rimmed squares floating above the HP numbers
-    bx = x0 - 26
+    bx = x0 + 3
     for label, name, sec in BUFFS:
         over(cv, (bx, by - 30, bx + 14, by - 16), G["out"])
         over(cv, (bx + 1, by - 29, bx + 13, by - 17), IRON[2])
