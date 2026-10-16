@@ -223,13 +223,13 @@ def ordered(face):
 # --- re-pose the reference before it becomes plates: lower, shorter front legs, slimmer -----------------
 # Tuned against the Creator's in-game look (2026-10-16: "front legs too long, lower like Gore Magala, more slender").
 POSE = {
-    "drop": 14.0,            # px the body comes down
-    "pitch": 10.0,           # degrees the front tips down, about the hips
+    "drop": 21.0,            # px the body comes down (the shorter hind legs lower the hips; Creator 2026-10-16)
+    "pitch": 4.0,            # degrees the front tips down, about the hips
     "hips": (0.0, 40.0, -40.0),
     "slim": .62,             # body, neck, head, tail and wings: width (X) scale about the centre line
     "legs": {               # chain, length scale per segment, limb thickness, foot shrink, knee hint
         "leg_fl": (("leg_fl", "leg_fl_fore", "leg_fl_paw"), (.62, .68), .82, .9, (0.15, 0, -1.0)),
-        "leg_hl": (("leg_hl", "leg_hl_shin", "leg_hl_foot"), (.95, .95), .82, .9, (0.15, 0, 1.0)),
+        "leg_hl": (("leg_hl", "leg_hl_shin", "leg_hl_foot"), (.81, .81), .82, .9, (0.15, 0, 1.0)),
     },
     "foot_x": .9,
     "fit": .7,               # body / tail boxes: thickness against the reference surface (lower = slenderer)
