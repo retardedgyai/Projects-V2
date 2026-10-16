@@ -221,6 +221,20 @@ def ordered(face):
     return [v[i] for i in idx], [uv[i] for i in idx]
 
 
+def element_colour(sampler, el):
+    """The reference's own colour for a part, averaged over its faces' texture (a part keeps one hue)."""
+    tot, n = [0, 0, 0], 0
+    for f in el["faces"]:
+        uv = f["uv"]
+        for i in range(len(uv)):
+            for j in range(i + 1, len(uv)):
+                u, v = (uv[i][0] + uv[j][0]) / 2, (uv[i][1] + uv[j][1]) / 2
+                c = sampler(f["tex"], u, v)
+                if c[3] > 8:
+                    tot = [tot[k] + c[k] for k in range(3)]; n += 1
+    return tuple(int(t / max(1, n)) for t in tot) + (255,)
+
+
 class TextureSampler:
     def __init__(self):
         from PIL import Image
@@ -237,49 +251,53 @@ class TextureSampler:
         return px[x, y]
 
 
-def facet_painter(sampler, tris3d, uvs, tex, R, c, half, glow=None, normal=None):
+def facet_painter(sampler, tris3d, uvs, tex, R, c, half, glow=None, vnormals=None, base=None):
     """Paint a plate's two big faces from the reference texture, transparent outside the face outline.
-    The plate's local X is the face normal; (y, z) span the face (see build: cube centred on c, rotated by R)."""
+    The plate's local X is the face normal; (y, z) span the face (see build: cube centred on c, rotated by R).
+    Light is baked from normals interpolated across the face (smooth shading), so neighbouring plates
+    blend into one surface instead of showing their seams."""
     ys, zs = half[1], half[2]
     loc = []
-    for tri, uv in zip(tris3d, uvs):
+    for k, (tri, uv) in enumerate(zip(tris3d, uvs)):
         pts = [[_dot(_sub(p, c), [R[0][1], R[1][1], R[2][1]]), _dot(_sub(p, c), [R[0][2], R[1][2], R[2][2]])] for p in tri]
-        loc.append((pts, uv))
+        loc.append((pts, uv, vnormals[k] if vnormals else None))
 
     def colour(py, pz):
-        for (a, b, d), (ua, ub, ud) in loc:
+        for (a, b, d), (ua, ub, ud), ns in loc:
             det = (b[0] - a[0]) * (d[1] - a[1]) - (b[1] - a[1]) * (d[0] - a[0])
             if abs(det) < 1e-9:
                 continue
             s = ((py - a[0]) * (d[1] - a[1]) - (pz - a[1]) * (d[0] - a[0])) / det
             t = ((b[0] - a[0]) * (pz - a[1]) - (b[1] - a[1]) * (py - a[0])) / det
-            if s >= -.04 and t >= -.04 and s + t <= 1.04:
+            if s >= -.08 and t >= -.08 and s + t <= 1.08:   # a little overlap closes the cracks between plates
                 if glow:
-                    return glow
+                    return glow, None
+                s, t = max(0.0, s), max(0.0, t)
+                n = None
+                if ns:
+                    n = _unit([ns[0][i] + s * (ns[1][i] - ns[0][i]) + t * (ns[2][i] - ns[0][i]) for i in range(3)])
+                if base is not None:
+                    world = [c[i] + R[i][1] * py + R[i][2] * pz for i in range(3)]
+                    return surface_colour(base, world), n
                 u = ua[0] + s * (ub[0] - ua[0]) + t * (ud[0] - ua[0])
                 v = ua[1] + s * (ub[1] - ua[1]) + t * (ud[1] - ua[1])
-                return sampler(tex, u, v)
-        return (0, 0, 0, 0)
+                return sampler(tex, u, v), n
+        return (0, 0, 0, 0), None
 
     def make(side, w, h):
         if side not in ("east", "west"):
             return (lambda x, y, w, h: (0, 0, 0, 0)), ("clear",)
         cache = {}
-        n = normal if side == "east" else [-v for v in normal] if normal else None
+        flip = 1 if side == "east" else -1
 
         def paint(x, y, w, h):
             key = (x, y)
             if key not in cache:
                 pz = (zs - (x + .5) / w * 2 * zs) if side == "east" else (-zs + (x + .5) / w * 2 * zs)
                 py = ys - (y + .5) / h * 2 * ys
-                col = colour(py, pz)
-                if col[3] and not glow:
-                    # Facet edge: a pixel whose neighbour falls outside the face gets a dark rim.
-                    dy, dz = 2 * ys / h, 2 * zs / w
-                    if any(colour(py + a, pz + b)[3] == 0 for a, b in ((dy, 0), (-dy, 0), (0, dz), (0, -dz))):
-                        col = tuple(int(v * .72) for v in col[:3]) + (col[3],)
-                    if n:
-                        col = bake(col, n)
+                col, n = colour(py, pz)
+                if col[3] and n:
+                    col = bake(col, [flip * v for v in n])
                 cache[key] = col
             return cache[key]
         return paint, ("facet", id(loc), side, w, h)
@@ -287,6 +305,33 @@ def facet_painter(sampler, tris3d, uvs, tex, R, c, half, glow=None, normal=None)
 
 
 GLOW_PARTS = ("pit",)
+
+
+def _hash3(x, y, z):
+    n = (x * 73856093) ^ (y * 19349663) ^ (z * 83492791)
+    n = (n ^ (n >> 13)) * 1274126177 & 0xffffffff
+    return ((n ^ (n >> 16)) & 0xffff) / 65535.0
+
+
+def solid_noise(p, scale):
+    """Trilinear value noise in model space: continuous across plates, so no seams."""
+    q = [v / scale for v in p]
+    i = [math.floor(v) for v in q]
+    f = [v - k for v, k in zip(q, i)]
+    f = [t * t * (3 - 2 * t) for t in f]
+    out = 0.0
+    for dx in (0, 1):
+        for dy in (0, 1):
+            for dz in (0, 1):
+                w = (f[0] if dx else 1 - f[0]) * (f[1] if dy else 1 - f[1]) * (f[2] if dz else 1 - f[2])
+                out += w * _hash3(i[0] + dx, i[1] + dy, i[2] + dz)
+    return out
+
+
+def surface_colour(base, p):
+    """Base hue with soft large mottling and a faint 1 px grain (reads as Minecraft pixels, but continuous)."""
+    k = .88 + .22 * solid_noise(p, 9.0) + .08 * (solid_noise(p, 1.3) - .5)
+    return tuple(max(0, min(255, int(c * k))) for c in base[:3]) + (255,)
 
 
 # --- re-pose the reference before it becomes plates: lower, shorter front legs, slimmer -----------------
@@ -424,9 +469,25 @@ def build():
         verts = [q for f in el["faces"] for q in f["v"]]
         centre = [sum(q[i] for q in verts) / len(verts) * (sign if i == 0 else 1) for i in range(3)]
         glow = PALETTES["glow"][1] + (255,) if any(k in el["name"] for k in GLOW_PARTS) else None
-        for k, f in enumerate(el["faces"]):
+        # Smooth vertex normals: area-weighted outward face normals summed per shared vertex position.
+        acc = {}
+        faces = []
+        for f in el["faces"]:
             v, uv = ordered(f)
             v = [[q[0] * sign, q[1], q[2]] for q in v]
+            fn = _cross(_sub(v[1], v[0]), _sub(v[2], v[0]))
+            if len(v) == 4:
+                fn = [fn[i] + _cross(_sub(v[2], v[0]), _sub(v[3], v[0]))[i] for i in range(3)]
+            cc = [sum(q[i] for q in v) / len(v) for i in range(3)]
+            if _dot(fn, _sub(cc, centre)) < 0:
+                fn = [-x for x in fn]
+            for q in v:
+                key = tuple(round(x, 2) for x in q)
+                acc[key] = [acc.get(key, [0, 0, 0])[i] + fn[i] for i in range(3)]
+            faces.append((f, v, uv))
+        vn = lambda q: _unit(acc[tuple(round(x, 2) for x in q)]) or [0, 1, 0]
+        base = element_colour(sampler, el)
+        for k, (f, v, uv) in enumerate(faces):
             tris = [(v[0], v[1], v[2])] + ([(v[0], v[2], v[3])] if len(v) == 4 else [])
             tuv = [(uv[0], uv[1], uv[2])] + ([(uv[0], uv[2], uv[3])] if len(v) == 4 else [])
             n = None
@@ -451,7 +512,8 @@ def build():
             off = [(max(ly) + min(ly)) / 2, (max(lz) + min(lz)) / 2]
             c = [c[i] + y[i] * off[0] + z[i] * off[1] for i in range(3)]
             half = [THIN, max(.15, (max(ly) - min(ly)) / 2), max(.15, (max(lz) - min(lz)) / 2)]
-            paint = facet_painter(sampler, tris, tuv, f["tex"], R, c, half, glow, n)
+            tvn = [[vn(q) for q in t] for t in tris]
+            paint = facet_painter(sampler, tris, tuv, f["tex"], R, c, half, glow, tvn, base)
             items = []
             m.cube(f"{el['name']}_{k}{suffix}", [c[0] - half[0], c[1] - half[1], c[2] - half[2]],
                    [c[0] + half[0], c[1] + half[1], c[2] + half[2]], items, paint,
