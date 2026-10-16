@@ -236,6 +236,8 @@ POSE = {
     "fit_legs": .62,
     "fur": .6,              # fur fringe length scale
     "crown": .8,            # crown spikes length scale about their joint
+    "fan_cup": 18.0,         # opened wing: front and rear lobes swing in toward the body (degrees)
+    "fan_curl": 24.0,        # opened wing: the outer half of each lobe curls in over the body (degrees)
     "horn_style": "ridged",  # frenzy horns: "swept" | "ridged" | "forked" (Creator chose ridged)
     "horn_len": 21.0,
     "head": .76,             # head (skull, jaw, crown) scale about the skull joint (2026-10-16: "face too big")
@@ -486,12 +488,12 @@ def membrane_painter(outline, half, inner_side, seed):
     return make
 
 
-def fan_painter(poly, half, inner_side, seed):
+def fan_painter(poly, half, inner_side, seed, root=None, radius=None):
     """One fur lobe of the opened wing: a polygon (carpal, finger a, outer bulge, finger b) in the plate's
     local (y, z). Strands of fur run outward from the carpal; the outer edge is torn into tufts (transparent);
     near-black on the outside, violet on the side facing the body, with sparse glowing scale dust."""
     ys, zs = half[1], half[2]
-    K = poly[0]
+    K = root if root is not None else poly[0]      # a band of a curved fan: the carpal may lie off the plate
     tris = [(poly[0], poly[i], poly[i + 1]) for i in range(1, len(poly) - 1)]
 
     def where(py, pz):
@@ -503,7 +505,8 @@ def fan_painter(poly, half, inner_side, seed):
             u = ((py - a[0]) * (c[1] - a[1]) - (pz - a[1]) * (c[0] - a[0])) / d
             v = ((b[0] - a[0]) * (pz - a[1]) - (b[1] - a[1]) * (py - a[0])) / d
             if u >= -.01 and v >= -.01 and u + v <= 1.01:
-                return True, max(0.0, min(1.0, u + v)), math.atan2(pz - K[1], py - K[0])
+                f = max(0.0, min(1.0, u + v)) if radius is None else min(1.0, math.hypot(py - K[0], pz - K[1]) / radius)
+                return True, f, math.atan2(pz - K[1], py - K[0])
         return False, 0.0, 0.0
 
     def make(side, w, h):
@@ -759,29 +762,49 @@ def build():
         def turn(v, ax, ang):
             ax = ax / np.linalg.norm(ax); c, s_ = math.cos(ang), math.sin(ang)
             return v * c + np.cross(ax, v) * s_ + ax * (ax @ v) * (1 - c)
+        # A cloak, not a board: the fan is cupped (front and rear lobes swing in toward the body) and each lobe
+        # bends halfway out, its outer band curling in over the body, so no two plates lie in one plane.
+        cup = math.radians(POSE["fan_cup"]); curl = math.radians(POSE["fan_curl"])
+        up = np.array([0, 1.0, 0])
+        nf = len(fine)
+        fine = [K + turn(q - K, up, -sign * cup * (2 * i / (nf - 1) - 1)) for i, q in enumerate(fine)]
+
+        def plate(nm, pts, root, radius, seed):
+            n = np.cross(pts[1] - pts[0], pts[-1] - pts[0]); n /= np.linalg.norm(n)
+            if n[0] * sign < 0:
+                n = -n                                    # +n points away from the body
+            zz = pts[-1] - pts[1]; zz = zz - n * (zz @ n); zz /= np.linalg.norm(zz); yy = np.cross(zz, n)
+            cen0 = sum(pts) / len(pts)
+            ly = [(q - cen0) @ yy for q in pts]; lz = [(q - cen0) @ zz for q in pts]
+            cen = cen0 + yy * (max(ly) + min(ly)) / 2 + zz * (max(lz) + min(lz)) / 2
+            half = [.05, (max(ly) - min(ly)) / 2 + .2, (max(lz) - min(lz)) / 2 + .2]
+            lp = [[float((q - cen) @ yy), float((q - cen) @ zz)] for q in pts]
+            r2 = [float((root - cen) @ yy), float((root - cen) @ zz)]
+            oriented(nm, name, cen, half, np.column_stack([n, yy, zz]), fan_painter(lp, half, "west", seed, r2, radius))
+
         for k, (a, b) in enumerate(zip(fine, fine[1:])):
             # Neighbouring lobes overlap (each reaches a quarter into the next) so no gaps open between them.
             a0 = a + (a - b) * .25; b0 = b + (b - a) * .25
             for layer, (scale, ang) in enumerate(((1.0, 0), (.92, 5), (.92, -5), (.8, 10), (.8, -9), (.66, 14))):
-                mid = (a + b) / 2
-                axis = mid - K
-                aa = K + turn((a0 - K) * scale, axis, math.radians(ang))
-                bb = K + turn((b0 - K) * scale, axis, math.radians(ang))
-                n = np.cross(aa - K, bb - K); n /= np.linalg.norm(n)
-                if n[0] * sign < 0:
-                    n = -n                                # +n points away from the body
-                m2 = (aa + bb) / 2
-                bulge = m2 + (m2 - K) / np.linalg.norm(m2 - K) * np.linalg.norm(bb - aa) * .55
-                pts = [K, aa, bulge, bb]
-                zz = (bb - aa) / np.linalg.norm(bb - aa); yy = np.cross(zz, n)
-                cen0 = sum(pts) / 4
-                ly = [(q - cen0) @ yy for q in pts]; lz = [(q - cen0) @ zz for q in pts]
-                cen = cen0 + yy * (max(ly) + min(ly)) / 2 + zz * (max(lz) + min(lz)) / 2
-                half = [.05, (max(ly) - min(ly)) / 2 + .2, (max(lz) - min(lz)) / 2 + .2]
-                lp = [[float((q - cen) @ yy), float((q - cen) @ zz)] for q in pts]
-                inner = "west"                            # local +X (east) points away from the body on both sides
-                oriented(f"{name}_fan{k}_{layer}", name, cen, half, np.column_stack([n, yy, zz]),
-                         fan_painter(lp, half, inner, 17 * k + 5 * layer + (sign > 0)))
+                axis = (a + b) / 2 - K
+                va = turn((a0 - K) * scale, axis, math.radians(ang)); vb = turn((b0 - K) * scale, axis, math.radians(ang))
+                m2 = (va + vb) / 2
+                vm = m2 + m2 / np.linalg.norm(m2) * np.linalg.norm(vb - va) * .55
+                radius = float(np.linalg.norm(vm))
+                n0 = np.cross(va, vb); n0 /= np.linalg.norm(n0)
+                if n0[0] * sign < 0:
+                    n0 = -n0
+                h = .5                                    # the bend line, as a fraction of the way out
+                ia, ib, im = K + va * h, K + vb * h, K + vm * h
+                seed = 17 * k + 5 * layer + (sign > 0)
+                plate(f"{name}_fan{k}_{layer}a", [K, ia, im, ib], K, radius, seed)
+                # outer band: rotated about the bend line so it curls toward the body (-n0)
+                hinge = ib - ia
+                def bend(v, base):
+                    return base + turn(v - base, hinge, -curl * (1 if np.cross(hinge, n0) @ (v - base) > 0 else -1))
+                oa, ob, om = (bend(K + v, base) for v, base in ((va, ia), (vb, ib), (vm, im)))
+                root = bend(K, ia) if False else K
+                plate(f"{name}_fan{k}_{layer}b", [ia, oa, om, ob, ib], K, radius, seed)
         # Fill: the membrane also runs along the arm (elbow and shoulder) and back to the flank, so there is
         # no gap between the fan, the arm and the body.
         fills = [(E, [E, S0 + np.array([0, 10, -6]) * M3 + np.array([0, 0, 0]), fine[0]]),
