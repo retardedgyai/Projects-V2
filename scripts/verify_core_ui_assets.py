@@ -7,7 +7,8 @@ import struct
 import zlib
 from PIL import Image
 from build_core_hud_assets import SKILLS
-from build_combat_hud import vanilla_overrides, LOCKED
+from build_combat_hud import vanilla_overrides, vanilla_reskins, NUMBER_FONTS, number_grid
+import combat_hud_art as hud_art
 from build_core_menu_assets import TEXT_YS, CELL, SOURCE_CELL, TEXT_SCALE, TEXT_BASE, FRAME_BASE, BUTTON_BASE, CARD_BASE, PALETTE, DOT_FONT_SHA256
 from build_core_menu_art import ART, ART_BASE, ART_CELL, ART_YS, ART_SIZES
 
@@ -21,13 +22,18 @@ def verify():
     overrides = vanilla_overrides()
     actual_overrides = {p for p in paths if p.startswith("assets/minecraft/")}
     additions = {"assets/minecraft/atlases/items.json"}
-    assert actual_overrides == set(overrides) | additions, "Only the replaced HUD sprites and the approved VFX atlas addition are permitted"
+    reskins = vanilla_reskins()
+    assert actual_overrides == set(overrides) | set(reskins) | additions, \
+        "Only the replaced HUD sprites, the reskinned hotbar and the approved VFX atlas addition are permitted"
     assert json.loads((PACK / "assets/minecraft/atlases/items.json").read_text()) == {
         "sources":[{"type":"minecraft:directory","source":"combat_vfx","prefix":"combat_vfx/"}]}
     assert not any(".." in p or "\\" in p or p.startswith("/") for p in paths)
     for path, size in overrides.items():
         with Image.open(PACK / path) as sprite:
             assert sprite.size == size and sprite.convert("RGBA").getchannel("A").getbbox() is None
+    for path, image in reskins.items():
+        with Image.open(PACK / path) as sprite:
+            assert sprite.size == image.size and sprite.convert("RGBA").tobytes() == image.tobytes()
     actual = sorted(str(p.relative_to(PACK)).replace("\\", "/") for p in PACK.rglob("*") if p.is_file() and p.name != "index.txt")
     assert actual == paths, "Stale pack index"
     meta = json.loads((PACK / "pack.mcmeta").read_text())
@@ -39,6 +45,11 @@ def verify():
             assert provider["type"] in ("bitmap", "space"), "No font replacement/reference needed"
             if provider["type"] == "space":
                 chars = provider["advances"]
+            elif provider["file"] == "minecraft:font/ascii.png":
+                # HUD numbers draw the game's own ascii sheet (not shipped) through private codepoints.
+                assert path.stem in NUMBER_FONTS and provider["height"] == 8 and provider["ascent"] == NUMBER_FONTS[path.stem]
+                chars = "".join(provider["chars"])
+                assert provider["chars"] == number_grid()
             else:
                 chars = "".join(provider["chars"])
                 filename = provider["file"].replace("projects:", "assets/projects/textures/")
@@ -72,8 +83,7 @@ def verify():
     by_font = {}
     for font, code, advance in advances.values():
         by_font.setdefault(font, {})[code] = advance
-    for font in ("hud_text_slot", "hud_text", "hud_text_boss"):
-        by_font["projects:" + font] = text_advances
+    by_font["projects:hud_text"] = text_advances
     for font, expected in by_font.items():
         providers = json.loads((PACK / f"assets/projects/font/{font.split(':')[1]}.json").read_text())["providers"]
         seen = 0
@@ -84,20 +94,28 @@ def verify():
             filename = provider["file"].replace("projects:", "assets/projects/textures/")
             with Image.open(PACK / filename) as sheet:
                 cell_w, cell_h = sheet.width // len(provider["chars"][0]), sheet.height // len(provider["chars"])
-                assert cell_h == provider["height"], f"{filename}: HUD texel must equal one GUI pixel"
+                # One texel per GUI pixel, except skill art: 32 texels in its 16 px hotbar slot (item density).
+                fine = font == "projects:hud_skills"
+                assert cell_h == provider["height"] * (2 if fine else 1), f"{filename}: HUD texel must equal one GUI pixel"
+                scale = provider["height"] / cell_h
                 for y, row in enumerate(provider["chars"]):
                     for x, char in enumerate(row):
                         if ord(char) not in expected:
                             continue
                         box = sheet.crop((x * cell_w, y * cell_h, (x + 1) * cell_w, (y + 1) * cell_h)).getchannel("A").getbbox()
-                        assert box is not None and box[2] + 1 == expected[ord(char)], f"HUD anchor drift: {font} U+{ord(char):04X}"
+                        assert box is not None and int(0.5 + box[2] * scale) + 1 == expected[ord(char)], \
+                            f"HUD anchor drift: {font} U+{ord(char):04X}"
                         seen += 1
         assert seen == len(expected), f"{font}: table names glyphs the font does not draw"
     for index in range(len(SKILLS)):
-        for frame in range(LOCKED + 1):
-            assert f"skill_{index}_{frame}" in advances
+        for state in hud_art.SKILL_STATES:
+            assert f"skill_{index}_{state}" in advances
+    for job in hud_art.CLASSES:
+        assert f"emblem_{job}" in advances and all(f"xp_{job}_{n}" in advances for n in range(1, hud_art.XP_STEPS + 1))
     layout = json.loads((ROOT / "assets/core-ui/hud-layout.json").read_text())
-    assert layout["plate"]["width"] == 182 and layout["skills"]["size"] == 36 and layout["skills"]["art"] == 32
+    assert layout["skill_icons"] == {"left_x": -88, "pitch": 20, "top": 19, "size": 16, "texels": 32,
+                                     "states": list(hud_art.SKILL_STATES)}
+    assert layout["console"]["width"] == 184 and layout["console"]["left_x"] == -92
     assert len(SKILLS) == len(set(SKILLS)) == 70
     # Slots retain exact vanilla coordinates and readable socket centers (items render afterwards).
     png = (PACK / "assets/projects/textures/gui/core/menu_frame.png").read_bytes()

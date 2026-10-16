@@ -1259,7 +1259,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0,
                 actor.skillDefinitions[i].mana, CoreSkillCatalog.artIndex(actor.skillDefinitions[i]), actor.skillAvailable(i), actor.resourceAvailable(i)) },
             message + " / ${actor.weaponHint}", actor.chargeCount, actor.resource, actor.resourceMax, actor.shield, actor.combatCue,
-            notice = actor.activeNotice, level = a.journey.level, experience = progress.toDouble(), healthTrail = trail, buffs = buffs), packed))
+            notice = actor.activeNotice, level = a.journey.level, experience = progress.toDouble(), healthTrail = trail, buffs = buffs,
+            classKey = actor.classId.name), packed))
     }
 
     override fun sessionSummary(player: Player): String = sessions[player.uuid]?.let {

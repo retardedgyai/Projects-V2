@@ -1,14 +1,17 @@
-"""Pixel-art combat HUD: one texel = one GUI pixel everywhere, no resampled artwork.
+"""Combat HUD (direction approved 2026-10-16: modern MMO x Minecraft) and the world-space HUD bits.
 
-Every sprite here is drawn at its final size. Skill art (assets/core-ui/skills/*.png, 32 px)
-is used 1:1 inside a 36 px card. Text uses the pinned 12 px MaruMinya at its native grid.
+Art lives in combat_hud_art.py; this file turns each piece into glyphs. Everything is drawn on the
+Minecraft GUI pixel grid; the 32 px skill art is shown in its 16 px hotbar slot (the density of any
+item there). Numbers use the vanilla ascii sheet itself (minecraft:font/ascii.png, mapped to private
+codepoints), so they are the game's own font; notices and the boss name are plain vanilla text.
 
 Outputs (all generated, git-ignored):
   font/hud*.json                      bitmap providers, one per vertical placement
   textures/gui/core/hud_*.png         glyph sheets
   menu/hud-glyphs.tsv                 name, font, code, advance  (read by CoreHudGlyphs)
-  menu/hud-text.tsv                   codepoint, glyph, advance  (read by CoreHudGlyphs)
-  assets/minecraft/...                transparent vanilla HUD sprites (CoreUiPackPolicy allowlist)
+  menu/hud-text.tsv                   codepoint, glyph, advance  (MaruMinya, world name tags only)
+  assets/minecraft/...                vanilla HUD sprites: blanked ones and the reskinned hotbar
+                                      (CoreUiPackPolicy allowlist)
 
 Placement conventions
   Action bar (CoreHudLayout): a glyph whose top edge is `top` GUI px above the screen bottom has
@@ -23,44 +26,15 @@ import math
 from PIL import Image, ImageDraw, ImageFont
 
 from build_core_hud_assets import SKILLS
+import combat_hud_art as art
 
 ROOT = Path(__file__).resolve().parents[1]
 HUD = "assets/minecraft/textures/gui/sprites/hud/"
 BOSS = "assets/minecraft/textures/gui/sprites/boss_bar/"
 FONT_PATH = ROOT / ".tools/core-menu/x12y12pxMaruMinya.ttf"
 
-# ---------------------------------------------------------------- palette
+# ---------------------------------------------------------------- palette (name tags, damage)
 OUT = (7, 8, 11)
-P_LO = (12, 13, 17)
-P_BODY = (22, 25, 31)
-P_BODY2 = (19, 21, 27)
-P_HI = (46, 51, 60)
-STEEL = (61, 67, 77)
-STEEL_HI = (98, 106, 118)
-GOLD_D = (110, 82, 38)
-GOLD = (184, 145, 74)
-GOLD_HI = (233, 201, 119)
-GOLD_PALE = (247, 230, 176)
-TEAL = (79, 214, 200)
-TEAL_D = (25, 92, 90)
-RECESS = (6, 7, 9)
-
-RAMPS = {
-    # top highlight → bottom shadow (7 rows); empty rows; leading edge
-    "hp": ([(255, 166, 140), (242, 86, 76), (226, 62, 66), (204, 48, 60), (176, 38, 56), (142, 30, 50), (104, 24, 42)],
-           [(46, 20, 27), (36, 15, 22), (33, 14, 20), (31, 13, 19), (29, 12, 18), (27, 11, 17), (24, 10, 15)],
-           (255, 214, 196)),
-    "mp": ([(170, 228, 255), (82, 170, 244), (62, 142, 228), (48, 116, 206), (38, 92, 178), (30, 70, 146), (24, 52, 110)],
-           [(18, 30, 52), (14, 24, 42), (13, 22, 39), (12, 21, 37), (11, 20, 35), (10, 19, 33), (9, 16, 28)],
-           (214, 242, 255)),
-    "boss": ([(255, 150, 120), (236, 70, 62), (214, 50, 56), (190, 40, 54), (160, 32, 50), (128, 26, 46), (92, 20, 38)],
-             [(44, 18, 24), (34, 13, 19), (31, 12, 18), (29, 11, 17), (27, 10, 16), (25, 10, 15), (22, 9, 13)],
-             (255, 220, 200)),
-}
-RESOURCE = [(255, 226, 154), (240, 180, 60), (212, 146, 42), (176, 112, 32), (136, 84, 26)]
-RESOURCE_EMPTY = [(40, 30, 14), (32, 24, 11), (30, 22, 10), (28, 21, 10), (24, 18, 8)]
-TRAIL = [(255, 240, 214), (246, 222, 184), (240, 210, 170), (232, 198, 158), (222, 186, 146), (208, 170, 132), (190, 152, 118)]
-SHIELD = [(236, 252, 255), (160, 232, 248), (110, 206, 236)]
 
 TINY = {
     "0": ["111", "101", "101", "101", "111"], "1": ["010", "110", "010", "010", "111"],
@@ -88,7 +62,7 @@ BIG_CHARS = "0123456789"
 
 
 def vanilla_overrides():
-    """Every vanilla HUD sprite this pack blanks. Mirrors CoreUiPackPolicy.vanillaOverrides."""
+    """Every vanilla HUD sprite this pack blanks. Mirrors CoreUiPackPolicy.vanillaOverrides (blank part)."""
     result = {}
     for kind in ("", "absorbing_", "frozen_", "poisoned_", "withered_"):
         for hardcore in ("", "hardcore_"):
@@ -102,13 +76,18 @@ def vanilla_overrides():
             result[f"{HUD}food_{fill}{hunger}.png"] = (9, 9)
         # Armour points live in the server's own defence stat; the vanilla row is noise.
         result[f"{HUD}armor_{fill}.png"] = (9, 9)
-    # Level and progress move into the HUD plate.
+    # Level and progress move into the level diamond.
     result[f"{HUD}experience_bar_background.png"] = (182, 5)
     result[f"{HUD}experience_bar_progress.png"] = (182, 5)
     # The pink bar is reserved for the pixel boss bar drawn by its name component.
     result[f"{BOSS}pink_background.png"] = (182, 5)
     result[f"{BOSS}pink_progress.png"] = (182, 5)
     return result
+
+
+def vanilla_reskins():
+    """Vanilla sprites drawn anew (not blanked): the hotbar and its selection frame, same sizes."""
+    return {f"{HUD}hotbar.png": art.hotbar_sprite(), f"{HUD}hotbar_selection.png": art.hotbar_selection_sprite()}
 
 
 # ---------------------------------------------------------------- glyph registry
@@ -121,11 +100,13 @@ class FontBuilder:
         self.code = start
         self.rows = []  # (name, font, code, advance)
 
-    def group(self, sheet_name, named_images, ascent, columns=16):
-        """named_images: list of (name, image). Ink sits at the top-left of a uniform cell."""
+    def group(self, sheet_name, named_images, ascent, columns=16, display_height=None):
+        """named_images: list of (name, image). Ink sits at the top-left of a uniform cell.
+        display_height: draw the cell this many GUI px tall (finer art, e.g. 32 px skill icons in 16)."""
         width = max(image.width for _, image in named_images)
         ink_height = max(image.height for _, image in named_images)
-        height = max(ink_height, ascent)
+        height = ink_height if display_height else max(ink_height, ascent)
+        scale = (display_height or height) / height
         assert width <= 256 and height <= 256, sheet_name
         columns = min(columns, len(named_images))
         rows = math.ceil(len(named_images) / columns)
@@ -138,7 +119,8 @@ class FontBuilder:
             code = self.code
             self.code += 1
             chars.append(chr(code))
-            self.rows.append((name, self.key, code, bounds[2] + 1))
+            # Client: advance = (int)(0.5 + ink width * scale) + 1.
+            self.rows.append((name, self.key, code, int(0.5 + bounds[2] * scale) + 1))
         # Pad the final row with unique private glyphs (never NUL).
         while len(chars) < rows * columns:
             chars.append(chr(self.code))
@@ -146,7 +128,7 @@ class FontBuilder:
         grid = ["".join(chars[r * columns:(r + 1) * columns]) for r in range(rows)]
         assert self.code < SPACE_BASE
         self.providers.append((sheet_name, sheet, {"type": "bitmap", "file": f"projects:gui/core/{sheet_name}.png",
-                                                   "height": height, "ascent": ascent, "chars": grid}))
+                                                   "height": display_height or height, "ascent": ascent, "chars": grid}))
 
 
 def hud_ascent(top):
@@ -223,231 +205,6 @@ BINARY = (1, 2, 4, 8, 16, 32, 64, 128)
 SPACE_BASE = 0xF800  # +2^n at F800+n, -2^n at F810+n, in every projects:hud* font (CoreHudLine)
 
 
-# ---------------------------------------------------------------- plate
-PLATE_W, PLATE_H = 182, 24
-PLATE_TOP = 47  # height - 47 .. height - 24, flush on the hotbar.
-HP_FILL = (4, 4, 76)   # local x, local y, width (7 rows)
-MP_FILL = (102, 4, 76)
-RES_FILL = (47, 14, 88)  # 5 rows
-XP_FILL = (3, 21, 176)  # 1 row
-
-
-def chamfer_mask(width, height, top_cut, bottom_cut):
-    def inside(x, y):
-        if not (0 <= x < width and 0 <= y < height):
-            return False
-        if y < top_cut and (x < top_cut - y or x > width - 1 - (top_cut - y)):
-            return False
-        rb = height - 1 - y
-        if rb < bottom_cut and (x < bottom_cut - rb or x > width - 1 - (bottom_cut - rb)):
-            return False
-        return True
-    return inside
-
-
-def panel(width, height, top_cut=3, bottom_cut=1, body=(P_BODY, P_BODY2)):
-    """Opaque gunmetal panel: dark rim, 1 px bevel lit from the top-left, quiet two-tone rows."""
-    image = new(width, height)
-    inside = chamfer_mask(width, height, top_cut, bottom_cut)
-    for y in range(height):
-        for x in range(width):
-            if not inside(x, y):
-                continue
-            ring = not all(inside(x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1))
-            if ring:
-                put(image, x, y, OUT)
-                continue
-            upper = not inside(x, y - 2) or not inside(x - 2, y) or not inside(x - 1, y - 2) or not inside(x + 1, y - 2)
-            lower = not inside(x, y + 2) or not inside(x + 2, y)
-            if upper and not lower:
-                put(image, x, y, P_HI)
-            elif lower:
-                put(image, x, y, P_LO)
-            else:
-                put(image, x, y, body[y % 2])
-    return image
-
-
-def recess(image, x0, y0, width, height, empty_rows, ticks=()):
-    """A sunken well: dark rim, empty gauge rows inside, faint quarter ticks on the rim."""
-    for y in range(height):
-        for x in range(width):
-            edge = x in (0, width - 1) or y in (0, height - 1)
-            put(image, x0 + x, y0 + y, RECESS if edge else empty_rows[(y - 1) % len(empty_rows)])
-    for t in ticks:
-        put(image, x0 + 1 + t, y0 + height - 1, STEEL)
-        put(image, x0 + 1 + t, y0, P_LO)
-
-
-def build_plate():
-    image = panel(PLATE_W, PLATE_H)
-    # Gold trim on the top rim, broken by the level crest in the middle.
-    for x in range(4, PLATE_W - 4):
-        if not 80 <= x <= 101:
-            put(image, x, 0, GOLD_D)
-    for x in (4, PLATE_W - 5):
-        put(image, x, 0, GOLD)
-    hp_empty, mp_empty = RAMPS["hp"][1], RAMPS["mp"][1]
-    recess(image, HP_FILL[0] - 1, HP_FILL[1] - 1, HP_FILL[2] + 2, 9, hp_empty, ticks=(18, 37, 56))
-    recess(image, MP_FILL[0] - 1, MP_FILL[1] - 1, MP_FILL[2] + 2, 9, mp_empty, ticks=(19, 38, 57))
-    recess(image, RES_FILL[0] - 1, RES_FILL[1] - 1, RES_FILL[2] + 2, 7, RESOURCE_EMPTY, ticks=(21, 43, 65))
-    for x in range(XP_FILL[2]):
-        put(image, XP_FILL[0] + x, XP_FILL[1], (14, 36, 36) if x % 4 else (20, 50, 48))
-    # Level crest: an elongated hexagon in brass, rising into the gold rim.
-    crest = [(82, 99)]
-    for y in range(0, 14):
-        cut = {0: 3, 1: 2, 2: 1, 11: 1, 12: 2, 13: 3}.get(y, 0)
-        left, right = 82 + cut, 99 - cut
-        for x in range(left, right + 1):
-            edge = x in (left, right) or y in (0, 13)
-            if edge:
-                put(image, x, y, GOLD if y < 7 else GOLD_D)
-            elif y == 1 or x == left + 1:
-                put(image, x, y, (52, 42, 24))
-            else:
-                put(image, x, y, (26, 22, 15))
-    put(image, 90, 0, GOLD_HI); put(image, 91, 0, GOLD_HI)
-    # Small chevrons that point from the crest to each gauge (near-future console detail).
-    for dx, flip in ((-1, True), (1, False)):
-        cx = 81 if flip else 100
-        put(image, cx, 6, GOLD_D); put(image, cx + dx, 7, GOLD); put(image, cx, 8, GOLD_D)
-    # Resource well side brackets.
-    for x0 in (41, 139):
-        for y in range(14, 19):
-            put(image, x0 + 1, y, STEEL if y in (14, 18) else P_HI)
-    return image
-
-
-def build_shield_icon():
-    rows = ["#######", "#######", "#######", "#######", ".#####.", "..###..", "...#..."]
-    image = outlined(rows, shade=lambda y, h: SHIELD[0] if y < 2 else SHIELD[1] if y < 4 else SHIELD[2])
-    put(image, 4, 2, (60, 120, 150)); put(image, 4, 3, (60, 120, 150)); put(image, 4, 4, (60, 120, 150))
-    return image
-
-
-def build_pip(lit):
-    rows = ["..#..", ".###.", "#####", ".###.", "..#.."]
-    color = (lambda y, h: (240, 220, 255) if y < 2 else (180, 140, 250)) if lit else (lambda y, h: (52, 46, 66))
-    return outlined(rows, shade=color)
-
-
-# ---------------------------------------------------------------- skill cards
-CARD = 36
-CD_STEPS = 24
-NO_MANA = CD_STEPS + 1
-LOCKED = CD_STEPS + 2
-SKILL_TOP = 96
-
-
-def card_ring(state):
-    if state == "ready":
-        return GOLD_HI, GOLD, GOLD_D
-    if state == "mana":
-        return (126, 186, 240), (58, 116, 190), (32, 62, 112)
-    if state == "locked":
-        return (52, 56, 64), (36, 39, 45), (24, 26, 30)
-    return STEEL_HI, STEEL, (36, 40, 46)
-
-
-def skill_card(art, frame):
-    image = new(CARD, CARD)
-    state = "ready" if frame == 0 else "mana" if frame == NO_MANA else "locked" if frame == LOCKED else "cd"
-    light, mid, dark = card_ring(state)
-    cut = chamfer_mask(CARD, CARD, 2, 2)
-    for y in range(CARD):
-        for x in range(CARD):
-            if not cut(x, y):
-                continue
-            d = min(x, y, CARD - 1 - x, CARD - 1 - y)
-            diagonal = not all(cut(x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1))
-            if d == 0 or diagonal:
-                put(image, x, y, OUT)
-            elif d == 1:
-                put(image, x, y, light if (y == 1 or x == 1) and not (x == CARD - 2 or y == CARD - 2) else dark if (x == CARD - 2 or y == CARD - 2) else mid)
-    pixels = art.load()
-    for y in range(32):
-        for x in range(32):
-            r, g, b, a = pixels[x, y]
-            if a == 0:
-                r, g, b, a = 10, 12, 16, 255
-            if state == "mana":
-                gray = (r * 3 + g * 6 + b) // 10
-                r, g, b = gray * 30 // 100, gray * 48 // 100, min(255, gray * 80 // 100 + 24)
-            elif state == "locked":
-                gray = (r * 3 + g * 6 + b) // 10
-                r, g, b = gray * 22 // 100, gray * 23 // 100, gray * 26 // 100
-            elif state == "cd":
-                remaining = frame / CD_STEPS
-                clockwise = (math.atan2(x - 15.5, -(y - 15.5)) + math.tau) % math.tau
-                if clockwise / math.tau >= 1 - remaining:
-                    gray = (r * 3 + g * 6 + b) // 10
-                    r, g, b = (r + gray) * 13 // 100, (g + gray) * 14 // 100, (b + gray) * 18 // 100
-            put(image, x + 2, y + 2, (r, g, b))
-    if state == "cd" and frame < CD_STEPS:
-        # One teal sweep line on the moving edge of the reveal.
-        angle = (1 - frame / CD_STEPS) * math.tau
-        for step in range(4, 17):
-            px = 15.5 + math.sin(angle) * step
-            py = 15.5 - math.cos(angle) * step
-            put(image, int(math.floor(px)) + 2, int(math.floor(py)) + 2, TEAL if step > 6 else TEAL_D)
-    if state == "ready":
-        # Brass corner brackets, mirrored to the pixel; the bottom-right corner carries the key number.
-        for sx, sy in ((2, 2), (CARD - 3, 2), (2, CARD - 3)):
-            dx = 1 if sx < CARD // 2 else -1
-            dy = 1 if sy < CARD // 2 else -1
-            for i in range(3):
-                put(image, sx + dx * i, sy, GOLD_PALE if i == 0 else GOLD_HI)
-                put(image, sx, sy + dy * i, GOLD_PALE if i == 0 else GOLD_HI)
-    if state == "locked":
-        lock = ["..###..", ".#...#.", ".#...#.", "#######", "###.###", "###.###", "#######"]
-        icon = outlined(lock, shade=lambda y, h: (214, 199, 164) if y < 3 else (186, 170, 136))
-        image.alpha_composite(icon, ((CARD - icon.width) // 2, (CARD - icon.height) // 2))
-    return image
-
-
-# ---------------------------------------------------------------- buffs
-BUFF = 12
-BUFF_STEPS = 12
-BUFFS = {
-    # name: (rim colour, symbol rows (8x8), symbol shade)
-    "whetstone": ((236, 156, 64), [
-        "......##", ".....###", "....###.", "...###..", "#.###...", "####....", ".##.....", "#.#....."],
-        lambda y, h: (246, 236, 214) if y < 4 else (196, 186, 170)),
-    "potion": ((226, 70, 80), [
-        "..####..", "...##...", "...##...", "..####..", ".######.", ".######.", ".######.", "..####.."],
-        lambda y, h: (236, 230, 222) if y < 3 else (240, 80, 86) if y > 3 else (255, 150, 140)),
-    "dodge": ((79, 214, 200), [
-        "........", "#...#...", ".#...#..", "..#...#.", "..#...#.", ".#...#..", "#...#...", "........"],
-        lambda y, h: (200, 255, 246)),
-}
-
-
-def buff_icon(name, frame):
-    rim, rows, shade = BUFFS[name]
-    image = new(BUFF, BUFF)
-    for y in range(BUFF):
-        for x in range(BUFF):
-            d = min(x, y, BUFF - 1 - x, BUFF - 1 - y)
-            if d == 0 and (x, y) not in ((0, 0), (BUFF - 1, 0), (0, BUFF - 1), (BUFF - 1, BUFF - 1)):
-                put(image, x, y, OUT)
-            elif d == 1:
-                lit = y == 1 or x == 1
-                put(image, x, y, rim if lit else tuple(c * 6 // 10 for c in rim))
-            elif d > 1:
-                put(image, x, y, (20, 22, 28) if (x + y) % 2 else (24, 26, 33))
-    for y, row in enumerate(rows):
-        for x, c in enumerate(row):
-            if c == "#":
-                put(image, x + 2, y + 2, shade(y, 8))
-    if frame:
-        # Cooldown: the unrecovered upper part sinks into shadow, one row per step.
-        for y in range(2, 2 + frame * 8 // BUFF_STEPS + (1 if frame * 8 % BUFF_STEPS else 0)):
-            for x in range(2, 10):
-                r, g, b, a = image.getpixel((x, y))
-                image.putpixel((x, y), (r * 30 // 100, g * 30 // 100, b * 34 // 100, a))
-    return image
-
-
 # ---------------------------------------------------------------- text
 def text_font():
     assert FONT_PATH.is_file(), "Run build_core_menu_assets first (it fetches the pinned MaruMinya font)"
@@ -480,32 +237,6 @@ def text_glyphs(chars):
     return result
 
 
-# ---------------------------------------------------------------- boss bar
-BOSS_FILL = 182
-BOSS_W = BOSS_FILL + 2 + 24
-BOSS_BAR_TOP = 17  # screen y just under the bar frame top; name ink sits above at y=2..15.
-
-
-def build_boss_frame():
-    image = new(BOSS_W, 11)
-    x0 = 12
-    recess(image, x0, 1, BOSS_FILL + 2, 9, RAMPS["boss"][1], ticks=(45, 90, 136))
-    # Outer rim and gold top/bottom lines.
-    for x in range(x0 - 1, x0 + BOSS_FILL + 3):
-        put(image, x, 0, GOLD_D); put(image, x, 10, OUT)
-    for x in range(x0 + 2, x0 + BOSS_FILL, 6):
-        put(image, x, 0, GOLD)
-    # End caps: brass hexagonal studs with a red core (the boss emblem colour).
-    for cx in (5, BOSS_W - 6):
-        for y in range(11):
-            half = (5 - abs(y - 5)) if abs(y - 5) <= 5 else -1
-            for x in range(cx - half, cx + half + 1):
-                d = half - abs(x - cx)
-                put(image, x, y, OUT if d == 0 else GOLD if (d == 1 and y < 5) else GOLD_D if d == 1 else (150, 30, 40) if d > 2 else (90, 20, 28))
-        put(image, cx - 1, 4, (255, 160, 140)); put(image, cx, 4, (230, 80, 70))
-    return image
-
-
 # ---------------------------------------------------------------- mob nameplate (world)
 TAG_FILL = 40
 TAG_COLORS = {
@@ -530,103 +261,103 @@ def build_tag_frame():
     return image
 
 
+# ---------------------------------------------------------------- vanilla-ascii number fonts
+ASCII_BASE = 0xE600   # ascii.png cell n (= codepoint n) is drawn by U+E600+n in every hud_num* font
+ASCII_SPACE = 4       # vanilla's own space advance (the ascii cell for ' ' is empty)
+
+
+ASCII_UNUSED = 0xE7FF  # stands in for the empty ' ' cell; the space provider owns U+E620
+
+
+def number_grid():
+    cells = [chr(ASCII_BASE + n) if n != 32 else chr(ASCII_UNUSED) for n in range(256)]
+    return ["".join(cells[row * 16:(row + 1) * 16]) for row in range(16)]
+
+
+def number_provider(ascent):
+    grid = number_grid()
+    return {"type": "bitmap", "file": "minecraft:font/ascii.png", "height": 8, "ascent": ascent, "chars": grid}
+
+
+NUMBER_FONTS = {  # font -> ascent; numbers are white glyphs tinted by the component colour
+    "hud_num_gauge": hud_ascent(art.GAUGE_TOP - 1),      # HP / MP values and the level, on the gauge row
+    "hud_num_cd": hud_ascent(15),                         # cooldown seconds on a hotbar skill
+    "hud_num_buff": hud_ascent(art.BUFF_TOP - 3),         # buff timers
+    "hud_num_boss": 10 - 5,                               # boss bar percentage
+}
+
+
 # ---------------------------------------------------------------- build
 def build_combat_hud(assets, pack, source, write_json, chars):
     output = assets / "textures/gui/core"
     output.mkdir(parents=True, exist_ok=True)
+    # Everything named hud* is this builder's (none of it is committed): drop the previous run's
+    # files so a renamed or removed glyph sheet never lingers in the pack.
+    for stale in list((assets / "font").glob("hud*.json")) + list(output.glob("hud_*.png")):
+        stale.unlink()
     fonts = []
 
     # -- projects:hud (action bar) ---------------------------------------
     hud = FontBuilder("projects:hud")
-    hud.group("hud_plate", [("plate", build_plate())], hud_ascent(PLATE_TOP))
-    top = PLATE_TOP - HP_FILL[1]
-    for bar in ("hp", "mp"):
-        fill, _, edge = RAMPS[bar]
-        hud.group(f"hud_{bar}_fill", segments(f"{bar}_fill", fill, BINARY[:7], textured=True), hud_ascent(top))
-        hud.group(f"hud_{bar}_edge", [(f"{bar}_edge", solid(1, [edge] * 7))], hud_ascent(top))
-    hud.group("hud_hp_trail", segments("hp_trail", TRAIL, BINARY[:7]), hud_ascent(top))
-    hud.group("hud_hp_shield", segments("hp_shield", SHIELD, BINARY[:7]), hud_ascent(top))
-    hud.group("hud_res_fill", segments("res_fill", RESOURCE, BINARY[:7], textured=True), hud_ascent(PLATE_TOP - RES_FILL[1]))
-    hud.group("hud_xp_fill", segments("xp_fill", [TEAL], BINARY), hud_ascent(PLATE_TOP - XP_FILL[1]))
+    hud.group("hud_console", [("console", art.console())], hud_ascent(art.CONSOLE_TOP))
+    rows = art.GAUGE_ROWS
+    gauge = [(f"hp_fill_{w}", art.gauge_fill(w, rows, art.HP)) for w in BINARY[:6]]
+    gauge += [(f"mp_fill_{w}", art.gauge_fill(w, rows, art.MP)) for w in BINARY[:6]]
+    gauge += [(f"hp_trail_{w}", art.flat(w, rows, art.TRAIL)) for w in BINARY[:6]]
+    gauge += [(f"hp_barrier_{w}", art.flat(w, rows, art.BARRIER[0], art.BARRIER[1])) for w in BINARY[:6]]
+    gauge += [("hp_tick", art.hp_tick())]
+    hud.group("hud_gauge", gauge, hud_ascent(art.GAUGE_TOP))
+    hud.group("hud_cells", [("rage_cell", art.rage_cell())], hud_ascent(art.CELL_TOP))
+    emblem_rows, emblem_x = [], None
+    for job in art.CLASSES:
+        image, emblem_x, emblem_top = art.emblem(job)
+        emblem_rows.append((f"emblem_{job}", image))
+        emblem_rows += [(f"xp_{job}_{step}", art.xp_overlay(job, step)) for step in range(1, art.XP_STEPS + 1)]
+    hud.group("hud_emblem", emblem_rows, hud_ascent(emblem_top), columns=25)
+    tiles = [("buff_left", art.buff_left()), ("buff_right", art.buff_right())]
+    tiles += [(f"buff_mid_{w}", art.buff_mid(w)) for w in BINARY[:5]]
+    hud.group("hud_buff_tile", tiles, hud_ascent(art.BUFF_TOP))
+    icons = [(f"buff_{kind}_{frame}", art.buff_icon(kind, frame)) for kind in art.BUFF_ART for frame in range(art.BUFF_STEPS + 1)]
+    hud.group("hud_buff_icon", icons, hud_ascent(art.BUFF_TOP - 2))
+    fonts.append(hud)
+
+    # -- projects:hud_skills: 32 px skill art drawn 16 GUI px tall over its hotbar slot ------------
+    skills = FontBuilder("projects:hud_skills")
+    for index, name in enumerate(SKILLS):
+        with Image.open(source / f"skills/{name}.png") as loaded:
+            sprite = loaded.convert("RGBA")
+        assert sprite.size == (32, 32), f"Skill art must be authored at 32 px: {name}"
+        # Named by CoreSkillCatalog art index; HUD and source order are the same list.
+        frames = [(f"skill_{index}_{state}", art.skill_icon(sprite, state)) for state in art.SKILL_STATES]
+        skills.group(f"hud_skill_{name}", frames, hud_ascent(art.SLOT_ICON_TOP), columns=4, display_height=16)
+    fonts.append(skills)
+
+    # -- text: MaruMinya for world name tags (unchanged) ------------------
+    glyphs = text_glyphs(chars)
+    text_rows = []
+    world = FontBuilder("projects:hud_text")
+    world.group("hud_text", [(f"text_{ord(c):X}", image) for c, image in glyphs], 10, columns=32)
+    for c, _ in glyphs:
+        row = next(r for r in world.rows if r[0] == f"text_{ord(c):X}")
+        text_rows.append((ord(c), row[2], row[3]))
+    fonts.append(world)
+
+    # -- boss bar --------------------------------------------------------
+    boss = FontBuilder("projects:hud_boss")
+    boss.group("hud_boss_plate", [("boss_plate", art.boss_plate())], 10 - art.BOSS_TOP)
+    boss_rows = [(f"boss_fill_{w}", art.gauge_fill(w, art.BOSS_FILL_ROWS, art.BOSS)) for w in BINARY]
+    boss_rows += [(f"boss_trail_{w}", art.flat(w, art.BOSS_FILL_ROWS, art.TRAIL)) for w in BINARY]
+    boss_rows += [("boss_tick", art.boss_tick())]
+    boss.group("hud_boss_fill", boss_rows, 10 - art.BOSS_FILL_TOP)
+    fonts.append(boss)
+
+    # -- mob nameplate (world, below the name line) -----------------------
     def boxed(image):
         backed = Image.new("RGBA", image.size, rgba(OUT))
         backed.alpha_composite(image)
         return backed
-    # Small numbers sit on a dark readout strip (adjacent cells merge): with only a contour, single
-    # gauge pixels peek through the gaps between 3 px digits and read as noise.
     tiny = [(c, boxed(outlined(TINY[c], shade=digit_shade))) for c in TINY_CHARS]
-    # One digit sheet per row it is used on: bars, resource well, crest, skill keys, buff timers.
-    hud.group("hud_tiny_bar", [(f"tiny_bar_{c}", i) for c, i in tiny], hud_ascent(top))
-    hud.group("hud_tiny_res", [(f"tiny_res_{c}", i) for c, i in tiny], hud_ascent(PLATE_TOP - RES_FILL[1] + 1))
-    hud.group("hud_tiny_crest", [(f"tiny_crest_{c}", i) for c, i in tiny], hud_ascent(PLATE_TOP - 3))
-    hud.group("hud_tiny_key", [(f"tiny_key_{c}", i) for c, i in tiny], hud_ascent(SKILL_TOP - 28))
-    hud.group("hud_tiny_buff", [(f"tiny_buff_{c}", i) for c, i in tiny], hud_ascent(SKILL_TOP - 30))
-    hud.group("hud_shield_icon", [("shield_icon", build_shield_icon())], hud_ascent(PLATE_TOP - 13))
-    hud.group("hud_pips", [("pip_on", build_pip(True)), ("pip_off", build_pip(False))], hud_ascent(PLATE_TOP - 14))
     big = [(c, outlined(BIG[c], shade=digit_shade)) for c in BIG_CHARS]
-    hud.group("hud_big_cd", [(f"big_cd_{c}", i) for c, i in big], hud_ascent(SKILL_TOP - 14))
-    buff_images = [(f"buff_{name}_{frame}", buff_icon(name, frame)) for name in BUFFS for frame in range(BUFF_STEPS + 1)]
-    hud.group("hud_buffs", buff_images, hud_ascent(SKILL_TOP - 17))
-    # Notice slot backing: translucent pill segments behind the caption line.
-    slot_top = SKILL_TOP + 17
-    pill_rows = [OUT] + [(12, 14, 19)] * 14 + [OUT]
-    def pill(width):
-        image = new(width, 16)
-        for y, color in enumerate(pill_rows):
-            for x in range(width):
-                put(image, x, y, color, 255 if color == OUT else 200)
-        return image
-    def cap(right):
-        image = new(4, 16)
-        for y in range(16):
-            for x in range(4):
-                inset = 3 - x if not right else x
-                if (y < inset) or (y > 15 - inset):
-                    continue
-                edge = y == inset or y == 15 - inset or (x == 0 and not right) or (x == 3 and right)
-                put(image, x, y, GOLD_D if edge and 3 <= y <= 12 else OUT if edge else (12, 14, 19), 255 if edge else 200)
-        return image
-    hud.group("hud_pill", [(f"pill_{w}", pill(w)) for w in BINARY] + [("pill_left", cap(False)), ("pill_right", cap(True))],
-              hud_ascent(slot_top))
-    fonts.append(hud)
-
-    # -- projects:hud_skills ---------------------------------------------
-    skills = FontBuilder("projects:hud_skills")
-    for index, name in enumerate(SKILLS):
-        with Image.open(source / f"skills/{name}.png") as loaded:
-            art = loaded.convert("RGBA")
-        assert art.size == (32, 32), f"Skill art must be authored at 32 px: {name}"
-        # Named by CoreSkillCatalog art index; HUD and source order are the same list.
-        frames = [(f"skill_{index}_{frame}", skill_card(art, frame)) for frame in range(LOCKED + 1)]
-        skills.group(f"hud_skill_{name}", frames, hud_ascent(SKILL_TOP), columns=9)
-    fonts.append(skills)
-
-    # -- text: action-bar caption slot and world/boss lines ---------------
-    glyphs = text_glyphs(chars)
-    text_rows = []
-    def text_font_builder(key, ascent):
-        builder = FontBuilder(key)
-        builder.group(key.split(":")[1], [(f"text_{ord(c):X}", image) for c, image in glyphs], ascent, columns=32)
-        return builder
-    caption = text_font_builder("projects:hud_text_slot", hud_ascent(slot_top - 1))
-    world = text_font_builder("projects:hud_text", 10)
-    boss_name = text_font_builder("projects:hud_text_boss", 10 - 2)
-    for c, _ in glyphs:
-        row = next(r for r in caption.rows if r[0] == f"text_{ord(c):X}")
-        text_rows.append((ord(c), row[2], row[3]))
-    fonts += [caption, world, boss_name]
-
-    # -- boss bar --------------------------------------------------------
-    boss = FontBuilder("projects:hud_boss")
-    boss.group("hud_boss_frame", [("boss_frame", build_boss_frame())], 10 - (BOSS_BAR_TOP - 1))
-    fill, _, edge = RAMPS["boss"]
-    boss.group("hud_boss_fill", segments("boss_fill", fill, BINARY, textured=True), 10 - BOSS_BAR_TOP - 1)
-    boss.group("hud_boss_trail", segments("boss_trail", TRAIL, BINARY), 10 - BOSS_BAR_TOP - 1)
-    boss.group("hud_boss_edge", [("boss_edge", solid(1, [edge] * 7))], 10 - BOSS_BAR_TOP - 1)
-    boss.group("hud_boss_tiny", [(f"boss_tiny_{c}", i) for c, i in tiny], 10 - BOSS_BAR_TOP - 1)
-    fonts.append(boss)
-
-    # -- mob nameplate (world, below the name line) -----------------------
     tag = FontBuilder("projects:hud_tag")
     tag.group("hud_tag_frame", [("tag_frame", build_tag_frame())], 7 - 13)
     for rarity, colors in TAG_COLORS.items():
@@ -644,39 +375,53 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     fonts.append(damage)
 
     # -- write ------------------------------------------------------------
+    space = {chr(SPACE_BASE + bit): 1 << bit for bit in range(12)} | {chr(SPACE_BASE + 16 + bit): -(1 << bit) for bit in range(12)}
     rows = []
     for builder in fonts:
         # Signed binary spaces in every HUD font let the server keep one text run per colour.
-        providers = [{"type": "space", "advances": {chr(SPACE_BASE + bit): 1 << bit for bit in range(12)} |
-                      {chr(SPACE_BASE + 16 + bit): -(1 << bit) for bit in range(12)}}]
+        providers = [{"type": "space", "advances": space}]
         for sheet_name, sheet, provider in builder.providers:
             sheet.save(output / f"{sheet_name}.png", optimize=True)
             providers.append(provider)
         write_json(assets / f"font/{builder.key.split(':')[1]}.json", {"providers": providers})
-        if builder.key.startswith("projects:hud_text"):
+        if builder.key == "projects:hud_text":
             continue
         rows += builder.rows
+    for name, ascent in NUMBER_FONTS.items():
+        write_json(assets / f"font/{name}.json", {"providers": [
+            {"type": "space", "advances": space | {chr(ASCII_BASE + 32): ASCII_SPACE}}, number_provider(ascent)]})
     (assets / "menu").mkdir(parents=True, exist_ok=True)
     (assets / "menu/hud-glyphs.tsv").write_text(
         "# name\tfont\tcode\tadvance; generated by build_combat_hud.py\n" +
         "".join(f"{name}\t{font}\t{code:X}\t{advance}\n" for name, font, code, advance in rows), encoding="utf-8")
     (assets / "menu/hud-text.tsv").write_text(
-        "# codepoint\tglyph\tadvance; generated by build_combat_hud.py (fonts projects:hud_text*)\n" +
+        "# codepoint\tglyph\tadvance; generated by build_combat_hud.py (font projects:hud_text)\n" +
         "".join(f"{cp:X}\t{code:X}\t{advance}\n" for cp, code, advance in text_rows), encoding="utf-8")
     for path, size in sorted(vanilla_overrides().items()):
         target = pack / path
         target.parent.mkdir(parents=True, exist_ok=True)
         Image.new("RGBA", size).save(target)
+    for path, image in sorted(vanilla_reskins().items()):
+        target = pack / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        image.save(target)
     write_json(source / "hud-layout.json", {
-        "vanilla": "26.2", "gui_coordinates": "relative to integer screen centre and GUI height",
-        "texel": "1 texture pixel = 1 GUI pixel for every HUD glyph",
+        "vanilla": "26.2", "gui_coordinates": "x relative to the integer screen centre; top = GUI px above the bottom",
+        "direction": "2026-10-16 modern MMO x Minecraft (proposals/2026-10-16-combat-hud)",
         "actionbar_bitmap_top": "height - 65 - ascent",
-        "plate": {"left_x": -91, "width": PLATE_W, "height": PLATE_H, "top_from_bottom": PLATE_TOP,
-                  "hp_fill": HP_FILL, "mp_fill": MP_FILL, "resource_fill": RES_FILL, "xp_fill": XP_FILL},
-        "skills": {"size": CARD, "art": 32, "top_from_bottom": SKILL_TOP, "cooldown_steps": CD_STEPS,
-                   "no_mana": NO_MANA, "locked": LOCKED},
-        "caption_slot_top_from_bottom": slot_top,
-        "boss_bar": {"name_top": 2, "bar_top": BOSS_BAR_TOP - 1, "fill": BOSS_FILL},
-        "transparent_vanilla_sprites": sorted(vanilla_overrides()),
+        "console": {"left_x": art.CONSOLE_X, "top": art.CONSOLE_TOP, "width": art.CONSOLE_W, "height": art.CONSOLE_H},
+        "hp_gauge": {"x": art.HP_X, "width": art.HP_W, "top": art.GAUGE_TOP, "rows": art.GAUGE_ROWS},
+        "mp_gauge": {"x": art.MP_X, "width": art.MP_W, "top": art.GAUGE_TOP, "rows": art.GAUGE_ROWS},
+        "resource_cells": {"x": art.CELL_X, "pitch": art.CELL_PITCH, "count": art.CELL_COUNT, "top": art.CELL_TOP},
+        "emblem": {"left_x": emblem_x, "top": emblem_top, "centre_from_bottom": art.EMBLEM_CY, "xp_steps": art.XP_STEPS,
+                   "classes": list(art.CLASSES)},
+        "skill_icons": {"left_x": art.SLOT_ICON_X, "pitch": 20, "top": art.SLOT_ICON_TOP, "size": 16, "texels": 32,
+                        "states": list(art.SKILL_STATES)},
+        "buffs": {"left_x": art.BUFF_LEFT, "top": art.BUFF_TOP, "height": art.BUFF_H},
+        "number_fonts": {k: v for k, v in NUMBER_FONTS.items()},
+        "boss_bar": {"plate_x": art.BOSS_X, "plate_width": art.BOSS_W, "plate_top": art.BOSS_TOP,
+                     "fill_x": art.BOSS_FILL_X, "fill_width": art.BOSS_FILL_W, "fill_top": art.BOSS_FILL_TOP},
+        "blank_vanilla_sprites": sorted(vanilla_overrides()),
+        "reskinned_vanilla_sprites": sorted(vanilla_reskins()),
     })
     return rows, text_rows

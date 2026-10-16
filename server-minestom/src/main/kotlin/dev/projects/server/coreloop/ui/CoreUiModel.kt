@@ -71,6 +71,8 @@ data class CoreHudState(
     /** Recently lost health still shown as a pale trail; equal to [health] when nothing is draining. */
     val healthTrail: Double = health,
     val buffs: List<CoreHudBuff> = emptyList(),
+    /** Class whose wings and crown decorate the level diamond (CoreClass.name, any case). */
+    val classKey: String = "warrior",
 )
 
 enum class CoreHudBuffKind(val glyph: String, val label: String) {

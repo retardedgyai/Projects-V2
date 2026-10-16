@@ -21,7 +21,7 @@ class CoreUiTest {
         val text=plain(CoreUiComponents.hud(state,false))
         assertTrue(text.contains("2:未解放")); assertTrue(text.contains("蓄積 3/3"))
         assertFalse(text.any { it.code in 0xE000..0xF8FF })
-        assertEquals(CoreHudLayout.LOCKED,CoreHudLayout.skillVisual(state.skills.single(),100.0).frame)
+        assertEquals(CoreHudLayout.LOCKED,CoreHudLayout.skillVisual(state.skills.single(),100.0).state)
     }
     private val model = CoreTooltipModel("開拓者の大剣", CoreUiRarity.EPIC, 4, 28, "大剣", listOf(
         CoreTooltipStat("攻撃力", "+42", CoreUiIcon.ATTACK)), listOf(CoreTooltipAffix("鋭刃", "攻撃力 +12%", "8〜15%", 57, "IV")), 4)
@@ -61,8 +61,8 @@ class CoreUiTest {
         val skillGlyphs = children(packed).filterIsInstance<TextComponent>()
             .filter { it.style().font()?.asString() == "projects:hud_skills" }
             .flatMap { run -> run.content().filter { it.code !in CoreHudLine.SPACE_POSITIVE..CoreHudLine.SPACE_NEGATIVE + 11 }.map(Char::toString) }
-        assertEquals(listOf(CoreHudGlyphs["skill_0_0"].char.toString(), CoreHudGlyphs["skill_1_${CoreHudLayout.skillVisual(state.skills[1], 50.0).frame}"].char.toString(),
-            CoreHudGlyphs["skill_2_${CoreHudLayout.skillVisual(state.skills[2], 50.0).frame}"].char.toString()), skillGlyphs)
+        assertEquals(listOf(CoreHudGlyphs["skill_0_ready"].char.toString(), CoreHudGlyphs["skill_1_${CoreHudLayout.skillVisual(state.skills[1], 50.0).state}"].char.toString(),
+            CoreHudGlyphs["skill_2_${CoreHudLayout.skillVisual(state.skills[2], 50.0).state}"].char.toString()), skillGlyphs)
     }
 
     @Test fun `inventory titles fit their frame using bold Japanese pixel width`() {

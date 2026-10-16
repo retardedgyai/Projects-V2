@@ -77,7 +77,7 @@ object CoreUiComponents {
         if (!packed) {
             val cooldowns = state.skills.take(5).joinToString(" / ") {
                 val visual = CoreHudLayout.skillVisual(it, state.mana)
-                val status = when (visual.frame) {
+                val status = when (visual.state) {
                     CoreHudLayout.READY -> "可"
                     CoreHudLayout.NO_MANA -> if(it.resourceAvailable) "マナ不足" else "資源不足"
                     CoreHudLayout.LOCKED -> "未解放"

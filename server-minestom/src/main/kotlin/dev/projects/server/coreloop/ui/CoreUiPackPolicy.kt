@@ -1,9 +1,9 @@
 package dev.projects.server.coreloop.ui
 
 /**
- * The only global overrides: blank the vanilla HUD parts the pixel HUD replaces (hearts, food,
- * armour row, XP bar) and the pink boss bar, whose name component draws the pixel boss bar.
- * Mirrors build_combat_hud.vanilla_overrides().
+ * The only global overrides: blank the vanilla HUD parts the combat HUD replaces (hearts, food,
+ * armour row, XP bar) and the pink boss bar, whose name component draws the boss bar; and reskin
+ * the hotbar. Mirrors build_combat_hud.vanilla_overrides() + vanilla_reskins().
  */
 internal object CoreUiPackPolicy {
     // Appends the custom VFX directory to the native atlas, without replacing sprites.
@@ -27,6 +27,8 @@ internal object CoreUiPackPolicy {
         }
         add("${HUD}experience_bar_background.png"); add("${HUD}experience_bar_progress.png")
         add("${BOSS}pink_background.png"); add("${BOSS}pink_progress.png")
+        // Reskinned, not blanked: the hotbar and its selection frame in the HUD's charcoal and iron (2026-10-16).
+        add("${HUD}hotbar.png"); add("${HUD}hotbar_selection.png")
     }
 
     /** Vanilla button and text-field frames in the ProjectS style, so server dialogs match the game (asked 2026-10-07). */

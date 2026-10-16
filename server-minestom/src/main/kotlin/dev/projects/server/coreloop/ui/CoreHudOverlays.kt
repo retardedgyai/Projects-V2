@@ -27,30 +27,34 @@ internal object CoreDamageNumbers {
 }
 
 /**
- * Pixel boss bar drawn by the name component of a PINK boss bar (whose vanilla sprites the pack
- * blanks): name in 12 px text on top, then a 182 px gauge with a trail of recent damage.
+ * Boss bar drawn by the name component of a PINK boss bar (whose vanilla sprites the pack blanks):
+ * a charcoal plate with the rank gem, the name in the vanilla font on the title row, the remaining
+ * percentage on the right, and a 220 px gauge with quarter marks and a trail of recent damage.
  */
 internal object CoreBossBarHud {
-    const val FILL = 182
-    private val NAME: TextColor = TextColor.color(0xF2D58A)
-    private val NUMBER: TextColor = TextColor.color(0xFFF5E0)
+    const val PLATE_X = -115
+    const val FILL_X = -110
+    const val FILL = 220
+    const val NAME_X = -99
+    private val NAME: TextColor = TextColor.color(0xFFFFFF)
+    private val NUMBER: TextColor = TextColor.color(0xFFFFFF)
+
+    fun percent(health: Double, maximum: Double): String =
+        if (!health.isFinite() || !maximum.isFinite() || maximum <= 0.0) "0%" else "${(health / maximum * 100).coerceIn(0.0, 100.0).toInt()}%"
 
     fun render(name: String, health: Double, maximum: Double, trail: Double): Component {
         val line = CoreHudLine()
-        line.put(-104, "boss_frame")
+        line.put(PLATE_X, "boss_plate")
         val filled = CoreHudLayout.fillWidth(health, maximum, FILL)
-        val trailing = CoreHudLayout.fillWidth(maxOf(health, trail), maximum, FILL)
-        line.fill("boss_fill", -91, filled, 128)
-        if (trailing > filled) line.fill("boss_trail", -91 + filled, trailing - filled, 128)
-        if (filled in 1 until FILL) line.put(-91 + filled - 1, "boss_edge")
-        val text = "${number(health)}/${number(maximum)}"
-        line.digits("boss_tiny", -CoreHudLine.digitsWidth(text.length) / 2, text, NUMBER)
-        val width = CoreHudGlyphs.textWidth(name)
-        line.text(-width / 2, name, CoreHudGlyphs.TEXT_BOSS, NAME)
+        val trailing = CoreHudLayout.fillWidth(maxOf(health, trail.takeIf { it.isFinite() } ?: health), maximum, FILL)
+        line.fill("boss_fill", FILL_X, filled, 128)
+        if (trailing > filled) line.fill("boss_trail", FILL_X + filled, trailing - filled, 128)
+        for (q in 1..3) line.put(FILL_X + FILL * q / 4, "boss_tick")
+        val pct = percent(health, maximum)
+        line.number(FILL_X + FILL - (CoreHudGlyphs.numberWidth(pct) - 1), pct, CoreHudGlyphs.NUM_BOSS, NUMBER)
+        line.vanilla(NAME_X, name, NAME)
         return line.build()
     }
-
-    private fun number(value: Double) = if (value.isFinite()) value.coerceIn(0.0, 9_999_999.0).roundToInt().toString() else "0"
 }
 
 /** Mob name tag: 12 px name (or the attack being prepared) over level, 40 px HP gauge and weakness. */

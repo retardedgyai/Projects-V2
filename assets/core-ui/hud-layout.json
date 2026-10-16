@@ -1,49 +1,79 @@
 {
   "vanilla": "26.2",
-  "gui_coordinates": "relative to integer screen centre and GUI height",
-  "texel": "1 texture pixel = 1 GUI pixel for every HUD glyph",
+  "gui_coordinates": "x relative to the integer screen centre; top = GUI px above the bottom",
+  "direction": "2026-10-16 modern MMO x Minecraft (proposals/2026-10-16-combat-hud)",
   "actionbar_bitmap_top": "height - 65 - ascent",
-  "plate": {
-    "left_x": -91,
-    "width": 182,
-    "height": 24,
-    "top_from_bottom": 47,
-    "hp_fill": [
-      4,
-      4,
-      76
-    ],
-    "mp_fill": [
-      102,
-      4,
-      76
-    ],
-    "resource_fill": [
-      47,
-      14,
-      88
-    ],
-    "xp_fill": [
-      3,
-      21,
-      176
+  "console": {
+    "left_x": -92,
+    "top": 40,
+    "width": 184,
+    "height": 19
+  },
+  "hp_gauge": {
+    "x": -78,
+    "width": 54,
+    "top": 38,
+    "rows": 9
+  },
+  "mp_gauge": {
+    "x": 24,
+    "width": 55,
+    "top": 38,
+    "rows": 9
+  },
+  "resource_cells": {
+    "x": -89,
+    "pitch": 9,
+    "count": 20,
+    "top": 25
+  },
+  "emblem": {
+    "left_x": -28,
+    "top": 57,
+    "centre_from_bottom": 34,
+    "xp_steps": 24,
+    "classes": [
+      "warrior",
+      "ranger",
+      "mage",
+      "assassin",
+      "templar",
+      "healer"
     ]
   },
-  "skills": {
-    "size": 36,
-    "art": 32,
-    "top_from_bottom": 96,
-    "cooldown_steps": 24,
-    "no_mana": 25,
-    "locked": 26
+  "skill_icons": {
+    "left_x": -88,
+    "pitch": 20,
+    "top": 19,
+    "size": 16,
+    "texels": 32,
+    "states": [
+      "ready",
+      "cooldown",
+      "mana",
+      "locked"
+    ]
   },
-  "caption_slot_top_from_bottom": 113,
+  "buffs": {
+    "left_x": -92,
+    "top": 55,
+    "height": 13
+  },
+  "number_fonts": {
+    "hud_num_gauge": -28,
+    "hud_num_cd": -50,
+    "hud_num_buff": -13,
+    "hud_num_boss": 5
+  },
   "boss_bar": {
-    "name_top": 2,
-    "bar_top": 16,
-    "fill": 182
+    "plate_x": -115,
+    "plate_width": 230,
+    "plate_top": 0,
+    "fill_x": -110,
+    "fill_width": 220,
+    "fill_top": 17
   },
-  "transparent_vanilla_sprites": [
+  "blank_vanilla_sprites": [
     "assets/minecraft/textures/gui/sprites/boss_bar/pink_background.png",
     "assets/minecraft/textures/gui/sprites/boss_bar/pink_progress.png",
     "assets/minecraft/textures/gui/sprites/hud/armor_empty.png",
@@ -101,5 +131,9 @@
     "assets/minecraft/textures/gui/sprites/hud/heart/withered_hardcore_full_blinking.png",
     "assets/minecraft/textures/gui/sprites/hud/heart/withered_hardcore_half.png",
     "assets/minecraft/textures/gui/sprites/hud/heart/withered_hardcore_half_blinking.png"
+  ],
+  "reskinned_vanilla_sprites": [
+    "assets/minecraft/textures/gui/sprites/hud/hotbar.png",
+    "assets/minecraft/textures/gui/sprites/hud/hotbar_selection.png"
   ]
 }
