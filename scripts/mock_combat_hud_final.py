@@ -46,7 +46,52 @@ def place_centred(cv, s, cx, cy, colour=WHITE, shadow=True, glyph_only_centre=Tr
     return (gx0 + ox, gy0 + oy, gx1 + ox, gy1 + oy)
 
 
-def design_j(job="warrior"):
+XP = .62  # progress toward the next level, for the XP-rim variant
+
+
+def fins(cv, cy, side):
+    """Three stacked iron blades off the diamond's side point, longest on top, stepped tips (deco 'fins')."""
+    D = hud.D
+    x0 = C + side * 13
+    for dy, length in ((-3, 9), (0, 7), (3, 5)):
+        for i in range(length):
+            x = x0 + side * (i + 1)
+            lift = i // 3 if dy < 0 else 0          # the top blade sweeps slightly upward
+            y = cy + dy - lift
+            hud.px(cv, x, y - 1, D["out"])
+            hud.px(cv, x, y, D["metal"][0] if dy < 0 else D["metal"][1])
+            hud.px(cv, x, y + 1, D["metal"][2] if i < length - 1 else D["out"])
+            hud.px(cv, x, y + 2, D["out"])
+        hud.px(cv, x0 + side * (length + 1), cy + dy - (length - 1) // 3 * (dy < 0), D["out"])
+
+
+def crown(cv, cy, accent):
+    """Three iron prongs on the top point, a class-colour gem on the middle one (deco 'crown')."""
+    D = hud.D
+    tip = cy - 14
+    for x, h in ((C - 4, 2), (C, 4), (C + 4, 2)):
+        for y in range(tip - h, tip + 1):
+            hud.px(cv, x - 1, y, D["out"]); hud.px(cv, x + 1, y, D["out"])
+            hud.px(cv, x, y, D["metal"][0] if y < tip - h + 2 else D["metal"][1])
+        hud.px(cv, x, tip - h - 1, D["out"])
+    hud.over(cv, (C - 5, tip, C + 6, tip + 2), D["out"])
+    hud.over(cv, (C - 4, tip, C + 5, tip + 1), D["metal"][1])
+    hud.gem(cv, C, tip - 5, (hud.rgba("000000"), hud.rgba(accent), hud.rgba("ffffff")), 1)
+
+
+def xp_rim(cv, cy, accent, r, frac):
+    """The class-colour band of the diamond fills clockwise from the top as XP grows (deco 'xp')."""
+    import math
+    lit, dim = hud.rgba(accent), tuple(v // 3 for v in hud.rgba(accent)[:3]) + (255,)
+    for j in range(-r + 2, r - 1):
+        w = r - 2 - abs(j)
+        for x in range(C - w, C + w + 1):
+            if abs(x - C) + abs(j) > r - 4:   # a 2 px band
+                ang = (math.degrees(math.atan2(x - C, -j)) + 360) % 360
+                hud.px(cv, x, cy + j, lit if ang <= 360 * frac else dim)
+
+
+def design_j(job="warrior", deco=None):
     cv = hud.world()
     top = Image.new("RGBA", (W, H))
     icons, jp, marks = [], [], {}
@@ -76,7 +121,7 @@ def design_j(job="warrior"):
     edge = r + 1                                       # outline reaches C +- 14
     hud.step_plate(cv, (X0 - 1, py, C - 1, py + ph))       # plates run on under the diamond, so no
     hud.step_plate(cv, (C + 1, py, X0 + 183, py + ph))     # stepped corner shows at the joint
-    gx0, gx1 = X0 + 13, C - edge - 2
+    gx0, gx1 = X0 + 13, C - edge - (11 if deco == "fins" else 2)
     hud.ramp_gauge(cv, gx0, gx1, py + 2, 9, hud.HP / hud.HP_MAX, hud.G["hp"], (34, 10, 14, 255),
                    trail=hud.HP_LOST / hud.HP_MAX)
     w = gx1 - gx0
@@ -89,7 +134,7 @@ def design_j(job="warrior"):
         hud.over(cv, (sxp, py + 2, sxp + 1, py + 11), (0, 0, 0, 150))
     cv.alpha_composite(hud.tex("gui/sprites/hud/heart/container"), (X0 + 2, py + 2))
     cv.alpha_composite(hud.tex("gui/sprites/hud/heart/full"), (X0 + 2, py + 2))
-    mx0, mx1 = C + edge + 2, X0 + 170
+    mx0, mx1 = C + edge + (11 if deco == "fins" else 2), X0 + 170
     hud.ramp_gauge(cv, mx0, mx1, py + 2, 9, hud.MP / hud.MP_MAX, hud.G["mp"], (10, 16, 36, 255))
     for j, row in enumerate(hud.MANA_ICON):
         for i, v in enumerate(row):
@@ -103,8 +148,17 @@ def design_j(job="warrior"):
     marks["mp"] = (place_centred(cv, f"{hud.MP} / {hud.MP_MAX}", (mx0 + mx1 - 1) / 2, gauge_mid),
                    (mx0, py + 2, mx1, py + 11))
     # level diamond, class colour on the inner rim, white level number
+    if deco == "fins":
+        fins(cv, cy, -1); fins(cv, cy, 1)
     diamond(cv, C, cy, ACCENT[job], r)
-    marks["lv"] = (place_centred(top, "12", C, cy), (C - r, cy - r, C + r + 1, cy + r + 1))
+    if deco == "crown":
+        crown(cv, cy, ACCENT[job])
+        hud.gem(cv, C, cy + 10, (hud.rgba("000000"), hud.rgba(ACCENT[job]), hud.rgba("ffffff")), 1)
+    if deco == "xp":
+        xp_rim(cv, cy, ACCENT[job], r, XP)
+        marks["lv"] = (place_centred(top, "12", C, cy), (C - r, cy - r, C + r + 1, cy + r + 1))
+    else:
+        marks["lv"] = (place_centred(top, "12", C, cy), (C - r, cy - r, C + r + 1, cy + r + 1))
     # buffs, aligned to the HP plate's left edge
     by = py - 15
     bx = X0 - 1
@@ -155,15 +209,26 @@ def review(marks, geo):
 
 
 def main():
-    result, marks, geo = design_j()
-    problems = review(marks, geo)
-    for p in problems:
-        print("PROBLEM:", p)
-    for s in (2, 4):
-        hud.compose(result, s).save(hud.OUT / f"J-final-{s}x.png")
-    big = hud.compose(result, 8)
-    big.crop((8 * (X0 - 4), 8 * (Y0 - 50), 8 * (X0 + 188), 8 * H)).save(hud.OUT / "J-final-closeup-8x.png")
-    print("review:", "OK" if not problems else f"{len(problems)} problem(s)")
+    crops = []
+    for tag, deco in (("J-final", None), ("K1-fins", "fins"), ("K2-crown", "crown"), ("K3-xp-rim", "xp")):
+        print(tag)
+        result, marks, geo = design_j(deco=deco)
+        problems = review(marks, geo)
+        for p in problems:
+            print("PROBLEM:", p)
+        for s in (2, 4):
+            hud.compose(result, s).save(hud.OUT / f"{tag}-{s}x.png")
+        big = hud.compose(result, 8)
+        crop = big.crop((8 * (C - 60), 8 * (Y0 - 40), 8 * (C + 60), 8 * H))
+        crop.save(hud.OUT / f"{tag}-closeup-8x.png")
+        if deco:
+            crops.append(crop)
+        print("review:", "OK" if not problems else f"{len(problems)} problem(s)")
+    sheet = Image.new("RGBA", (crops[0].width, sum(c.height for c in crops) + 16 * (len(crops) - 1)), (20, 20, 20, 255))
+    y = 0
+    for c in crops:
+        sheet.paste(c, (0, y)); y += c.height + 16
+    sheet.save(hud.OUT / "K1-K3.png")
 
 
 if __name__ == "__main__":
