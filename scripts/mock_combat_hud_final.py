@@ -92,6 +92,7 @@ def xp_rim(cv, cy, accent, r, frac):
 
 
 def design_j(job="warrior", deco=None):
+    deco = set(deco) if isinstance(deco, (set, tuple, list)) else {deco} if deco else set()
     cv = hud.world()
     top = Image.new("RGBA", (W, H))
     icons, jp, marks = [], [], {}
@@ -121,7 +122,7 @@ def design_j(job="warrior", deco=None):
     edge = r + 1                                       # outline reaches C +- 14
     hud.step_plate(cv, (X0 - 1, py, C - 1, py + ph))       # plates run on under the diamond, so no
     hud.step_plate(cv, (C + 1, py, X0 + 183, py + ph))     # stepped corner shows at the joint
-    gx0, gx1 = X0 + 13, C - edge - (11 if deco == "fins" else 2)
+    gx0, gx1 = X0 + 13, C - edge - (11 if "fins" in deco else 2)
     hud.ramp_gauge(cv, gx0, gx1, py + 2, 9, hud.HP / hud.HP_MAX, hud.G["hp"], (34, 10, 14, 255),
                    trail=hud.HP_LOST / hud.HP_MAX)
     w = gx1 - gx0
@@ -134,7 +135,7 @@ def design_j(job="warrior", deco=None):
         hud.over(cv, (sxp, py + 2, sxp + 1, py + 11), (0, 0, 0, 150))
     cv.alpha_composite(hud.tex("gui/sprites/hud/heart/container"), (X0 + 2, py + 2))
     cv.alpha_composite(hud.tex("gui/sprites/hud/heart/full"), (X0 + 2, py + 2))
-    mx0, mx1 = C + edge + (11 if deco == "fins" else 2), X0 + 170
+    mx0, mx1 = C + edge + (11 if "fins" in deco else 2), X0 + 170
     hud.ramp_gauge(cv, mx0, mx1, py + 2, 9, hud.MP / hud.MP_MAX, hud.G["mp"], (10, 16, 36, 255))
     for j, row in enumerate(hud.MANA_ICON):
         for i, v in enumerate(row):
@@ -148,17 +149,35 @@ def design_j(job="warrior", deco=None):
     marks["mp"] = (place_centred(cv, f"{hud.MP} / {hud.MP_MAX}", (mx0 + mx1 - 1) / 2, gauge_mid),
                    (mx0, py + 2, mx1, py + 11))
     # level diamond, class colour on the inner rim, white level number
-    if deco == "fins":
+    if "fins" in deco:
         fins(cv, cy, -1); fins(cv, cy, 1)
     diamond(cv, C, cy, ACCENT[job], r)
-    if deco == "crown":
+    if "crown" in deco:
         crown(cv, cy, ACCENT[job])
         hud.gem(cv, C, cy + 10, (hud.rgba("000000"), hud.rgba(ACCENT[job]), hud.rgba("ffffff")), 1)
-    if deco == "xp":
+    if "xp" in deco:
         xp_rim(cv, cy, ACCENT[job], r, XP)
-        marks["lv"] = (place_centred(top, "12", C, cy), (C - r, cy - r, C + r + 1, cy + r + 1))
-    else:
-        marks["lv"] = (place_centred(top, "12", C, cy), (C - r, cy - r, C + r + 1, cy + r + 1))
+    num_col = hud.rgba("ffd77a") if "gold" in deco else WHITE
+    ncy = cy
+    if "inner" in deco:   # a thin iron diamond inside, framing the number
+        for j in range(-7, 8):
+            w = 7 - abs(j)
+            hud.px(cv, C - w, cy + j, hud.D["metal"][1] if j <= 0 else hud.D["metal"][2])
+            hud.px(cv, C + w, cy + j, hud.D["metal"][1] if j <= 0 else hud.D["metal"][2])
+    if "inset" in deco:   # a dark recessed plate behind the number
+        hud.over(cv, (C - 7, cy - 4, C + 8, cy + 6), hud.D["out"])
+        hud.over(cv, (C - 6, cy - 3, C + 7, cy + 5), hud.rgba("0c0c10"))
+        hud.over(cv, (C - 6, cy + 4, C + 7, cy + 5), hud.D["slot_hi"])
+        ncy = cy + 1
+    if "band" in deco:    # a small plaque across the diamond carrying the number
+        hud.step_plate(cv, (C - 11, cy - 5, C + 12, cy + 6), cut=1)
+        hud.over(cv, (C - 9, cy - 3, C + 10, cy + 4), hud.rgba("0c0c10"))
+        for x in (C - 10, C + 10):
+            hud.px(cv, x, cy, hud.D["metal"][0])
+    if "label" in deco:
+        hud.caps(top, C - 3, cy - 10, "LV", hud.rgba("c8c8d4"))
+    marks["lv"] = (place_centred(top, "12", C, ncy, num_col), (C - r, cy - r, C + r + 1, cy + r + 1) if "inset" not in deco
+                   else (C - 6, cy - 3, C + 7, cy + 5))
     # buffs, aligned to the HP plate's left edge
     by = py - 15
     bx = X0 - 1
@@ -210,7 +229,9 @@ def review(marks, geo):
 
 def main():
     crops = []
-    for tag, deco in (("J-final", None), ("K1-fins", "fins"), ("K2-crown", "crown"), ("K3-xp-rim", "xp")):
+    for tag, deco in (("L1-rich", ("fins", "xp", "inset", "gold")),
+                      ("L2-rich", ("crown", "fins", "xp", "inner")),
+                      ("L3-rich", ("fins", "crown", "xp", "band", "gold"))):
         print(tag)
         result, marks, geo = design_j(deco=deco)
         problems = review(marks, geo)
@@ -228,7 +249,7 @@ def main():
     y = 0
     for c in crops:
         sheet.paste(c, (0, y)); y += c.height + 16
-    sheet.save(hud.OUT / "K1-K3.png")
+    sheet.save(hud.OUT / "L1-L3.png")
 
 
 if __name__ == "__main__":
