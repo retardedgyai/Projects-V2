@@ -17,8 +17,8 @@ goals, unlocks, reward, and the claim or pin button. Branch tabs show their seal
 
 Hovering a medallion shows its name, state and what is missing (`「相を溜める」を終えると開く`); locked
 entries are named on the map too, only `?` entries stay unnamed. Goals each get a check, counted goals a
-number and a bar. Claiming a reward flares the slot, flies the icon to its wallet pill and counts the number
-up (about 1.5 s). The trunk count leaves out side entries; chapters are written 序章 / 1章 / … / 終章.
+number and a bar. Claiming a reward outlines the slot in gold, hops five coins (or ink bottles) to their wallet pill
+and counts the number up (about 1.5 s); it uses no glow sprites, which render as flat blobs in the client. The trunk count leaves out side entries; chapters are written 序章 / 1章 / … / 終章.
 
 ## Content and progress
 

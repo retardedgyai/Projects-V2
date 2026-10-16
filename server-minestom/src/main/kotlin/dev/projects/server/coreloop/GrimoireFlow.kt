@@ -342,7 +342,7 @@ internal class GrimoireFlow(
         if (st != State.HIDDEN) {
             val label = e.title.removePrefix("寄り道：")
             val color = when (st) { State.DONE -> "#C9C3B8"; State.LOCKED, State.GOAL -> "#8A867E"; else -> "#ECE6DC" }
-            text("n-${e.id}-l", cx - 90, cy + R + 12, 180.0, label, if (sel) "v3b" else "v3m", if (sel) 16.0 else 15.0, color, 10, "center", shadow = true)
+            text("n-${e.id}-l", cx - 90, cy + R + 12, 180.0, label, if (sel) "v3b" else "v3m", if (sel) 16.0 else 15.0, color, 10, "center")
         }
         if (canClaim(e)) {
             round("n-${e.id}-c", cx + R - 18, cy - R - 4, 24.0, 24.0, 12.0, "#C2554A", 1.0, 6)
@@ -500,32 +500,35 @@ internal class GrimoireFlow(
         }
     }
 
-    /** The claim, in three beats: the reward slot flares, its icon arcs to the wallet pill, the number counts up. */
+    /**
+     * The claim: the slot is outlined in gold, five coins (or ink bottles) hop on staggered arcs to their
+     * wallet pill, and the pill is outlined while its number counts up. Only opaque pieces: in the client a
+     * soft glow sprite renders as a flat blob, which is what the first version looked like.
+     */
     private fun claimEffect(now: Long) {
         val fx = claimFx ?: return
         val t = now - fx.at
         if (t > FLY_END + COUNT_MS + 600) { claimFx = null; return }
         val icon = if (fx.reward.kind == Reward.Kind.INK) "i16_ink" else "i16_coin"
         val (sx, sy) = rewardSlot
-        val (px, py) = if (fx.reward.kind == Reward.Kind.INK) 1570.0 to 44.0 else 1722.0 to 44.0
-        if (t < FLARE_MS + 200 && tab == 0) {
-            val k = (t / FLARE_MS.toDouble()).coerceIn(0.0, 1.0)
-            val s = 80 + 120 * k
-            sprite("fx-flare", "v3_glow", sx + 24 - s / 2, sy + 24 - s / 2, s, s, 30, GOLD, 0.9 * (1 - k * 0.6))
+        val (pillX, pillW) = if (fx.reward.kind == Reward.Kind.INK) 1552.0 to 140.0 else 1704.0 to 160.0
+        val px = pillX + 18; val py = 44.0
+        fun arc(k: Double, lift: Double, spread: Double = 0.0): Pair<Double, Double> {
+            val e = k * k * (3 - 2 * k)
+            return (sx + 12 + (px - sx - 12) * e + spread * kotlin.math.sin(Math.PI * k)) to
+                (sy + 12 + (py - sy - 12) * e - lift * kotlin.math.sin(Math.PI * k))
         }
-        if (t in FLARE_MS..FLY_END) {
-            val k = (t - FLARE_MS) / (FLY_END - FLARE_MS).toDouble()
-            val e = 1 - (1 - k) * (1 - k)
-            val x = sx + 8 + (px - sx - 8) * e
-            val y = sy + 8 + (py - sy - 8) * e - 160 * kotlin.math.sin(Math.PI * k)
-            val size = 32 - 8 * e
-            sprite("fx-trail", "v3_glow", x + size / 2 - 40, y + size / 2 - 40, 80.0, 80.0, 30, GOLD, 0.6)
-            sprite("fx-icon", icon, x, y, size, size, 31)
-        }
-        if (t >= FLY_END) {
-            val k = ((t - FLY_END) / (COUNT_MS + 600.0)).coerceIn(0.0, 1.0)
-            sprite("fx-pill", "v3_glow", px - 70, py - 58, 140.0, 140.0, 1, GOLD, 0.7 * (1 - k))
-            text("fx-plus", px - 10, 86.0 - 10 * k, 120.0, "+${fx.to - fx.from}", "v3num", 19.0, "#E8C878", 30)
+        val landed = t >= FLY_END
+        // The slot outline turns gold as the reward leaves; the pill outline as it arrives.
+        if (tab == 0 && t < 450) border("fx-slot", sx - 3, sy - 3, 54.0, 54.0, 8.0, GOLD, 1.0, 30, 3.0)
+        if (landed && t < FLY_END + COUNT_MS + 300) border("fx-pill", pillX, 34.0, pillW, 44.0, 22.0, GOLD, 1.0, 4, 2.0)
+        if (landed) text("fx-plus", pillX, 84.0, pillW, "+${fx.to - fx.from}", "v3num", 19.0, "#E8C878", 30, "center")
+        for (i in 0 until 5) {
+            val k = (t - 150 - i * 70) / 650.0
+            if (k !in 0.0..1.0) continue
+            val (x, y) = arc(k, 150.0 + i * 12, (i - 2) * 26.0)
+            val size = 28 - 8 * k
+            sprite("fx-c$i", icon, x, y, size, size, 31)
         }
     }
 
@@ -582,7 +585,6 @@ internal class GrimoireFlow(
         private const val SIDE_X = 1432.0
         private const val SIDE_W = 432.0
         private const val R = 40.0
-        private const val FLARE_MS = 300L
         private const val FLY_END = 900L
         private const val COUNT_MS = 600L
         private const val PANEL = "#141518"

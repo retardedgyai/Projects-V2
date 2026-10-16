@@ -45,9 +45,9 @@ class GrimoireSceneGoldenTest {
         val SCRIPT = listOf("node:n4", "claim", "node:n5", "achieve", "node:n6", "achieve", "node:n7", "pin", "hover:n-n9-hit",
             "node:n8", "node:n11", "node:n12", "node:n1", "tab:2", "tab:0")
         val GOLDEN = listOf(
-            "3e7641b14a52236e", "249aca7bed73b2ef", "5872c33cb0f5d747", "57c4ab1d3f84ca5f",
-            "0a3677b87677733e", "45e994d866718238", "3706ffb0854ce03a", "d730b3101093e4f8",
-            "115b474e46fa9d69", "5d68ff5c031a8ed3", "ee7b59bad298302b", "9a2ed3809421f67d",
-            "f24f604bdb67a255", "9df3af06b8b27a16", "292632d2de421e18", "02f16fca19152e83")
+            "2505e242b0e28f67", "6790a5f05711d314", "a9afd200ee9a8c85", "843fd10b3ff8105e",
+            "bf4dd2b3dbd3625c", "1663e15e64d9a52a", "fafb11a99a023e7f", "398e39fddd20e79c",
+            "a550acbad9f7e0d9", "fcedbf8fea9b2fc3", "a6bd8594a80094b8", "743b3a5f6530a8a8",
+            "00c5315ba6b52a68", "1625e380d4bd8be1", "41bec0b0c13e1543", "cb917eef2badff43")
     }
 }
