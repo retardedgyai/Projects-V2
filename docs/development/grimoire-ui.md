@@ -10,7 +10,7 @@ Open it in the harbor with `/grimoire`. It needs the ProjectS UI pack.
 
 It follows the forge and the map: a header with the title, the branch tabs in the middle and the
 wallet pills (ink, silver) on the right, rounded panels, M PLUS 2 text and the key hints bottom right. The magic is
-in the colour: a night sky with soft cyan clouds, ring medallions for entries (gold done, cyan workable
+in the colour: a starry night sky, ring medallions for entries (gold done, cyan workable
 and breathing, violet side entries, grey locked, `?` not visible yet), a red `!` for an unclaimed reward
 and a cyan dot for the pinned entry. The right panel shows the selected entry: illustration, text,
 goals, unlocks, reward, and the claim or pin button. Branch tabs show their sealed state.
@@ -57,3 +57,7 @@ The test pins one hash per scene of a fixed click script; after a deliberate vis
 
 When you add text to `GrimoireFlow.kt`, rerun the two font commands; `GrimoireFlowTest` fails on any
 missing glyph.
+
+In the client the display's fills and sprites are not drawn back to front, so anything translucent can be
+drawn before what is behind it and show the world's sky. Fills are therefore pre-blended over the colour
+under them and drawn opaque (`GrimoireFlow.solid`); glow sprites are kept to places over an opaque fill.

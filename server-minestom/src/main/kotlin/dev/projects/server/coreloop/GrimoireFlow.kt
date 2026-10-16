@@ -21,8 +21,8 @@ import kotlin.math.roundToLong
 /**
  * 魔術書: the magic path's quest book (FTB Quests / Thaumonomicon role), on the camera display like the
  * forge and the 開拓大陸 map. It shares their grammar — header with title, tabs and wallet pills,
- * rounded panels, M PLUS 2 text, key hints — and gets its magic from colour: a night sky with soft
- * cyan clouds, glowing ring medallions for entries, gold for done and cyan for what can be worked on.
+ * rounded panels, M PLUS 2 text, key hints — and gets its magic from colour: a starry night sky,
+ * glowing ring medallions for entries, gold for done and cyan for what can be worked on.
  * Pixel art is kept to item icons and illustrations, as in the forge.
  *
  * The book's content is [GrimoireBook]; the player's progress is [GrimoireProgress], which outlives the flow.
@@ -224,9 +224,11 @@ internal class GrimoireFlow(
         return UiScene(800.0, 480.0, nodes.toList())
     }
 
-    /** Night sky: soft cyan and indigo clouds (the forge's glow sprite, tinted) and a fixed scatter of stars. */
+    /**
+     * Night sky: a fixed scatter of stars. (Soft glow clouds behind the panels were dropped: in the client a
+     * translucent sprite could be drawn before the backdrop and punch a pale hole of world sky through it.)
+     */
     private fun sky(now: Long) {
-        for ((i, c) in CLOUDS.withIndex()) sprite("cloud$i", "v3_glow", c.x - c.s / 2, c.y - c.s / 2, c.s, c.s, -7, c.color, c.a)
         for ((i, s) in STARS.withIndex()) {
             val twinkle = ((now / 600 + i) % 7 == 0L)
             // Stars over the map sit on its (opaque) fill, so the map keeps its night sky.
@@ -339,7 +341,7 @@ internal class GrimoireFlow(
         // Every visible entry is named, as in the panel; locked names are dim. Only `?` entries stay unnamed.
         if (st != State.HIDDEN) {
             val label = e.title.removePrefix("寄り道：")
-            val color = when (st) { State.DONE -> "#C9C3B8"; State.LOCKED, State.GOAL -> "#6F6B65"; else -> "#ECE6DC" }
+            val color = when (st) { State.DONE -> "#C9C3B8"; State.LOCKED, State.GOAL -> "#8A867E"; else -> "#ECE6DC" }
             text("n-${e.id}-l", cx - 90, cy + R + 12, 180.0, label, if (sel) "v3b" else "v3m", if (sel) 16.0 else 15.0, color, 10, "center", shadow = true)
         }
         if (canClaim(e)) {
@@ -569,8 +571,6 @@ internal class GrimoireFlow(
         return lines
     }
 
-    private data class Cloud(val x: Double, val y: Double, val s: Double, val color: String, val a: Double)
-
     companion object {
         private const val SCALE = 800.0 / 1920.0
         private const val TOP = (480.0 - 1080.0 * SCALE) / 2
@@ -590,10 +590,6 @@ internal class GrimoireFlow(
         private const val GOLD = "#ffe8c878"
         private const val CYAN = "#ff7fe3f0"
         private const val VIOLET = "#ffb49ae8"
-        private val CLOUDS = listOf(
-            Cloud(520.0, 560.0, 900.0, "#ff23497a", 0.55), Cloud(980.0, 420.0, 760.0, "#ff2f7a9a", 0.32),
-            Cloud(760.0, 760.0, 620.0, "#ff1b2e62", 0.6), Cloud(1260.0, 640.0, 700.0, "#ff2a2f6e", 0.45),
-            Cloud(300.0, 300.0, 520.0, "#ff1a2a5a", 0.5), Cloud(1600.0, 300.0, 600.0, "#ff1b2e62", 0.35))
         private val STARS: List<Triple<Double, Double, Double>> = run {
             val rnd = java.util.Random(7)
             List(110) { Triple(rnd.nextDouble() * 1920, 100 + rnd.nextDouble() * 940, if (rnd.nextInt(6) == 0) 4.0 else 2.0) }
