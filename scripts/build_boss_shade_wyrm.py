@@ -538,8 +538,9 @@ def fan_painter(poly, half, inner_side, seed):
 # ground with its claws, and a tall fan of fur rises from the carpal, up and back, about twice the body's
 # height. Offsets are for the left side, in px, from the shoulder joint (elbow, carpal) and from the carpal
 # (finger tips), Creator-confirmed reading of Gore Magala in frenzy (2026-10-16).
-FAN_WING = dict(elbow=(26, 12, -6), carpal=(14, -70, 26),
-                tips=((18, 142, 4), (56, 150, -14), (92, 132, -36), (108, 92, -58), (88, 46, -76)))
+FAN_WING = dict(elbow=(18, 6, -4), carpal=(8, -50, 22),
+                tips=((8, 140, -2), (46, 148, -18), (82, 130, -38), (98, 92, -58), (80, 50, -76)),
+                hip=(10, -22, -64))   # where the rearmost membrane meets the flank, from the shoulder
 
 
 # --- fitting the reference's mesh parts with oriented boxes -----------------------------------------------
@@ -733,8 +734,8 @@ def build():
                 p0 = a + d * i / n; p1 = a + d * (i + 1) / n
                 w = w0 + (w1 - w0) * (i + .5) / n
                 oriented(f"{nm}_{i}", name, (p0 + p1) / 2, [w / 2, w / 2, ln / n / 2 + .3], _no_roll(np, d / ln), box_painter(mat, i))
-        bar(f"{name}_humerus", S0, E, 8, 7, "plate")
-        bar(f"{name}_radius", E, K + np.array([0, 4, 0]), 7, 5, "hide", 3)
+        bar(f"{name}_humerus", S0, E, 11, 10, "plate")
+        bar(f"{name}_radius", E, K + np.array([0, 4, 0]), 10, 7, "hide", 3)
         oriented(f"{name}_carpal", name, K + np.array([0, 3, 0]), [3.5, 3.5, 4], np.eye(3), box_painter("plate", 3))
         for k, d in enumerate((np.array([0, -.25, 1.0]), np.array([.5 * sign, -.25, .9]), np.array([-.4 * sign, -.25, .9]))):
             d = d / np.linalg.norm(d)
@@ -747,6 +748,7 @@ def build():
         for a, b in zip(tips, tips[1:]):
             fine += [a, a + (b - a) * .5]
         fine.append(tips[-1])
+        hip = S0 + np.array(spec["hip"]) * M3
 
         def turn(v, ax, ang):
             ax = ax / np.linalg.norm(ax); c, s_ = math.cos(ang), math.sin(ang)
@@ -772,6 +774,26 @@ def build():
                 inner = "west" if n[0] > 0 else "east"
                 oriented(f"{name}_fan{k}_{layer}", name, cen, half, np.column_stack([n, yy, zz]),
                          fan_painter(lp, half, inner, 17 * k + 5 * layer + (sign > 0)))
+        # Fill: the membrane also runs along the arm (elbow and shoulder) and back to the flank, so there is
+        # no gap between the fan, the arm and the body.
+        fills = [(E, [E, S0 + np.array([0, 10, -6]) * M3 + np.array([0, 0, 0]), fine[0]]),
+                 (K, [K, E, fine[0]]),
+                 (E, [E, hip, S0])]
+        for k, (root, pts) in enumerate(fills):
+            for layer, push in enumerate((0.0, 1.2)):
+                n = np.cross(pts[1] - pts[0], pts[2] - pts[0]); n /= np.linalg.norm(n)
+                if n[0] * sign < 0:
+                    n = -n
+                q = [v + n * push for v in pts]
+                zz = (q[2] - q[1]) / np.linalg.norm(q[2] - q[1]); yy = np.cross(zz, n)
+                cen0 = sum(q) / 3
+                ly = [(v - cen0) @ yy for v in q]; lz = [(v - cen0) @ zz for v in q]
+                cen = cen0 + yy * (max(ly) + min(ly)) / 2 + zz * (max(lz) + min(lz)) / 2
+                half = [.05, (max(ly) - min(ly)) / 2 + .2, (max(lz) - min(lz)) / 2 + .2]
+                lp = [[float((v - cen) @ yy), float((v - cen) @ zz)] for v in q]
+                inner = "west" if n[0] > 0 else "east"
+                oriented(f"{name}_fill{k}_{layer}", name, cen, half, np.column_stack([n, yy, zz]),
+                         fan_painter(lp, half, inner, 91 * k + layer + (sign > 0)))
         order.append((name, "body"))
         pivots[name] = [float(v) for v in S0]
 
