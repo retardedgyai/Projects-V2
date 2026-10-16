@@ -26,8 +26,9 @@ class GrimoireFlowTest {
 
     @Test fun `every text uses a font page that has its glyphs`() {
         val f = flow()
-        for (action in listOf("node:n1", "node:n4", "node:n11", "node:n12", "tab:1", "tab:6", "tab:0", "node:n5", "achieve", "node:n8")) {
-            f.action(action)
+        for (action in listOf("node:n1", "node:n4", "claim", "node:n11", "node:n12", "hover:n-n9-hit", "hover:n-n11-hit", "hover:n-n5-hit",
+                "tab:1", "tab:6", "tab:0", "node:n5", "achieve", "node:n8", "node:n9")) {
+            if (action.startsWith("hover:")) f.hover(action.removePrefix("hover:")) else f.action(action)
             for (node in f.scene().nodes.filter { it.text.isNotEmpty() }) {
                 val page = assertNotNull(node.style["font-family"]).substringAfter(':')
                 assertTrue(Polish05FontMetrics.has(page), "missing page $page")
@@ -74,6 +75,50 @@ class GrimoireFlowTest {
         start.action("node:n1")
         assertTrue(start.scene().nodes.any { it.action == "achieve" })
         start.action("node:n2"); assertFalse(start.action("achieve"))
+    }
+
+    @Test fun `a claimed reward lands in the wallet`() {
+        var now = 0L
+        val progress = GrimoireSample.midway()
+        val f = GrimoireFlow(art, progress, { now }) {}
+        fun value(id: String) = f.scene().nodes.first { it.id == id }.text
+        f.action("node:n4"); assertTrue(f.action("claim"))
+        assertEquals(12_500, progress.silver, "the server-side wallet changes at once")
+        assertEquals("12,480", value("p-silver-v"), "the pill waits for the icon to land")
+        assertTrue(f.scene().nodes.any { it.id == "fx-flare" })
+        now = 600; assertTrue(f.scene().nodes.any { it.id == "fx-icon" })
+        now = 1200; val mid = value("p-silver-v"); assertTrue(mid != "12,480" && mid != "12,500", mid)
+        now = 1600; assertEquals("12,500", value("p-silver-v"))
+        now = 5000; assertTrue(f.scene().nodes.none { it.id.startsWith("fx-") })
+        // Ink goes to its aspect; the pill shows the total.
+        f.action("node:n5"); f.action("achieve"); assertTrue(f.action("claim"))
+        assertEquals(18, progress.ink["aqua"]); now = 9000; assertEquals("40", value("p-ink-v"))
+    }
+
+    @Test fun `hover tells what an entry is and why it is locked`() {
+        val f = flow()
+        f.hover("n-n9-hit")
+        val tip = f.scene().nodes.filter { it.id.startsWith("tip-") }.map { it.text }
+        assertTrue("杖" in tip && "未解放" in tip && "「相を溜める」を終えると開く" in tip, tip.toString())
+        f.hover("n-n11-hit")
+        assertTrue(f.scene().nodes.any { it.id == "tip-t" && it.text == "まだ見えない" })
+        assertTrue(f.scene().nodes.none { it.id == "n-n11-l" }, "? entries stay unnamed on the map")
+        assertTrue(f.scene().nodes.any { it.id == "n-n9-l" }, "locked entries are named, as in the panel")
+        f.action("node:n9")
+        assertEquals("「相を溜める」を終えると開く", f.scene().nodes.first { it.id == "e-lock-t" }.text)
+    }
+
+    @Test fun `counted goals show a number and a bar, the count leaves out side entries`() {
+        val f = flow()
+        f.action("node:n8")
+        val nodes = f.scene().nodes
+        assertEquals("7 / 12", nodes.first { it.id == "e-g0-n" }.text)
+        assertEquals("相を12種類観察する", nodes.first { it.id == "e-g0" }.text)
+        assertTrue(nodes.any { it.id == "e-g0-fill-c" })
+        assertEquals("4 / 11", nodes.first { it.id == "m-count" }.text)
+        assertEquals(listOf("序章", "1章", "2章", "3章", "終章"), GrimoireBook.CHAPTERS.map { it.first })
+        val icons = GrimoireBook.ENTRIES.groupBy { it.icon }.filterValues { it.size > 1 }
+        assertTrue(icons.isEmpty(), "each entry has its own icon: $icons")
     }
 
     @Test fun `fills sit behind the glyphs they belong to`() {

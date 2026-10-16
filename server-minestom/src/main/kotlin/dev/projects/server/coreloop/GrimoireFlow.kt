@@ -15,6 +15,8 @@ import dev.projects.server.coreloop.GrimoireBook.BRANCH_LINES
 import dev.projects.server.coreloop.GrimoireBook.CHAPTERS
 import dev.projects.server.coreloop.GrimoireBook.ENTRIES
 import dev.projects.server.coreloop.GrimoireBook.Entry
+import dev.projects.server.coreloop.GrimoireBook.Reward
+import kotlin.math.roundToLong
 
 /**
  * 魔術書: the magic path's quest book (FTB Quests / Thaumonomicon role), on the camera display like the
@@ -56,6 +58,10 @@ internal class GrimoireFlow(
     private var fresh: String? = null
     private var freshAt = 0L
     private var selectedAt = clock()
+    /** A claimed reward on its way to the wallet: the slot glows, the icon flies to its pill, the number counts up. */
+    private class ClaimFx(val reward: Reward, val from: Long, val to: Long, val at: Long)
+    private var claimFx: ClaimFx? = null
+    private var rewardSlot = 0.0 to 0.0
 
     private fun state(e: Entry): State {
         val done = e.id in progress.done
@@ -72,6 +78,16 @@ internal class GrimoireFlow(
     }
     private fun canClaim(e: Entry) = state(e) == State.DONE && e.reward != null && e.id !in progress.claimed
     private fun workable(s: State) = s == State.OPEN || s == State.SIDE || s == State.GOAL_OPEN
+    private fun wallet(kind: Reward.Kind) = when (kind) { Reward.Kind.SILVER -> progress.silver; Reward.Kind.INK -> progress.inkTotal.toLong() }
+    /** The wallet as drawn: a claimed amount counts up once its icon has landed. */
+    private fun shown(kind: Reward.Kind, now: Long): Long {
+        val fx = claimFx?.takeIf { it.reward.kind == kind } ?: return wallet(kind)
+        val t = ((now - fx.at - FLY_END) / COUNT_MS.toDouble()).coerceIn(0.0, 1.0)
+        return fx.from + ((fx.to - fx.from) * t).roundToLong()
+    }
+    /** Why a locked entry is locked: the unfinished entries before it. */
+    private fun lockReason(e: Entry): String = e.parents.filter { it !in progress.done }.map(GrimoireBook::entry)
+        .joinToString("」と「", "「", "」を終えると開く") { if (state(it) == State.HIDDEN) "?" else it.title.removePrefix("寄り道：") }
 
     override fun hover(id: String?) {
         hovered = id?.takeIf { it.startsWith("n-") && it.endsWith("-hit") }?.removePrefix("n-")?.removeSuffix("-hit")
@@ -92,7 +108,14 @@ internal class GrimoireFlow(
             action == "claim" -> {
                 val e = GrimoireBook.entry(selected)
                 if (!canClaim(e)) return false
+                val r = e.reward!!
+                val from = wallet(r.kind)
                 progress.claimed += e.id
+                when (r.kind) {
+                    Reward.Kind.SILVER -> progress.silver += r.amount
+                    Reward.Kind.INK -> progress.ink.merge(requireNotNull(r.aspect), r.amount, Int::plus)
+                }
+                claimFx = ClaimFx(r, from, wallet(r.kind), clock())
             }
             action == "pin" -> {
                 if (!workable(state(GrimoireBook.entry(selected)))) return false
@@ -170,12 +193,13 @@ internal class GrimoireFlow(
         val now = clock()
         rect("backdrop", -400.0, -200.0, 2720.0, 1480.0, "#ff090b14", -8)
         sky(now)
-        header()
+        header(now)
         panel("map", MAP_X, MAP_Y, MAP_W, MAP_H, 18.0, 1, "#0c1020", 0.55)
         if (tab == 0) trunkMap(now) else sealedBranch()
         panel("side", SIDE_X, MAP_Y, SIDE_W, MAP_H, 18.0, 1)
         if (tab == 0) entryPanel(GrimoireBook.entry(selected), now) else branchPanel()
         footer()
+        claimEffect(now)
         return UiScene(800.0, 480.0, nodes.toList())
     }
 
@@ -188,21 +212,22 @@ internal class GrimoireFlow(
         }
     }
 
-    private fun header() {
+    private fun header(now: Long) {
         // Title block, as the forge's 鍛冶師の仕事場.
         round("h-slot", 56.0, 30.0, 52.0, 52.0, 6.0, "#0D0E10", 1.0, 2)
         sprite("h-slot-i", "ic_book", 66.0, 40.0, 32.0, 32.0, 8)
         text("h-title", 124.0, 30.0, 300.0, "魔術書", "v3b", 24.0, "#ECE6DC", 8)
         text("h-sub", 124.0, 64.0, 300.0, "帰還港 · 研究室", "v3r", 13.0, "#A29E97", 8)
-        // Branch tabs in the middle, like 強化 / 精錬 / 製作.
-        var x = 960 - BRANCHES.sumOf { width(it.first, "v3b", 20.0) + 36 } / 2
-        BRANCHES.forEachIndexed { i, (name, _) ->
+        // Branch tabs in the middle, like 強化 / 精錬 / 製作, each with its branch icon; sealed branches are grey.
+        var x = 920 - BRANCHES.sumOf { width(it.first, "v3b", 20.0) + 28 + 30 } / 2
+        BRANCHES.forEachIndexed { i, (name, icon) ->
             val on = i == tab
-            val w = width(name, "v3b", 20.0)
-            text("tab$i", x, 44.0, w, name, if (on) "v3b" else "v3m", if (on) 20.0 else 18.0, if (on) "#ECE6DC" else if (i == 0) "#A29E97" else "#6F6B65", 8)
+            val w = 28 + width(name, "v3b", 20.0)
+            sprite("tab$i-i", icon, x, 48.0, 22.0, 22.0, 8, if (i == 0) null else "#ff8a8a96", if (on || i == 0) 1.0 else 0.6)
+            text("tab$i", x + 28, 44.0, w - 28, name, if (on) "v3b" else "v3m", if (on) 20.0 else 18.0, if (on) "#ECE6DC" else if (i == 0) "#A29E97" else "#6F6B65", 8)
             if (on) rect("tab$i-u", x, 82.0, w, 3.0, CYAN, 8)
             rect("tab$i-hit", x - 10, 34.0, w + 20, 56.0, "#00000000", 9, "tab:$i", "#14ffffff")
-            x += w + 36
+            x += w + 30
         }
         // Wallet pills on the right.
         fun pill(id: String, x: Double, w: Double) { round(id, x, 34.0, w, 44.0, 22.0, "#101114", 0.86, 2); border("$id-l", x, 34.0, w, 44.0, 22.0, "#ffffff", 0.09, 3) }
@@ -215,21 +240,23 @@ internal class GrimoireFlow(
         pill("p-ink", 1552.0, 140.0)
         sprite("p-ink-i", "i16_ink", 1570.0, 44.0, 24.0, 24.0, 8)
         text("p-ink-k", 1600.0, 47.0, 50.0, "インク", "v3r", 13.0, "#A29E97", 8)
-        text("p-ink-v", 1654.0, 44.0, 40.0, "${progress.inkTotal}", "v3num", 19.0, "#ECE6DC", 8)
+        text("p-ink-v", 1654.0, 44.0, 40.0, "${shown(Reward.Kind.INK, now)}", "v3num", 19.0, "#ECE6DC", 8)
         pill("p-silver", 1704.0, 160.0)
         sprite("p-silver-i", "i16_coin", 1722.0, 44.0, 24.0, 24.0, 8)
         text("p-silver-k", 1752.0, 47.0, 40.0, "銀貨", "v3r", 13.0, "#A29E97", 8)
-        text("p-silver-v", 1792.0, 44.0, 70.0, String.format(Locale.US, "%,d", progress.silver), "v3num", 19.0, "#ECE6DC", 8)
+        text("p-silver-v", 1792.0, 44.0, 70.0, String.format(Locale.US, "%,d", shown(Reward.Kind.SILVER, now)), "v3num", 19.0, "#ECE6DC", 8)
     }
 
     private fun nodeX(e: Entry) = MAP_X + 96 + e.col * 166.0
-    private fun nodeY(e: Entry) = MAP_Y + 96 + e.row * 176.0
+    private fun nodeY(e: Entry) = MAP_Y + 40 + e.row * 170.0
 
     private fun trunkMap(now: Long) {
-        val done = ENTRIES.count { state(it) == State.DONE }
+        // The count is the trunk only; side entries are optional.
+        val trunk = ENTRIES.filter { !it.side }
+        val done = trunk.count { state(it) == State.DONE }
         val claims = ENTRIES.count(::canClaim)
         text("m-title", MAP_X + 32, MAP_Y + 24, 200.0, "幹 · 基礎魔術", "v3b", 20.0, "#ECE6DC", 8)
-        text("m-count", MAP_X + 32 + width("幹 · 基礎魔術", "v3b", 20.0) + 16, MAP_Y + 26, 120.0, "$done / ${ENTRIES.size}", "v3num", 19.0, "#A29E97", 8)
+        text("m-count", MAP_X + 32 + width("幹 · 基礎魔術", "v3b", 20.0) + 16, MAP_Y + 26, 120.0, "$done / ${trunk.size}", "v3num", 19.0, "#A29E97", 8)
         if (claims > 0) {
             val label = "受け取れる報酬 $claims"
             val w = width(label, "v3m", 14.0) + 36
@@ -262,6 +289,7 @@ internal class GrimoireFlow(
             }
         }
         for (e in ENTRIES) medallion(e, now)
+        hovered?.takeIf { it != selected }?.let { tooltip(GrimoireBook.entry(it)) }
         legend()
     }
 
@@ -290,10 +318,11 @@ internal class GrimoireFlow(
             val s = 48 * grow
             sprite("n-${e.id}-i", e.icon, cx - s / 2, cy - s / 2, s, s, 10, if (st == State.LOCKED || st == State.GOAL) "#ff8a8a96" else null)
         } else text("n-${e.id}-q", cx - 30, cy - 15, 60.0, "?", "v3b", 24.0, "#5E6A8A", 10, "center")
-        if (st != State.LOCKED && st != State.HIDDEN) {
+        // Every visible entry is named, as in the panel; locked names are dim. Only `?` entries stay unnamed.
+        if (st != State.HIDDEN) {
             val label = e.title.removePrefix("寄り道：")
-            text("n-${e.id}-l", cx - 90, cy + R + 12, 180.0, label, if (sel) "v3b" else "v3m", if (sel) 16.0 else 15.0,
-                if (st == State.DONE) "#C9C3B8" else "#ECE6DC", 10, "center", shadow = true)
+            val color = when (st) { State.DONE -> "#C9C3B8"; State.LOCKED, State.GOAL -> "#6F6B65"; else -> "#ECE6DC" }
+            text("n-${e.id}-l", cx - 90, cy + R + 12, 180.0, label, if (sel) "v3b" else "v3m", if (sel) 16.0 else 15.0, color, 10, "center", shadow = true)
         }
         if (canClaim(e)) {
             round("n-${e.id}-c", cx + R - 18, cy - R - 4, 24.0, 24.0, 12.0, "#C2554A", 1.0, 6)
@@ -306,13 +335,43 @@ internal class GrimoireFlow(
         rect("n-${e.id}-hit", cx - R - 6, cy - R - 6, R * 2 + 12, R * 2 + 12, "#00000000", 12, "node:${e.id}", "#00000000")
     }
 
+    /** Name, state and what is missing for the medallion under the pointer. */
+    private fun tooltip(e: Entry) {
+        val st = state(e)
+        val (label, color) = LABEL.getValue(st)
+        val title = if (st == State.HIDDEN) "まだ見えない" else e.title
+        val hint = when {
+            st == State.HIDDEN -> "前の項目を終えると分かる"
+            st == State.LOCKED || st == State.GOAL -> lockReason(e)
+            canClaim(e) -> "報酬を受け取れる"
+            workable(st) -> e.goals.firstOrNull()?.text
+            else -> null
+        }
+        val w = maxOf(width(title, "v3b", 17.0), width(label, "v3m", 13.0), hint?.let { width(it, "v3r", 14.0) } ?: 0.0) + 32
+        val h = if (hint != null) 92.0 else 66.0
+        val cx = nodeX(e); val cy = nodeY(e)
+        val x = if (cx + R + 16 + w > MAP_X + MAP_W - 12) cx - R - 16 - w else cx + R + 16
+        val y = (cy - h / 2).coerceIn(MAP_Y + 12, MAP_Y + MAP_H - h - 12)
+        round("tip", x, y, w, h, 10.0, "#0D0E10", 0.96, 20)
+        border("tip-l", x, y, w, h, 10.0, "#" + color.takeLast(6), 0.5, 21)
+        text("tip-t", x + 16, y + 12, w, title, "v3b", 17.0, "#ECE6DC", 26)
+        text("tip-s", x + 16, y + 40, w, label, "v3m", 13.0, color, 26)
+        if (hint != null) text("tip-h", x + 16, y + 62, w, hint, "v3r", 14.0, "#A29E97", 26)
+    }
+
     private fun legend() {
         var x = MAP_X + 32
-        for ((label, color) in listOf("完了" to GOLD, "進められる" to CYAN, "寄り道" to VIOLET, "未解放" to "#ff4a5068")) {
-            round("lg-$label", x, MAP_Y + MAP_H - 38, 12.0, 12.0, 6.0, color, 1.0, 3)
-            text("lg-$label-t", x + 20, MAP_Y + MAP_H - 44, 120.0, label, "v3r", 14.0, "#A29E97", 8)
-            x += 20 + width(label, "v3r", 14.0) + 26
+        val y = MAP_Y + MAP_H - 38
+        fun label(id: String, value: String) { text("lg-$id-t", x + 20, y - 6, 120.0, value, "v3r", 14.0, "#A29E97", 8); x += 20 + width(value, "v3r", 14.0) + 26 }
+        for ((name, color) in listOf("完了" to GOLD, "進められる" to CYAN, "寄り道" to VIOLET, "幹のゴール" to "#ffa0503e", "未解放" to "#ff4a5068")) {
+            round("lg-$name", x, y, 12.0, 12.0, 6.0, color, 1.0, 3)
+            label(name, name)
         }
+        text("lg-q", x - 2, y - 7, 16.0, "?", "v3b", 15.0, "#5E6A8A", 8, "center"); label("q", "まだ見えない")
+        round("lg-c", x - 2, y - 2, 16.0, 16.0, 8.0, "#C2554A", 1.0, 3)
+        text("lg-c-x", x - 2, y - 2, 16.0, "!", "v3b", 11.0, "#FFF1DE", 8, "center"); label("c", "報酬あり")
+        round("lg-p", x - 2, y - 2, 16.0, 16.0, 8.0, "#14506e", 1.0, 3)
+        round("lg-p-d", x + 2, y + 2, 8.0, 8.0, 4.0, "#7FE3F0", 1.0, 4); label("p", "ピン留め")
     }
 
     private fun sealedBranch() {
@@ -362,11 +421,19 @@ internal class GrimoireFlow(
         }
         if (e.goals.isNotEmpty()) {
             section("e-g", "目標")
+            // One check per goal; counted goals get their number on the right and a bar under the text.
             for ((i, g) in e.goals.withIndex()) {
-                val ok = st == State.DONE
-                val label = if (g.target > 1) "${g.text} ${progress.count(e.id, i)}/${g.target}" else g.text
+                val n = if (st == State.DONE) g.target else progress.count(e.id, i).coerceAtMost(g.target)
+                val ok = n >= g.target
                 sprite("e-g$i-b", if (ok) "i16_check" else "i16_box", x, y + 2, 20.0, 20.0, 8)
-                text("e-g$i", x + 30, y, w - 30, label, "v3r", 15.0, if (ok) "#8A867E" else "#ECE6DC", 8); y += 28
+                text("e-g$i", x + 30, y, w - 30, g.text, "v3r", 15.0, if (ok) "#8A867E" else "#ECE6DC", 8)
+                if (g.target > 1) {
+                    text("e-g$i-n", x + 30, y + 1, w - 30, "$n / ${g.target}", "v3num", 15.0, if (ok) "#8A867E" else "#7FE3F0", 8, "right")
+                    round("e-g$i-bar", x + 30, y + 26, w - 30, 4.0, 2.0, "#2A2C31", 1.0, 3)
+                    round("e-g$i-fill", x + 30, y + 26, (w - 30) * n / g.target, 4.0, 2.0, if (ok) GOLD else CYAN, 1.0, 4)
+                    y += 14
+                }
+                y += 28
             }
         }
         if (e.unlocks.isNotEmpty()) {
@@ -379,6 +446,7 @@ internal class GrimoireFlow(
         }
         if (e.reward != null) {
             section("e-r", "報酬")
+            rewardSlot = x to y
             round("e-r-slot", x, y, 48.0, 48.0, 6.0, "#0D0E10", 1.0, 3)
             border("e-r-slot-l", x, y, 48.0, 48.0, 6.0, "#ffffff", 0.08, 4)
             sprite("e-r-i", if (e.reward.kind == GrimoireBook.Reward.Kind.INK) "i16_ink" else "i16_coin", x + 8, y + 8, 32.0, 32.0, 8)
@@ -404,6 +472,40 @@ internal class GrimoireFlow(
                 rect("e-test", x, by + 74, w, 26.0, "#00000000", 3, "achieve", "#10ffffff")
                 text("e-test-t", x, by + 78, w, "試し：ワールドで達成させる", "v3r", 13.0, "#6F6B65", 8, "center")
             }
+            st == State.LOCKED || st == State.GOAL -> {
+                round("e-lock", x, by, w, 64.0, 10.0, "#101114", 0.6, 3)
+                border("e-lock-l", x, by, w, 64.0, 10.0, "#ffffff", 0.06, 4)
+                text("e-lock-t", x, by + 22, w, lockReason(e), "v3m", 16.0, "#8A867E", 8, "center")
+            }
+        }
+    }
+
+    /** The claim, in three beats: the reward slot flares, its icon arcs to the wallet pill, the number counts up. */
+    private fun claimEffect(now: Long) {
+        val fx = claimFx ?: return
+        val t = now - fx.at
+        if (t > FLY_END + COUNT_MS + 600) { claimFx = null; return }
+        val icon = if (fx.reward.kind == Reward.Kind.INK) "i16_ink" else "i16_coin"
+        val (sx, sy) = rewardSlot
+        val (px, py) = if (fx.reward.kind == Reward.Kind.INK) 1570.0 to 44.0 else 1722.0 to 44.0
+        if (t < FLARE_MS + 200 && tab == 0) {
+            val k = (t / FLARE_MS.toDouble()).coerceIn(0.0, 1.0)
+            val s = 80 + 120 * k
+            sprite("fx-flare", "v3_glow", sx + 24 - s / 2, sy + 24 - s / 2, s, s, 30, GOLD, 0.9 * (1 - k * 0.6))
+        }
+        if (t in FLARE_MS..FLY_END) {
+            val k = (t - FLARE_MS) / (FLY_END - FLARE_MS).toDouble()
+            val e = 1 - (1 - k) * (1 - k)
+            val x = sx + 8 + (px - sx - 8) * e
+            val y = sy + 8 + (py - sy - 8) * e - 160 * kotlin.math.sin(Math.PI * k)
+            val size = 32 - 8 * e
+            sprite("fx-trail", "v3_glow", x + size / 2 - 40, y + size / 2 - 40, 80.0, 80.0, 30, GOLD, 0.6)
+            sprite("fx-icon", icon, x, y, size, size, 31)
+        }
+        if (t >= FLY_END) {
+            val k = ((t - FLY_END) / (COUNT_MS + 600.0)).coerceIn(0.0, 1.0)
+            sprite("fx-pill", "v3_glow", px - 70, py - 58, 140.0, 140.0, 1, GOLD, 0.7 * (1 - k))
+            text("fx-plus", px - 10, 86.0 - 10 * k, 120.0, "+${fx.to - fx.from}", "v3num", 19.0, "#E8C878", 30)
         }
     }
 
@@ -441,7 +543,8 @@ internal class GrimoireFlow(
     private fun wrap(value: String, w: Double, family: String, size: Double): List<String> {
         val lines = mutableListOf<String>(); var line = StringBuilder()
         for (c in value) {
-            if (width(line.toString() + c, family, size) > w && line.isNotEmpty()) { lines += line.toString(); line = StringBuilder() }
+            // Closing punctuation never starts a line (kinsoku); it may hang past the edge instead.
+            if (width(line.toString() + c, family, size) > w && line.isNotEmpty() && c !in "、。」）") { lines += line.toString(); line = StringBuilder() }
             line.append(c)
         }
         if (line.isNotEmpty()) lines += line.toString()
@@ -461,6 +564,9 @@ internal class GrimoireFlow(
         private const val SIDE_X = 1432.0
         private const val SIDE_W = 432.0
         private const val R = 40.0
+        private const val FLARE_MS = 300L
+        private const val FLY_END = 900L
+        private const val COUNT_MS = 600L
         private const val PANEL = "#141518"
         private const val GOLD = "#ffe8c878"
         private const val CYAN = "#ff7fe3f0"

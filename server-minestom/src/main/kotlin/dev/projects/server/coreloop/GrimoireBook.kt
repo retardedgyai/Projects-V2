@@ -30,7 +30,6 @@ internal object GrimoireBook {
         "薬や食べ物。体に入れる魔術。",
         "領地の結界、天候、転移の網。世界そのものに手を出す。",
         "仕分けや自動化の装置。工房を工場のように組む。")
-    val CHAPTERS = listOf("序章" to 1.0, "一章" to 3.5, "二章" to 5.0, "三章" to 6.0, "終章" to 7.0)
 
     val ENTRIES = listOf(
         Entry("n1", 0, 2, "ic_book", "古い手帳", "序章 観測", "光る草に挟まっていた手帳。最初のページには一文だけ。「すべての物は、目に見えない性質（相）でできている」",
@@ -53,9 +52,13 @@ internal object GrimoireBook {
             listOf(Goal("杖を作る")), listOf("作れる" to "杖"), null, listOf("n7")),
         Entry("n10", 5, 3, "ic_motus", "管と弁", "2章 流れ", "相は、引っ張る力の強いほうへ流れる。",
             listOf(Goal("蒸留器から瓶へ管でつなぐ")), listOf("置ける" to "管、弁"), null, listOf("n7")),
-        Entry("n11", 6, 2, "ic_vacuos", "地脈", "3章 地脈", "足もとを流れる、見えない川がある。",
+        Entry("n11", 6, 2, "ic_terra", "地脈", "3章 地脈", "足もとを流れる、見えない川がある。",
             listOf(Goal("地脈の上に研究机を置く")), listOf("見える" to "地脈の流れ"), null, listOf("n9", "n10"), mystery = true),
         Entry("n12", 7, 2, "ic_scroll", "帰還の巻物", "終章 最初の儀式", "幹のゴール。遠征先から、魔術で帰ってくる。ここまで来ると専門の枝の封が解ける。",
             listOf(Goal("小さな祭壇で帰還の巻物を作る")), listOf("開く" to "専門の枝すべて"), null, listOf("n11"), goal = true),
     )
+
+    /** Map headings: each chapter's first word ("1章"), centred over its columns. */
+    val CHAPTERS = ENTRIES.groupBy { it.chapter.substringBefore(' ') }
+        .map { (name, es) -> name to (es.minOf { it.col } + es.maxOf { it.col }) / 2.0 }
 }
