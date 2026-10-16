@@ -84,6 +84,140 @@ def crown(cv, cy, accent):
     hud.gem(cv, C, tip - 5, (hud.rgba("000000"), hud.rgba(accent), hud.rgba("ffffff")), 1)
 
 
+MAT = {  # light, mid, dark
+    "steel": ("c4c5ce", "8d8e99", "5e5f6a"), "wood": ("c8945a", "8a5a2e", "5a3618"),
+    "leaf": ("9ce86a", "4cb040", "2a6e2a"), "ice": ("e0f6ff", "7ac8f0", "3a7ac0"),
+    "bronze": ("f0b060", "b07a2e", "6e4818"), "fire": ("fff0a0", "ff9a2a", "c8401a"),
+    "iron": ("7a7888", "46444f", "26242c"), "violet": ("d0a0ff", "9a5af0", "54289c"),
+    "gold": ("fff2b0", "f0c040", "a8781c"), "white": ("ffffff", "eee4c8", "c4b080"),
+}
+
+
+def paint(cv, fill):
+    """fill: {(x, y): (material, tone 0..2)}; traces the dark outline around it, then paints."""
+    edge = {(x + a, y + b) for (x, y) in fill for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1))} - set(fill)
+    for x, y in edge:
+        hud.px(cv, x, y, hud.D["out"])
+    for (x, y), (mat, tone) in fill.items():
+        hud.px(cv, x, y, hud.rgba(MAT[mat][tone]))
+
+
+def mirrored(fill_left):
+    out = dict(fill_left)
+    for (x, y), v in fill_left.items():
+        out[(2 * C - x, y)] = v
+    return out
+
+
+def wing_pixels(job, cy):
+    """Left wing for each class (mirrored by the caller). Roots start under the number plaque."""
+    f = {}
+    root = C - 10
+
+    def put(i, y, m, t):
+        f[(root - i, y)] = (m, t)
+
+    if job in ("warrior", "templar"):              # stacked blades; templar's top edge is gold
+        for dy, length in ((-3, 12), (0, 10), (3, 8)):
+            for i in range(length):
+                y = cy + dy - (i // 3 if dy < 0 else 0)
+                put(i, y, "gold" if job == "templar" else "steel", 0 if dy < 0 or job == "templar" else 1)
+                if i < length - 2:
+                    put(i, y + 1, "steel", 2 if job == "warrior" else 1)
+                if job == "templar" and i < length - 4:
+                    put(i, y + 2, "steel", 2)
+    elif job == "ranger":                          # a wooden bough with three broad leaves
+        for i in range(13):
+            put(i, cy + (i // 6), "wood", 1)
+            put(i, cy + 1 + (i // 6), "wood", 2)
+        # a solid leaf lying along the bough and tilted up: light upper half, darker lower half
+        leaf = [(1, 0, 1), (2, 0, 1), (3, 0, 1), (4, 0, 1), (2, -1, 0), (3, -1, 0), (4, -1, 0), (5, -1, 0),
+                (4, -2, 0), (5, -2, 0), (6, -2, 0), (0, 1, 1), (1, 1, 2), (2, 1, 2)]
+        for i0, up in ((0, True), (4, False), (8, True)):
+            base = cy - 1 if up else cy + 2 + (i0 // 6)
+            for dx, dy, tone in leaf:
+                put(i0 + dx, base + (dy if up else -dy), "leaf", tone if up else 2 - tone if tone else 1)
+    elif job == "mage":                            # three ice shards: straight lit top edge, thinning from below
+        for dy, length, rise in ((-4, 11, 2), (0, 9, 0), (4, 6, -1)):
+            for i in range(length):
+                th = 3 if i < length * .45 else 2 if i < length * .8 else 1
+                top = cy + dy - (rise * i) // max(1, length - 1)
+                for t in range(th):
+                    put(i, top + t, "ice", 0 if t == 0 else 1 if t == 1 else 2)
+    elif job == "assassin":                        # two thin black-iron sickle blades curling upward
+        for dy, length in ((-1, 13), (3, 9)):
+            for i in range(length):
+                y = cy + dy - (i * i) // 22
+                put(i, y, "violet" if i > length - 4 else "iron", 0)
+                if i < length - 3:
+                    put(i, y + 1, "iron", 2)
+    elif job == "healer":                          # four white-gold feathers fanning out
+        for k, (dy, length, droop) in enumerate(((-4, 11, -1), (-1, 12, 0), (2, 10, 1), (5, 7, 2))):
+            for i in range(length):
+                y = cy + dy + (droop * i) // 6
+                put(i, y, "white", 0)
+                if i < length - 1:
+                    put(i, y + 1, "white", 2 if k % 2 else 1)
+    return f
+
+
+def crown_pixels(job, cy, accent):
+    tip = cy - 14
+    f = {}
+
+    def put(x, y, m, t):
+        f[(x, y)] = (m, t)
+
+    gem = None
+    if job == "warrior":                           # three separate sword points on an iron band
+        for x, h in ((C - 5, 3), (C, 5), (C + 5, 3)):
+            for k in range(h):
+                y = tip - 1 - k
+                put(x, y, "steel", 0)
+                if k < h - 1:
+                    put(x + 1, y, "steel", 2)
+        for x in range(C - 6, C + 8):
+            put(x, tip, "steel", 1)
+        gem = (C + 1, tip - 1)
+    elif job == "ranger":                          # a forked twig with buds
+        for k in range(5):
+            put(C, tip - k, "wood", 1)
+            put(C - 1 - k // 2, tip - 1 - k, "wood", 0)
+            put(C + 1 + k // 2, tip - 1 - k, "wood", 2)
+        put(C - 3, tip - 6, "leaf", 0); put(C + 3, tip - 6, "leaf", 1); put(C, tip - 5, "leaf", 0)
+    elif job == "mage":                            # a bronze cradle holding a fire gem
+        for x in range(C - 4, C + 5):
+            put(x, tip, "bronze", 1)
+        for x, y in ((C - 4, tip - 1), (C - 4, tip - 2), (C + 4, tip - 1), (C + 4, tip - 2), (C - 3, tip - 3), (C + 3, tip - 3)):
+            put(x, y, "bronze", 0 if x < C else 2)
+        for x, y, t in ((C, tip - 1, 2), (C - 1, tip - 2, 1), (C, tip - 2, 1), (C + 1, tip - 2, 2), (C - 1, tip - 3, 0),
+                        (C, tip - 3, 0), (C + 1, tip - 3, 1), (C, tip - 4, 0), (C, tip - 5, 0)):
+            put(x, y, "fire", t)
+    elif job == "assassin":                        # two hooked horns
+        for side in (-1, 1):
+            for k, (dx, dy) in enumerate(((2, 0), (3, -1), (4, -2), (4, -3), (3, -4), (2, -5))):
+                put(C + side * dx, tip + dy, "iron", 0 if k < 3 else 1)
+        gem = (C, tip - 1)
+    elif job == "templar":                         # a gold cross
+        for y in range(tip - 6, tip + 1):
+            put(C, y, "gold", 0); put(C + 1, y, "gold", 2)
+        for x in range(C - 3, C + 5):
+            put(x, tip - 4, "gold", 1)
+    elif job == "healer":                          # a halo ring with a leaf
+        for x in range(C - 5, C + 6):
+            for y in (tip - 6, tip - 2):
+                put(x, y, "gold", 0 if y == tip - 6 else 1)
+        for y in (tip - 5, tip - 4, tip - 3):
+            put(C - 6, y, "gold", 0); put(C + 6, y, "gold", 2)
+        put(C, tip - 1, "leaf", 0); put(C + 1, tip, "leaf", 1)
+    return f, gem
+
+
+def class_deco(cv, cy, job, accent):
+    paint(cv, mirrored(wing_pixels(job, cy)))
+    return crown_pixels(job, cy, accent)
+
+
 def xp_rim(cv, cy, accent, r, frac):
     """The class-colour band of the diamond fills clockwise from the top as XP grows (deco 'xp')."""
     import math
@@ -127,7 +261,7 @@ def design_j(job="warrior", deco=None):
     edge = r + 1                                       # outline reaches C +- 14
     hud.step_plate(cv, (X0 - 1, py, C - 1, py + ph))       # plates run on under the diamond, so no
     hud.step_plate(cv, (C + 1, py, X0 + 183, py + ph))     # stepped corner shows at the joint
-    gx0, gx1 = X0 + 13, C - edge - (10 if "fins" in deco else 2)
+    gx0, gx1 = X0 + 13, C - edge - (10 if deco & {"fins", "classdeco"} else 2)
     hud.ramp_gauge(cv, gx0, gx1, py + 2, 9, hud.HP / hud.HP_MAX, hud.G["hp"], (34, 10, 14, 255),
                    trail=hud.HP_LOST / hud.HP_MAX)
     w = gx1 - gx0
@@ -140,7 +274,7 @@ def design_j(job="warrior", deco=None):
         hud.over(cv, (sxp, py + 2, sxp + 1, py + 11), (0, 0, 0, 150))
     cv.alpha_composite(hud.tex("gui/sprites/hud/heart/container"), (X0 + 2, py + 2))
     cv.alpha_composite(hud.tex("gui/sprites/hud/heart/full"), (X0 + 2, py + 2))
-    mx0, mx1 = C + edge + (10 if "fins" in deco else 2), X0 + 170
+    mx0, mx1 = C + edge + (10 if deco & {"fins", "classdeco"} else 2), X0 + 170
     hud.ramp_gauge(cv, mx0, mx1, py + 2, 9, hud.MP / hud.MP_MAX, hud.G["mp"], (10, 16, 36, 255))
     for j, row in enumerate(hud.MANA_ICON):
         for i, v in enumerate(row):
@@ -154,9 +288,17 @@ def design_j(job="warrior", deco=None):
     marks["mp"] = (place_centred(cv, f"{hud.MP} / {hud.MP_MAX}", (mx0 + mx1 - 1) / 2, gauge_mid),
                    (mx0, py + 2, mx1, py + 11))
     # level diamond, class colour on the inner rim, white level number
-    if "fins" in deco:
+    crown_fill = None
+    if "classdeco" in deco:
+        crown_fill, crown_gem = class_deco(cv, cy, job, ACCENT[job])
+    elif "fins" in deco:
         fins(cv, cy, -1); fins(cv, cy, 1)
     diamond(cv, C, cy, ACCENT[job], r)
+    if crown_fill is not None:
+        paint(cv, crown_fill)
+        if crown_gem:
+            hud.gem(cv, crown_gem[0], crown_gem[1], (hud.rgba("000000"), hud.rgba(ACCENT[job]), hud.rgba("ffffff")), 1)
+        hud.gem(cv, C, cy + 10, (hud.rgba("000000"), hud.rgba(ACCENT[job]), hud.rgba("ffffff")), 1)
     if "crown" in deco:
         crown(cv, cy, ACCENT[job])
         hud.gem(cv, C, cy + 10, (hud.rgba("000000"), hud.rgba(ACCENT[job]), hud.rgba("ffffff")), 1)
@@ -236,7 +378,7 @@ def main():
     crops = []
     jobs = ["warrior", "ranger", "mage", "assassin", "templar", "healer"]
     for job in jobs:
-        tag, deco = f"M-{job}", ("fins", "crown", "xp", "band", "gold")
+        tag, deco = f"N-{job}", ("classdeco", "xp", "band", "gold")
         print(tag)
         result, marks, geo = design_j(job=job, deco=deco)
         problems = review(marks, geo)
@@ -254,7 +396,7 @@ def main():
     sheet = Image.new("RGBA", (cw * 2 + 16, ch * 3 + 32), (20, 20, 20, 255))
     for k, c in enumerate(crops):
         sheet.paste(c, ((k % 2) * (cw + 16), (k // 2) * (ch + 16)))
-    sheet.save(hud.OUT / "M-six-classes.png")
+    sheet.save(hud.OUT / "N-class-deco.png")
 
 
 if __name__ == "__main__":
