@@ -237,7 +237,7 @@ class TextureSampler:
         return px[x, y]
 
 
-def facet_painter(sampler, tris3d, uvs, tex, R, c, half, glow=None):
+def facet_painter(sampler, tris3d, uvs, tex, R, c, half, glow=None, normal=None):
     """Paint a plate's two big faces from the reference texture, transparent outside the face outline.
     The plate's local X is the face normal; (y, z) span the face (see build: cube centred on c, rotated by R)."""
     ys, zs = half[1], half[2]
@@ -265,13 +265,22 @@ def facet_painter(sampler, tris3d, uvs, tex, R, c, half, glow=None):
         if side not in ("east", "west"):
             return (lambda x, y, w, h: (0, 0, 0, 0)), ("clear",)
         cache = {}
+        n = normal if side == "east" else [-v for v in normal] if normal else None
 
         def paint(x, y, w, h):
             key = (x, y)
             if key not in cache:
                 pz = (zs - (x + .5) / w * 2 * zs) if side == "east" else (-zs + (x + .5) / w * 2 * zs)
                 py = ys - (y + .5) / h * 2 * ys
-                cache[key] = colour(py, pz)
+                col = colour(py, pz)
+                if col[3] and not glow:
+                    # Facet edge: a pixel whose neighbour falls outside the face gets a dark rim.
+                    dy, dz = 2 * ys / h, 2 * zs / w
+                    if any(colour(py + a, pz + b)[3] == 0 for a, b in ((dy, 0), (-dy, 0), (0, dz), (0, -dz))):
+                        col = tuple(int(v * .72) for v in col[:3]) + (col[3],)
+                    if n:
+                        col = bake(col, n)
+                cache[key] = col
             return cache[key]
         return paint, ("facet", id(loc), side, w, h)
     return make
@@ -280,12 +289,103 @@ def facet_painter(sampler, tris3d, uvs, tex, R, c, half, glow=None):
 GLOW_PARTS = ("pit",)
 
 
+# --- re-pose the reference before it becomes plates: lower, shorter front legs, slimmer -----------------
+# Tuned against the Creator's in-game look (2026-10-16: "front legs too long, lower like Gore Magala, more slender").
+POSE = {
+    "drop": 14.0,            # px the body comes down
+    "pitch": 6.0,            # degrees the front tips down, about the hips
+    "hips": (0.0, 40.0, -40.0),
+    "slim": .84,             # body, neck, head, tail and wings: width (X) scale about the centre line
+    "legs": {               # chain, length scale per segment, limb thickness, foot shrink, knee hint
+        "leg_fl": (("leg_fl", "leg_fl_fore", "leg_fl_paw"), (.74, .80), .82, .9, (0.15, 0, -1.0)),
+        "leg_hl": (("leg_hl", "leg_hl_shin", "leg_hl_foot"), (.95, .95), .82, .9, (0.15, 0, 1.0)),
+    },
+    "foot_x": .9,
+}
+LIGHT = _unit([.35, .85, .55])
+
+
+def _np():
+    import numpy
+    return numpy
+
+
+def repose(ref):
+    """Returns (pivot per bone, transform per bone) for the left side; transforms map reference points."""
+    np = _np()
+    piv = {b["name"]: np.array(b["pivot"], float) for b in ref["bones"]}
+    a = math.radians(POSE["pitch"])
+    Rp = np.array([[1, 0, 0], [0, math.cos(a), -math.sin(a)], [0, math.sin(a), math.cos(a)]])  # front (+Z) goes down
+    H = np.array(POSE["hips"])
+    S = np.diag([POSE["slim"], 1, 1])
+
+    def body(v):
+        v = S @ np.asarray(v, float)
+        return Rp @ (v - H) + H + np.array([0, -POSE["drop"], 0])
+
+    def rot_between(u, w):
+        u = u / np.linalg.norm(u); w = w / np.linalg.norm(w)
+        c = float(u @ w); ax = np.cross(u, w); s = np.linalg.norm(ax)
+        if s < 1e-9:
+            return np.eye(3)
+        ax /= s; K = np.array([[0, -ax[2], ax[1]], [ax[2], 0, -ax[0]], [-ax[1], ax[0], 0]])
+        return np.eye(3) + s * K + (1 - c) * K @ K
+
+    xf = {}
+    leg_bones = set()
+    for chain, scales, thick, foot, hint in POSE["legs"].values():
+        b0, b1, b2 = chain
+        leg_bones.update(chain)
+        J0, J1, J2 = piv[b0], piv[b1], piv[b2]
+        N0 = body(J0)
+        L1 = np.linalg.norm(J1 - J0) * scales[0]; L2 = np.linalg.norm(J2 - J1) * scales[1]
+        F = np.array([J2[0] * POSE["foot_x"], J2[1], J2[2]])
+        d = F - N0; dist = np.linalg.norm(d)
+        if dist > (L1 + L2) * .98:
+            F = N0 + d / dist * (L1 + L2) * .98; dist = (L1 + L2) * .98
+        u = (F - N0) / dist
+        aa = (L1 ** 2 - L2 ** 2 + dist ** 2) / (2 * dist)
+        h = math.sqrt(max(0.0, L1 ** 2 - aa ** 2))
+        w = np.array(hint, float); w = w - (w @ u) * u; w /= np.linalg.norm(w)
+        K = N0 + aa * u + h * w
+
+        def seg(J, Jn, N, Nn, f):
+            axis = (Jn - J) / np.linalg.norm(Jn - J)
+            Sc = thick * np.eye(3) + (f - thick) * np.outer(axis, axis)
+            R = rot_between(Jn - J, Nn - N)
+            return lambda v, R=R, Sc=Sc, J=J, N=N: N + R @ (Sc @ (np.asarray(v, float) - J))
+        xf[b0] = seg(J0, J1, N0, K, scales[0])
+        xf[b1] = seg(J1, J2, K, F, scales[1])
+        xf[b2] = lambda v, J2=J2, F=F, foot=foot: F + foot * (np.asarray(v, float) - J2)
+        piv[b0], piv[b1], piv[b2] = N0, K, F
+    for name in list(piv):
+        if name not in leg_bones:
+            xf[name] = body
+            piv[name] = body(piv[name])
+    return {k: [float(x) for x in v] for k, v in piv.items()}, xf
+
+
+def bake(colour, n):
+    """Baked key light on each facet, so the form reads even under Minecraft's flat item shading."""
+    k = .56 + .55 * max(0.0, _dot(n, LIGHT)) + .12 * n[1]
+    k = max(.42, min(1.22, k))
+    return tuple(min(255, int(c * k)) for c in colour[:3]) + (colour[3],)
+
+
+
+
 def build():
     m = Model("shade_wyrm", size=2048)
     rig = Rig(m)
     p = painter
     ref = json.loads((REF / "facets.json").read_text(encoding="utf-8"))
     sampler = TextureSampler()
+    new_pivots, xf = repose(ref)
+    for b in ref["bones"]:
+        b["pivot"] = new_pivots[b["name"]]
+    for el in ref["elements"]:
+        for f in el["faces"]:
+            f["v"] = [[float(x) for x in xf[el["bone"]](q)] for q in f["v"]]
 
     def sided(name):
         return bool(name) and name.startswith(("leg_", "wing_", "crown_"))
@@ -351,7 +451,7 @@ def build():
             off = [(max(ly) + min(ly)) / 2, (max(lz) + min(lz)) / 2]
             c = [c[i] + y[i] * off[0] + z[i] * off[1] for i in range(3)]
             half = [THIN, max(.15, (max(ly) - min(ly)) / 2), max(.15, (max(lz) - min(lz)) / 2)]
-            paint = facet_painter(sampler, tris, tuv, f["tex"], R, c, half, glow)
+            paint = facet_painter(sampler, tris, tuv, f["tex"], R, c, half, glow, n)
             items = []
             m.cube(f"{el['name']}_{k}{suffix}", [c[0] - half[0], c[1] - half[1], c[2] - half[2]],
                    [c[0] + half[0], c[1] + half[1], c[2] + half[2]], items, paint,
@@ -364,16 +464,15 @@ def build():
             plates(el, -1, right(el["bone"]), "_r")
 
     # ---------- rage parts: horns (hidden until enraged) and the two feelers ----------
-    for sign, s in ((1, "l"), (-1, "r")):
-        kids["skull"].append(part(f"horn_{s}", "skull", [9, 80, 56], [-28, -12, 0], [
-            ("horn_base", [7.5, 78, 52], [11, 82, 60], p("bone", "bone")),
+    # Horns are authored on the reference head; the re-pose moves them with it.
+    hp = [float(v) for v in xf["skull"]([9, 80, 56])]
+    off = [hp[i] - (9, 80, 56)[i] for i in range(3)]
+    horn = [("horn_base", [7.5, 78, 52], [11, 82, 60], p("bone", "bone")),
             ("horn_mid", [8, 78.5, 59], [10.5, 81.5, 68], p("bone", "bone")),
-            ("horn_glow", [8.5, 79, 67], [10, 81, 74], p("glow", "glow")),
-        ], sign, "_" + s))
-        kids["skull"].append(part(f"antenna_{s}", "skull", [4, 86, 46], [16, -6, 0], [
-            ("feeler", [3.2, 86, 18], [4.8, 87.4, 47], p("feeler")),
-            ("feeler_glow", [3.4, 86.2, 13], [4.6, 87.2, 18], p("glow", "glow")),
-        ], sign, "_" + s))
+            ("horn_glow", [8.5, 79, 67], [10, 81, 74], p("glow", "glow"))]
+    horn = [(n, [a[i] + off[i] for i in range(3)], [b[i] + off[i] for i in range(3)], q) for n, a, b, q in horn]
+    for sign, s in ((1, "l"), (-1, "r")):
+        kids["skull"].append(part(f"horn_{s}", "skull", hp, [-28, -12, 0], horn, sign, "_" + s))
 
     built = {}
     for name, parent in reversed(order):
