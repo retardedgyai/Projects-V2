@@ -46,7 +46,7 @@
     "pitch": 20,
     "top": 19,
     "size": 16,
-    "texels": 32,
+    "texels": 16,
     "states": [
       "ready",
       "cooldown",
@@ -62,7 +62,6 @@
   "number_fonts": {
     "hud_num_gauge": -28,
     "hud_num_cd": -50,
-    "hud_num_buff": -13,
     "hud_num_boss": 5
   },
   "boss_bar": {

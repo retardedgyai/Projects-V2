@@ -94,10 +94,9 @@ def verify():
             filename = provider["file"].replace("projects:", "assets/projects/textures/")
             with Image.open(PACK / filename) as sheet:
                 cell_w, cell_h = sheet.width // len(provider["chars"][0]), sheet.height // len(provider["chars"])
-                # One texel per GUI pixel, except skill art: 32 texels in its 16 px hotbar slot (item density).
-                fine = font == "projects:hud_skills"
-                assert cell_h == provider["height"] * (2 if fine else 1), f"{filename}: HUD texel must equal one GUI pixel"
-                scale = provider["height"] / cell_h
+                # One texel per GUI pixel everywhere (in-game, half-size skill pixels read as misaligned).
+                assert cell_h == provider["height"], f"{filename}: HUD texel must equal one GUI pixel"
+                scale = 1
                 for y, row in enumerate(provider["chars"]):
                     for x, char in enumerate(row):
                         if ord(char) not in expected:
@@ -113,7 +112,7 @@ def verify():
     for job in hud_art.CLASSES:
         assert f"emblem_{job}" in advances and all(f"xp_{job}_{n}" in advances for n in range(1, hud_art.XP_STEPS + 1))
     layout = json.loads((ROOT / "assets/core-ui/hud-layout.json").read_text())
-    assert layout["skill_icons"] == {"left_x": -88, "pitch": 20, "top": 19, "size": 16, "texels": 32,
+    assert layout["skill_icons"] == {"left_x": -88, "pitch": 20, "top": 19, "size": 16, "texels": 16,
                                      "states": list(hud_art.SKILL_STATES)}
     assert layout["console"]["width"] == 184 and layout["console"]["left_x"] == -92
     assert len(SKILLS) == len(set(SKILLS)) == 70

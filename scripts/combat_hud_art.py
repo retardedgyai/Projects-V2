@@ -1,7 +1,7 @@
 """Artwork for the combat HUD approved on 2026-10-16 (direction mocks F1 + L3, class decorations N).
 
-Everything is drawn at its final size on the Minecraft GUI pixel grid; the only finer-grained art is
-the 32 px skill icon shown in a 16 px hotbar slot, the same density as any item texture there.
+Everything is drawn at its final size on the Minecraft GUI pixel grid; the 32 px skill art is reduced
+to the 16 px hotbar slot so every pixel on screen is the same size.
 Coordinates: x relative to the screen centre, `top` = distance from the screen bottom (action bar)
 or from the screen top (boss bar). See build_combat_hud.py for how each piece becomes a glyph.
 
@@ -382,16 +382,20 @@ def hotbar_selection_sprite():
     return img
 
 
-# ---- skill icons in hotbar slots (32 texels in 16 GUI px) ---------------------------------------
+# ---- skill icons in hotbar slots (16 px, one texel per GUI pixel like everything else) -----------
 SKILL_STATES = ("ready", "cooldown", "mana", "locked")
-LOCK = ["...####...", "..#....#..", "..#....#..", "##########", "####..####", "####..####", "##########"]
+LOCK = ["..###..", ".#...#.", ".#...#.", "#######", "###.###", "###.###", "#######"]
 
 
 def skill_icon(art, state):
-    img = art.convert("RGBA").copy()
+    """The 32 px skill art reduced to the 16 px slot by area averaging (keeps colour and shape;
+    in-game the 32 px art showed half-size pixels next to the rest of the HUD)."""
+    src = art.convert("RGBA")
+    img = src.resize((16, 16), Image.BOX)
+    img.putalpha(img.getchannel("A").point(lambda v: 255 if v >= 100 else 0))
     pix = img.load()
-    for y in range(32):
-        for x in range(32):
+    for y in range(16):
+        for x in range(16):
             r, g, b, a = pix[x, y]
             if a == 0:
                 continue
@@ -402,15 +406,40 @@ def skill_icon(art, state):
                 r, g, b = lum * 66 // 255, lum * 99 // 255, min(255, lum * 153 // 255 + 20)
             elif state == "locked":
                 lum = (r + g + b) // 3
-                r, g, b = lum // 5, lum // 5, lum * 22 // 100
+                r, g, b = lum * 16 // 100, lum * 16 // 100, lum * 19 // 100
             pix[x, y] = (r, g, b, 255)
-    if state == "locked":
+    if state == "locked":  # a small, quiet lock: it must not outshine the usable skills
         for j, row in enumerate(LOCK):
             for i, ch in enumerate(row):
                 if ch == "#":
-                    for dy in (0, 1):
-                        px(img, 6 + i * 2, 9 + j * 2 + dy, hexc("d6c7a4") if j < 3 else hexc("baa688"))
-                        px(img, 7 + i * 2, 9 + j * 2 + dy, hexc("d6c7a4") if j < 3 else hexc("baa688"))
+                    px(img, 4 + i, 5 + j, hexc("8c8270") if j < 3 else hexc("6e6656"))
+    return img
+
+
+# ---- small gauge digits (3x5, shadow baked in) ---------------------------------------------------
+DIGITS = {
+    "0": ["111", "101", "101", "101", "111"], "1": ["010", "110", "010", "010", "111"],
+    "2": ["111", "001", "111", "100", "111"], "3": ["111", "001", "111", "001", "111"],
+    "4": ["101", "101", "111", "001", "001"], "5": ["111", "100", "111", "001", "111"],
+    "6": ["111", "100", "111", "101", "111"], "7": ["111", "001", "010", "010", "010"],
+    "8": ["111", "101", "111", "101", "111"], "9": ["111", "101", "111", "001", "111"],
+    "/": ["001", "001", "010", "100", "100"], "s": ["011", "100", "010", "001", "110"],
+}
+DIGIT_PITCH = 4
+
+
+def gauge_digit(ch):
+    """White 3x5 digit with a dark one-pixel drop shadow (the shadow lands in the 1 px gap)."""
+    rows = DIGITS[ch]
+    img = new(4, 6)
+    for j, row in enumerate(rows):
+        for i, v in enumerate(row):
+            if v == "1":
+                px(img, i + 1, j + 1, (0, 0, 0, 110))
+    for j, row in enumerate(rows):
+        for i, v in enumerate(row):
+            if v == "1":
+                px(img, i, j, (255, 255, 255, 255))
     return img
 
 

@@ -26,7 +26,7 @@ ASSETS = ROOT / "server-minestom/src/main/resources/core-ui-pack/assets"
 OUT = ROOT / "build/hud-preview"
 JAR = Path(os.environ.get("APPDATA", "")) / ".minecraft/versions/26.2/26.2.jar"
 W, H = 480, 270
-S = 4  # screen pixels per GUI pixel
+S = 4  # screen pixels per GUI pixel (set to 2 to match a GUI-scale-2 client)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 
@@ -167,6 +167,7 @@ def screen_for(fonts, actionbar, boss=None):
 
 
 def main():
+    global S
     snapshots = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted((OUT / "snapshots").glob("*.json"))}
     assert snapshots, "Run CoreHudLayoutTest first"
     fonts = Fonts()
@@ -192,6 +193,12 @@ def main():
     if "boss-boss" in snapshots:
         image = screen_for(fonts, snapshots["actionbar-ready"], snapshots["boss-boss"])
         image.crop(((W // 2 - 120) * S, 0, (W // 2 + 120) * S, 30 * S)).resize((240 * 8, 30 * 8), Image.NEAREST).save(OUT / "boss-8x.png")
+    # The creator plays at GUI scale 2: the same view, 2 screen px per GUI px, then enlarged x4
+    # like a zoomed in-game screenshot (compare with the client's F2 shots).
+    S = 2
+    image = screen_for(fonts, snapshots["actionbar-combat"])
+    image.crop(((W // 2 - 95) * S, (H - 58) * S, (W // 2 + 95) * S, H * S)).resize((190 * 2 * 4, 58 * 2 * 4), Image.NEAREST)         .save(OUT / "ingame-scale2-combat-4x.png")
+    S = 4
     print(f"Rendered {len(states)} HUD states into {OUT}")
 
 

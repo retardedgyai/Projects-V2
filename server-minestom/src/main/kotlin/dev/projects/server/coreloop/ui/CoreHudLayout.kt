@@ -14,7 +14,7 @@ import kotlin.math.roundToInt
  *
  *   H-22..H-0    vanilla hotbar, reskinned by the pack; skill art over slots 2-6 (keys 2-6)
  *   H-27..H-22   class-resource cells (20)
- *   H-40..H-28   HP plate | level diamond | MP plate (numbers inside the gauges)
+ *   H-40..H-28   HP plate | level diamond | MP plate (3x5 values inside the gauges)
  *   H-55..H-43   buff tiles
  *   action-bar text row: notice / combat cue in the vanilla font
  */
@@ -108,9 +108,9 @@ internal object CoreHudLayout {
         val trailEnd = (trailing + barrier).coerceAtMost(HP_W)
         if (trailEnd > filled + barrier) line.fill("hp_trail", HP_X + filled + barrier, trailEnd - filled - barrier)
         for (k in 1 until HP_TICKS) line.put(HP_X + (HP_W * k + HP_TICKS / 2) / HP_TICKS, "hp_tick")
-        line.numberCentred(HP_X + (HP_W - 1) / 2.0, "${number(state.health)} / ${number(state.maxHealth)}", CoreHudGlyphs.NUM_GAUGE, NUMBER)
+        gaugeValue(line, HP_X, HP_W, "${number(state.health)}/${number(state.maxHealth)}")
         line.fill("mp_fill", MP_X, fillWidth(state.mana, state.maxMana, MP_W))
-        line.numberCentred(MP_X + (MP_W - 1) / 2.0, "${number(state.mana)} / ${number(state.maxMana)}", CoreHudGlyphs.NUM_GAUGE, NUMBER)
+        gaugeValue(line, MP_X, MP_W, "${number(state.mana)}/${number(state.maxMana)}")
         for (i in 0 until litCells(state)) line.put(CELL_X + i * CELL_PITCH, "rage_cell")
         // Level diamond: class wings and crown, XP filling the class-colour band clockwise.
         val job = job(state)
@@ -135,13 +135,13 @@ internal object CoreHudLayout {
         var bx = BUFF_LEFT
         state.buffs.take(4).forEach { buff ->
             val seconds = buff.remainingSeconds.takeIf { it.isFinite() && it > 0.0 }?.let { "${ceil(it).toInt().coerceIn(1, 999)}s" } ?: ""
-            val ink = (CoreHudGlyphs.numberWidth(seconds) - 1).coerceAtLeast(0)
+            val ink = gaugeDigitsWidth(seconds)
             val tile = ink + 18
             line.put(bx, "buff_left")
             line.fill("buff_mid", bx + 14, tile - 17, 16)
             line.put(bx + tile - 3, "buff_right")
             line.put(bx + 2, "buff_${buff.kind.glyph}_${buffFrame(buff)}")
-            if (seconds.isNotEmpty()) line.numberCentred(bx + 13 + (tile - 15) / 2.0, seconds, CoreHudGlyphs.NUM_BUFF, NUMBER)
+            if (seconds.isNotEmpty()) line.digits("bd", kotlin.math.round(bx + 13 + (tile - 15) / 2.0 - (ink - 1) / 2.0).toInt(), seconds, NUMBER, DIGIT_PITCH)
             bx += tile + 2
         }
         // Notice (or the combat cue) on the action bar's own text row, in the vanilla font.
@@ -151,6 +151,17 @@ internal object CoreHudLayout {
             line.vanilla(-CoreUiComponents.width(text) / 2, text, if (state.notice.isNotBlank()) NOTICE else CUE)
         }
         return line.build()
+    }
+
+    const val DIGIT_PITCH = 4
+
+    /** Ink width of [value] in the 3x5 gauge digits (shadow excluded). */
+    fun gaugeDigitsWidth(value: String): Int = if (value.isEmpty()) 0 else (value.length - 1) * DIGIT_PITCH + 3
+
+    /** Small 3x5 digits centred in a gauge (the vanilla font filled the whole 54 px bar in-game). */
+    private fun gaugeValue(line: CoreHudLine, x: Int, width: Int, value: String) {
+        val left = kotlin.math.round(x + (width - 1) / 2.0 - (gaugeDigitsWidth(value) - 1) / 2.0).toInt()
+        line.digits("gd", left, value, NUMBER, DIGIT_PITCH)
     }
 
     private fun trimCaption(value: String): String {

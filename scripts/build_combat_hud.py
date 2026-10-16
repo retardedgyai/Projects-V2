@@ -1,8 +1,7 @@
 """Combat HUD (direction approved 2026-10-16: modern MMO x Minecraft) and the world-space HUD bits.
 
 Art lives in combat_hud_art.py; this file turns each piece into glyphs. Everything is drawn on the
-Minecraft GUI pixel grid; the 32 px skill art is shown in its 16 px hotbar slot (the density of any
-item there). Numbers use the vanilla ascii sheet itself (minecraft:font/ascii.png, mapped to private
+Minecraft GUI pixel grid at one texel per GUI pixel. Gauge values are small 3x5 digits; other numbers use the vanilla ascii sheet itself (minecraft:font/ascii.png, mapped to private
 codepoints), so they are the game's own font; notices and the boss name are plain vanilla text.
 
 Outputs (all generated, git-ignored):
@@ -282,7 +281,6 @@ def number_provider(ascent):
 NUMBER_FONTS = {  # font -> ascent; numbers are white glyphs tinted by the component colour
     "hud_num_gauge": hud_ascent(art.GAUGE_TOP - 1),      # HP / MP values and the level, on the gauge row
     "hud_num_cd": hud_ascent(15),                         # cooldown seconds on a hotbar skill
-    "hud_num_buff": hud_ascent(art.BUFF_TOP - 3),         # buff timers
     "hud_num_boss": 10 - 5,                               # boss bar percentage
 }
 
@@ -308,6 +306,8 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     gauge += [("hp_tick", art.hp_tick())]
     hud.group("hud_gauge", gauge, hud_ascent(art.GAUGE_TOP))
     hud.group("hud_cells", [("rage_cell", art.rage_cell())], hud_ascent(art.CELL_TOP))
+    hud.group("hud_gauge_digits", [(f"gd_{c}", art.gauge_digit(c)) for c in art.DIGITS], hud_ascent(art.GAUGE_TOP - 2))
+    hud.group("hud_buff_digits", [(f"bd_{c}", art.gauge_digit(c)) for c in art.DIGITS], hud_ascent(art.BUFF_TOP - 4))
     emblem_rows, emblem_x = [], None
     for job in art.CLASSES:
         image, emblem_x, emblem_top = art.emblem(job)
@@ -321,7 +321,7 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     hud.group("hud_buff_icon", icons, hud_ascent(art.BUFF_TOP - 2))
     fonts.append(hud)
 
-    # -- projects:hud_skills: 32 px skill art drawn 16 GUI px tall over its hotbar slot ------------
+    # -- projects:hud_skills: skill art reduced to 16 px over its hotbar slot -----------------------
     skills = FontBuilder("projects:hud_skills")
     for index, name in enumerate(SKILLS):
         with Image.open(source / f"skills/{name}.png") as loaded:
@@ -329,7 +329,7 @@ def build_combat_hud(assets, pack, source, write_json, chars):
         assert sprite.size == (32, 32), f"Skill art must be authored at 32 px: {name}"
         # Named by CoreSkillCatalog art index; HUD and source order are the same list.
         frames = [(f"skill_{index}_{state}", art.skill_icon(sprite, state)) for state in art.SKILL_STATES]
-        skills.group(f"hud_skill_{name}", frames, hud_ascent(art.SLOT_ICON_TOP), columns=4, display_height=16)
+        skills.group(f"hud_skill_{name}", frames, hud_ascent(art.SLOT_ICON_TOP), columns=4)
     fonts.append(skills)
 
     # -- text: MaruMinya for world name tags (unchanged) ------------------
@@ -415,7 +415,7 @@ def build_combat_hud(assets, pack, source, write_json, chars):
         "resource_cells": {"x": art.CELL_X, "pitch": art.CELL_PITCH, "count": art.CELL_COUNT, "top": art.CELL_TOP},
         "emblem": {"left_x": emblem_x, "top": emblem_top, "centre_from_bottom": art.EMBLEM_CY, "xp_steps": art.XP_STEPS,
                    "classes": list(art.CLASSES)},
-        "skill_icons": {"left_x": art.SLOT_ICON_X, "pitch": 20, "top": art.SLOT_ICON_TOP, "size": 16, "texels": 32,
+        "skill_icons": {"left_x": art.SLOT_ICON_X, "pitch": 20, "top": art.SLOT_ICON_TOP, "size": 16, "texels": 16,
                         "states": list(art.SKILL_STATES)},
         "buffs": {"left_x": art.BUFF_LEFT, "top": art.BUFF_TOP, "height": art.BUFF_H},
         "number_fonts": {k: v for k, v in NUMBER_FONTS.items()},

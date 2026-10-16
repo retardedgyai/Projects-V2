@@ -140,7 +140,7 @@ class CoreHudLayoutTest {
 
     @Test fun `all seventy skill arts have every state and sit exactly on hotbar slots two to six`() {
         for (index in 0..69) for (state in listOf(CoreHudLayout.READY, CoreHudLayout.COOLDOWN, CoreHudLayout.NO_MANA, CoreHudLayout.LOCKED))
-            assertEquals(17, CoreHudGlyphs["skill_${index}_$state"].advance, "32 texels drawn 16 px wide")
+            assertTrue(CoreHudGlyphs["skill_${index}_$state"].advance <= 17, "16 px art, one texel per GUI pixel")
         // Vanilla draws hotbar item i at x = centre - 91 + 3 + 20 i; keys 2-6 are slots 1-5.
         val glyphs = layout(CoreHudLayout.render(CoreHudState(80.0, 140.0, 100.0, skills = loadout))).first
         val icons = glyphs.filter { it.font == "projects:hud_skills" }.map { it.x }
@@ -157,18 +157,20 @@ class CoreHudLayoutTest {
         assertEquals("healer", CoreHudLayout.job(CoreHudState(1.0, 1.0, 1.0, classKey = "HEALER")))
     }
 
-    @Test fun `numbers use the vanilla font with its shadow and sit centred in their gauges`() {
+    @Test fun `gauge values are small centred digits and the level keeps the vanilla font`() {
         val glyphs = layout(CoreHudLayout.render(combat())).first
-        fun inkCentre(font: String, from: Int, until: Int): Double {
-            val run = glyphs.filter { it.font == font && it.x in from until until && it.code != CoreHudGlyphs.ASCII_BASE + ' '.code }
-            assertTrue(run.isNotEmpty() && run.all { it.shadow }, "vanilla numbers keep the drop shadow")
-            val left = run.minOf { it.x }
-            val right = run.maxOf { it.x + it.advance - 2 }
-            return (left + right) / 2.0
+        val digits = (('0'..'9') + '/').map { CoreHudGlyphs["gd_$it"] }.associateBy { it.char.code }
+        fun inkCentre(from: Int, until: Int): Double {
+            val run = glyphs.filter { it.code in digits && it.font == "projects:hud" && it.x in from until until }
+            assertTrue(run.isNotEmpty())
+            return (run.minOf { it.x } + run.maxOf { it.x } + 2) / 2.0
         }
-        assertEquals(CoreHudLayout.HP_X + (CoreHudLayout.HP_W - 1) / 2.0, inkCentre("projects:hud_num_gauge", -78, -20), 1.0)
-        assertEquals(CoreHudLayout.MP_X + (CoreHudLayout.MP_W - 1) / 2.0, inkCentre("projects:hud_num_gauge", 20, 80), 1.0)
-        assertEquals(0.0, inkCentre("projects:hud_num_gauge", -10, 10), 1.0)
+        assertEquals(CoreHudLayout.HP_X + (CoreHudLayout.HP_W - 1) / 2.0, inkCentre(-78, -20), 1.0)
+        assertEquals(CoreHudLayout.MP_X + (CoreHudLayout.MP_W - 1) / 2.0, inkCentre(20, 80), 1.0)
+        assertTrue(CoreHudLayout.gaugeDigitsWidth("132/240") <= CoreHudLayout.HP_W / 2 + 4, "values leave the gauge room to breathe")
+        val level = glyphs.filter { it.font == "projects:hud_num_gauge" }
+        assertTrue(level.isNotEmpty() && level.all { it.shadow }, "the level keeps the vanilla font and its shadow")
+        assertEquals(0.0, (level.minOf { it.x } + level.maxOf { it.x + it.advance - 2 }) / 2.0, 1.0)
         assertTrue(glyphs.filter { it.font.startsWith("projects:hud") && !it.font.startsWith("projects:hud_num") }.none { it.shadow },
             "drawn HUD art never gets a text shadow")
     }

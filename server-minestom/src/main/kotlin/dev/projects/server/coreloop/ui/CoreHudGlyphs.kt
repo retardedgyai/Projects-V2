@@ -21,9 +21,8 @@ internal object CoreHudGlyphs {
     /** Fonts that draw the game's own ascii sheet through U+E600+n (build_combat_hud.NUMBER_FONTS). */
     val NUM_GAUGE: Key = Key.key("projects", "hud_num_gauge")
     val NUM_CD: Key = Key.key("projects", "hud_num_cd")
-    val NUM_BUFF: Key = Key.key("projects", "hud_num_buff")
     val NUM_BOSS: Key = Key.key("projects", "hud_num_boss")
-    private val numberFonts = setOf(NUM_GAUGE, NUM_CD, NUM_BUFF, NUM_BOSS)
+    private val numberFonts = setOf(NUM_GAUGE, NUM_CD, NUM_BOSS)
     const val ASCII_BASE = 0xE600
 
     /** Vanilla ascii advances for the characters the HUD prints (ink width + 1, read from 26.2's ascii.png). */
