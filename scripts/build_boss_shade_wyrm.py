@@ -517,18 +517,24 @@ def fan_painter(poly, half, inner_side, seed):
             ok, f, ang = where(py, pz)
             if not ok:
                 return (0, 0, 0, 0)
-            strand = int(ang * 22)                      # broad locks of fur fanning out from the carpal
-            cut = .86 + .12 * _h(seed, strand // 2, 5) + .04 * _h(seed, strand, 9)
-            if f > cut:
-                return (0, 0, 0, 0)                     # torn, tufted outer edge
-            if _h(seed, x, y) < .006:
+            # Soft, rounded locks: each lock ends in a round tip (a scallop), with a little fluff on the rim.
+            q = ang * 5 + _h(seed, 1, 1) * 3
+            lock = math.floor(q); frac = q - lock
+            r1 = _h(seed, lock, 5)
+            tip = .78 + .08 * r1 + .16 * math.sqrt(max(0.0, math.sin(math.pi * frac)))
+            if f > tip + (.012 if _h(seed, x, y, 2) < .3 else 0):
+                return (0, 0, 0, 0)
+            if _h(seed, x, y) < .005:
                 return RAMPS["glow"][2] + (255,)
-            lock = _h(seed, strand, 3)
-            t = 0 if f < .2 else 1 if f < .55 + .2 * lock else 2
-            if lock < .2:
-                t = max(0, t - 1)
-            elif lock > .9 and f > .6:
-                t = 3                                   # a pale lock catching light
+            g = f / tip                                   # 0 at the carpal, 1 at the lock's tip
+            core = 1 - abs(frac - .5) * 2                 # 1 along the lock's middle
+            t = 0 if g < .3 else 1
+            if g > .7 and core > .35:
+                t = 2                                     # the puff's rounded top catches light
+                if g > .9 and core > .7 and r1 > .6:
+                    t = 3
+            elif core < .12 and g > .4:
+                t = 0                                     # soft crease between puffs
             return pal[t] + (255,)
         return paint, ("fan", seed, side, w, h)
     return make
@@ -741,7 +747,7 @@ def build():
             d = d / np.linalg.norm(d)
             oriented(f"{name}_claw{k}", name, K + d * 5 + np.array([0, -1, 0]), [1.3, 1.3, 4], _no_roll(np, d), box_painter("talon", k))
         for k, t in enumerate(tips):                      # the fingers, mostly hidden in the fur
-            bar(f"{name}_finger{k}", K + np.array([0, 4, 0]), t, 3.0, 1.2, "spar", 3)
+            bar(f"{name}_finger{k}", K + np.array([0, 4, 0]), K + (t - K) * .8, 2.6, 1.0, "hide", 3)
         # Puffy fan: lobes between finer sub-fingers, each lobe several fur layers fanned slightly apart
         # around the carpal (like a feather fan seen edge-on), so it reads thick, not as one sheet.
         fine = []
