@@ -1123,10 +1123,198 @@ def design_c5():
     return cv
 
 
+# ---- C6: modern MMO (AION2 / Lost Ark / BDO layout) x Minecraft materials --------------------
+# Concept corrected by the creator: "modern MMO x Minecraft", not near-future. Layout from AION2 /
+# Lost Ark (gauges run into a centre crest that carries the level); craft from C5 (flat 2-3 tone
+# ramps, bold pixel numbers); material from Minecraft itself: plates are tiled polished blackstone
+# with the Minecraft GUI bevel, rims and the crest are iron, accents are gems.
+
+def _stone_tile():
+    t = tex("block/polished_blackstone")
+    pix = t.load()
+    for y in range(16):
+        for x in range(16):
+            r, g, b, a = pix[x, y]
+            pix[x, y] = (int(r * .42) + 4, int(g * .42) + 4, int(b * .46) + 6, 245)
+    return t
+
+
+STONE = None
+IRON = (rgba("f0f0f0"), rgba("c6c6c6"), rgba("8c8c8c"), rgba("585858"), rgba("2e2e2e"))  # light..dark
+G = {"out": rgba("050506"), "inset": rgba("0f1012"), "text": rgba("f2f2f2"), "label": rgba("a0a0a0"),
+     "ruby": (rgba("6e0d1a"), rgba("d0263c"), rgba("ff8a8a")), "hp": (rgba("6c1020"), rgba("c8283a"), rgba("ff6a68")),
+     "mp": (rgba("143478"), rgba("2c6fe0"), rgba("78bcff")), "rage": (rgba("8a3a06"), rgba("f08a1a"), rgba("ffd25a")),
+     "boss": (rgba("7a1212"), rgba("d23a1e"), rgba("ff9a50")), "buff": rgba("4fd06e")}
+
+
+def stone_plate(cv, box, bevel=True):
+    """Minecraft-GUI plate: 1px dark outline, tiled blackstone fill, iron-ish bevel light TL / dark BR."""
+    global STONE
+    STONE = STONE or _stone_tile()
+    x0, y0, x1, y1 = box
+    over(cv, (x0 + 1, y0, x1 - 1, y1), G["out"])
+    over(cv, (x0, y0 + 1, x1, y1 - 1), G["out"])
+    for ty in range(y0 + 1, y1 - 1, 16):
+        for tx in range(x0 + 1, x1 - 1, 16):
+            tile = STONE.crop((0, 0, min(16, x1 - 1 - tx), min(16, y1 - 1 - ty)))
+            cv.alpha_composite(tile, (tx, ty))
+    if bevel:
+        over(cv, (x0 + 1, y0 + 1, x1 - 1, y0 + 2), IRON[3])
+        over(cv, (x0 + 1, y0 + 1, x0 + 2, y1 - 1), IRON[3])
+        over(cv, (x0 + 1, y1 - 2, x1 - 1, y1 - 1), (0, 0, 0, 200))
+        over(cv, (x1 - 2, y0 + 1, x1 - 1, y1 - 1), (0, 0, 0, 200))
+
+
+def inset_slot(cv, box):
+    x0, y0, x1, y1 = box
+    over(cv, (x0, y0, x1, y1), G["inset"])
+    over(cv, (x0, y0, x1, y0 + 1), (0, 0, 0, 255))
+    over(cv, (x0, y0, x0 + 1, y1), (0, 0, 0, 255))
+    over(cv, (x0, y1 - 1, x1, y1), (60, 60, 64, 255))
+    over(cv, (x1 - 1, y0, x1, y1), (60, 60, 64, 255))
+
+
+def ramp_gauge(cv, x0, x1, y, h, frac, ramp, empty, grow="right", extra=0.0, trail=0.0):
+    dark, base, light = ramp
+    inset_slot(cv, (x0 - 1, y - 1, x1 + 1, y + h + 1))
+    over(cv, (x0, y, x1, y + h), empty)
+    w = x1 - x0
+    f = round(w * frac)
+    fa, fb = (x0, x0 + f) if grow == "right" else (x1 - f, x1)
+    if trail:
+        t = round(w * trail)
+        over(cv, (fb, y, min(x1, fb + round(w * extra) + t), y + h), rgba("f6e2d2"))
+    if extra:
+        over(cv, (fb, y, min(x1, fb + round(w * extra)), y + h), rgba("dcdcdc"))
+        over(cv, (fb, y, min(x1, fb + round(w * extra)), y + 1), rgba("ffffff"))
+    over(cv, (fa, y, fb, y + h), base)
+    over(cv, (fa, y, fb, y + 1), light)
+    over(cv, (fa, y + h - 1, fb, y + h), dark)
+    for i in range(fa + 2, fb - 1, 6):           # pixel glints along the top like a polished bar
+        px(cv, i, y + 1, light)
+
+
+def gem(cv, cx, cy, ramp, r=2):
+    dark, base, light = ramp
+    for j in range(-r - 1, r + 2):
+        w = r + 1 - abs(j)
+        over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), G["out"])
+    for j in range(-r, r + 1):
+        w = r - abs(j)
+        over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), base if j < r else dark)
+    px(cv, cx - 1 if r > 1 else cx, cy - r + 1 if r > 1 else cy - 1, light)
+
+
+def iron_crest(cv, cx, top, level):
+    halves = [2, 4, 6, 8, 10, 12, 13, 13, 13, 13, 13, 13, 13, 13, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+    for j, hw in enumerate(halves):
+        over(cv, (cx - hw - 1, top + j, cx + hw + 1, top + j + 1), G["out"])
+    for j, hw in enumerate(halves[1:-1], start=1):  # iron ramp: light upper-left, dark lower-right
+        hw -= 1
+        over(cv, (cx - hw, top + j, cx, top + j + 1), IRON[1] if j < 6 else IRON[2])
+        over(cv, (cx, top + j, cx + hw, top + j + 1), IRON[2] if j < 6 else IRON[3])
+        px(cv, cx - hw, top + j, IRON[0])
+    for j, hw in enumerate(halves[5:-5], start=5):
+        hw -= 4
+        if hw > 0:
+            over(cv, (cx - hw, top + j, cx + hw, top + j + 1), G["out"] if j == 5 else (18, 18, 22, 255))
+    gem(cv, cx, top + 3, G["ruby"], 2)
+    bold(cv, cx - bold_width(level) // 2, top + 9, level, G["text"])
+
+
+def design_c6():
+    cv = world()
+    x0, y0 = HB_X, HB_Y
+    stone_plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    for i in range(9):
+        inset_slot(cv, (x0 + 2 + 20 * i, y0 + 2, x0 + 20 + 20 * i, y0 + 20))
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        ic = icon(name)
+        if state == "cd":
+            ic = darken(ic, .35)
+        elif state == "nomana":
+            ic = darken(ic, .6, tint=(110, 150, 255))
+        cv.alpha_composite(ic, (x, y))
+        if state == "cd":
+            s = str(cd)
+            bold(cv, x + 8 - bold_width(s) // 2, y + 4, s, G["text"])
+    for i in range(9):
+        caps(cv, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (190, 190, 190, 220))
+    sx = x0 + 1  # selection: iron frame
+    for a, b, c, d, col in ((sx, y0 + 1, sx + 20, y0 + 2, IRON[0]), (sx, y0 + 1, sx + 1, y0 + 21, IRON[0]),
+                            (sx, y0 + 20, sx + 20, y0 + 21, IRON[2]), (sx + 19, y0 + 1, sx + 20, y0 + 21, IRON[2])):
+        over(cv, (a, b, c, d), col)
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # class resource: ember cells between plate and hotbar
+    ry = y0 - 5
+    stone_plate(cv, (x0 - 1, ry, x0 + 183, ry + 6), bevel=False)
+    lit = RAGE * 20 // 100
+    for i in range(20):
+        cx0 = x0 + 2 + i * 9
+        if i < lit:
+            over(cv, (cx0, ry + 2, cx0 + 8, ry + 4), G["rage"][1])
+            over(cv, (cx0, ry + 2, cx0 + 8, ry + 3), G["rage"][2])
+        else:
+            over(cv, (cx0, ry + 2, cx0 + 8, ry + 4), (44, 30, 20, 255))
+    # HP / MP plates running into the iron crest
+    py, ph = y0 - 24, 20
+    stone_plate(cv, (x0 - 1, py, C - 9, py + ph))
+    stone_plate(cv, (C + 9, py, x0 + 183, py + ph))
+    mc_text(cv, x0 + 3, py + 3, "HP", G["label"])
+    s = str(HP)
+    bold(cv, x0 + 17, py + 3, s, G["text"])
+    mc_text(cv, x0 + 18 + bold_width(s) + 1, py + 4, f"/{HP_MAX}", G["label"])
+    ramp_gauge(cv, x0 + 3, C - 13, py + 13, 4, HP / HP_MAX, G["hp"], (34, 10, 14, 255),
+               extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX)
+    s = str(MP)
+    tx = x0 + 179 - (bold_width(s) + 2 + mc_width(f"/{MP_MAX}"))
+    bold(cv, tx, py + 3, s, G["text"])
+    mc_text(cv, tx + bold_width(s) + 2, py + 4, f"/{MP_MAX}", G["label"])
+    mc_text(cv, C + 17, py + 3, "MP", G["label"])
+    ramp_gauge(cv, C + 13, x0 + 179, py + 13, 4, MP / MP_MAX, G["mp"], (10, 16, 36, 255))
+    iron_crest(cv, C, py - 6, "12")
+    # buffs: small stone tiles with an emerald underline, seconds in the Minecraft font
+    bx = x0 - 1
+    for label, name, sec in BUFFS:
+        s = str(sec)
+        tw = 15 + mc_width(s) + 3
+        stone_plate(cv, (bx, py - 14, bx + tw, py - 1))
+        cv.alpha_composite(icon(name, 10), (bx + 2, py - 12))
+        over(cv, (bx + 2, py - 3, bx + 12, py - 2), G["buff"])
+        mc_text(cv, bx + 14, py - 11, s, G["text"])
+        bx += tw + 2
+    # notice: stone strip, text in the creator's 12px font
+    nw = jp_width(NOTICE)
+    stone_plate(cv, (C - nw // 2 - 8, py - 33, C + nw // 2 + 8, py - 17))
+    gem(cv, C - nw // 2 - 4, py - 25, G["mp"], 1)
+    gem(cv, C + nw // 2 + 3, py - 25, G["mp"], 1)
+    jp_text(cv, C - nw // 2, py - 32, NOTICE, rgba("9cc6ff"))
+    # boss: stone plate with a ruby rank gem, name, Lv, framed gauge with iron caps
+    bw = 230
+    bx0 = C - bw // 2
+    stone_plate(cv, (bx0, 2, bx0 + bw, 28))
+    gem(cv, bx0 + 8, 9, G["ruby"], 3)
+    name = "裂け目の執行官"
+    jp_text(cv, bx0 + 16, 3, name, G["text"])
+    mc_text(cv, bx0 + 20 + jp_width(name), 6, "Lv.30", rgba("e8c46a"))
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - 5 - mc_width(pct), 6, pct, G["text"])
+    ramp_gauge(cv, bx0 + 5, bx0 + bw - 5, 19, 5, BOSS / BOSS_MAX, G["boss"], (36, 10, 8, 255),
+               trail=BOSS_LOST / BOSS_MAX)
+    for q in (1, 2, 3):
+        qx = bx0 + 5 + (bw - 10) * q // 4
+        over(cv, (qx, 19, qx + 1, 24), (0, 0, 0, 160))
+    return cv
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c),
-                     ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4), ("C5-pixel-crosscode", design_c5)):
+                     ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4),
+                     ("C5-pixel-crosscode", design_c5), ("C6-modern-mmo-minecraft", design_c6)):
         img = fn()
         for s in (2, 4):
             img.resize((W * s, H * s), Image.NEAREST).save(OUT / f"{name}-{s}x.png")
