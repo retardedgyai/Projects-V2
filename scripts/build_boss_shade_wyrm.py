@@ -235,7 +235,9 @@ POSE = {
     "fit": .7,               # body / tail boxes: thickness against the reference surface (lower = slenderer)
     "fit_legs": .62,
     "fur": .6,              # fur fringe length scale
-    "crown": 1.1,            # crown spikes length scale about their joint
+    "crown": .8,            # crown spikes length scale about their joint
+    "horn_style": "ridged",  # frenzy horns: "swept" | "ridged" | "forked"
+    "horn_len": 26.0,
     "head": .76,             # head (skull, jaw, crown) scale about the skull joint (2026-10-16: "face too big")
     "head_shift": (0.0, 0.0, 15.0),   # and moved forward so the smaller head clears the collar
 }
@@ -333,6 +335,7 @@ RAMPS = {
     "talon": ((48, 22, 46), (82, 38, 76), (124, 64, 112), (176, 112, 160)),
     "spar": ((30, 30, 42), (50, 48, 66), (74, 70, 94), (108, 102, 132)),
     "crest": ((70, 60, 92), (118, 104, 146), (170, 156, 198), (226, 216, 244)),
+    "frenzy": ((92, 18, 78), (150, 34, 128), (214, 64, 182), (255, 148, 232)),
     "fur": ((12, 12, 20), (26, 24, 38), (46, 42, 62), (112, 102, 142)),
     "cloak": ((10, 10, 16), (20, 18, 28), (32, 28, 44), (54, 46, 72)),
     "inner": ((44, 26, 64), (66, 40, 94), (92, 58, 128), (132, 94, 176)),
@@ -497,7 +500,7 @@ def fit_boxes(faces, slim=.9):
 
 
 MATERIAL = (("pit", "glow"), ("gape", "mouth"), ("fang", "bone"), ("hook", "talon"), ("toe", "talon"),
-            ("shear", "talon"), ("digit", "spar"), ("keel", "plate"), ("crown", "crest"), ("brow", "plate"),
+            ("shear", "talon"), ("digit", "spar"), ("keel", "plate"), ("crown", "plate"), ("brow", "plate"),
             ("collar", "plate"), ("carapace", "plate"), ("knuckle", "plate"), ("jaw", "belly"))
 FUR_BONES = {"body": 1.0, "neck": 1.0, "skull": .45, "tail": .8, "tail_2": .7, "tail_mid": .55,
              "wing_l": .7, "wing_r": .7}
@@ -623,15 +626,47 @@ def build():
         if el["sided"]:
             build_part(el, -1, right(el["bone"]), "_r")
 
-    # ---------- rage parts: horns, hidden until enraged ----------
-    hp = [float(v) for v in xf["skull"]([9, 80, 56])]
-    off = [hp[i] - (9, 80, 56)[i] for i in range(3)]
-    horn = [("horn_base", [7.5, 78, 52], [11, 82, 60], p("bone", "bone")),
-            ("horn_mid", [8, 78.5, 59], [10.5, 81.5, 68], p("bone", "bone")),
-            ("horn_glow", [8.5, 79, 67], [10, 81, 74], p("glow", "glow"))]
-    horn = [(n, [a[i] + off[i] for i in range(3)], [b[i] + off[i] for i in range(3)], q) for n, a, b, q in horn]
+    # ---------- rage parts: the frenzy horns, hidden until enraged ----------
+    # Gore Magala's frenzy feelers: two glowing, segmented horns rise from the crown and sweep back.
+    # Built as a chain of tapering oriented boxes along a curve; style "ridged" adds barbs, "forked" splits the tip.
+    def bez(p0, p1, p2, t):
+        return (1 - t) ** 2 * p0 + 2 * (1 - t) * t * p1 + t * t * p2
+
+    style = POSE["horn_style"]
+    L = POSE["horn_len"]
     for sign, s in ((1, "l"), (-1, "r")):
-        kids["skull"].append(part(f"horn_{s}", "skull", hp, [-28, -12, 0], horn, sign, "_" + s))
+        base = np.array(pivots["crown_l"], float) * [sign, 1, 1] + np.array([0, 1.5, -1.0])
+        bend = {"swept": ((.10, .70, -.25), (.22, .80, -.95)), "ridged": ((.10, .75, -.20), (.20, .85, -.90)),
+                "forked": ((.12, .80, -.05), (.28, .95, -.70))}[style]
+        p0 = base; p1 = base + L * np.array([bend[0][0] * sign, bend[0][1], bend[0][2]])
+        p2 = base + L * np.array([bend[1][0] * sign, bend[1][1], bend[1][2]])
+        n = 6
+        name = f"horn_{s}"
+        kids[name] = []
+        pts = [bez(p0, p1, p2, i / n) for i in range(n + 1)]
+        for i in range(n):
+            a, b = pts[i], pts[i + 1]
+            d = b - a; ln = float(np.linalg.norm(d)); z = d / ln
+            up = np.array([0, 0, 1.0]) if abs(z[1]) > .9 else np.array([0, 1.0, 0])
+            x = np.cross(up, z); x /= np.linalg.norm(x); y = np.cross(z, x)
+            R = np.column_stack([x, y, z])
+            w = 3.8 * (1 - i / n) ** .8 + .8
+            mat = "glow" if i == n - 1 else "frenzy"
+            oriented(f"{name}_seg{i}", name, (a + b) / 2, [w / 2, w / 2, ln / 2 + .35], R, box_painter(mat, i))
+            if style == "ridged" and 0 < i < n - 1:
+                # A barb on the back of each segment, pointing back along the curve.
+                bc = (a + b) / 2 - y * (w / 2) + z * (ln * .1)
+                bd = _no_roll(np, z * .4 - y)
+                oriented(f"{name}_barb{i}", name, bc - y * 1.2, [w * .3, w * .3, 2.0], bd, box_painter("frenzy", i + 7))
+        if style == "forked":
+            tip, prev = pts[-1], pts[-2]
+            z = (tip - prev) / np.linalg.norm(tip - prev)
+            side = np.array([sign, 0, 0])
+            for k, dirv in enumerate((z + side * .9 + np.array([0, .3, 0]), z - np.array([0, .6, .3]))):
+                dirv = dirv / np.linalg.norm(dirv)
+                oriented(f"{name}_fork{k}", name, tip + dirv * 2.2, [.5, .5, 2.4], _no_roll(np, dirv), box_painter("glow", k))
+        order.append((name, "skull"))
+        pivots[name] = [float(v) for v in base]
 
     built = {}
     for name, parent in reversed(order):
