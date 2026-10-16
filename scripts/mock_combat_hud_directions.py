@@ -1912,7 +1912,8 @@ DOT16 = ImageFont.truetype("C:/Windows/Fonts/BIZ-UDGothicR.ttc", 15)
 MANA_ICON = ["000010000", "000111000", "001111100", "011101110", "111000111", "011101110", "001111100", "000111000", "000010000"]
 
 
-def design_f1():
+def design_f1(center=0):
+    """center: 0 = level number only (F1); 1-3 = centre emblem variants (G1-G3)."""
     cv = world()
     top = Image.new("RGBA", (W, H))
     icons, jp = [], []
@@ -1965,8 +1966,11 @@ def design_f1():
     mc_text(cv, (gx0 + gx1) // 2 - mc_width(s) // 2, py + 3, s, rgba("ffffff"))
     s = f"{MP} / {MP_MAX}"
     mc_text(cv, (mx0 + mx1) // 2 - mc_width(s) // 2, py + 3, s, rgba("ffffff"))
-    lv = "12"
-    mc_text(cv, C - mc_width(lv) // 2, py - 5, lv, rgba("80ff20"), outline=True)   # vanilla XP-level look
+    if center:
+        centre_emblem(cv, icons, top, center, py)
+    else:
+        lv = "12"
+        mc_text(cv, C - mc_width(lv) // 2, py - 5, lv, rgba("80ff20"), outline=True)   # vanilla XP-level look
     # buffs
     by = py - 15
     bx = x0 - 1
@@ -1998,6 +2002,60 @@ def design_f1():
     return cv, icons, top, jp
 
 
+def crossed_swords(cv, x, y):
+    """13x13 hand-placed crossed swords: steel blades, gold guards, leather grips."""
+    edge, mid, gold, grip = rgba("f2f2f8"), rgba("9a9aac"), rgba("e0b04a"), rgba("6e4424")
+    for side in (0, 1):
+        for t in range(9):
+            bx = x + (t if side == 0 else 12 - t)
+            px(cv, bx, y + t, edge)
+            px(cv, bx + (1 if side == 0 else -1), y + t, mid)
+        gx = x + (9 if side == 0 else 3)
+        for d in (-1, 0, 1):
+            px(cv, gx + d * (1 if side == 0 else -1), y + 9 - d, gold)  # guard, perpendicular
+        px(cv, x + (10 if side == 0 else 2), y + 10, grip)
+        px(cv, x + (11 if side == 0 else 1), y + 11, grip)
+        px(cv, x + (12 if side == 0 else 0), y + 12, gold)
+
+
+def centre_emblem(cv, icons, top, variant, py):
+    lvs = "12"
+    if variant == 1:  # charcoal hex, iron rim, crossed swords, level below
+        cx, ty = C, py - 11
+        rows = [1, 3, 5, 7, 9, 10] + [10] * 11 + [10, 9, 7, 5, 3, 1]
+        for j, hw in enumerate(rows):
+            over(cv, (cx - hw - 1, ty + j, cx + hw + 2, ty + j + 1), D["out"])
+        for j, hw in enumerate(rows[1:-1], start=1):
+            over(cv, (cx - hw, ty + j, cx + hw + 1, ty + j + 1), D["metal"][1] if j < 11 else D["metal"][2])
+            px(cv, cx - hw, ty + j, D["metal"][0] if j < 11 else D["metal"][1])
+        for j, hw in enumerate(rows[2:-2], start=2):
+            over(cv, (cx - hw + 2, ty + j, cx + hw - 1, ty + j + 1), D["plate"])
+        crossed_swords(cv, cx - 6, ty + 4)
+        mc_text(cv, cx - mc_width(lvs) // 2 + 1, ty + 18, lvs, rgba("80ff20"), outline=True)
+    elif variant == 2:  # iron diamond with the class's signature art inside
+        cx, cy, r = C, py + 4, 13
+        for j in range(-r - 1, r + 2):
+            w = r + 1 - abs(j)
+            over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), D["out"])
+        for j in range(-r, r + 1):
+            w = r - abs(j)
+            over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), D["metal"][1] if j < 0 else D["metal"][2])
+        for j in range(-r + 2, r - 1):
+            w = r - 2 - abs(j)
+            over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), D["slot"])
+        icons.append(("war_ult", cx - 6, cy - 6, "sz12"))
+        mc_text(top, cx - mc_width(lvs) // 2 + 1, cy + 8, lvs, rgba("80ff20"), outline=True)
+    else:  # a bigger slot of the hotbar's own family, art inside, level where a stack count sits
+        x, y = C - 12, py - 8
+        step_plate(cv, (x - 2, y - 2, x + 26, y + 26), cut=2)
+        d_slot(cv, x + 1, y + 1)
+        over(cv, (x + 1, y + 1, x + 23, y + 23), D["slot"])
+        over(cv, (x + 1, y + 1, x + 23, y + 2), D["out"])
+        over(cv, (x + 1, y + 22, x + 23, y + 23), D["slot_hi"])
+        icons.append(("war_ult", x + 4, y + 4, "sz16"))
+        mc_text(top, x + 24 - mc_width(lvs), y + 16, lvs, rgba("80ff20"), outline=True)
+
+
 def vanilla_jp(out, jp, s):
     """Japanese the way vanilla draws it: a 16 px bitmap glyph in 8 GUI px, 1 GUI px shadow."""
     for text, x, y, col in jp:
@@ -2022,7 +2080,7 @@ def compose(result, s):
     jp = result[3] if len(result) > 3 else []
     out = base.resize((W * s, H * s), Image.NEAREST)
     for name, x, y, state in icons:
-        size = 10 if state == "buff10" else 16
+        size = 10 if state == "buff10" else int(state[2:]) if state.startswith("sz") else 16
         with Image.open(SKILLS / f"{name}.png") as f:
             ic = f.convert("RGBA").resize((size * s, size * s), Image.NEAREST if s % 2 == 0 else Image.LANCZOS)
         if state == "cd":
@@ -2042,7 +2100,8 @@ def main():
                      ("C5-pixel-crosscode", design_c5), ("C6-modern-mmo-minecraft", design_c6),
                      ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True)), ("C9-modern-mmo", design_c9), ("C10-modern-mmo-plain", lambda: design_c9(plain=True)), ("D1-dungeons-mmo", design_d1), ("D2-c8-layout-dungeons", lambda: design_c6(crisp=True, dungeons=True)),
                      ("E1-compact", lambda: design_e(1)), ("E2-compact", lambda: design_e(2)), ("E3-compact", lambda: design_e(3)),
-                     ("F1-vanilla-vocab", design_f1)):
+                     ("F1-vanilla-vocab", design_f1),
+                     ("G1-centre-hex", lambda: design_f1(1)), ("G2-centre-diamond", lambda: design_f1(2)), ("G3-centre-slot", lambda: design_f1(3))):
         img = fn()
         for s in (2, 4):
             compose(img, s).save(OUT / f"{name}-{s}x.png")
