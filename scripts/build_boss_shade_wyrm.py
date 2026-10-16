@@ -232,6 +232,8 @@ POSE = {
         "leg_hl": (("leg_hl", "leg_hl_shin", "leg_hl_foot"), (.95, .95), .82, .9, (0.15, 0, 1.0)),
     },
     "foot_x": .9,
+    "head": .68,             # head (skull, jaw, crown) scale about the skull joint (2026-10-16: "face too big")
+    "head_shift": (0.0, -2.0, 7.0),   # and moved forward so the smaller head clears the collar
 }
 
 
@@ -288,8 +290,14 @@ def repose(ref):
         xf[b1] = seg(J1, J2, K, F, scales[1])
         xf[b2] = lambda v, J2=J2, F=F, foot=foot: F + foot * (np.asarray(v, float) - J2)
         piv[b0], piv[b1], piv[b2] = N0, K, F
+    head = {"skull", "jaw", "crown_l"}
+    hp = piv["skull"].copy()
+    k = POSE["head"]
     for name in list(piv):
-        if name not in leg_bones:
+        if name in head:
+            xf[name] = lambda v, hp=hp: body(hp + k * (np.asarray(v, float) - hp) + np.array(POSE["head_shift"]))
+            piv[name] = xf[name](piv[name])
+        elif name not in leg_bones:
             xf[name] = body
             piv[name] = body(piv[name])
     return {k: [float(x) for x in v] for k, v in piv.items()}, xf
@@ -472,7 +480,7 @@ def fit_boxes(faces, slim=.9):
 MATERIAL = (("pit", "glow"), ("gape", "mouth"), ("fang", "bone"), ("hook", "talon"), ("toe", "talon"),
             ("shear", "talon"), ("digit", "spar"), ("keel", "plate"), ("crown", "plate"), ("brow", "plate"),
             ("collar", "plate"), ("carapace", "plate"), ("knuckle", "plate"), ("throat", "belly"), ("jaw", "belly"))
-FUR_BONES = {"body": 1.0, "neck": 1.0, "skull": .8, "tail": .8, "tail_2": .7, "tail_mid": .55,
+FUR_BONES = {"body": 1.0, "neck": 1.0, "skull": .45, "tail": .8, "tail_2": .7, "tail_mid": .55,
              "wing_l": .7, "wing_r": .7}
 
 
@@ -558,7 +566,7 @@ def build():
             return membrane(el, sign, bone, suffix)
         mat = material_of(name)
         faces = [{"v": [[q[0] * sign, q[1], q[2]] for q in f["v"]]} for f in el["faces"]]
-        slim = .82 if bone.startswith("leg_") else .7 if bone.startswith("wing_") else .9
+        slim = .82 if bone.startswith("leg_") else .7 if bone.startswith("wing_") else .72 if bone == "neck" else .9
         for k, (c, half, R) in enumerate(fit_boxes(faces, slim)):
             seed = int(_h(len(name), k, sign) * 9973)
             oriented(f"{name}_{k}{suffix}", bone, c, half, R, box_painter(mat, seed))
