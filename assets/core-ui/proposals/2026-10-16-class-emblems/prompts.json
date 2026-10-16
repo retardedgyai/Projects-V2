@@ -1,0 +1,23 @@
+{
+  "generation": "built-in image_gen (Codex); one call per class; save each result unmodified as .tools/class-emblem-generation/<id>.png",
+  "purpose": "Centre emblem of the combat HUD (a 27 GUI px diamond between the HP and MP plates). Six classes; Starweaver was removed by the creator on 2026-10-16.",
+  "style_references": [
+    "assets/core-ui/proposals/2026-09-08-v3/slash-source.png",
+    "assets/core-ui/proposals/2026-09-08-v3/flame-source.png",
+    "assets/core-ui/proposals/2026-09-08-v3/guard-source.png"
+  ],
+  "creator_notes": [
+    "Liked: mcmodels.net 'Skill Icons - Samus RPG Classes Edition v.2' look — chunky pixel clusters, 3-4 tones per material, no black outline, lit upper-left / dark lower-right, energetic.",
+    "Rejected so far: heraldic flat emblems, thin line symbols, white silhouettes, muted grey items, abstract shapes whose subject is unclear, drawings off the centre, anything that looks poor or sparse.",
+    "Must read as ONE clear class object, centred, upright, filling the diamond."
+  ],
+  "common": "Use case: stylized-concept. ONE original ProjectS Minecraft MMORPG class emblem sprite. Reference images show the APPROVED ProjectS pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette; also aim for the energy of hand-made RPG skill icon packs: rich but readable, 3-4 shading tones per material, a lit upper-left edge and a dark lower-right edge, a small glow or spark accents in the class colour. Square image, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. The composition must fit inside a DIAMOND (a square rotated 45 degrees): one upright object on the vertical centre line, pointed or narrow at the very top and bottom, widest across the middle, all four image corners left empty. Simple flat dark charcoal background (#0e0e10), no frame, no border, no letters, no text, no watermark, no logo, no photorealism, no thin line art, no tiny noise. Must stay recognizable at 16x16. Do not copy any existing game's icon.",
+  "queue": [
+    {"id": "warrior", "accent": "#e3283e", "subject": "Class: warrior. A broad steel greatsword standing upright, point down, a heavy gold crossguard across the middle, a crimson ruby pommel, faint ember sparks rising off the blade. Crimson is the class colour."},
+    {"id": "ranger", "accent": "#5ec64a", "subject": "Class: ranger. A recurve bow in green-stained wood standing upright with gold tips, an arrow nocked and drawn, its steel head pointing straight up, a light green wind curl around the grip. Green is the class colour."},
+    {"id": "mage", "accent": "#ff8a1c", "subject": "Class: mage. An upright staff of pale blue frost crystal crowned with a blazing orange fire orb held by three icy claws, a few flame tongues rising from the orb. Fire orange is the class colour."},
+    {"id": "assassin", "accent": "#8a4cff", "subject": "Class: assassin. A short curved dagger standing upright, point up, a violet poison sheen along the blade, a black wrapped hilt with an amethyst pommel, two wisps of violet smoke curling around it. Violet is the class colour."},
+    {"id": "templar", "accent": "#f4c84e", "subject": "Class: templar. An upright heater shield of polished steel with a thick gold rim, a gold cross across its face and a small red gem at the centre, soft golden light rays behind it. Gold is the class colour."},
+    {"id": "healer", "accent": "#9cf07c", "subject": "Class: healer. A thick radiant cross of pale green light with a thin gold halo ring behind it and two small leaves at its foot, a few motes of light around it. Life green is the class colour."}
+  ]
+}
