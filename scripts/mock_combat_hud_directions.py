@@ -1485,7 +1485,8 @@ def key_tag(cv, x, y, s):
     caps(cv, x + 1, y + 1, s, (225, 225, 225, 255))
 
 
-def design_c9():
+def design_c9(plain=False):
+    """plain=True (C10): the same piece without wings, plate tips or the boss medallion."""
     cv = world()
     top = Image.new("RGBA", (W, H))
     icons = []
@@ -1530,8 +1531,9 @@ def design_c9():
     py = ry - ph - 1
     dark_plate(cv, (x0 + 3, py, C - 10, py + ph))
     dark_plate(cv, (C + 10, py, x0 + 179, py + ph))
-    plate_tip(cv, x0 + 2, py, ph, -1)
-    plate_tip(cv, x0 + 180, py, ph, 1)
+    if not plain:
+        plate_tip(cv, x0 + 2, py, ph, -1)
+        plate_tip(cv, x0 + 180, py, ph, 1)
     ramp_gauge(cv, x0 + 6, C - 13, py + 3, 9, HP / HP_MAX, G["hp"], (34, 10, 14, 255),
                extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX)
     ramp_gauge(cv, C + 13, x0 + 176, py + 3, 9, MP / MP_MAX, G["mp"], (10, 16, 36, 255))
@@ -1540,7 +1542,8 @@ def design_c9():
     s = f"{MP}/{MP_MAX}"
     mc_text(cv, (C + 13 + x0 + 176) // 2 - mc_width(s) // 2, py + 4, s, G["text"], outline=True)
     # crest with wings over the plates
-    wings(cv, C, py - 5, 30)
+    if not plain:
+        wings(cv, C, py - 5, 30)
     iron_crest(cv, C, py - 9, "12")
     # buffs: tiles with timers under the icon
     bx = x0 + 3
@@ -1555,8 +1558,9 @@ def design_c9():
     # notice
     nw = jp_width(NOTICE)
     dark_plate(cv, (C - nw // 2 - 8, py - 44, C + nw // 2 + 8, py - 28))
-    plate_tip(cv, C - nw // 2 - 9, py - 44, 16, -1)
-    plate_tip(cv, C + nw // 2 + 8, py - 44, 16, 1)
+    if not plain:
+        plate_tip(cv, C - nw // 2 - 9, py - 44, 16, -1)
+        plate_tip(cv, C + nw // 2 + 8, py - 44, 16, 1)
     jp_text(cv, C - nw // 2, py - 43, NOTICE, rgba("9cc6ff"))
     # boss: name over an ornate iron frame with arrow tips and a medallion
     name = "裂け目の執行官"
@@ -1574,8 +1578,9 @@ def design_c9():
     tiny(cv, nx + 2, 6, "30", rgba("e8c46a"))
     jp_text(cv, nx + lvw + 3, 2, name, G["text"], style="outline")
     dark_plate(cv, (bx0, 17, bx0 + bw, 28))
-    plate_tip(cv, bx0 - 1, 17, 11, -1)
-    plate_tip(cv, bx0 + bw, 17, 11, 1)
+    if not plain:
+        plate_tip(cv, bx0 - 1, 17, 11, -1)
+        plate_tip(cv, bx0 + bw, 17, 11, 1)
     ramp_gauge(cv, bx0 + 3, bx0 + bw - 3, 20, 5, BOSS / BOSS_MAX, G["boss"], (36, 10, 8, 255),
                trail=BOSS_LOST / BOSS_MAX)
     for q in (1, 2, 3):
@@ -1583,13 +1588,172 @@ def design_c9():
         over(cv, (qx, 20, qx + 1, 25), (0, 0, 0, 170))
     pct = f"{BOSS * 100 // BOSS_MAX}%"
     mc_text(cv, bx0 + bw - mc_width(pct), 7, pct, G["text"], outline=True)
-    for j in range(-4, 5):  # medallion
-        w = 4 - abs(j)
-        over(cv, (C - w - 1, 31 + j, C + w + 2, 32 + j), G["out"])
-    for j in range(-3, 4):
-        w = 3 - abs(j)
-        over(cv, (C - w, 31 + j, C + w + 1, 32 + j), IRON[1] if j < 0 else IRON[2])
-    gem(cv, C, 31, G["ruby"], 1)
+    if not plain:
+        for j in range(-4, 5):  # medallion
+            w = 4 - abs(j)
+            over(cv, (C - w - 1, 31 + j, C + w + 2, 32 + j), G["out"])
+        for j in range(-3, 4):
+            w = 3 - abs(j)
+            over(cv, (C - w, 31 + j, C + w + 1, 32 + j), IRON[1] if j < 0 else IRON[2])
+        gem(cv, C, 31, G["ruby"], 1)
+    return cv, icons, top
+
+
+# ---- D1: modern MMO layout drawn in the Minecraft Dungeons idiom -------------------------------
+# References studied: Minecraft Dungeons HUD (official UI art on Behance) and the Java "Dungeons
+# Hotbar" resource pack (Modrinth): chunky stepped-corner charcoal plates with soft bevels, a big
+# heart container as the centre piece (HP fills it like liquid), Minecraft font for numbers, no
+# glow bands. Layout keeps the AION2 idea: one hero piece in the middle, gauges on both sides.
+
+D = {"out": rgba("0e0e11"), "plate": rgba("2c2c32"), "hi": rgba("4c4c56"), "lo": rgba("1b1b20"),
+     "slot": rgba("17171b"), "slot_hi": rgba("3c3c45"), "metal": (rgba("c4c5ce"), rgba("8d8e99"), rgba("5e5f6a"), rgba("3a3b43")),
+     "red": (rgba("8a0f1c"), rgba("e0202e"), rgba("ff6b66")), "blue": (rgba("1a4aa8"), rgba("3a8ef0"), rgba("8cc8ff")),
+     "amber": (rgba("9a4a08"), rgba("f39a1c"), rgba("ffd86a")), "text": rgba("ffffff"), "sub": rgba("b8b8c2")}
+
+
+def step_plate(cv, box, cut=2):
+    """Charcoal plate with staircase-cut corners, 1px outline, light top / dark bottom bevel."""
+    x0, y0, x1, y1 = box
+    for j in range(y0, y1):
+        k = min(j - y0, y1 - 1 - j)
+        d = cut - k if k < cut else 0
+        over(cv, (x0 + d, j, x1 - d, j + 1), D["out"])
+        if 0 < k:
+            dd = max(0, cut - k) + 1
+            over(cv, (x0 + dd, j, x1 - dd, j + 1), D["hi"] if k == 1 and j - y0 == 1 else
+                 D["lo"] if k == 1 else D["plate"])
+
+
+def d_slot(cv, x, y):
+    over(cv, (x, y, x + 18, y + 18), D["slot"])
+    over(cv, (x, y, x + 18, y + 1), D["out"])
+    over(cv, (x, y, x + 1, y + 18), D["out"])
+    over(cv, (x, y + 17, x + 18, y + 18), D["slot_hi"])
+    over(cv, (x + 17, y, x + 18, y + 18), D["slot_hi"])
+
+
+def heart_masks(w=39, h=35):
+    inside = set()
+    for j in range(h):
+        for i in range(w):
+            x = (i + .5 - w / 2) / (w / 2) * 1.18
+            y = 1.22 - (j + .5) / h * 2.35
+            if (x * x + y * y - 1) ** 3 - x * x * y ** 3 <= 0:
+                inside.add((i, j))
+    def erode(s, n):
+        for _ in range(n):
+            s = {(i, j) for (i, j) in s if all((i + a, j + b) in s for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)))}
+        return s
+    inner = erode(inside, 3)
+    outline = {(i + a, j + b) for (i, j) in inside for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1))} - inside
+    return inside, inner, outline
+
+
+def heart_container(cv, cx, top, frac, trail):
+    w, h = 39, 35
+    inside, inner, outline = heart_masks(w, h)
+    x0 = cx - w // 2
+    for i, j in outline:
+        px(cv, x0 + i, top + j, D["out"])
+    dark, base, light, deep = D["metal"][3], D["metal"][1], D["metal"][0], D["metal"][2]
+    for i, j in inside - inner:  # metal rim, lit from the top-left
+        col = light if (i + j) < w * .55 and j < h * .45 else base if j < h * .6 else deep
+        px(cv, x0 + i, top + j, col)
+    rows = [j for (_, j) in inner]
+    r0, r1 = min(rows), max(rows)
+    surface = r1 + 1 - round((r1 - r0 + 1) * frac)
+    trail_row = r1 + 1 - round((r1 - r0 + 1) * (frac + trail))
+    for i, j in inner:
+        if j >= surface:
+            col = D["red"][2] if j == surface else D["red"][0] if (i, j + 1) not in inner or j > r1 - 2 else D["red"][1]
+        elif j >= trail_row:
+            col = rgba("f2c8c0")
+        else:
+            col = rgba("1d1216")
+        px(cv, x0 + i, top + j, col)
+    for i, j in inner:  # a glint in the upper-left lobe
+        if (i, j) in {(9, 7), (8, 8), (9, 8), (8, 9)}:
+            px(cv, x0 + i, top + j, rgba("ffffff", 200))
+
+
+SKULL = ["011111110", "111111111", "110111011", "100111001", "111101111", "011111110", "001010100"]
+
+
+def design_d1():
+    cv = world()
+    top = Image.new("RGBA", (W, H))
+    icons = []
+    x0, y0 = HB_X, HB_Y
+    # console strip above the hotbar, then the hotbar itself (same charcoal, one piece)
+    step_plate(cv, (x0 - 2, y0 - 12, x0 + 184, y0 + 3))
+    step_plate(cv, (x0 - 2, y0, x0 + 184, y0 + 23))
+    for i in range(9):
+        d_slot(cv, x0 + 2 + 20 * i, y0 + 2)
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        icons.append((name, x, y, state))
+        if state == "cd":
+            s = str(cd)
+            mc_text(top, x + 8 - mc_width(s) // 2 + 1, y + 4, s, D["text"], outline=True)
+    for i in range(9):
+        caps(top, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (230, 230, 236, 230))
+    sx = x0 + 1
+    for a, b, c, d in ((sx, y0 + 1, sx + 20, y0 + 2), (sx, y0 + 20, sx + 20, y0 + 21),
+                       (sx, y0 + 1, sx + 1, y0 + 21), (sx + 19, y0 + 1, sx + 20, y0 + 21)):
+        over(cv, (a, b, c, d), D["text"])
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # gauges in the console: MP left, class resource right (Minecraft Dungeons puts its bars here)
+    gy = y0 - 8
+    for gx0, gx1, frac, ramp in ((x0 + 3, C - 22, MP / MP_MAX, D["blue"]), (C + 22, x0 + 179, RAGE / 100, D["amber"])):
+        over(cv, (gx0 - 1, gy - 1, gx1 + 1, gy + 4), D["out"])
+        over(cv, (gx0, gy, gx1, gy + 3), rgba("101014"))
+        f = round((gx1 - gx0) * frac)
+        over(cv, (gx0, gy, gx0 + f, gy + 3), ramp[1])
+        over(cv, (gx0, gy, gx0 + f, gy + 1), ramp[2])
+    # numbers above the console in the Minecraft font
+    ty = y0 - 22
+    mc_text(cv, x0, ty, f"{MP}/{MP_MAX}", rgba("9cd0ff"))
+    lv = "LV 12"
+    mc_text(cv, x0 + 182 - mc_width(lv), ty, lv, D["text"])
+    mc_text(cv, C + 22, ty, f"+{BARRIER}", rgba("e8e8f0"))
+    # centre piece: the heart container, its tip plugged into the console; HP number inside
+    heart_container(cv, C, y0 - 40, HP / HP_MAX, HP_LOST / HP_MAX)
+    s = str(HP)
+    bold(cv, C - bold_width(s) // 2, y0 - 31, s, D["text"])
+    caps(cv, C - (4 * 3 - 1) // 2, y0 - 21, str(HP_MAX), rgba("ffd8d4"))
+    # buffs: small stepped frames, timer beside
+    bx = x0
+    for label, name, sec in BUFFS:
+        step_plate(cv, (bx, ty - 16, bx + 14, ty - 2), cut=1)
+        icons.append((name, bx + 2, ty - 14, "buff10"))
+        mc_text(cv, bx + 16, ty - 13, f"{sec}s", D["text"])
+        bx += 18 + mc_width(f"{sec}s") + 3
+    # notice: plain text with a Minecraft-style shadow, like a vanilla title
+    nw = jp_width(NOTICE)
+    jp_text(cv, C - nw // 2, y0 - 66, NOTICE, rgba("a8d0ff"))
+    # boss: name, chunky stepped bar with a skull cap
+    name = "裂け目の執行官"
+    jp_text(cv, C - jp_width(name) // 2, 2, name, D["text"])
+    bw = 200
+    bx0 = C - bw // 2
+    step_plate(cv, (bx0, 16, bx0 + bw, 27), cut=2)
+    gx0, gx1 = bx0 + 3, bx0 + bw - 3
+    over(cv, (gx0, 19, gx1, 24), rgba("1d1216"))
+    f = round((gx1 - gx0) * BOSS / BOSS_MAX)
+    t = round((gx1 - gx0) * BOSS_LOST / BOSS_MAX)
+    over(cv, (gx0 + f, 19, gx0 + f + t, 24), rgba("f2c8c0"))
+    over(cv, (gx0, 19, gx0 + f, 24), D["red"][1])
+    over(cv, (gx0, 19, gx0 + f, 20), D["red"][2])
+    over(cv, (gx0, 23, gx0 + f, 24), D["red"][0])
+    step_plate(cv, (bx0 - 8, 13, bx0 + 7, 30), cut=2)
+    for j, row in enumerate(SKULL):
+        for i, v in enumerate(row):
+            if v == "1":
+                px(cv, bx0 - 5 + i, 18 + j, rgba("e8e6dc"))
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - mc_width(pct), 5, pct, D["text"])
     return cv, icons, top
 
 
@@ -1617,7 +1781,7 @@ def main():
     for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c),
                      ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4),
                      ("C5-pixel-crosscode", design_c5), ("C6-modern-mmo-minecraft", design_c6),
-                     ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True)), ("C9-modern-mmo", design_c9)):
+                     ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True)), ("C9-modern-mmo", design_c9), ("C10-modern-mmo-plain", lambda: design_c9(plain=True)), ("D1-dungeons-mmo", design_d1)):
         img = fn()
         for s in (2, 4):
             compose(img, s).save(OUT / f"{name}-{s}x.png")
