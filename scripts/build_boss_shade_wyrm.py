@@ -299,7 +299,7 @@ def build():
         ])
         return rig.bone("neck", [0, 40, 22], NECK, neck_items, "body", [skull] + neck_parts)
 
-    def claw(name, parent, base, sign, size=1.0, pitch=24):
+    def claw(name, parent, base, sign, size=1.0, pitch=24, root_pitch=8):
         """A hooked claw pointing +Z from `base`: dark root, then a tip bone bent down, glowing at the point."""
         x, y, z = base
         w = 3 * size
@@ -307,79 +307,72 @@ def build():
             (f"{name}_hook", [x - w * .35, y + w * .15, z + 7 * size], [x + w * .35, y + w * .85, z + 12 * size], p("talon")),
             (f"{name}_glow", [x - w * .2, y + w * .3, z + 12 * size], [x + w * .2, y + w * .7, z + 15 * size], p("glow", "glow")),
         ], sign)
-        return part(name, parent, [x, y + w / 2, z], [8, 0, 0], [
+        return part(name, parent, [x, y + w / 2, z], [root_pitch, 0, 0], [
             (f"{name}_root", [x - w / 2, y, z - 2], [x + w / 2, y + w, z + 7 * size], p("talon")),
         ], sign, children=[tip])
 
-    # ---------- wing-arms (front legs) and the cloak ----------
+    # ---------- wing-arms: folded Z-wise on the shoulders, the carpal claws hanging in front ----------
     def wing(sign, s):
-        shoulder = [16 * sign, 54, 14]
-        elbow_world = [22 * sign, 70, 0]
-        wrist_world = [28 * sign, 9, 60]
-        up = [e - b for e, b in zip(elbow_world, shoulder)]
+        # World joints (+X side): shoulder -> elbow back and up -> carpal forward, high over the front shoulder.
+        shoulder, elbow, carpal = [16, 54, 14], [22, 66, -6], [24, 72, 26]
+        name, fore_name, hand_name = f"wing_{s}", f"wing_{s}_fore", f"wing_{s}_hand"
+        up = [(elbow[0] - shoulder[0]) * sign, elbow[1] - shoulder[1], elbow[2] - shoulder[2]]
         upper_rot = aim(up, along=(0, 1, 0))
         upper_len = length(up)
-        name = f"wing_{s}"
         rig.world[name] = euler_matrix(*upper_rot)
-        ey = shoulder[1] + upper_len   # the elbow, in the upper arm's local frame
-        top = [16 * sign, ey, 14]
-        sy = shoulder[1]
+        sy, ey = shoulder[1], shoulder[1] + upper_len   # straight layout: the elbow sits above the shoulder
         upper = cubes([
-            ("humerus", [10, sy - 6, 7], [22, ey, 21], p("scale", "scales")),
-            ("shoulder_plate", [8.5, sy - 10, 4], [23.5, sy + 4, 23], p("scale", "scales")),
-            ("elbow", [10, ey - 6, 6], [22, ey + 6, 20], p("hide")),
+            ("humerus", [10.5, sy - 4, 8], [21.5, ey, 20], p("scale", "scales")),
+            ("shoulder_plate", [8.5, sy - 10, 4], [23.5, sy + 5, 24], p("scale", "scales")),
+            ("elbow", [10, ey - 5, 7], [22, ey + 6, 21], p("hide")),
         ], sign, "_" + s)
-        elbow_spikes = [spike(f"elbow_spike_{s}", name, [16, ey + 4, 10], [40, 0, 0], 16, 5, sign),
-                        spike(f"elbow_barb_{s}", name, [16, ey - 2, 7], [10, 0, 0], 10, 3.5, sign)]
-        # Forearm: elbow -> wrist planted forward on the ground, thick at the elbow, thin at the wrist.
-        down = [w - e for w, e in zip(wrist_world, elbow_world)]
-        fore_len = length(down)
-        fore_rot = aim(down, parent=rig.world[name])
-        fore_name = f"wing_{s}_fore"
+        elbow_spikes = [spike(f"elbow_spike_{s}", name, [16, ey + 2, 10], [-60, 0, 0], 14, 5, sign)]
+        # Forearm: elbow -> carpal, folding forward again.
+        fwd = [(carpal[0] - elbow[0]) * sign, carpal[1] - elbow[1], carpal[2] - elbow[2]]
+        fore_len = length(fwd)
+        fore_rot = aim(fwd, along=(0, 1, 0), parent=rig.world[name])
         rig.world[fore_name] = _mul(rig.world[name], euler_matrix(*fore_rot))
+        cy = ey + fore_len
         fore = cubes([
-            ("forearm", [11, ey - fore_len * .5, 9], [21, ey, 19], p("hide")),
-            ("forearm_low", [12.5, ey - fore_len, 10.5], [19.5, ey - fore_len * .5, 17.5], p("hide")),
-            ("forearm_ridge", [13, ey - fore_len * .8, 17.5], [19, ey - 6, 20.5], p("scale", "scales")),
-            ("forearm_seam_glow", [15.5, ey - fore_len * .55, 20.5], [16.5, ey - fore_len * .3, 21], p("glow", "glow")),
+            ("forearm", [11, ey - 2, 9], [21, ey + fore_len * .55, 19], p("hide")),
+            ("forearm_hi", [12, ey + fore_len * .55, 10], [20, cy, 18], p("hide")),
+            ("forearm_ridge", [13, ey + 4, 18.5], [19, cy - 4, 21], p("scale", "scales")),
+            ("forearm_seam_glow", [15.5, ey + fore_len * .3, 21], [16.5, ey + fore_len * .7, 21.5], p("glow", "glow")),
         ], sign, "_" + s)
-        wy = ey - fore_len
-        hand = cubes([
-            ("wrist", [11, wy - 4, 6], [21, wy + 5, 20], p("scale", "scales")),
-        ], sign, "_" + s)
-        hand_name = f"wing_{s}_hand"
-        # Big hooked wing-claws: the brightest accent of the silhouette, planted in front.
-        claws = [claw(f"wclaw{k}_{s}", hand_name, [cx, wy - 4, 18], sign, size, 30)
-                 for k, (cx, size) in enumerate(((11.5, 1.1), (16, 1.35), (20.5, 1.0)))]
-        # The hand cancels the arm's rotation so it sits flat on the ground.
-        hand_b = rig.bone(hand_name, [16 * sign, wy, 14], matrix_euler(_t(rig.world[fore_name])), hand, fore_name, claws)
-        fore_b = rig.bone(fore_name, top, fore_rot, fore, name, [hand_b])
-
-        # Cloak: four finger spars fan back from the elbow; the membranes trail back past the hips.
+        # Carpal: cancels the chain, so everything below it is authored in world axes around the carpal.
+        hand = cubes([("carpal", [10.5, cy - 6, 7], [21.5, cy + 5, 22], p("scale", "scales"))], sign, "_" + s)
+        claws = [claw(f"wclaw{k}_{s}", hand_name, [cx, cy - 5, 20], sign, size, 34, 52)
+                 for k, (cx, size) in enumerate(((11.5, 1.1), (16, 1.4), (20.5, 1.0)))]
+        # Cloak: four finger spars run back from the carpal; their membranes drape over the flank to the tail.
         inner = "west" if sign > 0 else "east"
         mem_name = f"wing_{s}_membrane"
-        rig.world[mem_name] = rig.world[name]
+        rig.world[hand_name] = IDENTITY
+        rig.world[mem_name] = IDENTITY
+        top = [16 * sign, cy, 14]
         fingers = []
-        # (finger, world direction of the spar from the elbow, spar length, membrane width behind it)
-        # Each finger carries the membrane on its trailing side; the rear ones run back toward the tail.
-        layout = ((1, [8 * sign, -40, -20], 60, 22, -1), (2, [12 * sign, -34, -60], 84, 28, -1),
-                  (3, [12 * sign, -14, -92], 100, 30, -1), (4, [6 * sign, -2, -100], 104, 24, -1))
-        for idx, (i, direction, size, width, side) in enumerate(layout):
+        layout = ((1, [6 * sign, -60, -14], 62, 24), (2, [10 * sign, -50, -50], 80, 30),
+                  (3, [12 * sign, -26, -90], 98, 32), (4, [8 * sign, -6, -108], 112, 26))
+        for idx, (i, direction, size, width) in enumerate(layout):
             x0 = top[0] + sign * (3 + idx * .4)
-            z0, z1 = (14 - width, 13) if side < 0 else (15, 14 + width)
+            rot = aim(direction)
+            # Hang the membrane on whichever side of the spar points down.
+            below = _apply(euler_matrix(*rot), [0, 0, -1])[1] <= 0
+            z0, z1 = (14 - width, 13) if below else (15, 14 + width)
             items = cubes([
-                ("membrane", [x0 - .6, ey - size + 2, z0], [x0 + .6, ey - 2, z1], p("cloak", "membrane", inner)),
-                ("spar", [x0 - 1.5, ey - size * .55, 12.5], [x0 + 1.5, ey, 15.5], p("spar", "bone")),
-                ("spar_low", [x0 - 1, ey - size, 13], [x0 + 1, ey - size * .55, 15], p("spar", "bone")),
-                ("spar_glow", [x0 - .75, ey - size - 1.5, 13.25], [x0 + .75, ey - size, 14.75], p("glow", "glow")),
+                ("membrane", [x0 - .6, cy - size + 2, z0], [x0 + .6, cy - 2, z1], p("cloak", "membrane", inner)),
+                ("spar", [x0 - 1.5, cy - size * .55, 12.5], [x0 + 1.5, cy, 15.5], p("spar", "bone")),
+                ("spar_low", [x0 - 1, cy - size, 13], [x0 + 1, cy - size * .55, 15], p("spar", "bone")),
+                ("spar_glow", [x0 - .75, cy - size - 1.5, 13.25], [x0 + .75, cy - size, 14.75], p("glow", "glow")),
             ], 1, f"_{s}{i}")
-            fingers.append(rig.bone(f"wing_{s}_finger{i}", top, aim(direction, parent=rig.world[mem_name]), items, mem_name))
-        # Mantle: the folded part of the membrane lying over the back between the elbows.
-        # It cancels the arm's tilt so it lies level over the hips, and still opens with the wing.
-        mantle = cubes([("mantle", [-4, ey - 14, -40], [16, ey - 12, 18], p("cloak", "plain", "down"))], sign, "_" + s)
-        mantle_b = rig.bone(f"wing_{s}_mantle", top, matrix_euler(_t(rig.world[mem_name])), mantle, mem_name)
-        mem_b = rig.bone(mem_name, top, [0, 0, 0], [], name, fingers + [mantle_b])
-        return rig.bone(name, shoulder, upper_rot, upper, "body", [fore_b, mem_b] + elbow_spikes)
+            fingers.append(rig.bone(f"wing_{s}_finger{i}", top, rot, items, mem_name))
+        # Mantle: the folded membrane lying level over the back, from the carpal to the hips.
+        # Authored around the carpal: world = local - (16, cy, 14) + carpal.
+        mantle = cubes([("mantle", [-7, cy - 10, -52], [14, cy - 8, 8], p("cloak", "plain", "down"))], sign, "_" + s)
+        mantle_b = rig.bone(f"wing_{s}_mantle", top, [0, 0, 0], mantle, mem_name)
+        mem_b = rig.bone(mem_name, top, [0, 0, 0], [], hand_name, fingers + [mantle_b])
+        hand_b = rig.bone(hand_name, top, matrix_euler(_t(rig.world[fore_name])), hand, fore_name, claws + [mem_b])
+        fore_b = rig.bone(fore_name, [16 * sign, ey, 14], fore_rot, fore, name, [hand_b])
+        return rig.bone(name, [shoulder[0] * sign, shoulder[1], shoulder[2]], upper_rot, upper, "body", [fore_b] + elbow_spikes)
 
     def limb(names, joints, widths, parent, sign, extras=()):
         """Bones `names[i]` from joints[i] to joints[i+1] (world, +X side), laid out straight down from joints[0].

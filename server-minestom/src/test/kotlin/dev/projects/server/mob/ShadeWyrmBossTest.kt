@@ -75,9 +75,9 @@ class ShadeWyrmBossTest {
             val checks = listOf(
                 Triple("body", Vec(10.0, 56.0, 20.0), Vec(10.0, 56.0, 20.0)), // unrotated reference
                 Triple("neck", Vec(0.0, 40.0, 46.0), Vec(0.0, 30.2, 43.9)), // neck
-                Triple("wing_l", Vec(16.0, 80.0, 13.0), Vec(22.8, 72.2, -3.3)), // elbow
-                Triple("wing_l_hand", Vec(16.0, -8.0, 30.0), Vec(28.0, 10.7, 76.0)), // wing claw
-                Triple("wing_l_finger3", Vec(19.8, 10.3, 14.0), Vec(27.3, 62.3, -65.2)), // rear cloak spar
+                Triple("wing_l_fore", Vec(16.0, 110.7, 14.0), Vec(24.0, 72.0, 26.0)), // carpal
+                Triple("wing_l_hand", Vec(16.0, 102.7, 30.0), Vec(24.0, 64.0, 42.0)), // wing claw
+                Triple("wing_l_finger3", Vec(19.8, 20.7, 14.0), Vec(38.9, 48.8, -59.8)), // rear cloak spar
                 Triple("skull", Vec(0.0, 42.0, 81.0), Vec(0.0, 24.2, 78.2)), // nose
                 Triple("tail_end", Vec(0.0, 44.0, -140.0), Vec(0.0, 41.1, -138.7)), // tail blade
                 Triple("leg_hl_foot", Vec(15.0, -20.0, -20.0), Vec(16.0, -7.8, -24.0)), // hind foot
