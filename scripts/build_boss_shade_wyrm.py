@@ -15,6 +15,7 @@ every angle lives on a bone (rest rotation, Blockbench editor convention: euler 
 Animation names are the server contract: idle / walk / idle_enraged / walk_enraged / enrage /
 death, plus one `once` animation per ability id (length = telegraph+recovery, impact at telegraph).
 """
+import json
 import math
 
 from boss_models import Model, ROOT
@@ -119,7 +120,7 @@ def painter(material, motif="plain", inner_face=None):
         seed = sum(ord(c) * (i + 1) for i, c in enumerate(material + motif + side))
         big = side not in ("up", "down")
 
-        def paint(x, y, w, h):
+        def paint(x, y, w, h, motif=("membrane" if motif == "veil" else motif), torn=(motif != "veil")):
             mat = "inner" if side == inner_face else material
             pal = PALETTES[mat]
             c = pal[1]
@@ -155,7 +156,7 @@ def painter(material, motif="plain", inner_face=None):
             elif motif == "glow":
                 c = pal[2] if 0 < x < w - 1 and 0 < y < h - 1 else pal[1]
             # Ragged hem: notches cut into the lower edge of membranes and hair.
-            if motif in ("membrane", "fringe") and big and h >= 6:
+            if torn and motif in ("membrane", "fringe") and big and h >= 6:
                 depth = noise(x // 2, 7, seed) % (6 if motif == "membrane" else 4)
                 if y >= h - depth:
                     return (0, 0, 0, 0)
@@ -184,13 +185,72 @@ class Rig:
         return lambda: self.m.bone(name, pivot, items + [c() for c in children], rotation)
 
 
+ANATOMY = ROOT / "assets/bosses/shade_wyrm_anatomy.json"
+
+
+def material_for(name):
+    """Texture by anatomical part (anatomy JSON names come from the Creator's noctveil reference)."""
+    n = name
+    if "pit" in n:
+        return painter("glow", "glow")
+    if "gape" in n:
+        return painter("mouth")
+    if "fang" in n:
+        return painter("fang", "bone")
+    if any(k in n for k in ("toe", "hook", "shear")):
+        return painter("talon")
+    if "digit" in n:
+        return painter("spar", "bone")
+    if any(k in n for k in ("keel", "crown", "brow", "carapace", "collar", "knuckle", "palm", "ankle")):
+        return painter("scale", "scales")
+    return painter("hide", "scales")
+
+
+def masked(base, outline, half):
+    """Cut a membrane plate to its panel outline: the big faces show only inside the 2D triangles (local y, z);
+    the thin edge faces are left empty so the plate reads as the panel shape, not its bounding box."""
+    def inside(py, pz):
+        for (ay, az), (by, bz), (cy, cz) in outline:
+            d = (by - ay) * (cz - az) - (bz - az) * (cy - ay)
+            if abs(d) < 1e-9:
+                continue
+            u = ((py - ay) * (cz - az) - (pz - az) * (cy - ay)) / d
+            v = ((by - ay) * (pz - az) - (bz - az) * (py - ay)) / d
+            if u >= -.02 and v >= -.02 and u + v <= 1.02:
+                return True
+        return False
+
+    def make(side, w, h):
+        if side not in ("east", "west"):
+            return (lambda x, y, w, h: (0, 0, 0, 0)), ("clear", w, h)
+        paint, key = base(side, w, h)
+
+        def cut(x, y, w, h):
+            pz = (half[2] - (x + .5) / w * 2 * half[2]) if side == "east" else (-half[2] + (x + .5) / w * 2 * half[2])
+            py = half[1] - (y + .5) / h * 2 * half[1]
+            return paint(x, y, w, h) if inside(py, pz) else (0, 0, 0, 0)
+        return cut, key + (id(outline),)
+    return make
+
+
 def build():
     m = Model("shade_wyrm", size=1024)
     rig = Rig(m)
     p = painter
+    anatomy = json.loads(ANATOMY.read_text(encoding="utf-8"))
+    MIRROR = [[-1, 0, 0], [0, 1, 0], [0, 0, 1]]
+
+    def sided(name):
+        return bool(name) and name.startswith(("leg_", "wing_", "crown_"))
+
+    def right(name):
+        if not sided(name):
+            return name
+        for a, b in (("leg_fl", "leg_fr"), ("leg_hl", "leg_hr"), ("wing_l", "wing_r"), ("crown_l", "crown_r")):
+            name = name.replace(a, b)
+        return name
 
     def cubes(spec, sign=1, suffix=""):
-        """spec: [(name, from, to, paint)]; sign -1 mirrors across X for the right side."""
         items = []
         for name, a, b, paint in spec:
             if sign < 0:
@@ -198,301 +258,128 @@ def build():
             m.cube(f"{name}{suffix}", a, b, items, paint)
         return items
 
-    rig.world["body"] = IDENTITY
-    NECK, SKULL = (24, 0, 0), (-10, 0, 0)
-    rig.world["neck"] = euler_matrix(*NECK)
-    rig.world["skull"] = _mul(rig.world["neck"], euler_matrix(*SKULL))
-
-    # ---------- head ----------
     def part(name, parent, pivot, rotation, spec, sign=1, suffix="", children=()):
-        """A bone holding cubes: angles live on bones so the server can verify them (see the rest-pose test)."""
         piv = [pivot[0] * sign, pivot[1], pivot[2]]
         rotation = [rotation[0], rotation[1] * sign, rotation[2] * sign]
         return rig.bone(name, piv, rotation, cubes(spec, sign, suffix), parent, list(children))
 
-    def spike(name, parent, base, rotation, length, width, sign=1, glow=True):
+    def spike(name, parent, base, rotation, length, width, sign=1):
         """A tapered spike pointing along -Z from `base` before rotation: thick root, thin glowing tip."""
         x, y, z = base
         w2, w3 = width * .65, width * .35
-        spec = [(f"{name}_root", [x - width / 2, y, z - length * .5], [x + width / 2, y + width, z], p("scale", "scales")),
-                (f"{name}_mid", [x - w2 / 2, y + (width - w2) / 2, z - length * .8], [x + w2 / 2, y + (width + w2) / 2, z - length * .5], p("hide")),
-                (f"{name}_glow", [x - w3 / 2, y + (width - w3) / 2, z - length], [x + w3 / 2, y + (width + w3) / 2, z - length * .8],
-                 p("glow", "glow") if glow else p("bone", "bone"))]
-        return part(name, parent, base, rotation, spec, sign)
-
-    # ---------- head: a ridged helmet with a glowing mouth and a swept-back crown ----------
-    def head():
-        jaw_items = [
-            ("jaw", [-7, 27, 48], [7, 33, 72], p("hide")),
-            ("jaw_tip", [-5, 27.5, 72], [5, 32.5, 82], p("hide")),
-            ("jaw_plate", [-7.5, 26, 50], [7.5, 27, 74], p("belly", "belly")),
-            ("chin_spike", [-1, 24, 58], [1, 26, 70], p("bone", "bone")),
-            ("tongue", [-4, 32.5, 50], [4, 33.5, 74], p("mouth")),
-            ("throat_glow", [-3, 31.5, 48], [3, 33, 56], p("glow", "glow")),
-        ]
-        for k, z in enumerate((60, 65, 70, 75)):
-            for sx in (1, -1):
-                x = (5.5 - k * .4) * sx
-                jaw_items.append((f"lower_tooth_glow_{k}_{'l' if sx > 0 else 'r'}", [x - .75, 33, z], [x + .75, 35.5, z + 1.5], p("fang", "bone")))
-        jaw_b = part("jaw", "skull", [0, 33, 48], [9, 0, 0], jaw_items)
-
-        skull_items = [
-            ("cranium", [-10, 32, 36], [10, 48, 56], p("hide")),
-            ("skull_back", [-11, 30, 26], [11, 50, 37], p("fringe", "fringe")),
-            ("snout_base", [-8, 33, 56], [8, 45, 70], p("hide")),
-            ("snout_mid", [-6, 34, 70], [6, 43, 79], p("hide")),
-            ("snout_tip", [-4, 35, 79], [4, 41, 86], p("hide")),
-            ("beak", [-2.5, 32, 84], [2.5, 37, 88], p("scale", "scales")),
-            ("palate", [-5.5, 32.5, 52], [5.5, 33.5, 84], p("mouth")),
-        ]
-        for k, z in enumerate((58, 63, 68, 73, 78)):
-            for sx in (1, -1):
-                x = (6 - k * .45) * sx
-                skull_items.append((f"upper_tooth_{k}_{'l' if sx > 0 else 'r'}", [x - .75, 30.5, z], [x + .75, 33.5, z + 1.5], p("fang", "bone")))
-        skull_parts = [jaw_b]
-        # Helmet: two stepped dome plates leaning down to the nose, and a ridged nasal plate.
-        skull_parts.append(part("helm", "skull", [0, 48, 58], [12, 0, 0], [
-            ("helm_dome", [-11, 47, 34], [11, 52, 60], p("scale", "scales")),
-            ("helm_crest", [-7, 51, 36], [7, 54.5, 56], p("scale", "scales")),
-            ("helm_seam_glow", [-1, 54.5, 38], [1, 55, 54], p("glow", "glow")),
-        ]))
-        skull_parts.append(part("nasal", "skull", [0, 45, 70], [8, 0, 0], [
-            ("nasal_plate", [-6, 44, 58], [6, 47, 84], p("scale", "scales")),
-            ("nasal_ridge", [-2, 46.5, 60], [2, 48.5, 82], p("scale", "scales")),
-            ("nasal_seam_glow", [-.5, 48.5, 62], [.5, 49, 80], p("glow", "glow")),
-        ]))
-        for sign, s in ((1, "l"), (-1, "r")):
-            # Cheek guard flaring out toward the back, with the glowing sense slit where an eye would be.
-            skull_parts.append(part(f"cheek_{s}", "skull", [10, 40, 60], [0, -16, 0], [
-                ("cheek", [9, 33, 40], [12, 45, 60], p("scale", "scales")),
-                ("cheek_rim", [11.5, 43, 38], [13, 46.5, 58], p("hide")),
-                ("sense_glow", [12, 39, 48], [12.6, 41, 57], p("glow", "glow")),
-            ], sign, "_" + s))
-            # Ragged hood of hair flaring out behind the cheeks.
-            skull_parts.append(part(f"hood_{s}", "skull", [10, 40, 38], [0, -38, 8], [
-                ("hood_flap", [9.5, 28, 18], [11, 52, 38], p("fringe", "fringe")),
-            ], sign, "_" + s))
-            # Helmet rim spikes and the long crown, all swept back and up.
-            for k, (base, rot, length, width) in enumerate((
-                    ([11, 46, 44], [10, -24, 0], 9, 3), ([10.5, 42, 34], [4, -30, 0], 8, 2.5))):
-                skull_parts.append(spike(f"rim_spike{k}_{s}", "skull", base, rot, length, width, sign))
-            for k, (base, rot, length, width) in enumerate((
-                    ([4, 52, 42], [16, -8, 0], 30, 5), ([7, 49, 32], [10, -18, 0], 26, 4))):
-                skull_parts.append(spike(f"crown{k}_{s}", "skull", base, rot, length, width, sign))
-        feelers, horns = [], []
-        for sign, s in ((1, "l"), (-1, "r")):
-            feelers.append(part(f"antenna_{s}", "skull", [1.5, 55, 52], [0, 0, 0], [
-                ("feeler", [0.5, 55, 26], [2.5, 57, 52], p("feeler")),
-                ("feeler_glow", [0.75, 55.25, 20], [2.25, 56.75, 26], p("glow", "glow")),
-            ], sign, "_" + s))
-            horns.append(part(f"horn_{s}", "skull", [10, 47, 58], [-24, 0, 0], [
-                ("horn_base", [8.5, 45, 56], [12, 49, 66], p("bone", "bone")),
-                ("horn_mid", [9, 45.5, 64], [11.5, 48.5, 74], p("bone", "bone")),
-                ("horn_glow", [9.5, 46, 72], [11, 48, 80], p("glow", "glow")),
-            ], sign, "_" + s))
-        skull = rig.bone("skull", [0, 38, 44], SKULL, cubes(skull_items), "neck", skull_parts + feelers + horns)
-        neck_parts = [spike(f"neck_spike{k}", "neck", [0, 48, z], [20, 0, 0], 12, 4) for k, z in enumerate((42, 32, 22))]
-        neck_items = cubes([
-            ("neck", [-9, 30, 18], [9, 48, 46], p("scale", "scales")),
-            ("throat", [-7, 28.5, 20], [7, 30, 44], p("belly", "belly")),
-            ("neck_mane", [-10, 44, 16], [10, 50, 40], p("fringe", "fringe")),
-        ])
-        return rig.bone("neck", [0, 40, 22], NECK, neck_items, "body", [skull] + neck_parts)
-
-    def claw(name, parent, base, sign, size=1.0, pitch=24, root_pitch=8):
-        """A hooked claw pointing +Z from `base`: dark root, then a tip bone bent down, glowing at the point."""
-        x, y, z = base
-        w = 3 * size
-        tip = part(f"{name}_tip", name, [x, y + w / 2, z + 7 * size], [pitch, 0, 0], [
-            (f"{name}_hook", [x - w * .35, y + w * .15, z + 7 * size], [x + w * .35, y + w * .85, z + 12 * size], p("talon")),
-            (f"{name}_glow", [x - w * .2, y + w * .3, z + 12 * size], [x + w * .2, y + w * .7, z + 15 * size], p("glow", "glow")),
+        return part(name, parent, base, rotation, [
+            (f"{name}_root", [x - width / 2, y, z - length * .5], [x + width / 2, y + width, z], p("scale", "scales")),
+            (f"{name}_mid", [x - w2 / 2, y + (width - w2) / 2, z - length * .8], [x + w2 / 2, y + (width + w2) / 2, z - length * .5], p("hide")),
+            (f"{name}_glow", [x - w3 / 2, y + (width - w3) / 2, z - length], [x + w3 / 2, y + (width + w3) / 2, z - length * .8], p("glow", "glow")),
         ], sign)
-        return part(name, parent, [x, y + w / 2, z], [root_pitch, 0, 0], [
-            (f"{name}_root", [x - w / 2, y, z - 2], [x + w / 2, y + w, z + 7 * size], p("talon")),
-        ], sign, children=[tip])
 
-    # ---------- wing-arms: folded Z-wise on the shoulders, the carpal claws hanging in front ----------
-    def wing(sign, s):
-        # World joints (+X side): shoulder -> elbow back and up -> carpal forward, high over the front shoulder.
-        shoulder, elbow, carpal = [16, 54, 14], [22, 66, -6], [24, 72, 26]
-        name, fore_name, hand_name = f"wing_{s}", f"wing_{s}_fore", f"wing_{s}_hand"
-        up = [(elbow[0] - shoulder[0]) * sign, elbow[1] - shoulder[1], elbow[2] - shoulder[2]]
-        upper_rot = aim(up, along=(0, 1, 0))
-        upper_len = length(up)
-        rig.world[name] = euler_matrix(*upper_rot)
-        sy, ey = shoulder[1], shoulder[1] + upper_len   # straight layout: the elbow sits above the shoulder
-        upper = cubes([
-            ("humerus", [10.5, sy - 4, 8], [21.5, ey, 20], p("scale", "scales")),
-            ("shoulder_plate", [8.5, sy - 10, 4], [23.5, sy + 5, 24], p("scale", "scales")),
-            ("elbow", [10, ey - 5, 7], [22, ey + 6, 21], p("hide")),
-        ], sign, "_" + s)
-        elbow_spikes = [spike(f"elbow_spike_{s}", name, [16, ey + 2, 10], [-60, 0, 0], 14, 5, sign)]
-        # Forearm: elbow -> carpal, folding forward again.
-        fwd = [(carpal[0] - elbow[0]) * sign, carpal[1] - elbow[1], carpal[2] - elbow[2]]
-        fore_len = length(fwd)
-        fore_rot = aim(fwd, along=(0, 1, 0), parent=rig.world[name])
-        rig.world[fore_name] = _mul(rig.world[name], euler_matrix(*fore_rot))
-        cy = ey + fore_len
-        fore = cubes([
-            ("forearm", [11, ey - 2, 9], [21, ey + fore_len * .55, 19], p("hide")),
-            ("forearm_hi", [12, ey + fore_len * .55, 10], [20, cy, 18], p("hide")),
-            ("forearm_ridge", [13, ey + 4, 18.5], [19, cy - 4, 21], p("scale", "scales")),
-            ("forearm_seam_glow", [15.5, ey + fore_len * .3, 21], [16.5, ey + fore_len * .7, 21.5], p("glow", "glow")),
-        ], sign, "_" + s)
-        # Carpal: cancels the chain, so everything below it is authored in world axes around the carpal.
-        hand = cubes([("carpal", [10.5, cy - 6, 7], [21.5, cy + 5, 22], p("scale", "scales"))], sign, "_" + s)
-        claws = [claw(f"wclaw{k}_{s}", hand_name, [cx, cy - 5, 20], sign, size, 34, 52)
-                 for k, (cx, size) in enumerate(((11.5, 1.1), (16, 1.4), (20.5, 1.0)))]
-        # Cloak: four finger spars run back from the carpal; their membranes drape over the flank to the tail.
-        inner = "west" if sign > 0 else "east"
-        mem_name = f"wing_{s}_membrane"
-        rig.world[hand_name] = IDENTITY
-        rig.world[mem_name] = IDENTITY
-        top = [16 * sign, cy, 14]
-        fingers = []
-        layout = ((1, [6 * sign, -60, -14], 62, 24), (2, [10 * sign, -50, -50], 80, 30),
-                  (3, [12 * sign, -26, -90], 98, 32), (4, [8 * sign, -6, -108], 112, 26))
-        for idx, (i, direction, size, width) in enumerate(layout):
-            x0 = top[0] + sign * (3 + idx * .4)
-            rot = aim(direction)
-            # Hang the membrane on whichever side of the spar points down.
-            below = _apply(euler_matrix(*rot), [0, 0, -1])[1] <= 0
-            z0, z1 = (14 - width, 13) if below else (15, 14 + width)
-            items = cubes([
-                ("membrane", [x0 - .6, cy - size + 2, z0], [x0 + .6, cy - 2, z1], p("cloak", "membrane", inner)),
-                ("spar", [x0 - 1.5, cy - size * .55, 12.5], [x0 + 1.5, cy, 15.5], p("spar", "bone")),
-                ("spar_low", [x0 - 1, cy - size, 13], [x0 + 1, cy - size * .55, 15], p("spar", "bone")),
-                ("spar_glow", [x0 - .75, cy - size - 1.5, 13.25], [x0 + .75, cy - size, 14.75], p("glow", "glow")),
-            ], 1, f"_{s}{i}")
-            fingers.append(rig.bone(f"wing_{s}_finger{i}", top, rot, items, mem_name))
-        # Mantle: the folded membrane lying level over the back, from the carpal to the hips.
-        # Authored around the carpal: world = local - (16, cy, 14) + carpal.
-        mantle = cubes([("mantle", [-7, cy - 10, -52], [14, cy - 8, 8], p("cloak", "plain", "down"))], sign, "_" + s)
-        mantle_b = rig.bone(f"wing_{s}_mantle", top, [0, 0, 0], mantle, mem_name)
-        mem_b = rig.bone(mem_name, top, [0, 0, 0], [], hand_name, fingers + [mantle_b])
-        hand_b = rig.bone(hand_name, top, matrix_euler(_t(rig.world[fore_name])), hand, fore_name, claws + [mem_b])
-        fore_b = rig.bone(fore_name, [16 * sign, ey, 14], fore_rot, fore, name, [hand_b])
-        return rig.bone(name, [shoulder[0] * sign, shoulder[1], shoulder[2]], upper_rot, upper, "body", [fore_b] + elbow_spikes)
+    # ---------- skeleton and body from the anatomy (both sides) ----------
+    kids, pivots = {}, {}
+    order = []
+    for b in anatomy["bones"]:
+        for side in ((1, -1) if sided(b["name"]) else (1,)):
+            name = b["name"] if side > 0 else right(b["name"])
+            parent = b["parent"] if side > 0 else right(b["parent"])
+            pivots[name] = [b["pivot"][0] * side, b["pivot"][1], b["pivot"][2]]
+            order.append((name, parent))
+            kids.setdefault(name, [])
+    for name, parent in order:
+        rig.world[name] = IDENTITY
 
-    def limb(names, joints, widths, parent, sign, extras=()):
-        """Bones `names[i]` from joints[i] to joints[i+1] (world, +X side), laid out straight down from joints[0].
-        Returns (root bone, end pivot in the straight layout, world matrix of the last segment)."""
-        root = joints[0]
-        world, y, segs = rig.world.get(parent, IDENTITY), root[1], []
-        for i, (a, b) in enumerate(zip(joints, joints[1:])):
-            d = [(b[0] - a[0]) * 1.0, b[1] - a[1], b[2] - a[2]]
-            ln = length(d)
-            r = aim([d[0] * sign, d[1], d[2]], parent=world)
-            world = _mul(world, euler_matrix(*r))
-            rig.world[names[i]] = world
-            w = widths[i]
-            spec = [(names[i] + "_seg", [root[0] - w / 2, y - ln - 1, root[2] - w / 2], [root[0] + w / 2, y + 1, root[2] + w / 2],
-                     p("scale", "scales") if i == 0 else p("hide"))]
-            spec += [(n, [a2[0], y - ln + a2[1], a2[2]], [b2[0], y - ln + b2[1], b2[2]], q) for k, n, a2, b2, q in extras if k == i]
-            segs.append((names[i], [root[0] * sign, y, root[2]], [r[0], r[1], r[2]], cubes(spec, sign, "")))
-            y -= ln
-        child = None
-        for i in range(len(segs) - 1, -1, -1):
-            n, piv, r, items = segs[i]
-            child = rig.bone(n, piv, r, items, parent if i == 0 else segs[i - 1][0], [child] if child else [])
-        return child, [root[0] * sign, y, root[2]], world
+    def oriented(pt, sign, bone, suffix=""):
+        """One anatomy box as its own bone: pivot at the box centre, rest rotation = the box frame."""
+        R = pt["rotation"]
+        c = [pt["center"][0] * sign, pt["center"][1], pt["center"][2]]
+        if sign < 0:
+            R = _mul(MIRROR, _mul(R, MIRROR))
+        h = pt["half"]
+        paint = material_for(pt["name"])
+        if "panel" in pt["name"]:
+            # Membrane plates: local X is the normal; the face toward the body is the violet inside.
+            normal_x = R[0][0]
+            inner = "west" if normal_x * c[0] > 0 else "east"
+            paint = p("cloak", "membrane" if "tension" in pt["name"] else "veil", inner)
+        if "outline" in pt:
+            paint = masked(paint, pt["outline"], h)
+        spec = [(pt["name"] + suffix, [c[0] - h[0], c[1] - h[1], c[2] - h[2]], [c[0] + h[0], c[1] + h[1], c[2] + h[2]], paint)]
+        tipped = any(k in pt["name"] for k in ("toe", "hook", "crown", "shear"))
+        if tipped:   # glowing point at the end of the long axis away from the bone's joint
+            piv = pivots[bone]
+            axis = [R[0][2], R[1][2], R[2][2]]
+            out = sum((c[i] - piv[i]) * axis[i] for i in range(3))
+            zs = 1 if out >= 0 else -1
+            g = max(.35, min(h[0], h[1]) * .7)
+            z0, z1 = (c[2] + h[2], c[2] + h[2] + max(1.5, h[2] * .45)) if zs > 0 else (c[2] - h[2] - max(1.5, h[2] * .45), c[2] - h[2])
+            spec.append((pt["name"] + "_glow" + suffix, [c[0] - g, c[1] - g, z0], [c[0] + g, c[1] + g, z1], p("glow", "glow")))
+        bname = f"p_{bone}_{pt['name']}{suffix if sign < 0 and not sided(bone) else ''}"
+        return rig.bone(bname, c, matrix_euler(R), cubes(spec), bone)
 
-    # ---------- front legs (Gore has six limbs): short and thick under the chest ----------
-    def front_leg(sign, s):
-        name = f"leg_f{s}"
-        joints = [[13, 34, 16], [14, 17, 9], [14, 5, 22]]
-        paw_name = f"{name}_paw"
-        rig.world[paw_name] = IDENTITY
-        # Paw cubes are authored in the straight layout around the end pivot.
-        bone, end, world = limb([name, f"{name}_fore"], joints, [11, 8], "body", sign)
-        ex, ey2, ez = end
-        paw = cubes([("paw", [9, ey2 - 5, ez - 7], [19, ey2 + 2, ez + 6], p("scale", "scales"))], sign, "_" + s)
-        toes = [claw(f"ftoe{k}_{s}", paw_name, [tx, ey2 - 5, ez + 5], sign, .75, 28) for k, tx in enumerate((10.5, 14, 17.5))]
-        paw_b = rig.bone(paw_name, end, matrix_euler(_t(world)), paw, f"{name}_fore", toes)
-        return attach(bone, f"{name}_fore", paw_b)
+    for pt in anatomy["parts"]:
+        if pt["bone"] in ("skull", "jaw", "crown_l"):
+            continue   # the head is rebuilt by hand below, on the same skull pivot
+        if any(k in pt["name"] for k in ("throat", "mantle_chest")):
+            pt = dict(pt, half=[pt["half"][0] * .85, pt["half"][1] * .88, pt["half"][2]])
+        kids[pt["bone"]].append(oriented(pt, 1, pt["bone"]))
+        if pt["sided"]:
+            rb = right(pt["bone"])
+            if rb != pt["bone"]:
+                kids[rb].append(oriented(pt, -1, rb, "_r"))
+            else:   # a sided part on a centre bone (brow, cheek, pit, fang, collar): mirror in place
+                kids[pt["bone"]].append(oriented(pt, -1, pt["bone"], "_r"))
 
-    def attach(root_factory, bone_name, child_factory):
-        """Re-wrap a lazy bone tree so `child_factory` lands under `bone_name`."""
-        def build_tree():
-            node = root_factory()
-
-            def walk(n):
-                if n["name"] == bone_name:
-                    n["children"].append(child_factory())
-                    return True
-                return any(walk(c) for c in n["children"] if isinstance(c, dict))
-            walk(node)
-            return node
-        return build_tree
-
-    # ---------- hind legs: thick thigh, bent knee, clawed foot ----------
-    def leg(sign, s):
-        name = f"leg_h{s}"
-        foot_name = f"{name}_foot"
-        joints = [[15, 46, -30], [16, 22, -16], [16, 7, -34]]
-        # Extra cubes per segment, in the straight layout relative to the segment's lower end.
-        extras = [(0, "thigh_muscle", [7, 6, -40], [23, 26, -20], p("scale", "scales")),
-                  (0, "thigh_seam_glow", [22.8, 10, -34], [23.4, 20, -26], p("glow", "glow"))]
-        bone, end, world = limb([name, f"{name}_shin"], joints, [13, 8], "body", sign, extras)
-        ex, ey2, ez = end
-        foot = cubes([
-            ("foot", [10, ey2 - 6, ez - 8], [21, ey2 + 2, ez + 8], p("scale", "scales")),
-            ("spur", [14.5, ey2 - 3, ez - 12], [16.5, ey2, ez - 7], p("talon")),
-        ], sign, "_" + s)
-        rig.world[foot_name] = IDENTITY
-        toes = [claw(f"toe{k}_{s}", foot_name, [tx, ey2 - 6, ez + 7], sign, .8, 26) for k, tx in enumerate((11.5, 15.5, 19.5))]
-        foot_b = rig.bone(foot_name, end, matrix_euler(_t(world)), foot, f"{name}_shin", toes)
-        return attach(bone, f"{name}_shin", foot_b)
-
-    # ---------- tail: five tapering segments in an S-curve, spiked along the top ----------
-    def tail():
-        segs = (("tail", 22, 18, 17, 12), ("tail_2", 22, 14, 13, -8), ("tail_mid", 22, 11, 10, -10),
-                ("tail_4", 20, 8, 8, -8), ("tail_end", 18, 6, 6, 8))
-        z, built = -36, []
-        for k, (seg, ln, w, h, pitch) in enumerate(segs):
-            spec = [(f"{seg}_seg", [-w / 2, 44 - h / 2, z - ln - 1], [w / 2, 44 + h / 2, z], p("scale", "scales")),
-                    (f"{seg}_belly", [-w / 2 + 1, 44 - h / 2 - 1, z - ln], [w / 2 - 1, 44 - h / 2, z - 1], p("belly", "belly"))]
-            if k == len(segs) - 1:
-                spec += [("tail_blade", [-1, 40, z - ln - 12], [1, 48, z - ln], p("talon")),
-                         ("tail_blade_glow", [-.5, 41.5, z - ln - 16], [.5, 46.5, z - ln - 12], p("glow", "glow"))]
-            kids = [spike(f"{seg}_spike", seg, [0, 44 + h / 2 - 1, z - ln * .45], [30, 0, 0], 6 + h * .6, max(2, h * .35))]
-            if 1 <= k <= 3:
-                for sg, sx in ((1, "l"), (-1, "r")):
-                    kids.append(spike(f"{seg}_barb_{sx}", seg, [w / 2 - 1, 44, z - ln * .6], [6, -60, 0], 5 + w * .5, max(1.5, w * .25), sg))
-            built.append((seg, [0, 44, z], [pitch, 0, 0], spec, kids))
-            z -= ln
-        names = [b[0] for b in built]
-        child = None
-        for i in range(len(built) - 1, -1, -1):
-            seg, pivot, r, spec, kids = built[i]
-            parent = "body" if i == 0 else names[i - 1]
-            child = rig.bone(seg, pivot, r, cubes(spec), parent, kids + ([child] if child else []))
-        return child
-
-    # ---------- body: hips high, chest low, spiked spine ----------
-    body_items = cubes([
-        ("chest", [-15, 20, -4], [15, 46, 24], p("scale", "scales")),
-        ("chest_hump", [-12, 46, -2], [12, 54, 20], p("scale", "scales")),
-        ("breast", [-12, 18, 14], [12, 40, 26], p("belly", "belly")),
-        ("belly_front", [-11, 16, -4], [11, 21, 16], p("belly", "belly")),
-        ("mane_top", [-10, 52, 4], [10, 57, 24], p("fringe", "fringe")),
-    ])
-    body_parts = [part("waist", "body", [0, 40, -6], [-8, 0, 0], [
-        ("waist", [-13, 26, -40], [13, 50, -4], p("scale", "scales")),
-        ("waist_top", [-10, 50, -38], [10, 54, -6], p("scale", "scales")),
-        ("belly_back", [-10, 24, -36], [10, 27, -6], p("belly", "belly")),
-    ], children=[spike(f"spine_spike{k}", "waist", [0, 53, z], [36, 0, 0], ln, w)
-                 for k, (z, ln, w) in enumerate(((-12, 14, 5), (-22, 12, 4.5), (-32, 10, 4)))])]
-    body_parts += [spike(f"back_spike{k}", "body", [0, 56, z], [40, 0, 0], ln, w)
-                   for k, (z, ln, w) in enumerate(((18, 14, 5), (8, 16, 5.5)))]
+    # ---------- accents: B1-style glowing spikes along the spine and tail, horns for the rage ----------
+    for k, (z, y, ln, w) in enumerate(((10, 92, 16, 5.5), (-6, 88, 16, 5.5), (-22, 80, 14, 5), (-36, 70, 12, 4.5))):
+        kids["body"].append(spike(f"back_spike{k}", "body", [0, y - 3, z], [38, 0, 0], ln, w))
+    for k, (seg, z, y, ln, w) in enumerate((("tail", -56, 44, 11, 4), ("tail_2", -74, 37, 10, 3.5), ("tail_mid", -94, 29, 8, 3))):
+        x = pivots[seg][0]
+        kids[seg].append(spike(f"{seg}_spike", seg, [x, y, z], [34, 0, 0], ln, w))
+    # ---------- head (noctveil's shape in boxes): compact blind cranium, a beak tilted down, a keel,
+    # brow ridges, deep cheeks with glowing pits, a short recessed jaw, a crown sweeping back over the neck ----------
+    face = [
+        ("cranium", [-11, 64, 34], [11, 84, 50], p("scale", "scales")),
+        ("face1", [-9.5, 64, 50], [9.5, 82, 58], p("hide")),
+        ("face2", [-7.5, 64.5, 58], [7.5, 80, 65], p("hide")),
+        ("face3", [-5.5, 65, 65], [5.5, 78, 71], p("hide")),
+        ("beak", [-3.5, 66, 71], [3.5, 75, 77], p("scale", "scales")),
+        ("beak_hook", [-2, 62.5, 74], [2, 67, 78.5], p("talon")),
+        ("keel", [-1.5, 84, 36], [1.5, 86.5, 66], p("scale", "scales")),
+        ("keel_glow", [-.5, 86.5, 40], [.5, 87, 62], p("glow", "glow")),
+        ("gape", [-6, 63.5, 52], [6, 64.5, 72], p("mouth")),
+    ]
+    sided_face = [
+        ("brow_l", [8, 78, 40], [12, 83, 62], p("scale", "scales")),
+        ("cheek_l", [9.5, 64, 42], [12.5, 74, 58], p("scale", "scales")),
+        ("pit_glow_l", [12.5, 69, 47], [13.1, 73, 56], p("glow", "glow")),
+        ("fang_l", [4.5, 60, 64], [6, 64, 66], p("fang", "bone")),
+    ]
+    face += sided_face + [(n[:-2] + "_r", [-b[0], a[1], a[2]], [-a[0], b[1], b[2]], q) for n, a, b, q in sided_face]
+    kids["skull"].append(rig.bone("face", [0, 78, 44], [30, 0, 0], cubes(face), "skull"))
+    kids["jaw"].append(part("jaw_low", "jaw", [0, 64, 46], [36, 0, 0], [
+        ("jaw_bone", [-6, 57, 46], [6, 63, 66], p("hide")),
+        ("jaw_plate", [-6.5, 56, 48], [6.5, 57, 64], p("belly", "belly")),
+        ("lower_fang_l", [3.5, 63, 60], [5, 66, 62], p("fang", "bone")),
+        ("lower_fang_r", [-5, 63, 60], [-3.5, 66, 62], p("fang", "bone")),
+    ]))
     for sign, s in ((1, "l"), (-1, "r")):
-        body_parts.append(part(f"mane_{s}", "body", [12, 50, 20], [0, -30, 12], [
-            ("mane_flap", [11.5, 32, -2], [13, 56, 24], p("fringe", "fringe")),
+        crown = "crown_" + s
+        for k, (base, r, ln, w) in enumerate((([6, 82, 46], [24, -10, 0], 46, 7), ([10, 77, 44], [12, -24, 0], 30, 5),
+                                              ([3.5, 86, 40], [34, -6, 0], 26, 4))):
+            kids[crown].append(spike(f"crown{k}_{s}", crown, base, r, ln, w, sign))
+    for sign, s in ((1, "l"), (-1, "r")):
+        kids["skull"].append(part(f"horn_{s}", "skull", [10, 76, 56], [-28, -12, 0], [
+            ("horn_base", [8, 73, 52], [13, 79, 62], p("bone", "bone")),
+            ("horn_mid", [8.8, 74, 61], [12.2, 78, 72], p("bone", "bone")),
+            ("horn_glow", [9.5, 74.8, 71], [11.5, 77.2, 80], p("glow", "glow")),
         ], sign, "_" + s))
-    parts = [head(), tail(), wing(1, "l"), wing(-1, "r"), leg(1, "l"), leg(-1, "r"),
-             front_leg(1, "l"), front_leg(-1, "r")] + body_parts
-    body = rig.bone("body", [0, 36, 0], [0, 0, 0], body_items, None, parts)
-    outliner = [body()]
+        kids["skull"].append(part(f"antenna_{s}", "skull", [6, 86, 44], [18, -4, 0], [
+            ("feeler", [5, 86, 14], [7.5, 88, 46], p("feeler")),
+            ("feeler_glow", [5.25, 86.25, 8], [7.25, 87.75, 14], p("glow", "glow")),
+        ], sign, "_" + s))
+
+    built = {}
+    for name, parent in reversed(order):
+        built[name] = rig.bone(name, pivots[name], [0, 0, 0], [], parent, kids[name] + [built[c] for c, pp in order if pp == name])
+    outliner = [built["body"]()]
     animate(m)
     return m, outliner
 
