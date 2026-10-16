@@ -1310,14 +1310,140 @@ def design_c6():
     return cv
 
 
+# ---- C7: C6 with fewer boxes and real-resolution skill icons ----------------------------------
+# What changed from C6: no stone plate behind HP/MP/notice/boss — gauges are iron-framed bars that
+# plug into the crest (one continuous piece, like AION2); skill icons are the 32 px art shown the way
+# the game shows an item texture in a slot (32 texels in 16 GUI px), not shrunk to mush.
+
+def iron_bar(cv, x0, x1, y, h, frac, ramp, empty, grow="right", extra=0.0, trail=0.0, caps_at=("l", "r")):
+    over(cv, (x0 - 1, y - 2, x1 + 1, y + h + 2), G["out"])
+    over(cv, (x0, y - 1, x1, y), IRON[1])
+    over(cv, (x0, y + h, x1, y + h + 1), IRON[3])
+    ramp_gauge(cv, x0 + 1, x1 - 1, y, h, frac, ramp, empty, grow=grow, extra=extra, trail=trail)
+    for side in caps_at:  # iron end caps with a rivet
+        cx = x0 - 3 if side == "l" else x1
+        over(cv, (cx, y - 3, cx + 4, y + h + 3), G["out"])
+        over(cv, (cx + 1, y - 2, cx + 3, y + h + 2), IRON[2])
+        over(cv, (cx + 1, y - 2, cx + 2, y + h + 2), IRON[1])
+        px(cv, cx + 1, y + h // 2, IRON[0])
+
+
+def design_c7():
+    cv = world()
+    top = Image.new("RGBA", (W, H))
+    icons = []
+    x0, y0 = HB_X, HB_Y
+    stone_plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    for i in range(9):
+        inset_slot(cv, (x0 + 2 + 20 * i, y0 + 2, x0 + 20 + 20 * i, y0 + 20))
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        icons.append((name, x, y, state))
+        if state == "cd":
+            s = str(cd)
+            bold(top, x + 8 - bold_width(s) // 2, y + 4, s, G["text"])
+    for i in range(9):
+        caps(top, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (210, 210, 210, 230))
+    sx = x0 + 1
+    for a, b, c, d, col in ((sx, y0 + 1, sx + 20, y0 + 2, IRON[0]), (sx, y0 + 1, sx + 1, y0 + 21, IRON[0]),
+                            (sx, y0 + 20, sx + 20, y0 + 21, IRON[2]), (sx + 19, y0 + 1, sx + 20, y0 + 21, IRON[2])):
+        over(cv, (a, b, c, d), col)
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # class resource: ember cells on the hotbar's top edge
+    ry = y0 - 4
+    over(cv, (x0 - 1, ry, x0 + 183, ry + 4), G["out"])
+    lit = RAGE * 20 // 100
+    for i in range(20):
+        cx0 = x0 + 1 + i * 9
+        if i < lit:
+            over(cv, (cx0, ry + 1, cx0 + 8, ry + 3), G["rage"][1])
+            over(cv, (cx0, ry + 1, cx0 + 8, ry + 2), G["rage"][2])
+        else:
+            over(cv, (cx0, ry + 1, cx0 + 8, ry + 3), (48, 32, 20, 255))
+    # HP / MP: long iron-framed bars wider than the hotbar, plugging into the crest
+    by, bh = y0 - 14, 5
+    iron_bar(cv, x0 - 26, C - 12, by, bh, HP / HP_MAX, G["hp"], (34, 10, 14, 255),
+             extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX, caps_at=("l",))
+    iron_bar(cv, C + 12, x0 + 183 + 26, by, bh, MP / MP_MAX, G["mp"], (10, 16, 36, 255), caps_at=("r",))
+    s = str(HP)
+    mc_text(cv, x0 - 26, by - 12, "HP", G["label"])
+    bold(cv, x0 - 26 + mc_width("HP") + 4, by - 13, s, G["text"])
+    mc_text(cv, x0 - 26 + mc_width("HP") + 5 + bold_width(s) + 1, by - 12, f"/{HP_MAX}", G["label"])
+    mc_text(cv, x0 - 26 + mc_width("HP") + 5 + bold_width(s) + 2 + mc_width(f"/{HP_MAX}") + 3, by - 12,
+            f"+{BARRIER}", rgba("e6e6e6"))
+    s = str(MP)
+    right = x0 + 183 + 26
+    tw = bold_width(s) + 2 + mc_width(f"/{MP_MAX}")
+    mc_text(cv, right - mc_width("MP"), by - 12, "MP", G["label"])
+    bold(cv, right - mc_width("MP") - 5 - tw, by - 13, s, G["text"])
+    mc_text(cv, right - mc_width("MP") - 5 - tw + bold_width(s) + 2, by - 12, f"/{MP_MAX}", G["label"])
+    iron_crest(cv, C, by - 13, "12")
+    # buffs: iron-rimmed squares floating above the HP numbers
+    bx = x0 - 26
+    for label, name, sec in BUFFS:
+        over(cv, (bx, by - 30, bx + 14, by - 16), G["out"])
+        over(cv, (bx + 1, by - 29, bx + 13, by - 17), IRON[2])
+        over(cv, (bx + 2, by - 28, bx + 12, by - 18), G["inset"])
+        icons.append((name, bx + 2, by - 28, "buff10"))
+        over(cv, (bx + 1, by - 17, bx + 13, by - 16), G["buff"])
+        mc_text(cv, bx + 16, by - 26, str(sec), G["text"])
+        bx += 16 + mc_width(str(sec)) + 5
+    # notice: floating text over a soft dark band
+    nw = jp_width(NOTICE)
+    w = nw + 60
+    for i in range(w):
+        a = int(150 * (1 - abs(i - w / 2) / (w / 2)) ** .5)
+        over(cv, (C - w // 2 + i, by - 52, C - w // 2 + i + 1, by - 37), (0, 0, 0, a))
+    gem(cv, C - nw // 2 - 7, by - 45, G["mp"], 1)
+    gem(cv, C + nw // 2 + 6, by - 45, G["mp"], 1)
+    jp_text(cv, C - nw // 2, by - 51, NOTICE, rgba("9cc6ff"), style="outline")
+    # boss: floating name, long iron-framed bar with ruby-capped ends
+    name = "裂け目の執行官"
+    bw = 240
+    bx0 = C - bw // 2
+    jp_text(cv, C - (jp_width(name) + 4 + mc_width("Lv.30")) // 2, 2, name, G["text"], style="outline")
+    mc_text(cv, C + (jp_width(name) - mc_width("Lv.30")) // 2 + 4, 5, "Lv.30", rgba("e8c46a"))
+    iron_bar(cv, bx0, bx0 + bw, 19, 5, BOSS / BOSS_MAX, G["boss"], (36, 10, 8, 255), trail=BOSS_LOST / BOSS_MAX)
+    for q in (1, 2, 3):
+        qx = bx0 + 1 + (bw - 2) * q // 4
+        over(cv, (qx, 19, qx + 1, 24), (0, 0, 0, 170))
+    gem(cv, bx0 - 6, 21, G["ruby"], 2)
+    gem(cv, bx0 + bw + 6, 21, G["ruby"], 2)
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - mc_width(pct), 8, pct, G["text"])
+    return cv, icons, top
+
+
+def compose(result, s):
+    """Scale the GUI canvas, then lay item-slot icons at their real 32-texel resolution."""
+    if not isinstance(result, tuple):
+        return result.resize((W * s, H * s), Image.NEAREST)
+    base, icons, top = result
+    out = base.resize((W * s, H * s), Image.NEAREST)
+    for name, x, y, state in icons:
+        size = 10 if state == "buff10" else 16
+        with Image.open(SKILLS / f"{name}.png") as f:
+            ic = f.convert("RGBA").resize((size * s, size * s), Image.NEAREST if s % 2 == 0 else Image.LANCZOS)
+        if state == "cd":
+            ic = darken(ic, .35)
+        elif state == "nomana":
+            ic = darken(ic, .6, tint=(110, 150, 255))
+        out.alpha_composite(ic, (x * s, y * s))
+    out.alpha_composite(top.resize((W * s, H * s), Image.NEAREST))
+    return out
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c),
                      ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4),
-                     ("C5-pixel-crosscode", design_c5), ("C6-modern-mmo-minecraft", design_c6)):
+                     ("C5-pixel-crosscode", design_c5), ("C6-modern-mmo-minecraft", design_c6),
+                     ("C7-modern-mmo-open", design_c7)):
         img = fn()
         for s in (2, 4):
-            img.resize((W * s, H * s), Image.NEAREST).save(OUT / f"{name}-{s}x.png")
+            compose(img, s).save(OUT / f"{name}-{s}x.png")
     print(f"wrote {OUT}")
 
 
