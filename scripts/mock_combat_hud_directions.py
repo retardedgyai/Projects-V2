@@ -1763,6 +1763,143 @@ def design_d1():
     return cv, icons, top
 
 
+# ---- E1-E3: D2 without the crest and the HP/MP labels, packed tighter --------------------------
+# Creator feedback on D2: the crest and the "HP"/"MP" words may not be needed; pack it tighter.
+#   E1: two plates, numbers above thin gauges, a small Lv chip in the seam
+#   E2: numbers inside thick gauges, Lv chip in the seam (one row shorter than E1)
+#   E3: one console block on the hotbar: both gauges + the resource cells, Lv beside the buffs
+
+def _e_hotbar(cv, top, icons):
+    x0, y0 = HB_X, HB_Y
+    step_plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    for i in range(9):
+        d_slot(cv, x0 + 2 + 20 * i, y0 + 2)
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        icons.append((name, x, y, state))
+        if state == "cd":
+            s = str(cd)
+            bold(top, x + 8 - bold_width(s) // 2, y + 4, s, G["text"])
+    for i in range(9):
+        caps(top, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (200, 200, 206, 220))
+    sx = x0 + 1
+    for a, b, c, d, col in ((sx, y0 + 1, sx + 20, y0 + 2, IRON[0]), (sx, y0 + 1, sx + 1, y0 + 21, IRON[0]),
+                            (sx, y0 + 20, sx + 20, y0 + 21, IRON[2]), (sx + 19, y0 + 1, sx + 20, y0 + 21, IRON[2])):
+        over(cv, (a, b, c, d), col)
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+
+
+def _e_cells(cv, x0, x1, y):
+    lit = RAGE * 20 // 100
+    pitch = (x1 - x0 + 1) // 20
+    for i in range(20):
+        cx0 = x0 + i * pitch
+        if i < lit:
+            over(cv, (cx0, y, cx0 + pitch - 1, y + 2), G["rage"][1])
+            over(cv, (cx0, y, cx0 + pitch - 1, y + 1), G["rage"][2])
+        else:
+            over(cv, (cx0, y, cx0 + pitch - 1, y + 2), (44, 30, 20, 255))
+
+
+def _e_lv_chip(cv, cy):
+    s = "12"
+    w = mc_width(s) + 6
+    step_plate(cv, (C - w // 2, cy, C - w // 2 + w, cy + 12), cut=1)
+    mc_text(cv, C - mc_width(s) // 2, cy + 2, s, rgba("ffd77a"))
+
+
+def _e_inner_number(cv, x0, x1, y, val, mx):
+    s = f"{val}/{mx}"
+    mc_text(cv, (x0 + x1) // 2 - mc_width(s) // 2, y, s, G["text"], outline=True)
+
+
+def _e_top(cv, icons, buffs_y, lv_text=False):
+    x0 = HB_X
+    bx = x0 - 1
+    for label, name, sec in BUFFS:
+        s = str(sec)
+        tw = 15 + mc_width(s) + 3
+        step_plate(cv, (bx, buffs_y, bx + tw, buffs_y + 13))
+        icons.append((name, bx + 2, buffs_y + 2, "buff10"))
+        over(cv, (bx + 2, buffs_y + 11, bx + 12, buffs_y + 12), G["buff"])
+        mc_text(cv, bx + 14, buffs_y + 3, s, G["text"])
+        bx += tw + 2
+    if lv_text:
+        s = "Lv 12"
+        mc_text(cv, x0 + 183 - mc_width(s), buffs_y + 3, s, rgba("ffd77a"))
+    nw = jp_width(NOTICE)
+    jp_text(cv, C - nw // 2, buffs_y - 18, NOTICE, rgba("9cc6ff"))
+    # boss, as in D2
+    bw = 230
+    bx0 = C - bw // 2
+    step_plate(cv, (bx0, 2, bx0 + bw, 28))
+    gem(cv, bx0 + 8, 9, G["ruby"], 3)
+    name = "裂け目の執行官"
+    jp_text(cv, bx0 + 16, 3, name, G["text"])
+    mc_text(cv, bx0 + 20 + jp_width(name), 6, "Lv.30", rgba("e8c46a"))
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - 5 - mc_width(pct), 6, pct, G["text"])
+    ramp_gauge(cv, bx0 + 5, bx0 + bw - 5, 19, 5, BOSS / BOSS_MAX, G["boss"], (36, 10, 8, 255),
+               trail=BOSS_LOST / BOSS_MAX)
+    for q in (1, 2, 3):
+        qx = bx0 + 5 + (bw - 10) * q // 4
+        over(cv, (qx, 19, qx + 1, 24), (0, 0, 0, 160))
+
+
+def design_e(variant):
+    cv = world()
+    top = Image.new("RGBA", (W, H))
+    icons = []
+    x0, y0 = HB_X, HB_Y
+    _e_hotbar(cv, top, icons)
+    hp_args = dict(extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX)
+    if variant in (1, 2):
+        ry = y0 - 5
+        step_plate(cv, (x0 - 1, ry, x0 + 183, ry + 6))
+        _e_cells(cv, x0 + 2, x0 + 181, ry + 2)
+    if variant == 1:
+        ph = 16
+        py = y0 - 5 - ph
+        step_plate(cv, (x0 - 1, py, C - 4, py + ph))
+        step_plate(cv, (C + 4, py, x0 + 183, py + ph))
+        s = str(HP)
+        bold(cv, x0 + 3, py + 3, s, G["text"])
+        mc_text(cv, x0 + 4 + bold_width(s) + 1, py + 4, f"/{HP_MAX}", G["label"])
+        s = str(MP)
+        tx = x0 + 179 - (bold_width(s) + 2 + mc_width(f"/{MP_MAX}"))
+        bold(cv, tx, py + 3, s, G["text"])
+        mc_text(cv, tx + bold_width(s) + 2, py + 4, f"/{MP_MAX}", G["label"])
+        ramp_gauge(cv, x0 + 3, C - 8, py + 12, 2, HP / HP_MAX, G["hp"], (34, 10, 14, 255), **hp_args)
+        ramp_gauge(cv, C + 8, x0 + 179, py + 12, 2, MP / MP_MAX, G["mp"], (10, 16, 36, 255))
+        _e_lv_chip(cv, py + 2)
+        _e_top(cv, icons, py - 15)
+    elif variant == 2:
+        ph = 13
+        py = y0 - 5 - ph
+        step_plate(cv, (x0 - 1, py, C - 1, py + ph))
+        step_plate(cv, (C + 1, py, x0 + 183, py + ph))
+        ramp_gauge(cv, x0 + 3, C - 5, py + 2, 9, HP / HP_MAX, G["hp"], (34, 10, 14, 255), **hp_args)
+        ramp_gauge(cv, C + 5, x0 + 179, py + 2, 9, MP / MP_MAX, G["mp"], (10, 16, 36, 255))
+        _e_inner_number(cv, x0 + 3, C - 12, py + 3, HP, HP_MAX)
+        _e_inner_number(cv, C + 12, x0 + 179, py + 3, MP, MP_MAX)
+        _e_lv_chip(cv, py)
+        _e_top(cv, icons, py - 15)
+    else:
+        ph = 18
+        py = y0 - ph
+        step_plate(cv, (x0 - 1, py, x0 + 183, y0 + 2))
+        ramp_gauge(cv, x0 + 3, C - 2, py + 2, 9, HP / HP_MAX, G["hp"], (34, 10, 14, 255), **hp_args)
+        ramp_gauge(cv, C + 2, x0 + 179, py + 2, 9, MP / MP_MAX, G["mp"], (10, 16, 36, 255), grow="left")
+        _e_inner_number(cv, x0 + 3, C - 2, py + 3, HP, HP_MAX)
+        _e_inner_number(cv, C + 2, x0 + 179, py + 3, MP, MP_MAX)
+        _e_cells(cv, x0 + 3, x0 + 179, py + 13)
+        _e_hotbar(cv, top, [])  # redraw the hotbar over the console's bottom edge
+        _e_top(cv, icons, py - 15, lv_text=True)
+    return cv, icons, top
+
+
 def compose(result, s):
     """Scale the GUI canvas, then lay item-slot icons at their real 32-texel resolution."""
     if not isinstance(result, tuple):
@@ -1787,7 +1924,8 @@ def main():
     for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c),
                      ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4),
                      ("C5-pixel-crosscode", design_c5), ("C6-modern-mmo-minecraft", design_c6),
-                     ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True)), ("C9-modern-mmo", design_c9), ("C10-modern-mmo-plain", lambda: design_c9(plain=True)), ("D1-dungeons-mmo", design_d1), ("D2-c8-layout-dungeons", lambda: design_c6(crisp=True, dungeons=True))):
+                     ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True)), ("C9-modern-mmo", design_c9), ("C10-modern-mmo-plain", lambda: design_c9(plain=True)), ("D1-dungeons-mmo", design_d1), ("D2-c8-layout-dungeons", lambda: design_c6(crisp=True, dungeons=True)),
+                     ("E1-compact", lambda: design_e(1)), ("E2-compact", lambda: design_e(2)), ("E3-compact", lambda: design_e(3))):
         img = fn()
         for s in (2, 4):
             compose(img, s).save(OUT / f"{name}-{s}x.png")
