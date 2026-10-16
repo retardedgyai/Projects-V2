@@ -736,3 +736,5 @@ if __name__ == "__main__":
     out = ROOT / "assets/bosses/shade_wyrm.bbmodel"
     data = model.write(out, outliner)
     print(f"{out.relative_to(ROOT)}: {len(data['elements'])} cubes, {len(model.bones)} bones, {len(data['animations'])} animations")
+    import animate_boss_shade_wyrm
+    animate_boss_shade_wyrm.main(out)
