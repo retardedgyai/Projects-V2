@@ -876,6 +876,55 @@ class CorePlayerCombatTest {
         assertEquals(0,h.actor.cooldownRemaining(2))
     }
 
+    @Test fun `feel table covers all classes and recovery follows motion and class weight`() {
+        for (job in CoreClass.entries) {
+            val p = CoreCombatFeel.profile(job)
+            assertEquals(6L, p.bufferTicks)
+            assertEquals(job == CoreClass.WARRIOR, p.immediateNormal)
+            assertEquals(job != CoreClass.TEMPLAR, p.attackBreaksGuard)
+            for (s in CoreSkillCatalog.skills(job)) {
+                val r = CoreCombatFeel.recovery(job, s)
+                assertTrue(r in 0..7)
+                if (s.motion == CoreSkillMotion.GUARD) assertEquals(0, r)
+                assertEquals(CoreCombatFeel.lastImpact(s, 5) + r, CoreCombatFeel.finish(job, s, 5))
+            }
+        }
+        assertTrue(CoreCombatFeel.profile(CoreClass.ASSASSIN).recovery < CoreCombatFeel.profile(CoreClass.TEMPLAR).recovery)
+    }
+
+    @Test fun `every class buffers a skill pressed during its normal attack and links after the class window`() {
+        for (job in CoreClass.entries) arena(bossDistance = 2.5) { h ->
+            h.journey=CoreJourney.legacy(job=job);h.base=CoreWeaponBase.entries.first { it.usable(job) };h.actor.reset()
+            h.actor.refillTraining()
+            h.actor.attack();h.actor.skill(0)
+            assertEquals(0,h.actor.cooldownRemaining(0),"$job skill waits in the buffer, not dropped or cast through the swing")
+            h.ticks(16)
+            assertTrue(h.actor.cooldownRemaining(0)>0,"$job buffered skill fired after the link window")
+        }
+    }
+
+    @Test fun `every class remembers an attack pressed during a skill and fires it once after recovery`() {
+        for (job in CoreClass.entries) arena(bossDistance = 2.5) { h ->
+            h.journey=CoreJourney.legacy(job=job);h.base=CoreWeaponBase.entries.first { it.usable(job) };h.actor.reset()
+            h.actor.refillTraining()
+            val s=h.actor.skillDefinitions[0];h.actor.skill(0)
+            val finish=CoreCombatFeel.finish(job,s,s.startupTicks(h.actor.sheet))
+            h.ticks(finish-3);val afterSkill=h.combat.bossHealth()
+            assertTrue(afterSkill<300.0,"$job skill landed")
+            repeat(5) { h.actor.attack() }
+            h.ticks(40)
+            assertTrue(h.combat.bossHealth()<afterSkill,"$job buffered normal attack landed")
+        }
+    }
+
+    @Test fun `dodge cuts the normal follow through for every melee class but keeps the attack cadence`() {
+        for (job in CoreClass.entries.filter { it.melee }) arena(bossDistance = 2.5) { h ->
+            h.journey=CoreJourney.legacy(job=job);h.base=CoreWeaponBase.entries.first { it.usable(job) };h.actor.reset()
+            h.actor.attack();h.ticks(5);val origin=h.player.position
+            h.actor.dodge();assertTrue(h.player.position.distance(origin)>1.0,"$job dodge was not delayed by the swing")
+        }
+    }
+
     @Test fun `garden deploy frees input and owns its context while firebolt earns a separate element gain`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();h.actor.skill(1);h.actor.skill(1)
         assertEquals(80,h.actor.mana)

@@ -51,13 +51,13 @@ data class CoreSkillDefinition(
         }
         if (journey?.job == CoreClass.WARRIOR) {
             if (icon == "war_guard") add("成功時：叩きつけの再使用を回復 / 3秒以内の叩きつけ・返し刃を反撃化")
-            if (CoreWarriorCombatRules.counterSkill(icon)) {
+            if (CoreCombatFeel.counterSkill(icon)) {
                 val boost = if(journey.build.keystone == 1) 1.6 else 1.35
                 val counterTicks = copy(startup = minOf(3, startup)).startupTicks(sheet)
                 add("反撃時：発生${CoreCombatMath.number(counterTicks/20.0)}秒 / 威力+${((boost-1)*100).toInt()}%")
             }
-            add("後隙 ${CoreWarriorCombatRules.recovery(icon)/20.0}秒 / 次の入力は0.3秒先行受付")
         }
+        if (journey != null) add("後隙 ${CoreCombatFeel.recovery(journey.job, this@CoreSkillDefinition)/20.0}秒 / 次の入力は0.3秒先行受付")
     }
 }
 
