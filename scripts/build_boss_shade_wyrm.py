@@ -549,7 +549,7 @@ def fan_painter(poly, half, inner_side, seed, root=None, radius=None, solid=Fals
 # ground with its claws, and a tall fan of fur rises from the carpal, up and back, about twice the body's
 # height. Offsets are for the left side, in px, from the shoulder joint (elbow, carpal) and from the carpal
 # (finger tips), Creator-confirmed reading of Gore Magala in frenzy (2026-10-16).
-FAN_WING = dict(elbow=(26, 14, -16), carpal=(4, -50, 40),
+FAN_WING = dict(elbow=(24, 6, -14), carpal=(4, -50, 36), drop=12.0,   # drop: the enraged crouch lowers the body this much
                 tips=((10, 108, -4), (52, 116, -18), (92, 98, -38), (110, 62, -58), (92, 26, -76)),
                 hip=(10, -22, -64))   # where the rearmost membrane meets the flank, from the shoulder
 
@@ -736,7 +736,7 @@ def build():
         S0 = np.array(pivots[f"wing_{s}"], float)
         E = S0 + np.array(spec["elbow"]) * M3
         K = E + np.array(spec["carpal"]) * M3
-        K[1] = 6.0                                  # the carpal is planted on the ground
+        K[1] = 6.0 + spec["drop"]                   # planted on the ground once the body crouches by `drop`
         tips = [K + np.array(t) * M3 for t in spec["tips"]]
 
         def bar(nm, a, b, w0, w1, mat, n=2):
@@ -792,6 +792,13 @@ def build():
         o2, u2, z2 = chain(f"{name}_radius", E, (E + Wr) / 2 + fwd * 6 + outv * 3, Wr,
                            lambda t: 10 - 4 * t + 2.5 * math.sin(math.pi * min(1, t * 2)), 6, "hide")
         oriented(f"{name}_wrist", name, Wr, [4.2, 3.8, 4.2], np.column_stack(frame(K - Wr)), box_painter("plate", 6))
+        # overlapping armour plates down the top of the forearm, and a ridge of scales along the upper arm
+        for i, t in enumerate((.15, .35, .55, .75)):
+            c = E + (Wr - E) * t + u2 * (4.6 - 1.4 * t) + o2 * 1.2
+            oriented(f"{name}_forearmplate{i}", name, c, [3.6 - t * 1.6, 1.0, 3.4], np.column_stack([o2, u2, z2]), box_painter("plate", 12 + i))
+        for i, t in enumerate((.3, .6)):
+            c = S0 + (E - S0) * t + u1 * 5.5
+            oriented(f"{name}_armridge{i}", name, c, [3.4, 1.0, 4.2], np.column_stack([o1, u1, z1]), box_painter("plate", 16 + i))
         chain(f"{name}_hand", Wr, (Wr + K) / 2 + fwd * 2, K + np.array([0, 3, 2]), lambda t: 7 - t, 2, "plate")
         W = Wr
         back = o2 * .7 + u2 * .7                        # the spines rise from the forearm's outer back edge
