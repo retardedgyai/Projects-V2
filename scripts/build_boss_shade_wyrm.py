@@ -539,7 +539,7 @@ def fan_painter(poly, half, inner_side, seed):
 # height. Offsets are for the left side, in px, from the shoulder joint (elbow, carpal) and from the carpal
 # (finger tips), Creator-confirmed reading of Gore Magala in frenzy (2026-10-16).
 FAN_WING = dict(elbow=(26, 12, -6), carpal=(14, -70, 26),
-                tips=((22, 116, 6), (48, 118, -22), (66, 98, -52), (64, 66, -82), (44, 32, -104)))
+                tips=((18, 142, 4), (56, 150, -14), (92, 132, -36), (108, 92, -58), (88, 46, -76)))
 
 
 # --- fitting the reference's mesh parts with oriented boxes -----------------------------------------------
@@ -741,18 +741,30 @@ def build():
             oriented(f"{name}_claw{k}", name, K + d * 5 + np.array([0, -1, 0]), [1.3, 1.3, 4], _no_roll(np, d), box_painter("talon", k))
         for k, t in enumerate(tips):                      # the fingers, mostly hidden in the fur
             bar(f"{name}_finger{k}", K + np.array([0, 4, 0]), t, 3.0, 1.2, "spar", 3)
-        for k, (a, b) in enumerate(zip(tips, tips[1:])):
-            for layer, (scale, push) in enumerate(((1.0, 0.0), (.82, 1.0), (.62, 2.0))):
-                aa = K + (a - K) * scale; bb = K + (b - K) * scale
+        # Puffy fan: lobes between finer sub-fingers, each lobe several fur layers fanned slightly apart
+        # around the carpal (like a feather fan seen edge-on), so it reads thick, not as one sheet.
+        fine = []
+        for a, b in zip(tips, tips[1:]):
+            fine += [a, a + (b - a) * .5]
+        fine.append(tips[-1])
+
+        def turn(v, ax, ang):
+            ax = ax / np.linalg.norm(ax); c, s_ = math.cos(ang), math.sin(ang)
+            return v * c + np.cross(ax, v) * s_ + ax * (ax @ v) * (1 - c)
+        for k, (a, b) in enumerate(zip(fine, fine[1:])):
+            for layer, (scale, ang) in enumerate(((1.0, 0), (.9, 10), (.9, -10), (.76, 20), (.76, -18), (.6, 28))):
+                mid = (a + b) / 2
+                axis = mid - K
+                aa = K + turn((a - K) * scale, axis, math.radians(ang))
+                bb = K + turn((b - K) * scale, axis, math.radians(ang))
                 n = np.cross(aa - K, bb - K); n /= np.linalg.norm(n)
                 if n[0] * sign < 0:
                     n = -n                                # +n points away from the body
-                mid = (aa + bb) / 2
-                bulge = mid + (mid - K) / np.linalg.norm(mid - K) * np.linalg.norm(bb - aa) * .28
-                poly = [K, aa, bulge, bb]
-                cen0 = sum(poly) / 4 + n * push * .8 * sign * 0 + n * (push * .9)
+                m2 = (aa + bb) / 2
+                bulge = m2 + (m2 - K) / np.linalg.norm(m2 - K) * np.linalg.norm(bb - aa) * .55
+                pts = [K, aa, bulge, bb]
                 zz = (bb - aa) / np.linalg.norm(bb - aa); yy = np.cross(zz, n)
-                pts = [q + n * (push * .9) for q in poly]
+                cen0 = sum(pts) / 4
                 ly = [(q - cen0) @ yy for q in pts]; lz = [(q - cen0) @ zz for q in pts]
                 cen = cen0 + yy * (max(ly) + min(ly)) / 2 + zz * (max(lz) + min(lz)) / 2
                 half = [.05, (max(ly) - min(ly)) / 2 + .2, (max(lz) - min(lz)) / 2 + .2]
