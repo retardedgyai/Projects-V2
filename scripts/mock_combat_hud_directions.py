@@ -1912,7 +1912,7 @@ DOT16 = ImageFont.truetype("C:/Windows/Fonts/BIZ-UDGothicR.ttc", 15)
 MANA_ICON = ["000010000", "000111000", "001111100", "011101110", "111000111", "011101110", "001111100", "000111000", "000010000"]
 
 
-def design_f1(center=0):
+def design_f1(center=0, emblem=None):
     """center: 0 = level number only (F1); 1-3 = centre emblem variants (G1-G3)."""
     cv = world()
     top = Image.new("RGBA", (W, H))
@@ -1967,7 +1967,7 @@ def design_f1(center=0):
     s = f"{MP} / {MP_MAX}"
     mc_text(cv, (mx0 + mx1) // 2 - mc_width(s) // 2, py + 3, s, rgba("ffffff"))
     if center:
-        centre_emblem(cv, icons, top, center, py)
+        centre_emblem(cv, icons, top, center, py, emblem)
     else:
         lv = "12"
         mc_text(cv, C - mc_width(lv) // 2, py - 5, lv, rgba("80ff20"), outline=True)   # vanilla XP-level look
@@ -2018,7 +2018,66 @@ def crossed_swords(cv, x, y):
         px(cv, x + (12 if side == 0 else 0), y + 12, gold)
 
 
-def centre_emblem(cv, icons, top, variant, py):
+# Dedicated warrior emblems for the centre diamond, hand-placed at one texel per GUI pixel.
+EMB = {"o": rgba("0c0c10"), "L": rgba("f4f4fa"), "M": rgba("b4b6c4"), "D": rgba("6a6c7c"), "g": rgba("f2c454"),
+       "G": rgba("a8741e"), "b": rgba("5a3418"), "B": rgba("8a5a30"), "r": rgba("e0283c"), "R": rgba("ff9a9a"),
+       "e": rgba("ff8a1c"), "E": rgba("ffd860")}
+EMBLEM_SWORD = [
+    ".......o.......",
+    "......oRo......",
+    ".....orrro.....",
+    "......oro......",
+    "......oBo......",
+    "......obo......",
+    "......oBo......",
+    ".o...ooboo...o.",
+    "ogoooggggGoooGo",
+    "oggggggggGGGGGo",
+    ".oooooLMDooooo.",
+    "......LMD......",
+    ".....oLMDo.....",
+    ".....oLMDo.....",
+    ".....oLMDo.....",
+    ".....oLMDo.....",
+    ".....oLMDo.....",
+    "......oLDo.....",
+    "......oLo......",
+    ".......o.......",
+]
+EMBLEM_HELM = [
+    "......ooooo......",
+    "....ooLLLMMoo....",
+    "...oLLLLMMMMDo...",
+    "..oLLLLMMMMMMDo..",
+    "..oLLMMMMMMMMDo..",
+    ".oLLMMMMMMMMMMDo.",
+    ".oggggggggggggGo.",
+    ".oLMoooooooooMDo.",
+    ".oLMMMMMoMMMMMDo.",
+    ".oLMoMoMoMoMoMDo.",
+    ".oLMMMMMoMMMMMDo.",
+    ".oLMMMMMoMMMMMDo.",
+    "..oMMMMMMMMMMDo..",
+    "..ogggggggggGo...",
+    "...ooooooooooo...",
+]
+
+
+def draw_emblem(cv, kind, cx, cy):
+    rows = EMBLEM_HELM if kind == "helm" else EMBLEM_SWORD
+    h, w = len(rows), len(rows[0])
+    x0, y0 = cx - w // 2, cy - h // 2
+    for j, row in enumerate(rows):
+        for i, ch in enumerate(row):
+            if ch != ".":
+                px(cv, x0 + i, y0 + j, EMB[ch])
+    if kind == "flame":  # ember sparks climbing the blade
+        for dx, dy, ch in ((-3, 5, "e"), (3, 3, "E"), (-4, 1, "E"), (4, 7, "e"), (-2, 8, "E"), (3, -1, "e"),
+                           (-3, 2, "e"), (2, 6, "E")):
+            px(cv, cx + dx, cy + dy, EMB[ch])
+
+
+def centre_emblem(cv, icons, top, variant, py, emblem=None):
     lvs = "12"
     if variant == 1:  # charcoal hex, iron rim, crossed swords, level below
         cx, ty = C, py - 11
@@ -2043,8 +2102,11 @@ def centre_emblem(cv, icons, top, variant, py):
         for j in range(-r + 2, r - 1):
             w = r - 2 - abs(j)
             over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), D["slot"])
-        icons.append(("war_ult", cx - 6, cy - 6, "sz12"))
-        mc_text(top, cx - mc_width(lvs) // 2 + 1, cy + 8, lvs, rgba("80ff20"), outline=True)
+        if emblem:
+            draw_emblem(cv, emblem, cx, cy)
+        else:
+            icons.append(("war_ult", cx - 6, cy - 6, "sz12"))
+        mc_text(top, cx - mc_width(lvs) // 2 + 1, cy + 9, lvs, rgba("80ff20"), outline=True)
     else:  # a bigger slot of the hotbar's own family, art inside, level where a stack count sits
         x, y = C - 12, py - 8
         step_plate(cv, (x - 2, y - 2, x + 26, y + 26), cut=2)
@@ -2101,7 +2163,8 @@ def main():
                      ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True)), ("C9-modern-mmo", design_c9), ("C10-modern-mmo-plain", lambda: design_c9(plain=True)), ("D1-dungeons-mmo", design_d1), ("D2-c8-layout-dungeons", lambda: design_c6(crisp=True, dungeons=True)),
                      ("E1-compact", lambda: design_e(1)), ("E2-compact", lambda: design_e(2)), ("E3-compact", lambda: design_e(3)),
                      ("F1-vanilla-vocab", design_f1),
-                     ("G1-centre-hex", lambda: design_f1(1)), ("G2-centre-diamond", lambda: design_f1(2)), ("G3-centre-slot", lambda: design_f1(3))):
+                     ("G1-centre-hex", lambda: design_f1(1)), ("G2-centre-diamond", lambda: design_f1(2)), ("G3-centre-slot", lambda: design_f1(3)),
+                     ("H1-emblem-sword", lambda: design_f1(2, "sword")), ("H2-emblem-helm", lambda: design_f1(2, "helm")), ("H3-emblem-flame", lambda: design_f1(2, "flame"))):
         img = fn()
         for s in (2, 4):
             compose(img, s).save(OUT / f"{name}-{s}x.png")
