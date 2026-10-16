@@ -185,60 +185,107 @@ class Rig:
         return lambda: self.m.bone(name, pivot, items + [c() for c in children], rotation)
 
 
-ANATOMY = ROOT / "assets/bosses/shade_wyrm_anatomy.json"
+REF = ROOT / "assets/bosses/shade_wyrm_ref"
+THIN = .06   # half thickness of a facet plate, px
 
 
-def material_for(name):
-    """Texture by anatomical part (anatomy JSON names come from the Creator's noctveil reference)."""
-    n = name
-    if "pit" in n:
-        return painter("glow", "glow")
-    if "gape" in n:
-        return painter("mouth")
-    if "fang" in n:
-        return painter("fang", "bone")
-    if any(k in n for k in ("toe", "hook", "shear")):
-        return painter("talon")
-    if "digit" in n:
-        return painter("spar", "bone")
-    if any(k in n for k in ("keel", "crown", "brow", "carapace", "collar", "knuckle", "palm", "ankle")):
-        return painter("scale", "scales")
-    return painter("hide", "scales")
+def _sub(a, b):
+    return [a[i] - b[i] for i in range(3)]
 
 
-def masked(base, outline, half):
-    """Cut a membrane plate to its panel outline: the big faces show only inside the 2D triangles (local y, z);
-    the thin edge faces are left empty so the plate reads as the panel shape, not its bounding box."""
-    def inside(py, pz):
-        for (ay, az), (by, bz), (cy, cz) in outline:
-            d = (by - ay) * (cz - az) - (bz - az) * (cy - ay)
-            if abs(d) < 1e-9:
+def _dot(a, b):
+    return sum(a[i] * b[i] for i in range(3))
+
+
+def _cross(a, b):
+    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+
+
+def _unit(a):
+    n = math.sqrt(_dot(a, a))
+    return [v / n for v in a] if n > 1e-9 else None
+
+
+def ordered(face):
+    """Quads in Blockbench meshes are not stored in winding order: sort them around the centroid."""
+    v, uv = face["v"], face["uv"]
+    if len(v) != 4:
+        return v, uv
+    c = [sum(p[i] for p in v) / 4 for i in range(3)]
+    n = _unit(_cross(_sub(v[1], v[0]), _sub(v[2], v[0]))) or _unit(_cross(_sub(v[2], v[0]), _sub(v[3], v[0])))
+    a = _unit(_sub(v[0], c))
+    if not n or not a:
+        return v, uv
+    b = _cross(n, a)
+    idx = sorted(range(4), key=lambda i: math.atan2(_dot(_sub(v[i], c), b), _dot(_sub(v[i], c), a)))
+    return [v[i] for i in idx], [uv[i] for i in idx]
+
+
+class TextureSampler:
+    def __init__(self):
+        from PIL import Image
+        meta = json.loads((REF / "facets.json").read_text(encoding="utf-8"))["textures"]
+        self.tex = []
+        for t in meta:
+            im = Image.open(REF / t["file"]).convert("RGBA")
+            self.tex.append((im.load(), im.width, im.height, t["uv_width"], t["uv_height"]))
+
+    def __call__(self, index, u, v):
+        px, w, h, uw, uh = self.tex[index]
+        x = min(w - 1, max(0, int(u / uw * w)))
+        y = min(h - 1, max(0, int(v / uh * h)))
+        return px[x, y]
+
+
+def facet_painter(sampler, tris3d, uvs, tex, R, c, half, glow=None):
+    """Paint a plate's two big faces from the reference texture, transparent outside the face outline.
+    The plate's local X is the face normal; (y, z) span the face (see build: cube centred on c, rotated by R)."""
+    ys, zs = half[1], half[2]
+    loc = []
+    for tri, uv in zip(tris3d, uvs):
+        pts = [[_dot(_sub(p, c), [R[0][1], R[1][1], R[2][1]]), _dot(_sub(p, c), [R[0][2], R[1][2], R[2][2]])] for p in tri]
+        loc.append((pts, uv))
+
+    def colour(py, pz):
+        for (a, b, d), (ua, ub, ud) in loc:
+            det = (b[0] - a[0]) * (d[1] - a[1]) - (b[1] - a[1]) * (d[0] - a[0])
+            if abs(det) < 1e-9:
                 continue
-            u = ((py - ay) * (cz - az) - (pz - az) * (cy - ay)) / d
-            v = ((by - ay) * (pz - az) - (bz - az) * (py - ay)) / d
-            if u >= -.02 and v >= -.02 and u + v <= 1.02:
-                return True
-        return False
+            s = ((py - a[0]) * (d[1] - a[1]) - (pz - a[1]) * (d[0] - a[0])) / det
+            t = ((b[0] - a[0]) * (pz - a[1]) - (b[1] - a[1]) * (py - a[0])) / det
+            if s >= -.04 and t >= -.04 and s + t <= 1.04:
+                if glow:
+                    return glow
+                u = ua[0] + s * (ub[0] - ua[0]) + t * (ud[0] - ua[0])
+                v = ua[1] + s * (ub[1] - ua[1]) + t * (ud[1] - ua[1])
+                return sampler(tex, u, v)
+        return (0, 0, 0, 0)
 
     def make(side, w, h):
         if side not in ("east", "west"):
-            return (lambda x, y, w, h: (0, 0, 0, 0)), ("clear", w, h)
-        paint, key = base(side, w, h)
+            return (lambda x, y, w, h: (0, 0, 0, 0)), ("clear",)
+        cache = {}
 
-        def cut(x, y, w, h):
-            pz = (half[2] - (x + .5) / w * 2 * half[2]) if side == "east" else (-half[2] + (x + .5) / w * 2 * half[2])
-            py = half[1] - (y + .5) / h * 2 * half[1]
-            return paint(x, y, w, h) if inside(py, pz) else (0, 0, 0, 0)
-        return cut, key + (id(outline),)
+        def paint(x, y, w, h):
+            key = (x, y)
+            if key not in cache:
+                pz = (zs - (x + .5) / w * 2 * zs) if side == "east" else (-zs + (x + .5) / w * 2 * zs)
+                py = ys - (y + .5) / h * 2 * ys
+                cache[key] = colour(py, pz)
+            return cache[key]
+        return paint, ("facet", id(loc), side, w, h)
     return make
 
 
+GLOW_PARTS = ("pit",)
+
+
 def build():
-    m = Model("shade_wyrm", size=1024)
+    m = Model("shade_wyrm", size=2048)
     rig = Rig(m)
     p = painter
-    anatomy = json.loads(ANATOMY.read_text(encoding="utf-8"))
-    MIRROR = [[-1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    ref = json.loads((REF / "facets.json").read_text(encoding="utf-8"))
+    sampler = TextureSampler()
 
     def sided(name):
         return bool(name) and name.startswith(("leg_", "wing_", "crown_"))
@@ -258,127 +305,81 @@ def build():
             m.cube(f"{name}{suffix}", a, b, items, paint)
         return items
 
-    def part(name, parent, pivot, rotation, spec, sign=1, suffix="", children=()):
+    def part(name, parent, pivot, rotation, spec, sign=1, suffix=""):
         piv = [pivot[0] * sign, pivot[1], pivot[2]]
         rotation = [rotation[0], rotation[1] * sign, rotation[2] * sign]
-        return rig.bone(name, piv, rotation, cubes(spec, sign, suffix), parent, list(children))
+        return rig.bone(name, piv, rotation, cubes(spec, sign, suffix), parent)
 
-    def spike(name, parent, base, rotation, length, width, sign=1):
-        """A tapered spike pointing along -Z from `base` before rotation: thick root, thin glowing tip."""
-        x, y, z = base
-        w2, w3 = width * .65, width * .35
-        return part(name, parent, base, rotation, [
-            (f"{name}_root", [x - width / 2, y, z - length * .5], [x + width / 2, y + width, z], p("scale", "scales")),
-            (f"{name}_mid", [x - w2 / 2, y + (width - w2) / 2, z - length * .8], [x + w2 / 2, y + (width + w2) / 2, z - length * .5], p("hide")),
-            (f"{name}_glow", [x - w3 / 2, y + (width - w3) / 2, z - length], [x + w3 / 2, y + (width + w3) / 2, z - length * .8], p("glow", "glow")),
-        ], sign)
+    # ---------- skeleton: the reference's joints, both sides ----------
+    kids, pivots, order = {}, {}, []
+    for b in ref["bones"]:
+        for s in ((1, -1) if sided(b["name"]) else (1,)):
+            name = b["name"] if s > 0 else right(b["name"])
+            pivots[name] = [b["pivot"][0] * s, b["pivot"][1], b["pivot"][2]]
+            order.append((name, b["parent"] if s > 0 else right(b["parent"])))
+            kids[name] = []
 
-    # ---------- skeleton and body from the anatomy (both sides) ----------
-    kids, pivots = {}, {}
-    order = []
-    for b in anatomy["bones"]:
-        for side in ((1, -1) if sided(b["name"]) else (1,)):
-            name = b["name"] if side > 0 else right(b["name"])
-            parent = b["parent"] if side > 0 else right(b["parent"])
-            pivots[name] = [b["pivot"][0] * side, b["pivot"][1], b["pivot"][2]]
-            order.append((name, parent))
-            kids.setdefault(name, [])
-    for name, parent in order:
-        rig.world[name] = IDENTITY
+    # ---------- surface: every reference face becomes a thin plate cube, cut to its outline ----------
+    def plates(el, sign, bone, suffix):
+        verts = [q for f in el["faces"] for q in f["v"]]
+        centre = [sum(q[i] for q in verts) / len(verts) * (sign if i == 0 else 1) for i in range(3)]
+        glow = PALETTES["glow"][1] + (255,) if any(k in el["name"] for k in GLOW_PARTS) else None
+        for k, f in enumerate(el["faces"]):
+            v, uv = ordered(f)
+            v = [[q[0] * sign, q[1], q[2]] for q in v]
+            tris = [(v[0], v[1], v[2])] + ([(v[0], v[2], v[3])] if len(v) == 4 else [])
+            tuv = [(uv[0], uv[1], uv[2])] + ([(uv[0], uv[2], uv[3])] if len(v) == 4 else [])
+            n = None
+            for t in tris:
+                n = _unit(_cross(_sub(t[1], t[0]), _sub(t[2], t[0])))
+                if n:
+                    break
+            if not n:
+                continue
+            c = [sum(q[i] for q in v) / len(v) for i in range(3)]
+            if _dot(n, _sub(c, centre)) < 0:   # local X (the east face) points out of the volume
+                n = [-x for x in n]
+            edges = [_sub(v[(i + 1) % len(v)], v[i]) for i in range(len(v))]
+            z = max(edges, key=lambda e: _dot(e, e))
+            z = _unit(_sub(z, [n[i] * _dot(z, n) for i in range(3)]))
+            if not z:
+                continue
+            y = _cross(z, n)
+            R = [[n[0], y[0], z[0]], [n[1], y[1], z[1]], [n[2], y[2], z[2]]]
+            ly = [_dot(_sub(q, c), y) for q in v]
+            lz = [_dot(_sub(q, c), z) for q in v]
+            off = [(max(ly) + min(ly)) / 2, (max(lz) + min(lz)) / 2]
+            c = [c[i] + y[i] * off[0] + z[i] * off[1] for i in range(3)]
+            half = [THIN, max(.15, (max(ly) - min(ly)) / 2), max(.15, (max(lz) - min(lz)) / 2)]
+            paint = facet_painter(sampler, tris, tuv, f["tex"], R, c, half, glow)
+            items = []
+            m.cube(f"{el['name']}_{k}{suffix}", [c[0] - half[0], c[1] - half[1], c[2] - half[2]],
+                   [c[0] + half[0], c[1] + half[1], c[2] + half[2]], items, paint,
+                   rotation=matrix_euler(R), origin=c)
+            kids[bone].extend(items)
 
-    def oriented(pt, sign, bone, suffix=""):
-        """One anatomy box as its own bone: pivot at the box centre, rest rotation = the box frame."""
-        R = pt["rotation"]
-        c = [pt["center"][0] * sign, pt["center"][1], pt["center"][2]]
-        if sign < 0:
-            R = _mul(MIRROR, _mul(R, MIRROR))
-        h = pt["half"]
-        paint = material_for(pt["name"])
-        if "panel" in pt["name"]:
-            # Membrane plates: local X is the normal; the face toward the body is the violet inside.
-            normal_x = R[0][0]
-            inner = "west" if normal_x * c[0] > 0 else "east"
-            paint = p("cloak", "membrane" if "tension" in pt["name"] else "veil", inner)
-        if "outline" in pt:
-            paint = masked(paint, pt["outline"], h)
-        spec = [(pt["name"] + suffix, [c[0] - h[0], c[1] - h[1], c[2] - h[2]], [c[0] + h[0], c[1] + h[1], c[2] + h[2]], paint)]
-        tipped = any(k in pt["name"] for k in ("toe", "hook", "crown", "shear"))
-        if tipped:   # glowing point at the end of the long axis away from the bone's joint
-            piv = pivots[bone]
-            axis = [R[0][2], R[1][2], R[2][2]]
-            out = sum((c[i] - piv[i]) * axis[i] for i in range(3))
-            zs = 1 if out >= 0 else -1
-            g = max(.35, min(h[0], h[1]) * .7)
-            z0, z1 = (c[2] + h[2], c[2] + h[2] + max(1.5, h[2] * .45)) if zs > 0 else (c[2] - h[2] - max(1.5, h[2] * .45), c[2] - h[2])
-            spec.append((pt["name"] + "_glow" + suffix, [c[0] - g, c[1] - g, z0], [c[0] + g, c[1] + g, z1], p("glow", "glow")))
-        bname = f"p_{bone}_{pt['name']}{suffix if sign < 0 and not sided(bone) else ''}"
-        return rig.bone(bname, c, matrix_euler(R), cubes(spec), bone)
+    for el in ref["elements"]:
+        plates(el, 1, el["bone"], "")
+        if el["sided"]:
+            plates(el, -1, right(el["bone"]), "_r")
 
-    for pt in anatomy["parts"]:
-        if pt["bone"] in ("skull", "jaw", "crown_l"):
-            continue   # the head is rebuilt by hand below, on the same skull pivot
-        if any(k in pt["name"] for k in ("throat", "mantle_chest")):
-            pt = dict(pt, half=[pt["half"][0] * .85, pt["half"][1] * .88, pt["half"][2]])
-        kids[pt["bone"]].append(oriented(pt, 1, pt["bone"]))
-        if pt["sided"]:
-            rb = right(pt["bone"])
-            if rb != pt["bone"]:
-                kids[rb].append(oriented(pt, -1, rb, "_r"))
-            else:   # a sided part on a centre bone (brow, cheek, pit, fang, collar): mirror in place
-                kids[pt["bone"]].append(oriented(pt, -1, pt["bone"], "_r"))
-
-    # ---------- accents: B1-style glowing spikes along the spine and tail, horns for the rage ----------
-    for k, (z, y, ln, w) in enumerate(((10, 92, 16, 5.5), (-6, 88, 16, 5.5), (-22, 80, 14, 5), (-36, 70, 12, 4.5))):
-        kids["body"].append(spike(f"back_spike{k}", "body", [0, y - 3, z], [38, 0, 0], ln, w))
-    for k, (seg, z, y, ln, w) in enumerate((("tail", -56, 44, 11, 4), ("tail_2", -74, 37, 10, 3.5), ("tail_mid", -94, 29, 8, 3))):
-        x = pivots[seg][0]
-        kids[seg].append(spike(f"{seg}_spike", seg, [x, y, z], [34, 0, 0], ln, w))
-    # ---------- head (noctveil's shape in boxes): compact blind cranium, a beak tilted down, a keel,
-    # brow ridges, deep cheeks with glowing pits, a short recessed jaw, a crown sweeping back over the neck ----------
-    face = [
-        ("cranium", [-11, 64, 34], [11, 84, 50], p("scale", "scales")),
-        ("face1", [-9.5, 64, 50], [9.5, 82, 58], p("hide")),
-        ("face2", [-7.5, 64.5, 58], [7.5, 80, 65], p("hide")),
-        ("face3", [-5.5, 65, 65], [5.5, 78, 71], p("hide")),
-        ("beak", [-3.5, 66, 71], [3.5, 75, 77], p("scale", "scales")),
-        ("beak_hook", [-2, 62.5, 74], [2, 67, 78.5], p("talon")),
-        ("keel", [-1.5, 84, 36], [1.5, 86.5, 66], p("scale", "scales")),
-        ("keel_glow", [-.5, 86.5, 40], [.5, 87, 62], p("glow", "glow")),
-        ("gape", [-6, 63.5, 52], [6, 64.5, 72], p("mouth")),
-    ]
-    sided_face = [
-        ("brow_l", [8, 78, 40], [12, 83, 62], p("scale", "scales")),
-        ("cheek_l", [9.5, 64, 42], [12.5, 74, 58], p("scale", "scales")),
-        ("pit_glow_l", [12.5, 69, 47], [13.1, 73, 56], p("glow", "glow")),
-        ("fang_l", [4.5, 60, 64], [6, 64, 66], p("fang", "bone")),
-    ]
-    face += sided_face + [(n[:-2] + "_r", [-b[0], a[1], a[2]], [-a[0], b[1], b[2]], q) for n, a, b, q in sided_face]
-    kids["skull"].append(rig.bone("face", [0, 78, 44], [30, 0, 0], cubes(face), "skull"))
-    kids["jaw"].append(part("jaw_low", "jaw", [0, 64, 46], [36, 0, 0], [
-        ("jaw_bone", [-6, 57, 46], [6, 63, 66], p("hide")),
-        ("jaw_plate", [-6.5, 56, 48], [6.5, 57, 64], p("belly", "belly")),
-        ("lower_fang_l", [3.5, 63, 60], [5, 66, 62], p("fang", "bone")),
-        ("lower_fang_r", [-5, 63, 60], [-3.5, 66, 62], p("fang", "bone")),
-    ]))
+    # ---------- rage parts: horns (hidden until enraged) and the two feelers ----------
     for sign, s in ((1, "l"), (-1, "r")):
-        crown = "crown_" + s
-        for k, (base, r, ln, w) in enumerate((([6, 82, 46], [24, -10, 0], 46, 7), ([10, 77, 44], [12, -24, 0], 30, 5),
-                                              ([3.5, 86, 40], [34, -6, 0], 26, 4))):
-            kids[crown].append(spike(f"crown{k}_{s}", crown, base, r, ln, w, sign))
-    for sign, s in ((1, "l"), (-1, "r")):
-        kids["skull"].append(part(f"horn_{s}", "skull", [10, 76, 56], [-28, -12, 0], [
-            ("horn_base", [8, 73, 52], [13, 79, 62], p("bone", "bone")),
-            ("horn_mid", [8.8, 74, 61], [12.2, 78, 72], p("bone", "bone")),
-            ("horn_glow", [9.5, 74.8, 71], [11.5, 77.2, 80], p("glow", "glow")),
+        kids["skull"].append(part(f"horn_{s}", "skull", [9, 80, 56], [-28, -12, 0], [
+            ("horn_base", [7.5, 78, 52], [11, 82, 60], p("bone", "bone")),
+            ("horn_mid", [8, 78.5, 59], [10.5, 81.5, 68], p("bone", "bone")),
+            ("horn_glow", [8.5, 79, 67], [10, 81, 74], p("glow", "glow")),
         ], sign, "_" + s))
-        kids["skull"].append(part(f"antenna_{s}", "skull", [6, 86, 44], [18, -4, 0], [
-            ("feeler", [5, 86, 14], [7.5, 88, 46], p("feeler")),
-            ("feeler_glow", [5.25, 86.25, 8], [7.25, 87.75, 14], p("glow", "glow")),
+        kids["skull"].append(part(f"antenna_{s}", "skull", [4, 86, 46], [16, -6, 0], [
+            ("feeler", [3.2, 86, 18], [4.8, 87.4, 47], p("feeler")),
+            ("feeler_glow", [3.4, 86.2, 13], [4.6, 87.2, 18], p("glow", "glow")),
         ], sign, "_" + s))
 
     built = {}
     for name, parent in reversed(order):
-        built[name] = rig.bone(name, pivots[name], [0, 0, 0], [], parent, kids[name] + [built[c] for c, pp in order if pp == name])
+        own = [k for k in kids[name] if isinstance(k, str)]
+        sub = [k for k in kids[name] if not isinstance(k, str)]
+        built[name] = rig.bone(name, pivots[name], [0, 0, 0], own, parent, sub + [built[c] for c, pp in order if pp == name])
     outliner = [built["body"]()]
     animate(m)
     return m, outliner
