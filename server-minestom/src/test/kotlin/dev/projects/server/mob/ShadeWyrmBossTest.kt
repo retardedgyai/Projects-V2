@@ -155,7 +155,9 @@ class ShadeWyrmBossTest {
             combat.tick(100)
             assertTrue(combat.isEnraged(boss.uuid))
             assertEquals(0, combat.groundDisplayCount, "the roar holds every attack")
+            val mountsBefore = connection.passengerPackets
             combat.tick(1500)
+            assertTrue(connection.passengerPackets > mountsBefore, "the rage bones shown mid-clip must be mounted on the model root")
             assertEquals(0, combat.groundDisplayCount)
             assertTrue(combat.applyEffectDamage(boss.uuid, player, 99_999.0))
             assertEquals(1, victories)
@@ -170,7 +172,10 @@ class ShadeWyrmBossTest {
     }
 
     private class MemoryConnection : PlayerConnection() {
-        override fun sendPacket(packet: SendablePacket) = Unit
+        var passengerPackets = 0
+        override fun sendPacket(packet: SendablePacket) {
+            if (packet is net.minestom.server.network.packet.server.play.SetPassengersPacket) passengerPackets++
+        }
         override fun getRemoteAddress(): SocketAddress = InetSocketAddress("127.0.0.1", 0)
     }
 }

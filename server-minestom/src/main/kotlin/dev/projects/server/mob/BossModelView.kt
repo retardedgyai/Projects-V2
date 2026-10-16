@@ -106,7 +106,7 @@ internal class BossModelView(
     fun tick(at: Pos, now: Long) {
         if (disposed || dying) return
         if (hurtUntil != 0L && now >= hurtUntil) { hurtUntil = 0L; model.setState("normal") }
-        if (revealAt != 0L && now >= revealAt) { revealAt = 0L; hiddenUntilEnraged.forEach { model.setBoneVisible(it, true) } }
+        if (revealAt != 0L && now >= revealAt) { revealAt = 0L; reveal() }
         if (foldAt != 0L && now >= foldAt) { foldAt = 0L; hideFolded() }
         val moved = at.distanceSquared(last) > 0.03 * 0.03
         last = at
@@ -144,9 +144,18 @@ internal class BossModelView(
             revealAt = now + ENRAGE_REVEAL_MILLIS
             foldAt = now + ENRAGE_FOLD_MILLIS
         } else {
-            hiddenUntilEnraged.forEach { model.setBoneVisible(it, true) }
+            reveal()
             hideFolded()
         }
+    }
+
+    /**
+     * WSEE mounts the bone displays on the model's root only when the root spawns for a viewer, so a bone shown
+     * later is never mounted and stays where it was spawned. Showing the model again mounts every bone.
+     */
+    private fun reveal() {
+        hiddenUntilEnraged.forEach { model.setBoneVisible(it, true) }
+        for (viewer in model.viewers.toList()) { model.removeViewer(viewer); model.addViewer(viewer) }
     }
 
     private fun hideFolded() {
