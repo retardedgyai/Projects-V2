@@ -58,7 +58,6 @@ data class CoreHudState(
     val maxMana: Double = 100.0,
     val skills: List<CoreHudSkill> = emptyList(),
     val hint: String = "",
-    val charges: Int? = null,
     val resource: Double? = null,
     val resourceMaximum: Double = 100.0,
     val shield: Double = 0.0,

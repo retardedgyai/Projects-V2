@@ -28,6 +28,9 @@ sealed interface CoreRepositorySave {
     data class Failed(val reason: String) : CoreRepositorySave
 }
 
+/** Retired class id that old saves may still contain; it loads as Mage. */
+private const val RETIRED_STARWEAVER = "STARWEAVER"
+
 /** Dedicated core-loop directory. Existing progression files are never opened or migrated. */
 class CoreAccountRepository(
     directory: Path,
@@ -354,16 +357,22 @@ internal object CoreAccountCodec {
             return CoreClassTrees.refundLegacyMask(mask)
         }
         val savedBuilds = mutableMapOf<CoreClass, CoreClassBuild>()
+        // The retired Starweaver class loads as Mage; its own loadout cannot carry over.
+        var retiredStarweaver = false
         val bases = linkedMapOf<UUID, Pair<CoreWeaponBase, Int>>()
         val mapLevels = linkedMapOf<UUID, Int>()
         rows.drop(2).forEach { row -> when (row[0]) {
             "class-build" -> { require(version >= 9 && row.size == 7 && classBuild == null); classBuild = CoreClassBuild(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), readTreeMask(row[6])) }
             "class-loadout" -> {
                 require(version >= 9 && row.size == 8)
-                val job = CoreClass.valueOf(row[1]); require(job !in savedBuilds)
-                savedBuilds[job] = CoreClassBuild(row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), row[6].toInt(), readTreeMask(row[7]))
+                val build = CoreClassBuild(row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), row[6].toInt(), readTreeMask(row[7]))
+                if (row[1] != RETIRED_STARWEAVER) {
+                    val job = CoreClass.valueOf(row[1]); require(job !in savedBuilds)
+                    savedBuilds[job] = build
+                }
             }
-            "journey" -> { require(version >= 8 && row.size == 6 && journey == null); journey = CoreJourney(CoreClass.valueOf(row[1]), row[2].toBooleanStrict(), row[3].toLong(), row[4].toInt(), row[5].toBooleanStrict()) }
+            "journey" -> { require(version >= 8 && row.size == 6 && journey == null); retiredStarweaver = row[1] == RETIRED_STARWEAVER
+                journey = CoreJourney(if (retiredStarweaver) CoreClass.MAGE else CoreClass.valueOf(row[1]), row[2].toBooleanStrict(), row[3].toLong(), row[4].toInt(), row[5].toBooleanStrict()) }
             "gear-base" -> { require(version >= 8 && row.size == 4); require(bases.put(UUID.fromString(row[1]), CoreWeaponBase.valueOf(row[2]) to row[3].toInt()) == null) }
             "map-level" -> { require(version >= 8 && row.size == 3); require(mapLevels.put(UUID.fromString(row[1]), row[2].toInt()) == null) }
             "survey" -> { require(version >= 7 && row.size == 2 && survey == null); survey = row[1].toLong() }
@@ -457,7 +466,8 @@ internal object CoreAccountCodec {
                 val oldBudget=if(existingJourney.legacy)6 else (2+existingJourney.level/8).coerceAtMost(6)
                 require(legacyTreeMasks.all { Integer.bitCount(it)<=oldBudget }) { "旧技能ポイントが不正です" }
             }
-            val build = requireNotNull(classBuild) { "職業の構成データがありません" }
+            val saved = requireNotNull(classBuild) { "職業の構成データがありません" }
+            val build = if (retiredStarweaver) savedBuilds.remove(CoreClass.MAGE) ?: CoreClassBuild() else saved
             require(build.points <= CoreClassTrees.budget(existingJourney)) { "技能ポイントが不正です" }
             require(existingJourney.job !in savedBuilds) { "現在の職業の構成が重複しています" }
             journey = existingJourney.copy(build = build, savedBuilds = savedBuilds.toMap())

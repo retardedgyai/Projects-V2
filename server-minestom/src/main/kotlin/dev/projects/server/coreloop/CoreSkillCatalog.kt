@@ -208,17 +208,6 @@ object CoreSkillCatalog {
                 s("清めの風", "heal_wind", "信仰20で軽く回復し、自分の回避を再使用可能に", CoreSkillMotion.HEAL, 12.0, .5, mana=12, cd=120, gain=0, spend=20, radius=5.0),
                 s("救済", "heal_ult", "信仰80を使い、周囲の仲間を大きく回復", CoreSkillMotion.HEAL, 70.0, 2.8, mana=30, cd=650, startup=16, gain=0, spend=80, radius=10.0, ult=true),
                 s("最後の審判", "heal_judgment", "信仰80を攻撃へ全投入。四度の広域の裁き", CoreSkillMotion.FIELD, 12.0, 1.8, mana=30, cd=620, startup=18, pulses=4, gain=0, spend=80, radius=6.5, ult=true))
-            CoreClass.STARWEAVER -> listOf(
-                s("星糸", "star_thread", "星を解放。三蓄積なら三体まで貫通", CoreSkillMotion.RAY, 6.0, 1.4, cd=80, startup=5, gain=0),
-                s("星環", "star_ring", "星を解放して減速。三蓄積ならマナ12回復", CoreSkillMotion.NOVA, 8.0, 1.1, cd=140, status=CoreSkillStatus.SLOW, gain=0),
-                s("星降る夜", "starfall", "星を解放。三蓄積なら四回に増加", CoreSkillMotion.FIELD, 4.0, 1.1, mana=25, cd=200, pulses=3, gain=0),
-                s("星渡り", "star_step", "前方へ星の道を渡る。攻撃と離脱の位置を作る", CoreSkillMotion.EVADE, 0.0, 0.0, mana=15, cd=140, gain=0, range=4.0),
-                s("星の針", "star_needle", "星を消費せず印を付ける。次の解放を準備", CoreSkillMotion.RAY, 3.0, .65, mana=8, cd=65, gain=1, status=CoreSkillStatus.MARK),
-                s("星雲", "star_cloud", "星を解放し、地点へ四度の減速波", CoreSkillMotion.FIELD, 2.0, .6, mana=20, cd=180, pulses=4, gain=0, status=CoreSkillStatus.SLOW),
-                s("星衣", "star_shield", "星を解放して仲間を保護する", CoreSkillMotion.SHIELD, 15.0, 1.0, mana=18, cd=200, gain=0, radius=7.0, duration=120),
-                s("星砕き", "star_break", "星を解放して印を起爆。集団より単体に強い", CoreSkillMotion.RAY, 10.0, 2.2, mana=20, cd=160, gain=0, spend=1),
-                s("天球崩壊", "star_ult", "星3を使う五連星雨。星の残響ならさらに一回", CoreSkillMotion.FIELD, 12.0, 1.8, mana=30, cd=620, startup=16, pulses=5, gain=0, spend=3, radius=7.0, ult=true),
-                s("星座の守り", "star_constellation", "星3を使い仲間へ大きな障壁を編む", CoreSkillMotion.SHIELD, 60.0, 2.0, mana=25, cd=680, gain=0, spend=3, radius=10.0, duration=160, ult=true))
         }
     }
 }

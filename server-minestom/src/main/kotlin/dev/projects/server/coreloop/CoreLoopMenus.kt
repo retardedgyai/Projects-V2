@@ -246,12 +246,12 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             v.canvas.left("${a.journey.job.displayName} Lv${a.journey.level}",
                 lines("経験 ${a.journey.xp}", if (a.journey.level < 40) "次まで ${CoreJourneyRules.threshold(a.journey.level + 1) - a.journey.xp}" else "冒険Lv最大", "T1 Lv1〜10", "T2 Lv11〜20", "T3 Lv21〜30", "T4 Lv31〜40", "技 Lv1/4/8/12", "奥義 Lv16"), hero = CoreMenuArt.GEAR)
             v.canvas.right("次の一歩", paragraph(CoreJourneyRules.next(a)) + lines("", "導入 ${(0..5).count(a.journey::knows)}/6", "港で職業を変更可能", "装備と経験は保持", "採取でも経験を獲得"), hero = CoreMenuArt.EXPEDITION)
-            CoreClass.entries.sortedBy { it == CoreClass.STARWEAVER }.forEachIndexed { i, job ->
-                val slot = listOf(9, 12, 15, 18, 21, 24, 27)[i]
-                val eligible = a.activeRun == null && (job != CoreClass.STARWEAVER || CoreJourneyRules.starweaverBlocker(a) == null)
-                tile(v, slot, 3, if (job == CoreClass.STARWEAVER) "星織り" else job.displayName,
+            CoreClass.entries.forEachIndexed { i, job ->
+                val slot = listOf(9, 12, 15, 18, 21, 24)[i]
+                val eligible = a.activeRun == null
+                tile(v, slot, 3, job.displayName,
                     CoreLoopItems.icon(if (job.magic) Material.AMETHYST_SHARD else Material.IRON_SWORD, job.displayName, job.description,
-                        if (job == CoreClass.STARWEAVER) "メイジLv20 + T2討伐証2枚（非消費）" else "港でいつでも選び直せます"),
+                        "港でいつでも選び直せます"),
                     if (!eligible) Tone.DISABLED else if (a.journey.chosen && job == a.journey.job) Tone.SELECTED else Tone.PRIMARY) {
                     mutate(v, player, CoreAction.ChooseClass(job), a.revision) { career(player) }
                 }

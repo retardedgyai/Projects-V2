@@ -110,7 +110,6 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         }
         is CoreAction.ChooseClass -> {
             requireHub(account)
-            if (action.job == CoreClass.STARWEAVER) CoreJourneyRules.starweaverBlocker(account)?.let { throw IllegalArgumentException(it) }
             var selected = account.copy(journey = account.journey.changeClass(action.job))
             if (!selected.weaponIdentity.base.usable(action.job)) {
                 val old = CoreEconomy.capture(selected, CoreGearSlot.WEAPON)

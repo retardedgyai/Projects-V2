@@ -10,11 +10,11 @@ from preview_class_armaments import render_model, FONT
 
 ROOT = Path(__file__).resolve().parents[1]
 WEAPONS = [('greatsword','大剣'),('dagger','短剣'),('staff','魔杖'),('bow','長弓'),
-           ('mace','戦槌'),('tome','聖典'),('astrolabe','星環杖')]
+           ('mace','戦槌'),('tome','聖典')]
 
 
 def main():
-    sheet = Image.new('RGB',(7*160,420),'#171b20')
+    sheet = Image.new('RGB',(6*160,420),'#171b20')
     draw = ImageDraw.Draw(sheet)
     draw.text((10,8),'保存済みJSON・PNG・表示変換の確認 / Minecraft画面ではありません',font=FONT,fill='#ded7ca')
     draw.text((10,31),'上: GUI倍率2相当 / 下: GUI倍率4相当（どちらも最近傍で拡大して比較）',font=FONT,fill='#a8adb2')

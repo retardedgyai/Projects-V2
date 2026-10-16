@@ -153,8 +153,8 @@ class CoreHudLayoutTest {
         }
     }
 
-    @Test fun `five skill slots resource shield and all seventy art mappings retain exact centering`() {
-        for(index in 0..69) {
+    @Test fun `five skill slots resource shield and all sixty art mappings retain exact centering`() {
+        for(index in 0..59) {
             val skill=CoreHudSkill(CoreUiIcon.DASH,"6",0.0,30.0,10,artIndex=index,resourceAvailable=false)
             assertEquals(CoreHudLayout.SkillVisual(21,""),CoreHudLayout.skillVisual(skill,100.0))
             val state=CoreHudState(80.0,140.0,100.0,skills=List(5){skill.copy(key=(it+2).toString())},resource=60.0,shield=42.0)

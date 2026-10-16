@@ -86,7 +86,7 @@ object CoreUiComponents {
                 "${it.key}:$status"
             }
             return text("HP ${number(state.health)}/${number(state.maxHealth)}  マナ ${number(state.mana)}/${number(state.maxMana)}", GOLD)
-                .append(text("  $cooldowns" + (state.resource?.let { "  資源 ${number(it)}/${number(state.resourceMaximum)}" } ?: state.charges?.let { "  蓄積 ${it.coerceIn(0,3)}/3" } ?: "") + if(state.shield > 0) "  障壁 ${number(state.shield)}" else "", IVORY))
+                .append(text("  $cooldowns" + (state.resource?.let { "  資源 ${number(it)}/${number(state.resourceMaximum)}" } ?: "") + if(state.shield > 0) "  障壁 ${number(state.shield)}" else "", IVORY))
                 .append(if(state.combatCue.isBlank()) Component.empty() else text("  ${state.combatCue}", IVORY))
                 .append(if (state.hint.isBlank()) Component.empty() else text("  ${state.hint}", MUTED))
         }

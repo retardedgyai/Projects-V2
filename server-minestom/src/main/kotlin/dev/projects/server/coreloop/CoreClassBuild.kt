@@ -77,7 +77,6 @@ object CoreClassTrees {
             CoreClass.ASSASSIN -> listOf("処刑人" to "印を消費する技はHP35%以下の敵へ威力+40%", "影渡り" to "印を消費すると回避が再使用可能", "毒刃" to "印のある敵への通常攻撃が3秒の毒を付与")
             CoreClass.TEMPLAR -> listOf("断罪者" to "障壁を得る技で次の攻撃を強化。威力+35%", "重力の主" to "吸引が広がる。ボスには防御低下を付与", "守護聖人" to "味方への障壁+40%、自分への威力-10%")
             CoreClass.HEALER -> listOf("審判者" to "回復の半分を障壁に変え、裁きの威力+25%", "命の循環" to "実際に味方を回復すると信仰を回収（1回上限15）", "灯守" to "救護技で味方の移動速度+20%を3秒付与")
-            CoreClass.STARWEAVER -> listOf("星の残響" to "三蓄積で解放する技が1回増える（各85%）", "星巡り" to "移動技でも星を一つ編む", "守り星" to "三蓄積の解放で周囲の味方に障壁")
         }
         val core = keys.flatMapIndexed { branch, (name, text) -> listOf(
             CoreTalentNode(listOf("鍛えた一撃", "巧みな準備", "生存の心得")[branch], listOf("直接ダメージ+8%", "固有資源の獲得+20%", "最大HP+10%")[branch]),

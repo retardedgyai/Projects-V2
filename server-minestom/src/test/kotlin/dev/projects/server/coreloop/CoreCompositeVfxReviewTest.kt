@@ -11,7 +11,7 @@ import kotlin.test.*
  * Gear-adjusted cast speed, movement, hit reactions and display budgets need separate tests.
  */
 class CoreCompositeVfxReviewTest {
-    @Test fun `export all seventy complete casts with preparations and every base damage pulse`() {
+    @Test fun `export all sixty complete casts with preparations and every base damage pulse`() {
         fun xyz(v: Vec)=listOf(v.x(),v.y(),v.z())
         val scenes=CoreClass.entries.flatMap { job -> CoreSkillCatalog.skills(job).map { skill ->
             val events=mutableListOf<Triple<Int,CoreSkillEffect,List<CoreCombatMeshPart>>>()
@@ -44,7 +44,7 @@ class CoreCompositeVfxReviewTest {
                 "events" to events.map { (at,e,_) -> mapOf("tick" to at,"phase" to e.phase.name,"pulse" to e.pulse) },
                 "peakParts" to frames.maxOf { it.size })
         } }
-        assertEquals(70,scenes.size)
+        assertEquals(60,scenes.size)
         val path=Path.of("../.tools/composite-skill-frames.json")
         Files.createDirectories(path.parent);Files.writeString(path,Gson().toJson(scenes))
     }

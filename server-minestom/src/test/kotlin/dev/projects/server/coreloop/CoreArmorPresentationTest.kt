@@ -39,7 +39,7 @@ class CoreArmorPresentationTest {
         }
     }
 
-    @Test fun `all 112 equipment projections retain tier stats tags and slot with class models`() {
+    @Test fun `all 96 equipment projections retain tier stats tags and slot with class models`() {
         MinecraftServer.init(Auth.Offline())
         val pieces = listOf(Material.IRON_HELMET, Material.IRON_CHESTPLATE, Material.IRON_LEGGINGS, Material.IRON_BOOTS)
         val seen = mutableSetOf<String>()
@@ -61,7 +61,7 @@ class CoreArmorPresentationTest {
             assertEquals(model,CoreLoopItems.gear(account,CoreGearSlot.ARMOR,true,material).get(DataComponents.ITEM_MODEL))
             seen+=model
         }
-        assertEquals(112,seen.size)
+        assertEquals(96,seen.size)
     }
 
     @Test fun `no pack or non-armor item is not given a custom equipment layer`() {

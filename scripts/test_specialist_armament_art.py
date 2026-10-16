@@ -4,7 +4,7 @@ import json
 import unittest
 import numpy as np
 from PIL import Image
-from process_specialist_armament_art import JOBS, SOURCE, OUT, convert, extract, region
+from process_specialist_armament_art import JOBS, SOURCE, OUT, convert, extract
 
 
 class SpecialistArtTest(unittest.TestCase):
@@ -67,19 +67,12 @@ class SpecialistArtTest(unittest.TestCase):
         self.assertGreater(int(right.sum()),800)
 
     def test_small_colored_focal_points_are_not_replaced_by_body_material(self):
-        star = np.asarray(Image.open(OUT/'astrolabe-star.png'))
-        colors = star[star[:,:,3]>0,:3].astype(int)
-        self.assertTrue(((colors[:,2]>colors[:,0]+15)&(colors[:,2]>colors[:,1]+25)).any())
         bow = np.asarray(Image.open(OUT/'bow-grip.png'))
         colors = bow[bow[:,:,3]>0,:3].astype(int)
         self.assertTrue(((colors[:,1]>colors[:,0]*1.7)&(colors[:,1]>colors[:,2]*1.5)).any())
         tome = np.asarray(Image.open(OUT/'tome-binding_cover.png'))
         colors = tome[tome[:,:,3]>0,:3].astype(int)
         self.assertTrue(((colors[:,0]>150)&(colors[:,1]<40)&(colors[:,2]<60)).any())
-        # Space inside the star ring remains truly open after detaching the star.
-        ring = np.asarray(Image.open(OUT/'astrolabe-ring.png'))
-        interior = region(np.full_like(ring,255),self.manifest['weapons']['astrolabe'],[410,305,520,525])
-        self.assertTrue((ring[interior,3]==0).all())
 
     def test_outputs_remain_isolated_from_playing_server(self):
         self.assertFalse(self.manifest['runtime_applied'])

@@ -8,7 +8,7 @@ import math
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
-CLASSES = ("warrior", "ranger", "mage", "starweaver", "assassin", "templar", "healer")
+CLASSES = ("warrior", "ranger", "mage", "assassin", "templar", "healer")
 OVERRIDE_PREFIX = "assets/minecraft/textures/gui/sprites/hud/"
 DIGITS = "0123456789/HMPR"
 # Same stable order as CoreClass.entries and its eight skills + two ultimates.
@@ -16,7 +16,6 @@ SKILLS = (
     "dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner",
     "pierce", "frost_fan", "arrow_rain", "hunt_retreat", "hunt_pierce", "hunt_trap", "hunt_mark", "hunt_volley", "hunt_ult", "hunt_storm",
     "firebolt", "frost_nova", "meteor", "mage_blink", "mage_mark", "mage_garden", "mage_burst", "mage_ward", "mage_ult", "mage_zero",
-    "star_thread", "star_ring", "starfall", "star_step", "star_needle", "star_cloud", "star_shield", "star_break", "star_ult", "star_constellation",
     "ass_stab", "ass_execute", "ass_fan", "ass_escape", "ass_poison", "ass_chase", "ass_needle", "ass_guard", "ass_ult", "ass_contract",
     "temp_mace", "temp_pull", "temp_ward", "temp_guard", "temp_rebuke", "temp_field", "temp_break", "temp_dash", "temp_ult", "temp_sanctuary",
     "heal_light", "heal_ring", "heal_pillar", "heal_step", "heal_lamp", "heal_shield", "heal_mark", "heal_wind", "heal_ult", "heal_judgment",
@@ -242,7 +241,7 @@ def build_hud(assets, source, write_json):
         preview_digits("HP" if x == 0 else "MP", x + 3, 57)
         preview_digits("100/100", x + 34, 57)
     save(preview.resize((728, 352), Image.Resampling.NEAREST), source / "hud-layout-preview.png")
-    overview = Image.new("RGBA", (364, 270), "#211d22")
+    overview = Image.new("RGBA", (364, 232), "#211d22")
     for index, name in enumerate(SKILLS):
         overview.alpha_composite(frames[name][0], (4 + index % 10 * 36, 4 + index // 10 * 38))
-    save(overview.resize((1092, 810), Image.Resampling.NEAREST), source / "skill-classes-preview.png")
+    save(overview.resize((1092, 696), Image.Resampling.NEAREST), source / "skill-classes-preview.png")

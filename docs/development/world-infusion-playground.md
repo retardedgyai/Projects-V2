@@ -87,7 +87,7 @@ resourcepack追加は `assets/projects/{items,models,textures}/infusion` と `in
 本編への次段階：現core装備/通常素材の台座escrowを同じcore ledgerにtransactionとして組み込み、owner/access/rangeを共有ワールドに接続する。
 その時に今回の独立world envelopeを本番saveとして採用しない。恒久知識とノート予算は別のまま、祭壇gateにしない。
 今回のCoreStoredGearを本編に持ち込む/既存装備をこの試験worldへ移す機能や市場/取引の調整は追加していない。
-深殿とASTRAL退役に独立。星織り師のコンテンツは触らない。
+深殿とASTRAL退役に独立。
 
 ## 検証段階
 

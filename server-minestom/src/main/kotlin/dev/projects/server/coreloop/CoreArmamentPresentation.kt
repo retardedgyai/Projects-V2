@@ -22,12 +22,11 @@ internal object CoreArmamentPresentation {
     }
     // Transient, player-owned and never serialized into an item/account/save.
     private val clipTag = Tag.Transient<Clip>("projects_armament_visual_clip")
-    private val families = setOf("greatsword", "staff", "bow", "dagger", "mace", "tome", "astrolabe")
+    private val families = setOf("greatsword", "staff", "bow", "dagger", "mace", "tome")
     private val models = families.flatMap { family -> (1..4).map { "projects:weapons/${family}_t$it" } }.toSet()
 
     fun model(base: CoreWeaponBase, job: CoreClass, tier: Int): String {
-        val family = if (base == CoreWeaponBase.STAFF && job == CoreClass.STARWEAVER) "astrolabe" else base.family
-        return "projects:weapons/${family}_t${tier.coerceIn(1, 4)}"
+        return "projects:weapons/${base.family}_t${tier.coerceIn(1, 4)}"
     }
 
     fun frame(item: ItemStack, frame: Int): ItemStack {

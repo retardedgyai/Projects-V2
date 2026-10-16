@@ -71,9 +71,9 @@ internal object CoreHudLayout {
             layer(-40, glyph(0xE340 + barFrame(state.resource, state.resourceMaximum)), BAR_WIDTH + 1)
             val text = "${number(state.resource)}/${number(state.resourceMaximum)}"
             layer(-text.length * 2, digits(text, 0xE560), text.length * 4)
-        } else state.charges?.let { charge -> layer(-6, digits("${charge.coerceIn(0,3)}/3", 0xE540), 12) }
+        }
         state.skills.take(5).forEachIndexed { index, skill ->
-            val kind = skill.artIndex?.coerceIn(0, 69) ?: when (skill.icon) {
+            val kind = skill.artIndex?.coerceIn(0, 59) ?: when (skill.icon) {
                 CoreUiIcon.DASH -> 0
                 CoreUiIcon.SLAM -> 1
                 CoreUiIcon.WHIRL -> 2

@@ -40,7 +40,7 @@ enum class CoreAffixStat(val displayName: String, val percent: Boolean = true) {
     LIFESTEAL("ライフスティール"),
     SHIELD_POWER("シールド量"),
     WAR_AFTERSHOCK("戦士・余波", false), MAGE_ECHO("メイジ・残響", false), HUNT_RETURN("狩人・追矢", false),
-    ASS_VENOM("暗殺者・毒印", false), TEMP_GRAVITY("聖騎士・重力", false), HEAL_CONVERSION("治療師・予防", false), STAR_ORBIT("星織り・公転", false),
+    ASS_VENOM("暗殺者・毒印", false), TEMP_GRAVITY("聖騎士・重力", false), HEAL_CONVERSION("治療師・予防", false),
 }
 
 /** Identity and roll are server-owned. Unknown definitions remain serializable but inert. */
@@ -155,7 +155,6 @@ object CoreAffixCatalog {
         CoreAffixDefinition("projects:venom-mark", "毒印の刻印石", CoreAffixStat.ASS_VENOM, CoreAffixCategory.OFFENSE, 1, 4, 1, weight=3),
         CoreAffixDefinition("projects:gravity-well", "重力の刻印石", CoreAffixStat.TEMP_GRAVITY, CoreAffixCategory.UTILITY, 1, 4, 1, weight=3),
         CoreAffixDefinition("projects:preventive-prayer", "予防の刻印石", CoreAffixStat.HEAL_CONVERSION, CoreAffixCategory.DEFENSE, 1, 4, 1, weight=3),
-        CoreAffixDefinition("projects:orbit", "公転の刻印石", CoreAffixStat.STAR_ORBIT, CoreAffixCategory.OFFENSE, 1, 4, 1, weight=3),
     ))
     // Kept outside the normal loot/currency candidate list. Same budget; no additional firepower.
     private val ritualOnly = CoreAffixDefinition("projects:glacial-attunement", "霜転の調律（試作）",
@@ -182,7 +181,6 @@ object CoreAffixCatalog {
             CoreAffixStat.ASS_VENOM -> return "暗殺者：印を付けた敵に${10 + v * 2}% ADの毒を3回"
             CoreAffixStat.TEMP_GRAVITY -> return "聖騎士：吸引+${v * 10}% / 威力80%"
             CoreAffixStat.HEAL_CONVERSION -> return "治療師：回復の${25 + v * 3}%を同量の障壁に変換"
-            CoreAffixStat.STAR_ORBIT -> return "星織り：三蓄積の解放+1回 / 各${65 + v}%威力"
             else -> Unit
         }
         val value = if (stone.value % 1.0 == 0.0) stone.value.toInt().toString() else java.lang.String.format(java.util.Locale.ROOT, "%.1f", stone.value)

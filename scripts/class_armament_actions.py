@@ -103,13 +103,6 @@ def action_model(kind, tier, stage, frame):
             elif part['name']=='prayer seal ray':
                 x=sum((part['from'][0],part['to'][0]))/2
                 translate(part,[(x-8)*amount*.3,amount*1.3,0])
-    elif kind=='astrolabe':
-        for part in e:
-            if part['name'].startswith(('floating star','star diamond')):
-                translate(part,[0,0,-amount*1.1])
-            elif part['name']=='orbiting star fragment':
-                center=[(a+b)/2 for a,b in zip(part['from'],part['to'])]
-                translate(part,[(8-center[0])*amount*.45,(25-center[1])*amount*.45,-amount*1.2])
     elif kind=='mace':
         # Reliquary slides apart at the four seams; the shaft and grip stay fixed.
         for part in e:

@@ -42,13 +42,10 @@ class CoreJourneyTest {
         }
     }
 
-    @Test fun `next Tier and Mage ascension remain ahead of T4 equipment guidance`() {
+    @Test fun `next Tier remains ahead of T4 equipment guidance`() {
         val a = CoreAccount(UUID.randomUUID(), unlockedMapTier = 4,
             journey = CoreJourney(job = CoreClass.WARRIOR, chosen = true, lessons = 63, legacy = false))
         for (tier in 1..3) assertTrue("次のTier" in CoreJourneyRules.next(a.copy(unlockedMapTier = tier)))
-        val mage = a.copy(journey = a.journey.copy(job = CoreClass.MAGE, xp = CoreJourneyRules.threshold(20)))
-        assertTrue("星織り師" in CoreJourneyRules.next(mage))
-        assertTrue("転職条件" in CoreJourneyRules.next(mage))
     }
 
     @Test fun `first class through six real tutorial actions can create equip and roll a chosen weapon`() {
@@ -106,16 +103,6 @@ class CoreJourneyTest {
         }
         assertEquals(3, f.a.storedGear.size)
         assertTrue(f.a.storedGear.all { it.identity.bound })
-    }
-    @Test fun `Mage alone can ascend at level20 with a T2 boss proof without destroying it`() {
-        val id = UUID.randomUUID()
-        val f = Fixture(CoreAccount(id, journey = CoreJourney.fresh().copy(xp = CoreJourneyRules.threshold(20)),
-            balances = mapOf(CoreMaterial(CoreResource.BOSS_SIGIL, 2) to 2L)))
-        assertEquals(CoreTransactionStatus.REJECTED, f.send(CoreAction.ChooseClass(CoreClass.STARWEAVER)).status)
-        f.act(CoreAction.ChooseClass(CoreClass.MAGE)); val weapon = f.a.weaponIdentity
-        f.act(CoreAction.ChooseClass(CoreClass.STARWEAVER)); f.reload()
-        assertEquals(weapon, f.a.weaponIdentity); assertEquals(2, f.a.amount(CoreResource.BOSS_SIGIL, 2))
-        assertEquals(CoreClass.STARWEAVER, f.a.journey.job)
     }
     @Test fun `first boss keeps T1 and a ten-level capstone advances generation`() {
         val f = Fixture(); f.act(CoreAction.ChooseClass(CoreClass.MAGE)); f.act(CoreAction.ClaimMap(1, 17))

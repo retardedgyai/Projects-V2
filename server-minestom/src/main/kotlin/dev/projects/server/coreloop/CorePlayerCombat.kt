@@ -70,7 +70,6 @@ internal class CorePlayerCombat(
     private var nextShot = 0L
     private var shot: Pair<Long, Vec>? = null
     private var skillBoost = 1.0
-    private var castCharges = 0
     private var lastConduitGain = -1L
     private val lessonAttempts = mutableMapOf<Int, Long>()
     val classId get() = journey().job
@@ -80,7 +79,6 @@ internal class CorePlayerCombat(
     fun resourceAvailable(index: Int) = classState.canCast(skillDefinitions[index], journey().build)
     val weaponHint get() = "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}"
     val combatCue get() = CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil)
-    val chargeCount: Int? get() = if (classId == CoreClass.STARWEAVER) classState.resource.toInt() else null
     val resource get() = classState.resource
     val resourceMax get() = classState.cap(classId)
     val shield get() = classState.shield
@@ -105,7 +103,7 @@ internal class CorePlayerCombat(
     private val damageLabels = mutableListOf<Pair<Entity, Long>>()
 
     private data class PendingSkill(val id: Int, val definition: CoreSkillDefinition, val origin: Pos, val direction: Vec, val startup: Int,
-        var elapsed: Int = 0, var gained: Boolean = false, val empowered: Double = 0.0, val counter: Boolean = false,
+        var elapsed: Int = 0, var gained: Boolean = false, val counter: Boolean = false,
         val boost: Double = 1.0, val gardenCells: List<Pos>? = null)
 
     fun attack() {
@@ -178,9 +176,8 @@ internal class CorePlayerCombat(
             }
         }
         manaValue -= cost
-        val spentFrom = classState.spend(definition, classId, journey().build)
-        castCharges = if (classId == CoreClass.STARWEAVER) spentFrom.toInt() else 0
-        skillBoost = if (classId == CoreClass.STARWEAVER && definition.gain == 0 && definition.motion != CoreSkillMotion.EVADE) 1 + spentFrom * .15 else 1.0
+        classState.spend(definition, classId, journey().build)
+        skillBoost = 1.0
         if (weaponBase() == CoreWeaponBase.CONDUIT && definition.spend > 0) skillBoost *= 1.12
         val counter = classState.counterUntil >= tickNumber && definition.formula.ad > 0 &&
             (classId != CoreClass.WARRIOR || CoreWarriorCombatRules.counterSkill(definition.icon)) &&
@@ -188,18 +185,11 @@ internal class CorePlayerCombat(
         if (counter) { skillBoost *= if (journey().build.keystone == 1 && classId == CoreClass.WARRIOR) 1.6 else 1.35; classState.counterUntil = -1 }
         var castDefinition = definition
         if (classId == CoreClass.WARRIOR && counter) castDefinition = definition.copy(startup = minOf(3, definition.startup))
-        if (classId == CoreClass.STARWEAVER && spentFrom == 3.0 && definition.motion !in setOf(CoreSkillMotion.EVADE, CoreSkillMotion.HEAL, CoreSkillMotion.SHIELD)) {
-            var extra = if (definition.motion == CoreSkillMotion.FIELD) 1 else 0
-            if (journey().build.keystone == 0) { extra++; skillBoost *= .85 }
-            val orbit = statSource().bonus(CoreAffixStat.STAR_ORBIT)
-            if (orbit > 0) { extra++; skillBoost *= .65 + orbit.coerceAtMost(20.0) / 100 }
-            castDefinition = definition.copy(pulses = (definition.pulses + extra).coerceAtMost(8))
-        }
         readyAt[id] = tickNumber + cooldownTicks(id)
         val startup = castDefinition.startupTicks(sheet)
         pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
             if (definition.motion == CoreSkillMotion.RAY) player.position.direction() else flatFacing(), startup,
-            empowered = spentFrom, counter = counter, boost = skillBoost, gardenCells = gardenCells)
+            counter = counter, boost = skillBoost, gardenCells = gardenCells)
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
@@ -363,7 +353,7 @@ internal class CorePlayerCombat(
         }
         when (s.motion) {
             CoreSkillMotion.RAY -> rangedStrike(enemies, action.direction, s.range, .65,
-                if ((classId == CoreClass.STARWEAVER && action.empowered >= 3) || s.icon == "hunt_pierce") 3 else 1, 1.0, true)
+                if (s.icon == "hunt_pierce") 3 else 1, 1.0, true)
             CoreSkillMotion.LUNGE -> {
                 val maximum = if (s.range == 18.0) 2.2 else s.range
                 val distance = enemies.combatTargets().mapNotNull { target ->
@@ -387,7 +377,6 @@ internal class CorePlayerCombat(
                 val departure = player.position
                 moveSafely(action.direction.mul(if (s.range < 0) -1.0 else 1.0), abs(s.range))
                 classState.dodgeUntil = tickNumber + 60
-                if (classId == CoreClass.STARWEAVER && build.keystone == 1) classState.gain(1.0, classId, build)
                 if (classId == CoreClass.HEALER) grantNearbyShields(8 + abilityPower * .3, 4.0, 60)
                 if (s.formula.ad > 0 || s.formula.ap > 0) rangedStrike(enemies, action.direction, 18.0, .7, 1, 1.0, true)
                 else if (s.status == CoreSkillStatus.SLOW) enemies.combatTargets().filter { it.position.distance(action.origin) < 4 && visibleTo(it.id, enemies) }
@@ -439,9 +428,6 @@ internal class CorePlayerCombat(
             }
         }
         if (!actionsValid(enemies, epoch)) return
-        if (classId == CoreClass.STARWEAVER && action.empowered >= 3 && action.elapsed == action.startup && build.keystone == 2) {
-            grantNearbyShields(10 + abilityPower * .5, 7.0, 100)
-        }
     }
 
     private fun nearbyAllies(radius: Double): List<CorePlayerCombat> = (allies() + this).distinctBy { it.player.uuid }.filter {
@@ -503,7 +489,7 @@ internal class CorePlayerCombat(
         if (classId == CoreClass.WARRIOR && build.keystone == 0 && resource >= 60) classMultiplier *= 1.2
         if (classId == CoreClass.HEALER && build.keystone == 0) classMultiplier *= 1.25
         if (classId == CoreClass.TEMPLAR && build.keystone == 2) classMultiplier *= .9
-        val consumeMark = skill && classId != CoreClass.WARRIOR && classState.marked(id, tickNumber) && (definition!!.spend > 0 || (classId == CoreClass.STARWEAVER && castCharges > 0))
+        val consumeMark = skill && classId != CoreClass.WARRIOR && classState.marked(id, tickNumber) && definition!!.spend > 0
         if (consumeMark) {
             classMultiplier *= 1.35
             val info = enemies.mobInfo(id)
@@ -528,7 +514,6 @@ internal class CorePlayerCombat(
         }
         else skillAction?.takeUnless { it.gained }?.let { action ->
             action.gained = true; classState.skillHit(classId, action.definition, build)
-            if (classId == CoreClass.STARWEAVER && action.empowered >= 3 && action.definition.icon == "star_ring") manaValue = min(maxMana.toDouble(), manaValue + 12)
         }
         if (consumeMark) { classState.consumeMark(id, tickNumber); if (classId == CoreClass.ASSASSIN && build.keystone == 1) nextDodge = 0 }
         if (classId == CoreClass.TEMPLAR) enemies.taunt(id, player)
@@ -738,7 +723,7 @@ internal class CorePlayerCombat(
         actionEpoch++
         garden?.let { it.encounter.clearSlowSource(it.field.slowSource) }
         garden = null
-        normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; queuedSkill = null; queuedDodge = false; burns.clear()
+        normal.reset(); pending = null; shot = null; lastConduitGain = -1; skillBoost = 1.0; queuedSkill = null; queuedDodge = false; burns.clear()
         normalEmpowerment = 1.0
         warriorQueued = null; warriorQueueUntil = -1; warriorNextNormalAt = -1
         classState.reset(); moveHasteUntil = -1; previousPosition = null

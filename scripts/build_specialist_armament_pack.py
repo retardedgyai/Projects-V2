@@ -1,7 +1,7 @@
-"""Four texture-led, articulated native weapons; isolated from the playing server.
+"""Three texture-led, articulated native weapons; isolated from the playing server.
 
 Consumes preserved pixel layers. Bow tips drive the string endpoints, pages hinge
-at the gutter, and the astral ring and star have distinct axes/timing. No client
+at the gutter, and the mace crystal turns on its own axis. No client
 code, resource-pack index, equipment registration or combat logic is changed.
 """
 from copy import deepcopy
@@ -27,7 +27,6 @@ DEPTHS = {
     'bow': {'upper_limb':.20,'grip':.85,'lower_limb':.20},
     'mace': {'body':.7,'crystal':.55},
     'tome': {'binding_cover':.6,'page_backing':.6,'left_page':.12,'right_page':.12},
-    'astrolabe': {'shaft':.8,'ring':.18,'star':.4},
 }
 
 
@@ -120,7 +119,6 @@ def geometry(key,entry,source_textures=None):
         anchors['hinge'] = point(pivot,top+entry['content_size'][1]/2,7.54)
         parts['left_page'] = translate(parts['left_page'],[0,0,-.46])
         parts['right_page'] = translate(parts['right_page'],[0,0,-.46])
-    elif key=='astrolabe': anchors['star'] = point(*centroid(textures['star']))
     else: anchors['crystal'] = point(*centroid(textures['crystal']))
     base['display'] = calibrated_display(key,grip_point(key,entry,textures),
         pose(key,base,parts,anchors)['elements'],base['display'])
@@ -188,16 +186,6 @@ def pose(key,base,parts,anchors,stage='rest',frame=0):
         lift = .6*(1-math.cos(frame*math.tau/12)) if stage=='idle' else 0
         elements.extend(turn(parts['left_page'],'y',-36*charge-lift,anchors['hinge']))
         elements.extend(turn(parts['right_page'],'y',24*charge+lift,anchors['hinge']))
-    elif key=='astrolabe':
-        elements.extend(deepcopy(parts['shaft']))
-        elements.extend(turn(parts['ring'],'z',32*charge+3*idle,anchors['star']))
-        star = turn(parts['star'],'z',-40*charge-6*idle,anchors['star'])
-        offset = [0,.18*idle,-.7*charge]
-        star = translate(star,offset)
-        for e in star:
-            if 'rotation' in e:
-                e['rotation']['origin'] = [round(v+d,6) for v,d in zip(e['rotation']['origin'],offset)]
-        elements.extend(star)
     elif key=='mace':
         elements.extend(deepcopy(parts['body']))
         crystal = turn(parts['crystal'],'y',35*charge+4*idle,anchors['crystal'])
@@ -234,7 +222,7 @@ def build():
         write_json(ASSETS/f'items/weapons/pixel_{key}.json',definition(key))
         report[key] = {'parts':{p:len(es) for p,es in parts.items()},'anchors':anchors,
             'poses':24,'texture_size':entry['canvas_size']}
-    sheet = Image.new('RGB',(1280,1520),'#1b1e23')
+    sheet = Image.new('RGB',(1280,1140),'#1b1e23')
     for row,key in enumerate(JOBS):
         for col,yaw in enumerate((0,-35,90,180)):
             model = json.loads((ASSETS/f'models/item/weapons/pixel_{key}.json').read_text())
@@ -244,7 +232,7 @@ def build():
     frames = []
     for stage,count in (('prepare',6),('release',6)):
         for frame in range(count):
-            strip = Image.new('RGB',(1280,380),'#1b1e23')
+            strip = Image.new('RGB',(960,380),'#1b1e23')
             for col,key in enumerate(JOBS):
                 model = json.loads((ASSETS/f'models/item/weapons/pixel_{key}_{stage}{frame:02d}.json').read_text())
                 strip.paste(render_model(model,loaded[key],yaw=-35,size=(320,350)),(col*320,30))

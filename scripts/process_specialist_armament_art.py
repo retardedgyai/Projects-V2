@@ -1,4 +1,4 @@
-"""Approved source-specific cleanup of bow, mace, tome and astrolabe artwork.
+"""Approved source-specific cleanup of bow, mace and tome artwork.
 
 Separate from the first three weapons so a new palette cannot change their art.
 This exports pixel textures and articulation layers, not a runtime animation.
@@ -20,13 +20,11 @@ JOBS = {
         'sha256':'612191609ce1ae0bb9c6d6a4bfc65af88ce2c7f1d762ad41d9773c163c643def'},
     'tome': {'source':'sources/tome-v01.png', 'height':48,
         'sha256':'ada12adfd77e81fd12a18d31f165998c273acac70c17183fac11b0a574444c04'},
-    'astrolabe': {'source':'sources/astrolabe-v01.png', 'height':92,
-        'sha256':'d2f02051377ccd8925298b665524d547f03090903ed2ca264e74f409a63e0b3e'},
 }
 
 
 def extract(image):
-    """These four RGB originals have neutral light checker backgrounds.
+    """These three RGB originals have neutral light checker backgrounds.
 
     Unlike the first batch, retain pale parchment and lilac stars. Inspected
     foreground is chromatic even when bright; the background is near-neutral.
@@ -103,10 +101,6 @@ def layers(key, pixels, transform):
         left = region(pixels,transform,[105,213,594,944]) & warm
         right = region(pixels,transform,[658,213,1148,944]) & warm
         masks = {'binding_cover':opaque & ~left & ~right,'left_page':left,'right_page':right}
-    elif key == 'astrolabe':
-        star = region(pixels,transform,[385,342,533,508])
-        ring = region(pixels,transform,[0,0,887,648]) & ~star
-        masks = {'shaft':opaque & ~star & ~ring,'ring':ring,'star':star}
     else:
         raise ValueError('Unknown weapon')
     result = {}
@@ -151,7 +145,7 @@ def build():
         'runtime_applied':False,'native_models_exported':False,
         'authorization':'User approved Python transparency, pixel resolution and palette reduction.',
         'source_tool':'built-in image_gen; no CLI/API fallback','weapons':{}}
-    sheet = Image.new('RGB',(1200,560),'#28232e')
+    sheet = Image.new('RGB',(900,560),'#28232e')
     draw = ImageDraw.Draw(sheet)
     for col,key in enumerate(JOBS):
         pixels,parts,entry = convert(key)

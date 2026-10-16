@@ -41,7 +41,7 @@ class CoreSkillSceneGeometryTest {
 
     @Test fun `all skills and three normal steps have explicit individual contracts`() {
         assertEquals((CoreSkillCatalog.artNames+listOf("normal_sweep","normal_reverse","normal_finish")).toSet(),CoreSkillScenes.all.keys)
-        assertTrue(CoreSkillScenes.all.values.flatMap { listOf(it.body,it.accent,it.windup,it.impact) }.distinct().size>=85)
+        assertTrue(CoreSkillScenes.all.values.flatMap { listOf(it.body,it.accent,it.windup,it.impact) }.distinct().size>=80)
         for(job in CoreClass.entries) for(s in CoreSkillCatalog.skills(job)) {
             val scene=CoreSkillScenes.get(s.icon)
             assertEquals(s.name,scene.name)
@@ -82,7 +82,7 @@ class CoreSkillSceneGeometryTest {
     }
 
     @Test fun `teleport endpoints have opposite opening and closing motion and no blades`() {
-        for((job,id) in listOf(CoreClass.MAGE to "mage_blink",CoreClass.ASSASSIN to "ass_escape",CoreClass.HEALER to "heal_step",CoreClass.STARWEAVER to "star_step")) {
+        for((job,id) in listOf(CoreClass.MAGE to "mage_blink",CoreClass.ASSASSIN to "ass_escape",CoreClass.HEALER to "heal_step")) {
             val from=CoreCombatMeshArt.parts(effect(job,id,endpoint=CoreSkillEndpoint.DEPARTURE)).first()
             val to=CoreCombatMeshArt.parts(effect(job,id,endpoint=CoreSkillEndpoint.ARRIVAL)).first()
             assertTrue(from.shape.endsWith("gate"));assertEquals(from.shape,to.shape)
@@ -94,21 +94,18 @@ class CoreSkillSceneGeometryTest {
     @Test fun `pull pieces move inward and rain reaches the same point as its actual pulse`() {
         val pull=CoreCombatMeshArt.parts(effect(CoreClass.TEMPLAR,"temp_ult"))
         pull.filterNot { it.secondary }.forEach { assertTrue(it.offset.add(it.travel).length()<it.offset.length()) }
-        for((job,id) in listOf(CoreClass.MAGE to "meteor",CoreClass.RANGER to "arrow_rain",CoreClass.STARWEAVER to "starfall")) {
+        for((job,id) in listOf(CoreClass.MAGE to "meteor",CoreClass.RANGER to "arrow_rain")) {
             val prep=CoreCombatMeshArt.parts(effect(job,id,phase=CoreSkillVisualPhase.PREPARE)).first()
             val pulse=CoreCombatMeshArt.parts(effect(job,id)).first()
             assertTrue(prep.offset.add(prep.travel).distance(pulse.offset)<1e-6)
         }
     }
 
-    @Test fun `lantern light stays upright star wards stay on body and judgment points down`() {
+    @Test fun `lantern light stays upright and judgment points down`() {
         val lantern=CoreCombatMeshArt.parts(effect(CoreClass.HEALER,"heal_lamp"))
         assertTrue(lantern.first().offset.y()>2.0)
         assertEquals(-PI/2,lantern.last().pitch)
         assertFalse(lantern.last().ground)
-        val star=CoreCombatMeshArt.parts(effect(CoreClass.STARWEAVER,"star_constellation"))
-        assertTrue(star.all { it.followOwner && !it.ground })
-        assertTrue(star.first().offset.y()>1.8)
         assertEquals(PI/2,CoreCombatMeshArt.parts(effect(CoreClass.HEALER,"heal_judgment")).first().pitch)
         assertEquals("shield_wave",CoreCombatMeshArt.parts(effect(CoreClass.TEMPLAR,"temp_rebuke")).first().shape)
     }

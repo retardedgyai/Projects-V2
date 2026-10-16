@@ -52,7 +52,7 @@ def build_art():
         if material_key in {"wood", "ore", "stone", "hide", "fiber", "board", "ingot", "cut_stone", "leather", "cloth", "affix_dust"}:
             original = Image.open(MATERIAL_ICONS / f"{material_key}.png").convert("RGBA")
         elif source == "skills":
-            master = Image.open(ROOT / f"assets/core-ui/skills/{('pierce','star_thread')[index]}.png").convert("RGBA")
+            master = Image.open(ROOT / f"assets/core-ui/skills/{('pierce','mage_burst')[index]}.png").convert("RGBA")
             master = master.crop(master.getchannel('A').getbbox())
             master.thumbnail((28,28), Image.Resampling.NEAREST)
             original = Image.new('RGBA',(32,32))

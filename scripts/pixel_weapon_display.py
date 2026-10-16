@@ -1,4 +1,4 @@
-"""Grip anchoring and inventory framing for the seven authored pixel weapons.
+"""Grip anchoring and inventory framing for the six authored pixel weapons.
 
 Matches 26.2 ItemTransform.apply: T * rotationXYZ * S * translate(-.5).
 Left-handed rendering negates translation.x and rotation.y/z in the CLIENT.
@@ -15,7 +15,7 @@ from preview_class_armaments import rotated
 def grip_pixels(key,entry,textures):
     if key=='tome':
         return entry['padding']+entry['content_size'][0]/2,entry['padding']+entry['content_size'][1]-10
-    layer = textures['grip'] if key=='bow' else textures['shaft'] if key=='astrolabe' else textures['body']
+    layer = textures['grip'] if key=='bow' else textures['body']
     yy,xx = np.nonzero(layer[:,:,3]>0)
     if key in ('greatsword','dagger'):
         keep = (yy>=entry['rows'][-2]) & (yy<entry['rows'][-1])
@@ -23,9 +23,6 @@ def grip_pixels(key,entry,textures):
     elif key=='mace':
         low,high=entry.get('grip_rows',[43,68])
         keep = (yy>=low) & (yy<high)
-    elif key=='astrolabe':
-        span = yy.max()-yy.min()
-        keep = (yy>=yy.min()+span/3) & (yy<=yy.min()+span*2/3)
     else: keep = np.ones(len(yy),dtype=bool)
     if not keep.any(): raise ValueError(f'{key}: no painted grip')
     return float(np.median(xx[keep]))+.5,float(np.median(yy[keep]))+.5

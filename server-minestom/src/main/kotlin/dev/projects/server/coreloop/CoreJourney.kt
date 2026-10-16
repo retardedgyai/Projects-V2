@@ -5,19 +5,17 @@ enum class CoreClass(val displayName: String, val description: String) {
     WARRIOR("戦士", "集団を薙ぎ、攻撃を受け流して大剣を叩き込む"),
     RANGER("レンジャー", "射線を通し、距離を保って狙い撃つ"),
     MAGE("メイジ", "炎と氷の術式。マナを使って集団を制する"),
-    STARWEAVER("星織り師", "メイジ派生。星を編み、術式で解放する"),
     ASSASSIN("アサシン", "印を仕込み、接近と離脱を使い分ける"),
     TEMPLAR("テンプラー", "敵を集め、守った力を反撃と支援に回す"),
     HEALER("ヒーラー", "攻撃で信仰を得て、救護か裁きに使う");
-    val magic get() = this == MAGE || this == STARWEAVER || this == HEALER
+    val magic get() = this == MAGE || this == HEALER
     val melee get() = this == WARRIOR || this == ASSASSIN || this == TEMPLAR
-    val resourceName get() = when (this) { WARRIOR -> "闘気"; RANGER -> "集中"; MAGE -> "術式"; STARWEAVER -> "星"; ASSASSIN -> "機会"; TEMPLAR -> "決意"; HEALER -> "信仰" }
-    val healthFactor get() = when (this) { WARRIOR -> 1.0; RANGER -> .72; MAGE -> .8; STARWEAVER -> .8; ASSASSIN -> .75; TEMPLAR -> 1.4; HEALER -> .9 }
+    val resourceName get() = when (this) { WARRIOR -> "闘気"; RANGER -> "集中"; MAGE -> "術式"; ASSASSIN -> "機会"; TEMPLAR -> "決意"; HEALER -> "信仰" }
+    val healthFactor get() = when (this) { WARRIOR -> 1.0; RANGER -> .72; MAGE -> .8; ASSASSIN -> .75; TEMPLAR -> 1.4; HEALER -> .9 }
     val passive get() = when(this) {
         WARRIOR -> "薙ぎ払いは集団、叩きつけは正面の隙へ。受け流し成功で叩きつけが再使用でき、素早い反撃に変わる。闘気は奥義や選択技へ。"
         RANGER -> "同じ獲物への通常攻撃で集中が育ち、威力が最大20%増す。獲物変更で集中半減。"
         MAGE -> "属性を変えて生成技を当てると術式を追加15獲得。集めた術式を大技に使う。"
-        STARWEAVER -> "通常命中で星を編む。最大3。解放技は全て使い、星ごとに威力15%増加。"
         ASSASSIN -> "通常攻撃で機会を得る。印を付けた敵への消費技は最初の命中が35%強化。"
         TEMPLAR -> "攻撃と防御で決意を得る。命中した敵の狙いを2秒引きつけ、味方を守る。"
         HEALER -> "通常攻撃と光の技で信仰を得る。回復・障壁・裁きに同じ信仰を振り分ける。"
@@ -84,12 +82,6 @@ object CoreJourneyRules {
     fun rank(identity: CoreGearIdentity, tier: Int) = itemLevel(identity, tier) - floor(tier)
     fun power(identity: CoreGearIdentity, tier: Int) = 1.0 + rank(identity, tier) * CoreMmoTuning.balance.equipmentRankPermille / 1000.0
     fun base(a: CoreAccount) = a.weaponIdentity.base
-    /** Single source of truth for the star-weaver change; null when eligible. */
-    fun starweaverBlocker(a: CoreAccount): String? = when {
-        a.journey.job != CoreClass.MAGE && a.journey.job != CoreClass.STARWEAVER -> "メイジから転職してください"
-        a.journey.level < 20 || a.amount(CoreResource.BOSS_SIGIL, 2) < 2 -> "Lv20とT2討伐証2枚が必要です（証は消費しません）"
-        else -> null
-    }
     fun skillUnlocked(a: CoreAccount, index: Int) = a.journey.legacy || a.journey.level >= CoreSkillCatalog.unlockLevels[index]
     fun reward(tier: Int, boss: Boolean = false): Long = (if (boss) 300L else 35L) * tier
     fun next(a: CoreAccount): String = when {
@@ -100,7 +92,6 @@ object CoreJourneyRules {
         !a.journey.knows(3) -> "手帳から港へ帰還し、戦利品を確認しよう"
         !a.journey.knows(4) -> "工房で制作するか、市場で装備を購入しよう"
         !a.journey.knows(5) -> "刻印工房でオーブを使い、MODを付けよう"
-        a.journey.job == CoreClass.MAGE && a.journey.level >= 20 -> "職業の手帳で星織り師への転職条件を確認しよう"
         a.unlockedMapTier < 4 -> "ボスを討伐、または採取実績を積んで次のTierへ"
         else -> "T4遠征と工房で、装備のMOD・強化・製造品質を追求しよう"
     }
