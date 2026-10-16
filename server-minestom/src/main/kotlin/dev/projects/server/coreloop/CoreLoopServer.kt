@@ -137,9 +137,11 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         GrimoireFlow.Art(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/grimoire.json")).use { it.readBytes() },
             requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
     }.onFailure { System.err.println("GRIMOIRE_DISABLED: ${it.message}") }.getOrNull()
+    /** 魔術書 progress per player, in memory until quests are saved; closing the book keeps it. */
+    private val grimoireProgress = java.util.concurrent.ConcurrentHashMap<java.util.UUID, GrimoireProgress>()
     private val grimoireSessions: UiSessions? = if(uiPack != null && grimoireArt != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
         { player -> uiPack.enabled(player) }, null,
-        { player -> GrimoireFlow(grimoireArt, leave = { player.scheduler().scheduleNextTick { grimoireSessions?.close(player) } }) },
+        { player -> GrimoireFlow(grimoireArt, grimoireProgress.computeIfAbsent(player.uuid) { GrimoireSample.midway() }, leave = { player.scheduler().scheduleNextTick { grimoireSessions?.close(player) } }) },
         { Pos(0.0,100.0,0.0,0f,0f) })
     else null
     private val questMaps = VerdantRoadQuestService(hub, harbor.spawn,
@@ -473,6 +475,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     else -> grimoireSessions.open(player)
                 }
             } }
+            // Development: start the book from the very beginning (progress is in memory only).
+            addSyntax({ sender, _ -> (sender as? Player)?.let { player ->
+                grimoireSessions?.close(player)
+                grimoireProgress[player.uuid] = GrimoireSample.start()
+                player.sendMessage(CoreLoopItems.text("魔術書を最初からにしました", NamedTextColor.YELLOW))
+            } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("reset"))
         })
         MinecraftServer.getCommandManager().register(Command("colony").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { enterColony(it) } }

@@ -9,6 +9,12 @@ import dev.projects.webui.UiNode
 import dev.projects.webui.UiScene
 import dev.projects.webui.UiSprite
 import java.util.Locale
+import kotlin.math.roundToInt
+import dev.projects.server.coreloop.GrimoireBook.BRANCHES
+import dev.projects.server.coreloop.GrimoireBook.BRANCH_LINES
+import dev.projects.server.coreloop.GrimoireBook.CHAPTERS
+import dev.projects.server.coreloop.GrimoireBook.ENTRIES
+import dev.projects.server.coreloop.GrimoireBook.Entry
 
 /**
  * 魔術書: the magic path's quest book (FTB Quests / Thaumonomicon role), on the camera display like the
@@ -17,10 +23,13 @@ import java.util.Locale
  * cyan clouds, glowing ring medallions for entries, gold for done and cyan for what can be worked on.
  * Pixel art is kept to item icons and illustrations, as in the forge.
  *
- * Quest progress is sample data. Completion will come from the world, so the page only offers a test
- * shortcut for the unlock animation.
+ * The book's content is [GrimoireBook]; the player's progress is [GrimoireProgress], which outlives the flow.
+ * Completion will come from the world, so the page only offers a test shortcut for the unlock animation.
  */
-internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit) : ForgeUiFlow {
+internal class GrimoireFlow(
+    private val art: Art, private val progress: GrimoireProgress,
+    private val clock: () -> Long = System::currentTimeMillis, private val leave: () -> Unit,
+) : ForgeUiFlow {
     /** Icons from polish05/grimoire.json plus the shared forge shapes from polish05/font-map.json. */
     class Art(json: ByteArray, forgeFontMap: ByteArray) {
         val sprites: Map<String, UiSprite>
@@ -35,13 +44,6 @@ internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit)
 
     enum class State { DONE, OPEN, SIDE, LOCKED, HIDDEN, GOAL, GOAL_OPEN }
 
-    data class Entry(
-        val id: String, val col: Int, val row: Int, val icon: String, val title: String, val chapter: String,
-        val concept: String, val goals: List<String>, val unlocks: List<Pair<String, String>>, val reward: String,
-        val parents: List<String>, val done: Boolean = false, val side: Boolean = false, val mystery: Boolean = false,
-        val goal: Boolean = false, val hero: String? = null,
-    )
-
     override val view = "grimoire"
     override val muted = false
     override val operationActive = false
@@ -49,18 +51,15 @@ internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit)
     override val live = true
 
     private var tab = 0
-    private var selected = "n5"
-    private var pinned: String? = "n5"
+    private var selected = progress.pinned ?: "n5"
     private var hovered: String? = null
-    private val achieved = mutableSetOf<String>()
-    private val claimed = mutableSetOf("n1", "n2", "n3")
     private var fresh: String? = null
     private var freshAt = 0L
-    private var selectedAt = System.currentTimeMillis()
+    private var selectedAt = clock()
 
     private fun state(e: Entry): State {
-        val done = e.done || e.id in achieved
-        val ready = e.parents.all { p -> ENTRIES.first { it.id == p }.let { it.done || it.id in achieved } }
+        val done = e.id in progress.done
+        val ready = e.parents.all { it in progress.done }
         return when {
             done -> State.DONE
             ready && e.side -> State.SIDE
@@ -71,7 +70,7 @@ internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit)
             else -> State.LOCKED
         }
     }
-    private fun canClaim(e: Entry) = state(e) == State.DONE && e.reward.isNotEmpty() && e.id !in claimed
+    private fun canClaim(e: Entry) = state(e) == State.DONE && e.reward != null && e.id !in progress.claimed
     private fun workable(s: State) = s == State.OPEN || s == State.SIDE || s == State.GOAL_OPEN
 
     override fun hover(id: String?) {
@@ -83,26 +82,26 @@ internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit)
             action.startsWith("node:") -> {
                 val id = action.removePrefix("node:")
                 if (ENTRIES.none { it.id == id } || id == selected) return false
-                selected = id; selectedAt = System.currentTimeMillis()
+                selected = id; selectedAt = clock()
             }
             action.startsWith("tab:") -> {
                 val t = action.removePrefix("tab:").toIntOrNull()?.takeIf { it in BRANCHES.indices } ?: return false
                 if (t == tab) return false
-                tab = t; selectedAt = System.currentTimeMillis()
+                tab = t; selectedAt = clock()
             }
             action == "claim" -> {
-                val e = ENTRIES.first { it.id == selected }
+                val e = GrimoireBook.entry(selected)
                 if (!canClaim(e)) return false
-                claimed += e.id
+                progress.claimed += e.id
             }
             action == "pin" -> {
-                if (!workable(state(ENTRIES.first { it.id == selected }))) return false
-                pinned = if (pinned == selected) null else selected
+                if (!workable(state(GrimoireBook.entry(selected)))) return false
+                progress.pinned = if (progress.pinned == selected) null else selected
             }
             action == "achieve" -> {
-                val e = ENTRIES.first { it.id == selected }
+                val e = GrimoireBook.entry(selected)
                 if (!workable(state(e))) return false
-                achieved += e.id; fresh = e.id; freshAt = System.currentTimeMillis()
+                progress.done += e.id; fresh = e.id; freshAt = clock()
             }
             action == "close" -> leave()
             else -> return false
@@ -168,14 +167,14 @@ internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit)
 
     override fun scene(light: ForgeLightPhase): UiScene {
         nodes.clear()
-        val now = System.currentTimeMillis()
+        val now = clock()
         rect("backdrop", -400.0, -200.0, 2720.0, 1480.0, "#ff090b14", -8)
         sky(now)
         header()
         panel("map", MAP_X, MAP_Y, MAP_W, MAP_H, 18.0, 1, "#0c1020", 0.55)
         if (tab == 0) trunkMap(now) else sealedBranch()
         panel("side", SIDE_X, MAP_Y, SIDE_W, MAP_H, 18.0, 1)
-        if (tab == 0) entryPanel(ENTRIES.first { it.id == selected }, now) else branchPanel()
+        if (tab == 0) entryPanel(GrimoireBook.entry(selected), now) else branchPanel()
         footer()
         return UiScene(800.0, 480.0, nodes.toList())
     }
@@ -210,17 +209,17 @@ internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit)
         pill("p-rank", 1300.0, 240.0)
         text("p-rank-k", 1320.0, 42.0, 100.0, "魔術熟練", "v3r", 12.0, "#A29E97", 8)
         round("p-rank-bar", 1320.0, 62.0, 96.0, 4.0, 2.0, "#2A2C31", 1.0, 3)
-        round("p-rank-fill", 1320.0, 62.0, 60.0, 4.0, 2.0, CYAN, 1.0, 4)
-        text("p-rank-v", 1430.0, 44.0, 80.0, "Rank 3", "v3num", 19.0, "#ECE6DC", 8)
-        text("p-rank-x", 1500.0, 49.0, 40.0, "620", "v3num", 12.0, "#A29E97", 8)
+        round("p-rank-fill", 1320.0, 62.0, (96.0 * progress.rankXp / GrimoireBook.RANK_XP).roundToInt().toDouble(), 4.0, 2.0, CYAN, 1.0, 4)
+        text("p-rank-v", 1430.0, 44.0, 80.0, "Rank ${progress.rank}", "v3num", 19.0, "#ECE6DC", 8)
+        text("p-rank-x", 1500.0, 49.0, 40.0, "${progress.rankXp}", "v3num", 12.0, "#A29E97", 8)
         pill("p-ink", 1552.0, 140.0)
         sprite("p-ink-i", "i16_ink", 1570.0, 44.0, 24.0, 24.0, 8)
         text("p-ink-k", 1600.0, 47.0, 50.0, "インク", "v3r", 13.0, "#A29E97", 8)
-        text("p-ink-v", 1654.0, 44.0, 40.0, "36", "v3num", 19.0, "#ECE6DC", 8)
+        text("p-ink-v", 1654.0, 44.0, 40.0, "${progress.inkTotal}", "v3num", 19.0, "#ECE6DC", 8)
         pill("p-silver", 1704.0, 160.0)
         sprite("p-silver-i", "i16_coin", 1722.0, 44.0, 24.0, 24.0, 8)
         text("p-silver-k", 1752.0, 47.0, 40.0, "銀貨", "v3r", 13.0, "#A29E97", 8)
-        text("p-silver-v", 1792.0, 44.0, 70.0, "12,480", "v3num", 19.0, "#ECE6DC", 8)
+        text("p-silver-v", 1792.0, 44.0, 70.0, String.format(Locale.US, "%,d", progress.silver), "v3num", 19.0, "#ECE6DC", 8)
     }
 
     private fun nodeX(e: Entry) = MAP_X + 96 + e.col * 166.0
@@ -244,7 +243,7 @@ internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit)
         }
         // Paths: fine dotted light between medallion centres.
         for (e in ENTRIES) for (p in e.parents) {
-            val a = ENTRIES.first { it.id == p }
+            val a = GrimoireBook.entry(p)
             val sa = state(a); val sb = state(e)
             val color = when {
                 sa != State.DONE -> "#ff26304a"
@@ -300,7 +299,7 @@ internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit)
             round("n-${e.id}-c", cx + R - 18, cy - R - 4, 24.0, 24.0, 12.0, "#C2554A", 1.0, 6)
             text("n-${e.id}-ct", cx + R - 18, cy - R - 2, 24.0, "!", "v3b", 16.0, "#FFF1DE", 11, "center")
         }
-        if (pinned == e.id && st != State.DONE) {
+        if (progress.pinned == e.id && st != State.DONE) {
             round("n-${e.id}-p", cx - R - 6, cy - R - 4, 22.0, 22.0, 11.0, "#14506e", 1.0, 6)
             round("n-${e.id}-pd", cx - R + 1, cy - R + 3, 8.0, 8.0, 4.0, "#7FE3F0", 1.0, 7)
         }
@@ -365,8 +364,9 @@ internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit)
             section("e-g", "目標")
             for ((i, g) in e.goals.withIndex()) {
                 val ok = st == State.DONE
+                val label = if (g.target > 1) "${g.text} ${progress.count(e.id, i)}/${g.target}" else g.text
                 sprite("e-g$i-b", if (ok) "i16_check" else "i16_box", x, y + 2, 20.0, 20.0, 8)
-                text("e-g$i", x + 30, y, w - 30, g, "v3r", 15.0, if (ok) "#8A867E" else "#ECE6DC", 8); y += 28
+                text("e-g$i", x + 30, y, w - 30, label, "v3r", 15.0, if (ok) "#8A867E" else "#ECE6DC", 8); y += 28
             }
         }
         if (e.unlocks.isNotEmpty()) {
@@ -377,12 +377,12 @@ internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit)
                 text("e-u$i-t", x + 100, y, w - 100, u.second, "v3r", 15.0, "#ECE6DC", 8); y += 28
             }
         }
-        if (e.reward.isNotEmpty()) {
+        if (e.reward != null) {
             section("e-r", "報酬")
             round("e-r-slot", x, y, 48.0, 48.0, 6.0, "#0D0E10", 1.0, 3)
             border("e-r-slot-l", x, y, 48.0, 48.0, 6.0, "#ffffff", 0.08, 4)
-            sprite("e-r-i", if ("インク" in e.reward) "i16_ink" else "i16_coin", x + 8, y + 8, 32.0, 32.0, 8)
-            text("e-r-t", x + 64, y + 12, w - 64, e.reward, "v3m", 18.0, "#ECE6DC", 8)
+            sprite("e-r-i", if (e.reward.kind == GrimoireBook.Reward.Kind.INK) "i16_ink" else "i16_coin", x + 8, y + 8, 32.0, 32.0, 8)
+            text("e-r-t", x + 64, y + 12, w - 64, e.reward.label, "v3m", 18.0, "#ECE6DC", 8)
         }
         // Actions along the bottom of the panel, forge-style buttons.
         val by = MAP_Y + MAP_H - 28 - 64 - (if (workable(st)) 34 else 0)
@@ -391,12 +391,12 @@ internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit)
                 round("e-claim", x, by, w, 64.0, 10.0, "#E8C878", 1.0, 3, "claim", "#fff2d898")
                 text("e-claim-t", x, by + 18, w, "報酬を受け取る", "v3b", 24.0, "#1A1208", 8, "center")
             }
-            st == State.DONE && e.reward.isNotEmpty() -> {
+            st == State.DONE && e.reward != null -> {
                 round("e-claimed", x, by, w, 64.0, 10.0, "#1C1D22", 1.0, 3)
                 text("e-claimed-t", x, by + 20, w, "受け取り済み", "v3m", 18.0, "#6F6B65", 8, "center")
             }
             workable(st) -> {
-                val on = pinned == e.id
+                val on = progress.pinned == e.id
                 if (on) round("e-pin", x, by, w, 64.0, 10.0, "#1f6fa8", 0.35, 3, "pin", "#5531a0d0")
                 else round("e-pin", x, by, w, 64.0, 10.0, "#101114", 0.9, 3, "pin", "#ff16202a")
                 border("e-pin-l", x, by, w, 64.0, 10.0, "#7FE3F0", if (on) 0.9 else 0.55, 4)
@@ -473,46 +473,10 @@ internal class GrimoireFlow(private val art: Art, private val leave: () -> Unit)
             val rnd = java.util.Random(7)
             List(110) { Triple(rnd.nextDouble() * 1920, 100 + rnd.nextDouble() * 940, if (rnd.nextInt(6) == 0) 4.0 else 2.0) }
         }
-        internal val BRANCHES = listOf("幹" to "ic_book", "刻印術" to "ic_scroll", "注入" to "ic_ignis", "召喚" to "ic_mortuus",
-            "錬金" to "ic_victus", "地脈術" to "ic_terra", "魔導工学" to "ic_potentia")
-        private val BRANCH_LINES = listOf("",
-            "帰還・加速・転移などの巻物。使えば消える、魔術の効果そのもの。",
-            "武器や防具に、魔術ならではの性質を与える・付け替える。",
-            "ボスを呼ぶ封印の鍵を作る。戦闘職がボスに挑むための入口。",
-            "薬や食べ物。体に入れる魔術。",
-            "領地の結界、天候、転移の網。世界そのものに手を出す。",
-            "仕分けや自動化の装置。工房を工場のように組む。")
-        private val CHAPTERS = listOf("序章" to 1.0, "一章" to 3.5, "二章" to 5.0, "三章" to 6.0, "終章" to 7.0)
         private val KIND_ICON = mapOf("開く" to "i16_open", "見える" to "i16_see", "置ける" to "i16_place", "作れる" to "i16_craft", "もらえる" to "i16_get")
         private val LABEL = mapOf(
             State.DONE to ("完了" to "#E8C878"), State.OPEN to ("進められる" to "#7FE3F0"), State.GOAL_OPEN to ("進められる" to "#7FE3F0"),
             State.SIDE to ("寄り道" to "#B49AE8"), State.LOCKED to ("未解放" to "#8A867E"), State.HIDDEN to ("まだ見えない" to "#6F7FA8"),
             State.GOAL to ("幹のゴール" to "#E58B80"))
-        internal val ENTRIES = listOf(
-            Entry("n1", 0, 2, "ic_book", "古い手帳", "序章 観測", "光る草に挟まっていた手帳。最初のページには一文だけ。「すべての物は、目に見えない性質（相）でできている」",
-                listOf("光る素材を拾う"), listOf("開く" to "魔術書"), "", emptyList(), done = true),
-            Entry("n2", 1, 1, "ic_goggles", "観測の眼鏡", "序章 観測", "かぶっている間だけ、見ている物の相が見える。",
-                listOf("眼鏡を作る（ガラス2・銅1）"), listOf("見える" to "照準の先の相"), "", listOf("n1"), done = true),
-            Entry("n3", 1, 3, "ic_desk", "研究机", "序章 観測", "読めない相は、机の上で考えると分かる。最初の「自分の魔術の場所」。",
-                listOf("研究机を置く"), listOf("置ける" to "研究机"), "", listOf("n1"), done = true, hero = "hero_desk"),
-            Entry("n4", 2, 2, "ic_lux", "最初の研究「光」", "序章 観測", "相は2つ合わさって新しい相になる。松明の相は、Aer と Ignis が合わさった Lux だった。",
-                listOf("研究盤で Lux を解く"), listOf("見える" to "珍しい物の光"), "銀貨 20", listOf("n2", "n3"), done = true),
-            Entry("n5", 3, 1, "ic_distiller", "蒸留器", "1章 抽出", "相は取り出して液体（Essentia）にできる。素材を窯で溶かすと、中の相が分かれて出てくる。",
-                listOf("蒸留器を作って工房に置く"), listOf("置ける" to "蒸留器"), "インク ×4", listOf("n4"), hero = "hero_distiller"),
-            Entry("n6", 3, 3, "ic_jar", "瓶", "1章 抽出", "Essentia は瓶に溜まる。瓶ひとつにつき相はひとつ。",
-                listOf("瓶を3つ置く"), listOf("置ける" to "瓶"), "", listOf("n4"), hero = "hero_jar"),
-            Entry("n7", 4, 2, "ic_aqua", "相を溜める", "1章 抽出", "蒸留器と瓶がそろうと、相が溜まっていく。",
-                listOf("ひとつの瓶に Essentia を16溜める"), listOf("作れる" to "瓶詰めの Essentia"), "銀貨 40", listOf("n5", "n6")),
-            Entry("n8", 4, 4, "ic_vacuos", "寄り道：相の図鑑", "1章 抽出", "本筋には要らない。いろんな物を見て、相を集める。",
-                listOf("相を12種類観察する 7/12"), listOf("もらえる" to "眼鏡の見た目"), "", listOf("n6"), side = true),
-            Entry("n9", 5, 1, "ic_wand", "杖", "2章 流れ", "杖は工房をつなぐレンチ。顎で管をはさみ、弁の向きを決める。",
-                listOf("杖を作る"), listOf("作れる" to "杖"), "", listOf("n7")),
-            Entry("n10", 5, 3, "ic_motus", "管と弁", "2章 流れ", "相は、引っ張る力の強いほうへ流れる。",
-                listOf("蒸留器から瓶へ管でつなぐ"), listOf("置ける" to "管、弁"), "", listOf("n7")),
-            Entry("n11", 6, 2, "ic_vacuos", "地脈", "3章 地脈", "足もとを流れる、見えない川がある。",
-                listOf("地脈の上に研究机を置く"), listOf("見える" to "地脈の流れ"), "", listOf("n9", "n10"), mystery = true),
-            Entry("n12", 7, 2, "ic_scroll", "帰還の巻物", "終章 最初の儀式", "幹のゴール。遠征先から、魔術で帰ってくる。ここまで来ると専門の枝の封が解ける。",
-                listOf("小さな祭壇で帰還の巻物を作る"), listOf("開く" to "専門の枝すべて"), "", listOf("n11"), goal = true),
-        )
     }
 }

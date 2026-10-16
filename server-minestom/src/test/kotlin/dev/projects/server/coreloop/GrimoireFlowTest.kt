@@ -8,7 +8,7 @@ class GrimoireFlowTest {
     private fun bytes(path: String) = assertNotNull(javaClass.getResourceAsStream(path), path).use { it.readBytes() }
     private val art = GrimoireFlow.Art(bytes("/polish05/grimoire.json"), bytes("/polish05/font-map.json"))
     private var closed = false
-    private fun flow() = GrimoireFlow(art) { closed = true }
+    private fun flow(progress: GrimoireProgress = GrimoireSample.midway()) = GrimoireFlow(art, progress) { closed = true }
 
     @Test fun `every sprite the screen can draw is shipped`() {
         val files = mutableSetOf<String>()
@@ -17,7 +17,7 @@ class GrimoireFlowTest {
         }
         assertTrue("assets/projects_ui_polish05/font/grimoire.json" in files)
         assertTrue(files.all { it.startsWith("assets/projects_ui_polish05/") }, "private namespace only")
-        val drawn = GrimoireFlow.ENTRIES.flatMap { listOfNotNull(it.icon, it.hero) } + GrimoireFlow.BRANCHES.map { it.second } +
+        val drawn = GrimoireBook.ENTRIES.flatMap { listOfNotNull(it.icon, it.hero) } + GrimoireBook.BRANCHES.map { it.second } +
             listOf("i16_coin", "i16_ink", "i16_box", "i16_check", "i16_open", "i16_see", "i16_place", "i16_craft", "i16_get",
                 "v3_glow", "v3_ring", "v3_round_tl", "v3_ring10_tl", "v3_ring14_br")
         for (name in drawn) assertNotNull(art.sprites[name], name)
@@ -59,6 +59,21 @@ class GrimoireFlowTest {
         assertTrue(f.action("tab:2"))
         assertTrue(f.scene().nodes.any { it.id == "seal-ring" })
         assertTrue(f.action("close")); assertTrue(closed)
+    }
+
+    @Test fun `progress outlives the book being closed`() {
+        val progress = GrimoireSample.midway()
+        flow(progress).apply { action("node:n4"); action("claim"); action("node:n5"); action("achieve"); action("node:n6"); action("pin") }
+        val again = flow(progress)
+        again.action("node:n4")
+        assertTrue(again.scene().nodes.none { it.action == "claim" }, "the claim is remembered")
+        assertTrue(again.scene().nodes.any { it.id == "n-n6-p-tl" }, "the pin is remembered")
+        assertTrue(again.scene().nodes.any { it.id == "n-n5-ring" } && "n5" in progress.done)
+        // 最初から: only the first entry can be worked on.
+        val start = flow(GrimoireSample.start())
+        start.action("node:n1")
+        assertTrue(start.scene().nodes.any { it.action == "achieve" })
+        start.action("node:n2"); assertFalse(start.action("achieve"))
     }
 
     @Test fun `fills sit behind the glyphs they belong to`() {
