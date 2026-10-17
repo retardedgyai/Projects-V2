@@ -29,25 +29,27 @@ internal object CoreWarriorIronChoreography {
                 startSize = 1.0, endSize = 1.0, secondary = secondary, ground = ground)
         return when (e.sceneId) {
             "slam" -> {
-                val impact = 2.4
+                // Everything stays inside the damage reach: the fissure ends where the hit ends.
+                val impact = 2.0
+                val rift = reach - impact
                 listOf(
-                    part("cleave", local(0.0, 1.5, impact - .3), Vec(3.0, 1.0, 3.2), -PI / 2, 8),
+                    part("cleave", local(0.0, 1.65, impact - .2), Vec(3.0, 1.0, 3.2), -PI / 2, 8),
                     // Solid tilted rock chunks thrust out of the ground; model y=8 sits on the ground (16 units = 3.6 m).
-                    part("heave", local(0.0, .12, impact + .1), Vec(3.6, 3.6, 3.6), 0.0, 12, ground = true),
-                    part("burst", local(0.0, 1.4, impact + .2), Vec(2.9, 1.0, 2.9), -PI / 2, 9),
+                    part("heave", local(0.0, .12, impact + .2), Vec(3.4, 3.4, 3.4), 0.0, 12, ground = true),
+                    part("burst", local(0.0, 1.47, impact + .2), Vec(2.9, 1.0, 2.9), -PI / 2, 9),
                     // A crossed copy keeps the fire's volume when seen from the side.
-                    part("burst", local(0.0, 1.4, impact + .2), Vec(2.4, 1.0, 2.9), -PI / 2, 9, secondary = true).let { it.copy(yaw = it.yaw + PI / 2) },
-                    part("rift", local(0.0, .13, impact + reach * .5), Vec(reach * 1.1, 1.0, reach * 1.2), 0.0, 16, ground = true),
-                    part("rim", local(0.0, .12, impact + reach * .5), Vec(reach * 1.1, 3.0, reach * 1.2), 0.0, 16, ground = true),
-                    part("shards", local(0.0, 1.4, impact), Vec(3.0, 1.0, 3.0), -PI / 2, 12, secondary = true),
+                    part("burstx", local(0.0, 1.47, impact + .2), Vec(2.4, 1.0, 2.9), -PI / 2, 9, secondary = true).let { it.copy(yaw = it.yaw + PI / 2) },
+                    part("rift", local(0.0, .13, impact + rift * .5), Vec(rift * 1.2, 1.0, rift), 0.0, 16, ground = true),
+                    part("rim", local(0.0, .12, impact + rift * .5), Vec(rift * 1.2, 3.0, rift), 0.0, 16, ground = true),
+                    part("shards", local(0.0, 1.53, impact), Vec(3.0, 1.0, 3.0), -PI / 2, 12, secondary = true),
                 )
             }
             else -> {
-                val span = reach * 2.2
+                val span = reach * 2.0
                 listOf(
                     // Tilted so the far side rises toward the wielder's eye: read as a crescent, not a line.
-                    part("arc", local(0.0, .95, .4), Vec(span, 1.0, span), TILT, 11),
-                    part("wshards", local(0.0, .95, .4), Vec(span * 1.1, 1.0, span * 1.1), TILT, 12, secondary = true),
+                    part("arc", local(0.0, .95, 0.0), Vec(span, 1.0, span), TILT, 11),
+                    part("wshards", local(0.0, .95, 0.0), Vec(span, 1.0, span), TILT, 12, secondary = true),
                 )
             }
         }

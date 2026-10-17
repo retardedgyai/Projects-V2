@@ -28,6 +28,13 @@ internal object CoreUiPackPolicy {
         }
     }
 
+    /**
+     * The vanilla item shader, so combat VFX texels carrying a marker alpha glow and flicker (2026-10-17, Creator
+     * asked to try shaders). scripts/shaders/item.fsh leaves every unmarked texel exactly as vanilla draws it.
+     */
+    val effectShaders: Set<String> = setOf("assets/minecraft/shaders/core/item.vsh", "assets/minecraft/shaders/core/item.fsh")
+
     fun allowedPath(path: String): Boolean = !path.startsWith('/') && ".." !in path && '\\' !in path &&
-        (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions || path in dialogWidgets)
+        (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions || path in dialogWidgets ||
+            path in effectShaders)
 }
