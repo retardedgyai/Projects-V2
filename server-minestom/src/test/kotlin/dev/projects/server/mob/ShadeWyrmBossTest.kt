@@ -151,6 +151,47 @@ class ShadeWyrmBossTest {
     }
 
     @Test
+    fun `moving sideways while facing ahead plays the strafe, to the carrier's right as strafe_l`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val view = BossModelView("shade_wyrm", arena.instance, arena.bossSpawn.withView(0f, 0f), definition.enragedBones, definition.foldedBones)
+        try {
+            assertTrue(view.canManeuver)
+            // Yaw 0 faces +Z; the carrier's right is -X.
+            var at = arena.bossSpawn.withView(0f, 0f)
+            repeat(6) { at = at.add(-.08, 0.0, 0.0); view.tick(at, it * 50L) }
+            assertEquals("strafe_l", view.currentLoop)
+            repeat(6) { at = at.add(.08, 0.0, 0.0); view.tick(at, 400L + it * 50L) }
+            assertEquals("strafe_r", view.currentLoop)
+        } finally {
+            view.dispose(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `the wyrm moves round its target between attacks`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "ShadeMove"))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        player.setInstance(arena.instance, arena.bossSpawn.add(0.0, 0.0, 6.5)).join()
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            repeat(400) { now += 50; combat.tick(now); MinecraftServer.getSchedulerManager().processTick() }
+            assertTrue(combat.maneuverCount(boss.uuid) > 0, "no maneuver in 20 s")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
     fun `arena fight shows the model enrages once at half health and plays out its death`() {
         MinecraftServer.init(Auth.Offline())
         val arena = BossArenaFactory.create("shade", 1)

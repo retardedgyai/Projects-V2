@@ -63,6 +63,11 @@ internal class QuestMobLife(val maximumHealth: Double) {
 /** How long an enraging boss holds its roar before attacking again (matches the `enrage` model clip). */
 private const val ENRAGE_HOLD_MILLIS = 5000L
 
+internal enum class ManeuverKind { STRAFE, HOP_BACK, DASH }
+
+/** The carrier is moved from [from] to [to] between [moveFrom] and [moveTo] (hop/dash); a strafe paths instead. */
+internal class Maneuver(val kind: ManeuverKind, val from: Pos, val to: Pos, val moveFrom: Long, val moveTo: Long, val endAt: Long, val sign: Int)
+
 /**
  * One map owns one instance of this runtime. Invoke tick on the map's server tick, and dispose before unloading it.
  * Player attack packets never enter this class: applyDamage accepts targets already resolved by server hit shapes.
@@ -123,6 +128,12 @@ class QuestEncounterCombat(
         @Volatile var view: BossModelView? = null
         var enraged = false
         var enrageHoldUntil = 0L
+        /** Model bosses: a move round the target between attacks (see [startManeuver]). */
+        var maneuver: Maneuver? = null
+        var nextManeuverAt = 0L
+        var maneuvers = 0
+        /** Where the model looks while it moves sideways or backward: at its target. */
+        var faceYaw = 0f
     }
 
     private val mobs = linkedMapOf<UUID, Mob>()
@@ -157,6 +168,7 @@ class QuestEncounterCombat(
     internal val groundDisplayCount: Int get() = telegraphs.displayCount
     internal val modelDisplayCount: Int get() = mobs.values.sumOf { (it.model?.count ?: 0) + (it.view?.partCount ?: 0) }
     internal fun isEnraged(targetId: UUID): Boolean = mobs[targetId]?.enraged == true
+    internal fun maneuverCount(targetId: UUID): Int = mobs[targetId]?.maneuvers ?: 0
 
     init {
         require(tier in 1..4)
@@ -443,7 +455,7 @@ class QuestEncounterCombat(
             if (!mob.life.isAlive || !isSpawned(mob)) continue
             tickMob(mob, players, nowMillis)
             mob.model?.tick(mob.entity.position, nowMillis, mob.life.phase == QuestMobPhase.ATTACKING, mob.life.health / mob.life.maximumHealth)
-            mob.view?.tick(mob.entity.position, nowMillis)
+            mob.view?.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, nowMillis)
             if (actionsStoppedForReturn || disposed) return
         }
     }
@@ -600,6 +612,7 @@ class QuestEncounterCombat(
             }
             return
         }
+        mob.maneuver?.let { if (tickManeuver(mob, it, target, now)) return }
         if (mob.abilities.isActive) {
             for (event in mob.abilities.tick(now, target.position)) {
                 if (!handleAbilityEvent(mob, event, players)) return
@@ -630,6 +643,7 @@ class QuestEncounterCombat(
         }
         mob.life.phase = QuestMobPhase.CHASING
         if (crowded(mob, CrowdControl.ROOT, now)) { stopNavigation(mob); return }
+        if (startManeuver(mob, target, now)) return
         if (now >= mob.nextPathAt) {
             val distance = mob.definition.preferredDistance
             val retreat = if (distance >= 6.0 && mob.entity.position.distanceSquared(target.position) < 4.5 * 4.5) {
@@ -642,6 +656,7 @@ class QuestEncounterCombat(
     }
 
     private fun startReturn(mob: Mob, now: Long) {
+        mob.maneuver = null
         removeEncounter(mob.guardianIds)
         mob.guardianIds = emptySet()
         mob.challengeStage = 0
@@ -696,6 +711,7 @@ class QuestEncounterCombat(
         if (!mob.enraged) {
             if (threshold <= 0.0 || mob.life.health / mob.life.maximumHealth > threshold) return false
             mob.enraged = true
+            mob.maneuver = null
             mob.enrageHoldUntil = now + ENRAGE_HOLD_MILLIS
             mob.abilities.cancel()
             clearWarning(mob.entity.uuid)
@@ -749,11 +765,88 @@ class QuestEncounterCombat(
         mob.slowPercent = mob.slows.values.maxOfOrNull { it.strength } ?: 0.0
         mob.slowedUntil = mob.slows.values.maxOfOrNull { it.until } ?: 0L
         val speed = mob.definition.movementSpeed * (1.0 - mob.slowPercent) *
-            if (mob.enraged) mob.definition.enragedSpeedMultiplier else 1.0
+            (if (mob.enraged) mob.definition.enragedSpeedMultiplier else 1.0) *
+            (if (mob.maneuver?.kind == ManeuverKind.STRAFE) STRAFE_SPEED else 1.0)
         if (mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue != speed) {
             mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = speed
         }
     }
+
+    /**
+     * Between attacks a model boss with movement clips moves round its target instead of only walking at it
+     * (shade wyrm, after the Wilds Gore Magala): too close -> one wingbeat back (hop_back), mid range -> a low
+     * sidestep round it (strafe), every third time a ground-skimming dart to its side (dash). Attacks come first;
+     * this runs only when no ability could start.
+     */
+    private fun startManeuver(mob: Mob, target: Player, now: Long): Boolean {
+        val view = mob.view ?: return false
+        if (!view.canManeuver || now < mob.nextManeuverAt || mob.enraged && now < mob.enrageHoldUntil) return false
+        val here = mob.entity.position
+        val distance = horizontalLength(target.position.sub(here))
+        val away = normalizeHorizontal(here.sub(target.position))
+        val right = Vec(away.z(), 0.0, -away.x())            // the boss's right while it faces the target
+        val kind = when {
+            distance < 3.5 -> ManeuverKind.HOP_BACK
+            distance in 4.0..10.0 -> if (mob.maneuvers % 3 == 2) ManeuverKind.DASH else ManeuverKind.STRAFE
+            else -> return false
+        }
+        val sign = if (mob.maneuvers % 2 == 0) 1 else -1
+        val leash = mob.definition.leashRange
+        val maneuver = when (kind) {
+            ManeuverKind.HOP_BACK -> {
+                val to = safeRetreat(here.add(away.mul(4.0)), mob.home, leash) ?: return false
+                Maneuver(kind, here, to, now + 280, now + 680, now + 1100, 0)
+            }
+            ManeuverKind.DASH -> {
+                val to = safeRetreat(here.add(right.mul(5.0 * sign)), mob.home, leash)
+                    ?: safeRetreat(here.add(right.mul(-5.0 * sign)), mob.home, leash) ?: return false
+                val toRight = (to.x() - here.x()) * right.x() + (to.z() - here.z()) * right.z() > 0
+                Maneuver(kind, here, to, now + 200, now + 500, now + 900, if (toRight) 1 else -1)
+            }
+            ManeuverKind.STRAFE -> Maneuver(kind, here, here, now, now, now + 1600, sign)
+        }
+        mob.maneuvers++
+        mob.nextManeuverAt = maneuver.endAt + if (kind == ManeuverKind.STRAFE) 900 else 1700
+        mob.maneuver = maneuver
+        mob.faceYaw = yawToward(here, target.position)
+        if (kind != ManeuverKind.STRAFE) stopNavigation(mob)
+        when (kind) {
+            ManeuverKind.HOP_BACK -> view.maneuver("hop_back")
+            ManeuverKind.DASH -> view.maneuver(if (maneuver.sign > 0) "dash_l" else "dash_r")
+            ManeuverKind.STRAFE -> mob.nextPathAt = now
+        }
+        updateMovementSpeed(mob, now)
+        return true
+    }
+
+    /** True while the maneuver holds the mob (no attacks, no chase). */
+    private fun tickManeuver(mob: Mob, maneuver: Maneuver, target: Player, now: Long): Boolean {
+        if (now >= maneuver.endAt) {
+            mob.maneuver = null
+            updateMovementSpeed(mob, now)
+            return false
+        }
+        val here = mob.entity.position
+        mob.faceYaw = yawToward(here, target.position)
+        if (maneuver.kind == ManeuverKind.STRAFE) {
+            if (now >= mob.nextPathAt) {
+                val angle = kotlin.math.atan2(here.z() - target.position.z(), here.x() - target.position.x()) + maneuver.sign * .6
+                val radius = horizontalLength(here.sub(target.position)).coerceIn(5.0, 8.0)
+                val goal = safeRetreat(target.position.add(kotlin.math.cos(angle) * radius, 0.0, kotlin.math.sin(angle) * radius), mob.home, mob.definition.leashRange)
+                if (goal != null) mob.entity.navigator.setPathTo(goal, 0.5, null) else stopNavigation(mob)
+                mob.nextPathAt = now + 300L
+            }
+        } else if (now >= maneuver.moveFrom) {
+            val k = ((now - maneuver.moveFrom).toDouble() / (maneuver.moveTo - maneuver.moveFrom)).coerceIn(0.0, 1.0)
+            val e = k * k * (3 - 2 * k)
+            val f = maneuver.from; val t = maneuver.to
+            mob.entity.teleport(Pos(f.x() + (t.x() - f.x()) * e, f.y() + (t.y() - f.y()) * e, f.z() + (t.z() - f.z()) * e, mob.faceYaw, 0f))
+        }
+        return true
+    }
+
+    private fun yawToward(from: Pos, to: net.minestom.server.coordinate.Point): Float =
+        Math.toDegrees(kotlin.math.atan2(-(to.x() - from.x()), to.z() - from.z())).toFloat()
 
     private fun safeRetreat(position: Pos, home: Pos, leash: Double): Pos? {
         val ground = telegraphs.groundHeight(position) ?: return null
@@ -874,6 +967,8 @@ class QuestEncounterCombat(
     }
 
     companion object {
+        /** A strafe walks at this share of the walking speed, the pace its clip is timed to (1.6 of 2.6 blocks/s). */
+        const val STRAFE_SPEED = .62
         const val BREAK_MAX = 100.0
         const val BREAK_MILLIS = 4000L
         const val BROKEN_DAMAGE = 1.3

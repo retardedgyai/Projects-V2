@@ -110,11 +110,13 @@ internal class BossModelView(
         if (hurtUntil != 0L && now >= hurtUntil) { hurtUntil = 0L; model.setState("normal") }
         if (revealAt != 0L && now >= revealAt) { revealAt = 0L; reveal() }
         if (foldAt != 0L && now >= foldAt) { foldAt = 0L; hideFolded() }
-        val moved = at.distanceSquared(last) > 0.03 * 0.03
+        val dx = at.x() - last.x(); val dz = at.z() - last.z()
+        val moved = dx * dx + dz * dz > 0.03 * 0.03
         last = at
         model.setPosition(at)
         model.setGlobalRotation(modelYaw(at.yaw()))
-        val wanted = (if (moved) "walk" else "idle") + if (enraged && has("idle_enraged")) "_enraged" else ""
+        val base = if (!moved) "idle" else gait(at.yaw(), dx, dz)
+        val wanted = base + if (enraged && has("${base}_enraged")) "_enraged" else ""
         // WSEE's `playing` is the once clip if one runs, else the repeating loop (never null), so this waits for
         // ability clips only.
         if (wanted != loop && animations.playing == animations.repeating) {
@@ -122,6 +124,27 @@ internal class BossModelView(
             animations.playRepeat(wanted, 4)
         }
     }
+
+    /**
+     * walk, or strafe_l / strafe_r when the carrier moves more sideways than forward (it keeps facing its target).
+     * WSEE mirrors Blockbench X, so the model's +X side (`_l`) is the carrier's right.
+     */
+    private fun gait(yaw: Float, dx: Double, dz: Double): String {
+        if (!has("strafe_l")) return "walk"
+        val r = Math.toRadians(yaw.toDouble())
+        val forward = -kotlin.math.sin(r) * dx + kotlin.math.cos(r) * dz
+        val right = -kotlin.math.cos(r) * dx - kotlin.math.sin(r) * dz
+        return if (kotlin.math.abs(right) > kotlin.math.abs(forward)) (if (right > 0) "strafe_l" else "strafe_r") else "walk"
+    }
+
+    /** A movement clip (hop_back, dash_l, dash_r) while the server carries the body; its enraged twin once enraged. */
+    fun maneuver(clip: String) {
+        if (disposed || dying) return
+        val name = phased(clip)
+        if (has(name)) animations.playOnce(name, 2) {}
+    }
+
+    val canManeuver: Boolean get() = !disposed && has("hop_back") && has("dash_l") && has("strafe_l")
 
     /** WSEE's generated red "hit" texture state, briefly. */
     fun hurt(now: Long) {
