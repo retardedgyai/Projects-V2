@@ -23,7 +23,7 @@ import kotlin.math.sin
 /**
  * Shader experiment (2026-10-17): the 黒翳竜's strikes as item displays whose colour the pack's core/item shader
  * computes (assets/bosses/shaders/item.fsh). Each display's tint is the marker: blue 77, green = kind
- * (1 slash, 2 ring, 3 beam, 4 puff, 5 curtain), red = progress, rewritten every tick. Only players with the pack
+ * (1 slash, 2 ring, 3 beam, 4 puff, 5 curtain, 6 smoke), red = progress, rewritten every tick. Only players with the pack
  * see them; the others keep the particles of [ShadeWyrmVfx].
  */
 internal class ShadeWyrmShaderFx(private val instance: Instance) {
@@ -53,21 +53,27 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         addingWindup = true
         try { when (abilityId) {
             "shade-dust" -> if (shape is MobAttackShape.Ring) {
+                // Spores shaken off the wings drift out over the circle and hang there, glowing brighter.
                 val d = shape.radius * 2.05
                 add("ring", 2, o.add(0.0, .08, 0.0), 0, ticks, Vec(d, 1.0, d), IDENTITY) { .1 + .25 * it * it }
-                repeat(9) { n ->
-                    val a = n * 2 * PI / 9; val r = shape.radius * (if (n % 3 == 0) .25 else .75)
-                    add("puff", 4, o.add(cos(a) * r, .25 + (n % 3) * .3, sin(a) * r), n * 2, ticks - n * 2, Vec(1.6, 1.6, 1.0), IDENTITY,
-                        grow = Vec(2.6, 2.6, 1.0), slide = Vec(0.0, .5, 0.0), moveTicks = ticks - n * 2, billboard = true, progress = appear)
+                val wings = frame.casterOrigin.add(0.0, 3.2, 0.0)
+                for ((n, spot) in spores(shape.radius).withIndex()) {
+                    val at = o.add(spot)
+                    val delay = n % 8
+                    val from = Vec(wings.x() - at.x() + (n % 3 - 1) * 1.5, wings.y() - at.y(), wings.z() - at.z())
+                    add("puff", 4, at, delay, ticks - delay, Vec(.5, .5, 1.0), IDENTITY, translation = from,
+                        grow = Vec(1.3, 1.3, 1.0), slide = Vec.ZERO, moveTicks = 14 + n % 6, billboard = true) { .55 - .4 * it }
                 }
             }
             "shade-pulse" -> if (shape is MobAttackShape.Ring) {
-                val d = shape.radius * 2.0
-                for (k in 0..2) add("ring", 2, o.add(0.0, .4 + .5 * k, 0.0), k * 7, 9, Vec(d, 1.0, d), IDENTITY,
-                    grow = Vec(1.2, 1.0, 1.2), moveTicks = 8) { .2 + .6 * it }
+                // The antennae start to hum; the spores hanging round the wyrm wake and quiver with them.
                 val crown = head(ShadeWyrmVfx.CROWN)?.let(Pos::fromPoint) ?: o.add(f.mul(3.5)).add(0.0, 3.2, 0.0)
                 add("puff", 4, crown, 0, ticks, Vec(.8, .8, 1.0), IDENTITY, grow = Vec(2.2, 2.2, 1.0), moveTicks = ticks,
                     billboard = true, progress = appear)
+                for ((n, spot) in motes(shape.radius).withIndex()) {
+                    add("puff", 4, o.add(spot), n % 6, ticks - n % 6, Vec(.7, .7, 1.0), IDENTITY, grow = Vec(1.1, 1.1, 1.0),
+                        moveTicks = ticks - n % 6, billboard = true) { .6 - .45 * it }
+                }
             }
             "shade-breath" -> {
                 val mouth = head(ShadeWyrmVfx.SNOUT)?.let(Pos::fromPoint) ?: o.add(f.mul(3.5)).add(0.0, 2.5, 0.0)
@@ -109,24 +115,38 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                 }
             }
             "shade-dust" -> if (shape is MobAttackShape.Ring) {
-                // The settled spores ignite: a pillar out of the centre, the dome bursting to the circle's edge.
+                // The feet land and every hanging spore goes off at once.
                 val r = shape.radius
-                for (roll in listOf(0.0, PI / 2)) add("beam_up", 3, o.add(0.0, 3.2, 0.0), 0, 12, Vec(6.4, r * 1.5, 1.0), mul(qy(roll), qz(PI / 2)))
                 add("ring", 2, o.add(0.0, .15, 0.0), 0, 10, Vec(r, 1.0, r), IDENTITY, grow = Vec(r * 2.6, 1.0, r * 2.6), moveTicks = 5)
-                add("ring_up", 2, o.add(0.0, 1.4, 0.0), 0, 9, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(r * 2.2, r * 2.2, 1.0), moveTicks = 5, billboard = true)
-                repeat(10) { n ->
-                    val a = n * 2 * PI / 10; val rr = if (n % 2 == 0) r * .7 else r * .35
-                    add("puff", 4, o.add(cos(a) * rr, .6 + (n % 3) * .7, sin(a) * rr), n % 3, 18, Vec(3.6 + n % 2, 3.6 + n % 2, 1.0), IDENTITY,
-                        slide = Vec(cos(a) * .8, .8, sin(a) * .8), moveTicks = 14, billboard = true)
+                for ((n, spot) in spores(r).withIndex()) {
+                    val at = o.add(spot)
+                    val size = 2.2 + (n % 4) * .45
+                    add("puff", 4, at, n % 2, 13, Vec(size, size, 1.0), IDENTITY, grow = Vec(size * 1.5, size * 1.5, 1.0), moveTicks = 10, billboard = true)
+                    if (n % 2 == 0) add("smoke", 6, at.add(0.0, .4, 0.0), 2 + n % 3, 18, Vec(size * 1.2, size * 1.2, 1.0), IDENTITY,
+                        slide = Vec(0.0, 1.2, 0.0), moveTicks = 16, billboard = true)
+                    if (n % 3 == 0) add("ring", 2, at.withY(o.y() + .12), 0, 8, Vec(.8, 1.0, .8), IDENTITY, grow = Vec(2.6, 1.0, 2.6), moveTicks = 4)
                 }
             }
             "shade-pulse" -> if (shape is MobAttackShape.Ring) {
-                // The antennae ring: a shell of sound bursting out of the head and three ground ripples after it.
+                // The resonance peaks: the head flashes, a low shock runs out and the quivering spores burst outward.
                 val d = shape.radius * 2.0
                 val crown = head(ShadeWyrmVfx.CROWN)?.let(Pos::fromPoint) ?: o.add(f.mul(3.5)).add(0.0, 3.2, 0.0)
-                for (k in 0..1) add("ring_up", 2, crown, k * 2, 9, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(d * 1.1, d * 1.1, 1.0), moveTicks = 6, billboard = true)
-                for (k in 0..2) add("ring", 2, o.add(0.0, .2 + .5 * k, 0.0), k * 2, 9, Vec(1.2, 1.0, 1.2), IDENTITY, grow = Vec(d, 1.0, d), moveTicks = 6)
-                add("puff", 4, crown, 0, 8, Vec(3.0, 3.0, 1.0), IDENTITY, billboard = true)
+                add("puff", 4, crown, 0, 8, Vec(3.2, 3.2, 1.0), IDENTITY, billboard = true)
+                add("ring_up", 2, crown, 0, 7, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(d * .8, d * .8, 1.0), moveTicks = 5, billboard = true)
+                add("ring", 2, o.add(0.0, .15, 0.0), 0, 8, Vec(1.5, 1.0, 1.5), IDENTITY, grow = Vec(d, 1.0, d), moveTicks = 4)
+                val count = 22
+                for (n in 0 until count) {
+                    val a = n * 2 * PI / count
+                    val dir = Vec(cos(a), 0.0, sin(a))
+                    val width = 2 * PI * 1.4 / count * 1.4
+                    add("curtain", 5, o, 0, 8, Vec(width, 1.8, 1.0), yawTo(dir), translation = dir.mul(1.4).add(0.0, .9, 0.0),
+                        grow = Vec(width * shape.radius / 1.4, 1.8, 1.0), slide = dir.mul(shape.radius).add(0.0, .9, 0.0), moveTicks = 4)
+                }
+                for ((n, spot) in motes(shape.radius).withIndex()) {
+                    val out = Vec(spot.x(), 0.0, spot.z()).normalize()
+                    add("puff", 4, o.add(spot), n % 2, 9, Vec(1.8, 1.8, 1.0), IDENTITY, slide = out.mul(1.8), grow = Vec(2.4, 2.4, 1.0),
+                        moveTicks = 8, billboard = true)
+                }
             }
             "shade-breath" -> if (shape is MobAttackShape.Slam) {
                 // A torrent of shadow dust, not a ray: billowing clouds rolling out and widening, the ground scorched.
@@ -152,6 +172,19 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                 repeat(4) { n ->
                     add("puff", 4, o.add(f.mul(shape.length - 1.5)).add(right.mul((n - 1.5) * shape.halfWidth * .6)).add(0.0, 1.0 + n % 2, 0.0),
                         5 + n, 16, Vec(4.0, 4.0, 1.0), IDENTITY, billboard = true)
+                }
+                add("puff", 4, Pos.fromPoint(mouth), 0, 7, Vec(3.4, 3.4, 1.0), IDENTITY, billboard = true)
+                for (n in 0 until 10) {                       // dark billows rolling behind and above the bright dust
+                    val t = (n + .5) / 10.0
+                    val size = 3.4 + t * shape.halfWidth * 2.2
+                    add("smoke", 6, o.add(f.mul(2.5 + t * (shape.length - 3.0))).add(right.mul(((n * 3) % 5 - 2) * .3 * shape.halfWidth))
+                        .add(0.0, 1.6 + t, 0.0), 1 + n / 2, 20, Vec(size, size, 1.0), IDENTITY,
+                        slide = f.mul(1.5).add(0.0, 1.4, 0.0), grow = Vec(size * 1.3, size * 1.3, 1.0), moveTicks = 18, billboard = true)
+                }
+                val edges = (shape.length / 1.6).toInt()
+                for (n in 0 until edges) for (side in listOf(-1.0, 1.0)) {    // dust kicked up along both edges as it passes
+                    val at = o.add(f.mul(1.5 + n * 1.6)).add(right.mul(side * shape.halfWidth))
+                    add("curtain", 5, at.add(0.0, 1.1, 0.0), 1 + n / 2, 14, Vec(1.9, 2.2, 1.0), yawTo(right.mul(side)))
                 }
             }
             "shade-storm" -> if (shape is MobAttackShape.Ring) {
@@ -241,6 +274,20 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         return ItemStack.of(Material.PAPER).withItemModel("projects:boss_vfx/${piece.sprite}")
             .with(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), emptyList(),
                 listOf(TextColor.color(red, piece.kind, MARKER))))
+    }
+
+    /** Where the dust spores hang: a sunflower spread over the circle, low to chest height. */
+    private fun spores(radius: Double): List<Vec> = (0 until 18).map { n ->
+        val r = radius * .95 * kotlin.math.sqrt((n + .5) / 18)
+        val a = n * 2.39996
+        Vec(cos(a) * r, .5 + (n % 4) * .35, sin(a) * r)
+    }
+
+    /** Spores floating round the wyrm for the pulse, in the ring it hurts. */
+    private fun motes(radius: Double): List<Vec> = (0 until 16).map { n ->
+        val r = 1.6 + (radius - 1.8) * ((n * 7) % 16) / 15.0
+        val a = n * 2 * PI / 16 + (n % 2) * .2
+        Vec(cos(a) * r, .6 + (n % 5) * .5, sin(a) * r)
     }
 
     companion object {

@@ -23,7 +23,7 @@ JP = {"shade-sweep": "翼脚薙ぎ", "shade-pounce": "飛びかかり", "shade-d
       "shade-breath": "翳の吐息（怒り）", "shade-storm": "鱗粉嵐（怒り）"}
 ENRAGED_ONLY = ("shade-breath", "shade-storm")
 FRAME = {"shade-breath": (.5, 130), "shade-storm": (.42, 0), "shade-pounce": (.75, 70)}
-UPRIGHT = ("beam_up", "ring_up", "puff", "curtain")
+UPRIGHT = ("beam_up", "ring_up", "puff", "smoke", "curtain")
 
 
 # ---- item.fsh, line for line ----
@@ -85,10 +85,16 @@ def shade_vfx(mask, flow, across, kind, p, t):
         edge = 1 - sstep(0, .12, v - threshold)
         heat = mask * (.95 - .55 * p) + edge
         alpha = (v >= threshold) * mask * (1 - .4 * p)
-    else:
+    elif kind == 5:
         rise = fbm(flow * 18, across * 2.5 - t * 3)
         heat = mask * rise * (1 - across * .6) + .2 * mask
         alpha = mask * sstep(.25, .65, rise + (1 - across) * .3) * (1 - across) * (1 - sstep(.55, 1.0, p))
+    else:
+        threshold = p * 1.1
+        v = mask * .7 + n * .5
+        edge = 1 - sstep(0, .15, v - threshold)
+        heat = mask * .18 + edge * .55 + n * .1
+        alpha = (v >= threshold) * mask * .85
     return ramp(np.clip(heat, 0, 1)), np.clip(alpha, 0, 1)
 
 

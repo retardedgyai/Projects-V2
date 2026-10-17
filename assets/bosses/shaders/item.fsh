@@ -1,7 +1,7 @@
 #version 330
 
 // ProjectS boss VFX experiment (2026-10-17). Vanilla 26.2 core/item, except for items whose tint is a VFX
-// marker: blue == 77 and green == the effect kind (1..5). For those the texture is a data map
+// marker: blue == 77 and green == the effect kind (1..6). For those the texture is a data map
 // (R = shape mask, G = flow coordinate along the effect, B = across), the tint red is the effect's progress
 // (0..1, driven by the server every tick) and the colour is computed here: emissive, moving noise, a hot
 // leading edge, dissolving tails. Every other item renders exactly as vanilla.
@@ -70,10 +70,16 @@ vec4 shadeVfx(vec4 data, float kind, float p) {
         float edge = 1.0 - smoothstep(0.0, .12, v - threshold);
         heat = mask * (.95 - .55 * p) + edge;
         alpha = step(threshold, v) * mask * (1.0 - .4 * p);
-    } else {                                           // 5 wall: dust rising off the ground in a curtain
+    } else if (kind < 5.5) {                           // 5 wall: dust rising off the ground in a curtain
         float rise = fbm(vec2(flow * 18.0, across * 2.5 - t * 3.0));
         heat = mask * rise * (1.0 - across * .6) + .2 * mask;
         alpha = mask * smoothstep(.25, .65, rise + (1.0 - across) * .3) * (1.0 - across) * (1.0 - smoothstep(.55, 1.0, p));
+    } else {                                           // 6 smoke: a dark billow behind the bright dust, lit at its rim
+        float threshold = p * 1.1;
+        float v = mask * .7 + n * .5;
+        float edge = 1.0 - smoothstep(0.0, .15, v - threshold);
+        heat = mask * .18 + edge * .55 + n * .1;
+        alpha = step(threshold, v) * mask * .85;
     }
     return vec4(ramp(clamp(heat, 0.0, 1.0)), clamp(alpha, 0.0, 1.0));
 }
@@ -82,7 +88,7 @@ void main() {
     vec4 color = texture(Sampler0, texCoord0);
     int markerB = int(rawColor.b * 255.0 + .5);
     int kind = int(rawColor.g * 255.0 + .5);
-    if (markerB == 77 && kind >= 1 && kind <= 5) {
+    if (markerB == 77 && kind >= 1 && kind <= 6) {
         vec4 fx = shadeVfx(color, float(kind), rawColor.r);
         if (fx.a < .01) {
             discard;
