@@ -125,8 +125,13 @@ class QuestEncounterCombat(
     private val vfxSink = dev.projects.server.particle.ParticleSink { spawn ->
         val packet = ParticlePacket(spawn.particle, spawn.position.x(), spawn.position.y(), spawn.position.z(),
             spawn.offset.x().toFloat(), spawn.offset.y().toFloat(), spawn.offset.z().toFloat(), spawn.speed, spawn.count)
-        instance.players.filter { it.position.distanceSquared(spawn.position) < 56.0 * 56.0 }.forEach { it.sendPacket(packet) }
+        // With the pack, the shader displays draw the strike; its dust particles would only muddy them.
+        val shaded = spawn.importance == dev.projects.server.particle.ParticleImportance.COMBAT_FEEDBACK &&
+            (spawn.particle is Particle.Dust || spawn.particle is Particle.DustColorTransition)
+        instance.players.filter { it.position.distanceSquared(spawn.position) < 56.0 * 56.0 &&
+            !(shaded && dev.projects.server.coreloop.CoreCombatPresentation.packed(it)) }.forEach { it.sendPacket(packet) }
     }
+    private val shaderFx = ShadeWyrmShaderFx(instance)
     @Volatile private var disposed = false
     private var bossSealed = false
     private var bossGateFraction = 0.0
@@ -364,6 +369,7 @@ class QuestEncounterCombat(
         lastTickAt = nowMillis
         telegraphs.tick(nowMillis)
         vfx.tick()
+        shaderFx.tick()
         val players = instance.players.filter { canTarget(it) }
         if (actionsStoppedForReturn) {
             if (players.isEmpty()) return
@@ -403,6 +409,7 @@ class QuestEncounterCombat(
         disposed = true
         telegraphs.dispose()
         vfx.cancelAll()
+        shaderFx.dispose()
         mobs.values.forEach { mob ->
             mob.abilities.cancel()
             stopNavigation(mob)
@@ -695,6 +702,7 @@ class QuestEncounterCombat(
                 castingPose(mob, false)
                 if (!drawWarning(mob, event.frame, true)) { cancelWarning(mob); return false }
                 playVfx(mob, ShadeWyrmVfx.hit(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
+                if (mob.view != null) shaderFx.strike(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
                 sound(event.frame.origin,
                     if (mob.entity.entityMeta is SpellcasterIllagerMeta) "minecraft:entity.evoker.cast_spell"
                     else if (event.frame.ability.shape is MobAttackShape.Sweep) "minecraft:entity.player.attack.sweep"

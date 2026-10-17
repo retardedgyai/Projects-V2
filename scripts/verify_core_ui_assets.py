@@ -9,6 +9,7 @@ from PIL import Image
 from build_core_hud_assets import vanilla_overrides, SKILLS
 from build_core_menu_assets import TEXT_YS, CELL, SOURCE_CELL, TEXT_SCALE, TEXT_BASE, FRAME_BASE, BUTTON_BASE, CARD_BASE, PALETTE, DOT_FONT_SHA256
 from build_core_menu_art import ART, ART_BASE, ART_CELL, ART_YS, ART_SIZES
+from build_boss_vfx import shader_overrides
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
@@ -19,8 +20,9 @@ def verify():
     assert len(paths) == len(set(paths)) and paths == sorted(paths)
     overrides = vanilla_overrides()
     actual_overrides = {p for p in paths if p.startswith("assets/minecraft/")}
-    additions = {"assets/minecraft/atlases/items.json"}
-    assert actual_overrides == overrides | additions, "Only player heart/food overrides and the approved VFX atlas addition are permitted"
+    additions = {"assets/minecraft/atlases/items.json"} | shader_overrides()
+    assert actual_overrides == overrides | additions, ("Only player heart/food overrides, the approved VFX atlas addition and "
+                                                       "the boss VFX core/item shader experiment are permitted")
     assert json.loads((PACK / "assets/minecraft/atlases/items.json").read_text()) == {
         "sources":[{"type":"minecraft:directory","source":"combat_vfx","prefix":"combat_vfx/"}]}
     assert not any(".." in p or "\\" in p or p.startswith("/") for p in paths)

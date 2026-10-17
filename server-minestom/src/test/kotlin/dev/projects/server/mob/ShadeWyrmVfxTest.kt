@@ -36,6 +36,27 @@ class ShadeWyrmVfxTest {
         }
     }
 
+    @Test
+    fun `shader strikes spawn marked displays and clean them up`() {
+        net.minestom.server.MinecraftServer.init(net.minestom.server.Auth.Offline())
+        val instance = net.minestom.server.MinecraftServer.getInstanceManager().createInstanceContainer()
+        for (x in -2..1) for (z in -2..1) instance.loadChunk(x, z).join()
+        try {
+            for (ability in definition.abilities) {
+                val fx = ShadeWyrmShaderFx(instance)
+                fx.strike(ability.id, MobAbilityFrame(ability, Pos(0.0, 64.0, 0.0), Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L)) { null }
+                var peak = 0
+                repeat(40) { fx.tick(); peak = maxOf(peak, fx.liveCount) }
+                assertTrue(peak > 0, "${ability.id} showed nothing")
+                assertTrue(fx.liveCount == 0, "${ability.id} left ${fx.liveCount} displays")
+                val marked = instance.entities.none { it.entityType == net.minestom.server.entity.EntityType.ITEM_DISPLAY }
+                assertTrue(marked, "${ability.id} displays not removed")
+            }
+        } finally {
+            net.minestom.server.MinecraftServer.getInstanceManager().unregisterInstance(instance)
+        }
+    }
+
     /** `SHADE_VFX_DUMP=<file> ./gradlew :server-minestom:test --tests '*ShadeWyrmVfxTest' --rerun` writes every
      * particle (facing +Z from the origin, in blocks) for scripts/boss_preview/vfxclip.py to draw over the clips. */
     @Test
