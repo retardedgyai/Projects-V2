@@ -155,8 +155,12 @@ internal class GrimoireFlow(
         nodes += UiNode(id, box(x, y, w, h), "", style, null, null, true, depth + lift, s)
     }
     /** The 魔術書's own crisp page for this face and size ("gmv3m15", built by build_grimoire_assets.py), else the forge's. */
-    private fun page(family: String, size: Double) =
-        listOf("gm$family${size.toInt()}", "$family${size.toInt()}").firstOrNull(Polish05FontMetrics::has) ?: family
+    private fun page(family: String, size: Double): String {
+        // Text of 14 px and less is set one weight heavier: at 1:1 in the client, regular strokes thinner than a
+        // pixel break up once the page's alpha is snapped (イ, し) and grey labels read as hairlines.
+        val face = if (size <= 14) HEAVIER[family] ?: family else family
+        return listOf("gm$face${size.toInt()}", "$face${size.toInt()}").firstOrNull(Polish05FontMetrics::has) ?: face
+    }
     private fun text(id: String, x: Double, y: Double, w: Double, value: String, family: String, size: Double, color: String, depth: Int,
                      align: String = "left", shadow: Boolean = false) {
         if (value.isEmpty()) return
@@ -656,6 +660,7 @@ internal class GrimoireFlow(
             val rnd = java.util.Random(7)
             List(110) { Triple(rnd.nextDouble() * 1920, 100 + rnd.nextDouble() * 940, if (rnd.nextInt(6) == 0) 4.0 else 2.0) }
         }
+        private val HEAVIER = mapOf("v3r" to "v3m", "v3m" to "v3b")
         private val KIND_ICON = mapOf("開く" to "i16_open", "見える" to "i16_see", "置ける" to "i16_place", "作れる" to "i16_craft", "もらえる" to "i16_get")
         private val LABEL = mapOf(
             State.DONE to ("完了" to "#E8C878"), State.OPEN to ("進められる" to "#7FE3F0"), State.GOAL_OPEN to ("進められる" to "#7FE3F0"),

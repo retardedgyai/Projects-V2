@@ -31,8 +31,9 @@ FONT = f"{NS}:grimoire"
 TILE = 256
 METRICS = ROOT / "web-ui-lab/src/main/resources/polish05-font-metrics.json"
 TEXT_SOURCES = [ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop" / f for f in ("GrimoireFlow.kt", "GrimoireBook.kt")]
-# The M PLUS 2 weights and sizes GrimoireFlow draws ("v3m15" -> crisp "gmv3m15").
-CRISP = {"r": (12, 13, 14, 15), "m": (13, 14, 15, 16, 18), "b": (11, 15, 16, 17, 20, 24, 26, 44)}
+# The M PLUS 2 weights and sizes GrimoireFlow draws ("v3m15" -> crisp "gmv3m15"). Text of 14 px and less is
+# drawn one weight heavier (GrimoireFlow.page), so regular stops at 15.
+CRISP = {"r": (15,), "m": (13, 14, 15, 16, 18), "b": (11, 13, 14, 15, 16, 17, 20, 24, 26, 44)}
 
 
 def crisp_text(files: dict[str, bytes]) -> None:

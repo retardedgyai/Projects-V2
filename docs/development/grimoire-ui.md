@@ -79,8 +79,8 @@ Halos follow the medallion state: done gold, workable cyan, side violet, the loc
   切替と一時ダンプは削除し、`GOLDEN` も B で更新済み。共通の直し（整数倍ドット・「この先」・封印の枝の?地図）も入っている。
 - 描画は Linux では `python3`、比較用ラベルの日本語フォントは Noto Sans CJK（`/usr/share/fonts/opentype/noto/`）。
 - 空気感は②「星雲＋後光」に決定・実装（2026-10-17、見本 https://claude.ai/artifact/Ub7KNcn4aZG2Hd43HamvUx ）。
-- 注意: Linux で `build_grimoire_assets.py` を回すと、くっきり文字のページ（gmv3*）も描き直され、字幅が Windows 版と少しずれる。
-  今回は文字ページと polish05-font-metrics.json を元のまま残し、新しい画像だけ足した。文字を足すときは要確認。
+- 細い字（2026-10-17、実機で確認）: 14px 以下は1段太く（Regular→Medium、Medium→Bold、`GrimoireFlow.page`）。
+  くっきり文字のページは Linux で作り直した（Windows 版は小さい字で「イ」「し」が欠けていた）。以後は Linux で作る。
 - 残り: 503c48ed 以降を藍が実機で確認すること。
 - テスト: Java 25、`:server-minestom:test --tests '*Grimoire*'`（maxHeap 1g・ワーカー1）。サーバーは `-Dprojects.port=25567` で別立てしていた。
 - 絵の確認は `scripts/render_grimoire_preview.py`（実機の文字・スプライトの描き方を再現）。実機SSはクライアントの screenshots/ に出る。
