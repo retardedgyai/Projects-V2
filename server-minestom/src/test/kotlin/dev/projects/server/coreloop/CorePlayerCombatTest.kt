@@ -968,6 +968,15 @@ class CorePlayerCombatTest {
         }
     }
 
+    @Test fun `warrior slam shows rock and an explosion to the player and plays the heavy smash`() = arena { h ->
+        val packets = (h.player.playerConnection as MemoryConnection).packets
+        h.actor.skill(1); packets.clear(); h.ticks(14)
+        val particles = packets.filterIsInstance<net.minestom.server.network.packet.server.play.ParticlePacket>().map { it.particle().key().value() }
+        assertTrue("explosion" in particles && "block" in particles && "dust_pillar" in particles, particles.distinct().toString())
+        val sounds = packets.filterIsInstance<net.minestom.server.network.packet.server.play.SoundEffectPacket>().map { it.soundEvent() }
+        assertTrue(net.minestom.server.sound.SoundEvent.ITEM_MACE_SMASH_GROUND_HEAVY in sounds, sounds.toString())
+    }
+
     @Test fun `sword saint third hits take time off the heavy cooldowns`() = arena { h ->
         h.journey=CoreJourney.legacy(build=CoreClassBuild(nodes=8248));h.actor.reset()
         h.actor.skill(2);h.ticks(10)

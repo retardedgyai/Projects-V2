@@ -219,6 +219,15 @@ internal class GreatswordVfx(private val player: Player) {
             return true
         }
         if (activeEffects >= MAX_EFFECTS) scheduler.cancelAll() // Shed old normal trails before a skill pulse.
+        if (effect is CoreSkillEffect && CoreIronWarriorVfx.handles(effect)) {
+            // Iron-mass warrior: vanilla rock/dust/ember particles for every viewer; the old blade meshes are not used.
+            if (activeEffects >= MAX_EFFECTS) return false
+            val ground = player.instance.getBlock(effect.origin.sub(0.0, .5, 0.0))
+            combatScheduler.start(CoreIronWarriorVfx.effect(effect, ground), frame)
+            if (effect.phase != CoreSkillVisualPhase.CONTACT || !contactSoundThisTick) CoreIronWarriorVfx.play(player, effect)
+            if (effect.phase == CoreSkillVisualPhase.CONTACT) contactSoundThisTick = true
+            return true
+        }
         if (activeEffects < MAX_EFFECTS) {
             if (effect is CoreSkillEffect) effect.solidCompanion = CoreCombatPresentation.packed(player)
             if(effect is CoreSkillEffect) {
