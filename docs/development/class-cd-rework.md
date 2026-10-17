@@ -58,6 +58,10 @@ Creator：「ここからクラスリワークしていきたい。基本はCD�
 - 32pxの元絵は16pxのきっちり2倍。新HUD（combat-hud）は16pxに縮めて出すので、描いたマスがそのまま出る。今のメニューの枠は中が24pxなので、そこでは0.75倍になり、ドットの大きさが少し揃わない。
 - 技名もゲーム内に入れた（藍、2026-10-17）：踏み込み斬り→**轟進**、叩きつけ→**地割り**、薙ぎ払い→**押し薙ぎ**、剣風→**地走り**、踏ん張り→**根張り**、天断→**鉄槌**、猛り→**赤熱**。この文書の§3・§3.5は旧名のまま残している。地走りの演出はまだ旧牽制斬りの斬撃（亀裂ではない）。
 
+## 3.7 戦士の演出（2026-10-17、やり直し）
+
+マイクラ標準の粒子で6技・赤熱・CCの印を描いた版（35e72ad1）を、藍が「もろAI slop」と判断。9月に同じ粒子案が「デザイン不一致」で撤回済みだったため打ち消した。演出は、藍が「過去一番いい」と評価した Blockbench 方式の板モデル（承認済み踏み込み斬りの白い刃、`CoreCombatMeshes → CoreWarriorCompanions → CoreWarriorFlourish`）の上で作り直す。参照は SamusDev「Dragon Warrior」と MatE（Dark Sister の刃の赤い効果、Hollow Monarch、Last Rite）。経緯は `docs/archive/2026-09/warrior-design-rework-2026-09-11.md`。
+
 ## 4. 保存データ
 
 外した技は `CoreSkillCatalog` に `retired = true` で番号・アイコン・絵の並びを残す。技選び・試験場・`SelectSkill` では選べない。読み込み時（`CoreAccountCodec.decode`）に `CoreSkillCatalog.migrate` が外した技を「その構成にまだない最初の選べる技」へ置き換える。保存の列と版（v11）は変えていない。成長樹「広い備え」の対象は戦士だけ位置4（剣風）。
