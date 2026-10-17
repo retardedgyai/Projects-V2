@@ -164,14 +164,22 @@ internal class GrimoireFlow(
     private fun text(id: String, x: Double, y: Double, w: Double, value: String, family: String, size: Double, color: String, depth: Int,
                      align: String = "left", shadow: Boolean = false) {
         if (value.isEmpty()) return
-        nodes += UiNode(id, box(x, y, w, size * 1.25), value, buildMap {
-            put("font-size", "${size * SCALE}px"); put("color", "#" + color.takeLast(6)); put("text-align", align)
+        val px = drawn(family, size)
+        nodes += UiNode(id, box(x, y, w, px * 1.25), value, buildMap {
+            put("font-size", "${px * SCALE}px"); put("color", "#" + color.takeLast(6)); put("text-align", align)
             put("font-family", "projects_ui_polish05:${page(family, size)}")
             if (shadow) put("text-shadow", "true")
         }, null, null, true, depth + lift)
     }
     private fun width(value: String, family: String, size: Double) =
-        Polish05FontMetrics.advance(value, page(family, size)) / Polish05FontMetrics.SIZE * size
+        Polish05FontMetrics.advance(value, page(family, size)) / Polish05FontMetrics.SIZE * drawn(family, size)
+    /**
+     * The size a sized glyph page is drawn at so one texel is one pixel at 1080p. A page rasterised at `size` has
+     * cells of ceil(size * 1.25) texels and declares 40 units of height, so drawn at `size` a 13 px page shows 17
+     * texels in 16.25 px and the client drops a row or column (イ, し, the bar of 4).
+     */
+    private fun drawn(family: String, size: Double) =
+        if (page(family, size).last().isDigit()) kotlin.math.ceil(size * 1.25) / 1.25 else size
     private fun argb(hex: String, a: Double) = String.format("#%02x%s", (a * 255).toInt().coerceIn(0, 255), hex.takeLast(6))
     /**
      * The colour [ground] shows through a translucent fill, as an opaque fill. The client draws the display's fills in
