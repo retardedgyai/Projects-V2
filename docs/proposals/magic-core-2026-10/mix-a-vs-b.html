@@ -1,0 +1,233 @@
+<title>相の工房 A/B</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: three workbench columns (周りの物 → 瓶の棚 → レシピ) under a mode switch; one dark "magic window" look on purpose */
+:root {
+  --bg: #0b0e18; --panel: #131828; --panel2: #192036; --line: #263052; --fg: #e8e6df; --muted: #9096ab;
+  --gold: #e8c878; --cyan: #7fe3f0; --red: #e58b80;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1240px; margin: 0 auto; padding-block: 22px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 18px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+h2 { font-size: 1rem; margin: 0 0 10px; letter-spacing: .04em; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 72ch; }
+.modes { display: flex; flex-wrap: wrap; gap: 10px; }
+.modes button { font: inherit; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 8px 16px; cursor: pointer; text-align: left; min-width: 0; }
+.modes button b { display: block; font-size: 1.02rem; }
+.modes button span { color: var(--muted); font-size: .85rem; }
+.modes button[aria-pressed="true"] { border-color: var(--cyan); box-shadow: inset 0 0 0 1px var(--cyan); }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.bench { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, .9fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .bench { grid-template-columns: 1fr; } }
+.col { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; min-width: 0; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.row h2 { margin: 0; }
+.goggles { font: inherit; font-size: .88rem; color: var(--fg); background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.goggles[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.items { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.item { font: inherit; color: var(--fg); background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px; cursor: pointer; text-align: left; display: grid; gap: 6px; transition: transform .08s; }
+.item:hover { border-color: #3a4a7a; }
+.item:active { transform: scale(.97); }
+.item .name { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.icon { width: 22px; height: 22px; border-radius: 4px; flex: none; image-rendering: pixelated; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; min-height: 22px; }
+.chip { font-size: .78rem; border-radius: 6px; padding: 0 6px; border: 1px solid; white-space: nowrap; }
+.chip.unknown { color: var(--muted); border-color: var(--line); }
+.hint { font-size: .8rem; color: var(--muted); margin-top: 8px; }
+.jars { display: grid; gap: 8px; }
+.jar { display: grid; grid-template-columns: 4.6em 1fr 2.6em; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 8px;
+  border: 1px solid transparent; background: none; color: var(--fg); font: inherit; text-align: left; }
+.jar.pick { cursor: pointer; }
+.jar.pick:hover { border-color: var(--line); }
+.jar.sel { border-color: var(--cyan); }
+.jar .bar { height: 10px; border-radius: 3px; background: #0d1120; overflow: hidden; }
+.jar .bar i { display: block; height: 100%; width: 0; transition: width .25s; }
+.jar .n { font-family: var(--num); text-align: right; font-variant-numeric: tabular-nums; }
+.mix { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.mix .slots { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.slot { min-width: 4.4em; text-align: center; border: 1px dashed var(--line); border-radius: 8px; padding: 3px 8px; color: var(--muted); }
+.slot.on { border-style: solid; color: var(--fg); }
+.act { font: inherit; font-weight: 700; color: #08202a; background: var(--cyan); border: 0; border-radius: 10px; padding: 8px 14px; cursor: pointer; }
+.act:disabled { background: #2a3350; color: #6f7894; cursor: default; }
+.recipe { display: grid; gap: 10px; }
+.need { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; }
+.need .n { font-family: var(--num); font-variant-numeric: tabular-nums; }
+.ok { color: var(--gold); }
+.scroll { width: 100%; }
+.stat { display: flex; gap: 18px; flex-wrap: wrap; font-size: .9rem; color: var(--muted); }
+.stat b { font-family: var(--num); color: var(--fg); font-weight: 400; font-size: 1.05rem; }
+.log { font-size: .85rem; color: var(--muted); min-height: 3.2em; }
+.done { border: 1px solid var(--gold); border-radius: 10px; padding: 10px; color: var(--gold); }
+.reset { font: inherit; font-size: .85rem; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+.flash { animation: flash .45s; }
+@keyframes flash { from { background: #2b3a66; } to { background: var(--panel2); } }
+@media (prefers-reduced-motion: reduce) { .flash { animation: none; } .jar .bar i { transition: none; } }
+</style>
+<main>
+  <header>
+    <h1>相の工房　巻物を1枚作ってみる</h1>
+    <p>目標は「帰還の巻物」。眼鏡をかけて周りの物を見て、物を押すと蒸留器で相が抜けて瓶に溜まります。A と B で同じ巻物を作って、どちらが楽しいか比べてください。物はいくらでも押せます。</p>
+  </header>
+
+  <div class="modes" role="group" aria-label="遊び方">
+    <button id="mA" aria-pressed="true" data-m="A"><b>A　混ぜて作る</b><span>物から抜けるのは基本の6相だけ。光や運動は瓶で混ぜて作る</span></button>
+    <button id="mB" aria-pressed="false" data-m="B"><b>B　物から直接抜く</b><span>光る物から光、速い物から運動。混ぜる工程はなし</span></button>
+  </div>
+
+  <section class="bench">
+    <div class="col">
+      <div class="row"><h2>工房の周りの物</h2><button class="goggles" id="goggles" aria-pressed="false">観測の眼鏡をかける</button></div>
+      <div class="items" id="items"></div>
+      <div class="hint" id="itemHint"></div>
+    </div>
+
+    <div class="col">
+      <div class="row"><h2>瓶の棚</h2><button class="reset" id="reset">最初から</button></div>
+      <div class="jars" id="jars"></div>
+      <div class="mix" id="mix">
+        <h2>混ぜる</h2>
+        <div class="slots"><span class="slot" id="s1">相を選ぶ</span>＋<span class="slot" id="s2">相を選ぶ</span>→<span class="slot" id="s3">？</span>
+          <button class="act" id="mixBtn" disabled>混ぜる</button></div>
+        <div class="hint">瓶を2つ押して選ぶと、それぞれ1ずつ使って1つできる。組み合わせは魔術書に書いてある：光＝風＋火、運動＝風＋秩序、生命＝水＋地、金属＝地＋秩序、死＝地＋混沌</div>
+      </div>
+    </div>
+
+    <div class="col recipe">
+      <h2>レシピ　帰還の巻物</h2>
+      <div class="need" id="need"></div>
+      <button class="act scroll" id="craft" disabled>巻物を作る</button>
+      <div class="stat"><span>押した回数 <b id="clicks">0</b></span><span>蒸留 <b id="dist">0</b></span><span id="mixStat">混ぜた <b id="mixes">0</b></span></div>
+      <div class="log" id="log" aria-live="polite">眼鏡をかけると、物に入っている相が見える。</div>
+    </div>
+  </section>
+</main>
+<script>
+const AS = {
+  aer: ["風", "#dbe8af"], aqua: ["水", "#78cadb"], ignis: ["火", "#eba16b"], terra: ["地", "#a9b889"], ordo: ["秩序", "#e8d9b4"], perditio: ["混沌", "#b9a0c8"],
+  lux: ["光", "#fff1a8"], motus: ["運動", "#9fd3ff"], victus: ["生命", "#9be08a"], metallum: ["金属", "#c9ccd6"], mortuus: ["死", "#8d8478"],
+};
+const MIX = { lux: ["aer", "ignis"], motus: ["aer", "ordo"], victus: ["aqua", "terra"], metallum: ["terra", "ordo"], mortuus: ["terra", "perditio"] };
+const PRIMAL = ["aer", "aqua", "ignis", "terra", "ordo", "perditio"];
+const COMPOUND = ["lux", "motus", "victus", "metallum", "mortuus"];
+// Each thing yields per press. A: primals only. B: what it "is", compounds included.
+const ITEMS = [
+  { id: "torch", name: "松明", c: "#e9a14e", A: { ignis: 2, aer: 1 }, B: { lux: 2, ignis: 1 } },
+  { id: "glow", name: "グロウストーン", c: "#f4d36b", A: { ignis: 1, aer: 2 }, B: { lux: 3 } },
+  { id: "feather", name: "羽根", c: "#e9ecef", A: { aer: 2, ordo: 1 }, B: { motus: 2, aer: 1 } },
+  { id: "sugar", name: "砂糖", c: "#f6f3ea", A: { ordo: 1, aqua: 1 }, B: { motus: 1, victus: 1 } },
+  { id: "stone", name: "石", c: "#8b8f97", A: { terra: 2 }, B: { terra: 2 } },
+  { id: "iron", name: "鉄インゴット", c: "#cfd3da", A: { terra: 1, ordo: 2 }, B: { metallum: 2, terra: 1 } },
+  { id: "bone", name: "骨", c: "#e6e0cf", A: { terra: 1, perditio: 2 }, B: { mortuus: 2 } },
+  { id: "leaf", name: "木の葉", c: "#5f9e4a", A: { aqua: 1, terra: 1 }, B: { victus: 2 } },
+];
+const NEED = { motus: 4, lux: 2 };
+let mode = "A", goggles = false;
+const fresh = () => ({ jars: {}, clicks: 0, dist: 0, mixes: 0, pick: [], done: false, start: null });
+const state = { A: fresh(), B: fresh() };
+const S = () => state[mode];
+const $ = id => document.getElementById(id);
+const amt = k => S().jars[k] || 0;
+
+function chip(k, n) {
+  const [name, col] = AS[k];
+  return `<span class="chip" style="color:${col};border-color:${col}55">${name}${n ? " " + n : ""}</span>`;
+}
+function renderItems() {
+  $("items").innerHTML = ITEMS.map(it => {
+    const y = it[mode];
+    const chips = goggles ? Object.entries(y).map(([k, n]) => chip(k, n)).join("") : `<span class="chip unknown">？？</span>`;
+    return `<button class="item" data-id="${it.id}"><span class="name"><span class="icon" style="background:${it.c}"></span>${it.name}</span><span class="chips">${chips}</span></button>`;
+  }).join("");
+  $("itemHint").textContent = goggles ? "押すと蒸留器に入れて、出てきた相が瓶に入る。" : "眼鏡をかけないと、何が入っているか分からない。";
+  document.querySelectorAll(".item").forEach(b => b.addEventListener("click", () => distill(b)));
+}
+function renderJars() {
+  const keys = mode === "A" ? [...PRIMAL, ...COMPOUND] : [...COMPOUND, ...PRIMAL];
+  const max = Math.max(8, ...keys.map(amt));
+  $("jars").innerHTML = keys.map(k => {
+    const [name, col] = AS[k];
+    const sel = S().pick.includes(k);
+    const pick = mode === "A" && PRIMAL.includes(k);
+    return `<button class="jar${pick ? " pick" : ""}${sel ? " sel" : ""}" data-k="${k}" ${pick ? "" : "tabindex='-1'"}>
+      <span style="color:${col}">${name}</span><span class="bar"><i style="width:${amt(k) / max * 100}%;background:${col}"></i></span><span class="n">${amt(k)}</span></button>`;
+  }).join("");
+  document.querySelectorAll(".jar.pick").forEach(b => b.addEventListener("click", () => pickJar(b.dataset.k)));
+}
+function renderMix() {
+  $("mix").hidden = mode !== "A"; $("mixStat").hidden = mode !== "A";
+  const [a, b] = S().pick;
+  $("s1").textContent = a ? AS[a][0] : "相を選ぶ"; $("s1").classList.toggle("on", !!a);
+  $("s2").textContent = b ? AS[b][0] : "相を選ぶ"; $("s2").classList.toggle("on", !!b);
+  const out = a && b ? result(a, b) : null;
+  $("s3").textContent = out ? AS[out][0] : (a && b ? "できない" : "？"); $("s3").classList.toggle("on", !!out);
+  $("mixBtn").disabled = !out || amt(a) < 1 || amt(b) < 1;
+}
+function result(a, b) {
+  return Object.keys(MIX).find(k => { const [x, y] = MIX[k]; return (x === a && y === b) || (x === b && y === a); }) || null;
+}
+function renderRecipe() {
+  const rows = [`<span>紙</span><span class="n ok">1 / 1</span>`];
+  for (const [k, n] of Object.entries(NEED)) {
+    const have = Math.min(amt(k), n);
+    rows.push(`<span>${chip(k)}</span><span class="n ${have >= n ? "ok" : ""}">${have} / ${n}</span>`);
+  }
+  $("need").innerHTML = rows.join("");
+  const ready = Object.entries(NEED).every(([k, n]) => amt(k) >= n);
+  $("craft").disabled = !ready || S().done;
+  $("craft").textContent = S().done ? "できた！" : "巻物を作る";
+  $("clicks").textContent = S().clicks; $("dist").textContent = S().dist; $("mixes").textContent = S().mixes;
+}
+function render() { renderItems(); renderJars(); renderMix(); renderRecipe(); }
+function log(t) { $("log").innerHTML = t; }
+
+function distill(btn) {
+  const it = ITEMS.find(i => i.id === btn.dataset.id);
+  const s = S(); s.clicks++; s.dist++; if (!s.start) s.start = Date.now();
+  for (const [k, n] of Object.entries(it[mode])) s.jars[k] = (s.jars[k] || 0) + n;
+  log(`${it.name}を蒸留した → ${Object.entries(it[mode]).map(([k, n]) => chip(k, n)).join(" ")}`);
+  renderJars(); renderMix(); renderRecipe();
+  const again = document.querySelector(`.item[data-id="${it.id}"]`); again.classList.remove("flash"); void again.offsetWidth; again.classList.add("flash");
+}
+function pickJar(k) {
+  const s = S(); s.clicks++;
+  if (s.pick.includes(k)) s.pick = s.pick.filter(x => x !== k);
+  else s.pick = s.pick.length >= 2 ? [k] : [...s.pick, k];
+  renderJars(); renderMix(); renderRecipe();
+}
+$("mixBtn").addEventListener("click", () => {
+  const s = S(); const [a, b] = s.pick; const out = result(a, b);
+  if (!out || amt(a) < 1 || amt(b) < 1) return;
+  s.jars[a]--; s.jars[b]--; s.jars[out] = amt(out) + 1; s.clicks++; s.mixes++;
+  log(`${AS[a][0]}＋${AS[b][0]} → ${chip(out, 1)}`);
+  renderJars(); renderMix(); renderRecipe();
+});
+$("craft").addEventListener("click", () => {
+  const s = S(); if (s.done) return;
+  for (const [k, n] of Object.entries(NEED)) s.jars[k] -= n;
+  s.clicks++; s.done = true;
+  const sec = s.start ? Math.round((Date.now() - s.start) / 1000) : 0;
+  log(`<div class="done">帰還の巻物ができた！　押した回数 ${s.clicks}・蒸留 ${s.dist}${mode === "A" ? "・混ぜた " + s.mixes : ""}・約 ${sec} 秒</div>`);
+  render();
+});
+$("goggles").addEventListener("click", () => {
+  goggles = !goggles; $("goggles").setAttribute("aria-pressed", goggles);
+  $("goggles").textContent = goggles ? "観測の眼鏡をかけている" : "観測の眼鏡をかける";
+  if (goggles) log("物に入っている相が見えるようになった。"); renderItems();
+});
+$("reset").addEventListener("click", () => { state[mode] = fresh(); log("瓶を空にした。"); render(); });
+document.querySelectorAll(".modes button").forEach(b => b.addEventListener("click", () => {
+  mode = b.dataset.m; document.querySelectorAll(".modes button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  log(S().done ? "この遊び方ではもう作った。「最初から」でやり直せる。" : (mode === "A" ? "A：物からは基本の相だけ。光と運動は混ぜて作る。" : "B：物からそのまま光や運動が抜ける。"));
+  render();
+}));
+render();
+</script>

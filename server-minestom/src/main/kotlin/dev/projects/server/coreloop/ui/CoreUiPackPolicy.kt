@@ -1,10 +1,15 @@
 package dev.projects.server.coreloop.ui
 
-/** The only global overrides explicitly requested: hide player heart/food sprites for the new HUD. */
+/**
+ * The only global overrides: blank the vanilla HUD parts the combat HUD replaces (hearts, food,
+ * armour row, XP bar) and the pink boss bar, whose name component draws the boss bar; and reskin
+ * the hotbar. Mirrors build_combat_hud.vanilla_overrides() + vanilla_reskins().
+ */
 internal object CoreUiPackPolicy {
     // Appends the custom VFX directory to the native atlas, without replacing sprites.
     val vanillaAdditions: Set<String> = setOf("assets/minecraft/atlases/items.json")
     private const val HUD = "assets/minecraft/textures/gui/sprites/hud/"
+    private const val BOSS = "assets/minecraft/textures/gui/sprites/boss_bar/"
     val vanillaOverrides: Set<String> = buildSet {
         for (type in listOf("", "absorbing_", "frozen_", "poisoned_", "withered_")) {
             for (hardcore in listOf("", "hardcore_")) {
@@ -18,7 +23,12 @@ internal object CoreUiPackPolicy {
         }
         for (fill in listOf("empty", "half", "full")) {
             for (hunger in listOf("", "_hunger")) add("${HUD}food_$fill$hunger.png")
+            add("${HUD}armor_$fill.png")
         }
+        add("${HUD}experience_bar_background.png"); add("${HUD}experience_bar_progress.png")
+        add("${BOSS}pink_background.png"); add("${BOSS}pink_progress.png")
+        // Reskinned, not blanked: the hotbar and its selection frame in the HUD's charcoal and iron (2026-10-16).
+        add("${HUD}hotbar.png"); add("${HUD}hotbar_selection.png")
     }
 
     /** Vanilla button and text-field frames in the ProjectS style, so server dialogs match the game (asked 2026-10-07). */
@@ -28,6 +38,14 @@ internal object CoreUiPackPolicy {
         }
     }
 
+    /**
+     * Combat VFX shader, one core/item for both experiments: texels carrying the warrior heat/glow alpha markers
+     * (scripts/build_warrior_iron_vfx.py) and items tinted with the 黒翳竜 VFX marker (scripts/build_boss_vfx.py).
+     * Every other item renders as vanilla.
+     */
+    val shaderOverrides: Set<String> = setOf("assets/minecraft/shaders/core/item.vsh", "assets/minecraft/shaders/core/item.fsh")
+
     fun allowedPath(path: String): Boolean = !path.startsWith('/') && ".." !in path && '\\' !in path &&
-        (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions || path in dialogWidgets)
+        (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions || path in dialogWidgets ||
+            path in shaderOverrides)
 }

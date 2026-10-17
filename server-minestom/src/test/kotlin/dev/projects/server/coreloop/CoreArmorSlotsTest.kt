@@ -115,7 +115,7 @@ class CoreArmorSlotsTest {
             row.startsWith("armor-part\t") ||
                 (row.startsWith("gear-quality\t") || row.startsWith("gear-base\t")) &&
                     row.split('\t').getOrNull(1) in newPartIds
-        }.joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t11\t", "PROJECTS_CORE_LOOP\t10\t")
+        }.joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t12\t", "PROJECTS_CORE_LOOP\t10\t")
         val checksum = MessageDigest.getInstance("SHA-256").digest(oldBody.toByteArray(UTF_8))
             .joinToString("") { "%02x".format(it) }
         val migrated = CoreAccountCodec.decode(oldBody + "checksum\t$checksum\n", id)
@@ -144,7 +144,7 @@ class CoreArmorSlotsTest {
         assertEquals(CoreRepositorySave.Saved,
             repository.commit(loaded.account.revision, loaded.account.copy(revision = loaded.account.revision + 1)))
         assertTrue(Files.readAllBytes(directory.resolve("$id.account.v10.bak")).contentEquals(oldBytes))
-        assertTrue(Files.readString(source).startsWith("PROJECTS_CORE_LOOP\t11\t"))
+        assertTrue(Files.readString(source).startsWith("PROJECTS_CORE_LOOP\t12\t"))
     }
 
     @Test fun cappedV10SilverKeepsOldSetOrderCancellableWithoutBlockingLoad() {

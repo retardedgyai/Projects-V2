@@ -1,0 +1,349 @@
+<title>相の工房 一周</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: a step strip (見る→解く→抜く→混ぜる→作る) over a workbench: things | research desk | jars, then recipes | upgrades | log */
+:root {
+  --bg: #0b0e18; --panel: #131828; --panel2: #192036; --line: #263052; --fg: #e8e6df; --muted: #9096ab;
+  --gold: #e8c878; --cyan: #7fe3f0; --violet: #b49ae8; --red: #e58b80;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1320px; margin: 0 auto; padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+h2 { font-size: 1rem; margin: 0; letter-spacing: .04em; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 78ch; }
+button { font: inherit; color: inherit; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.steps { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.step { padding: 3px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: .9rem; }
+.step.now { border-color: var(--cyan); color: var(--cyan); }
+.step.done { border-color: #5b5030; color: var(--gold); }
+.arrow { color: #3c4770; }
+.next { font-weight: 500; color: var(--cyan); }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+.col { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; min-width: 0; display: grid; gap: 10px; align-content: start; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.pill { font-size: .85rem; background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; cursor: pointer; }
+.pill[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.items { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.item { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; cursor: pointer; text-align: left; display: grid; gap: 4px; }
+.item:hover { border-color: #3a4a7a; }
+.item .name { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.item .do { font-size: .75rem; color: var(--muted); }
+.item.study .do { color: var(--gold); }
+.icon { width: 18px; height: 18px; border-radius: 4px; flex: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-size: .76rem; border-radius: 6px; padding: 0 6px; border: 1px solid; white-space: nowrap; }
+.chip.unknown { color: var(--muted); border-color: var(--line); }
+.ink { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: .85rem; color: var(--muted); }
+.ink b { font-family: var(--num); font-weight: 400; color: var(--fg); }
+.cards { display: flex; flex-wrap: wrap; gap: 6px; }
+.card { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 4px 10px; cursor: pointer; font-size: .88rem; }
+.card[aria-pressed="true"] { border-color: var(--cyan); color: var(--cyan); }
+.card.solved { border-color: #5b5030; color: var(--gold); }
+.board { display: grid; justify-items: center; gap: 6px; }
+.board svg { width: 100%; max-width: 360px; height: auto; touch-action: manipulation; }
+.hex { cursor: pointer; }
+.hex polygon { fill: #10152a; stroke: #2a3456; stroke-width: 1.5; }
+.hex.hint polygon { stroke: #4d6aa8; fill: #141c36; }
+.hex.anchor polygon { stroke: #8a7a4a; fill: #1a1a20; }
+.hex.lit polygon { stroke: var(--gold); }
+.hex text { font-family: var(--sans); font-size: 13px; font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.link { stroke-width: 3; stroke-linecap: round; }
+.palette { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.pal { border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); padding: 2px 10px; cursor: pointer; font-size: .88rem; }
+.pal[aria-pressed="true"] { box-shadow: inset 0 0 0 2px currentColor; }
+.pal small { color: var(--muted); margin-left: 4px; }
+.small { font-size: .82rem; color: var(--muted); }
+.jars { display: grid; gap: 6px; }
+.jar { display: grid; grid-template-columns: 4.2em 1fr 3.6em; align-items: center; gap: 8px; padding: 3px 6px; border-radius: 8px;
+  border: 1px solid transparent; background: none; text-align: left; cursor: pointer; }
+.jar:hover { border-color: var(--line); }
+.jar.sel { border-color: var(--cyan); }
+.jar .bar { height: 9px; border-radius: 3px; background: #0d1120; overflow: hidden; }
+.jar .bar i { display: block; height: 100%; transition: width .25s; }
+.jar .n { font-family: var(--num); text-align: right; font-variant-numeric: tabular-nums; font-size: .9rem; }
+.mix { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.slot { min-width: 3.6em; text-align: center; border: 1px dashed var(--line); border-radius: 8px; padding: 2px 8px; color: var(--muted); }
+.slot.on { border-style: solid; color: var(--fg); }
+.act { font-weight: 700; color: #08202a; background: var(--cyan); border: 0; border-radius: 10px; padding: 7px 14px; cursor: pointer; }
+.act:disabled { background: #2a3350; color: #6f7894; cursor: default; }
+.lower { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 1000px) { .lower { grid-template-columns: 1fr; } }
+.recipe { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 6px; }
+.recipe.made { border-color: #5b5030; }
+.need { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; font-size: .9rem; }
+.need .n { font-family: var(--num); }
+.ok { color: var(--gold); }
+.up { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.up b { font-weight: 500; } .up span { color: var(--muted); font-size: .82rem; grid-column: 1; }
+.up button { grid-row: 1 / span 2; grid-column: 2; }
+.up.owned { border-color: #5b5030; }
+.points { font-family: var(--num); color: var(--gold); }
+.log { display: grid; gap: 4px; font-size: .85rem; color: var(--muted); max-height: 260px; overflow: auto; }
+.log div:first-child { color: var(--fg); }
+.win { border: 1px solid var(--gold); color: var(--gold); border-radius: 10px; padding: 8px 10px; }
+.reset { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 3px 10px; color: var(--muted); cursor: pointer; font-size: .85rem; }
+@media (prefers-reduced-motion: reduce) { .jar .bar i { transition: none; } }
+</style>
+<main>
+  <header>
+    <h1>相の工房　魔術を一周してみる</h1>
+    <p>目標は「帰還の巻物」。眼鏡で物を調べて研究インクを集め、研究机のパズルで混ぜ方を覚え、蒸留して瓶に溜め、混ぜて、作ります。パズルを解くと研究ポイントももらえて、工房を良くできます。</p>
+  </header>
+
+  <div class="steps" id="steps"></div>
+
+  <section class="grid">
+    <div class="col">
+      <div class="head"><h2>見る・抜く　工房の周りの物</h2><button class="pill" id="goggles" aria-pressed="false">観測の眼鏡をかける</button></div>
+      <div class="items" id="items"></div>
+      <div class="small" id="itemHint"></div>
+      <div class="head"><h2>研究インク</h2></div>
+      <div class="ink" id="ink"></div>
+    </div>
+
+    <div class="col">
+      <div class="head"><h2>解く　研究机</h2></div>
+      <div class="cards" id="cards"></div>
+      <div class="board">
+        <svg id="board" viewBox="-170 -150 340 300" role="img" aria-label="相パズルの盤面"></svg>
+        <div class="palette" id="palette"></div>
+        <div class="small" id="boardHint"></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="head"><h2>瓶の棚</h2><span class="small" id="cap"></span></div>
+      <div class="jars" id="jars"></div>
+      <div class="head"><h2>混ぜる</h2></div>
+      <div class="mix"><span class="slot" id="s1">瓶を押す</span>＋<span class="slot" id="s2">瓶を押す</span>→<span class="slot" id="s3">？</span><button class="act" id="mixBtn" disabled>混ぜる</button></div>
+      <div class="small" id="mixHint">瓶を2つ押して選ぶ。混ぜ方は研究で解くまで分からない。</div>
+    </div>
+  </section>
+
+  <section class="lower">
+    <div class="col"><div class="head"><h2>作る　レシピ</h2></div><div id="recipes" style="display:grid;gap:10px"></div></div>
+    <div class="col"><div class="head"><h2>工房の強化</h2><span>研究ポイント <span class="points" id="points">0</span></span></div><div id="ups" style="display:grid;gap:8px"></div></div>
+    <div class="col"><div class="head"><h2>記録</h2><button class="reset" id="reset">最初から</button></div><div class="log" id="log" aria-live="polite"></div></div>
+  </section>
+</main>
+<script>
+const AS = {
+  aer: ["風", "#dbe8af"], aqua: ["水", "#78cadb"], ignis: ["火", "#eba16b"], terra: ["地", "#a9b889"], ordo: ["秩序", "#e8d9b4"], perditio: ["混沌", "#b9a0c8"],
+  lux: ["光", "#fff1a8"], motus: ["運動", "#9fd3ff"], victus: ["生命", "#9be08a"],
+};
+const PRIMAL = ["aer", "aqua", "ignis", "terra", "ordo", "perditio"];
+const MIX = { lux: ["aer", "ignis"], motus: ["aer", "ordo"], victus: ["aqua", "terra"] };
+const ITEMS = [
+  { id: "torch", name: "松明", c: "#e9a14e", y: { ignis: 2, aer: 1 } },
+  { id: "glow", name: "グロウストーン", c: "#f4d36b", y: { ignis: 1, aer: 2 } },
+  { id: "feather", name: "羽根", c: "#e9ecef", y: { aer: 2, ordo: 1 } },
+  { id: "sugar", name: "砂糖", c: "#f6f3ea", y: { ordo: 1, aqua: 1 } },
+  { id: "stone", name: "石", c: "#8b8f97", y: { terra: 2 } },
+  { id: "iron", name: "鉄インゴット", c: "#cfd3da", y: { terra: 1, ordo: 2 } },
+  { id: "bone", name: "骨", c: "#e6e0cf", y: { terra: 1, perditio: 2 } },
+  { id: "leaf", name: "木の葉", c: "#5f9e4a", y: { aqua: 1, terra: 1 } },
+];
+// Research boards: fixed anchors on a radius-2 hex grid (axial q,r). Shortest solutions: 1, 2 and 3 placements.
+const RESEARCH = [
+  { id: "lux", title: "光の混ぜ方", anchors: { "-1,0": "aer", "1,0": "ignis" } },
+  { id: "motus", title: "運動の混ぜ方", anchors: { "-2,1": "lux", "1,0": "ordo" } },
+  { id: "victus", title: "生命の混ぜ方", anchors: { "-2,1": "aqua", "1,-1": "terra" } },
+];
+const RECIPES = [
+  { id: "scroll", name: "帰還の巻物", main: true, need: { motus: 4, lux: 2 }, extra: "紙" },
+  { id: "salve", name: "癒しの軟膏（寄り道）", need: { victus: 3, aqua: 2 }, extra: "布" },
+];
+const UPS = [
+  { id: "jar", name: "大きな瓶", text: "瓶に入る量が 10 → 20" },
+  { id: "still", name: "良い蒸留器", text: "蒸留で出る相がそれぞれ +1" },
+  { id: "hands", name: "混ぜの手際", text: "1＋1 で 2 できる" },
+];
+const HEX = []; for (let q = -2; q <= 2; q++) for (let r = -2; r <= 2; r++) if (Math.abs(q + r) <= 2) HEX.push(q + "," + r);
+const nb = k => { const [q, r] = k.split(",").map(Number); return [[1, 0], [-1, 0], [0, 1], [0, -1], [1, -1], [-1, 1]].map(([a, b]) => (q + a) + "," + (r + b)); };
+const related = (a, b) => (MIX[a] && MIX[a].includes(b)) || (MIX[b] && MIX[b].includes(a));
+const $ = id => document.getElementById(id);
+
+let S;
+function fresh() {
+  S = { goggles: false, studied: new Set(), ink: {}, jars: {}, known: new Set(), solved: new Set(), points: 0, ups: new Set(),
+        research: "lux", cells: {}, sel: null, pick: [], made: new Set(), clicks: 0, log: [] };
+}
+const cap = () => S.ups.has("jar") ? 20 : 10;
+const amt = k => S.jars[k] || 0;
+const cost = a => MIX[a] ? { [MIX[a][0]]: 1, [MIX[a][1]]: 1 } : { [a]: 1 };
+const canPay = c => Object.entries(c).every(([k, n]) => (S.ink[k] || 0) >= n);
+const pay = (c, s) => { for (const [k, n] of Object.entries(c)) S.ink[k] = (S.ink[k] || 0) + s * n; };
+const chip = (k, n) => `<span class="chip" style="color:${AS[k][1]};border-color:${AS[k][1]}55">${AS[k][0]}${n != null ? " " + n : ""}</span>`;
+function log(t) { S.log.unshift(t); S.log = S.log.slice(0, 40); renderLog(); }
+
+/* ---- steps ---- */
+function nextStep() {
+  const sc = RECIPES[0];
+  if (S.made.has("scroll")) return [5, "巻物ができた！ 寄り道の軟膏や、工房の強化も試せる。"];
+  if (!S.goggles) return [0, "まず観測の眼鏡をかける"];
+  if (S.studied.size < 3) return [0, "物を押して調べる（初めての物は研究インクになる）"];
+  if (!S.known.has("lux") || !S.known.has("motus")) return [1, "研究机で「光」と「運動」の混ぜ方を解く"];
+  const short = Object.entries(sc.need).some(([k, n]) => amt(k) < n);
+  const prim = { aer: 0, ignis: 0, ordo: 0 };
+  for (const [k, n] of Object.entries(sc.need)) { const lack = Math.max(0, n - amt(k)); for (const p of MIX[k]) prim[p] += lack; }
+  if (short && Object.entries(prim).some(([p, n]) => amt(p) < n)) return [2, "物を蒸留して、風・火・秩序を瓶に溜める"];
+  if (short) return [3, "瓶で混ぜて、光と運動を作る"];
+  return [4, "巻物を作る"];
+}
+function renderSteps() {
+  const [n, t] = nextStep();
+  const names = ["見る", "解く", "抜く", "混ぜる", "作る"];
+  $("steps").innerHTML = names.map((x, i) => `<span class="step ${i < n ? "done" : i === n ? "now" : ""}">${x}</span>`).join('<span class="arrow">→</span>') +
+    `<span class="next">　次：${t}</span><span class="small">　押した回数 ${S.clicks}</span>`;
+}
+
+/* ---- things ---- */
+function yieldOf(it) { const y = {}; for (const [k, n] of Object.entries(it.y)) y[k] = n + (S.ups.has("still") ? 1 : 0); return y; }
+function renderItems() {
+  $("items").innerHTML = ITEMS.map(it => {
+    const seen = S.goggles && S.studied.has(it.id);
+    const study = S.goggles && !S.studied.has(it.id);
+    const chips = seen ? Object.entries(it.y).map(([k, n]) => chip(k, n)).join("") : `<span class="chip unknown">？？</span>`;
+    return `<button class="item${study ? " study" : ""}" data-id="${it.id}"><span class="name"><span class="icon" style="background:${it.c}"></span>${it.name}</span>
+      <span class="chips">${chips}</span><span class="do">${study ? "押すと調べる（研究インク）" : "押すと蒸留する"}</span></button>`;
+  }).join("");
+  $("itemHint").textContent = S.goggles ? "初めての物は、押すと調べて研究インクになる。2回目からは蒸留して瓶に入る。" : "眼鏡をかけないと、中の相は分からない（蒸留はできる）。";
+  document.querySelectorAll(".item").forEach(b => b.addEventListener("click", () => useItem(b.dataset.id)));
+  $("ink").innerHTML = PRIMAL.map(k => `<span style="color:${AS[k][1]}">${AS[k][0]} <b>${S.ink[k] || 0}</b></span>`).join("");
+}
+function useItem(id) {
+  const it = ITEMS.find(i => i.id === id); S.clicks++;
+  if (S.goggles && !S.studied.has(id)) {
+    S.studied.add(id);
+    for (const [k, n] of Object.entries(it.y)) S.ink[k] = (S.ink[k] || 0) + n * 2;
+    log(`${it.name}を調べた。研究インク ${Object.entries(it.y).map(([k, n]) => chip(k, "+" + n * 2)).join(" ")}`);
+  } else {
+    const y = yieldOf(it); const got = []; let spill = false;
+    for (const [k, n] of Object.entries(y)) { const add = Math.min(n, cap() - amt(k)); if (add < n) spill = true; if (add > 0) { S.jars[k] = amt(k) + add; got.push(chip(k, add)); } }
+    log(`${it.name}を蒸留した → ${got.join(" ") || "瓶がいっぱい"}${spill ? "（あふれた分は捨てた）" : ""}`);
+  }
+  render();
+}
+
+/* ---- research desk ---- */
+function boardCells() { const r = RESEARCH.find(x => x.id === S.research); return { ...r.anchors, ...S.cells }; }
+function connected(cells, anchors) {
+  const keys = Object.keys(anchors); const seen = new Set([keys[0]]); const st = [keys[0]];
+  while (st.length) { const h = st.pop(); for (const n of nb(h)) if (cells[n] && !seen.has(n) && related(cells[h], cells[n])) { seen.add(n); st.push(n); } }
+  return { all: keys.every(k => seen.has(k)), seen };
+}
+function renderDesk() {
+  $("cards").innerHTML = RESEARCH.map(r => `<button class="card${S.solved.has(r.id) ? " solved" : ""}" aria-pressed="${S.research === r.id}" data-id="${r.id}">${r.title}${S.solved.has(r.id) ? "　✓" : ""}</button>`).join("");
+  document.querySelectorAll(".card").forEach(b => b.addEventListener("click", () => { S.research = b.dataset.id; S.cells = {}; S.sel = null; S.clicks++; render(); }));
+  const r = RESEARCH.find(x => x.id === S.research);
+  const solved = S.solved.has(r.id);
+  const cells = solved ? { ...r.anchors, ...(S.solvedCells?.[r.id] || {}) } : boardCells();
+  const { seen } = connected(cells, r.anchors);
+  const size = 34, w = Math.sqrt(3) * size;
+  const pos = k => { const [q, rr] = k.split(",").map(Number); return [w * (q + rr / 2), 1.5 * size * rr]; };
+  const poly = (x, y) => Array.from({ length: 6 }, (_, i) => { const a = Math.PI / 180 * (60 * i - 30); return `${(x + (size - 2) * Math.cos(a)).toFixed(1)},${(y + (size - 2) * Math.sin(a)).toFixed(1)}`; }).join(" ");
+  let links = "";
+  for (const k of Object.keys(cells)) for (const n of nb(k)) if (cells[n] && k < n && related(cells[k], cells[n])) {
+    const [x1, y1] = pos(k), [x2, y2] = pos(n); links += `<line class="link" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${seen.has(k) && seen.has(n) ? "#e8c878" : "#4d6aa8"}"/>`;
+  }
+  const hexes = HEX.map(k => {
+    const [x, y] = pos(k); const a = cells[k]; const anchor = k in r.anchors;
+    const hint = !solved && !a && S.sel && nb(k).some(n => cells[n] && related(S.sel, cells[n]));
+    return `<g class="hex${anchor ? " anchor" : ""}${hint ? " hint" : ""}${a && seen.has(k) ? " lit" : ""}" data-k="${k}"><polygon points="${poly(x, y)}"/>${a ? `<text x="${x}" y="${y}" fill="${AS[a][1]}">${AS[a][0]}</text>` : ""}</g>`;
+  }).join("");
+  $("board").innerHTML = hexes + links;
+  document.querySelectorAll("#board .hex").forEach(g => g.addEventListener("click", () => tapHex(g.dataset.k)));
+  const pal = solved ? [] : [...PRIMAL, ...[...S.known], ...(S.known.has(r.id) ? [] : [r.id])];
+  $("palette").innerHTML = pal.map(a => { const c = cost(a); const ok = canPay(c);
+    return `<button class="pal" style="color:${AS[a][1]}${ok ? "" : ";opacity:.45"}" aria-pressed="${S.sel === a}" data-a="${a}">${AS[a][0]}<small>${Object.entries(c).map(([k, n]) => AS[k][0] + n).join("・")}</small></button>`; }).join("");
+  document.querySelectorAll(".pal").forEach(b => b.addEventListener("click", () => { S.sel = S.sel === b.dataset.a ? null : b.dataset.a; renderDesk(); }));
+  $("boardHint").innerHTML = solved ? `<span class="ok">解いた。${AS[r.id][0]}＝${AS[MIX[r.id][0]][0]}＋${AS[MIX[r.id][1]][0]} が魔術書に載った。</span>`
+    : `置かれた相を全部つなぐ。隣同士は「親子」（${AS[r.id][0]}の隣には${AS[MIX[r.id][0]][0]}か${AS[MIX[r.id][1]][0]}）でないとつながらない。下から相を選んでマスを押す（研究インクを使う）。置いた相を押すと戻せる。青く縁取られたマスは、選んだ相がつながる場所。`;
+}
+function tapHex(k) {
+  const r = RESEARCH.find(x => x.id === S.research);
+  if (S.solved.has(r.id) || k in r.anchors) return;
+  S.clicks++;
+  if (S.cells[k]) { pay(cost(S.cells[k]), 1); delete S.cells[k]; render(); return; }
+  if (!S.sel) { log("下の相を選んでから、マスを押す。"); return; }
+  const c = cost(S.sel);
+  if (!canPay(c)) { log(`研究インクが足りない（${Object.entries(c).map(([kk, n]) => AS[kk][0] + n).join("・")}）。眼鏡で新しい物を調べる。`); return; }
+  pay(c, -1); S.cells[k] = S.sel;
+  const cells = boardCells();
+  if (connected(cells, r.anchors).all) {
+    S.solved.add(r.id); S.known.add(r.id); S.points++;
+    S.solvedCells = S.solvedCells || {}; S.solvedCells[r.id] = { ...S.cells };
+    log(`<div class="win">研究完了：${r.title}。${AS[r.id][0]}＝${AS[MIX[r.id][0]][0]}＋${AS[MIX[r.id][1]][0]} を覚えた。研究ポイント +1</div>`);
+    S.sel = null;
+  }
+  render();
+}
+
+/* ---- jars & mixing ---- */
+function renderJars() {
+  const keys = [...PRIMAL, "lux", "motus", "victus"];
+  $("cap").textContent = `1つ ${cap()} まで`;
+  $("jars").innerHTML = keys.map(k => `<button class="jar${S.pick.includes(k) ? " sel" : ""}" data-k="${k}"><span style="color:${AS[k][1]}">${AS[k][0]}</span>
+    <span class="bar"><i style="width:${amt(k) / cap() * 100}%;background:${AS[k][1]}"></i></span><span class="n">${amt(k)}/${cap()}</span></button>`).join("");
+  document.querySelectorAll(".jar").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.k; S.clicks++;
+    S.pick = S.pick.includes(k) ? S.pick.filter(x => x !== k) : (S.pick.length >= 2 ? [k] : [...S.pick, k]); render();
+  }));
+  const [a, b] = S.pick;
+  const out = a && b ? Object.keys(MIX).find(m => (MIX[m][0] === a && MIX[m][1] === b) || (MIX[m][0] === b && MIX[m][1] === a)) : null;
+  $("s1").textContent = a ? AS[a][0] : "瓶を押す"; $("s1").classList.toggle("on", !!a);
+  $("s2").textContent = b ? AS[b][0] : "瓶を押す"; $("s2").classList.toggle("on", !!b);
+  const knows = out && S.known.has(out);
+  $("s3").textContent = !(a && b) ? "？" : out ? (knows ? AS[out][0] : "？？") : "できない"; $("s3").classList.toggle("on", !!knows);
+  $("mixBtn").disabled = !knows || amt(a) < 1 || amt(b) < 1 || amt(out) >= cap();
+  $("mixHint").textContent = a && b && out && !knows ? "何かできそうだが、混ぜ方をまだ知らない。研究机で解くと分かる。" : "瓶を2つ押して選ぶ。混ぜ方は研究で解くまで分からない。";
+}
+$("mixBtn").addEventListener("click", () => {
+  const [a, b] = S.pick; const out = Object.keys(MIX).find(m => MIX[m].includes(a) && MIX[m].includes(b) && a !== b);
+  if (!out || !S.known.has(out) || amt(a) < 1 || amt(b) < 1) return;
+  const n = Math.min(S.ups.has("hands") ? 2 : 1, cap() - amt(out));
+  S.jars[a]--; S.jars[b]--; S.jars[out] = amt(out) + n; S.clicks++;
+  log(`${AS[a][0]}＋${AS[b][0]} → ${chip(out, n)}`); render();
+});
+
+/* ---- recipes & upgrades ---- */
+function renderRecipes() {
+  $("recipes").innerHTML = RECIPES.map(rc => {
+    const ready = Object.entries(rc.need).every(([k, n]) => amt(k) >= n);
+    const made = S.made.has(rc.id);
+    return `<div class="recipe${made ? " made" : ""}"><b>${rc.name}</b><div class="need"><span>${rc.extra}</span><span class="n ok">1/1</span>
+      ${Object.entries(rc.need).map(([k, n]) => `<span>${chip(k)}</span><span class="n ${amt(k) >= n ? "ok" : ""}">${Math.min(amt(k), n)}/${n}</span>`).join("")}</div>
+      <button class="act" data-r="${rc.id}" ${ready && !made ? "" : "disabled"}>${made ? "できた！" : "作る"}</button></div>`;
+  }).join("");
+  document.querySelectorAll("#recipes .act").forEach(b => b.addEventListener("click", () => {
+    const rc = RECIPES.find(x => x.id === b.dataset.r); S.clicks++;
+    for (const [k, n] of Object.entries(rc.need)) S.jars[k] -= n;
+    S.made.add(rc.id);
+    log(`<div class="win">${rc.name.replace("（寄り道）", "")}ができた！　ここまで押した回数 ${S.clicks}</div>`); render();
+  }));
+  $("points").textContent = S.points;
+  $("ups").innerHTML = UPS.map(u => `<div class="up${S.ups.has(u.id) ? " owned" : ""}"><b>${u.name}</b><span>${u.text}</span>
+    <button class="act" data-u="${u.id}" ${S.ups.has(u.id) || S.points < 1 ? "disabled" : ""}>${S.ups.has(u.id) ? "済み" : "1pt で強化"}</button></div>`).join("");
+  document.querySelectorAll("#ups .act").forEach(b => b.addEventListener("click", () => {
+    const u = UPS.find(x => x.id === b.dataset.u); S.points--; S.ups.add(u.id); S.clicks++; log(`工房を強化：${u.name}`); render();
+  }));
+}
+function renderLog() { $("log").innerHTML = S.log.map(t => `<div>${t}</div>`).join(""); }
+function render() { renderSteps(); renderItems(); renderDesk(); renderJars(); renderRecipes(); renderLog(); }
+
+$("goggles").addEventListener("click", () => {
+  S.goggles = !S.goggles; S.clicks++;
+  $("goggles").setAttribute("aria-pressed", S.goggles); $("goggles").textContent = S.goggles ? "観測の眼鏡をかけている" : "観測の眼鏡をかける";
+  if (S.goggles) log("眼鏡をかけた。初めて見る物は、押すと調べられる。"); render();
+});
+$("reset").addEventListener("click", () => { fresh(); $("goggles").setAttribute("aria-pressed", "false"); $("goggles").textContent = "観測の眼鏡をかける"; log("工房を最初に戻した。"); render(); });
+fresh(); log("目標：帰還の巻物（紙＋運動4＋光2）。まず眼鏡をかけよう。"); render();
+</script>
