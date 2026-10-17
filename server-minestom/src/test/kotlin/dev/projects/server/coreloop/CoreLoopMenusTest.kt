@@ -332,9 +332,9 @@ class CoreLoopMenusTest {
             f.menus.skillBuild(f.player)
             f.click(14)
             assertTrue(f.host.requests.isEmpty())
-            assertEquals("キー2と4を入替",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            assertEquals("キー2と3を入替",f.snapshot().buttons.single { it.firstSlot==49 }.label)
             f.click(49)
-            assertEquals(CoreAction.SelectSkill(0,2),f.host.requests.single().action)
+            assertEquals(CoreAction.SelectSkill(0,1),f.host.requests.single().action)
             f.host.requests.clear()
             f.menus.talentTree(f.player)
             assertEquals(21,f.snapshot().treeEdges.size)
@@ -367,9 +367,13 @@ class CoreLoopMenusTest {
             f.menus.skillBuild(f.player,0,before.skills[1]);f.click(49)
             assertEquals("装備済み",f.snapshot().buttons.single { it.firstSlot==49 }.label)
             assertTrue(f.host.requests.isEmpty())
-            f.menus.skillBuild(f.player,0,7)
+            f.menus.skillBuild(f.player,0,4)
             assertEquals("キー2 に装備",f.snapshot().buttons.single { it.firstSlot==49 }.label)
-            f.click(49);assertEquals(CoreAction.SelectSkill(0,7),f.host.requests.single().action)
+            f.click(49);assertEquals(CoreAction.SelectSkill(0,4),f.host.requests.single().action)
+            // Retired catalog entries are never offered or confirmable.
+            f.host.requests.clear();f.menus.skillBuild(f.player,0,7)
+            assertEquals("候補を選ぶ",f.snapshot().buttons.single { it.firstSlot==49 }.label)
+            f.click(49);assertTrue(f.host.requests.isEmpty())
         }
     }
 

@@ -66,6 +66,8 @@ internal class CorePlayerCombat(
     private var queueUntil = -1L
     private var nextNormalAt = -1L
     private val feel get() = CoreCombatFeel.profile(classId)
+    /** Warrior: a connected third normal hit opens a short window for a fast, heavy slam. */
+    private var finisherUntil = -1L
     private var whetstoneUntil = 0L
     private var shot: Pair<Long, Vec>? = null
     private var skillBoost = 1.0
@@ -168,12 +170,19 @@ internal class CorePlayerCombat(
         castCharges = if (classId == CoreClass.STARWEAVER) spentFrom.toInt() else 0
         skillBoost = if (classId == CoreClass.STARWEAVER && definition.gain == 0 && definition.motion != CoreSkillMotion.EVADE) 1 + spentFrom * .15 else 1.0
         if (weaponBase() == CoreWeaponBase.CONDUIT && definition.spend > 0) skillBoost *= 1.12
+        // Only a templar guard read sets counterUntil (CoreClassState.guarded); the warrior has no parry counter (D06).
         val counter = classState.counterUntil >= tickNumber && definition.formula.ad > 0 &&
-            (classId != CoreClass.WARRIOR || CoreCombatFeel.counterSkill(definition.icon)) &&
             definition.motion !in setOf(CoreSkillMotion.SHIELD,CoreSkillMotion.HEAL,CoreSkillMotion.GUARD)
-        if (counter) { skillBoost *= if (journey().build.keystone == 1 && classId == CoreClass.WARRIOR) 1.6 else 1.35; classState.counterUntil = -1 }
+        if (counter) { skillBoost *= 1.35; classState.counterUntil = -1 }
         var castDefinition = definition
-        if (classId == CoreClass.WARRIOR && counter) castDefinition = definition.copy(startup = minOf(3, definition.startup))
+        if (classId == CoreClass.WARRIOR && definition.icon in CoreWarriorRules.heavy) {
+            // Rage never gates the heavy skills; when it is there they take it for a heavier hit.
+            if (classState.consume(CoreWarriorRules.RAGE_COST)) skillBoost *= 1 + CoreWarriorRules.RAGE_BONUS_PERCENT / 100.0
+            if (definition.icon == "slam" && tickNumber <= finisherUntil) {
+                skillBoost *= 1 + CoreWarriorRules.FINISHER_BONUS_PERCENT / 100.0; finisherUntil = -1
+                castDefinition = definition.copy(startup = minOf(CoreWarriorRules.FINISHER_STARTUP, definition.startup))
+            }
+        }
         if (classId == CoreClass.STARWEAVER && spentFrom == 3.0 && definition.motion !in setOf(CoreSkillMotion.EVADE, CoreSkillMotion.HEAL, CoreSkillMotion.SHIELD)) {
             var extra = if (definition.motion == CoreSkillMotion.FIELD) 1 else 0
             if (journey().build.keystone == 0) { extra++; skillBoost *= .85 }
@@ -338,6 +347,12 @@ internal class CorePlayerCombat(
             }
         }
         if (connected && swing.step == 3 && weaponBase() == CoreWeaponBase.FLOW) manaValue = min(maxMana.toDouble(), manaValue + 8)
+        if (connected && swing.step == 3 && classId == CoreClass.WARRIOR) {
+            finisherUntil = tickNumber + CoreWarriorRules.FINISHER_TICKS
+            if (journey().build.keystone == 1) skillDefinitions.forEachIndexed { i, s ->
+                if (s.icon in CoreWarriorRules.heavy) readyAt[i] = maxOf(tickNumber, readyAt[i] - CoreWarriorRules.SAINT_REFUND_TICKS)
+            }
+        }
         return actionsValid(enemies, epoch)
     }
 
@@ -674,8 +689,7 @@ internal class CorePlayerCombat(
             adjusted *= if (perfect) .2 else .45
             classState.guarded(classId, tickNumber, journey().build)
             if (classId == CoreClass.WARRIOR && perfect) {
-                // One successful read, one refresh; sustained damage cannot repeatedly reset it.
-                skillDefinitions.forEachIndexed { i, s -> if(s.icon == "slam") readyAt[i] = tickNumber }
+                // One read per stance; it shows the catch but refreshes nothing (the parry/slam reset was removed, D06).
                 classState.perfectUntil = -1
                 val guard = CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "war_guard" }
                 vfx.playSkill(CoreSkillEffect(classId, guard, player.position, flatFacing(), CoreSkillVisualPhase.CONTACT))
@@ -728,7 +742,7 @@ internal class CorePlayerCombat(
         garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         vfx.cancel()
         warriorMarks.clear()

@@ -43,6 +43,8 @@ data class CoreTalentNode(val name: String, val description: String)
 
 object CoreClassTrees {
     fun signature(job: CoreClass) = if(job==CoreClass.TEMPLAR)6 else 2
+    /** Target of the "広い備え" node; the warrior's index 5 was retired. */
+    fun support(job: CoreClass) = if(job==CoreClass.WARRIOR) 4 else 5
     fun budget(journey: CoreJourney) = if (journey.legacy) 12 else (2 + journey.level / 4).coerceAtMost(12)
     fun parents(i: Int): List<Int> {
         require(i in 0..17)
@@ -71,7 +73,7 @@ object CoreClassTrees {
     }
     fun nodes(job: CoreClass): List<CoreTalentNode> {
         val keys = when (job) {
-            CoreClass.WARRIOR -> listOf("狂戦士" to "闘気60以上：威力+20%、被ダメージ+10%", "剣聖" to "受け流し成功後、叩きつけ・返し刃の反撃威力+60%", "旗手" to "防御技で周囲の仲間にも小さな障壁")
+            CoreClass.WARRIOR -> listOf("狂戦士" to "闘気60以上：威力+20%、被ダメージ+10%", "剣聖" to "通常3段目が当たるたび、叩きつけ・薙ぎ払いの再使用が1.5秒縮む", "旗手" to "防御技で周囲の仲間にも小さな障壁")
             CoreClass.MAGE -> listOf("連鎖術式" to "起爆技が1回増えるが、1回の威力-15%", "対位法" to "違う属性の技を当てると術式をさらに15獲得", "氷の賢者" to "氷術の減速を強化し、命中時に自分へ障壁")
             CoreClass.RANGER -> listOf("狙撃手" to "2秒静止すると威力+25%。動くと解除", "遊撃手" to "回避後3秒、通常射撃が二連射（各65%）", "罠師" to "罠と設置技が1回増え、減速時間も延長")
             CoreClass.ASSASSIN -> listOf("処刑人" to "印を消費する技はHP35%以下の敵へ威力+40%", "影渡り" to "印を消費すると回避が再使用可能", "毒刃" to "印のある敵への通常攻撃が3秒の毒を付与")
@@ -87,7 +89,7 @@ object CoreClassTrees {
         val signature = skills[signature(job)].name
         val opener = skills[0].name
         val movement = skills[3].name
-        val support = skills[5].name
+        val support = skills[support(job)].name
         return core + listOf(
             CoreTalentNode("広域化", "$signature：範囲+30%、威力-10%"),
             CoreTalentNode("重ね撃ち", "$signature：追加発動1回、各回の威力75%"),

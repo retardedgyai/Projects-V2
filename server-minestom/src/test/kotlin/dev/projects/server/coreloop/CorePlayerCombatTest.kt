@@ -91,9 +91,9 @@ class CorePlayerCombatTest {
         repeat(3) { h.actor.refillTraining(); h.ticks(1) }
         assertEquals(300.0, h.combat.bossHealth())
         h.actor.refillTraining(); h.ticks(1)
-        assertEquals(277.2, h.combat.bossHealth(), .00001)
+        assertEquals(266.0, h.combat.bossHealth(), .00001)
         repeat(16) { h.actor.refillTraining(); h.ticks(1) }
-        assertEquals(277.2, h.combat.bossHealth(), .00001)
+        assertEquals(266.0, h.combat.bossHealth(), .00001)
         assertEquals(0, h.actor.cooldownRemaining(2))
         assertEquals(h.actor.maxMana, h.actor.mana)
     }
@@ -180,8 +180,8 @@ class CorePlayerCombatTest {
     fun `lunge spends mana once hits after startup and respects its cooldown`() = arena { h ->
         h.actor.skill(0)
         h.actor.skill(0)
-        assertEquals(88, h.actor.mana)
-        assertEquals(4L, h.actor.cooldownSeconds(0))
+        assertEquals(92, h.actor.mana)
+        assertEquals(5L, h.actor.cooldownSeconds(0))
         h.ticks(4)
         assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
@@ -191,11 +191,11 @@ class CorePlayerCombatTest {
         val manaDuringCooldown = h.actor.mana
         h.actor.skill(0)
         assertEquals(manaDuringCooldown, h.actor.mana)
-        h.ticks(64)
+        h.ticks(84)
         assertEquals(0L, h.actor.cooldownSeconds(0))
         val readyMana = h.actor.mana
         h.actor.skill(0)
-        assertEquals(readyMana - 12, h.actor.mana)
+        assertEquals(readyMana - 8, h.actor.mana)
     }
 
     @Test
@@ -209,16 +209,17 @@ class CorePlayerCombatTest {
     }
 
     @Test
-    fun `ground slam resolves once at its startup boundary and has six second cooldown`() = arena { h ->
+    fun `ground slam resolves once at its startup boundary and has a twelve second cooldown`() = arena { h ->
         h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
-        assertEquals(80, h.actor.mana)
-        assertEquals(6L, h.actor.cooldownSeconds(1))
+        assertEquals(88, h.actor.mana)
+        assertEquals(12L, h.actor.cooldownSeconds(1))
         h.ticks(11)
         assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
-        assertEquals(259.6, h.combat.bossHealth(), 0.00001)
+        assertEquals(300.0 - 58.4 * 1.3, h.combat.bossHealth(), 0.00001) // 30 rage taken for +30%
+        assertEquals(70.0, h.actor.resource)
         h.ticks(20)
-        assertEquals(259.6, h.combat.bossHealth(), 0.00001)
+        assertEquals(300.0 - 58.4 * 1.3, h.combat.bossHealth(), 0.00001)
         val mana = h.actor.mana
         h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(mana, h.actor.mana)
@@ -227,16 +228,16 @@ class CorePlayerCombatTest {
     @Test
     fun `sweep hits the front once and cannot damage a target behind the warrior`() = arena(bossDistance = 2.0) { h ->
         h.actor.skill(2)
-        assertEquals(88, h.actor.mana)
-        assertEquals(4L, h.actor.cooldownSeconds(2))
+        assertEquals(90, h.actor.mana)
+        assertEquals(10L, h.actor.cooldownSeconds(2))
         h.ticks(3)
         assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
-        assertEquals(277.2, h.combat.bossHealth(), 0.00001)
-        h.ticks(70)
-        assertEquals(277.2, h.combat.bossHealth(), 0.00001)
+        assertEquals(266.0, h.combat.bossHealth(), 0.00001)
+        h.ticks(200)
+        assertEquals(266.0, h.combat.bossHealth(), 0.00001)
         h.player.setView(180f, 0f);h.actor.skill(2);h.ticks(15)
-        assertEquals(277.2, h.combat.bossHealth(), 0.00001)
+        assertEquals(266.0, h.combat.bossHealth(), 0.00001)
     }
 
     @Test
@@ -247,10 +248,10 @@ class CorePlayerCombatTest {
         h.ticks(5)
         assertEquals(100, h.actor.mana)
         h.ticks(1)
-        assertEquals(80, h.actor.mana)
+        assertEquals(88, h.actor.mana)
         assertEquals(288.0, h.combat.bossHealth())
         h.ticks(12)
-        assertEquals(247.6, h.combat.bossHealth(), 0.00001)
+        assertEquals(288.0 - 58.4 * 1.3, h.combat.bossHealth(), 0.00001)
     }
 
     @Test
@@ -384,12 +385,12 @@ class CorePlayerCombatTest {
     fun `physical skill startup uses attack speed and cooldown uses recovery speed`() = arena(
         stats = CoreAffixStats(skillDamagePercent = 50.0, attackSpeedPercent = 50.0, cooldownReductionPercent = 25.0)) { h ->
         h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
-        assertEquals(96, h.actor.cooldownTicks(1))
+        assertEquals(192, h.actor.cooldownTicks(1))
         h.ticks(7)
         assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
-        assertEquals(300.0 - (14.0 + 12.0 * 2.2) * 1.5, h.combat.bossHealth(), 0.00001)
-        assertEquals(88, h.actor.cooldownRemaining(1))
+        assertEquals(300.0 - (20.0 + 12.0 * 3.2) * 1.5 * 1.3, h.combat.bossHealth(), 0.00001)
+        assertEquals(184, h.actor.cooldownRemaining(1))
     }
 
     @Test
@@ -410,9 +411,9 @@ class CorePlayerCombatTest {
         stats = CoreAffixStats(maxManaFlat = 50.0, manaRegenPercent = 40.0)) { h ->
         assertEquals(150, h.actor.maxMana)
         h.actor.skill(2)
-        assertEquals(138, h.actor.mana)
+        assertEquals(140, h.actor.mana)
         h.ticks(20)
-        assertEquals(145, h.actor.mana)
+        assertEquals(147, h.actor.mana)
     }
 
     @Test
@@ -572,7 +573,7 @@ class CorePlayerCombatTest {
         assertTrue(origin.distance(h.player.position) > 0)
         h.weaponBroken = false
         h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
-        assertEquals(80, h.actor.mana)
+        assertEquals(88, h.actor.mana)
     }
 
     @Test
@@ -664,17 +665,17 @@ class CorePlayerCombatTest {
         h.ticks(1);assertEquals(1,h.actor.activeMarkLabels)
         h.actor.resetActions();assertEquals(0,h.actor.activeMarkLabels)
     }
-    @Test fun `warrior timed guard reduces real incoming damage and rewards a strong counter`() = arena { h ->
-        h.journey=CoreJourney.legacy(build=CoreClassBuild(first=3,second=5,third=2,fourth=0,nodes=8248))
-        h.actor.reset();h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
-        assertTrue(h.actor.combatCue.startsWith("防御 "))
-        h.actor.hurt(50.0);assertEquals(90.0,h.actor.health)
-        assertEquals("反撃の好機 3秒",h.actor.combatCue)
-        assertEquals(36.0,h.actor.resource)
-        h.ticks(15);val before=h.combat.bossHealth();h.actor.skill(1);h.ticks(4)
-        assertFalse(h.actor.combatCue.startsWith("反撃の好機"))
-        assertEquals(before-(10+12*2.8)*1.6,h.combat.bossHealth(),.00001)
+    @Test fun `warrior hold guard reduces real incoming damage and turns it into rage without a counter`() = arena { h ->
+        h.actor.skill(3); h.ticks(1)
+        assertTrue(h.actor.combatCue.startsWith("踏ん張り "))
+        h.actor.hurt(50.0); assertEquals(90.0, h.actor.health)
+        assertEquals(30.0, h.actor.resource)
+        assertEquals(-1L, h.actor.classState.counterUntil)
+        h.actor.skill(1); h.ticks(12)
+        assertEquals(300.0 - 58.4 * 1.3, h.combat.bossHealth(), .00001)
+        assertEquals(0.0, h.actor.resource)
     }
+
     @Test fun `assassin mark consumption enhances one real hit and shadow keystone resets dodge`() = arena(bossDistance=2.0) { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.ASSASSIN,build=CoreClassBuild(nodes=8248));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
         h.actor.skill(0);h.ticks(18)
@@ -791,7 +792,7 @@ class CorePlayerCombatTest {
         assertEquals(0.0, h.actor.resource)
         assertTrue(h.actor.skillDefinitions.take(4).all { it.spend == 0 })
         h.actor.skill(1); h.ticks(12)
-        assertEquals(259.6, h.combat.bossHealth(), .00001)
+        assertEquals(241.6, h.combat.bossHealth(), .00001)
     }
 
     @Test fun `wide sweep catches lateral enemies that a committed slam misses`() = arena(bossDistance=3.0) { h ->
@@ -799,33 +800,33 @@ class CorePlayerCombatTest {
         h.actor.skill(1); h.ticks(20)
         assertEquals(300.0, h.combat.bossHealth())
         h.actor.skill(2); h.ticks(4)
-        assertEquals(277.2, h.combat.bossHealth(), .00001)
+        assertEquals(266.0, h.combat.bossHealth(), .00001)
     }
 
     @Test fun `late AA during a skill executes once when recovery ends`() = arena { h ->
         h.actor.skill(1); h.ticks(14)
         repeat(10) { h.actor.attack() }
-        h.ticks(4); assertEquals(259.6, h.combat.bossHealth(), .00001)
-        h.ticks(1); assertEquals(247.6, h.combat.bossHealth(), .00001)
-        h.ticks(60); assertEquals(247.6, h.combat.bossHealth(), .00001)
+        h.ticks(4); assertEquals(241.6, h.combat.bossHealth(), .00001)
+        h.ticks(1); assertEquals(229.6, h.combat.bossHealth(), .00001)
+        h.ticks(60); assertEquals(229.6, h.combat.bossHealth(), .00001)
     }
 
     @Test fun `early expired input is not stored for an unexpected attack much later`() = arena { h ->
         h.actor.skill(1); h.actor.attack(); h.ticks(40)
-        assertEquals(259.6, h.combat.bossHealth(), .00001)
+        assertEquals(241.6, h.combat.bossHealth(), .00001)
     }
 
     @Test fun `pending skill accepts only the latest intent and rechecks costs`() = arena { h ->
         h.actor.skill(1); h.ticks(14)
         h.actor.skill(2); h.actor.attack(); h.ticks(9)
         assertEquals(0, h.actor.cooldownRemaining(2))
-        assertEquals(247.6, h.combat.bossHealth(), .00001)
+        assertEquals(229.6, h.combat.bossHealth(), .00001)
     }
 
     @Test fun `queued skill starts at prior recovery end without a second input`() = arena { h ->
         h.actor.skill(1); h.ticks(14); h.actor.skill(2)
         h.ticks(5); assertTrue(h.actor.cooldownRemaining(2)>0)
-        h.ticks(4); assertEquals(236.8, h.combat.bossHealth(), .00001)
+        h.ticks(4); assertEquals(207.6, h.combat.bossHealth(), .00001)
     }
 
     @Test fun `guard can cancel AA follow through but cannot bypass its attack cadence`() = arena { h ->
@@ -846,33 +847,44 @@ class CorePlayerCombatTest {
         h.ticks(10); assertEquals(288.0, h.combat.bossHealth())
     }
 
-    @Test fun `parry refreshes slam once and turns it into fast retaliation rather than boosting any attack`() = arena { h ->
+    @Test fun `hold guard cuts a finished slam recovery but never refreshes the slam`() = arena { h ->
         h.actor.skill(1);h.ticks(12)
         h.actor.skill(3);h.ticks(1) // Guard cancels only the completed hit's recovery.
-        assertTrue(h.actor.cooldownRemaining(1)>0)
-        h.actor.hurt(50.0)
-        assertEquals(0,h.actor.cooldownRemaining(1))
-        assertEquals(90.0,h.actor.health)
-        val before=h.combat.bossHealth()
-        h.actor.skill(1);h.ticks(2);assertEquals(before,h.combat.bossHealth())
-        h.ticks(1);assertEquals(before-40.4*1.35,h.combat.bossHealth(),.00001)
+        val cd=h.actor.cooldownRemaining(1);assertTrue(cd>0)
+        h.actor.hurt(50.0);assertEquals(90.0,h.actor.health)
+        assertEquals(cd,h.actor.cooldownRemaining(1))
         assertFalse(h.actor.combatCue.startsWith("反撃"))
-        val cd=h.actor.cooldownRemaining(1)
-        h.actor.hurt(10.0);assertEquals(cd,h.actor.cooldownRemaining(1))
-        assertEquals(80.0,h.actor.health) // Attacking ended the defensive stance.
     }
 
-    @Test fun `sweep does not steal a reserved slam counter`() = arena { h ->
-        h.actor.skill(3);h.ticks(1);h.actor.hurt(10.0)
-        h.actor.skill(2);h.ticks(4)
-        assertEquals(277.2,h.combat.bossHealth(),.00001)
-        assertTrue(h.actor.combatCue.startsWith("反撃"))
+    @Test fun `third normal hit opens one fast heavier slam`() = arena { h ->
+        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
+        val before=h.combat.bossHealth();assertEquals(300.0-12.0*(1.0+1.15+1.85),before,.00001)
+        assertEquals(36.0,h.actor.resource)
+        h.ticks(6);h.actor.skill(1);h.ticks(2);assertEquals(before,h.combat.bossHealth())
+        h.ticks(1);assertEquals(before-58.4*1.3*1.3,h.combat.bossHealth(),.00001)
+        assertEquals(6.0,h.actor.resource)
     }
+
+    @Test fun `a slam long after the third hit is neither fast nor finisher boosted`() = arena { h ->
+        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(30)
+        val before=h.combat.bossHealth()
+        h.actor.skill(1);h.ticks(11);assertEquals(before,h.combat.bossHealth())
+        h.ticks(1);assertEquals(before-58.4*1.3,h.combat.bossHealth(),.00001)
+    }
+
+    @Test fun `sword saint third hits take time off the heavy cooldowns`() = arena { h ->
+        h.journey=CoreJourney.legacy(build=CoreClassBuild(nodes=8248));h.actor.reset()
+        h.actor.skill(2);h.ticks(10)
+        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
+        assertEquals(200-10-50-30,h.actor.cooldownRemaining(2))
+    }
+
+    
 
     @Test fun `warrior buffer is discarded on map reset`() = arena { h ->
         h.actor.skill(1);h.ticks(14);h.actor.skill(2)
         h.actor.resetActions();h.ticks(30)
-        assertEquals(259.6,h.combat.bossHealth(),.00001)
+        assertEquals(241.6,h.combat.bossHealth(),.00001)
         assertEquals(0,h.actor.cooldownRemaining(2))
     }
 

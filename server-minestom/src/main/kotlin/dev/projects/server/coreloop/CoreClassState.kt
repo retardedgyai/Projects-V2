@@ -28,6 +28,8 @@ internal class CoreClassState {
         val multiplier = if (build.has(3) && job != CoreClass.STARWEAVER) 1.2 else 1.0
         resource = (resource + value * multiplier).coerceIn(0.0, cap(job))
     }
+    /** Takes [amount] only when it is all there; never leaves a partial spend. */
+    fun consume(amount: Double): Boolean = (resource >= amount).also { if (it) resource -= amount }
     fun cost(skill: CoreSkillDefinition, build: CoreClassBuild): Int = skill.spend
     fun canCast(skill: CoreSkillDefinition, build: CoreClassBuild) = resource >= cost(skill, build)
     fun spend(skill: CoreSkillDefinition, job: CoreClass, build: CoreClassBuild): Double {
@@ -60,7 +62,8 @@ internal class CoreClassState {
         if (tick - lastGuardGain < 10) return
         lastGuardGain = tick
         gain(if (tick <= perfectUntil) 30.0 else 15.0, job, build)
-        if (tick <= perfectUntil) counterUntil = tick + 60
+        // Only the templar turns a read into a retaliation; the warrior guard just holds the line (D06).
+        if (tick <= perfectUntil && job == CoreClass.TEMPLAR) counterUntil = tick + 60
     }
     fun mark(id: UUID, tick: Long) { marks[id] = tick + 120 }
     fun marked(id: UUID, tick: Long) = (marks[id] ?: -1) >= tick

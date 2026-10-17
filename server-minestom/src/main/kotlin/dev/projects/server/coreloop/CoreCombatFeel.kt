@@ -25,8 +25,6 @@ internal object CoreCombatFeel {
         CoreClass.RANGER -> Profile(6, 0, immediateNormal = false, recovery = 4, attackBreaksGuard = true)
         CoreClass.MAGE, CoreClass.HEALER, CoreClass.STARWEAVER -> Profile(6, 0, immediateNormal = false, recovery = 5, attackBreaksGuard = true)
     }
-    /** Warrior parry follow-ups; the parry/counter set itself is reworked with the warrior skills. */
-    fun counterSkill(icon: String) = icon == "slam" || icon == "war_counter"
     fun recovery(job: CoreClass, s: CoreSkillDefinition) = when {
         s.icon == "dash" || s.icon == "war_wound" -> 3
         s.icon in setOf("whirl", "war_counter", "war_breach", "war_cry", "war_banner") -> 4
@@ -41,6 +39,20 @@ internal object CoreCombatFeel {
     fun minDot(icon: String) = when (icon) {
         "whirl" -> 0.0 // A broad frontal sweep, not damage behind the wielder.
         "slam", "war_breach" -> .8 // Commit the heavy blade along the aimed lane.
+        "war_wound" -> .9 // The blade wind is a thin line, not a cone.
         else -> .35
     }
+}
+
+/** Warrior rules that are not timing: rage feeds the heavy skills, the third normal hit opens the slam. */
+internal object CoreWarriorRules {
+    val heavy = setOf("slam", "whirl")
+    const val RAGE_COST = 30.0
+    const val RAGE_BONUS_PERCENT = 30
+    /** Ticks after a connected third normal hit in which the slam comes out fast and heavy. */
+    const val FINISHER_TICKS = 12L
+    const val FINISHER_STARTUP = 3
+    const val FINISHER_BONUS_PERCENT = 30
+    /** 剣聖: each connected third normal hit takes this much off the heavy skills' remaining cooldown. */
+    const val SAINT_REFUND_TICKS = 30L
 }
