@@ -62,6 +62,13 @@ Creator：「ここからクラスリワークしていきたい。基本はCD�
 
 マイクラ標準の粒子で6技・赤熱・CCの印を描いた版（35e72ad1）を、藍が「もろAI slop」と判断。9月に同じ粒子案が「デザイン不一致」で撤回済みだったため打ち消した。演出は、藍が「過去一番いい」と評価した Blockbench 方式の板モデル（承認済み踏み込み斬りの白い刃、`CoreCombatMeshes → CoreWarriorCompanions → CoreWarriorFlourish`）の上で作り直す。参照は SamusDev「Dragon Warrior」と MatE（Dark Sister の刃の赤い効果、Hollow Monarch、Last Rite）。経緯は `docs/archive/2026-09/warrior-design-rework-2026-09-11.md`。
 
+### 3.7.1 作り直しの現状（2026-10-17 夜）
+
+- 地割り・押し薙ぎを、承認済みの板モデルの経路で作り直した（`scripts/build_warrior_iron_vfx.py`、`CoreWarriorIronChoreography`）。主役の形は32x32の手描きの原画（赤熱の三日月・地面から噴く炎・1本の地割れ・鉄片・190度の三日月）。半透明のにじみを持つパレットで光らせる。岩は傾けた直方体の立体（せり上がる岩、地割れのふち）。三日月は着弾の瞬間だけ全面で出し、すぐふちだけにして視界を空ける。どの部品も技の当たる範囲の外へは出さない。
+- シェーダー（`scripts/shaders/item.{vsh,fsh}`、パック方針 `CoreUiPackPolicy.effectShaders`）：パレットの目印のアルファ（熱253・にじみ121/65）の画素だけ、面の陰を付けず、1/8ブロックごとに熱でちらつかせ、にじみを強める。ほかの物は今までどおり。26.2のクライアントで読み込みエラーがないことは確認済み。
+- 比較プレビュー：`scripts/preview_warrior_iron_shader.py`（シェーダーなし／ありを一人称と斜め後ろ上で、実時間かスローで出す）。
+- 藍の判断待ち：ゲーム内の見た目（藍が「あとで見る」）。残りの技（轟進・地走り・根張り・鉄槌・赤熱・CCの印）は、この判断のあとで同じ作りに広げる。サーバーやクライアントは、藍が頼まない限り起動しない。
+
 ## 4. 保存データ
 
 外した技は `CoreSkillCatalog` に `retired = true` で番号・アイコン・絵の並びを残す。技選び・試験場・`SelectSkill` では選べない。読み込み時（`CoreAccountCodec.decode`）に `CoreSkillCatalog.migrate` が外した技を「その構成にまだない最初の選べる技」へ置き換える。保存の列と版（v11）は変えていない。成長樹「広い備え」の対象は戦士だけ位置4（剣風）。
