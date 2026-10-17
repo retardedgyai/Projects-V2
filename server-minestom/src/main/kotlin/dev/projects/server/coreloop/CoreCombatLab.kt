@@ -67,6 +67,14 @@ internal class CoreCombatLab(
     fun actor(player: Player) = entries[player.uuid]?.takeIf { it.player === player && !it.returning }?.actor
     internal fun combat(player: Player) = entries[player.uuid]?.takeIf { it.player === player && !it.returning }?.combat
     fun account(player: Player) = entries[player.uuid]?.takeIf { it.player === player }?.loadout?.account()
+    /** Dev-only (/bosstest rage): the boss drops just under its enrage ratio, as if hit by this player. */
+    internal fun enrageBoss(player: Player): Boolean {
+        val combat = combat(player) ?: return false
+        val boss = combat.entities().firstOrNull { combat.isBoss(it.uuid) } ?: return false
+        val ratio = combat.bossEnrageRatio()
+        val amount = combat.bossHealth() - combat.bossMaxHealth() * (ratio - .01)
+        return ratio > 0 && amount > 0 && combat.applyEffectDamage(boss.uuid, player, amount)
+    }
     fun summary(player: Player) = entries[player.uuid]?.let {
         if (!it.prepared) "テスト用マップを準備中…"
         else "${if (it.bossId != null) "ボス試験場" else "スキル試験場"} / ${if (it.loadout.free) "制限なし" else "通常条件"} / 設定は手帳 [9]"

@@ -180,6 +180,7 @@ class QuestEncounterCombat(
     fun bossHealth(): Double = mobs.values.firstOrNull { it.boss }?.life?.health ?: 0.0
     fun bossMaxHealth(): Double = mobs.values.firstOrNull { it.boss }?.life?.maximumHealth ?: 1.0
     fun bossName(): String = mobs.values.firstOrNull { it.boss }?.definition?.name ?: ""
+    fun bossEnrageRatio(): Double = mobs.values.firstOrNull { it.boss }?.definition?.enrageHealthRatio ?: 0.0
     fun weaknessOf(targetId: UUID): String? = mobs[targetId]?.definition?.archetype?.weakness
     fun expose(targetId: UUID, durationMillis: Long = 4000): Boolean {
         val mob = mobs[targetId] ?: return false
