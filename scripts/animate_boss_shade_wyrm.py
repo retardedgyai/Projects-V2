@@ -363,9 +363,9 @@ def pulse_pose(sk, rest_feet, theta, t, enraged):
     body(sk, p, (K(t, [(0, 0), (.7, -6), (1.05, -8), (1.2, 4), (1.5, 2), (2.0, 0)]), 0, .6 * shiver(t, 1.2, 1.6, 13)),
          (0, K(t, [(0, 0), (.7, 4), (1.05, 5), (1.2, -3), (1.35, -2), (1.8, 0)]), 0))
     trem = shiver(t, .7, 1.2, 14)
-    add(p, "neck", (K(t, [(0, 0), (.4, -15), (.9, -38), (1.08, -42), (1.2, 20), (1.35, 24), (1.8, 4), (2.3, 0)]),
+    add(p, "neck", (K(t, [(0, 0), (.4, -10), (.9, -22), (1.08, -25), (1.2, 14), (1.35, 16), (1.8, 3), (2.3, 0)]),
                     K(t, [(0, 0), (.4, 6), (.7, -6), (1.0, 4), (1.2, 0)]), 0))
-    add(p, "skull", (K(t, [(0, 0), (.9, -18), (1.1, -20), (1.2, 12), (1.4, 8), (2.0, 0)]) + 1.5 * trem,
+    add(p, "skull", (K(t, [(0, 0), (.9, -6), (1.1, -7), (1.2, 5), (1.4, 3), (2.0, 0)]) + 1.5 * trem,
                      K(t, [(0, 0), (.5, -8), (.8, 8), (1.1, 0)]), 1.5 * trem))
     add(p, "jaw", (K(t, [(0, 0), (.9, 8), (1.15, 12), (1.22, 40), (1.6, 30), (1.9, 0)]), 0, 0))
     spread = K(t, [(0, 0), (.6, 20), (1.1, 28), (1.2, -6), (1.5, 6), (2.0, 0)])
@@ -387,9 +387,9 @@ def breath_pose(sk, rest_feet, theta, t, enraged):
                  K(t, [(0, 0), (.8, 10), (1.45, 14), (1.6, -4), (1.8, -2), (2.3, 0)]), 0),
          (0, K(t, [(0, 0), (.8, 2), (1.45, 3), (1.6, -2), (2.0, 0)]),
           K(t, [(0, 0), (.8, -4), (1.45, -7), (1.6, 3), (1.68, -4), (1.9, -2), (2.4, 0)])))
-    add(p, "neck", (K(t, [(0, 0), (.8, -30), (1.45, -44), (1.6, 20), (1.75, 12), (2.0, 8), (2.5, 0)]) + 1.5 * shiver(t, 1.1, 1.5, 12),
+    add(p, "neck", (K(t, [(0, 0), (.8, -18), (1.45, -26), (1.6, 14), (1.75, 9), (2.0, 6), (2.5, 0)]) + 1.5 * shiver(t, 1.1, 1.5, 12),
                     K(t, [(0, 0), (.8, 24), (1.45, 30), (1.6, -6), (1.8, 0)]), 0))
-    add(p, "skull", (K(t, [(0, 0), (.8, -10), (1.45, -14), (1.6, 6), (1.7, 12), (2.1, 0)]),
+    add(p, "skull", (K(t, [(0, 0), (.8, -3), (1.45, -4), (1.6, 4), (1.7, 6), (2.1, 0)]),
                      K(t, [(0, 0), (1.45, 12), (1.6, -8), (1.9, 0)]), 0))
     add(p, "jaw", (K(t, [(0, 0), (.8, 6), (1.4, 18), (1.6, 44), (2.1, 38), (2.3, 0)]), 0, 0))
     for side, sg in (("l", 1), ("r", -1)):
@@ -490,8 +490,8 @@ def death_pose(sk, rest_feet, theta, t, enraged):
 # Secondary motion: each listed bone lags the motion of the bones above it (a damped spring driven by their
 # angular acceleration, and by the body's vertical acceleration), overshoots and settles.
 # (bone, drivers, gain per axis, frequency Hz, damping ratio, gain on body height for its x/z)
-SPRINGS = [("neck", ("body",), (.25, .3, .25), 2.2, .5, (-1.2, 0)),
-           ("skull", ("body", "neck"), (.35, .4, .3), 2.8, .45, (-.8, 0)),
+SPRINGS = [("neck", ("body",), (.15, .3, .25), 2.2, .55, (-.8, 0)),
+           ("skull", ("body", "neck"), (.15, .4, .3), 2.8, .55, (-.4, 0)),
            ("jaw", ("neck", "skull"), (.3, 0, 0), 4.0, .4, (-.6, 0)),
            ("tail", ("body",), (.35, .5, .2), 2.0, .4, (1.0, 0)),
            ("tail_2", ("body", "tail"), (.45, .6, .2), 2.2, .4, (.8, 0)),
@@ -531,7 +531,8 @@ def springs(sk, poses, dt, loop):
                     a = -w * w * x - 2 * zeta * w * v - np.array(gain) * acc[i]
                     v = v + a * dt / 4; x = x + v * dt / 4
                 res[i] = x
-        out_bone = np.clip(res, -35, 35)
+        limit = 8 if bone in ("neck", "skull") else 35      # more and the neck plates cut through the face
+        out_bone = np.clip(res, -limit, limit)
         for i in range(n):
             out[i].append((bone, out_bone[i]))
     for i, pose in enumerate(poses):

@@ -882,8 +882,8 @@ def build():
                 plate(f"{name}_fan{k}_{layer}b", [ia, oa, om, ob, ib], K, radius, seed, layer == 0)
         # Fill: the membrane also runs along the arm (elbow and shoulder) and back to the flank, so there is
         # no gap between the fan, the arm and the body.
+        # (A carpal-elbow-first-tip sheet used to sit here; it stuck out past the fan's front edge in-game, 2026-10-17.)
         fills = [(E, [E, S0 + np.array([0, 10, -6]) * M3 + np.array([0, 0, 0]), fine[0]]),
-                 (K, [K, E, fine[0]]),
                  (E, [E, hip, S0])]
         for k, (root, pts) in enumerate(fills):
             for layer, push in enumerate((0.0, 1.2)):

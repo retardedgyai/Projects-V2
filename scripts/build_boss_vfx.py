@@ -37,10 +37,10 @@ def smooth(a, b, x):
 
 
 def slash(u, v):
-    """Flat crescent around the centre, ±75° about +Z (v grows toward +Z), flow 0 at the right (-X) end."""
+    """Flat crescent around the centre, ±90° about +Z (v grows toward +Z), flow 0 at the right (-X) end."""
     x, z = 2 * u - 1, 2 * v - 1
     r, a = math.hypot(x, z), math.atan2(x, z)
-    half = math.radians(75)
+    half = math.radians(90)
     if abs(a) > half or not .36 < r <= 1:
         return 0, 0, 0
     band = 1 - abs(r - .78) / .42

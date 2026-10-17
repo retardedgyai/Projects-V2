@@ -101,10 +101,24 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         val shape = frame.ability.shape
         when (abilityId) {
             "shade-sweep" -> if (shape is MobAttackShape.Sweep) {
+                // Three crescents fanning up from the swing, the wing-arm's wake left as burning dust and dark smoke
+                // along the arc, and a shock on the ground under it. The slash sprite spans ±90° like the ability.
                 val d = shape.radius * 2.1
-                // Tilted like the wing-arm's swing: high where it starts (right), low across the front.
-                add("slash", 1, o.add(0.0, 1.4, 0.0), 0, 9, Vec(d, 1.0, d), mul(yaw, mul(qz(.32), qx(-.12))))
-                add("slash", 1, o.add(0.0, 1.9, 0.0), 1, 8, Vec(d * .8, 1.0, d * .8), mul(yaw, mul(qz(.5), qx(-.2))))
+                val wide = 1.0
+                add("slash", 1, o.add(0.0, 1.2, 0.0), 0, 9, Vec(d * wide, 1.0, d), mul(yaw, mul(qz(.28), qx(-.1))))
+                add("slash", 1, o.add(0.0, 1.8, 0.0), 1, 9, Vec(d * .82 * wide, 1.0, d * .82), mul(yaw, mul(qz(.45), qx(-.18))))
+                add("slash", 1, o.add(0.0, .6, 0.0), 2, 8, Vec(d * 1.05 * wide, 1.0, d * 1.05), mul(yaw, qz(.12)))
+                add("ring", 2, o.add(0.0, .12, 0.0), 1, 9, Vec(2.0, 1.0, 2.0), yaw, grow = Vec(d, 1.0, d), moveTicks = 5)
+                val half = Math.toRadians(shape.halfAngleDegrees)
+                for (n in 0..8) {
+                    val a = half - 2 * half * n / 8.0
+                    val dir = f.mul(cos(a)).add(right.mul(sin(a)))
+                    val at = o.add(dir.mul(shape.radius * .8)).add(0.0, 1.3 - n * .06, 0.0)
+                    add("puff", 4, at, n / 3, 12, Vec(2.4, 2.4, 1.0), IDENTITY, slide = dir.mul(1.2).add(0.0, .6, 0.0),
+                        grow = Vec(3.2, 3.2, 1.0), moveTicks = 11, billboard = true)
+                    if (n % 2 == 0) add("smoke", 6, at.add(0.0, .6, 0.0), 2 + n / 3, 18, Vec(3.4, 3.4, 1.0), IDENTITY,
+                        slide = dir.mul(1.0).add(0.0, 1.2, 0.0), moveTicks = 16, billboard = true)
+                }
             }
             "shade-pounce" -> if (shape is MobAttackShape.Slam) {
                 // Both wing-arms slam down side by side: a crater under each, the ground cracking out, one wide shock.

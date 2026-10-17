@@ -142,7 +142,7 @@ internal object QuestMobContent {
             // assets/bosses/shade_wyrm.bbmodel equal telegraph+recovery of each ability below.
             QuestMobArchetype.SHADE_WYRM -> definition(EntityType.RAVAGER, 560.0, .13, 3.0, 1.0,
                 Material.AIR, attacks = listOf(
-                    attack("shade-sweep", "翼脚薙ぎ・背後か距離を取れ", MobAttackShape.Sweep(5.2, 75.0), 4.8, 22.0,
+                    attack("shade-sweep", "翼脚薙ぎ・背後か距離を取れ", MobAttackShape.Sweep(7.0, 90.0), 4.8, 22.0,
                         1100, 400, 900, 2200, weight = 3),
                     attack("shade-pounce", "飛びかかり・大きく横へ", MobAttackShape.Slam(5.5, 3.0), 9.5, 27.0,
                         1400, 500, 1200, 3400, minimumRange = 3.0, weight = 2),
