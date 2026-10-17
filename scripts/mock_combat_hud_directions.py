@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "build/hud-preview/directions"
-JAR = zipfile.ZipFile(Path(os.environ["APPDATA"]) / ".minecraft/versions/26.2/26.2.jar")
+JAR = zipfile.ZipFile(Path(os.environ.get("APPDATA", Path.home())) / ".minecraft/versions/26.2/26.2.jar")
 SKILLS = ROOT / "assets/core-ui/skills"
 MARU = ImageFont.truetype(str(ROOT / ".tools/core-menu/x12y12pxMaruMinya.ttf"), 12)
 W, H, C = 480, 270, 240
@@ -1908,7 +1908,8 @@ def design_e(variant):
 # Japanese is drawn like vanilla's unifont (16 px glyph in 8 GUI px; DotGothic16 stands in here).
 
 # Unifont is not on this machine; a 16 px aliased gothic stands in (same cell size as vanilla).
-DOT16 = ImageFont.truetype("C:/Windows/Fonts/BIZ-UDGothicR.ttc", 15)
+DOT16 = ImageFont.truetype(next(f for f in ("C:/Windows/Fonts/BIZ-UDGothicR.ttc", "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc")
+                                 if Path(f).exists()), 15)
 MANA_ICON = ["000010000", "000111000", "001111100", "011101110", "111000111", "011101110", "001111100", "000111000", "000010000"]
 
 
