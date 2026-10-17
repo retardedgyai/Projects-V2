@@ -28,6 +28,13 @@ internal object CoreUiPackPolicy {
         }
     }
 
+    /**
+     * 黒翳竜 shader experiment (asked 2026-10-17, scripts/build_boss_vfx.py): core/item stays vanilla except for
+     * items tinted with the boss VFX marker.
+     */
+    val shaderOverrides: Set<String> = setOf("assets/minecraft/shaders/core/item.vsh", "assets/minecraft/shaders/core/item.fsh")
+
     fun allowedPath(path: String): Boolean = !path.startsWith('/') && ".." !in path && '\\' !in path &&
-        (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions || path in dialogWidgets)
+        (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions || path in dialogWidgets ||
+            path in shaderOverrides)
 }
