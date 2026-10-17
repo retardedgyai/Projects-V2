@@ -314,7 +314,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 val skill = CoreSkillCatalog.modify(raw, a.journey, sheet.mods)
                 val item = CoreSkillTooltip.item(skill,sheet,a.journey,v.packed)
                 val owned = if(slot == 4) a.journey.build.ultimate == i else a.journey.build.skills[slot] == i
-                val label=when(skill.icon) { "dash" -> "踏込斬り"; "hunt_storm" -> "狩場支配"; "mage_ult" -> "天火術式"; else -> skill.name }
+                val label=when(skill.icon) { "hunt_storm" -> "狩場支配"; "mage_ult" -> "天火術式"; else -> skill.name }
                 tile(v, listOf(18,22,27,31)[shown], 4, label, item,
                     if(choice==i) Tone.SELECTED else if(owned) Tone.PRIMARY else Tone.NEUTRAL, icon=true) {
                     skillBuild(player,slot,i,selectedPage)

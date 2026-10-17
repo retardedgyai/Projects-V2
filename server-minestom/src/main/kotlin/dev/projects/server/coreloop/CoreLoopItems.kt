@@ -97,7 +97,7 @@ internal object CoreLoopItems {
 
     fun weapon(tier: Int): ItemStack = icon(listOf(Material.STONE_SWORD, Material.IRON_SWORD, Material.DIAMOND_SWORD, Material.NETHERITE_SWORD)[tier - 1],
         "T$tier 開拓者の大剣", "攻撃力 ${(12 * CoreLoopCatalog.weaponDamage(tier)).roundToInt()}",
-        "左クリック：前方を斬る", "右クリック：踏み込み斬り", "F：移動方向へ回避", color = colors[tier - 1])
+        "左クリック：前方を斬る", "右クリック：轟進", "F：移動方向へ回避", color = colors[tier - 1])
         .withTag(actionTag, "weapon").withTag(gearTag, CoreGearSlot.WEAPON.name)
 
     fun menuSkin(item: ItemStack, packed: Boolean): ItemStack = if (packed)

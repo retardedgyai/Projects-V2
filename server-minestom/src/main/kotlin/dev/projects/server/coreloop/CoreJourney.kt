@@ -2,7 +2,7 @@ package dev.projects.server.coreloop
 
 /** Concrete character progression; separate from tradable gear and temporary run boons. */
 enum class CoreClass(val displayName: String, val description: String) {
-    WARRIOR("戦士", "大剣の連撃から重い一撃と薙ぎ払いを叩き込む"),
+    WARRIOR("戦士", "鉄塊の大剣で地を割り、敵を押し出す"),
     RANGER("レンジャー", "射線を通し、距離を保って狙い撃つ"),
     MAGE("メイジ", "炎と氷の術式。マナを使って集団を制する"),
     STARWEAVER("星織り師", "メイジ派生。星を編み、術式で解放する"),
@@ -14,7 +14,7 @@ enum class CoreClass(val displayName: String, val description: String) {
     val resourceName get() = when (this) { WARRIOR -> "闘気"; RANGER -> "集中"; MAGE -> "術式"; STARWEAVER -> "星"; ASSASSIN -> "機会"; TEMPLAR -> "決意"; HEALER -> "信仰" }
     val healthFactor get() = when (this) { WARRIOR -> 1.0; RANGER -> .72; MAGE -> .8; STARWEAVER -> .8; ASSASSIN -> .75; TEMPLAR -> 1.4; HEALER -> .9 }
     val passive get() = when(this) {
-        WARRIOR -> "通常攻撃で闘気を溜める。叩きつけ・薙ぎ払いは闘気があれば自動で使って重くなる。3段目の直後の叩きつけは速い。"
+        WARRIOR -> "殴って、殴られて闘気を溜める。地割りは闘気を全部注いで重くなり、闘気100で赤熱する。3段目の直後の地割りは速い。"
         RANGER -> "同じ獲物への通常攻撃で集中が育ち、威力が最大20%増す。獲物変更で集中半減。"
         MAGE -> "属性を変えて生成技を当てると術式を追加15獲得。集めた術式を大技に使う。"
         STARWEAVER -> "通常命中で星を編む。最大3。解放技は全て使い、星ごとに威力15%増加。"

@@ -84,7 +84,7 @@ internal class CorePlayerCombat(
     val skillNames get() = skillDefinitions.map { it.name }
     fun skillAvailable(index: Int) = index in 0..4 && (journey().legacy || journey().level >= CoreSkillCatalog.unlockLevels[index])
     fun resourceAvailable(index: Int) = classState.canCast(skillDefinitions[index], journey().build)
-    val weaponHint get() = "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}${if (raging) " 猛り" else ""}"
+    val weaponHint get() = "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}${if (raging) " 赤熱" else ""}"
     val combatCue get() = CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil,rampageUntil)
     val chargeCount: Int? get() = if (classId == CoreClass.STARWEAVER) classState.resource.toInt() else null
     val resource get() = classState.resource
@@ -846,5 +846,5 @@ internal class CorePlayerCombat(
     private fun notice(message: String) = player.sendActionBar(Component.text(message, NamedTextColor.YELLOW))
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))
 
-    companion object { val SKILL_NAMES = listOf("踏み込み斬り", "叩きつけ", "薙ぎ払い") }
+    companion object { val SKILL_NAMES = listOf("轟進", "地割り", "押し薙ぎ") }
 }

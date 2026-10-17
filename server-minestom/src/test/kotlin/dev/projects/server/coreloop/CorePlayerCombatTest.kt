@@ -670,7 +670,7 @@ class CorePlayerCombatTest {
     }
     @Test fun `warrior hold guard reduces real incoming damage and turns it into rage without a counter`() = arena { h ->
         h.actor.skill(3); h.ticks(1)
-        assertTrue(h.actor.combatCue.startsWith("踏ん張り "))
+        assertTrue(h.actor.combatCue.startsWith("根張り "))
         h.actor.hurt(50.0); assertEquals(90.0, h.actor.health)
         assertEquals(30.0, h.actor.resource)
         assertEquals(-1L, h.actor.classState.counterUntil)
@@ -877,7 +877,7 @@ class CorePlayerCombatTest {
 
     @Test fun `rage at the cap starts a rampage that hits harder and keeps rage full`() = arena { h ->
         h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.ticks(1)
-        assertTrue(h.actor.raging); assertTrue(h.actor.combatCue.startsWith("猛り ")); assertTrue(h.actor.weaponHint.endsWith("猛り"))
+        assertTrue(h.actor.raging); assertTrue(h.actor.combatCue.startsWith("赤熱 ")); assertTrue(h.actor.weaponHint.endsWith("赤熱"))
         h.actor.attack(); assertEquals(300.0 - 12.0 * 1.25, h.combat.bossHealth(), .00001)
         h.actor.skill(2); h.ticks(4) // the sweep takes 30 and the rampage refills it
         assertEquals(100.0, h.actor.resource)

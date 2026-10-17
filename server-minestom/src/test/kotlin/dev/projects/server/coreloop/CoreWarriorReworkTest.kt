@@ -87,7 +87,7 @@ class CoreWarriorReworkTest {
         val sheet = CoreCombatSheet.from(CoreAccount(UUID.randomUUID(), journey = j))
         val slam = warrior.first { it.icon == "slam" }.tooltip(sheet, j).joinToString("\n")
         assertContains(slam, "闘気30以上なら全部注ぎ込み、闘気1につき威力+1%")
-        assertContains(slam, "猛り中に撃つと")
+        assertContains(slam, "赤熱中に撃つと")
         assertContains(slam, "通常3段目の命中から0.6秒以内")
         assertFalse("30.0" in slam)
         assertContains(warrior.first { it.icon == "whirl" }.tooltip(sheet, j).joinToString("\n"), "闘気30以上なら自動で30使い、威力+30%")

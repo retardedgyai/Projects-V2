@@ -14,9 +14,9 @@ class CoreWarriorSkillPresentationTest {
     @Test fun `caption reads actual defensive windows and vanishes when consumed or expired`() {
         fun cue(t: Long,c: Long,g: Long)=CoreWarriorSkillPresentation.combatCue(CoreClass.WARRIOR,t,c,g)
         assertEquals("",cue(0,-1,-1))
-        assertEquals("踏ん張り 2秒",cue(10,-1,40))
+        assertEquals("根張り 2秒",cue(10,-1,40))
         // The warrior has no parry counter any more; a counter window never shows.
-        assertEquals("踏ん張り 2秒",cue(10,70,40))
+        assertEquals("根張り 2秒",cue(10,70,40))
         assertEquals("",cue(71,70,40))
         for(job in CoreClass.entries.filter { it!=CoreClass.WARRIOR })
             assertEquals("",CoreWarriorSkillPresentation.combatCue(job,10,70,40))
