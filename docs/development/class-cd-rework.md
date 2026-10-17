@@ -50,6 +50,14 @@ Creator：「ここからクラスリワークしていきたい。基本はCD�
 - 戦士（仮）：踏み込み斬り＝怯み0.3秒、叩きつけ＝スタン1秒、薙ぎ払い＝ノックバック、剣風＝拘束1.5秒、天断＝打ち上げ1秒（1段ごと）、通常3段目と猛り中の全攻撃＝怯み0.3秒。
 - 敵側（`mob/QuestEncounterCombat.kt`・`MobAbilityManager.kt`）を変えた。play/gyai/boss-gore と play/gyai/combat-hud も同じファイルを触っているので、合流時に衝突を確認する。
 
+## 3.6 戦士のアイコン（2026-10-17）
+
+藍：今のアイコンも試作3方向も「全部ダサい」、Monumenta のスキルアイコンがかっこいい。Monumenta は16x16・黒地・枠なし・1枚1色の6段の光・主役のまわりを同色相のごく暗い色で埋める・粒は動きに沿って狙って置く。数式で生成した版は「かなり差がある」と言われたので、Monumenta を1マスずつ模写して置き方を覚え、7枚を1マスずつ手で置いた（`scripts/build_warrior_iron_icons.py`、16pxの元は `assets/core-ui/skills/warrior-16/`）。
+
+- 轟進（dash）・地割り（slam）・押し薙ぎ（whirl）・地走り（war_wound）・根張り（war_guard）・鉄槌（war_ult）を差し替えた。赤熱（猛り）の絵は、HUDに猛りの表示ができたら使う。
+- 32pxの元絵は16pxのきっちり2倍。新HUD（combat-hud）は16pxに縮めて出すので、描いたマスがそのまま出る。今のメニューの枠は中が24pxなので、そこでは0.75倍になり、ドットの大きさが少し揃わない。
+- 技名（轟進など）は案のまま。ゲーム内の名前はまだ変えていない。
+
 ## 4. 保存データ
 
 外した技は `CoreSkillCatalog` に `retired = true` で番号・アイコン・絵の並びを残す。技選び・試験場・`SelectSkill` では選べない。読み込み時（`CoreAccountCodec.decode`）に `CoreSkillCatalog.migrate` が外した技を「その構成にまだない最初の選べる技」へ置き換える。保存の列と版（v11）は変えていない。成長樹「広い備え」の対象は戦士だけ位置4（剣風）。
