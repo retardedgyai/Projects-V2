@@ -135,6 +135,22 @@ class ShadeWyrmBossTest {
     }
 
     @Test
+    fun `the model walks while its carrier moves and stands when it stops`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val view = BossModelView("shade_wyrm", arena.instance, arena.bossSpawn, definition.enragedBones, definition.foldedBones)
+        try {
+            var at = arena.bossSpawn
+            repeat(10) { at = at.add(0.0, 0.0, .13); view.tick(at, it * 50L) }
+            assertEquals("walk", view.currentLoop)
+            repeat(5) { view.tick(at, 600L + it * 50L) }
+            assertEquals("idle", view.currentLoop)
+        } finally {
+            view.dispose(); arena.dispose()
+        }
+    }
+
+    @Test
     fun `arena fight shows the model enrages once at half health and plays out its death`() {
         MinecraftServer.init(Auth.Offline())
         val arena = BossArenaFactory.create("shade", 1)

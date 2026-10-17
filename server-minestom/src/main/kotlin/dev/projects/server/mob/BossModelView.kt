@@ -99,6 +99,7 @@ internal class BossModelView(
     }
 
     val partCount: Int get() = if (disposed) 0 else model.getParts().size
+    internal val currentLoop: String get() = loop
 
     fun show(player: Player) { if (!disposed) model.addViewer(player) }
     fun hide(player: Player) { if (!disposed && !dying) model.removeViewer(player) }
@@ -114,7 +115,9 @@ internal class BossModelView(
         model.setPosition(at)
         model.setGlobalRotation(modelYaw(at.yaw()))
         val wanted = (if (moved) "walk" else "idle") + if (enraged && has("idle_enraged")) "_enraged" else ""
-        if (wanted != loop && animations.playing == null) {
+        // WSEE's `playing` is the once clip if one runs, else the repeating loop (never null), so this waits for
+        // ability clips only.
+        if (wanted != loop && animations.playing == animations.repeating) {
             loop = wanted
             animations.playRepeat(wanted, 4)
         }
