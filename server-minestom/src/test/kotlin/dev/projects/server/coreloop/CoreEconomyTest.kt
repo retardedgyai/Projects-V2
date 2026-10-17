@@ -160,7 +160,7 @@ class CoreEconomyTest {
         assertEquals(old, Files.readString(file)) // read does not migrate the account
         assertTrue(service.transact(id, CoreOperation(UUID.randomUUID(), 7, CoreAction.ClaimMap(1, 9))).successful)
         assertEquals(old, Files.readString(dir.resolve("$id.account.v4.bak")))
-        assertTrue(Files.readString(file).startsWith("PROJECTS_CORE_LOOP\t11\t"))
+        assertTrue(Files.readString(file).startsWith("PROJECTS_CORE_LOOP\t12\t"))
     }
 
     @Test fun `inventory capacity and failing ordinary save never spend inputs`() {
