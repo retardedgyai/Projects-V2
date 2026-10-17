@@ -4,7 +4,7 @@
     python scripts/build_boss_vfx.py      # the data maps
     python scripts/boss_preview/shaderclip.py /tmp/vfx.jsonl shade-sweep out.gif
 
-The dump's "shader" rows are the item displays ShadeWyrmShaderFx shows each tick after the hit (position,
+The dump's "shader" rows are the item displays ShadeWyrmShaderFx shows each tick from the wind-up on (position,
 scale, rotation, progress). Each is drawn as its textured quad with the shader's colour maths, depth-tested
 against the model, alpha-blended (the game blends translucent items the same way). The particles of the
 dump's other rows are left out: with the pack, the strike's dust is not sent.
@@ -23,7 +23,7 @@ JP = {"shade-sweep": "翼脚薙ぎ", "shade-pounce": "飛びかかり", "shade-d
       "shade-breath": "翳の吐息（怒り）", "shade-storm": "鱗粉嵐（怒り）"}
 ENRAGED_ONLY = ("shade-breath", "shade-storm")
 FRAME = {"shade-breath": (.5, 130), "shade-storm": (.42, 0), "shade-pounce": (.75, 70)}
-UPRIGHT = ("beam_up", "puff", "curtain")
+UPRIGHT = ("beam_up", "ring_up", "puff", "curtain")
 
 
 # ---- item.fsh, line for line ----
@@ -83,7 +83,7 @@ def shade_vfx(mask, flow, across, kind, p, t):
         threshold = p * 1.1
         v = mask * .7 + n * .5
         edge = 1 - sstep(0, .12, v - threshold)
-        heat = mask * .55 + edge
+        heat = mask * (.95 - .55 * p) + edge
         alpha = (v >= threshold) * mask * (1 - .4 * p)
     else:
         rise = fbm(flow * 18, across * 2.5 - t * 3)
@@ -180,11 +180,10 @@ def main(dump, name, out, fps=15):
     n = int(a["length"] * fps)
     times = [a["length"] * i / n for i in range(n + 1)]
     if out.endswith(".png"):
-        times = [HIT[name] + d for d in (.05, .15, .25, .35, .5, .7)]
+        times = [HIT[name] * .5, HIT[name] - .1, HIT[name] + .1, HIT[name] + .2, HIT[name] + .35, HIT[name] + .6]
     for t in times:
         pose = sample(a, t)
-        tick = int(math.floor((t - HIT[name]) / .05 + 1e-6)) - 1
-        live = by_tick.get(tick, [])
+        live = by_tick.get(int(round(t / .05)) - 1, [])       # the dump's "time" is (tick + 1) * 0.05 from the start
         img = Image.new("RGB", (760, 300))
         for j, v in enumerate(views):
             panel, zb = render(sc, pose, hidden=hidden, bg=bg, outline=False, with_depth=True, **v)

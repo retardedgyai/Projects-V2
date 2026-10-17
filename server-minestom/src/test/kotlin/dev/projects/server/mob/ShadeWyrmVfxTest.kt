@@ -91,12 +91,15 @@ class ShadeWyrmVfxTest {
         for (x in -2..1) for (z in -2..1) instance.loadChunk(x, z).join()
         for (ability in definition.abilities) {
             val fx = ShadeWyrmShaderFx(instance)
-            fx.strike(ability.id, MobAbilityFrame(ability, Pos.ZERO, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L)) { null }
-            repeat(30) { tick ->
+            val frame = MobAbilityFrame(ability, Pos.ZERO, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L)
+            val hitTick = (ability.telegraphMillis / 50).toInt()
+            fx.windup(ability.id, frame) { null }
+            repeat(hitTick + 30) { tick ->
+                if (tick == hitTick) fx.strike(ability.id, frame) { null }
                 fx.tick()
                 for (v in fx.views()) {
                     fun vec(p: net.minestom.server.coordinate.Point) = "[${p.x()},${p.y()},${p.z()}]"
-                    lines += "{\"ability\":\"${ability.id}\",\"phase\":\"shader\",\"tick\":$tick,\"sprite\":\"${v.sprite}\",\"kind\":${v.kind}," +
+                    lines += "{\"ability\":\"${ability.id}\",\"phase\":\"shader\",\"tick\":$tick,\"time\":${(tick + 1) * .05},\"sprite\":\"${v.sprite}\",\"kind\":${v.kind}," +
                         "\"progress\":${v.progress},\"at\":${vec(v.at)},\"scale\":${vec(v.scale)},\"translation\":${vec(v.translation)}," +
                         "\"rotation\":[${v.rotation.joinToString(",")}],\"billboard\":${v.billboard}}"
                 }

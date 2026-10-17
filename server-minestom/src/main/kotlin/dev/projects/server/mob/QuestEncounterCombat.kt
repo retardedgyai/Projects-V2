@@ -640,6 +640,7 @@ class QuestEncounterCombat(
     private fun clearWarning(id: UUID) {
         telegraphs.clear(id)
         vfx.cancel(vfxHandles.remove(id))
+        shaderFx.cancelWindup()
     }
 
     /** Model bosses only: the wind-up cue is cut when the ability is, the strike always plays out. */
@@ -689,6 +690,7 @@ class QuestEncounterCombat(
                     return false
                 }
                 playVfx(mob, ShadeWyrmVfx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
+                if (mob.view != null) shaderFx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
                 mob.entity.refreshActiveHand(false, true, false)
                 castingPose(mob, true)
                 sound(event.frame.origin, "minecraft:block.note_block.hat", 0.7f, 0.8f)

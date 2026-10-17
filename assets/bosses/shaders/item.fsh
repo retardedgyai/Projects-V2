@@ -68,7 +68,7 @@ vec4 shadeVfx(vec4 data, float kind, float p) {
         float threshold = p * 1.1;
         float v = mask * .7 + n * .5;
         float edge = 1.0 - smoothstep(0.0, .12, v - threshold);
-        heat = mask * .55 + edge;
+        heat = mask * (.95 - .55 * p) + edge;
         alpha = step(threshold, v) * mask * (1.0 - .4 * p);
     } else {                                           // 5 wall: dust rising off the ground in a curtain
         float rise = fbm(vec2(flow * 18.0, across * 2.5 - t * 3.0));
