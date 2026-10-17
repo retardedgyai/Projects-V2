@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "server-minestom/src/main/resources/core-ui-pack/assets"
 OUT = ROOT / "build/hud-preview"
-JAR = Path(os.environ.get("APPDATA", "")) / ".minecraft/versions/26.2/26.2.jar"
+JAR = Path(os.environ.get("APPDATA", Path.home())) / ".minecraft/versions/26.2/26.2.jar"
 W, H = 480, 270
 S = 4  # screen pixels per GUI pixel (set to 2 to match a GUI-scale-2 client)
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -59,7 +59,9 @@ def width_of(text):
 class Fonts:
     def __init__(self):
         self.fonts, self.sheets = {}, {}
-        self.jp = ImageFont.truetype("C:/Windows/Fonts/BIZ-UDGothicR.ttc", 15)
+        self.jp = ImageFont.truetype(next(f for f in ("C:/Windows/Fonts/BIZ-UDGothicR.ttc",
+                                                   "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc")
+                                         if Path(f).exists()), 15)
 
     def sheet(self, file):
         if file not in self.sheets:

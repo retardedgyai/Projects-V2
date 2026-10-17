@@ -22,8 +22,8 @@ internal object CoreHudLayout {
     const val CONSOLE_X = -92
     const val HP_X = -78
     const val HP_W = 54
-    const val MP_X = 24
-    const val MP_W = 55
+    const val MP_X = 25
+    const val MP_W = 54
     const val HP_TICKS = 6
     const val CELL_X = -89
     const val CELL_PITCH = 9

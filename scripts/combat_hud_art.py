@@ -47,7 +47,7 @@ XP_STEPS = 24
 HOTBAR_X = -91                       # vanilla hotbar sprite, 182x22, top 22
 CONSOLE_X, CONSOLE_TOP, CONSOLE_W, CONSOLE_H = -92, 40, 184, 19
 HP_X, HP_W = -78, 54                 # gauge fill rows: top 38, 9 rows
-MP_X, MP_W = 24, 55
+MP_X, MP_W = 25, 54                  # mirrors HP about the centre column
 GAUGE_TOP, GAUGE_ROWS = 38, 9
 CELL_X, CELL_PITCH, CELL_COUNT, CELL_TOP = -89, 9, 20, 25
 EMBLEM_CY = 34                       # diamond centre, from the bottom
@@ -231,53 +231,55 @@ def wing_pixels(job, C, cy):
 
 
 def crown_pixels(job, C, cy):
+    """Crown on the diamond's top point. put() draws every pixel mirrored about the centre column,
+    so each crown is left-right symmetric in shape and shade, like the wings."""
     tip = cy - 14
     f = {}
 
     def put(x, y, m, t):
         f[(x, y)] = (m, t)
+        f[(2 * C - x, y)] = (m, t)
 
     gem = None
-    if job == "warrior":
-        for x, h in ((C - 5, 3), (C, 5), (C + 5, 3)):
-            for k in range(h):
-                put(x, tip - 1 - k, "steel", 0)
-                if k < h - 1:
-                    put(x + 1, tip - 1 - k, "steel", 2)
-        for x in range(C - 6, C + 8):
+    if job == "warrior":                           # three sword points on an iron band, gem at the middle root
+        for k in range(3):
+            put(C - 5, tip - 1 - k, "steel", 0 if k == 2 else 1)
+        for k in range(6):
+            put(C, tip - 1 - k, "steel", 0 if k >= 4 else 1)
+            if k < 4:
+                put(C - 1, tip - 1 - k, "steel", 2)
+        for x in range(C - 6, C + 1):
             put(x, tip, "steel", 1)
-        gem = (C + 1, tip - 1)
-    elif job == "ranger":
+        gem = (C, tip - 1)
+    elif job == "ranger":                          # a forked twig with buds
         for k in range(5):
             put(C, tip - k, "wood", 1)
-            put(C - 1 - k // 2, tip - 1 - k, "wood", 0)
-            put(C + 1 + k // 2, tip - 1 - k, "wood", 2)
-        put(C - 3, tip - 6, "leaf", 0); put(C + 3, tip - 6, "leaf", 1); put(C, tip - 5, "leaf", 0)
-    elif job == "mage":
-        for x in range(C - 4, C + 5):
+            put(C - 1 - k // 2, tip - 1 - k, "wood", 1)
+        put(C - 3, tip - 6, "leaf", 0); put(C, tip - 5, "leaf", 0)
+    elif job == "mage":                            # a bronze cradle holding a fire gem
+        for x in range(C - 4, C + 1):
             put(x, tip, "bronze", 1)
-        for x, y in ((C - 4, tip - 1), (C - 4, tip - 2), (C + 4, tip - 1), (C + 4, tip - 2), (C - 3, tip - 3), (C + 3, tip - 3)):
-            put(x, y, "bronze", 0 if x < C else 2)
-        for x, y, t in ((C, tip - 1, 2), (C - 1, tip - 2, 1), (C, tip - 2, 1), (C + 1, tip - 2, 2), (C - 1, tip - 3, 0),
-                        (C, tip - 3, 0), (C + 1, tip - 3, 1), (C, tip - 4, 0), (C, tip - 5, 0)):
+        for x, y in ((C - 4, tip - 1), (C - 4, tip - 2), (C - 3, tip - 3)):
+            put(x, y, "bronze", 0)
+        for x, y, t in ((C, tip - 1, 2), (C - 1, tip - 2, 1), (C, tip - 2, 1), (C - 1, tip - 3, 1),
+                        (C, tip - 3, 0), (C, tip - 4, 0), (C, tip - 5, 0)):
             put(x, y, "fire", t)
-    elif job == "assassin":
-        for side in (-1, 1):
-            for k, (dx, dy) in enumerate(((2, 0), (3, -1), (4, -2), (4, -3), (3, -4), (2, -5))):
-                put(C + side * dx, tip + dy, "iron", 0 if k < 3 else 1)
+    elif job == "assassin":                        # two hooked horns
+        for k, (dx, dy) in enumerate(((2, 0), (3, -1), (4, -2), (4, -3), (3, -4), (2, -5))):
+            put(C - dx, tip + dy, "iron", 0 if k < 3 else 1)
         gem = (C, tip - 1)
-    elif job == "templar":
+    elif job == "templar":                         # a gold cross, three pixels wide
         for y in range(tip - 6, tip + 1):
-            put(C, y, "gold", 0); put(C + 1, y, "gold", 2)
-        for x in range(C - 3, C + 5):
+            put(C, y, "gold", 0); put(C - 1, y, "gold", 2)
+        for x in range(C - 4, C - 1):
             put(x, tip - 4, "gold", 1)
-    elif job == "healer":
-        for x in range(C - 5, C + 6):
-            for y in (tip - 6, tip - 2):
-                put(x, y, "gold", 0 if y == tip - 6 else 1)
+    elif job == "healer":                          # a halo ring with a leaf
+        for x in range(C - 5, C + 1):
+            put(x, tip - 6, "gold", 0)
+            put(x, tip - 2, "gold", 1)
         for y in (tip - 5, tip - 4, tip - 3):
-            put(C - 6, y, "gold", 0); put(C + 6, y, "gold", 2)
-        put(C, tip - 1, "leaf", 0); put(C + 1, tip, "leaf", 1)
+            put(C - 6, y, "gold", 1)
+        put(C, tip - 1, "leaf", 0); put(C - 1, tip - 1, "leaf", 1)
     return f, gem
 
 

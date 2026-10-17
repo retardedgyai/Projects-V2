@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import mock_combat_hud_directions as hud  # noqa: E402
 from mock_class_icons_v4 import ACCENT  # noqa: E402
 from mock_class_sigils import diamond  # noqa: E402  (charcoal inner, matches the plates)
+import combat_hud_art as art  # noqa: E402
 
 H, W, C = hud.H, hud.W, hud.C
 X0, Y0 = hud.HB_X, hud.HB_Y
@@ -162,55 +163,8 @@ def wing_pixels(job, cy):
 
 
 def crown_pixels(job, cy, accent):
-    tip = cy - 14
-    f = {}
-
-    def put(x, y, m, t):
-        f[(x, y)] = (m, t)
-
-    gem = None
-    if job == "warrior":                           # three separate sword points on an iron band
-        for x, h in ((C - 5, 3), (C, 5), (C + 5, 3)):
-            for k in range(h):
-                y = tip - 1 - k
-                put(x, y, "steel", 0)
-                if k < h - 1:
-                    put(x + 1, y, "steel", 2)
-        for x in range(C - 6, C + 8):
-            put(x, tip, "steel", 1)
-        gem = (C + 1, tip - 1)
-    elif job == "ranger":                          # a forked twig with buds
-        for k in range(5):
-            put(C, tip - k, "wood", 1)
-            put(C - 1 - k // 2, tip - 1 - k, "wood", 0)
-            put(C + 1 + k // 2, tip - 1 - k, "wood", 2)
-        put(C - 3, tip - 6, "leaf", 0); put(C + 3, tip - 6, "leaf", 1); put(C, tip - 5, "leaf", 0)
-    elif job == "mage":                            # a bronze cradle holding a fire gem
-        for x in range(C - 4, C + 5):
-            put(x, tip, "bronze", 1)
-        for x, y in ((C - 4, tip - 1), (C - 4, tip - 2), (C + 4, tip - 1), (C + 4, tip - 2), (C - 3, tip - 3), (C + 3, tip - 3)):
-            put(x, y, "bronze", 0 if x < C else 2)
-        for x, y, t in ((C, tip - 1, 2), (C - 1, tip - 2, 1), (C, tip - 2, 1), (C + 1, tip - 2, 2), (C - 1, tip - 3, 0),
-                        (C, tip - 3, 0), (C + 1, tip - 3, 1), (C, tip - 4, 0), (C, tip - 5, 0)):
-            put(x, y, "fire", t)
-    elif job == "assassin":                        # two hooked horns
-        for side in (-1, 1):
-            for k, (dx, dy) in enumerate(((2, 0), (3, -1), (4, -2), (4, -3), (3, -4), (2, -5))):
-                put(C + side * dx, tip + dy, "iron", 0 if k < 3 else 1)
-        gem = (C, tip - 1)
-    elif job == "templar":                         # a gold cross
-        for y in range(tip - 6, tip + 1):
-            put(C, y, "gold", 0); put(C + 1, y, "gold", 2)
-        for x in range(C - 3, C + 5):
-            put(x, tip - 4, "gold", 1)
-    elif job == "healer":                          # a halo ring with a leaf
-        for x in range(C - 5, C + 6):
-            for y in (tip - 6, tip - 2):
-                put(x, y, "gold", 0 if y == tip - 6 else 1)
-        for y in (tip - 5, tip - 4, tip - 3):
-            put(C - 6, y, "gold", 0); put(C + 6, y, "gold", 2)
-        put(C, tip - 1, "leaf", 0); put(C + 1, tip, "leaf", 1)
-    return f, gem
+    """The in-game crown (combat_hud_art), so the mock and the pack never drift apart."""
+    return art.crown_pixels(job, C, cy)
 
 
 def class_deco(cv, cy, job, accent):
@@ -274,7 +228,7 @@ def design_j(job="warrior", deco=None):
         hud.over(cv, (sxp, py + 2, sxp + 1, py + 11), (0, 0, 0, 150))
     cv.alpha_composite(hud.tex("gui/sprites/hud/heart/container"), (X0 + 2, py + 2))
     cv.alpha_composite(hud.tex("gui/sprites/hud/heart/full"), (X0 + 2, py + 2))
-    mx0, mx1 = C + edge + (10 if deco & {"fins", "classdeco"} else 2), X0 + 170
+    mx0, mx1 = C + edge + 1 + (10 if deco & {"fins", "classdeco"} else 2), X0 + 170
     hud.ramp_gauge(cv, mx0, mx1, py + 2, 9, hud.MP / hud.MP_MAX, hud.G["mp"], (10, 16, 36, 255))
     for j, row in enumerate(hud.MANA_ICON):
         for i, v in enumerate(row):
