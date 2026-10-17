@@ -44,11 +44,25 @@ internal object CoreCombatFeel {
     }
 }
 
-/** Warrior rules that are not timing: rage feeds the heavy skills, the third normal hit opens the slam. */
+/**
+ * Warrior rules that are not timing. Rage is built by hitting and being hit, poured whole into the slam,
+ * and at the cap it boils over into a short rampage (2026-10-17: Creator chose "charge and smash" + "rage release").
+ */
 internal object CoreWarriorRules {
     val heavy = setOf("slam", "whirl")
+    /** Least rage the heavy skills take; the sweep takes exactly this for [RAGE_BONUS_PERCENT]. */
     const val RAGE_COST = 30.0
     const val RAGE_BONUS_PERCENT = 30
+    /** The slam pours in all rage (at least [RAGE_COST]): +1% damage per point, up to +100%. */
+    const val SLAM_PERCENT_PER_RAGE = 1.0
+    /** Reaching the rage cap starts a rampage; rage stays full until it ends, then empties. */
+    const val RAMPAGE_TICKS = 120L
+    const val RAMPAGE_DAMAGE_PERCENT = 25
+    /** Normal swings during a rampage are this much faster. */
+    const val RAMPAGE_HASTE = 1.3
+    /** Rage from an unguarded hit taken, at most once per [HURT_RAGE_GAP] ticks. */
+    const val HURT_RAGE = 8.0
+    const val HURT_RAGE_GAP = 10L
     /** Ticks after a connected third normal hit in which the slam comes out fast and heavy. */
     const val FINISHER_TICKS = 12L
     const val FINISHER_STARTUP = 3

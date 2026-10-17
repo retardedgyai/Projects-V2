@@ -91,9 +91,9 @@ class CorePlayerCombatTest {
         repeat(3) { h.actor.refillTraining(); h.ticks(1) }
         assertEquals(300.0, h.combat.bossHealth())
         h.actor.refillTraining(); h.ticks(1)
-        assertEquals(266.0, h.combat.bossHealth(), .00001)
+        assertEquals(300.0 - 34.0 * 1.25, h.combat.bossHealth(), .00001) // full rage in the lab means a rampage
         repeat(16) { h.actor.refillTraining(); h.ticks(1) }
-        assertEquals(266.0, h.combat.bossHealth(), .00001)
+        assertEquals(300.0 - 34.0 * 1.25, h.combat.bossHealth(), .00001)
         assertEquals(0, h.actor.cooldownRemaining(2))
         assertEquals(h.actor.maxMana, h.actor.mana)
     }
@@ -216,10 +216,10 @@ class CorePlayerCombatTest {
         h.ticks(11)
         assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
-        assertEquals(300.0 - 58.4 * 1.3, h.combat.bossHealth(), 0.00001) // 30 rage taken for +30%
-        assertEquals(70.0, h.actor.resource)
+        assertEquals(300.0 - 58.4 * 2.0, h.combat.bossHealth(), 0.00001) // all 100 rage poured in for +100%
+        assertEquals(0.0, h.actor.resource)
         h.ticks(20)
-        assertEquals(300.0 - 58.4 * 1.3, h.combat.bossHealth(), 0.00001)
+        assertEquals(300.0 - 58.4 * 2.0, h.combat.bossHealth(), 0.00001)
         val mana = h.actor.mana
         h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(mana, h.actor.mana)
@@ -243,7 +243,7 @@ class CorePlayerCombatTest {
     @Test
     fun `skill links after six AA ticks instead of waiting the entire AA recovery`() = arena { h ->
         h.actor.attack()
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(30.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(100, h.actor.mana)
         h.ticks(5)
         assertEquals(100, h.actor.mana)
@@ -251,7 +251,7 @@ class CorePlayerCombatTest {
         assertEquals(88, h.actor.mana)
         assertEquals(288.0, h.combat.bossHealth())
         h.ticks(12)
-        assertEquals(288.0 - 58.4 * 1.3, h.combat.bossHealth(), 0.00001)
+        assertEquals(288.0 - 58.4 * 1.42, h.combat.bossHealth(), 0.00001) // 12 from the AA + 30 poured in
     }
 
     @Test
@@ -384,7 +384,7 @@ class CorePlayerCombatTest {
     @Test
     fun `physical skill startup uses attack speed and cooldown uses recovery speed`() = arena(
         stats = CoreAffixStats(skillDamagePercent = 50.0, attackSpeedPercent = 50.0, cooldownReductionPercent = 25.0)) { h ->
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(30.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(192, h.actor.cooldownTicks(1))
         h.ticks(7)
         assertEquals(300.0, h.combat.bossHealth())
@@ -861,15 +861,48 @@ class CorePlayerCombatTest {
         val before=h.combat.bossHealth();assertEquals(300.0-12.0*(1.0+1.15+1.85),before,.00001)
         assertEquals(36.0,h.actor.resource)
         h.ticks(6);h.actor.skill(1);h.ticks(2);assertEquals(before,h.combat.bossHealth())
-        h.ticks(1);assertEquals(before-58.4*1.3*1.3,h.combat.bossHealth(),.00001)
-        assertEquals(6.0,h.actor.resource)
+        h.ticks(1);assertEquals(before-58.4*1.36*1.3,h.combat.bossHealth(),.00001) // 36 rage poured in, then the finisher
+        assertEquals(0.0,h.actor.resource)
     }
 
     @Test fun `a slam long after the third hit is neither fast nor finisher boosted`() = arena { h ->
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(30)
         val before=h.combat.bossHealth()
         h.actor.skill(1);h.ticks(11);assertEquals(before,h.combat.bossHealth())
-        h.ticks(1);assertEquals(before-58.4*1.3,h.combat.bossHealth(),.00001)
+        h.ticks(1);assertEquals(before-58.4*1.36,h.combat.bossHealth(),.00001)
+    }
+
+    @Test fun `rage at the cap starts a rampage that hits harder and keeps rage full`() = arena { h ->
+        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.ticks(1)
+        assertTrue(h.actor.raging); assertTrue(h.actor.combatCue.startsWith("猛り ")); assertTrue(h.actor.weaponHint.endsWith("猛り"))
+        h.actor.attack(); assertEquals(300.0 - 12.0 * 1.25, h.combat.bossHealth(), .00001)
+        h.actor.skill(2); h.ticks(4) // the sweep takes 30 and the rampage refills it
+        assertEquals(100.0, h.actor.resource)
+        h.ticks(CoreWarriorRules.RAMPAGE_TICKS.toInt())
+        assertFalse(h.actor.raging); assertEquals(0.0, h.actor.resource) // an unfinished rampage burns out
+        assertEquals("", h.actor.combatCue)
+    }
+
+    @Test fun `a slam during a rampage pours in full rage and closes it`() = arena { h ->
+        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.ticks(1)
+        h.actor.skill(1); h.ticks(12)
+        assertEquals(300.0 - 58.4 * 2.0 * 1.25, h.combat.bossHealth(), .00001)
+        assertFalse(h.actor.raging); assertEquals(0.0, h.actor.resource)
+        h.ticks(5); assertFalse(h.actor.raging)
+    }
+
+    @Test fun `the ultimate costs no rage during a rampage and does not end it`() = arena { h ->
+        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.ticks(1)
+        h.actor.skill(4); h.ticks(1)
+        assertTrue(h.actor.cooldownRemaining(4) > 0)
+        assertTrue(h.actor.raging); assertEquals(100.0, h.actor.resource)
+    }
+
+    @Test fun `unguarded hits taken build warrior rage at most twice a second`() = arena { h ->
+        h.actor.hurt(10.0); h.actor.hurt(10.0)
+        assertEquals(CoreWarriorRules.HURT_RAGE, h.actor.resource)
+        h.ticks(CoreWarriorRules.HURT_RAGE_GAP.toInt()); h.actor.hurt(10.0)
+        assertEquals(CoreWarriorRules.HURT_RAGE * 2, h.actor.resource)
     }
 
     @Test fun `sword saint third hits take time off the heavy cooldowns`() = arena { h ->

@@ -28,6 +28,11 @@ internal class CoreClassState {
         val multiplier = if (build.has(3) && job != CoreClass.STARWEAVER) 1.2 else 1.0
         resource = (resource + value * multiplier).coerceIn(0.0, cap(job))
     }
+    /** Takes everything when at least [least] is there; returns what was taken (0 when short). */
+    fun consumeAll(least: Double): Double = if (resource >= least) resource.also { resource = 0.0 } else 0.0
+    /** Warrior rampage: held at the cap while it lasts, then emptied. */
+    fun fill(job: CoreClass) { resource = cap(job) }
+    fun drain() { resource = 0.0 }
     /** Takes [amount] only when it is all there; never leaves a partial spend. */
     fun consume(amount: Double): Boolean = (resource >= amount).also { if (it) resource -= amount }
     fun cost(skill: CoreSkillDefinition, build: CoreClassBuild): Int = skill.spend

@@ -52,7 +52,10 @@ data class CoreSkillDefinition(
             add("在域中40%減速（氷大成50%） / ボス10% / 退出後最大0.35秒")
         }
         if (journey?.job == CoreClass.WARRIOR && icon in CoreWarriorRules.heavy) {
-            add("闘気${CoreWarriorRules.RAGE_COST.toInt()}以上なら自動で使い、威力+${CoreWarriorRules.RAGE_BONUS_PERCENT}%")
+            if (icon == "slam") {
+                add("闘気${CoreWarriorRules.RAGE_COST.toInt()}以上なら全部注ぎ込み、闘気1につき威力+${CoreCombatMath.number(CoreWarriorRules.SLAM_PERCENT_PER_RAGE)}%")
+                add("猛り中に撃つと最大の威力で猛りを締める")
+            } else add("闘気${CoreWarriorRules.RAGE_COST.toInt()}以上なら自動で${CoreWarriorRules.RAGE_COST.toInt()}使い、威力+${CoreWarriorRules.RAGE_BONUS_PERCENT}%")
             if (icon == "slam") add("通常3段目の命中から${CoreCombatMath.number(CoreWarriorRules.FINISHER_TICKS/20.0)}秒以内：発生${CoreCombatMath.number(copy(startup = CoreWarriorRules.FINISHER_STARTUP).startupTicks(sheet)/20.0)}秒・威力+${CoreWarriorRules.FINISHER_BONUS_PERCENT}%")
         }
         if (journey != null) add("後隙 ${CoreCombatFeel.recovery(journey.job, this@CoreSkillDefinition)/20.0}秒 / 次の入力は0.3秒先行受付")
@@ -158,17 +161,17 @@ object CoreSkillCatalog {
                 .let { if (retired) it.copy(retired = true) else it }
         return when (job) {
             // 2026-10 rework (cooldown first): link 5s / heavy 10-12s / situational 16-20s / ultimate 60s + rage.
-            // Rage never gates a normal skill; heavy skills spend it automatically for a bonus (CoreWarriorRules).
+            // Rage never gates a normal skill: the slam pours all of it in, the sweep takes 30, the cap starts a rampage (CoreWarriorRules).
             CoreClass.WARRIOR -> listOf(
                 s("踏み込み斬り", "dash", "離れた敵の手前へ踏み込んで斬る。闘気を得る", CoreSkillMotion.LUNGE, 6.0, 1.2, mana=8, cd=100, startup=5),
-                s("叩きつけ", "slam", "正面の狭い範囲へ重い一撃。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE),
+                s("叩きつけ", "slam", "溜めた闘気を全部叩き込む重い一撃。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE),
                 s("薙ぎ払い", "whirl", "前方180度を一度で薙ぐ。正面の集団をまとめて捉える", CoreSkillMotion.CONE, 10.0, 2.0, mana=10, cd=200, startup=4, gain=0, radius=4.2),
                 s("踏ん張り", "war_guard", "2秒構えて被害を減らし、受けた攻撃を闘気に変える。反撃は付かない", CoreSkillMotion.GUARD, 0.0, 0.0, mana=8, cd=400, startup=1, gain=0, duration=40),
                 s("剣風", "war_wound", "前方7mへ細い斬撃を飛ばす。近づけない敵に届き、闘気を得る", CoreSkillMotion.CONE, 5.0, 1.3, mana=8, cd=320, startup=3, radius=7.0),
                 s("返し刃", "war_counter", "（廃止）受け流し専用の反撃", CoreSkillMotion.CONE, 10.0, 2.8, cd=130, startup=4, gain=0, spend=30, retired=true),
                 s("雄叫び", "war_cry", "（廃止）仲間に短い障壁", CoreSkillMotion.SHIELD, 12.0, .5, mana=18, cd=240, gain=0, radius=7.0, duration=100, retired=true),
                 s("破城突き", "war_breach", "（廃止）踏み込み斬りへ統合", CoreSkillMotion.LUNGE, 8.0, 1.5, mana=18, cd=160, startup=8, status=CoreSkillStatus.EXPOSE, range=4.0, retired=true),
-                s("天断", "war_ult", "闘気80を解放し斬り上げ・返し・叩きつけ。途中の回避で中断可", CoreSkillMotion.CONE, 20.0, 2.4, mana=20, cd=1200, startup=18, pulses=3, gain=0, spend=80, radius=7.0, ult=true),
+                s("天断", "war_ult", "闘気80を解放し斬り上げ・返し・叩きつけ。猛り中は闘気を使わない。途中の回避で中断可", CoreSkillMotion.CONE, 20.0, 2.4, mana=20, cd=1200, startup=18, pulses=3, gain=0, spend=80, radius=7.0, ult=true),
                 s("不屈の旗", "war_banner", "（廃止）仲間全員に大きな障壁", CoreSkillMotion.SHIELD, 50.0, 1.5, mana=25, cd=700, gain=0, spend=70, radius=10.0, duration=160, ult=true, retired=true))
             CoreClass.MAGE -> listOf(
                 s("火炎弾", "firebolt", "火の術式を刻む。直前と違う属性なら獲得量増加", CoreSkillMotion.RAY, 8.0, 1.4, cd=60, startup=5, element=1),

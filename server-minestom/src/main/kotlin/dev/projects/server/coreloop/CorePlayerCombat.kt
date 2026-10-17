@@ -68,6 +68,10 @@ internal class CorePlayerCombat(
     private val feel get() = CoreCombatFeel.profile(classId)
     /** Warrior: a connected third normal hit opens a short window for a fast, heavy slam. */
     private var finisherUntil = -1L
+    /** Warrior: rage hit the cap; full rage, harder hits and faster swings until this tick (CoreWarriorRules). */
+    private var rampageUntil = -1L
+    private var lastHurtRage = -100L
+    val raging get() = classId == CoreClass.WARRIOR && tickNumber < rampageUntil
     private var whetstoneUntil = 0L
     private var shot: Pair<Long, Vec>? = null
     private var skillBoost = 1.0
@@ -79,8 +83,8 @@ internal class CorePlayerCombat(
     val skillNames get() = skillDefinitions.map { it.name }
     fun skillAvailable(index: Int) = index in 0..4 && (journey().legacy || journey().level >= CoreSkillCatalog.unlockLevels[index])
     fun resourceAvailable(index: Int) = classState.canCast(skillDefinitions[index], journey().build)
-    val weaponHint get() = "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}"
-    val combatCue get() = CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil)
+    val weaponHint get() = "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}${if (raging) " 猛り" else ""}"
+    val combatCue get() = CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil,rampageUntil)
     val chargeCount: Int? get() = if (classId == CoreClass.STARWEAVER) classState.resource.toInt() else null
     val resource get() = classState.resource
     val resourceMax get() = classState.cap(classId)
@@ -123,7 +127,7 @@ internal class CorePlayerCombat(
             sound(if (classId == CoreClass.RANGER) SoundEvent.ENTITY_ARROW_SHOOT else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .65f, 1.2f)
             return
         }
-        normal.press(attackSpeed, quick = classId == CoreClass.ASSASSIN, immediate = feel.immediateNormal)?.let { swing ->
+        normal.press(attackSpeed * if (raging) CoreWarriorRules.RAMPAGE_HASTE else 1.0, quick = classId == CoreClass.ASSASSIN, immediate = feel.immediateNormal)?.let { swing ->
             nextNormalAt = tickNumber + swing.totalTicks
             normalEmpowerment = if(classId == CoreClass.TEMPLAR && classState.counterUntil >= tickNumber) 1.35 else 1.0
             if(normalEmpowerment > 1) classState.counterUntil = -1
@@ -140,6 +144,7 @@ internal class CorePlayerCombat(
         if (!skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
         val definition = skillDefinitions[id]
+        if (raging) classState.fill(classId) // The ultimate is free while raging: rage refills before and after the spend.
         if (!classState.canCast(definition, journey().build)) { notice("${classId.resourceName}が足りません（必要 ${definition.spend} / 現在 ${resource.toInt()}）"); return }
         val cost = definition.mana
         if (mana < cost) { notice("マナが足りません（必要 $cost）"); return }
@@ -177,7 +182,11 @@ internal class CorePlayerCombat(
         var castDefinition = definition
         if (classId == CoreClass.WARRIOR && definition.icon in CoreWarriorRules.heavy) {
             // Rage never gates the heavy skills; when it is there they take it for a heavier hit.
-            if (classState.consume(CoreWarriorRules.RAGE_COST)) skillBoost *= 1 + CoreWarriorRules.RAGE_BONUS_PERCENT / 100.0
+            if (definition.icon == "slam") {
+                // The slam pours in everything; during a rampage it is the closing blow.
+                skillBoost *= 1 + classState.consumeAll(CoreWarriorRules.RAGE_COST) * CoreWarriorRules.SLAM_PERCENT_PER_RAGE / 100.0
+                if (raging) { skillBoost *= 1 + CoreWarriorRules.RAMPAGE_DAMAGE_PERCENT / 100.0; rampageUntil = -1; classState.drain() }
+            } else if (classState.consume(CoreWarriorRules.RAGE_COST)) skillBoost *= 1 + CoreWarriorRules.RAGE_BONUS_PERCENT / 100.0
             if (definition.icon == "slam" && tickNumber <= finisherUntil) {
                 skillBoost *= 1 + CoreWarriorRules.FINISHER_BONUS_PERCENT / 100.0; finisherUntil = -1
                 castDefinition = definition.copy(startup = minOf(CoreWarriorRules.FINISHER_STARTUP, definition.startup))
@@ -226,6 +235,7 @@ internal class CorePlayerCombat(
         tickNumber++
         visualContactsThisTick = 0
         classState.tick(tickNumber)
+        if (classId == CoreClass.WARRIOR) rampageTick()
         previousPosition?.let { if (it.distance(player.position) > .035) classState.stationarySince = tickNumber }
         previousPosition = player.position
         damageLabels.removeAll { (entity, expiry) -> if (tickNumber >= expiry) { entity.remove(); true } else false }
@@ -504,6 +514,7 @@ internal class CorePlayerCombat(
             if (build.keystone == 0 && tickNumber - classState.stationarySince >= 40) classMultiplier *= 1.25
         }
         if (classId == CoreClass.WARRIOR && build.keystone == 0 && resource >= 60) classMultiplier *= 1.2
+        if (raging) classMultiplier *= 1 + CoreWarriorRules.RAMPAGE_DAMAGE_PERCENT / 100.0
         if (classId == CoreClass.HEALER && build.keystone == 0) classMultiplier *= 1.25
         if (classId == CoreClass.TEMPLAR && build.keystone == 2) classMultiplier *= .9
         val consumeMark = skill && classId != CoreClass.WARRIOR && classState.marked(id, tickNumber) && (definition!!.spend > 0 || (classId == CoreClass.STARWEAVER && castCharges > 0))
@@ -695,6 +706,8 @@ internal class CorePlayerCombat(
                 vfx.playSkill(CoreSkillEffect(classId, guard, player.position, flatFacing(), CoreSkillVisualPhase.CONTACT))
             }
             sound(SoundEvent.ITEM_SHIELD_BLOCK, .8f, if (perfect) 1.4f else .8f)
+        } else if (classId == CoreClass.WARRIOR && tickNumber - lastHurtRage >= CoreWarriorRules.HURT_RAGE_GAP) {
+            lastHurtRage = tickNumber; classState.gain(CoreWarriorRules.HURT_RAGE, classId, journey().build)
         }
         val absorbed = min(adjusted, classState.shield)
         classState.shield -= absorbed; adjusted -= absorbed
@@ -742,7 +755,7 @@ internal class CorePlayerCombat(
         garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; rampageUntil = -1; lastHurtRage = -100
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         vfx.cancel()
         warriorMarks.clear()
@@ -814,6 +827,17 @@ internal class CorePlayerCombat(
     }
     private fun actionsValid(enemies: QuestEncounterCombat, epoch: Long): Boolean =
         epoch == actionEpoch && !defeated && encounter() === enemies && player.instance != null
+    /** Rage at the cap boils over; an unfinished rampage burns the rage out. */
+    private fun rampageTick() {
+        when {
+            rampageUntil >= 0 && tickNumber >= rampageUntil -> { rampageUntil = -1; classState.drain() }
+            rampageUntil < 0 && classState.resource >= classState.cap(classId) -> {
+                rampageUntil = tickNumber + CoreWarriorRules.RAMPAGE_TICKS
+                sound(SoundEvent.ENTITY_RAVAGER_ROAR, .7f, 1.1f)
+            }
+        }
+        if (raging) classState.fill(classId)
+    }
     private fun notice(message: String) = player.sendActionBar(Component.text(message, NamedTextColor.YELLOW))
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))
 

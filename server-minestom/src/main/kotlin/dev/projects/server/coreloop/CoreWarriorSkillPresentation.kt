@@ -20,8 +20,9 @@ internal object CoreWarriorSkillPresentation {
     val candidateSlots = listOf(9, 14, 18, 23, 27, 32, 36, 41)
     val loadoutSlots = listOf(0, 2, 4, 6, 8)
 
-    fun combatCue(job: CoreClass, tick: Long, counterUntil: Long, guardUntil: Long): String {
+    fun combatCue(job: CoreClass, tick: Long, counterUntil: Long, guardUntil: Long, rampageUntil: Long = -1): String {
         if(job!=CoreClass.WARRIOR) return ""
+        if(rampageUntil>tick) return "猛り ${((rampageUntil-tick+19)/20).coerceAtLeast(1)}秒"
         if(guardUntil>=tick) return "踏ん張り ${((guardUntil-tick+19)/20).coerceAtLeast(1)}秒"
         return ""
     }
