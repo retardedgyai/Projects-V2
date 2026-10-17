@@ -38,7 +38,10 @@ GLYPH_SOURCES = [
     ROOT / "web-ui-lab/src/main/kotlin/dev/projects/webui/ForgeV3Scene.kt",
     *(ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop" / f for f in (
         "CorePolish05ForgeFlow.kt", "CoreAccount.kt", "CoreEnhancementCatalog.kt", "CoreAffixCatalog.kt",
-        "CoreJourney.kt", "CoreCraftingCurrency.kt", "CoreEconomy.kt", "AtlasMapFlow.kt")),
+        "CoreJourney.kt", "CoreCraftingCurrency.kt", "CoreEconomy.kt", "AtlasMapFlow.kt", "CoreFrontierZones.kt")),
+    # The atlas panel names each zone's boss and gathering specialty.
+    ROOT / "server-minestom/src/main/kotlin/dev/projects/server/mob/QuestMobContent.kt",
+    ROOT / "server-minestom/src/main/kotlin/dev/projects/server/questmap/QuestGathering.kt",
 ]
 # Glyph pages per family and CSS pixel size. Vanilla samples font textures without mipmaps, so each size the
 # artboard uses gets a page rasterised at exactly that size: at 1080p one artboard pixel is one screen pixel.

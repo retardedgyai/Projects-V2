@@ -280,6 +280,7 @@ internal class VerdantRoadQuestRuntime private constructor(
             candidateCount: Int = QuestMapCandidateSelector.DEFAULT_CANDIDATE_COUNT,
             customization: QuestMapCustomization = QuestMapCustomization.NONE,
             resourceTier: Int = 1,
+            specialty: QuestGatheringDiscipline? = null,
         ): CompletableFuture<VerdantRoadQuestRuntime> {
             require(resourceTier in 1..4)
             val startedAt = System.nanoTime()
@@ -301,7 +302,7 @@ internal class VerdantRoadQuestRuntime private constructor(
             return CompletableFuture.allOf(*chunks.toTypedArray()).thenApply {
                 val missing = chunkCoordinates.filter { (chunkX, chunkZ) -> instance.getChunk(chunkX, chunkZ) == null }
                 check(missing.isEmpty()) { "Quest map render coverage incomplete: ${missing.take(8)} (${missing.size} missing)" }
-                val gatheringNodes = questGatheringNodes(plan, customization).map { it.copy(tier = resourceTier) }
+                val gatheringNodes = questGatheringNodes(plan, customization, specialty).map { it.copy(tier = resourceTier) }
                 VerdantRoadQuestDecorator.decorate(instance, plan, gatheringNodes)
                 val spawn = Pos(plan.start.x + 0.5, plan.heightAt(plan.start) + 1.0, plan.start.z + 0.5)
                 VerdantRoadQuestRuntime(
