@@ -183,6 +183,10 @@ internal class BossModelView(
         model.destroy()
     }
 
+    /** Where a point on a bone (Blockbench px in the bone's model space) is in the world right now. */
+    fun point(bone: String, px: net.minestom.server.coordinate.Point): net.minestom.server.coordinate.Point? =
+        if (disposed) null else model.getBonePoint(bone, px.mul(0.25))
+
     private fun has(animation: String) = animations.getAnimation(animation) != null
 
     /** Once enraged, a clip authored in the enraged stance (`<name>_enraged`) replaces the phase-one one. */

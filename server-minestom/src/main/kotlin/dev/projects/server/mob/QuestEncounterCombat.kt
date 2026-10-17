@@ -120,6 +120,13 @@ class QuestEncounterCombat(
 
     private val mobs = linkedMapOf<UUID, Mob>()
     private val telegraphs = MobGroundTelegraph(instance)
+    private val vfx = dev.projects.server.particle.ParticleAnimationScheduler()
+    private val vfxHandles = mutableMapOf<UUID, dev.projects.server.particle.ParticleEffectHandle>()
+    private val vfxSink = dev.projects.server.particle.ParticleSink { spawn ->
+        val packet = ParticlePacket(spawn.particle, spawn.position.x(), spawn.position.y(), spawn.position.z(),
+            spawn.offset.x().toFloat(), spawn.offset.y().toFloat(), spawn.offset.z().toFloat(), spawn.speed, spawn.count)
+        instance.players.filter { it.position.distanceSquared(spawn.position) < 56.0 * 56.0 }.forEach { it.sendPacket(packet) }
+    }
     @Volatile private var disposed = false
     private var bossSealed = false
     private var bossGateFraction = 0.0
@@ -153,7 +160,7 @@ class QuestEncounterCombat(
 
     fun sealBoss(sealed: Boolean) {
         bossSealed = sealed
-        if (sealed) mobs.values.filter { it.boss }.forEach { it.abilities.cancel(); telegraphs.clear(it.entity.uuid); stopNavigation(it) }
+        if (sealed) mobs.values.filter { it.boss }.forEach { it.abilities.cancel(); clearWarning(it.entity.uuid); stopNavigation(it) }
     }
     fun gateBossHealth(fraction: Double) { require(fraction in 0.0..1.0); bossGateFraction = fraction }
     fun staggerBoss(untilMillis: Long) { bossStaggerUntil = untilMillis }
@@ -168,7 +175,7 @@ class QuestEncounterCombat(
     fun removeEncounter(ids: Set<UUID>) {
         ids.mapNotNull(mobs::get).filter { !it.boss }.forEach { mob ->
             mob.abilities.cancel()
-            telegraphs.clear(mob.entity.uuid)
+            clearWarning(mob.entity.uuid)
             stopNavigation(mob)
             if (mob.life.isAlive) mob.life.phase = QuestMobPhase.DISPOSED
             mob.entity.remove()
@@ -207,7 +214,7 @@ class QuestEncounterCombat(
         if (mob.boss) {
             if(now < mob.pullImmuneUntil) return false
             mob.pullImmuneUntil = now + 6000
-            mob.abilities.cancel(); telegraphs.clear(targetId); staggerBoss(now + 400); return true
+            mob.abilities.cancel(); clearWarning(targetId); staggerBoss(now + 400); return true
         }
         val delta = attacker.position.sub(mob.entity.position)
         val horizontal = Vec(delta.x(), 0.0, delta.z())
@@ -222,7 +229,7 @@ class QuestEncounterCombat(
                 listOf(-.4, .4).any { x -> listOf(-.4, .4).any { z -> listOf(.1, 1.0, 1.8).any { y -> instance.getBlock(point.add(x,y,z)).isSolid } } }) break
             destination = point
         }
-        mob.abilities.cancel(); telegraphs.clear(targetId); stopNavigation(mob)
+        mob.abilities.cancel(); clearWarning(targetId); stopNavigation(mob)
         mob.entity.teleport(destination); mob.target = attacker
         return true
     }
@@ -329,7 +336,7 @@ class QuestEncounterCombat(
         mob.lastAttacker = attacker
         if (!mob.life.isAlive) {
             mob.abilities.cancel()
-            telegraphs.clear(mob.entity.uuid)
+            clearWarning(mob.entity.uuid)
             castingPose(mob, false)
             stopNavigation(mob)
             sound(mob.entity.position, "minecraft:entity.${mob.definition.soundFamily}.death", 1.0f, if (mob.boss) 0.65f else 1.0f)
@@ -356,6 +363,7 @@ class QuestEncounterCombat(
         if (disposed || nowMillis <= lastTickAt) return
         lastTickAt = nowMillis
         telegraphs.tick(nowMillis)
+        vfx.tick()
         val players = instance.players.filter { canTarget(it) }
         if (actionsStoppedForReturn) {
             if (players.isEmpty()) return
@@ -377,7 +385,7 @@ class QuestEncounterCombat(
         actionsStoppedForReturn = true
         mobs.values.filter { it.life.isAlive }.forEach { mob ->
             mob.abilities.cancel()
-            telegraphs.clear(mob.entity.uuid)
+            clearWarning(mob.entity.uuid)
             stopNavigation(mob)
             castingPose(mob, false)
             mob.entity.refreshActiveHand(false, true, false)
@@ -394,6 +402,7 @@ class QuestEncounterCombat(
         if (disposed) return
         disposed = true
         telegraphs.dispose()
+        vfx.cancelAll()
         mobs.values.forEach { mob ->
             mob.abilities.cancel()
             stopNavigation(mob)
@@ -546,7 +555,7 @@ class QuestEncounterCombat(
         mob.guardianIds = emptySet()
         mob.challengeStage = 0
         mob.abilities.cancel()
-        telegraphs.clear(mob.entity.uuid)
+        clearWarning(mob.entity.uuid)
         castingPose(mob, false)
         mob.slows.clear()
         mob.slowedUntil = 0L
@@ -577,7 +586,7 @@ class QuestEncounterCombat(
         if (mob.life.health / mob.life.maximumHealth > threshold) return false
         mob.challengeStage++
         mob.abilities.cancel()
-        telegraphs.clear(mob.entity.uuid)
+        clearWarning(mob.entity.uuid)
         castingPose(mob, false)
         stopNavigation(mob)
         mob.guardianIds = spawnEncounter(QuestCombatEncounter(
@@ -597,7 +606,7 @@ class QuestEncounterCombat(
             mob.enraged = true
             mob.enrageHoldUntil = now + ENRAGE_HOLD_MILLIS
             mob.abilities.cancel()
-            telegraphs.clear(mob.entity.uuid)
+            clearWarning(mob.entity.uuid)
             castingPose(mob, false)
             stopNavigation(mob)
             mob.view?.enrage(now)
@@ -621,9 +630,21 @@ class QuestEncounterCombat(
             if (active) SpellcasterIllagerMeta.Spell.ATTACK else SpellcasterIllagerMeta.Spell.NONE
     }
 
+    private fun clearWarning(id: UUID) {
+        telegraphs.clear(id)
+        vfx.cancel(vfxHandles.remove(id))
+    }
+
+    /** Model bosses only: the wind-up cue is cut when the ability is, the strike always plays out. */
+    private fun playVfx(mob: Mob, effect: dev.projects.server.particle.ParticleEffect?) {
+        if (mob.view == null || effect == null) return
+        vfx.cancel(vfxHandles.remove(mob.entity.uuid))
+        vfxHandles[mob.entity.uuid] = vfx.start(effect, vfxSink)
+    }
+
     private fun cancelWarning(mob: Mob) {
         mob.abilities.cancel()
-        telegraphs.clear(mob.entity.uuid)
+        clearWarning(mob.entity.uuid)
         mob.life.phase = QuestMobPhase.CHASING
         mob.warningRetryAt = lastTickAt + 600L
         castingPose(mob, false)
@@ -660,6 +681,7 @@ class QuestEncounterCombat(
                     cancelWarning(mob)
                     return false
                 }
+                playVfx(mob, ShadeWyrmVfx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
                 mob.entity.refreshActiveHand(false, true, false)
                 castingPose(mob, true)
                 sound(event.frame.origin, "minecraft:block.note_block.hat", 0.7f, 0.8f)
@@ -672,6 +694,7 @@ class QuestEncounterCombat(
                 mob.entity.swingMainHand()
                 castingPose(mob, false)
                 if (!drawWarning(mob, event.frame, true)) { cancelWarning(mob); return false }
+                playVfx(mob, ShadeWyrmVfx.hit(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
                 sound(event.frame.origin,
                     if (mob.entity.entityMeta is SpellcasterIllagerMeta) "minecraft:entity.evoker.cast_spell"
                     else if (event.frame.ability.shape is MobAttackShape.Sweep) "minecraft:entity.player.attack.sweep"
@@ -687,7 +710,7 @@ class QuestEncounterCombat(
                     if (disposed || actionsStoppedForReturn) return false
                 }
             }
-            is MobAbilityEvent.Finished -> { telegraphs.clear(mob.entity.uuid); updateName(mob) }
+            is MobAbilityEvent.Finished -> { clearWarning(mob.entity.uuid); updateName(mob) }
         }
         return true
     }
