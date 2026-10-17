@@ -41,3 +41,9 @@ Creator：「ここからクラスリワークしていきたい。基本はCD�
 ## 4. 保存データ
 
 外した技は `CoreSkillCatalog` に `retired = true` で番号・アイコン・絵の並びを残す。技選び・試験場・`SelectSkill` では選べない。読み込み時（`CoreAccountCodec.decode`）に `CoreSkillCatalog.migrate` が外した技を「その構成にまだない最初の選べる技」へ置き換える。保存の列と版（v11）は変えていない。成長樹「広い備え」の対象は戦士だけ位置4（剣風）。
+
+## 再開メモ（2026-10-17）
+
+- 済み：方針（§1）を藍が承認。手触りルールを全職へ（336b623b）、戦士をCD管理に作り直し（071f745a）。全テスト783件通過、push済み。`play/gyai/class-rework`（資源管理型）は使わないと藍が決定。
+- 次の一手：藍に聞いてからサーバーを起動し、実機で戦士を触ってもらう → 数値を直す → 戦士の見た目（VFX・アイコン）を2〜3案の画像で選ぶ → アサシンへ。
+- 注意：このブランチは origin/main 起点で新HUD（`play/gyai/combat-hud`）が入っていない。合流時に CoreHudSkill の remainingSeconds / totalSeconds / resourceAvailable が新CDと合うか確認。星織り師は削除側（`play/gyai/remove-starweaver`）で解消、ボス部分（QuestEncounterCombat）は触らない。テストは Java 25・`-Xmx1g`・ワーカー1。
