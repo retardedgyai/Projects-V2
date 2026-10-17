@@ -131,8 +131,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }.onFailure { System.err.println("ATLAS_MAP_DISABLED: ${it.message}") }.getOrNull()
     private val atlasSessions: UiSessions? = if(uiPack != null && atlasMap != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
         { player -> uiPack.enabled(player) }, null,
-        { player -> AtlasMapFlow(atlasMap,
-            depart = { tier, style -> player.scheduler().scheduleNextTick { departFromAtlas(player, tier, style) } },
+        { player -> AtlasMapFlow(atlasMap, { account(player) },
+            depart = { zone -> player.scheduler().scheduleNextTick { departFromAtlas(player, zone) } },
             leave = { player.scheduler().scheduleNextTick { atlasSessions?.close(player) } }) },
         { Pos(0.0,100.0,0.0,0f,0f) })
     else null
@@ -830,16 +830,22 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     override fun warmMap(player: Player, map: CoreOwnedMap): Boolean = preparedMaps.warm(player.uuid, map)
 
-    /** 開拓大陸 departure: a fresh map of the zone's terrain at the player's level, then the usual departure. */
-    private fun departFromAtlas(player: Player, tier: Int, style: QuestTerrainStyle) {
-        atlasSessions?.close(player)
+    /**
+     * 開拓大陸 departure: a fresh map of the zone's terrain and tier at the player's level, tagged with the zone
+     * (specialty gathering, the zone's boss, its clear record), then the usual departure.
+     */
+    private fun departFromAtlas(player: Player, zoneId: Int) {
+        val zone = CoreFrontierZones.expedition(zoneId) ?: return
         val a = account(player) ?: return
+        CoreFrontierZones.departure(a, zone).blocked?.let {
+            player.sendMessage(CoreLoopItems.text(it, NamedTextColor.YELLOW)); return
+        }
+        atlasSessions?.close(player)
         if (!requireHub(player)) return
         val base = java.util.concurrent.ThreadLocalRandom.current().nextLong() ushr 4
         // Quest terrain style is chosen by seed mod 6; the candidate search keeps it.
-        val seed = base - Math.floorMod(base, QuestTerrainStyle.entries.size.toLong()) + style.ordinal
-        val playable = tier.coerceIn(1, a.unlockedMapTier)
-        mutate(player, CoreAction.ClaimMap(playable, seed), a.revision, { menus.expeditions(player) }) {
+        val seed = base - Math.floorMod(base, QuestTerrainStyle.entries.size.toLong()) + zone.terrain.ordinal
+        mutate(player, CoreAction.ClaimMap(zone.tier, seed, zone = zone.id), a.revision, { menus.expeditions(player) }) {
             val map = account(player)?.maps?.firstOrNull { it.seed == seed } ?: return@mutate
             account(player)?.let { depart(player, map.id, it.revision) }
         }
@@ -895,7 +901,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                                         try {
                                             attachSession(player, runtime, runId, map.tier)
                                             refresh(player); actors[player.uuid]?.reset()
-                                            player.sendMessage(CoreLoopItems.text("T${map.tier} 遠征開始。道の先にボス。裂け目・儀式の寄り道には専用オーブと欠片があります。", NamedTextColor.GOLD))
+                                            val zone = CoreFrontierZones.zone(map.zone)
+                                            player.sendMessage(CoreLoopItems.text(if (zone != null) "T${map.tier} ${zone.name}へ遠征開始。道の先に${zone.boss?.displayName}。特産は${zone.specialty?.displayName}。"
+                                                else "T${map.tier} 遠征開始。道の先にボス。裂け目・儀式の寄り道には専用オーブと欠片があります。", NamedTextColor.GOLD))
                                         } catch (failure: Exception) {
                                             System.err.println("CORE_ENCOUNTER_SETUP_FAILURE run=$runId: $failure")
                                             questMaps.returnToHub(player).whenComplete { _, _ -> abortDeparture(player, runId) }
@@ -1032,8 +1040,11 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
             QuestCombatEncounter(positions)
         }
+        val zone = CoreFrontierZones.zone(account(player)?.activeRun?.map?.zone)
+        // The packed HUD draws the name each tick from combat.bossName(), which follows the zone's boss.
         val bar = BossBar.bossBar(Component.empty(), 1f, bossBarColor(player), BossBar.Overlay.PROGRESS)
         val combat = QuestEncounterCombat(runtime.instance, tier, groups, QuestCombatPlacement.resolve(runtime.instance, pos(plan.boss)),
+            explicitBossArchetype = zone?.boss,
             onMobDefeated = { _, boss -> onMobDefeated(player, boss) }, damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
             canTarget = { target -> target.uuid == player.uuid && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
             contentSeed = plan.seed, encounterLevel = account(player)?.activeRun?.map?.level ?: CoreJourneyRules.floor(tier),

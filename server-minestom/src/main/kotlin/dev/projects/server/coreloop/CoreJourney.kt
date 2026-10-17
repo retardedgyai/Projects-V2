@@ -35,7 +35,7 @@ enum class CoreWeaponBase(val displayName: String, val detail: String, val power
     LONGBOW("潮風の長弓", "狙った射線へ矢を放つ", .95),
     STAFF("灯火の杖", "遠距離の魔弾と属性術式", .92),
     DAGGERS("影縫い短剣", "素早く印を仕込む。接近戦用の短い間合い", .78, 1.35),
-    MACE("誓いの戦槌", "重い槌と守護の術。集団を制する", .95, .85),
+    MACE("誓いの騎槍", "長い騎槍と守護の術。集団を制する", .95, .85),
     TOME("灯守の聖典", "裁きと救護。攻撃で得た信仰を振り分ける", .9);
     val family get() = when (this) { LONGBOW -> "bow"; STAFF -> "staff"; DAGGERS -> "dagger"; MACE -> "mace"; TOME -> "tome"; else -> "greatsword" }
     fun usable(job: CoreClass) = when (job) {
