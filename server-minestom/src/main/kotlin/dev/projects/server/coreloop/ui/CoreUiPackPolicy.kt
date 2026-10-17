@@ -28,6 +28,13 @@ internal object CoreUiPackPolicy {
         }
     }
 
+    /**
+     * Combat VFX shader (scripts/build_warrior_iron_vfx.py): core/item stays vanilla except for texels carrying the
+     * warrior heat/glow alpha markers.
+     */
+    val shaderOverrides: Set<String> = setOf("assets/minecraft/shaders/core/item.vsh", "assets/minecraft/shaders/core/item.fsh")
+
     fun allowedPath(path: String): Boolean = !path.startsWith('/') && ".." !in path && '\\' !in path &&
-        (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions || path in dialogWidgets)
+        (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions || path in dialogWidgets ||
+            path in shaderOverrides)
 }
