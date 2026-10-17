@@ -117,6 +117,17 @@ internal enum class QuestGatheringDiscipline(
         )
 
         fun forGatheringOrdinal(ordinal: Int): QuestGatheringDiscipline = entries[Math.floorMod(ordinal, entries.size)]
+
+        /**
+         * A zone's specialty takes every other base site (4 of 8); the other four disciplines share the rest,
+         * one site each, so every map still offers every material.
+         */
+        fun forGatheringOrdinal(ordinal: Int, specialty: QuestGatheringDiscipline?): QuestGatheringDiscipline {
+            if (specialty == null) return forGatheringOrdinal(ordinal)
+            if (Math.floorMod(ordinal, 2) == 0) return specialty
+            val others = entries.filter { it != specialty }
+            return others[Math.floorMod(ordinal / 2, others.size)]
+        }
     }
 }
 
@@ -196,11 +207,12 @@ internal data class QuestGatheringNode(
 internal fun questGatheringNodes(
     plan: QuestMapPlan,
     customization: QuestMapCustomization = QuestMapCustomization.NONE,
+    specialty: QuestGatheringDiscipline? = null,
 ): List<QuestGatheringNode> {
     val baseNodes = plan.contents
         .filter { it.kind == QuestMapContentKind.GATHERING }
         .mapIndexed { ordinal, content ->
-        val discipline = QuestGatheringDiscipline.forGatheringOrdinal(ordinal)
+        val discipline = QuestGatheringDiscipline.forGatheringOrdinal(ordinal, specialty)
         val routeAnchor = plan.mainRoute[content.mainRouteIndex]
         val outwardX = (content.position.x - routeAnchor.x).coerceIn(-1, 1)
         val outwardZ = (content.position.z - routeAnchor.z).coerceIn(-1, 1)
