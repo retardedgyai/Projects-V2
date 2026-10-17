@@ -181,6 +181,7 @@ internal class CoreCombatLab(
         }
         val skills = CoreSkillCatalog.skills(state.journey.job)
         skills.forEachIndexed { i, skill ->
+            if (skill.retired) return@forEachIndexed
             val slot = if (i < 8) 18 + i else 27 + i - 8
             items[slot] = CoreSkillTooltip.item(skill, actor.sheet, state.journey, packed(player),
                 footer = if (i < 8) "クリック：枠${state.selectedSlot + 1}へ設定" else "クリック：奥義へ設定")

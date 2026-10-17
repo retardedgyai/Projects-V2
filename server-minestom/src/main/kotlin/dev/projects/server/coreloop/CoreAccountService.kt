@@ -98,6 +98,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         is CoreAction.SelectSkill -> {
             requireHub(account)
             require(action.slot in 0..4 && CoreJourneyRules.skillUnlocked(account, action.slot)) { "このスキル枠は未解放です" }
+            require(CoreSkillCatalog.selectable(account.journey.job, action.slot, action.choice)) { "この技は選べません" }
             account.copy(journey = account.journey.copy(build = account.journey.build.equip(action.slot, action.choice))) to "スキル構成を保存しました"
         }
         is CoreAction.ToggleTalent -> {
