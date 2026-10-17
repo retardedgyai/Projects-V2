@@ -91,8 +91,8 @@ for _, _, kind, n in items:
     x, y, w, h = b["x"] * K, b["y"] * K, b["w"] * K, b["h"] * K
     if kind == "fill":
         c = color(st["background-color"])
-        if c[3] == 0:
-            continue
+        if c[3] == 0 or round(x + w) <= round(x) or round(y + h) <= round(y):
+            continue  # newer Pillow refuses empty rectangles
         layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
         ImageDraw.Draw(layer).rectangle((round(x), round(y), round(x + w) - 1, round(y + h) - 1), fill=c)
         canvas.alpha_composite(layer)

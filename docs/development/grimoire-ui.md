@@ -72,5 +72,8 @@ by `build_grimoire_assets.py`; `render_grimoire_preview.py` draws text and sprit
 - 未決（藍に選択依頼中）: 地図の章の見せ方 A帯 / B細線 / Cなし（map-chapters-abc.png）。`GrimoireFlow.mapStyle` で切替中。
   決まったら mapStyle と分岐を消し、`GrimoirePreviewDump.kt`（一時）を削除、`GrimoireSceneGoldenTest.GOLDEN` を
   build/grimoire-golden/hashes.txt で更新して通常 commit。共通の直し（整数倍ドット・「この先」・封印の枝の?地図）はこの wip に入っている。
+- 2026-10-17 Debian で再開: 同じ3案を描き直して一致を確認（map-chapters-abc-linux.png）。`GOLDEN` は今の既定（案A）の
+  ハッシュに更新済みでテストは全部通る。案が決まって B/C にしたら hashes.txt で再更新する。
+  描画は Linux では `python3`、ラベル用の日本語フォントは Noto Sans CJK（`/usr/share/fonts/opentype/noto/`）。
 - テスト: Java 25、`:server-minestom:test --tests '*Grimoire*'`（maxHeap 1g・ワーカー1）。サーバーは `-Dprojects.port=25567` で別立てしていた。
 - 絵の確認は `scripts/render_grimoire_preview.py`（実機の文字・スプライトの描き方を再現）。実機SSはクライアントの screenshots/ に出る。
