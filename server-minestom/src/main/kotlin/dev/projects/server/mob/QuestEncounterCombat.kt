@@ -637,7 +637,22 @@ class QuestEncounterCombat(
         return true
     }
 
+    /** Set by the server once the owner's UI pack is loaded; name tags then use the pixel nameplate. */
+    var pixelNameplates = false
+        set(value) { field = value; mobs.values.filter { it.life.isAlive }.forEach { updateName(it) } }
+
     private fun updateName(mob: Mob, attackName: String? = null) {
+        if (pixelNameplates) {
+            val rank = when (mob.definition.archetype.rarity) {
+                QuestMobRarity.BOSS -> dev.projects.server.coreloop.ui.CoreMobNameplate.Rank.BOSS
+                QuestMobRarity.ELITE -> dev.projects.server.coreloop.ui.CoreMobNameplate.Rank.ELITE
+                QuestMobRarity.NORMAL -> dev.projects.server.coreloop.ui.CoreMobNameplate.Rank.NORMAL
+            }
+            mob.entity.customName = dev.projects.server.coreloop.ui.CoreMobNameplate.render(encounterLevel, mob.definition.name,
+                mob.life.health, mob.life.maximumHealth, rank, mob.definition.archetype.weakness,
+                attackName ?: if (mob.life.phase == QuestMobPhase.RETURNING) "帰還中" else null)
+            return
+        }
         val weakness = when (mob.definition.archetype.weakness) { "fire" -> "炎"; "ice" -> "氷"; else -> "雷" }
         val base = "T$tier ${mob.definition.name}  ${ceil(mob.life.health).toInt()}/${ceil(mob.life.maximumHealth).toInt()}  弱点:$weakness"
         val suffix = when {

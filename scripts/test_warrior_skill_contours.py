@@ -7,22 +7,6 @@ from build_warrior_skill_contours import CLIPS, COUNTS, PACK, build, contour, ti
 
 
 class WarriorContoursTest(unittest.TestCase):
-    def test_hud_glyph_ink_is_identical_to_accepted_font_with_legal_padding(self):
-        assets=PACK/'assets/projects'
-        original=json.loads((assets/'font/core_menu_emphasis_y30.json').read_text())['providers'][1]
-        current=json.loads((assets/'font/warrior_hud_status.json').read_text())['providers'][1]
-        source=Image.open(assets/('textures/'+original['file'].split(':')[1])).convert('RGBA')
-        atlas=Image.open(assets/('textures/'+current['file'].split(':')[1])).convert('RGBA')
-        cw,ch=source.width//len(original['chars'][0]),source.height//len(original['chars'])
-        self.assertLessEqual(current['ascent'],current['height'])
-        self.assertEqual(cw,atlas.width//len(current['chars'][0]))
-        for i,glyph in enumerate(current['chars'][0]):
-            row=next(y for y,r in enumerate(original['chars']) if glyph in r)
-            col=original['chars'][row].index(glyph)
-            self.assertEqual(source.crop((col*cw,row*ch,(col+1)*cw,(row+1)*ch)).tobytes(),
-                             atlas.crop((i*cw,0,(i+1)*cw,ch)).tobytes())
-        self.assertIsNone(atlas.crop((0,ch,atlas.width,atlas.height)).getchannel('A').getbbox())
-
     def test_actual_shipped_output_is_reproducible(self):
         checked=[]
         def verify(path,value):

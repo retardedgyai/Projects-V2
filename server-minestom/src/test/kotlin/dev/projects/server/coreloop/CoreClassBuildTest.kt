@@ -21,8 +21,8 @@ class CoreClassBuildTest {
             skills.map { it.icon }
         }
         assertEquals(70,icons.distinct().size);assertEquals(icons,CoreSkillCatalog.artNames)
-        val font=javaClass.classLoader.getResourceAsStream("core-ui-pack/assets/projects/font/core_hud.json")!!.bufferedReader().readText()
-        icons.forEach { assertContains(font,"skill_${it}_states.png") }
+        val font=javaClass.classLoader.getResourceAsStream("core-ui-pack/assets/projects/font/hud_skills.json")!!.bufferedReader().readText()
+        icons.forEach { assertContains(font,"hud_skill_${it}.png") }
     }
     @Test fun `swapping an equipped skill cannot duplicate it and ultimate never enters a normal slot`() {
         assertEquals(listOf(1,0,2,3),CoreClassBuild().equip(0,1).skills)
