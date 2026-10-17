@@ -39,7 +39,7 @@ class CoreWarriorSupportChoreographyTest {
             val e=effect("war_guard",yaw=heading*PI/4);val parts=CoreSkillChoreography.parts(e)
             assertEquals(2,parts.size);val blade=parts.first();val glint=parts.last()
             assertEquals("war_parry_blade",blade.shape);assertEquals(e.skill.duration,blade.durationTicks)
-            assertEquals(30,blade.durationTicks);assertEquals(12,glint.durationTicks)
+            assertEquals(40,blade.durationTicks);assertEquals(12,glint.durationTicks)
             assertTrue(parts.all { it.followOwner && !it.sprite && !it.secondary })
             for(tick in 0 until blade.durationTicks) {
                 val p=CoreSkillChoreography.pose(blade,tick.toDouble())
@@ -53,7 +53,7 @@ class CoreWarriorSupportChoreographyTest {
                     assertTrue(delta.cross(axis(p)).length()<.00001)
                 }
             }
-            assertFalse(CoreSkillChoreography.pose(blade,30.0).visible)
+            assertFalse(CoreSkillChoreography.pose(blade,40.0).visible)
             assertFalse(CoreSkillChoreography.pose(glint,12.0).visible)
         }
     }

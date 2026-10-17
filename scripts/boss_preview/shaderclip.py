@@ -1,4 +1,4 @@
-"""GIF of an ability clip with the shader VFX (CPU emulation of assets/bosses/shaders/item.fsh, NOT Minecraft).
+"""GIF of an ability clip with the shader VFX (CPU emulation of the boss branch of scripts/shaders/item.fsh, NOT Minecraft).
 
     SHADE_VFX_DUMP=/tmp/vfx.jsonl ./gradlew :server-minestom:test --tests '*ShadeWyrmVfxTest' --rerun
     python scripts/build_boss_vfx.py      # the data maps

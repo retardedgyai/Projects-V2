@@ -1,8 +1,8 @@
 """黒翳竜 shader VFX experiment (2026-10-17, the Creator asked to try core shaders "as far as vanilla goes").
 
 Writes into the core-ui-pack (generated, git-ignored):
-- assets/minecraft/shaders/core/item.{vsh,fsh} from assets/bosses/shaders/ — vanilla 26.2 core/item plus a branch
-  for items whose tint is a VFX marker (blue 77, green = kind 1..5); every other item renders as vanilla.
+- assets/minecraft/shaders/core/item.{vsh,fsh} from scripts/shaders/ (shared with the warrior iron strikes) — vanilla
+  26.2 core/item plus a branch for items whose tint is a VFX marker (blue 77, green = kind 1..6).
 - assets/projects/{textures/item,models,items}/boss_vfx/<name> — data maps (R mask, G flow, B across) on flat
   (ground) or upright quads, tinted through custom_model_data so the server drives the parameters.
 
@@ -17,7 +17,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
-SHADERS = ROOT / "assets/bosses/shaders"
+SHADERS = ROOT / "scripts/shaders"  # one core/item for every combat VFX marker
 SHADER_FILES = ("item.vsh", "item.fsh")
 
 

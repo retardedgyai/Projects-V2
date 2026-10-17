@@ -22,7 +22,7 @@ import kotlin.math.sin
 
 /**
  * Shader experiment (2026-10-17): the 黒翳竜's strikes as item displays whose colour the pack's core/item shader
- * computes (assets/bosses/shaders/item.fsh). Each display's tint is the marker: blue 77, green = kind
+ * computes (scripts/shaders/item.fsh). Each display's tint is the marker: blue 77, green = kind
  * (1 slash, 2 ring, 3 beam, 4 puff, 5 curtain, 6 smoke), red = progress, rewritten every tick. Only players with the pack
  * see them; the others keep the particles of [ShadeWyrmVfx].
  */

@@ -38,6 +38,7 @@ internal object CoreSkillChoreography {
         CoreWarriorFlourish.pose(p,age)?.let { return it }
         CoreApprovedNormalV3.pose(p,age)?.let { return it }
         CoreApprovedDashV3.pose(p,age)?.let { return it }
+        CoreWarriorIronChoreography.pose(p,age)?.let { return it }
         CoreWarriorBladeChoreography.pose(p,age)?.let { return it }
         CoreFlowSlashChoreography.pose(p,age)?.let { return it }
         CoreExpandedSlashChoreography.pose(p,age)?.let { return it }
@@ -136,6 +137,7 @@ internal object CoreSkillChoreography {
         if(raw.isEmpty()) return raw
         CoreApprovedNormalV3.parts(e)?.let { return it }
         CoreApprovedDashV3.parts(e)?.let { return it }
+        CoreWarriorIronChoreography.parts(e)?.let { return it }
         CoreWarriorBladeChoreography.parts(e)?.let { return it }
         CoreExpandedSlashChoreography.parts(e)?.let { return it }
         CoreGreatswordSweepChoreography.parts(e)?.let { return it }
