@@ -68,7 +68,8 @@ object CoreLoopServer {
 
 internal class CoreLoopGame(private val hub: InstanceContainer, private val harbor: HarborScene.Result) : CoreMenuHost {
     internal fun consumeImmediateUiPacket(player: Player, packet: ClientPacket): Boolean =
-        polishSessions?.consumeImmediateUiPacket(player,packet) == true || atlasSessions?.consumeImmediateUiPacket(player,packet) == true
+        polishSessions?.consumeImmediateUiPacket(player,packet) == true || atlasSessions?.consumeImmediateUiPacket(player,packet) == true ||
+            grimoireSessions?.consumeImmediateUiPacket(player,packet) == true
     private val io = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "projects-core-ledger").apply { isDaemon = true } }
     private val mapBuilder = Executors.newSingleThreadExecutor { r -> Thread(r, "projects-core-map-builder").apply { isDaemon = true } }
     private val preparedMaps = CoreMapPreparation(mapBuilder)
@@ -130,6 +131,17 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         { player -> AtlasMapFlow(atlasMap, { account(player) },
             depart = { zone -> player.scheduler().scheduleNextTick { departFromAtlas(player, zone) } },
             leave = { player.scheduler().scheduleNextTick { atlasSessions?.close(player) } }) },
+        { Pos(0.0,100.0,0.0,0f,0f) })
+    else null
+    private val grimoireArt = runCatching {
+        GrimoireFlow.Art(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/grimoire.json")).use { it.readBytes() },
+            requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
+    }.onFailure { System.err.println("GRIMOIRE_DISABLED: ${it.message}") }.getOrNull()
+    /** 魔術書 progress per player, in memory until quests are saved; closing the book keeps it. */
+    private val grimoireProgress = java.util.concurrent.ConcurrentHashMap<java.util.UUID, GrimoireProgress>()
+    private val grimoireSessions: UiSessions? = if(uiPack != null && grimoireArt != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
+        { player -> uiPack.enabled(player) }, null,
+        { player -> GrimoireFlow(grimoireArt, grimoireProgress.computeIfAbsent(player.uuid) { GrimoireSample.midway() }, leave = { player.scheduler().scheduleNextTick { grimoireSessions?.close(player) } }) },
         { Pos(0.0,100.0,0.0,0f,0f) })
     else null
     private val questMaps = VerdantRoadQuestService(hub, harbor.spawn,
@@ -453,6 +465,22 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         })
         MinecraftServer.getCommandManager().register(Command("hub").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { returnToHarbor(it) } }
+        })
+        MinecraftServer.getCommandManager().register(Command("grimoire").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
+                when {
+                    grimoireSessions == null || uiPack?.enabled(player) != true ->
+                        player.sendMessage(CoreLoopItems.text("魔術書を開くには ProjectS のリソースパックが必要です", NamedTextColor.YELLOW))
+                    !requireHub(player) -> Unit
+                    else -> grimoireSessions.open(player)
+                }
+            } }
+            // Development: start the book from the very beginning (progress is in memory only).
+            addSyntax({ sender, _ -> (sender as? Player)?.let { player ->
+                grimoireSessions?.close(player)
+                grimoireProgress[player.uuid] = GrimoireSample.start()
+                player.sendMessage(CoreLoopItems.text("魔術書を最初からにしました", NamedTextColor.YELLOW))
+            } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("reset"))
         })
         MinecraftServer.getCommandManager().register(Command("colony").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { enterColony(it) } }
@@ -1213,7 +1241,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     private fun updateHud(player: Player) {
         // The smith's forge covers the whole view; the action-bar HUD would sit on top of it.
-        if (polishSessions?.isOpen(player) == true || atlasSessions?.isOpen(player) == true) { player.sendActionBar(Component.empty()); return }
+        if (polishSessions?.isOpen(player) == true || atlasSessions?.isOpen(player) == true || grimoireSessions?.isOpen(player) == true) {
+            player.sendActionBar(Component.empty()); return
+        }
         val a = combatLab.account(player) ?: account(player) ?: return
         val actor = actor(player) ?: return
         player.food = 20
@@ -1265,6 +1295,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         uiPack?.forget(player)
         polishSessions?.close(player,false)
         atlasSessions?.close(player,false)
+        grimoireSessions?.close(player,false)
         departing.remove(player.uuid)
         sessions.remove(player.uuid)?.let { session ->
             if (session.combat.bossDefeated && accounts[player.uuid]?.activeRun?.bossDefeated != true) {
@@ -1330,6 +1361,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
         polishSessions?.close()
         atlasSessions?.close()
+        grimoireSessions?.close()
     }
 
     private fun disciplineResource(discipline: QuestGatheringDiscipline): CoreResource = when (discipline) {
