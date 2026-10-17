@@ -53,17 +53,26 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         addingWindup = true
         try { when (abilityId) {
             "shade-dust" -> if (shape is MobAttackShape.Ring) {
-                // Spores pour off the body and spread out, ring by ring, until they hang over the whole circle.
-                val d = shape.radius * 2.05
-                add("ring", 2, o.add(0.0, .08, 0.0), 0, ticks, Vec(d, 1.0, d), IDENTITY) { .1 + .25 * it * it }
+                // For the whole telegraph the spores pour off the body and push outward: a low front of dust rolls from
+                // the wyrm to the circle's edge while the cloud behind it thickens.
+                val r = shape.radius
+                add("ring", 2, o.add(0.0, .08, 0.0), 0, ticks, Vec(r * 2.05, 1.0, r * 2.05), IDENTITY) { .1 + .25 * it * it }
+                val count = 22
+                for (n in 0 until count) {
+                    val a = n * 2 * PI / count
+                    val dir = Vec(cos(a), 0.0, sin(a))
+                    val width = 2 * PI * .9 / count * 1.5
+                    add("curtain", 5, o, 0, ticks, Vec(width, 1.4, 1.0), yawTo(dir), translation = dir.mul(.9).add(0.0, .7, 0.0),
+                        grow = Vec(width * r / .9, 1.6, 1.0), slide = dir.mul(r).add(0.0, .8, 0.0), moveTicks = ticks - 2) { .15 + .3 * it }
+                }
                 val body = frame.casterOrigin.add(0.0, 2.0, 0.0)
-                val all = spores(shape.radius)
+                val all = spores(r, 40)
                 for ((n, spot) in all.withIndex()) {
                     val at = o.add(spot)
-                    val delay = (n * (ticks - 12) / all.size).coerceAtLeast(0)
+                    val delay = n * (ticks - 8) / all.size
                     val from = Vec(body.x() - at.x(), body.y() - at.y(), body.z() - at.z())
-                    add("puff", 4, at, delay, ticks - delay, Vec(.6, .6, 1.0), IDENTITY, translation = from,
-                        grow = Vec(1.4, 1.4, 1.0), slide = Vec.ZERO, moveTicks = 10, billboard = true) { .5 - .38 * it }
+                    add("puff", 4, at, delay, ticks - delay, Vec(.8, .8, 1.0), IDENTITY, translation = from,
+                        grow = Vec(2.3, 2.3, 1.0), slide = Vec.ZERO, moveTicks = 12, billboard = true) { .45 - .35 * it }
                 }
             }
             "shade-pulse" -> if (shape is MobAttackShape.Ring) {
@@ -119,7 +128,7 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                 // The feet land and every hanging spore goes off at once.
                 val r = shape.radius
                 add("ring", 2, o.add(0.0, .15, 0.0), 0, 10, Vec(r, 1.0, r), IDENTITY, grow = Vec(r * 2.6, 1.0, r * 2.6), moveTicks = 5)
-                for ((n, spot) in spores(r).withIndex()) {
+                for ((n, spot) in spores(r, 40).withIndex()) {
                     val at = o.add(spot)
                     val size = 2.2 + (n % 4) * .45
                     add("puff", 4, at, n % 2, 13, Vec(size, size, 1.0), IDENTITY, grow = Vec(size * 1.5, size * 1.5, 1.0), moveTicks = 10, billboard = true)
@@ -272,8 +281,8 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
     }
 
     /** Where the dust spores hang: a sunflower spread over the circle, low to chest height. */
-    private fun spores(radius: Double): List<Vec> = (0 until 26).map { n ->
-        val r = radius * .95 * kotlin.math.sqrt((n + .5) / 26)
+    private fun spores(radius: Double, count: Int = 26): List<Vec> = (0 until count).map { n ->
+        val r = radius * .95 * kotlin.math.sqrt((n + .5) / count)
         val a = n * 2.39996
         Vec(cos(a) * r, .5 + (n % 4) * .35, sin(a) * r)
     }

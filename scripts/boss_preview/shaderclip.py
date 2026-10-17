@@ -186,7 +186,7 @@ def main(dump, name, out, fps=15):
     n = int(a["length"] * fps)
     times = [a["length"] * i / n for i in range(n + 1)]
     if out.endswith(".png"):
-        times = [HIT[name] * .5, HIT[name] - .1, HIT[name] + .1, HIT[name] + .2, HIT[name] + .35, HIT[name] + .6]
+        times = [HIT[name] * .2, HIT[name] * .45, HIT[name] * .7, HIT[name] - .1, HIT[name] + .1, HIT[name] + .35]
     for t in times:
         pose = sample(a, t)
         live = by_tick.get(int(round(t / .05)) - 1, [])       # the dump's "time" is (tick + 1) * 0.05 from the start
