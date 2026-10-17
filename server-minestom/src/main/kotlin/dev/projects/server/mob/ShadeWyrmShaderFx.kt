@@ -57,16 +57,16 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                 // the wyrm to the circle's edge while the cloud behind it thickens.
                 val r = shape.radius
                 add("ring", 2, o.add(0.0, .08, 0.0), 0, ticks, Vec(r * 2.05, 1.0, r * 2.05), IDENTITY) { .1 + .25 * it * it }
-                val count = 22
+                val count = 32
                 for (n in 0 until count) {
                     val a = n * 2 * PI / count
                     val dir = Vec(cos(a), 0.0, sin(a))
-                    val width = 2 * PI * .9 / count * 1.5
-                    add("curtain", 5, o, 0, ticks, Vec(width, 1.4, 1.0), yawTo(dir), translation = dir.mul(.9).add(0.0, .7, 0.0),
-                        grow = Vec(width * r / .9, 1.6, 1.0), slide = dir.mul(r).add(0.0, .8, 0.0), moveTicks = ticks - 2) { .15 + .3 * it }
+                    val width = 2 * PI * 1.5 / count * 1.5
+                    add("curtain", 5, o, 0, ticks, Vec(width, 1.8, 1.0), yawTo(dir), translation = dir.mul(1.5).add(0.0, .9, 0.0),
+                        grow = Vec(width * r / 1.5, 2.2, 1.0), slide = dir.mul(r).add(0.0, 1.1, 0.0), moveTicks = ticks - 2) { .15 + .3 * it }
                 }
                 val body = frame.casterOrigin.add(0.0, 2.0, 0.0)
-                val all = spores(r, 40)
+                val all = spores(r, 64)
                 for ((n, spot) in all.withIndex()) {
                     val at = o.add(spot)
                     val delay = n * (ticks - 8) / all.size
@@ -128,7 +128,7 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                 // The feet land and every hanging spore goes off at once.
                 val r = shape.radius
                 add("ring", 2, o.add(0.0, .15, 0.0), 0, 10, Vec(r, 1.0, r), IDENTITY, grow = Vec(r * 2.6, 1.0, r * 2.6), moveTicks = 5)
-                for ((n, spot) in spores(r, 40).withIndex()) {
+                for ((n, spot) in spores(r, 64).withIndex()) {
                     val at = o.add(spot)
                     val size = 2.2 + (n % 4) * .45
                     add("puff", 4, at, n % 2, 13, Vec(size, size, 1.0), IDENTITY, grow = Vec(size * 1.5, size * 1.5, 1.0), moveTicks = 10, billboard = true)
