@@ -123,7 +123,7 @@ class GrimoireFlowTest {
         assertEquals("相を12種類観察する", nodes.first { it.id == "e-g0" }.text)
         assertTrue(nodes.any { it.id == "e-g0-fill-c" })
         assertEquals("4 / 11", nodes.first { it.id == "m-count" }.text)
-        assertEquals(listOf("序章", "1章", "2章", "3章", "終章"), GrimoireBook.CHAPTERS.map { it.first })
+        assertEquals(listOf("序章", "1章", "2章", "3章", "終章"), GrimoireBook.CHAPTERS.map { it.name })
         val icons = GrimoireBook.ENTRIES.groupBy { it.icon }.filterValues { it.size > 1 }
         assertTrue(icons.isEmpty(), "each entry has its own icon: $icons")
     }

@@ -55,7 +55,12 @@ internal object GrimoireBook {
             listOf(Goal("小さな祭壇で帰還の巻物を作る")), listOf("開く" to "専門の枝すべて"), null, listOf("n11"), goal = true),
     )
 
-    /** Map headings: each chapter's first word ("1章"), centred over its columns. */
-    val CHAPTERS = ENTRIES.groupBy { it.chapter.substringBefore(' ') }
-        .map { (name, es) -> name to (es.minOf { it.col } + es.maxOf { it.col }) / 2.0 }
+    /** A chapter on the map: its heading and the columns it spans. */
+    data class Chapter(val name: String, val from: Int, val to: Int) { val centre get() = (from + to) / 2.0 }
+
+    /** Map chapters in order: each chapter's first word ("1章") over the columns its entries use. */
+    val CHAPTERS: List<Chapter> = ENTRIES.groupBy { it.chapter.substringBefore(' ') }
+        .map { (name, es) -> Chapter(name, es.minOf { it.col }, es.maxOf { it.col }) }
+
+    fun children(id: String) = ENTRIES.filter { id in it.parents }
 }

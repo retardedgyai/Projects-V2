@@ -64,3 +64,13 @@ under them and drawn opaque (`GrimoireFlow.solid`). The client also draws every 
 alpha cutoff fully opaque: soft glow sprites become flat discs (the book uses none) and anti-aliased small
 text thickens. The book therefore has its own crisp text pages (`gmv3m15` …, alpha snapped at 0.5), built
 by `build_grimoire_assets.py`; `render_grimoire_preview.py` draws text and sprites the same way.
+
+## 再開メモ（2026-10-17、OS入れ替え前の wip）
+
+- 藍の承認済み: 見本①〜⑧（docs/proposals/grimoire-ui-2026-10/mock-1-approved.png）、受け取り演出A（claim-abc-chosen-A.png）、
+  Rank表示なし、文字は魔術書だけくっきり化（text-crisp-before-after.png）。503c48ed まで藍は実機で未確認。
+- 未決（藍に選択依頼中）: 地図の章の見せ方 A帯 / B細線 / Cなし（map-chapters-abc.png）。`GrimoireFlow.mapStyle` で切替中。
+  決まったら mapStyle と分岐を消し、`GrimoirePreviewDump.kt`（一時）を削除、`GrimoireSceneGoldenTest.GOLDEN` を
+  build/grimoire-golden/hashes.txt で更新して通常 commit。共通の直し（整数倍ドット・「この先」・封印の枝の?地図）はこの wip に入っている。
+- テスト: Java 25、`:server-minestom:test --tests '*Grimoire*'`（maxHeap 1g・ワーカー1）。サーバーは `-Dprojects.port=25567` で別立てしていた。
+- 絵の確認は `scripts/render_grimoire_preview.py`（実機の文字・スプライトの描き方を再現）。実機SSはクライアントの screenshots/ に出る。

@@ -17,6 +17,8 @@ import dev.projects.server.coreloop.GrimoireBook.ENTRIES
 import dev.projects.server.coreloop.GrimoireBook.Entry
 import dev.projects.server.coreloop.GrimoireBook.Reward
 import kotlin.math.roundToLong
+import kotlin.math.abs
+import kotlin.math.hypot
 
 /**
  * 魔術書: the magic path's quest book (FTB Quests / Thaumonomicon role), on the camera display like the
@@ -62,6 +64,8 @@ internal class GrimoireFlow(
     private class ClaimFx(val reward: Reward, val from: Long, val to: Long, val at: Long)
     private var claimFx: ClaimFx? = null
     private var rewardSlot = 0.0 to 0.0
+    /** Map structure while the candidates are compared: A chapter bands, B chapter hairlines, C none. */
+    internal var mapStyle = 'A'
 
     private fun state(e: Entry): State {
         val done = e.id in progress.done
@@ -251,7 +255,7 @@ internal class GrimoireFlow(
         BRANCHES.forEachIndexed { i, (name, icon) ->
             val on = i == tab
             val w = 28 + width(name, "v3b", 20.0)
-            sprite("tab$i-i", icon, x, 48.0, 22.0, 22.0, 8, if (i == 0) null else "#ff8a8a96", if (on || i == 0) 1.0 else 0.6)
+            sprite("tab$i-i", icon, x - 4, 44.0, 32.0, 32.0, 8, if (i == 0) null else "#ff8a8a96", if (on || i == 0) 1.0 else 0.6)
             text("tab$i", x + 28, 44.0, w - 28, name, if (on) "v3b" else "v3m", if (on) 20.0 else 18.0, if (on) "#ECE6DC" else if (i == 0) "#A29E97" else "#6F6B65", 8)
             if (on) rect("tab$i-u", x, 82.0, w, 3.0, CYAN, 8)
             rect("tab$i-hit", x - 10, 34.0, w + 20, 56.0, "#00000000", 9, "tab:$i", "#14ffffff")
@@ -260,11 +264,11 @@ internal class GrimoireFlow(
         // Wallet pills on the right.
         fun pill(id: String, x: Double, w: Double) { round(id, x, 34.0, w, 44.0, 22.0, "#101114", 0.86, 2); border("$id-l", x, 34.0, w, 44.0, 22.0, "#ffffff", 0.09, 3) }
         pill("p-ink", 1552.0, 140.0)
-        sprite("p-ink-i", "i16_ink", 1570.0, 44.0, 24.0, 24.0, 8)
+        sprite("p-ink-i", "i16_ink", 1568.0, 40.0, 32.0, 32.0, 8)
         text("p-ink-k", 1600.0, 47.0, 50.0, "インク", "v3r", 13.0, "#A29E97", 8)
         text("p-ink-v", 1654.0, 44.0, 40.0, "${shown(Reward.Kind.INK, now)}", "v3num", 19.0, "#ECE6DC", 8)
         pill("p-silver", 1704.0, 160.0)
-        sprite("p-silver-i", "i16_coin", 1722.0, 44.0, 24.0, 24.0, 8)
+        sprite("p-silver-i", "i16_coin", 1720.0, 40.0, 32.0, 32.0, 8)
         text("p-silver-k", 1752.0, 47.0, 40.0, "銀貨", "v3r", 13.0, "#A29E97", 8)
         text("p-silver-v", 1792.0, 44.0, 70.0, String.format(Locale.US, "%,d", shown(Reward.Kind.SILVER, now)), "v3num", 19.0, "#ECE6DC", 8)
     }
@@ -286,9 +290,13 @@ internal class GrimoireFlow(
             rect("m-claim-dot", MAP_X + MAP_W - 32 - w + 14, MAP_Y + 34, 6.0, 6.0, "#ffe58b80", 4)
             text("m-claim-t", MAP_X + MAP_W - 32 - w + 26, MAP_Y + 28, w, label, "v3m", 14.0, "#E58B80", 8)
         }
-        for ((name, col) in CHAPTERS) {
-            val cx = MAP_X + 96 + col * 166.0
-            text("ch-$name", cx - 60, MAP_Y + 66, 120.0, name, "v3m", 14.0, "#6F7FA8", 8, "center")
+        for ((i, ch) in CHAPTERS.withIndex()) {
+            val cx = MAP_X + 96 + ch.centre * 166.0
+            val left = MAP_X + 96 + (ch.from - 0.5) * 166.0; val cw = (ch.to - ch.from + 1) * 166.0
+            if (mapStyle == 'A' && i % 2 == 1) rect("ch-${ch.name}-band", left, MAP_Y + 56, cw, MAP_H - 112, "#07ffffff", 1)
+            if (mapStyle == 'B' && i > 0) rect("ch-${ch.name}-line", left, MAP_Y + 56, 1.0, MAP_H - 112, "#12ffffff", 1)
+            if (mapStyle != 'C') rect("ch-${ch.name}-u", cx - 20, MAP_Y + 88, 40.0, 2.0, "#ff2e3a5e", 2)
+            text("ch-${ch.name}", cx - 60, MAP_Y + 62, 120.0, ch.name, "v3m", 14.0, "#6F7FA8", 8, "center")
         }
         // Paths: fine dotted light between medallion centres.
         for (e in ENTRIES) for (p in e.parents) {
@@ -331,7 +339,7 @@ internal class GrimoireFlow(
         if (sel) sprite("n-${e.id}-ring2", "v3_ring", cx - r - 8, cy - r - 8, r * 2 + 16, r * 2 + 16, 9, "#ffeafcff", 0.7)
         if (hot) sprite("n-${e.id}-ring3", "v3_ring", cx - r - 5, cy - r - 5, r * 2 + 10, r * 2 + 10, 9, ring, 0.5)
         if (st != State.HIDDEN) {
-            val s = 48 * grow
+            val s = 64 * grow
             sprite("n-${e.id}-i", e.icon, cx - s / 2, cy - s / 2, s, s, 10, if (st == State.LOCKED || st == State.GOAL) "#ff8a8a96" else null)
         } else text("n-${e.id}-q", cx - 30, cy - 15, 60.0, "?", "v3b", 24.0, "#5E6A8A", 10, "center")
         // Every visible entry is named, as in the panel; locked names are dim. Only `?` entries stay unnamed.
@@ -393,6 +401,18 @@ internal class GrimoireFlow(
     private fun sealedBranch() {
         val (name, icon) = BRANCHES[tab]
         val cx = MAP_X + MAP_W / 2; val cy = MAP_Y + MAP_H / 2 - 40
+        // A faint map that is not readable yet: `?` medallions on dim paths around the seal.
+        val ghosts = listOf(-2 to -1, -1 to 1, 1 to -1, 2 to 1, -3 to 0, 3 to 0)
+        for ((i, g) in ghosts.withIndex()) {
+            val gx = cx + g.first * 190.0; val gy = cy + g.second * 150.0
+            round("ghost$i-disc", gx - 36, gy - 36, 72.0, 72.0, 36.0, "#0c1222", 1.0, 4)
+            sprite("ghost$i-ring", "v3_ring", gx - 36, gy - 36, 72.0, 72.0, 9, "#ff232a3c")
+            text("ghost$i-q", gx - 30, gy - 14, 60.0, "?", "v3b", 22.0, "#2e3650", 10, "center")
+            val (ax, ay) = if (abs(g.first) == 3) cx + (g.first / 3) * 100.0 to cy else gx to gy
+            val (bx, by) = if (abs(g.first) == 3) gx to gy else cx + (g.first / abs(g.first)) * 64.0 to cy
+            val len = hypot(bx - ax, by - ay); var t = 36.0 + 10; var k = 0
+            while (t < len - 36 - 10) { rect("ghost$i-d$k", ax + (bx - ax) * t / len - 2, ay + (by - ay) * t / len - 2, 4.0, 4.0, "#ff1c2234", 2); t += 11; k++ }
+        }
         round("seal-disc", cx - 64, cy - 64, 128.0, 128.0, 64.0, "#0c1222", 1.0, 4)
         sprite("seal-ring", "v3_ring", cx - 64, cy - 64, 128.0, 128.0, 9, "#ff6f6b65")
         sprite("seal-i", icon, cx - 32, cy - 32, 64.0, 64.0, 10, "#ff8a8a96")
@@ -416,7 +436,7 @@ internal class GrimoireFlow(
         if (st != State.HIDDEN) {
             val hero = e.hero?.let { art.sprites[it] }
             if (hero != null) {
-                val k = minOf(240.0 / hero.width, 170.0 / hero.height)
+                val k = minOf(240.0 / hero.width, 170.0 / hero.height).let { if (it >= 2) 2.0 else 1.0 }
                 sprite("e-hero", e.hero, x + w / 2 - hero.width * k / 2, y + 98 - hero.height * k / 2, hero.width * k, hero.height * k, 6,
                     if (st == State.LOCKED || st == State.GOAL) "#ff8a8a96" else null)
             } else sprite("e-hero", e.icon, x + w / 2 - 48, y + 50, 96.0, 96.0, 6, if (st == State.LOCKED || st == State.GOAL) "#ff8a8a96" else null)
@@ -439,12 +459,12 @@ internal class GrimoireFlow(
             for ((i, g) in e.goals.withIndex()) {
                 val n = if (st == State.DONE) g.target else progress.count(e.id, i).coerceAtMost(g.target)
                 val ok = n >= g.target
-                sprite("e-g$i-b", if (ok) "i16_check" else "i16_box", x, y + 2, 20.0, 20.0, 8)
-                text("e-g$i", x + 30, y, w - 30, g.text, "v3r", 15.0, if (ok) "#8A867E" else "#ECE6DC", 8)
+                sprite("e-g$i-b", if (ok) "i16_check" else "i16_box", x - 4, y - 2, 32.0, 32.0, 8)
+                text("e-g$i", x + 36, y, w - 36, g.text, "v3r", 15.0, if (ok) "#8A867E" else "#ECE6DC", 8)
                 if (g.target > 1) {
-                    text("e-g$i-n", x + 30, y + 1, w - 30, "$n / ${g.target}", "v3num", 15.0, if (ok) "#8A867E" else "#7FE3F0", 8, "right")
-                    round("e-g$i-bar", x + 30, y + 26, w - 30, 4.0, 2.0, "#2A2C31", 1.0, 3)
-                    round("e-g$i-fill", x + 30, y + 26, (w - 30) * n / g.target, 4.0, 2.0, if (ok) GOLD else CYAN, 1.0, 4)
+                    text("e-g$i-n", x + 36, y + 1, w - 36, "$n / ${g.target}", "v3num", 15.0, if (ok) "#8A867E" else "#7FE3F0", 8, "right")
+                    round("e-g$i-bar", x + 36, y + 26, w - 36, 4.0, 2.0, "#2A2C31", 1.0, 3)
+                    round("e-g$i-fill", x + 36, y + 26, (w - 36) * n / g.target, 4.0, 2.0, if (ok) GOLD else CYAN, 1.0, 4)
                     y += 14
                 }
                 y += 28
@@ -453,10 +473,27 @@ internal class GrimoireFlow(
         if (e.unlocks.isNotEmpty()) {
             section("e-u", "できるようになること")
             for ((i, u) in e.unlocks.withIndex()) {
-                KIND_ICON[u.first]?.let { sprite("e-u$i-i", it, x, y + 2, 20.0, 20.0, 8) }
-                text("e-u$i-k", x + 30, y, 70.0, u.first, "v3m", 15.0, "#7FE3F0", 8)
-                text("e-u$i-t", x + 100, y, w - 100, u.second, "v3r", 15.0, "#ECE6DC", 8); y += 28
+                KIND_ICON[u.first]?.let { sprite("e-u$i-i", it, x - 4, y - 2, 32.0, 32.0, 8) }
+                text("e-u$i-k", x + 36, y, 70.0, u.first, "v3m", 15.0, "#7FE3F0", 8)
+                text("e-u$i-t", x + 106, y, w - 106, u.second, "v3r", 15.0, "#ECE6DC", 8); y += 28
             }
+        }
+        val next = GrimoireBook.children(e.id)
+        if (next.isNotEmpty() && st != State.DONE) {
+            section("e-n", "この先")
+            var nx = x
+            for ((i, c) in next.withIndex()) {
+                val hidden = state(c) == State.HIDDEN
+                val label = if (hidden) "?" else c.title.removePrefix("寄り道：")
+                val cw = 40 + width(label, "v3r", 14.0) + 12
+                round("e-n$i", nx, y - 4, cw, 36.0, 8.0, "#0c1222", 1.0, 3)
+                border("e-n$i-l", nx, y - 4, cw, 36.0, 8.0, "#ffffff", 0.08, 4)
+                if (hidden) text("e-n$i-q", nx + 4, y + 2, 32.0, "?", "v3b", 16.0, "#5E6A8A", 8, "center")
+                else sprite("e-n$i-i", c.icon, nx + 4, y - 2, 32.0, 32.0, 8, "#ff8a8a96")
+                text("e-n$i-t", nx + 40, y + 3, cw - 40, label, "v3r", 14.0, "#A29E97", 8)
+                nx += cw + 8
+            }
+            y += 44
         }
         if (e.reward != null) {
             section("e-r", "報酬")
@@ -578,7 +615,7 @@ internal class GrimoireFlow(
         private const val MAP_H = 880.0
         private const val SIDE_X = 1432.0
         private const val SIDE_W = 432.0
-        private const val R = 40.0
+        private const val R = 44.0
         private const val FLY_END = 900L
         private const val COUNT_MS = 600L
         private const val PANEL = "#141518"
