@@ -14,6 +14,8 @@
 | hind_sheet.png | 後脚は案1（約15%短く） |
 | wrap_sheet4.png | 怒る瞬間の「翼で体を包む」はe4（前へ回して脇を地面まで垂らす） |
 | enrage3_keys.png / enrage3.gif | 怒る瞬間（5秒）。うずくまり翼で包む→立ち上がり扇が開き角が生える→振り下ろし→叩きつけて構え |
+| shader_dust.gif | 鱗粉炸裂のシェーダー版：竜中心の半径8.5、溜めの間に体から鱗粉が広がり、着地で全部爆発（`scripts/boss_preview/shaderclip.py`、CPUでシェーダーを再現） |
+| shader_breath.gif | 翳の吐息のシェーダー版：光る煙と暗い煙の奔流、地面のエフェクトなし（藍「good」） |
 
 ## 外部の参考（画像はrepoに入れない。URLと要点だけ）
 
