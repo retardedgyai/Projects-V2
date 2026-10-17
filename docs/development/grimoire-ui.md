@@ -65,15 +65,13 @@ alpha cutoff fully opaque: soft glow sprites become flat discs (the book uses no
 text thickens. The book therefore has its own crisp text pages (`gmv3m15` …, alpha snapped at 0.5), built
 by `build_grimoire_assets.py`; `render_grimoire_preview.py` draws text and sprites the same way.
 
-## 再開メモ（2026-10-17、OS入れ替え前の wip）
+## 再開メモ（2026-10-17）
 
 - 藍の承認済み: 見本①〜⑧（docs/proposals/grimoire-ui-2026-10/mock-1-approved.png）、受け取り演出A（claim-abc-chosen-A.png）、
   Rank表示なし、文字は魔術書だけくっきり化（text-crisp-before-after.png）。503c48ed まで藍は実機で未確認。
-- 未決（藍に選択依頼中）: 地図の章の見せ方 A帯 / B細線 / Cなし（map-chapters-abc.png）。`GrimoireFlow.mapStyle` で切替中。
-  決まったら mapStyle と分岐を消し、`GrimoirePreviewDump.kt`（一時）を削除、`GrimoireSceneGoldenTest.GOLDEN` を
-  build/grimoire-golden/hashes.txt で更新して通常 commit。共通の直し（整数倍ドット・「この先」・封印の枝の?地図）はこの wip に入っている。
-- 2026-10-17 Debian で再開: 同じ3案を描き直して一致を確認（map-chapters-abc-linux.png）。`GOLDEN` は今の既定（案A）の
-  ハッシュに更新済みでテストは全部通る。案が決まって B/C にしたら hashes.txt で再更新する。
-  描画は Linux では `python3`、ラベル用の日本語フォントは Noto Sans CJK（`/usr/share/fonts/opentype/noto/`）。
+- 地図の章の見せ方は B（章の境に細い縦線＋章名の下線）に決定（2026-10-17、map-chapters-abc-linux.png）。
+  切替と一時ダンプは削除し、`GOLDEN` も B で更新済み。共通の直し（整数倍ドット・「この先」・封印の枝の?地図）も入っている。
+- 描画は Linux では `python3`、比較用ラベルの日本語フォントは Noto Sans CJK（`/usr/share/fonts/opentype/noto/`）。
+- 残り: 503c48ed 以降を藍が実機で確認すること。
 - テスト: Java 25、`:server-minestom:test --tests '*Grimoire*'`（maxHeap 1g・ワーカー1）。サーバーは `-Dprojects.port=25567` で別立てしていた。
 - 絵の確認は `scripts/render_grimoire_preview.py`（実機の文字・スプライトの描き方を再現）。実機SSはクライアントの screenshots/ に出る。

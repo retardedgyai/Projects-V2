@@ -64,8 +64,6 @@ internal class GrimoireFlow(
     private class ClaimFx(val reward: Reward, val from: Long, val to: Long, val at: Long)
     private var claimFx: ClaimFx? = null
     private var rewardSlot = 0.0 to 0.0
-    /** Map structure while the candidates are compared: A chapter bands, B chapter hairlines, C none. */
-    internal var mapStyle = 'A'
 
     private fun state(e: Entry): State {
         val done = e.id in progress.done
@@ -292,10 +290,9 @@ internal class GrimoireFlow(
         }
         for ((i, ch) in CHAPTERS.withIndex()) {
             val cx = MAP_X + 96 + ch.centre * 166.0
-            val left = MAP_X + 96 + (ch.from - 0.5) * 166.0; val cw = (ch.to - ch.from + 1) * 166.0
-            if (mapStyle == 'A' && i % 2 == 1) rect("ch-${ch.name}-band", left, MAP_Y + 56, cw, MAP_H - 112, "#07ffffff", 1)
-            if (mapStyle == 'B' && i > 0) rect("ch-${ch.name}-line", left, MAP_Y + 56, 1.0, MAP_H - 112, "#12ffffff", 1)
-            if (mapStyle != 'C') rect("ch-${ch.name}-u", cx - 20, MAP_Y + 88, 40.0, 2.0, "#ff2e3a5e", 2)
+            val left = MAP_X + 96 + (ch.from - 0.5) * 166.0
+            if (i > 0) rect("ch-${ch.name}-line", left, MAP_Y + 56, 1.0, MAP_H - 112, "#12ffffff", 1)
+            rect("ch-${ch.name}-u", cx - 20, MAP_Y + 88, 40.0, 2.0, "#ff2e3a5e", 2)
             text("ch-${ch.name}", cx - 60, MAP_Y + 62, 120.0, ch.name, "v3m", 14.0, "#6F7FA8", 8, "center")
         }
         // Paths: fine dotted light between medallion centres.
