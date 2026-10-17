@@ -146,7 +146,7 @@ internal object QuestMobContent {
                         1100, 400, 900, 2200, weight = 3),
                     attack("shade-pounce", "飛びかかり・大きく横へ", MobAttackShape.Slam(5.5, 3.0), 9.5, 27.0,
                         1400, 500, 1200, 3400, minimumRange = 3.0, weight = 2),
-                    attack("shade-dust", "鱗粉炸裂・足元から離れろ", MobAttackShape.Ring(3.2), 16.0, 23.0,
+                    attack("shade-dust", "鱗粉炸裂・足元から離れろ", MobAttackShape.Ring(4.5), 16.0, 23.0,
                         1700, 500, 900, 2800, target = true, weight = 2),
                     attack("shade-pulse", "触角の共鳴・竜から離れろ", MobAttackShape.Ring(4.6), 4.5, 20.0,
                         1200, 0, 1100, 3600),

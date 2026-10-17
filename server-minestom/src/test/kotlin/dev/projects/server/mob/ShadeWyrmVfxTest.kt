@@ -91,7 +91,9 @@ class ShadeWyrmVfxTest {
         for (x in -2..1) for (z in -2..1) instance.loadChunk(x, z).join()
         for (ability in definition.abilities) {
             val fx = ShadeWyrmShaderFx(instance)
-            val frame = MobAbilityFrame(ability, Pos.ZERO, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L)
+            // A target-anchored ability lands where the player stands, 7 blocks ahead here.
+            val at = if (ability.anchor == MobAbilityAnchor.TARGET) Pos(0.0, 0.0, 7.0) else Pos.ZERO
+            val frame = MobAbilityFrame(ability, at, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L, Pos.ZERO)
             val hitTick = (ability.telegraphMillis / 50).toInt()
             fx.windup(ability.id, frame) { null }
             repeat(hitTick + 30) { tick ->

@@ -149,9 +149,8 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                 }
             }
             "shade-breath" -> if (shape is MobAttackShape.Slam) {
-                // A torrent of shadow dust, not a ray: billowing clouds rolling out and widening, the ground scorched.
+                // A torrent of shadow dust, not a ray: bright clouds rolling out and widening, dark billows behind them.
                 val mouth = head(ShadeWyrmVfx.SNOUT) ?: o.add(f.mul(3.5)).add(0.0, 2.5, 0.0)
-                add("beam", 3, o.add(f.mul(shape.length / 2)).add(0.0, .1, 0.0), 1, 18, Vec(shape.halfWidth * 2.3, 1.0, shape.length), yaw)
                 val touch = o.add(f.mul(shape.length * .35)).add(0.0, .8, 0.0)
                 val along = touch.sub(mouth)
                 val pitch = atan2(-along.y(), hypot(along.x(), along.z()))
@@ -180,11 +179,6 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                     add("smoke", 6, o.add(f.mul(2.5 + t * (shape.length - 3.0))).add(right.mul(((n * 3) % 5 - 2) * .3 * shape.halfWidth))
                         .add(0.0, 1.6 + t, 0.0), 1 + n / 2, 20, Vec(size, size, 1.0), IDENTITY,
                         slide = f.mul(1.5).add(0.0, 1.4, 0.0), grow = Vec(size * 1.3, size * 1.3, 1.0), moveTicks = 18, billboard = true)
-                }
-                val edges = (shape.length / 1.6).toInt()
-                for (n in 0 until edges) for (side in listOf(-1.0, 1.0)) {    // dust kicked up along both edges as it passes
-                    val at = o.add(f.mul(1.5 + n * 1.6)).add(right.mul(side * shape.halfWidth))
-                    add("curtain", 5, at.add(0.0, 1.1, 0.0), 1 + n / 2, 14, Vec(1.9, 2.2, 1.0), yawTo(right.mul(side)))
                 }
             }
             "shade-storm" -> if (shape is MobAttackShape.Ring) {
@@ -277,8 +271,8 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
     }
 
     /** Where the dust spores hang: a sunflower spread over the circle, low to chest height. */
-    private fun spores(radius: Double): List<Vec> = (0 until 18).map { n ->
-        val r = radius * .95 * kotlin.math.sqrt((n + .5) / 18)
+    private fun spores(radius: Double): List<Vec> = (0 until 26).map { n ->
+        val r = radius * .95 * kotlin.math.sqrt((n + .5) / 26)
         val a = n * 2.39996
         Vec(cos(a) * r, .5 + (n % 4) * .35, sin(a) * r)
     }
