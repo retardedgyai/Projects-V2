@@ -2,7 +2,8 @@
 
     python scripts/build_grimoire_assets.py
 
-Reads assets/ui/grimoire/source/*.png (item icons and illustrations) and writes
+Reads assets/ui/grimoire/source/*.png (item icons and illustrations), draws the trunk map's dithered
+nebula and the medallion halos, and writes
 server-minestom/src/main/resources/polish05/grimoire.zip (private-namespace sprites, merged into
 the UI pack by CoreUiPackServer) and polish05/grimoire.json (sprite chars and tile layouts).
 
@@ -15,7 +16,7 @@ Images wider or taller than 256 px are split into tiles because larger font glyp
 Alpha is snapped to fully opaque or fully clear: a translucent glyph hides what is drawn after it.
 The one exception is a single alpha-1 pixel that keeps a tile's advance at its full width.
 """
-import io, json, sys, zipfile
+import io, json, math, random, sys, zipfile
 from pathlib import Path
 from PIL import Image
 
@@ -50,6 +51,55 @@ def crisp_text(files: dict[str, bytes]) -> None:
     METRICS.write_text(json.dumps(metrics, ensure_ascii=False, sort_keys=True, separators=(",", ":")), encoding="utf-8")
 
 
+# The trunk map's sky and the medallion halos, in opaque pixel steps: the client draws soft glow sprites
+# as flat discs, so the glow is dithered instead. One texel is 4 px of GrimoireFlow's 1920 layout.
+NEBULA_SIZE = (1356 // 4, 880 // 4)          # GrimoireFlow MAP_W x MAP_H
+NEBULA_STEPS = [(14, 21, 40), (17, 30, 56), (21, 40, 72), (27, 52, 88)]   # over the map fill #0b0e1b
+BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
+# Medallion radius 44 px = 11 texels; three 2-texel rings, the outer one a checker.
+HALO_TINTS = {"gold": (200, 160, 70), "cyan": (90, 210, 235), "violet": (180, 154, 232), "red": (200, 90, 75)}
+HALO_INNER, HALO_RINGS = 11, ((2, 0.28), (4, 0.18), (6, 0.10))
+
+
+def value_noise(cells: int, size: tuple[int, int], seed: int) -> Image.Image:
+    rnd = random.Random(seed)
+    small = Image.new("L", (cells * size[0] // size[1] + 1, cells))
+    small.putdata([rnd.randrange(256) for _ in range(small.width * small.height)])
+    return small.resize(size, Image.BICUBIC)
+
+
+def nebula() -> Image.Image:
+    """Two soft clouds over the trunk's opened part, fading out to the right where it is still locked."""
+    w, h = NEBULA_SIZE
+    coarse, fine = value_noise(5, (w, h), 1), value_noise(14, (w, h), 2)
+    image = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    for y in range(h):
+        for x in range(w):
+            u, v = x / w, y / h
+            field = 0.55 * math.exp(-(((u - 0.30) / 0.22) ** 2 + ((v - 0.45) / 0.30) ** 2)) \
+                + 0.35 * math.exp(-(((u - 0.50) / 0.16) ** 2 + ((v - 0.62) / 0.22) ** 2))
+            field = field * (0.55 + 0.75 * coarse.getpixel((x, y)) / 255) + 0.12 * fine.getpixel((x, y)) / 255
+            level = min(4, max(0, int(field * 4.4 + (BAYER[y % 4][x % 4] / 16 - 0.5) * 0.9)))
+            if level:  # level 0 is the map fill itself: left clear
+                image.putpixel((x, y), (*NEBULA_STEPS[level - 1], 255))
+    return image
+
+
+def halo(tint: tuple[int, int, int]) -> Image.Image:
+    size = 2 * (HALO_INNER + HALO_RINGS[-1][0])
+    under = NEBULA_STEPS[1]
+    image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    for y in range(size):
+        for x in range(size):
+            d = math.hypot(x + 0.5 - size / 2, y + 0.5 - size / 2) - HALO_INNER
+            for i, (out, a) in enumerate(HALO_RINGS):
+                if 0 < d <= out:
+                    if i < len(HALO_RINGS) - 1 or (x + y) % 2 == 0:
+                        image.putpixel((x, y), (*(round(u + (t - u) * a) for u, t in zip(under, tint)), 255))
+                    break
+    return image
+
+
 def snap_alpha(image: Image.Image) -> Image.Image:
     image = image.convert("RGBA")
     alpha = image.getchannel("A").point(lambda a: 255 if a >= 128 else 0)
@@ -80,9 +130,8 @@ def main() -> None:
         providers.append({"type": "bitmap", "file": f"{NS}:{rel}", "ascent": image.height, "height": image.height, "chars": [char]})
         sprites[name] = {"char": char, "font": FONT, "width": image.width, "height": image.height}
 
-    for path in sorted(SOURCE.glob("*.png")):
-        image = snap_alpha(Image.open(path))
-        name = path.stem
+    generated = [("trunk_nebula", nebula())] + [(f"halo_{k}", halo(t)) for k, t in HALO_TINTS.items()]
+    for name, image in [(p.stem, snap_alpha(Image.open(p))) for p in sorted(SOURCE.glob("*.png"))] + generated:
         if image.width <= TILE and image.height <= TILE:
             add(name, image)
             continue

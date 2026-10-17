@@ -138,11 +138,13 @@ internal class GrimoireFlow(
 
     private val nodes = mutableListOf<UiNode>()
     private fun box(x: Double, y: Double, w: Double, h: Double) = Box(x * SCALE, TOP + y * SCALE, w * SCALE, h * SCALE)
+    /** Added to every depth while the trunk map's content is drawn, to leave layers for its nebula and halos. */
+    private var lift = 0
     /** UiRenderer puts glyphs (sprites, text) 5 depth steps in front of fills; fills are lifted so one depth is one layer. */
     private fun rect(id: String, x: Double, y: Double, w: Double, h: Double, color: String, depth: Int, action: String? = null, hover: String? = null) {
         if (w <= 0 || h <= 0) return
         val style = buildMap { put("background-color", solid(color)); if (hover != null) put("hover-background-color", solid(hover)) }
-        nodes += UiNode(id, box(x, y, w, h), "", style, action, null, true, depth + GLYPH_LIFT)
+        nodes += UiNode(id, box(x, y, w, h), "", style, action, null, true, depth + GLYPH_LIFT + lift)
     }
     private fun sprite(id: String, name: String, x: Double, y: Double, w: Double, h: Double, depth: Int, tint: String? = null, opacity: Double = 1.0) {
         val s = art.sprites[name] ?: return
@@ -150,7 +152,7 @@ internal class GrimoireFlow(
             if (tint != null) put("sprite-color", "#" + tint.takeLast(6))
             if (opacity < 1.0) put("opacity", String.format(Locale.US, "%.3f", opacity))
         }
-        nodes += UiNode(id, box(x, y, w, h), "", style, null, null, true, depth, s)
+        nodes += UiNode(id, box(x, y, w, h), "", style, null, null, true, depth + lift, s)
     }
     /** The 魔術書's own crisp page for this face and size ("gmv3m15", built by build_grimoire_assets.py), else the forge's. */
     private fun page(family: String, size: Double) =
@@ -162,7 +164,7 @@ internal class GrimoireFlow(
             put("font-size", "${size * SCALE}px"); put("color", "#" + color.takeLast(6)); put("text-align", align)
             put("font-family", "projects_ui_polish05:${page(family, size)}")
             if (shadow) put("text-shadow", "true")
-        }, null, null, true, depth)
+        }, null, null, true, depth + lift)
     }
     private fun width(value: String, family: String, size: Double) =
         Polish05FontMetrics.advance(value, page(family, size)) / Polish05FontMetrics.SIZE * size
@@ -238,7 +240,8 @@ internal class GrimoireFlow(
             // Stars over the map sit on its (opaque) fill, so the map keeps its night sky.
             val onMap = s.first in MAP_X + 12..MAP_X + MAP_W - 16 && s.second in MAP_Y + 12..MAP_Y + MAP_H - 16
             val color = if (twinkle) "#ffeafcff" else if (i % 3 == 0) "#ff9fe7f4" else "#ff5e7aa8"
-            rect("star$i", s.first, s.second, s.third, s.third, if (onMap && !twinkle) "#ff3a4a6e" else color, if (onMap) 2 else -7)
+            // On the map they sit above its nebula (layer 2) and halos (3), with the lifted map content.
+            rect("star$i", s.first, s.second, s.third, s.third, if (onMap && !twinkle) "#ff3a4a6e" else color, if (onMap) 5 else -7)
         }
     }
 
@@ -275,6 +278,35 @@ internal class GrimoireFlow(
     private fun nodeY(e: Entry) = MAP_Y + 40 + e.row * 170.0
 
     private fun trunkMap(now: Long) {
+        nebulaAndHalos(now)
+        lift = 3
+        try { trunkMapContent(now) } finally { lift = 0 }
+    }
+
+    /**
+     * The trunk's sky: a dithered nebula behind the opened part (opaque pixel steps from build_grimoire_assets.py,
+     * one texel = 4 px) and stepped halos behind done, workable and goal medallions. They take layers 2 and 3,
+     * between the map fill (1) and its content, lifted by 3, so nothing shares a depth with them.
+     */
+    private fun nebulaAndHalos(now: Long) {
+        for ((name, s) in art.sprites) {
+            if (!name.startsWith("trunk_nebula_")) continue
+            val (tx, ty) = name.removePrefix("trunk_nebula_").split("_").map(String::toDouble)
+            sprite("neb-$name", name, MAP_X + tx * 4, MAP_Y + ty * 4, s.width * 4.0, s.height * 4.0, 2)
+        }
+        for (e in ENTRIES) {
+            if (fresh == e.id && now - freshAt < 450) continue  // lights up once the unlocked medallion has grown
+            val tint = when (state(e)) {
+                State.DONE -> "gold"; State.OPEN, State.GOAL_OPEN -> "cyan"; State.SIDE -> "violet"; State.GOAL -> "red"
+                State.LOCKED, State.HIDDEN -> continue
+            }
+            val s = art.sprites["halo_$tint"] ?: continue
+            val size = s.width * 4.0
+            sprite("n-${e.id}-halo", "halo_$tint", nodeX(e) - size / 2, nodeY(e) - size / 2, size, size, 3)
+        }
+    }
+
+    private fun trunkMapContent(now: Long) {
         // The count is the trunk only; side entries are optional.
         val trunk = ENTRIES.filter { !it.side }
         val done = trunk.count { state(it) == State.DONE }

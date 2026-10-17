@@ -65,6 +65,12 @@ alpha cutoff fully opaque: soft glow sprites become flat discs (the book uses no
 text thickens. The book therefore has its own crisp text pages (`gmv3m15` …, alpha snapped at 0.5), built
 by `build_grimoire_assets.py`; `render_grimoire_preview.py` draws text and sprites the same way.
 
+The trunk map's glow is therefore drawn in opaque pixel steps: `build_grimoire_assets.py` generates a dithered
+nebula (`trunk_nebula_*`, one texel = 4 px, 4 colour steps plus the map fill left clear) and stepped halos
+(`halo_gold` / `cyan` / `violet` / `red`, three 2-texel rings, the outer one a checker). GrimoireFlow draws them on
+layers 2 and 3 above the map fill and lifts the rest of the trunk map by 3 (`lift`), so nothing shares their depth.
+Halos follow the medallion state: done gold, workable cyan, side violet, the locked trunk goal red.
+
 ## 再開メモ（2026-10-17）
 
 - 藍の承認済み: 見本①〜⑧（docs/proposals/grimoire-ui-2026-10/mock-1-approved.png）、受け取り演出A（claim-abc-chosen-A.png）、
@@ -72,6 +78,9 @@ by `build_grimoire_assets.py`; `render_grimoire_preview.py` draws text and sprit
 - 地図の章の見せ方は B（章の境に細い縦線＋章名の下線）に決定（2026-10-17、map-chapters-abc-linux.png）。
   切替と一時ダンプは削除し、`GOLDEN` も B で更新済み。共通の直し（整数倍ドット・「この先」・封印の枝の?地図）も入っている。
 - 描画は Linux では `python3`、比較用ラベルの日本語フォントは Noto Sans CJK（`/usr/share/fonts/opentype/noto/`）。
+- 空気感は②「星雲＋後光」に決定・実装（2026-10-17、見本 https://claude.ai/artifact/Ub7KNcn4aZG2Hd43HamvUx ）。
+- 注意: Linux で `build_grimoire_assets.py` を回すと、くっきり文字のページ（gmv3*）も描き直され、字幅が Windows 版と少しずれる。
+  今回は文字ページと polish05-font-metrics.json を元のまま残し、新しい画像だけ足した。文字を足すときは要確認。
 - 残り: 503c48ed 以降を藍が実機で確認すること。
 - テスト: Java 25、`:server-minestom:test --tests '*Grimoire*'`（maxHeap 1g・ワーカー1）。サーバーは `-Dprojects.port=25567` で別立てしていた。
 - 絵の確認は `scripts/render_grimoire_preview.py`（実機の文字・スプライトの描き方を再現）。実機SSはクライアントの screenshots/ に出る。
