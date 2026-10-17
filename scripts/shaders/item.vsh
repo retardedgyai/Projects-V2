@@ -1,5 +1,9 @@
 #version 330
 
+// ProjectS combat VFX: vanilla 26.2 core/item, plus two values for item.fsh. rawColor is the item tint untouched
+// by lighting (the 黒翳竜 VFX parameters, scripts/build_boss_vfx.py); vfxPosition is the camera-relative position
+// for the warrior heat shimmer (scripts/build_warrior_iron_vfx.py). Rendering is otherwise the vanilla vertex stage.
+
 #moj_import <minecraft:light.glsl>
 #moj_import <minecraft:fog.glsl>
 #moj_import <minecraft:dynamictransforms.glsl>
@@ -21,9 +25,9 @@ out float cylindricalVertexDistance;
 out vec4 vertexColor;
 out vec4 lightMapColor;
 out vec4 overlayColor;
+out vec4 rawColor;
 
 out vec2 texCoord0;
-// ProjectS: camera-relative position for the effect shimmer (vanilla item.vsh otherwise unchanged).
 out vec3 vfxPosition;
 
 void main() {
@@ -35,6 +39,7 @@ void main() {
     vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, Normal, Color);
     lightMapColor = sample_lightmap(Sampler2, UV2);
     overlayColor = texelFetch(Sampler1, UV1, 0);
+    rawColor = Color;
 
     texCoord0 = UV0;
     vfxPosition = Position;

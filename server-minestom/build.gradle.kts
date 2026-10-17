@@ -7,8 +7,19 @@ kotlin {
     jvmToolchain(25)
 }
 
+repositories {
+    // WorldSeed Entity Engine (Apache-2.0, https://github.com/AtlasEngineCa/WorldSeedEntityEngine) is only
+    // published on its author's Reposilite. Restrict that repository to the one group so nothing else resolves there.
+    exclusiveContent {
+        forRepository { maven("https://reposilite.atlasengine.ca/public") { name = "AtlasEngine" } }
+        filter { includeGroup("net.worldseed.multipart") }
+    }
+}
+
 dependencies {
     implementation(project(":web-ui-lab"))
+    // D12: Blockbench bosses are displayed and animated with WSEE (built against Minestom 2026.07.22-26.2).
+    implementation("net.worldseed.multipart:WorldSeedEntityEngine:13.0.4")
     implementation("net.minestom:minestom:${property("minestom_version")}")
     testImplementation(kotlin("test"))
 }
@@ -38,6 +49,24 @@ val generatedPackDirs = listOf(
 )
 val generatedPackFiles = listOf("index.txt", "pack.mcmeta")
 
+// Blockbench bosses (docs/development/boss-model-pipeline.md): assets/bosses/*.bbmodel -> WSEE bone models in
+// the private worldseed namespace + server-side geometry/animation data. Both outputs are ignored by git.
+val bossModelSources = rootProject.layout.projectDirectory.dir("assets/bosses")
+val bossPackDir = corePack.dir("assets/worldseed")
+val bossDataDir = layout.projectDirectory.dir("src/main/resources/boss-models")
+val generateBossModels by tasks.registering(JavaExec::class) {
+    group = "build"
+    description = "Converts assets/bosses/*.bbmodel with WSEE into pack models and server model data"
+    // Compiled classes + libraries only: the full runtime classpath would include processResources (a cycle).
+    classpath = files(sourceSets.main.get().output.classesDirs) + configurations.runtimeClasspath.get()
+    mainClass = "dev.projects.server.mob.BossModelPack"
+    args(bossModelSources.asFile.path, corePack.asFile.path, bossDataDir.asFile.path)
+    inputs.files(fileTree(bossModelSources) { include("*.bbmodel") })
+        .withPropertyName("bbmodels").withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.dir(bossPackDir)
+    outputs.dir(bossDataDir)
+}
+
 val generateResourcePack by tasks.registering(Exec::class) {
     group = "build"
     description = "Regenerates the generated core-ui-pack assets with scripts/gen_resource_pack.py"
@@ -60,8 +89,13 @@ val generateResourcePack by tasks.registering(Exec::class) {
     inputs.files(fileTree(corePack) {
         exclude(generatedPackFiles)
         exclude(generatedPackDirs.map { "$it/**" })
+        exclude("assets/worldseed/**")
     }).withPropertyName("committedPack").withPathSensitivity(PathSensitivity.RELATIVE)
 
+    // index.txt lists the boss models too, so the pack index is rebuilt after them.
+    dependsOn(generateBossModels)
+    inputs.files(generateBossModels.map { it.outputs.files }).withPropertyName("bossModels")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.dirs(generatedPackDirs.map { corePack.dir(it) })
     outputs.files(generatedPackFiles.map { corePack.file(it) })
 }

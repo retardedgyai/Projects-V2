@@ -25,6 +25,7 @@ CHAIN = [
     "build_ice_garden_bloom.py", # combat_vfx/garden_bloom
     # Only font/first_magic_canvas_*.json; the first_magic art itself is committed (partly hand-finished).
     ["build_first_magic_assets.py", "--fonts-only"],
+    "build_boss_vfx.py",         # boss_vfx data maps + the core/item shader experiment
 ]
 
 

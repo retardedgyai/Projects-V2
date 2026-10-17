@@ -39,8 +39,9 @@ internal object CoreUiPackPolicy {
     }
 
     /**
-     * Combat VFX shader (scripts/build_warrior_iron_vfx.py): core/item stays vanilla except for texels carrying the
-     * warrior heat/glow alpha markers.
+     * Combat VFX shader, one core/item for both experiments: texels carrying the warrior heat/glow alpha markers
+     * (scripts/build_warrior_iron_vfx.py) and items tinted with the 黒翳竜 VFX marker (scripts/build_boss_vfx.py).
+     * Every other item renders as vanilla.
      */
     val shaderOverrides: Set<String> = setOf("assets/minecraft/shaders/core/item.vsh", "assets/minecraft/shaders/core/item.fsh")
 

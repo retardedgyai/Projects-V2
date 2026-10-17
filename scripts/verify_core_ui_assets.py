@@ -11,6 +11,7 @@ from build_combat_hud import vanilla_overrides, vanilla_reskins, NUMBER_FONTS, n
 import combat_hud_art as hud_art
 from build_core_menu_assets import TEXT_YS, CELL, SOURCE_CELL, TEXT_SCALE, TEXT_BASE, FRAME_BASE, BUTTON_BASE, CARD_BASE, PALETTE, DOT_FONT_SHA256
 from build_core_menu_art import ART, ART_BASE, ART_CELL, ART_YS, ART_SIZES
+from build_boss_vfx import shader_overrides
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
@@ -21,10 +22,10 @@ def verify():
     assert len(paths) == len(set(paths)) and paths == sorted(paths)
     overrides = vanilla_overrides()
     actual_overrides = {p for p in paths if p.startswith("assets/minecraft/")}
-    additions = {"assets/minecraft/atlases/items.json"}
+    additions = {"assets/minecraft/atlases/items.json"} | shader_overrides()
     reskins = vanilla_reskins()
     assert actual_overrides == set(overrides) | set(reskins) | additions, \
-        "Only the replaced HUD sprites, the reskinned hotbar and the approved VFX atlas addition are permitted"
+        "Only the replaced HUD sprites, the reskinned hotbar, the approved VFX atlas addition and the combat VFX core/item shader are permitted"
     assert json.loads((PACK / "assets/minecraft/atlases/items.json").read_text()) == {
         "sources":[{"type":"minecraft:directory","source":"combat_vfx","prefix":"combat_vfx/"}]}
     assert not any(".." in p or "\\" in p or p.startswith("/") for p in paths)
