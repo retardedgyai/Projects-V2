@@ -52,8 +52,8 @@ data class CoreSkillDefinition(
             add("在域中40%減速（氷大成50%） / ボス10% / 退出後最大0.35秒")
         }
         if (journey?.job == CoreClass.WARRIOR && icon in CoreWarriorRules.heavy) {
-            add("闘気${CoreWarriorRules.RAGE_COST}以上なら自動で使い、威力+${CoreWarriorRules.RAGE_BONUS_PERCENT}%")
-            if (icon == "slam") add("通常3段目の命中から${CoreWarriorRules.FINISHER_TICKS/20.0}秒以内：発生${CoreCombatMath.number(copy(startup = CoreWarriorRules.FINISHER_STARTUP).startupTicks(sheet)/20.0)}秒・威力+${CoreWarriorRules.FINISHER_BONUS_PERCENT}%")
+            add("闘気${CoreWarriorRules.RAGE_COST.toInt()}以上なら自動で使い、威力+${CoreWarriorRules.RAGE_BONUS_PERCENT}%")
+            if (icon == "slam") add("通常3段目の命中から${CoreCombatMath.number(CoreWarriorRules.FINISHER_TICKS/20.0)}秒以内：発生${CoreCombatMath.number(copy(startup = CoreWarriorRules.FINISHER_STARTUP).startupTicks(sheet)/20.0)}秒・威力+${CoreWarriorRules.FINISHER_BONUS_PERCENT}%")
         }
         if (journey != null) add("後隙 ${CoreCombatFeel.recovery(journey.job, this@CoreSkillDefinition)/20.0}秒 / 次の入力は0.3秒先行受付")
     }
