@@ -22,7 +22,7 @@ HIT = {"shade-sweep": 1.1, "shade-pounce": 1.4, "shade-dust": 1.7, "shade-pulse"
 JP = {"shade-sweep": "翼脚薙ぎ", "shade-pounce": "飛びかかり", "shade-dust": "鱗粉炸裂", "shade-pulse": "触角の共鳴",
       "shade-breath": "翳の吐息（怒り）", "shade-storm": "鱗粉嵐（怒り）"}
 ENRAGED_ONLY = ("shade-breath", "shade-storm")
-FRAME = {"shade-breath": (.5, 130), "shade-storm": (.42, 0), "shade-pounce": (.75, 70), "shade-dust": (.55, 80)}
+FRAME = {"shade-breath": (.5, 130), "shade-storm": (.42, 0), "shade-pounce": (.75, 70), "shade-dust": (.62, 20)}
 UPRIGHT = ("beam_up", "ring_up", "puff", "smoke", "curtain")
 
 

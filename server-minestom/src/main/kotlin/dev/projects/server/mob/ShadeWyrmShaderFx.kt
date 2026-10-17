@@ -53,16 +53,17 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         addingWindup = true
         try { when (abilityId) {
             "shade-dust" -> if (shape is MobAttackShape.Ring) {
-                // Spores shaken off the wings drift out over the circle and hang there, glowing brighter.
+                // Spores pour off the body and spread out, ring by ring, until they hang over the whole circle.
                 val d = shape.radius * 2.05
                 add("ring", 2, o.add(0.0, .08, 0.0), 0, ticks, Vec(d, 1.0, d), IDENTITY) { .1 + .25 * it * it }
-                val wings = frame.casterOrigin.add(0.0, 3.2, 0.0)
-                for ((n, spot) in spores(shape.radius).withIndex()) {
+                val body = frame.casterOrigin.add(0.0, 2.0, 0.0)
+                val all = spores(shape.radius)
+                for ((n, spot) in all.withIndex()) {
                     val at = o.add(spot)
-                    val delay = n % 8
-                    val from = Vec(wings.x() - at.x() + (n % 3 - 1) * 1.5, wings.y() - at.y(), wings.z() - at.z())
-                    add("puff", 4, at, delay, ticks - delay, Vec(.5, .5, 1.0), IDENTITY, translation = from,
-                        grow = Vec(1.3, 1.3, 1.0), slide = Vec.ZERO, moveTicks = 14 + n % 6, billboard = true) { .55 - .4 * it }
+                    val delay = (n * (ticks - 12) / all.size).coerceAtLeast(0)
+                    val from = Vec(body.x() - at.x(), body.y() - at.y(), body.z() - at.z())
+                    add("puff", 4, at, delay, ticks - delay, Vec(.6, .6, 1.0), IDENTITY, translation = from,
+                        grow = Vec(1.4, 1.4, 1.0), slide = Vec.ZERO, moveTicks = 10, billboard = true) { .5 - .38 * it }
                 }
             }
             "shade-pulse" -> if (shape is MobAttackShape.Ring) {
