@@ -46,8 +46,9 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         when (abilityId) {
             "shade-sweep" -> if (shape is MobAttackShape.Sweep) {
                 val d = shape.radius * 2.1
-                add("slash", 1, o.add(0.0, .9, 0.0), 0, 9, Vec(d, 1.0, d), yaw)
-                add("slash", 1, o.add(0.0, 1.5, 0.0), 1, 8, Vec(d * .78, 1.0, d * .78), yaw)
+                // Tilted like the wing-arm's swing: high where it starts (right), low across the front.
+                add("slash", 1, o.add(0.0, 1.4, 0.0), 0, 9, Vec(d, 1.0, d), mul(yaw, mul(qz(.32), qx(-.12))))
+                add("slash", 1, o.add(0.0, 1.9, 0.0), 1, 8, Vec(d * .8, 1.0, d * .8), mul(yaw, mul(qz(.5), qx(-.2))))
             }
             "shade-pounce" -> if (shape is MobAttackShape.Slam) {
                 val landing = o.add(f.mul(2.0))
@@ -122,6 +123,17 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                 }
             }
         }
+    }
+
+    /** What a client shows now (transform interpolation included), for the CPU preview dump. */
+    internal data class View(val sprite: String, val kind: Int, val progress: Double, val at: Pos, val scale: Vec,
+                             val rotation: FloatArray, val translation: Vec, val billboard: Boolean)
+
+    internal fun views(): List<View> = pieces.filter { it.entity != null }.map { p ->
+        val age = now - p.start
+        val k = if (p.moveTicks > 0) ((age - 1).toDouble() / p.moveTicks).coerceIn(0.0, 1.0) else 0.0
+        fun lerp(a: Vec, b: Vec?) = if (b == null) a else a.add(b.sub(a).mul(k))
+        View(p.sprite, p.kind, age.toDouble() / p.life, p.at, lerp(p.scale, p.grow), p.rotation, lerp(p.translation, p.slide), p.billboard)
     }
 
     fun dispose() {

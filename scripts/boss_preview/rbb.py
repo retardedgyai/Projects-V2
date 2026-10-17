@@ -65,7 +65,8 @@ FACES = {
 
 
 def render(sc, pose=None, hidden=(), az=36, el=16, size=(900, 640), scale=3.4, cx=.5, cy=.84, flat=None,
-           bg=((118, 122, 140), (64, 64, 78)), outline=True, center=None, unshaded=False):
+           bg=((118, 122, 140), (64, 64, 78)), outline=True, center=None, unshaded=False, with_depth=False):
+    """with_depth=True also returns the depth buffer (larger = nearer the camera, -1e9 = empty)."""
     mats = sc.mats(pose)
     a, e = math.radians(az), math.radians(el)
     cam = np.array([math.cos(e) * math.sin(a), math.sin(e), math.cos(e) * math.cos(a)])
@@ -142,7 +143,7 @@ def render(sc, pose=None, hidden=(), az=36, el=16, size=(900, 640), scale=3.4, c
         m = zb > -1e8
         edge = m & ~(np.roll(m, 1, 0) & np.roll(m, -1, 0) & np.roll(m, 1, 1) & np.roll(m, -1, 1))
         img[edge] = (12, 10, 16)
-    return Image.fromarray(img)
+    return (Image.fromarray(img), zb) if with_depth else Image.fromarray(img)
 
 
 def text(img, xy, s, font=MID, fill=(236, 228, 244)):

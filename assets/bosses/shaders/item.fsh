@@ -54,12 +54,12 @@ vec4 shadeVfx(vec4 data, float kind, float p) {
         float head = p * 1.25;
         float trail = clamp(1.0 - (head - flow) / .55, 0.0, 1.0) * step(flow, head);
         float body = mask * trail * smoothstep(.15, .55, n + trail * .5);
-        heat = body * (.45 + .55 * trail) + smoothstep(.9, 1.0, trail) * mask * .5;
-        alpha = body * (1.0 - smoothstep(.75, 1.0, p));
+        heat = body * (.7 + .5 * trail) + smoothstep(.85, 1.0, trail) * mask * .6;
+        alpha = min(1.0, body * 1.5) * (1.0 - smoothstep(.75, 1.0, p));
     } else if (kind < 2.5) {                           // 2 ring: a shock ring the server scales; flickers, fades with p
         float flick = .75 + .25 * sin(t * 40.0 + flow * 60.0);
-        heat = mask * (.5 + .5 * n) * flick + mask * mask * .4;
-        alpha = mask * (.55 + .45 * n) * (1.0 - p);
+        heat = mask * (.75 + .35 * n) * flick + mask * .3;
+        alpha = min(1.0, mask * 1.3) * (.8 + .2 * n) * (1.0 - p * p);
     } else if (kind < 3.5) {                           // 3 beam: dust streaming along flow, a white core
         float stream = fbm(vec2(flow * 14.0 - t * 9.0, across * 3.0));
         heat = mask * mask * (.6 + .6 * stream);
@@ -68,7 +68,7 @@ vec4 shadeVfx(vec4 data, float kind, float p) {
         float threshold = p * 1.1;
         float v = mask * .7 + n * .5;
         float edge = 1.0 - smoothstep(0.0, .12, v - threshold);
-        heat = mask * .35 + edge * .9;
+        heat = mask * .55 + edge;
         alpha = step(threshold, v) * mask * (1.0 - .4 * p);
     } else {                                           // 5 wall: dust rising off the ground in a curtain
         float rise = fbm(vec2(flow * 18.0, across * 2.5 - t * 3.0));
