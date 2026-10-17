@@ -65,3 +65,10 @@ pink のボスバーのスプライトを透明にし、名前コンポーネン
   `python scripts/render_combat_hud_preview.py` が画面の 2倍・4倍、HUD の 8倍、6職の菱形、ボスバーの PNG を作る。
   ローカルの 26.2 クライアント jar から数字とホットバーのアイテムを文脈として読む（リポジトリには入れない）。
   これは配置確認図で、実ゲームのスクリーンショットではない。GUI scale ごとの見え方と手触りの判断は Creator が行う。
+
+## 再開メモ（2026-10-17、PC入れ替え前）
+
+- 状態：藍が承認した新HUDを実装・実機確認済み（play/gyai/combat-hud、643e38e1 以降）。PR は未作成、main へのマージは藍の判断待ち。
+- 絵の正本は `scripts/combat_hud_art.py`、承認モックと判定一覧は `assets/core-ui/proposals/2026-10-16-combat-hud/`（README.md・ok-ng.md・承認画像）。
+- 次の一手：藍が実機で気になった点を F2 で撮ってもらい直す → PR。CD管理のクラスリワーク（別ブランチ）が入ったら HUD との接続（CoreHudSkill の CD/資源）を確認する。
+- 注意：play/gyai/remove-starweaver と 7職リワークは「星織りを消す側」で合流。クライアントは「画面のあるデスクトップに出す起動スクリプト」経由でないとすぐ落ちる。
