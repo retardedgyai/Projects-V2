@@ -206,15 +206,26 @@ def enrage_pose(sk, rest_feet, theta, t):
     return p
 
 
+# The walk is timed to the server's ground speed so the planted feet do not skate: a stance foot slides back one
+# stride over duty * cycle seconds, which must equal the carrier's speed (0.13 blocks/tick = 41.6 px/s, x1.2 enraged).
+WALK = dict(stride=34, duty=.7, enraged_stride=36)
+WALK_SPEED = 41.6                                # px/s
+
+
+def walk_cycle(enraged):
+    stride = WALK["enraged_stride"] if enraged else WALK["stride"]
+    return stride / (WALK["duty"] * WALK_SPEED * (1.2 if enraged else 1.0))
+
+
 def walk_pose(sk, rest_feet, t, enraged=False, theta=0.0):
-    duty, stride, lift = .7, 18, 11
+    duty, stride, lift = WALK["duty"], WALK["stride"], 11
     ph = {"hl": 0, "fl": .25, "hr": .5, "fr": .75}
     roll, bob, sway = 1.5, .35, .6
     s = math.sin(2 * math.pi * t)
     p = {}
     if enraged:
         enraged_stance(sk, p, theta)
-        stride, lift = 20, 8
+        stride, lift = WALK["enraged_stride"], 8
     add(p, "body", (0, sway * s, roll * math.sin(2 * math.pi * (t + .25))), (0, -bob * abs(s), 0))
     targets = {}
     for k in LEGS:
@@ -231,6 +242,93 @@ def walk_pose(sk, rest_feet, t, enraged=False, theta=0.0):
         add(p, b, (0, 5 * (1 + .5 * k) * math.sin(2 * math.pi * (t - .15 * (k + 1))), 0))
     for side, sfx in ((1, "l"), (-1, "r")):
         add(p, f"wing_{sfx}", (2 * math.sin(2 * math.pi * (t + (0 if side > 0 else .5))), 0, 0))
+    return p
+
+
+# ---- moving round the player (draft, 2026-10-17): strafe, hop back, side dash ----
+# The server moves the carrier; these clips keep the body over it (no horizontal travel), only the gait, the arc
+# of a hop and the lean. Strafe: a sideways walk at 1.6 blocks/s with the head kept on the player.
+STRAFE = dict(stride=22, duty=.7, speed=25.6)     # px, -, px/s
+LEG_DROP = 40.0                                   # px from leg root to foot, for the sideways swing
+
+
+def strafe_cycle():
+    return STRAFE["stride"] / (STRAFE["duty"] * STRAFE["speed"])
+
+
+def side_swing(sk, p, offsets):
+    """Swing each leg sideways about its root so its foot lands dx px aside (the IK works in the y-z plane only)."""
+    for k, dx in offsets.items():
+        add(p, LEGS[k][0], (0, 0, math.degrees(math.asin(max(-.9, min(.9, dx / LEG_DROP))))))
+
+
+def strafe_pose(sk, rest_feet, t, sign, enraged=False, theta=0.0):
+    """sign +1 steps toward model +X. Lead legs on that side move first, the far legs cross after them."""
+    duty, stride, lift = STRAFE["duty"], STRAFE["stride"], 9
+    ph = {"fl": 0, "hl": .2, "fr": .5, "hr": .7} if sign > 0 else {"fr": 0, "hr": .2, "fl": .5, "hl": .7}
+    p = {}
+    if enraged:
+        enraged_stance(sk, p, theta)
+    s = math.sin(2 * math.pi * t)
+    add(p, "body", (0, 0, -2.5 * sign + 1.0 * math.sin(4 * math.pi * t)), (0, -.4 * abs(s), 0))
+    targets, swing = {}, {}
+    for k in LEGS:
+        dy, dz = foot_offset((t + ph[k]) % 1, duty, stride, lift if k.startswith("f") else lift * .5, k.startswith("f"))
+        targets[k] = rest_feet[k] + np.array([0, dy, 0])
+        swing[k] = -dz * sign                          # dz runs +stride/2 -> -stride/2 over the stance: reuse it sideways
+    solve_legs(sk, p, targets)
+    side_swing(sk, p, swing)
+    add(p, "neck", (-10 if not enraged else 0, -6 * sign, 2 * sign)); add(p, "skull", (8 if not enraged else 0, -4 * sign, 0))
+    for k, b in enumerate(TAIL):
+        add(p, b, (0, (6 + 3 * k) * sign + 3 * math.sin(2 * math.pi * (t - .15 * (k + 1))), 0))
+    return p
+
+
+def hop_back_pose(sk, rest_feet, t, enraged=False, theta=0.0):
+    """跳び退き, 0.9 s: sinks, springs up and back with the wings flaring, lands on the hind feet then the fore, settles.
+    The server carries it ~3.5 blocks back between 0.16 s and 0.46 s."""
+    p = {}
+    y = K(t, [(0, 0), (.14, -6), (.2, 2), (.32, 14), (.44, 2), (.5, -5), (.62, -1), (.9, 0)])
+    pitch = K(t, [(0, 0), (.14, 4), (.22, -14), (.36, -6), (.46, 6), (.56, 4), (.9, 0)])
+    if enraged:
+        enraged_stance(sk, p, theta)
+    body(sk, p, (pitch, 0, 0), (0, y, 0))
+    air = smooth(t, .17, .22) * (1 - smooth(t, .42, .5))
+    fore = (0, y + 14 * air, 10 * air); hind = (0, y + 6 * air, -6 * air)
+    feet = feet_with(rest_feet, fl=fore, fr=fore, hl=hind, hr=hind)
+    arm = "cloak" if enraged else "wing"
+    for side, sg in (("l", 1), ("r", -1)):
+        add(p, f"{arm}_{side}", (0, 0, K(t, [(0, 0), (.16, 10), (.32, 48), (.46, 20), (.6, 4), (.9, 0)]) * (.5 if enraged else 1) * sg))
+    add(p, "neck", (K(t, [(0, 0), (.14, 8), (.3, -8), (.48, 6), (.9, 0)]) + (-10 if not enraged else 0), 0, 0))
+    if not enraged:
+        add(p, "skull", (8, 0, 0))
+    add(p, "tail", (K(t, [(0, 0), (.2, 12), (.4, -6), (.6, 0)]), 0, 0))
+    solve_legs(sk, p, feet)
+    return p
+
+
+def dash_side_pose(sk, rest_feet, t, sign, enraged=False, theta=0.0):
+    """回り込み, 0.8 s: a crouch and one low sideways bound toward model +X (sign +1), leaning into it, the head kept on
+    the player; the server carries it ~4 blocks aside between 0.14 s and 0.42 s."""
+    p = {}
+    y = K(t, [(0, 0), (.12, -5), (.18, 1), (.28, 8), (.4, 1), (.46, -4), (.6, -1), (.8, 0)])
+    lean = K(t, [(0, 0), (.12, 4), (.24, -10), (.4, -6), (.5, 5), (.8, 0)]) * sign
+    if enraged:
+        enraged_stance(sk, p, theta)
+    body(sk, p, (0, 0, lean), (0, y, 0))
+    air = smooth(t, .15, .2) * (1 - smooth(t, .38, .46))
+    lead = (0, y + 10 * air, 0); trail = (0, y + 6 * air, 0)
+    feet = feet_with(rest_feet, **{k: (lead if (k.endswith("l") == (sign > 0)) else trail) for k in LEGS})
+    solve_legs(sk, p, feet)
+    side_swing(sk, p, {k: (14 if (k.endswith("l") == (sign > 0)) else -10) * sign * air for k in LEGS})
+    arm = "cloak" if enraged else "wing"
+    for side, sg in (("l", 1), ("r", -1)):
+        add(p, f"{arm}_{side}", (0, 0, K(t, [(0, 0), (.15, 8), (.28, 30), (.44, 10), (.8, 0)]) * (.5 if enraged else 1) * sg))
+    add(p, "neck", ((-10 if not enraged else 0), -12 * sign * air, 0))
+    if not enraged:
+        add(p, "skull", (8, 0, 0))
+    for k, b in enumerate(TAIL):
+        add(p, b, (0, (10 + 4 * k) * sign * K(t, [(0, 0), (.2, 1), (.5, -.4), (.8, 0)]), 0))
     return p
 
 
@@ -584,11 +682,17 @@ def main(path=MODEL, carpal_drop=12.0):
     sk = Skeleton(data)
     rest_feet = {k: sk.point(v[2]) for k, v in LEGS.items()}
     theta = crouch_angle(data, carpal_drop)
-    frames, length = 16, 2.4
     new = {}
     for name, enraged in (("walk", False), ("walk_enraged", True)):
-        poses = [walk_pose(sk, rest_feet, i / frames, enraged, theta) for i in range(frames + 1)]
-        new[name] = clip(sk, name, length, frames, poses, "loop")
+        new[name] = baked(sk, name, round(walk_cycle(enraged), 2), lambda t, e=enraged: walk_pose(sk, rest_feet, t / round(walk_cycle(e), 2), e, theta), True)
+    for suffix, enraged in (("", False), ("_enraged", True)):
+        for side, sign in (("l", 1), ("r", -1)):
+            T = round(strafe_cycle(), 2)
+            new[f"strafe_{side}{suffix}"] = baked(sk, f"strafe_{side}{suffix}", T,
+                                                  lambda t, sg=sign, e=enraged: strafe_pose(sk, rest_feet, t / T, sg, e, theta), True)
+            new[f"dash_{side}{suffix}"] = baked(sk, f"dash_{side}{suffix}", .8,
+                                                lambda t, sg=sign, e=enraged: dash_side_pose(sk, rest_feet, t, sg, e, theta), False)
+        new[f"hop_back{suffix}"] = baked(sk, f"hop_back{suffix}", .9, lambda t, e=enraged: hop_back_pose(sk, rest_feet, t, e, theta), False)
     n = int(ENRAGE_SECONDS * 20)
     new["enrage"] = clip(sk, "enrage", ENRAGE_SECONDS, n,
                          [enrage_pose(sk, rest_feet, theta, ENRAGE_SECONDS * i / n) for i in range(n + 1)], "once")
