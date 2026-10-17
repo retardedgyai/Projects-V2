@@ -4,12 +4,13 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-try:
-    FONT = ImageFont.truetype("C:/Windows/Fonts/meiryo.ttc", 24)
-    MID = ImageFont.truetype("C:/Windows/Fonts/meiryo.ttc", 16)
-    SMALL = ImageFont.truetype("C:/Windows/Fonts/meiryo.ttc", 13)
-except OSError:
-    FONT = MID = SMALL = ImageFont.load_default()
+FONT = MID = SMALL = ImageFont.load_default()
+for _jp in ("C:/Windows/Fonts/meiryo.ttc", "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"):
+    try:
+        FONT, MID, SMALL = (ImageFont.truetype(_jp, n) for n in (24, 16, 13))
+        break
+    except OSError:
+        pass
 
 
 def rx(a):

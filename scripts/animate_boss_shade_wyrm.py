@@ -243,6 +243,140 @@ def walk_pose(sk, rest_feet, t, enraged=False, theta=0.0):
     return p
 
 
+# ---- abilities: wind-up (溜め) -> strike (決め) on the telegraph's end -> follow-through (余韻) back to the stance ----
+# Each clip is telegraph + recovery long and hits on the telegraph time (the server's contract). The four phase-one
+# abilities also get an `<id>_enraged` twin in the crouch with the fans, which the server plays once enraged.
+ABILITIES = {"shade-sweep": (1.1, 2.0), "shade-pounce": (1.4, 2.6), "shade-dust": (1.7, 2.6),
+             "shade-pulse": (1.2, 2.3), "shade-breath": (1.6, 2.6), "shade-storm": (2.2, 3.5)}
+PHASE_ONE = ("shade-sweep", "shade-pounce", "shade-dust", "shade-pulse")
+
+
+def turn_about_hips(sk, rot):
+    """Body translation that turns a body rotation about its pivot into one about the hips."""
+    p0 = sk.bones["body"]["pivot"]
+    return euler(np.array(rot, float)) @ (p0 - HIPS) + HIPS - p0
+
+
+def body(sk, p, rot=(0, 0, 0), pos=(0, 0, 0)):
+    add(p, "body", rot, turn_about_hips(sk, rot) + np.array(pos, float))
+
+
+def beats(t, hit, length, strike=.12, hold=.18):
+    """(wind-up, strike, overshoot, tremble) weights. The wind-up coils by 65% of the telegraph and holds there
+    trembling; the strike snaps in over `strike` seconds ending on the hit; the pose holds, then eases home."""
+    a = smooth(t, .05, .65 * hit) * (1 - smooth(t, hit - strike, hit))
+    s = smooth(t, hit - strike, hit) * (1 - smooth(t, hit + hold, length - .08))
+    o = bump(t, hit, hit + .08, hit + .4)
+    trem = math.sin(t * 2 * math.pi * 9) * smooth(t, hit - .5, hit - .3) * (1 - smooth(t, hit - .12, hit))
+    return a, s, o, trem
+
+
+def ability_pose(sk, rest_feet, theta, name, t, enraged):
+    hit, length = ABILITIES[name]
+    a, s, o, trem = beats(t, hit, length)
+    p = {}
+    if enraged:
+        enraged_stance(sk, p, theta)
+    arm = "cloak" if enraged else "wing"          # the wing-arm that is shown in this phase
+    feet = dict(rest_feet)
+    if name == "shade-sweep":                     # +X wing-arm drawn back and up, whipped across the front
+        body(sk, p, (4 * a + 3 * s, 16 * a - 28 * s - 8 * o, -5 * s), (0, -3 * a, 0))
+        add(p, "neck", (0, -12 * a - 14 * s, 0)); add(p, "skull", (6 * a - 4 * s, 0, 0))
+        lift = 48 if not enraged else 40
+        add(p, f"{arm}_l", (0, 32 * a - 58 * s - 10 * o, lift * a + 8 * s + 2 * trem))
+        add(p, f"{arm}_r", (0, 8 * a, -10 * a))
+        add(p, "jaw", (18 * s, 0, 0))
+        for k, b in enumerate(("tail", "tail_2", "tail_mid", "tail_end")):
+            add(p, b, (0, -18 * a + 30 * s + 8 * o, 0))
+    elif name == "shade-pounce":                  # sinks back over the hind legs, launches forward, lands nose-down
+        leap = bump(t, hit - .12, hit - .02, hit + .1)
+        land = smooth(t, hit - .02, hit + .08) * (1 - smooth(t, hit + .3, length - .1))
+        reach = smooth(t, hit - .12, hit) * (1 - smooth(t, hit + .3, length - .1))
+        body(sk, p, (5 * a - 8 * leap + 8 * land, 0, .8 * trem), (0, -8 * a + 10 * leap - 4 * land, -8 * a + 34 * reach))
+        add(p, "neck", (10 * a - 6 * leap + 4 * land, 0, 0)); add(p, "skull", (-10 * a, 0, 0))
+        add(p, "jaw", (34 * reach, 0, 0))
+        add(p, "tail", (14 * a - 10 * leap, 0, 0)); add(p, "tail_2", (8 * a, 0, 0))
+        for k in ("fl", "fr"):
+            feet[k] = feet[k] + np.array([0, 16 * leap, 30 * reach])
+        for side, sg in (("l", 1), ("r", -1)):
+            add(p, f"{arm}_{side}", (0, 0, (14 * a + 40 * leap - 6 * land) * sg))
+    elif name == "shade-dust":                    # rises and shakes the wings out, slams the dust down
+        shake = math.sin(t * 2 * math.pi * 11) * smooth(t, .3, hit - .2) * (1 - smooth(t, hit - .05, hit))
+        settle = math.sin((t - hit) * 2 * math.pi * 6) * bump(t, hit, hit + .1, hit + .6)
+        body(sk, p, (-6 * a + 5 * s, 0, 1.2 * shake), (0, 4 * a - 4 * s - 2 * o, 0))
+        add(p, "neck", (-10 * a + 16 * s, 0, 0)); add(p, "skull", (-6 * a + 8 * s, 0, 0))
+        add(p, "tail", (8 * a - 6 * s, 0, 0))
+        for side, sg in (("l", 1), ("r", -1)):
+            add(p, f"{arm}_{side}", (0, -14 * a * sg, (36 * a - 14 * s + 5 * shake + 4 * settle) * sg))
+            if not enraged:
+                for h in ("hinge02", "hinge09", "hinge10", "hinge14"):
+                    add(p, f"wing_{side}_{h}", (0, 0, (10 * a * shake + 6 * settle) * sg))
+    elif name == "shade-pulse":                   # head lifts and the antennae spread, quivering; snaps down
+        body(sk, p, (-3 * a + 3 * s, 0, 0), (0, 3 * a - 3 * s, 0))
+        add(p, "neck", (-40 * a + 28 * s + 6 * o, 1.5 * trem, 0)); add(p, "skull", (-20 * a + 12 * s, 0, 1.5 * trem))
+        add(p, "jaw", (12 * a + 34 * s, 0, 0))
+        for side, sg in (("l", 1), ("r", -1)):
+            add(p, f"crown_{side}", (-10 * a, 18 * a * sg, 0))
+            if enraged:
+                add(p, f"horn_{side}", (-12 * a + 6 * s, 14 * a * sg, 0))
+            add(p, f"{arm}_{side}", (0, 0, (-8 * a + 26 * s) * sg))
+    elif name == "shade-breath":                  # head drawn back and up, jaw opening; thrust forward and held open
+        body(sk, p, (-8 * a + 4 * s, 0, 0), (0, 3 * a, -8 * a + 8 * s))
+        add(p, "neck", (-45 * a + 30 * s + 1.5 * trem, 0, 0)); add(p, "skull", (-12 * a + 8 * s - 4 * o, 0, 0))
+        add(p, "jaw", (16 * a + 40 * s * (1 - smooth(t, hit + .55, hit + .8)), 0, 0))
+        add(p, "tail", (6 * a, 0, 0))
+    elif name == "shade-storm":                   # rears with the fans thrown overhead; beats them down hard
+        lift = smooth(t, .1, .7 * hit) * (1 - smooth(t, hit - .14, hit))
+        impact = bump(t, hit - .02, hit + .04, hit + .22)
+        body(sk, p, (-26 * lift + 4 * s, 0, .8 * trem), (0, 4 * lift - 3 * impact, 0))
+        add(p, "neck", (-10 * lift + 12 * s, 0, 0)); add(p, "skull", (-14 * lift + 6 * s, 0, 0))
+        add(p, "jaw", (30 * bump(t, .5 * hit, .75 * hit, hit) + 20 * s, 0, 0))
+        for k in ("fl", "fr"):
+            feet[k] = feet[k] + np.array([0, 26 * lift, 6 * lift])
+        for side, sg in (("l", 1), ("r", -1)):
+            add(p, f"{arm}_{side}", (-12 * lift - 14 * s, 0, (60 * lift - 22 * s - 8 * o + 3 * trem) * sg))
+    solve_legs(sk, p, feet)
+    if name in ("shade-pounce", "shade-storm"):
+        for k in ("fl", "fr"):
+            add(p, LEGS[k][2], (40 * max(0.0, feet[k][1] - rest_feet[k][1]) / 26, 0, 0))
+    return p
+
+
+def idle_pose(sk, rest_feet, t):
+    p = {}
+    add(p, "body", (0, 0, 0), (0, -.6 * math.sin(math.pi * t) ** 2, 0))
+    solve_legs(sk, p, rest_feet)
+    add(p, "neck", (-10 - 1.5 * math.sin(2 * math.pi * t), 2 * math.sin(2 * math.pi * t), 0))
+    add(p, "skull", (8, 0, 0))
+    for k, b in enumerate(("tail", "tail_2", "tail_mid", "tail_end")):
+        add(p, b, (0, 3 * (1 + .5 * k) * math.sin(2 * math.pi * (t - .12 * (k + 1))), 0))
+    return p
+
+
+def death_pose(sk, rest_feet, theta, t, enraged):
+    """Staggers, the legs give out, rolls onto its side and goes still (the clip holds its last frame)."""
+    p = {}
+    if enraged:
+        enraged_stance(sk, p, theta * (1 - smooth(t, .2, .8)))
+    arm = "cloak" if enraged else "wing"
+    stagger = bump(t, 0, .25, .7)
+    sink = smooth(t, .5, 1.3)
+    roll = smooth(t, 1.0, 1.7)
+    thud = bump(t, 1.6, 1.68, 1.9)
+    body(sk, p, (-6 * stagger + 6 * sink, 0, 62 * roll), (0, 3 * stagger - 16 * sink - 4 * roll - 1.5 * thud, 0))
+    add(p, "neck", (-18 * stagger + 30 * sink, 0, -20 * roll)); add(p, "skull", (-14 * stagger + 12 * sink, 0, 0))
+    add(p, "jaw", (30 * bump(t, .05, .3, .9) + 12 * roll, 0, 0))
+    for k, b in enumerate(("tail", "tail_2", "tail_mid", "tail_end")):
+        add(p, b, (6 * sink, -10 * roll, 0))
+    feet = {k: v + np.array([0, -4 * sink, 0]) for k, v in rest_feet.items()}
+    solve_legs(sk, p, feet)
+    for k, (r, m, e) in LEGS.items():             # limp: the legs fold toward the belly as it rolls
+        add(p, r, (-30 * roll if k.startswith("f") else 20 * roll, 0, (-25 if k.endswith("l") else 15) * roll))
+    for side, sg in (("l", 1), ("r", -1)):
+        add(p, f"{arm}_{side}", (0, 0, (30 * stagger - 20 * sink) * sg + (40 if side == "r" else -10) * roll))
+    return p
+
+
 def clip(sk, name, length, frames, poses, loop):
     animators = {}
     for b in sk.order:
@@ -284,7 +418,17 @@ def main(path=MODEL, carpal_drop=12.0):
     n = int(ENRAGE_SECONDS * 20)
     new["enrage"] = clip(sk, "enrage", ENRAGE_SECONDS, n,
                          [enrage_pose(sk, rest_feet, theta, ENRAGE_SECONDS * i / n) for i in range(n + 1)], "once")
-    data["animations"] = [new.get(a["name"], a) for a in data["animations"]]
+    new["idle"] = clip(sk, "idle", 2.0, 8, [idle_pose(sk, rest_feet, i / 8) for i in range(9)], "loop")
+    for name, (hit, length) in ABILITIES.items():
+        for enraged in ((False, True) if name in PHASE_ONE else (True,)):
+            n = int(round(length * 20))
+            poses = [ability_pose(sk, rest_feet, theta, name, length * i / n, enraged) for i in range(n + 1)]
+            key = name + ("_enraged" if enraged and name in PHASE_ONE else "")
+            new[key] = clip(sk, key, length, n, poses, "once")
+    for key, enraged in (("death", False), ("death_enraged", True)):
+        new[key] = clip(sk, key, 2.4, 48, [death_pose(sk, rest_feet, theta, 2.4 * i / 48, enraged) for i in range(49)], "once")
+    names = [a["name"] for a in data["animations"]]
+    data["animations"] = [new.get(a["name"], a) for a in data["animations"]] + [c for k, c in new.items() if k not in names]
     path.write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"{path.relative_to(ROOT)}: wrote {', '.join(new)}")
 

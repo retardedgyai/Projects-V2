@@ -45,9 +45,14 @@ class ShadeWyrmBossTest {
             val clip = assertNotNull(clips.getAsJsonObject(ability.id), "missing clip ${ability.id}")
             assertFalse(clip["loop"].asBoolean, ability.id)
             assertEquals((ability.telegraphMillis + ability.recoveryMillis) / 1000.0, clip["animation_length"].asDouble, 0.051, ability.id)
+            // Phase-one abilities also run after the enrage: their twin in the enraged stance keeps the same timing.
+            if (ability.maximumHealthRatio > definition.enrageHealthRatio) {
+                val twin = assertNotNull(clips.getAsJsonObject("${ability.id}_enraged"), "missing clip ${ability.id}_enraged")
+                assertEquals(clip["animation_length"].asDouble, twin["animation_length"].asDouble, 0.001, ability.id)
+            }
         }
         for (loop in listOf("idle", "walk", "idle_enraged", "walk_enraged")) assertTrue(clips.getAsJsonObject(loop)["loop"].asBoolean, loop)
-        for (once in listOf("enrage", "death")) assertFalse(clips.getAsJsonObject(once)["loop"].asBoolean, once)
+        for (once in listOf("enrage", "death", "death_enraged")) assertFalse(clips.getAsJsonObject(once)["loop"].asBoolean, once)
         // Phase two: the abilities gated at the enrage ratio exist and nothing is gated elsewhere.
         assertEquals(setOf(1.0, definition.enrageHealthRatio), definition.abilities.map { it.maximumHealthRatio }.toSet())
         assertTrue(BossModelView.available("shade_wyrm"))
@@ -68,7 +73,7 @@ class ShadeWyrmBossTest {
         val handler = AnimationHandlerImpl(model)
         try {
             model.setGlobalRotation(BossModelView.modelYaw(origin.yaw()))
-            handler.playRepeat("idle")
+            // No clip: idle carries the neck arched like the walk, so only the bare model shows the rest pose.
             repeat(2) { MinecraftServer.getSchedulerManager().processTick() }
             // (bone, Blockbench point on that bone, where build_boss_shade_wyrm.py's rest pose puts it) in px.
             // X is compared by distance from the centre line because WSEE mirrors Blockbench X.

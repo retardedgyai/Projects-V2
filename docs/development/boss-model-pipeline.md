@@ -30,6 +30,7 @@ WSEEは本来、運び役アイテム（magma_cream）の **バニラのitem定�
 - 骨の名前は一意。`head` と、`hitbox`/`seat`/`nametag` を含む名前は使わない（WSEEが特別扱いする。当たり判定はサーバーが持つ）。
 - アニメ名がサーバーとの契約：
   - `idle`・`walk`（loop）。怒りのあるボスは `idle_enraged`・`walk_enraged`・`enrage`（once）。`death`（once、最後の姿勢で止まる）。
+  - 怒った後も使う技と `death` は、怒りの構えで作った `<名前>_enraged` を置くと、怒り中はそちらが再生される（無ければ通常版）。
   - **技1つにつき、技idと同名の once アニメ**。長さ＝予兆＋硬直（ms/1000）、当たる瞬間の姿勢＝予兆の時刻。サーバーは技開始時に再生するだけなので、ここがずれると見た目と当たり判定がずれる（`ShadeWyrmBossTest` が長さを検査）。
   - 怒り後だけ見せる骨（角など）は `QuestMobDefinition.enragedBones` に名前を書くと、最初は非表示になる。
   - 怒ると消える骨（畳んだ翼など）は `foldedBones` に書くと、`enrage` の途中でその骨と下の骨がまとめて非表示になる。`enrage` が拡大縮小キーで角・扇を0から生やし畳んだ翼を縮めるので、表示の切り替え時刻（`BossModelView` の `ENRAGE_REVEAL_MILLIS`・`ENRAGE_FOLD_MILLIS`）はクリップに合わせる。

@@ -64,7 +64,8 @@ internal class ModelCarrier(type: EntityType) : EntityCreature(type) {
 
 /**
  * Plays a Blockbench boss through WSEE. Animation names are the contract with the .bbmodel:
- * idle / walk (+ `_enraged`), enrage, death and one `once` clip per ability id, aligned to its telegraph.
+ * idle / walk (+ `_enraged`), enrage, death and one `once` clip per ability id, aligned to its telegraph; once enraged,
+ * an ability's or death's `_enraged` twin plays instead when the model has one.
  */
 internal class BossModelView(
     private val modelId: String,
@@ -127,7 +128,9 @@ internal class BossModelView(
     }
 
     fun ability(abilityId: String) {
-        if (!disposed && !dying && has(abilityId)) animations.playOnce(abilityId, 2) {}
+        if (disposed || dying) return
+        val clip = phased(abilityId)
+        if (has(clip)) animations.playOnce(clip, 2) {}
     }
 
     /**
@@ -169,7 +172,8 @@ internal class BossModelView(
     fun die() {
         if (disposed || dying) return
         dying = true
-        if (has("death")) animations.playOnce("death", false) { dispose() } else dispose()
+        val clip = phased("death")
+        if (has(clip)) animations.playOnce(clip, false) { dispose() } else dispose()
     }
 
     fun dispose() {
@@ -180,6 +184,9 @@ internal class BossModelView(
     }
 
     private fun has(animation: String) = animations.getAnimation(animation) != null
+
+    /** Once enraged, a clip authored in the enraged stance (`<name>_enraged`) replaces the phase-one one. */
+    private fun phased(animation: String) = if (enraged && has("${animation}_enraged")) "${animation}_enraged" else animation
 
     companion object {
         /** shade_wyrm `enrage`: the fans and horns start growing at 2.15 s, the folded wings are gone by 2.4 s. */
