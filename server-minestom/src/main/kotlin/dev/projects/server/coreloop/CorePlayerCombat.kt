@@ -1,5 +1,6 @@
 package dev.projects.server.coreloop
 
+import dev.projects.server.mob.CrowdControl
 import dev.projects.server.mob.QuestEncounterCombat
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
@@ -566,6 +567,10 @@ internal class CorePlayerCombat(
             }
             CoreSkillStatus.NONE -> Unit
         }
+        // Warrior weight: the third normal hit and every hit while raging make the target flinch.
+        val crowd = definition?.crowd?.let { it to definition.crowdMillis }
+            ?: if (classId == CoreClass.WARRIOR && (raging || (!skill && heavy))) CrowdControl.FLINCH to CoreWarriorRules.FLINCH_MILLIS else null
+        if (crowd != null) enemies.applyCrowdControl(id, crowd.first, crowd.second, player)
         val venom = stats.bonus(CoreAffixStat.ASS_VENOM)
         if (classId == CoreClass.ASSASSIN && ((venom > 0 && definition?.status == CoreSkillStatus.MARK) ||
                 (!skill && build.keystone == 2 && classState.marked(id, tickNumber)))) {

@@ -106,6 +106,13 @@ class QuestEncounterCombat(
         var exposedUntil = 0L
         var tauntedUntil = 0L
         var pullImmuneUntil = 0L
+        /** Expiry per active [CrowdControl]; never set on bosses. */
+        val crowd = mutableMapOf<CrowdControl, Long>()
+        /** Where charm pulls toward and fear runs from. */
+        var crowdSource: Pos? = null
+        /** Boss only: crowd control wears this down; at 0 the boss is broken until [brokenUntil]. */
+        var breakGauge = BREAK_MAX
+        var brokenUntil = 0L
         var guardianIds = emptySet<UUID>()
         @Volatile var spawnFailure: Throwable? = null
         @Volatile var model: WardenModel? = null
@@ -205,18 +212,73 @@ class QuestEncounterCombat(
         if (horizontal.length() < 1.6) return true
         val direction = horizontal.normalize()
         val distance = minOf(maximumDistance.coerceIn(0.0, 5.0), horizontal.length() - 1.4)
+        mob.abilities.cancel(); telegraphs.clear(targetId)
+        slide(mob, direction, distance); mob.target = attacker
+        return true
+    }
+    /**
+     * Server-validated crowd control from a hit that already landed. Bosses take none of it: it wears down their
+     * break gauge, and an empty gauge breaks them for [BREAK_MILLIS] (no attacks, no movement, +30% damage taken).
+     */
+    fun applyCrowdControl(targetId: UUID, kind: CrowdControl, durationMillis: Long, source: Player, distance: Double = 2.5): Boolean {
+        if (disposed || durationMillis <= 0L) return false
+        val mob = mobs[targetId] ?: return false
+        if (!mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING || (mob.boss && bossSealed) || mob.guardianIds.any(::isAlive) ||
+            source.instance !== instance || !canTarget(source)) return false
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        if (mob.boss) {
+            if (now < mob.brokenUntil) return false
+            mob.breakGauge = (mob.breakGauge - kind.breakDamage).coerceAtLeast(0.0)
+            if (mob.breakGauge <= 0.0) {
+                mob.brokenUntil = now + BREAK_MILLIS
+                mob.breakGauge = BREAK_MAX
+                mob.abilities.cancel(); telegraphs.clear(targetId); castingPose(mob, false); stopNavigation(mob)
+                mob.life.phase = QuestMobPhase.CHASING
+                sound(mob.entity.position, "minecraft:block.anvil.land", 1.0f, 0.5f)
+                particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.EXPLOSION, 2)
+            }
+            updateName(mob)
+            return true
+        }
+        mob.crowd[kind] = maxOf(mob.crowd[kind] ?: 0L, now + durationMillis.coerceAtMost(5000L))
+        mob.crowdSource = source.position
+        if (kind.hard || kind == CrowdControl.FLINCH) {
+            mob.abilities.cancel(); telegraphs.clear(targetId); castingPose(mob, false)
+            mob.life.phase = QuestMobPhase.CHASING
+            mob.warningRetryAt = maxOf(mob.warningRetryAt, now + durationMillis.coerceAtMost(5000L))
+        }
+        when (kind) {
+            CrowdControl.STUN, CrowdControl.ROOT -> stopNavigation(mob)
+            CrowdControl.AIRBORNE -> { mob.entity.navigator.reset(); mob.entity.velocity = Vec(0.0, 9.0, 0.0) }
+            CrowdControl.KNOCKBACK -> slide(mob, normalizeHorizontal(mob.entity.position.sub(source.position)), distance)
+            else -> Unit
+        }
+        updateName(mob)
+        return true
+    }
+    fun crowdControl(targetId: UUID): Set<CrowdControl> {
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        return mobs[targetId]?.crowd?.filterValues { it > now }?.keys ?: emptySet()
+    }
+    fun breakGauge(targetId: UUID): Double? = mobs[targetId]?.takeIf { it.boss }?.breakGauge
+    fun isBroken(targetId: UUID): Boolean {
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        return mobs[targetId]?.let { it.boss && now < it.brokenUntil } == true
+    }
+    /** Moves a mob along the ground only as far as the path is clear (shared by pull and knockback). */
+    private fun slide(mob: Mob, direction: Vec, distance: Double) {
         val origin = mob.entity.position
         var destination = origin
-        for (step in 1..ceil(distance / .2).toInt()) {
+        for (step in 1..ceil(distance.coerceIn(0.0, 5.0) / .2).toInt()) {
             val point = origin.add(direction.mul(minOf(distance, step * .2)))
             if (!instance.getBlock(point.sub(0.0, .15, 0.0)).isSolid ||
                 listOf(-.4, .4).any { x -> listOf(-.4, .4).any { z -> listOf(.1, 1.0, 1.8).any { y -> instance.getBlock(point.add(x,y,z)).isSolid } } }) break
             destination = point
         }
-        mob.abilities.cancel(); telegraphs.clear(targetId); stopNavigation(mob)
-        mob.entity.teleport(destination); mob.target = attacker
-        return true
+        stopNavigation(mob)
+        mob.entity.teleport(destination)
     }
+    private fun crowded(mob: Mob, kind: CrowdControl, now: Long) = (mob.crowd[kind] ?: 0L) > now
     fun mobInfo(targetId: UUID): QuestMobInfo? = mobs[targetId]?.let {
         QuestMobInfo(targetId, it.definition.archetype, it.definition.archetype.rarity, tier,
             it.entity.position, it.life.health, it.life.maximumHealth)
@@ -310,7 +372,8 @@ class QuestEncounterCombat(
         val guarded = !effect && guarding(mob) &&
             normalizeHorizontal(source.sub(mob.entity.position)).dot(normalizeHorizontal(mob.entity.position.direction())) >= 0.5
         val healthBefore = mob.life.health
-        val mitigated = amount * if (guarded) mob.definition.frontalDamageMultiplier else 1.0
+        val mitigated = amount * (if (guarded) mob.definition.frontalDamageMultiplier else 1.0) *
+            (if (mob.boss && now < mob.brokenUntil) BROKEN_DAMAGE else 1.0)
         val gated = if (mob.boss) minOf(mitigated, (mob.life.health - mob.life.maximumHealth * bossGateFraction).coerceAtLeast(0.0)) else mitigated
         if (!mob.life.damage(gated)) return null
         val applied = healthBefore - mob.life.health
@@ -431,6 +494,9 @@ class QuestEncounterCombat(
 
     private fun tickMob(mob: Mob, players: List<Player>, now: Long) {
         if (mob.boss && (bossSealed || now < bossStaggerUntil)) { stopNavigation(mob); return }
+        if (mob.boss && mob.brokenUntil in 1..now) { mob.brokenUntil = 0L; updateName(mob) }
+        if (mob.boss && now < mob.brokenUntil) { stopNavigation(mob); return }
+        if (mob.crowd.values.removeAll { it <= now }) updateName(mob)
         updateMovementSpeed(mob, now)
         mob.entity.refreshActiveHand(guarding(mob), true, false)
         if (mob.life.phase == QuestMobPhase.RETURNING) {
@@ -443,6 +509,7 @@ class QuestEncounterCombat(
                 mob.exposedUntil = 0L
                 mob.tauntedUntil = 0L
                 mob.pullImmuneUntil = 0L
+                mob.crowd.clear(); mob.breakGauge = BREAK_MAX; mob.brokenUntil = 0L
                 (mob.entity.entityMeta as MobMeta).isAggressive = false
                 updateName(mob)
             } else if (now >= mob.nextPathAt) {
@@ -473,6 +540,21 @@ class QuestEncounterCombat(
         }
         (mob.entity.entityMeta as MobMeta).isAggressive = true
         if (tickChallengeBarrier(mob, now)) return
+        if (crowded(mob, CrowdControl.STUN, now) || crowded(mob, CrowdControl.AIRBORNE, now) || crowded(mob, CrowdControl.KNOCKBACK, now)) {
+            if (!crowded(mob, CrowdControl.AIRBORNE, now)) stopNavigation(mob)
+            return
+        }
+        val charmed = crowded(mob, CrowdControl.CHARM, now)
+        if (charmed || crowded(mob, CrowdControl.FEAR, now)) {
+            val from = mob.crowdSource ?: target.position
+            if (now >= mob.nextPathAt) {
+                val goal = if (charmed) from else
+                    safeRetreat(mob.entity.position.add(normalizeHorizontal(mob.entity.position.sub(from)).mul(4.0)), mob.home, mob.definition.leashRange)
+                if (goal != null) mob.entity.navigator.setPathTo(goal, if (charmed) 1.2 else 0.6, null) else stopNavigation(mob)
+                mob.nextPathAt = now + 300L
+            }
+            return
+        }
         if (mob.abilities.isActive) {
             for (event in mob.abilities.tick(now, target.position)) {
                 if (!handleAbilityEvent(mob, event, players)) return
@@ -492,7 +574,8 @@ class QuestEncounterCombat(
             mob.life.phase = QuestMobPhase.CHASING
         }
         if (now >= mob.warningRetryAt && mob.entity.hasLineOfSight(target) && telegraphs.canStart(mob.entity.uuid)) {
-            val start = mob.abilities.tryStart(now, mob.entity.position, target.position, mob.life.health / mob.life.maximumHealth)
+            val start = mob.abilities.tryStart(now, mob.entity.position, target.position, mob.life.health / mob.life.maximumHealth,
+                plainOnly = crowded(mob, CrowdControl.SILENCE, now))
             if (start != null) {
                 mob.life.phase = QuestMobPhase.ATTACKING
                 stopNavigation(mob)
@@ -501,6 +584,7 @@ class QuestEncounterCombat(
             }
         }
         mob.life.phase = QuestMobPhase.CHASING
+        if (crowded(mob, CrowdControl.ROOT, now)) { stopNavigation(mob); return }
         if (now >= mob.nextPathAt) {
             val distance = mob.definition.preferredDistance
             val retreat = if (distance >= 6.0 && mob.entity.position.distanceSquared(target.position) < 4.5 * 4.5) {
@@ -520,6 +604,7 @@ class QuestEncounterCombat(
         telegraphs.clear(mob.entity.uuid)
         castingPose(mob, false)
         mob.slows.clear()
+        mob.crowd.clear()
         mob.slowedUntil = 0L
         mob.slowPercent = 0.0
         updateMovementSpeed(mob, now)
@@ -614,6 +699,12 @@ class QuestEncounterCombat(
                 sound(event.frame.origin, "minecraft:block.note_block.pling", 0.8f, 0.7f)
             }
             is MobAbilityEvent.Hit -> {
+                val blind = crowded(mob, CrowdControl.BLIND, lastTickAt)
+                val event = if (!blind) event else MobAbilityEvent.Hit(event.frame.copy(
+                    // A blinded swing lands well off its mark: turned aside, and a targeted blast lands 4 blocks away.
+                    facing = event.frame.facing.rotateAroundY(Math.toRadians(if (Random.nextBoolean()) 70.0 else -70.0)),
+                    origin = if (event.frame.ability.anchor == MobAbilityAnchor.TARGET)
+                        event.frame.origin.add(event.frame.facing.rotateAroundY(Math.PI / 2).mul(4.0)) else event.frame.origin))
                 mob.entity.swingMainHand()
                 castingPose(mob, false)
                 if (!drawWarning(mob, event.frame, true)) { cancelWarning(mob); return false }
@@ -640,11 +731,17 @@ class QuestEncounterCombat(
     private fun updateName(mob: Mob, attackName: String? = null) {
         val weakness = when (mob.definition.archetype.weakness) { "fire" -> "炎"; "ice" -> "氷"; else -> "雷" }
         val base = "T$tier ${mob.definition.name}  ${ceil(mob.life.health).toInt()}/${ceil(mob.life.maximumHealth).toInt()}  弱点:$weakness"
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        val crowd = when {
+            mob.boss && now < mob.brokenUntil -> "  ［崩れた！］"
+            mob.boss -> "  崩し ${ceil(mob.breakGauge).toInt()}"
+            else -> mob.crowd.filterValues { it > now }.keys.joinToString("") { "  ［${it.label}］" }
+        }
         val suffix = when {
             mob.life.phase == QuestMobPhase.RETURNING -> "  帰還中"
             attackName != null -> "  $attackName"
             else -> ""
-        }
+        } + crowd
         val color = when (mob.definition.archetype.rarity) {
             QuestMobRarity.BOSS -> NamedTextColor.RED
             QuestMobRarity.ELITE -> NamedTextColor.LIGHT_PURPLE
@@ -670,6 +767,12 @@ class QuestEncounterCombat(
     private fun particle(position: Pos, type: Particle, count: Int = 1) {
         val packet = ParticlePacket(type, position.x(), position.y(), position.z(), 0f, 0f, 0f, 0f, count)
         instance.players.filter { it.position.distanceSquared(position) < 56.0 * 56.0 }.forEach { it.sendPacket(packet) }
+    }
+
+    companion object {
+        const val BREAK_MAX = 100.0
+        const val BREAK_MILLIS = 4000L
+        const val BROKEN_DAMAGE = 1.3
     }
 
     private fun sound(position: Pos, key: String, volume: Float, pitch: Float) {

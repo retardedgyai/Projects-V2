@@ -190,11 +190,12 @@ class MobAbilityManager(
     private val readyAt = mutableMapOf<String, Long>()
     val isActive: Boolean get() = current != null
 
-    fun tryStart(nowMillis: Long, origin: Pos, target: Point, healthRatio: Double = 1.0): MobAbilityEvent.Started? {
+    /** [plainOnly] (silence) offers only the first, plainest ability. */
+    fun tryStart(nowMillis: Long, origin: Pos, target: Point, healthRatio: Double = 1.0, plainOnly: Boolean = false): MobAbilityEvent.Started? {
         if (current != null || nowMillis < nextSelectionAt) return null
         if (abs(origin.y() - target.y()) > 2.2) return null
         val distance = horizontalLength(target.sub(origin))
-        val available = abilities.filter {
+        val available = (if (plainOnly) abilities.take(1) else abilities).filter {
             distance in it.minimumStartRange..it.maximumStartRange && healthRatio <= it.maximumHealthRatio &&
                 nowMillis >= readyAt.getOrDefault(it.id, Long.MIN_VALUE)
         }

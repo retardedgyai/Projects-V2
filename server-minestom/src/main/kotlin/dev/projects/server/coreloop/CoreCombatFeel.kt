@@ -63,6 +63,8 @@ internal object CoreWarriorRules {
     /** Rage from an unguarded hit taken, at most once per [HURT_RAGE_GAP] ticks. */
     const val HURT_RAGE = 8.0
     const val HURT_RAGE_GAP = 10L
+    /** Flinch from the third normal hit and from every hit during a rampage. */
+    const val FLINCH_MILLIS = 300L
     /** Ticks after a connected third normal hit in which the slam comes out fast and heavy. */
     const val FINISHER_TICKS = 12L
     const val FINISHER_STARTUP = 3

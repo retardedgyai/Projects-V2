@@ -1,6 +1,9 @@
 package dev.projects.server.coreloop
 
+import dev.projects.server.mob.CrowdControl
+import dev.projects.server.mob.QuestCombatEncounter
 import dev.projects.server.mob.QuestEncounterCombat
+import dev.projects.server.mob.QuestMobArchetype
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
@@ -903,6 +906,66 @@ class CorePlayerCombatTest {
         assertEquals(CoreWarriorRules.HURT_RAGE, h.actor.resource)
         h.ticks(CoreWarriorRules.HURT_RAGE_GAP.toInt()); h.actor.hurt(10.0)
         assertEquals(CoreWarriorRules.HURT_RAGE * 2, h.actor.resource)
+    }
+
+    @Test fun `boss takes no crowd control but its break gauge empties into a four second break`() = arena { h ->
+        val id = h.combat.combatTargets().single().id
+        h.combat.tick(1000L)
+        assertTrue(h.combat.applyCrowdControl(id, CrowdControl.STUN, 1000, h.player))
+        assertEquals(80.0, h.combat.breakGauge(id)); assertTrue(h.combat.crowdControl(id).isEmpty())
+        repeat(4) { h.combat.applyCrowdControl(id, CrowdControl.STUN, 1000, h.player) }
+        assertTrue(h.combat.isBroken(id)); assertEquals(100.0, h.combat.breakGauge(id))
+        assertFalse(h.combat.applyCrowdControl(id, CrowdControl.STUN, 1000, h.player), "no gauge damage while broken")
+        // A broken boss starts no attack even at slam range, and takes 30% more damage.
+        for (t in listOf(1100L, 1650L, 2550L, 4100L)) h.combat.tick(t)
+        assertTrue(h.incomingHits.isEmpty())
+        h.actor.attack(); assertEquals(300.0 - 12.0 * QuestEncounterCombat.BROKEN_DAMAGE, h.combat.bossHealth(), .00001)
+        h.combat.tick(5000L); assertFalse(h.combat.isBroken(id))
+    }
+
+    private fun soldierArena(h: Harness, at: Pos = Pos(8.5, 40.0, 10.0), test: (QuestEncounterCombat, java.util.UUID) -> Unit) {
+        h.combat.dispose()
+        val hits = mutableListOf<Double>()
+        val encounter = QuestEncounterCombat(h.instance, 1, listOf(QuestCombatEncounter(listOf(at), listOf(QuestMobArchetype.SOLDIER))),
+            Pos(40.0, 40.0, 40.0), onMobDefeated = { _, _ -> }, damagePlayer = { _, amount -> hits += amount }, spawnBoss = false,
+            healthMultiplier = 10.0)
+        h.activeEncounter = encounter
+        try { test(encounter, encounter.combatTargets().single().id); soldierHits = hits.size } finally { h.actor.resetActions(); encounter.dispose() }
+    }
+    private var soldierHits = 0
+
+    @Test fun `a stunned enemy starts no attack until the stun ends`() = arena { h ->
+        soldierArena(h) { e, id ->
+            e.tick(1000L)
+            assertTrue(e.applyCrowdControl(id, CrowdControl.STUN, 3000, h.player))
+            assertEquals(setOf(CrowdControl.STUN), e.crowdControl(id))
+            var t = 1000L; while (t < 3900L) { t += 50; e.tick(t) }
+            assertEquals(setOf(CrowdControl.STUN), e.crowdControl(id), "still stunned just before it ends")
+        }
+        assertEquals(0, soldierHits)
+        soldierArena(h) { e, _ -> var t = 1000L; while (t < 3900L) { t += 50; e.tick(t) } }
+        assertTrue(soldierHits > 0, "the same soldier does attack when not stunned")
+    }
+
+    @Test fun `knockback shoves an enemy away along the ground`() = arena { h ->
+        soldierArena(h) { e, id ->
+            e.tick(1000L); val before = e.positionOf(id)!!
+            assertTrue(e.applyCrowdControl(id, CrowdControl.KNOCKBACK, 400, h.player, distance = 2.5))
+            assertEquals(2.5, e.positionOf(id)!!.z() - before.z(), .21)
+        }
+    }
+
+    @Test fun `warrior slam stuns the enemy it hits and the third normal hit makes it flinch`() = arena { h ->
+        soldierArena(h) { e, id ->
+            h.actor.skill(1); h.ticks(12)
+            assertTrue(CrowdControl.STUN in e.crowdControl(id))
+        }
+        soldierArena(h) { e, id ->
+            h.actor.attack(); h.ticks(25); h.actor.attack(); h.ticks(25)
+            assertFalse(CrowdControl.FLINCH in e.crowdControl(id))
+            h.actor.attack()
+            assertTrue(CrowdControl.FLINCH in e.crowdControl(id))
+        }
     }
 
     @Test fun `sword saint third hits take time off the heavy cooldowns`() = arena { h ->
