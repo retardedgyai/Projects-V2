@@ -113,7 +113,6 @@ class QuestEncounterCombat(
         /** Boss only: crowd control wears this down; at 0 the boss is broken until [brokenUntil]. */
         var breakGauge = BREAK_MAX
         var brokenUntil = 0L
-        var crowdMarkAt = 0L
         var guardianIds = emptySet<UUID>()
         @Volatile var spawnFailure: Throwable? = null
         @Volatile var model: WardenModel? = null
@@ -236,20 +235,12 @@ class QuestEncounterCombat(
                 mob.abilities.cancel(); telegraphs.clear(targetId); castingPose(mob, false); stopNavigation(mob)
                 mob.life.phase = QuestMobPhase.CHASING
                 sound(mob.entity.position, "minecraft:block.anvil.land", 1.0f, 0.5f)
-                sound(mob.entity.position, "minecraft:entity.iron_golem.damage", 1.0f, 0.5f)
                 particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.EXPLOSION, 2)
             }
             updateName(mob)
             return true
         }
         mob.crowd[kind] = maxOf(mob.crowd[kind] ?: 0L, now + durationMillis.coerceAtMost(5000L))
-        mob.crowdMarkAt = now
-        when (kind) {
-            CrowdControl.STUN -> sound(mob.entity.position, "minecraft:block.anvil.land", .5f, 1.6f)
-            CrowdControl.KNOCKBACK, CrowdControl.AIRBORNE -> sound(mob.entity.position, "minecraft:entity.player.attack.knockback", .8f, .7f)
-            CrowdControl.ROOT -> sound(mob.entity.position, "minecraft:block.chain.place", .8f, .6f)
-            else -> Unit
-        }
         mob.crowdSource = source.position
         if (kind.hard || kind == CrowdControl.FLINCH) {
             mob.abilities.cancel(); telegraphs.clear(targetId); castingPose(mob, false)
@@ -288,25 +279,6 @@ class QuestEncounterCombat(
         mob.entity.teleport(destination)
     }
     private fun crowded(mob: Mob, kind: CrowdControl, now: Long) = (mob.crowd[kind] ?: 0L) > now
-    /** What each active CC looks like over the enemy, a few times a second; a broken boss throws sparks. */
-    private fun crowdMarker(mob: Mob, now: Long) {
-        if (now < mob.crowdMarkAt) return
-        mob.crowdMarkAt = now + 250L
-        val head = mob.entity.position.add(0.0, (if (mob.model != null) 2.4 else 2.0) * mob.definition.scale, 0.0)
-        val feet = mob.entity.position.add(0.0, .1, 0.0)
-        if (mob.boss && now < mob.brokenUntil) { particle(head, Particle.ELECTRIC_SPARK, 8); particle(feet, Particle.LARGE_SMOKE, 2); return }
-        for (kind in mob.crowd.filterValues { it > now }.keys) when (kind) {
-            CrowdControl.STUN -> particle(head, Particle.CRIT, 6)
-            CrowdControl.AIRBORNE -> particle(feet, Particle.CLOUD, 3)
-            CrowdControl.KNOCKBACK -> particle(feet, Particle.POOF, 3)
-            CrowdControl.CHARM -> particle(head, Particle.HEART, 1)
-            CrowdControl.FEAR -> particle(head, Particle.SCULK_SOUL, 2)
-            CrowdControl.FLINCH -> particle(head.sub(0.0, .6, 0.0), Particle.SWEEP_ATTACK, 1)
-            CrowdControl.ROOT -> particle(feet, Particle.DUST_PILLAR.withBlock(net.minestom.server.instance.block.Block.COBBLED_DEEPSLATE), 6)
-            CrowdControl.BLIND -> particle(head, Particle.SQUID_INK, 3)
-            CrowdControl.SILENCE -> particle(head, Particle.SMOKE, 4)
-        }
-    }
     fun mobInfo(targetId: UUID): QuestMobInfo? = mobs[targetId]?.let {
         QuestMobInfo(targetId, it.definition.archetype, it.definition.archetype.rarity, tier,
             it.entity.position, it.life.health, it.life.maximumHealth)
@@ -525,7 +497,6 @@ class QuestEncounterCombat(
         if (mob.boss && mob.brokenUntil in 1..now) { mob.brokenUntil = 0L; updateName(mob) }
         if (mob.boss && now < mob.brokenUntil) { stopNavigation(mob); return }
         if (mob.crowd.values.removeAll { it <= now }) updateName(mob)
-        crowdMarker(mob, now)
         updateMovementSpeed(mob, now)
         mob.entity.refreshActiveHand(guarding(mob), true, false)
         if (mob.life.phase == QuestMobPhase.RETURNING) {

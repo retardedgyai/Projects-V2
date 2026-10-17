@@ -839,14 +839,9 @@ internal class CorePlayerCombat(
             rampageUntil < 0 && classState.resource >= classState.cap(classId) -> {
                 rampageUntil = tickNumber + CoreWarriorRules.RAMPAGE_TICKS
                 sound(SoundEvent.ENTITY_RAVAGER_ROAR, .7f, 1.1f)
-                sound(SoundEvent.ITEM_FIRECHARGE_USE, .8f, .6f)
-                CoreIronWarriorVfx.rampage(player.position, flatFacing(), tickNumber, true) { p, at, n, spread, speed -> vfx.particles(p, at, n, spread, speed) }
             }
         }
-        if (raging) {
-            classState.fill(classId)
-            CoreIronWarriorVfx.rampage(player.position, flatFacing(), tickNumber, false) { p, at, n, spread, speed -> vfx.particles(p, at, n, spread, speed) }
-        }
+        if (raging) classState.fill(classId)
     }
     private fun notice(message: String) = player.sendActionBar(Component.text(message, NamedTextColor.YELLOW))
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))
