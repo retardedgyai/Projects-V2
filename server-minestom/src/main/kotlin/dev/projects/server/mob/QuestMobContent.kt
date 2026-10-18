@@ -160,7 +160,7 @@ internal object QuestMobContent {
                     attack("shade-dive", "飛び上がり急降下・落下点から離れろ", MobAttackShape.Ring(4.5), 30.0, 28.0,
                         2400, 1600, 1400, 9000, minimumRange = 12.0, target = true, weight = 2),
                 )).copy(model = "shade_wyrm", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2,
-                    enragedBones = setOf("horn_l", "horn_r", "cloak_l", "cloak_r"), foldedBones = setOf("wing_l", "wing_r"))
+                    enragedBones = setOf("horn_l", "horn_r", "cloak_l", "cloak_r", "horn_l_tip", "horn_r_tip", "cloak_l_outer", "cloak_r_outer"), foldedBones = setOf("wing_l", "wing_r"))
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,
                 Material.IRON_AXE, attacks = listOf(sweep(), slam()))
             QuestMobArchetype.SHIELD_GUARD -> definition(EntityType.HUSK, 66.0, 0.105, 2.0, 1.0,

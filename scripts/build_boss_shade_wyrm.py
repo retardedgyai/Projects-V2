@@ -951,6 +951,20 @@ def build():
         order.append((name, "skull"))
         pivots[name] = [float(v) for v in base]
 
+    # Breakable parts (gimmicks, 2026-10-18): the enraged fans' outer lobes and the horn tips sit on child bones with
+    # the parent's pivot (clips are unaffected), so the server can hide them when they are broken.
+    names = {e["uuid"]: e["name"] for e in m.elements}
+
+    def split(bone, child, test):
+        moved = [k for k in kids[bone] if isinstance(k, str) and test(names[k])]
+        kids[bone] = [k for k in kids[bone] if k not in moved]
+        kids[child] = moved
+        pivots[child] = list(pivots[bone])
+        order.append((child, bone))
+    for sd in ("l", "r"):
+        split(f"cloak_{sd}", f"cloak_{sd}_outer", lambda n, sd=sd: any(n.startswith(f"cloak_{sd}_fan{k}_") for k in range(4, 8)))
+        split(f"horn_{sd}", f"horn_{sd}_tip", lambda n, sd=sd: any(n.startswith(f"horn_{sd}_{p}") for p in ("seg3", "seg4", "seg5", "barb3", "barb4", "barb5", "fork")))
+
     built = {}
     for name, parent in reversed(order):
         own = [k for k in kids[name] if isinstance(k, str)]
