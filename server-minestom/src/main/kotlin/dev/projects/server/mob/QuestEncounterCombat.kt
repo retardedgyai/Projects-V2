@@ -292,8 +292,8 @@ class QuestEncounterCombat(
         var destination = origin
         for (step in 1..ceil(distance.coerceIn(0.0, 5.0) / .2).toInt()) {
             val point = origin.add(direction.mul(minOf(distance, step * .2)))
-            if (!instance.getBlock(point.sub(0.0, .15, 0.0)).isSolid ||
-                listOf(-.4, .4).any { x -> listOf(-.4, .4).any { z -> listOf(.1, 1.0, 1.8).any { y -> instance.getBlock(point.add(x,y,z)).isSolid } } }) break
+            if (!instance.getBlock(point.sub(0.0, .15, 0.0)).solid() ||
+                listOf(-.4, .4).any { x -> listOf(-.4, .4).any { z -> listOf(.1, 1.0, 1.8).any { y -> instance.getBlock(point.add(x,y,z)).solid() } } }) break
             destination = point
         }
         stopNavigation(mob)
@@ -388,7 +388,7 @@ class QuestEncounterCombat(
             if (!listOf(source.x(),source.y(),source.z()).all(Double::isFinite) || attacker.position.distanceSquared(source) > 24.0*24.0) return null
             val start = source.add(0.0,1.0,0.0); val end = mob.entity.position.add(0.0,1.0,0.0)
             val steps = ceil(start.distance(end)*4).toInt().coerceAtLeast(1)
-            if ((1 until steps).any { instance.getBlock(start.add(end.sub(start).mul(it.toDouble()/steps))).isSolid }) return null
+            if ((1 until steps).any { instance.getBlock(start.add(end.sub(start).mul(it.toDouble()/steps))).solid() }) return null
         }
         val range = if (effect || projectile) 24.0 else 8.0
         if (!isSpawned(mob) || source.distanceSquared(mob.entity.position) > range * range) return null
@@ -762,7 +762,7 @@ class QuestEncounterCombat(
         val x = floor(candidate.x()).toInt()
         val z = floor(candidate.z()).toInt()
         val y = floor(candidate.y()).toInt()
-        return candidate.takeUnless { (y..y + 2).any { instance.getBlock(x, it, z).isSolid } }
+        return candidate.takeUnless { (y..y + 2).any { instance.getBlock(x, it, z).solid() } }
     }
 
     private fun handleAbilityEvent(mob: Mob, event: MobAbilityEvent, players: List<Player>): Boolean {
