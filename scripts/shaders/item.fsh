@@ -1,29 +1,67 @@
 #version 330
+#extension GL_ARB_separate_shader_objects : require
 
-// ProjectS combat VFX on vanilla 26.2 core/item. Two independent markers, every other item renders as vanilla:
+// ProjectS combat VFX on vanilla 26.3 core/item. Two independent markers, every other item renders as vanilla:
 // - 黒翳竜 (scripts/build_boss_vfx.py): items whose tint is blue == 77, green == the effect kind (1..6). The
 //   texture is a data map (R = shape mask, G = flow coordinate along the effect, B = across), the tint red is the
 //   effect's progress (0..1, driven by the server every tick) and the colour is computed here: emissive, moving
 //   noise, a hot leading edge, dissolving tails.
 // - Warrior iron strikes (scripts/build_warrior_iron_vfx.py): texels whose alpha is a marker. 253 = heat,
 //   self-lit and flickering; 121 / 65 = near / far glow halo.
+// The VFX colours are self-lit (no overlay, lightmap or glint) but go through the same OIT phases and fog as vanilla.
 
-#moj_import <minecraft:fog.glsl>
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:globals.glsl>
+#include <minecraft:globals.glsl>
+#include <minecraft:fog.glsl>
+#include <minecraft:dynamictransforms.glsl>
+#include <minecraft:oit.glsl>
 
 uniform sampler2D Sampler0;
 
-in float sphericalVertexDistance;
-in float cylindricalVertexDistance;
-in vec4 vertexColor;
-in vec4 lightMapColor;
-in vec4 overlayColor;
-in vec4 rawColor;
-in vec2 texCoord0;
-in vec3 vfxPosition;
+#ifdef GLINT
+uniform sampler2D GlintSampler;
+#endif
 
-out vec4 fragColor;
+#ifndef OIT_ALPHA_ONLY
+layout(location = 0) in float sphericalVertexDistance;
+layout(location = 1) in float cylindricalVertexDistance;
+#endif
+layout(location = 2) in vec4 vertexColor;
+#ifndef OIT_ALPHA_ONLY
+layout(location = 3) in vec4 lightMapColor;
+layout(location = 4) in vec4 overlayColor;
+#endif
+layout(location = 5) in vec2 texCoord0;
+#ifdef GLINT
+layout(location = 6) in vec2 texCoordGlint;
+#endif
+layout(location = 7) in vec4 rawColor;
+layout(location = 8) in vec3 vfxPosition;
+
+#ifndef OIT_ALPHA_ONLY
+layout(location = 0) out vec4 fragColor;
+#endif
+
+#ifndef OIT_ALPHA_ONLY
+vec4 calculateFinalColor(vec4 color) {
+    color.rgb = mix(overlayColor.rgb, color.rgb, overlayColor.a);
+    color *= lightMapColor;
+
+    #ifdef GLINT
+    vec4 glintColor = GlintAlpha * texture(GlintSampler, texCoordGlint);// Glint color modulator?
+    // Matches BlendFuntion.GLINT
+    color.rgb += glintColor.rgb * glintColor.rgb;
+    #endif
+
+    #ifdef OIT_ACCUMULATE
+    color = sampleColorForAccumulation(color);
+    vec4 fogColor = vec4(FogColor.rgb * color.a, FogColor.a);
+    #else
+    vec4 fogColor = FogColor;
+    #endif
+
+    return apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, fogColor);
+}
+#endif
 
 float hash(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
@@ -91,6 +129,27 @@ float vfxHash(vec3 cell) {
     return fract(sin(dot(cell, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
 }
 
+#ifndef OIT_ALPHA_ONLY
+vec4 calculateUnlitColor(vec4 color) {
+    #ifdef OIT_ACCUMULATE
+    color = sampleColorForAccumulation(color);
+    vec4 fogColor = vec4(FogColor.rgb * color.a, FogColor.a);
+    #else
+    vec4 fogColor = FogColor;
+    #endif
+
+    return apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, fogColor);
+}
+#endif
+
+void finishUnlit(vec4 color) {
+    #ifdef OIT_ALPHA_ONLY
+    executeAlphaOnlyPhase(gl_FragCoord.z, color.a);
+    #else
+    fragColor = calculateUnlitColor(color);
+    #endif
+}
+
 void main() {
     vec4 color = texture(Sampler0, texCoord0);
     int markerB = int(rawColor.b * 255.0 + .5);
@@ -100,7 +159,7 @@ void main() {
         if (fx.a < .01) {
             discard;
         }
-        fragColor = apply_fog(fx, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
+        finishUnlit(fx);
         return;
     }
     int marker = int(color.a * 255.0 + 0.5);
@@ -117,18 +176,24 @@ void main() {
             alpha = (marker == 121 ? 0.6 : 0.34) * (0.85 + 0.15 * sin(t * 2.3 + n * 6.2832));
         }
         vec4 lit = vec4(min(rgb, vec3(1.0)), alpha) * ColorModulator;
-        fragColor = apply_fog(lit, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
+        finishUnlit(lit);
         return;
     }
-#ifdef ALPHA_CUTOUT
+    #ifdef ALPHA_CUTOUT
     if (color.a < ALPHA_CUTOUT) {
         discard;
     }
-#endif
+    #endif
 
     color *= vertexColor * ColorModulator;
-    color.rgb = mix(overlayColor.rgb, color.rgb, overlayColor.a);
-    color *= lightMapColor;
 
-    fragColor = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
+    #ifdef GLINT
+    color.a = max(color.a, GlintAlpha);
+    #endif
+
+    #ifdef OIT_ALPHA_ONLY
+    executeAlphaOnlyPhase(gl_FragCoord.z, color.a);
+    #else
+    fragColor = calculateFinalColor(color);
+    #endif
 }

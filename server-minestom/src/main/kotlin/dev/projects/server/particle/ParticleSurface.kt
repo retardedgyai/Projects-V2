@@ -26,7 +26,7 @@ class MinestomParticleRaycast(private val instance: Instance) : ParticleRaycast 
         while (distance <= limit) {
             val point = origin.add(ray.x() * distance, ray.y() * distance, ray.z() * distance)
             val block = instance.getBlock(floor(point.x()).toInt(), floor(point.y()).toInt(), floor(point.z()).toInt())
-            if (!block.isAir && block.collisionShape() != null) {
+            if (!block.air() && block.collisionShape() != null) {
                 val normal = faceNormal(ray)
                 return ParticleRaycastHit(previous, normal, distance.coerceAtMost(limit))
             }
