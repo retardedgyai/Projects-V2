@@ -1,0 +1,124 @@
+<!doctype html>
+<!-- Hi-res direction mock (AION2 / Lost Ark idiom over Minecraft). Rendered by
+     scripts/render_hud_mock_hires.py with headless Chrome at 1920x1080 = GUI scale 4.
+     Hotbar geometry matches vanilla exactly (182x22 GUI px -> 728x88 screen px). -->
+<html><head><meta charset="utf-8"><style>
+:root{
+  --metal:linear-gradient(180deg,#f6f8fa 0%,#c9cfd6 38%,#7d858f 52%,#aeb5bd 70%,#e3e7eb 100%);
+  --panel:linear-gradient(180deg,rgba(28,31,38,.92),rgba(10,11,14,.92));
+  --line:rgba(214,222,232,.28);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1920px;height:1080px;overflow:hidden;background:#000 url(world.png) 0 0/1920px 1080px no-repeat;
+  font-family:"Noto Sans JP","Yu Gothic UI",sans-serif;color:#fff}
+.abs{position:absolute}
+.num{font-weight:700;letter-spacing:.5px;text-shadow:-1px 0 #000,1px 0 #000,0 -1px #000,0 1px #000,0 0 5px rgba(0,0,0,.9)}
+
+/* hotbar: vanilla footprint */
+#hotbar{left:596px;top:992px;width:728px;height:88px;background:var(--panel);
+  border:1px solid var(--line);border-bottom:none;box-shadow:0 -1px 0 rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.08)}
+.slot{position:absolute;top:7px;width:74px;height:74px;border-radius:2px;
+  background:radial-gradient(ellipse at 50% 35%,#20242c 0%,#0b0c10 75%);
+  border:1px solid rgba(255,255,255,.10);box-shadow:inset 0 0 0 1px #000,inset 0 6px 10px rgba(0,0,0,.6)}
+.slot.skill{border-color:rgba(205,214,226,.45);box-shadow:inset 0 0 0 1px #000,inset 0 6px 10px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.7)}
+.slot img{position:absolute;left:4px;top:4px;width:64px;height:64px;image-rendering:pixelated}
+.slot .key{position:absolute;left:3px;top:2px;font-size:13px;font-weight:700;color:#e9edf2;text-shadow:0 0 3px #000,0 1px 0 #000}
+.slot.sel{border:2px solid #e9edf2;box-shadow:0 0 8px rgba(255,255,255,.35),inset 0 0 0 1px #000}
+.cd{position:absolute;inset:4px;background:conic-gradient(rgba(0,0,0,.72) var(--a),rgba(0,0,0,.28) 0)}
+.cdn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px}
+.nomana img{filter:saturate(.4) brightness(.6) sepia(1) hue-rotate(185deg) saturate(3)}
+.nomana::after{content:"";position:absolute;left:4px;right:4px;bottom:3px;height:3px;background:#4aa3ff;box-shadow:0 0 6px #4aa3ff}
+
+/* class resource: ember cells */
+#rage{left:600px;top:977px;width:720px;height:10px;display:flex;gap:4px}
+#rage i{flex:1;background:#2a1b10;border:1px solid #000;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+#rage i.on{background:linear-gradient(180deg,#ffe08a,#ff9a2a 55%,#c4520c);box-shadow:0 0 6px rgba(255,150,40,.55)}
+
+/* HP / MP bars */
+.bar{top:932px;height:28px;border:1px solid rgba(0,0,0,.95);background:#0d0e12;
+  box-shadow:0 0 0 1px rgba(214,222,232,.35),0 2px 6px rgba(0,0,0,.6)}
+.bar .fill,.bar .trail,.bar .shield{position:absolute;top:2px;bottom:2px}
+.bar .fill::after{content:"";position:absolute;left:0;right:0;top:0;height:40%;background:linear-gradient(180deg,rgba(255,255,255,.38),rgba(255,255,255,0))}
+#hp{left:596px;width:322px}
+#hp .fill{left:2px;width:calc((100% - 4px)*.55);background:linear-gradient(180deg,#ff6a6a,#d1182c 60%,#8e0c1a)}
+#hp .shield{left:calc(2px + (100% - 4px)*.55);width:calc((100% - 4px)*.2);background:linear-gradient(180deg,#ffffff,#c9d3df)}
+#hp .trail{left:calc(2px + (100% - 4px)*.75);width:calc((100% - 4px)*.117);background:rgba(255,224,208,.85)}
+#mp{left:1002px;width:322px}
+#mp .fill{right:2px;width:calc((100% - 4px)*.46);background:linear-gradient(180deg,#7fd0ff,#1f78f0 60%,#0f3c99)}
+.bar .t{position:absolute;top:0;bottom:0;display:flex;align-items:center;font-size:17px}
+#hp .t{left:12px} #mp .t{right:12px}
+.bar .t small{font-size:13px;color:#d8dde4;margin:0 3px}
+
+/* centre crest */
+#crest{left:912px;top:884px;width:96px;height:106px;background:var(--metal);
+  clip-path:polygon(50% 0,100% 16%,100% 62%,50% 100%,0 62%,0 16%);filter:drop-shadow(0 2px 3px #000)}
+#crest .in{position:absolute;inset:7px;background:radial-gradient(ellipse at 50% 30%,#2b3038,#0b0c10 75%);
+  clip-path:polygon(50% 0,100% 16%,100% 62%,50% 100%,0 62%,0 16%)}
+#crest .lv{position:absolute;top:13px;width:100%;text-align:center;font-size:12px;color:#c9cfd6;letter-spacing:2px}
+#crest .n{position:absolute;top:28px;width:100%;text-align:center;font-size:36px;line-height:1}
+#crest .gem{position:absolute;left:43px;top:4px;width:10px;height:10px;transform:rotate(45deg);
+  background:linear-gradient(135deg,#ff9aa6,#d3132d 55%,#6b0614);box-shadow:0 0 6px rgba(255,40,70,.8)}
+#cls{left:921px;top:960px;width:78px;text-align:center;font-size:13px;color:#e3c27a;font-weight:700;text-shadow:0 0 3px #000}
+
+/* buffs */
+#buffs{left:596px;top:870px;display:flex;gap:8px}
+.buff{width:42px;text-align:center}
+.buff .b{width:42px;height:42px;border:1px solid #000;box-shadow:0 0 0 1px rgba(120,230,150,.75);background:#0b0c10;position:relative}
+.buff img{width:40px;height:40px;image-rendering:pixelated}
+.buff span{display:block;font-size:13px;margin-top:2px}
+
+/* notice */
+#notice{left:560px;top:792px;width:800px;height:44px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(90deg,transparent,rgba(0,0,0,.62) 25%,rgba(0,0,0,.62) 75%,transparent);
+  font-size:24px;font-weight:700;color:#bcd8ff}
+#notice::before,#notice::after{content:"";width:60px;height:1px;background:linear-gradient(90deg,transparent,#bcd8ff);margin:0 18px}
+#notice::after{transform:scaleX(-1)}
+
+/* boss */
+#bossname{left:0;width:1920px;top:18px;display:flex;justify-content:center;align-items:center;gap:10px;font-size:26px}
+#bossname .lv{width:34px;height:34px;border-radius:50%;background:var(--metal);padding:3px}
+#bossname .lv b{display:flex;width:100%;height:100%;border-radius:50%;background:#14161b;align-items:center;justify-content:center;font-size:14px;color:#ffd77a}
+#bossbar{left:510px;top:62px;width:900px;height:22px;background:var(--metal);
+  clip-path:polygon(0 50%,14px 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,14px 100%);filter:drop-shadow(0 2px 3px #000)}
+#bossbar .in{position:absolute;left:14px;right:14px;top:3px;bottom:3px;background:#1a1408}
+#bossbar .fill{position:absolute;left:0;top:0;bottom:0;width:62.4%;background:linear-gradient(180deg,#fff6a0,#f2c21c 55%,#b07c00)}
+#bossbar .trail{position:absolute;left:62.4%;top:0;bottom:0;width:4.5%;background:#fff3e2}
+#bossbar .q{position:absolute;top:0;bottom:0;width:2px;background:rgba(0,0,0,.55)}
+#bosspct{left:1340px;top:30px;font-size:18px}
+#stagger{left:760px;top:92px;width:400px;height:6px;background:#140c1c;border:1px solid #000;box-shadow:0 0 0 1px rgba(214,222,232,.25)}
+#stagger i{display:block;height:100%;width:38%;background:linear-gradient(90deg,#8a4dff,#d39bff)}
+</style></head><body>
+
+<div id="bossname" class="abs num"><span class="lv"><b>30</b></span>裂け目の執行官</div>
+<div id="bosspct" class="abs num">62%</div>
+<div id="bossbar" class="abs"><div class="in"><div class="fill"></div><div class="trail"></div>
+  <div class="q" style="left:25%"></div><div class="q" style="left:50%"></div><div class="q" style="left:75%"></div></div></div>
+<div id="stagger" class="abs"><i></i></div>
+
+<div id="notice" class="abs">マナが足りません</div>
+
+<div id="buffs" class="abs">
+  <div class="buff"><div class="b"><img src="../../../assets/core-ui/skills/temp_mace.png"></div><span class="num">96s</span></div>
+  <div class="buff"><div class="b"><img src="../../../assets/core-ui/skills/heal_light.png"></div><span class="num">7s</span></div>
+</div>
+
+<div id="hp" class="abs bar"><div class="fill"></div><div class="shield"></div><div class="trail"></div>
+  <div class="t num">132<small>/</small>240</div></div>
+<div id="mp" class="abs bar"><div class="fill"></div><div class="t num">46<small>/</small>100</div></div>
+<div id="crest" class="abs"><div class="in"></div><div class="gem"></div><div class="lv">Lv</div><div class="n num">12</div></div>
+
+
+<div id="rage" class="abs"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+<div id="hotbar" class="abs">
+  <div class="slot sel" style="left:3px"><img src="iron_sword.png"><span class="key">1</span></div>
+  <div class="slot skill" style="left:83px"><img src="../../../assets/core-ui/skills/war_breach.png"><span class="key">2</span></div>
+  <div class="slot skill" style="left:163px"><img src="../../../assets/core-ui/skills/war_wound.png"><div class="cd" style="--a:240deg"></div><div class="cdn num">8</div><span class="key">3</span></div>
+  <div class="slot skill" style="left:243px"><img src="../../../assets/core-ui/skills/whirl.png"><span class="key">4</span></div>
+  <div class="slot skill" style="left:323px"><img src="../../../assets/core-ui/skills/war_counter.png"><div class="cd" style="--a:108deg"></div><div class="cdn num">3</div><span class="key">5</span></div>
+  <div class="slot skill nomana" style="left:403px"><img src="../../../assets/core-ui/skills/war_cry.png"><span class="key">6</span></div>
+  <div class="slot" style="left:483px"><span class="key">7</span></div>
+  <div class="slot" style="left:563px"><img src="potion.png"><span class="key">8</span></div>
+  <div class="slot" style="left:643px"><span class="key">9</span></div>
+</div>
+</body></html>

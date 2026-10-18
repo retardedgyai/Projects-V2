@@ -4,11 +4,16 @@ import java.util.Collections
 import java.util.UUID
 import kotlin.math.pow
 
-enum class CoreResource(val displayName: String, val raw: Boolean = false) {
+/** `research` goods are tier-1 market items of the magic path: anomalous samples and research products. */
+enum class CoreResource(val displayName: String, val raw: Boolean = false, val research: Boolean = false) {
     WOOD("木材", true), ORE("鉱石", true), STONE("石材", true), HIDE("獣皮", true), FIBER("植物繊維", true),
     BOARD("板材"), INGOT("インゴット"), STONE_BLOCK("加工石材"), LEATHER("なめし革"), CLOTH("布"),
     BOSS_SIGIL("討伐証"), COMBAT_TOKEN("戦利品券"), POTION("回復薬"), GATHERING_TABLET("採取の石板"), WHETSTONE("砥石"),
     AFFIX_DUST("刻印粉"),
+    // Names match AnomalousMaterial so the first-magic sidecar migrates by name.
+    MOONBELL("月鈴草", research = true), EMBER_MOSS("熾火苔", research = true), HOLLOW_CRYSTAL("空洞水晶", research = true),
+    WARM_ORE("微熱鉱片", research = true), TIDEWING_FEATHER("潮羽", research = true), WITHERED_CORE("枯れた核", research = true),
+    ARCANE_CATALYST("星鉄の触媒", research = true), MENDING_SEAL("修復の封蝋", research = true),
 }
 
 data class CoreMaterial(val resource: CoreResource, val tier: Int = 1) {
@@ -25,15 +30,28 @@ data class CoreMapModifier(val discipline: String?, val stat: String, val percen
     val key: String get() = "${discipline ?: "all"}:$stat"
 }
 
-class CoreOwnedMap(val id: UUID, val seed: Long, val tier: Int, modifiers: List<CoreMapModifier> = emptyList(), val level: Int = CoreJourneyRules.floor(tier)) {
+/** [zone] is the atlas zone the map was drawn for (null for maps from rewards, surveys and trials). */
+class CoreOwnedMap(val id: UUID, val seed: Long, val tier: Int, modifiers: List<CoreMapModifier> = emptyList(), val level: Int = CoreJourneyRules.floor(tier),
+    val zone: Int? = null) {
     val modifiers: List<CoreMapModifier> = Collections.unmodifiableList(modifiers.toList())
     init {
         require(tier in 1..4)
         require(level in CoreJourneyRules.floor(tier)..CoreJourneyRules.ceiling(tier))
         require(modifiers.size <= 3 && modifiers.map { it.key }.distinct().size == modifiers.size)
+        require(zone == null || zone in 0..CoreZoneRecord.MAX_ZONE_ID)
     }
-    fun withModifier(modifier: CoreMapModifier) = CoreOwnedMap(id, seed, tier, modifiers + modifier, level)
-    override fun toString() = "CoreOwnedMap($id,$seed,$tier,$modifiers,$level)"
+    fun withModifier(modifier: CoreMapModifier) = CoreOwnedMap(id, seed, tier, modifiers + modifier, level, zone)
+    override fun toString() = "CoreOwnedMap($id,$seed,$tier,$modifiers,$level,$zone)"
+}
+
+/** A player's own record of one atlas zone: boss clears there and the highest enemy level cleared. */
+data class CoreZoneRecord(val clears: Int, val bestLevel: Int) {
+    init { require(clears in 1..MAX_CLEARS && bestLevel in 1..CoreJourneyRules.MAX_LEVEL) }
+    fun cleared(level: Int) = CoreZoneRecord((clears + 1).coerceAtMost(MAX_CLEARS), maxOf(bestLevel, level))
+    companion object {
+        const val MAX_ZONE_ID = 255
+        const val MAX_CLEARS = 1_000_000
+    }
 }
 
 data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: Boolean = false, val trialId: String? = null) {
@@ -87,7 +105,10 @@ class CoreAccount(
     armorParts: Map<CoreGearSlot, CoreArmorPiece> = CoreGearSlot.armorSlots.filterNot { it == CoreGearSlot.CHEST }
         .associateWith { slot -> CoreArmorPiece(CoreGearIdentity.legacy(playerId, slot).copy(quality = armorIdentity.quality),
             armorTier, CoreCraftingCatalog.inferRarity(equippedAffixes, slot), armorEnhancement, armorBroken) },
+    zoneRecords: Map<Int, CoreZoneRecord> = emptyMap(),
 ) {
+    /** Atlas clears by zone id. Unknown ids are kept so a removed zone never corrupts a save. */
+    val zoneRecords: Map<Int, CoreZoneRecord> = Collections.unmodifiableMap(LinkedHashMap(zoneRecords.toSortedMap()))
     /** CHEST owns the v10 armor fields so older callers and fixtures remain readable. */
     val armorParts = Collections.unmodifiableMap(armorParts.toMap())
     fun armor(slot: CoreGearSlot): CoreArmorPiece = when (CoreGearSlot.equipped(slot)) {
@@ -115,6 +136,7 @@ class CoreAccount(
     val legacyLayouts: Set<CoreGearSlot> = Collections.unmodifiableSet(legacyLayouts.toSet())
     init {
         require(surveyPoints in 0..1_000_000_000L)
+        require(zoneRecords.keys.all { it in 0..CoreZoneRecord.MAX_ZONE_ID })
         require(buyOrders.size <= CoreEconomy.MAX_OFFERS && buyOrders.map { it.id }.distinct().size == buyOrders.size)
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
         require(smithingXp in 0..CoreEnhancementCatalog.MAX_SMITHING_XP)
@@ -192,9 +214,10 @@ class CoreAccount(
         buyOrders: List<CoreBuyOrder> = this.buyOrders,
         journey: CoreJourney = this.journey,
         armorParts: Map<CoreGearSlot, CoreArmorPiece> = this.armorParts,
+        zoneRecords: Map<Int, CoreZoneRecord> = this.zoneRecords,
     ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes,
         weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed, weaponEnhancement, armorEnhancement, smithingXp,
-        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, journey, armorParts)
+        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, journey, armorParts, zoneRecords)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)
@@ -240,13 +263,22 @@ sealed interface CoreAction {
     data class UpgradeArmorPart(val slot: CoreGearSlot) : CoreAction
     data class Exchange(val resource: CoreResource, val tier: Int, val batches: Int = 1) : CoreAction
     data class Craft(val resource: CoreResource, val batches: Int = 1, val tier: Int = 1) : CoreAction
-    data class ClaimMap(val tier: Int, val seed: Long, val level: Int? = null) : CoreAction
+    /** [zone]: the atlas zone the map is drawn for; its tier must match. */
+    data class ClaimMap(val tier: Int, val seed: Long, val level: Int? = null, val zone: Int? = null) : CoreAction
     data class ApplyTablet(val mapId: UUID, val modifier: CoreMapModifier) : CoreAction
     data class StartRun(val mapId: UUID, val runId: UUID) : CoreAction
     /** Only failed generation/transfer refunds a map. Normal withdrawal/death/disconnect does not. */
     data class AbortRun(val runId: UUID) : CoreAction
     data class FinishRun(val runId: UUID) : CoreAction
     data class Consume(val resource: CoreResource) : CoreAction
+    /** Magic path. Each spends ledger goods and destroys a silver fee; the first-magic sidecar is updated after commit. */
+    data class ResearchDistill(val material: CoreResource) : CoreAction
+    data class ResearchInk(val material: CoreResource) : CoreAction
+    /** The caller (server) has verified the personal research unlock and Essentia in the sidecar. */
+    data class ResearchCraft(val researchId: String) : CoreAction
+    data class SealRepair(val slot: CoreGearSlot) : CoreAction
+    /** Server-only: legacy sidecar materials at login, and the dev-only /researchtest top-up. */
+    data class GrantResearchMaterials(val materials: Map<CoreResource, Long>, val silverFloor: Long = 0) : CoreAction
 }
 
 enum class CoreTransactionStatus { COMMITTED, REPLAYED, REJECTED, STALE, CONFLICT, UNAVAILABLE, SAVE_FAILED }
@@ -266,7 +298,7 @@ data class CoreRecipe(val displayName: String, val costs: Map<CoreMaterial, Long
 /** Explicit provisional benchmark balance, shared by transaction validation and the hub UI. */
 object CoreLoopCatalog {
     const val MAX_BALANCE = 1_000_000L
-    const val MAX_BALANCES = 64
+    const val MAX_BALANCES = 128 // Raised from 64 when research goods joined the ledger; old saves are below either cap.
     const val MAX_MAPS = 32
     const val MAX_RECEIPTS = 16_384
     const val MAX_SOURCES = 16_384

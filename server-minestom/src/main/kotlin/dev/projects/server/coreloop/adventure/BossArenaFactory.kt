@@ -39,11 +39,13 @@ object BossArenaFactory {
             "rift" -> QuestMobArchetype.CINDER_REGENT
             "ritual" -> QuestMobArchetype.GLACIAL_COLOSSUS
             "trial" -> QuestMobArchetype.TEMPEST_HIEROPHANT
+            // Dev-only so far (/bosstest); no fragment/currency entry exists for it yet.
+            "shade" -> QuestMobArchetype.SHADE_WYRM
             else -> error("Unknown trial boss: $bossId")
         }
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
         instance.setChunkSupplier(::LightingChunk)
-        instance.time = if (bossId == "trial") 18_000L else 6_000L
+        instance.time = if (bossId == "trial" || bossId == "shade") 18_000L else 6_000L
         instance.defaultClock()?.pause()
         instance.setWeather(Weather.CLEAR)
         instance.setGenerator { unit ->
@@ -57,6 +59,13 @@ object BossArenaFactory {
                 val floor = when (bossId) {
                     "rift" -> if (abs(dx) < 2 || abs(dz) < 2) Block.POLISHED_BLACKSTONE else Block.RED_NETHER_BRICKS
                     "ritual" -> if (distance in 4.5..5.5 || distance in 15.5..16.5) Block.BLUE_ICE else Block.SMOOTH_QUARTZ
+                    // The wyrm's nest: dust-stained blackstone, sculk drifts, a sparse grid of dim lights.
+                    "shade" -> when {
+                        Math.floorMod(x, 8) == 0 && Math.floorMod(z, 8) == 0 -> Block.PEARLESCENT_FROGLIGHT
+                        distance < 3.5 || Math.floorMod(x * 31 + z * 17, 11) == 0 -> Block.SCULK
+                        Math.floorMod(x * 7 + z * 13, 9) == 0 -> Block.CRYING_OBSIDIAN
+                        else -> Block.POLISHED_BLACKSTONE
+                    }
                     else -> if ((x + z) % 7 == 0) Block.SEA_LANTERN else Block.PRISMARINE_BRICKS
                 }
                 unit.modifier().setBlock(x, 39, z, floor)
@@ -64,7 +73,8 @@ object BossArenaFactory {
                     if (bossId == "ritual") Block.BLUE_ICE else Block.POLISHED_DEEPSLATE)
                 if (distance in 19.0..20.5 && (abs(dx) < 1 || abs(dz) < 1)) {
                     for (y in 40..44) unit.modifier().setBlock(x, y, z, Block.POLISHED_DEEPSLATE)
-                    unit.modifier().setBlock(x, 45, z, if (bossId == "rift") Block.SHROOMLIGHT else Block.SEA_LANTERN)
+                    unit.modifier().setBlock(x, 45, z, when (bossId) {
+                        "rift" -> Block.SHROOMLIGHT; "shade" -> Block.PEARLESCENT_FROGLIGHT; else -> Block.SEA_LANTERN })
                 }
             }
         }
@@ -72,7 +82,7 @@ object BossArenaFactory {
             val chunks = (-1..5).flatMap { x -> (-1..5).map { z -> instance.loadChunk(x, z) } }
             CompletableFuture.allOf(*chunks.toTypedArray()).join()
             return BossArena(instance, Pos(32.5, 40.0, 16.5), Pos(32.5, 40.0, 32.5), archetype, bossId,
-                when (bossId) { "rift" -> "灰燼の溶炉"; "ritual" -> "氷獄の円庭"; else -> "天雷の祭壇" })
+                when (bossId) { "rift" -> "灰燼の溶炉"; "ritual" -> "氷獄の円庭"; "shade" -> "翳の巣"; else -> "天雷の祭壇" })
         } catch (failure: Throwable) {
             MinecraftServer.getInstanceManager().unregisterInstance(instance)
             throw failure

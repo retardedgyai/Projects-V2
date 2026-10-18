@@ -29,7 +29,7 @@ class QuestMapDumpTool {
                     val column = StringBuilder()
                     for (y in h - 4..h + 28) {
                         val block = runtime.instance.getBlock(x, y, z)
-                        if (block.isAir) continue
+                        if (block.air()) continue
                         column.append(y).append(':').append(block.name().removePrefix("minecraft:"))
                         if (block.name().endsWith("_slab")) column.append('#').append(block.getProperty("type"))
                         column.append(' ')

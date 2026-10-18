@@ -47,7 +47,7 @@ class CoreWarriorReworkTest {
         val saved = loaded.journey.savedBuilds.getValue(CoreClass.WARRIOR)
         assertEquals(listOf(0, 1, 2, 3), saved.skills); assertEquals(0, saved.ultimate)
         assertEquals(CoreAccountCodec.encode(loaded), CoreAccountCodec.encode(CoreAccountCodec.decode(CoreAccountCodec.encode(loaded), a.playerId)))
-        assertTrue(CoreAccountCodec.encode(loaded).startsWith("PROJECTS_CORE_LOOP\t11\t"))
+        assertTrue(CoreAccountCodec.encode(loaded).startsWith("PROJECTS_CORE_LOOP\t12\t"))
         val current = CoreAccount(UUID.randomUUID(), journey = CoreJourney.legacy(build = legacyWarrior))
         assertEquals(listOf(0, 1, 2, 3), CoreAccountCodec.decode(CoreAccountCodec.encode(current), current.playerId).journey.build.skills)
     }

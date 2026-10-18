@@ -40,6 +40,8 @@ internal class CorePlayerCombat(
     private val onLesson: (Int) -> Unit = {},
     private val allies: () -> List<CorePlayerCombat> = { emptyList() },
     private val gearSource: () -> CoreCombatGear? = { null },
+    /** True once the UI pack is loaded: damage numbers then use the pixel damage font. */
+    private val packed: () -> Boolean = { false },
     private val onDefeated: () -> Unit,
 ) {
     private val normal = GreatswordCombo()
@@ -52,6 +54,7 @@ internal class CorePlayerCombat(
     internal val activeVisualEffects: Int get() = vfx.activeEffects
     private var tickNumber = 0L
     private var nextDodge = 0L
+    private var dodgeCooldown = 24L
     private var lastCombat = -400L
     private val readyAt = LongArray(5)
     internal val classState = CoreClassState()
@@ -227,7 +230,8 @@ internal class CorePlayerCombat(
         val direction = if (forward == 0.0 && side == 0.0) facing else facing.mul(forward).add(right.mul(side)).normalize()
         moveSafely(direction, 2.6)
         if (weaponBase() == CoreWeaponBase.FLOW) normal.holdSequence()
-        nextDodge = tickNumber + if (journey().build.has(4)) 20 else 24
+        dodgeCooldown = if (journey().build.has(4)) 20L else 24L
+        nextDodge = tickNumber + dodgeCooldown
         classState.dodgeUntil = tickNumber + 60
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, 0.35f, 1.7f)
     }
@@ -480,7 +484,7 @@ internal class CorePlayerCombat(
     private fun clearLine(from: Pos, to: Pos): Boolean {
         val start = from.add(0.0, 1.0, 0.0); val end = to.add(0.0, 1.0, 0.0)
         val steps = ceil(start.distance(end) * 4).toInt().coerceAtLeast(1)
-        return (1 until steps).all { !player.instance.getBlock(start.add(end.sub(start).mul(it.toDouble() / steps))).isSolid }
+        return (1 until steps).all { !player.instance.getBlock(start.add(end.sub(start).mul(it.toDouble() / steps))).solid() }
     }
 
     private fun strike(enemies: QuestEncounterCombat, origin: Pos, direction: Vec, range: Double, minDot: Double, multiplier: Double) {
@@ -627,7 +631,7 @@ internal class CorePlayerCombat(
         var visibleDistance = 0.0
         for (step in 1..floor(distance * 4).toInt()) {
             val p = origin.add(direction.mul(step / 4.0))
-            if (player.instance.getBlock(p).isSolid) break
+            if (player.instance.getBlock(p).solid()) break
             visibleDistance = step / 4.0
             if (!skill && step % 2 == 0) vfx.particles(if (classId == CoreClass.MAGE) Particle.FLAME else Particle.END_ROD, p, 1)
         }
@@ -662,7 +666,7 @@ internal class CorePlayerCombat(
         var previous=from
         for(step in 1..ceil(maximum*4).toInt()) {
             val point=from.add(direction.mul(step*.25))
-            if(player.instance.getBlock(point).isSolid) return previous.sub(0.0,if(direction.y()<-.1) 0.0 else 1.0,0.0)
+            if(player.instance.getBlock(point).solid()) return previous.sub(0.0,if(direction.y()<-.1) 0.0 else 1.0,0.0)
             previous=point
         }
         return player.position.add(flatFacing().mul(minOf(maximum,7.0)))
@@ -671,15 +675,34 @@ internal class CorePlayerCombat(
     private fun showDamage(position: Pos, amount: Double, critical: Boolean, weak: Boolean) {
         // Bounded, short-lived combat feedback; never a client damage declaration.
         if (damageLabels.size >= 24) damageLabels.removeAt(0).first.remove()
+        val pixel = packed()
+        val size = if (critical) 0.95 else 0.7
+        val random = ThreadLocalRandom.current()
         val entity = Entity(EntityType.TEXT_DISPLAY).apply {
             setNoGravity(true); setHasPhysics(false)
             editEntityMeta(TextDisplayMeta::class.java) { meta ->
-                meta.setText(Component.text("${if (critical) "✦ " else ""}${amount.roundToInt()}${if (weak) " 弱点" else ""}",
-                    if (critical) NamedTextColor.GOLD else if (weak) NamedTextColor.AQUA else NamedTextColor.WHITE))
+                meta.setText(if (pixel) dev.projects.server.coreloop.ui.CoreDamageNumbers.render(amount, critical, weak)
+                    else Component.text("${if (critical) "✦ " else ""}${amount.roundToInt()}${if (weak) " 弱点" else ""}",
+                        if (critical) NamedTextColor.GOLD else if (weak) NamedTextColor.AQUA else NamedTextColor.WHITE))
                 meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
-                meta.setScale(Vec(0.7, 0.7, 0.7)); meta.setShadow(true); meta.setBackgroundColor(0)
+                // Pop in large, then settle and rise (client-side interpolation, two meta updates).
+                meta.setScale(Vec(size * 1.7, size * 1.7, size * 1.7)); meta.setShadow(!pixel); meta.setBackgroundColor(0)
             }
-            setInstance(player.instance, position.add(0.0, 2.35, 0.0))
+            setInstance(player.instance, position.add(random.nextDouble(-.35, .35), 2.2 + random.nextDouble(0.0, .25), random.nextDouble(-.35, .35)))
+        }
+        if (pixel) {
+            entity.scheduler().buildTask {
+                entity.editEntityMeta(TextDisplayMeta::class.java) { meta ->
+                    meta.setTransformationInterpolationStartDelta(0); meta.setTransformationInterpolationDuration(3)
+                    meta.setScale(Vec(size, size, size)); meta.setTranslation(Vec(0.0, .15, 0.0))
+                }
+            }.delay(net.minestom.server.timer.TaskSchedule.tick(1)).schedule()
+            entity.scheduler().buildTask {
+                entity.editEntityMeta(TextDisplayMeta::class.java) { meta ->
+                    meta.setTransformationInterpolationStartDelta(0); meta.setTransformationInterpolationDuration(12)
+                    meta.setScale(Vec(size * .8, size * .8, size * .8)); meta.setTranslation(Vec(0.0, .8, 0.0))
+                }
+            }.delay(net.minestom.server.timer.TaskSchedule.tick(5)).schedule()
         }
         damageLabels += entity to tickNumber + 18
     }
@@ -691,7 +714,7 @@ internal class CorePlayerCombat(
         val steps = ceil(start.distance(end) * 4).toInt().coerceAtLeast(1)
         return (1 until steps).all { step ->
             val point = start.add(end.sub(start).mul(step.toDouble() / steps))
-            !player.instance.getBlock(point).isSolid
+            !player.instance.getBlock(point).solid()
         }
     }
 
@@ -742,7 +765,7 @@ internal class CorePlayerCombat(
         syncVanillaHealth()
     }
 
-    fun sharpen() { whetstoneUntil = tickNumber + 20 * 180 }
+    fun sharpen() { whetstoneUntil = tickNumber + WHETSTONE_TICKS }
     fun cooldownSeconds(id: Int): Long = ((readyAt[id] - tickNumber).coerceAtLeast(0) + 19) / 20
     fun cooldownTicks(id: Int): Int = skillDefinitions[id].cooldownTicks(statSource())
     fun cooldownRemaining(id: Int): Int = (readyAt[id] - tickNumber).coerceAtLeast(0).toInt()
@@ -774,12 +797,12 @@ internal class CorePlayerCombat(
     private fun moveSafely(direction: Vec, distance: Double) {
         val start = player.position
         var destination = start
-        val grounded=player.instance.getBlock(start.sub(0.0,.15,0.0)).isSolid
+        val grounded=player.instance.getBlock(start.sub(0.0,.15,0.0)).solid()
         for (step in 1..ceil(distance / 0.15).toInt()) {
             val next = start.add(direction.mul(min(distance, step * 0.15)))
-            if(grounded && !player.instance.getBlock(next.sub(0.0,.15,0.0)).isSolid) break
+            if(grounded && !player.instance.getBlock(next.sub(0.0,.15,0.0)).solid()) break
             if (!listOf(-0.3, 0.3).all { x -> listOf(-0.3, 0.3).all { z ->
-                listOf(0.1, 0.9, 1.7).all { y -> !player.instance.getBlock(next.add(x, y, z)).isSolid }
+                listOf(0.1, 0.9, 1.7).all { y -> !player.instance.getBlock(next.add(x, y, z)).solid() }
             } }) break
             destination = next
         }
@@ -795,9 +818,9 @@ internal class CorePlayerCombat(
         val base = floor(at.y()).toInt()
         val surface = (base+1 downTo base-3).firstOrNull { y ->
             listOf(-size/2+.04,0.0,size/2-.04).all { x -> listOf(-size/2+.04,0.0,size/2-.04).all { z ->
-                instance.getBlock(Pos(at.x()+x,y.toDouble(),at.z()+z)).isSolid &&
-                    !instance.getBlock(Pos(at.x()+x,y+1.0,at.z()+z)).isSolid &&
-                    !instance.getBlock(Pos(at.x()+x,y+2.0,at.z()+z)).isSolid
+                instance.getBlock(Pos(at.x()+x,y.toDouble(),at.z()+z)).solid() &&
+                    !instance.getBlock(Pos(at.x()+x,y+1.0,at.z()+z)).solid() &&
+                    !instance.getBlock(Pos(at.x()+x,y+2.0,at.z()+z)).solid()
             } }
         } ?: return null
         return Pos(at.x(),surface+1.0,at.z())
@@ -843,8 +866,31 @@ internal class CorePlayerCombat(
         }
         if (raging) classState.fill(classId)
     }
-    private fun notice(message: String) = player.sendActionBar(Component.text(message, NamedTextColor.YELLOW))
+    /** Feedback goes into the HUD caption slot; a separate action-bar message would blank the HUD. */
+    fun notice(message: String) {
+        noticeText = message
+        noticeUntil = System.currentTimeMillis() + NOTICE_MILLIS
+        hudDirty = true
+    }
+    private var noticeText = ""
+    private var noticeUntil = 0L
+    private var hudDirty = false
+    val activeNotice: String get() = if (System.currentTimeMillis() < noticeUntil) noticeText else ""
+    /** True once after a notice: the server refreshes the HUD now instead of on its 5-tick cadence. */
+    fun consumeHudDirty(): Boolean = hudDirty.also { hudDirty = false }
+    fun hudBuffs(): List<dev.projects.server.coreloop.ui.CoreHudBuff> = buildList {
+        val whetstone = whetstoneUntil - tickNumber
+        if (whetstone > 0) add(dev.projects.server.coreloop.ui.CoreHudBuff(dev.projects.server.coreloop.ui.CoreHudBuffKind.WHETSTONE,
+            whetstone / 20.0, WHETSTONE_TICKS / 20.0, cooldown = false))
+        val dodge = nextDodge - tickNumber
+        if (dodge > 0) add(dev.projects.server.coreloop.ui.CoreHudBuff(dev.projects.server.coreloop.ui.CoreHudBuffKind.DODGE,
+            dodge / 20.0, dodgeCooldown / 20.0, cooldown = true))
+    }
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))
 
-    companion object { val SKILL_NAMES = listOf("轟進", "地割り", "押し薙ぎ") }
+    companion object {
+        val SKILL_NAMES = listOf("轟進", "地割り", "押し薙ぎ")
+        const val WHETSTONE_TICKS = 20L * 180
+        const val NOTICE_MILLIS = 1_600L
+    }
 }

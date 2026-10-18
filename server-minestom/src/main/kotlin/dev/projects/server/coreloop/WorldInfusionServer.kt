@@ -39,6 +39,7 @@ internal object WorldInfusionServer {
     private val games=ConcurrentHashMap<UUID,WorldInfusionGame>()
     internal fun track(game:WorldInfusionGame) { check(games.putIfAbsent(game.player.uuid,game)==null) }
     private fun retire(game:WorldInfusionGame) {
+        games.remove(game.player.uuid,game)
         game.close()
         val manager=MinecraftServer.getInstanceManager()
         if(manager.getInstance(game.instance.uuid)===game.instance && game.instance.players.none { it.isOnline })manager.unregisterInstance(game.instance)
@@ -139,6 +140,9 @@ internal object WorldInfusionServer {
             }
         }
         private fun at(c:InfusionCell,y:Double=0.0)=Pos(c.x+.5,c.y+y,c.z+.5)
+        // Altar models face as in their approved previews (render-world-models.py yaw). 26.2 turns an
+        // item display by -yaw and then 180 degrees, so the entity yaw is 180 minus the preview yaw.
+        private fun modelAt(c:InfusionCell,y:Double,previewYaw:Float=0f)=at(c,y).withYaw(180f-previewYaw)
         private fun block(x:Int,y:Int,z:Int,b:Block) {
             val key=Triple(x,y,z);blockKeys+=key
             if(blocks[key]!=b) { instance.setBlock(x,y,z,b);blocks[key]=b }
@@ -261,24 +265,24 @@ internal object WorldInfusionServer {
             visibleKeys.clear();blockKeys.clear();coreDisplay=null;lastCorePose=null
             state.matrix?.let { c->
                 block(c.x,41,c.z,if(packed)Block.BARRIER else Block.CHISELED_STONE_BRICKS)
-                display(model("infusion-v6/center",Material.CHISELED_STONE_BRICKS,"中心台座","visual"),at(c,.5))
+                display(model("infusion-v6/center",Material.CHISELED_STONE_BRICKS,"中心台座","visual"),modelAt(c,.5))
                 for(x in listOf(-1,1))for(z in listOf(-1,1)) {
                     for(y in 41..43)block(c.x+x,y,c.z+z,if(packed)Block.BARRIER else if(y==43)Block.CUT_COPPER else Block.POLISHED_DEEPSLATE_WALL)
-                    if(packed)display(model("infusion-v4/support",Material.PAPER,"Support","visual"),at(c.copy(x=c.x+x,z=c.z+z),.5)
-                        .withYaw(when { x<0&&z<0->135f;x>0&&z<0->45f;x<0->-135f;else->-45f }))
+                    if(packed)display(model("infusion-v4/support",Material.PAPER,"Support","visual"),
+                        modelAt(c.copy(x=c.x+x,z=c.z+z),.5,when { x<0&&z<0->135f;x>0&&z<0->45f;x<0->-135f;else->-45f }))
                 }
                 block(c.x,44,c.z,if(packed)Block.BARRIER else Block.LODESTONE)
-                coreDisplay=display(model("infusion-v7/core_ritual",Material.LODESTONE,"Matrix","visual"),at(c,3.4))
+                coreDisplay=display(model("infusion-v7/core_ritual",Material.LODESTONE,"Matrix","visual"),modelAt(c,3.4))
                 if(state.gearPlace!=InfusionGearPlace.INVENTORY)display(gearItem(),at(c,1.15),Vec(.65,.65,.65))
             }
             state.pedestals.forEach { p->
                 block(p.cell.x,41,p.cell.z,if(packed)Block.BARRIER else Block.CHISELED_STONE_BRICKS)
-                if(packed)display(model("infusion-v6/offering",Material.CHISELED_STONE_BRICKS,"外側台座","visual"),at(p.cell,.5))
+                if(packed)display(model("infusion-v6/offering",Material.CHISELED_STONE_BRICKS,"外側台座","visual"),modelAt(p.cell,.5))
                 p.item?.let { display(CoreLoopItems.resource(CoreMaterial(it,2),1,packed),at(p.cell,1.12),Vec(.55,.55,.55)) }
             }
             state.jars.filter { it.cell!=null }.forEach { j->val c=j.cell!!
                 block(c.x,41,c.z,if(packed)Block.BARRIER else Block.GLASS)
-                if(packed)display(model("infusion-v3/jar",Material.GLASS_BOTTLE,"Jar","visual"),at(c,.5))
+                if(packed)display(model("infusion-v3/jar",Material.GLASS_BOTTLE,"Jar","visual"),modelAt(c,.5))
                 liquid(j)
             }
             displays.entries.removeIf { (key,e)->if(key !in visibleKeys) { e.remove();true } else false }
@@ -287,11 +291,13 @@ internal object WorldInfusionServer {
         fun tick() {
             if(closed)return
             ticks++
+            // Still configuring or loading chunks: the player has no instance yet. Disconnects are retired by the event.
+            if(player.instance==null)return
             if(!player.isOnline || player.instance!==instance) { retire(this);return }
             if(MinecraftServer.getInstanceManager().getInstance(instance.uuid)!==instance) { close();return }
             state.matrix?.let { c->
                 // Player breaking is disabled; external removal/unload must not leave a floating effect.
-                if(instance.getBlock(c.x,44,c.z).isAir) { close();return }
+                if(instance.getBlock(c.x,44,c.z).air()) { close();return }
             }
             var completed=false
             val power=WorldInfusionEnergy.Supply(demoPowerPerSecond)

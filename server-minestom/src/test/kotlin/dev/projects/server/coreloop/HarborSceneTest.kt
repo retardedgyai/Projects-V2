@@ -38,19 +38,19 @@ class HarborSceneTest {
         try {
             val spawn = scene.spawn
             assertEquals(41.0, spawn.y())
-            assertTrue(instance.getBlock(spawn.blockX(), 40, spawn.blockZ()).isSolid)
+            assertTrue(instance.getBlock(spawn.blockX(), 40, spawn.blockZ()).solid())
             assertEquals(Block.AIR, instance.getBlock(spawn))
             assertEquals(6, scene.facilities.size)
             assertEquals(HarborFacilityKind.entries.toSet(), scene.facilities.map { it.kind }.toSet())
             assertEquals(EntityType.VILLAGER, scene.smith.entityType)
             assertTrue(scene.smith.position.distance(scene.facilities.single { it.kind == HarborFacilityKind.WORKSHOP }.position) < 5.0)
-            assertTrue(instance.getBlock(scene.smith.position).isAir, "Smith NPC is embedded in workshop scenery")
+            assertTrue(instance.getBlock(scene.smith.position).air(), "Smith NPC is embedded in workshop scenery")
             assertEquals(6, scene.labels.size)
             assertEquals(493,scene.scenery.size, "Unexpected growth in static harbor geometry")
             // Natural chalk continues from the town's spurs into the separately generated headlands.
             assertEquals(Block.CALCITE,instance.getBlock(48,45,-3))
-            assertTrue(instance.getBlock(-47,46,-16).isSolid, "West coast spur lost its foundation")
-            assertTrue(instance.getBlock(-44,43,11).isAir, "Chalk spurs obstructed the west shore viewpoint")
+            assertTrue(instance.getBlock(-47,46,-16).solid(), "West coast spur lost its foundation")
+            assertTrue(instance.getBlock(-44,43,11).air(), "Chalk spurs obstructed the west shore viewpoint")
             instance.loadChunk(4,-4).join()
             instance.loadChunk(5,-4).join()
             var chalk=0; var foliage=0; var rootedTrees=0
@@ -72,15 +72,15 @@ class HarborSceneTest {
                 assertEquals("x",instance.getBlock(x,y,z).getProperty("axis"))
             }
             assertEquals("minecraft:orange_stained_glass_pane",instance.getBlock(25,51,8).name(), "Trading roof bay has no recessed light")
-            assertTrue(instance.getBlock(26,51,8).isAir, "Roof-bay window is flush instead of recessed")
+            assertTrue(instance.getBlock(26,51,8).air(), "Roof-bay window is flush instead of recessed")
             for(z in listOf(6,12)) for(x in 21..26)
-                assertTrue(instance.getBlock(x,49,z).isSolid, "Trading roof bay has disconnected bearings")
+                assertTrue(instance.getBlock(x,49,z).solid(), "Trading roof bay has disconnected bearings")
             assertEquals("minecraft:dark_oak_log",instance.getBlock(-20,55,18).name(), "Loading hoist has no beam")
             for(y in 52..54) assertEquals("minecraft:iron_chain",instance.getBlock(-20,y,19).name())
             for(z in listOf(22,24)) for(y in 35..51)
-                assertTrue(instance.getBlock(-35,y,z).isSolid, "Cargo crane mast is not supported")
+                assertTrue(instance.getBlock(-35,y,z).solid(), "Cargo crane mast is not supported")
             for(x in -36..-25) for(z in 23..24)
-                assertTrue(instance.getBlock(x,51,z).isSolid, "Cargo crane arm has a gap")
+                assertTrue(instance.getBlock(x,51,z).solid(), "Cargo crane arm has a gap")
             for(y in 45..50) assertEquals("minecraft:iron_chain",instance.getBlock(-26,y,24).name())
             val roofFamilies=mutableSetOf<String>()
             for(x in -40..40) for(z in -51..18) for(y in 49..76) {
@@ -98,7 +98,7 @@ class HarborSceneTest {
             }
             assertEquals("minecraft:jungle_leaves",instance.getBlock(-51,50,-1).name(), "Seaward palm frond lost its drooping tip")
             assertEquals("minecraft:jungle_leaves",instance.getBlock(-41,51,-1).name(), "Short inland frond is missing")
-            assertTrue(instance.getBlock(-48,53,1).isAir, "Palm canopy filled the gap between fronds")
+            assertTrue(instance.getBlock(-48,53,1).air(), "Palm canopy filled the gap between fronds")
             val westCrown=mutableSetOf<Triple<Int,Int,Int>>()
             for(x in -51..-38) for(y in 48..55) for(z in -8..6)
                 if(instance.getBlock(x,y,z).name()=="minecraft:jungle_leaves") westCrown.add(Triple(x,y,z))
@@ -152,7 +152,7 @@ class HarborSceneTest {
                 assertEquals(45.6+.35*minOf(z+8,-2-z),cloth.position.y(),1e-6, "Split market tent ridge")
             }
             for(x in listOf(-8,-4,4,7)) for(z in listOf(-8,-3)) {
-                assertTrue(instance.getBlock(x,40,z).isSolid, "Tent post has no foundation")
+                assertTrue(instance.getBlock(x,40,z).solid(), "Tent post has no foundation")
                 for(y in 41..45) assertEquals("minecraft:dark_oak_fence",instance.getBlock(x,y,z).name())
             }
             val cargoCloth=fabric.filter { it.position.x()< -24 && it.position.z()>25 }
@@ -166,7 +166,7 @@ class HarborSceneTest {
                     assertEquals(mastZ+.6+1.8*kotlin.math.sin(Math.PI*row/8),panel.position.z(),1e-6)
                     assertTrue((panel.entityMeta as BlockDisplayMeta).scale.z()<=.1)
                 }
-                for(y in 40..top) assertTrue(instance.getBlock(-29,y,mastZ).isSolid, "Cargo mast has a gap")
+                for(y in 40..top) assertTrue(instance.getBlock(-29,y,mastZ).solid(), "Cargo mast has a gap")
             }
             val cutterCloth=fabric.filter { it.position.x()>29 && it.position.z()>25 }
             assertEquals(152,cutterCloth.size)
@@ -175,15 +175,15 @@ class HarborSceneTest {
             for(x in -33..-25) for(y in 47..58) for(z in 38..49)
                 assertFalse(instance.getBlock(x,y,z).name().endsWith("_wool"), "Old solid cargo sail remains")
             assertEquals("minecraft:spruce_stairs",instance.getBlock(-29,41,32).name(), "Forecastle access missing")
-            assertTrue(instance.getBlock(-29,40,32).isSolid, "Forecastle step is unsupported")
+            assertTrue(instance.getBlock(-29,40,32).solid(), "Forecastle step is unsupported")
             for(xs in listOf(-23..-11,11..23)) for(x in xs) for(z in 15..16)
-                assertTrue(instance.getBlock(x,46,z).isSolid, "Fabric replaced the balcony floor $x,$z")
+                assertTrue(instance.getBlock(x,46,z).solid(), "Fabric replaced the balcony floor $x,$z")
             for(x in listOf(-23,-17,-11,11,17,23)) {
                 assertEquals("minecraft:lantern",instance.getBlock(x,44,16).name())
-                assertTrue(instance.getBlock(x,45,16).isSolid, "Quay lantern lost its hanger")
+                assertTrue(instance.getBlock(x,45,16).solid(), "Quay lantern lost its hanger")
             }
             for((x,z) in listOf(9 to 6,9 to 17,4 to 11)) {
-                assertTrue(instance.getBlock(x,40,z).isSolid, "Sail mast has no foundation")
+                assertTrue(instance.getBlock(x,40,z).solid(), "Sail mast has no foundation")
                 assertEquals("minecraft:cobblestone_wall",instance.getBlock(x,41,z).name())
                 val roof=45+(x-4)/2+kotlin.math.abs(z-11)/4
                 for(y in 42..roof) assertEquals(
@@ -192,8 +192,8 @@ class HarborSceneTest {
             }
 
             fun walkable(x: Int, z: Int): Boolean =
-                x in -36..36 && z in -28..56 && instance.getBlock(x, 40, z).isSolid &&
-                    instance.getBlock(x, 41, z).isAir && instance.getBlock(x, 42, z).isAir
+                x in -36..36 && z in -28..56 && instance.getBlock(x, 40, z).solid() &&
+                    instance.getBlock(x, 41, z).air() && instance.getBlock(x, 42, z).air()
 
             val reached = mutableSetOf(spawn.blockX() to spawn.blockZ())
             val pending = ArrayDeque(reached)
@@ -208,7 +208,7 @@ class HarborSceneTest {
             scene.facilities.forEach { facility ->
                 assertTrue(facility.position.distance(spawn) < 25.0, "${facility.kind} is too far from arrival")
                 facility.blockPositions.forEach { block ->
-                    assertFalse(instance.getBlock(block).isAir, "${facility.kind} exposes an empty interaction block")
+                    assertFalse(instance.getBlock(block).air(), "${facility.kind} exposes an empty interaction block")
                 }
                 assertTrue(
                     facility.blockPositions.any { block ->
@@ -224,9 +224,9 @@ class HarborSceneTest {
             for(x in listOf(-10,-9,9,10)) for(z in 10..12)
                 assertTrue(walkable(x,z) && x to z in reached, "Covered market side door blocked $x,$z")
             for(z in listOf(4,10,16)) {
-                for(y in 40..45) assertTrue(instance.getBlock(-4,y,z).isSolid, "Arcade post is unsupported $y,$z")
+                for(y in 40..45) assertTrue(instance.getBlock(-4,y,z).solid(), "Arcade post is unsupported $y,$z")
                 assertEquals("minecraft:lantern",instance.getBlock(-6,45,z).name())
-                assertTrue(instance.getBlock(-6,46,z).isSolid, "Arcade lantern is not suspended from a rafter")
+                assertTrue(instance.getBlock(-6,46,z).solid(), "Arcade lantern is not suspended from a rafter")
             }
             for(x in -22..23) for(z in -1..3)
                 assertTrue(walkable(x,z), "Cross-street narrowed by market extension $x,$z")
@@ -243,12 +243,12 @@ class HarborSceneTest {
                 for(x in -4..4) for(y in 39..40)
                     assertEquals("minecraft:dark_oak_log",instance.getBlock(x,y,z).name(), "Arrival bearer disconnected")
                 for(x in listOf(-4,4)) for(y in 34..38)
-                    assertTrue(instance.getBlock(x,y,z).isSolid, "Arrival frame lost its pile")
+                    assertTrue(instance.getBlock(x,y,z).solid(), "Arrival frame lost its pile")
             }
             for(x in listOf(-24,-20,-14,14,20,26)) for(z in listOf(32,36))
-                for(y in 34..40) assertTrue(instance.getBlock(x,y,z).isSolid, "Boarding bearer has no pile")
+                for(y in 34..40) assertTrue(instance.getBlock(x,y,z).solid(), "Boarding bearer has no pile")
             for(z in 25..31) for(x in listOf(-4,4))
-                assertTrue(instance.getBlock(x,41,z).isSolid, "Arrival edge has a gap")
+                assertTrue(instance.getBlock(x,41,z).solid(), "Arrival edge has a gap")
             for(z in 21..24) assertTrue(walkable(-29,z), "Cargo bow still overlaps the shore quay $z")
             assertEquals(Block.DARK_OAK_PLANKS,instance.getBlock(-32,44,51), "Cargo lantern floats above a bottom slab")
             assertEquals(Block.WAXED_WEATHERED_CUT_COPPER,instance.getBlock(28,43,41), "Cutter lantern floats above a bottom slab")
@@ -265,13 +265,13 @@ class HarborSceneTest {
                 for (x in 8..12) {
                     assertTrue(instance.getBlock(x,y,z).name().contains("stairs"), "Missing upper hall step $step at $x")
                     assertEquals("north", instance.getBlock(x,y,z).getProperty("facing"))
-                    assertTrue(instance.getBlock(x,y+1,z).isAir && instance.getBlock(x,y+2,z).isAir, "Upper hall stair headroom $step at $x")
-                    assertTrue(instance.getBlock(x,y-1,z).isSolid, "Stair has no foundation $step at $x")
+                    assertTrue(instance.getBlock(x,y+1,z).air() && instance.getBlock(x,y+2,z).air(), "Upper hall stair headroom $step at $x")
+                    assertTrue(instance.getBlock(x,y-1,z).solid(), "Stair has no foundation $step at $x")
                 }
             }
-            for (z in -29..-27) assertTrue(instance.getBlock(8,53,z).isAir && instance.getBlock(8,54,z).isAir, "Hall entry blocked at $z")
+            for (z in -29..-27) assertTrue(instance.getBlock(8,53,z).air() && instance.getBlock(8,54,z).air(), "Hall entry blocked at $z")
             fun upperWalkable(x: Int, z: Int) = x in -15..15 && z in -49..-27 &&
-                instance.getBlock(x,52,z).isSolid && instance.getBlock(x,53,z).isAir && instance.getBlock(x,54,z).isAir
+                instance.getBlock(x,52,z).solid() && instance.getBlock(x,53,z).air() && instance.getBlock(x,54,z).air()
             val upperReached = mutableSetOf(10 to -27)
             val upperPending = ArrayDeque(upperReached)
             while (upperPending.isNotEmpty()) {
@@ -288,31 +288,31 @@ class HarborSceneTest {
                 assertTrue(upperWalkable(x,z), "Seaward hall bay is not connected to the veranda $x,$z")
             for(x in listOf(-14,-7,-3,3,7,14)) {
                 assertEquals(Block.CHISELED_STONE_BRICKS,instance.getBlock(x,53,-27), "Veranda post lost its plinth")
-                for(y in 54..59) assertTrue(instance.getBlock(x,y,-27).isSolid, "Veranda post has a gap $x,$y")
+                for(y in 54..59) assertTrue(instance.getBlock(x,y,-27).solid(), "Veranda post has a gap $x,$y")
             }
             for(x in -16..16) if(x !in 8..12 && x !in listOf(-14,-7,-3,3,7,14))
                 assertEquals("minecraft:dark_oak_fence",instance.getBlock(x,53,-27).name(), "Unguarded podium edge $x")
             for(x in 8..12) assertTrue(upperWalkable(x,-27), "Balustrade closed the actual hall stairs $x")
-            assertTrue(instance.getBlock(2,68,-31).isAir, "Great hall still has an opaque domestic gable")
-            assertTrue(instance.getBlock(0,62,-31).isSolid, "Open gable king post has no bearing")
+            assertTrue(instance.getBlock(2,68,-31).air(), "Great hall still has an opaque domestic gable")
+            assertTrue(instance.getBlock(0,62,-31).solid(), "Open gable king post has no bearing")
             for(x in listOf(-2,2)) {
                 assertEquals("minecraft:lantern",instance.getBlock(x,65,-31).name())
-                assertTrue(instance.getBlock(x,66,-31).isSolid, "Gable lantern does not hang from the fan truss")
+                assertTrue(instance.getBlock(x,66,-31).solid(), "Gable lantern does not hang from the fan truss")
             }
             for(side in listOf(-1,1)) for(z in -48..-32 step 4) {
-                assertTrue(instance.getBlock(side*15,60,z).isSolid, "Swept eave has no gallery column")
-                for(i in 1..3) assertTrue(instance.getBlock(side*(15+i),60+i,z).isSolid, "Disconnected eave bracket")
+                assertTrue(instance.getBlock(side*15,60,z).solid(), "Swept eave has no gallery column")
+                for(i in 1..3) assertTrue(instance.getBlock(side*(15+i),60+i,z).solid(), "Disconnected eave bracket")
             }
             for(z in listOf(-46,-40,-34)) for(x in listOf(-11,11)) for(y in 52..61)
-                assertTrue(instance.getBlock(x,y,z).isSolid, "Hall frame is unsupported $x,$y,$z")
+                assertTrue(instance.getBlock(x,y,z).solid(), "Hall frame is unsupported $x,$y,$z")
             for(z in listOf(-43,-37)) {
                 assertEquals("minecraft:lantern",instance.getBlock(0,59,z).name())
-                assertTrue(instance.getBlock(0,60,z).isSolid, "Hall light has no suspension frame")
+                assertTrue(instance.getBlock(0,60,z).solid(), "Hall light has no suspension frame")
                 for(y in 61..63) assertEquals("minecraft:iron_chain",instance.getBlock(0,y,z).name())
-                assertTrue(instance.getBlock(0,64,z).isSolid, "Chandelier chain has no roof beam")
+                assertTrue(instance.getBlock(0,64,z).solid(), "Chandelier chain has no roof beam")
             }
             for (x in -12..12) for (z in -48..-31)
-                assertTrue(instance.getBlock(x,51,z).isSolid, "The great hall floats above an unsupported floor $x,$z")
+                assertTrue(instance.getBlock(x,51,z).solid(), "The great hall floats above an unsupported floor $x,$z")
             for (x in -22..-12) {
                 val rail = instance.getBlock(x,47,16)
                 assertTrue(rail.name().endsWith("_fence"), "Warehouse gallery has a missing railing at $x")
@@ -324,7 +324,7 @@ class HarborSceneTest {
                 for (dz in 0..1) {
                     assertEquals("minecraft:spruce_stairs",instance.getBlock(x,y,z+dz).name())
                     assertEquals(facing,instance.getBlock(x,y,z+dz).getProperty("facing"))
-                    assertTrue(instance.getBlock(x,y+1,z+dz).isAir && instance.getBlock(x,y+2,z+dz).isAir,
+                    assertTrue(instance.getBlock(x,y+1,z+dz).air() && instance.getBlock(x,y+2,z+dz).air(),
                         "Occupied storey stair headroom $x,$y,${z+dz}")
                 }
             }
@@ -343,13 +343,13 @@ class HarborSceneTest {
             assertTrue(-25 to 7 in reached && 25 to 6 in reached, "Merchant stair alley approaches must be reachable")
             for(point in listOf(-33 to 8,-32 to 5,-31 to 0,-33 to -3,-33 to -5,-29 to -1,-29 to 5))
                 assertTrue(point in reached, "Sailmaker workshop or its north/street doorway disconnected: $point")
-            assertTrue(instance.getBlock(-44,42,11).isSolid && instance.getBlock(-44,43,11).isAir &&
-                instance.getBlock(-44,44,11).isAir, "West shore photograph is not standing on the existing rock shelf")
+            assertTrue(instance.getBlock(-44,42,11).solid() && instance.getBlock(-44,43,11).air() &&
+                instance.getBlock(-44,44,11).air(), "West shore photograph is not standing on the existing rock shelf")
             for(x in listOf(-39,-35,-29)) {
-                for(y in 40..46) assertTrue(instance.getBlock(x,y,7).isSolid, "Sail workshop porch frame unsupported")
-                for(y in 40..49) assertTrue(instance.getBlock(x,y,-4).isSolid, "Sail workshop north frame unsupported")
-                for(z in -4..7) assertTrue(instance.getBlock(x,46,z).isSolid, "Workshop tie beam ends before its bearing post")
-                assertTrue(instance.getBlock(x,52,-2).isSolid, "Sail workshop ridge lost its frame")
+                for(y in 40..46) assertTrue(instance.getBlock(x,y,7).solid(), "Sail workshop porch frame unsupported")
+                for(y in 40..49) assertTrue(instance.getBlock(x,y,-4).solid(), "Sail workshop north frame unsupported")
+                for(z in -4..7) assertTrue(instance.getBlock(x,46,z).solid(), "Workshop tie beam ends before its bearing post")
+                assertTrue(instance.getBlock(x,52,-2).solid(), "Sail workshop ridge lost its frame")
             }
             assertEquals("minecraft:dark_oak_log",instance.getBlock(-32,52,-2).name(), "Workshop ridge is not continuous")
             assertEquals("x",instance.getBlock(-32,52,-2).getProperty("axis"))
@@ -360,33 +360,33 @@ class HarborSceneTest {
                 assertEquals("south",roof.getProperty("facing"))
             }
             assertEquals("top",instance.getBlock(-32,46,9).getProperty("type"), "Long porch roof must end in a thin half-step")
-            assertTrue(instance.getBlock(-32,53,3).isAir, "Old domestic dormer remains above the workshop")
+            assertTrue(instance.getBlock(-32,53,3).air(), "Old domestic dormer remains above the workshop")
             for(z in listOf(-2,-1)) assertEquals("minecraft:loom",instance.getBlock(-38,41,z).name())
             for(z in listOf(-2,-1,0,3,4,5)) {
                 assertEquals("minecraft:light_blue_stained_glass_pane",instance.getBlock(-39,43,z).name())
-                assertTrue(instance.getBlock(-39,42,z).isSolid, "Workshop seaward window lost its sill")
+                assertTrue(instance.getBlock(-39,42,z).solid(), "Workshop seaward window lost its sill")
             }
             for(x in listOf(-37,-31)) for((lightY,z) in listOf(46 to 2,45 to 7)) {
                 assertEquals("minecraft:lantern",instance.getBlock(x,lightY,z).name())
-                assertTrue(instance.getBlock(x,lightY+1,z).isSolid, "Sail workshop lantern lacks a bearing beam")
+                assertTrue(instance.getBlock(x,lightY+1,z).solid(), "Sail workshop lantern lacks a bearing beam")
             }
             for ((x,z) in listOf(-24 to 7,24 to 6)) assertTrue(walkable(x,z), "Merchant stair door $x,$z")
             for (x in listOf(-18,-17,16,17)) for (z in 14..15) {
-                assertTrue(instance.getBlock(x,46,z).isSolid, "Unsupported merchant balcony doorway $x,$z")
-                assertTrue(instance.getBlock(x,47,z).isAir && instance.getBlock(x,48,z).isAir, "Blocked merchant balcony doorway $x,$z")
+                assertTrue(instance.getBlock(x,46,z).solid(), "Unsupported merchant balcony doorway $x,$z")
+                assertTrue(instance.getBlock(x,47,z).air() && instance.getBlock(x,48,z).air(), "Blocked merchant balcony doorway $x,$z")
             }
             for (x in listOf(-12,-6,6,12)) {
                 assertEquals("minecraft:red_wall_banner",instance.getBlock(x,58,-30).name())
-                assertTrue(instance.getBlock(x,58,-31).isSolid, "A wall banner has no wall behind it")
+                assertTrue(instance.getBlock(x,58,-31).solid(), "A wall banner has no wall behind it")
             }
             // The repair shed must read as an open working building, with supported frames and clear side aisles.
             for (z in listOf(-3,3,9)) for (x in listOf(29,40)) {
-                assertTrue(instance.getBlock(x,40,z).isSolid)
+                assertTrue(instance.getBlock(x,40,z).solid())
                 assertEquals(Block.STRIPPED_SPRUCE_LOG,instance.getBlock(x,47,z))
             }
             for (z in -2..10) for (x in listOf(29,39)) {
                 if (x == 29 && z in listOf(3,9)) continue
-                assertTrue(instance.getBlock(x,41,z).isAir && instance.getBlock(x,42,z).isAir,
+                assertTrue(instance.getBlock(x,41,z).air() && instance.getBlock(x,42,z).air(),
                     "Repair shed aisle obstructed $x,$z")
             }
             assertEquals(Block.STRIPPED_SPRUCE_LOG,instance.getBlock(30,55,34), "Cutter mast missing")
@@ -395,24 +395,24 @@ class HarborSceneTest {
             // Foundry stays open at bench level, with two real stone arches instead of another merchant facade.
             for (x in (-24..-19) + (-17..-12)) {
                 assertTrue(walkable(x,-3), "Foundry arcade obstructed $x")
-                assertTrue(instance.getBlock(x,46,-3).isSolid, "Foundry arch crown missing $x")
+                assertTrue(instance.getBlock(x,46,-3).solid(), "Foundry arch crown missing $x")
             }
             for (x in listOf(-25,-18,-11)) for (y in 40..46)
-                assertTrue(instance.getBlock(x,y,-3).isSolid, "Foundry arch pier unsupported $x,$y")
-            assertTrue(instance.getBlock(-18,50,-5).isAir, "Old domestic upper floor remains above the foundry forecourt")
+                assertTrue(instance.getBlock(x,y,-3).solid(), "Foundry arch pier unsupported $x,$y")
+            assertTrue(instance.getBlock(-18,50,-5).air(), "Old domestic upper floor remains above the foundry forecourt")
             for (direction in listOf("north","south"))
                 assertEquals("true",instance.getBlock(-11,45,-13).getProperty(direction), "Foundry glazing has disconnected iron bars")
             for(x in -2..2) assertTrue(walkable(x,-12), "Cartography loggia entry narrowed $x")
-            assertTrue(instance.getBlock(0,51,-12).isAir, "Reception gable still obscures the raised hall")
+            assertTrue(instance.getBlock(0,51,-12).air(), "Reception gable still obscures the raised hall")
             for(x in listOf(-7,-3,3,7)) for(y in 40..45)
-                assertTrue(instance.getBlock(x,y,-12).isSolid, "Loggia front post unsupported $x,$y")
+                assertTrue(instance.getBlock(x,y,-12).solid(), "Loggia front post unsupported $x,$y")
             for(x in 15..18) assertTrue(walkable(x,-5), "Lecture room entrance obstructed $x")
             assertTrue(19 to -16 in reached && 23 to -16 in reached, "The octagonal reading room must be enterable")
             assertEquals(Block.AIR,instance.getBlock(23,50,-16), "Reading room should be a tall room, not a solid tower")
             assertEquals(Block.LIGHT_BLUE_STAINED_GLASS,instance.getBlock(14,45,-8), "Lecture room street wall lost its reading-light window")
             assertEquals(Block.WAXED_WEATHERED_CUT_COPPER,instance.getBlock(23,64,-16), "Tower finial has no full-block support")
-            assertTrue(instance.getBlock(42,39,-24).isSolid, "East retaining wall lacks its natural rock apron")
-            assertTrue(instance.getBlock(-42,39,-22).isSolid, "West retaining wall lacks its natural rock apron")
+            assertTrue(instance.getBlock(42,39,-24).solid(), "East retaining wall lacks its natural rock apron")
+            assertTrue(instance.getBlock(-42,39,-22).solid(), "West retaining wall lacks its natural rock apron")
             val coastReached=mutableSetOf(31 to -15)
             val coastPending=ArrayDeque(coastReached)
             while(coastPending.isNotEmpty()) {
@@ -420,8 +420,8 @@ class HarborSceneTest {
                 for((dx,dz) in directions) {
                     val nx=x+dx; val nz=z+dz
                     if(nx !in 28..43 || nz !in -30..-14) continue
-                    if(instance.getBlock(nx,44,nz).isSolid && instance.getBlock(nx,45,nz).isAir &&
-                        instance.getBlock(nx,46,nz).isAir && coastReached.add(nx to nz)) coastPending.add(nx to nz)
+                    if(instance.getBlock(nx,44,nz).solid() && instance.getBlock(nx,45,nz).air() &&
+                        instance.getBlock(nx,46,nz).air() && coastReached.add(nx to nz)) coastPending.add(nx to nz)
                 }
             }
             for(x in 41..42) for(z in -27..-18)
@@ -432,11 +432,11 @@ class HarborSceneTest {
                 val y=45+step; val z=-18-step
                 assertEquals("minecraft:spruce_stairs",instance.getBlock(x,y,z).name())
                 assertEquals("north",instance.getBlock(x,y,z).getProperty("facing"))
-                assertTrue(instance.getBlock(x,y-1,z).isSolid, "Lodging stair is unsupported")
-                assertTrue(instance.getBlock(x,y+1,z).isAir && instance.getBlock(x,y+2,z).isAir, "Lodging stair headroom blocked")
+                assertTrue(instance.getBlock(x,y-1,z).solid(), "Lodging stair is unsupported")
+                assertTrue(instance.getBlock(x,y+1,z).air() && instance.getBlock(x,y+2,z).air(), "Lodging stair headroom blocked")
             }
-            assertTrue(instance.getBlock(30,50,-24).isSolid && instance.getBlock(30,51,-24).isAir &&
-                instance.getBlock(30,52,-24).isAir, "Lodging stair has no usable upper landing")
+            assertTrue(instance.getBlock(30,50,-24).solid() && instance.getBlock(30,51,-24).air() &&
+                instance.getBlock(30,52,-24).air(), "Lodging stair has no usable upper landing")
             val lodgingReached=mutableSetOf(30 to -24)
             val lodgingPending=ArrayDeque(lodgingReached)
             while(lodgingPending.isNotEmpty()) {
@@ -444,8 +444,8 @@ class HarborSceneTest {
                 for((dx,dz) in directions) {
                     val nx=x+dx; val nz=z+dz
                     if(nx !in 30..38 || nz !in -28..-15) continue
-                    if(instance.getBlock(nx,50,nz).isSolid && instance.getBlock(nx,51,nz).isAir &&
-                        instance.getBlock(nx,52,nz).isAir && lodgingReached.add(nx to nz)) lodgingPending.add(nx to nz)
+                    if(instance.getBlock(nx,50,nz).solid() && instance.getBlock(nx,51,nz).air() &&
+                        instance.getBlock(nx,52,nz).air() && lodgingReached.add(nx to nz)) lodgingPending.add(nx to nz)
                 }
             }
             for(point in listOf(36 to -26,36 to -22,36 to -18,33 to -15,34 to -15))
@@ -454,29 +454,29 @@ class HarborSceneTest {
                 assertEquals("foot",instance.getBlock(37,51,z).getProperty("part"))
                 assertEquals("head",instance.getBlock(38,51,z).getProperty("part"))
                 assertEquals("east",instance.getBlock(38,51,z).getProperty("facing"))
-                assertTrue(instance.getBlock(38,51,z-1).isSolid, "Bedside light has no cabinet")
+                assertTrue(instance.getBlock(38,51,z-1).solid(), "Bedside light has no cabinet")
             }
             for(z in listOf(-25,-21)) {
                 assertEquals("minecraft:lantern",instance.getBlock(33,54,z).name())
-                assertTrue(instance.getBlock(33,55,z).isSolid, "Lodging passage light lost its beam")
+                assertTrue(instance.getBlock(33,55,z).solid(), "Lodging passage light lost its beam")
             }
             for(z in -30..-15) {
                 val edge=if(z in -27..-18) 43 else 42
                 assertEquals("minecraft:stone_brick_wall",instance.getBlock(edge,45,z).name(), "Seaward terrace lost its edge guard")
-                assertTrue(instance.getBlock(edge,44,z).isSolid)
+                assertTrue(instance.getBlock(edge,44,z).solid())
             }
             for(z in listOf(-29,-25,-21,-17)) {
                 val edge=if(z in -27..-18) 43 else 42
                 for(x in 40..edge) for(y in 35..44)
-                    assertTrue(instance.getBlock(x,y,z).isSolid, "Cliff buttress is not continuous $x,$y,$z")
+                    assertTrue(instance.getBlock(x,y,z).solid(), "Cliff buttress is not continuous $x,$y,$z")
             }
             assertEquals(Block.WATER,instance.getBlock(20,38,38), "Shore rocks intrude into the shipping channel")
             for(x in 20..22) for(z in 14..16) {
                 assertEquals(Block.SPRUCE_PLANKS,instance.getBlock(x,46,z), "Trading bay floor unsupported")
-                assertTrue(instance.getBlock(x,47,z).isAir && instance.getBlock(x,48,z).isAir, "Trading bay is a sealed facade")
+                assertTrue(instance.getBlock(x,47,z).air() && instance.getBlock(x,48,z).air(), "Trading bay is a sealed facade")
             }
             for(x in listOf(19,23)) for(z in 14..17)
-                assertTrue(instance.getBlock(x,45,z).isSolid, "Trading bay has a disconnected cantilever")
+                assertTrue(instance.getBlock(x,45,z).solid(), "Trading bay has a disconnected cantilever")
             // Export actual terrain blocks. Thin native cloth displays are verified above
             // and in Vanilla photographs, not represented by this block-only diagnostic file.
             val target = java.nio.file.Path.of("build/reports/harbor-blocks.tsv")
@@ -484,7 +484,7 @@ class HarborSceneTest {
             java.nio.file.Files.newBufferedWriter(target).use { out ->
                 for (x in -55..55) for (z in -62..58) for (y in 34..86) {
                     val b = instance.getBlock(x,y,z)
-                    if (!b.isAir && b != Block.WATER && listOf(Triple(1,0,0),Triple(-1,0,0),Triple(0,1,0),Triple(0,-1,0),Triple(0,0,1),Triple(0,0,-1)).any { (dx,dy,dz) -> instance.getBlock(x+dx,y+dy,z+dz).let { it.isAir || it == Block.WATER } })
+                    if (!b.air() && b != Block.WATER && listOf(Triple(1,0,0),Triple(-1,0,0),Triple(0,1,0),Triple(0,-1,0),Triple(0,0,1),Triple(0,0,-1)).any { (dx,dy,dz) -> instance.getBlock(x+dx,y+dy,z+dz).let { it.air() || it == Block.WATER } })
                         out.appendLine("$x\t$y\t$z\t${b.name()}")
                 }
             }

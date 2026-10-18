@@ -69,7 +69,7 @@ fun main(args: Array<String>) {
             check(first.gameMode!=net.minestom.server.entity.GameMode.SPECTATOR)
             val sync=packets.filterIsInstance<PlayerPositionAndLookPacket>().last()
             check(sync.teleportId()<0)
-            val ack=PlayerPacketEvent(first,ClientTeleportConfirmPacket(sync.teleportId()))
+            val ack=PlayerPacketEvent(first,ClientTeleportConfirmPacket(sync.teleportId(),net.minestom.server.coordinate.Pos.ZERO))
             events.call(ack);check(ack.isCancelled)
             val probesBefore=packets.filterIsInstance<PlayerPositionAndLookPacket>().size
             Thread.sleep(120)
@@ -144,7 +144,7 @@ fun main(args: Array<String>) {
             check(packets.filterIsInstance<CameraPacket>().last().cameraId()==first.entityId)
             check(packets.filterIsInstance<HeldItemChangePacket>().last().slot().toInt()==0)
             check(packets.filterIsInstance<ChangeGameStatePacket>().last().value()==first.gameMode.ordinal.toFloat())
-            val lateAck=PlayerPacketEvent(first,ClientTeleportConfirmPacket(outstanding.teleportId()))
+            val lateAck=PlayerPacketEvent(first,ClientTeleportConfirmPacket(outstanding.teleportId(),net.minestom.server.coordinate.Pos.ZERO))
             events.call(lateAck);check(lateAck.isCancelled)
             val lateRotation=PlayerPacketEvent(first,ClientPlayerPositionAndRotationPacket(Pos(20.0,30.0,40.0,75f,60f),false,false))
             events.call(lateRotation);check(!lateRotation.isCancelled) { "Closed UI swallowed ordinary movement" }
@@ -154,7 +154,7 @@ fun main(args: Array<String>) {
         // Switching to the lab's artificial delay must restore instance-thread cursor updates.
         sessions.open(first)
         val delaySync=packets.filterIsInstance<PlayerPositionAndLookPacket>().last()
-        check(sessions.consumeImmediateUiPacket(first,ClientTeleportConfirmPacket(delaySync.teleportId())))
+        check(sessions.consumeImmediateUiPacket(first,ClientTeleportConfirmPacket(delaySync.teleportId(),net.minestom.server.coordinate.Pos.ZERO)))
         first.addPacketToQueue(ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,0f,0f),false,false))
         val delayButton=UiDocument.parse(java.nio.file.Files.readString(Path.of(args.single())))
             .layout(ForgeDemo().values(),ForgeDemo().flags()).nodes.single { it.action=="delay" }.box
@@ -177,7 +177,7 @@ fun main(args: Array<String>) {
         // A UI scale change must refresh packet transforms even with a stationary mouse.
         sessions.open(first)
         val zoomSync=packets.filterIsInstance<PlayerPositionAndLookPacket>().last()
-        check(sessions.consumeImmediateUiPacket(first,ClientTeleportConfirmPacket(zoomSync.teleportId())))
+        check(sessions.consumeImmediateUiPacket(first,ClientTeleportConfirmPacket(zoomSync.teleportId(),net.minestom.server.coordinate.Pos.ZERO)))
         first.addPacketToQueue(ClientPlayerPositionAndRotationPacket(Pos(0.0,1.0,0.0,0f,0f),false,false))
         val zoomButton=UiDocument.parse(java.nio.file.Files.readString(Path.of(args.single())))
             .layout(ForgeDemo().values(),ForgeDemo().flags()).nodes.single { it.action=="zoom" }.box
@@ -194,7 +194,7 @@ fun main(args: Array<String>) {
         // A transfer close restores the camera/mode without issuing a return teleport.
         sessions.open(first)
         val directSync=packets.filterIsInstance<PlayerPositionAndLookPacket>().last()
-        check(sessions.consumeImmediateUiPacket(first,ClientTeleportConfirmPacket(directSync.teleportId())))
+        check(sessions.consumeImmediateUiPacket(first,ClientTeleportConfirmPacket(directSync.teleportId(),net.minestom.server.coordinate.Pos.ZERO)))
         val beforeBaseline=instance.entities.mapNotNull { e ->
             (e.entityMeta as? TextDisplayMeta)?.takeIf { it.transformationInterpolationDuration==1 }
                 ?.let { e.entityId to it.translation }

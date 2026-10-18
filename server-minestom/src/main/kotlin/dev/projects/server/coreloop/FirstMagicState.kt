@@ -54,6 +54,10 @@ internal sealed interface FirstMagicAction {
     data class Combine(val first: String, val second: String) : FirstMagicAction
     data class Place(val researchId: String, val slot: Int, val aspectId: String) : FirstMagicAction
     data class Remove(val researchId: String, val slot: Int) : FirstMagicAction
+    /** Paired with CoreAction.ResearchInk: one sample and a silver fee become ink for the sample's aspects. */
+    data class BrewInk(val material: AnomalousMaterial) : FirstMagicAction
+    /** Paired with CoreAction.ResearchCraft: Essentia leaves the jars, the product enters the ledger. */
+    data class Craft(val researchId: String) : FirstMagicAction
 }
 
 internal data class FirstMagicChange(val state: FirstMagicState, val message: String, val changed: Boolean)
@@ -61,6 +65,7 @@ internal data class FirstMagicChange(val state: FirstMagicState, val message: St
 internal object FirstMagicRules {
     const val JAR_CAPACITY = 16
     const val MATERIAL_CAPACITY = 64
+    const val INK_CAPACITY = 999
 
     fun apply(before: FirstMagicState, action: FirstMagicAction): FirstMagicChange = when (action) {
         FirstMagicAction.PrepareResearchTest -> {
@@ -154,6 +159,34 @@ internal object FirstMagicRules {
                         unlockedResearch = if (completed) before.unlockedResearch + research.id else before.unlockedResearch,
                     ), if (completed) "研究「${research.title}」を解明した" else "${AspectCatalog.byId.getValue(action.aspectId).name} を記した", true)
                 }
+            }
+        }
+        is FirstMagicAction.BrewInk -> {
+            val aspects = action.material.researchAspects()
+            val yieldPerAspect = CoreMmoTuning.balance.researchInkYield
+            when {
+                !before.deskRestored -> FirstMagicChange(before, "先に研究机を修復しよう", false)
+                action.material !in before.studied -> FirstMagicChange(before, "先に${action.material.label}を分析しよう", false)
+                before.count(action.material) == 0 -> FirstMagicChange(before, "${action.material.label}を持っていない。市場で買える", false)
+                aspects.any { before.ink(it) + yieldPerAspect > INK_CAPACITY } -> FirstMagicChange(before, "研究インクの瓶がいっぱいです", false)
+                else -> FirstMagicChange(before.copy(
+                    materialCounts = if (before.count(action.material) == 1) before.materialCounts - action.material
+                        else before.materialCounts + (action.material to before.count(action.material) - 1),
+                    researchInk = before.researchInk + aspects.associateWith { before.ink(it) + yieldPerAspect },
+                ), "${action.material.label}を溶かし、研究インクを${aspects.joinToString("・") { AspectCatalog.byId.getValue(it).name }}に${yieldPerAspect}ずつ得た", true)
+            }
+        }
+        is FirstMagicAction.Craft -> {
+            val recipe = ResearchRecipes.byResearch[action.researchId]
+            when {
+                recipe == null -> FirstMagicChange(before, "この研究から作れる品はまだない", false)
+                action.researchId !in before.unlockedResearch ->
+                    FirstMagicChange(before, "研究「${ResearchCatalog.byId.getValue(action.researchId).title}」を先に解明しよう", false)
+                recipe.essentia.any { (aspect, amount) -> before.jar(aspect) < amount } ->
+                    FirstMagicChange(before, "Essentiaが足りない（${recipe.essentiaLabel()}）", false)
+                else -> FirstMagicChange(before.copy(
+                    jars = (before.jars + recipe.essentia.mapValues { (aspect, amount) -> before.jar(aspect) - amount }).filterValues { it > 0 },
+                ), "${recipe.product.displayName}を調合した", true)
             }
         }
         is FirstMagicAction.Remove -> {
