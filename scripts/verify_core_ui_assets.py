@@ -27,7 +27,7 @@ def verify():
     assert actual_overrides == set(overrides) | set(reskins) | additions, \
         "Only the replaced HUD sprites, the reskinned hotbar, the approved VFX atlas addition and the combat VFX core/item shader are permitted"
     assert json.loads((PACK / "assets/minecraft/atlases/items.json").read_text()) == {
-        "sources":[{"type":"minecraft:directory","source":"combat_vfx","prefix":"combat_vfx/"}]}
+        "sources":[{"type":"minecraft:directory","source":d,"prefix":f"{d}/"} for d in ["combat_vfx", "infusion", "infusion-energy", "infusion-radiance", "infusion-v3", "infusion-v5", "infusion-v6", "infusion-v7"]]}
     assert not any(".." in p or "\\" in p or p.startswith("/") for p in paths)
     for path, size in overrides.items():
         with Image.open(PACK / path) as sprite:

@@ -39,6 +39,7 @@ internal object WorldInfusionServer {
     private val games=ConcurrentHashMap<UUID,WorldInfusionGame>()
     internal fun track(game:WorldInfusionGame) { check(games.putIfAbsent(game.player.uuid,game)==null) }
     private fun retire(game:WorldInfusionGame) {
+        games.remove(game.player.uuid,game)
         game.close()
         val manager=MinecraftServer.getInstanceManager()
         if(manager.getInstance(game.instance.uuid)===game.instance && game.instance.players.none { it.isOnline })manager.unregisterInstance(game.instance)
@@ -287,6 +288,8 @@ internal object WorldInfusionServer {
         fun tick() {
             if(closed)return
             ticks++
+            // Still configuring or loading chunks: the player has no instance yet. Disconnects are retired by the event.
+            if(player.instance==null)return
             if(!player.isOnline || player.instance!==instance) { retire(this);return }
             if(MinecraftServer.getInstanceManager().getInstance(instance.uuid)!==instance) { close();return }
             state.matrix?.let { c->
