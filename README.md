@@ -1,6 +1,6 @@
 # ProjectS v2
 
-Minecraft Java Edition の上で動く、オンラインの Action MMO です。プレイヤーはバニラの Minecraft 26.2 でサーバーに入るだけで遊べます。見た目はサーバーが配るリソースパックで出します。
+Minecraft Java Edition の上で動く、オンラインの Action MMO です。プレイヤーはバニラの Minecraft 26.3 でサーバーに入るだけで遊べます。見た目はサーバーが配るリソースパックで出します。
 
 **目標：2026年11月中旬に、3〜5人で小さなテストプレイをする。** 新しいアイデアは「テストに要るか？」で振り分けています。
 
@@ -34,7 +34,7 @@ Minecraft Java Edition の上で動く、オンラインの Action MMO です。
 - Git
 - JDK 25
 - Python 3 と Pillow・numpy（リソースパックをビルド時に生成するため）：`pip install -r scripts/requirements.txt`
-- Minecraft Java Edition 26.2（遊ぶ側）
+- Minecraft Java Edition 26.3（遊ぶ側）
 
 ### ビルドとテスト
 
@@ -56,7 +56,7 @@ pythonExe=python3
 ./gradlew :server-minestom:run
 ```
 
-Minecraft 26.2 で `localhost` に接続します。リソースパックの確認が出たら受け入れてください。
+Minecraft 26.3 で `localhost` に接続します。リソースパックの確認が出たら受け入れてください。
 
 `run` で起動すると、開発用のコマンドも使えます。
 

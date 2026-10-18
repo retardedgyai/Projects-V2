@@ -42,7 +42,7 @@ def verify():
     actual = sorted(str(p.relative_to(PACK)).replace("\\", "/") for p in PACK.rglob("*") if p.is_file() and p.name != "index.txt")
     assert actual == paths, "Stale pack index"
     meta = json.loads((PACK / "pack.mcmeta").read_text())
-    assert meta["pack"]["min_format"] == [88, 0] and meta["pack"]["max_format"] == [88, 0]
+    assert meta["pack"]["min_format"] == [97, 1] and meta["pack"]["max_format"] == [97, 1]
     glyphs = set()
     for path in (PACK / "assets/projects/font").glob("*.json"):
         providers = json.loads(path.read_text())["providers"]

@@ -69,7 +69,7 @@ internal class CoreMapCaches(
         val from = player.position.add(0.0, player.eyeHeight, 0.0)
         val to = cache.position.add(0.0, 0.6, 0.0)
         val steps = ceil(from.distance(to) * 4).toInt().coerceAtLeast(1)
-        if ((1 until steps).any { instance.getBlock(from.add(to.sub(from).mul(it.toDouble() / steps))).isSolid }) return true
+        if ((1 until steps).any { instance.getBlock(from.add(to.sub(from).mul(it.toDouble() / steps))).solid() }) return true
         if (guarded(cache.position)) {
             player.sendMessage(CoreLoopItems.text("近くの敵が宝箱を守っています。先に倒してください。", NamedTextColor.YELLOW))
             return true

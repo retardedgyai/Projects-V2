@@ -297,7 +297,7 @@ internal object WorldInfusionServer {
             if(MinecraftServer.getInstanceManager().getInstance(instance.uuid)!==instance) { close();return }
             state.matrix?.let { c->
                 // Player breaking is disabled; external removal/unload must not leave a floating effect.
-                if(instance.getBlock(c.x,44,c.z).isAir) { close();return }
+                if(instance.getBlock(c.x,44,c.z).air()) { close();return }
             }
             var completed=false
             val power=WorldInfusionEnergy.Supply(demoPowerPerSecond)

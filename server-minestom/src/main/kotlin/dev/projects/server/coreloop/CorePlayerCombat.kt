@@ -484,7 +484,7 @@ internal class CorePlayerCombat(
     private fun clearLine(from: Pos, to: Pos): Boolean {
         val start = from.add(0.0, 1.0, 0.0); val end = to.add(0.0, 1.0, 0.0)
         val steps = ceil(start.distance(end) * 4).toInt().coerceAtLeast(1)
-        return (1 until steps).all { !player.instance.getBlock(start.add(end.sub(start).mul(it.toDouble() / steps))).isSolid }
+        return (1 until steps).all { !player.instance.getBlock(start.add(end.sub(start).mul(it.toDouble() / steps))).solid() }
     }
 
     private fun strike(enemies: QuestEncounterCombat, origin: Pos, direction: Vec, range: Double, minDot: Double, multiplier: Double) {
@@ -631,7 +631,7 @@ internal class CorePlayerCombat(
         var visibleDistance = 0.0
         for (step in 1..floor(distance * 4).toInt()) {
             val p = origin.add(direction.mul(step / 4.0))
-            if (player.instance.getBlock(p).isSolid) break
+            if (player.instance.getBlock(p).solid()) break
             visibleDistance = step / 4.0
             if (!skill && step % 2 == 0) vfx.particles(if (classId == CoreClass.MAGE) Particle.FLAME else Particle.END_ROD, p, 1)
         }
@@ -666,7 +666,7 @@ internal class CorePlayerCombat(
         var previous=from
         for(step in 1..ceil(maximum*4).toInt()) {
             val point=from.add(direction.mul(step*.25))
-            if(player.instance.getBlock(point).isSolid) return previous.sub(0.0,if(direction.y()<-.1) 0.0 else 1.0,0.0)
+            if(player.instance.getBlock(point).solid()) return previous.sub(0.0,if(direction.y()<-.1) 0.0 else 1.0,0.0)
             previous=point
         }
         return player.position.add(flatFacing().mul(minOf(maximum,7.0)))
@@ -714,7 +714,7 @@ internal class CorePlayerCombat(
         val steps = ceil(start.distance(end) * 4).toInt().coerceAtLeast(1)
         return (1 until steps).all { step ->
             val point = start.add(end.sub(start).mul(step.toDouble() / steps))
-            !player.instance.getBlock(point).isSolid
+            !player.instance.getBlock(point).solid()
         }
     }
 
@@ -797,12 +797,12 @@ internal class CorePlayerCombat(
     private fun moveSafely(direction: Vec, distance: Double) {
         val start = player.position
         var destination = start
-        val grounded=player.instance.getBlock(start.sub(0.0,.15,0.0)).isSolid
+        val grounded=player.instance.getBlock(start.sub(0.0,.15,0.0)).solid()
         for (step in 1..ceil(distance / 0.15).toInt()) {
             val next = start.add(direction.mul(min(distance, step * 0.15)))
-            if(grounded && !player.instance.getBlock(next.sub(0.0,.15,0.0)).isSolid) break
+            if(grounded && !player.instance.getBlock(next.sub(0.0,.15,0.0)).solid()) break
             if (!listOf(-0.3, 0.3).all { x -> listOf(-0.3, 0.3).all { z ->
-                listOf(0.1, 0.9, 1.7).all { y -> !player.instance.getBlock(next.add(x, y, z)).isSolid }
+                listOf(0.1, 0.9, 1.7).all { y -> !player.instance.getBlock(next.add(x, y, z)).solid() }
             } }) break
             destination = next
         }
@@ -818,9 +818,9 @@ internal class CorePlayerCombat(
         val base = floor(at.y()).toInt()
         val surface = (base+1 downTo base-3).firstOrNull { y ->
             listOf(-size/2+.04,0.0,size/2-.04).all { x -> listOf(-size/2+.04,0.0,size/2-.04).all { z ->
-                instance.getBlock(Pos(at.x()+x,y.toDouble(),at.z()+z)).isSolid &&
-                    !instance.getBlock(Pos(at.x()+x,y+1.0,at.z()+z)).isSolid &&
-                    !instance.getBlock(Pos(at.x()+x,y+2.0,at.z()+z)).isSolid
+                instance.getBlock(Pos(at.x()+x,y.toDouble(),at.z()+z)).solid() &&
+                    !instance.getBlock(Pos(at.x()+x,y+1.0,at.z()+z)).solid() &&
+                    !instance.getBlock(Pos(at.x()+x,y+2.0,at.z()+z)).solid()
             } }
         } ?: return null
         return Pos(at.x(),surface+1.0,at.z())
