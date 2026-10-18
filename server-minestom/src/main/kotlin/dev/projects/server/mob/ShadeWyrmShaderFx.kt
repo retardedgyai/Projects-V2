@@ -85,6 +85,20 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                         moveTicks = ticks - n % 6, billboard = true) { .6 - .45 * it }
                 }
             }
+            "shade-dive" -> if (shape is MobAttackShape.Ring) {
+                // The takeoff blows dust off the ground; once it is up, its shadow gathers and darkens where it will land.
+                val caster = frame.casterOrigin
+                add("ring", 2, caster.add(0.0, .1, 0.0), 12, 10, Vec(2.0, 1.0, 2.0), IDENTITY, grow = Vec(9.0, 1.0, 9.0), moveTicks = 8)
+                repeat(4) { n ->
+                    val a = n * PI / 2 + .5
+                    add("smoke", 6, caster.add(cos(a) * 2.0, .6, sin(a) * 2.0), 12 + n % 2, 16, Vec(2.6, 2.6, 1.0), IDENTITY,
+                        slide = Vec(cos(a) * 2.5, .6, sin(a) * 2.5), moveTicks = 14, billboard = true)
+                }
+                val from = ticks * 2 / 5
+                add("disc", 6, o.add(0.0, .06, 0.0), from, ticks - from, Vec(1.5, 1.0, 1.5), IDENTITY,
+                    grow = Vec(shape.radius * 2.1, 1.0, shape.radius * 2.1), moveTicks = ticks - from) { .45 - .4 * it }
+                add("ring", 2, o.add(0.0, .1, 0.0), from, ticks - from, Vec(shape.radius * 2.05, 1.0, shape.radius * 2.05), IDENTITY) { .3 - .2 * it }
+            }
             "shade-breath" -> {
                 val mouth = head(ShadeWyrmVfx.SNOUT)?.let(Pos::fromPoint) ?: o.add(f.mul(3.5)).add(0.0, 2.5, 0.0)
                 add("puff", 4, mouth, ticks / 3, ticks - ticks / 3, Vec(.6, .6, 1.0), IDENTITY, grow = Vec(2.4, 2.4, 1.0),
@@ -100,7 +114,7 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         val yaw = yawTo(f)
         val shape = frame.ability.shape
         when (abilityId) {
-            "shade-sweep" -> if (shape is MobAttackShape.Sweep) {
+            "shade-sweep", "shade-turnsweep" -> if (shape is MobAttackShape.Sweep) {
                 // Three crescents fanning up from the swing, the wing-arm's wake left as burning dust and dark smoke
                 // along the arc, and a shock on the ground under it. The slash sprite spans ±90° like the ability.
                 val d = shape.radius * 2.1
@@ -204,6 +218,43 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                         .add(0.0, 1.6 + t, 0.0), 1 + n / 2, 20, Vec(size, size, 1.0), IDENTITY,
                         slide = f.mul(1.5).add(0.0, 1.4, 0.0), grow = Vec(size * 1.3, size * 1.3, 1.0), moveTicks = 18, billboard = true)
                 }
+            }
+            "shade-dive" -> if (shape is MobAttackShape.Ring) {
+                // It hits the ground nose first: a flash, a shock running out with dust kicked up behind it, dark billows.
+                val r = shape.radius
+                add("puff", 4, o.add(0.0, 1.2, 0.0), 0, 8, Vec(4.5, 4.5, 1.0), IDENTITY, billboard = true)
+                add("ring", 2, o.add(0.0, .12, 0.0), 0, 10, Vec(2.0, 1.0, 2.0), IDENTITY, grow = Vec(r * 2.8, 1.0, r * 2.8), moveTicks = 6)
+                val count = 20
+                for (n in 0 until count) {
+                    val a = n * 2 * PI / count
+                    val dir = Vec(cos(a), 0.0, sin(a))
+                    val width = 2 * PI * 1.2 / count * 1.4
+                    add("curtain", 5, o, 0, 10, Vec(width, 2.4, 1.0), yawTo(dir), translation = dir.mul(1.2).add(0.0, 1.2, 0.0),
+                        grow = Vec(width * r / 1.2, 2.4, 1.0), slide = dir.mul(r).add(0.0, 1.2, 0.0), moveTicks = 5)
+                }
+                repeat(8) { n ->
+                    val a = n * 2 * PI / 8 + .3; val rr = r * (if (n % 2 == 0) .55 else .85)
+                    add("puff", 4, o.add(cos(a) * rr, .7, sin(a) * rr), n % 3, 14, Vec(2.8, 2.8, 1.0), IDENTITY,
+                        slide = Vec(cos(a) * 1.4, .9, sin(a) * 1.4), moveTicks = 12, billboard = true)
+                    if (n % 2 == 1) add("smoke", 6, o.add(cos(a) * rr, 1.2, sin(a) * rr), 2, 20, Vec(3.6, 3.6, 1.0), IDENTITY,
+                        slide = Vec(cos(a) * 1.0, 1.6, sin(a) * 1.0), moveTicks = 18, billboard = true)
+                }
+            }
+            "shade-triple" -> if (shape is MobAttackShape.Ring) {
+                // One of the three spits (the server calls this per shot): a flash at the mouth, the ball arcing over
+                // to where the player stood, a burst there.
+                val mouth = head(ShadeWyrmVfx.SNOUT)?.let(Pos::fromPoint) ?: frame.casterOrigin.add(f.mul(3.5)).add(0.0, 2.5, 0.0)
+                add("puff", 4, mouth, 0, 6, Vec(2.0, 2.0, 1.0), IDENTITY, billboard = true)
+                val at = o.add(0.0, .9, 0.0)
+                add("puff", 4, at, 0, 5, Vec(1.4, 1.4, 1.0), IDENTITY, translation = Vec(mouth.x() - at.x(), mouth.y() - at.y(), mouth.z() - at.z()),
+                    slide = Vec.ZERO, moveTicks = 4, billboard = true) { .05 }
+                add("ring", 2, o.add(0.0, .12, 0.0), 4, 8, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(shape.radius * 2.4, 1.0, shape.radius * 2.4), moveTicks = 4)
+                repeat(4) { n ->
+                    val a = n * PI / 2 + .4
+                    add("puff", 4, o.add(cos(a) * .7, .6 + n % 2 * .4, sin(a) * .7), 4 + n % 2, 12, Vec(2.2, 2.2, 1.0), IDENTITY,
+                        slide = Vec(cos(a) * .8, .7, sin(a) * .8), moveTicks = 10, billboard = true)
+                }
+                add("smoke", 6, o.add(0.0, 1.0, 0.0), 6, 16, Vec(2.8, 2.8, 1.0), IDENTITY, slide = Vec(0.0, 1.2, 0.0), moveTicks = 14, billboard = true)
             }
             "shade-storm" -> if (shape is MobAttackShape.Ring) {
                 val count = 28
