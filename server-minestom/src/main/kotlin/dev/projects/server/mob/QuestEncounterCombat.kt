@@ -142,6 +142,12 @@ class QuestEncounterCombat(
         var travelFrom: Pos? = null
         /** Lost its target (far or out of sight): it creeps and searches. */
         var searching = false
+        /** Enraged parts (gimmicks): damage dealt near the head and on each side, and what has broken. 0 = its right fan. */
+        var hornDamage = 0.0
+        var hornsBroken = false
+        var sloppyUntil = 0L
+        val fanDamage = DoubleArray(2)
+        val fanTorn = BooleanArray(2)
     }
 
     private val mobs = linkedMapOf<UUID, Mob>()
@@ -158,6 +164,7 @@ class QuestEncounterCombat(
             !(shaded && dev.projects.server.coreloop.CoreCombatPresentation.packed(it)) }.forEach { it.sendPacket(packet) }
     }
     private val shaderFx = ShadeWyrmShaderFx(instance)
+    private val gimmicks = ShadeWyrmGimmicks(tier, shaderFx)
     @Volatile private var disposed = false
     private var bossSealed = false
     private var bossGateFraction = 0.0
@@ -177,6 +184,9 @@ class QuestEncounterCombat(
     internal val modelDisplayCount: Int get() = mobs.values.sumOf { (it.model?.count ?: 0) + (it.view?.partCount ?: 0) }
     internal fun isEnraged(targetId: UUID): Boolean = mobs[targetId]?.enraged == true
     internal fun maneuverCount(targetId: UUID): Int = mobs[targetId]?.maneuvers ?: 0
+    internal fun partsBroken(targetId: UUID): List<Boolean> = mobs[targetId]?.let { listOf(it.hornsBroken, it.fanTorn[0], it.fanTorn[1]) } ?: emptyList()
+    internal fun erosionOf(player: UUID): Double = gimmicks.erosionOf(player)
+    internal val poolCount: Int get() = gimmicks.poolCount
     /** Fight preview dump: the model's clip and the shader displays on show. */
     internal fun shownClip(targetId: UUID): Pair<String, Long>? = mobs[targetId]?.view?.let { it.shownClip to it.shownSince }
     internal fun modelFacing(targetId: UUID): Float? = mobs[targetId]?.let { if (it.maneuver != null) it.faceYaw else it.entity.position.yaw() }
@@ -426,6 +436,10 @@ class QuestEncounterCombat(
         if (!mob.life.damage(gated)) return null
         val applied = healthBefore - mob.life.health
         mob.lastAttacker = attacker
+        if (mob.view != null && applied > 0.0 && mob.life.isAlive) {
+            gimmicks.playerStruck(attacker)
+            breakParts(mob, attacker, applied, now)
+        }
         if (!mob.life.isAlive) {
             mob.abilities.cancel()
             clearWarning(mob.entity.uuid)
@@ -457,6 +471,9 @@ class QuestEncounterCombat(
         telegraphs.tick(nowMillis)
         vfx.tick()
         shaderFx.tick()
+        if (mobs.values.any { it.view != null }) gimmicks.tick(nowMillis, instance.players.filter { canTarget(it) }) { p, amount, type ->
+            if (typedDamagePlayer != null) typedDamagePlayer.invoke(p, amount, type) else damagePlayer(p, amount)
+        }
         val players = instance.players.filter { canTarget(it) }
         if (actionsStoppedForReturn) {
             if (players.isEmpty()) return
@@ -497,6 +514,7 @@ class QuestEncounterCombat(
         disposed = true
         telegraphs.dispose()
         vfx.cancelAll()
+        gimmicks.dispose()
         shaderFx.dispose()
         mobs.values.forEach { mob ->
             mob.abilities.cancel()
@@ -627,11 +645,11 @@ class QuestEncounterCombat(
         }
         mob.maneuver?.let { if (tickManeuver(mob, it, target, now)) return }
         if (mob.abilities.isActive) {
-            for (event in mob.abilities.tick(now, target.position)) {
+            for (event in mob.abilities.tick(now, aimAt(mob, target, now))) {
                 if (!handleAbilityEvent(mob, event, players)) return
                 if (disposed || !mob.life.isAlive) return
             }
-            val frame = mob.abilities.current
+            val frame = mob.abilities.current?.let { effectiveFrame(mob, it) }
             if (frame != null) {
                 mob.entity.setView(Pos.ZERO.withDirection(frame.facing).yaw(), 0.0f)
                 carryThroughAbility(mob, frame, now)
@@ -651,8 +669,9 @@ class QuestEncounterCombat(
             val silenced = crowded(mob, CrowdControl.SILENCE, now)
             val scripted = if (silenced) null else mob.combo ?: if (behindFor(mob, target, now) >= TURN_AFTER_MILLIS) TURN_SWEEP else null
             mob.combo = null
-            val start = scripted?.let { mob.abilities.tryStart(now, mob.entity.position, target.position, ratio, only = it) }
-                ?: mob.abilities.tryStart(now, mob.entity.position, target.position, ratio, plainOnly = silenced)
+            val aim = aimAt(mob, target, now)
+            val start = scripted?.let { mob.abilities.tryStart(now, mob.entity.position, aim, ratio, only = it) }
+                ?: mob.abilities.tryStart(now, mob.entity.position, aim, ratio, plainOnly = silenced)
             if (start != null) {
                 mob.life.phase = QuestMobPhase.ATTACKING
                 stopNavigation(mob)
@@ -876,6 +895,71 @@ class QuestEncounterCombat(
         return true
     }
 
+    /** With its horns broken it aims badly for a while: its target point swings up to 3 blocks to either side. */
+    private fun aimAt(mob: Mob, target: Player, now: Long): Pos {
+        if (now >= mob.sloppyUntil) return target.position
+        val yaw = Math.toRadians(mob.entity.position.yaw().toDouble())
+        return target.position.add(Vec(-kotlin.math.cos(yaw), 0.0, -kotlin.math.sin(yaw)).mul(3.0 * kotlin.math.sin(now / 600.0)))
+    }
+
+    /** A torn right fan (the side its wing-arm sweeps with) shortens the sweeps to [TORN_SWEEP_RADIUS]. */
+    private fun effectiveFrame(mob: Mob, frame: MobAbilityFrame): MobAbilityFrame {
+        val shape = frame.ability.shape
+        if (!mob.fanTorn[0] || shape !is MobAttackShape.Sweep || frame.ability.id !in setOf("shade-sweep", "shade-turnsweep")) return frame
+        return frame.copy(ability = frame.ability.copy(shape = MobAttackShape.Sweep(minOf(shape.radius, TORN_SWEEP_RADIUS), shape.halfAngleDegrees)))
+    }
+
+    /**
+     * Enraged part breaks (gimmicks): damage dealt from in front within [HEAD_REACH] of the head wears the horns,
+     * from either side the fan on that side. Thresholds are shares of its maximum health.
+     */
+    private fun breakParts(mob: Mob, attacker: Player, applied: Double, now: Long) {
+        if (!mob.enraged || now < mob.enrageHoldUntil) return
+        val here = mob.entity.position
+        val yaw = Math.toRadians((if (mob.maneuver != null) mob.faceYaw else here.yaw()).toDouble())
+        val ahead = Vec(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw))
+        val right = Vec(-kotlin.math.cos(yaw), 0.0, -kotlin.math.sin(yaw))
+        val off = Vec(attacker.position.x() - here.x(), 0.0, attacker.position.z() - here.z())
+        if (off.length() < 1e-6) return
+        val dir = off.normalize()
+        val angle = Math.toDegrees(kotlin.math.acos(dir.dot(ahead).coerceIn(-1.0, 1.0)))
+        val max = mob.life.maximumHealth
+        val head = here.add(ahead.mul(4.0))
+        if (!mob.hornsBroken && angle <= 60.0 && attacker.position.distance(head.withY(attacker.position.y())) <= HEAD_REACH) {
+            mob.hornDamage += applied
+            if (mob.hornDamage >= max * HORN_BREAK) {
+                mob.hornsBroken = true
+                mob.sloppyUntil = now + SLOPPY_MILLIS
+                mob.view?.hideBones(listOf("horn_l_tip", "horn_r_tip"))
+                partBroken(mob, now, 3000L, "角が折れた")
+            }
+        }
+        if (angle in 45.0..135.0) {
+            val side = if (dir.dot(right) > 0) 0 else 1
+            if (!mob.fanTorn[side]) {
+                mob.fanDamage[side] += applied
+                if (mob.fanDamage[side] >= max * FAN_TEAR) {
+                    mob.fanTorn[side] = true
+                    mob.view?.hideBones(listOf(if (side == 0) "cloak_l_tatters" else "cloak_r_tatters"))   // _l = its right
+                    if (mob.fanTorn.all { it }) mob.abilities.disable("shade-storm")
+                    partBroken(mob, now, 2000L, "扇が裂けた")
+                }
+            }
+        }
+    }
+
+    private fun partBroken(mob: Mob, now: Long, staggerMillis: Long, label: String) {
+        mob.abilities.cancel()
+        clearWarning(mob.entity.uuid)
+        castingPose(mob, false)
+        mob.maneuver = null
+        stopNavigation(mob)
+        staggerBoss(maxOf(bossStaggerUntil, now + staggerMillis))
+        updateName(mob, label)
+        sound(mob.entity.position, "minecraft:entity.ravager.stunned", 1.2f, 0.7f)
+        particle(mob.entity.position.add(0.0, 2.5, 0.0), Particle.DUST.withColor(NamedTextColor.LIGHT_PURPLE).withScale(2.0f), 30)
+    }
+
     /** How long the target has stood behind the model (more than 120 degrees off its facing). */
     private fun behindFor(mob: Mob, target: Player, now: Long): Long {
         if (mob.view == null) return 0L
@@ -916,7 +1000,13 @@ class QuestEncounterCombat(
         return candidate.takeUnless { (y..y + 2).any { instance.getBlock(x, it, z).isSolid } }
     }
 
-    private fun handleAbilityEvent(mob: Mob, event: MobAbilityEvent, players: List<Player>): Boolean {
+    private fun handleAbilityEvent(mob: Mob, raw: MobAbilityEvent, players: List<Player>): Boolean {
+        val event = when (raw) {
+            is MobAbilityEvent.Started -> raw.copy(frame = effectiveFrame(mob, raw.frame))
+            is MobAbilityEvent.Locked -> raw.copy(frame = effectiveFrame(mob, raw.frame))
+            is MobAbilityEvent.Hit -> raw.copy(frame = effectiveFrame(mob, raw.frame))
+            else -> raw
+        }
         when (event) {
             is MobAbilityEvent.Started -> {
                 mob.travelFrom = mob.entity.position
@@ -960,9 +1050,11 @@ class QuestEncounterCombat(
                     ) {
                         if (typedDamagePlayer != null) typedDamagePlayer.invoke(player, event.frame.ability.damage, event.frame.ability.damageType)
                         else damagePlayer(player, event.frame.ability.damage)
+                        if (mob.view != null) gimmicks.playerHit(player, event.frame.ability.id, lastTickAt)
                     }
                     if (disposed || actionsStoppedForReturn) return false
                 }
+                if (mob.view != null) gimmicks.abilityHit(event.frame, lastTickAt)
             }
             is MobAbilityEvent.Finished -> { clearWarning(mob.entity.uuid); updateName(mob) }
         }
@@ -1029,6 +1121,12 @@ class QuestEncounterCombat(
     companion object {
         /** A strafe walks at this share of the walking speed, the pace its clip is timed to (1.6 of 2.6 blocks/s). */
         const val STRAFE_SPEED = .62
+        /** Gimmicks: horn break (12 % of max health from near the head), fan tear (10 % per side). */
+        const val HEAD_REACH = 6.0
+        const val HORN_BREAK = .12
+        const val FAN_TEAR = .10
+        const val SLOPPY_MILLIS = 20_000L
+        const val TORN_SWEEP_RADIUS = 4.5
         /** Search: the creeping walk's share of the walking speed (its clip is timed to it), and when it starts. */
         const val SEARCH_SPEED = .3
         const val SEARCH_BEYOND = 14.0

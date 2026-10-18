@@ -16,6 +16,7 @@ idle / walk / idle_enraged / walk_enraged / enrage / death, plus one `once` anim
 (length = telegraph+recovery, impact at telegraph).
 """
 import json
+import hashlib
 import math
 
 from boss_models import Model, ROOT
@@ -951,9 +952,20 @@ def build():
         order.append((name, "skull"))
         pivots[name] = [float(v) for v in base]
 
-    # Breakable parts (gimmicks, 2026-10-18): the enraged fans' outer lobes and the horn tips sit on child bones with
-    # the parent's pivot (clips are unaffected), so the server can hide them when they are broken.
+    # Breakable parts (gimmicks, 2026-10-18): the enraged fans' tatters (the plates that tear away, scattered over the
+    # outer lobes so a torn fan looks ragged, the Creator's pick) and the horn tips sit on child bones with the
+    # parent's pivot (clips are unaffected), so the server can hide them when they are broken.
     names = {e["uuid"]: e["name"] for e in m.elements}
+
+    def tatter(n, sd):
+        """Outer bands (b) of lobes 3-7 mostly, inner plates (a) sometimes, the outermost spar's tip; fixed by name."""
+        if n == f"cloak_{sd}_finger4_2":
+            return True
+        if not n.startswith(f"cloak_{sd}_fan"):
+            return False
+        lobe = int(n.split("_fan")[1].split("_")[0])
+        roll = int(hashlib.md5(n.replace(f"cloak_{sd}_", "").encode()).hexdigest()[:4], 16) / 65535
+        return lobe >= 3 and roll < (.65 if n.endswith("b") else .3)
 
     def split(bone, child, test):
         moved = [k for k in kids[bone] if isinstance(k, str) and test(names[k])]
@@ -962,7 +974,7 @@ def build():
         pivots[child] = list(pivots[bone])
         order.append((child, bone))
     for sd in ("l", "r"):
-        split(f"cloak_{sd}", f"cloak_{sd}_outer", lambda n, sd=sd: any(n.startswith(f"cloak_{sd}_fan{k}_") for k in range(4, 8)))
+        split(f"cloak_{sd}", f"cloak_{sd}_tatters", lambda n, sd=sd: tatter(n, sd))
         split(f"horn_{sd}", f"horn_{sd}_tip", lambda n, sd=sd: any(n.startswith(f"horn_{sd}_{p}") for p in ("seg3", "seg4", "seg5", "barb3", "barb4", "barb5", "fork")))
 
     built = {}

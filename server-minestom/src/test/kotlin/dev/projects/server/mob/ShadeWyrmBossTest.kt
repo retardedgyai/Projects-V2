@@ -277,6 +277,93 @@ class ShadeWyrmBossTest {
         }
     }
 
+    private fun testPlayer(arena: dev.projects.server.coreloop.adventure.BossArena, at: Pos, name: String): Player {
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), name))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        player.setInstance(arena.instance, at).join()
+        return player
+    }
+
+    @Test
+    fun `dust erosion builds up, erupts at full and attacking relieves it`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, 6.0), "Erode")
+        val gimmicks = ShadeWyrmGimmicks(1, ShadeWyrmShaderFx(arena.instance), kotlin.random.Random(1))
+        var hurt = 0.0
+        try {
+            repeat(4) { gimmicks.playerHit(player, "shade-dust", 1000L) }
+            assertEquals(80.0, gimmicks.erosionOf(player.uuid))
+            gimmicks.playerStruck(player)
+            assertEquals(74.0, gimmicks.erosionOf(player.uuid))
+            gimmicks.playerHit(player, "shade-sweep", 1000L)                  // not a dust attack
+            assertEquals(74.0, gimmicks.erosionOf(player.uuid))
+            repeat(2) { gimmicks.playerHit(player, "shade-breath", 1100L) }
+            gimmicks.tick(1150L, listOf(player)) { _, amount, _ -> hurt += amount }
+            assertEquals(ShadeWyrmGimmicks.ERUPT_DAMAGE, hurt)
+            assertEquals(0.0, gimmicks.erosionOf(player.uuid))
+        } finally {
+            gimmicks.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `the dust burst leaves pools and the antennae pulse bursts them`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val gimmicks = ShadeWyrmGimmicks(1, ShadeWyrmShaderFx(arena.instance), kotlin.random.Random(2))
+        val dust = definition.abilities.single { it.id == "shade-dust" }
+        val pulse = definition.abilities.single { it.id == "shade-pulse" }
+        val c = arena.bossSpawn
+        try {
+            gimmicks.abilityHit(MobAbilityFrame(dust, c, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L), 1000L)
+            assertEquals(4, gimmicks.poolCount)
+            gimmicks.abilityHit(MobAbilityFrame(pulse, c, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L), 2000L)
+            gimmicks.tick(2000L + ShadeWyrmGimmicks.BURST_DELAY_MILLIS - 50, emptyList()) { _, _, _ -> }
+            assertEquals(4, gimmicks.poolCount)
+            gimmicks.tick(2000L + ShadeWyrmGimmicks.BURST_DELAY_MILLIS, emptyList()) { _, _, _ -> }
+            assertEquals(0, gimmicks.poolCount)
+        } finally {
+            gimmicks.dispose(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `enraged horns break from the front and each fan tears from its side`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, -20.0), "Parts")
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            combat.tick(now)
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .52))
+            repeat(110) { now += 50; combat.tick(now) }                        // the enrage roar
+            assertTrue(combat.isEnraged(boss.uuid))
+            fun hitFrom(offset: Vec, share: Double) {
+                val yaw = Math.toRadians(boss.position.yaw().toDouble())
+                val ahead = Vec(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw))
+                val right = Vec(-kotlin.math.cos(yaw), 0.0, -kotlin.math.sin(yaw))
+                player.teleport(boss.position.add(ahead.mul(offset.z())).add(right.mul(offset.x()))).join()
+                assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * share))
+            }
+            hitFrom(Vec(0.0, 0.0, 6.0), .13)
+            assertEquals(listOf(true, false, false), combat.partsBroken(boss.uuid))
+            hitFrom(Vec(5.0, 0.0, 0.0), .11)
+            assertEquals(listOf(true, true, false), combat.partsBroken(boss.uuid))
+            hitFrom(Vec(-5.0, 0.0, 0.0), .11)
+            assertEquals(listOf(true, true, true), combat.partsBroken(boss.uuid))
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
     /**
      * `SHADE_FIGHT_DUMP=<file> ./gradlew :server-minestom:test --tests '*ShadeWyrmBossTest' --rerun` runs a scripted
      * 40 s fight through the real encounter code and writes, per tick, where the wyrm is, where it looks, the clip on

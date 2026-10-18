@@ -190,6 +190,10 @@ class MobAbilityManager(
     private var nextSelectionAt = Long.MIN_VALUE
     private var previousAbilityId: String? = null
     private val readyAt = mutableMapOf<String, Long>()
+    private val disabled = mutableSetOf<String>()
+
+    /** Never offer [id] again (a broken part took the ability away). */
+    fun disable(id: String) { disabled += id }
     val isActive: Boolean get() = current != null
 
     /**
@@ -202,7 +206,7 @@ class MobAbilityManager(
         if (abs(origin.y() - target.y()) > 2.2) return null
         val distance = horizontalLength(target.sub(origin))
         val available = (if (plainOnly) abilities.take(1) else abilities).filter {
-            if (only != null) it.id == only && healthRatio <= it.maximumHealthRatio
+            it.id !in disabled && if (only != null) it.id == only && healthRatio <= it.maximumHealthRatio
             else !it.scripted && distance in it.minimumStartRange..it.maximumStartRange &&
                 healthRatio <= it.maximumHealthRatio && nowMillis >= readyAt.getOrDefault(it.id, Long.MIN_VALUE)
         }

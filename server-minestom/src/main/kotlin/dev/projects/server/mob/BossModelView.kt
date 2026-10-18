@@ -170,6 +170,12 @@ internal class BossModelView(
 
     val canManeuver: Boolean get() = !disposed && has("hop_back") && has("dash_l") && has("strafe_l")
 
+    /** A broken part (horn tips, fan tatters): hidden for good. */
+    fun hideBones(names: Collection<String>) {
+        if (disposed) return
+        names.forEach { model.setBoneVisible(it, false) }
+    }
+
     /** WSEE's generated red "hit" texture state, briefly. */
     fun hurt(now: Long) {
         if (disposed || dying) return

@@ -31,8 +31,8 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         val sprite: String, val kind: Int, val at: Pos, val start: Int, val life: Int,
         val scale: Vec, val rotation: FloatArray, val translation: Vec = Vec.ZERO,
         val grow: Vec? = null, val slide: Vec? = null, val moveTicks: Int = 0, val billboard: Boolean = false,
-        val progress: (Double) -> Double = { it }, val windup: Boolean = false,
-    ) { var entity: Entity? = null }
+        val progress: (Double) -> Double = { it }, val windup: Boolean = false, val tag: String? = null,
+    ) { var entity: Entity? = null; var life2 = life; var sent = -1 }
 
     private val pieces = mutableListOf<Piece>()
     private var now = 0
@@ -262,8 +262,11 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
             val piece = iterator.next()
             val age = now - piece.start
             if (age < 0) continue
-            if (age >= piece.life) { piece.entity?.remove(); iterator.remove(); continue }
+            if (age >= piece.life2) { piece.entity?.remove(); iterator.remove(); continue }
             val entity = piece.entity ?: spawn(piece).also { piece.entity = it }
+            val red = (piece.progress(age.toDouble() / piece.life).coerceIn(0.0, 1.0) * 255).toInt()
+            if (red == piece.sent && !(age == 1 && piece.moveTicks > 0)) continue   // long-lived pieces: no resend
+            piece.sent = red
             entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
                 meta.setItemStack(stack(piece, piece.progress(age.toDouble() / piece.life)))
                 if (age == 1 && piece.moveTicks > 0) {
@@ -296,7 +299,44 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                     translation: Vec = Vec.ZERO, grow: Vec? = null, slide: Vec? = null, moveTicks: Int = 0, billboard: Boolean = false,
                     progress: (Double) -> Double = { it }) {
         if (life <= 0) return
-        pieces += Piece(sprite, kind, at, now + 1 + delay, life, scale, rotation, translation, grow, slide, moveTicks, billboard, progress, addingWindup)
+        pieces += Piece(sprite, kind, at, now + 1 + delay, life, scale, rotation, translation, grow, slide, moveTicks, billboard, progress,
+            addingWindup, addingTag)
+    }
+    private var addingTag: String? = null
+
+    /** Ends every piece added under [tag] (a pool) on the next tick. */
+    fun endTag(tag: String) {
+        pieces.forEach { if (it.tag == tag) it.life2 = minOf(it.life2, now - it.start + 1) }
+    }
+
+    /** 鱗粉だまり: a dark, slowly breathing puddle with a faint violet rim and dust drifting up, for [ticks]. */
+    fun pool(at: Pos, tag: String, ticks: Int) {
+        addingTag = tag
+        try {
+            add("disc", 6, at.add(0.0, .05, 0.0), 0, ticks, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(3.8, 1.0, 3.8), moveTicks = 8) { .28 }
+            add("ring", 2, at.add(0.0, .08, 0.0), 0, ticks, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(3.9, 1.0, 3.9), moveTicks = 8) { .55 }
+            add("puff", 4, at.add(0.0, .7, 0.0), 4, ticks - 4, Vec(1.4, 1.4, 1.0), IDENTITY, billboard = true) { .45 }
+        } finally { addingTag = null }
+    }
+
+    /** The pulse roared: the pool glows hot before it bursts. */
+    fun poolWarning(at: Pos, tag: String) {
+        addingTag = tag
+        try { add("puff", 4, at.add(0.0, .9, 0.0), 0, 16, Vec(1.6, 1.6, 1.0), IDENTITY, grow = Vec(2.6, 2.6, 1.0), moveTicks = 15, billboard = true) { .15 } }
+        finally { addingTag = null }
+    }
+
+    fun poolBurst(at: Pos, tag: String) {
+        endTag(tag)
+        add("puff", 4, at.add(0.0, 1.0, 0.0), 0, 12, Vec(3.5, 3.5, 1.0), IDENTITY, grow = Vec(5.0, 5.0, 1.0), moveTicks = 10, billboard = true)
+        add("ring", 2, at.add(0.0, .1, 0.0), 0, 10, Vec(2.0, 1.0, 2.0), IDENTITY, grow = Vec(7.0, 1.0, 7.0), moveTicks = 6)
+        add("smoke", 6, at.add(0.0, 1.8, 0.0), 2, 18, Vec(3.6, 3.6, 1.0), IDENTITY, slide = Vec(0.0, 1.4, 0.0), moveTicks = 16, billboard = true)
+    }
+
+    /** The player's erosion erupted: a violet burst around them. */
+    fun erupt(at: Pos) {
+        add("puff", 4, at.add(0.0, 1.0, 0.0), 0, 12, Vec(2.6, 2.6, 1.0), IDENTITY, grow = Vec(4.0, 4.0, 1.0), moveTicks = 10, billboard = true)
+        add("ring", 2, at.add(0.0, .1, 0.0), 0, 10, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(4.5, 1.0, 4.5), moveTicks = 6)
     }
 
     /** A cancelled telegraph: its wind-up pieces go, strikes already flying stay. */
@@ -323,7 +363,7 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
     }
 
     private fun stack(piece: Piece, progress: Double): ItemStack {
-        val red = (progress.coerceIn(0.0, 1.0) * 255).toInt()
+        val red = (progress.coerceIn(0.0, 1.0) * 255).toInt()  // the shader's progress
         return ItemStack.of(Material.PAPER).withItemModel("projects:boss_vfx/${piece.sprite}")
             .with(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), emptyList(),
                 listOf(TextColor.color(red, piece.kind, MARKER))))
