@@ -240,22 +240,6 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                         slide = Vec(cos(a) * 1.0, 1.6, sin(a) * 1.0), moveTicks = 18, billboard = true)
                 }
             }
-            "shade-triple" -> if (shape is MobAttackShape.Ring) {
-                // One of the three spits (the server calls this per shot): a flash at the mouth, the ball arcing over
-                // to where the player stood, a burst there.
-                val mouth = head(ShadeWyrmVfx.SNOUT)?.let(Pos::fromPoint) ?: frame.casterOrigin.add(f.mul(3.5)).add(0.0, 2.5, 0.0)
-                add("puff", 4, mouth, 0, 6, Vec(2.0, 2.0, 1.0), IDENTITY, billboard = true)
-                val at = o.add(0.0, .9, 0.0)
-                add("puff", 4, at, 0, 5, Vec(1.4, 1.4, 1.0), IDENTITY, translation = Vec(mouth.x() - at.x(), mouth.y() - at.y(), mouth.z() - at.z()),
-                    slide = Vec.ZERO, moveTicks = 4, billboard = true) { .05 }
-                add("ring", 2, o.add(0.0, .12, 0.0), 4, 8, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(shape.radius * 2.4, 1.0, shape.radius * 2.4), moveTicks = 4)
-                repeat(4) { n ->
-                    val a = n * PI / 2 + .4
-                    add("puff", 4, o.add(cos(a) * .7, .6 + n % 2 * .4, sin(a) * .7), 4 + n % 2, 12, Vec(2.2, 2.2, 1.0), IDENTITY,
-                        slide = Vec(cos(a) * .8, .7, sin(a) * .8), moveTicks = 10, billboard = true)
-                }
-                add("smoke", 6, o.add(0.0, 1.0, 0.0), 6, 16, Vec(2.8, 2.8, 1.0), IDENTITY, slide = Vec(0.0, 1.2, 0.0), moveTicks = 14, billboard = true)
-            }
             "shade-storm" -> if (shape is MobAttackShape.Ring) {
                 val count = 28
                 for (n in 0 until count) {

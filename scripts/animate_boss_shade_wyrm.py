@@ -373,7 +373,7 @@ def dash_side_pose(sk, rest_feet, t, sign, enraged=False, theta=0.0):
 # abilities also get an `<id>_enraged` twin in the crouch with the fans, which the server plays once enraged.
 ABILITIES = {"shade-sweep": (1.1, 2.0), "shade-pounce": (1.4, 2.6), "shade-dust": (1.7, 2.6),
              "shade-pulse": (1.2, 2.3), "shade-breath": (1.6, 2.6), "shade-storm": (2.2, 3.5),
-             "shade-turnsweep": (.9, 1.8), "shade-dive": (2.4, 3.8), "shade-triple": (1.2, 3.2)}
+             "shade-turnsweep": (.9, 1.8), "shade-dive": (2.4, 3.8)}
 PHASE_ONE = ("shade-sweep", "shade-pounce", "shade-dust", "shade-pulse", "shade-turnsweep", "shade-dive")
 TAIL = ("tail", "tail_2", "tail_mid", "tail_end")
 
@@ -613,31 +613,6 @@ def dive_pose(sk, rest_feet, theta, t, enraged):
     return p, None
 
 
-TRIPLE_SHOTS = (1.2, 1.7, 2.2)
-
-
-def triple_pose(sk, rest_feet, theta, t, enraged):
-    """三連鱗粉弾 (Triple Frenzy Ball), enraged: three shots at 1.2, 1.7 and 2.2 s, each a quick draw-back and spit with
-    the head swinging to where the player has run (left, right, centre); the body braced and stepping between."""
-    p = {}
-    enraged_stance(sk, p, theta)
-    aims = (-16, 18, 0)
-    nx = ny = jaw = 0.0
-    for shot, aim in zip(TRIPLE_SHOTS, aims):
-        draw = bump(t, shot - .32, shot - .06, shot + .02)
-        spit = bump(t, shot - .04, shot + .04, shot + .3)
-        nx += -24 * draw + 16 * spit
-        ny += aim * bump(t, shot - .42, shot - .1, shot + .3)
-        jaw += 12 * draw + 40 * spit
-    body(sk, p, (-3 * smooth(t, .2, .9) * (1 - smooth(t, 2.4, 3.0)), .5 * ny, 0), (0, 0, -4 * bump(t, 1.1, 1.24, 1.5) - 4 * bump(t, 1.6, 1.74, 2.0) - 4 * bump(t, 2.1, 2.24, 2.5)))
-    solve_legs(sk, p, dict(rest_feet))
-    add(p, "neck", (nx, ny, 0)); add(p, "skull", (-.3 * nx, .3 * ny, 0)); add(p, "jaw", (jaw, 0, 0))
-    for side, sg in (("l", 1), ("r", -1)):
-        add(p, f"cloak_{side}", (0, 0, (-4 + 6 * bump(t, 2.2, 2.3, 2.6)) * sg))
-    add(p, "tail", (K(t, [(0, 0), (1.2, -6), (2.2, -8), (2.8, 0)]), -.4 * ny, 0))
-    return p, None
-
-
 SEARCH = dict(stride=18, duty=.72, cycle=2.0)
 
 
@@ -665,7 +640,7 @@ def search_pose(sk, rest_feet, t):
 
 POSES = {"shade-sweep": sweep_pose, "shade-pounce": pounce_pose, "shade-dust": dust_pose,
          "shade-pulse": pulse_pose, "shade-breath": breath_pose, "shade-storm": storm_pose,
-         "shade-turnsweep": turnsweep_pose, "shade-dive": dive_pose, "shade-triple": triple_pose}
+         "shade-turnsweep": turnsweep_pose, "shade-dive": dive_pose}
 
 
 def ability_pose(sk, rest_feet, theta, name, t, enraged):

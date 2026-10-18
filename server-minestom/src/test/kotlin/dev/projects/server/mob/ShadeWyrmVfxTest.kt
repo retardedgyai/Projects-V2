@@ -92,15 +92,13 @@ class ShadeWyrmVfxTest {
         // Draft abilities for the new patterns (not in the boss yet): previewed before they are wired in.
         val drafts = listOf(
             MobAbility("shade-turnsweep", "", MobAttackShape.Sweep(6.5, 90.0), 6.0, 20.0, 900, 300, 900, 4000),
-            MobAbility("shade-dive", "", MobAttackShape.Ring(4.5), 30.0, 28.0, 2400, 1600, 1400, 9000, anchor = MobAbilityAnchor.TARGET),
-            MobAbility("shade-triple", "", MobAttackShape.Ring(2.0), 20.0, 14.0, 1200, 300, 2000, 7000, anchor = MobAbilityAnchor.TARGET))
-        val extraShots = mapOf("shade-triple" to listOf(34 to Pos(2.5, 0.0, 8.0), 44 to Pos(0.0, 0.0, 7.0)))
+            MobAbility("shade-dive", "", MobAttackShape.Ring(4.5), 30.0, 28.0, 2400, 1600, 1400, 9000, anchor = MobAbilityAnchor.TARGET)
+        )
         for (ability in definition.abilities + drafts) {
             val fx = ShadeWyrmShaderFx(instance)
             // A target-anchored ability lands where the player stands, 7 blocks ahead here.
             val at = when {
                 ability.id == "shade-dive" -> Pos(0.0, 0.0, 8.0)
-                ability.id == "shade-triple" -> Pos(-3.0, 0.0, 7.0)
                 ability.anchor == MobAbilityAnchor.TARGET -> Pos(0.0, 0.0, 7.0)
                 else -> Pos.ZERO
             }
@@ -109,9 +107,6 @@ class ShadeWyrmVfxTest {
             fx.windup(ability.id, frame) { null }
             repeat(hitTick + 50) { tick ->
                 if (tick == hitTick) fx.strike(ability.id, frame) { null }
-                extraShots[ability.id]?.firstOrNull { it.first == tick }?.let { (_, shot) ->
-                    fx.strike(ability.id, MobAbilityFrame(ability, shot, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L, Pos.ZERO)) { null }
-                }
                 fx.tick()
                 for (v in fx.views()) {
                     fun vec(p: net.minestom.server.coordinate.Point) = "[${p.x()},${p.y()},${p.z()}]"
