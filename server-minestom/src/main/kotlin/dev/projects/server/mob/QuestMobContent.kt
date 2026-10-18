@@ -115,14 +115,14 @@ internal object QuestMobContent {
         val boss = archetype.rarity == QuestMobRarity.BOSS
         fun attack(id: String, label: String, shape: MobAttackShape, range: Double, damage: Double,
             warning: Long = 1000, tracking: Long = 400, recovery: Long = 850, cooldown: Long = 1900,
-            minimumRange: Double = 0.0, target: Boolean = false, health: Double = 1.0, weight: Int = 1) = MobAbility(
+            minimumRange: Double = 0.0, target: Boolean = false, health: Double = 1.0, weight: Int = 1, scripted: Boolean = false) = MobAbility(
             id, label, shape, range, damage * factor, warning, tracking, recovery, cooldown, weight,
             minimumRange, if (target) MobAbilityAnchor.TARGET else MobAbilityAnchor.CASTER, health,
             if (id in setOf("rift-bolt", "rift-pulse", "oracle-mark", "oracle-ray", "oracle-pulse",
                     "forge-cross", "forge-mark", "tide-ray", "tide-ring", "tide-center", "eclipse-mark", "eclipse-cross",
                     "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross",
                     "shade-dust", "shade-pulse", "shade-breath", "shade-storm"))
-                dev.projects.server.coreloop.CoreDamageType.MAGICAL else dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
+                dev.projects.server.coreloop.CoreDamageType.MAGICAL else dev.projects.server.coreloop.CoreDamageType.PHYSICAL, scripted
         )
         fun sweep(radius: Double = 3.4, damage: Double = 10.0) = attack(
             "sweep", "横薙ぎ", MobAttackShape.Sweep(radius), radius - 0.4, damage, weight = 3,
@@ -154,6 +154,11 @@ internal object QuestMobContent {
                         1600, 450, 1000, 3600, health = .5, weight = 3),
                     attack("shade-storm", "鱗粉嵐・竜の懐へ", MobAttackShape.Ring(15.0, 4.0), 15.0, 32.0,
                         2200, 0, 1300, 6000, health = .5, weight = 2),
+                    // Only when the player got behind it during an attack and stays there (QuestEncounterCombat).
+                    attack("shade-turnsweep", "振り向き薙ぎ・距離を取れ", MobAttackShape.Sweep(6.5, 90.0), 7.0, 22.0,
+                        900, 300, 900, 5000, scripted = true),
+                    attack("shade-dive", "飛び上がり急降下・落下点から離れろ", MobAttackShape.Ring(4.5), 30.0, 28.0,
+                        2400, 1600, 1400, 9000, minimumRange = 12.0, target = true, weight = 2),
                 )).copy(model = "shade_wyrm", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2,
                     enragedBones = setOf("horn_l", "horn_r", "cloak_l", "cloak_r"), foldedBones = setOf("wing_l", "wing_r"))
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,

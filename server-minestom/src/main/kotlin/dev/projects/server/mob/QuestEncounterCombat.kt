@@ -134,6 +134,14 @@ class QuestEncounterCombat(
         var maneuvers = 0
         /** Where the model looks while it moves sideways or backward: at its target. */
         var faceYaw = 0f
+        /** Since when the target has stood behind the model (0 = not behind); see [TURN_AFTER_MILLIS]. */
+        var behindSince = 0L
+        /** An ability to follow the maneuver that just ended (hop back -> breath, dash -> sweep). */
+        var combo: String? = null
+        /** Where an ability that carries the body (the dive) took off from. */
+        var travelFrom: Pos? = null
+        /** Lost its target (far or out of sight): it creeps and searches. */
+        var searching = false
     }
 
     private val mobs = linkedMapOf<UUID, Mob>()
@@ -169,6 +177,10 @@ class QuestEncounterCombat(
     internal val modelDisplayCount: Int get() = mobs.values.sumOf { (it.model?.count ?: 0) + (it.view?.partCount ?: 0) }
     internal fun isEnraged(targetId: UUID): Boolean = mobs[targetId]?.enraged == true
     internal fun maneuverCount(targetId: UUID): Int = mobs[targetId]?.maneuvers ?: 0
+    /** Fight preview dump: the model's clip and the shader displays on show. */
+    internal fun shownClip(targetId: UUID): Pair<String, Long>? = mobs[targetId]?.view?.let { it.shownClip to it.shownSince }
+    internal fun modelFacing(targetId: UUID): Float? = mobs[targetId]?.let { if (it.maneuver != null) it.faceYaw else it.entity.position.yaw() }
+    internal fun shaderViews() = shaderFx.views()
 
     init {
         require(tier in 1..4)
@@ -455,7 +467,8 @@ class QuestEncounterCombat(
             if (!mob.life.isAlive || !isSpawned(mob)) continue
             tickMob(mob, players, nowMillis)
             mob.model?.tick(mob.entity.position, nowMillis, mob.life.phase == QuestMobPhase.ATTACKING, mob.life.health / mob.life.maximumHealth)
-            mob.view?.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, nowMillis)
+            mob.view?.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, nowMillis,
+                searching = mob.searching && mob.maneuver == null && !mob.abilities.isActive)
             if (actionsStoppedForReturn || disposed) return
         }
     }
@@ -621,6 +634,8 @@ class QuestEncounterCombat(
             val frame = mob.abilities.current
             if (frame != null) {
                 mob.entity.setView(Pos.ZERO.withDirection(frame.facing).yaw(), 0.0f)
+                carryThroughAbility(mob, frame, now)
+                behindFor(mob, target, now)                // standing behind it during an attack counts too
                 if (frame.phase != MobAbilityPhase.RECOVERY && now >= mob.nextWarningAt) {
                     if (!drawWarning(mob, frame, false)) {
                         cancelWarning(mob)
@@ -632,8 +647,12 @@ class QuestEncounterCombat(
             mob.life.phase = QuestMobPhase.CHASING
         }
         if (now >= mob.warningRetryAt && mob.entity.hasLineOfSight(target) && telegraphs.canStart(mob.entity.uuid)) {
-            val start = mob.abilities.tryStart(now, mob.entity.position, target.position, mob.life.health / mob.life.maximumHealth,
-                plainOnly = crowded(mob, CrowdControl.SILENCE, now))
+            val ratio = mob.life.health / mob.life.maximumHealth
+            val silenced = crowded(mob, CrowdControl.SILENCE, now)
+            val scripted = if (silenced) null else mob.combo ?: if (behindFor(mob, target, now) >= TURN_AFTER_MILLIS) TURN_SWEEP else null
+            mob.combo = null
+            val start = scripted?.let { mob.abilities.tryStart(now, mob.entity.position, target.position, ratio, only = it) }
+                ?: mob.abilities.tryStart(now, mob.entity.position, target.position, ratio, plainOnly = silenced)
             if (start != null) {
                 mob.life.phase = QuestMobPhase.ATTACKING
                 stopNavigation(mob)
@@ -644,6 +663,10 @@ class QuestEncounterCombat(
         mob.life.phase = QuestMobPhase.CHASING
         if (crowded(mob, CrowdControl.ROOT, now)) { stopNavigation(mob); return }
         if (startManeuver(mob, target, now)) return
+        val wasSearching = mob.searching
+        mob.searching = mob.view != null &&
+            (mob.entity.position.distanceSquared(target.position) > SEARCH_BEYOND * SEARCH_BEYOND || !mob.entity.hasLineOfSight(target))
+        if (mob.searching != wasSearching) updateMovementSpeed(mob, now)
         if (now >= mob.nextPathAt) {
             val distance = mob.definition.preferredDistance
             val retreat = if (distance >= 6.0 && mob.entity.position.distanceSquared(target.position) < 4.5 * 4.5) {
@@ -766,7 +789,8 @@ class QuestEncounterCombat(
         mob.slowedUntil = mob.slows.values.maxOfOrNull { it.until } ?: 0L
         val speed = mob.definition.movementSpeed * (1.0 - mob.slowPercent) *
             (if (mob.enraged) mob.definition.enragedSpeedMultiplier else 1.0) *
-            (if (mob.maneuver?.kind == ManeuverKind.STRAFE) STRAFE_SPEED else 1.0)
+            (if (mob.maneuver?.kind == ManeuverKind.STRAFE) STRAFE_SPEED else 1.0) *
+            (if (mob.searching && mob.maneuver == null) SEARCH_SPEED else 1.0)
         if (mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue != speed) {
             mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = speed
         }
@@ -781,6 +805,7 @@ class QuestEncounterCombat(
     private fun startManeuver(mob: Mob, target: Player, now: Long): Boolean {
         val view = mob.view ?: return false
         if (!view.canManeuver || now < mob.nextManeuverAt || mob.enraged && now < mob.enrageHoldUntil) return false
+        if (behindFor(mob, target, now) > 0L) return false          // someone at its back: hold still and turn on them
         val here = mob.entity.position
         val distance = horizontalLength(target.position.sub(here))
         val away = normalizeHorizontal(here.sub(target.position))
@@ -823,6 +848,12 @@ class QuestEncounterCombat(
     private fun tickManeuver(mob: Mob, maneuver: Maneuver, target: Player, now: Long): Boolean {
         if (now >= maneuver.endAt) {
             mob.maneuver = null
+            mob.combo = when (maneuver.kind) {
+                ManeuverKind.HOP_BACK -> if (mob.enraged) "shade-breath" else null   // 2 跳び退き→吐息
+                ManeuverKind.DASH -> "shade-sweep"                                   // 3 回り込み→薙ぎ
+                ManeuverKind.STRAFE -> null
+            }
+            if (mob.combo != null) mob.warningRetryAt = now
             updateMovementSpeed(mob, now)
             return false
         }
@@ -845,6 +876,33 @@ class QuestEncounterCombat(
         return true
     }
 
+    /** How long the target has stood behind the model (more than 120 degrees off its facing). */
+    private fun behindFor(mob: Mob, target: Player, now: Long): Long {
+        if (mob.view == null) return 0L
+        val here = mob.entity.position
+        val facing = if (mob.maneuver != null) mob.faceYaw else here.yaw()
+        var off = (yawToward(here, target.position) - facing) % 360f
+        if (off > 180f) off -= 360f
+        if (off < -180f) off += 360f
+        if (kotlin.math.abs(off) < 120f) { mob.behindSince = 0L; return 0L }
+        if (mob.behindSince == 0L) mob.behindSince = now
+        return now - mob.behindSince
+    }
+
+    /** The dive carries the body over its target while it hangs in the air (between [DIVE_CARRY] ms of the clip). */
+    private fun carryThroughAbility(mob: Mob, frame: MobAbilityFrame, now: Long) {
+        if (frame.ability.id != "shade-dive") return
+        val from = mob.travelFrom ?: return
+        val elapsed = now - frame.startedAt
+        if (elapsed < DIVE_CARRY.first) return
+        val k = ((elapsed - DIVE_CARRY.first).toDouble() / (DIVE_CARRY.last - DIVE_CARRY.first)).coerceIn(0.0, 1.0)
+        val e = k * k * (3 - 2 * k)
+        val to = frame.origin
+        val ground = telegraphs.groundHeight(to) ?: from.y()
+        mob.entity.teleport(Pos(from.x() + (to.x() - from.x()) * e, from.y() + (ground - from.y()) * e, from.z() + (to.z() - from.z()) * e,
+            mob.entity.position.yaw(), 0f))
+    }
+
     private fun yawToward(from: Pos, to: net.minestom.server.coordinate.Point): Float =
         Math.toDegrees(kotlin.math.atan2(-(to.x() - from.x()), to.z() - from.z())).toFloat()
 
@@ -861,6 +919,8 @@ class QuestEncounterCombat(
     private fun handleAbilityEvent(mob: Mob, event: MobAbilityEvent, players: List<Player>): Boolean {
         when (event) {
             is MobAbilityEvent.Started -> {
+                mob.travelFrom = mob.entity.position
+                if (event.frame.ability.id == TURN_SWEEP) mob.behindSince = 0L
                 updateName(mob, event.frame.ability.displayName)
                 mob.view?.ability(event.frame.ability.id)
                 if (!drawWarning(mob, event.frame, false)) {
@@ -969,6 +1029,14 @@ class QuestEncounterCombat(
     companion object {
         /** A strafe walks at this share of the walking speed, the pace its clip is timed to (1.6 of 2.6 blocks/s). */
         const val STRAFE_SPEED = .62
+        /** Search: the creeping walk's share of the walking speed (its clip is timed to it), and when it starts. */
+        const val SEARCH_SPEED = .3
+        const val SEARCH_BEYOND = 14.0
+        const val TURN_SWEEP = "shade-turnsweep"
+        /** Got behind it (usually while an attack holds its facing) for this long when it is free to act. */
+        const val TURN_AFTER_MILLIS = 600L
+        /** ms into shade-dive while the body is carried over the target (the clip hangs in the air then). */
+        val DIVE_CARRY = 1000L..2300L
         const val BREAK_MAX = 100.0
         const val BREAK_MILLIS = 4000L
         const val BROKEN_DAMAGE = 1.3

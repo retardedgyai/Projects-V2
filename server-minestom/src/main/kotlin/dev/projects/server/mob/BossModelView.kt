@@ -85,6 +85,23 @@ internal class BossModelView(
     private var dying = false
     private var disposed = false
     private var loop = "idle"
+    private var lastNow = 0L
+    private var pendingLoop = "idle"
+    private var pendingSince = 0L
+    /** The clip on screen and since when (server millis), for the fight preview dump. */
+    internal var shownClip = "idle"; private set
+    internal var shownSince = 0L; private set
+    private var shownUntil = 0L
+    /** Clip lengths (s) from the generated animation file, so the preview knows when a once clip is over. */
+    private val lengths: Map<String, Double> by lazy {
+        BossModelView::class.java.classLoader.getResourceAsStream("${BossModelPack.DATA_ROOT}/models/$modelId.bbmodel/model.animation.json")
+            ?.use { com.google.gson.JsonParser.parseString(it.readBytes().decodeToString()).asJsonObject.getAsJsonObject("animations") }
+            ?.entrySet()?.associate { (k, v) -> k to v.asJsonObject["animation_length"].asDouble } ?: emptyMap()
+    }
+    private fun shown(name: String, once: Boolean = false) {
+        shownClip = name; shownSince = lastNow
+        shownUntil = if (once) lastNow + ((lengths[name] ?: 0.0) * 1000).toLong() else 0L
+    }
     private var last: Pos = origin
     private var hurtUntil = 0L
     private var revealAt = 0L
@@ -105,8 +122,11 @@ internal class BossModelView(
     fun hide(player: Player) { if (!disposed && !dying) model.removeViewer(player) }
 
     /** Follows the carrier and switches between standing and walking loops. */
-    fun tick(at: Pos, now: Long) {
+    /** [searching]: it has lost its target and creeps (the `search` loop) instead of walking. */
+    fun tick(at: Pos, now: Long, searching: Boolean = false) {
         if (disposed || dying) return
+        lastNow = now
+        if (shownUntil != 0L && now >= shownUntil) shown(loop)
         if (hurtUntil != 0L && now >= hurtUntil) { hurtUntil = 0L; model.setState("normal") }
         if (revealAt != 0L && now >= revealAt) { revealAt = 0L; reveal() }
         if (foldAt != 0L && now >= foldAt) { foldAt = 0L; hideFolded() }
@@ -115,13 +135,17 @@ internal class BossModelView(
         last = at
         model.setPosition(at)
         model.setGlobalRotation(modelYaw(at.yaw()))
-        val base = if (!moved) "idle" else gait(at.yaw(), dx, dz)
+        val base = if (!moved) "idle" else if (searching && has("search")) "search" else gait(at.yaw(), dx, dz)
         val wanted = base + if (enraged && has("${base}_enraged")) "_enraged" else ""
+        // A new gait must hold for GAIT_SETTLE_MILLIS before it replaces the loop, so circling a moving player does
+        // not flicker between walk and strafe every tick.
+        if (wanted != pendingLoop) { pendingLoop = wanted; pendingSince = now }
         // WSEE's `playing` is the once clip if one runs, else the repeating loop (never null), so this waits for
         // ability clips only.
-        if (wanted != loop && animations.playing == animations.repeating) {
+        if (wanted != loop && now - pendingSince >= GAIT_SETTLE_MILLIS && animations.playing == animations.repeating) {
             loop = wanted
             animations.playRepeat(wanted, 4)
+            shown(wanted)
         }
     }
 
@@ -141,7 +165,7 @@ internal class BossModelView(
     fun maneuver(clip: String) {
         if (disposed || dying) return
         val name = phased(clip)
-        if (has(name)) animations.playOnce(name, 2) {}
+        if (has(name)) { animations.playOnce(name, 2) {}; shown(name, once = true) }
     }
 
     val canManeuver: Boolean get() = !disposed && has("hop_back") && has("dash_l") && has("strafe_l")
@@ -156,7 +180,7 @@ internal class BossModelView(
     fun ability(abilityId: String) {
         if (disposed || dying) return
         val clip = phased(abilityId)
-        if (has(clip)) animations.playOnce(clip, 2) {}
+        if (has(clip)) { animations.playOnce(clip, 2) {}; shown(clip, once = true) }
     }
 
     /**
@@ -170,6 +194,7 @@ internal class BossModelView(
         animations.playRepeat(loop)
         if (has("enrage")) {
             animations.playOnce("enrage", 2) {}
+            lastNow = now; shown("enrage", once = true)
             revealAt = now + ENRAGE_REVEAL_MILLIS
             foldAt = now + ENRAGE_FOLD_MILLIS
         } else {
@@ -222,6 +247,7 @@ internal class BossModelView(
         /** shade_wyrm `enrage`: the fans and horns start growing at 2.15 s, the folded wings are gone by 2.4 s. */
         private const val ENRAGE_REVEAL_MILLIS = 300L
         private const val ENRAGE_FOLD_MILLIS = 2500L
+        private const val GAIT_SETTLE_MILLIS = 200L
         fun available(modelId: String) = modelId in BossModelLibrary.models()
         /**
          * Entity yaw -> WSEE model rotation. WSEE turns a model by (180 - rotation), so a Blockbench +Z front

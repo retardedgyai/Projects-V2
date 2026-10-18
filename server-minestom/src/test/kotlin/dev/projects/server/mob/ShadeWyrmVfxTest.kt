@@ -89,12 +89,7 @@ class ShadeWyrmVfxTest {
         net.minestom.server.MinecraftServer.init(net.minestom.server.Auth.Offline())
         val instance = net.minestom.server.MinecraftServer.getInstanceManager().createInstanceContainer()
         for (x in -2..1) for (z in -2..1) instance.loadChunk(x, z).join()
-        // Draft abilities for the new patterns (not in the boss yet): previewed before they are wired in.
-        val drafts = listOf(
-            MobAbility("shade-turnsweep", "", MobAttackShape.Sweep(6.5, 90.0), 6.0, 20.0, 900, 300, 900, 4000),
-            MobAbility("shade-dive", "", MobAttackShape.Ring(4.5), 30.0, 28.0, 2400, 1600, 1400, 9000, anchor = MobAbilityAnchor.TARGET)
-        )
-        for (ability in definition.abilities + drafts) {
+        for (ability in definition.abilities) {
             val fx = ShadeWyrmShaderFx(instance)
             // A target-anchored ability lands where the player stands, 7 blocks ahead here.
             val at = when {

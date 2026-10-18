@@ -40,7 +40,7 @@ class ShadeWyrmBossTest {
     fun `every ability has a once clip timed to its telegraph and recovery`() {
         val clips = animations()
         assertEquals("shade_wyrm", definition.model)
-        assertTrue(definition.abilities.size in 4..6)
+        assertTrue(definition.abilities.size in 4..8)
         for (ability in definition.abilities) {
             val clip = assertNotNull(clips.getAsJsonObject(ability.id), "missing clip ${ability.id}")
             assertFalse(clip["loop"].asBoolean, ability.id)
@@ -192,6 +192,50 @@ class ShadeWyrmBossTest {
     }
 
     @Test
+    fun `scripted abilities never come up at random and start by name`() {
+        val manager = MobAbilityManager(definition.abilities, kotlin.random.Random(3))
+        val turn = definition.abilities.single { it.id == "shade-turnsweep" }
+        assertTrue(turn.scripted)
+        var now = 0L
+        repeat(200) {
+            now += 10_000
+            val started = manager.tryStart(now, Pos(0.0, 64.0, 0.0), Pos(0.0, 64.0, 5.0))
+            assertTrue(started?.frame?.ability?.id != "shade-turnsweep")
+            manager.cancel()
+        }
+        val forced = assertNotNull(manager.tryStart(now + 10_000, Pos(0.0, 64.0, 0.0), Pos(0.0, 64.0, -5.0), only = "shade-turnsweep"))
+        assertEquals("shade-turnsweep", forced.frame.ability.id)
+    }
+
+    @Test
+    fun `the dive carries the wyrm onto a far player`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "ShadeDive"))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        val spot = arena.bossSpawn.add(0.0, 0.0, 17.0)
+        player.setInstance(arena.instance, spot).join()
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            var closest = Double.MAX_VALUE
+            repeat(120) {
+                now += 50; combat.tick(now); MinecraftServer.getSchedulerManager().processTick()
+                closest = minOf(closest, boss.position.distance(spot))
+            }
+            assertTrue(closest < 2.0, "the dive should land on the player: closest ${"%.1f".format(closest)} blocks")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
     fun `arena fight shows the model enrages once at half health and plays out its death`() {
         MinecraftServer.init(Auth.Offline())
         val arena = BossArenaFactory.create("shade", 1)
@@ -231,6 +275,66 @@ class ShadeWyrmBossTest {
             arena.dispose()
             assertFalse(arena.instance.isRegistered)
         }
+    }
+
+    /**
+     * `SHADE_FIGHT_DUMP=<file> ./gradlew :server-minestom:test --tests '*ShadeWyrmBossTest' --rerun` runs a scripted
+     * 40 s fight through the real encounter code and writes, per tick, where the wyrm is, where it looks, the clip on
+     * show and the shader displays, for scripts/boss_preview/fightclip.py. The player: in front, then running round it,
+     * far away, inside its reach, enrages it, inside its reach again, mid range.
+     */
+    @Test
+    fun `dump a scripted fight for the preview`() {
+        val path = System.getenv("SHADE_FIGHT_DUMP") ?: return
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "ShadeFight"))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        val c = arena.bossSpawn
+        player.setInstance(arena.instance, c.add(0.0, 0.0, -6.0)).join()
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        val lines = mutableListOf<String>()
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            for (tick in 0 until 800) {
+                val t = tick * .05
+                val b = boss.position
+                val facing = Math.toRadians((combat.modelFacing(boss.uuid) ?: 0f).toDouble())
+                val ahead = Vec(-kotlin.math.sin(facing), 0.0, kotlin.math.cos(facing))
+                val want = when {
+                    t < 6 -> c.add(0.0, 0.0, -6.0)
+                    t < 11 -> b.add(kotlin.math.cos(t * 2.1) * 4.5, 0.0, kotlin.math.sin(t * 2.1) * 4.5)   // run round it
+                    t < 18 -> c.add(0.0, 0.0, -17.0)                      // far away
+                    t < 22 -> b.add(ahead.mul(2.5))                       // inside its reach
+                    t < 27 -> c.add(0.0, 0.0, -8.0)
+                    t < 33 -> b.add(ahead.mul(2.5))
+                    else -> b.add(ahead.mul(6.5))
+                }
+                player.teleport(Pos(want.x(), c.y(), want.z())).join()
+                player.health = 20f
+                if (tick == 440) combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .55)
+                now += 50; combat.tick(now); boss.tick(now); MinecraftServer.getSchedulerManager().processTick()
+                val (clip, since) = combat.shownClip(boss.uuid) ?: ("idle" to now)
+                val shader = combat.shaderViews().joinToString(",") { v ->
+                    "{\"sprite\":\"${v.sprite}\",\"kind\":${v.kind},\"progress\":${v.progress},\"at\":[${v.at.x() - c.x()},${v.at.y() - c.y()},${v.at.z() - c.z()}]," +
+                        "\"scale\":[${v.scale.x()},${v.scale.y()},${v.scale.z()}],\"translation\":[${v.translation.x()},${v.translation.y()},${v.translation.z()}]," +
+                        "\"rotation\":[${v.rotation.joinToString(",")}],\"billboard\":${v.billboard}}"
+                }
+                val p = player.position
+                lines += "{\"t\":${"%.2f".format(t + .05)},\"boss\":[${boss.position.x() - c.x()},${boss.position.y() - c.y()},${boss.position.z() - c.z()}]," +
+                    "\"yaw\":${combat.modelFacing(boss.uuid) ?: 0f},\"clip\":\"$clip\",\"clipT\":${(now - since) / 1000.0}," +
+                    "\"player\":[${p.x() - c.x()},${p.z() - c.z()}],\"enraged\":${combat.isEnraged(boss.uuid)},\"shader\":[$shader]}"
+            }
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+        java.io.File(path).writeText(lines.joinToString("\n"))
     }
 
     private class MemoryConnection : PlayerConnection() {

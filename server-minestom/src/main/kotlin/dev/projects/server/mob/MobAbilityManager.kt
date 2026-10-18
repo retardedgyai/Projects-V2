@@ -144,6 +144,8 @@ data class MobAbility(
     val anchor: MobAbilityAnchor = MobAbilityAnchor.CASTER,
     val maximumHealthRatio: Double = 1.0,
     val damageType: dev.projects.server.coreloop.CoreDamageType = dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
+    /** Never picked at random; the encounter starts it by id when its situation comes up (a combo, a turn). */
+    val scripted: Boolean = false,
 ) {
     init {
         require(id.isNotBlank() && maximumStartRange > 0.0 && damage > 0.0)
@@ -190,14 +192,19 @@ class MobAbilityManager(
     private val readyAt = mutableMapOf<String, Long>()
     val isActive: Boolean get() = current != null
 
-    /** [plainOnly] (silence) offers only the first, plainest ability. */
-    fun tryStart(nowMillis: Long, origin: Pos, target: Point, healthRatio: Double = 1.0, plainOnly: Boolean = false): MobAbilityEvent.Started? {
+    /**
+     * [plainOnly] (silence) offers only the first, plainest ability. [only] starts that one ability if it is allowed at
+     * this health, cooldown and range ignored (the encounter chose the moment: a combo always follows through).
+     */
+    fun tryStart(nowMillis: Long, origin: Pos, target: Point, healthRatio: Double = 1.0, plainOnly: Boolean = false,
+                 only: String? = null): MobAbilityEvent.Started? {
         if (current != null || nowMillis < nextSelectionAt) return null
         if (abs(origin.y() - target.y()) > 2.2) return null
         val distance = horizontalLength(target.sub(origin))
         val available = (if (plainOnly) abilities.take(1) else abilities).filter {
-            distance in it.minimumStartRange..it.maximumStartRange && healthRatio <= it.maximumHealthRatio &&
-                nowMillis >= readyAt.getOrDefault(it.id, Long.MIN_VALUE)
+            if (only != null) it.id == only && healthRatio <= it.maximumHealthRatio
+            else !it.scripted && distance in it.minimumStartRange..it.maximumStartRange &&
+                healthRatio <= it.maximumHealthRatio && nowMillis >= readyAt.getOrDefault(it.id, Long.MIN_VALUE)
         }
         if (available.isEmpty()) return null
         val choices = available.filter { it.id != previousAbilityId }.ifEmpty { available }
