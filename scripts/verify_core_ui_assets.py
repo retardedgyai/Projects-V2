@@ -27,8 +27,12 @@ def verify():
     assert actual_overrides == set(overrides) | set(reskins) | additions, \
         "Only the replaced HUD sprites, the reskinned hotbar, the approved VFX atlas addition and the combat VFX core/item shader are permitted"
     assert json.loads((PACK / "assets/minecraft/atlases/items.json").read_text()) == {
-        "sources":[{"type":"minecraft:directory","source":"combat_vfx","prefix":"combat_vfx/"}]}
+        "sources":[{"type":"minecraft:directory","source":d,"prefix":f"{d}/"} for d in ["combat_vfx", "infusion", "infusion-energy", "infusion-radiance", "infusion-v3", "infusion-v5", "infusion-v6", "infusion-v7"]]}
     assert not any(".." in p or "\\" in p or p.startswith("/") for p in paths)
+    # 26.2 does not repeat a texture past UV 0..16; it reads the transparent atlas around it.
+    for path in (PACK / "assets/projects/models").glob("infusion*/*.json"):
+        for element in json.loads(path.read_text()).get("elements", []):
+            assert all(0 <= v <= 16 for f in element["faces"].values() for v in f.get("uv", [])), path
     for path, size in overrides.items():
         with Image.open(PACK / path) as sprite:
             assert sprite.size == size and sprite.convert("RGBA").getchannel("A").getbbox() is None
