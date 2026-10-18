@@ -3,11 +3,16 @@ package dev.projects.server.mob
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.entity.EntityCreature
 import net.minestom.server.entity.EntityType
+import net.minestom.server.entity.EquipmentSlot
 import net.minestom.server.entity.Player
 import net.minestom.server.instance.Instance
+import net.minestom.server.item.ItemStack
+import net.minestom.server.network.packet.server.play.EntityEquipmentPacket
 import net.worldseed.multipart.GenericModelImpl
 import net.worldseed.multipart.ModelEngine
 import net.worldseed.multipart.animations.AnimationHandlerImpl
+import net.worldseed.multipart.model_bones.BoneEntity
+import net.worldseed.multipart.model_bones.display_entity.RootBoneEntity
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -77,6 +82,17 @@ internal class BossModelView(
 ) {
     private class Model(private val id: String) : GenericModelImpl() {
         override fun getId(): String = "$id.bbmodel"
+        override fun generateRoot(): BoneEntity = Root(this)
+    }
+
+    /**
+     * WSEE 13.0.4 (built for 26.2) sends the root armor stand's equipment packet to every new viewer. On 26.3 Minestom
+     * returns null for an entity with no equipment, and the null packet throws in the connection's queue, so the
+     * model never shows. Send the empty equipment explicitly, as 26.2 did.
+     */
+    private class Root(model: GenericModelImpl) : RootBoneEntity(model) {
+        override fun getEquipmentsPacket(): EntityEquipmentPacket =
+            super.getEquipmentsPacket() ?: EntityEquipmentPacket(entityId, mapOf(EquipmentSlot.MAIN_HAND to ItemStack.AIR))
     }
 
     private val model = Model(modelId)

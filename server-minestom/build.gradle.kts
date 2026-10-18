@@ -18,7 +18,8 @@ repositories {
 
 dependencies {
     implementation(project(":web-ui-lab"))
-    // D12: Blockbench bosses are displayed and animated with WSEE (built against Minestom 2026.07.22-26.2).
+    // D12: Blockbench bosses are displayed and animated with WSEE (built against Minestom 2026.07.22-26.2; its
+    // Minestom references all still resolve on the 26.3 build, docs/mc-26-3.md).
     implementation("net.worldseed.multipart:WorldSeedEntityEngine:13.0.4")
     implementation("net.minestom:minestom:${property("minestom_version")}")
     testImplementation(kotlin("test"))

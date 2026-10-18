@@ -46,7 +46,7 @@ def build():
     base,gem,textures=geometry('dagger',first_entry)
     loaded={1:(base,gem,textures)}
     write_json(PACK/'pack.mcmeta',{'pack':{'description':'ProjectS dagger tiers / isolated review',
-        'min_format':[88,0],'max_format':[88,0]}})
+        'min_format':[97, 1],'max_format':[97, 1]}})
     for tier in JOBS:
         pixels,textures,entry,base,gem=model_data(tier)
         key=tier_key(tier); manifest['tiers'][str(tier)]=entry
