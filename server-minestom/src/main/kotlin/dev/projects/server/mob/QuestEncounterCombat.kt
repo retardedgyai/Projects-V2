@@ -955,6 +955,7 @@ class QuestEncounterCombat(
         mob.maneuver = null
         stopNavigation(mob)
         staggerBoss(maxOf(bossStaggerUntil, now + staggerMillis))
+        mob.view?.maneuver("flinch")                       // cuts the attack clip that was playing
         updateName(mob, label)
         sound(mob.entity.position, "minecraft:entity.ravager.stunned", 1.2f, 0.7f)
         particle(mob.entity.position.add(0.0, 2.5, 0.0), Particle.DUST.withColor(NamedTextColor.LIGHT_PURPLE).withScale(2.0f), 30)

@@ -401,11 +401,13 @@ class ShadeWyrmBossTest {
                     t < 22 -> b.add(ahead.mul(2.5))                       // inside its reach
                     t < 27 -> c.add(0.0, 0.0, -8.0)
                     t < 33 -> b.add(ahead.mul(2.5))
-                    else -> b.add(ahead.mul(6.5))
+                    t < 36.5 -> b.add(Vec(-kotlin.math.cos(facing), 0.0, -kotlin.math.sin(facing)).mul(4.5))   // its right side
+                    else -> b.add(Vec(kotlin.math.cos(facing), 0.0, kotlin.math.sin(facing)).mul(4.5))         // its left side
                 }
                 player.teleport(Pos(want.x(), c.y(), want.z())).join()
                 player.health = 20f
                 if (tick == 440) combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .55)
+                if (t >= 27.5 && tick % 10 == 0) combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .015)   // it fights back
                 now += 50; combat.tick(now); boss.tick(now); MinecraftServer.getSchedulerManager().processTick()
                 val (clip, since) = combat.shownClip(boss.uuid) ?: ("idle" to now)
                 val shader = combat.shaderViews().joinToString(",") { v ->
@@ -416,7 +418,8 @@ class ShadeWyrmBossTest {
                 val p = player.position
                 lines += "{\"t\":${"%.2f".format(t + .05)},\"boss\":[${boss.position.x() - c.x()},${boss.position.y() - c.y()},${boss.position.z() - c.z()}]," +
                     "\"yaw\":${combat.modelFacing(boss.uuid) ?: 0f},\"clip\":\"$clip\",\"clipT\":${(now - since) / 1000.0}," +
-                    "\"player\":[${p.x() - c.x()},${p.z() - c.z()}],\"enraged\":${combat.isEnraged(boss.uuid)},\"shader\":[$shader]}"
+                    "\"player\":[${p.x() - c.x()},${p.z() - c.z()}],\"enraged\":${combat.isEnraged(boss.uuid)}," +
+                    "\"broken\":[${combat.partsBroken(boss.uuid).joinToString(",")}],\"erosion\":${combat.erosionOf(player.uuid)},\"shader\":[$shader]}"
             }
         } finally {
             combat.dispose(); player.remove(); arena.dispose()

@@ -613,6 +613,25 @@ def dive_pose(sk, rest_feet, theta, t, enraged):
     return p, None
 
 
+def flinch_pose(sk, rest_feet, t, enraged=False, theta=0.0):
+    """怯み (a part broke), 1.4 s: snaps back and up, shakes its head, the fans jerk out, then gathers itself."""
+    p = {}
+    if enraged:
+        enraged_stance(sk, p, theta)
+    snap = K(t, [(0, 0), (.1, 1), (.5, .7), (1.4, 0)])
+    shake = math.sin(t * 2 * math.pi * 6) * smooth(t, .1, .2) * (1 - smooth(t, .6, .9))
+    body(sk, p, (-10 * snap, 4 * shake, 3 * shake), (0, 2 * snap, -3 * snap))
+    solve_legs(sk, p, dict(rest_feet))
+    add(p, "neck", (-24 * snap, 14 * shake, 0)); add(p, "skull", (-18 * snap, 10 * shake, 6 * shake))
+    add(p, "jaw", (30 * K(t, [(0, 0), (.1, 1), (.6, .6), (1.1, 0)]), 0, 0))
+    arm = "cloak" if enraged else "wing"
+    for side, sg in (("l", 1), ("r", -1)):
+        add(p, f"{arm}_{side}", (0, 0, 16 * bump(t, 0, .12, .7) * sg))
+    for k, b in enumerate(TAIL):
+        add(p, b, (-10 * snap, 8 * shake * (1 + .3 * k), 0))
+    return p
+
+
 SEARCH = dict(stride=18, duty=.72, cycle=2.0)
 
 
@@ -817,6 +836,8 @@ def main(path=MODEL, carpal_drop=12.0):
             new[f"dash_{side}{suffix}"] = baked(sk, f"dash_{side}{suffix}", .9,
                                                 lambda t, sg=sign, e=enraged: dash_side_pose(sk, rest_feet, t, sg, e, theta), False)
     new["search"] = baked(sk, "search", SEARCH["cycle"], lambda t: search_pose(sk, rest_feet, t / SEARCH["cycle"]), True)
+    for suffix, enraged in (("", False), ("_enraged", True)):
+        new[f"flinch{suffix}"] = baked(sk, f"flinch{suffix}", 1.4, lambda t, e=enraged: flinch_pose(sk, rest_feet, t, e, theta), False)
     for suffix, enraged in (("", False), ("_enraged", True)):
         new[f"hop_back{suffix}"] = baked(sk, f"hop_back{suffix}", 1.1, lambda t, e=enraged: hop_back_pose(sk, rest_feet, t, e, theta), False)
     n = int(ENRAGE_SECONDS * 20)

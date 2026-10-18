@@ -20,7 +20,8 @@ import shaderclip as SH
 ROOT = Path(__file__).resolve().parents[2]
 JP = {"idle": "待機", "walk": "歩き", "strafe": "横移動", "dash": "回り込み", "hop_back": "跳び退き", "search": "探りの歩み",
       "enrage": "怒り", "shade-sweep": "翼脚薙ぎ", "shade-pounce": "飛びかかり", "shade-dust": "鱗粉炸裂", "shade-pulse": "触角の共鳴",
-      "shade-breath": "翳の吐息", "shade-storm": "鱗粉嵐", "shade-turnsweep": "振り向き薙ぎ", "shade-dive": "飛び上がり急降下", "death": "死亡"}
+      "shade-breath": "翳の吐息", "shade-storm": "鱗粉嵐", "shade-turnsweep": "振り向き薙ぎ", "shade-dive": "飛び上がり急降下", "death": "死亡",
+      "flinch": "怯み"}
 
 
 def label(clip):
@@ -63,6 +64,9 @@ def main(dump, t0, t1, out, fps=10):
             hidden = ()
         else:
             hidden = ("horn_l", "horn_r", "cloak_l", "cloak_r")
+        horns, fan_right, fan_left = (r.get("broken") or [False, False, False])
+        hidden += (("horn_l_tip", "horn_r_tip") if horns else ()) + (("cloak_l_tatters",) if fan_right else ()) + \
+            (("cloak_r_tatters",) if fan_left else ())
         px, pz = r["player"]
         center = (carrier[0], 0, carrier[2])           # on the wyrm's feet (the ground shadow is drawn under the centre)
         panel, zb = render(sc, pose, hidden=hidden, az=az, el=el, size=(W, H), scale=zoom, center=center, cy=.72,
@@ -99,7 +103,14 @@ def main(dump, t0, t1, out, fps=10):
         wx, wz = to_m(bx, bz); f = math.radians(yaw); fx, fz = math.sin(f), math.cos(f)
         md.polygon([(wx + fx * 7, wz + fz * 7), (wx - fx * 5 + fz * 4, wz - fz * 5 - fx * 4), (wx - fx * 5 - fz * 4, wz - fz * 5 + fx * 4)], fill=(180, 140, 240))
         img.paste(m, (W - 138, 8))
-        hdr = f"{r['t']:5.1f}s  {label(r['clip'])}" + ("（怒り後）" if r["enraged"] else "")
+        er = r.get("erosion", 0.0)
+        if er > 0:                                    # the erosion boss bar (purple, 10 notches)
+            bx, by = W // 2 - 100, 40
+            d.rectangle((bx - 4, by - 18, bx + 204, by + 10), fill=(16, 12, 22))
+            text(img, (bx + 80, by - 18), "侵食", SMALL, (210, 170, 250))
+            d.rectangle((bx, by, bx + 200, by + 5), fill=(60, 48, 72)); d.rectangle((bx, by, bx + int(200 * er / 100), by + 5), fill=(196, 120, 240))
+        broke = [n for n, b in zip(("角が折れた", "右の扇が裂けた", "左の扇が裂けた"), (horns, fan_right, fan_left)) if b]
+        hdr = f"{r['t']:5.1f}s  {label(r['clip'])}" + ("（怒り後）" if r["enraged"] else "") + (f"  [{'・'.join(broke)}]" if broke else "")
         text(img, (10, 8), hdr, FONT, (236, 228, 244))
         frames.append(img.convert("P", palette=Image.ADAPTIVE, colors=128))
     frames[0].save(out, save_all=True, append_images=frames[1:], duration=round(1000 / fps), loop=0, optimize=True)
