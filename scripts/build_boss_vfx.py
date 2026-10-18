@@ -103,6 +103,14 @@ def build(pack=PACK):
             path = pack / f"assets/projects/{sub}/boss_vfx/{name}.json"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
+    # The arena glow (26.3 post effect, turned on per player by the server): our own namespace, no vanilla override.
+    post = pack / "assets/projects/shaders/post"
+    post.mkdir(parents=True, exist_ok=True)
+    for f in ("shade_glow_extract.fsh", "shade_glow_composite.fsh"):
+        shutil.copyfile(SHADERS / "post" / f, post / f)
+    effect = pack / "assets/projects/post_effect/shade_glow.json"
+    effect.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(SHADERS / "post" / "shade_glow.json", effect)
     core = pack / "assets/minecraft/shaders/core"
     core.mkdir(parents=True, exist_ok=True)
     for f in SHADER_FILES:

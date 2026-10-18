@@ -164,7 +164,10 @@ class QuestEncounterCombat(
             !(shaded && dev.projects.server.coreloop.CoreCombatPresentation.packed(it)) }.forEach { it.sendPacket(packet) }
     }
     private val shaderFx = ShadeWyrmShaderFx(instance)
-    private val gimmicks = ShadeWyrmGimmicks(tier, shaderFx)
+    private val lights = ShadeWyrmLights(instance)
+    private val gimmicks = ShadeWyrmGimmicks(tier, shaderFx, lights = lights)
+    /** Players who have the boss glow post effect on (26.3 /posteffect, assets/projects/post_effect/shade_glow.json). */
+    private val glowing = mutableSetOf<Player>()
     @Volatile private var disposed = false
     private var bossSealed = false
     private var bossGateFraction = 0.0
@@ -191,6 +194,7 @@ class QuestEncounterCombat(
     internal fun shownClip(targetId: UUID): Pair<String, Long>? = mobs[targetId]?.view?.let { it.shownClip to it.shownSince }
     internal fun modelFacing(targetId: UUID): Float? = mobs[targetId]?.let { if (it.maneuver != null) it.faceYaw else it.entity.position.yaw() }
     internal fun shaderViews() = shaderFx.views()
+    internal fun lightsOn() = lights.snapshot()
 
     init {
         require(tier in 1..4)
@@ -471,6 +475,8 @@ class QuestEncounterCombat(
         telegraphs.tick(nowMillis)
         vfx.tick()
         shaderFx.tick()
+        lights.tick(nowMillis)
+        tickGlow()
         if (mobs.values.any { it.view != null }) gimmicks.tick(nowMillis, instance.players.filter { canTarget(it) }) { p, amount, type ->
             if (typedDamagePlayer != null) typedDamagePlayer.invoke(p, amount, type) else damagePlayer(p, amount)
         }
@@ -484,6 +490,8 @@ class QuestEncounterCombat(
             if (!mob.life.isAlive || !isSpawned(mob)) continue
             tickMob(mob, players, nowMillis)
             mob.model?.tick(mob.entity.position, nowMillis, mob.life.phase == QuestMobPhase.ATTACKING, mob.life.health / mob.life.maximumHealth)
+            if (mob.view != null) lights.hold("horns-${mob.entity.uuid}",
+                if (mob.enraged && !mob.hornsBroken && nowMillis >= mob.enrageHoldUntil - 2500) mob.view?.point("skull", ShadeWyrmVfx.CROWN) else null, 12)
             mob.view?.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, nowMillis,
                 searching = mob.searching && mob.maneuver == null && !mob.abilities.isActive)
             if (actionsStoppedForReturn || disposed) return
@@ -515,6 +523,9 @@ class QuestEncounterCombat(
         telegraphs.dispose()
         vfx.cancelAll()
         gimmicks.dispose()
+        lights.dispose()
+        glowing.forEach { it.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList())) }
+        glowing.clear()
         shaderFx.dispose()
         mobs.values.forEach { mob ->
             mob.abilities.cancel()
@@ -895,6 +906,34 @@ class QuestEncounterCombat(
         return true
     }
 
+    /** The strike's own violet light on the floor and the wyrm (see [ShadeWyrmLights]). */
+    private fun lightUp(frame: MobAbilityFrame) {
+        val o = frame.origin
+        val f = normalizeHorizontal(frame.facing)
+        when (val shape = frame.ability.shape) {
+            is MobAttackShape.Ring -> {
+                lights.flash(o, 13, 700)
+                val r = if (shape.innerRadius > 0) (shape.innerRadius + shape.radius) / 2 else shape.radius * .6
+                for (k in 0 until 4) { val a = k * Math.PI / 2 + .4; lights.flash(o.add(kotlin.math.cos(a) * r, 0.0, kotlin.math.sin(a) * r), 11, 700) }
+            }
+            is MobAttackShape.Slam -> { var d = 2.0; while (d <= shape.length) { lights.flash(o.add(f.mul(d)), 12, 900); d += 4.0 } }
+            is MobAttackShape.Sweep -> for (k in -1..1) {
+                val a = Math.toRadians(shape.halfAngleDegrees * .6 * k)
+                lights.flash(o.add(f.rotateAroundY(a).mul(shape.radius * .7)), 12, 500)
+            }
+            else -> Unit
+        }
+    }
+
+    /** The glow post effect is on for exactly the players in an arena whose model boss is alive. */
+    private fun tickGlow() {
+        val boss = mobs.values.any { it.view != null && it.life.isAlive && it.definition.model == "shade_wyrm" }
+        val wanted = if (boss) instance.players.toSet() else emptySet()
+        for (p in wanted - glowing) p.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(listOf(GLOW)))
+        for (p in glowing - wanted) p.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList()))
+        glowing.clear(); glowing += wanted
+    }
+
     /** With its horns broken it aims badly for a while: its target point swings up to 3 blocks to either side. */
     private fun aimAt(mob: Mob, target: Player, now: Long): Pos {
         if (now >= mob.sloppyUntil) return target.position
@@ -1055,7 +1094,7 @@ class QuestEncounterCombat(
                     }
                     if (disposed || actionsStoppedForReturn) return false
                 }
-                if (mob.view != null) gimmicks.abilityHit(event.frame, lastTickAt)
+                if (mob.view != null) { gimmicks.abilityHit(event.frame, lastTickAt); lightUp(event.frame) }
             }
             is MobAbilityEvent.Finished -> { clearWarning(mob.entity.uuid); updateName(mob) }
         }
@@ -1122,6 +1161,7 @@ class QuestEncounterCombat(
     companion object {
         /** A strafe walks at this share of the walking speed, the pace its clip is timed to (1.6 of 2.6 blocks/s). */
         const val STRAFE_SPEED = .62
+        val GLOW: net.kyori.adventure.key.Key = net.kyori.adventure.key.Key.key("projects", "shade_glow")
         /** Gimmicks: horn break (12 % of max health from near the head), fan tear (10 % per side). */
         const val HEAD_REACH = 6.0
         const val HORN_BREAK = .12

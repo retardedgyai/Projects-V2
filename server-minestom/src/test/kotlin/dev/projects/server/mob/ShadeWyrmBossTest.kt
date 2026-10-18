@@ -364,6 +364,52 @@ class ShadeWyrmBossTest {
         }
     }
 
+    @Test
+    fun `the shade nest tints block light violet and pools light the floor until they burst`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val type = requireNotNull(MinecraftServer.getDimensionTypeRegistry().get(arena.instance.dimensionType))
+        assertEquals(net.kyori.adventure.text.format.TextColor.color(BossArenaFactory.SHADE_LIGHT),
+            type.attributes().entries()[net.minestom.server.world.attribute.EnvironmentAttribute.BLOCK_LIGHT_TINT]?.argument())
+        val lights = ShadeWyrmLights(arena.instance)
+        val gimmicks = ShadeWyrmGimmicks(1, ShadeWyrmShaderFx(arena.instance), kotlin.random.Random(2), lights)
+        val dust = definition.abilities.single { it.id == "shade-dust" }
+        val pulse = definition.abilities.single { it.id == "shade-pulse" }
+        val c = arena.bossSpawn
+        fun lit() = lights.snapshot().keys.count { arena.instance.getBlock(it).compare(net.minestom.server.instance.block.Block.LIGHT) }
+        try {
+            gimmicks.abilityHit(MobAbilityFrame(dust, c, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L), 1000L)
+            assertTrue(lit() in 1..4)                                         // two pools may share a block
+            gimmicks.abilityHit(MobAbilityFrame(pulse, c, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L), 2000L)
+            val burst = 2000L + ShadeWyrmGimmicks.BURST_DELAY_MILLIS
+            lights.tick(burst); gimmicks.tick(burst, emptyList()) { _, _, _ -> }
+            assertTrue(lights.snapshot().values.all { it == 14 })             // the burst flashes brighter
+            lights.tick(burst + 600)
+            assertEquals(0, lit())
+            assertTrue(lights.snapshot().isEmpty())
+        } finally {
+            gimmicks.dispose(); lights.dispose(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `players in the arena get the glow post effect while the wyrm lives`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, -20.0), "Glow")
+        val connection = player.playerConnection as MemoryConnection
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            combat.tick(1_000L); combat.tick(1_050L)
+            assertEquals(listOf(listOf(QuestEncounterCombat.GLOW)), connection.postEffects)
+            combat.dispose()
+            assertEquals(listOf(listOf(QuestEncounterCombat.GLOW), emptyList()), connection.postEffects)
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
     /**
      * `SHADE_FIGHT_DUMP=<file> ./gradlew :server-minestom:test --tests '*ShadeWyrmBossTest' --rerun` runs a scripted
      * 40 s fight through the real encounter code and writes, per tick, where the wyrm is, where it looks, the clip on
@@ -419,7 +465,7 @@ class ShadeWyrmBossTest {
                 lines += "{\"t\":${"%.2f".format(t + .05)},\"boss\":[${boss.position.x() - c.x()},${boss.position.y() - c.y()},${boss.position.z() - c.z()}]," +
                     "\"yaw\":${combat.modelFacing(boss.uuid) ?: 0f},\"clip\":\"$clip\",\"clipT\":${(now - since) / 1000.0}," +
                     "\"player\":[${p.x() - c.x()},${p.z() - c.z()}],\"enraged\":${combat.isEnraged(boss.uuid)}," +
-                    "\"broken\":[${combat.partsBroken(boss.uuid).joinToString(",")}],\"erosion\":${combat.erosionOf(player.uuid)},\"shader\":[$shader]}"
+                    "\"broken\":[${combat.partsBroken(boss.uuid).joinToString(",")}],\"lights\":[${combat.lightsOn().entries.joinToString(",") { (b, l) -> "[${b.x() - c.blockX()},${b.y() - c.blockY()},${b.z() - c.blockZ()},$l]" }}],\"erosion\":${combat.erosionOf(player.uuid)},\"shader\":[$shader]}"
             }
         } finally {
             combat.dispose(); player.remove(); arena.dispose()
@@ -429,7 +475,9 @@ class ShadeWyrmBossTest {
 
     private class MemoryConnection : PlayerConnection() {
         var passengerPackets = 0
+        val postEffects = mutableListOf<List<net.kyori.adventure.key.Key>>()
         override fun sendPacket(packet: SendablePacket) {
+            if (packet is net.minestom.server.network.packet.server.common.PostEffectsPacket) postEffects += packet.postEffects()
             if (packet is net.minestom.server.network.packet.server.play.SetPassengersPacket) passengerPackets++
         }
         override fun getRemoteAddress(): SocketAddress = InetSocketAddress("127.0.0.1", 0)

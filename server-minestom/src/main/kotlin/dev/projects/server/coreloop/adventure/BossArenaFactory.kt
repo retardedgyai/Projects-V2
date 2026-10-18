@@ -7,6 +7,11 @@ import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
+import net.minestom.server.registry.RegistryKey
+import net.minestom.server.world.DimensionType
+import net.minestom.server.world.attribute.EnvironmentAttribute
+import net.kyori.adventure.key.Key
+import net.kyori.adventure.text.format.TextColor
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
@@ -33,6 +38,30 @@ data class BossArena(
 
 /** Three concrete server-built arenas; no imported world or landscape mutation. */
 object BossArenaFactory {
+    /** 翳の巣 lives in its own dimension type (26.3 environment attributes): block light tinted violet, a violet night. */
+    val SHADE_NEST: Key = Key.key("projects", "shade_nest")
+
+    /**
+     * Registers the arena dimensions. Dimension types reach a client only when it joins, so the server calls this
+     * once at start (CoreLoopServer); create() calls it too for tests and tools that build an arena directly.
+     */
+    @Synchronized
+    fun registerDimensions(): RegistryKey<DimensionType> {
+        val registry = MinecraftServer.getDimensionTypeRegistry()
+        registry.getKey(SHADE_NEST)?.let { return it }
+        val base = requireNotNull(registry.get(DimensionType.OVERWORLD))
+        return registry.register(SHADE_NEST, DimensionType.builder(base)
+            .setAttribute(EnvironmentAttribute.BLOCK_LIGHT_TINT, TextColor.color(SHADE_LIGHT))
+            .setAttribute(EnvironmentAttribute.AMBIENT_LIGHT_COLOR, TextColor.color(0x1c1128))
+            .setAttribute(EnvironmentAttribute.FOG_COLOR, TextColor.color(0x140b20))
+            .setAttribute(EnvironmentAttribute.SKY_COLOR, TextColor.color(0x0b0612))
+            .setAttribute(EnvironmentAttribute.SKY_LIGHT_COLOR, TextColor.color(0x3a2660))
+            .build())
+    }
+
+    /** The violet every block light in 翳の巣 takes (vanilla mixes it toward white near light level 0 and 15). */
+    const val SHADE_LIGHT = 0xb34cff
+
     fun create(bossId: String, tier: Int): BossArena {
         require(tier in 1..4)
         val archetype = when (bossId) {
@@ -43,7 +72,8 @@ object BossArenaFactory {
             "shade" -> QuestMobArchetype.SHADE_WYRM
             else -> error("Unknown trial boss: $bossId")
         }
-        val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
+        val instance = if (bossId == "shade") MinecraftServer.getInstanceManager().createInstanceContainer(registerDimensions())
+            else MinecraftServer.getInstanceManager().createInstanceContainer()
         instance.setChunkSupplier(::LightingChunk)
         instance.time = if (bossId == "trial" || bossId == "shade") 18_000L else 6_000L
         instance.defaultClock()?.pause()
@@ -59,12 +89,13 @@ object BossArenaFactory {
                 val floor = when (bossId) {
                     "rift" -> if (abs(dx) < 2 || abs(dz) < 2) Block.POLISHED_BLACKSTONE else Block.RED_NETHER_BRICKS
                     "ritual" -> if (distance in 4.5..5.5 || distance in 15.5..16.5) Block.BLUE_ICE else Block.SMOOTH_QUARTZ
-                    // The wyrm's nest: dust-stained blackstone, sculk drifts, a sparse grid of dim lights.
+                    // The wyrm's nest: pale tuff (it takes the violet light), sculk drifts, amethyst stains and a sparse grid
+                    // of crying obsidian (light 10) so the violet light of its effects is what lights the floor.
                     "shade" -> when {
-                        Math.floorMod(x, 8) == 0 && Math.floorMod(z, 8) == 0 -> Block.PEARLESCENT_FROGLIGHT
+                        Math.floorMod(x, 8) == 0 && Math.floorMod(z, 8) == 0 -> Block.CRYING_OBSIDIAN
                         distance < 3.5 || Math.floorMod(x * 31 + z * 17, 11) == 0 -> Block.SCULK
-                        Math.floorMod(x * 7 + z * 13, 9) == 0 -> Block.CRYING_OBSIDIAN
-                        else -> Block.POLISHED_BLACKSTONE
+                        Math.floorMod(x * 7 + z * 13, 9) == 0 -> Block.AMETHYST_BLOCK
+                        else -> Block.POLISHED_TUFF
                     }
                     else -> if ((x + z) % 7 == 0) Block.SEA_LANTERN else Block.PRISMARINE_BRICKS
                 }

@@ -2,11 +2,13 @@
 
     SHADE_FIGHT_DUMP=/tmp/fight.jsonl ./gradlew :server-minestom:test --tests '*ShadeWyrmBossTest' --rerun
     python scripts/build_boss_vfx.py    # the shader data maps, if the pack was not built
-    python scripts/boss_preview/fightclip.py /tmp/fight.jsonl 0 11 out.gif
+    python scripts/boss_preview/fightclip.py /tmp/fight.jsonl 0 11 out.gif [flat|before|violet|glow]
 
 Each frame: the wyrm where the server had it, turned the way the model faced, posed from the clip on show at that
 time, the shader displays the server showed (item.fsh's maths, see shaderclip.py), the player as a green post, and
-a small map of the arena. Blends between clips are not drawn.
+a small map of the arena. Blends between clips are not drawn. The last argument picks the lighting: flat (none),
+before (the overworld's warm block light), violet (翳の巣's tint and the server's light blocks), glow (violet plus the
+shade_glow post effect); see lightfx.py.
 """
 import json
 import math
@@ -16,6 +18,7 @@ from pathlib import Path
 from rbb import *
 from vfxclip import sample
 import shaderclip as SH
+import lightfx as LF
 
 ROOT = Path(__file__).resolve().parents[2]
 JP = {"idle": "待機", "walk": "歩き", "strafe": "横移動", "dash": "回り込み", "hop_back": "跳び退き", "search": "探りの歩み",
@@ -32,7 +35,7 @@ def label(clip):
     return base
 
 
-def main(dump, t0, t1, out, fps=10):
+def main(dump, t0, t1, out, mode="flat", fps=10):
     model = ROOT / "assets/bosses/shade_wyrm.bbmodel"
     sc = Scene(model)
     A = {a["name"]: a for a in json.loads(model.read_text(encoding="utf-8"))["animations"]}
@@ -74,8 +77,10 @@ def main(dump, t0, t1, out, fps=10):
         arr = np.asarray(panel).astype(np.float32).copy()
         ox = W * .5 - np.array(center) @ right * zoom; oy = H * .72 + np.array(center) @ up * zoom
         proj = lambda p: (int(ox + p @ right * zoom), int(oy - p @ up * zoom))
+        if mode != "flat":
+            LF.light(arr, zb, r.get("lights", []), "before" if mode == "before" else "violet", cam, right, up, ox, oy, zoom)
         # floor dots every 2 blocks and the arena wall (radius 22)
-        for gx in range(-22, 23, 2):
+        for gx in (range(-22, 23, 2) if mode == "flat" else ()):
             for gz in range(-22, 23, 2):
                 if gx * gx + gz * gz > 22 * 22:
                     continue
@@ -90,6 +95,8 @@ def main(dump, t0, t1, out, fps=10):
         live = [dict(v) for v in r["shader"]]
         if live:
             SH.draw(arr, zb, live, 100 + r["t"], cam, right, up, ox, oy, zoom, tex)
+        if mode == "glow":
+            LF.bloom(arr)
         img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
         d = ImageDraw.Draw(img)
         p0 = proj(np.array([-px * 16, 0, pz * 16])); p1 = proj(np.array([-px * 16, 28, pz * 16]))
@@ -118,4 +125,4 @@ def main(dump, t0, t1, out, fps=10):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), sys.argv[4])
+    main(sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), sys.argv[4], *sys.argv[5:6])

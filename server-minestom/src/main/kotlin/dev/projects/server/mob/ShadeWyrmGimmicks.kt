@@ -23,7 +23,8 @@ import kotlin.random.Random
  * - Pools: the dust burst leaves 4 inside its circle, the breath 3 along its band (radius [POOL_RADIUS], [POOL_MILLIS],
  *   at most [MAX_POOLS]). The antennae pulse makes them all burst [BURST_DELAY_MILLIS] after its hit.
  */
-internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyrmShaderFx, private val random: Random = Random.Default) {
+internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyrmShaderFx, private val random: Random = Random.Default,
+                                  private val lights: ShadeWyrmLights? = null) {
     private class Erosion(var value: Double = 0.0, var lastGainAt: Long = 0L) {
         val bar: BossBar = BossBar.bossBar(Component.text("侵食", NamedTextColor.LIGHT_PURPLE), 0f, BossBar.Color.PURPLE, BossBar.Overlay.NOTCHED_10)
         var shown = false
@@ -71,11 +72,12 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
     }
 
     fun tick(now: Long, players: List<Player>, damage: (Player, Double, CoreDamageType) -> Unit) {
-        pools.removeAll { pool -> (now >= pool.until).also { if (it) fx.endTag(pool.tag) } }
+        pools.removeAll { pool -> (now >= pool.until).also { if (it) { fx.endTag(pool.tag); lights?.hold(pool.tag, null, 0) } } }
         if (burstAt != 0L && now >= burstAt) {
             burstAt = 0L
             for (pool in pools) {
                 fx.poolBurst(pool.at, pool.tag)
+                lights?.hold(pool.tag, null, 0); lights?.flash(pool.at, 14, 600)
                 for (p in players) if (flat(p.position, pool.at) <= BURST_RADIUS) damage(p, BURST_DAMAGE * factor, CoreDamageType.MAGICAL)
             }
             pools.clear()
@@ -91,6 +93,7 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
                 damage(p, ERUPT_DAMAGE * factor, CoreDamageType.MAGICAL)
                 p.addEffect(Potion(PotionEffect.SLOWNESS, ERUPT_SLOW_LEVEL, (ERUPT_SLOW_MILLIS / 50).toInt()))
                 fx.erupt(p.position)
+                lights?.flash(p.position, 12, 600)
             } else if (now - e.lastGainAt > DECAY_AFTER_MILLIS) {
                 e.value = (e.value - DECAY_PER_SECOND / 20.0).coerceAtLeast(0.0)
             }
@@ -102,7 +105,7 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
 
     fun dispose() {
         for ((id, e) in erosion) if (e.shown) viewers[id]?.hideBossBar(e.bar)
-        erosion.clear(); pools.forEach { fx.endTag(it.tag) }; pools.clear()
+        erosion.clear(); pools.forEach { fx.endTag(it.tag); lights?.hold(it.tag, null, 0) }; pools.clear()
     }
 
     private fun gain(player: Player, amount: Double, now: Long) {
@@ -113,10 +116,11 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
     }
 
     private fun addPool(at: Pos, now: Long) {
-        if (pools.size >= MAX_POOLS) fx.endTag(pools.removeAt(0).tag)
+        if (pools.size >= MAX_POOLS) pools.removeAt(0).let { fx.endTag(it.tag); lights?.hold(it.tag, null, 0) }
         val tag = "pool-${serial++}"
         pools += Pool(at, now + POOL_MILLIS, tag)
         fx.pool(at, tag, (POOL_MILLIS / 50).toInt())
+        lights?.hold(tag, at, 10)
     }
 
     private fun flat(a: Pos, b: Pos): Double = sqrt((a.x() - b.x()) * (a.x() - b.x()) + (a.z() - b.z()) * (a.z() - b.z()))
