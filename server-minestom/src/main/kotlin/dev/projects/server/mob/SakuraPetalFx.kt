@@ -279,9 +279,19 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
             }
             "sakura-barge" -> {
                 if (t in .1..(hit - .05)) repeat(rate("load", 40.0)) { add(shell(), Vec(r(-1.0, 1.0), r(1.5, 3.5), r(-1.0, 1.0)), .8) }
-                if (once("a:barge", strike)) repeat(count(130)) {               // the flank slams every petal loose ahead
-                    val a = Math.toRadians(r(-60.0, 60.0))
-                    add(shell(), f.dir(sin(a), r(.05, .45), cos(a)).mul(r(12.0, 22.0)), r(.9, 1.4), 2.0)
+                if (once("a:barge", strike)) {
+                    // the petals burst off the flank it slams in with (whichever side leads), skimming low and ahead,
+                    // not off the high back and tail (they sailed up over the target's head)
+                    val flank = listOf(bone("chest", Vec(16.0, 34.0, 4.0)), bone("chest", Vec(-16.0, 34.0, 4.0)))
+                        .maxBy { (it.x() - f.at.x()) * f.forward.x() + (it.z() - f.at.z()) * f.forward.z() }
+                    repeat(count(90)) {
+                        val a = Math.toRadians(r(-45.0, 45.0))
+                        add(flank.add(randomDir().mul(.5)), f.dir(sin(a), r(-.1, .15), cos(a)).mul(r(12.0, 20.0)), r(.9, 1.3), 2.0)
+                    }
+                    repeat(count(50)) {                                         // and a spray along the ground where it hits
+                        val a = Math.toRadians(r(-70.0, 70.0))
+                        add(Vec(flank.x(), f.at.y() + .2, flank.z()), f.dir(sin(a), r(.1, .35), cos(a)).mul(r(8.0, 14.0)), r(.7, 1.1), 2.2)
+                    }
                 }
             }
             "sakura-hopswipe" -> {

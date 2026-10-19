@@ -135,10 +135,14 @@ class Fx:
             if .1 <= t <= hit - .05:
                 for _ in range(self.rate("load", 40)):
                     self.add(self.shell_point(sc, pose), np.array([r.uniform(-16, 16), r.uniform(24, 56), r.uniform(-16, 16)]), .8)
-            if self.once("barge", t, hit):
-                for _ in range(130):
-                    a = math.radians(r.uniform(-60, 60))
-                    self.add(self.shell_point(sc, pose), np.array([math.sin(a), r.uniform(.05, .45), math.cos(a)]) * r.uniform(192, 352), r.uniform(.9, 1.4), drag=2.0)
+            if self.once("barge", t, hit):                         # off the leading flank, low and ahead
+                flank = max((sc.point("chest", (16, 34, 4), pose), sc.point("chest", (-16, 34, 4), pose)), key=lambda q: q[2])
+                for _ in range(90):
+                    a = math.radians(r.uniform(-45, 45))
+                    self.add(flank + rand_dir(r) * 8, np.array([math.sin(a), r.uniform(-.1, .15), math.cos(a)]) * r.uniform(192, 320), r.uniform(.9, 1.3), drag=2.0)
+                for _ in range(50):
+                    a = math.radians(r.uniform(-70, 70))
+                    self.add(np.array([flank[0], 3, flank[2]]), np.array([math.sin(a), r.uniform(.1, .35), math.cos(a)]) * r.uniform(128, 224), r.uniform(.7, 1.1), drag=2.2)
         elif base == "sakura-hopswipe":
             if .2 <= t <= hit - .05:
                 for _ in range(self.rate("hop", 60)):
