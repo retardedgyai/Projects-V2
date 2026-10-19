@@ -35,7 +35,7 @@ class SakuraFangBossTest {
     fun `every ability has a once clip timed to its telegraph and recovery`() {
         val clips = animations()
         assertEquals("sakura_fang", definition.model)
-        assertEquals(9, definition.abilities.size)
+        assertEquals(12, definition.abilities.size)
         for (ability in definition.abilities) {
             val clip = assertNotNull(clips.getAsJsonObject(ability.id), "missing clip ${ability.id}")
             assertFalse(clip["loop"].asBoolean, ability.id)
@@ -135,7 +135,9 @@ class SakuraFangBossTest {
             val fx = SakuraStrikeFx(instance)
             val id = ability?.id ?: "enrage"
             val hitTick = if (ability == null) 50 else (ability.telegraphMillis / 50).toInt()
-            val frame = ability?.let { MobAbilityFrame(it, net.minestom.server.coordinate.Pos.ZERO, net.minestom.server.coordinate.Vec(0.0, 0.0, 1.0),
+            // a target-anchored ability lands where the player stands, 7 blocks ahead here
+            val origin = if (ability?.anchor == MobAbilityAnchor.TARGET) net.minestom.server.coordinate.Pos(0.0, 0.0, 7.0) else net.minestom.server.coordinate.Pos.ZERO
+            val frame = ability?.let { MobAbilityFrame(it, origin, net.minestom.server.coordinate.Vec(0.0, 0.0, 1.0),
                 MobAbilityPhase.LOCKED, 0L, net.minestom.server.coordinate.Pos.ZERO) }
             if (frame != null) fx.windup(id, frame) { _, _ -> null }
             repeat(hitTick + 40) { tick ->

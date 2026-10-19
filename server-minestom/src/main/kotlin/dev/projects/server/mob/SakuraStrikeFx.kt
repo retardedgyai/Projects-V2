@@ -45,6 +45,15 @@ internal class SakuraStrikeFx(instance: Instance) {
                         slide = dir.mul(shape.radius).add(0.0, 1.2, 0.0), moveTicks = ticks - ticks / 3) { .2 + .25 * it }
                 }
             }
+            "sakura-rain" -> if (shape is MobAttackShape.Ring) {
+                // A crest of light opens under the mark and slowly brightens: that is where the blossoms will fall.
+                fx.add("sakura_crest", 2, o.add(0.0, .14, 0.0), 0, ticks, Vec(shape.radius * 1.2, 1.0, shape.radius * 1.2), IDENTITY,
+                    grow = Vec(shape.radius * 2.0, 1.0, shape.radius * 2.0), moveTicks = ticks / 2) { .05 + .35 * it * it }
+                fx.add("sakura_ring", 2, o.add(0.0, .1, 0.0), 0, ticks, Vec(shape.radius * 2.05, 1.0, shape.radius * 2.05), IDENTITY) { .2 + .3 * it }
+            }
+            "sakura-pounce" -> if (shape is MobAttackShape.Ring) {
+                fx.add("sakura_ring", 2, o.add(0.0, .1, 0.0), ticks / 3, ticks - ticks / 3, Vec(shape.radius * 2.05, 1.0, shape.radius * 2.05), IDENTITY) { .25 + .3 * it }
+            }
             "sakura-howl", "sakura-scatter" -> {
                 val head = point("skull", Vec(0.0, 44.0, 40.0))?.let(Pos::fromPoint) ?: frame.casterOrigin.add(0.0, 3.0, 0.0)
                 fx.add("sakura_blossom", 4, head, ticks / 2, ticks - ticks / 2, Vec(.6, .6, 1.0), IDENTITY, grow = Vec(2.0, 2.0, 1.0),
@@ -120,6 +129,19 @@ internal class SakuraStrikeFx(instance: Instance) {
                 }
                 fx.add("sakura_blossom", 4, o.add(0.0, 2.6, 0.0), 0, 14, Vec(2.5, 2.5, 1.0), IDENTITY, grow = Vec(6.0, 6.0, 1.0), moveTicks = 12, billboard = true)
                 crest(o, shape.radius * 1.9, ShadeWyrmShaderFx.qy(.3))
+            }
+            "sakura-pounce", "sakura-rain" -> if (shape is MobAttackShape.Ring) {
+                // It lands (or the blossoms land) on the mark: a crest blooms, a ring of petals and a blossom burst.
+                crest(o, shape.radius * 2.2, yaw)
+                fx.add("sakura_ring", 2, o.add(0.0, .12, 0.0), 0, 12, Vec(2.0, 1.0, 2.0), IDENTITY, grow = Vec(shape.radius * 2.6, 1.0, shape.radius * 2.6), moveTicks = 7)
+                fx.add("sakura_blossom", 4, o.add(0.0, 1.2, 0.0), 0, 12, Vec(1.8, 1.8, 1.0), IDENTITY, grow = Vec(4.0, 4.0, 1.0), moveTicks = 10, billboard = true)
+            }
+            "sakura-charge" -> if (shape is MobAttackShape.Slam) {
+                // The run: two trails of petals down the strip, and the skid's ring at its end.
+                for (k in listOf(-1, 1)) fx.add("sakura_trail", 3, o.add(right.mul(k * shape.halfWidth * .6)).add(f.mul(shape.length / 2)).add(0.0, .1, 0.0), 0, 18,
+                    Vec(.6, 1.0, 1.0), yaw, grow = Vec(1.2, 1.0, shape.length), moveTicks = 8)
+                fx.add("sakura_ring", 2, o.add(f.mul(shape.length * .8)).add(0.0, .12, 0.0), 6, 12, Vec(2.0, 1.0, 2.0), yaw, grow = Vec(6.0, 1.0, 6.0), moveTicks = 7)
+                crest(o.add(f.mul(shape.length * .8)), 5.0, yaw)
             }
             "sakura-horn" -> if (shape is MobAttackShape.Slam) {
                 // The horns rake upward: a standing crescent ahead and a small shock.

@@ -144,6 +144,35 @@ class Fx:
                 for _ in range(400):
                     a = r.uniform(0, 2 * math.pi); d = np.array([math.cos(a), 0, math.sin(a)])
                     self.add(self.shell_point(sc, pose), d * r.uniform(320, 450) + [0, r.uniform(32, 110), 0], r.uniform(.9, 1.5), drag=1.8)
+        elif base == "sakura-pounce":
+            if .6 <= t <= hit - .02:
+                for _ in range(self.rate("leap", 80)):
+                    self.add(self.shell_point(sc, pose), np.array([r.uniform(-24, 24), r.uniform(-8, 24), r.uniform(-48, -16)]), r.uniform(.8, 1.2), drag=1.2)
+            if self.once("land", t, hit):
+                for _ in range(160):
+                    a = r.uniform(0, 2 * math.pi); d = np.array([math.cos(a), 0, math.sin(a)])
+                    self.add(np.array([0, 5, 112]) + d * r.uniform(8, 24), d * r.uniform(224, 352) + [0, r.uniform(48, 144), 0], r.uniform(.9, 1.5), drag=2.0)
+        elif base == "sakura-rain":
+            if .5 <= t <= hit - .05:
+                for _ in range(self.rate("rise", 60)):
+                    self.add(self.shell_point(sc, pose), np.array([r.uniform(-16, 16), r.uniform(144, 224), r.uniform(-16, 16)]), 1.0, drag=.3)
+            if hit - .7 <= t <= hit - .02:
+                for _ in range(self.rate("fall", 90)):
+                    a = r.uniform(0, 2 * math.pi); rr = r.uniform(0, 48)
+                    self.add(np.array([math.cos(a) * rr, r.uniform(96, 144), 112 + math.sin(a) * rr]), np.array([r.uniform(-16, 16), -224, r.uniform(-16, 16)]), .7, drag=.2)
+            if self.once("rain", t, hit):
+                for _ in range(150):
+                    a = r.uniform(0, 2 * math.pi); d = np.array([math.cos(a), 0, math.sin(a)])
+                    self.add(np.array([0, 6, 112]) + d * r.uniform(5, 19), d * r.uniform(160, 272) + [0, r.uniform(64, 160), 0], r.uniform(.9, 1.4), drag=2.0)
+        elif base == "sakura-charge":
+            if .55 <= t <= 1.4:
+                for _ in range(self.rate("wake", 140)):
+                    self.add(self.shell_point(sc, pose), np.array([r.uniform(-40, 40), r.uniform(8, 48), r.uniform(-96, -32)]), r.uniform(1.0, 1.6), drag=1.0)
+            if self.once("skid", t, 1.4):
+                o = sc.point("skull", (0, 40, 40), pose) * [1, 0, 1] + [0, 3, 0]
+                for _ in range(120):
+                    a = math.radians(r.uniform(-50, 50))
+                    self.add(o + rand_dir(r) * 6, np.array([math.sin(a), r.uniform(.3, .9), math.cos(a)]) * r.uniform(160, 288), r.uniform(.9, 1.4), drag=2.0)
         elif c == "sakura-bloom":
             if t <= hit - .1:                                      # a vortex rises round the beast
                 radius = 40 + 70 * (t / hit)

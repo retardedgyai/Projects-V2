@@ -1073,13 +1073,17 @@ class QuestEncounterCombat(
 
     /** The dive carries the body over its target while it hangs in the air (between [DIVE_CARRY] ms of the clip). */
     private fun carryThroughAbility(mob: Mob, frame: MobAbilityFrame, now: Long) {
-        if (frame.ability.id != "shade-dive") return
+        // shade-dive and 桜牙獣's pounce land on the target (the frame's origin); the charge runs down its strip.
+        val window = when (frame.ability.id) { "shade-dive" -> DIVE_CARRY; "sakura-pounce" -> POUNCE_CARRY; "sakura-charge" -> CHARGE_CARRY; else -> return }
         val from = mob.travelFrom ?: return
         val elapsed = now - frame.startedAt
-        if (elapsed < DIVE_CARRY.first) return
-        val k = ((elapsed - DIVE_CARRY.first).toDouble() / (DIVE_CARRY.last - DIVE_CARRY.first)).coerceIn(0.0, 1.0)
-        val e = k * k * (3 - 2 * k)
-        val to = frame.origin
+        if (elapsed < window.first) return
+        val k = ((elapsed - window.first).toDouble() / (window.last - window.first)).coerceIn(0.0, 1.0)
+        val e = if (frame.ability.id == "sakura-charge") k else k * k * (3 - 2 * k)
+        val shape = frame.ability.shape
+        val to = if (frame.ability.id == "sakura-charge" && shape is MobAttackShape.Slam)
+            (safeRetreat(frame.origin.add(frame.facing.mul(shape.length * .8)), mob.home, mob.definition.leashRange) ?: return)
+        else frame.origin
         val ground = telegraphs.groundHeight(to) ?: from.y()
         mob.entity.teleport(Pos(from.x() + (to.x() - from.x()) * e, from.y() + (ground - from.y()) * e, from.z() + (to.z() - from.z()) * e,
             mob.entity.position.yaw(), 0f))
@@ -1112,7 +1116,7 @@ class QuestEncounterCombat(
                 updateName(mob, event.frame.ability.displayName)
                 mob.view?.ability(event.frame.ability.id)
                 if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) {
-                    sakuraFx?.start(event.frame.ability.id, event.frame.ability.telegraphMillis / 1000.0)
+                    sakuraFx?.start(event.frame.ability.id, event.frame.ability.telegraphMillis / 1000.0, event.frame.origin)
                     sakuraStrike?.windup(event.frame.ability.id, event.frame) { bone, px -> mob.view?.point(bone, px) }
                 }
                 if (!drawWarning(mob, event.frame, false)) {
@@ -1169,6 +1173,10 @@ class QuestEncounterCombat(
                     mob.combo = when (event.abilityId) {
                         "sakura-claw" -> "sakura-claw2"
                         "sakura-claw2" -> if (mob.enraged) "sakura-claw3" else null
+                        // once enraged it strings its moves: the somersault lands into the spin, the horn into the paw
+                        "sakura-tail" -> if (mob.enraged) "sakura-spin" else null
+                        "sakura-horn" -> if (mob.enraged) "sakura-claw" else null
+                        "sakura-pounce" -> if (mob.enraged) "sakura-horn" else null
                         else -> null
                     }
                     if (mob.combo != null) mob.warningRetryAt = lastTickAt
@@ -1290,6 +1298,9 @@ class QuestEncounterCombat(
         const val TURN_AFTER_MILLIS = 600L
         /** ms into shade-dive while the body is carried over the target (the clip hangs in the air then). */
         val DIVE_CARRY = 1000L..2300L
+        /** 桜牙獣's leap (sakura-pounce clip: airborne 0.6..1.1 s) and its charge (the gallop 0.55..1.35 s). */
+        val POUNCE_CARRY = 600L..1100L
+        val CHARGE_CARRY = 550L..1350L
         const val BREAK_MAX = 100.0
         const val BREAK_MILLIS = 4000L
         const val BROKEN_DAMAGE = 1.3

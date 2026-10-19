@@ -122,7 +122,7 @@ internal object QuestMobContent {
             if (id in setOf("rift-bolt", "rift-pulse", "oracle-mark", "oracle-ray", "oracle-pulse",
                     "forge-cross", "forge-mark", "tide-ray", "tide-ring", "tide-center", "eclipse-mark", "eclipse-cross",
                     "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross",
-                    "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "sakura-scatter", "sakura-bloom", "sakura-howl"))
+                    "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "sakura-scatter", "sakura-bloom", "sakura-howl", "sakura-rain"))
                 dev.projects.server.coreloop.CoreDamageType.MAGICAL else dev.projects.server.coreloop.CoreDamageType.PHYSICAL, scripted
         )
         fun sweep(radius: Double = 3.4, damage: Double = 10.0) = attack(
@@ -180,6 +180,12 @@ internal object QuestMobContent {
                         1000, 0, 900, 3200, weight = 2),
                     attack("sakura-howl", "散り際の遠吠え・離れろ", MobAttackShape.Ring(6.5), 5.5, 26.0,
                         1600, 0, 1000, 7000, health = .5, weight = 1),
+                    attack("sakura-pounce", "花冠の飛びかかり・着地点から離れろ", MobAttackShape.Ring(3.6), 14.0, 26.0,
+                        1100, 550, 900, 4200, minimumRange = 5.0, target = true, weight = 2),
+                    attack("sakura-rain", "花冠落とし・印から出ろ", MobAttackShape.Ring(3.2), 16.0, 22.0,
+                        1800, 1300, 800, 5200, minimumRange = 4.0, target = true, weight = 2),
+                    attack("sakura-charge", "花吹雪の突進・横へ", MobAttackShape.Slam(13.0, 2.0), 12.0, 28.0,
+                        1000, 450, 1200, 5000, minimumRange = 3.0, health = .5, weight = 2),
                     // 三連桜爪: the paw slam chains into a second blow, and once enraged into a third (QuestEncounterCombat).
                     attack("sakura-claw2", "桜爪・二の手", MobAttackShape.Slam(6.0, 2.4), 5.0, 20.0,
                         600, 250, 700, 0, scripted = true),

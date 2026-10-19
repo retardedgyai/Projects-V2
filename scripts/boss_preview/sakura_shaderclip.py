@@ -34,6 +34,25 @@ def sakura_ramp(h):
 shaderclip.ramp = sakura_ramp
 shaderclip.UPRIGHT = shaderclip.UPRIGHT + ("sakura_blossom", "sakura_curtain")
 
+def carry(name, t):
+    """The body offset the server adds while it carries the beast (QuestEncounterCombat POUNCE/CHARGE_CARRY), in px."""
+    if name == "sakura-pounce":
+        k = min(1, max(0, (t - .6) / .5)); return 112 * k * k * (3 - 2 * k)
+    if name == "sakura-charge":
+        return 13 * .8 * 16 * min(1, max(0, (t - .55) / .8))
+    return 0.0
+
+
+def sample(a, name, t):
+    pose = sakura_clips.sample(a, t)
+    dz = carry(name, t)
+    if dz:
+        rot, pos, scl = pose.get("body", (np.zeros(3), np.zeros(3), np.ones(3)))
+        pose["body"] = (rot, pos + np.array([0, 0, dz]), scl)
+    return pose
+
+
+NEW = [("sakura-pounce", "花冠の飛びかかり（新）", .8), ("sakura-rain", "花冠落とし（新）", .8), ("sakura-charge", "花吹雪の突進（新・怒り後）", .55)]
 ORDER = [("sakura-claw", "桜爪の叩きつけ", 1.0), ("sakura-claw2", "桜爪・二の手", 1.0), ("sakura-claw3", "桜爪・止め（怒り後）", 1.0),
          ("sakura-tail", "花尾の宙返り", .9), ("sakura-horn", "枝角の突き上げ", 1.1), ("sakura-spin", "花尾の旋回", .9),
          ("sakura-scatter", "散華", .7), ("sakura-bloom", "花嵐（怒り後）", .62), ("sakura-howl", "散り際の遠吠え（怒り後）", .7),
@@ -41,13 +60,13 @@ ORDER = [("sakura-claw", "桜爪の叩きつけ", 1.0), ("sakura-claw2", "桜爪
 BG = ((52, 50, 64), (22, 20, 28))
 
 
-def main(dump, out):
+def main(dump, out, which="all"):
     sc = rbb.Scene(sakura_clips.PATH)
     anims = {a["name"]: a for a in json.loads(sakura_clips.PATH.read_text(encoding="utf-8"))["animations"]}
     rows = [json.loads(l) for l in Path(dump).read_text().splitlines()]
     textures = {p.stem: np.asarray(Image.open(p).convert("RGBA")).astype(np.float32) for p in shaderclip.TEX.glob("*.png")}
     frames, keys = [], []
-    for name, label, zoom in ORDER:
+    for name, label, zoom in (NEW if which == "new" else ORDER):
         clip = name if name in fang.ENRAGED_ONLY or name == "enrage" else name
         a = anims[clip]
         by_tick = {}
@@ -55,7 +74,7 @@ def main(dump, out):
             if r["ability"] == name:
                 by_tick.setdefault(r["tick"], []).append(r)
         hit = fang.ABILITIES.get(name, (2.5, 0))[0]
-        v = dict(az=35, el=26, size=(560, 360), scale=zoom * 1.6, center=(0, 20, 40), cy=.66)
+        v = dict(az=35, el=26, size=(560, 360), scale=zoom * 1.6, center=(0, 20, 40 + (70 if name in dict((n, 0) for n, _, _ in NEW) else 0)), cy=.66)
         storm = sakura_fx.Fx(name)                         # the petal storm (look B) that plays with the strike in game
         look = sakura_fx_styles.Style("B")
         st = 0
@@ -64,11 +83,11 @@ def main(dump, out):
             t = min(a["length"], i * .1)
             while st * sakura_fx.DT <= t:
                 tt = st * sakura_fx.DT
-                storm.emit(tt, sc, sakura_clips.sample(a, min(tt, a["length"])))
+                storm.emit(tt, sc, sample(a, name, min(tt, a["length"])))
                 storm.step(tt)
                 look.hist = {id(q): (look.hist.get(id(q), []) + [q.p.copy()])[-look.trail:] for q in storm.petals}
                 st += 1
-            pose = sakura_clips.sample(a, t)
+            pose = sample(a, name, t)
             live = by_tick.get(int(round(t / .05)) - 1, [])
             panel, zb = rbb.render(sc, pose, bg=BG, outline=False, with_depth=True, emissive=sakura_glow.shader(t), **v)
             arr = np.asarray(panel).astype(np.float32).copy()
@@ -96,4 +115,4 @@ def main(dump, out):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:3])
+    main(*sys.argv[1:4])

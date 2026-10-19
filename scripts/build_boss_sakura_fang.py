@@ -838,9 +838,10 @@ def walk_pose(t, L=1.2, enraged=False):
 
 ABILITIES = {"sakura-claw": (1.2, 1.0), "sakura-tail": (1.5, 1.1), "sakura-scatter": (1.7, .9), "sakura-bloom": (2.0, 1.2),
              "sakura-horn": (.8, .7), "sakura-spin": (1.0, .9), "sakura-howl": (1.6, 1.0),
-             "sakura-claw2": (.6, .7), "sakura-claw3": (.9, 1.3)}
+             "sakura-claw2": (.6, .7), "sakura-claw3": (.9, 1.3),
+             "sakura-pounce": (1.1, .9), "sakura-rain": (1.8, .8), "sakura-charge": (1.0, 1.2)}
 # Only after the enrage: no phase-one twin is needed (the clip itself is authored with the petals open).
-ENRAGED_ONLY = {"sakura-bloom", "sakura-howl", "sakura-claw3"}
+ENRAGED_ONLY = {"sakura-bloom", "sakura-howl", "sakura-claw3", "sakura-charge"}
 CALM = {}
 
 
@@ -994,6 +995,64 @@ def claw3_keys(hit, end, shells):
             (hit + .9, pose(mie(1.0), skull=(-4, 0, 0)), "io"), (end, {"shells": 1.0}, "io")]
 
 
+def pounce_keys(hit, end, shells):
+    """花冠の飛びかかり: the server carries the body onto the target from 0.6 to 1.1 s (POUNCE_CARRY). It crouches and
+    wiggles, springs in a high arc with the forepaws reaching out, crashes down on the mark and rises into the 見得."""
+    s = {"shells": shells}
+    crouch = pose(rear(10), pos=(0, -5, -2), chest=(10, 0, 0), neck=(14, 0, 0), skull=(6, 0, 0), shin_l=(22, 0, 0), shin_r=(22, 0, 0),
+                  tail_1=(-20, 0, 0), tremble=2.0, **s)
+    keys = [(0, dict(s), "io"), (.4, crouch, "io"), (.58, pose(crouch, pos=(0, -7, -3)), "io")]
+    for k in range(6):
+        u = (k + 1) / 6
+        h = 34 * math.sin(math.pi * u)
+        reach = math.sin(math.pi * min(1, u * 1.2))
+        keys.append((.6 + .5 * u, pose(rear(-18 * (1 - u) + 12 * u), pos=(0, h, 0), arm_l=(-70 * reach, 0, 0), arm_r=(-70 * reach, 0, 0),
+                                      forearm_l=(-20 * reach, 0, 0), forearm_r=(-20 * reach, 0, 0), thigh_l=(30 * reach, 0, 0), thigh_r=(30 * reach, 0, 0),
+                                      neck=(-12 * reach, 0, 0), jaw=(24 * reach, 0, 0), tail_1=(10 * reach, 0, 0), shells=shells + .3 * reach), "lin"))
+    land = pose(rear(18), pos=(0, -5, 3), chest=(14, 0, 0), neck=(18, 0, 0), jaw=(26, 0, 0), arm_l=(16, 0, 0), arm_r=(16, 0, 0),
+                shin_l=(18, 0, 0), shin_r=(18, 0, 0), shells=shells + .3, tremble=2.5)
+    return keys + [(hit + .02, land, "in"), (hit + .2, pose(rear(4), pos=(0, -1, 2), **s), "out"), (hit + .45, mie(shells), "out"),
+                   (hit + .65, pose(mie(shells), skull=(-4, 0, 0)), "io"), (end, dict(s), "io")]
+
+
+def charge_keys(hit, end, shells):
+    """花吹雪の突進 (enraged only): it scrapes the ground and lowers its horns, then a bounding gallop carries it down
+    the strip (CHARGE_CARRY 0.55..1.35 s), it skids to a stop and throws its head up."""
+    scrape = pose(rear(8), pos=(0, -3, -2), neck=(22, 0, 0), skull=(18, 0, 0), arm_r=(-30, 0, 0), forearm_r=(-20, 0, 0), tail_1=(14, 0, 0),
+                  shells=1.2, tremble=3.0)
+    keys = [(0, {"shells": 1.0}, "io"), (.2, scrape, "io"), (.35, pose(scrape, arm_r=(20, 0, 0)), "io"), (.5, pose(scrape, arm_r=(-30, 0, 0)), "io")]
+    for k in range(9):                              # a bounding gallop: fore and hind pairs together, the spine flexing
+        tt = .55 + k * .1
+        ph = k * math.pi / 2
+        flex = math.sin(ph)
+        keys.append((tt, pose(body=(8 * flex, 0, 0), pos=(0, 6 * abs(math.sin(ph)) - 2, 0), chest=(-6 * flex, 0, 0),
+                              arm_l=(-40 * flex, 0, 0), arm_r=(-40 * flex + 6, 0, 0), forearm_l=(-30 * max(0, -flex), 0, 0), forearm_r=(-30 * max(0, -flex), 0, 0),
+                              thigh_l=(40 * flex, 0, 0), thigh_r=(40 * flex - 6, 0, 0), neck=(18 - 4 * flex, 0, 0), skull=(12, 0, 0),
+                              tail_1=(10 * flex, 0, 0), tail_2=(8 * flex, 0, 0), shells=1.3), "io"))
+    skid = pose(rear(16), pos=(0, -4, 4), arm_l=(20, 0, 0), arm_r=(24, 0, 0), chest=(12, 0, 0), neck=(4, 0, 0), jaw=(20, 0, 0),
+                tail_1=(-14, 0, 0), shells=1.2, tremble=3.0)
+    return keys + [(1.5, skid, "out"), (1.75, mie(1.0), "out"), (1.95, pose(mie(1.0), skull=(-4, 0, 0)), "io"), (end, {"shells": 1.0}, "io")]
+
+
+def rain_keys(hit, end, shells):
+    """花冠落とし: it sits up and howls the petals into the sky over its prey, holds the note, then snaps its head down
+    as the blossoms fall on the mark."""
+    sit = sit_howl(shells + .4)
+    return [(0, {"shells": shells}, "io"), (.5, pose(sit, jaw=(-20, 0, 0)), "out"), (.8, sit, "io"),
+            (hit - .15, pose(sit, skull=(-6, 0, 0), tremble=4.0), "io"),
+            (hit, pose(rear(-8), neck=(20, 0, 0), skull=(14, 0, 0), jaw=(8, 0, 0), shells=shells + .2), "in"),
+            (hit + .3, pose(rear(-4), neck=(4, 0, 0), shells=shells), "out"), (end, {"shells": shells}, "io")]
+
+
+def search_pose(t, L=2.4, enraged=False):
+    """Lost its prey: it prowls with the nose low to the ground, sweeping side to side, now and then lifting the head
+    to scent the air."""
+    p = walk_pose(t * .5, L * .5, enraged)
+    sweep = wave(t, L)
+    lift = max(0.0, wave(t, L, .3)) ** 3
+    return pose(p, neck=(26 - 30 * lift, 14 * sweep, 0), skull=(14 - 18 * lift, 8 * sweep, 0), pos=(0, -2, 0))
+
+
 # --- maneuvers (the server carries the body; QuestEncounterCombat.startManeuver timings) ---------------------
 def hop_back_keys(shells):
     """1.1 s, moved back 4 blocks between 0.28 and 0.68 s: crouch, a bounding leap with the forelegs tucked, a soft
@@ -1114,12 +1173,14 @@ def animate(m, b):
     bake(b, "walk_enraged", 1.2, looped(1.2, lambda t: walk_pose(t, enraged=True)), "loop")
     for name, keys in (("sakura-claw", claw_keys), ("sakura-tail", tail_keys), ("sakura-scatter", scatter_keys), ("sakura-bloom", bloom_keys),
                        ("sakura-horn", horn_keys), ("sakura-spin", spin_keys), ("sakura-howl", howl_attack_keys),
-                       ("sakura-claw2", claw2_keys), ("sakura-claw3", claw3_keys)):
+                       ("sakura-claw2", claw2_keys), ("sakura-claw3", claw3_keys),
+                       ("sakura-pounce", pounce_keys), ("sakura-rain", rain_keys), ("sakura-charge", charge_keys)):
         hit, rec = ABILITIES[name]
         ov = overlay_for(name, hit, hit + rec)
         if name not in ENRAGED_ONLY:
             bake(b, name, hit + rec, keys(hit, hit + rec, 0.0), overlay=ov)
         bake(b, name if name in ENRAGED_ONLY else f"{name}_enraged", hit + rec, keys(hit, hit + rec, 1.0), overlay=ov)
+    bake(b, "search", 2.4, looped(2.4, lambda t: search_pose(t)), "loop")
     for tag, sh in (("", 0.0), ("_enraged", 1.0)):
         bake(b, f"hop_back{tag}", 1.1, hop_back_keys(sh))
         bake(b, f"dash_l{tag}", .9, dash_keys(1, sh))

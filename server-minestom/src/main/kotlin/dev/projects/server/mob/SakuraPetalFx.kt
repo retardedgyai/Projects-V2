@@ -51,9 +51,12 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
     val liveCount: Int get() = petals.size
     private val time: Double get() = tick * DT
 
-    /** An ability began; its strike lands [telegraphSeconds] later. */
-    fun start(abilityId: String, telegraphSeconds: Double) {
+    private var targetAt: Vec? = null
+
+    /** An ability began; its strike lands [telegraphSeconds] later; [target] is where a target-anchored one lands. */
+    fun start(abilityId: String, telegraphSeconds: Double, target: Point? = null) {
         ability = abilityId; abilityAt = time; hit = telegraphSeconds
+        targetAt = target?.let { Vec(it.x(), it.y(), it.z()) }
         fired.removeAll { it.startsWith("a:") }
     }
 
@@ -215,6 +218,39 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
                     }
                 }
             }
+            "sakura-pounce" -> {
+                if (t in .6..(hit - .02)) repeat(rate("leap", 80.0)) {          // the leap trails a ribbon of petals
+                    add(shell(), f.dir(r(-1.5, 1.5), r(-.5, 1.5), r(-3.0, -1.0)), r(.8, 1.2), 1.2)
+                }
+                if (once("a:land", strike)) repeat(count(160)) {                // and the landing throws them out in a ring
+                    val a = r(0.0, 2 * PI); val d = Vec(cos(a), 0.0, sin(a))
+                    add(Vec(f.at.x(), f.at.y() + .3, f.at.z()).add(d.mul(r(.5, 1.5))), d.mul(r(14.0, 22.0)).add(0.0, r(3.0, 9.0), 0.0), r(.9, 1.5), 2.0)
+                }
+            }
+            "sakura-charge" -> {
+                if (t in .55..1.4) repeat(rate("wake", 140.0)) {                // the run leaves a wake of petals
+                    add(shell(), f.dir(r(-2.5, 2.5), r(.5, 3.0), r(-6.0, -2.0)), r(1.0, 1.6), 1.0)
+                }
+                if (once("a:skid", abilityAt + 1.4)) repeat(count(120)) {       // the skid sprays them ahead
+                    val a = Math.toRadians(r(-50.0, 50.0))
+                    add(f.px(r(-16.0, 16.0), 3.0, 30.0), f.dir(sin(a), r(.3, .9), cos(a)).mul(r(10.0, 18.0)), r(.9, 1.4), 2.0)
+                }
+            }
+            "sakura-rain" -> {
+                if (t in .5..(hit - .05)) repeat(rate("rise", 60.0)) {           // the howl sends petals up into the sky
+                    add(shell(), Vec(r(-1.0, 1.0), r(9.0, 14.0), r(-1.0, 1.0)), 1.0, .3)
+                }
+                // they come down over the mark (the ability's origin is the target) and burst
+                val mark = targetAt
+                if (mark != null && t in (hit - .7)..(hit - .02)) repeat(rate("fall", 90.0)) {
+                    val a = r(0.0, 2 * PI); val rr = r(0.0, 3.0)
+                    add(mark.add(cos(a) * rr, r(6.0, 9.0), sin(a) * rr), Vec(r(-1.0, 1.0), -14.0, r(-1.0, 1.0)), .7, .2)
+                }
+                if (mark != null && once("a:rain", strike)) repeat(count(150)) {
+                    val a = r(0.0, 2 * PI); val d = Vec(cos(a), 0.0, sin(a))
+                    add(mark.add(0.0, .4, 0.0).add(d.mul(r(.3, 1.2))), d.mul(r(10.0, 17.0)).add(0.0, r(4.0, 10.0), 0.0), r(.9, 1.4), 2.0)
+                }
+            }
             "sakura-bloom" -> {
                 if (t <= hit - .1) {                                            // a vortex rises round the beast
                     val radius = (40 + 70 * (t / hit)) / 16
@@ -289,10 +325,10 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
     companion object {
         const val MARKER = 78
         const val DT = .05
-        const val SEND_EVERY = 2
-        const val CAP = 180
-        /** The in-game storm uses fewer, larger petals than the preview: each one carries a long ribbon. */
-        const val DENSITY = .5
+        const val SEND_EVERY = 3
+        const val CAP = 360
+        /** As many petals as the preview (scripts/boss_preview/sakura_fx.py), the Creator's choice. */
+        const val DENSITY = 1.0
         const val GRAVITY = -3.75
         const val DRAG = 1.6
         const val WIND_X = .5
