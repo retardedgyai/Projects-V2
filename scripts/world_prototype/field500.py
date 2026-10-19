@@ -620,8 +620,72 @@ UPPER = np.full((B, B), -1, np.int32)          # walkable heights above the grou
 ROCK = ["stone", "andesite", "stone", "tuff", "stone", "andesite"]
 
 
-def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=False, clear=0.0):
-    LEAF = "cherry_leaves" if sakura else "oak_leaves"
+def sakura_tree(x, z, g, size=1.0):
+    """A big weeping sakura: dark leaning trunk, spreading limbs, a wide layered pink crown with long hanging strands."""
+    rs = random.Random(x * 9973 + z)
+    th = int(5 + 3 * size)
+    lean = (rs.uniform(-1.5, 1.5), rs.uniform(-1.5, 1.5))
+    tube((x, g, z), (x + lean[0], g + th, z + lean[1]), 1.2 * size + .3, .8 * size + .2, mat=("cherry_log_top", "cherry_log"))
+    tops = []
+    for k in range(rs.randint(4, 6)):
+        a = k / 5 * math.tau + rs.uniform(-.4, .4)
+        L = (4 + 2.5 * size) * rs.uniform(.8, 1.1)
+        e = (x + lean[0] + math.cos(a) * L, g + th + rs.uniform(1, 3) * size, z + lean[1] + math.sin(a) * L)
+        tube((x + lean[0], g + th - 1, z + lean[1]), e, .7 * size + .2, .45, mat=("cherry_log_top", "cherry_log"))
+        tops.append(e)
+    tops.append((x + lean[0], g + th + 2.5 * size, z + lean[1]))
+    rim = []
+    for (tx, ty, tz) in tops:
+        r = (3.0 + 1.6 * size) * rs.uniform(.85, 1.1)
+        ri = int(r) + 1
+        for dx in range(-ri, ri + 1):
+            for dz in range(-ri, ri + 1):
+                for dy in range(-2, 3):
+                    q = (dx / r) ** 2 + (dz / r) ** 2 + (dy / (r * .5)) ** 2
+                    if q <= .85 + noise3(tx + dx, ty + dy, tz + dz, 181, 1.6) * .35:
+                        p = (int(round(tx)) + dx, int(round(ty)) + dy, int(round(tz)) + dz)
+                        if p not in w.b:
+                            put(*p, "cherry_leaves" if rs.random() > .08 else "pink_wool")
+                        if dy == -2 or q > .7: rim.append(p)
+    for p in rs.sample(rim, min(len(rim), int(len(rim) * .3))):          # weeping strands
+        for k2 in range(1, rs.randint(2, int(4 + 4 * size))):
+            q2 = (p[0], p[1] - k2, p[2])
+            if q2 in w.b or q2[1] <= at(p[0], p[2]) + 1: break
+            put(*q2, "cherry_leaves", shape="shut_s" if k2 > 2 else "full")
+    for _ in range(int(40 * size)):                                     # petals on the ground beneath
+        a = rs.random() * math.tau; r = (6 + 4 * size) * math.sqrt(rs.random())
+        px, pz = int(round(x + math.cos(a) * r)), int(round(z + math.sin(a) * r))
+        if 0 <= px < B and 0 <= pz < B:
+            gy2 = UPPER[pz, px] if UPPER[pz, px] >= 0 else at(px, pz)
+            if (px, gy2 + 1, pz) not in w.b: put(px, gy2 + 1, pz, "pink_petals", shape="carpet")
+
+
+def torii(cx, cz, y, ux, uz, half=3, h=6):
+    """A vermilion torii across a path heading (ux, uz): two posts, the nuki tie beam, the dark kasagi with upturned ends."""
+    px, pz = -uz, ux
+    for s2 in (-half, half):
+        bx, bz = int(round(cx + px * s2)), int(round(cz + pz * s2))
+        put(bx, y, bz, "stone_bricks")
+        for yy in range(y + 1, y + h + 1): put(bx, yy, bz, "red_concrete", shape="post")
+    for s2 in range(-half - 2, half + 3):
+        bx, bz = int(round(cx + px * s2)), int(round(cz + pz * s2))
+        if abs(s2) <= half: put(bx, y + h - 1, bz, "red_concrete", shape="slab_t")
+        put(bx, y + h + 1, bz, "blackstone" if abs(s2) <= half + 1 else "blackstone", shape="full" if abs(s2) < half + 2 else "slab")
+        if abs(s2) <= half + 1: put(bx, y + h, bz, "red_concrete")
+    put(int(round(cx)), y + h, int(round(cz)), "gold_block")
+
+
+def stone_lantern(x, z, y):
+    put(x, y + 1, z, "stone_bricks", shape="wall"); put(x, y + 2, z, "stone_bricks", shape="slab")
+    put(x, y + 2, z, "lantern", shape="lantern"); put(x, y + 3, z, "stone_bricks", shape="slab")
+
+
+PLANTED = []
+
+
+def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
+    sakura = float(sakura)
+    LEAF = "cherry_leaves" if sakura >= .5 else "oak_leaves"
     base = min(at(cx + dx, cz + dz) for dx in (-int(rb), 0, int(rb)) for dz in (-int(rb), 0, int(rb))) - 2
     Hm = top_y - base
     for y in range(base, top_y + 1):
@@ -643,7 +707,7 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=False, clear=0.0):
                 elif y == top_y:
                     put(x, y, z, "grass_block_top", "grass_block_side"); UPPER[z, x] = top_y
                 elif y >= top_y - 3 and d > rr - 1.6:
-                    put(x, y, z, "moss_block" if y < top_y - 1 else LEAF)        # a leafy, mossy lip instead of bare dirt
+                    put(x, y, z, "moss_block" if y < top_y - 1 else ("cherry_leaves" if noise3(x, y, z, 191, 3) < sakura else "oak_leaves"))
                 else:
                     n = noise3(x, y, z, seed + 7, 2.2)
                     up_open = y > base + 2 and f > .45                          # the overhang's underside and the waist
@@ -658,30 +722,38 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=False, clear=0.0):
         for k2 in range(R.randint(2, 6) if drape else R.randint(4, 18)):
             p = (x, top_y - k2, z)
             if p in w.b or p[1] <= at(x, z): break
-            put(*p, LEAF if drape else ("vine" if not sakura or R.random() < .5 else "cherry_leaves"), shape="full" if drape else "shut_s")
+            pk = R.random() < sakura
+            put(*p, ("cherry_leaves" if pk else "oak_leaves") if drape else ("cherry_leaves" if pk else "vine"), shape="full" if drape else "shut_s")
     if needle:
         mark(cx - int(rb) - 3, cz - int(rb) - 3, cx + int(rb) + 3, cz + int(rb) + 3)
         return
-    for _ in range(int(rt * .55) + 1):                               # trees and bushes on top
+    for _ in range(int(rt * (.55 - .3 * sakura)) + 1):               # trees on top: sakura share follows the route gradient (sakura are big, so fewer)
         a = R.random() * math.tau; rr = rt * (clear + (.7 - clear) * math.sqrt(R.random()))
         x, z = int(round(cx + math.cos(a) * rr)), int(round(cz + math.sin(a) * rr))
-        th = R.randint(4, 7) + (2 if sakura else 0)
-        for y in range(top_y + 1, top_y + th + 1): put(x, y, z, *LOG("cherry_log" if sakura else "oak_log"))
+        if (x, top_y + 1, z) in w.b: continue
+        if R.random() < sakura:
+            if any(math.hypot(x - tx2, z - tz2) < 13 for (tx2, tz2) in PLANTED): continue
+            PLANTED.append((x, z))
+            sakura_tree(x, z, top_y, size=R.uniform(.8, 1.2) + sakura * .2)
+            continue
+        th = R.randint(4, 7)
+        for y in range(top_y + 1, top_y + th + 1): put(x, y, z, *LOG("oak_log"))
         for dx in range(-3, 4):
             for dz in range(-3, 4):
                 for dy in range(-2, 2):
                     if dx * dx + dz * dz + dy * dy * 2 <= 9 + R.random() * 3 and (x + dx, top_y + th + dy, z + dz) not in w.b:
-                        put(x + dx, top_y + th + dy, z + dz, LEAF)
+                        put(x + dx, top_y + th + dy, z + dz, "oak_leaves")
     for _ in range(int(rt * rt * .5)):
         a = R.random() * math.tau; rr = rt * .85 * math.sqrt(R.random())
         x, z = int(round(cx + math.cos(a) * rr)), int(round(cz + math.sin(a) * rr))
         if (x, top_y + 1, z) not in w.b:
-            if sakura: put(x, top_y + 1, z, "pink_petals", shape="carpet")
+            if R.random() < sakura: put(x, top_y + 1, z, "pink_petals", shape="carpet")
             else: put(x, top_y + 1, z, R.choice(["short_grass", "short_grass", "poppy", "dandelion", "fern"]), shape="plant")
     mark(cx - int(rb) - 3, cz - int(rb) - 3, cx + int(rb) + 3, cz + int(rb) + 3)
 
 
-def rock_bridge(p0, p1, rise=3, width=1.6):
+def rock_bridge(p0, p1, rise=3, width=1.6, sakura=0.0):
+    samples = []
     """A natural rock bridge with a grassy walkable deck; the deck height goes into UPPER."""
     L = math.dist((p0[0], p0[2]), (p1[0], p1[2])); n = int(L * 2)
     cpt = lambda t: (int(round(p0[0] + (p1[0] - p0[0]) * t)), int(round(p0[2] + (p1[2] - p0[2]) * t)))
@@ -714,12 +786,16 @@ def rock_bridge(p0, p1, rise=3, width=1.6):
                     if w.b.get((x, deck + 1, z), ("", "", ""))[1] in ("vine",): w.b.pop((x, deck + 1, z), None)
                 for y in range(int(deck - under * (1 - (d / (wid + 1.2)) ** 2)), deck):
                     if y > at(x, z): put(x, y, z, ROCK[(y // 4) % len(ROCK)] if noise3(x, y, z, 153, 2) < .5 else "moss_block")
-                if wid < d <= wid + 1.2 and (x, deck, z) not in w.b: put(x, deck, z, "azalea_leaves" if (x + z) % 3 else "oak_leaves")
+                if wid < d <= wid + 1.2 and (x, deck, z) not in w.b:
+                    put(x, deck, z, "cherry_leaves" if R.random() < sakura else ("azalea_leaves" if (x + z) % 3 else "oak_leaves"))
+                if d <= wid and R.random() < sakura * .5 and (x, deck + 1, z) not in w.b: put(x, deck + 1, z, "pink_petals", shape="carpet")
+        samples.append((cx, cz, deck, u))
         if i % 7 == 3:
             for k2 in range(R.randint(2, 7)):
                 vx, vz = int(round(cx + R.uniform(-1, 1))), int(round(cz + R.uniform(-1, 1)))
                 p = (vx, deck - int(under) - k2, vz)
-                if p not in w.b and p[1] > at(vx, vz): put(*p, "vine", shape="shut_s")
+                if p not in w.b and p[1] > at(vx, vz): put(*p, "cherry_leaves" if R.random() < sakura else "vine", shape="shut_s")
+    return samples
 
 
 # (the sakura arena is built right after the pillars)
@@ -729,20 +805,31 @@ EDGE_Y = at(ex, ez)
 PILLARS = [(300, 222, EDGE_Y + 10, 15, 38, 3), (296, 322, EDGE_Y + 20, 16, 42, 5),
            (372, 408, EDGE_Y + 28, 17, 44, 1), (456, 318, EDGE_Y + 22, 13, 34, 7)]
 SAKURA = 2                                                          # the highest pillar is the sakura boss's arena
+SAK = [.3, .62, 1.0, .85]                                           # sakura share along the upper route
 for k2, (px, pz, ty, rb, rt, sd) in enumerate(PILLARS):
-    mesa(px, pz, ty, rb, rt, sd, sakura=(k2 == SAKURA), clear=(.5 if k2 == SAKURA else 0))
+    mesa(px, pz, ty, rb, rt, sd, sakura=SAK[k2], clear=(.66 if k2 == SAKURA else 0))
 
 
-def link(a, b, rise):
+def link(a, b, rise, sak=0.0):
     (ax, az, ay, _, art, _), (bx, bz, by, _, brt, _) = a, b
     d = math.hypot(bx - ax, bz - az); ux, uz = (bx - ax) / d, (bz - az) / d
-    rock_bridge((ax + ux * art * .84, ay, az + uz * art * .84), (bx - ux * brt * .84, by, bz - uz * brt * .84), rise=rise)
+    return rock_bridge((ax + ux * art * .84, ay, az + uz * art * .84), (bx - ux * brt * .84, by, bz - uz * brt * .84), rise=rise, sakura=sak), (ux, uz)
 
 
-rock_bridge((ex, EDGE_Y, ez - 2), (PILLARS[0][0], PILLARS[0][2], PILLARS[0][1] - PILLARS[0][4] * .84), rise=0)
-link(PILLARS[0], PILLARS[1], 5)
-link(PILLARS[1], PILLARS[2], 6)
-link(PILLARS[2], PILLARS[3], 7)
+BR0 = rock_bridge((ex, EDGE_Y, ez - 2), (PILLARS[0][0], PILLARS[0][2], PILLARS[0][1] - PILLARS[0][4] * .84), rise=0, sakura=.15)
+BR1, D1 = link(PILLARS[0], PILLARS[1], 5, .45)
+BR2, D2 = link(PILLARS[1], PILLARS[2], 6, .85)
+BR3, D3 = link(PILLARS[2], PILLARS[3], 7, .9)
+# the sando: torii appear along the route and grow denser toward the boss (one, then a few, then a tunnel of them)
+def torii_on(samples, d, every):
+    for i2, (cx, cz, deck, u) in enumerate(samples):
+        if .08 < u < .92 and i2 % every == 0:
+            torii(cx, cz, deck, d[0], d[1], half=3, h=6)
+torii_on(BR1, D1, 40)
+torii_on(BR2, D2, 18)
+P0x, P0z, P0y, _, P0r, _ = PILLARS[0]
+for (dx, dz) in ((0, -int(P0r * .6)),):                             # a single small torii marks the start of the sando on the first pillar
+    torii(P0x + dx, P0z + dz + 6, P0y, 0, 1, half=2, h=5)
 for x in range(ex - 3, ex + 4):                                     # the plateau edge where the first bridge starts
     for z in range(ez - 4, ez + 1):
         UPPER[z, x] = max(UPPER[z, x], at(x, z))
@@ -860,26 +947,27 @@ for k2 in range(12):                                                # stone lant
     if UPPER[z, x] != SY_: continue
     put(x, SY_ + 1, z, "stone_bricks", shape="wall"); put(x, SY_ + 2, z, "stone_bricks", shape="slab")
     put(x, SY_ + 2, z, "lantern", shape="lantern"); put(x, SY_ + 3, z, "stone_bricks", shape="slab")
-# the great sakura at the back of the arena: thick trunk, wide pink crown that rains petals onto the floor
+# the walk from the last bridge to the arena: a tunnel of torii lined with stone lanterns
+ux2, uz2 = D2
+startx, startz = BR2[-1][0], BR2[-1][1]
+for k2 in range(1, 9):
+    cx, cz = startx + ux2 * k2 * 5, startz + uz2 * k2 * 5
+    if math.hypot(cx - SX_, cz - SZ_) < AR + 2: break
+    torii(cx, cz, SY_, ux2, uz2, half=2, h=5)
+    for s2 in (-4, 4):
+        stone_lantern(int(round(cx - uz2 * s2)), int(round(cz + ux2 * s2)), SY_)
+for k2 in range(0, 30):
+    for s2 in (-1, 0, 1):
+        x, z = int(round(startx + ux2 * k2 - uz2 * s2)), int(round(startz + uz2 * k2 + ux2 * s2))
+        if UPPER[z, x] == SY_ and math.hypot(x - SX_, z - SZ_) > AR: put(x, SY_, z, "stone_bricks" if (k2 + s2) % 3 else "mossy_stone_bricks")
+# the great sakura at the back of the arena
 GX_, GZ_ = SX_, SZ_ - AR - 6
 gtop = SY_ + 22
-tube((GX_, SY_ - 1, GZ_), (GX_ + 1, SY_ + 12, GZ_ - 1), 3.2, 2.0, mat=("cherry_log_top", "cherry_log"))
-for k2 in range(6):
-    a = k2 / 6 * math.tau + .3
-    end = (GX_ + math.cos(a) * 13, SY_ + 17 + R.randint(0, 4), GZ_ + math.sin(a) * 11)
-    tube((GX_ + 1, SY_ + 11, GZ_ - 1), end, 1.6, .8, mat=("cherry_log_top", "cherry_log"))
-    for dx in range(-7, 8):
-        for dz in range(-7, 8):
-            for dy in range(-3, 4):
-                q = (dx / 6.5) ** 2 + (dz / 6.5) ** 2 + (dy / 3.4) ** 2
-                if q <= .8 + noise3(end[0] + dx, dy, end[2] + dz, 172, 2) * .4:
-                    p = (int(end[0]) + dx, int(end[1]) + dy, int(end[2]) + dz)
-                    if p not in w.b: put(*p, "cherry_leaves")
-for (dx, dz) in ((-1, 0), (1, 1), (0, -1), (2, -1), (-2, 1)):          # root flare
-    tube((GX_, SY_ + 2, GZ_), (GX_ + dx * 5, SY_ - 1, GZ_ + dz * 5), 1.4, .7, mat=("cherry_log_top", "cherry_log"))
-for _ in range(120):                                                 # petals drifting below the crown
-    x, z = GX_ + R.randint(-18, 18), GZ_ + R.randint(-14, 20)
-    if 0 <= x < B and 0 <= z < B and UPPER[z, x] == SY_ and (x, SY_ + 1, z) not in w.b: put(x, SY_ + 1, z, "pink_petals", shape="carpet")
+sakura_tree(GX_, GZ_ - 4, SY_, size=2.6)                                 # the great weeping sakura
+for k2 in range(0):                                                  # (ring disabled: the pillar's own sakura frame the arena)
+    a = k2 / 10 * math.tau + .2
+    x, z = int(round(SX_ + math.cos(a) * (AR + 9))), int(round(SZ_ + math.sin(a) * (AR + 9)))
+    if UPPER[z, x] == SY_ and (x, SY_ + 1, z) not in w.b and math.hypot(x - GX_, z - GZ_) > 14: sakura_tree(x, z, SY_, size=1.4)
 put(SX_, SY_ + 1, SZ_, "pink_wool", shape="boss")                    # the sakura boss (stand-in)
 CONTENT.append((SX_, SZ_, "boss"))
 
