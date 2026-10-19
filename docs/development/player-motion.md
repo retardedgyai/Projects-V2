@@ -1,6 +1,6 @@
 # プレイヤーの人形モーション（試作）
 
-技の間だけプレイヤーを隠し、本人のスキンを貼った人形（ディスプレイエンティティ）を動かす案。2026-10-19 時点ではプレビューだけで、サーバーにはまだ組み込んでいない。
+技の間だけプレイヤーを隠し、本人のスキンを貼った人形（ディスプレイエンティティ）を動かす案。2026-10-19：サーバーで人形を出す仕組みまで実装（開発用コマンド `/motion` で再生）。技への組み込み・斬撃や揺れの演出はまだ。
 
 ## 動きの正本は Blockbench
 
@@ -39,3 +39,15 @@ server-minestom/src/main/resources/player-motions/<技>.json
 ## 一人称
 
 自分のカメラは人形についていけないので、自分には人形を見せない。大剣は手に持った剣のポーズ（`fp_grip`/`fp_blade`、カメラ基準）で、双剣は両手に持った刃で振りを見せ、溜めは画面のふちの光、当たりは画面の揺れ・白い光・一拍止めで出す。
+
+## サーバー側（2026-10-19）
+
+- `puppet/PlayerMotion`：`player-motions/<技>.json` と、それが指す `.bbmodel`（ビルドが `assets/player-motions/` から resources へコピー）を読み、骨の位置と向きを計算する（`scripts/player_rig.py` と同じ式。テストで数値が一致することを確認）。
+- `puppet/PuppetSkin`：プレイヤーのプロフィールのスキンURL（Mojangのテクスチャサーバー）から画像を1回だけ取り、部品ごとの色を作る。届くまで・スキンが無いときはマネキン。今は肌の1層目だけ（帽子・上着などの2層目は未対応）、細腕（slim）は太腕として読む。
+- `puppet/PlayerPuppet`：本人を透明にし、他の人には装備も空に見せ、人形（体10部品＋武器）を本人以外に表示して毎tick動かす。終わったら元に戻す。人形は動き始めの向きのまま、本人の位置に立つ。
+- 部品モデル：`scripts/build_player_puppet.py`（`gen_resource_pack.py` の一部）が `combat_vfx/puppet/*` を生成し、色の番号とスキンのピクセルの対応を `player-motions/puppet-layout.json` に書く。
+- 確かめ方：`python3 scripts/preview_puppet_displays.py greatsword_charge` は、サーバーが送る値をパックのモデルでそのまま描く（`PlayerPuppetTest` の書き出しを先に実行）。
+
+### ゲーム内で見るとき
+
+`./gradlew :server-minestom:run` で起動し、`/motion greatsword_charge` か `/motion dual_blades_dance`（`/motion stop` で止める）。自分には人形が見えないので、**2人目のクライアントから見る**必要がある（1人ならF5でも自分の人形は見えない）。

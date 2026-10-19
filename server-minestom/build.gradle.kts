@@ -103,6 +103,11 @@ val generateResourcePack by tasks.registering(Exec::class) {
 
 tasks.processResources {
     dependsOn(generateResourcePack)
+    // Player motions (docs/development/player-motion.md): the Blockbench models are the animation source.
+    from(rootProject.layout.projectDirectory.dir("assets/player-motions")) {
+        include("*.bbmodel")
+        into("player-motions")
+    }
 }
 
 application {

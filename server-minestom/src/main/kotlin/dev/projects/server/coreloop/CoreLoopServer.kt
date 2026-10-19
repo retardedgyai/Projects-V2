@@ -521,6 +521,17 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 player.sendMessage(Component.text(if (combatLab.enrageBoss(player)) "ボスを怒らせた（体力を怒りの境目の少し下へ）。" else "/bosstest のボス戦の中で使ってください。", NamedTextColor.GRAY))
             } } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("rage"))
         })
+        // Test-only: plays a player motion on the puppet (docs/development/player-motion.md). /motion stop ends it.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("motion").apply {
+            val name = net.minestom.server.command.builder.arguments.ArgumentType.Word("name")
+            setDefaultExecutor { sender, _ -> sender.sendMessage(Component.text("/motion greatsword_charge | dual_blades_dance | stop", NamedTextColor.GRAY)) }
+            addSyntax({ sender, context -> (sender as? Player)?.let { player ->
+                val motion = context.get(name)
+                if (motion == "stop") dev.projects.server.puppet.PlayerPuppet.stop(player)
+                else if (!dev.projects.server.puppet.PlayerPuppet.play(player, motion))
+                    player.sendMessage(Component.text("そのモーションはありません: $motion", NamedTextColor.YELLOW))
+            } }, name)
+        })
         MinecraftServer.getCommandManager().register(Command("effects").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let {
                 it.sendMessage(CoreLoopItems.text("戦闘演出：${CoreCombatPresentation.cycle(it).label}（/effects で切替。自分の表示だけ変更）"))
