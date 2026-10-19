@@ -33,7 +33,7 @@ internal object CoreDamageNumbers {
  * Graded bosses: the level diamond (larger for higher grades) over a charcoal plate with the name row, a
  * thick HP gauge with the number inside and the break gauge as cells; the grade is a labelled tag on the
  * plate's corner and the plate's frame (purple ring, gold ring and brackets, black iron with thorns). A dedicated boss
- * swaps all of it for a frame drawn from the boss (shade wyrm: its fan of wing blades and horned head).
+ * keeps that bar and adds its own ornament (shade wyrm: wing fan and pink horns; sakura beast: mane, horns, tails).
  * Every row sits at its own font's height (scripts/boss_bar_art.py), so text is not tied to the title line.
  */
 internal object CoreBossBarHud {
@@ -43,14 +43,13 @@ internal object CoreBossBarHud {
     const val TAG_X = PLATE_X + 12
     const val PLATE_W = 237
     const val EMBLEM_X = -40
+    /** Ornament glyphs (wings, mane, tails) come in two 180 px halves: x -180..-1 and 0..179. */
+    const val ORNAMENT_X = -180
     const val HP_X = -112
     const val HP_W = 225
     const val CELL_X = -109
     const val CELL_PITCH = 11
     const val CELLS = 20
-    const val WYRM_FRAME_X = -180
-    const val WYRM_HP_X = -110
-    const val WYRM_HP_W = 221
     const val ICON_PITCH = 10
     const val MAX_ICONS = 6
     private val WHITE: TextColor = TextColor.color(0xFFFFFF)
@@ -71,15 +70,14 @@ internal object CoreBossBarHud {
      */
     fun centred(width: Int): Int = -(width - 1) / 2
 
-    /** Dedicated frames by [MobHud.dedicated]: the key's glyph family (frame, fill, trail). */
+    /** Decorated bosses by [MobHud.dedicated]: the key's glyph family (back, front, fill, trail). */
     private val DEDICATED = mapOf("shade_wyrm" to "wyrm", "sakura_fang" to "sakura")
     const val EROSION_X = -45
     const val EROSION_CELLS = 10
     const val EROSION_PITCH = 9
 
     /** [erosion]: this viewer's 黒翳竜 erosion 0..1 (drawn under the name while above zero). */
-    fun render(hud: MobHud, trail: Double, erosion: Double = 0.0): Component =
-        DEDICATED[hud.dedicated]?.let { dedicated(it, hud, trail, erosion) } ?: graded(hud, trail)
+    fun render(hud: MobHud, trail: Double, erosion: Double = 0.0): Component = graded(hud, trail, DEDICATED[hud.dedicated], erosion)
 
     /** [fill]: the fill glyph family (boss_fill, boss_fillc, wyrm_fill); the trail is that family's *_trail. */
     private fun CoreHudLine.gauge(fill: String, x: Int, width: Int, hud: MobHud, trail: Double) {
@@ -102,45 +100,41 @@ internal object CoreBossBarHud {
     /** The notice (attack being prepared, 帰還中) replaces the name; a break shows on the gauge and as an icon. */
     private fun title(hud: MobHud): Pair<String, TextColor>? = hud.notice?.let { it to NOTICE }
 
-    private fun graded(hud: MobHud, trail: Double): Component {
+    /**
+     * [ornament]: a dedicated boss's glyph family ("wyrm", "sakura"): the same bar, decorated — its ornament
+     * behind the plate (wings, mane, tails), horns over the diamond, its own HP colour, the plate's corner
+     * pieces left off so they do not fight the ornament.
+     */
+    private fun graded(hud: MobHud, trail: Double, ornament: String?, erosion: Double): Component {
         val line = CoreHudLine()
         val grade = if (hud.grade == MobGrade.COMMON) MobGrade.ELITE else hud.grade
         val key = grade.name.lowercase()
-        line.put(PLATE_X - PLATE_PAD, "boss_plate_$key")
+        if (ornament != null) {
+            line.put(ORNAMENT_X, "${ornament}_back_l")
+            line.put(0, "${ornament}_back_r")
+        }
+        line.put(PLATE_X - PLATE_PAD, if (ornament != null && grade == MobGrade.CALAMITY) "boss_plate_calamity_bare" else "boss_plate_$key")
         line.put(EMBLEM_X, "boss_emblem_$key")
-        line.gauge(if (grade == MobGrade.CALAMITY) "boss_fillc" else "boss_fill", HP_X, HP_W, hud, trail)
+        if (ornament != null) line.put(EMBLEM_X, "${ornament}_front")
+        val fill = when {
+            ornament != null -> "${ornament}_fill"
+            grade == MobGrade.CALAMITY -> "boss_fillc"
+            else -> "boss_fill"
+        }
+        line.gauge(fill, HP_X, HP_W, hud, trail)
         for (q in 1..3) line.put(HP_X + HP_W * q / 4, "boss_tick")
         line.cells("boss", hud)
         hud.effects.take(MAX_ICONS).forEachIndexed { i, effect -> line.put(PLATE_X + 2 + i * ICON_PITCH, "boss_icon_${effect.icon}") }
         line.uni(TAG_X + 4, grade.label, CoreHudGlyphs.BOSS_TAG, CoreMobNameplate.color(grade))
         val lv = hud.level.coerceIn(0, 999).toString()
         line.uni(centred(CoreHudGlyphs.uniWidth(lv)), lv, CoreHudGlyphs.BOSS_LV, LEVEL)
-        val (title, color) = title(hud) ?: (hud.name to WHITE)
+        val nameColor = when (ornament) { "wyrm" -> WYRM_NAME; "sakura" -> SAKURA_NAME; else -> WHITE }
+        val (title, color) = title(hud) ?: (hud.name to nameColor)
         line.uni(PLATE_X + 6, title, CoreHudGlyphs.BOSS_NAME, color)
         val pct = percent(hud.health, hud.maximumHealth)
         line.uni(PLATE_X + PLATE_W - 6 - CoreHudGlyphs.uniWidth(pct) + 1, pct, CoreHudGlyphs.BOSS_NAME, WHITE)
         val number = "${grouped(hud.health)} / ${grouped(hud.maximumHealth)}"
         line.uni(centred(CoreHudGlyphs.uniWidth(number)), number, CoreHudGlyphs.BOSS_HP, WHITE)
-        return line.build()
-    }
-
-    private fun dedicated(key: String, hud: MobHud, trail: Double, erosion: Double): Component {
-        val line = CoreHudLine()
-        line.put(WYRM_FRAME_X, "${key}_frame_l")
-        line.put(0, "${key}_frame_r")
-        line.gauge("${key}_fill", WYRM_HP_X, WYRM_HP_W, hud, trail)
-        line.cells("ded", hud)
-        val icons = hud.effects.take(MAX_ICONS)
-        icons.forEachIndexed { i, effect ->
-            line.put(WYRM_HP_X + WYRM_HP_W - icons.size * ICON_PITCH + 1 + i * ICON_PITCH, "ded_icon_${effect.icon}")
-        }
-        val lv = "Lv${hud.level.coerceIn(0, 999)}"
-        val (title, color) = title(hud) ?: (hud.name to (if (key == "sakura") SAKURA_NAME else WYRM_NAME))
-        val left = centred(CoreHudGlyphs.uniWidth(lv) + 4 + CoreHudGlyphs.uniWidth(title))
-        line.uni(left, lv, CoreHudGlyphs.DED_NAME, CoreMobNameplate.LEVEL)
-        line.uni(left + CoreHudGlyphs.uniWidth(lv) + 4, title, CoreHudGlyphs.DED_NAME, color)
-        val pct = percent(hud.health, hud.maximumHealth)
-        line.uni(WYRM_HP_X + WYRM_HP_W + 2 - CoreHudGlyphs.uniWidth(pct), pct, CoreHudGlyphs.DED_PCT, WHITE)
         if (erosion > 0.0 && erosion.isFinite()) {
             line.put(EROSION_X - 2, "erosion_well")
             val lit = kotlin.math.ceil(erosion.coerceIn(0.0, 1.0) * EROSION_CELLS).toInt()

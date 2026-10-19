@@ -45,7 +45,7 @@ class CoreHudLayoutTest {
     }
 
     private fun glyphName(placed: Placed): String? = placed.font.takeIf { it.isNotEmpty() }?.let { font ->
-        listOf("console", "emblem_warrior", "emblem_mage", "boss_plate_elite", "boss_plate_calamity", "boss_emblem_calamity", "wyrm_frame_l").firstOrNull { name ->
+        listOf("console", "emblem_warrior", "emblem_mage", "boss_plate_elite", "boss_plate_calamity", "boss_emblem_calamity", "wyrm_back_l", "boss_plate_calamity_bare").firstOrNull { name ->
             CoreHudGlyphs[name].let { it.font.asString() == font && it.char.code == placed.code } }
     }
 
@@ -233,15 +233,16 @@ class CoreHudLayoutTest {
         assertEquals(CoreBossBarHud.PLATE_X + CoreBossBarHud.PLATE_W - 6, row.maxOf { it.x + it.advance - 1 }, "percentage ends inside the plate")
         val lit = glyphs.count { g -> CoreHudGlyphs["boss_cell"].let { it.font.asString() == g.font && it.char.code == g.code } }
         assertEquals(13, lit, "64% of 20 break cells")
-        val wyrm = layout(CoreBossBarHud.render(bossHud().copy(dedicated = "shade_wyrm"), 14900.0)).first
-        assertEquals(CoreBossBarHud.WYRM_FRAME_X, wyrm.first { glyphName(it) == "wyrm_frame_l" }.x)
-        assertTrue(wyrm.none { it.font == "projects:hud_boss_name" })
+        val wyrm = layout(CoreBossBarHud.render(bossHud().copy(grade = MobGrade.CALAMITY, dedicated = "shade_wyrm"), 14900.0)).first
+        assertEquals(CoreBossBarHud.ORNAMENT_X, wyrm.first { glyphName(it) == "wyrm_back_l" }.x, "the wings sit behind the normal bar")
+        assertTrue(wyrm.any { glyphName(it) == "boss_plate_calamity_bare" }, "no corner thorns under the wings")
+        assertTrue(wyrm.indexOfFirst { glyphName(it) == "wyrm_back_l" } < wyrm.indexOfFirst { glyphName(it) == "boss_plate_calamity_bare" })
         assertTrue(wyrm.none { it.font == "projects:hud_ded_erosion" }, "no erosion gauge at zero")
         val eroded = layout(CoreBossBarHud.render(bossHud().copy(dedicated = "shade_wyrm"), 14900.0, erosion = .35)).first
         val cells = eroded.count { g -> CoreHudGlyphs["erosion_cell"].let { it.font.asString() == g.font && it.char.code == g.code } }
         assertEquals(4, cells, "35% erosion lights 4 of 10 cells")
         val sakura = layout(CoreBossBarHud.render(bossHud().copy(dedicated = "sakura_fang"), 14900.0)).first
-        assertTrue(sakura.any { g -> CoreHudGlyphs["sakura_frame_l"].let { it.font.asString() == g.font && it.char.code == g.code } })
+        assertTrue(sakura.any { g -> CoreHudGlyphs["sakura_back_l"].let { it.font.asString() == g.font && it.char.code == g.code } })
     }
 
     @Test fun `override allowlist hides only the HUD parts the HUD replaces and reskins the hotbar`() {

@@ -28,10 +28,8 @@ internal object CoreHudGlyphs {
     val BOSS_TAG: Key = Key.key("projects", "hud_boss_tag")
     val BOSS_HP: Key = Key.key("projects", "hud_boss_hp")
     val BOSS_LV: Key = Key.key("projects", "hud_boss_lv")
-    val DED_NAME: Key = Key.key("projects", "hud_ded_name")
-    val DED_PCT: Key = Key.key("projects", "hud_ded_pct")
     val DED_EROSION: Key = Key.key("projects", "hud_ded_erosion")
-    val uniFonts = setOf(BOSS_NAME, BOSS_TAG, BOSS_HP, BOSS_LV, DED_NAME, DED_PCT, DED_EROSION)
+    val uniFonts = setOf(BOSS_NAME, BOSS_TAG, BOSS_HP, BOSS_LV, DED_EROSION)
     const val ASCII_BASE = 0xE600
 
     /** Vanilla ascii advances for the characters the HUD prints (ink width + 1, read from 26.2's ascii.png). */

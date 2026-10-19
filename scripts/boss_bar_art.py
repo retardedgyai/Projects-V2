@@ -114,7 +114,7 @@ def _thorns(img, x, y, sx, sy):
     img.alpha_composite(layer)
 
 
-def plate(grade):
+def plate(grade, corners=True):
     """Plate with its frame, corner pieces, grade tag, HP well and empty break cells.
     Glyph x = PLATE_X - PLATE_PAD, top = PLATE_TOP - PLATE_PAD."""
     st = STYLE[grade]
@@ -132,9 +132,11 @@ def plate(grade):
     for i in range(CELL_COUNT):
         x = x0 + CELL_X - PLATE_X + i * CELL_PITCH
         rect(img, x, y0 + CELL_TOP - PLATE_TOP, x + CELL_PITCH - 1, y0 + CELL_TOP - PLATE_TOP + CELL_ROWS, art.RAGE_EMPTY)
-    corners = ((x0 - 1, y0 - 1, 1, 1), (x1, y0 - 1, -1, 1), (x0 - 1, y1, 1, -1), (x1, y1, -1, -1))
-    if st["corners"] == "gold":
-        for c in corners:
+    at = ((x0 - 1, y0 - 1, 1, 1), (x1, y0 - 1, -1, 1), (x0 - 1, y1, 1, -1), (x1, y1, -1, -1))
+    if not corners:
+        pass
+    elif st["corners"] == "gold":
+        for c in at:
             _bracket(img, *c)
     elif st["corners"] == "thorns":
         for (x, y, sx, sy) in ((x0 + 1, y0 + 1, 1, 1), (x1 - 2, y0 + 1, -1, 1), (x0 + 1, y1 - 2, 1, -1), (x1 - 2, y1 - 2, -1, -1)):
@@ -235,71 +237,63 @@ def _wyrm_head(img, cx, top):
     img.alpha_composite(_outline(head))
 
 
-def _wyrm_canvas(bar_y, height):
-    C = WYRM_FRAME_HALF
-    layer = new(2 * C, height)
-    pivot = (C - 34, bar_y + 6)
-    for k in range(9):  # outer blade first, so the inner ones overlap it
-        _blade(layer, pivot, 172 - k * 8.2, 96 + 10 * math.sin(math.pi * k / 8) - 3 * k, 13 - k * .5, k in (6, 7), k)
-    layer = _outline(_mirror(layer, C))
-    for x, y in ((C - 70, bar_y - 40), (C - 98, bar_y - 30), (C - 52, bar_y - 58), (C - 124, bar_y - 12),
-                 (C - 84, bar_y - 54), (C - 112, bar_y - 36), (C - 60, bar_y - 22), (C - 136, bar_y - 22), (C - 40, bar_y - 40)):
-        for xx in (x, 2 * C - x):
-            p = layer.getpixel((xx, y)) if 0 <= y < height else (0, 0, 0, 0)
-            if p[3] and p[:3] != OUT[:3]:
-                px(layer, xx, y, WY["mote"])
-    _slim_plate(layer, C, bar_y, WY["plate"], WYRM_EMPTY)
-    _wyrm_head(layer, C, bar_y - 18)
-    return layer
-
-
-def _slim_plate(layer, C, bar_y, mat, empty):
-    """The dedicated bars' slim plate round the gauge: HP well (6 rows) and the empty break cells (2 rows)."""
-    gx = C + WYRM_HP_X
-    rect(layer, gx - 4, bar_y - 3, gx + WYRM_HP_W + 4, bar_y + 13, OUT)
-    rect(layer, gx - 3, bar_y - 2, gx + WYRM_HP_W + 3, bar_y + 12, mat[1])
-    rect(layer, gx - 3, bar_y - 2, gx + WYRM_HP_W + 3, bar_y - 1, mat[3])
-    rect(layer, gx - 3, bar_y + 11, gx + WYRM_HP_W + 3, bar_y + 12, mat[0])
-    well(layer, gx, gx + WYRM_HP_W, bar_y, WYRM_HP_ROWS, empty)
-    for i in range(CELL_COUNT):
-        x = C + WYRM_CELL_X + i * CELL_PITCH
-        rect(layer, x, bar_y + 8, x + CELL_PITCH - 1, bar_y + 8 + WYRM_CELL_ROWS, art.RAGE_EMPTY)
-
-
-def _wyrm_layout():
-    """Place the bar so the highest blade tip sits at y = 2."""
-    probe = _wyrm_canvas(120, 200)
-    top = probe.getchannel("A").getbbox()[1]
-    bar_y = 120 - (top - 2)
-    return bar_y
-
-
-WYRM_BAR_Y = _wyrm_layout()
-# Every dedicated bar shares the wyrm's rows, so the text fonts are shared too.
-DED_BAR_Y = WYRM_BAR_Y
-DED_NAME_TOP = DED_BAR_Y + 16      # Lv + name, centred under the gauge
-DED_PCT_TOP = DED_BAR_Y - 12       # percentage, right end above the gauge
-DED_ICON_TOP = DED_BAR_Y + 15
-EROSION_TOP = DED_BAR_Y + 28       # 黒翳竜's erosion gauge (per player), under the name, only while above zero
+ORNAMENT_TOP = 0                 # ornament glyphs are drawn from the screen top
+ORNAMENT_H = PLATE_TOP + PLATE_H + 6
+EROSION_TOP = ICON_TOP + 2       # 黒翳竜's erosion gauge (per player), centred under the plate, only above zero
 EROSION_X, EROSION_CELLS, EROSION_PITCH = -45, 10, 9
 EROSION_LABEL_TOP = EROSION_TOP - 3
+
+
+def _capped(pivot_y, ang_deg, want, squash=.8, top=3):
+    """Longest blade at this angle whose tip stays at or below y = top."""
+    rise = math.sin(math.radians(ang_deg)) * squash
+    return want if rise <= 0 else min(want, (pivot_y - top) / rise)
+
+
+def wyrm_back():
+    """黒翳竜, behind the normal bar: its enraged fan of blade-like wing panels spreading from behind the
+    diamond, out past both ends of the plate. Returns (left half, right half)."""
+    C = WYRM_FRAME_HALF
+    layer = new(2 * C, ORNAMENT_H)
+    pivot = (C - 22, PLATE_TOP + 8)
+    for k in range(9):  # outer (near level) first, so the inner ones overlap it
+        ang = 176 - k * 9
+        length = _capped(pivot[1], ang, 150 - 9 * k)
+        _blade(layer, pivot, ang, length, 13 - k * .5, k in (6, 7), k)
+    layer = _outline(_mirror(layer, C))
+    for x, y in ((C - 70, 18), (C - 98, 22), (C - 52, 8), (C - 124, 26), (C - 84, 12), (C - 140, 30), (C - 40, 14)):
+        for xx in (x, 2 * C - x):
+            p = layer.getpixel((xx, y))
+            if p[3] and p[:3] != OUT[:3]:
+                px(layer, xx, y, WY["mote"])
+    return _split(layer)
+
+
+def _horn_pairs(img, cx, cy, r, pairs, cols):
+    """Horns rooted on the diamond's upper edges, sweeping up and out, mirrored. pairs: (dx, length, lean)."""
+    layer = new(img.width, img.height)
+    for dx, length, lean in pairs:
+        for side in (-1, 1):
+            x0, y0 = cx + side * dx, cy - (r - dx) + 1
+            for i in range(length):
+                x = x0 + side * (i * i) // (lean * 4); y = y0 - i
+                px(layer, x, y, hexc(cols[0]) if i > length - 4 else hexc(cols[1]))
+                if i < length - 3:
+                    px(layer, x + side, y, hexc(cols[2]))
+    img.alpha_composite(_outline(layer))
+
+
+def wyrm_front():
+    """Pink horns growing out of the diamond (over the emblem). Glyph x = -EMBLEM_W // 2, top 0."""
+    img = new(EMBLEM_W, EMBLEM_CY + 18)
+    r = STYLE["calamity"]["r"]
+    _horn_pairs(img, EMBLEM_W // 2, EMBLEM_CY, r, ((5, 10, 3), (9, 8, 4), (12, 6, 5)), ("ffb0e8", "e070c0", "a04080"))
+    return img
 
 
 def _split(full):
     C = WYRM_FRAME_HALF
     return full.crop((0, 0, C, full.height)), full.crop((C, 0, 2 * C, full.height))
-
-
-def wyrm_frame():
-    """(left half, right half): the frame is wider than one 256 px glyph."""
-    return _split(_wyrm_canvas(DED_BAR_Y, DED_BAR_Y + 14))
-
-
-def ded_cell(lit):
-    img = new(CELL_PITCH - 1, WYRM_CELL_ROWS)
-    rect(img, 0, 0, img.width, WYRM_CELL_ROWS, art.BREAK[1] if lit else hexc("ffffff"))
-    rect(img, 0, 0, img.width, 1, art.BREAK[2] if lit else hexc("ffffff"))
-    return img
 
 
 def erosion_well():
@@ -366,11 +360,13 @@ def _sakura_head(img, cx, top):
     img.alpha_composite(_outline(head))
 
 
-def _sakura_canvas(bar_y, height):
+def sakura_back():
+    """桜牙獣, behind the normal bar: a white mane fanning up behind the diamond, and from each end of the
+    plate a dark tail curling up with sakura blossoms along it. Returns (left half, right half)."""
     C = WYRM_FRAME_HALF
-    layer = new(2 * C, height)
-    # the tail: out of the plate's left end, sweeping out and curling up; blossoms ride its outer edge
-    p0, p1, p2, p3 = (C - 113, bar_y + 6), (C - 146, bar_y + 8), (C - 156, bar_y - 20), (C - 138, bar_y - 30)
+    layer = new(2 * C, ORNAMENT_H)
+    y_mid = PLATE_TOP + 16
+    p0, p1, p2, p3 = (C - 116, y_mid), (C - 150, y_mid + 2), (C - 160, y_mid - 22), (C - 142, y_mid - 34)
     pts = []
     for i in range(60):
         u = i / 59
@@ -382,25 +378,27 @@ def _sakura_canvas(bar_y, height):
             px(layer, round(x) - t // 2, round(y) + t - th // 2, SK["s3"] if t == 0 else SK["s2"] if t < th - 1 else SK["s1"])
     for i, r in ((26, 4), (44, 5), (59, 6)):
         x, y = pts[i]
-        _blossom(layer, round(x) - 3, round(y) - 2, r)
-    # mane: five broad locks swept up and outward behind the head
-    bx, by = C - 6, bar_y - 4
+        _blossom(layer, round(x) - 3, max(r + 1, round(y) - 2), r)
+    bx, by = C - 4, EMBLEM_CY + 4
     d = ImageDraw.Draw(layer)
-    for k, (ang, length, w) in enumerate(((112, 24, 3.6), (128, 28, 3.8), (144, 27, 3.6), (160, 23, 3.2), (174, 17, 2.8))):
+    for k, ang in enumerate((118, 134, 150, 166, 180)):
         a_ = math.radians(ang)
+        length = _capped(by, ang, (30, 34, 34, 30, 24)[k], squash=.85, top=2)
+        w = (3.6, 3.8, 3.6, 3.2, 2.8)[k]
         tip = (bx + math.cos(a_) * length, by - math.sin(a_) * length * .85)
         n = (-math.sin(a_) * w, -math.cos(a_) * w)
         bend = (bx + math.cos(a_ + .25) * length * .6, by - math.sin(a_ + .25) * length * .55)
         _poly(layer, [(bx + n[0], by + n[1]), bend, tip, (bx - n[0], by - n[1])], SK["fur2"] if k % 2 == 0 else SK["fur1"])
         d.line([(bx, by), (round(tip[0]), round(tip[1]))], fill=SK["fur0"], width=1)
-    layer = _outline(_mirror(layer, C))
-    _slim_plate(layer, C, bar_y, SK["plate"], SAKURA_EMPTY)
-    _sakura_head(layer, C, bar_y - 15)
-    return layer
+    return _split(_outline(_mirror(layer, C)))
 
 
-def sakura_frame():
-    return _split(_sakura_canvas(DED_BAR_Y, DED_BAR_Y + 14))
+def sakura_front():
+    """Pale horns out of the diamond's upper edges (over the emblem)."""
+    img = new(EMBLEM_W, EMBLEM_CY + 18)
+    r = STYLE["calamity"]["r"]
+    _horn_pairs(img, EMBLEM_W // 2, EMBLEM_CY, r, ((6, 12, 3),), ("e8e2dc", "b8b0b0", "8a8292"))
+    return img
 
 
 ICONS = mob_art.ICONS
