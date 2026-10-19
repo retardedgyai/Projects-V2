@@ -89,8 +89,19 @@ def lightmap(level, look):
     return col * .5 + ng * .5                                                  # BrightnessFactor 0.5 (the default)
 
 
-def light(arr, zb, dyn, look, cam, right, up, ox, oy, zoom):
-    """Relights the rendered frame in place: the wyrm by the light at each pixel, the empty pixels as the floor."""
+WAVE_TIME = 1.2                                       # the enrage wave: from the wyrm to the arena wall (22 blocks)
+
+
+def wave_radius(dt):
+    """The wave's radius dt seconds after the roar (eased out: fast at first)."""
+    f = min(max(dt / WAVE_TIME, 0), 1)
+    return 22 * (1 - (1 - f) ** 2) if dt >= 0 else -1
+
+
+def light(arr, zb, dyn, look, cam, right, up, ox, oy, zoom, wave=None):
+    """Relights the rendered frame in place: the wyrm by the light at each pixel, the empty pixels as the floor.
+    wave=(x, z, r): the enrage wave's centre (relative to C) and radius, drawn as a glowing band on the floor with a
+    ring of light blocks on its front."""
     H, W = zb.shape
     X, Y = np.meshgrid(np.arange(W) + .5, np.arange(H) + .5)
     a, b = (X - ox) / zoom, (oy - Y) / zoom
@@ -99,11 +110,20 @@ def light(arr, zb, dyn, look, cam, right, up, ox, oy, zoom):
     p = a[..., None] * right + b[..., None] * up + s[..., None] * cam          # model px (X mirrored, 16 px a block)
     world = np.stack([C[0] - p[..., 0] / 16, C[1] + p[..., 1] / 16, C[2] + p[..., 2] / 16], -1)
     lamps = [(int(C[0]) + x, int(C[1]) + y, int(C[2]) + z, l) for x, y, z, l in dyn]
+    if wave and 0 <= wave[2] < 22:
+        n = max(6, int(2 * math.pi * wave[2] / 3))
+        lamps += [(math.floor(C[0] + wave[0] + math.cos(k * 2 * math.pi / n) * wave[2]), 40,
+                   math.floor(C[2] + wave[1] + math.sin(k * 2 * math.pi / n) * wave[2]), 13) for k in range(n)]
     surf = world.copy(); surf[..., 1] = np.where(model, surf[..., 1], 40.5)   # the floor takes the light above it
     lm = lightmap(block_light(surf, lamps), look)
     alb, emissive = floor_albedo(np.floor(world[..., 0]), np.floor(world[..., 2]))
     inside = np.hypot(world[..., 0] - 32, world[..., 2] - 32) < 22
     floor = np.where(emissive[..., None], alb, alb * lm) * 255
+    if wave and 0 <= wave[2] < 22.5:
+        d = np.hypot(world[..., 0] - C[0] - wave[0], world[..., 2] - C[2] - wave[1])
+        fade = 1 - (wave[2] / 22.5) ** 3
+        band = np.exp(-((d - wave[2]) / .7) ** 2) + .25 * np.where(d < wave[2], np.exp(-(wave[2] - d) / 2.5), 0)
+        floor = floor + np.array([200, 120, 255]) * (band * fade)[..., None]
     floor = np.where(inside[..., None], floor, (8, 6, 12))
     wyrm = arr / 255 * lm * 1.25 * 255
     arr[:] = np.where(model[..., None], wyrm, floor)

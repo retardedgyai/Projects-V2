@@ -80,7 +80,12 @@ def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
         proj = lambda p: (int(ox + p @ right * zoom), int(oy - p @ up * zoom))
         if mode != "flat":
             look = LF.rage_look((r["t"] - rage_at) / LF.RAGE_FADE) if mode == "rage" else "before" if mode == "before" else "violet"
-            LF.light(arr, zb, r.get("lights", []), look, cam, right, up, ox, oy, zoom)
+            wave = None
+            if mode == "wave":                        # proposal: the roar (2.5 s into the enrage) sends a wave out
+                wr = LF.wave_radius(r["t"] - rage_at - 2.5)
+                look = LF.rage_look(wr / 22 if wr >= 0 else 0)
+                wave = (bx, bz, wr) if wr >= 0 else None
+            LF.light(arr, zb, r.get("lights", []), look, cam, right, up, ox, oy, zoom, wave)
         # floor dots every 2 blocks and the arena wall (radius 22)
         for gx in (range(-22, 23, 2) if mode == "flat" else ()):
             for gz in range(-22, 23, 2):
@@ -97,7 +102,7 @@ def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
         live = [dict(v) for v in r["shader"]]
         if live:
             SH.draw(arr, zb, live, 100 + r["t"], cam, right, up, ox, oy, zoom, tex)
-        if mode in ("glow", "rage"):
+        if mode in ("glow", "rage", "wave"):
             LF.bloom(arr)
         img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
         d = ImageDraw.Draw(img)
