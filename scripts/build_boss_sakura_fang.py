@@ -596,6 +596,69 @@ def merged(*poses):
     return out
 
 
+def spring_params(name):
+    """(frequency Hz, damping ratio, gain) of the lag a bone gets behind its ancestors, or None."""
+    if name.startswith("tail_"):
+        k = int(name[5:])
+        return 2.4 - .2 * k, .35, .35 + .12 * k
+    if name == "neck":
+        return 2.6, .45, .25
+    if name == "skull":
+        return 3.0, .45, .3
+    if name == "jaw":
+        return 4.0, .4, .2
+    if name.startswith(("mane_", "cheekfur_", "beard_", "chestfur_", "elbowfur_", "hipfur_")):
+        return 2.2, .3, .6
+    return None
+
+
+def follow_through(b, frames, loop):
+    """Secondary motion: chain bones (tail, neck, head, fur) lag behind the turns of their ancestors and overshoot
+    (a damped spring driven by the ancestors' angular acceleration, x and z). Loops are run three times and the last
+    pass kept, so they stay seamless."""
+    parent = {nm: p for nm, p, _ in b.bones}
+    n = len(frames)
+    reps = 3 if loop else 1
+    dt = STEP
+    for name in [nm for nm, _, _ in b.bones]:
+        sp = spring_params(name)
+        if sp is None:
+            continue
+        f, zeta, gain = sp
+        k = (2 * math.pi * f) ** 2
+        c = 2 * zeta * math.sqrt(k)
+        drive = []
+        for _, pose in frames:
+            dx = dz = 0.0
+            a = parent.get(name)
+            while a is not None:
+                v = pose.get(a, (0, 0, 0))
+                dx += v[0]; dz += v[2]
+                a = parent.get(a)
+            dx += 2.0 * pose.get("pos", (0, 0, 0))[1]
+            drive.append((dx, dz))
+        seq = drive[:-1] * reps + [drive[-1]] if loop else drive
+        acc = []
+        for i in range(len(seq)):
+            prv, nxt = seq[max(0, i - 1)], seq[min(len(seq) - 1, i + 1)]
+            cur = seq[i]
+            acc.append(tuple((prv[j] - 2 * cur[j] + nxt[j]) / (dt * dt) for j in range(2)))
+        x = [0.0, 0.0]; v = [0.0, 0.0]
+        out = []
+        sub = 10
+        for i in range(len(seq)):
+            for _ in range(sub):
+                for j in range(2):
+                    a_ = -k * x[j] - c * v[j] - gain * acc[i][j]
+                    v[j] += a_ * dt / sub
+                    x[j] += v[j] * dt / sub
+            out.append((max(-22.0, min(22.0, x[0])), max(-22.0, min(22.0, x[1]))))
+        out = out[-n:]
+        for i, (t, pose) in enumerate(frames):
+            o = pose.get(name, (0, 0, 0))
+            pose[name] = (o[0] + out[i][0], o[1], o[2] + out[i][1])
+
+
 def bake(b, name, length, keys, loop="once", base=None):
     """keys: [(time, pose, ease_into_this_key)]. Samples every STEP and writes linear keyframes."""
     base = base or {}
@@ -613,6 +676,7 @@ def bake(b, name, length, keys, loop="once", base=None):
         else:
             pose = keys[-1][1]
         frames.append((t, merged(base, pose, wind(t, pose.get("shells", 0.0)))))
+    follow_through(b, frames, loop == "loop")
     bones = {nm for nm, _, _ in b.bones}
     tracks = {}
     for t, pose in frames:
