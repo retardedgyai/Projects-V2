@@ -405,9 +405,9 @@ class QuestEncounterCombat(
         .filter { it.life.isAlive && it.life.phase != QuestMobPhase.RETURNING && isSpawned(it) }
         .map { mob ->
             val scale = mob.definition.scale
-            // The wyrm's body reaches ~1 block ahead of its carrier; its box covers chest, wings and hips.
+            // The wyrm's body reaches ~1 block ahead of its carrier; hits test the spheres on its bones (ShadeWyrmHitbox).
             if (mob.view != null) CombatTarget(mob.entity.uuid, mob.entity.position.add(normalizeHorizontal(mob.entity.position.direction()))
-                .add(0.0, 1.8, 0.0), Vec(2.0, 1.8, 2.0))
+                .add(0.0, 1.8, 0.0), Vec(2.0, 1.8, 2.0), parts = ShadeWyrmHitbox.parts(mob.view!!))
             else if (mob.model != null) CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 1.8, 0.0), Vec(1.2, 1.8, .6))
             else CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 0.9 * scale, 0.0), Vec(0.35 * scale, 0.9 * scale, 0.35 * scale))
         }
@@ -465,7 +465,8 @@ class QuestEncounterCombat(
             val steps = ceil(start.distance(end)*4).toInt().coerceAtLeast(1)
             if ((1 until steps).any { instance.getBlock(start.add(end.sub(start).mul(it.toDouble()/steps))).solid() }) return null
         }
-        val range = if (effect || projectile) 24.0 else 8.0
+        // A model boss is long (tail ~7 blocks back, fans ~7 out): melee may land on a part far from the carrier.
+        val range = if (effect || projectile) 24.0 else if (mob.view != null) 13.0 else 8.0
         if (!isSpawned(mob) || source.distanceSquared(mob.entity.position) > range * range) return null
         if (fieldOrigin == null && !effect && !mob.entity.hasLineOfSight(attacker)) return null
         val guarded = !effect && guarding(mob) &&
