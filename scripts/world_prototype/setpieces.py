@@ -31,8 +31,8 @@ def pick(mix, x, y, z, seed, blob=3.0):
     return mix[-1][0]
 
 
-BARK = [("dark_oak_wood", 55), ("spruce_wood", 25), ("mangrove_wood", 10), ("stripped_dark_oak_log", 10)]
-BARK_SHADE = [("spruce_wood", 50), ("dark_oak_wood", 40), ("mangrove_wood", 10)]
+BARK = [("dark_oak_wood", 80), ("spruce_wood", 12), ("stripped_dark_oak_log", 8)]
+BARK_SHADE = [("dark_oak_wood", 55), ("spruce_wood", 45)]
 
 
 def bark(x, y, z, shade=False, lossy=True):
@@ -294,13 +294,11 @@ def aqueduct(x0, zc, bays=7, pitch=12, pier=3, seed=2, collapsed=3, road_bay=Non
     # a little water still standing in the channel's intact stretches
     for u in range(pitch * (max(stump_piers) + 1), Ltot):
         if u // pitch == collapsed: continue
-        if _h(x0 + u, 0, zc, 747) < .4:
-            for s in (-1, 0, 1): put(x0 + u, floor_ + 1, zc + s, "water_still", shape="water") if (x0 + u, floor_, zc + s) in solid else None
-        elif _h(x0 + u, 1, zc, 748) < .3:
+        if _h(x0 + u, 1, zc, 748) < .3:
             put(x0 + u, floor_ + 1, zc, "moss_block", shape="carpet")
     # rubble: the fallen bay piled under and beyond the gap, downhill, half buried; one arc segment lying tilted
     gx0 = x0 + collapsed * pitch + pier
-    n_rub = int(removed * .18)
+    n_rub = int(removed * .35)
     for _ in range(n_rub):
         x = int(gx0 + r + R.gauss(0, r * .8)); z = int(zc + R.gauss(2.5, 3.2))
         if not (0 <= x < G.B and 0 <= z < G.B): continue

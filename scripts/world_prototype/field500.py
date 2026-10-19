@@ -625,8 +625,8 @@ for x in range(FX - 50, FX + 51):
             g = at(x, z)
             if math.hypot(x - FX + 2, z - FZ - 8) < 6 + 2 * noise3(x, 1, z, 72, 3) and not used[z, x]:
                 put(x, g, z, "water_still", shape="water")               # one dark pool in the bottom of the hollow
-            elif n > .42 or d < .55:
-                put(x, g, z, "podzol_top", "podzol_side") if n < .6 else put(x, g, z, "moss_block")
+            elif d + (n - .5) * .35 < .72:                               # one rot floor that fades out at the rim, not blobs
+                put(x, g, z, *(("moss_block",) if n > .66 else ("podzol_top", "podzol_side")))
 
 
 def giant_mushroom(x, z, height, cap_r, red=True):
@@ -650,13 +650,14 @@ def giant_mushroom(x, z, height, cap_r, red=True):
         put(int(round(px_)) + 2, int(py_), int(round(pz_)), "glow_lichen", shape="shut_s")
     cap = "red_mushroom_block" if red else "brown_mushroom_block"
     ri = int(cap_r) + 1
+    ta = R.uniform(0, math.tau); tilt = R.uniform(.12, .3)              # caps tilt toward the light and are never quite round
     for dx in range(-ri, ri + 1):
         for dz in range(-ri, ri + 1):
             d = math.hypot(dx, dz)
-            if d > cap_r: continue
+            if d > cap_r * (1 + .1 * math.sin(3 * math.atan2(dz, dx) + ta) + .06 * math.sin(5 * math.atan2(dz, dx))): continue
             dome = int(round((1 - (d / cap_r) ** 2) * (cap_r * .45 if red else cap_r * .2)))
             cx2, cz2 = int(round(top[0])) + dx, int(round(top[2])) + dz
-            y = int(top[1]) + dome
+            y = int(top[1]) + dome + int(round((dx * math.cos(ta) + dz * math.sin(ta)) * tilt))
             put(cx2, y, cz2, cap)
             if d > cap_r - 1.5:
                 put(cx2, y - 1, cz2, cap)                          # rim turns down
@@ -672,8 +673,9 @@ def giant_mushroom(x, z, height, cap_r, red=True):
     mark(x - ri, z - ri, x + ri, z + ri)
 
 
-for (mx, mz, h, r, red) in ((FX - 10, FZ - 6, 18, 9, True), (FX + 18, FZ + 10, 13, 7, False), (FX - 28, FZ + 16, 11, 6, True),
-                             (FX + 6, FZ - 26, 9, 5, False), (FX + 30, FZ - 14, 8, 5, True), (FX - 30, FZ - 18, 7, 4, False)):
+for (mx, mz, h, r, red) in ((FX - 10, FZ - 6, 20, 10, True),                                   # one hero; the rest brown, in two clusters of falling size
+                             (FX + 14, FZ + 8, 12, 6, False), (FX + 19, FZ + 13, 8, 4, False), (FX + 11, FZ + 15, 5, 3, False),
+                             (FX - 26, FZ - 20, 10, 5, False), (FX - 31, FZ - 15, 6, 3, False)):
     giant_mushroom(mx, mz, h, r, red)
 spawn(FX, FZ, 38, 16, "red_mushroom_block", "upright")              # fungal parasites
 mark(FX - 40, FZ - 32, FX + 40, FZ + 32)
@@ -873,8 +875,8 @@ def sakura_tree(x, z, g, size=1.0):
     """A Somei Yoshino: short thick trunk forking low into 3-5 spreading limbs, an umbrella crown wider than tall built of
     separate blossom pads at different heights, with gaps where the dark limbs show through (research-builds.md recipe 5)."""
     rs = random.Random(x * 9973 + z)
-    H = 9 + 9 * size
-    W = H * rs.uniform(1.3, 1.55)
+    H = 8 + 7 * size
+    W = H * rs.uniform(1.25, 1.45)
     D = max(1.2, H / 8)
     fork = g + H * rs.uniform(.2, .28)
     lean = (rs.uniform(-1, 1) * H / 9, rs.uniform(-1, 1) * H / 9)
@@ -931,7 +933,7 @@ def sakura_tree(x, z, g, size=1.0):
                 for dy in range(-int(ry) - 1, int(ry) + 2):
                     q = (dx / rx) ** 2 + (dz / rx) ** 2 + (dy / (ry if dy > 0 else ry * .7)) ** 2
                     if q > 1: continue
-                    fill = .78 if q < .55 else .32
+                    fill = 1.0 if q < .3 else (.78 if q < .6 else .32)          # a solid heart so no limb tip shows bare
                     if dy < 0: fill *= .6
                     p = (int(round(px)) + dx, int(round(py)) + dy, int(round(pz)) + dz)
                     if p in w.b or rs.random() > fill: continue
@@ -1406,12 +1408,12 @@ ent_a = math.atan2(-uz2, -ux2)
 FY = SY_ + 1                                                        # arena floor is one step up
 PREC = AR + 17
 for (x, y, z) in [p for p in w.b if abs(p[0] - SX_) <= PREC and abs(p[2] - SZ_) <= PREC and SY_ < p[1] < SY_ + 30]:
-    if math.hypot(x - SX_, z - SZ_) <= PREC and w.b[(x, y, z)][1] in ("cherry_log", "cherry_log_top", "cherry_wood", "cherry_leaves", "pink_wool", "oak_log", "oak_leaves", "oak_log_top"):
+    if math.hypot(x - SX_, z - SZ_) <= PREC and w.b[(x, y, z)][1] in ("cherry_log", "cherry_log_top", "cherry_wood", "dark_oak_wood", "mangrove_wood", "flowering_azalea_leaves", "cherry_leaves", "pink_wool", "oak_log", "oak_leaves", "oak_log_top"):
         w.b.pop((x, y, z), None)
 for (x, y, z) in [p for p in w.b if abs(p[0] - SX_) <= PREC and abs(p[2] - SZ_) <= PREC and p[1] == SY_ + 1]:
     if w.b[(x, y, z)][0] in ("carpet", "plant") and math.hypot(x - SX_, z - SZ_) <= PREC and UPPER[z, x] == SY_: w.b.pop((x, y, z), None)
 for (x, y, z) in [p for p in w.b if abs(p[0] - SX_) <= PREC and abs(p[2] - SZ_) <= PREC and SY_ - 3 <= p[1] <= SY_]:
-    if w.b[(x, y, z)][1] in ("cherry_log", "cherry_log_top", "cherry_wood", "oak_log", "oak_log_top") and math.hypot(x - SX_, z - SZ_) <= PREC:
+    if w.b[(x, y, z)][1] in ("cherry_log", "cherry_log_top", "cherry_wood", "dark_oak_wood", "mangrove_wood", "flowering_azalea_leaves", "oak_log", "oak_log_top") and math.hypot(x - SX_, z - SZ_) <= PREC:
         put(x, y, z, "grass_block_top" if y == SY_ else "dirt", "grass_block_side" if y == SY_ else "dirt")
 for dx in range(-AR - 4, AR + 5):
     for dz in range(-AR - 4, AR + 5):
@@ -1420,7 +1422,7 @@ for dx in range(-AR - 4, AR + 5):
         if UPPER[z, x] != SY_ or d > AR + 3: continue
         for y in range(SY_ + 1, SY_ + 12):
             v = w.b.get((x, y, z), ("", "", ""))
-            if v[1] in ("cherry_log", "cherry_log_top", "cherry_wood", "cherry_leaves", "pink_petals", "pink_wool") or v[0] in ("plant", "carpet"): w.b.pop((x, y, z), None)
+            if v[1] in ("cherry_log", "cherry_log_top", "cherry_wood", "dark_oak_wood", "mangrove_wood", "flowering_azalea_leaves", "cherry_leaves", "pink_petals", "pink_wool") or v[0] in ("plant", "carpet"): w.b.pop((x, y, z), None)
         if d <= AR:
             ring = abs(d - (AR - 2.5)) < .55                                  # one ring near the edge
             ang = math.atan2(dz, dx)
@@ -1434,7 +1436,8 @@ for dx in range(-AR - 4, AR + 5):
                 if (along / 3.0) ** 2 + (across / 2.3) ** 2 <= 1 and not notch: petal = True
             if d < 2.6: mat = "chiseled_stone_bricks" if d < 1.2 else "polished_andesite"
             elif ring: mat = "polished_andesite"
-            else: mat = "stone_bricks" if _h(x, 0, z, 61) > .18 else ("mossy_stone_bricks" if _h(x, 1, z, 62) > .5 else "cracked_stone_bricks")
+            elif abs(d - AR * .6) < 2.2 + noise3(x, 0, z, 616, 3): mat = "cracked_stone_bricks" if _h(x, 0, z, 61) < .45 else "polished_andesite"   # worn where the fight circles
+            else: mat = "stone_bricks" if noise3(x, 1, z, 617, 4) > .3 else "mossy_stone_bricks"
             put(x, FY, z, mat); put(x, SY_, z, "stone_bricks"); UPPER[z, x] = FY
             if _h(x, 2, z, 63) < .1: put(x, FY + 1, z, "pink_petals", shape="carpet")   # a few petals blown in
         elif d <= AR + 1.2:
@@ -1445,13 +1448,14 @@ for k2 in range(int(math.tau * (AR + 2))):                          # tamagaki: 
     a = k2 / (AR + 2)
     if abs(math.atan2(math.sin(a - ent_a), math.cos(a - ent_a))) < .32: continue
     x, z = int(round(SX_ + math.cos(a) * (AR + 2))), int(round(SZ_ + math.sin(a) * (AR + 2)))
-    put(x, SY_ + 1, z, "red_concrete", shape="fence"); put(x, SY_ + 2, z, "red_concrete", shape="slab")
-    if k2 % 9 == 0: put(x, SY_ + 3, z, "lantern", shape="lantern")
+    gone = noise3(math.cos(a) * 4, 0, math.sin(a) * 4, 613, 1.2)            # stretches of the old fence have fallen
+    if gone > .68: continue
+    put(x, SY_ + 1, z, "red_concrete", shape="fence")
+    if gone < .6: put(x, SY_ + 2, z, "red_concrete", shape="slab")
 gx0, gz0 = SX_ + math.cos(ent_a) * (AR + 2), SZ_ + math.sin(ent_a) * (AR + 2)
 torii(gx0, gz0, SY_, -math.cos(ent_a), -math.sin(ent_a), half=5, h=17)   # the great torii at the entrance
-for k2 in range(16):                                                # lanterns on the gravel band
-    a = ent_a + (k2 + .5) / 16 * math.tau
-    if abs(math.atan2(math.sin(a - ent_a), math.cos(a - ent_a))) < .4: continue
+for off in (.5, -.5, math.pi - .3, math.pi + .3):                      # lanterns only where something is: flanking the gate and the sacred tree
+    a = ent_a + off
     stone_lantern(int(round(SX_ + math.cos(a) * (AR + 5))), int(round(SZ_ + math.sin(a) * (AR + 5))), SY_, tall=True)
 for off, kind, rr0 in ((.85, "chozuya", 2), (-.85, "open", 3), (2.3, "hall", 5), (-2.3, "hall", 3)):   # a main hall, a small shrine, an open hall, the basin
     a = ent_a + off
@@ -1485,20 +1489,21 @@ for off in (1.55, -1.55):                                            # reflectin
                 put(x, SY_, z, "polished_andesite" if _h(x, 1, z, 72) < .6 else "mossy_stone_bricks")
     stone_lantern(int(round(qx0)) + 5, int(round(qz0)) - 3, SY_)
 for k2 in range(8):                                                  # framing sakura on the precinct edge, kept out of the sightlines
+    if k2 % 2: continue                                              # four, not a ring
     a = ent_a + .45 + k2 / 8 * math.tau
     rel = abs(math.atan2(math.sin(a - ent_a), math.cos(a - ent_a)))
     if rel < .6 or rel > math.pi - .55: continue
     x, z = int(round(SX_ + math.cos(a) * (AR + 16))), int(round(SZ_ + math.sin(a) * (AR + 16)))
-    if UPPER[z, x] == SY_: sakura_tree(x, z, SY_, size=1.5)
+    if UPPER[z, x] == SY_: sakura_tree(x, z, SY_, size=(1.0, 1.3, .7, 1.1)[k2 // 2])
 # the walk from the last bridge to the arena: a tunnel of torii lined with stone lanterns, a stone path
 startx, startz = BR2[-1][0], BR2[-1][1]
 for k2 in range(0, 40):
     for s2 in (-1, 0, 1):
         x, z = int(round(startx + ux2 * k2 - uz2 * s2)), int(round(startz + uz2 * k2 + ux2 * s2))
         if UPPER[z, x] == SY_ and math.hypot(x - SX_, z - SZ_) > AR + 1.5:
-            put(x, SY_, z, "polished_andesite" if s2 == 0 else ("stone_bricks" if k2 % 4 else "chiseled_stone_bricks"))
+            put(x, SY_, z, ("stone_bricks", "polished_andesite", "mossy_stone_bricks", "stone_bricks")[int(noise3(x, 0, z, 614, 2.5) * 4) % 4] if s2 == 0 or _h(x, 0, z, 615) < .7 else "moss_block")
             for y in range(SY_ + 1, SY_ + 10):
-                if w.b.get((x, y, z), ("", "", ""))[1] in ("cherry_log", "cherry_wood", "cherry_leaves"): w.b.pop((x, y, z), None)
+                if w.b.get((x, y, z), ("", "", ""))[1] in ("cherry_log", "cherry_wood", "dark_oak_wood", "mangrove_wood", "flowering_azalea_leaves", "cherry_leaves"): w.b.pop((x, y, z), None)
 for k2 in range(1, 9):
     cx, cz = startx + ux2 * (3 + k2 * 8), startz + uz2 * (3 + k2 * 8)
     if math.hypot(cx - SX_, cz - SZ_) < AR + 6: break
@@ -2194,10 +2199,10 @@ for z in range(2, B - 2):
                 put(x, y, z, FLOWERS[int(noise3(x, 0, z, 403, 30) * 12) % 6], shape="plant")
             elif clump > .52 and _h(x, 3, z, 42) < (clump - .45) * 2.2:
                 put(x, y, z, "tall_grass_top" if clump > .78 and _h(x, 4, z, 43) < .4 else "short_grass", shape="plant")
-            elif FOREST_F[z, x] > .5 and _h(x, 5, z, 44) < .08:
+            elif FOREST_F[z, x] > .5 and _h(x, 5, z, 44) < .2 * max(0, noise3(x, 5, z, 453, 4) - .5) * 4:
                 put(x, y, z, "fern", shape="plant")
         elif top in ("podzol_top", "moss_block", "coarse_dirt"):
-            if _h(x, 6, z, 45) < (.14 if top == "podzol_top" else .08):
+            if _h(x, 6, z, 45) < (.3 if top == "podzol_top" else .16) * max(0, noise3(x, 6, z, 452, 4) - .45) * 4:
                 k_ = R.choice(["fern", "fern", "short_grass", "brown_mushroom", "leaf_litter"]); put(x, y, z, k_, shape="carpet" if k_ == "leaf_litter" else "plant")
             elif top == "moss_block" and _h(x, 7, z, 46) < .25:
                 put(x, y, z, "moss_block", shape="carpet")
