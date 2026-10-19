@@ -524,13 +524,18 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         // Test-only: plays a player motion on the puppet (docs/development/player-motion.md). /motion stop ends it.
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("motion").apply {
             val name = net.minestom.server.command.builder.arguments.ArgumentType.Word("name")
-            setDefaultExecutor { sender, _ -> sender.sendMessage(Component.text("/motion greatsword_charge | dual_blades_dance | stop", NamedTextColor.GRAY)) }
+            val self = net.minestom.server.command.builder.arguments.ArgumentType.Literal("self")
+            setDefaultExecutor { sender, _ -> sender.sendMessage(Component.text("/motion greatsword_charge | dual_blades_dance [self] | stop（self：自分にも人形を見せる。F5で確認用）", NamedTextColor.GRAY)) }
             addSyntax({ sender, context -> (sender as? Player)?.let { player ->
                 val motion = context.get(name)
                 if (motion == "stop") dev.projects.server.puppet.PlayerPuppet.stop(player)
                 else if (!dev.projects.server.puppet.PlayerPuppet.play(player, motion))
                     player.sendMessage(Component.text("そのモーションはありません: $motion", NamedTextColor.YELLOW))
             } }, name)
+            addSyntax({ sender, context -> (sender as? Player)?.let { player ->
+                if (!dev.projects.server.puppet.PlayerPuppet.play(player, context.get(name), showOwner = true))
+                    player.sendMessage(Component.text("そのモーションはありません: ${context.get(name)}", NamedTextColor.YELLOW))
+            } }, name, self)
         })
         MinecraftServer.getCommandManager().register(Command("effects").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let {

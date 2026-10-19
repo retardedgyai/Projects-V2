@@ -50,4 +50,4 @@ server-minestom/src/main/resources/player-motions/<技>.json
 
 ### ゲーム内で見るとき
 
-`./gradlew :server-minestom:run` で起動し、`/motion greatsword_charge` か `/motion dual_blades_dance`（`/motion stop` で止める）。自分には人形が見えないので、**2人目のクライアントから見る**必要がある（1人ならF5でも自分の人形は見えない）。
+`./gradlew :server-minestom:run` で起動し、`/motion greatsword_charge` か `/motion dual_blades_dance`（`/motion stop` で止める）。自分には人形が見えない作りなので、1人で確かめるときは `/motion greatsword_charge self`（開発用：自分にも人形を見せる）でF5にして見る。一人称では人形がカメラを囲むので、本番の見え方ではない。

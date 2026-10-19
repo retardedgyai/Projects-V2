@@ -28,7 +28,7 @@ import kotlin.math.PI
  * Server-side only, no client mod. The puppet stands where the player stands, facing the way they faced when the
  * motion started. Driven by [tick] once per server tick; [stop] restores the player.
  */
-internal class PlayerPuppet(private val owner: Player, private val motion: PlayerMotion) {
+internal class PlayerPuppet(private val owner: Player, private val motion: PlayerMotion, private val showOwner: Boolean = false) {
     private val displays = LinkedHashMap<String, Entity>()
     private val yaw = -owner.position.yaw() * PI / 180
     private var age = 0
@@ -112,7 +112,8 @@ internal class PlayerPuppet(private val owner: Player, private val motion: Playe
     private fun spawn(instance: net.minestom.server.instance.Instance, item: ItemStack): Entity = Entity(EntityType.ITEM_DISPLAY).apply {
         setNoGravity(true)
         setHasPhysics(false)
-        updateViewableRule { it !== owner && CoreCombatPresentation.packed(it) }
+        // showOwner: dev only (/motion <name> self), to check the puppet alone in F5.
+        updateViewableRule { (showOwner || it !== owner) && CoreCombatPresentation.packed(it) }
         editEntityMeta(ItemDisplayMeta::class.java) { meta ->
             meta.setDisplayContext(ItemDisplayMeta.DisplayContext.NONE)
             meta.setItemStack(item)
@@ -134,10 +135,10 @@ internal class PlayerPuppet(private val owner: Player, private val motion: Playe
         private val active = HashMap<UUID, PlayerPuppet>()
 
         /** Plays [name] on [player], replacing any motion already playing. False if the motion does not exist. */
-        fun play(player: Player, name: String): Boolean {
+        fun play(player: Player, name: String, showOwner: Boolean = false): Boolean {
             val motion = PlayerMotion.load(name) ?: return false
             active.remove(player.uuid)?.stop()
-            val puppet = PlayerPuppet(player, motion)
+            val puppet = PlayerPuppet(player, motion, showOwner)
             active[player.uuid] = puppet
             puppet.start()
             player.scheduler().submitTask {
