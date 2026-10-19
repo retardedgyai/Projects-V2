@@ -342,14 +342,18 @@ def render(motion, skin, t, view):
         tr = motion['tracks']
         hands = [('r', 'grip_r', 'blade_r'), ('l', 'grip_l', 'blade_l')] if weapon['hands'] == 'dual' else [('r', 'grip', 'blade')]
         to_world = lambda v, w: camera.eye * w + v[0] * camera.r + v[1] * camera.u + v[2] * camera.f
+        to_cam = lambda v: np.array([-v[0], v[1], v[2]])  # character right (-x) is screen right
         for side, gk, bk in hands:
-            g, b = sample(tr[gk], t, 'pos'), sample(tr[bk], t, 'dir')
-            # character right (-x) is screen right; fists ~0.9 m below the eye, pushed out in front of the camera
+            g = sample(tr[gk], t, 'pos')
+            # fists ~0.8 m below the eye, pushed out in front of the camera
             gc = np.array([-g[0] * 1.1, g[1] - .78, g[2] * .9 + .55])
-            bc = np.array([-b[0], b[1], b[2]])
-            z = to_world(bc, 0); z = z / np.linalg.norm(z)
-            x = np.cross(camera.u, z); x = x / (np.linalg.norm(x) + 1e-9)
-            held = np.eye(4); held[:3, 0], held[:3, 1], held[:3, 2], held[:3, 3] = x, np.cross(z, x), z, to_world(gc, 1)
+            # Same blade frame as third person (edge leads the cut), built in camera space and then placed.
+            frame = blade_frame(tr[bk], np.diag([-1.0, 1.0, 1.0, 1.0]), t, np.zeros(3))
+            cam_basis = np.column_stack((camera.r, camera.u, camera.f))
+            held = np.eye(4)
+            held[:3, :3] = cam_basis @ frame[:3, :3]
+            if np.linalg.det(held[:3, :3]) < 0: held[:3, 0] = -held[:3, 0]  # the mirror flips handedness back
+            held[:3, 3] = to_world(gc, 1)
             faces += sword_faces(held @ S(.7, .7, .7), glow, weapon)
     else:
         for name, m in parts.items():
