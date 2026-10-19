@@ -55,7 +55,6 @@ internal object CoreBossBarHud {
     const val MAX_ICONS = 6
     private val WHITE: TextColor = TextColor.color(0xFFFFFF)
     private val LEVEL: TextColor = TextColor.color(0xFFD25A)
-    private val BROKEN: TextColor = TextColor.color(0xFFF2A0)
     private val NOTICE: TextColor = TextColor.color(0xFF8A70)
     private val WYRM_NAME: TextColor = TextColor.color(0xE0D4FF)
     private val SAKURA_NAME: TextColor = TextColor.color(0xFFD8E4)
@@ -100,11 +99,8 @@ internal object CoreBossBarHud {
         for (i in 0 until lit) put(x0 + i * CELL_PITCH, glyph)
     }
 
-    private fun title(hud: MobHud): Pair<String, TextColor>? = when {
-        hud.broken != null -> "崩れた！ 被ダメ+30%" to BROKEN
-        hud.notice != null -> hud.notice to NOTICE
-        else -> null
-    }
+    /** The notice (attack being prepared, 帰還中) replaces the name; a break shows on the gauge and as an icon. */
+    private fun title(hud: MobHud): Pair<String, TextColor>? = hud.notice?.let { it to NOTICE }
 
     private fun graded(hud: MobHud, trail: Double): Component {
         val line = CoreHudLine()

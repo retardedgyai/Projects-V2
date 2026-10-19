@@ -100,11 +100,12 @@ class CoreHudLayoutTest {
                 level = 3, experience = .05, notice = "マナが足りません（必要 15）", classKey = "assassin"), true)),
         ) + CoreHudLayout.classes.map { Triple("actionbar", "class-$it", CoreUiComponents.hud(combat(it), true)) } + listOf(
             Triple("boss", "boss", CoreBossBarHud.render(bossHud(), 14900.0)),
-            Triple("boss", "broken", CoreBossBarHud.render(bossHud().copy(health = 8200.0, broken = .55), 9000.0)),
+            Triple("boss", "broken", CoreBossBarHud.render(bossHud().copy(health = 8200.0, broken = .55,
+                effects = listOf(MobHudEffect(MobHudEffectKind.CC, "broken")) + bossHud().effects), 9000.0)),
         ) + MobGrade.entries.drop(1).map { Triple("boss", "grade-${it.name.lowercase()}", CoreBossBarHud.render(bossHud().copy(grade = it), 14900.0)) } + listOf(
             Triple("boss", "wyrm", CoreBossBarHud.render(bossHud().copy(name = "黒翳竜", grade = MobGrade.CALAMITY, dedicated = "shade_wyrm"), 14900.0)),
             Triple("boss", "wyrm-broken", CoreBossBarHud.render(bossHud().copy(name = "黒翳竜", health = 8200.0, broken = .55,
-                grade = MobGrade.CALAMITY, dedicated = "shade_wyrm"), 9000.0)),
+                grade = MobGrade.CALAMITY, dedicated = "shade_wyrm", effects = listOf(MobHudEffect(MobHudEffectKind.CC, "broken"))), 9000.0)),
             Triple("boss", "wyrm-erosion", CoreBossBarHud.render(bossHud().copy(name = "黒翳竜", grade = MobGrade.CALAMITY,
                 dedicated = "shade_wyrm"), 14900.0, erosion = .64)),
             Triple("boss", "sakura", CoreBossBarHud.render(bossHud().copy(name = "桜牙獣", grade = MobGrade.CALAMITY,

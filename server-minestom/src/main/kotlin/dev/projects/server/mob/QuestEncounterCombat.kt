@@ -1211,7 +1211,7 @@ class QuestEncounterCombat(
         val base = "T$tier ${mob.definition.name}  ${ceil(mob.life.health).toInt()}/${ceil(mob.life.maximumHealth).toInt()}  弱点:$weakness"
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         val crowd = when {
-            now < mob.brokenUntil -> "  ［崩れた！］"
+            now < mob.brokenUntil -> "  ［崩れ］"
             mob.boss -> "  崩し ${ceil(mob.breakGauge).toInt()}"
             else -> mob.crowd.filterValues { it > now }.keys.joinToString("") { "  ［${it.label}］" }
         }
@@ -1239,6 +1239,7 @@ class QuestEncounterCombat(
     private fun hud(mob: Mob): MobHud {
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         val effects = buildList {
+            if (now < mob.brokenUntil) add(MobHudEffect(MobHudEffectKind.CC, "broken"))
             if (mob.enraged || frenzied(mob)) add(MobHudEffect(MobHudEffectKind.BUFF, "rage"))
             if (now < mob.exposedUntil) add(MobHudEffect(MobHudEffectKind.DEBUFF, "exposed"))
             if (now < mob.slowedUntil && mob.slowPercent > 0.0) add(MobHudEffect(MobHudEffectKind.DEBUFF, "slow"))

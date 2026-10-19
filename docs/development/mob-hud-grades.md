@@ -32,7 +32,7 @@ CC はそのまま効き、同時に CC の種類ごとの量（`CrowdControl.br
 - 頭上：モブに乗せたテキスト表示エンティティ（`mob/MobPlates.kt`）。行ごとに「バフ/デバフ/CCの印」「Lv＋名前（バニラの字）」
   「HPと崩しのゲージ（等級の枠）」「MOD（バニラの字）」。乗っているのでモブと一緒に動き、ちらつかない。変化した時だけ送る（0.25秒ごとに確認）。
   名札1行方式は、バニラの字を別の段に置けない（ascii.png は高さ8、字を段ごとにずらすフォントが作れない）ので使わない。
-- ボスバー：板の HP の下に崩しゲージ（崩れ中は白いゲージが4秒で減り、題名が「崩れた！ 被ダメ+30%」）。右に印、左に Lv。
+- ボスバー：板の HP の下に崩しゲージ（崩れ中は白いマスが4秒で減り、印の列に「崩れ」のアイコン。文字は出さない）。右に印、左に Lv。
 - 絵：`scripts/mob_hud_art.py`（頭上）と `combat_hud_art.boss_plate`（ボスバー）。字形は `build_combat_hud.py` が `projects:hud_plate` に出す。
 - 確認：`./gradlew :server-minestom:test --tests '*CoreHudLayoutTest*'` → `python scripts/render_combat_hud_preview.py` → `build/hud-preview/mob-hud-4x.png`。
 
