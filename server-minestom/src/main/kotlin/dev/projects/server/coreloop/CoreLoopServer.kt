@@ -524,6 +524,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
                 player.sendMessage(Component.text(if (combatLab.enrageBoss(player)) "ボスを怒らせた（体力を怒りの境目の少し下へ）。" else "/bosstest のボス戦の中で使ってください。", NamedTextColor.GRAY))
             } } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("rage"))
+            // /bosstest sakura: 桜牙獣 in 散り桜の庭 instead of the shade wyrm.
+            addSyntax({ sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR, "sakura") } },
+                net.minestom.server.command.builder.arguments.ArgumentType.Literal("sakura"))
         })
         MinecraftServer.getCommandManager().register(Command("effects").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let {

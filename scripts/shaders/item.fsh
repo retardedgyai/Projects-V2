@@ -8,6 +8,11 @@
 //   noise, a hot leading edge, dissolving tails.
 // - Warrior iron strikes (scripts/build_warrior_iron_vfx.py): texels whose alpha is a marker. 253 = heat,
 //   self-lit and flickering; 121 / 65 = near / far glow halo.
+// - 桜牙獣 petal storm (SakuraPetalFx): items whose tint is blue == 78, green == 100 + heat * 100, red == fade. The
+//   texture is a data map (R mask, G along: the petal at 0 .. the ribbon end at 1, B across): a white-hot petal
+//   that cools to pink, trailing a glowing ribbon.
+// - 桜牙獣 (scripts/build_boss_sakura_fang.py): texels with alpha 200..215 and R/G/B low bits 1/2/3 glow, and a
+//   light runs along them: alpha - 200 is the texel's place on the flow (0 shoulders .. 15 tail tip).
 // The VFX colours are self-lit (no overlay, lightmap or glint) but go through the same OIT phases and fog as vanilla.
 
 #include <minecraft:globals.glsl>
@@ -86,7 +91,14 @@ vec3 ramp(float h) {
     return mix(c, vec3(1.0, .80, .95), smoothstep(.7, 1.0, h));
 }
 
-vec4 shadeVfx(vec4 data, float kind, float p) {
+// 桜牙獣 (marker 79): the same shapes in sakura: deep plum body, pink, pale blossom, a white-pink core.
+vec3 sakuraRamp(float h) {
+    vec3 c = mix(vec3(.14, .03, .09), vec3(.78, .20, .47), smoothstep(.0, .35, h));
+    c = mix(c, vec3(1.0, .62, .80), smoothstep(.35, .7, h));
+    return mix(c, vec3(1.0, .94, .97), smoothstep(.7, 1.0, h));
+}
+
+vec4 shadeVfx(vec4 data, float kind, float p, bool sakura) {
     float mask = data.r, flow = data.g, across = data.b;
     float t = GameTime * 1200.0;                       // seconds
     float n = fbm(vec2(flow * 9.0 - t * 2.4, across * 5.0 + t * .7));
@@ -122,7 +134,8 @@ vec4 shadeVfx(vec4 data, float kind, float p) {
         heat = mask * .18 + edge * .55 + n * .1;
         alpha = step(threshold, v) * mask * .85;
     }
-    return vec4(ramp(clamp(heat, 0.0, 1.0)), clamp(alpha, 0.0, 1.0));
+    float h = clamp(heat, 0.0, 1.0);
+    return vec4(sakura ? sakuraRamp(h) : ramp(h), clamp(alpha, 0.0, 1.0));
 }
 
 float vfxHash(vec3 cell) {
@@ -154,12 +167,32 @@ void main() {
     vec4 color = texture(Sampler0, texCoord0);
     int markerB = int(rawColor.b * 255.0 + .5);
     int kind = int(rawColor.g * 255.0 + .5);
-    if (markerB == 77 && kind >= 1 && kind <= 6) {
-        vec4 fx = shadeVfx(color, float(kind), rawColor.r);
+    if ((markerB == 77 || markerB == 79) && kind >= 1 && kind <= 6) {
+        vec4 fx = shadeVfx(color, float(kind), rawColor.r, markerB == 79);
         if (fx.a < .01) {
             discard;
         }
         finishUnlit(fx);
+        return;
+    }
+    if (markerB == 78 && kind >= 100 && kind <= 200) {
+        float fade = rawColor.r;
+        float heat = float(kind - 100) / 100.0;
+        float along = color.g, across = color.b, mask = color.r;
+        vec3 core = vec3(1.0, .93, .96), hot = vec3(1.0, .58, .77), deep = vec3(.78, .22, .50);
+        vec4 fx;
+        if (along < .2) {                                  // the petal itself
+            fx = vec4(mix(mix(hot, core, .55 + .45 * heat), hot, across * .5), mask * min(1.0, fade * 1.4));
+        } else {                                           // its ribbon, fading behind it
+            float t = (along - .2) / .8;
+            float shimmer = .85 + .15 * sin(GameTime * 24000.0 * .8 + along * 30.0);
+            vec3 c = mix(mix(hot, core, heat * (1.0 - t)), deep, t * t);
+            fx = vec4(c * (1.1 - .4 * t), mask * pow(1.0 - t, 1.3) * .8 * fade * shimmer);
+        }
+        if (fx.a < .01) {
+            discard;
+        }
+        finishUnlit(fx * vec4(ColorModulator.rgb, ColorModulator.a));
         return;
     }
     int marker = int(color.a * 255.0 + 0.5);
@@ -185,6 +218,20 @@ void main() {
         }
         vec4 lit = vec4(min(rgb, vec3(1.0)), alpha) * ColorModulator;
         finishUnlit(lit);
+        return;
+    }
+    ivec4 texel = ivec4(color * 255.0 + 0.5);
+    if (texel.a >= 200 && texel.a <= 215 && (texel.r & 3) == 1 && (texel.g & 3) == 2 && (texel.b & 3) == 3) {
+        float phase = float(texel.a - 200) / 15.0;
+        float t = GameTime * 1200.0;                                   // seconds
+        // Two waves of light run from the shoulders to the tail tip (2.2 s apart), a slow breath under them.
+        float d1 = abs(fract(t * .45 - phase + .5) - .5);
+        float d2 = abs(fract(t * .45 - phase) - .5);
+        float band = exp(-d1 * d1 * 140.0) + .45 * exp(-d2 * d2 * 260.0);
+        float breath = .9 + .1 * sin(t * 2.1);
+        vec3 rgb = color.rgb * breath * 1.08;
+        rgb = mix(rgb, vec3(1.0, .90, .95), clamp(band * .8, 0.0, .85));
+        finishUnlit(vec4(min(rgb, vec3(1.0)), 1.0) * ColorModulator);
         return;
     }
     #ifdef ALPHA_CUTOUT

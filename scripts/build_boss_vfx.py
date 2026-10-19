@@ -75,13 +75,135 @@ def curtain(u, v):
     return smooth(0, .18, u) * smooth(0, .18, 1 - u), u, 1 - v
 
 
+def streak(u, v):
+    """桜牙獣 petal with its light ribbon (scripts/build_boss_sakura_fang.py): the notched petal at the top (v < .2),
+    the ribbon fading down to the bottom. G = along (0 head .. 1 ribbon end), B = across."""
+    across = abs(2 * u - 1)
+    if v < .2:
+        w = v / .2                                       # 0 tip .. 1 base of the petal
+        half = (.35 + .65 * math.sin(math.pi * min(1, .15 + w * .85)) ** .7) * (1 - .5 * w * w)
+        if across > half or (w < .16 and across < .22):
+            return 0, 0, 0
+        return 1, v, across
+    return (1 - across ** 1.3) * (1 - (v - .2) / .8) ** .4, v, across
+
+
+# --- 桜牙獣's sakura sprites: the same data-map contract (R mask, G flow, B across), drawn as blossoms and petals ---
+def petal_at(x, y, cx, cy, ang, size, notch=True):
+    """Mask of one notched sakura petal centred at (cx, cy), its tip pointing along ang (radians); 0 outside."""
+    dx, dy = x - cx, y - cy
+    ax, ay = math.sin(ang), math.cos(ang)                             # the tip direction, same convention as the callers
+    v, u = (dx * ax + dy * ay) / size, (dx * ay - dy * ax) / size     # v along the petal (-1 base .. 1 tip), u across
+    w = (v + 1) / 2
+    if not 0 <= w <= 1:
+        return 0.0
+    half = (.22 + .78 * min(1, w / .7) ** .6) * math.sqrt(max(0, 1 - max(0, (w - .72) / .3) ** 2)) * .55
+    if abs(u) > half or (notch and w > 1 - .2 * max(0, 1 - abs(u) / .17)):
+        return 0.0
+    edge = 1 - abs(u) / max(half, 1e-6)
+    return .55 + .45 * min(1, edge * 3) * (.6 + .4 * w)
+
+
+def crest(u, v):
+    """A five-petal sakura crest lying on the ground: flow = angle round it, across = distance from the centre."""
+    x, z = 2 * u - 1, 2 * v - 1
+    r, a = math.hypot(x, z), math.atan2(x, z)
+    m = 0.0
+    for k in range(5):
+        ang = k * 2 * math.pi / 5
+        m = max(m, petal_at(x, z, math.sin(ang) * .5, math.cos(ang) * .5, ang, .5))
+    if r < .12:
+        m = max(m, 1.0)
+    return m, (a / (2 * math.pi)) % 1, min(1, r)
+
+
+def petal_ring(u, v):
+    """A shock ring made of petals, all pointing outward, round the rim."""
+    x, z = 2 * u - 1, 2 * v - 1
+    r, a = math.hypot(x, z), math.atan2(x, z)
+    m = 0.0
+    n = 18
+    k = round(a / (2 * math.pi) * n)
+    for j in (k - 1, k, k + 1):
+        ang = j * 2 * math.pi / n
+        m = max(m, petal_at(x, z, math.sin(ang) * .84, math.cos(ang) * .84, ang, .15))
+    return m, (a / (2 * math.pi)) % 1, min(1, max(0, (r - .6) / .4))
+
+
+def petal_slash(u, v):
+    """A crescent (like slash) whose band is a stream of petals laid along the arc, tips pointing the way it swings."""
+    x, z = 2 * u - 1, 2 * v - 1
+    r, a = math.hypot(x, z), math.atan2(x, z)
+    half = math.radians(90)
+    if abs(a) > half or not .4 < r <= 1:
+        return 0, 0, 0
+    m = 0.0
+    for lane, rr in enumerate((.58, .78, .94)):
+        n = (9, 12, 14)[lane]
+        k = round((a + half) / (2 * half) * (n - 1) + lane * .37)
+        for j in (k - 1, k, k + 1):
+            aa = -half + (j - lane * .37) * 2 * half / (n - 1)
+            if abs(aa) > half:
+                continue
+            m = max(m, petal_at(x, z, math.sin(aa) * rr, math.cos(aa) * rr, aa - math.pi / 2, .1 + .02 * lane))
+    ends = smooth(0, .1, (half - abs(a)) / (2 * half))
+    return m * ends, (a + half) / (2 * half), (r - .4) / .6
+
+
+def petal_trail(u, v):
+    """A strip of petals in single file along v (toward +Z), each pointing the way it is thrown."""
+    x, z = 2 * u - 1, v
+    m = 0.0
+    n = 9
+    k = round(z * (n - 1))
+    for j in (k - 1, k, k + 1):
+        if 0 <= j < n:
+            cz = j / (n - 1)
+            m = max(m, petal_at(x, z * 4, .25 * math.sin(j * 2.1), cz * 4, 0.0, .55))
+    return m * smooth(0, .05, v) * smooth(0, .08, 1 - v), v, abs(2 * u - 1)
+
+
+def blossom(u, v):
+    """An upright blossom: five open petals round a bright heart (a billboard burst)."""
+    x, y = 2 * u - 1, 2 * v - 1
+    r, a = math.hypot(x, y), math.atan2(y, x)
+    m = 0.0
+    for k in range(5):
+        ang = k * 2 * math.pi / 5 + .3
+        m = max(m, petal_at(x, y, math.sin(ang) * .48, math.cos(ang) * .48, ang, .5))
+    if r < .14:
+        m = 1.0
+    return m, r, (a / (2 * math.pi)) % 1
+
+
+def petal_curtain(u, v):
+    """Upright: a wall of petals blown upward, thinning toward the top (across 0 bottom .. 1 top)."""
+    m = 0.0
+    for j in range(7):
+        cx, cy = (j * .37 + .1) % 1, (j * .53 + .2) % 1
+        m = max(m, petal_at(u * 2, v * 2, cx * 2, cy * 2, math.pi + (j - 3) * .25, .28))
+    return m * smooth(0, .15, u) * smooth(0, .15, 1 - u), u, 1 - v
+
+
 SPRITES = {"slash": (128, 128, slash, "flat"), "ring": (64, 64, ring, "flat"), "beam": (32, 128, beam, "flat"),
            "beam_up": (128, 32, lambda u, v: beam(v, u), "upright"), "ring_up": (64, 64, ring, "upright"), "puff": (32, 32, puff, "upright"), "smoke": (32, 32, puff, "upright"), "disc": (32, 32, puff, "flat"),
-           "curtain": (32, 64, curtain, "upright")}
+           "curtain": (32, 64, curtain, "upright"),
+           "sakura_streak": (16, 80, streak, "cross"),
+           "sakura_crest": (128, 128, crest, "flat"), "sakura_ring": (128, 128, petal_ring, "flat"),
+           "sakura_slash": (128, 128, petal_slash, "flat"), "sakura_trail": (32, 128, petal_trail, "flat"),
+           "sakura_blossom": (64, 64, blossom, "upright"), "sakura_curtain": (64, 64, petal_curtain, "upright")}
 
 
 def model(name, kind):
     face = {"texture": "#fx", "uv": [0, 0, 16, 16], "tintindex": 0}
+    if kind == "cross":                                   # two crossed upright quads: never seen edge-on
+        elements = [{"from": [0, 0, 8], "to": [16, 16, 8], "faces": {"north": face, "south": face}},
+                     {"from": [8, 0, 0], "to": [8, 16, 16], "faces": {"east": face, "west": face}}]
+        for e in elements:
+            e.update(light_emission=15, shade=False)
+        return {"ambientocclusion": False, "elements": elements,
+                "textures": {"fx": {"sprite": f"projects:item/boss_vfx/{name}", "force_translucent": True},
+                             "particle": f"projects:item/boss_vfx/{name}"}}
     if kind == "flat":
         element = {"from": [0, 8, 0], "to": [16, 8, 16], "faces": {"up": face}}
     else:

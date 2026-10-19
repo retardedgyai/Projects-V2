@@ -26,7 +26,7 @@ import kotlin.math.sin
  * (1 slash, 2 ring, 3 beam, 4 puff, 5 curtain, 6 smoke), red = progress, rewritten every tick. Only players with the pack
  * see them; the others keep the particles of [ShadeWyrmVfx].
  */
-internal class ShadeWyrmShaderFx(private val instance: Instance) {
+internal class ShadeWyrmShaderFx(private val instance: Instance, private val marker: Int = MARKER) {
     private class Piece(
         val sprite: String, val kind: Int, val at: Pos, val start: Int, val life: Int,
         val scale: Vec, val rotation: FloatArray, val translation: Vec = Vec.ZERO,
@@ -376,7 +376,8 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         pieces.clear()
     }
 
-    private fun add(sprite: String, kind: Int, at: Pos, delay: Int, life: Int, scale: Vec, rotation: FloatArray,
+    /** One shader piece; [marker] picks the palette in item.fsh (77 the wyrm's violet, 79 桜牙獣's sakura, see SakuraStrikeFx). */
+    internal fun add(sprite: String, kind: Int, at: Pos, delay: Int, life: Int, scale: Vec, rotation: FloatArray,
                     translation: Vec = Vec.ZERO, grow: Vec? = null, slide: Vec? = null, moveTicks: Int = 0, billboard: Boolean = false,
                     progress: (Double) -> Double = { it }) {
         if (life <= 0) return
@@ -515,7 +516,7 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         val red = (progress.coerceIn(0.0, 1.0) * 255).toInt()  // the shader's progress
         return ItemStack.of(Material.PAPER).withItemModel("projects:boss_vfx/${piece.sprite}")
             .with(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), emptyList(),
-                listOf(TextColor.color(red, piece.kind, MARKER))))
+                listOf(TextColor.color(red, piece.kind, marker))))
     }
 
     /** Where the dust spores hang: a sunflower spread over the circle, low to chest height. */

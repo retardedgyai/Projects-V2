@@ -98,6 +98,7 @@ object BossArenaFactory {
             "trial" -> QuestMobArchetype.TEMPEST_HIEROPHANT
             // Dev-only so far (/bosstest); no fragment/currency entry exists for it yet.
             "shade" -> QuestMobArchetype.SHADE_WYRM
+            "sakura" -> QuestMobArchetype.SAKURA_FANG
             else -> error("Unknown trial boss: $bossId")
         }
         val instance = if (bossId == "shade") MinecraftServer.getInstanceManager().createInstanceContainer(registerDimensions())
@@ -126,15 +127,24 @@ object BossArenaFactory {
                         Math.floorMod(x * 7 + z * 13, 9) == 0 -> Block.AMETHYST_BLOCK
                         else -> Block.POLISHED_TUFF
                     }
+                    // 桜牙獣's glade: moss and grass strewn with fallen petals, a ring of cherry planks.
+                    "sakura" -> when {
+                        distance in 9.5..10.5 -> Block.CHERRY_PLANKS
+                        Math.floorMod(x * 7 + z * 13, 5) == 0 -> Block.PINK_WOOL
+                        Math.floorMod(x * 11 + z * 3, 4) == 0 -> Block.MOSS_BLOCK
+                        else -> Block.GRASS_BLOCK
+                    }
                     else -> if ((x + z) % 7 == 0) Block.SEA_LANTERN else Block.PRISMARINE_BRICKS
                 }
                 unit.modifier().setBlock(x, 39, z, floor)
                 if (distance in 22.0..23.5) for (y in 40..43) unit.modifier().setBlock(x, y, z,
-                    if (bossId == "ritual") Block.BLUE_ICE else Block.POLISHED_DEEPSLATE)
-                if (distance in 19.0..20.5 && (abs(dx) < 1 || abs(dz) < 1)) {
+                    when (bossId) { "ritual" -> Block.BLUE_ICE; "sakura" -> Block.CHERRY_LEAVES; else -> Block.POLISHED_DEEPSLATE })
+                // 散り桜の庭's pillars are wider: they are the cover from 桜牙獣's 千本桜
+                val pillar = if (bossId == "sakura") 1.6 else 1.0
+                if (distance in 19.0..20.5 && (abs(dx) < pillar || abs(dz) < pillar)) {
                     for (y in 40..44) unit.modifier().setBlock(x, y, z, Block.POLISHED_DEEPSLATE)
                     unit.modifier().setBlock(x, 45, z, when (bossId) {
-                        "rift" -> Block.SHROOMLIGHT; "shade" -> Block.PEARLESCENT_FROGLIGHT; else -> Block.SEA_LANTERN })
+                        "rift" -> Block.SHROOMLIGHT; "shade" -> Block.PEARLESCENT_FROGLIGHT; "sakura" -> Block.PEARLESCENT_FROGLIGHT; else -> Block.SEA_LANTERN })
                 }
             }
         }
@@ -142,7 +152,7 @@ object BossArenaFactory {
             val chunks = (-1..5).flatMap { x -> (-1..5).map { z -> instance.loadChunk(x, z) } }
             CompletableFuture.allOf(*chunks.toTypedArray()).join()
             return BossArena(instance, Pos(32.5, 40.0, 16.5), Pos(32.5, 40.0, 32.5), archetype, bossId,
-                when (bossId) { "rift" -> "灰燼の溶炉"; "ritual" -> "氷獄の円庭"; "shade" -> "翳の巣"; else -> "天雷の祭壇" })
+                when (bossId) { "rift" -> "灰燼の溶炉"; "ritual" -> "氷獄の円庭"; "shade" -> "翳の巣"; "sakura" -> "散り桜の庭"; else -> "天雷の祭壇" })
         } catch (failure: Throwable) {
             MinecraftServer.getInstanceManager().unregisterInstance(instance)
             throw failure
