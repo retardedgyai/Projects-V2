@@ -63,6 +63,11 @@ internal class QuestMobLife(val maximumHealth: Double) {
 /** How long an enraging boss holds its roar before attacking again (matches the `enrage` model clip). */
 private const val ENRAGE_HOLD_MILLIS = 5000L
 
+internal enum class ManeuverKind { STRAFE, HOP_BACK, DASH }
+
+/** The carrier is moved from [from] to [to] between [moveFrom] and [moveTo] (hop/dash); a strafe paths instead. */
+internal class Maneuver(val kind: ManeuverKind, val from: Pos, val to: Pos, val moveFrom: Long, val moveTo: Long, val endAt: Long, val sign: Int)
+
 /**
  * One map owns one instance of this runtime. Invoke tick on the map's server tick, and dispose before unloading it.
  * Player attack packets never enter this class: applyDamage accepts targets already resolved by server hit shapes.
@@ -123,6 +128,29 @@ class QuestEncounterCombat(
         @Volatile var view: BossModelView? = null
         var enraged = false
         var enrageHoldUntil = 0L
+        /** Model bosses: a move round the target between attacks (see [startManeuver]). */
+        var maneuver: Maneuver? = null
+        var nextManeuverAt = 0L
+        var maneuvers = 0
+        /** Where the model looks while it moves sideways or backward: at its target. */
+        var faceYaw = 0f
+        /** Since when the target has stood behind the model (0 = not behind); see [TURN_AFTER_MILLIS]. */
+        var behindSince = 0L
+        /** An ability to follow the maneuver that just ended (hop back -> breath, dash -> sweep). */
+        var combo: String? = null
+        /** Where an ability that carries the body (the dive) took off from. */
+        var travelFrom: Pos? = null
+        /** Lost its target (far or out of sight): it creeps and searches. */
+        var searching = false
+        /** Enraged parts (gimmicks): damage dealt near the head and on each side, and what has broken. 0 = its right fan. */
+        var hornDamage = 0.0
+        var hornsBroken = false
+        /** The enrage roar's wave (see [tickRageWave]): when it left the wyrm and from where; 0 = not yet. */
+        var waveAt = 0L
+        var waveFrom: Pos? = null
+        var sloppyUntil = 0L
+        val fanDamage = DoubleArray(2)
+        val fanTorn = BooleanArray(2)
     }
 
     private val mobs = linkedMapOf<UUID, Mob>()
@@ -139,6 +167,13 @@ class QuestEncounterCombat(
             !(shaded && dev.projects.server.coreloop.CoreCombatPresentation.packed(it)) }.forEach { it.sendPacket(packet) }
     }
     private val shaderFx = ShadeWyrmShaderFx(instance)
+    private val lights = ShadeWyrmLights(instance)
+    private val gimmicks = ShadeWyrmGimmicks(tier, shaderFx, lights = lights)
+    /** Players who have the boss glow post effect on (26.3 /posteffect, assets/projects/post_effect/shade_glow.json). */
+    private val glowing = mutableSetOf<Player>()
+    /** 翳の巣's rage clock: started when the wyrm enrages, it turns the arena's light violet (BossArenaFactory.SHADE_RAGE). */
+    private val rageClock = if (instance.dimensionType.key() == dev.projects.server.coreloop.adventure.BossArenaFactory.SHADE_NEST)
+        instance.clock(dev.projects.server.coreloop.adventure.BossArenaFactory.rageClock()) else null
     @Volatile private var disposed = false
     private var bossSealed = false
     private var bossGateFraction = 0.0
@@ -157,6 +192,17 @@ class QuestEncounterCombat(
     internal val groundDisplayCount: Int get() = telegraphs.displayCount
     internal val modelDisplayCount: Int get() = mobs.values.sumOf { (it.model?.count ?: 0) + (it.view?.partCount ?: 0) }
     internal fun isEnraged(targetId: UUID): Boolean = mobs[targetId]?.enraged == true
+    internal fun maneuverCount(targetId: UUID): Int = mobs[targetId]?.maneuvers ?: 0
+    internal fun partsBroken(targetId: UUID): List<Boolean> = mobs[targetId]?.let { listOf(it.hornsBroken, it.fanTorn[0], it.fanTorn[1]) } ?: emptyList()
+    internal fun erosionOf(player: UUID): Double = gimmicks.erosionOf(player)
+    internal val poolCount: Int get() = gimmicks.poolCount
+    /** Fight preview dump: the model's clip and the shader displays on show. */
+    internal fun shownClip(targetId: UUID): Pair<String, Long>? = mobs[targetId]?.view?.let { it.shownClip to it.shownSince }
+    internal fun modelFacing(targetId: UUID): Float? = mobs[targetId]?.let { if (it.maneuver != null) it.faceYaw else it.entity.position.yaw() }
+    internal fun shaderViews() = shaderFx.views()
+    internal fun lightsOn() = lights.snapshot()
+    /** How far the arena's light has turned violet (0..1), for the preview dump. */
+    internal fun rageShown(): Double = rageClock?.let { (it.time().toDouble() / dev.projects.server.coreloop.adventure.BossArenaFactory.RAGE_FADE_TICKS).coerceIn(0.0, 1.0) } ?: 0.0
 
     init {
         require(tier in 1..4)
@@ -402,6 +448,10 @@ class QuestEncounterCombat(
         if (!mob.life.damage(gated)) return null
         val applied = healthBefore - mob.life.health
         mob.lastAttacker = attacker
+        if (mob.view != null && applied > 0.0 && mob.life.isAlive) {
+            gimmicks.playerStruck(attacker)
+            breakParts(mob, attacker, applied, now)
+        }
         if (!mob.life.isAlive) {
             mob.abilities.cancel()
             clearWarning(mob.entity.uuid)
@@ -433,6 +483,12 @@ class QuestEncounterCombat(
         telegraphs.tick(nowMillis)
         vfx.tick()
         shaderFx.tick()
+        lights.tick(nowMillis)
+        tickGlow()
+        rageClock?.let { if (!it.paused() && it.time() >= dev.projects.server.coreloop.adventure.BossArenaFactory.RAGE_FADE_TICKS) it.pause() }
+        if (mobs.values.any { it.view != null }) gimmicks.tick(nowMillis, instance.players.filter { canTarget(it) }) { p, amount, type ->
+            if (typedDamagePlayer != null) typedDamagePlayer.invoke(p, amount, type) else damagePlayer(p, amount)
+        }
         val players = instance.players.filter { canTarget(it) }
         if (actionsStoppedForReturn) {
             if (players.isEmpty()) return
@@ -443,7 +499,11 @@ class QuestEncounterCombat(
             if (!mob.life.isAlive || !isSpawned(mob)) continue
             tickMob(mob, players, nowMillis)
             mob.model?.tick(mob.entity.position, nowMillis, mob.life.phase == QuestMobPhase.ATTACKING, mob.life.health / mob.life.maximumHealth)
-            mob.view?.tick(mob.entity.position, nowMillis)
+            if (mob.view != null) tickRageWave(mob, nowMillis)
+            if (mob.view != null) lights.hold("horns-${mob.entity.uuid}",
+                if (mob.enraged && !mob.hornsBroken && nowMillis >= mob.enrageHoldUntil - 2500) mob.view?.point("skull", ShadeWyrmVfx.CROWN) else null, 12)
+            mob.view?.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, nowMillis,
+                searching = mob.searching && mob.maneuver == null && !mob.abilities.isActive)
             if (actionsStoppedForReturn || disposed) return
         }
     }
@@ -472,6 +532,10 @@ class QuestEncounterCombat(
         disposed = true
         telegraphs.dispose()
         vfx.cancelAll()
+        gimmicks.dispose()
+        lights.dispose()
+        glowing.forEach { it.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList())) }
+        glowing.clear()
         shaderFx.dispose()
         mobs.values.forEach { mob ->
             mob.abilities.cancel()
@@ -600,14 +664,17 @@ class QuestEncounterCombat(
             }
             return
         }
+        mob.maneuver?.let { if (tickManeuver(mob, it, target, now)) return }
         if (mob.abilities.isActive) {
-            for (event in mob.abilities.tick(now, target.position)) {
+            for (event in mob.abilities.tick(now, aimAt(mob, target, now))) {
                 if (!handleAbilityEvent(mob, event, players)) return
                 if (disposed || !mob.life.isAlive) return
             }
-            val frame = mob.abilities.current
+            val frame = mob.abilities.current?.let { effectiveFrame(mob, it) }
             if (frame != null) {
                 mob.entity.setView(Pos.ZERO.withDirection(frame.facing).yaw(), 0.0f)
+                carryThroughAbility(mob, frame, now)
+                behindFor(mob, target, now)                // standing behind it during an attack counts too
                 if (frame.phase != MobAbilityPhase.RECOVERY && now >= mob.nextWarningAt) {
                     if (!drawWarning(mob, frame, false)) {
                         cancelWarning(mob)
@@ -619,8 +686,13 @@ class QuestEncounterCombat(
             mob.life.phase = QuestMobPhase.CHASING
         }
         if (now >= mob.warningRetryAt && mob.entity.hasLineOfSight(target) && telegraphs.canStart(mob.entity.uuid)) {
-            val start = mob.abilities.tryStart(now, mob.entity.position, target.position, mob.life.health / mob.life.maximumHealth,
-                plainOnly = crowded(mob, CrowdControl.SILENCE, now))
+            val ratio = mob.life.health / mob.life.maximumHealth
+            val silenced = crowded(mob, CrowdControl.SILENCE, now)
+            val scripted = if (silenced) null else mob.combo ?: if (behindFor(mob, target, now) >= TURN_AFTER_MILLIS) TURN_SWEEP else null
+            mob.combo = null
+            val aim = aimAt(mob, target, now)
+            val start = scripted?.let { mob.abilities.tryStart(now, mob.entity.position, aim, ratio, only = it) }
+                ?: mob.abilities.tryStart(now, mob.entity.position, aim, ratio, plainOnly = silenced)
             if (start != null) {
                 mob.life.phase = QuestMobPhase.ATTACKING
                 stopNavigation(mob)
@@ -630,6 +702,11 @@ class QuestEncounterCombat(
         }
         mob.life.phase = QuestMobPhase.CHASING
         if (crowded(mob, CrowdControl.ROOT, now)) { stopNavigation(mob); return }
+        if (startManeuver(mob, target, now)) return
+        val wasSearching = mob.searching
+        mob.searching = mob.view != null &&
+            (mob.entity.position.distanceSquared(target.position) > SEARCH_BEYOND * SEARCH_BEYOND || !mob.entity.hasLineOfSight(target))
+        if (mob.searching != wasSearching) updateMovementSpeed(mob, now)
         if (now >= mob.nextPathAt) {
             val distance = mob.definition.preferredDistance
             val retreat = if (distance >= 6.0 && mob.entity.position.distanceSquared(target.position) < 4.5 * 4.5) {
@@ -642,6 +719,7 @@ class QuestEncounterCombat(
     }
 
     private fun startReturn(mob: Mob, now: Long) {
+        mob.maneuver = null
         removeEncounter(mob.guardianIds)
         mob.guardianIds = emptySet()
         mob.challengeStage = 0
@@ -690,12 +768,38 @@ class QuestEncounterCombat(
         return true
     }
 
+    /**
+     * The enrage roar (2.5 s into the hold, when the model rears up) sends a violet wave from the wyrm to the arena
+     * wall: a ring display grows to [RAGE_WAVE_RADIUS] over [RAGE_WAVE_MILLIS], light blocks flash along its front,
+     * and the arena's rage clock starts so the light turns violet as the wave crosses it (BossArenaFactory.SHADE_RAGE).
+     */
+    private fun tickRageWave(mob: Mob, now: Long) {
+        if (!mob.enraged) return
+        if (mob.waveAt == 0L) {
+            if (now < mob.enrageHoldUntil - 2500) return
+            mob.waveAt = now
+            mob.waveFrom = mob.entity.position
+            shaderFx.rageWave(mob.entity.position, RAGE_WAVE_RADIUS, (RAGE_WAVE_MILLIS / 50).toInt())
+            rageClock?.resume()
+        }
+        val from = mob.waveFrom ?: return
+        val age = now - mob.waveAt
+        if (age > RAGE_WAVE_MILLIS || (age / 50) % 2 != 0L) return
+        val r = RAGE_WAVE_RADIUS * age / RAGE_WAVE_MILLIS
+        val n = maxOf(4, (2 * Math.PI * r / 4.0).toInt())
+        for (k in 0 until n) {
+            val a = k * 2 * Math.PI / n
+            lights.flash(from.add(kotlin.math.cos(a) * r, 0.0, kotlin.math.sin(a) * r), 13, 150)
+        }
+    }
+
     /** One-way rage at the definition's health ratio: a held roar (no attacks), then faster with new abilities. */
     private fun tickEnrage(mob: Mob, now: Long): Boolean {
         val threshold = mob.definition.enrageHealthRatio
         if (!mob.enraged) {
             if (threshold <= 0.0 || mob.life.health / mob.life.maximumHealth > threshold) return false
             mob.enraged = true
+            mob.maneuver = null
             mob.enrageHoldUntil = now + ENRAGE_HOLD_MILLIS
             mob.abilities.cancel()
             clearWarning(mob.entity.uuid)
@@ -749,11 +853,217 @@ class QuestEncounterCombat(
         mob.slowPercent = mob.slows.values.maxOfOrNull { it.strength } ?: 0.0
         mob.slowedUntil = mob.slows.values.maxOfOrNull { it.until } ?: 0L
         val speed = mob.definition.movementSpeed * (1.0 - mob.slowPercent) *
-            if (mob.enraged) mob.definition.enragedSpeedMultiplier else 1.0
+            (if (mob.enraged) mob.definition.enragedSpeedMultiplier else 1.0) *
+            (if (mob.maneuver?.kind == ManeuverKind.STRAFE) STRAFE_SPEED else 1.0) *
+            (if (mob.searching && mob.maneuver == null) SEARCH_SPEED else 1.0)
         if (mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue != speed) {
             mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = speed
         }
     }
+
+    /**
+     * Between attacks a model boss with movement clips moves round its target instead of only walking at it
+     * (shade wyrm, after the Wilds Gore Magala): too close -> one wingbeat back (hop_back), mid range -> a low
+     * sidestep round it (strafe), every third time a ground-skimming dart to its side (dash). Attacks come first;
+     * this runs only when no ability could start.
+     */
+    private fun startManeuver(mob: Mob, target: Player, now: Long): Boolean {
+        val view = mob.view ?: return false
+        if (!view.canManeuver || now < mob.nextManeuverAt || mob.enraged && now < mob.enrageHoldUntil) return false
+        if (behindFor(mob, target, now) > 0L) return false          // someone at its back: hold still and turn on them
+        val here = mob.entity.position
+        val distance = horizontalLength(target.position.sub(here))
+        val away = normalizeHorizontal(here.sub(target.position))
+        val right = Vec(away.z(), 0.0, -away.x())            // the boss's right while it faces the target
+        val kind = when {
+            distance < 3.5 -> ManeuverKind.HOP_BACK
+            distance in 4.0..10.0 -> if (mob.maneuvers % 3 == 2) ManeuverKind.DASH else ManeuverKind.STRAFE
+            else -> return false
+        }
+        val sign = if (mob.maneuvers % 2 == 0) 1 else -1
+        val leash = mob.definition.leashRange
+        val maneuver = when (kind) {
+            ManeuverKind.HOP_BACK -> {
+                val to = safeRetreat(here.add(away.mul(4.0)), mob.home, leash) ?: return false
+                Maneuver(kind, here, to, now + 280, now + 680, now + 1100, 0)
+            }
+            ManeuverKind.DASH -> {
+                val to = safeRetreat(here.add(right.mul(5.0 * sign)), mob.home, leash)
+                    ?: safeRetreat(here.add(right.mul(-5.0 * sign)), mob.home, leash) ?: return false
+                val toRight = (to.x() - here.x()) * right.x() + (to.z() - here.z()) * right.z() > 0
+                Maneuver(kind, here, to, now + 200, now + 500, now + 900, if (toRight) 1 else -1)
+            }
+            ManeuverKind.STRAFE -> Maneuver(kind, here, here, now, now, now + 1600, sign)
+        }
+        mob.maneuvers++
+        mob.nextManeuverAt = maneuver.endAt + if (kind == ManeuverKind.STRAFE) 900 else 1700
+        mob.maneuver = maneuver
+        mob.faceYaw = yawToward(here, target.position)
+        if (kind != ManeuverKind.STRAFE) stopNavigation(mob)
+        when (kind) {
+            ManeuverKind.HOP_BACK -> view.maneuver("hop_back")
+            ManeuverKind.DASH -> view.maneuver(if (maneuver.sign > 0) "dash_l" else "dash_r")
+            ManeuverKind.STRAFE -> mob.nextPathAt = now
+        }
+        updateMovementSpeed(mob, now)
+        return true
+    }
+
+    /** True while the maneuver holds the mob (no attacks, no chase). */
+    private fun tickManeuver(mob: Mob, maneuver: Maneuver, target: Player, now: Long): Boolean {
+        if (now >= maneuver.endAt) {
+            mob.maneuver = null
+            mob.combo = when (maneuver.kind) {
+                ManeuverKind.HOP_BACK -> if (mob.enraged) "shade-breath" else null   // 2 跳び退き→吐息
+                ManeuverKind.DASH -> "shade-sweep"                                   // 3 回り込み→薙ぎ
+                ManeuverKind.STRAFE -> null
+            }
+            if (mob.combo != null) mob.warningRetryAt = now
+            updateMovementSpeed(mob, now)
+            return false
+        }
+        val here = mob.entity.position
+        mob.faceYaw = yawToward(here, target.position)
+        if (maneuver.kind == ManeuverKind.STRAFE) {
+            if (now >= mob.nextPathAt) {
+                val angle = kotlin.math.atan2(here.z() - target.position.z(), here.x() - target.position.x()) + maneuver.sign * .6
+                val radius = horizontalLength(here.sub(target.position)).coerceIn(5.0, 8.0)
+                val goal = safeRetreat(target.position.add(kotlin.math.cos(angle) * radius, 0.0, kotlin.math.sin(angle) * radius), mob.home, mob.definition.leashRange)
+                if (goal != null) mob.entity.navigator.setPathTo(goal, 0.5, null) else stopNavigation(mob)
+                mob.nextPathAt = now + 300L
+            }
+        } else if (now >= maneuver.moveFrom) {
+            val k = ((now - maneuver.moveFrom).toDouble() / (maneuver.moveTo - maneuver.moveFrom)).coerceIn(0.0, 1.0)
+            val e = k * k * (3 - 2 * k)
+            val f = maneuver.from; val t = maneuver.to
+            mob.entity.teleport(Pos(f.x() + (t.x() - f.x()) * e, f.y() + (t.y() - f.y()) * e, f.z() + (t.z() - f.z()) * e, mob.faceYaw, 0f))
+        }
+        return true
+    }
+
+    /** The strike's own violet light on the floor and the wyrm (see [ShadeWyrmLights]). */
+    private fun lightUp(frame: MobAbilityFrame) {
+        val o = frame.origin
+        val f = normalizeHorizontal(frame.facing)
+        when (val shape = frame.ability.shape) {
+            is MobAttackShape.Ring -> {
+                lights.flash(o, 13, 700)
+                val r = if (shape.innerRadius > 0) (shape.innerRadius + shape.radius) / 2 else shape.radius * .6
+                for (k in 0 until 4) { val a = k * Math.PI / 2 + .4; lights.flash(o.add(kotlin.math.cos(a) * r, 0.0, kotlin.math.sin(a) * r), 11, 700) }
+            }
+            is MobAttackShape.Slam -> { var d = 2.0; while (d <= shape.length) { lights.flash(o.add(f.mul(d)), 12, 900); d += 4.0 } }
+            is MobAttackShape.Sweep -> for (k in -1..1) {
+                val a = Math.toRadians(shape.halfAngleDegrees * .6 * k)
+                lights.flash(o.add(f.rotateAroundY(a).mul(shape.radius * .7)), 12, 500)
+            }
+            else -> Unit
+        }
+    }
+
+    /** The glow post effect is on for exactly the players in an arena whose model boss is alive. */
+    private fun tickGlow() {
+        val boss = mobs.values.any { it.view != null && it.life.isAlive && it.definition.model == "shade_wyrm" }
+        val wanted = if (boss) instance.players.toSet() else emptySet()
+        for (p in wanted - glowing) p.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(listOf(GLOW)))
+        for (p in glowing - wanted) p.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList()))
+        glowing.clear(); glowing += wanted
+    }
+
+    /** With its horns broken it aims badly for a while: its target point swings up to 3 blocks to either side. */
+    private fun aimAt(mob: Mob, target: Player, now: Long): Pos {
+        if (now >= mob.sloppyUntil) return target.position
+        val yaw = Math.toRadians(mob.entity.position.yaw().toDouble())
+        return target.position.add(Vec(-kotlin.math.cos(yaw), 0.0, -kotlin.math.sin(yaw)).mul(3.0 * kotlin.math.sin(now / 600.0)))
+    }
+
+    /** A torn right fan (the side its wing-arm sweeps with) shortens the sweeps to [TORN_SWEEP_RADIUS]. */
+    private fun effectiveFrame(mob: Mob, frame: MobAbilityFrame): MobAbilityFrame {
+        val shape = frame.ability.shape
+        if (!mob.fanTorn[0] || shape !is MobAttackShape.Sweep || frame.ability.id !in setOf("shade-sweep", "shade-turnsweep")) return frame
+        return frame.copy(ability = frame.ability.copy(shape = MobAttackShape.Sweep(minOf(shape.radius, TORN_SWEEP_RADIUS), shape.halfAngleDegrees)))
+    }
+
+    /**
+     * Enraged part breaks (gimmicks): damage dealt from in front within [HEAD_REACH] of the head wears the horns,
+     * from either side the fan on that side. Thresholds are shares of its maximum health.
+     */
+    private fun breakParts(mob: Mob, attacker: Player, applied: Double, now: Long) {
+        if (!mob.enraged || now < mob.enrageHoldUntil) return
+        val here = mob.entity.position
+        val yaw = Math.toRadians((if (mob.maneuver != null) mob.faceYaw else here.yaw()).toDouble())
+        val ahead = Vec(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw))
+        val right = Vec(-kotlin.math.cos(yaw), 0.0, -kotlin.math.sin(yaw))
+        val off = Vec(attacker.position.x() - here.x(), 0.0, attacker.position.z() - here.z())
+        if (off.length() < 1e-6) return
+        val dir = off.normalize()
+        val angle = Math.toDegrees(kotlin.math.acos(dir.dot(ahead).coerceIn(-1.0, 1.0)))
+        val max = mob.life.maximumHealth
+        val head = here.add(ahead.mul(4.0))
+        if (!mob.hornsBroken && angle <= 60.0 && attacker.position.distance(head.withY(attacker.position.y())) <= HEAD_REACH) {
+            mob.hornDamage += applied
+            if (mob.hornDamage >= max * HORN_BREAK) {
+                mob.hornsBroken = true
+                mob.sloppyUntil = now + SLOPPY_MILLIS
+                mob.view?.hideBones(listOf("horn_l_tip", "horn_r_tip"))
+                partBroken(mob, now, 3000L, "角が折れた")
+            }
+        }
+        if (angle in 45.0..135.0) {
+            val side = if (dir.dot(right) > 0) 0 else 1
+            if (!mob.fanTorn[side]) {
+                mob.fanDamage[side] += applied
+                if (mob.fanDamage[side] >= max * FAN_TEAR) {
+                    mob.fanTorn[side] = true
+                    mob.view?.hideBones(listOf(if (side == 0) "cloak_l_tatters" else "cloak_r_tatters"))   // _l = its right
+                    if (mob.fanTorn.all { it }) mob.abilities.disable("shade-storm")
+                    partBroken(mob, now, 2000L, "扇が裂けた")
+                }
+            }
+        }
+    }
+
+    private fun partBroken(mob: Mob, now: Long, staggerMillis: Long, label: String) {
+        mob.abilities.cancel()
+        clearWarning(mob.entity.uuid)
+        castingPose(mob, false)
+        mob.maneuver = null
+        stopNavigation(mob)
+        staggerBoss(maxOf(bossStaggerUntil, now + staggerMillis))
+        mob.view?.maneuver("flinch")                       // cuts the attack clip that was playing
+        updateName(mob, label)
+        sound(mob.entity.position, "minecraft:entity.ravager.stunned", 1.2f, 0.7f)
+        particle(mob.entity.position.add(0.0, 2.5, 0.0), Particle.DUST.withColor(NamedTextColor.LIGHT_PURPLE).withScale(2.0f), 30)
+    }
+
+    /** How long the target has stood behind the model (more than 120 degrees off its facing). */
+    private fun behindFor(mob: Mob, target: Player, now: Long): Long {
+        if (mob.view == null) return 0L
+        val here = mob.entity.position
+        val facing = if (mob.maneuver != null) mob.faceYaw else here.yaw()
+        var off = (yawToward(here, target.position) - facing) % 360f
+        if (off > 180f) off -= 360f
+        if (off < -180f) off += 360f
+        if (kotlin.math.abs(off) < 120f) { mob.behindSince = 0L; return 0L }
+        if (mob.behindSince == 0L) mob.behindSince = now
+        return now - mob.behindSince
+    }
+
+    /** The dive carries the body over its target while it hangs in the air (between [DIVE_CARRY] ms of the clip). */
+    private fun carryThroughAbility(mob: Mob, frame: MobAbilityFrame, now: Long) {
+        if (frame.ability.id != "shade-dive") return
+        val from = mob.travelFrom ?: return
+        val elapsed = now - frame.startedAt
+        if (elapsed < DIVE_CARRY.first) return
+        val k = ((elapsed - DIVE_CARRY.first).toDouble() / (DIVE_CARRY.last - DIVE_CARRY.first)).coerceIn(0.0, 1.0)
+        val e = k * k * (3 - 2 * k)
+        val to = frame.origin
+        val ground = telegraphs.groundHeight(to) ?: from.y()
+        mob.entity.teleport(Pos(from.x() + (to.x() - from.x()) * e, from.y() + (ground - from.y()) * e, from.z() + (to.z() - from.z()) * e,
+            mob.entity.position.yaw(), 0f))
+    }
+
+    private fun yawToward(from: Pos, to: net.minestom.server.coordinate.Point): Float =
+        Math.toDegrees(kotlin.math.atan2(-(to.x() - from.x()), to.z() - from.z())).toFloat()
 
     private fun safeRetreat(position: Pos, home: Pos, leash: Double): Pos? {
         val ground = telegraphs.groundHeight(position) ?: return null
@@ -765,9 +1075,17 @@ class QuestEncounterCombat(
         return candidate.takeUnless { (y..y + 2).any { instance.getBlock(x, it, z).solid() } }
     }
 
-    private fun handleAbilityEvent(mob: Mob, event: MobAbilityEvent, players: List<Player>): Boolean {
+    private fun handleAbilityEvent(mob: Mob, raw: MobAbilityEvent, players: List<Player>): Boolean {
+        val event = when (raw) {
+            is MobAbilityEvent.Started -> raw.copy(frame = effectiveFrame(mob, raw.frame))
+            is MobAbilityEvent.Locked -> raw.copy(frame = effectiveFrame(mob, raw.frame))
+            is MobAbilityEvent.Hit -> raw.copy(frame = effectiveFrame(mob, raw.frame))
+            else -> raw
+        }
         when (event) {
             is MobAbilityEvent.Started -> {
+                mob.travelFrom = mob.entity.position
+                if (event.frame.ability.id == TURN_SWEEP) mob.behindSince = 0L
                 updateName(mob, event.frame.ability.displayName)
                 mob.view?.ability(event.frame.ability.id)
                 if (!drawWarning(mob, event.frame, false)) {
@@ -807,9 +1125,11 @@ class QuestEncounterCombat(
                     ) {
                         if (typedDamagePlayer != null) typedDamagePlayer.invoke(player, event.frame.ability.damage, event.frame.ability.damageType)
                         else damagePlayer(player, event.frame.ability.damage)
+                        if (mob.view != null) gimmicks.playerHit(player, event.frame.ability.id, lastTickAt)
                     }
                     if (disposed || actionsStoppedForReturn) return false
                 }
+                if (mob.view != null) { gimmicks.abilityHit(event.frame, lastTickAt); lightUp(event.frame) }
             }
             is MobAbilityEvent.Finished -> { clearWarning(mob.entity.uuid); updateName(mob) }
         }
@@ -874,6 +1194,26 @@ class QuestEncounterCombat(
     }
 
     companion object {
+        /** A strafe walks at this share of the walking speed, the pace its clip is timed to (1.6 of 2.6 blocks/s). */
+        const val STRAFE_SPEED = .62
+        /** The enrage wave reaches the arena wall (radius 22) as the light finishes turning violet. */
+        const val RAGE_WAVE_RADIUS = 22.0
+        val RAGE_WAVE_MILLIS = dev.projects.server.coreloop.adventure.BossArenaFactory.RAGE_FADE_TICKS * 50L
+        val GLOW: net.kyori.adventure.key.Key = net.kyori.adventure.key.Key.key("projects", "shade_glow")
+        /** Gimmicks: horn break (12 % of max health from near the head), fan tear (10 % per side). */
+        const val HEAD_REACH = 6.0
+        const val HORN_BREAK = .12
+        const val FAN_TEAR = .10
+        const val SLOPPY_MILLIS = 20_000L
+        const val TORN_SWEEP_RADIUS = 4.5
+        /** Search: the creeping walk's share of the walking speed (its clip is timed to it), and when it starts. */
+        const val SEARCH_SPEED = .3
+        const val SEARCH_BEYOND = 14.0
+        const val TURN_SWEEP = "shade-turnsweep"
+        /** Got behind it (usually while an attack holds its facing) for this long when it is free to act. */
+        const val TURN_AFTER_MILLIS = 600L
+        /** ms into shade-dive while the body is carried over the target (the clip hangs in the air then). */
+        val DIVE_CARRY = 1000L..2300L
         const val BREAK_MAX = 100.0
         const val BREAK_MILLIS = 4000L
         const val BROKEN_DAMAGE = 1.3
