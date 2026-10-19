@@ -249,20 +249,7 @@ class QuestEncounterCombat(
         if (!mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING || (mob.boss && bossSealed) || mob.guardianIds.any(::isAlive) ||
             source.instance !== instance || !canTarget(source)) return false
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
-        if (mob.boss) {
-            if (now < mob.brokenUntil) return false
-            mob.breakGauge = (mob.breakGauge - kind.breakDamage).coerceAtLeast(0.0)
-            if (mob.breakGauge <= 0.0) {
-                mob.brokenUntil = now + BREAK_MILLIS
-                mob.breakGauge = BREAK_MAX
-                mob.abilities.cancel(); clearWarning(targetId); castingPose(mob, false); stopNavigation(mob)
-                mob.life.phase = QuestMobPhase.CHASING
-                sound(mob.entity.position, "minecraft:block.anvil.land", 1.0f, 0.5f)
-                particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.EXPLOSION, 2)
-            }
-            updateName(mob)
-            return true
-        }
+        if (mob.boss) return breakBoss(mob, targetId, kind.breakDamage, now)
         mob.crowd[kind] = maxOf(mob.crowd[kind] ?: 0L, now + durationMillis.coerceAtMost(5000L))
         mob.crowdSource = source.position
         if (kind.hard || kind == CrowdControl.FLINCH) {
@@ -279,6 +266,34 @@ class QuestEncounterCombat(
         updateName(mob)
         return true
     }
+    /**
+     * Wears [amount] off a boss's break gauge from a hit that already landed (players' break, CoreBreak).
+     * Regular enemies have no gauge. Returns false when nothing could be broken (not a boss, already broken, sealed).
+     */
+    fun applyBreak(targetId: UUID, amount: Double, source: Player): Boolean {
+        if (disposed || !amount.isFinite() || amount <= 0.0) return false
+        val mob = mobs[targetId] ?: return false
+        if (!mob.boss || !mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING || bossSealed || mob.guardianIds.any(::isAlive) ||
+            source.instance !== instance || !canTarget(source)) return false
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        return breakBoss(mob, targetId, amount, now)
+    }
+
+    private fun breakBoss(mob: Mob, targetId: UUID, amount: Double, now: Long): Boolean {
+        if (now < mob.brokenUntil) return false
+        mob.breakGauge = (mob.breakGauge - amount).coerceAtLeast(0.0)
+        if (mob.breakGauge <= 0.0) {
+            mob.brokenUntil = now + BREAK_MILLIS
+            mob.breakGauge = BREAK_MAX
+            mob.abilities.cancel(); clearWarning(targetId); castingPose(mob, false); stopNavigation(mob)
+            mob.life.phase = QuestMobPhase.CHASING
+            sound(mob.entity.position, "minecraft:block.anvil.land", 1.0f, 0.5f)
+            particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.EXPLOSION, 2)
+        }
+        updateName(mob)
+        return true
+    }
+
     fun crowdControl(targetId: UUID): Set<CrowdControl> {
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         return mobs[targetId]?.crowd?.filterValues { it > now }?.keys ?: emptySet()

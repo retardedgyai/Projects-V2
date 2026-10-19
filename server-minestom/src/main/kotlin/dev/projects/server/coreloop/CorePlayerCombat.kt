@@ -85,6 +85,8 @@ internal class CorePlayerCombat(
     /** Crowd control this player is under (enemy attacks now, other players in PvP fields). */
     internal val crowd = CorePlayerCrowdControl()
     private var movementHeld = false
+    /** Warrior: 根張り caught a blow; a 地割り before this tick is the return strike (CoreBreak.RIPOSTE). */
+    private var riposteUntil = -1L
     val classId get() = journey().job
     val skillDefinitions get() = CoreSkillCatalog.equipped(journey(), statSource())
     val skillNames get() = skillDefinitions.map { it.name }
@@ -118,7 +120,9 @@ internal class CorePlayerCombat(
 
     private data class PendingSkill(val id: Int, val definition: CoreSkillDefinition, val origin: Pos, val direction: Vec, val startup: Int,
         var elapsed: Int = 0, var gained: Boolean = false, val empowered: Double = 0.0, val counter: Boolean = false,
-        val boost: Double = 1.0, val gardenCells: List<Pos>? = null)
+        val boost: Double = 1.0, val gardenCells: List<Pos>? = null,
+        /** Break gauge damage each hit on a boss does (CoreBreak), fixed at the cast. */
+        val breakAmount: Double = 0.0)
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
@@ -189,15 +193,22 @@ internal class CorePlayerCombat(
             definition.motion !in setOf(CoreSkillMotion.SHIELD,CoreSkillMotion.HEAL,CoreSkillMotion.GUARD)
         if (counter) { skillBoost *= 1.35; classState.counterUntil = -1 }
         var castDefinition = definition
+        // Break is fixed at the cast: a rampage that the slam closes still counts for that slam.
+        val rampageAtCast = raging
+        var breakAmount = CoreBreak.skill(classId, definition.icon)
         if (classId == CoreClass.WARRIOR && definition.icon in CoreWarriorRules.heavy) {
             // Rage never gates the heavy skills; when it is there they take it for a heavier hit.
             if (definition.icon == "slam") {
                 // The slam pours in everything; during a rampage it is the closing blow.
-                skillBoost *= 1 + classState.consumeAll(CoreWarriorRules.RAGE_COST) * CoreWarriorRules.SLAM_PERCENT_PER_RAGE / 100.0
+                val poured = classState.consumeAll(CoreWarriorRules.RAGE_COST)
+                skillBoost *= 1 + poured * CoreWarriorRules.SLAM_PERCENT_PER_RAGE / 100.0
+                breakAmount = CoreBreak.slam(poured)
+                if (tickNumber <= riposteUntil) { breakAmount *= CoreBreak.RIPOSTE; riposteUntil = -1; notice("返しの一撃") }
                 if (raging) { skillBoost *= 1 + CoreWarriorRules.RAMPAGE_DAMAGE_PERCENT / 100.0; rampageUntil = -1; classState.drain() }
             } else if (classState.consume(CoreWarriorRules.RAGE_COST)) skillBoost *= 1 + CoreWarriorRules.RAGE_BONUS_PERCENT / 100.0
             if (definition.icon == "slam" && tickNumber <= finisherUntil) {
                 skillBoost *= 1 + CoreWarriorRules.FINISHER_BONUS_PERCENT / 100.0; finisherUntil = -1
+                breakAmount *= CoreBreak.FINISHER
                 castDefinition = definition.copy(startup = minOf(CoreWarriorRules.FINISHER_STARTUP, definition.startup))
             }
         }
@@ -212,7 +223,8 @@ internal class CorePlayerCombat(
         val startup = castDefinition.startupTicks(sheet)
         pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
             if (definition.motion == CoreSkillMotion.RAY) player.position.direction() else flatFacing(), startup,
-            empowered = spentFrom, counter = counter, boost = skillBoost, gardenCells = gardenCells)
+            empowered = spentFrom, counter = counter, boost = skillBoost, gardenCells = gardenCells,
+            breakAmount = breakAmount * if (rampageAtCast) CoreBreak.RAMPAGE else 1.0)
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
@@ -582,7 +594,12 @@ internal class CorePlayerCombat(
         // Warrior weight: the third normal hit and every hit while raging make the target flinch.
         val crowd = definition?.crowd?.let { it to definition.crowdMillis }
             ?: if (classId == CoreClass.WARRIOR && (raging || (!skill && heavy))) CrowdControl.FLINCH to CoreWarriorRules.FLINCH_MILLIS else null
-        if (crowd != null) enemies.applyCrowdControl(id, crowd.first, crowd.second, player)
+        if (enemies.isBoss(id)) {
+            // Bosses take break, not crowd control: the warrior breaks the most, every class a little (CoreBreak).
+            val amount = if (skill) skillAction?.breakAmount ?: 0.0
+                else CoreBreak.normal(classId, heavy) * if (raging) CoreBreak.RAMPAGE else 1.0
+            enemies.applyBreak(id, amount, player)
+        } else if (crowd != null) enemies.applyCrowdControl(id, crowd.first, crowd.second, player)
         val venom = stats.bonus(CoreAffixStat.ASS_VENOM)
         if (classId == CoreClass.ASSASSIN && ((venom > 0 && definition?.status == CoreSkillStatus.MARK) ||
                 (!skill && build.keystone == 2 && classState.marked(id, tickNumber)))) {
@@ -786,6 +803,7 @@ internal class CorePlayerCombat(
             val perfect = tickNumber <= classState.perfectUntil
             adjusted *= if (perfect) .2 else .45
             classState.guarded(classId, tickNumber, journey().build)
+            if (classId == CoreClass.WARRIOR) riposteUntil = tickNumber + CoreBreak.RIPOSTE_TICKS
             if (classId == CoreClass.WARRIOR && perfect) {
                 // One read per stance; it shows the catch but refreshes nothing (the parry/slam reset was removed, D06).
                 classState.perfectUntil = -1
@@ -842,7 +860,7 @@ internal class CorePlayerCombat(
         garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; rampageUntil = -1; lastHurtRage = -100
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; rampageUntil = -1; lastHurtRage = -100; riposteUntil = -1
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         crowd.clear(); if (movementHeld) updateMovement()
         vfx.cancel()

@@ -997,6 +997,35 @@ class CorePlayerCombatTest {
         } finally { h.actor.resetActions(); encounter.dispose() }
     }
 
+    @Test fun `the warrior's slam breaks the boss by the rage poured in and takes no crowd control`() = arena { h ->
+        val id = h.combat.combatTargets().single().id
+        h.actor.classState.gain(30.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(12)
+        assertEquals(100.0 - (12.0 + 3.0), h.combat.breakGauge(id)!!, .0001)
+        assertTrue(h.combat.crowdControl(id).isEmpty())
+    }
+
+    @Test fun `normal hits break a little and the third-hit slam breaks half again as much`() = arena { h ->
+        val id = h.combat.combatTargets().single().id
+        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
+        assertEquals(100.0 - (2.0 + 2.0 + 5.0), h.combat.breakGauge(id)!!, .0001)
+        h.ticks(6);h.actor.skill(1);h.ticks(3)
+        assertEquals(100.0 - 9.0 - (12.0 + 3.0) * CoreBreak.FINISHER, h.combat.breakGauge(id)!!, .0001)
+    }
+
+    @Test fun `a slam right after the hold guard catches a blow is the return strike`() = arena { h ->
+        val id = h.combat.combatTargets().single().id
+        h.actor.skill(3); h.ticks(1); h.actor.hurt(20.0) // perfect catch: +30 rage
+        h.ticks(5); h.actor.skill(1); h.ticks(12)
+        assertEquals(100.0 - (12.0 + 3.0) * CoreBreak.RIPOSTE, h.combat.breakGauge(id)!!, .0001)
+    }
+
+    @Test fun `other classes break a little with every hit`() = arena(bossDistance = 2.0) { h ->
+        h.journey = CoreJourney.legacy(job = CoreClass.ASSASSIN); h.base = CoreWeaponBase.DAGGERS; h.actor.reset()
+        val id = h.combat.combatTargets().single().id
+        h.actor.attack(); h.ticks(12)
+        assertEquals(100.0 - CoreBreak.NORMAL, h.combat.breakGauge(id)!!, .0001)
+    }
+
     @Test fun `sword saint third hits take time off the heavy cooldowns`() = arena { h ->
         h.journey=CoreJourney.legacy(build=CoreClassBuild(nodes=8248));h.actor.reset()
         h.actor.skill(2);h.ticks(10)
