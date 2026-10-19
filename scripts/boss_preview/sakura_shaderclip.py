@@ -56,7 +56,7 @@ NEW = [("sakura-pounce", "花冠の飛びかかり（新）", .8), ("sakura-rain
 ORDER = [("sakura-claw", "桜爪の叩きつけ", 1.0), ("sakura-claw2", "桜爪・二の手", 1.0), ("sakura-claw3", "桜爪・止め（怒り後）", 1.0),
          ("sakura-tail", "花尾の宙返り", .9), ("sakura-horn", "枝角の突き上げ", 1.1), ("sakura-spin", "花尾の旋回", .9),
          ("sakura-scatter", "散華", .7), ("sakura-bloom", "花嵐（怒り後）", .62), ("sakura-howl", "散り際の遠吠え（怒り後）", .7),
-         ("enrage", "怒りの遠吠え", .4)]
+         ("enrage", "怒りの遠吠え", .55)]
 BG = ((52, 50, 64), (22, 20, 28))
 
 
@@ -66,7 +66,7 @@ def main(dump, out, which="all"):
     rows = [json.loads(l) for l in Path(dump).read_text().splitlines()]
     textures = {p.stem: np.asarray(Image.open(p).convert("RGBA")).astype(np.float32) for p in shaderclip.TEX.glob("*.png")}
     frames, keys = [], []
-    for name, label, zoom in (NEW if which == "new" else ORDER):
+    for name, label, zoom in (NEW if which == "new" else ORDER + NEW if which == "all" else ORDER):
         clip = name if name in fang.ENRAGED_ONLY or name == "enrage" else name
         a = anims[clip]
         by_tick = {}
@@ -102,14 +102,18 @@ def main(dump, out, which="all"):
             img = look.draw(img, zb, storm.petals, t, (v["az"], v["el"], v["size"], v["scale"], v["cy"], v["center"]), [])
             on = hit - .02 <= t <= hit + .3
             rbb.text(img, (8, 4), f"{label}  {t:.1f}s" + ("  ← 決め" if on else ""), rbb.SMALL, (255, 150, 190) if on else (236, 228, 244))
-            frames.append(img)
-            if abs(t - (hit + .3)) < .051:
-                keys.append(img)
-    frames = [f.convert("P", palette=Image.ADAPTIVE, colors=200) for f in frames]
-    frames[0].save(out, save_all=True, append_images=frames[1:], duration=100, loop=0, optimize=True)
-    sheet = Image.new("RGB", (560 * 5, 360 * 2))
-    for i, k in enumerate(keys[:10]):
-        sheet.paste(k, ((i % 5) * 560, (i // 5) * 360))
+            if not out.endswith(".png"):
+                frames.append(img)                       # a .png out keeps only the overview (light on memory)
+            for want in (hit * .7, hit + .05, hit + .4):
+                if abs(t - want) < .051:
+                    keys.append(img)
+    if frames:
+        frames = [f.convert("P", palette=Image.ADAPTIVE, colors=200) for f in frames]
+        frames[0].save(out, save_all=True, append_images=frames[1:], duration=100, loop=0, optimize=True)
+    rows = (len(keys) + 2) // 3
+    sheet = Image.new("RGB", (560 * 3, 360 * rows))
+    for i, k in enumerate(keys):
+        sheet.paste(k, ((i % 3) * 560, (i // 3) * 360))
     sheet.save(Path(out).with_suffix(".png"))
     print(out, len(frames))
 

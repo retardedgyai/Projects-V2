@@ -145,8 +145,11 @@ internal class SakuraStrikeFx(instance: Instance) {
             }
             "sakura-horn" -> if (shape is MobAttackShape.Slam) {
                 // The horns rake upward: a standing crescent ahead and a small shock.
-                val upright = ShadeWyrmShaderFx.mul(yaw, ShadeWyrmShaderFx.mul(ShadeWyrmShaderFx.qz(PI / 2), ShadeWyrmShaderFx.qy(PI)))
-                fx.add("sakura_slash", 1, o.add(f.mul(shape.length * .5)).add(0.0, 1.6, 0.0), 0, 8, Vec(3.6, 1.0, 3.6), upright)
+                // the crescent stands in the vertical plane through the facing, its arc ahead of the head
+                val upright = ShadeWyrmShaderFx.mul(yaw, ShadeWyrmShaderFx.qz(PI / 2))
+                fx.add("sakura_slash", 1, o.add(f.mul(shape.length * .3)).add(0.0, 2.2, 0.0), 0, 9, Vec(4.4, 1.0, 4.4), upright)
+                fx.add("sakura_blossom", 4, o.add(f.mul(shape.length * .75)).add(0.0, 2.4, 0.0), 1, 10, Vec(1.0, 1.0, 1.0), IDENTITY,
+                    grow = Vec(2.6, 2.6, 1.0), moveTicks = 8, billboard = true)
                 fx.add("sakura_ring", 2, o.add(f.mul(shape.length * .6)).add(0.0, .12, 0.0), 1, 10, Vec(1.0, 1.0, 1.0), yaw, grow = Vec(4.0, 1.0, 4.0), moveTicks = 6)
             }
             "sakura-spin" -> if (shape is MobAttackShape.Ring) {
