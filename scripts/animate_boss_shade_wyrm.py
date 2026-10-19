@@ -376,9 +376,11 @@ ABILITIES = {"shade-sweep": (1.1, 2.0), "shade-pounce": (1.4, 2.6), "shade-dust"
              "shade-turnsweep": (.9, 1.8), "shade-dive": (2.4, 3.8),
              # 2026-10-19 (藍が選んだ行動): the bite's hit is its last snap (the earlier two at 0.7 / 1.15 s)
              "shade-bite": (1.6, 2.4), "shade-tailspin": (1.25, 2.4), "shade-horn": (1.0, 2.0),
-             "shade-tailslap": (.7, 1.5), "shade-orb": (1.2, 2.2)}
+             "shade-tailslap": (.7, 1.5), "shade-orb": (1.2, 2.2),
+             # MMO gimmicks (2026-10-19): the cast to interrupt (second form on), the shell to break (enraged)
+             "shade-channel": (6.0, 7.2), "shade-shell": (12.0, 13.2)}
 PHASE_ONE = ("shade-sweep", "shade-pounce", "shade-dust", "shade-pulse", "shade-turnsweep", "shade-dive",
-             "shade-bite", "shade-tailspin", "shade-horn", "shade-tailslap", "shade-orb")
+             "shade-bite", "shade-tailspin", "shade-horn", "shade-tailslap", "shade-orb", "shade-channel")
 TAIL = ("tail", "tail_2", "tail_mid", "tail_end")
 
 
@@ -778,6 +780,75 @@ def awaken_pose(sk, rest_feet, t):
         add(p, b, (K(t, [(0, 0), (1.3, 16), (2.2, 14), (2.6, -6), (3.0, 0)]) * (1 + .2 * k), 4 * trem, 0))
     return p
 
+def channel_pose(sk, rest_feet, theta, t, enraged):
+    """翳の大詠唱 (2026-10-19, MMO gimmick: interrupt it), 7.2 s, blast at 6.0 s: rises with the head high and the wings
+    (fans) raised overhead, holding still while they tremble harder and the antennae quiver (the cast); if nobody
+    breaks it, crouches and slams the wings down at 6.0 s (an arena-wide blast) and recovers."""
+    p = {}
+    hold = smooth(t, .3, 1.0) * (1 - smooth(t, 5.75, 5.95))
+    trem = math.sin(t * 2 * math.pi * (6 + 4 * t / 6)) * smooth(t, 1.0, 1.5) * (1 - smooth(t, 5.8, 5.95)) * (.4 + .6 * t / 6)
+    slam = bump(t, 5.85, 6.02, 6.6)
+    body(sk, p, (-14 * hold + 10 * slam + K(t, [(0, 0), (6.6, 0), (7.2, 0)]), 0, 1.0 * trem),
+         (0, 5 * hold - 6 * slam, -3 * hold))
+    add(p, "neck", (-24 * hold + 16 * slam, 0, 0))
+    add(p, "skull", (-12 * hold + 10 * slam, 2 * trem, 0))
+    add(p, "jaw", (14 * hold + 30 * bump(t, 5.95, 6.05, 6.5), 0, 0))
+    arm = "cloak" if enraged else "wing"
+    for sd, sg in (("l", 1), ("r", -1)):
+        z = (58 if not enraged else 34) * hold + 3 * trem - 40 * slam
+        add(p, f"{arm}_{sd}", (0, -12 * hold * sg, z * sg))
+        if not enraged:
+            add(p, f"wing_{sd}_fore", (0, 0, -30 * hold * sg))
+        add(p, f"crown_{sd}", (-8 * hold, 10 * trem * sg, 0))
+    for k, b in enumerate(TAIL):
+        add(p, b, (12 * hold * (1 + .2 * k) - 10 * slam, 2 * trem, 0))
+    fore = (0, 4 * slam, 0)
+    return p, feet_with(rest_feet, fl=fore, fr=fore)
+
+
+def shell_pose(sk, rest_feet, theta, t, enraged):
+    """鱗粉の殻 (2026-10-19, MMO gimmick: break the shell in time), enraged, 13.2 s, burst at 12.0 s: crouches and wraps
+    the fans round its body like a cocoon (the dust hardens into a shell around it, a server display), breathing and
+    trembling inside; if the shell holds to 12.0 s, it throws the fans open (a burst) and stands."""
+    p = {}
+    wrap = smooth(t, .2, 1.0) * (1 - smooth(t, 11.8, 12.0))
+    breathe = math.sin(t * 2 * math.pi * .5) * wrap
+    trem = math.sin(t * 2 * math.pi * 9) * smooth(t, 9.0, 10.0) * (1 - smooth(t, 11.8, 11.95))
+    burst = bump(t, 11.9, 12.05, 12.8)
+    body(sk, p, (8 * wrap - 16 * burst, 0, .8 * trem), (0, -8 * wrap + 2 * breathe + 4 * burst, 0))
+    add(p, "neck", (26 * wrap - 20 * burst, 12 * wrap, 0))
+    add(p, "skull", (14 * wrap - 10 * burst, 8 * wrap, 0))
+    add(p, "jaw", (36 * burst, 0, 0))
+    for sd, sg in (("l", 1), ("r", -1)):
+        # swept forward and down round the body (y -55), a cocoon; thrown wide and up on the burst
+        add(p, f"cloak_{sd}", (10 * wrap, (-55 * wrap + 20 * burst) * sg, (-18 * wrap + 3 * breathe + 2 * trem + 50 * burst) * sg))
+    for k, b in enumerate(TAIL):
+        add(p, b, (6 * wrap, 30 * wrap, 0))
+    return p, feet_with(rest_feet)
+
+
+def down_pose(sk, rest_feet, t, enraged=False, theta=0.0):
+    """ダウン (2026-10-19: the cast broken or the shell shattered), 4.0 s: collapses onto its belly with the legs
+    giving way and the wings (fans) sprawled, the head on the ground; struggles at 2.4 s and pushes itself up."""
+    p = {}
+    drop = smooth(t, 0, .45) * (1 - smooth(t, 3.2, 3.9))
+    jolt = bump(t, 0, .12, .4)
+    strug = math.sin((t - 2.4) * 2 * math.pi * 3) * smooth(t, 2.3, 2.5) * (1 - smooth(t, 3.0, 3.2))
+    if enraged:
+        enraged_stance(sk, p, theta * (1 - drop))
+    body(sk, p, (6 * drop - 6 * jolt, 3 * strug, 8 * drop + 2 * strug), (0, -16 * drop + 4 * jolt, 0))
+    feet = {k: v + np.array([(6 if k.endswith("l") else -6) * drop, -2 * drop, 0]) for k, v in rest_feet.items()}
+    solve_legs(sk, p, feet)
+    add(p, "neck", (30 * drop - 10 * jolt, 10 * drop + 6 * strug, 0)); add(p, "skull", (14 * drop, 0, 8 * drop))
+    add(p, "jaw", (20 * bump(t, .1, .3, 1.0) + 16 * bump(t, 2.4, 2.6, 3.1), 0, 0))
+    arm = "cloak" if enraged else "wing"
+    for sd, sg in (("l", 1), ("r", -1)):
+        add(p, f"{arm}_{sd}", (0, 0, (-20 * drop + 18 * jolt + 6 * strug) * sg))
+    for k, b in enumerate(TAIL):
+        add(p, b, (-6 * drop, 8 * strug * (1 + .3 * k), 0))
+    return p
+
+
 def flinch_pose(sk, rest_feet, t, enraged=False, theta=0.0):
     """怯み (a part broke), 1.4 s: snaps back and up, shakes its head, the fans jerk out, then gathers itself."""
     p = {}
@@ -825,7 +896,8 @@ def search_pose(sk, rest_feet, t):
 POSES = {"shade-sweep": sweep_pose, "shade-pounce": pounce_pose, "shade-dust": dust_pose,
          "shade-pulse": pulse_pose, "shade-breath": breath_pose, "shade-storm": storm_pose,
          "shade-turnsweep": turnsweep_pose, "shade-dive": dive_pose, "shade-bite": bite_pose,
-         "shade-tailspin": tailspin_pose, "shade-horn": horn_pose, "shade-tailslap": tailslap_pose, "shade-orb": orb_pose}
+         "shade-tailspin": tailspin_pose, "shade-horn": horn_pose, "shade-tailslap": tailslap_pose, "shade-orb": orb_pose,
+         "shade-channel": channel_pose, "shade-shell": shell_pose}
 
 
 def ability_pose(sk, rest_feet, theta, name, t, enraged):
@@ -1008,6 +1080,8 @@ def main(path=MODEL, carpal_drop=12.0):
         new[f"hop_back{suffix}"] = baked(sk, f"hop_back{suffix}", 1.1, lambda t, e=enraged: hop_back_pose(sk, rest_feet, t, e, theta), False)
     for suffix, enraged in (("", False), ("_enraged", True)):
         new[f"relocate{suffix}"] = baked(sk, f"relocate{suffix}", 3.0, lambda t, e=enraged: relocate_pose(sk, rest_feet, t, e, theta), False)
+    for suffix, enraged in (("", False), ("_enraged", True)):
+        new[f"down{suffix}"] = baked(sk, f"down{suffix}", 4.0, lambda t, e=enraged: down_pose(sk, rest_feet, t, e, theta), False)
     new["awaken"] = baked(sk, "awaken", AWAKEN_SECONDS, lambda t: awaken_pose(sk, rest_feet, t), False)
     n = int(ENRAGE_SECONDS * 20)
     new["enrage"] = clip(sk, "enrage", ENRAGE_SECONDS, n,
