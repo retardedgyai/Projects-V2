@@ -68,8 +68,10 @@ n2 = np.asarray(Image.fromarray(np.random.default_rng(6).random((1, 12)).astype(
 B1 = 345 + (n1 - .5) * 30          # low / mid scarp (z, per x)
 B2 = 172 + (n2 - .5) * 30          # mid / high scarp
 CLIFF_Z = np.broadcast_to(B2[None, :], (B, B))
-step1 = np.clip((B1[None, :] - zz) / 3 + .5, 0, 1)    # 1 north of B1
-step2 = np.clip((B2[None, :] - zz) / 3 + .5, 0, 1)    # 1 north of B2
+jag = (fbm(4, 40, .55, 61) - .5) * 9 + (fbm(3, 90, .5, 62) - .5) * 3          # notches every few blocks
+width = 2 + fbm(4, 25, .5, 63) * 5                                              # some faces sheer, some broken into steps
+step1 = np.clip((B1[None, :] + jag - zz) / width + .5, 0, 1)    # 1 north of B1
+step2 = np.clip((B2[None, :] + jag * .8 - zz) / width + .5, 0, 1)    # 1 north of B2
 H = LOW + (MID - LOW) * step1 + (HIGH - MID) * step2
 H += (fbm(5, 3, .5, 1) - .5) * 7 + (fbm(4, 9, .5, 2) - .5) * 3           # gentle rolls inside each level
 H += bump(*TREE, 75, 65, 12)                                              # the tree hill
@@ -215,6 +217,11 @@ for z in range(B):
             continue
         if stream[z, x]:
             put(x, h - 1, z, TM.bed_block(x, z)); put(x, h, z, "water_still", shape="water")
+            if slope[z, x] > 1.0:                                         # a fall: rough up the pool edge below it
+                for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, 1)):
+                    a, b = x + dx, z + dz
+                    if 0 <= a < B and 0 <= b < B and not stream[b, a] and not road[b, a]:
+                        put(a, hi[b, a], b, R.choice(["gravel", "mossy_cobblestone", "moss_block", "cobblestone"]))
             up = max([hi[z + dz, x + dx] for dx in (-1, 0, 1) for dz in (-1, 0, 1)
                       if 0 <= x + dx < B and 0 <= z + dz < B and stream[z + dz, x + dx]] + [h])
             for y in range(h + 1, up): put(x, y, z, "water_still")          # waterfall down the scarp
@@ -241,6 +248,35 @@ for z in range(B):
             ups = [hi[z + dz, x + dx] for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)) if 0 <= x + dx < B and 0 <= z + dz < B]
             if any(u == h + 1 for u in ups):
                 put(x, h + 1, z, top[0], top[-1], shape="slab")
+
+
+# talus: rockfall piles where a face meets the ground below it
+from collections import Counter as _C
+TALUS = ["gravel", "gravel", "cobblestone", "andesite", "stone", "tuff", "mossy_cobblestone"]
+for z in range(2, B - 2):
+    for x in range(2, B - 2):
+        if slope[z, x] > 1.0 or road_d[z, x] < 4 or path_d[z, x] < 3 or lake[z, x] or stream[z, x]: continue
+        up = max(hi[z + dz, x + dx] for dx in (-2, -1, 0, 1, 2) for dz in (-2, -1, 0, 1, 2))
+        if up - hi[z, x] < 5: continue                                # only right below a real face
+        n = noise3(x, 0, z, 371, 2.5)
+        if n < .42: continue
+        g = hi[z, x]
+        put(x, g, z, R.choice(TALUS))
+        if n > .6 and _h(x, 1, z, 52) < .35:                          # a fallen boulder, sometimes two high, mossy on top
+            put(x, g + 1, z, R.choice(["cobblestone", "andesite", "stone", "mossy_cobblestone"]))
+            if n > .72 and _h(x, 2, z, 53) < .4: put(x, g + 2, z, "moss_block" if _h(x, 3, z, 54) < .5 else "mossy_cobblestone", shape="slab")
+        elif _h(x, 4, z, 55) < .15:
+            put(x, g + 1, z, "stone", shape="slab")
+for z in range(1, B - 1):
+    for x in range(1, B - 1):
+        if slope[z, x] <= 1.3: continue
+        h = hi[z, x]
+        for y in range(hi[z + 1, x] + 1, h + 1):                      # the face looking south (toward the camera)
+            if (x, y, z + 1) in w.b: continue
+            r3 = _h(x, y, z, 56)
+            if r3 < .025: put(x, y, z + 1, "glow_lichen", shape="shut_s")
+            elif r3 < .04 and y > h - 3: put(x, y, z + 1, "hanging_roots", shape="shut_s")
+            elif r3 < .07 and y > h - 2: put(x, y, z + 1, "vine", shape="shut_s")
 
 
 # ---------------- shared builders ----------------
@@ -1154,14 +1190,49 @@ west = np.clip((150 - xx) / 120, 0, 1)
 north = np.clip((60 - zz) / 60, 0, 1)
 treehill = np.exp(-(((xx - TREE[0]) / 90) ** 2 + ((zz - TREE[1]) / 80) ** 2))
 dens = np.clip((forest - .48) * 2 + west * .8 + north * .5 + treehill * .35, 0, 1) ** 1.6 * .035 + .0025
+def young_tree(x, z):
+    if not (2 <= x < B - 3 and 2 <= z < B - 3) or used[z, x] or anyway[z, x] < 3 or lake[z, x] or stream[z, x] or slope[z, x] > 1.0: return
+    g = at(x, z); th = R.randint(2, 4)
+    for y in range(g + 1, g + th + 1): put(x, y, z, *LOG("oak_log"))
+    for dx in range(-2, 3):
+        for dz in range(-2, 3):
+            for dy in range(-1, 2):
+                if dx * dx + dz * dz + dy * dy * 2 <= 4.5 + R.random() * 2 and (x + dx, g + th + dy, z + dz) not in w.b:
+                    put(x + dx, g + th + dy, z + dz, R.choice(["oak_leaves", "oak_leaves", "azalea_leaves"]))
+    mark(x - 1, z - 1, x + 1, z + 1)
+
+
+def bush_clump(x, z):
+    if not (2 <= x < B - 3 and 2 <= z < B - 3) or used[z, x] or anyway[z, x] < 3 or lake[z, x] or stream[z, x]: return
+    for _ in range(R.randint(2, 5)):
+        a, b = x + R.randint(-1, 1), z + R.randint(-1, 1)
+        y = at(a, b) + 1
+        if (a, y, b) not in w.b:
+            put(a, y, b, R.choice(["oak_leaves", "azalea_leaves", "flowering_azalea_leaves", "bush"]),
+                shape="plant" if R.random() < .25 else ("slab" if R.random() < .4 else "full"))
+
+
+EDGE_LO, EDGE_HI = .006, .02
 for z in range(4, B - 4):
     for x in range(4, B - 4):
+        dz_ = dens[z, x]
+        if EDGE_LO < dz_ < EDGE_HI:                                   # the woodland edge: low cover in front of the trees
+            r2 = R.random()
+            if r2 < .004: young_tree(x, z)
+            elif r2 < .02: bush_clump(x, z)
+            continue
         if R.random() < dens[z, x]:
             if x > CLIFF_X - 4: oak(x, z, "spruce")
             elif west[z, x] > .3 and R.random() < .55: oak(x, z, "dark", big=R.random() < .3)
             elif treehill[z, x] > .4 and R.random() < .4: oak(x, z, "birch")
             else: oak(x, z, "oak", big=R.random() < .08)
 scatter_plants(70, 280, 70, .05, ["fern", "short_grass", "brown_mushroom", "leaf_litter"])
+# leaf litter under canopies: find ground cells shaded by leaves within 6 blocks above
+for (x, y, z), v in list(w.b.items()):
+    if v[1] in ("oak_leaves", "dark_oak_leaves", "birch_leaves") and y - at(x, z) <= 9 and _h(x, y, z, 51) < .12:
+        g = at(x, z)
+        if (x, g + 1, z) not in w.b and w.b.get((x, g, z), ("", "", ""))[1] in ("grass_block_top", "podzol_top", "coarse_dirt", "moss_block"):
+            put(x, g + 1, z, "leaf_litter", shape="carpet")
 scatter_plants(250, 250, 240, .006, ["poppy", "dandelion", "short_grass", "short_grass"])
 # ground cover in clumps and drifts: grass tufts where the clump noise is high, flowers in single-species drifts,
 # ferns in shade and damp ground, a few small mossy stones on the hills
