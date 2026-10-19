@@ -475,6 +475,50 @@ class ShadeWyrmBossTest {
     }
 
     @Test
+    fun `the head takes more and the tail less, and break skills wear the cast down`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, -8.0), "Weak")
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            val max = combat.bossMaxHealth()
+            var now = 1_000L
+            combat.tick(now)
+            fun hitFrom(offset: Vec): Double {
+                val yaw = Math.toRadians(boss.position.yaw().toDouble())
+                val ahead = Vec(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw))
+                val right = Vec(-kotlin.math.cos(yaw), 0.0, -kotlin.math.sin(yaw))
+                player.teleport(boss.position.add(ahead.mul(offset.z())).add(right.mul(offset.x()))).join()
+                val before = combat.healthOf(boss.uuid)!!
+                assertNotNull(combat.applyDamageAmount(boss.uuid, player, 10.0))
+                return before - combat.healthOf(boss.uuid)!!
+            }
+            assertEquals(10.0 * QuestEncounterCombat.HEAD_MULTIPLIER, hitFrom(Vec(0.0, 0.0, 6.0)), 1e-6)
+            assertTrue(combat.takeWeakSpot(player), "a head hit is flagged for the damage number")
+            assertFalse(combat.takeWeakSpot(player), "the flag is read once")
+            assertEquals(10.0, hitFrom(Vec(5.0, 0.0, 0.0)), 1e-6)
+            assertEquals(10.0 * QuestEncounterCombat.TAIL_MULTIPLIER, hitFrom(Vec(0.0, 0.0, -6.0)), 1e-6)
+            assertFalse(combat.takeWeakSpot(player))
+
+            player.teleport(arena.bossSpawn.add(0.0, 0.0, -8.0)).join()
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, max * .32))           // the second form
+            var guard = 0
+            while (combat.gimmickBars()?.first != QuestEncounterCombat.CHANNEL && guard++ < 600) { now += 50; combat.tick(now) }
+            assertEquals(QuestEncounterCombat.CHANNEL, combat.gimmickBars()?.first)
+            val hits = kotlin.math.ceil(QuestEncounterCombat.CAST_SHARE / QuestEncounterCombat.CC_CAST_HARD).toInt()
+            repeat(hits - 1) { assertTrue(combat.applyCrowdControl(boss.uuid, CrowdControl.STUN, 1000, player)) }
+            assertFalse(combat.isDown(boss.uuid))
+            assertEquals(QuestEncounterCombat.CHANNEL, combat.gimmickBars()?.first, "crowd control never cancels the cast by itself")
+            combat.applyCrowdControl(boss.uuid, CrowdControl.STUN, 1000, player)
+            assertTrue(combat.isDown(boss.uuid), "enough break skills during the cast interrupt it")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
     fun `hitting the cast hard enough knocks the wyrm down, and the shell soaks damage until it breaks`() {
         MinecraftServer.init(Auth.Offline())
         val arena = BossArenaFactory.create("shade", 1)

@@ -294,6 +294,10 @@ class QuestEncounterCombat(
     }
     fun bossName(): String = mobs.values.firstOrNull { it.boss }?.definition?.name ?: ""
     fun bossEnrageRatio(): Double = mobs.values.firstOrNull { it.boss }?.definition?.enrageHealthRatio ?: 0.0
+    /** Attackers whose latest hit landed on a weak part (the wyrm's head); read once by the attacker's feedback. */
+    private val weakSpotHits = mutableSetOf<UUID>()
+    fun takeWeakSpot(attacker: Player): Boolean = weakSpotHits.remove(attacker.uuid)
+
     fun weaknessOf(targetId: UUID): String? = mobs[targetId]?.definition?.archetype?.weakness
     fun expose(targetId: UUID, durationMillis: Long = 4000): Boolean {
         val mob = mobs[targetId] ?: return false
@@ -346,8 +350,22 @@ class QuestEncounterCombat(
             if (now < mob.brokenUntil) return false
             mob.breakGauge = (mob.breakGauge - kind.breakDamage).coerceAtLeast(0.0)
             mob.lastCcAt = now
-            // A cast / shell is broken by its own rule (damage), never by the break gauge.
-            if (mob.abilities.current?.ability?.id in GIMMICKS) mob.breakGauge = maxOf(mob.breakGauge, 1.0)
+            // A cast / shell is broken by its own rule (damage), never by the break gauge; a break tool still counts
+            // toward that damage, so choosing the right skill matters during the gimmick.
+            val gimmick = mob.abilities.current?.ability?.id
+            if (gimmick in GIMMICKS) {
+                mob.breakGauge = maxOf(mob.breakGauge, 1.0)
+                val share = mob.life.maximumHealth * (if (kind.hard) CC_CAST_HARD else CC_CAST_SOFT)
+                if (gimmick == CHANNEL) {
+                    mob.castDamage += share
+                    if (mob.castDamage >= mob.life.maximumHealth * CAST_SHARE) knockDown(mob, now, "詠唱を止めた・殴り放題")
+                } else if (gimmick == SHELL && mob.shellHealth > 0.0) {
+                    mob.shellHealth -= share
+                    if (mob.shellHealth <= 0.0) knockDown(mob, now, "殻が割れた・殴り放題")
+                }
+                updateName(mob)
+                return true
+            }
             if (mob.breakGauge <= 0.0) {
                 mob.brokenUntil = now + BREAK_MILLIS
                 mob.maneuver = null
@@ -496,7 +514,9 @@ class QuestEncounterCombat(
         val guarded = !effect && guarding(mob) &&
             normalizeHorizontal(source.sub(mob.entity.position)).dot(normalizeHorizontal(mob.entity.position.direction())) >= 0.5
         val healthBefore = mob.life.health
-        val mitigated = amount * (if (guarded) mob.definition.frontalDamageMultiplier else 1.0) *
+        val part = if (effect || fieldOrigin != null || mob.view == null) 1.0 else partMultiplier(mob, attacker, projectile)
+        if (part > 1.0) weakSpotHits += attacker.uuid else weakSpotHits -= attacker.uuid
+        val mitigated = amount * part * (if (guarded) mob.definition.frontalDamageMultiplier else 1.0) *
             (if (mob.boss && now < mob.brokenUntil) BROKEN_DAMAGE else 1.0)
         val gated = if (mob.boss) minOf(mitigated, (mob.life.health - mob.life.maximumHealth * bossGateFraction).coerceAtLeast(0.0)) else mitigated
         val gimmick = mob.abilities.current?.ability?.id
@@ -1284,6 +1304,25 @@ class QuestEncounterCombat(
      * Enraged part breaks (gimmicks): damage dealt from in front within [HEAD_REACH] of the head wears the horns,
      * from either side the fan on that side. Thresholds are shares of its maximum health.
      */
+    /**
+     * 部位の手応え: the head takes more, the tail less. Read from where the attacker stands relative to the wyrm,
+     * like [breakParts]: melee must be at the head, a shot must come from in front.
+     */
+    private fun partMultiplier(mob: Mob, attacker: Player, projectile: Boolean): Double {
+        val here = mob.entity.position
+        val yaw = Math.toRadians((if (mob.maneuver != null) mob.faceYaw else here.yaw()).toDouble())
+        val ahead = Vec(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw))
+        val off = Vec(attacker.position.x() - here.x(), 0.0, attacker.position.z() - here.z())
+        if (off.length() < 1e-6) return 1.0
+        val angle = Math.toDegrees(kotlin.math.acos(off.normalize().dot(ahead).coerceIn(-1.0, 1.0)))
+        val head = here.add(ahead.mul(4.0))
+        return when {
+            angle <= HEAD_ANGLE && (projectile || attacker.position.distance(head.withY(attacker.position.y())) <= HEAD_REACH) -> HEAD_MULTIPLIER
+            angle >= TAIL_ANGLE -> TAIL_MULTIPLIER
+            else -> 1.0
+        }
+    }
+
     private fun breakParts(mob: Mob, attacker: Player, applied: Double, now: Long) {
         if (!mob.enraged || now < mob.enrageHoldUntil) return
         val here = mob.entity.position
@@ -1604,6 +1643,13 @@ class QuestEncounterCombat(
         val GLOW: net.kyori.adventure.key.Key = net.kyori.adventure.key.Key.key("projects", "shade_glow")
         /** Gimmicks: horn break (12 % of max health from near the head), fan tear (10 % per side). */
         const val HEAD_REACH = 6.0
+        const val HEAD_ANGLE = 50.0
+        const val TAIL_ANGLE = 140.0
+        const val HEAD_MULTIPLIER = 1.25
+        const val TAIL_MULTIPLIER = .8
+        /** Share of max HP a crowd-control hit adds to a channel / takes off a shell (hard / soft CC). */
+        const val CC_CAST_HARD = .02
+        const val CC_CAST_SOFT = .008
         const val HORN_BREAK = .12
         const val FAN_TEAR = .10
         const val SLOPPY_MILLIS = 20_000L

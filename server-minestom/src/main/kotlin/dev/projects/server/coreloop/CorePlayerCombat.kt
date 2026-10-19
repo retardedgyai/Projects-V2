@@ -58,6 +58,18 @@ internal class CorePlayerCombat(
     private var tickNumber = 0L
     private var nextDodge = 0L
     private var dodgeCooldown = 24L
+    /** 回避の無敵: hits (except TRUE damage) are evaded until this tick. */
+    private var evadeUntil = -1L
+    /** An F pressed while committed (swing before impact, heavy startup) fires as soon as it is allowed. */
+    private var dodgeQueuedUntil = -1L
+    /** Dodges and knockbacks travel over a few ticks instead of teleporting. */
+    private class Slide(val direction: Vec, val step: Double, var remaining: Int)
+    private var slide: Slide? = null
+    /** 怯み / 吹き飛び: no input and no walking until this tick. */
+    private var staggerUntil = -1L
+    val staggered get() = tickNumber < staggerUntil
+    private var baseSpeed = 0.1
+    private var appliedSpeed = -1.0
     private var lastCombat = -400L
     private val readyAt = LongArray(5)
     internal val classState = CoreClassState()
@@ -122,7 +134,7 @@ internal class CorePlayerCombat(
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
-        if (defeated || player.openInventory != null) return
+        if (defeated || player.openInventory != null || staggered) return
         val enemies = encounter() ?: return
         if (pending != null || shot != null || tickNumber < nextNormalAt) { queueAction(CoreCombatFeel.NORMAL); return }
         queued = null
@@ -147,7 +159,7 @@ internal class CorePlayerCombat(
 
     fun skill(id: Int) {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
-        if (id !in 0..4 || defeated || encounter() == null || player.openInventory != null) return
+        if (id !in 0..4 || defeated || encounter() == null || player.openInventory != null || staggered) return
         if (!skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
         val definition = skillDefinitions[id]
@@ -219,8 +231,11 @@ internal class CorePlayerCombat(
     }
 
     fun dodge() {
-        if (defeated || encounter() == null || tickNumber < nextDodge) return
-        // F cuts any follow-through for every class; the normal cadence (nextNormalAt) is still paid.
+        if (defeated || encounter() == null || tickNumber < nextDodge || staggered) return
+        // MH×MMO commitment: F cuts follow-through (after impact) and light skills, never a swing before its impact
+        // or the startup of a heavy skill / ultimate. Pressed then, it fires the moment the commitment ends.
+        if (committed()) { dodgeQueuedUntil = tickNumber + DODGE_BUFFER_TICKS; return }
+        dodgeQueuedUntil = -1
         queued = null
         if (normal.isAttacking) normal.endRecovery()
         classState.guardUntil = -1; classState.perfectUntil = -1
@@ -231,7 +246,8 @@ internal class CorePlayerCombat(
         val facing = flatFacing()
         val right = Vec(-facing.z(), 0.0, facing.x())
         val direction = if (forward == 0.0 && side == 0.0) facing else facing.mul(forward).add(right.mul(side)).normalize()
-        moveSafely(direction, 2.6)
+        startSlide(direction, DODGE_DISTANCE, DODGE_SLIDE_TICKS)
+        evadeUntil = tickNumber + DODGE_EVADE_TICKS
         if (weaponBase() == CoreWeaponBase.FLOW) normal.holdSequence()
         dodgeCooldown = if (journey().build.has(4)) 20L else 24L
         nextDodge = tickNumber + dodgeCooldown
@@ -251,10 +267,15 @@ internal class CorePlayerCombat(
         if(player.isRemoved) { resetActions(); return }
         if (tickNumber % 20 == 0L) {
             manaValue = (manaValue + CoreCombatMath.manaRegeneration(statSource(), tickNumber - lastCombat > 100)).coerceAtMost(maxMana.toDouble())
-            player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = 0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0 + if (tickNumber < moveHasteUntil) .2 else 0.0)
+            baseSpeed = 0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0 + if (tickNumber < moveHasteUntil) .2 else 0.0)
         }
+        applySpeed(speedFactor())
         val enemies = encounter() ?: run { resetActions(); return }
         if (weaponBroken()) { resetActions(); return }
+        slide?.let { s ->
+            val travelled = moveSafely(s.direction, s.step)
+            if (--s.remaining <= 0 || travelled < s.step - 1e-6) slide = null
+        }
         val epoch = actionEpoch
         shot?.takeIf { tickNumber >= it.first }?.let { (_, direction) ->
             shot = null
@@ -312,11 +333,64 @@ internal class CorePlayerCombat(
         }
         tickGarden(enemies)
         if (!actionsValid(enemies, epoch)) return
+        if (tickNumber <= dodgeQueuedUntil && !committed()) dodge()
         drainInput()
         if(classId==CoreClass.WARRIOR) {
             warriorMarks.update(enemies.combatTargets().filter { classState.marked(it.id,tickNumber) && visibleTo(it.id,enemies) },classState,tickNumber)
         } else warriorMarks.clear()
         vfx.tick()
+    }
+
+    /** A swing before its impact, or the startup of a heavy skill / ultimate, cannot be cut by F. */
+    private fun committed(): Boolean {
+        val swing = normal.swing
+        if (swing != null && normal.elapsed < swing.impactTick) return true
+        val action = pending ?: return false
+        return action.elapsed < action.startup && (action.startup >= HEAVY_STARTUP || action.definition.ultimate)
+    }
+
+    /** Walking while acting: rooted for heavy startups and while staggered, slowed while casting or swinging. */
+    private fun speedFactor(): Double {
+        if (defeated || staggered) return 0.0
+        val action = pending
+        if (action != null && action.elapsed < action.startup)
+            return if (action.startup >= HEAVY_STARTUP || action.definition.ultimate) 0.0 else CAST_SPEED
+        return if (normal.isAttacking && classId.melee) SWING_SPEED else 1.0
+    }
+
+    private fun applySpeed(factor: Double) {
+        val speed = baseSpeed * factor
+        if (speed == appliedSpeed) return
+        appliedSpeed = speed
+        player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = speed
+    }
+
+    /** The first step lands now (an F press feels instant); the rest follows on the next ticks. */
+    private fun startSlide(direction: Vec, distance: Double, ticks: Int) {
+        val step = distance / ticks
+        slide = null
+        if (moveSafely(direction, step) < step - 1e-6 || ticks <= 1) return
+        slide = Slide(direction, step, ticks - 1)
+    }
+
+    /** A heavy unguarded hit staggers (≥20% of max HP) or knocks down (≥45%): the action is lost, the body is thrown. */
+    private fun react(share: Double) {
+        if (share < STAGGER_SHARE || staggered) return
+        val down = share >= KNOCKDOWN_SHARE
+        queued = null; dodgeQueuedUntil = -1; shot = null
+        if (normal.isAttacking) normal.endRecovery()
+        if (pending != null) { pending = null; vfx.cancel(preserveGarden = garden != null) }
+        staggerUntil = tickNumber + if (down) KNOCKDOWN_TICKS else STAGGER_TICKS
+        // Getting up is protected, as in MH: no juggling a downed hunter.
+        if (down) evadeUntil = staggerUntil + WAKE_EVADE_TICKS
+        val here = player.position
+        val away = encounter()?.combatTargets()?.minByOrNull { it.position.distanceSquared(here) }
+            ?.let { Vec(here.x() - it.position.x(), 0.0, here.z() - it.position.z()) }
+            ?.takeIf { it.lengthSquared() > 1e-6 }?.normalize() ?: flatFacing().mul(-1.0)
+        startSlide(away, if (down) KNOCKDOWN_DISTANCE else STAGGER_DISTANCE, 3)
+        applySpeed(0.0)
+        notice(if (down) "吹き飛ばされた" else "怯んだ")
+        sound(if (down) SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK else SoundEvent.ENTITY_PLAYER_ATTACK_WEAK, .8f, if (down) .7f else 1f)
     }
 
     /** A skill pressed during a slow swing is kept until that swing can be linked, not only for the buffer. */
@@ -512,8 +586,11 @@ internal class CorePlayerCombat(
         val tags = definition?.tags ?: CoreSkillCatalog.basicTags(classId)
         val element = (stats.fireFlat + stats.iceFlat + stats.lightningFlat) * (if (skill) 1.0 else multiplier) * 0.65
         val critical = criticalRoll() < stats.criticalChance
+        // A skill of the weak element counts as much as an affix of it (element 1 fire / 2 ice / 3 lightning).
+        val skillElement = definition?.element ?: 0
         val weak = when (enemies.weaknessOf(id)) {
-            "fire" -> stats.fireFlat > 0; "ice" -> stats.iceFlat > 0; "lightning" -> stats.lightningFlat > 0; else -> false
+            "fire" -> stats.fireFlat > 0 || skillElement == 1; "ice" -> stats.iceFlat > 0 || skillElement == 2
+            "lightning" -> stats.lightningFlat > 0 || skillElement == 3; else -> false
         }
         val baseDamage = definition?.baseDamage(sheet) ?: (formula.evaluate(sheet) * multiplier + element)
         var classMultiplier = 1.0
@@ -537,6 +614,8 @@ internal class CorePlayerCombat(
             else enemies.applyCalculatedDamage(id, player, damage, type, stats,
                 projectile = !classId.melee || definition?.motion == CoreSkillMotion.RAY || definition?.motion == CoreSkillMotion.FIELD || (definition?.radius ?: 0.0) > 7.0)) ?: return
         accepted?.invoke()
+        val weakSpot = enemies.takeWeakSpot(player)
+        if (weakSpot) sound(SoundEvent.ENTITY_PLAYER_ATTACK_CRIT, .7f, 1.25f)
         val lesson = if (skill) 1 else 0
         if (!journey().knows(lesson) && tickNumber - (lessonAttempts[lesson] ?: -100L) >= 20) {
             lessonAttempts[lesson] = tickNumber; onLesson(lesson)
@@ -599,7 +678,7 @@ internal class CorePlayerCombat(
             sound(if (classId == CoreClass.RANGER) SoundEvent.ENTITY_ARROW_HIT else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .4f, 1.4f)
             vfx.particles(if (classId == CoreClass.MAGE) Particle.FLAME else Particle.END_ROD, position.add(0.0, 1.0, 0.0), 6, Vec(.2, .3, .2), .03f)
         }
-        showDamage(position, applied, critical, weak)
+        showDamage(position, applied, critical, weak || weakSpot)
         if (stats.fireFlat > 0 && enemies.isAlive(id)) {
             burns[DotKey(id)] = Burn(maxOf(burns[DotKey(id)]?.damage ?: 0.0, CoreCombatMath.outgoing(stats.fireFlat * .3, type, tags, stats)), type, stats, tickNumber + 20, 3)
             vfx.particles(Particle.SMALL_FLAME, position.add(0.0, 1.0, 0.0), 7, Vec(0.2, 0.4, 0.2), 0.01f)
@@ -725,12 +804,19 @@ internal class CorePlayerCombat(
         }
     }
 
-    fun hurt(amount: Double, type: CoreDamageType = CoreDamageType.PHYSICAL) {
+    /** [blow] false for damage that is not a strike (ticking effects, setup): it never staggers. */
+    fun hurt(amount: Double, type: CoreDamageType = CoreDamageType.PHYSICAL, blow: Boolean = true) {
         if (defeated || encounter() == null || !amount.isFinite() || amount <= 0.0) return
+        // 回避の無敵. TRUE damage (failed gimmicks) cannot be rolled through.
+        if (tickNumber < evadeUntil && type != CoreDamageType.TRUE) {
+            sound(SoundEvent.ENTITY_BREEZE_WIND_BURST, .45f, 1.6f)
+            return
+        }
         val snapshot = sheet
         var adjusted = CoreCombatMath.mitigate(amount, type, snapshot.ar, snapshot.mr, damageReduction = snapshot.mods.mitigationPercent)
         if (classId == CoreClass.WARRIOR && journey().build.keystone == 0 && resource >= 60) adjusted *= 1.1
-        if (tickNumber < classState.guardUntil) {
+        val guarded = tickNumber < classState.guardUntil
+        if (guarded) {
             val perfect = tickNumber <= classState.perfectUntil
             adjusted *= if (perfect) .2 else .45
             classState.guarded(classId, tickNumber, journey().build)
@@ -757,6 +843,7 @@ internal class CorePlayerCombat(
         health -= adjusted
         syncVanillaHealth()
         sound(SoundEvent.ENTITY_PLAYER_HURT, 0.65f, 1f)
+        if (!guarded && blow) react(adjusted / maxHealth)
     }
 
     fun healPotion() {
@@ -792,6 +879,8 @@ internal class CorePlayerCombat(
         normalEmpowerment = 1.0
         queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; rampageUntil = -1; lastHurtRage = -100
         classState.reset(); moveHasteUntil = -1; previousPosition = null
+        evadeUntil = -1; dodgeQueuedUntil = -1; slide = null; staggerUntil = -1
+        if (appliedSpeed >= 0 && appliedSpeed != baseSpeed) applySpeed(1.0)
         vfx.cancel()
         warriorMarks.clear()
         damageLabels.forEach { it.first.remove() }; damageLabels.clear()
@@ -801,7 +890,8 @@ internal class CorePlayerCombat(
         player.health = (20.0 * health / maxHealth).toFloat().coerceIn(0.1f, 20f)
     }
 
-    private fun moveSafely(direction: Vec, distance: Double) {
+    /** Returns how far the player actually moved. */
+    private fun moveSafely(direction: Vec, distance: Double): Double {
         val start = player.position
         var destination = start
         val grounded=player.instance.getBlock(start.sub(0.0,.15,0.0)).solid()
@@ -814,6 +904,7 @@ internal class CorePlayerCombat(
             destination = next
         }
         player.teleport(destination)
+        return start.distance(destination)
     }
 
     private fun flatFacing(): Vec = Vec(player.position.direction().x(), 0.0, player.position.direction().z()).let {
@@ -899,5 +990,21 @@ internal class CorePlayerCombat(
         val SKILL_NAMES = listOf("轟進", "地割り", "押し薙ぎ")
         const val WHETSTONE_TICKS = 20L * 180
         const val NOTICE_MILLIS = 1_600L
+        const val DODGE_DISTANCE = 2.6
+        const val DODGE_SLIDE_TICKS = 4
+        /** About 0.35 s of evasion from the press, a little longer than the slide. */
+        const val DODGE_EVADE_TICKS = 7L
+        const val DODGE_BUFFER_TICKS = 8L
+        /** Skills with a startup this long (or ultimates) root the caster and cannot be dodge-cancelled before they fire. */
+        const val HEAVY_STARTUP = 12
+        const val CAST_SPEED = .35
+        const val SWING_SPEED = .6
+        const val STAGGER_SHARE = .2
+        const val KNOCKDOWN_SHARE = .45
+        const val STAGGER_TICKS = 10L
+        const val KNOCKDOWN_TICKS = 20L
+        const val WAKE_EVADE_TICKS = 8L
+        const val STAGGER_DISTANCE = 2.5
+        const val KNOCKDOWN_DISTANCE = 4.0
     }
 }
