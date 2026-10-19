@@ -357,6 +357,38 @@ class CorePlayerCombatTest {
         assertEquals(300.0, h.combat.bossHealth())
     }
 
+    /** Records what a real warrior cast puts in the world, tick by tick, for scripts/preview_warrior_cast.py (player + skill). */
+    @Test fun `warrior casts export the player and every spawned display for the cast preview`() {
+        fun xyz(v: net.minestom.server.coordinate.Point)=listOf(v.x(),v.y(),v.z())
+        val casts=listOf("dash" to 0,"slam" to 1,"whirl" to 2,"war_guard" to 3,"war_wound" to 3,"war_ult" to 4)
+        val scenes=casts.map { (icon,slot) -> var scene=emptyMap<String,Any>(); arena { h ->
+            CoreCombatPresentation.pack(h.player,true)
+            if(icon=="war_wound") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=4)); h.actor.reset() }
+            assertEquals(icon,h.actor.skillDefinitions[slot].icon)
+            h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
+            val frames=mutableListOf<Map<String,Any>>()
+            fun record() { frames+=mapOf("player" to xyz(h.player.position)+h.player.position.yaw().toDouble(),
+                "targets" to h.combat.combatTargets().map { xyz(it.position) },
+                "displays" to h.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }.mapNotNull { e ->
+                    val m=e.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+                    val model=m.itemStack.get(DataComponents.ITEM_MODEL)?.toString()?.substringAfter("projects:") ?: return@mapNotNull null
+                    if(m.scale.x()==0.0&&m.scale.y()==0.0&&m.scale.z()==0.0) return@mapNotNull null
+                    mapOf("model" to model,"offset" to xyz(e.position.add(m.translation)),"scale" to xyz(m.scale),
+                        "quaternion" to m.leftRotation.map { it.toDouble() })
+                }) }
+            repeat(4) { record(); h.ticks(1) }
+            h.actor.skill(slot)
+            repeat(76) { record(); h.ticks(1) }
+            scene=mapOf("id" to icon,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"frames" to frames)
+            CoreCombatPresentation.forget(h.player)
+        }; scene }
+        val cwd=java.nio.file.Path.of(System.getProperty("user.dir"))
+        val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd
+        java.nio.file.Files.createDirectories(root.resolve(".tools"))
+        java.nio.file.Files.writeString(root.resolve(".tools/warrior-cast-frames.json"),com.google.gson.Gson().toJson(scenes))
+        assertTrue(scenes.all { s -> (s["frames"] as List<*>).any { (it as Map<*,*>)["displays"].let { d -> (d as List<*>).isNotEmpty() } } })
+    }
+
     private fun arena(bossDistance: Double = 4.0, armorTier: Int = 1, stats: CoreAffixStats = CoreAffixStats(), roll: Double = 1.0,
         weaponEnhancement: Int = 0, armorEnhancement: Int = 0, test: (Harness) -> Unit) {
         MinecraftServer.init(Auth.Offline())
