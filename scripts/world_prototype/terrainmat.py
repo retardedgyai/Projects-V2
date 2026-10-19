@@ -20,13 +20,13 @@ from greattree import noise3, _h
 ROCKY = [("stone", 65), ("andesite", 10), ("cobblestone", 5.5), ("light_gray_concrete_powder", 5), ("gravel", 4),
          ("dirt", 2), ("coal_ore", .5), ("iron_ore", .5), ("mossy_cobblestone", 2)]
 HILLS = [("grass_block_top", 3), ("coarse_dirt", 3), ("stone", 3), ("andesite", 2), ("gravel", 1)]
-MEADOW = [("grass_block_top", 14), ("coarse_dirt", 1), ("moss_block", 1)]
+MEADOW = [("grass_block_top", 24), ("coarse_dirt", .7), ("moss_block", 1)]
 FOREST = [("podzol_top", 3), ("coarse_dirt", 3), ("grass_block_top", 3), ("moss_block", 2)]
 DAMP = [("moss_block", 3), ("grass_block_top", 3), ("mud", 1), ("coarse_dirt", 1)]
 BED = [("gravel", 3), ("clay", 2), ("dirt", 1), ("sand", 1)]
 SIDE = {"grass_block_top": "grass_block_side", "podzol_top": "podzol_side", "dirt_path_top": "dirt_path_side"}
 # cliff gradient, dark -> light
-CLIFF = ["deepslate", "cobbled_deepslate", "tuff", "tuff", "cobblestone", "gravel", "andesite", "andesite", "stone", "stone"]
+CLIFF = ["cobbled_deepslate", "tuff", "tuff", "cobblestone", "gravel", "andesite", "andesite", "stone", "stone"]
 
 
 def pick_mix(mix, x, z, seed, blob=4.0):
@@ -52,7 +52,7 @@ def surface(x, z, slope, forest, damp, seed=301):
     elif forest > .45:
         name = pick_mix(FOREST, x, z, seed + 4, 3.5)
     else:
-        name = pick_mix(MEADOW, x, z, seed + 5, 5.0)
+        name = pick_mix(MEADOW, x, z, seed + 5, 2.2)
     return (name, SIDE.get(name, name))
 
 

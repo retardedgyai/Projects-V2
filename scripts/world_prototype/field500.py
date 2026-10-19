@@ -164,8 +164,11 @@ sprof = np.minimum.accumulate(sprof) - 1.5
 st_d, st_i = dist_idx(stream_pl)
 stream = (st_d < 1.6) & ~lake & ~road & ~trail
 chan = sprof[np.clip(st_i, 0, len(sprof) - 1)]
-bank = np.clip(1 - (st_d - 1.6) / 3, 0, 1) * (anyway > 4)
-H = np.where(stream, np.minimum(H, chan), H * (1 - bank * .6) + np.minimum(H, chan + 1.5) * bank * .6).astype(np.float32)
+bank = np.clip(1 - (st_d - 1.6) / 6, 0, 1) * (anyway > 4)           # a wide, gentle bank (was 3 blocks: a wall)
+bank = bank * bank * (3 - 2 * bank)
+H = np.where(stream, np.minimum(H, chan), H * (1 - bank) + np.minimum(H, chan + 1 + (st_d - 1.6) * .35) * bank).astype(np.float32)
+pbank = np.clip((1.35 - pond_d) / .35, 0, 1) * (pond_d >= 1)           # the pond shore slopes into the water
+H = np.where(pbank > 0, H * (1 - pbank) + (WL + .4) * pbank, H).astype(np.float32)
 
 hi = np.round(H).astype(int)
 gy_, gx_ = np.gradient(H)
@@ -203,10 +206,13 @@ for z in range(B):
         h = hi[z, x]
         nb = min(hi[max(0, z - 1), x], hi[min(B - 1, z + 1), x], hi[z, max(0, x - 1)], hi[z, min(B - 1, x + 1)])
         lo = h - 6 if x in (0, B - 1) or z in (0, B - 1) else min(nb, h) - 1
-        face = slope[z, x] > 1.3
+        near_water = st_d[z, x] < 8 or pond_d[z, x] < 1.5
+        face = slope[z, x] > 1.3 and not near_water
         fb, ft = LOCAL_MIN[z, x], max(LOCAL_MAX[z, x], LOCAL_MIN[z, x] + 1)
         recess = float(np.clip((LOCAL_AVG[z, x] - H[z, x]) / 3, 0, 1))
         for y in range(lo, h):
+            if near_water and h - y <= 3:
+                put(x, y, z, "dirt" if h - y > 1 or _h(x, y, z, 6) < .7 else "coarse_dirt"); continue
             if face or h - y > 2:
                 put(x, y, z, TM.cliff_block(x, y, z, (y - fb) / (ft - fb), recess))
             else:
@@ -242,7 +248,7 @@ for z in range(B):
             put(x, h, z, *(("moss_block",) if n > .72 else ("grass_block_top", "grass_block_side") if n > .64 else (TM.cliff_block(x, h, z, (h - fb) / (ft - fb), recess),)))
             continue
         top = TM.surface(x, z, slope[z, x], FOREST_F[z, x], DAMP_F[z, x])
-        if 0 < anyway[z, x] - 2 < 2.5 and _h(x, 3, z, 11) < .5: top = ("coarse_dirt", "coarse_dirt")     # trampled verge
+        if 0 < anyway[z, x] - 2 < 2.5 and _h(x, 3, z, 11) < .2: top = ("coarse_dirt", "coarse_dirt")     # trampled verge
         put(x, h, z, *top)
         if slope[z, x] < 1.2:  # half steps so nothing on walkable ground needs a jump
             ups = [hi[z + dz, x + dx] for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)) if 0 <= x + dx < B and 0 <= z + dz < B]
@@ -309,6 +315,7 @@ def bez(p0, p1, p2, n=10):
 
 
 def root_arch(p0, apex, p2, r0, r1, hang=True, follow=True):
+    r0, r1 = r0 * .65, max(.6, r1 * .65)
     """A giant surfaced root: rises from the ground, arches, dives back in. Moss on its back, vines below.
     The path wobbles and the girth swells and pinches, so it reads as grown rather than placed."""
     pts = bez(p0, apex, p2, 18)
@@ -706,11 +713,11 @@ def sakura_tree(x, z, g, size=1.0):
                         if p not in w.b:
                             put(*p, "cherry_leaves" if rs.random() > .08 else "pink_wool")
                         if dy == -2 or q > .7: rim.append(p)
-    for p in rs.sample(rim, min(len(rim), int(len(rim) * .3))):          # weeping strands
-        for k2 in range(1, rs.randint(2, int(4 + 4 * size))):
+    for p in rs.sample(rim, min(len(rim), int(len(rim) * .12))):         # weeping tips: 1-2 blocks, the crown's ragged hem
+        for k2 in range(1, rs.randint(2, 3)):
             q2 = (p[0], p[1] - k2, p[2])
-            if q2 in w.b or q2[1] <= at(p[0], p[2]) + 1: break
-            put(*q2, "cherry_leaves", shape="shut_s" if k2 > 2 else "full")
+            if q2 in w.b or q2[1] <= at(p[0], p[2]) + 2: break
+            put(*q2, "cherry_leaves")
     for _ in range(int(40 * size)):                                     # petals on the ground beneath
         a = rs.random() * math.tau; r = (6 + 4 * size) * math.sqrt(rs.random())
         px, pz = int(round(x + math.cos(a) * r)), int(round(z + math.sin(a) * r))
@@ -720,36 +727,39 @@ def sakura_tree(x, z, g, size=1.0):
 
 
 def torii(cx, cz, y, ux, uz, half=3, h=6):
-    """Myojin torii across a path heading (ux, uz): stone kamebara bases, vermilion hashira, the nuki tie beam running
-    past the posts, a dark gakuzuka plaque, the red shimaki and a dark kasagi whose ends turn up."""
+    """Myojin torii across a path heading (ux, uz). Posts are whole from base to shimaki; the nuki is one beam that runs
+    through the posts and one block past them; a small dark plaque sits between nuki and shimaki; the dark kasagi is one
+    block wider than the shimaki on each side and its tips turn up by a half block."""
     px, pz = -uz, ux
     P = lambda s2: (int(round(cx + px * s2)), int(round(cz + pz * s2)))
+    nuki_y = y + h - 2
     for s2 in (-half, half):
         bx, bz = P(s2)
         put(bx, y + 1, bz, "polished_andesite")
         for yy in range(y + 2, y + h + 1): put(bx, yy, bz, "red_concrete")
-    for s2 in range(-half - 1, half + 2):                            # nuki, one block past each post
-        bx, bz = P(s2)
-        put(bx, y + h - 2, bz, "red_concrete", shape="slab_t")
-    bx, bz = P(0)
-    put(bx, y + h - 1, bz, "black_concrete"); put(bx, y + h - 1, bz, "gold_block", shape="lantern")    # the plaque
-    for s2 in range(-half - 1, half + 2):                            # shimaki
+    for s2 in range(-half - 1, half + 2):
+        if abs(s2) == half: continue
+        bx, bz = P(s2); put(bx, nuki_y, bz, "red_concrete")
+    bx, bz = P(0); put(bx, nuki_y + 1, bz, "black_concrete")
+    for s2 in range(-half - 1, half + 2):
         bx, bz = P(s2); put(bx, y + h, bz, "red_concrete")
-    for s2 in range(-half - 2, half + 3):                            # kasagi
-        bx, bz = P(s2); put(bx, y + h + 1, bz, "deepslate_tiles")
-    for s2 in (-half - 3, half + 3):                                 # the upturned ends
-        bx, bz = P(s2); put(bx, y + h + 1, bz, "deepslate_tiles", shape="slab_t"); put(bx, y + h + 2, bz, "deepslate_tiles", shape="slab")
+    for s2 in range(-half - 2, half + 3):
+        bx, bz = P(s2); put(bx, y + h + 1, bz, "deepslate_tiles", shape="full" if abs(s2) < half + 2 else "slab")
+    for s2 in (-half - 2, half + 2):
+        bx, bz = P(s2); put(bx, y + h + 2, bz, "deepslate_tiles", shape="slab")
+    bx, bz = P(0)
+    for (dx, dz) in ((0, 0),):
+        pass
 
 
 def stone_lantern(x, z, y):
-    """Ishidoro: a pedestal, a slim post, the fire box, a wide roof, a jewel on top."""
+    """Ishidoro: a stone base, a slim wall post, the lit fire box, a hipped roof (centre + four stairs), a small jewel."""
     put(x, y + 1, z, "polished_andesite")
     put(x, y + 2, z, "stone_bricks", shape="wall")
-    put(x, y + 3, z, "polished_andesite", shape="slab")
     put(x, y + 3, z, "lantern", shape="lantern")
     put(x, y + 4, z, "deepslate_tiles")
-    for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-        if (x + dx, y + 4, z + dz) not in w.b: put(x + dx, y + 4, z + dz, "deepslate_tiles", shape="slab")
+    for dx, dz, f in ((1, 0, "w"), (-1, 0, "e"), (0, 1, "n"), (0, -1, "s")):
+        if (x + dx, y + 4, z + dz) not in w.b: put(x + dx, y + 4, z + dz, "deepslate_tiles", shape="stair_" + f)
     put(x, y + 5, z, "polished_andesite", shape="post")
 
 
@@ -809,7 +819,7 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
                 else:
                     n = noise3(x, y, z, seed + 7, 2.2)
                     up_open = y > base + 2 and f > .45                          # the overhang's underside and the waist
-                    rec = .5 if .35 < f < .75 else 0.0                               # the waist sits in shadow: darker blocks
+                    rec = .12 if .35 < f < .75 else 0.0                              # the waist: only a little darker
                     mossy = TM.moss_streak(x, y, z, top_y) or (f > .8 and n > .62)    # streaks from the lip, the overhang's belly
                     mat = "moss_block" if mossy else TM.cliff_block(x, y, z, f, rec)
                     put(x, y, z, mat)
@@ -819,11 +829,11 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
         x, z = int(round(cx + math.cos(a) * (out + .6))), int(round(cz + math.sin(a) * (out + .6)))
         if not (0 <= x < B and 0 <= z < B): continue
         drape = R.random() < .35
-        for k2 in range(R.randint(2, 6) if drape else R.randint(4, 18)):
+        for k2 in range(R.randint(1, 3) if drape else R.randint(4, 14)):
             p = (x, top_y - k2, z)
             if p in w.b or p[1] <= at(x, z): break
             pk = R.random() < sakura
-            put(*p, ("cherry_leaves" if pk else "oak_leaves") if drape else ("cherry_leaves" if pk else "vine"), shape="full" if drape else "shut_s")
+            put(*p, ("cherry_leaves" if pk else "oak_leaves") if drape else "vine", shape="full" if drape else "shut_s")
     if needle:
         mark(cx - int(rb) - 3, cz - int(rb) - 3, cx + int(rb) + 3, cz + int(rb) + 3)
         return
@@ -925,8 +935,17 @@ def torii_on(samples, d, every):
     for i2, (cx, cz, deck, u) in enumerate(samples):
         if .08 < u < .92 and i2 % every == 0:
             torii(cx, cz, deck, d[0], d[1], half=3, h=6)
-torii_on(BR1, D1, 40)
-torii_on(BR2, D2, 18)
+def landing_torii(samples, d, at_start, half=2, h=6):
+    """A torii on the flat top just before/after a bridge, never on the slope."""
+    pts = samples if not at_start else samples[::-1]
+    for (cx, cz, deck, u) in pts:
+        if (u <= .01 and at_start) or (u >= .99 and not at_start):
+            torii(cx + (-d[0] if at_start else d[0]) * 3, cz + (-d[1] if at_start else d[1]) * 3, deck, d[0], d[1], half=half, h=h)
+            return
+
+
+landing_torii(BR1, D1, at_start=False)                              # arriving on pillar 2
+landing_torii(BR2, D2, at_start=True)                               # leaving pillar 2 toward the boss
 P0x, P0z, P0y, _, P0r, _ = PILLARS[0]
 for (dx, dz) in ((0, -int(P0r * .6)),):                             # a single small torii marks the start of the sando on the first pillar
     torii(P0x + dx, P0z + dz + 6, P0y, 0, 1, half=2, h=5)
@@ -1094,7 +1113,9 @@ for off in (.85, -.85, 2.3, -2.3):                                   # four pavi
             for dx in range(-rr, rr + 1):
                 for dz in range(-rr, rr + 1):
                     put(px2 + dx, SY_ + 10 + layer, pz2 + dz, "deepslate_tiles", shape="slab" if max(abs(dx), abs(dz)) == rr and layer == 0 else "full")
-        for yy in (SY_ + 9,): put(px2, yy, pz2, "red_concrete", shape="post")
+        for dx in range(-1, 2):                                          # the drum between the two roofs
+            for dz in range(-1, 2):
+                put(px2 + dx, SY_ + 9, pz2 + dz, "dark_oak_planks" if (dx or dz) else "red_concrete")
         put(px2, SY_ + 12, pz2, "gold_block", shape="post")
 for off in (1.55, -1.55):                                            # reflecting ponds between the pavilions
     a = ent_a + off
@@ -1127,9 +1148,9 @@ for k2 in range(0, 40):
             for y in range(SY_ + 1, SY_ + 10):
                 if w.b.get((x, y, z), ("", "", ""))[1] in ("cherry_log", "cherry_leaves"): w.b.pop((x, y, z), None)
 for k2 in range(1, 9):
-    cx, cz = startx + ux2 * k2 * 5, startz + uz2 * k2 * 5
+    cx, cz = startx + ux2 * (3 + k2 * 7), startz + uz2 * (3 + k2 * 7)
     if math.hypot(cx - SX_, cz - SZ_) < AR + 6: break
-    torii(cx, cz, SY_ - 1, ux2, uz2, half=2, h=6)
+    torii(cx, cz, SY_ - 1, ux2, uz2, half=3, h=7)
     for s2 in (-4, 4):
         stone_lantern(int(round(cx - uz2 * s2)), int(round(cz + ux2 * s2)), SY_)
 # the sacred sakura (goshinboku) behind the arena, opposite the entrance, wrapped in a shimenawa
@@ -1181,7 +1202,7 @@ stone_arch((470, at(470, 200) - 1, 200), (470, at(470, 268) - 1, 268), 40, 5)   
 for (sx, sz, h2, r2) in ((150, 470, 48, 5), (172, 452, 36, 3.5), (130, 460, 28, 3), (40, 355, 44, 4.5), (60, 340, 30, 3.5),
                          (470, 470, 52, 5.5), (448, 460, 34, 4), (460, 120, 40, 4), (20, 120, 36, 4), (235, 470, 30, 3.5)):
     if not (5 <= sx < B - 5 and 5 <= sz < B - 5) or anyway[sz, sx] < 9 or used[sz, sx] or lake[sz, sx]: continue
-    mesa(sx, sz, at(sx, sz) + h2, r2 * 1.5, r2 * .8, 2, needle=True)
+    pass                                                              # needles removed after the in-game check
 
 
 # ---------------- main places count as content ----------------
@@ -1218,7 +1239,8 @@ def beetle_mound(x, z):       # 甲虫の巣塚: a dirt mound riddled with holes
                 top = g + int((1 - d / 5) * 4)
                 for y in range(at(x + dx, z + dz) + 1, top + 1):
                     hole = noise3(x + dx, y, z + dz, 131, 1.2) > .8
-                    put(x + dx, y, z + dz, "black_concrete" if hole else R.choice(["coarse_dirt", "rooted_dirt", "coarse_dirt", "mud"]))
+                    if hole and y < top: continue
+                    put(x + dx, y, z + dz, R.choice(["coarse_dirt", "rooted_dirt", "coarse_dirt", "packed_mud", "dirt"]))
     spawn(x, z, 10, 5, "black_wool", "beetle")
     mark(x - 6, z - 6, x + 6, z + 6)
 

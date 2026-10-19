@@ -28,10 +28,11 @@ BARK = [("dark_oak_log", "dark_oak_log")] * 5 + [("mangrove_log", "mangrove_log"
 
 
 def bark(x, y, z):
+    """Wood blocks (bark on all six faces) so roots and limbs never show end grain."""
     n = noise3(x, y * .5, z, 3, 3.0)
-    if n > .72: return ("mangrove_log", "mangrove_log")
-    if n < .2: return ("stripped_dark_oak_log", "stripped_dark_oak_log")
-    return ("dark_oak_log", "dark_oak_log")
+    if n > .78: return ("mangrove_wood", "mangrove_wood")
+    if n < .18: return ("spruce_wood", "spruce_wood")
+    return ("dark_oak_wood", "dark_oak_wood")
 
 
 def build(w, put, at, B, road, cx, cz, mark, seed=77):

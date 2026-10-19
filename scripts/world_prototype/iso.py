@@ -11,6 +11,7 @@ _cache = {}
 
 
 def tex(name):
+    if name.endswith("_wood") and not (TEX / f"{name}.png").exists(): name = name[:-5] + "_log"
     if name not in _cache:
         im = Image.open(TEX / f"{name}.png").convert("RGBA")
         im = im.crop((0, 0, im.width, im.width))
