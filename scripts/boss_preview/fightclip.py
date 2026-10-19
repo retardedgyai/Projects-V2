@@ -74,6 +74,7 @@ def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
         horns, fan_right, fan_left = (r.get("broken") or [False, False, False])
         hidden += (("horn_l_tip", "horn_r_tip") if horns else ()) + (("cloak_l_tatters",) if fan_right else ()) + \
             (("cloak_r_tatters",) if fan_left else ())
+        hidden = tuple(b for b in sc.bones if any(b == h or b.startswith(h + "_") for h in hidden))   # rays and their tatters
         px, pz = r["player"]
         center = (carrier[0], 0, carrier[2])           # on the wyrm's feet (the ground shadow is drawn under the centre)
         sc.atlas = atlases[1 if r.get("glowing") and len(atlases) > 1 else 0]   # the second form's glowing texture

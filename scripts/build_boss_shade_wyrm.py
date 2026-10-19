@@ -751,6 +751,7 @@ def build():
 
     # ---------- rage parts: the opened wings (hidden until enraged; the folded wing hides then) ----------
     spec = FAN_WING
+    fan_roots = {}
     for sign, s in ((1, "l"), (-1, "r")):
         name = f"cloak_{s}"
         kids[name] = []
@@ -760,6 +761,7 @@ def build():
         K = E + np.array(spec["carpal"]) * M3
         K[1] = 6.0 + spec["drop"]                   # planted on the ground once the body crouches by `drop`
         tips = [K + np.array(t) * M3 for t in spec["tips"]]
+        fan_roots[s] = [float(v) for v in K]
 
         def bar(nm, a, b, w0, w1, mat, n=2):
             d = b - a; ln = float(np.linalg.norm(d))
@@ -994,8 +996,22 @@ def build():
         kids[child] = moved
         pivots[child] = list(pivots[bone])
         order.append((child, bone))
+    # The fan is not one plate (review 2026-10-19: 藍「羽は風で揺られるべき」): its lobes and spars hang on four ray bones
+    # pivoting at the hand (fan root), so the feathers can ripple one after another; each ray carries its own tatters
+    # (cloak_?_tatters_<ray>, hidden together when that fan tears).
+    def ray_of(n, sd):
+        if n.startswith(f"cloak_{sd}_fan"):
+            return int(n.split("_fan")[1].split("_")[0]) // 2
+        if n.startswith(f"cloak_{sd}_finger"):
+            f = int(n.split("_finger")[1].split("_")[0])
+            return f - 1 if f >= 1 else None
+        return None
     for sd in ("l", "r"):
-        split(f"cloak_{sd}", f"cloak_{sd}_tatters", lambda n, sd=sd: tatter(n, sd))
+        for j in range(4):
+            ray = f"cloak_{sd}_ray{j}"
+            split(f"cloak_{sd}", ray, lambda n, sd=sd, j=j: ray_of(n, sd) == j)
+            pivots[ray] = fan_roots[sd]
+            split(ray, f"cloak_{sd}_tatters_{j}", lambda n, sd=sd: tatter(n, sd))
         split(f"horn_{sd}", f"horn_{sd}_tip", lambda n, sd=sd: any(n.startswith(f"horn_{sd}_{p}") for p in ("seg3", "seg4", "seg5", "barb3", "barb4", "barb5", "fork")))
 
     built = {}

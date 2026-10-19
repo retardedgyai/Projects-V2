@@ -131,7 +131,7 @@ internal class BossModelView(
         model.init(instance, origin)
         model.setGlobalRotation(modelYaw(origin.yaw()))
         animations = AnimationHandlerImpl(model)
-        hiddenUntilEnraged.forEach { model.setBoneVisible(it, false) }
+        under(hiddenUntilEnraged).forEach { it.setVisible(false) }
         animations.playRepeat(loop)
     }
 
@@ -194,11 +194,15 @@ internal class BossModelView(
 
     val canManeuver: Boolean get() = !disposed && has("hop_back") && has("dash_l") && has("strafe_l")
 
-    /** A broken part (horn tips, fan tatters): hidden for good. */
+    /** A broken part (horn tips, fan tatters): hidden for good, with every bone named under it (`<name>_…`). */
     fun hideBones(names: Collection<String>) {
         if (disposed) return
-        names.forEach { model.setBoneVisible(it, false) }
+        under(names).forEach { it.setVisible(false) }
     }
+
+    /** The bones named [names] or `<name>_…` (a fan's rays and their tatters sit under `cloak_l_…`). */
+    private fun under(names: Collection<String>) =
+        model.getParts().filter { part -> names.any { part.name == it || part.name.startsWith("${it}_") } }
 
     /** WSEE's generated red "hit" texture state, briefly. */
     fun hurt(now: Long) {
@@ -257,7 +261,7 @@ internal class BossModelView(
      */
     private fun reveal() {
         revealed = true
-        hiddenUntilEnraged.forEach { model.setBoneVisible(it, true) }
+        under(hiddenUntilEnraged).forEach { it.setVisible(true) }
         for (viewer in model.viewers.toList()) { model.removeViewer(viewer); model.addViewer(viewer) }
     }
 
