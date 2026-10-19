@@ -13,6 +13,7 @@ placed in world space, so a bone turns about its pivot (the joint). Animation na
 contract (see docs/development/boss-model-pipeline.md); the clips here are placeholders until the shape OK.
 """
 import math
+from pathlib import Path
 
 from boss_models import Model, ROOT
 
@@ -91,7 +92,85 @@ def _h(*k):
     return (n & 0xffff) / 65535.0
 
 
+SKIN = __import__("os").environ.get("SAKURA_SKIN", "old")
+# 5 tones, hue shifting from cold indigo shadows to warm mauve lights (no black outline, no noise).
+HIDE5 = ((13, 11, 26), (27, 23, 44), (46, 39, 66), (74, 59, 90), (112, 86, 118))
+SHELL5 = ((60, 48, 66), (98, 84, 102), (144, 128, 142), (190, 176, 186), (232, 222, 228))
+
+
+def skin_painter(mat, seed=0):
+    """Hide in the chosen skin: fine overlapping scales, large grooved plates, or short combed fur.
+    Shells get a bevelled plate with a light upper rim and an engraved inner line."""
+    ramp = SHELL5 if mat == "shell" else HIDE5
+    kind = "bevel" if mat in ("shell", "plate") else SKIN
+
+    def tone(level):
+        return ramp[max(0, min(4, int(round(level))))] + (255,)
+
+    def make(side, w, h):
+        def paint(x, y, w, h):
+            if side == "down":
+                return tone(.6)
+            v = y / max(1, h - 1)
+            L = 3.0 if side == "up" else 3.3 - 2.4 * v
+            if w < 3 or h < 3:
+                return tone(L)
+            if kind == "bevel":
+                edge = min(x, y, w - 1 - x, h - 1 - y)
+                if y == 0 or (x == 0 and side != "up"):
+                    return tone(L + 1)
+                if y == h - 1 or x == w - 1:
+                    return tone(L - 1.4)
+                if edge == 2 and w > 6 and h > 6:
+                    return tone(L - .8)                        # engraved line
+                return tone(L - .2)
+            def scallop(x, y, L):
+                row = y // 4
+                cx, cy = (x + (row % 2) * 3) % 6, y % 4
+                d = abs(cx - 2.5)
+                if (cy == 3 and d <= 1.6) or (cy == 2 and d > 1.6):
+                    return tone(L - 1.1)                       # the scalloped lower edge over the next row
+                if cy == 0 and d < 1.2:
+                    return tone(L + 1.0)                       # light catching the scale's crown
+                if cy == 1 and d < 2:
+                    return tone(L + .4)
+                return tone(L - .1)
+            if kind == "scale":
+                return scallop(x, y, L)
+            if kind == "plates":                                # shell band on top, scales below (two materials)
+                band = max(2, int(h * .32)) if side != "up" else h
+                if y < band:
+                    S = SHELL5
+                    lv = 3.3 - 1.2 * y / band
+                    if y == 0:
+                        lv += .8
+                    if y == band - 1:
+                        lv -= 1.6
+                    if x % 9 == 0 and y < band - 1:
+                        lv -= 1.0                              # shell seams
+                    return S[max(0, min(4, int(round(lv - 1.9))))] + (255,)
+                return scallop(x, y - band, L)
+            if kind == "fur":
+                clump = x // 2
+                ls = 5 + int(_h(seed, clump, 9) * 3)
+                ph = (y + int(_h(seed, clump, 4) * 9)) % ls
+                f = ph / (ls - 1)
+                lv = L + .9 - 1.7 * f                          # each strand light at its root, dark where the next one overlaps
+                if x % 2 and ph == 0:
+                    lv += .3
+                return tone(lv)
+            return tone(L)
+        return paint, ("skin", kind, mat, side, w, h, seed % 9)
+    return make
+
+
 def box_painter(mat, seed=0):
+    if SKIN != "old" and mat in ("hide", "plate", "shell"):
+        return skin_painter(mat, seed)
+    return old_box_painter(mat, seed)
+
+
+def old_box_painter(mat, seed=0):
     """Top-lit ramp down each side, overlapping 6x4 scales where only some catch a light lip
     (the shade wyrm hand-painted look), bright top, shadowed bottom."""
     ramp = RAMPS[mat]
@@ -403,9 +482,9 @@ def build():
     # sakura shells: short, broad petals overlapping like Zinogre's tail plates, pointing toward the tip.
     # One bone per run of petals and side; opening swings the run about its own spine axis.
     def splay(D, X, U, deg):
-        """Rotation about the spine axis that tips the dorsal row out toward its own side."""
+        """(axis, degrees) about the spine axis that tips the dorsal row out toward its own side."""
         R = axis_angle(D, deg)
-        return R if dot(mat_vec(R, U), X) > 0 else axis_angle(D, -deg)
+        return (D, deg) if dot(mat_vec(R, U), X) > 0 else (D, -deg)
 
     def run(name, parent, a, c, X, U, sizes, open_deg, top):
         D = unit([c[i] - a[i] for i in range(3)])
@@ -444,27 +523,240 @@ def build():
     return b
 
 
+# --- animation ----------------------------------------------------------------------------------------
+# Poses are written in Blockbench editor euler degrees about each bone's pivot (bones rest at 0, so axes
+# are world axes): +x tips a forward-pointing part down / swings a hanging limb back / lifts the tail,
+# +z lifts the beast's left (+X) side, +y turns the front toward its left. Keyframes store x negated
+# (Bedrock 4.x; see ShadeWyrmBossTest / boss-model-pipeline.md). "shells" is the petal opening (0 closed,
+# 1 open), "tremble" a shiver amplitude in degrees, "pos" the body offset in px.
+STEP = .05
+
+
+def ease(kind, f):
+    if kind == "in":          # accelerate into the strike
+        return f ** 3
+    if kind == "out":         # snap then settle
+        return 1 - (1 - f) ** 3
+    if kind == "hold":
+        return 0.0
+    return f * f * (3 - 2 * f)
+
+
+def blend(p, q, f):
+    out = {}
+    for k in set(p) | set(q):
+        a, c = p.get(k, 0 if k in ("shells", "tremble") else (0, 0, 0)), q.get(k, 0 if k in ("shells", "tremble") else (0, 0, 0))
+        out[k] = a + (c - a) * f if isinstance(a, (int, float)) else tuple(a[i] + (c[i] - a[i]) * f for i in range(3))
+    return out
+
+
+def merged(*poses):
+    out = {}
+    for p in poses:
+        for k, v in p.items():
+            if k in ("shells", "tremble"):
+                out[k] = v
+            else:
+                o = out.get(k, (0, 0, 0))
+                out[k] = tuple(o[i] + v[i] for i in range(3))
+    return out
+
+
+def bake(b, name, length, keys, loop="once", base=None):
+    """keys: [(time, pose, ease_into_this_key)]. Samples every STEP and writes linear keyframes."""
+    base = base or {}
+    frames = []
+    n = int(round(length / STEP))
+    for i in range(n + 1):
+        t = min(length, i * STEP)
+        k = 0
+        while k + 1 < len(keys) and keys[k + 1][0] <= t:
+            k += 1
+        if k + 1 < len(keys):
+            t0, p0, _ = keys[k]
+            t1, p1, kind = keys[k + 1]
+            pose = blend(p0, p1, ease(kind, (t - t0) / max(1e-6, t1 - t0)))
+        else:
+            pose = keys[-1][1]
+        frames.append((t, merged(base, pose)))
+    bones = {nm for nm, _, _ in b.bones}
+    tracks = {}
+    for t, pose in frames:
+        shells = pose.get("shells", 0.0)
+        tremble = pose.get("tremble", 0.0)
+        for bone, v in pose.items():
+            if bone in ("shells", "tremble"):
+                continue
+            if bone == "pos":
+                tracks.setdefault("body", []).append((t, tuple(round(c, 3) for c in v), "position"))
+                continue
+            if bone in bones:
+                tracks.setdefault(bone, []).append((t, (round(-v[0], 3), round(v[1], 3), round(v[2], 3))))
+        for k, (shell, (axis, deg)) in enumerate(sorted(b.frames.items())):
+            jitter = tremble * math.sin(t * 47 + k * 1.7)
+            e = matrix_euler(axis_angle(axis, deg * shells + math.copysign(jitter, deg)))
+            tracks.setdefault(shell, []).append((t, (round(-e[0], 3), round(e[1], 3), round(e[2], 3))))
+    b.m.anim(name, length, tracks, loop)
+
+
+def wave(t, period, phase=0.0):
+    return math.sin((t / period + phase) * 2 * math.pi)
+
+
+def looped(length, fn):
+    """Loop keys sampled from fn(t) every 0.1 s (smoothstep between them)."""
+    ts = [round(i * .1, 3) for i in range(int(round(length / .1)) + 1)]
+    return [(t, fn(t), "io") for t in ts]
+
+
+def idle_pose(t, L=2.4, enraged=False):
+    w = wave(t, L)
+    lag = lambda k: wave(t, L, -.12 * k)
+    p = {"chest": (1.2 * w, 0, 0), "neck": (-1.5 * w, 1.5 * wave(t, L, .25), 0), "skull": (1.5 * lag(2), 0, 0),
+         "jaw": (1 + w, 0, 0), "pos": (0, -.5 + .5 * w, 0)}
+    for k in range(1, 6):
+        p[f"tail_{k}"] = (1.6 * lag(k), 3.0 * wave(t, L, -.15 * k), 0)
+    if enraged:
+        p["neck"] = (6 - 1.5 * w, 2 * wave(t, L, .25), 0)
+        p["skull"] = (4 + 2 * lag(2), 0, 0)
+        p["jaw"] = (6 + 2 * w, 0, 0)
+        p["shells"] = 1.0
+        p["tremble"] = 1.5
+    return p
+
+
+def walk_pose(t, L=1.2, enraged=False):
+    ph = t / L * 2 * math.pi
+    s1, c1 = math.sin(ph), math.cos(ph)
+    s2 = math.sin(ph + math.pi)
+    p = {"pos": (0, -1.0 * abs(math.sin(ph)), 0), "chest": (1.5 * c1, 2 * s1, 0), "neck": (2 * math.sin(2 * ph), -2 * s1, 0),
+         "skull": (-1.5 * math.sin(2 * ph), 0, 0)}
+    for side, s in (("l", s1), ("r", s2)):
+        lift = max(0.0, math.cos(ph if side == "l" else ph + math.pi))
+        p[f"arm_{side}"] = (16 * s, 0, 0)
+        p[f"forearm_{side}"] = (-22 * lift, 0, 0)
+        p[f"hand_{side}"] = (14 * lift - 6 * s, 0, 0)
+    for side, s in (("l", s2), ("r", s1)):          # diagonal gait: right hind with left fore
+        lift = max(0.0, math.cos(ph + math.pi if side == "l" else ph))
+        p[f"thigh_{side}"] = (-14 * s, 0, 0)
+        p[f"shin_{side}"] = (12 * lift, 0, 0)
+        p[f"foot_{side}"] = (-10 * lift + 4 * s, 0, 0)
+    for k in range(1, 6):
+        p[f"tail_{k}"] = (2 * math.sin(2 * ph - .5 * k), 4 * math.sin(ph - .4 * k), 0)
+    if enraged:
+        p["neck"] = (6 + p["neck"][0], p["neck"][1], 0)
+        p["shells"] = 1.0
+        p["tremble"] = 1.0
+    return p
+
+
+# Ability clips: (id, telegraph s, recovery s). Length = telegraph + recovery, impact pose at the telegraph.
+ABILITIES = {"sakura-claw": (1.2, 1.0), "sakura-tail": (1.5, 1.1), "sakura-scatter": (1.7, .9), "sakura-bloom": (2.0, 1.2)}
+CALM = {}
+
+
+def claw_keys(hit, end, shells):
+    """桜爪の叩きつけ: rear the right forearm high, shiver, slam it down, shake, recover."""
+    up = {"arm_r": (-75, 0, -8), "forearm_r": (-35, 0, 0), "hand_r": (-20, 0, 0), "chest": (-10, 0, 6), "pos": (0, 2, -1),
+          "neck": (-8, -10, 0), "skull": (-6, 0, 0), "jaw": (14, 0, 0), "arm_l": (-6, 0, 0), "tail_1": (8, 0, 0), "tail_2": (6, 0, 0),
+          "shells": shells, "tremble": 0}
+    shake = dict(up, tremble=3.0, chest=(-12, 0, 7))
+    slam = {"arm_r": (14, 0, 2), "forearm_r": (4, 0, 0), "hand_r": (-6, 0, 0), "chest": (10, 0, -4), "pos": (0, -2.5, 2),
+            "neck": (12, -4, 0), "skull": (8, 0, 0), "jaw": (20, 0, 0), "arm_l": (8, 0, 0), "tail_1": (-6, 0, 0), "tail_2": (-4, 0, 0),
+            "shells": shells + .25, "tremble": 2.0}
+    return [(0, dict(CALM, shells=shells), "io"), (hit * .7, up, "out"), (hit - .1, shake, "io"), (hit, slam, "in"),
+            (hit + .25, dict(slam, tremble=0, shells=shells), "out"), (end, dict(CALM, shells=shells), "io")]
+
+
+def tail_keys(hit, end, shells):
+    """花尾の振り下ろし: crouch with the tail pulled low behind, then whip it over the back onto the ground ahead."""
+    wind = {"chest": (-10, 0, 0), "pos": (0, -2, -2), "neck": (-6, 0, 0), "skull": (-4, 0, 0), "jaw": (8, 0, 0),
+            "arm_l": (-8, 0, 0), "arm_r": (-8, 0, 0), "thigh_l": (10, 0, 0), "thigh_r": (10, 0, 0),
+            "tail_1": (-26, 0, 0), "tail_2": (-14, 0, 0), "tail_3": (-10, 0, 0), "tail_4": (-6, 0, 0), "tail_5": (-6, 0, 0),
+            "shells": shells, "tremble": 0}
+    coil = dict(wind, tremble=2.0, tail_1=(-30, 0, 0))
+    whip = {"chest": (16, 0, 0), "pos": (0, -3, 3), "neck": (14, 0, 0), "skull": (6, 0, 0), "jaw": (4, 0, 0),
+            "arm_l": (10, 0, 0), "arm_r": (10, 0, 0), "thigh_l": (-18, 0, 0), "thigh_r": (-18, 0, 0), "shin_l": (10, 0, 0), "shin_r": (10, 0, 0),
+            "tail_1": (58, 0, 0), "tail_2": (16, 0, 0), "tail_3": (-6, 0, 0), "tail_4": (-18, 0, 0), "tail_5": (-12, 0, 0),
+            "shells": shells + .4, "tremble": 2.5}
+    return [(0, dict(CALM, shells=shells), "io"), (hit * .75, wind, "io"), (hit - .12, coil, "io"), (hit, whip, "in"),
+            (hit + .3, dict(whip, tremble=0), "out"), (end, dict(CALM, shells=shells), "io")]
+
+
+def scatter_keys(hit, end, shells):
+    """散華: the petals open wide and shiver while the tail rises, then a lunge flings them out in a fan."""
+    gather = {"chest": (4, 0, 0), "pos": (0, -2, -1), "neck": (10, 0, 0), "skull": (6, 0, 0), "jaw": (10, 0, 0),
+              "tail_1": (18, 0, 0), "tail_2": (10, 0, 0), "thigh_l": (6, 0, 0), "thigh_r": (6, 0, 0), "shells": 1.25, "tremble": 4.0}
+    fling = {"chest": (10, 0, 0), "pos": (0, -1, 4), "neck": (2, 0, 0), "skull": (-10, 0, 0), "jaw": (34, 0, 0),
+             "arm_l": (-14, 0, 0), "arm_r": (-14, 0, 0), "tail_1": (34, 0, 0), "tail_2": (22, 0, 0), "tail_3": (14, 0, 0),
+             "shells": .35, "tremble": 0}
+    return [(0, dict(CALM, shells=shells), "io"), (hit * .8, gather, "io"), (hit - .08, dict(gather, shells=1.35, tremble=6.0), "io"),
+            (hit, fling, "in"), (hit + .3, dict(fling, jaw=(20, 0, 0)), "out"), (end, dict(CALM, shells=shells), "io")]
+
+
+def bloom_keys(hit, end, shells):
+    """花嵐 (enraged only): rear up on the hind legs with every petal flared, then crash down and burst."""
+    rear = {"body": (-26, 0, 0), "pos": (0, 4, -3), "arm_l": (-50, 0, 0), "arm_r": (-46, 0, 0), "forearm_l": (-30, 0, 0), "forearm_r": (-34, 0, 0),
+            "thigh_l": (20, 0, 0), "thigh_r": (20, 0, 0), "shin_l": (-14, 0, 0), "shin_r": (-14, 0, 0), "foot_l": (6, 0, 0), "foot_r": (6, 0, 0),
+            "neck": (-14, 0, 0), "skull": (-14, 0, 0), "jaw": (30, 0, 0), "tail_1": (-14, 0, 0), "tail_2": (-6, 0, 0),
+            "shells": 1.35, "tremble": 3.0}
+    crash = {"body": (10, 0, 0), "pos": (0, -3, 3), "arm_l": (12, 0, 0), "arm_r": (12, 0, 0), "neck": (14, 0, 0), "skull": (8, 0, 0),
+             "jaw": (24, 0, 0), "tail_1": (10, 0, 0), "shells": .5, "tremble": 0}
+    return [(0, dict(CALM, shells=shells), "io"), (hit * .7, rear, "out"), (hit - .15, dict(rear, tremble=6.0, shells=1.45), "io"),
+            (hit, crash, "in"), (hit + .35, dict(crash, shells=1.2), "out"), (end, dict(CALM, shells=shells), "io")]
+
+
+def enrage_keys():
+    """5 s (QuestEncounterCombat.ENRAGE_HOLD_MILLIS): crouch, shiver, rear up and roar as the petals burst open at 2.5 s."""
+    crouch = {"pos": (0, -3, -1), "chest": (8, 0, 0), "neck": (14, 0, 0), "skull": (10, 0, 0), "tail_1": (-10, 0, 0), "shells": .1}
+    shiver = dict(crouch, tremble=5.0, shells=.3)
+    rear = {"body": (-24, 0, 0), "pos": (0, 4, -3), "arm_l": (-44, 0, 0), "arm_r": (-44, 0, 0), "forearm_l": (-26, 0, 0), "forearm_r": (-26, 0, 0),
+            "thigh_l": (18, 0, 0), "thigh_r": (18, 0, 0), "neck": (-26, 0, 0), "skull": (-18, 0, 0), "jaw": (36, 0, 0),
+            "tail_1": (-10, 0, 0), "shells": .3, "tremble": 2.0}
+    burst = dict(rear, shells=1.4, tremble=4.0)
+    land = {"body": (6, 0, 0), "pos": (0, -2, 2), "arm_l": (8, 0, 0), "arm_r": (8, 0, 0), "neck": (10, 0, 0), "skull": (4, 0, 0),
+            "jaw": (14, 0, 0), "shells": 1.0, "tremble": 1.0}
+    calm = dict(idle_pose(0, enraged=True))
+    return [(0, {}, "io"), (.6, crouch, "io"), (1.6, shiver, "io"), (2.3, rear, "out"), (2.5, burst, "in"),
+            (3.9, dict(burst, tremble=2.0), "io"), (4.3, land, "in"), (5.0, calm, "io")]
+
+
+def death_keys(shells):
+    stagger = {"pos": (0, -1, -2), "chest": (-6, 0, 8), "neck": (-10, 0, 0), "jaw": (30, 0, 0), "shells": shells, "tremble": 3.0}
+    fall = {"pos": (0, -14, 0), "body": (0, 0, 72), "neck": (10, 0, 0), "skull": (12, 0, 0), "jaw": (22, 0, 0),
+            "arm_l": (20, 0, 0), "arm_r": (-24, 0, 0), "thigh_l": (-12, 0, 0), "thigh_r": (16, 0, 0),
+            "tail_1": (-14, 0, 0), "tail_2": (-12, 0, 0), "tail_3": (-10, 0, 0), "shells": shells * .3, "tremble": 0}
+    return [(0, {"shells": shells}, "io"), (.6, stagger, "io"), (1.5, fall, "in"), (1.8, dict(fall, pos=(0, -13, 0)), "out"),
+            (2.4, dict(fall, shells=0.0), "io")]
+
+
 def animate(m, b):
-    """Placeholder clips that keep the server contract; the motion pass comes after the shape OK."""
-    zero = (0, 0, 0)
-    breathe = {"body": [(0, zero, "position"), (1.0, (0, -0.6, 0), "position"), (2.0, zero, "position")]}
-    bob = {"body": [(t, (0, -1 if t in (0.3, 0.9) else 0, 0), "position") for t in (0, 0.3, 0.6, 0.9, 1.2)]}
-    m.anim("idle", 2.0, breathe, "loop")
-    m.anim("walk", 1.2, bob, "loop")
+    bake(b, "idle", 2.4, looped(2.4, lambda t: idle_pose(t)), "loop")
+    bake(b, "idle_enraged", 2.4, looped(2.4, lambda t: idle_pose(t, enraged=True)), "loop")
+    bake(b, "walk", 1.2, looped(1.2, lambda t: walk_pose(t)), "loop")
+    bake(b, "walk_enraged", 1.2, looped(1.2, lambda t: walk_pose(t, enraged=True)), "loop")
+    for name, keys in (("sakura-claw", claw_keys), ("sakura-tail", tail_keys), ("sakura-scatter", scatter_keys), ("sakura-bloom", bloom_keys)):
+        hit, rec = ABILITIES[name]
+        if name != "sakura-bloom":
+            bake(b, name, hit + rec, keys(hit, hit + rec, 0.0))
+        bake(b, f"{name}_enraged" if name != "sakura-bloom" else name, hit + rec, keys(hit, hit + rec, 1.0))
+    bake(b, "enrage", 5.0, enrage_keys())
+    bake(b, "death", 2.4, death_keys(0.0))
+    bake(b, "death_enraged", 2.4, death_keys(1.0))
 
 
-def open_pose(b):
-    """Raw Blockbench euler per shell bone for the opened (enraged) shells, for previews."""
-    return {name: matrix_euler(R) for name, R in b.frames.items()}
+def open_pose(b, f=1.0):
+    """Raw Blockbench (editor) euler per shell bone at opening f, for previews."""
+    return {name: matrix_euler(axis_angle(axis, deg * f)) for name, (axis, deg) in b.frames.items()}
 
 
 def main():
     b = build()
     outliner = b.outliner()
     animate(b.m, b)
-    out = ROOT / "assets/bosses/sakura_fang.bbmodel"
+    out = Path(__import__("os").environ.get("SAKURA_OUT", ROOT / "assets/bosses/sakura_fang.bbmodel"))
     data = b.m.write(out, outliner)
-    print(f"{out.relative_to(ROOT)}: {len(data['elements'])} cubes, {len(b.bones)} bones, {len(data['animations'])} animations")
+    print(f"{out}: {len(data['elements'])} cubes, {len(b.bones)} bones, {len(data['animations'])} animations")
     return b
 
 

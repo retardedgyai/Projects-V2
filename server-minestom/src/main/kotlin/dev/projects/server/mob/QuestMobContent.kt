@@ -24,6 +24,7 @@ enum class QuestMobArchetype(val displayName: String, val rarity: QuestMobRarity
     TIDE_ARCHIVIST("蒼潮の記録者", QuestMobRarity.BOSS, "fire"),
     ECLIPSE_REGENT("星蝕の王", QuestMobRarity.BOSS, "lightning"),
     SHADE_WYRM("黒翳竜", QuestMobRarity.BOSS, "fire"),
+    SAKURA_FANG("桜牙獣", QuestMobRarity.BOSS, "fire"),
 }
 
 data class QuestMobInfo(
@@ -80,7 +81,7 @@ internal data class QuestMobDefinition(
         QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE, QuestMobArchetype.TEMPEST_HIEROPHANT, QuestMobArchetype.TIDE_ARCHIVIST -> "evoker"
         QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.CINDER_REGENT, QuestMobArchetype.FORGE_SENTINEL -> "piglin_brute"
         QuestMobArchetype.ECLIPSE_REGENT -> "wither_skeleton"
-        QuestMobArchetype.SHADE_WYRM -> "ravager"
+        QuestMobArchetype.SHADE_WYRM, QuestMobArchetype.SAKURA_FANG -> "ravager"
         else -> "vindicator"
     }
     val dropKind: QuestMobDropKind get() = when (archetype) {
@@ -121,7 +122,7 @@ internal object QuestMobContent {
             if (id in setOf("rift-bolt", "rift-pulse", "oracle-mark", "oracle-ray", "oracle-pulse",
                     "forge-cross", "forge-mark", "tide-ray", "tide-ring", "tide-center", "eclipse-mark", "eclipse-cross",
                     "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross",
-                    "shade-dust", "shade-pulse", "shade-breath", "shade-storm"))
+                    "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "sakura-scatter", "sakura-bloom"))
                 dev.projects.server.coreloop.CoreDamageType.MAGICAL else dev.projects.server.coreloop.CoreDamageType.PHYSICAL, scripted
         )
         fun sweep(radius: Double = 3.4, damage: Double = 10.0) = attack(
@@ -161,6 +162,19 @@ internal object QuestMobContent {
                         2400, 1600, 1400, 9000, minimumRange = 12.0, target = true, weight = 2),
                 )).copy(model = "shade_wyrm", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2,
                     enragedBones = setOf("horn_l", "horn_r", "cloak_l", "cloak_r", "horn_l_tip", "horn_r_tip", "cloak_l_tatters", "cloak_r_tatters"), foldedBones = setOf("wing_l", "wing_r"))
+            // Fanged beast with sakura petal shells (scripts/build_boss_sakura_fang.py). Animation lengths in
+            // assets/bosses/sakura_fang.bbmodel equal telegraph+recovery of each ability below.
+            QuestMobArchetype.SAKURA_FANG -> definition(EntityType.RAVAGER, 560.0, .14, 3.0, 1.0,
+                Material.AIR, attacks = listOf(
+                    attack("sakura-claw", "桜爪の叩きつけ・横へ", MobAttackShape.Slam(6.0, 2.4), 5.0, 22.0,
+                        1200, 450, 1000, 2400, weight = 3),
+                    attack("sakura-tail", "花尾の振り下ろし・横へ", MobAttackShape.Slam(9.0, 1.8), 8.5, 27.0,
+                        1500, 500, 1100, 3400, minimumRange = 2.5, weight = 2),
+                    attack("sakura-scatter", "散華・扇の外へ", MobAttackShape.Sweep(12.0, 40.0), 11.0, 20.0,
+                        1700, 600, 900, 3200, weight = 2),
+                    attack("sakura-bloom", "花嵐・獣から離れろ", MobAttackShape.Ring(8.0), 6.0, 30.0,
+                        2000, 0, 1200, 5000, health = .5, weight = 2),
+                )).copy(model = "sakura_fang", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2)
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,
                 Material.IRON_AXE, attacks = listOf(sweep(), slam()))
             QuestMobArchetype.SHIELD_GUARD -> definition(EntityType.HUSK, 66.0, 0.105, 2.0, 1.0,

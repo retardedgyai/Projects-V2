@@ -448,7 +448,7 @@ class QuestEncounterCombat(
         if (!mob.life.damage(gated)) return null
         val applied = healthBefore - mob.life.health
         mob.lastAttacker = attacker
-        if (mob.view != null && applied > 0.0 && mob.life.isAlive) {
+        if (mob.shade && applied > 0.0 && mob.life.isAlive) {
             gimmicks.playerStruck(attacker)
             breakParts(mob, attacker, applied, now)
         }
@@ -486,7 +486,7 @@ class QuestEncounterCombat(
         lights.tick(nowMillis)
         tickGlow()
         rageClock?.let { if (!it.paused() && it.time() >= dev.projects.server.coreloop.adventure.BossArenaFactory.RAGE_FADE_TICKS) it.pause() }
-        if (mobs.values.any { it.view != null }) gimmicks.tick(nowMillis, instance.players.filter { canTarget(it) }) { p, amount, type ->
+        if (mobs.values.any { it.shade }) gimmicks.tick(nowMillis, instance.players.filter { canTarget(it) }) { p, amount, type ->
             if (typedDamagePlayer != null) typedDamagePlayer.invoke(p, amount, type) else damagePlayer(p, amount)
         }
         val players = instance.players.filter { canTarget(it) }
@@ -499,8 +499,9 @@ class QuestEncounterCombat(
             if (!mob.life.isAlive || !isSpawned(mob)) continue
             tickMob(mob, players, nowMillis)
             mob.model?.tick(mob.entity.position, nowMillis, mob.life.phase == QuestMobPhase.ATTACKING, mob.life.health / mob.life.maximumHealth)
-            if (mob.view != null) tickRageWave(mob, nowMillis)
-            if (mob.view != null) lights.hold("horns-${mob.entity.uuid}",
+            if (mob.shade) tickRageWave(mob, nowMillis)
+            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && mob.enraged) tickSakuraRoar(mob, nowMillis)
+            if (mob.shade) lights.hold("horns-${mob.entity.uuid}",
                 if (mob.enraged && !mob.hornsBroken && nowMillis >= mob.enrageHoldUntil - 2500) mob.view?.point("skull", ShadeWyrmVfx.CROWN) else null, 12)
             mob.view?.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, nowMillis,
                 searching = mob.searching && mob.maneuver == null && !mob.abilities.isActive)
@@ -807,9 +808,10 @@ class QuestEncounterCombat(
             stopNavigation(mob)
             mob.view?.enrage(now)
             mob.warningRetryAt = mob.enrageHoldUntil
-            updateName(mob, "怒り・翼を広げた")
+            updateName(mob, if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) "怒り・花が開いた" else "怒り・翼を広げた")
             sound(mob.entity.position, "minecraft:entity.ravager.roar", 1.2f, 0.6f)
-            particle(mob.entity.position.add(0.0, 2.0, 0.0), Particle.DUST.withColor(NamedTextColor.DARK_PURPLE).withScale(2.0f), 40)
+            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) mob.waveAt = -1L   // petals burst with the roar, see tickSakuraRoar
+            else particle(mob.entity.position.add(0.0, 2.0, 0.0), Particle.DUST.withColor(NamedTextColor.DARK_PURPLE).withScale(2.0f), 40)
             updateMovementSpeed(mob, now)
             return true
         }
@@ -1093,7 +1095,7 @@ class QuestEncounterCombat(
                     return false
                 }
                 playVfx(mob, ShadeWyrmVfx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
-                if (mob.view != null) shaderFx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
+                if (mob.shade) shaderFx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
                 mob.entity.refreshActiveHand(false, true, false)
                 castingPose(mob, true)
                 sound(event.frame.origin, "minecraft:block.note_block.hat", 0.7f, 0.8f)
@@ -1113,7 +1115,7 @@ class QuestEncounterCombat(
                 castingPose(mob, false)
                 if (!drawWarning(mob, event.frame, true)) { cancelWarning(mob); return false }
                 playVfx(mob, ShadeWyrmVfx.hit(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
-                if (mob.view != null) shaderFx.strike(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
+                if (mob.shade) shaderFx.strike(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
                 sound(event.frame.origin,
                     if (mob.entity.entityMeta is SpellcasterIllagerMeta) "minecraft:entity.evoker.cast_spell"
                     else if (event.frame.ability.shape is MobAttackShape.Sweep) "minecraft:entity.player.attack.sweep"
@@ -1125,11 +1127,12 @@ class QuestEncounterCombat(
                     ) {
                         if (typedDamagePlayer != null) typedDamagePlayer.invoke(player, event.frame.ability.damage, event.frame.ability.damageType)
                         else damagePlayer(player, event.frame.ability.damage)
-                        if (mob.view != null) gimmicks.playerHit(player, event.frame.ability.id, lastTickAt)
+                        if (mob.shade) gimmicks.playerHit(player, event.frame.ability.id, lastTickAt)
                     }
                     if (disposed || actionsStoppedForReturn) return false
                 }
-                if (mob.view != null) { gimmicks.abilityHit(event.frame, lastTickAt); lightUp(event.frame) }
+                if (mob.shade) { gimmicks.abilityHit(event.frame, lastTickAt); lightUp(event.frame) }
+                if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) sakuraBurst(event.frame)
             }
             is MobAbilityEvent.Finished -> { clearWarning(mob.entity.uuid); updateName(mob) }
         }
@@ -1186,6 +1189,37 @@ class QuestEncounterCombat(
         }
         return true
     }
+
+    /** 桜牙獣's strikes scatter petals over the struck shape (vanilla particles, no shader). */
+    private fun sakuraBurst(frame: MobAbilityFrame) {
+        val o = frame.origin.add(0.0, .3, 0.0)
+        val f = normalizeHorizontal(frame.facing)
+        val pink = Particle.DUST.withColor(net.kyori.adventure.text.format.TextColor.color(0xff8fc0)).withScale(1.6f)
+        val points = when (val shape = frame.ability.shape) {
+            is MobAttackShape.Ring -> (0 until 24).map { k ->
+                val a = k * Math.PI / 12; val r = shape.radius * (if (k % 2 == 0) 1.0 else .55)
+                o.add(kotlin.math.cos(a) * r, 0.0, kotlin.math.sin(a) * r) }
+            is MobAttackShape.Slam -> (0..(shape.length / 1.5).toInt()).map { o.add(f.mul(it * 1.5)) }
+            is MobAttackShape.Sweep -> (-4..4).flatMap { k -> listOf(.45, .9).map { d ->
+                o.add(f.rotateAroundY(Math.toRadians(shape.halfAngleDegrees * k / 4.0)).mul(shape.radius * d)) } }
+            else -> listOf(o)
+        }
+        for (p in points) { particle(p, Particle.CHERRY_LEAVES, 6); particle(p, pink, 2) }
+    }
+
+    /** The enrage roar of 桜牙獣 (2.5 s into the hold, when its petals burst open): a ring of petals across the arena. */
+    private fun tickSakuraRoar(mob: Mob, now: Long) {
+        if (mob.waveAt != -1L || now < mob.enrageHoldUntil - 2500) return
+        mob.waveAt = now
+        val o = mob.entity.position.add(0.0, 2.5, 0.0)
+        particle(o, Particle.CHERRY_LEAVES, 60)
+        for (k in 0 until 32) {
+            val a = k * Math.PI / 16
+            particle(o.add(kotlin.math.cos(a) * 6.0, -2.0, kotlin.math.sin(a) * 6.0), Particle.CHERRY_LEAVES, 4)
+        }
+    }
+
+    private val Mob.shade: Boolean get() = definition.archetype == QuestMobArchetype.SHADE_WYRM
 
     private fun particle(position: Pos, type: Particle, count: Int = 1) {
         val spread = if (count > 8) 1.5f else 0f
