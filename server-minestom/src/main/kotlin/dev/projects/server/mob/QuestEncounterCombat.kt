@@ -1297,7 +1297,7 @@ class QuestEncounterCombat(
             sound(mob.entity.position, "minecraft:block.amethyst_block.resonate", 1.4f, 1.6f)
             sound(mob.entity.position, "minecraft:block.cherry_leaves.break", 1.4f, .8f)
             sakuraFx?.wreath((mob.counterTo - mob.counterFrom) / 1000.0)
-            sakuraStrike?.counterBloom((mob.counterTo - mob.counterFrom) / 50) { bone, px -> mob.view?.point(bone, px) }
+            sakuraStrike?.counterBloom(((mob.counterTo - mob.counterFrom) / 50).toInt()) { bone, px -> mob.view?.point(bone, px) }
         }
         // without the pack: cherry leaves whirling at the horn tips
         for (tip in listOf(Vec(11.4, 27.0, -18.0), Vec(-11.4, 27.0, -18.0))) {
