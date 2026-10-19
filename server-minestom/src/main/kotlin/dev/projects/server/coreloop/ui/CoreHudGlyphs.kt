@@ -16,13 +16,20 @@ internal object CoreHudGlyphs {
 
     private const val GLYPHS = "core-ui-pack/assets/projects/menu/hud-glyphs.tsv"
     private const val TEXT = "core-ui-pack/assets/projects/menu/hud-text.tsv"
+    private const val UNI = "core-ui-pack/assets/projects/menu/hud-uni.tsv"
     val TEXT_WORLD: Key = Key.key("projects", "hud_text")
 
     /** Fonts that draw the game's own ascii sheet through U+E600+n (build_combat_hud.NUMBER_FONTS). */
     val NUM_GAUGE: Key = Key.key("projects", "hud_num_gauge")
     val NUM_CD: Key = Key.key("projects", "hud_num_cd")
-    val NUM_BOSS: Key = Key.key("projects", "hud_num_boss")
-    private val numberFonts = setOf(NUM_GAUGE, NUM_CD, NUM_BOSS)
+    private val numberFonts = setOf(NUM_GAUGE, NUM_CD)
+    /** Boss bar text rows: ascii.png for ASCII, the client's own Unifont bitmaps for the rest (build_combat_hud.BOSS_TEXT_FONTS). */
+    val BOSS_NAME: Key = Key.key("projects", "hud_boss_name")
+    val BOSS_TAG: Key = Key.key("projects", "hud_boss_tag")
+    val BOSS_HP: Key = Key.key("projects", "hud_boss_hp")
+    val BOSS_LV: Key = Key.key("projects", "hud_boss_lv")
+    val DED_EROSION: Key = Key.key("projects", "hud_ded_erosion")
+    val uniFonts = setOf(BOSS_NAME, BOSS_TAG, BOSS_HP, BOSS_LV, DED_EROSION)
     const val ASCII_BASE = 0xE600
 
     /** Vanilla ascii advances for the characters the HUD prints (ink width + 1, read from 26.2's ascii.png). */
@@ -45,6 +52,21 @@ internal object CoreHudGlyphs {
     private val text: Map<Int, Pair<Char, Int>> by lazy {
         lines(TEXT).associate { (codepoint, glyph, advance) -> codepoint.toInt(16) to (glyph.toInt(16).toChar() to advance.toInt()) }
     }
+
+    /** Codepoint → (private glyph, advance) in every [uniFonts] row. */
+    private val uni: Map<Int, Pair<Char, Int>> by lazy {
+        lines(UNI).associate { (codepoint, glyph, advance) -> codepoint.toInt(16) to (glyph.toInt(16).toChar() to advance.toInt()) }
+    }
+    private val uniByGlyph: Map<Char, Int> by lazy { uni.values.associate { it.first to it.second } }
+
+    /** Glyph and advance of one codepoint in a [uniFonts] row; ASCII maps onto ascii.png (vanilla advances). */
+    fun uniGlyph(codepoint: Int): Pair<Char, Int>? = when {
+        codepoint == ' '.code -> (ASCII_BASE + 32).toChar() to 4
+        codepoint < 0x80 -> (ASCII_BASE + codepoint).toChar() to CoreUiComponents.width(String(Character.toChars(codepoint)))
+        else -> uni[codepoint]
+    }
+
+    fun uniWidth(value: String): Int = value.codePoints().toArray().sumOf { uniGlyph(it)?.second ?: 0 }
 
     operator fun get(name: String): Glyph = glyphs[name] ?: error("Missing HUD glyph $name")
     fun has(name: String): Boolean = name in glyphs
@@ -72,11 +94,16 @@ internal object CoreHudGlyphs {
     /** Client advance of a generated HUD glyph (null for anything this table does not own). */
     fun advanceOf(font: Key, char: Char): Int? {
         byGlyph[font.asString() to char]?.let { return it }
+        if (font in uniFonts) uniByGlyph[char]?.let { return it }
         if (font.namespace() != "projects" || !font.value().startsWith("hud")) return null
         return when (char.code) {
             in CoreHudLine.SPACE_POSITIVE..CoreHudLine.SPACE_POSITIVE + 11 -> 1 shl (char.code - CoreHudLine.SPACE_POSITIVE)
             in CoreHudLine.SPACE_NEGATIVE..CoreHudLine.SPACE_NEGATIVE + 11 -> -(1 shl (char.code - CoreHudLine.SPACE_NEGATIVE))
-            in ASCII_BASE..ASCII_BASE + 255 -> if (font in numberFonts) numberAdvance((char.code - ASCII_BASE).toChar()) else null
+            in ASCII_BASE..ASCII_BASE + 255 -> when (font) {
+                in numberFonts -> numberAdvance((char.code - ASCII_BASE).toChar())
+                in uniFonts -> uniGlyph(char.code - ASCII_BASE)?.second
+                else -> null
+            }
             else -> null
         }
     }
@@ -183,6 +210,16 @@ internal class CoreHudLine {
             use(Style(null, color, true))
             run.append(text)
             cursor += advance
+            at += advance
+        }
+    }
+
+    /** Text on a boss bar row font ([CoreHudGlyphs.uniFonts]): looks like vanilla text, at that font's row. */
+    fun uni(x: Int, value: String, font: Key, color: TextColor) {
+        var at = x
+        for (codepoint in value.codePoints().toArray()) {
+            val (glyph, advance) = CoreHudGlyphs.uniGlyph(codepoint) ?: continue
+            emit(at, Style(font, color, true), glyph, advance)
             at += advance
         }
     }

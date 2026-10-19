@@ -1102,7 +1102,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             canTarget = { target -> target.uuid == player.uuid && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
             contentSeed = plan.seed, encounterLevel = account(player)?.activeRun?.map?.level ?: CoreJourneyRules.floor(tier),
             typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) },
-            evading = { actors[it.uuid]?.evading == true })
+            evading = { actors[it.uuid]?.evading == true }, rollGrades = true)
         val run = requireNotNull(account(player)?.activeRun)
         val loot = CoreWorldLoot(player, runtime.instance, run,
             reward = { rewards.submit(player.uuid, it) },
@@ -1218,7 +1218,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (packed(player)) {
             val trail = session?.bossTrail?.update(health, maximum, System.currentTimeMillis()) ?: health
             bar.color(BossBar.Color.PINK)
-            bar.name(CoreBossBarHud.render(name, health, maximum, trail))
+            val hud = combat.bossHud()
+            bar.name(if (hud != null) CoreBossBarHud.render(hud, trail, combat.erosionShare(player.uuid)) else Component.empty())
         } else {
             bar.color(BossBar.Color.RED)
             bar.name(CoreLoopItems.text("$name  ${health.roundToInt()} / ${maximum.roundToInt()}", NamedTextColor.RED))

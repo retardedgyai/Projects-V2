@@ -3,6 +3,11 @@ package dev.projects.server.coreloop.ui
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
+import dev.projects.server.mob.MobGrade
+import dev.projects.server.mob.MobHud
+import dev.projects.server.mob.MobHudEffect
+import dev.projects.server.mob.MobHudEffectKind
+import dev.projects.server.mob.MobMod
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -40,7 +45,7 @@ class CoreHudLayoutTest {
     }
 
     private fun glyphName(placed: Placed): String? = placed.font.takeIf { it.isNotEmpty() }?.let { font ->
-        listOf("console", "emblem_warrior", "emblem_mage", "boss_plate").firstOrNull { name ->
+        listOf("console", "emblem_warrior", "emblem_mage", "boss_plate_elite", "boss_plate_calamity", "boss_emblem_calamity", "wyrm_back_l", "boss_plate_calamity_bare").firstOrNull { name ->
             CoreHudGlyphs[name].let { it.font.asString() == font && it.char.code == placed.code } }
     }
 
@@ -56,6 +61,27 @@ class CoreHudLayoutTest {
         s.copy(remainingSeconds = listOf(0.0, 7.2, 0.0, 2.5, 0.0)[i], resourceAvailable = i != 4) }, resource = 35.0, shield = 48.0,
         healthTrail = 171.0, level = 12, experience = .62, notice = "マナが足りません", classKey = job,
         buffs = listOf(CoreHudBuff(CoreHudBuffKind.WHETSTONE, 96.0, 180.0, false), CoreHudBuff(CoreHudBuffKind.POTION, 6.3, 10.0, true)))
+
+    private val effects = listOf(MobHudEffect(MobHudEffectKind.BUFF, "rage"), MobHudEffect(MobHudEffectKind.DEBUFF, "slow"),
+        MobHudEffect(MobHudEffectKind.CC, "stun"))
+
+    private fun bossHud() = MobHud(40, "裂け目の執行官", MobGrade.COMMON, emptyList(), 12480.0, 20000.0, .64, null,
+        listOf(MobHudEffect(MobHudEffectKind.BUFF, "rage"), MobHudEffect(MobHudEffectKind.DEBUFF, "exposed")))
+
+    /** One plate per grade, as the mock of 2026-10-19 laid them out. */
+    private val plates = listOf(
+        "common" to MobHud(12, "骨の兵士", MobGrade.COMMON, emptyList(), 170.0, 200.0, null, null,
+            listOf(MobHudEffect(MobHudEffectKind.DEBUFF, "slow"))),
+        "elite" to MobHud(14, "骨の槍兵", MobGrade.ELITE, listOf(MobMod.SWIFT), 180.0, 300.0, .45, null,
+            listOf(MobHudEffect(MobHudEffectKind.BUFF, "rage"), MobHudEffect(MobHudEffectKind.CC, "stun"))),
+        "rare" to MobHud(16, "墓守の騎士", MobGrade.RARE, listOf(MobMod.IRONHIDE, MobMod.LEECH), 300.0, 420.0, .55, null,
+            listOf(MobHudEffect(MobHudEffectKind.DEBUFF, "exposed"), MobHudEffect(MobHudEffectKind.DEBUFF, "slow"), MobHudEffect(MobHudEffectKind.CC, "root"))),
+        "unique" to MobHud(18, "朽ちた百人長", MobGrade.UNIQUE, listOf(MobMod.IRONHIDE, MobMod.MIGHT, MobMod.FRENZY), 240.0, 600.0, .65, null,
+            listOf(MobHudEffect(MobHudEffectKind.BUFF, "rage"), MobHudEffect(MobHudEffectKind.DEBUFF, "taunt"))),
+        "calamity" to MobHud(20, "灰冠のガルム", MobGrade.CALAMITY, listOf(MobMod.SWIFT, MobMod.IRONHIDE, MobMod.LEECH, MobMod.FRENZY),
+            720.0, 800.0, 1.0, .4, listOf(MobHudEffect(MobHudEffectKind.BUFF, "rage"), MobHudEffect(MobHudEffectKind.CC, "stun"),
+                MobHudEffect(MobHudEffectKind.DEBUFF, "slow"))),
+    )
 
     @Test fun `export HUD surfaces from the actual components for the preview`() {
         val root = generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
@@ -73,9 +99,18 @@ class CoreHudLayoutTest {
                 s.copy(remainingSeconds = if (i == 0) 8.0 else 0.0, resourceAvailable = i != 2, unlocked = i != 4) }, resource = 0.0,
                 level = 3, experience = .05, notice = "マナが足りません（必要 15）", classKey = "assassin"), true)),
         ) + CoreHudLayout.classes.map { Triple("actionbar", "class-$it", CoreUiComponents.hud(combat(it), true)) } + listOf(
-            Triple("boss", "boss", CoreBossBarHud.render("裂け目の執行官", 12480.0, 20000.0, 14900.0)),
-            Triple("nametag", "normal", CoreMobNameplate.render(14, "苔むした兵士", 120.0, 200.0, CoreMobNameplate.Rank.NORMAL, "fire", null)),
-            Triple("nametag", "elite", CoreMobNameplate.render(15, "裂け目の術師", 410.0, 420.0, CoreMobNameplate.Rank.ELITE, "ice", "氷結の槍")),
+            Triple("boss", "boss", CoreBossBarHud.render(bossHud(), 14900.0)),
+            Triple("boss", "broken", CoreBossBarHud.render(bossHud().copy(health = 8200.0, broken = .55,
+                effects = listOf(MobHudEffect(MobHudEffectKind.CC, "broken")) + bossHud().effects), 9000.0)),
+        ) + MobGrade.entries.drop(1).map { Triple("boss", "grade-${it.name.lowercase()}", CoreBossBarHud.render(bossHud().copy(grade = it), 14900.0)) } + listOf(
+            Triple("boss", "wyrm", CoreBossBarHud.render(bossHud().copy(name = "黒翳竜", grade = MobGrade.CALAMITY, dedicated = "shade_wyrm"), 14900.0)),
+            Triple("boss", "wyrm-broken", CoreBossBarHud.render(bossHud().copy(name = "黒翳竜", health = 8200.0, broken = .55,
+                grade = MobGrade.CALAMITY, dedicated = "shade_wyrm", effects = listOf(MobHudEffect(MobHudEffectKind.CC, "broken"))), 9000.0)),
+            Triple("boss", "wyrm-erosion", CoreBossBarHud.render(bossHud().copy(name = "黒翳竜", grade = MobGrade.CALAMITY,
+                dedicated = "shade_wyrm"), 14900.0, erosion = .64)),
+            Triple("boss", "sakura", CoreBossBarHud.render(bossHud().copy(name = "桜牙獣", grade = MobGrade.CALAMITY,
+                dedicated = "sakura_fang"), 14900.0)),
+        ) + plates.flatMap { (name, hud) -> CoreMobNameplate.lines(hud).mapIndexed { i, line -> Triple("plate", "$name-$i", line) } } + listOf(
             Triple("damage", "normal", CoreDamageNumbers.render(482.0, false, false)),
             Triple("damage", "critical", CoreDamageNumbers.render(1260.0, true, false)),
             Triple("damage", "weak", CoreDamageNumbers.render(733.0, false, true)),
@@ -131,9 +166,11 @@ class CoreHudLayoutTest {
                     CoreHudBuff(it, health % 7.0, 7.0, it != CoreHudBuffKind.WHETSTONE) })
             assertEquals(0, layout(CoreUiComponents.hud(state, true)).second)
         }
-        for (health in 0..20000 step 97) assertEquals(0, layout(CoreBossBarHud.render("執行官", health.toDouble(), 20000.0, health + 500.0)).second)
-        for (health in 0..200 step 3) assertEquals(0, layout(CoreMobNameplate.render(9, "兵士", health.toDouble(), 200.0,
-            CoreMobNameplate.Rank.ELITE, "thunder", null)).second)
+        for (health in 0..20000 step 97) assertEquals(0, layout(CoreBossBarHud.render(bossHud().copy(health = health.toDouble(),
+            breakGauge = health / 20000.0), health + 500.0)).second)
+        for (grade in MobGrade.entries) for (health in 0..200 step 3) for (line in CoreMobNameplate.lines(MobHud(9, "兵士", grade,
+            MobMod.entries.take(grade.mods), health.toDouble(), 200.0, if (grade.breaks) health / 200.0 else null, null, effects)))
+            assertEquals(0, layout(line).second)
         for (amount in listOf(0.0, 7.0, 99.0, 12345.0, Double.NaN)) for (crit in listOf(true, false))
             assertEquals(0, layout(CoreDamageNumbers.render(amount, crit, !crit)).second)
     }
@@ -185,13 +222,27 @@ class CoreHudLayoutTest {
         assertTrue(long.maxOf { it.x + it.advance } - long.minOf { it.x } <= CoreHudLayout.MAX_CAPTION_WIDTH)
     }
 
-    @Test fun `boss bar keeps its plate gauge and percentage inside the plate`() {
-        val glyphs = layout(CoreBossBarHud.render("裂け目の執行官", 12480.0, 20000.0, 14900.0)).first
+    @Test fun `boss bar keeps its plate, emblem, name row and percentage where the art expects them`() {
         assertEquals("62%", CoreBossBarHud.percent(12480.0, 20000.0))
-        assertEquals(CoreBossBarHud.PLATE_X, glyphs.first { glyphName(it) == "boss_plate" }.x)
-        val pct = glyphs.filter { it.font == "projects:hud_num_boss" }
-        assertEquals(CoreBossBarHud.FILL_X + CoreBossBarHud.FILL, pct.maxOf { it.x + it.advance - 1 })
-        assertTrue(glyphs.filter { it.font == "" }.minOf { it.x } == CoreBossBarHud.NAME_X)
+        val glyphs = layout(CoreBossBarHud.render(bossHud().copy(grade = MobGrade.CALAMITY), 14900.0)).first
+        assertEquals(CoreBossBarHud.PLATE_X - CoreBossBarHud.PLATE_PAD, glyphs.first { glyphName(it) == "boss_plate_calamity" }.x)
+        assertEquals(CoreBossBarHud.TAG_X + 4, glyphs.filter { it.font == "projects:hud_boss_tag" }.minOf { it.x }, "grade label on its tag")
+        assertEquals(CoreBossBarHud.EMBLEM_X, glyphs.first { glyphName(it) == "boss_emblem_calamity" }.x)
+        val row = glyphs.filter { it.font == "projects:hud_boss_name" }
+        assertEquals(CoreBossBarHud.PLATE_X + 6, row.minOf { it.x }, "the name starts the name row")
+        assertEquals(CoreBossBarHud.PLATE_X + CoreBossBarHud.PLATE_W - 6, row.maxOf { it.x + it.advance - 1 }, "percentage ends inside the plate")
+        val lit = glyphs.count { g -> CoreHudGlyphs["boss_cell"].let { it.font.asString() == g.font && it.char.code == g.code } }
+        assertEquals(13, lit, "64% of 20 break cells")
+        val wyrm = layout(CoreBossBarHud.render(bossHud().copy(grade = MobGrade.CALAMITY, dedicated = "shade_wyrm"), 14900.0)).first
+        assertEquals(CoreBossBarHud.ORNAMENT_X, wyrm.first { glyphName(it) == "wyrm_back_l" }.x, "the wings sit behind the normal bar")
+        assertTrue(wyrm.any { glyphName(it) == "boss_plate_calamity_bare" }, "no corner thorns under the wings")
+        assertTrue(wyrm.indexOfFirst { glyphName(it) == "wyrm_back_l" } < wyrm.indexOfFirst { glyphName(it) == "boss_plate_calamity_bare" })
+        assertTrue(wyrm.none { it.font == "projects:hud_ded_erosion" }, "no erosion gauge at zero")
+        val eroded = layout(CoreBossBarHud.render(bossHud().copy(dedicated = "shade_wyrm"), 14900.0, erosion = .35)).first
+        val cells = eroded.count { g -> CoreHudGlyphs["erosion_cell"].let { it.font.asString() == g.font && it.char.code == g.code } }
+        assertEquals(4, cells, "35% erosion lights 4 of 10 cells")
+        val sakura = layout(CoreBossBarHud.render(bossHud().copy(dedicated = "sakura_fang"), 14900.0)).first
+        assertTrue(sakura.any { g -> CoreHudGlyphs["sakura_back_l"].let { it.font.asString() == g.font && it.char.code == g.code } })
     }
 
     @Test fun `override allowlist hides only the HUD parts the HUD replaces and reskins the hotbar`() {
