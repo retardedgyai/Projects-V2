@@ -333,8 +333,8 @@ class CorePlayerCombatTest {
     fun `armor damage reduction and potion healing use logical max health`() = arena(armorTier = 2) { h ->
         assertEquals(130, h.actor.maxHealth)
         h.actor.hurt(20.0)
-        assertEquals(112.0, h.actor.health)
-        assertEquals(20f * 112f / 130f, h.player.health, 0.0001f)
+        assertEquals(113.92857, h.actor.health, .00001)
+        assertEquals(20f * 113.92857f / 130f, h.player.health, 0.0001f)
         h.actor.healPotion()
         assertEquals(130.0, h.actor.health)
         assertEquals(20f, h.player.health)
@@ -401,7 +401,7 @@ class CorePlayerCombatTest {
         stats = CoreAffixStats(healthFlat = 20.0, mitigationPercent = 20.0, moveSpeedPercent = 20.0)) { h ->
         assertEquals(150, h.actor.maxHealth)
         h.actor.hurt(20.0)
-        assertEquals(135.6, h.actor.health, 0.00001)
+        assertEquals(137.142857, h.actor.health, 0.00001)
         assertEquals(20f, h.player.getAttribute(Attribute.MAX_HEALTH).baseValue.toFloat())
         h.ticks(20)
         assertEquals(0.12, h.player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue, 0.00001)
@@ -585,12 +585,12 @@ class CorePlayerCombatTest {
         h.actor.reset()
         assertEquals(100, h.actor.maxHealth)
         h.actor.hurt(20.0)
-        assertEquals(80.0, h.actor.health, .00001)
+        assertEquals(100.0 - 20.0 * 300 / 340, h.actor.health, .00001)
         h.armorBroken = false
         h.actor.reset()
         assertEquals(304, h.actor.maxHealth)
         h.actor.hurt(20.0)
-        assertEquals(290.0, h.actor.health, .00001)
+        assertEquals(291.195122, h.actor.health, .00001)
     }
 
     @Test fun `real Mage spell gains AP not AD and matches the tooltip preview`() {
@@ -615,12 +615,13 @@ class CorePlayerCombatTest {
 
     @Test fun `player AR and MR mitigate different incoming types`() = arena(
         stats = CoreAffixStats(additional = mapOf(CoreAffixStat.AR_FLAT to 300.0))) { h ->
-        h.actor.hurt(20.0, CoreDamageType.PHYSICAL)
-        assertEquals(90.0, h.actor.health)
-        h.actor.hurt(20.0, CoreDamageType.MAGICAL)
-        assertEquals(70.0, h.actor.health)
+        h.actor.hurt(20.0, CoreDamageType.PHYSICAL) // AR 300 + warrior base 40
+        val afterPhysical = 100.0 - 20.0 * 300 / 640
+        assertEquals(afterPhysical, h.actor.health, .00001)
+        h.actor.hurt(20.0, CoreDamageType.MAGICAL) // warrior base MR 25 only
+        assertEquals(afterPhysical - 20.0 * 300 / 325, h.actor.health, .00001)
         h.actor.hurt(Double.NaN)
-        assertEquals(70.0, h.actor.health)
+        assertEquals(afterPhysical - 20.0 * 300 / 325, h.actor.health, .00001)
     }
 
     @Test fun `lifesteal uses overkill-capped health loss and cannot trigger recursively from burn`() = arena(
@@ -628,9 +629,9 @@ class CorePlayerCombatTest {
         h.actor.hurt(60.0)
         h.combat.applyEffectDamage(h.combat.combatTargets().single().id, h.player, 296.0)
         h.actor.attack(); h.ticks(8)
-        assertEquals(40.0 + 4 * .5 * .33, h.actor.health, .000001)
+        assertEquals(47.718824, h.actor.health, .000001)
         h.ticks(80)
-        assertEquals(40.0 + 4 * .5 * .33, h.actor.health, .000001)
+        assertEquals(47.718824, h.actor.health, .000001)
     }
 
     @Test fun `only cast speed shortens a Mage skill while physical attack speed does not`() {
@@ -671,7 +672,7 @@ class CorePlayerCombatTest {
     @Test fun `warrior hold guard reduces real incoming damage and turns it into rage without a counter`() = arena { h ->
         h.actor.skill(3); h.ticks(1)
         assertTrue(h.actor.combatCue.startsWith("根張り "))
-        h.actor.hurt(50.0); assertEquals(90.0, h.actor.health)
+        h.actor.hurt(50.0); assertEquals(100.0 - 10.0 * 300 / 340, h.actor.health, .00001)
         assertEquals(30.0, h.actor.resource)
         assertEquals(-1L, h.actor.classState.counterUntil)
         h.actor.skill(1); h.ticks(12)
@@ -713,7 +714,7 @@ class CorePlayerCombatTest {
         val value=h.actor.skillDefinitions[1].preview(h.actor.sheet);val before=h.actor.health
         h.actor.skill(1);h.ticks(6)
         assertEquals(before+value*.5,h.actor.health,.00001);assertEquals(value*.5,h.actor.shield,.00001)
-        h.actor.hurt(value*.25);assertEquals(before+value*.5,h.actor.health,.00001);assertEquals(value*.25,h.actor.shield,.00001)
+        h.actor.hurt(value*.25);assertEquals(before+value*.5,h.actor.health,.00001);assertEquals(value*.5-value*.25*300/320,h.actor.shield,.00001) // healer base AR 20
         h.ticks(100);assertEquals(0.0,h.actor.shield)
     }
     @Test fun `templar shielding supports nearby allies but never passes walls`() = arena { h ->
@@ -834,7 +835,7 @@ class CorePlayerCombatTest {
 
     @Test fun `guard can cancel AA follow through but cannot bypass its attack cadence`() = arena { h ->
         h.actor.attack(); h.actor.skill(3); h.ticks(1)
-        h.actor.hurt(50.0); assertEquals(90.0, h.actor.health)
+        h.actor.hurt(50.0); assertEquals(100.0 - 10.0 * 300 / 340, h.actor.health, .00001)
         h.actor.attack(); h.ticks(8)
         assertEquals(288.0, h.combat.bossHealth())
         h.ticks(6); h.actor.attack(); h.ticks(5)
@@ -854,7 +855,7 @@ class CorePlayerCombatTest {
         h.actor.skill(1);h.ticks(12)
         h.actor.skill(3);h.ticks(1) // Guard cancels only the completed hit's recovery.
         val cd=h.actor.cooldownRemaining(1);assertTrue(cd>0)
-        h.actor.hurt(50.0);assertEquals(90.0,h.actor.health)
+        h.actor.hurt(50.0);assertEquals(100.0 - 10.0 * 300 / 340,h.actor.health,.00001)
         assertEquals(cd,h.actor.cooldownRemaining(1))
         assertFalse(h.actor.combatCue.startsWith("反撃"))
     }
