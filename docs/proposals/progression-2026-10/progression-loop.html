@@ -1,0 +1,741 @@
+<title>強くなる道 一周</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: tabs (最初の1時間 / 遊ぶ / 強くなる道 / 要るUI) over one dark forge-like world; play tab = places | forge | gear, then market | log */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --sakura: #f2a3c0; --shade: #a98be0; --red: #e58b80; --green: #9fd49a;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1320px; margin: 0 auto; padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.02rem; margin: 0; letter-spacing: .04em; }
+h3 { font-size: .95rem; margin: 0; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 78ch; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+button:disabled { cursor: not-allowed; opacity: .45; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 5px 16px; }
+.tab[aria-selected="true"] { border-color: var(--gold); color: var(--gold); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; min-width: 0; display: grid; gap: 10px; align-content: start; }
+.num { font-family: var(--num); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: .82rem; }
+.gold { color: var(--gold); } .cyan { color: var(--cyan); } .red { color: var(--red); } .green { color: var(--green); }
+.sak { color: var(--sakura); } .shd { color: var(--shade); }
+
+/* first hour map */
+.mapwrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--line); background: #0f1420; }
+.mapwrap svg { display: block; width: 100%; min-width: 640px; height: auto; }
+.stop { cursor: pointer; }
+.stop circle.ring { fill: var(--panel2); stroke: var(--gold); stroke-width: 2.5; }
+.stop.on circle.ring { fill: var(--gold); }
+.stop.on text.n { fill: #1a1405; }
+.stop text.n { fill: var(--gold); font-family: var(--num); font-size: 15px; text-anchor: middle; dominant-baseline: central; }
+.stop text.t { fill: var(--fg); font-size: 12px; text-anchor: middle; }
+.stop:focus-visible circle.ring { stroke: var(--cyan); stroke-width: 4; }
+.hour { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .hour { grid-template-columns: 1fr; } }
+.detail .time { font-family: var(--num); color: var(--gold); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: .8rem; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; background: var(--panel2); }
+.chip.ui { border-color: #2f5560; color: var(--cyan); }
+.chip.get { border-color: #5b5030; color: var(--gold); }
+.endcard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.stat { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.stat b { display: block; font-family: var(--num); font-size: 1.15rem; color: var(--gold); font-weight: 400; }
+
+/* decision */
+.decide { border-color: #5b4a2a; }
+.opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 800px) { .opts { grid-template-columns: 1fr; } }
+.opt { text-align: left; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 4px; }
+.opt[aria-pressed="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.opt .k { font-family: var(--num); color: var(--gold); }
+.opt .rec { font-size: .75rem; color: var(--cyan); }
+
+/* play */
+.play { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 1050px) { .play { grid-template-columns: 1fr; } }
+.goal { background: #17202c; border: 1px solid #2f5560; border-radius: 12px; padding: 10px 14px; display: flex; gap: 14px; flex-wrap: wrap; align-items: baseline; }
+.goal .label { font-size: .75rem; letter-spacing: .08em; color: var(--cyan); }
+.goal .text { font-weight: 500; }
+.place { border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 6px; background: var(--panel2); }
+.place.locked { opacity: .55; }
+.place .head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.tier { font-family: var(--num); font-size: .8rem; border: 1px solid var(--line); border-radius: 6px; padding: 0 6px; color: var(--muted); }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.act { background: #222b40; border: 1px solid #34405f; border-radius: 8px; padding: 4px 10px; font-size: .86rem; }
+.act:hover:not(:disabled) { border-color: var(--cyan); }
+.act.boss { border-color: #6a4a7a; }
+.act.boss.sakura { border-color: #7a4a5e; }
+.need { font-size: .78rem; color: var(--muted); }
+.subtabs { display: flex; flex-wrap: wrap; gap: 4px; }
+.sub { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 3px 10px; font-size: .86rem; }
+.sub[aria-selected="true"] { border-color: var(--cyan); color: var(--cyan); }
+.recipe { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--panel2); display: grid; gap: 4px; }
+.recipe .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cost { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: .82rem; }
+.cost .ok { color: var(--green); } .cost .no { color: var(--red); }
+.bar { height: 8px; background: #222b40; border-radius: 4px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--gold); }
+.gear { display: grid; gap: 6px; }
+.slot { border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; background: var(--panel2); display: grid; gap: 2px; }
+.slot .top { display: flex; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+.slot.empty { border-style: dashed; color: var(--muted); }
+.r-magic { color: #8fb6ff; } .r-rare { color: #f1d36b; }
+.mods { font-size: .78rem; color: var(--muted); }
+.mark { font-size: .78rem; }
+.power { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.inv { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 4px 10px; font-size: .82rem; }
+.inv span.q { font-family: var(--num); color: var(--gold); }
+.lock { font-size: .72rem; color: var(--red); }
+.low { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .low { grid-template-columns: 1fr; } }
+.log { font-size: .84rem; max-height: 260px; overflow-y: auto; display: grid; gap: 2px; }
+.log div:first-child { color: var(--fg); }
+.log div { color: var(--muted); }
+.mrow { display: flex; justify-content: space-between; gap: 8px; align-items: center; border-bottom: 1px solid #1f2740; padding: 3px 0; font-size: .86rem; flex-wrap: wrap; }
+.mrow:last-child { border-bottom: 0; }
+
+/* ladder */
+.ladder { overflow-x: auto; }
+.ladder svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.walls { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+
+/* ui list */
+.uicols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 950px) { .uicols { grid-template-columns: 1fr; } }
+.ui-item { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 2px; }
+.ui-item:first-of-type { border-top: 0; padding-top: 0; }
+.ui-item .who { font-size: .75rem; color: var(--shade); }
+.badge { font-size: .72rem; border-radius: 6px; padding: 0 6px; border: 1px solid; }
+.b-have { color: var(--green); border-color: #3d5a3a; }
+.b-fix { color: var(--gold); border-color: #5b5030; }
+.b-new { color: var(--cyan); border-color: #2f5560; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>強くなる道 ── 最初の1時間から桜牙獣まで</h1>
+    <p>港町と「巨樹の根の丘」だけのテストで、何をして、何を作って、どう強くなるか。触って確かめる見本。数値は今の main のコードの値（強化の成功率・費用、Tierの攻撃・HP）を使い、ボスの素材だけ新しい案。</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="見る場所">
+    <button class="tab" role="tab" id="t-hour" aria-selected="true" data-tab="hour">① 最初の1時間</button>
+    <button class="tab" role="tab" id="t-play" aria-selected="false" data-tab="play">② 遊んでみる</button>
+    <button class="tab" role="tab" id="t-road" aria-selected="false" data-tab="road">③ 強くなる道</button>
+    <button class="tab" role="tab" id="t-ui" aria-selected="false" data-tab="ui">④ 要るUI</button>
+  </nav>
+
+  <!-- ① first hour -->
+  <section id="p-hour" role="tabpanel" aria-labelledby="t-hour" style="display:grid;gap:14px">
+    <div class="hour">
+      <div class="mapwrap">
+        <svg viewBox="0 0 900 470" role="img" aria-label="港町から根の丘、根の洞、桜の柱までの最初の1時間の道">
+          <defs>
+            <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16314a"/><stop offset="1" stop-color="#0c1a2b"/></linearGradient>
+            <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26422c"/><stop offset="1" stop-color="#16261b"/></linearGradient>
+            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#121a2c"/><stop offset="1" stop-color="#0f1420"/></linearGradient>
+          </defs>
+          <rect width="900" height="470" fill="url(#sky)"/>
+          <!-- sea + harbor -->
+          <path d="M0 330 Q120 320 210 360 L210 470 L0 470 Z" fill="url(#sea)"/>
+          <path d="M0 340 Q60 336 120 346" stroke="#2c5476" stroke-width="2" fill="none"/>
+          <path d="M20 372 Q80 366 150 380" stroke="#24486a" stroke-width="2" fill="none"/>
+          <!-- hills -->
+          <path d="M150 470 Q260 300 420 300 Q560 300 640 240 Q720 190 900 200 L900 470 Z" fill="url(#hill)"/>
+          <path d="M330 470 Q420 360 540 350 Q680 340 900 320 L900 470 Z" fill="#1a2f20"/>
+          <!-- town -->
+          <g fill="#3a3046" stroke="#5d4c6b" stroke-width="1">
+            <rect x="70" y="282" width="34" height="30"/><path d="M66 284 L87 266 L108 284 Z" fill="#7a3b33"/>
+            <rect x="112" y="290" width="30" height="24"/><path d="M108 292 L127 276 L146 292 Z" fill="#7a3b33"/>
+            <rect x="150" y="296" width="40" height="26"/><path d="M146 298 L170 280 L194 298 Z" fill="#8a4a2e"/>
+          </g>
+          <rect x="40" y="318" width="90" height="6" fill="#5a4630"/>
+          <!-- road -->
+          <path id="road" d="M110 330 C200 340 230 300 300 290 S420 300 470 270 S560 230 610 250 S700 300 740 260" stroke="#c9a86a" stroke-width="5" fill="none" stroke-dasharray="2 9" stroke-linecap="round"/>
+          <!-- roots -->
+          <g stroke="#5b4430" stroke-width="7" fill="none" stroke-linecap="round" opacity=".9">
+            <path d="M330 300 Q380 250 450 235"/><path d="M460 300 Q500 250 520 200"/><path d="M560 320 Q600 280 640 280"/>
+          </g>
+          <!-- giant tree -->
+          <rect x="505" y="120" width="26" height="120" fill="#4a3624"/>
+          <ellipse cx="518" cy="105" rx="92" ry="52" fill="#2f5a34"/>
+          <ellipse cx="490" cy="90" rx="48" ry="30" fill="#3a6c3d"/>
+          <ellipse cx="560" cy="96" rx="40" ry="26" fill="#376638"/>
+          <!-- cave -->
+          <path d="M600 262 Q625 228 650 262 Z" fill="#06080d" stroke="#5b4430" stroke-width="4"/>
+          <!-- pillars + sakura shrine -->
+          <rect x="790" y="70" width="44" height="200" fill="#4b4f5c"/><rect x="740" y="130" width="34" height="140" fill="#3f4350"/>
+          <path d="M774 132 L790 118" stroke="#6d6252" stroke-width="4"/>
+          <ellipse cx="812" cy="60" rx="38" ry="18" fill="#f2a3c0" opacity=".85"/>
+          <ellipse cx="796" cy="54" rx="18" ry="10" fill="#f7c6d8"/>
+          <rect x="804" y="44" width="14" height="10" fill="#c0392b"/>
+          <!-- stops -->
+          <g class="stop" data-stop="0" tabindex="0" role="button" aria-label="1 港の桟橋"><circle class="ring" cx="70" cy="340" r="15"/><text class="n" x="70" y="340">1</text><text class="t" x="70" y="372">港の桟橋</text></g>
+          <g class="stop" data-stop="1" tabindex="0" role="button" aria-label="2 港の鍛冶屋"><circle class="ring" cx="170" cy="262" r="15"/><text class="n" x="170" y="262">2</text><text class="t" x="170" y="240">鍛冶屋</text></g>
+          <g class="stop" data-stop="2" tabindex="0" role="button" aria-label="3 根の丘の入口"><circle class="ring" cx="300" cy="290" r="15"/><text class="n" x="300" y="290">3</text><text class="t" x="300" y="322">根の丘</text></g>
+          <g class="stop" data-stop="3" tabindex="0" role="button" aria-label="4 港へ帰って初めての製作"><circle class="ring" cx="215" cy="330" r="15"/><text class="n" x="215" y="330">4</text><text class="t" x="230" y="362">初めての製作</text></g>
+          <g class="stop" data-stop="4" tabindex="0" role="button" aria-label="5 狩り場"><circle class="ring" cx="470" cy="270" r="15"/><text class="n" x="470" y="270">5</text><text class="t" x="440" y="304">狩り場（狼・キノコ）</text></g>
+          <g class="stop" data-stop="5" tabindex="0" role="button" aria-label="6 根の洞の入口"><circle class="ring" cx="625" cy="282" r="15"/><text class="n" x="625" y="282">6</text><text class="t" x="625" y="314">根の洞（黒翳竜）</text></g>
+          <g class="stop" data-stop="6" tabindex="0" role="button" aria-label="7 桜の柱を見上げる"><circle class="ring" cx="812" cy="110" r="15"/><text class="n" x="812" y="110">7</text><text class="t" x="812" y="300">岩柱の上の桜</text></g>
+        </svg>
+      </div>
+      <div class="panel detail" id="stopDetail" aria-live="polite"></div>
+    </div>
+    <div class="panel">
+      <h2>1時間後の手元（目安）</h2>
+      <div class="endcard">
+        <div class="stat">職業Lv<b>5〜6</b><span class="small muted">技が2〜3個（Lv1・4で解放）</span></div>
+        <div class="stat">武器<b>T1 +5</b><span class="small muted">+5までは必ず成功</span></div>
+        <div class="stat">防具<b>T1 2〜4部位</b><span class="small muted">胴から作る</span></div>
+        <div class="stat">MOD<b>マジック</b><span class="small muted">変成のオーブで1〜2個</span></div>
+        <div class="stat">次の目標<b class="shd">黒翳竜</b><span class="small muted">扉に目安が出る</span></div>
+      </div>
+      <p class="small">流れは「港で頼まれる → 丘で取る → 港で作る → 強くなったのが数字で見える → 次の場所が見える」の繰り返し。手帳の「次の一行」（今のコードの <span class="num">CoreJourneyRules.next</span>）を、遠征の言葉からこの場所の名前に直して使う。</p>
+    </div>
+  </section>
+
+  <!-- ② play -->
+  <section id="p-play" role="tabpanel" aria-labelledby="t-play" hidden style="display:grid;gap:14px">
+    <div class="panel decide">
+      <h2>決めること：ボスの素材は何になる？</h2>
+      <p class="small">切り替えると、下の工房で作れる物が変わる。同じ素材で3つの遊び方を触り比べてください。</p>
+      <div class="opts" role="group" aria-label="ボスの素材の使い道">
+        <button class="opt" data-opt="A" aria-pressed="false"><span class="k">A　昇格の鍵</span><span class="small">Tierを上げる鍵がボスの部位（今のコードは討伐証）。ボスは「次のTierの門番」。部位は売れるので、行かない人は買って上げる。</span></button>
+        <button class="opt" data-opt="B" aria-pressed="false"><span class="k">B　ボスの装備</span><span class="small">モンハン型。桜牙獣の大剣・黒翳竜の大剣を作る。強いが +0 からやり直し。7職×ボスごとに武器と防具の絵が要る。</span></button>
+        <button class="opt" data-opt="C" aria-pressed="true"><span class="k">C　銘を刻む</span><span class="rec">おすすめ</span><span class="small">装備はいつもの装備。ボスの部位で「桜の銘」などを1つ刻むと固有の効果が付く。Tierを上げても残る。</span></button>
+      </div>
+    </div>
+
+    <div class="goal" aria-live="polite"><span class="label">次の目標</span><span class="text" id="goal"></span><span class="small muted" id="goalSub"></span></div>
+
+    <div class="play">
+      <div class="panel">
+        <div class="head" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline">
+          <h2>場所</h2>
+          <span class="small"><button class="sub" id="fast">早送り：素材を足す</button> <button class="sub" id="reset">最初から</button></span>
+        </div>
+        <div id="places" style="display:grid;gap:8px"></div>
+      </div>
+
+      <div class="panel">
+        <h2>港の鍛冶屋（工房）</h2>
+        <div class="subtabs" role="tablist" aria-label="工房のタブ" id="forgeTabs"></div>
+        <div id="forge" style="display:grid;gap:8px"></div>
+      </div>
+
+      <div class="panel">
+        <h2>装備と強さ</h2>
+        <div class="power">
+          <div class="stat">攻撃<b id="atk"></b></div>
+          <div class="stat">HP<b id="hp"></b></div>
+        </div>
+        <div class="stat small">職業Lv <span class="num gold" id="lv"></span>　<span class="muted" id="skills"></span><div class="bar" style="margin-top:4px"><i id="xpbar"></i></div></div>
+        <div class="gear" id="gear"></div>
+      </div>
+    </div>
+
+    <div class="low">
+      <div class="panel">
+        <h2>持ち物</h2>
+        <div class="inv" id="inv"></div>
+      </div>
+      <div class="panel">
+        <h2>市場</h2>
+        <p class="small" style="margin:0">ほかのプレイヤーが出した物の見本値。オーブと討伐証は売買できない（自分で拾う・倒す物）。</p>
+        <div id="market"></div>
+      </div>
+    </div>
+    <div class="panel"><h2>記録</h2><div class="log" id="log"></div></div>
+  </section>
+
+  <!-- ③ road -->
+  <section id="p-road" role="tabpanel" aria-labelledby="t-road" hidden style="display:grid;gap:14px">
+    <div class="panel">
+      <h2>Tierの階段とボス</h2>
+      <p class="small">Tierは場所で決まる。ボスを倒すと次の場所が開き、その場所の素材で次のTierが作れる。テストは T1〜T3。T4 は次の地域。</p>
+      <div class="ladder">
+        <svg viewBox="0 0 960 300" role="img" aria-label="T1からT4までの階段と、間にいるボス">
+          <g font-family="M PLUS 2, sans-serif" font-size="13">
+            <rect x="10" y="190" width="200" height="90" rx="10" fill="#1b2233" stroke="#2a3450"/>
+            <text x="24" y="214" fill="#e6c477" font-family="DotGothic16, monospace" font-size="18">T1</text>
+            <text x="60" y="214" fill="#ebe7dc">港・根の丘・狩り場</text>
+            <text x="24" y="238" fill="#959bb0">職業Lv 1〜10</text>
+            <text x="24" y="258" fill="#959bb0">強化 +1〜8 は T1素材</text>
+
+            <rect x="250" y="130" width="200" height="150" rx="10" fill="#1b2233" stroke="#2a3450"/>
+            <text x="264" y="154" fill="#e6c477" font-family="DotGothic16, monospace" font-size="18">T2</text>
+            <text x="300" y="154" fill="#ebe7dc">根の洞</text>
+            <text x="264" y="178" fill="#959bb0">職業Lv 11〜20</text>
+            <text x="264" y="198" fill="#959bb0">強化 +9〜16 は T2素材</text>
+            <text x="264" y="218" fill="#959bb0">攻撃 ×1.65 / HP 130</text>
+
+            <rect x="490" y="70" width="200" height="210" rx="10" fill="#1b2233" stroke="#2a3450"/>
+            <text x="504" y="94" fill="#e6c477" font-family="DotGothic16, monospace" font-size="18">T3</text>
+            <text x="540" y="94" fill="#ebe7dc">柱の上の空のフィールド</text>
+            <text x="504" y="118" fill="#959bb0">職業Lv 21〜30</text>
+            <text x="504" y="138" fill="#959bb0">強化 +17〜24 は T3素材</text>
+            <text x="504" y="158" fill="#959bb0">攻撃 ×2.72 / HP 160</text>
+
+            <rect x="730" y="10" width="220" height="270" rx="10" fill="#141a27" stroke="#2a3450" stroke-dasharray="5 5"/>
+            <text x="744" y="34" fill="#959bb0" font-family="DotGothic16, monospace" font-size="18">T4</text>
+            <text x="780" y="34" fill="#959bb0">次の地域（テスト外）</text>
+            <text x="744" y="58" fill="#959bb0">職業Lv 31〜40</text>
+            <text x="744" y="78" fill="#959bb0">強化 +25〜30 は T4素材</text>
+
+            <g>
+              <circle cx="230" cy="160" r="22" fill="#2a2140" stroke="#a98be0" stroke-width="2"/>
+              <text x="230" y="165" fill="#a98be0" text-anchor="middle" font-size="12">黒翳竜</text>
+              <text x="230" y="120" fill="#959bb0" text-anchor="middle" font-size="11">根の洞の奥</text>
+            </g>
+            <g>
+              <circle cx="470" cy="100" r="22" fill="#3a2030" stroke="#f2a3c0" stroke-width="2"/>
+              <text x="470" y="105" fill="#f2a3c0" text-anchor="middle" font-size="12">桜牙獣</text>
+              <text x="470" y="60" fill="#959bb0" text-anchor="middle" font-size="11">いちばん高い柱</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="walls">
+      <div class="panel"><h3>強化 +30（今のコード）</h3><p class="small">+5 まで必ず成功。+11〜15 で 55→35%、+21 から 10% 以下。天井（4・6・9回失敗）で次は必ず成功。+15 からは失敗すると壊れることがある（+値は残る。修理は予備か魔術の封蝋）。素材のTierは装備ではなく強化段階で決まるので、+9 を超えるには <b>T2素材</b>＝根の洞に行くか市場で買う。ここが最初の詰まり所で、同時に「採取の人の売り先」になる。</p></div>
+      <div class="panel"><h3>MOD・オーブ</h3><p class="small">オーブは狩りとボスで落ちる（売買はできない＝自分で拾う物）。変成でマジック（1〜2個）、錬金でレア（4〜6個）、混沌で引き直し。T1 でも6MODのレアが作れ、Tierを上げても残る。<b>数字の組み合わせを試す場所</b>。</p></div>
+      <div class="panel"><h3>職業Lv</h3><p class="small">狩りで上がる（1〜40）。技は Lv1・4・8・12・16 で増える。Tierごとに10Lvの帯があり、装備の階段と並んで進む。Lv自体は「数字の強さ」より「できることが増える」担当。</p></div>
+      <div class="panel"><h3>魔術の研究品</h3><p class="small">研究者が作って市場に出す。<b>星鉄の触媒</b>＝強化の成功率 +25、<b>修復の封蝋</b>＝予備なしで修理。+15〜+30 の壁で戦闘の人が買う → 魔術の人のお金になる。自分で研究しても強くはならない。</p></div>
+      <div class="panel"><h3>ボスの部位（新しい案）</h3><p class="small">部位破壊で取れる。黒翳竜：<span class="shd">翼膜</span>（背後）・<span class="shd">触角</span>（正面）。桜牙獣：<span class="sak">花びら甲殻</span>（尾・背後）・<span class="sak">枝角</span>（正面）。部位は売れる。討伐証は売れない（苦労の証）。使い道は A/B/C で決める。</p></div>
+      <div class="panel"><h3>目標になるもの</h3><p class="small">短い目標：次の部位・次の+5。中くらい：ボスの扉の目安。長い目標：+30、6MODの理想ロール、銘。<b>道ごとの目標</b>：採取＝上位素材の売り先、魔術＝研究品、鍛冶（製造Lv）＝他人の装備を作って売る。</p></div>
+    </div>
+  </section>
+
+  <!-- ④ ui -->
+  <section id="p-ui" role="tabpanel" aria-labelledby="t-ui" hidden style="display:grid;gap:14px">
+    <p class="small">紫の小さな字は、そのUIを今さわっている別の作業。そこと食い違わないように作る。</p>
+    <div class="uicols">
+      <div class="panel">
+        <h2><span class="badge b-have">ある</span> そのまま使う</h2>
+        <div class="ui-item"><h3>強化画面 v3</h3><p class="small">港の鍛冶屋。成功率・天井・費用・確認。見た目は承認済み。</p></div>
+        <div class="ui-item"><h3>工房（チェスト版）</h3><p class="small">精製・制作・MOD加工。1回/5回/最大、費用の不足が赤。</p></div>
+        <div class="ui-item"><h3>市場</h3><p class="small">出品・買い注文・手数料5%・オフライン売買。</p></div>
+        <div class="ui-item"><h3>装備庫（防具4部位）</h3><p class="small">装備・制作・MOD・修理・保管品と交換。</p></div>
+        <div class="ui-item"><h3>モブの頭上HUD・ボスバー</h3><p class="small">等級と専用ボスバー、崩しゲージ。</p><span class="who">hud セッション（PR #167）</span></div>
+        <div class="ui-item"><h3>魔術書・研究机</h3><p class="small">研究品の作り方はここで覚える。</p></div>
+      </div>
+      <div class="panel">
+        <h2><span class="badge b-fix">直す</span></h2>
+        <div class="ui-item"><h3>強化画面 v3 の「精錬・製作」タブ</h3><p class="small">今は見た目だけ。チェスト版の中身をつなぎ、工房を1つの画面にする。</p></div>
+        <div class="ui-item"><h3>手帳の「次の一行」</h3><p class="small">遠征の言葉（T1遠征・地図台）を、港・根の丘・根の洞・桜の柱の名前に直す。上の「次の目標」帯と同じ中身。</p><span class="who">遠征マップ（expedition-map）と場所名を合わせる</span></div>
+        <div class="ui-item"><h3>費用の素材をクリック → 取れる場所</h3><p class="small">今は「補給所・地図台」へ飛ぶ。「根の丘の伐採」「根の洞」「市場で買う」に変える。</p></div>
+        <div class="ui-item"><h3>市場</h3><p class="small">検索と最近の値段を足す。売れない物（討伐証）は鍵の印。</p></div>
+        <div class="ui-item"><h3>触媒の選び方</h3><p class="small">星鉄の触媒と刻印粉を別ボタンに（今は自動で星鉄）。</p></div>
+      </div>
+      <div class="panel">
+        <h2><span class="badge b-new">新しく</span></h2>
+        <div class="ui-item"><h3>依頼板（港）</h3><p class="small">最初の頼み3つ（毛皮と古木・初めての防具・狩り場）。報酬にオーブ1個。</p></div>
+        <div class="ui-item"><h3>ボスの扉の目安</h3><p class="small">扉に近づくと「目安：攻撃130・HP175／今のあなた」。人数で下がる。</p></div>
+        <div class="ui-item"><h3>討伐の報酬画面</h3><p class="small">壊した部位の素材が並ぶ。「尾を斬った → 花びら甲殻×2」。</p><span class="who">桜牙獣（session-2, PR #169）の部位破壊とつなぐ</span></div>
+        <div class="ui-item"><h3>素材の逆引き</h3><p class="small">素材をしゃがんで右クリック → この素材で作れる物・取れる場所。</p></div>
+        <div class="ui-item"><h3>銘を刻む画面（C のとき）</h3><p class="small">工房のタブを1つ足す。B ならボス装備の製作表。</p></div>
+        <div class="ui-item"><h3>最初の画面との受け渡し</h3><p class="small">職業を選んだら桟橋に降りて「鍛冶屋に会おう」が出る。</p><span class="who">最初の画面（first-join）セッション</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  // ---------- tabs ----------
+  const tabs = [...document.querySelectorAll('.tab')];
+  function showTab(name) {
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+    ['hour', 'play', 'road', 'ui'].forEach(n => { document.getElementById('p-' + n).hidden = n !== name; });
+    try { localStorage.setItem('prog-tab', name); } catch (e) {}
+  }
+  tabs.forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+  const hash = location.hash.replace('#', '');
+  let saved = null; try { saved = localStorage.getItem('prog-tab'); } catch (e) {}
+  showTab(['hour', 'play', 'road', 'ui'].includes(hash) ? hash : (saved || 'hour'));
+
+  // ---------- first hour ----------
+  const STOPS = [
+    { time: '0:00', title: '港の桟橋に降りる', what: '最初の画面で職業を選ぶと、船から桟橋に降りる。画面の上に「鍛冶屋に会おう」の一行。', get: ['職業のT1武器（地味版）', '回復薬3', '銀貨50'], ui: ['職業選択（first-join）', '次の目標の一行'] },
+    { time: '0:03', title: '鍛冶屋で最初の頼み', what: '鍛冶屋が「防具がないな。根の丘で毛皮と古木を取っておいで」。工房を一度だけ開いて、胴が作れない（素材が赤い）ことを見せる。', get: ['依頼「初めての防具」'], ui: ['依頼板', '工房（不足が赤）'] },
+    { time: '0:08', title: '根の丘で取る・倒す', what: '街道を色の道案内でたどる。樹液甲虫・根の精を倒し、古木を伐り、石と鉱石を掘る。職業Lv2〜3。', get: ['古木の材', '毛皮', '石・鉱石', '菌糸'], ui: ['頭上HUD', '拾った物の通知'] },
+    { time: '0:20', title: '港に帰って初めての製作', what: '精製（2個→1個）→ 胴を作る → 武器を +1〜+5。ここまで必ず成功して、攻撃とHPの数字が目に見えて上がる。依頼の報酬で変成のオーブ → 初めてのMOD。', get: ['T1の胴', '武器 +5', 'マジック装備'], ui: ['工房', '強化画面 v3', 'MOD加工'] },
+    { time: '0:35', title: '狩り場で群れと戦う', what: '根に巣くう狼・キノコの寄生体が湧く普通の狩り場。Lv4で2つ目の技。毛皮と菌糸がまとまって取れ、残りの部位を作る。オーブもここで落ちる。', get: ['頭・脚・足の素材', 'オーブ', '戦利品券'], ui: ['装備庫（4部位）'] },
+    { time: '0:50', title: '根の洞の入口', what: '洞の奥に黒翳竜。扉の前で「目安：攻撃130・HP175（今のあなた 攻撃120・HP140）」が出る。ここが次の目標。浅い所では T2 の素材が取れ始める。', get: ['次の目標', 'T2素材（少し）'], ui: ['ボスの扉の目安'] },
+    { time: '見えるだけ', title: '岩柱の上の桜', what: 'いちばん高い柱の上に桜の社が見える。桜牙獣は黒翳竜の先（T2）。行けない・まだ早いと分かるだけでいい。', get: ['長い目標'], ui: [] },
+  ];
+  const stopEls = [...document.querySelectorAll('.stop')];
+  const det = document.getElementById('stopDetail');
+  function showStop(i) {
+    stopEls.forEach(s => s.classList.toggle('on', +s.dataset.stop === i));
+    const s = STOPS[i];
+    det.innerHTML = `<div><span class="time">${s.time}</span>　<h2 style="display:inline">${i + 1}. ${s.title}</h2></div>
+      <p style="color:var(--fg)">${s.what}</p>
+      <div class="chips">${s.get.map(g => `<span class="chip get">${g}</span>`).join('')}</div>
+      ${s.ui.length ? `<div class="small muted">使う画面</div><div class="chips">${s.ui.map(g => `<span class="chip ui">${g}</span>`).join('')}</div>` : ''}
+      <div class="small muted">番号を押すと次へ。${i < STOPS.length - 1 ? '' : '最後の場所。'}</div>`;
+  }
+  stopEls.forEach(s => {
+    s.addEventListener('click', () => showStop(+s.dataset.stop));
+    s.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showStop(+s.dataset.stop); } });
+  });
+  showStop(0);
+
+  // ---------- play ----------
+  const RAW = { wood: '古木の材', ore: '鉱石', stone: '石', hide: '毛皮', fiber: '菌糸' };
+  const REF = { wood: '板材', ore: 'インゴット', stone: '加工石材', hide: 'なめし革', fiber: '布' };
+  const PART = { ant: ['黒翳竜の触角', 'shd'], wing: ['黒翳竜の翼膜', 'shd'], horn: ['桜牙獣の枝角', 'sak'], petal: ['桜の花びら甲殻', 'sak'] };
+  const PIECES = { head: ['頭', .15], chest: ['胴', .40], legs: ['脚', .30], feet: ['足', .15] };
+  const RATE = [0, 100, 100, 100, 100, 100, 95, 87.5, 80, 72.5, 65, 55, 50, 45, 40, 35, 30, 26, 22, 18, 14, 10, 8.5, 7, 5.5, 4, 3, 2.5, 2, 1.5, 1];
+  const PITY = t => t <= 5 ? 0 : t <= 10 ? 4 : t <= 20 ? 6 : 9;
+  const matTier = t => t <= 8 ? 1 : t <= 16 ? 2 : t <= 24 ? 3 : 4;
+  const wDmg = t => Math.pow(1.65, t - 1);
+  const aHp = t => 100 + 30 * (t - 1);
+  const BOSS = {
+    shade: { name: '黒翳竜', cls: 'shd', atk: 130, hp: 175, front: 'ant', back: 'wing', tier: 2, silver: 120, sigil: 'sigShade' },
+    sakura: { name: '桜牙獣', cls: 'sak', atk: 250, hp: 225, front: 'horn', back: 'petal', tier: 3, silver: 300, sigil: 'sigSakura' },
+  };
+  const MODPOOL = [['攻撃力', 'atk'], ['最大HP', 'hp'], ['攻撃速度', ''], ['CD短縮', ''], ['移動速度', ''], ['会心率', ''], ['スキルダメージ', ''], ['被ダメ軽減', '']];
+  const MARKS = {
+    shade: { name: '黒翳の銘', cls: 'shd', cost: { wing: 2, ant: 1 }, text: '攻撃+6%、崩した敵に+15%', atk: .06 },
+    sakura: { name: '桜の銘', cls: 'sak', cost: { petal: 2, horn: 1 }, text: '攻撃+10%、部位を壊すと10秒 攻撃+20%', atk: .10 },
+  };
+  const BWEAP = {
+    shade: { name: '黒翳の大剣', cls: 'shd', tier: 2, bonus: .10, cost: { wing: 3, ant: 1 }, ref: ['ore', 2, 4], text: 'T2相当＋固有 攻撃+10%' },
+    sakura: { name: '桜牙の大剣', cls: 'sak', tier: 3, bonus: .12, cost: { petal: 3, horn: 2 }, ref: ['ore', 3, 4], text: 'T3相当＋固有 攻撃+12%' },
+  };
+
+  let S, opt = 'C', forgeTab = 'refine', enhTarget = 'weapon', useCat = false;
+  try { const o = localStorage.getItem('prog-opt'); if (o) opt = o; } catch (e) {}
+  const zero = () => ({ 1: 0, 2: 0, 3: 0, 4: 0 });
+  function fresh() {
+    const raw = {}, ref = {};
+    for (const k in RAW) { raw[k] = zero(); ref[k] = zero(); }
+    return {
+      silver: 50, raw, ref, parts: { ant: 0, wing: 0, horn: 0, petal: 0 }, sigShade: 0, sigSakura: 0,
+      orbs: { trans: 0, alch: 0, chaos: 0 }, cat: 0, seal: 0, lv: 1, xp: 0, killed: { shade: 0, sakura: 0 },
+      weapon: { tier: 1, plus: 0, fail: 0, broken: false, rarity: 'normal', mods: [], mark: null, boss: null, name: 'T1 大剣' },
+      armor: { pieces: { head: 0, chest: 0, legs: 0, feet: 0 }, plus: 0, fail: 0, broken: false, rarity: 'normal', mods: [], mark: null },
+      log: ['職業を選んで港の桟橋に降りた。鍛冶屋が防具を作れと言っている。'],
+    };
+  }
+  S = fresh();
+  const $ = id => document.getElementById(id);
+  const log = m => { S.log.unshift(m); S.log = S.log.slice(0, 60); };
+  const xpNeed = lv => 80 + 20 * lv + 3 * lv * lv; // same curve as CoreJourneyRules.threshold steps
+  function gainXp(n) {
+    S.xp += n;
+    while (S.lv < 40 && S.xp >= xpNeed(S.lv)) {
+      S.xp -= xpNeed(S.lv); S.lv++;
+      if ([4, 8, 12, 16].includes(S.lv)) log(`職業Lv${S.lv}！ 新しい技を覚えた。`); else log(`職業Lv${S.lv}。`);
+    }
+  }
+  const modSum = (g, key) => g.mods.filter(m => m.key === key).reduce((a, m) => a + m.v, 0) / 100;
+  function atk() {
+    const w = S.weapon;
+    const bonus = (w.boss ? BWEAP[w.boss].bonus : 0) + (opt === 'C' && w.mark ? MARKS[w.mark].atk : 0) + (opt === 'C' && S.armor.mark ? MARKS[S.armor.mark].atk / 2 : 0);
+    if (w.broken) return Math.round(100 * wDmg(w.tier));
+    return Math.round(100 * wDmg(w.tier) * (1 + .04 * w.plus) * (1 + modSum(w, 'atk') + modSum(S.armor, 'atk')) * (1 + bonus));
+  }
+  function hp() {
+    const a = S.armor; let h = 60;
+    for (const p in PIECES) if (a.pieces[p]) h += PIECES[p][1] * aHp(a.pieces[p]) * (1 + (a.broken ? 0 : .02 * a.plus));
+    if (a.broken) return Math.round(h);
+    return Math.round(h * (1 + modSum(a, 'hp') + modSum(S.weapon, 'hp')));
+  }
+  const pieceCount = () => Object.values(S.armor.pieces).filter(Boolean).length;
+  const armorTier = () => Math.min(...Object.values(S.armor.pieces).map(t => t || 0));
+
+  // costs helpers: list of [label, have, need, take()]
+  function costRaw(k, t, n) { return { label: `T${t} ${RAW[k]}`, have: () => S.raw[k][t], need: n, take: () => { S.raw[k][t] -= n; } }; }
+  function costRef(k, t, n) { return { label: `T${t} ${REF[k]}`, have: () => S.ref[k][t], need: n, take: () => { S.ref[k][t] -= n; } }; }
+  function costPart(k, n) { return { label: PART[k][0], cls: PART[k][1], have: () => S.parts[k], need: n, take: () => { S.parts[k] -= n; } }; }
+  function costSig(key, label, n) { return { label, cls: key === 'sigShade' ? 'shd' : 'sak', have: () => S[key], need: n, take: () => { S[key] -= n; } }; }
+  const can = cs => cs.every(c => c.have() >= c.need);
+  const pay = cs => cs.forEach(c => c.take());
+  const costHtml = cs => `<div class="cost">${cs.map(c => `<span class="${c.have() >= c.need ? 'ok' : 'no'}"><span class="${c.cls || ''}">${c.label}</span> <span class="num">${c.have()}/${c.need}</span></span>`).join('')}</div>`;
+
+  // ---------- places ----------
+  const PLACES = [
+    { id: 'hill', name: '根の丘', tier: 1, open: () => true, lock: '',
+      acts: [
+        { n: '古木を伐る', f: () => { S.raw.wood[1] += 2; gainXp(8); log('古木の材 +2'); } },
+        { n: '掘る', f: () => { S.raw.ore[1] += 1; S.raw.stone[1] += 2; gainXp(8); log('鉱石 +1、石 +2'); } },
+        { n: '樹液甲虫を倒す', f: () => { S.raw.hide[1] += 1; S.raw.fiber[1] += 1; gainXp(30); if (Math.random() < .12) { S.orbs.trans++; log('毛皮 +1、菌糸 +1、変成のオーブを拾った！'); } else log('毛皮 +1、菌糸 +1'); } },
+      ] },
+    { id: 'hunt', name: '狩り場（狼・キノコ）', tier: 1, open: () => S.lv >= 3, lock: '職業Lv3から',
+      acts: [
+        { n: '群れを狩る', f: () => { S.raw.hide[1] += 3; S.raw.fiber[1] += 2; S.silver += 5; gainXp(70); const r = Math.random(); if (r < .25) { S.orbs.trans++; log('毛皮 +3、菌糸 +2、銀貨 +5、変成のオーブ'); } else if (r < .33) { S.orbs.alch++; log('毛皮 +3、菌糸 +2、銀貨 +5、錬金のオーブ！'); } else log('毛皮 +3、菌糸 +2、銀貨 +5'); } },
+      ] },
+    { id: 'cave', name: '根の洞', tier: 2, open: () => atk() >= 115, lock: '攻撃115から（浅い所）',
+      acts: [
+        { n: 'T2を掘る', f: () => { S.raw.ore[2] += 2; S.raw.stone[2] += 2; S.raw.wood[2] += 1; gainXp(40); log('T2 鉱石 +2、石 +2、古木 +1'); } },
+        { n: '洞の獣を狩る', f: () => { S.raw.hide[2] += 2; S.raw.fiber[2] += 2; S.silver += 10; gainXp(140); if (Math.random() < .3) { S.orbs.alch++; log('T2 毛皮 +2、菌糸 +2、錬金のオーブ'); } else log('T2 毛皮 +2、菌糸 +2、銀貨 +10'); } },
+      ], boss: 'shade' },
+    { id: 'sky', name: '柱の上の空のフィールド', tier: 3, open: () => S.killed.shade > 0, lock: '黒翳竜を倒すと岩の橋が開く',
+      acts: [
+        { n: 'T3を掘る', f: () => { S.raw.ore[3] += 2; S.raw.stone[3] += 2; S.raw.wood[3] += 1; gainXp(80); log('T3 鉱石 +2、石 +2、古木 +1'); } },
+        { n: '空の獣を狩る', f: () => { S.raw.hide[3] += 2; S.raw.fiber[3] += 2; S.silver += 20; gainXp(260); if (Math.random() < .3) { S.orbs.chaos++; log('T3 毛皮 +2、菌糸 +2、混沌のオーブ'); } else log('T3 毛皮 +2、菌糸 +2、銀貨 +20'); } },
+      ], boss: 'sakura' },
+  ];
+  function fight(bk, aim) {
+    const b = BOSS[bk];
+    const a = atk(), h = hp();
+    if (a < b.atk || h < b.hp) {
+      log(`${b.name}に負けた。目安 攻撃${b.atk}・HP${b.hp}（今 攻撃${a}・HP${h}）。`);
+      S.silver = Math.max(0, S.silver - 10); render(); return;
+    }
+    const main = aim === 'front' ? b.front : b.back, other = aim === 'front' ? b.back : b.front;
+    S.parts[main] += 2; if (Math.random() < .5) S.parts[other] += 1;
+    S[b.sigil] += 1; S.silver += b.silver; S.killed[bk]++;
+    for (const k in RAW) S.raw[k][b.tier] += 2;
+    S.orbs.alch += 1; if (bk === 'sakura') S.orbs.chaos += 1; else S.orbs.trans += 2;
+    gainXp(bk === 'sakura' ? 1600 : 600);
+    log(`${b.name}を倒した！ ${aim === 'front' ? '正面から' : '背後から'}部位を壊した → ${PART[main][0]} ×2。討伐証・T${b.tier}素材・オーブ・銀貨${b.silver}。`);
+    render();
+  }
+  function renderPlaces() {
+    $('places').innerHTML = PLACES.map(p => {
+      const o = p.open();
+      const b = p.boss && BOSS[p.boss];
+      return `<div class="place ${o ? '' : 'locked'}">
+        <div class="head"><h3>${p.name}</h3><span class="tier">T${p.tier}</span></div>
+        ${o ? '' : `<div class="need">${p.lock}</div>`}
+        <div class="acts">${p.acts.map((a, i) => `<button class="act" data-place="${p.id}" data-i="${i}" ${o ? '' : 'disabled'}>${a.n}</button>`).join('')}</div>
+        ${b ? `<div class="need">奥に <span class="${b.cls}">${b.name}</span>　目安 攻撃<span class="num">${b.atk}</span>・HP<span class="num">${b.hp}</span>　<span class="${atk() >= b.atk && hp() >= b.hp ? 'green' : 'red'}">今 ${atk()}・${hp()}</span></div>
+        <div class="acts"><button class="act boss ${p.boss}" data-boss="${p.boss}" data-aim="front" ${o ? '' : 'disabled'}>正面から角を狙う</button><button class="act boss ${p.boss}" data-boss="${p.boss}" data-aim="back" ${o ? '' : 'disabled'}>背後から${p.boss === 'shade' ? '翼' : '尾'}を狙う</button></div>` : ''}
+      </div>`;
+    }).join('');
+  }
+  $('places').addEventListener('click', e => {
+    const btn = e.target.closest('button'); if (!btn || btn.disabled) return;
+    if (btn.dataset.boss) return fight(btn.dataset.boss, btn.dataset.aim);
+    const p = PLACES.find(x => x.id === btn.dataset.place); p.acts[+btn.dataset.i].f(); render();
+  });
+
+  // ---------- forge ----------
+  function forgeTabs() {
+    const list = [['refine', '精製'], ['craft', '製作'], ['enh', '強化'], ['mod', 'MOD']];
+    if (opt === 'A' || opt === 'C' || opt === 'B') list.splice(2, 0, ['up', opt === 'B' ? 'Tier・ボス装備' : 'Tier昇格']);
+    if (opt === 'C') list.push(['mark', '銘']);
+    if (!list.some(l => l[0] === forgeTab)) forgeTab = 'refine';
+    $('forgeTabs').innerHTML = list.map(([k, n]) => `<button class="sub" role="tab" data-ft="${k}" aria-selected="${k === forgeTab}">${n}</button>`).join('');
+  }
+  $('forgeTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; forgeTab = b.dataset.ft; render(); });
+  let RECIPES = [];
+  function recipe(title, sub, costs, run, extra = '') {
+    const id = RECIPES.length; RECIPES.push({ costs, run });
+    return `<div class="recipe"><div class="row"><b>${title}</b><button class="act" data-r="${id}" ${can(costs) ? '' : 'disabled'}>作る</button></div>${sub ? `<div class="small muted">${sub}</div>` : ''}${costHtml(costs)}${extra}</div>`;
+  }
+  function upKey(fromTier) {
+    if (fromTier === 1) return opt === 'A' ? [costPart('wing', 2)] : [costSig('sigShade', '黒翳竜の討伐証', 1)];
+    if (fromTier === 2) return opt === 'A' ? [costPart('petal', 2), costPart('horn', 1)] : [costSig('sigSakura', '桜牙獣の討伐証', 1)];
+    return [costSig('none', 'T4は次の地域', 1)];
+  }
+  function renderForge() {
+    RECIPES = [];
+    let h = '';
+    if (forgeTab === 'refine') {
+      h += `<p class="small" style="margin:0">取った素材2個 → 精製品1個。</p>`;
+      for (let t = 1; t <= 3; t++) for (const k in RAW) {
+        if (S.raw[k][t] < 2 && S.ref[k][t] === 0) continue;
+        const n = Math.floor(S.raw[k][t] / 2);
+        h += recipe(`T${t} ${REF[k]}`, n > 1 ? `まとめて${n}回` : '', [costRaw(k, t, Math.max(2, n * 2))], () => { S.ref[k][t] += Math.max(1, n); log(`T${t} ${REF[k]} +${Math.max(1, n)}`); });
+      }
+      if (!RECIPES.length) h += `<p class="small">素材がない。根の丘で取ってこよう。</p>`;
+    } else if (forgeTab === 'craft') {
+      const at = Math.max(1, armorTier());
+      for (const p in PIECES) {
+        const have = S.armor.pieces[p];
+        if (have) { h += `<div class="recipe"><div class="row"><b>${PIECES[p][0]}</b><span class="small green">T${have} 装備中</span></div></div>`; continue; }
+        const n = p === 'chest' || p === 'legs' ? 3 : 2;
+        h += recipe(`T${at} ${PIECES[p][0]}の防具`, `HP の ${Math.round(PIECES[p][1] * 100)}% を受け持つ（今のコードは どの部位も革4・布2・石材1 → 案：頭と足を軽く）`, [costRef('hide', at, n), costRef('fiber', at, 1), ...(n === 3 ? [costRef('stone', at, 1)] : [])], () => { S.armor.pieces[p] = at; log(`T${at} ${PIECES[p][0]}を作った！`); });
+      }
+    } else if (forgeTab === 'up') {
+      const w = S.weapon;
+      if (!w.boss && w.tier < 3) h += recipe(`武器を T${w.tier + 1} へ鍛造`, `強化・MOD・銘はそのまま残る`, [costRef('ore', w.tier, 4), costRef('wood', w.tier, 2), ...upKey(w.tier)], () => { w.tier++; w.name = `T${w.tier} 大剣`; log(`武器が T${w.tier} になった！`); });
+      const at = armorTier();
+      if (pieceCount() === 4 && at < 3) h += recipe(`防具4部位を T${at + 1} へ`, '見本ではまとめて上げる（実際は部位ごと）', [costRef('hide', at, 8), costRef('fiber', at, 4), ...upKey(at)], () => { for (const p in PIECES) S.armor.pieces[p] = at + 1; log(`防具が T${at + 1} になった！`); });
+      else if (pieceCount() < 4) h += `<p class="small">防具を4部位そろえると昇格できる。</p>`;
+      if (opt === 'B') {
+        h += `<h3 style="margin-top:6px">ボスの装備</h3><p class="small" style="margin:0">作ると今の武器と入れ替え。強化は +0 から。</p>`;
+        for (const k in BWEAP) {
+          const bw = BWEAP[k];
+          const cs = [...Object.entries(bw.cost).map(([pk, n]) => costPart(pk, n)), costRef(bw.ref[0], bw.ref[1], bw.ref[2])];
+          h += recipe(`<span class="${bw.cls}">${bw.name}</span>`, bw.text, cs, () => { Object.assign(S.weapon, { tier: bw.tier, plus: 0, fail: 0, boss: k, name: bw.name }); log(`${bw.name}を作った！ 強化は +0 から。`); });
+        }
+      }
+      if (opt === 'A') h += `<p class="small">A：Tierを上げる鍵がボスの部位。部位は市場で買えるので、ボスに行かない人も上げられる（その分、部位の値段が上がる）。</p>`;
+    } else if (forgeTab === 'enh') {
+      const g = enhTarget === 'weapon' ? S.weapon : S.armor;
+      h += `<div class="subtabs"><button class="sub" data-et="weapon" aria-selected="${enhTarget === 'weapon'}">武器</button><button class="sub" data-et="armor" aria-selected="${enhTarget === 'armor'}" ${pieceCount() ? '' : 'disabled'}>防具</button></div>`;
+      if (g.broken) {
+        const tier = enhTarget === 'weapon' ? S.weapon.tier : Math.max(1, armorTier());
+        h += `<p class="red" style="margin:0">壊れている。強化の分とMODが効いていない。</p>`;
+        h += recipe('修理する', '魔術の研究品「修復の封蝋」を Tier の数だけ（または同じ装備の予備1個）', [{ label: '修復の封蝋', have: () => S.seal, need: tier, take: () => { S.seal -= tier; } }], () => { g.broken = false; log('修理した。'); });
+      } else if (g.plus >= 30) h += `<p class="gold">+30 到達。</p>`;
+      else {
+        const t = g.plus + 1, mt = matTier(t), u = Math.ceil(t / 5);
+        const cs = enhTarget === 'weapon' ? [costRef('ore', mt, u), costRef('wood', mt, Math.ceil(u / 2)), costRef('stone', mt, u)] : [costRef('hide', mt, u), costRef('fiber', mt, Math.ceil(u / 2)), costRef('stone', mt, u)];
+        const pity = PITY(t), guaranteed = pity > 0 && g.fail >= pity;
+        const cat = useCat && S.cat > 0 && RATE[t] < 100;
+        const rate = guaranteed ? 100 : Math.min(100, RATE[t] + (cat ? 25 : 0));
+        if (cat) cs.push({ label: '星鉄の触媒', have: () => S.cat, need: 1, take: () => { S.cat--; } });
+        h += recipe(`+${g.plus} → +${t}`, `成功率 <span class="num gold">${rate}%</span>${g.plus >= 15 ? `　<span class="red">失敗すると ${Math.min(50, 5 + (g.plus - 15) * 3)}% で壊れる</span>` : ''}${guaranteed ? '（天井：必ず成功）' : pity ? `　天井まで ${pity - g.fail} 回` : ''}　素材は T${mt}`, cs, () => {
+          if (Math.random() * 100 < rate) { g.plus++; g.fail = 0; log(`強化成功！ +${g.plus}`); }
+          else {
+            g.fail++;
+            const br = g.plus < 15 ? 0 : Math.min(50, 5 + (g.plus - 15) * 3);
+            if (Math.random() * 100 < br) { g.broken = true; log(`強化失敗…装備が壊れた（+${g.plus} は残る。修理が要る）`); }
+            else log(`強化失敗（+${g.plus} のまま。素材は消えた）`);
+          }
+        }, S.cat > 0 && RATE[t] < 100 ? `<label class="small"><input type="checkbox" id="usecat" ${useCat ? 'checked' : ''}> 星鉄の触媒を使う（成功率+25、持っている数 ${S.cat}）</label>` : (RATE[t] < 100 ? `<div class="small muted">市場で魔術の研究品「星鉄の触媒」を買うと +25。</div>` : ''));
+      }
+    } else if (forgeTab === 'mod') {
+      h += `<div class="subtabs"><button class="sub" data-et="weapon" aria-selected="${enhTarget === 'weapon'}">武器</button><button class="sub" data-et="armor" aria-selected="${enhTarget === 'armor'}" ${pieceCount() ? '' : 'disabled'}>防具</button></div>`;
+      const g = enhTarget === 'weapon' ? S.weapon : S.armor;
+      const tier = enhTarget === 'weapon' ? S.weapon.tier : Math.max(1, armorTier());
+      const roll = n => { const pool = [...MODPOOL].sort(() => Math.random() - .5).slice(0, n); return pool.map(([name, key]) => ({ name, key, v: Math.round((2 + Math.random() * 6) * (1 + .5 * (tier - 1))) })); };
+      const orb = (k, label) => ({ label, have: () => S.orbs[k], need: 1, take: () => { S.orbs[k]--; } });
+      if (g.rarity === 'normal') {
+        h += recipe('変成のオーブ', 'ノーマル → マジック（MOD 1〜2個）', [orb('trans', '変成のオーブ')], () => { g.rarity = 'magic'; g.mods = roll(1 + (Math.random() < .5)); log('マジックになった：' + g.mods.map(m => m.name).join('・')); });
+        h += recipe('錬金のオーブ', 'ノーマル → レア（MOD 4〜6個）', [orb('alch', '錬金のオーブ')], () => { g.rarity = 'rare'; g.mods = roll(4 + Math.floor(Math.random() * 3)); log('レアになった！ MOD ' + g.mods.length + '個'); });
+      } else if (g.rarity === 'magic') {
+        h += recipe('錬金…はノーマルだけ。', '', [orb('alch', '錬金のオーブ'), { label: '（今はマジック）', have: () => 0, need: 1, take: () => {} }], () => {});
+        h += recipe('変成で引き直す（見本では改変の代わり）', 'マジックのまま MOD を引き直す', [orb('trans', '変成のオーブ')], () => { g.mods = roll(1 + (Math.random() < .5)); log('引き直した：' + g.mods.map(m => m.name).join('・')); });
+      } else {
+        h += recipe('混沌のオーブ', 'レアの MOD を全部引き直す', [orb('chaos', '混沌のオーブ')], () => { g.mods = roll(4 + Math.floor(Math.random() * 3)); log('混沌：MOD ' + g.mods.length + '個に引き直し'); });
+      }
+      h += `<p class="small">攻撃力・最大HP の MOD だけが右の数字に入る（ほかは表示だけ）。</p>`;
+    } else if (forgeTab === 'mark') {
+      h += `<p class="small" style="margin:0">1つの装備に銘は1つ。刻み直すと上書き。Tierを上げても残る。</p>`;
+      for (const k in MARKS) {
+        const m = MARKS[k];
+        const cs = Object.entries(m.cost).map(([pk, n]) => costPart(pk, n));
+        h += recipe(`<span class="${m.cls}">${m.name}</span> を武器に`, m.text, cs, () => { S.weapon.mark = k; log(`武器に${m.name}を刻んだ。`); });
+        h += recipe(`<span class="${m.cls}">${m.name}</span> を防具に`, '防具では効果が半分', cs.map(c => ({ ...c })), () => { S.armor.mark = k; log(`防具に${m.name}を刻んだ。`); });
+      }
+    }
+    $('forge').innerHTML = h;
+  }
+  $('forge').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.dataset.et) { enhTarget = b.dataset.et; render(); return; }
+    if (b.dataset.r != null) { const r = RECIPES[+b.dataset.r]; if (!can(r.costs)) return; pay(r.costs); r.run(); render(); }
+  });
+  $('forge').addEventListener('change', e => { if (e.target.id === 'usecat') { useCat = e.target.checked; render(); } });
+
+  // ---------- gear / inv / market ----------
+  function gearHtml(title, g, extra) {
+    const r = g.rarity === 'rare' ? 'r-rare' : g.rarity === 'magic' ? 'r-magic' : '';
+    const m = opt === 'C' && g.mark ? MARKS[g.mark] : null;
+    return `<div class="slot"><div class="top"><b class="${r}">${title}</b><span class="num gold">+${g.plus}${g.broken ? ' <span class="red">壊れ</span>' : ''}</span></div>
+      ${extra || ''}
+      ${g.mods.length ? `<div class="mods">${g.mods.map(x => `${x.name}+${x.v}%`).join('　')}</div>` : ''}
+      ${m ? `<div class="mark ${m.cls}">${m.name}：${m.text}</div>` : ''}</div>`;
+  }
+  function renderGear() {
+    $('atk').textContent = atk(); $('hp').textContent = hp();
+    $('lv').textContent = S.lv;
+    const sk = [1, 4, 8, 12, 16].filter(l => S.lv >= l).length;
+    $('skills').textContent = `技 ${sk}/5`;
+    $('xpbar').style.width = (S.lv >= 40 ? 100 : Math.round(100 * S.xp / xpNeed(S.lv))) + '%';
+    const w = S.weapon;
+    let h = gearHtml(w.boss ? `<span class="${BWEAP[w.boss].cls}">${w.name}</span>` : w.name, w, `<div class="small muted">T${w.tier}${w.boss ? '（ボス装備）' : ''}</div>`);
+    const pcs = Object.entries(S.armor.pieces).map(([p, t]) => t ? `${PIECES[p][0]} T${t}` : `<span class="muted">${PIECES[p][0]} なし</span>`).join('　');
+    h += pieceCount() ? gearHtml(`防具 ${pieceCount()}/4部位`, S.armor, `<div class="small">${pcs}</div>`) : `<div class="slot empty">防具なし（鍛冶屋の「製作」で胴から）</div>`;
+    $('gear').innerHTML = h;
+  }
+  function renderInv() {
+    const items = [];
+    items.push(['銀貨', S.silver]);
+    for (let t = 1; t <= 3; t++) for (const k in RAW) { if (S.raw[k][t]) items.push([`T${t} ${RAW[k]}`, S.raw[k][t]]); if (S.ref[k][t]) items.push([`T${t} ${REF[k]}`, S.ref[k][t]]); }
+    for (const k in S.parts) if (S.parts[k]) items.push([`<span class="${PART[k][1]}">${PART[k][0]}</span>`, S.parts[k]]);
+    if (S.sigShade) items.push(['<span class="shd">黒翳竜の討伐証</span> <span class="lock">売買不可</span>', S.sigShade]);
+    if (S.sigSakura) items.push(['<span class="sak">桜牙獣の討伐証</span> <span class="lock">売買不可</span>', S.sigSakura]);
+    const ON = { trans: '変成のオーブ', alch: '錬金のオーブ', chaos: '混沌のオーブ' };
+    for (const k in S.orbs) if (S.orbs[k]) items.push([ON[k], S.orbs[k]]);
+    if (S.cat) items.push(['星鉄の触媒', S.cat]);
+    if (S.seal) items.push(['修復の封蝋', S.seal]);
+    $('inv').innerHTML = items.map(([n, q]) => `<div>${n} <span class="q">${q}</span></div>`).join('');
+  }
+  const MARKET = [
+    { n: 'T2 インゴット', buy: 14, f: () => { S.ref.ore[2]++; } },
+    { n: 'T2 加工石材', buy: 10, f: () => { S.ref.stone[2]++; } },
+    { n: 'T2 板材', buy: 10, f: () => { S.ref.wood[2]++; } },
+    { n: '星鉄の触媒（魔術の研究品）', buy: 70, f: () => { S.cat++; } },
+    { n: '修復の封蝋（魔術の研究品）', buy: 40, f: () => { S.seal++; } },
+    { n: '<span class="shd">黒翳竜の翼膜</span>', buy: opt === 'A' ? 70 : 45, sell: 'wing' },
+    { n: '<span class="sak">桜の花びら甲殻</span>', buy: opt === 'A' ? 140 : 90, sell: 'petal' },
+  ];
+  function renderMarket() {
+    const rows = MARKET.map((m, i) => {
+      const price = m.sell ? (opt === 'A' ? (m.sell === 'wing' ? 70 : 140) : (m.sell === 'wing' ? 45 : 90)) : m.buy;
+      const sellBtn = m.sell ? `<button class="act" data-ms="${i}" ${S.parts[m.sell] ? '' : 'disabled'}>売る ${Math.floor(price * .95)}</button>` : '';
+      return `<div class="mrow"><span>${m.n}</span><span><button class="act" data-mb="${i}" ${S.silver >= price ? '' : 'disabled'}>買う <span class="num">${price}</span></button> ${sellBtn}</span></div>`;
+    });
+    rows.push(`<div class="mrow"><span><span class="shd">黒翳竜の討伐証</span>・<span class="sak">桜牙獣の討伐証</span></span><span class="lock">出品できない（苦労の証）</span></div>`);
+    $('market').innerHTML = rows.join('');
+  }
+  $('market').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.dataset.mb != null) {
+      const m = MARKET[+b.dataset.mb];
+      const price = m.sell ? (opt === 'A' ? (m.sell === 'wing' ? 70 : 140) : (m.sell === 'wing' ? 45 : 90)) : m.buy;
+      if (S.silver < price) return; S.silver -= price;
+      if (m.sell) S.parts[m.sell]++; else m.f();
+      log(`市場で買った：${m.n.replace(/<[^>]+>/g, '')}（${price}）`);
+    } else if (b.dataset.ms != null) {
+      const m = MARKET[+b.dataset.ms];
+      const price = opt === 'A' ? (m.sell === 'wing' ? 70 : 140) : (m.sell === 'wing' ? 45 : 90);
+      if (!S.parts[m.sell]) return; S.parts[m.sell]--; S.silver += Math.floor(price * .95);
+      log(`市場で売った：${m.n.replace(/<[^>]+>/g, '')}（手数料5%を引いて ${Math.floor(price * .95)}）`);
+    }
+    render();
+  });
+
+  // ---------- goal ----------
+  function goal() {
+    const a = atk(), h = hp();
+    if (pieceCount() === 0) return ['防具を作ろう', '根の丘で毛皮と菌糸 → 精製 → 製作で胴'];
+    if (S.weapon.plus < 5) return ['武器を +5 まで強化しよう', '+5 までは必ず成功'];
+    if (pieceCount() < 4) return [`防具をそろえよう（${pieceCount()}/4）`, '狩り場は職業Lv3から'];
+    if (!S.killed.shade) return a >= 130 && h >= 175 ? ['黒翳竜に挑もう', '根の洞の奥'] : [`黒翳竜の目安：攻撃130・HP175`, `今 攻撃${a}・HP${h}。+9 から T2素材が要る（根の洞か市場）`];
+    if (S.weapon.tier < 2) return [opt === 'B' ? '黒翳の大剣を作るか、武器を T2 へ' : '武器を T2 へ鍛造しよう', opt === 'A' ? '鍵は黒翳竜の翼膜×2' : '黒翳竜の討伐証を使う'];
+    if (!S.killed.sakura) return a >= 250 && h >= 225 ? ['桜牙獣に挑もう', '柱の上の空のフィールド'] : [`桜牙獣の目安：攻撃250・HP225`, `今 攻撃${a}・HP${h}。防具も T2 に、強化は +15 前後`];
+    if (opt === 'C' && S.weapon.mark !== 'sakura') return ['桜の銘を刻もう', '花びら甲殻×2・枝角×1'];
+    return ['T3 で +30 と理想のMODへ', 'ここから先は自分で決める長い目標'];
+  }
+
+  function render() {
+    document.querySelectorAll('.opt').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.opt === opt)));
+    renderPlaces(); forgeTabs(); renderForge(); renderGear(); renderInv(); renderMarket();
+    const [g, s] = goal(); $('goal').textContent = g; $('goalSub').textContent = s;
+    $('log').innerHTML = S.log.map(l => `<div>${l}</div>`).join('');
+  }
+  document.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => {
+    opt = b.dataset.opt; try { localStorage.setItem('prog-opt', opt); } catch (e) {}
+    if (opt !== 'B' && S.weapon.boss) log('（B の装備は B のときだけ有効。見本では持ったまま。）');
+    render();
+  }));
+  $('reset').addEventListener('click', () => { S = fresh(); render(); });
+  $('fast').addEventListener('click', () => {
+    const t = S.killed.shade ? 3 : pieceCount() === 4 && S.weapon.plus >= 8 ? 2 : 1;
+    for (const k in RAW) S.raw[k][t] += 12;
+    S.silver += 60; gainXp(t === 1 ? 150 : t === 2 ? 900 : 2500);
+    log(`早送り：T${t}素材を各12個、銀貨+60、経験値。`); render();
+  });
+  render();
+})();
+</script>
