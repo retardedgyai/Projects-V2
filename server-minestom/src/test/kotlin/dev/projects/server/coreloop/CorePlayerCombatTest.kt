@@ -969,6 +969,11 @@ class CorePlayerCombatTest {
         }
     }
 
+    @Test fun `CC resistance stones shorten the stun a player receives`() = arena(
+        stats = CoreAffixStats(additional = mapOf(CoreAffixStat.CC_RESIST to 50.0))) { h ->
+        assertEquals(10, h.actor.receiveCrowdControl(CrowdControl.STUN, 1000, null))
+    }
+
     @Test fun `a stunned player cannot attack cast or move and the dodge frees them`() = arena { h ->
         assertEquals(20, h.actor.receiveCrowdControl(CrowdControl.STUN, 1000, h.player.position.add(0.0, 0.0, 2.0)))
         h.ticks(1)

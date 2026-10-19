@@ -754,7 +754,7 @@ internal class CorePlayerCombat(
             queued = null
             if (pending != null) { pending = null; vfx.cancel(preserveGarden = garden != null) }
         }
-        val ticks = crowd.apply(kind, millis, tickNumber, pvp, from)
+        val ticks = crowd.apply(kind, millis, tickNumber, pvp, from, sheet.mods.bonus(CoreAffixStat.CC_RESIST))
         if (ticks <= 0) return 0
         val away = from?.let { player.position.sub(it).let { d -> Vec(d.x(), 0.0, d.z()) } }
             ?.takeIf { it.length() > 1e-6 }?.normalize() ?: flatFacing().mul(-1.0)

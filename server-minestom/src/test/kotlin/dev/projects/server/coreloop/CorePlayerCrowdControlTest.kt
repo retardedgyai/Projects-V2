@@ -12,6 +12,13 @@ class CorePlayerCrowdControlTest {
         assertEquals(60, CorePlayerCrowdControl().apply(CrowdControl.SILENCE, 9000, 0, pvp = false, from = null), "capped at 3 s")
     }
 
+    @Test fun `CC resistance shortens every kind but never makes a player immune`() {
+        assertEquals(10, CorePlayerCrowdControl().apply(CrowdControl.STUN, 1000, 0, false, null, resist = 50.0))
+        assertEquals(10, CorePlayerCrowdControl().apply(CrowdControl.SILENCE, 1000, 0, false, null, resist = 50.0))
+        assertEquals(8, CorePlayerCrowdControl().apply(CrowdControl.STUN, 1000, 0, false, null, resist = 500.0), "capped at 60%")
+        assertEquals(4, CorePlayerCrowdControl().apply(CrowdControl.STUN, 1000, 0, true, null, resist = 60.0), "stacks with the PvP share")
+    }
+
     @Test fun `movement locks diminish within the window and reset after it`() {
         val cc = CorePlayerCrowdControl()
         assertEquals(20, cc.apply(CrowdControl.STUN, 1000, 0, false, null))

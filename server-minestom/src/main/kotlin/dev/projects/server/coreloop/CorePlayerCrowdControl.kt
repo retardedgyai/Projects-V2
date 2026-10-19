@@ -15,6 +15,8 @@ import kotlin.math.ceil
  *    the next lasts 1, 1/2, 1/4 of its duration, then the player is immune until the window passes ([DR_STEPS]).
  *    Bosses hitting a player again and again are held to the same rule.
  * 3. Escape: the dodge (F) breaks every movement lock at once ([escape]); it still costs the dodge cooldown.
+ * CC resistance (2026-10-19, Creator: one stat for every kind) shortens every CC by its percent, up to [MAX_RESIST].
+ * It never makes a player immune: optional, and stacking it only makes fights easier.
  * Durations are server ticks. Flinch has no duration: the caller cancels the windup.
  */
 internal class CorePlayerCrowdControl {
@@ -26,9 +28,10 @@ internal class CorePlayerCrowdControl {
         private set
 
     /** Applies [kind] and returns the ticks it will actually last (0 when diminished to nothing or a flinch). */
-    fun apply(kind: CrowdControl, millis: Long, tick: Long, pvp: Boolean, from: Pos?): Int {
+    fun apply(kind: CrowdControl, millis: Long, tick: Long, pvp: Boolean, from: Pos?, resist: Double = 0.0): Int {
         if (kind == CrowdControl.FLINCH || millis <= 0) return 0
-        var ticks = ceil(millis.coerceAtMost(MAX_MILLIS) / 50.0) * (if (pvp) PVP_SHARE else 1.0)
+        var ticks = ceil(millis.coerceAtMost(MAX_MILLIS) / 50.0) * (if (pvp) PVP_SHARE else 1.0) *
+            (1 - CoreCombatMath.safe(resist).coerceAtMost(MAX_RESIST) / 100)
         if (locksMovement(kind)) {
             if (tick - drLast > DR_WINDOW_TICKS) drCount = 0
             val share = DR_STEPS.getOrElse(drCount) { 0.0 }
@@ -72,6 +75,8 @@ internal class CorePlayerCrowdControl {
         val DR_STEPS = listOf(1.0, .5, .25)
         /** No player is held longer than this by a single CC, whatever the source asks for. */
         const val MAX_MILLIS = 3000L
+        /** CC resistance in percentage points stops here: a CC always lasts at least 40%. */
+        const val MAX_RESIST = 60.0
         val HELD = setOf(CrowdControl.STUN, CrowdControl.AIRBORNE, CrowdControl.KNOCKBACK, CrowdControl.ROOT)
         val INCAPACITATING = setOf(CrowdControl.STUN, CrowdControl.AIRBORNE, CrowdControl.KNOCKBACK, CrowdControl.CHARM, CrowdControl.FEAR)
         private val CUE_ORDER = listOf(CrowdControl.STUN, CrowdControl.AIRBORNE, CrowdControl.KNOCKBACK, CrowdControl.CHARM,
