@@ -260,7 +260,7 @@ class CorePlayerCombatTest {
     @Test
     fun `F dodge follows Minecraft strafe direction and cooldown then forward movement`() = arena { h ->
         h.player.refreshInput(false, false, false, true, false, false, false)
-        h.actor.dodge()
+        h.actor.dodge(); h.ticks(3)
         assertEquals(5.9, h.player.position.x(), 0.00001)
         assertEquals(8.5, h.player.position.z(), 0.00001)
         val afterFirst = h.player.position
@@ -268,7 +268,7 @@ class CorePlayerCombatTest {
         assertEquals(afterFirst, h.player.position)
         h.ticks(24)
         h.player.refreshInput(true, false, false, false, false, false, false)
-        h.actor.dodge()
+        h.actor.dodge(); h.ticks(3)
         assertEquals(5.9, h.player.position.x(), 0.00001)
         assertEquals(11.1, h.player.position.z(), 0.00001)
     }
@@ -277,13 +277,13 @@ class CorePlayerCombatTest {
     fun `diagonal dodge is normalized and cannot teleport through solid wall`() {
         arena { h ->
             h.player.refreshInput(true, false, false, true, false, false, false)
-            h.actor.dodge()
+            h.actor.dodge(); h.ticks(3)
             assertEquals(8.5 - 2.6 / sqrt(2.0), h.player.position.x(), 0.00001)
             assertEquals(8.5 + 2.6 / sqrt(2.0), h.player.position.z(), 0.00001)
         }
         arena { h ->
             for (y in 40..42) h.instance.setBlock(8, y, 10, Block.STONE)
-            h.actor.dodge()
+            h.actor.dodge(); h.ticks(3)
             assertTrue(h.player.position.z() in 8.5..9.7)
             assertTrue(h.player.position.z() + 0.3 < 10.000001)
         }
@@ -390,6 +390,43 @@ class CorePlayerCombatTest {
         java.nio.file.Files.createDirectories(root.resolve(".tools"))
         java.nio.file.Files.writeString(root.resolve(".tools/warrior-cast-frames.json"),com.google.gson.Gson().toJson(scenes))
         assertTrue(scenes.all { s -> (s["frames"] as List<*>).any { (it as Map<*,*>)["displays"].let { d -> (d as List<*>).isNotEmpty() } } })
+    }
+
+    @Test fun `dodge slides over a few ticks and evades every hit but true damage while it lasts`() = arena { h ->
+        val origin=h.player.position
+        h.actor.dodge(); assertEquals(.65,h.player.position.distance(origin),1e-5)
+        h.actor.hurt(30.0); assertEquals(100.0,h.actor.health); assertFalse(h.actor.staggered)
+        h.actor.hurt(10.0,CoreDamageType.TRUE); assertTrue(h.actor.health<100.0)
+        val afterTrue=h.actor.health
+        h.ticks(3); assertEquals(2.6,h.player.position.distance(origin),1e-5)
+        h.ticks(4); h.actor.hurt(10.0); assertTrue(h.actor.health<afterTrue)
+    }
+
+    @Test fun `a heavy blow staggers and throws the player back, a knockdown more, and a guard takes neither`() = arena { h ->
+        val origin=h.player.position
+        h.actor.hurt(15.0); assertFalse(h.actor.staggered); assertEquals(origin,h.player.position)
+        h.actor.hurt(25.0); assertTrue(h.actor.staggered)
+        h.ticks(2); assertTrue(h.player.position.z()<origin.z()-2.0,"thrown away from the wyrm")
+        assertEquals(0.0,h.player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue)
+        h.actor.attack(); h.actor.skill(0); h.actor.dodge(); h.ticks(8)
+        assertEquals(300.0,h.combat.bossHealth()); assertFalse(h.actor.staggered)
+        assertEquals(.1,h.player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,1e-9)
+        h.actor.reset()
+        // The warrior's base armor (AR 40) takes the edge off: 60 lands as ~53, over the 45% knockdown share.
+        h.actor.hurt(60.0); assertTrue(h.actor.staggered)
+        h.actor.hurt(20.0); assertEquals(100.0-60.0*300/340,h.actor.health,1e-9,"a downed player is not juggled")
+        h.actor.reset(); h.player.teleport(origin).join()
+        h.actor.classState.guardUntil=1000
+        h.actor.hurt(60.0); assertFalse(h.actor.staggered); assertEquals(origin,h.player.position)
+    }
+
+    @Test fun `a heavy skill roots its startup and F waits for it to fire`() = arena { h ->
+        h.actor.classState.gain(100.0,h.journey.job,h.journey.build); h.actor.skill(1)
+        h.ticks(6); assertEquals(0.0,h.player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue)
+        val origin=h.player.position
+        h.actor.dodge(); assertEquals(origin,h.player.position)
+        h.ticks(10); assertTrue(h.combat.bossHealth()<300.0,"the slam still lands")
+        assertTrue(h.player.position.distance(origin)>2.0,"the buffered dodge fired after it")
     }
 
     private fun arena(bossDistance: Double = 4.0, armorTier: Int = 1, stats: CoreAffixStats = CoreAffixStats(), roll: Double = 1.0,
@@ -661,7 +698,7 @@ class CorePlayerCombatTest {
 
     @Test fun `lifesteal uses overkill-capped health loss and cannot trigger recursively from burn`() = arena(
         stats = CoreAffixStats(fireFlat = 10.0, additional = mapOf(CoreAffixStat.LIFESTEAL to 50.0))) { h ->
-        h.actor.hurt(60.0)
+        h.actor.hurt(60.0, blow = false)
         h.combat.applyEffectDamage(h.combat.combatTargets().single().id, h.player, 296.0)
         h.actor.attack(); h.ticks(8)
         assertEquals(47.718824, h.actor.health, .000001)
@@ -720,7 +757,7 @@ class CorePlayerCombatTest {
         h.actor.skill(0);h.ticks(18)
         val id=h.combat.combatTargets().single().id;assertTrue(h.actor.classState.marked(id,18))
         h.actor.classState.gain(40.0,h.journey.job,h.journey.build)
-        h.actor.dodge();h.player.teleport(Pos(8.5,40.0,8.5)).join();val at=h.player.position
+        h.actor.dodge();h.ticks(3);h.player.teleport(Pos(8.5,40.0,8.5)).join();val at=h.player.position
         val before=h.combat.bossHealth();h.actor.skill(1);h.ticks(4)
         assertEquals(before-(10+12*.78*2.8)*1.35,h.combat.bossHealth(),.00001)
         assertFalse(h.actor.classState.marked(id,22));h.actor.dodge();assertTrue(h.player.position.distance(at)>0)
@@ -736,7 +773,7 @@ class CorePlayerCombatTest {
     }
     @Test fun `healer can damage alone then spend the same faith pool on actual self recovery`() = arena { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.HEALER);h.base=CoreWeaponBase.TOME;h.actor.reset()
-        h.actor.hurt(60.0)
+        h.actor.hurt(60.0, blow = false)
         h.actor.skill(0);h.ticks(20);assertTrue(h.combat.bossHealth()<300);assertEquals(20.0,h.actor.resource)
         h.actor.attack();h.ticks(20);h.actor.attack();h.ticks(20);assertTrue(h.actor.resource>=30)
         val before=h.actor.health;val heal=h.actor.skillDefinitions[1]
@@ -745,7 +782,7 @@ class CorePlayerCombatTest {
     }
     @Test fun `healing conversion splits real recovery and shield and cannot extend a stronger shield`() = arena { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.HEALER,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.TOME;h.actor.reset()
-        h.actor.hurt(60.0);h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
+        h.actor.hurt(60.0, blow = false);h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
         val value=h.actor.skillDefinitions[1].preview(h.actor.sheet);val before=h.actor.health
         h.actor.skill(1);h.ticks(6)
         assertEquals(before+value*.5,h.actor.health,.00001);assertEquals(value*.5,h.actor.shield,.00001)
@@ -878,12 +915,13 @@ class CorePlayerCombatTest {
         h.ticks(40); assertEquals(274.2, h.combat.bossHealth(), .00001)
     }
 
-    @Test fun `dodge is immediate during AA but repeated cancel inputs cannot manufacture AA hits`() = arena { h ->
+    @Test fun `dodge cuts the AA after its impact but repeated cancel inputs cannot manufacture AA hits`() = arena { h ->
+        // The warrior AA lands on the press, so F right after it only cuts the follow-through.
         h.actor.attack(); val origin=h.player.position
-        h.actor.dodge(); assertTrue(h.player.position.distance(origin)>2.0)
-        h.player.teleport(origin).join()
+        h.actor.dodge(); h.ticks(3); assertTrue(h.player.position.distance(origin)>2.0); assertEquals(288.0, h.combat.bossHealth())
+        h.player.teleport(origin).join(); h.ticks(30)
         repeat(10) { h.actor.attack();h.actor.dodge() }
-        h.ticks(10); assertEquals(288.0, h.combat.bossHealth())
+        h.ticks(10); assertTrue(h.combat.bossHealth() in 270.0..287.9, "exactly one more AA landed: ${h.combat.bossHealth()}")
     }
 
     @Test fun `hold guard cuts a finished slam recovery but never refreshes the slam`() = arena { h ->
@@ -1137,8 +1175,8 @@ class CorePlayerCombatTest {
     @Test fun `dodge cuts the normal follow through for every melee class but keeps the attack cadence`() {
         for (job in CoreClass.entries.filter { it.melee }) arena(bossDistance = 2.5) { h ->
             h.journey=CoreJourney.legacy(job=job);h.base=CoreWeaponBase.entries.first { it.usable(job) };h.actor.reset()
-            h.actor.attack();h.ticks(5);val origin=h.player.position
-            h.actor.dodge();assertTrue(h.player.position.distance(origin)>1.0,"$job dodge was not delayed by the swing")
+            h.actor.attack();h.ticks(9);val origin=h.player.position
+            h.actor.dodge();h.ticks(3);assertTrue(h.player.position.distance(origin)>1.0,"$job dodge was not delayed by the swing")
         }
     }
 

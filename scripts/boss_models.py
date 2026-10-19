@@ -113,7 +113,17 @@ class Model:
                                 "anim_time_update": "", "blend_weight": "", "start_delay": "",
                                 "loop_delay": "", "animators": animators})
 
-    def write(self, path, outliner):
+    def texture_entry(self, name, ident, pixels):
+        return {"path": "", "name": name, "folder": "", "namespace": "",
+                "id": ident, "particle": False, "render_mode": "default", "render_sides": "auto",
+                "frame_time": 1, "frame_order_type": "loop", "frame_order": "",
+                "frame_interpolate": False, "visible": True, "internal": True, "saved": False,
+                "uuid": self.uid(), "width": self.size, "height": self.size,
+                "uv_width": self.size, "uv_height": self.size,
+                "source": "data:image/png;base64," + base64.b64encode(png(pixels)).decode()}
+
+    def write(self, path, outliner, variants=()):
+        """variants: (name, pixels) of alternative atlases with the same layout (WSEE texture states)."""
         data = {
             "meta": {"format_version": "4.10", "model_format": "bedrock", "box_uv": False},
             "name": self.name, "model_identifier": self.name, "visible_box": [4, 4, 0],
@@ -121,13 +131,8 @@ class Model:
             "timeline_setups": [], "unhandled_root_fields": {},
             "resolution": {"width": self.size, "height": self.size},
             "elements": self.elements, "outliner": outliner,
-            "textures": [{"path": "", "name": f"{self.name}.png", "folder": "", "namespace": "",
-                          "id": "0", "particle": False, "render_mode": "default", "render_sides": "auto",
-                          "frame_time": 1, "frame_order_type": "loop", "frame_order": "",
-                          "frame_interpolate": False, "visible": True, "internal": True, "saved": False,
-                          "uuid": self.uid(), "width": self.size, "height": self.size,
-                          "uv_width": self.size, "uv_height": self.size,
-                          "source": "data:image/png;base64," + base64.b64encode(png(self.pixels)).decode()}],
+            "textures": [self.texture_entry(f"{self.name}.png", "0", self.pixels)]
+                        + [self.texture_entry(f"{name}.png", str(k + 1), px) for k, (name, px) in enumerate(variants)],
             "animations": self.animations,
         }
         validate_model(data)

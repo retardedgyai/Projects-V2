@@ -16,6 +16,7 @@ idle / walk / idle_enraged / walk_enraged / enrage / death, plus one `once` anim
 (length = telegraph+recovery, impact at telegraph).
 """
 import json
+import hashlib
 import math
 
 from boss_models import Model, ROOT
@@ -102,6 +103,27 @@ PALETTES = {
 }
 VEIN = (88, 60, 120)
 INNER_VEIN = (56, 32, 84)
+
+
+# 第2形態 (2026-10-19, 藍がCを選んだ): the same atlas with the shade glowing through it. Only the violet parts change
+# (veins, dust flecks, the inner membrane, the hem, antennae, scale glints, claws); the dark hide stays dark, so the
+# glow reads as veins of light. The server switches to it with the WSEE texture state "frenzy" in phase two.
+SELF_LIT = 251
+
+
+def frenzy_pixel(p):
+    """Violet pixels (blue well above green) light up toward a hot violet-white, scaled by how violet they are."""
+    r, g, b, a = p
+    if not a or b < 46 or b - g < 14:
+        return p
+    k = min(1.0, (b - g - 14) / 40) * min(1.0, (b - 46) / 50)
+    hot = (min(255, int(r * 1.9 + 60)), min(255, int(g * 1.5 + 22)), min(255, int(b * 1.7 + 70)))
+    # Alpha 251 marks the pixel self-lit for the pack's item shader (scripts/shaders/item.fsh): the veins glow in the dark.
+    return tuple(int(c + (h - c) * k) for c, h in zip((r, g, b), hot)) + (SELF_LIT if k > .3 else a,)
+
+
+def frenzy_pixels(pixels):
+    return [[frenzy_pixel(p) for p in row] for row in pixels]
 
 
 def noise(x, y, seed):
@@ -729,6 +751,7 @@ def build():
 
     # ---------- rage parts: the opened wings (hidden until enraged; the folded wing hides then) ----------
     spec = FAN_WING
+    fan_roots = {}
     for sign, s in ((1, "l"), (-1, "r")):
         name = f"cloak_{s}"
         kids[name] = []
@@ -738,6 +761,7 @@ def build():
         K = E + np.array(spec["carpal"]) * M3
         K[1] = 6.0 + spec["drop"]                   # planted on the ground once the body crouches by `drop`
         tips = [K + np.array(t) * M3 for t in spec["tips"]]
+        fan_roots[s] = [float(v) for v in K]
 
         def bar(nm, a, b, w0, w1, mat, n=2):
             d = b - a; ln = float(np.linalg.norm(d))
@@ -951,6 +975,45 @@ def build():
         order.append((name, "skull"))
         pivots[name] = [float(v) for v in base]
 
+    # Breakable parts (gimmicks, 2026-10-18): the enraged fans' tatters (the plates that tear away, scattered over the
+    # outer lobes so a torn fan looks ragged, the Creator's pick) and the horn tips sit on child bones with the
+    # parent's pivot (clips are unaffected), so the server can hide them when they are broken.
+    names = {e["uuid"]: e["name"] for e in m.elements}
+
+    def tatter(n, sd):
+        """Outer bands (b) of lobes 3-7 mostly, inner plates (a) sometimes, the outermost spar's tip; fixed by name."""
+        if n == f"cloak_{sd}_finger4_2":
+            return True
+        if not n.startswith(f"cloak_{sd}_fan"):
+            return False
+        lobe = int(n.split("_fan")[1].split("_")[0])
+        roll = int(hashlib.md5(n.replace(f"cloak_{sd}_", "").encode()).hexdigest()[:4], 16) / 65535
+        return lobe >= 3 and roll < (.65 if n.endswith("b") else .3)
+
+    def split(bone, child, test):
+        moved = [k for k in kids[bone] if isinstance(k, str) and test(names[k])]
+        kids[bone] = [k for k in kids[bone] if k not in moved]
+        kids[child] = moved
+        pivots[child] = list(pivots[bone])
+        order.append((child, bone))
+    # The fan is not one plate (review 2026-10-19: 藍「羽は風で揺られるべき」): its lobes and spars hang on four ray bones
+    # pivoting at the hand (fan root), so the feathers can ripple one after another; each ray carries its own tatters
+    # (cloak_?_tatters_<ray>, hidden together when that fan tears).
+    def ray_of(n, sd):
+        if n.startswith(f"cloak_{sd}_fan"):
+            return int(n.split("_fan")[1].split("_")[0]) // 2
+        if n.startswith(f"cloak_{sd}_finger"):
+            f = int(n.split("_finger")[1].split("_")[0])
+            return f - 1 if f >= 1 else None
+        return None
+    for sd in ("l", "r"):
+        for j in range(4):
+            ray = f"cloak_{sd}_ray{j}"
+            split(f"cloak_{sd}", ray, lambda n, sd=sd, j=j: ray_of(n, sd) == j)
+            pivots[ray] = fan_roots[sd]
+            split(ray, f"cloak_{sd}_tatters_{j}", lambda n, sd=sd: tatter(n, sd))
+        split(f"horn_{sd}", f"horn_{sd}_tip", lambda n, sd=sd: any(n.startswith(f"horn_{sd}_{p}") for p in ("seg3", "seg4", "seg5", "barb3", "barb4", "barb5", "fork")))
+
     built = {}
     for name, parent in reversed(order):
         own = [k for k in kids[name] if isinstance(k, str)]
@@ -978,7 +1041,7 @@ def animate(m):
 if __name__ == "__main__":
     model, outliner = build()
     out = ROOT / "assets/bosses/shade_wyrm.bbmodel"
-    data = model.write(out, outliner)
+    data = model.write(out, outliner, variants=[("shade_wyrm_frenzy", frenzy_pixels(model.pixels))])
     print(f"{out.relative_to(ROOT)}: {len(data['elements'])} cubes, {len(model.bones)} bones, {len(data['animations'])} animations")
     import animate_boss_shade_wyrm
     animate_boss_shade_wyrm.main(out, FAN_WING["drop"])

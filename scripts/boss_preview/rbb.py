@@ -66,7 +66,8 @@ FACES = {
 
 def render(sc, pose=None, hidden=(), az=36, el=16, size=(900, 640), scale=3.4, cx=.5, cy=.84, flat=None,
            bg=((118, 122, 140), (64, 64, 78)), outline=True, center=None, unshaded=False, with_depth=False):
-    """with_depth=True also returns the depth buffer (larger = nearer the camera, -1e9 = empty)."""
+    """with_depth=True also returns the depth buffer (larger = nearer the camera, -1e9 = empty); the texel alpha of
+    each drawn pixel is left in render.alpha (alpha markers: 251 = self-lit, see scripts/shaders/item.fsh)."""
     mats = sc.mats(pose)
     a, e = math.radians(az), math.radians(el)
     cam = np.array([math.cos(e) * math.sin(a), math.sin(e), math.cos(e) * math.cos(a)])
@@ -82,6 +83,8 @@ def render(sc, pose=None, hidden=(), az=36, el=16, size=(900, 640), scale=3.4, c
         gp = np.array([W * cx, H * cy]) if center is None else np.array([ox, oy])
         col[((xx - gp[0]) / (58 * scale)) ** 2 + ((yy - gp[1]) / (15 * scale)) ** 2 < 1] *= .6
     zb = np.full((H, W), -1e9, np.float32)
+    ab = np.zeros((H, W), np.float32)
+    render.alpha = ab
     light = np.array([.4, .85, .35]); light /= np.linalg.norm(light)
     hide = set(hidden)
 
@@ -130,6 +133,7 @@ def render(sc, pose=None, hidden=(), az=36, el=16, size=(900, 640), scale=3.4, c
                 z = zb[y0:y1, x0:x1]
                 ok = inside & (depth > z) & (tex[..., 3] > 8)
                 z[ok] = depth[ok]
+                ab[y0:y1, x0:x1][ok] = tex[..., 3][ok]
                 if flat is not None:
                     col[y0:y1, x0:x1][ok] = flat
                 else:
