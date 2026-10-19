@@ -684,7 +684,18 @@ def bake(b, name, length, keys, loop="once", base=None, overlay=None):
     follow_through(b, frames, loop == "loop")
     bones = {nm for nm, _, _ in b.bones}
     tracks = {}
-    for t, pose in frames:
+    opening = [pose.get("shells", 0.0) for _, pose in frames]
+    n_frames = len(frames)
+
+    def ripple(i, shell):
+        """Petal opening seen by one shell: it follows the shoulders' a little later the further down the tail it
+        sits, so every opening and closing travels shoulders -> tail tip as a wave."""
+        order = 0 if "_b_" in shell else int(shell.split("_t")[1].split("_")[0])
+        j = i - order * RIPPLE_FRAMES
+        if loop == "loop":
+            j %= max(1, n_frames - 1)
+        return opening[max(0, j)]
+    for i, (t, pose) in enumerate(frames):
         shells = pose.get("shells", 0.0)
         tremble = pose.get("tremble", 0.0)
         for bone, v in pose.items():
@@ -697,10 +708,12 @@ def bake(b, name, length, keys, loop="once", base=None, overlay=None):
                 tracks.setdefault(bone, []).append((t, (round(-v[0], 3), round(v[1], 3), round(v[2], 3))))
         for k, (shell, (axis, deg)) in enumerate(sorted(b.frames.items())):
             jitter = tremble * math.sin(t * 47 + k * 1.7)
-            e = matrix_euler(axis_angle(axis, deg * shells + math.copysign(jitter, deg)))
+            e = matrix_euler(axis_angle(axis, deg * ripple(i, shell) + math.copysign(jitter, deg)))
             tracks.setdefault(shell, []).append((t, (round(-e[0], 3), round(e[1], 3), round(e[2], 3))))
     b.m.anim(name, length, tracks, loop)
 
+
+RIPPLE_FRAMES = 1   # each tail segment opens one 0.05 s frame after the one before it
 
 WIND_PERIOD = 1.2   # divides every loop length (idle 2.4, walk 1.2)
 
@@ -745,6 +758,27 @@ def rear(a):
     return {"body": (a, 0, 0), "pos": (0, dy - ny, dz - nz), "thigh_l": (-a, 0, 0), "thigh_r": (-a, 0, 0)}
 
 
+def mie(shells, side=1):
+    """見得: the closing flourish of a big move (kabuki's held pose): chest out, head thrown up, one forepaw lifted,
+    the tail arched high and every petal flared and quivering, held a moment before it relaxes."""
+    paw = "arm_l" if side > 0 else "arm_r"
+    fore = "forearm_l" if side > 0 else "forearm_r"
+    return pose(rear(-10), chest=(-8, 6 * side, 0), neck=(-24, 8 * side, 0), skull=(-14, 6 * side, 4 * side), jaw=(12, 0, 0),
+                **{paw: (-28, 0, 0), fore: (-36, 0, 0)}, tail_1=(20, 0, 0), tail_2=(14, 0, 0), tail_3=(6, 0, 0),
+                shells=max(shells, 1.35), tremble=2.5)
+
+
+def sit_howl(open_):
+    """Zinogre's howl: it sits back on its haunches like a wolf, forelegs straight, chest out and the head thrown
+    straight up at the sky with the jaw wide."""
+    a = -30
+    # rear(a) already turns the hind legs back upright; on top of that the knees go forward and the hocks fold under
+    return pose(rear(a), pos=(0, -14, -4), thigh_l=(-45, 0, 0), thigh_r=(-45, 0, 0), shin_l=(85, 0, 0), shin_r=(85, 0, 0),
+                foot_l=(-40, 0, 0), foot_r=(-40, 0, 0), arm_l=(-a + 4, 0, 0), arm_r=(-a + 4, 0, 0), forearm_l=(-4, 0, 0), forearm_r=(-4, 0, 0),
+                hand_l=(2, 0, 0), hand_r=(2, 0, 0), chest=(-6, 0, 0), neck=(-56, 0, 0), skull=(-30, 0, 0), jaw=(46, 0, 0),
+                tail_1=(22, 0, 0), tail_2=(12, 0, 0), shells=open_, tremble=3.0)
+
+
 def pose(*parts, **extra):
     out = merged(*parts)
     for k, v in extra.items():
@@ -762,8 +796,9 @@ def idle_pose(t, L=2.4, enraged=False):
          "neck": (-2.5 * w + 1.5 * wave(t, L / 2), 9.0 * look, 0), "skull": (2.0 * wave(t, L, -.15), 4.0 * look, 2.0 * look),
          "jaw": (1.5 + 1.5 * max(0.0, wave(t, L / 2, .2)), 0, 0), "pos": (.6 * sway, -.8 + .8 * w, 0),
          "arm_l": (1.5 * sway, 0, 0), "arm_r": (-1.5 * sway, 0, 0)}
-    for k in range(1, 6):
-        p[f"tail_{k}"] = (2.5 * wave(t, L, -.1 * k), 6.0 * wave(t, L, .15 - .12 * k), 2.0 * wave(t, L, -.1 * k))
+    for k in range(1, 6):                         # the tail draws a slow figure eight, the tip trailing
+        p[f"tail_{k}"] = (4.0 * wave(t, L / 2, -.08 * k), 9.0 * wave(t, L, .15 - .12 * k), 2.5 * wave(t, L, -.1 * k))
+    p["neck"] = tuple(p["neck"][i] + (-6, 0, 0)[i] for i in range(3))   # head carried a little higher: proud, not slumped
     if enraged:                                   # lower, wider, snarling; the petals stay open and shiver
         p = pose(p, chest=(4, 0, 0), neck=(8, 0, 0), skull=(4, 0, 0), jaw=(8 + 3 * w, 0, 0), pos=(0, -2, 0))
         p["shells"] = 1.0
@@ -792,7 +827,8 @@ def walk_pose(t, L=1.2, enraged=False):
         p[f"shin_{side}"] = (16 * lift, 0, 0)
         p[f"foot_{side}"] = (-14 * lift + 5 * s, 0, 0)
     for k in range(1, 6):
-        p[f"tail_{k}"] = (3 * math.sin(2 * ph - .5 * k), 8 * math.sin(ph + math.pi - .45 * k), 0)
+        p[f"tail_{k}"] = (3 * math.sin(2 * ph - .5 * k) + (4 if k == 1 else 0), 10 * math.sin(ph + math.pi - .45 * k), 0)
+    p["neck"] = tuple(p["neck"][i] + (-8, 0, 0)[i] for i in range(3))   # a proud carriage, head high
     if enraged:
         p = pose(p, neck=(8, 0, 0), chest=(3, 0, 0))
         p["shells"] = 1.0
@@ -823,8 +859,8 @@ def claw_keys(hit, end, shells):
     settle = pose(chest=(-2, 0, 0), neck=(-4, 0, 0), skull=(-3, 0, 0), pos=(0, 0, 1), **s)
     step_back = pose(rear(-6), pos=(0, 1, -2), arm_r=(-24, 0, 0), forearm_r=(-20, 0, 0), neck=(-8, 0, 0), jaw=(10, 0, 0), **s)
     return [(0, dict(s), "io"), (.3, sink, "io"), (hit * .72, up, "out"), (hit - .06, top, "io"), (hit, slam, "in"),
-            (hit + .14, bounce, "out"), (hit + .32, pose(bounce, arm_l=(14, 0, 0)), "io"), (hit + .55, step_back, "io"),
-            (hit + .8, settle, "io"), (end, dict(s), "io")]
+            (hit + .14, bounce, "out"), (hit + .32, pose(bounce, arm_l=(14, 0, 0)), "io"), (hit + .5, step_back, "io"),
+            (hit + .7, mie(shells, -1), "out"), (hit + .86, pose(mie(shells, -1), skull=(-4, 0, 0)), "io"), (end, dict(s), "io")]
 
 
 def tail_keys(hit, end, shells):
@@ -854,7 +890,8 @@ def tail_keys(hit, end, shells):
     land = pose(rear(10), pos=(0, -4, 4), chest=(10, 0, 0), neck=(12, 0, 0), jaw=(16, 0, 0), arm_l=(10, 0, 0), arm_r=(10, 0, 0),
                 shin_l=(16, 0, 0), shin_r=(16, 0, 0), tail_1=(-10, 0, 0), tremble=2.0, **s)
     stagger = pose(rear(-4), pos=(0, 0, 3), chest=(-2, 4, 4), neck=(-6, 6, 0), **s)
-    return frames + flip + [(t_land + .12, land, "out"), (t_land + .45, stagger, "io"), (end, dict(s), "io")]
+    return frames + flip + [(t_land + .12, land, "out"), (t_land + .3, stagger, "io"), (t_land + .5, mie(shells), "out"),
+                            (t_land + .64, pose(mie(shells), neck=(4, 0, 0)), "io"), (end, dict(s), "io")]
 
 
 def scatter_keys(hit, end, shells):
@@ -868,7 +905,8 @@ def scatter_keys(hit, end, shells):
                  tail_1=(40, 0, 0), tail_2=(26, 0, 0), tail_3=(16, 0, 0), shells=.35, tremble=0)
     after = pose(rear(4), pos=(0, -1, 4), neck=(6, 0, 0), skull=(-4, 0, 0), jaw=(16, 0, 0), tail_1=(8, 0, 0), shells=shells)
     return [(0, {"shells": shells}, "io"), (hit * .75, gather, "io"), (hit - .12, draw, "io"), (hit, fling, "in"),
-            (hit + .25, after, "out"), (end, {"shells": shells}, "io")]
+            (hit + .22, after, "out"), (hit + .5, mie(shells), "out"), (hit + .68, pose(mie(shells), skull=(-4, 0, 0)), "io"),
+            (end, {"shells": shells}, "io")]
 
 
 def bloom_keys(hit, end, shells):
@@ -882,23 +920,22 @@ def bloom_keys(hit, end, shells):
     bounce = pose(rear(2), pos=(0, 0, 3), neck=(4, 0, 0), jaw=(16, 0, 0), shells=1.1)
     return [(0, {"shells": shells}, "io"), (.25, pose(rear(6), pos=(0, -2, -1), neck=(10, 0, 0), shells=shells), "io"),
             (hit * .6, rise, "out"), (hit - .14, claw, "io"), (hit, crash, "in"), (hit + .16, bounce, "out"),
-            (hit + .34, pose(rear(8), pos=(0, -2, 3), shells=1.0), "in"), (hit + .6, pose(bounce, shells=1.0), "out"),
-            (end, {"shells": shells}, "io")]
+            (hit + .34, pose(rear(8), pos=(0, -2, 3), shells=1.0), "in"), (hit + .55, pose(bounce, shells=1.0), "out"),
+            (hit + .8, mie(1.0, -1), "out"), (hit + 1.0, pose(mie(1.0, -1), skull=(-4, 0, 0)), "io"), (end, {"shells": shells}, "io")]
 
 
 def enrage_keys():
-    """5 s (QuestEncounterCombat.ENRAGE_HOLD_MILLIS): the beast stops, shudders low while the petals rattle, then
-    rears up and howls to the sky as they burst open at 2.5 s, holds the howl shaking, and drops into its new stance."""
+    """5 s (QuestEncounterCombat.ENRAGE_HOLD_MILLIS), Zinogre's howl: the beast stops and shudders low while the petals
+    rattle, sits back on its haunches and howls straight at the sky; at 2.5 s the petals burst open in a wave down the
+    tail, the howl swells and sweeps the sky, then it drops forward onto all fours in its new stance."""
     crouch = pose(rear(10), pos=(0, -4, -1), chest=(10, 0, 0), neck=(18, 0, 0), skull=(12, 0, 0), jaw=(6, 0, 0),
                   tail_1=(-14, 0, 0), shells=.15, tremble=2.0)
     shiver = pose(crouch, shells=.35, tremble=6.0, neck=(22, -6, 0))
-    rise = pose(rear(-48), arm_l=(-60, 0, 8), arm_r=(-60, 0, -8), forearm_l=(-30, 0, 0), forearm_r=(-30, 0, 0),
-                neck=(-30, 0, 0), skull=(-24, 0, 0), jaw=(44, 0, 0), tail_1=(-10, 0, 0), shells=.4, tremble=3.0)
-    burst = pose(rise, rear(-6), shells=1.45, tremble=6.0)
     land = pose(rear(14), pos=(0, -3, 3), arm_l=(10, 0, 0), arm_r=(10, 0, 0), neck=(16, 0, 0), skull=(8, 0, 0), jaw=(18, 0, 0),
                 shells=1.0, tremble=2.0)
-    return [(0, {}, "io"), (.6, crouch, "io"), (1.6, shiver, "io"), (2.3, rise, "out"), (2.5, burst, "in"),
-            (3.9, pose(burst, tremble=3.5, skull=(-4, 4, 0)), "io"), (4.25, land, "in"), (5.0, idle_pose(0, enraged=True), "io")]
+    return [(0, {}, "io"), (.6, crouch, "io"), (1.5, shiver, "io"), (2.25, sit_howl(.4), "out"), (2.5, sit_howl(1.45), "in"),
+            (3.9, pose(sit_howl(1.35), skull=(-6, 0, 0), jaw=(6, 0, 0)), "io"), (4.3, land, "in"),
+            (5.0, idle_pose(0, enraged=True), "io")]
 
 
 def death_keys(shells):
