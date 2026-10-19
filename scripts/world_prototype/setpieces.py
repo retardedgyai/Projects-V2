@@ -361,10 +361,10 @@ def stump(cx, cz, D=15, seed=3):
             x, z = cx + dx, cz + dz
             gg = at(x, z)
             high = (dx * sdx + dz * sdz) > rad * .33
-            ytop = fy(dx, dz)                                              # the cut slopes down toward the south: the rings face the road
+            ytop = fy(dx, dz) + (int(3 * max(0, noise3(math.cos(math.atan2(dz, dx)) * 3, 0, math.sin(math.atan2(dz, dx)) * 3, seed + 9, 1) - .45) * 2.5) if d > rad * .7 else 0)   # the outer bark rim stands ragged above the cut
             for y in range(gg - 1, ytop + 1):
                 f = max(0, (g + 3 - y)) / 3                                  # flare over the bottom 3 layers
-                rr = rad * wob(a) * (1 + .5 * f) + flute
+                rr = rad * wob(a) * (1 + .5 * f) * (1 - .12 * max(0, y - g) / max(1, H)) + flute
                 if d > rr: continue
                 if y == ytop and d < rr - 1:
                     # the cut face: rings from the centre, each border wobbled

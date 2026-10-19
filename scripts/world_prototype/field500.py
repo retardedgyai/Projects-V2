@@ -178,7 +178,7 @@ anyway = np.minimum(road_d, path_d)
 pond_d = np.sqrt(((xx - POND[0]) / 36) ** 2 + ((zz - POND[1]) / 24) ** 2) + (fbm(4, 14, .5, 7) - .5) * .4
 lake = (pond_d < 1) & ~road & ~trail
 WL = int(np.percentile(H[lake], 25)) if lake.any() else SEA
-H = np.where(lake, np.minimum(H, WL - 1 - (1 - pond_d) * 4), H)
+H = np.where(lake, np.minimum(H, WL - 1 - np.sqrt(np.clip(1 - pond_d, 0, 1)) * 2.2), H)
 # a stream from the tree hill, over both scarps as waterfalls, into the pond
 stream_pl = polyline([(262, 150), (272, 205), (252, 245), (236, 300), (205, 345), (165, 375), (128, 412)], 8)
 sprof = np.array([sample(H, x, z) for x, z in stream_pl], np.float32)
@@ -298,7 +298,7 @@ for z in range(B):
         if slope[z, x] < 1.2:  # half steps so nothing on walkable ground needs a jump
             ups = [hi[z + dz, x + dx] for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)) if 0 <= x + dx < B and 0 <= z + dz < B]
             if any(u == h + 1 for u in ups):
-                put(x, h + 1, z, top[0], top[-1], shape="slab")
+                pass
 
 
 # talus: rockfall piles where a face meets the ground below it
@@ -464,7 +464,7 @@ def oak(x, z, kind="oak", big=False, form=None, lift=0):
         mark(x - 1, z - 1, x + 2, z + 2); return
     for (dx, dz) in ((1, 0), (-1, 0), (0, 1), (0, -1)):              # a couple of short limbs under the crown
         if R.random() < .5: put(tx + dx * 2, ty - 1, tz + dz * 2, logn.replace("_log", "_wood"))
-    r = {"round": 2.8, "tall": 2.3, "wide": 4.4, "lean": 3.0}[form] + (1.6 if big else 0) + R.random() * .7
+    r = {"round": 2.8, "tall": 2.3, "wide": 4.4, "lean": 3.0}[form] + (1.6 if big else 0) + R.random() * .7 + lift * .45
     sq = {"round": .75, "tall": 1.2, "wide": .45, "lean": .7}[form]
     lumps = [(0, 0, 0)] + [(R.uniform(-1.8, 1.8), R.uniform(-1.5, 1) * (2 if form == "tall" else 1), R.uniform(-1.8, 1.8)) for _ in range(2 if not big else 3)]
     for (ox, oy, oz) in lumps:
@@ -2244,6 +2244,34 @@ for (x, y, z), v in list(w.b.items()):
     if v[1] in ("dark_oak_wood", "mangrove_wood", "spruce_wood", "dark_oak_log", "mangrove_log") and y > at(x, z) + 3 and (x, y - 1, z) not in w.b and _h(x, y, z, 901) < .14:
         put(x, y - 1, z, "glow_lichen", shape="ceil"); nlich += 1
 print("night: firefly clusters", nff, "lichen", nlich)
+
+nfoot = 0
+for z in range(2, B - 2):
+    for x in range(2, B - 2):
+        if anyway[z, x] < 2.5 or lake[z, x] or stream[z, x] or used[z, x]: continue
+        h = hi[z, x]
+        if (x, h + 1, z) in w.b or w.b.get((x, h, z), ("",))[1] not in ("grass_block_top", "podzol_top", "moss_block", "coarse_dirt"): continue
+        if not any(hi[z + dz, x + dx] == h + 1 for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1))): continue
+        r = _h(x, 77, z, 991)
+        if r < .55: put(x, h + 1, z, "short_grass", shape="plant")
+        elif r < .75: put(x, h + 1, z, "fern", shape="plant")
+        elif r < .9: put(x, h + 1, z, "tall_grass_top", shape="plant")
+        nfoot += 1
+print("step-foot cover", nfoot)
+# road cut banks: where the graded road sits a block below the turf, the bank lip is worn (rooted / coarse dirt) and grass overhangs it
+nbank = 0
+for z in range(2, B - 2):
+    for x in range(2, B - 2):
+        if road[z, x] or trail[z, x] or anyway[z, x] > 4.5: continue
+        h = hi[z, x]
+        if not any((road[z + dz, x + dx] or trail[z + dz, x + dx]) and hi[z + dz, x + dx] < h for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1))): continue
+        if w.b.get((x, h, z), ("",))[1] != "grass_block_top": continue
+        r = noise3(x, 0, z, 993, 2.5)
+        if r < .35: put(x, h, z, "rooted_dirt")
+        elif r < .5: put(x, h, z, "coarse_dirt")
+        if (x, h + 1, z) not in w.b and _h(x, 1, z, 994) < .6: put(x, h + 1, z, "short_grass" if r > .5 else "fern", shape="plant")
+        nbank += 1
+print("road banks", nbank)
 
 # ---------- walkability pass: a slab on the low side of every one-block step along roads, trails, bridges and tops ----------
 STEP_SLAB = ["mud_bricks", "mud_bricks", "mud_bricks", "cobblestone", "mud_bricks"]
