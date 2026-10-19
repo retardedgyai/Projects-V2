@@ -170,8 +170,11 @@ def part_faces(name, m, skin, glow=None):
 
 def sword_faces(m, glow):
     model, tints = R.item_model(SWORD, 0.0)
-    # Model space: grip around y=4, blade toward +y. Put the grip at the fist and the blade along +z.
-    place = m @ S(SWORD_SCALE, SWORD_SCALE, SWORD_SCALE) @ Rx(math.pi / 2) @ T(-.5, -4 / 16, -.5) @ S(1 / 16, 1 / 16, 1 / 16)
+    # Model space: grip around y=4, blade toward +y, its width (edge to edge) along x. Put the grip at the fist, the
+    # blade along +z and the width along the frame's y, i.e. in the swing plane: the edge leads the cut and the flat
+    # faces sideways. (The first version laid the width across the swing, so it struck with the flat.)
+    place = (m @ S(SWORD_SCALE, SWORD_SCALE, SWORD_SCALE) @ Rx(math.pi / 2) @ Ry(math.pi / 2)
+             @ T(-.5, -4 / 16, -.5) @ S(1 / 16, 1 / 16, 1 / 16))
     faces = R.model_faces(model, tints, place)
     if glow is None: return faces
     out = []
