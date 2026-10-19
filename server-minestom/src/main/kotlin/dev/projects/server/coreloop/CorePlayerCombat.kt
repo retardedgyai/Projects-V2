@@ -68,6 +68,8 @@ internal class CorePlayerCombat(
     /** 怯み / 吹き飛び: no input and no walking until this tick. */
     private var staggerUntil = -1L
     val staggered get() = tickNumber < staggerUntil
+    /** In the dodge's invulnerable window: the boss counts a hit on this player as a whiff. */
+    val evading get() = tickNumber < evadeUntil
     private var baseSpeed = 0.1
     private var appliedSpeed = -1.0
     private var lastCombat = -400L

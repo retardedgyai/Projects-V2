@@ -1041,7 +1041,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
             canTarget = { target -> target === player && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
             contentSeed = run.map.seed, explicitBossArchetype = arena.archetype,
-            typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) })
+            typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) },
+            evading = { actors[it.uuid]?.evading == true })
         try {
             val loot = CoreWorldLoot(player, arena.instance, run, { rewards.submit(player.uuid, it) }, { refresh(player) })
             combat.pixelNameplates = packed(player)
@@ -1084,7 +1085,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             onMobDefeated = { _, boss -> onMobDefeated(player, boss) }, damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
             canTarget = { target -> target.uuid == player.uuid && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
             contentSeed = plan.seed, encounterLevel = account(player)?.activeRun?.map?.level ?: CoreJourneyRules.floor(tier),
-            typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) })
+            typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) },
+            evading = { actors[it.uuid]?.evading == true })
         val run = requireNotNull(account(player)?.activeRun)
         val loot = CoreWorldLoot(player, runtime.instance, run,
             reward = { rewards.submit(player.uuid, it) },

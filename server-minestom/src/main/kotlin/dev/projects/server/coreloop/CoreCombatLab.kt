@@ -157,6 +157,7 @@ internal class CoreCombatLab(
                 } },
                 damagePlayer = { _, damage -> if (!entry.loadout.free) entry.actor?.hurt(damage) },
                 typedDamagePlayer = { _, damage, type -> if (!entry.loadout.free) entry.actor?.hurt(damage, type) },
+                evading = { entry.actor?.evading == true },
                 canTarget = { it === entry.player && !entry.returning },
                 explicitBossArchetype = arena.archetype)
             entry.actor?.resetActions(); entry.combat?.dispose(); entry.combat = next
@@ -177,6 +178,7 @@ internal class CoreCombatLab(
             onMobDefeated = { _, _ -> }, // No loot, XP, account callback or completion transition.
             damagePlayer = { _, damage -> if (!entry.loadout.free) entry.actor?.hurt(damage) },
             typedDamagePlayer = { _, damage, type -> if (!entry.loadout.free) entry.actor?.hurt(damage, type) },
+            evading = { entry.actor?.evading == true },
             // This predicate also authorizes incoming player hits. Pausing AI must not disable damage.
             canTarget = { it === entry.player && !entry.returning },
             spawnBoss = false, healthMultiplier = 20.0)

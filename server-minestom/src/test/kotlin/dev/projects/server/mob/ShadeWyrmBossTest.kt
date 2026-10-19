@@ -475,6 +475,66 @@ class ShadeWyrmBossTest {
     }
 
     @Test
+    fun `after a move it stands open, longer when it whiffed or only met a dodge`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, -4.0), "Open")
+        var dodging = false
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype, evading = { dodging })
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            combat.tick(now)
+            fun biteFrom(distance: Double): Long {
+                boss.teleport(arena.bossSpawn).join()
+                player.teleport(arena.bossSpawn.add(0.0, 0.0, -distance)).join()
+                now += 5_000; combat.tick(now); now += 2_000; combat.tick(now)    // whatever it was doing has ended
+                assertTrue(combat.startAbilityForTest(boss.uuid, "shade-bite", now))
+                var guard = 0
+                while (combat.busy(boss.uuid) && guard++ < 200) { now += 50; combat.tick(now) }
+                return combat.openFor(boss.uuid)
+            }
+            val open = QuestEncounterCombat.OPENING.getValue("shade-bite")
+            assertEquals(open, biteFrom(3.0), "a bite that lands leaves its plain opening")
+            assertEquals(open + QuestEncounterCombat.WHIFF_MILLIS, biteFrom(9.8), "a bite that reaches nobody whiffs")
+            dodging = true
+            assertEquals(open + QuestEncounterCombat.WHIFF_MILLIS, biteFrom(3.0), "a bite that only met a dodge whiffs too")
+            dodging = false
+            val before = boss.position
+            now += 300; combat.tick(now)
+            assertEquals(before, boss.position, "it stands still while open")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `a break skill on the white flash of a heavy wind-up knocks the wyrm down`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, -8.0), "Counter")
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            combat.tick(now)
+            assertTrue(combat.startAbilityForTest(boss.uuid, "shade-pounce", now))
+            val start = now
+            now += 100; combat.tick(now)
+            assertTrue(combat.applyCrowdControl(boss.uuid, CrowdControl.FLINCH, 300, player))
+            assertFalse(combat.isDown(boss.uuid), "before the flash a break skill only wears the gauge")
+            while (now < start + 700) { now += 50; combat.tick(now) }
+            assertTrue(combat.applyCrowdControl(boss.uuid, CrowdControl.FLINCH, 300, player))
+            assertTrue(combat.isDown(boss.uuid), "on the flash it is a counter")
+            assertFalse(combat.busy(boss.uuid))
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
     fun `the head takes more and the tail less, and break skills wear the cast down`() {
         MinecraftServer.init(Auth.Offline())
         val arena = BossArenaFactory.create("shade", 1)
