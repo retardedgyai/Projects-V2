@@ -220,10 +220,11 @@ class CoreHudLayoutTest {
     @Test fun `boss bar keeps its plate, emblem, name row and percentage where the art expects them`() {
         assertEquals("62%", CoreBossBarHud.percent(12480.0, 20000.0))
         val glyphs = layout(CoreBossBarHud.render(bossHud().copy(grade = MobGrade.CALAMITY), 14900.0)).first
-        assertEquals(CoreBossBarHud.PLATE_X, glyphs.first { glyphName(it) == "boss_plate_calamity" }.x)
+        assertEquals(CoreBossBarHud.PLATE_X - CoreBossBarHud.PLATE_PAD, glyphs.first { glyphName(it) == "boss_plate_calamity" }.x)
+        assertEquals(CoreBossBarHud.TAG_X + 4, glyphs.filter { it.font == "projects:hud_boss_tag" }.minOf { it.x }, "grade label on its tag")
         assertEquals(CoreBossBarHud.EMBLEM_X, glyphs.first { glyphName(it) == "boss_emblem_calamity" }.x)
         val row = glyphs.filter { it.font == "projects:hud_boss_name" }
-        assertEquals(CoreBossBarHud.PLATE_X + 6, row.minOf { it.x }, "grade label starts the name row")
+        assertEquals(CoreBossBarHud.PLATE_X + 6, row.minOf { it.x }, "the name starts the name row")
         assertEquals(CoreBossBarHud.PLATE_X + CoreBossBarHud.PLATE_W - 6, row.maxOf { it.x + it.advance - 1 }, "percentage ends inside the plate")
         val lit = glyphs.count { g -> CoreHudGlyphs["boss_cell"].let { it.font.asString() == g.font && it.char.code == g.code } }
         assertEquals(13, lit, "64% of 20 break cells")

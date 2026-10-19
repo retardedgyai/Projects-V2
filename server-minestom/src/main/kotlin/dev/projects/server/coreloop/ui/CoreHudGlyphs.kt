@@ -25,11 +25,12 @@ internal object CoreHudGlyphs {
     private val numberFonts = setOf(NUM_GAUGE, NUM_CD)
     /** Boss bar text rows: ascii.png for ASCII, the client's own Unifont bitmaps for the rest (build_combat_hud.BOSS_TEXT_FONTS). */
     val BOSS_NAME: Key = Key.key("projects", "hud_boss_name")
+    val BOSS_TAG: Key = Key.key("projects", "hud_boss_tag")
     val BOSS_HP: Key = Key.key("projects", "hud_boss_hp")
     val BOSS_LV: Key = Key.key("projects", "hud_boss_lv")
     val WYRM_NAME: Key = Key.key("projects", "hud_wyrm_name")
     val WYRM_PCT: Key = Key.key("projects", "hud_wyrm_pct")
-    val uniFonts = setOf(BOSS_NAME, BOSS_HP, BOSS_LV, WYRM_NAME, WYRM_PCT)
+    val uniFonts = setOf(BOSS_NAME, BOSS_TAG, BOSS_HP, BOSS_LV, WYRM_NAME, WYRM_PCT)
     const val ASCII_BASE = 0xE600
 
     /** Vanilla ascii advances for the characters the HUD prints (ink width + 1, read from 26.2's ascii.png). */

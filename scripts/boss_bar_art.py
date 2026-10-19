@@ -1,8 +1,10 @@
 """Boss bar artwork (direction approved 2026-10-19).
 
-Graded bosses ("v3"): the combat HUD's own parts — the level diamond with a number plaque, wings and a
-crown that grow with the grade, a charcoal plate holding the name row, a thick HP gauge with the
-number inside and the break gauge as rage-bar cells. Dedicated bosses get a frame drawn from the boss
+Graded bosses: the combat HUD's own parts — the level diamond (larger for higher grades) with a number
+plaque over a charcoal plate holding the name row, a thick HP gauge with the number inside and the
+break gauge as rage-bar cells. The grade is a labelled tag on the plate's corner plus the plate's frame:
+none (精鋭) -> purple ring (希少) -> gold ring + gold corner brackets (特異) -> black iron and a red
+glowing ring with iron thorns out of the corners (厄災). Dedicated bosses get a frame drawn from the boss
 itself; the first is the shade wyrm (黒翳竜): its enraged fan of blade-like wing panels and its horned,
 eyeless head around a slim gauge.
 
@@ -17,10 +19,13 @@ import combat_hud_art as art
 import mob_hud_art as mob_art
 from combat_hud_art import OUT, hexc, new, px, rect, gem, step_plate, well
 
-# ---- graded layout -------------------------------------------------------------------------------
-EMBLEM_CY = 25                  # level diamond centre
-PLATE_X, PLATE_W, PLATE_TOP, PLATE_H = -118, 237, 31, 33   # odd widths: symmetric about column 0
-NAME_TOP = PLATE_TOP + 3        # name / grade / percentage row (8 px text)
+# ---- graded layout (2026-10-19: grade = a labelled tag + the plate's frame; Lost Ark-style restraint) ---
+EMBLEM_CY = 20                  # level diamond centre
+PLATE_X, PLATE_W, PLATE_TOP, PLATE_H = -118, 237, 28, 32   # odd widths: symmetric about column 0
+PLATE_PAD = 9                   # the plate glyph's margin for corner brackets, thorns and the tag
+NAME_TOP = PLATE_TOP + 4        # name / percentage row (8 px text)
+TAG_TOP = PLATE_TOP - 6         # grade label on the tag
+TAG_X = PLATE_X + 12            # tag plate left; its label starts 4 px in
 HP_X, HP_W, HP_TOP, HP_ROWS = -112, 225, PLATE_TOP + 13, 9
 HP_TEXT_TOP = HP_TOP + 1        # the HP number inside the gauge
 LV_TOP = EMBLEM_CY - 3          # the level number on the diamond's plaque
@@ -29,86 +34,114 @@ ICON_TOP = PLATE_TOP + PLATE_H + 1
 EMBLEM_W = 80                   # emblem glyph canvas, centred on x = 0
 
 TRAIL = hexc("c88a80")          # muted, so the white number inside the gauge stays readable
+CALAMITY_HP = (hexc("4a0608"), hexc("a8141c"), hexc("ff5a4a"))
 GRADES = ("elite", "rare", "unique", "calamity")
-ACCENT = {"elite": "4a8cff", "rare": "a35cff", "unique": "f0a020", "calamity": "e8283a"}
-MATS = dict(art.MAT)
-WINGS = {  # (dy, length, material, droop) per feather, mirrored
-    "elite": [],
-    "rare": [(-2, 9, "steel", 0), (2, 6, "steel", 1)],
-    "unique": [(-4, 13, "gold", -1), (0, 11, "gold", 0), (4, 8, "steel", 1)],
-    "calamity": [(-5, 15, "gold", -2), (-1, 13, "gold", 0), (3, 11, "gold", 1), (7, 7, "steel", 2)],
+PURPLE = ("d9b8ff", "a36cf0", "6a3aa8")
+GOLD = ("f2e6a0", "d0b35a", "9c7a34")
+IRON = ("5e5c6a", "3a3844", "1a1820")
+EMBER = ("ff6a3a", "e0302a", "8a1418")
+STYLE = {  # diamond radius, rim (light, mid, dark), band, tag colour, frames (outer first), corners, body, empty well
+    "elite": dict(r=11, rim=("c4c5ce", "8d8e99", "5e5f6a"), band="4a8cff", tag="4a8cff", frames=[], corners=None, body=None,
+                  empty=art.BOSS_EMPTY),
+    "rare": dict(r=13, rim=("c4c5ce", "8d8e99", "5e5f6a"), band="a35cff", tag="a36cf0", frames=[PURPLE], corners=None, body=None,
+                 empty=art.BOSS_EMPTY),
+    "unique": dict(r=14, rim=("fff2b0", "f0c040", "a8781c"), band="f0a020", tag="ffd25a", frames=[GOLD], corners="gold",
+                   body=hexc("2a2418"), empty=art.BOSS_EMPTY),
+    "calamity": dict(r=16, rim=("9a98a6", "66646f", "3e3c48"), band="e0302a", tag="ff5a3a", frames=[IRON, EMBER], corners="thorns",
+                     body=hexc("2e2630"), empty=(58, 20, 24, 255)),
 }
 
 
-def _paint(img, fill):
-    """Fill {(x, y): (material, tone)} with a 1 px outline only where nothing is drawn yet."""
-    edge = {(x + a, y + b) for (x, y) in fill for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1))} - set(fill)
-    for x, y in edge:
-        if 0 <= x < img.width and 0 <= y < img.height and img.getpixel((x, y))[3] == 0:
-            px(img, x, y, OUT)
-    for (x, y), (mat, tone) in fill.items():
-        px(img, x, y, hexc(MATS[mat][tone]))
-
-
-def _feathers(C, cy, spec):
-    """Feathers taper 3 -> 2 -> 1 px from the diamond outward, mirrored about C (the class wings' build)."""
-    f = {}
-    root = C - 15
-    for dy, length, mat, droop in spec:
-        for i in range(length):
-            th = 3 if i < length * .4 else 2 if i < length * .75 else 1
-            top = cy + dy - (i * 2) // 5 + (droop * i * i) // (length * length)
-            for t in range(th):
-                f[(root - i, top + t)] = (mat, 0 if t == 0 else 1 if t == 1 else 2)
-    return f | {(2 * C - x, y): v for (x, y), v in f.items()}
-
-
-def _crown(C, cy, mat):
-    """Three sword points on a band, the middle one tallest, mirrored; returns (fill, gem position)."""
-    tip = cy - art.DIAMOND_R - 1
-    f = {}
-
-    def put(x, y, t):
-        f[(x, y)] = (mat, t); f[(2 * C - x, y)] = (mat, t)
-    for k in range(4):
-        put(C - 5, tip - 1 - k, 0 if k == 3 else 1)
-    for k in range(7):
-        put(C, tip - 1 - k, 0 if k >= 5 else 1)
-        if k < 5:
-            put(C - 1, tip - 1 - k, 2)
-    for x in range(C - 6, C + 1):
-        put(x, tip, 1)
-    return f, (C, tip - 1)
+def _diamond(img, cx, cy, r, rim, band):
+    """The level diamond at any size: black outline, a rim lit on its upper third, a coloured band, dark centre."""
+    for j in range(-r - 1, r + 2):
+        w = r + 1 - abs(j); rect(img, cx - w, cy + j, cx + w + 1, cy + j + 1, OUT)
+    for j in range(-r, r + 1):
+        w = r - abs(j)
+        rect(img, cx - w, cy + j, cx + w + 1, cy + j + 1, hexc(rim[0] if j < -r // 2 else rim[1] if j < 0 else rim[2]))
+    for j in range(-r + 2, r - 1):
+        w = r - 2 - abs(j); rect(img, cx - w, cy + j, cx + w + 1, cy + j + 1, hexc(band))
+    for j in range(-r + 3, r - 2):
+        w = r - 3 - abs(j); rect(img, cx - w, cy + j, cx + w + 1, cy + j + 1, art.SLOT)
 
 
 def emblem(grade):
-    """Wings + diamond + crown + plaque for a grade. Glyph x = -EMBLEM_W // 2, top 0."""
-    img = new(EMBLEM_W, EMBLEM_CY + 16)
-    C, cy = EMBLEM_W // 2, EMBLEM_CY
-    accent = ACCENT[grade]
-    if WINGS[grade]:
-        _paint(img, _feathers(C, cy, WINGS[grade]))
-    art.diamond(img, C, cy, accent)
-    if grade == "calamity":
-        crown, at = _crown(C, cy, "gold")
-        _paint(img, crown)
-        gem(img, *at, accent)
-    gem(img, C, cy + 10, accent)
+    """Diamond (bigger for higher grades) + gem + number plaque. Glyph x = -EMBLEM_W // 2, top 0."""
+    st = STYLE[grade]
+    img = new(EMBLEM_W, EMBLEM_CY + 18)
+    C, cy, r = EMBLEM_W // 2, EMBLEM_CY, st["r"]
+    _diamond(img, C, cy, r, st["rim"], st["band"])
+    gem(img, C, cy + r - 3, st["band"])
     step_plate(img, C - 11, cy - 5, C + 12, cy + 6, cut=1)
     rect(img, C - 9, cy - 3, C + 10, cy + 4, (12, 12, 16, 255))
     return img
 
 
+def _frames(img, x0, y0, x1, y1, mats):
+    """Bevelled 1 px rings just inside the plate outline: light on top / left, dark on bottom / right."""
+    for k, m in enumerate(mats):
+        a0, b0, a1, b1 = x0 + 1 + k, y0 + 1 + k, x1 - 1 - k, y1 - 1 - k
+        rect(img, a0, b0, a1, b0 + 1, hexc(m[0])); rect(img, a0, b0, a0 + 1, b1, hexc(m[1]))
+        rect(img, a0, b1 - 1, a1, b1, hexc(m[2])); rect(img, a1 - 1, b0, a1, b1, hexc(m[2]))
+
+
+def _bracket(img, x, y, sx, sy):
+    """特異: an L-shaped gold bracket over a plate corner, mirrored by (sx, sy)."""
+    for i in range(7):
+        for t, col in enumerate((GOLD[0], GOLD[1])):
+            px(img, x + sx * i, y + sy * t, hexc(col)); px(img, x + sx * t, y + sy * i, hexc(col))
+
+
+def _thorns(img, x, y, sx, sy):
+    """厄災: three black iron thorns out of a plate corner (sideways, upward, the longest on the diagonal):
+    lit upper face, dark lower face, glowing red at the root."""
+    layer = new(img.width, img.height)
+    d = ImageDraw.Draw(layer)
+    for ux, uy, length, base in ((-1, 0, 9, 2.5), (0, -1, 8, 2.5), (-.72, -.72, 13, 3.2)):
+        ux, uy = ux * sx, uy * sy
+        nx, ny = -uy, ux
+        tip = (round(x + ux * length), round(y + uy * length))
+        d.polygon([(round(x + nx * base), round(y + ny * base)), tip, (x, y)], fill=hexc("5e5c6a"))
+        d.polygon([(round(x - nx * base), round(y - ny * base)), tip, (x, y)], fill=hexc("2a2832"))
+        d.line([(x, y), (round(x + ux * 2), round(y + uy * 2))], fill=hexc("e0302a"))
+    a = layer.getchannel("A").load()
+    for yy in range(max(0, y - 16), min(img.height, y + 17)):
+        for xx in range(max(0, x - 16), min(img.width, x + 17)):
+            if not a[xx, yy] and img.getpixel((xx, yy))[3] == 0 and any(
+                    0 <= xx + dx < img.width and 0 <= yy + dy < img.height and a[xx + dx, yy + dy]
+                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                px(layer, xx, yy, OUT)
+    img.alpha_composite(layer)
+
+
 def plate(grade):
-    """Charcoal plate with the HP well and the empty break cells; 厄災 adds a gold rule on its top edge."""
-    img = new(PLATE_W, PLATE_H)
-    step_plate(img, 0, 0, PLATE_W, PLATE_H)
-    well(img, HP_X - PLATE_X, HP_X - PLATE_X + HP_W, HP_TOP - PLATE_TOP, HP_ROWS, art.BOSS_EMPTY)
+    """Plate with its frame, corner pieces, grade tag, HP well and empty break cells.
+    Glyph x = PLATE_X - PLATE_PAD, top = PLATE_TOP - PLATE_PAD."""
+    st = STYLE[grade]
+    P = PLATE_PAD
+    img = new(PLATE_W + 2 * P, PLATE_H + 2 * P)
+    x0, y0, x1, y1 = P, P, P + PLATE_W, P + PLATE_H
+    step_plate(img, x0, y0, x1, y1)
+    if st["body"]:
+        rect(img, x0 + 3, y0 + 3, x1 - 3, y1 - 3, st["body"])
+        if grade == "calamity":  # bevel so the dark plate does not read flat
+            rect(img, x0 + 3, y0 + 3, x1 - 3, y0 + 4, hexc("4a404e"))
+            rect(img, x0 + 3, y1 - 4, x1 - 3, y1 - 3, hexc("1e1820"))
+    _frames(img, x0, y0, x1, y1, st["frames"])
+    well(img, x0 + HP_X - PLATE_X, x0 + HP_X - PLATE_X + HP_W, y0 + HP_TOP - PLATE_TOP, HP_ROWS, st["empty"])
     for i in range(CELL_COUNT):
-        x = CELL_X - PLATE_X + i * CELL_PITCH
-        rect(img, x, CELL_TOP - PLATE_TOP, x + CELL_PITCH - 1, CELL_TOP - PLATE_TOP + CELL_ROWS, art.RAGE_EMPTY)
-    if grade == "calamity":
-        rect(img, 3, 1, PLATE_W - 3, 2, hexc("d0b35a"))
+        x = x0 + CELL_X - PLATE_X + i * CELL_PITCH
+        rect(img, x, y0 + CELL_TOP - PLATE_TOP, x + CELL_PITCH - 1, y0 + CELL_TOP - PLATE_TOP + CELL_ROWS, art.RAGE_EMPTY)
+    corners = ((x0 - 1, y0 - 1, 1, 1), (x1, y0 - 1, -1, 1), (x0 - 1, y1, 1, -1), (x1, y1, -1, -1))
+    if st["corners"] == "gold":
+        for c in corners:
+            _bracket(img, *c)
+    elif st["corners"] == "thorns":
+        for (x, y, sx, sy) in ((x0 + 1, y0 + 1, 1, 1), (x1 - 2, y0 + 1, -1, 1), (x0 + 1, y1 - 2, 1, -1), (x1 - 2, y1 - 2, -1, -1)):
+            _thorns(img, x, y, sx, sy)
+    tx = x0 + TAG_X - PLATE_X
+    step_plate(img, tx, y0 - 8, tx + 26, y0 + 4, cut=1)
+    rect(img, tx + 1, y0 - 7, tx + 25, y0 - 6, hexc(st["tag"]))
     return img
 
 

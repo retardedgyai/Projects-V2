@@ -30,13 +30,17 @@ internal object CoreDamageNumbers {
 
 /**
  * Boss bar drawn by the name component of a PINK boss bar (whose vanilla sprites the pack blanks).
- * Graded bosses: the level diamond (wings and a crown grow with the grade) over a charcoal plate with the
- * grade + name row, a thick HP gauge with the number inside and the break gauge as cells. A dedicated boss
+ * Graded bosses: the level diamond (larger for higher grades) over a charcoal plate with the name row, a
+ * thick HP gauge with the number inside and the break gauge as cells; the grade is a labelled tag on the
+ * plate's corner and the plate's frame (purple ring, gold ring and brackets, black iron with thorns). A dedicated boss
  * swaps all of it for a frame drawn from the boss (shade wyrm: its fan of wing blades and horned head).
  * Every row sits at its own font's height (scripts/boss_bar_art.py), so text is not tied to the title line.
  */
 internal object CoreBossBarHud {
     const val PLATE_X = -118
+    /** The plate glyph carries a margin for its corner pieces and grade tag (boss_bar_art.PLATE_PAD). */
+    const val PLATE_PAD = 9
+    const val TAG_X = PLATE_X + 12
     const val PLATE_W = 237
     const val EMBLEM_X = -40
     const val HP_X = -112
@@ -69,11 +73,12 @@ internal object CoreBossBarHud {
     fun render(hud: MobHud, trail: Double): Component =
         if (hud.dedicated == "shade_wyrm") wyrm(hud, trail) else graded(hud, trail)
 
-    private fun CoreHudLine.gauge(prefix: String, x: Int, width: Int, hud: MobHud, trail: Double) {
+    /** [fill]: the fill glyph family (boss_fill, boss_fillc, wyrm_fill); the trail is that family's *_trail. */
+    private fun CoreHudLine.gauge(fill: String, x: Int, width: Int, hud: MobHud, trail: Double) {
         val filled = CoreHudLayout.fillWidth(hud.health, hud.maximumHealth, width)
         val trailing = CoreHudLayout.fillWidth(maxOf(hud.health, trail.takeIf { it.isFinite() } ?: hud.health), hud.maximumHealth, width)
-        fill("${prefix}_fill", x, filled, 128)
-        if (trailing > filled) fill("${prefix}_trail", x + filled, trailing - filled, 128)
+        fill(fill, x, filled, 128)
+        if (trailing > filled) fill(fill.substringBefore('_') + "_trail", x + filled, trailing - filled, 128)
     }
 
     private fun CoreHudLine.cells(prefix: String, hud: MobHud) {
@@ -94,23 +99,19 @@ internal object CoreBossBarHud {
 
     private fun graded(hud: MobHud, trail: Double): Component {
         val line = CoreHudLine()
-        val grade = (if (hud.grade == MobGrade.COMMON) MobGrade.ELITE else hud.grade).name.lowercase()
-        line.put(PLATE_X, "boss_plate_$grade")
-        line.put(EMBLEM_X, "boss_emblem_$grade")
-        line.gauge("boss", HP_X, HP_W, hud, trail)
+        val grade = if (hud.grade == MobGrade.COMMON) MobGrade.ELITE else hud.grade
+        val key = grade.name.lowercase()
+        line.put(PLATE_X - PLATE_PAD, "boss_plate_$key")
+        line.put(EMBLEM_X, "boss_emblem_$key")
+        line.gauge(if (grade == MobGrade.CALAMITY) "boss_fillc" else "boss_fill", HP_X, HP_W, hud, trail)
         for (q in 1..3) line.put(HP_X + HP_W * q / 4, "boss_tick")
         line.cells("boss", hud)
         hud.effects.take(MAX_ICONS).forEachIndexed { i, effect -> line.put(PLATE_X + 2 + i * ICON_PITCH, "boss_icon_${effect.icon}") }
+        line.uni(TAG_X + 4, grade.label, CoreHudGlyphs.BOSS_TAG, CoreMobNameplate.color(grade))
         val lv = hud.level.coerceIn(0, 999).toString()
         line.uni(centred(CoreHudGlyphs.uniWidth(lv)), lv, CoreHudGlyphs.BOSS_LV, LEVEL)
-        val nameX = PLATE_X + 6
-        val override = title(hud)
-        if (override != null) line.uni(nameX, override.first, CoreHudGlyphs.BOSS_NAME, override.second)
-        else {
-            val label = (if (hud.grade == MobGrade.COMMON) MobGrade.ELITE else hud.grade).label
-            line.uni(nameX, label, CoreHudGlyphs.BOSS_NAME, CoreMobNameplate.color(if (hud.grade == MobGrade.COMMON) MobGrade.ELITE else hud.grade))
-            line.uni(nameX + CoreHudGlyphs.uniWidth(label) + 4, hud.name, CoreHudGlyphs.BOSS_NAME, WHITE)
-        }
+        val (title, color) = title(hud) ?: (hud.name to WHITE)
+        line.uni(PLATE_X + 6, title, CoreHudGlyphs.BOSS_NAME, color)
         val pct = percent(hud.health, hud.maximumHealth)
         line.uni(PLATE_X + PLATE_W - 6 - CoreHudGlyphs.uniWidth(pct) + 1, pct, CoreHudGlyphs.BOSS_NAME, WHITE)
         val number = "${grouped(hud.health)} / ${grouped(hud.maximumHealth)}"
@@ -122,7 +123,7 @@ internal object CoreBossBarHud {
         val line = CoreHudLine()
         line.put(WYRM_FRAME_X, "wyrm_frame_l")
         line.put(0, "wyrm_frame_r")
-        line.gauge("wyrm", WYRM_HP_X, WYRM_HP_W, hud, trail)
+        line.gauge("wyrm_fill", WYRM_HP_X, WYRM_HP_W, hud, trail)
         line.cells("wyrm", hud)
         val icons = hud.effects.take(MAX_ICONS)
         icons.forEachIndexed { i, effect ->

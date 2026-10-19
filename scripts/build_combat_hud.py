@@ -268,6 +268,7 @@ def unifont_glyphs(chars):
 
 BOSS_TEXT_FONTS = {  # font -> top of its 8 px text row (boss bar: ascent = 10 - top)
     "hud_boss_name": boss_art.NAME_TOP,
+    "hud_boss_tag": boss_art.TAG_TOP,
     "hud_boss_hp": boss_art.HP_TEXT_TOP,
     "hud_boss_lv": boss_art.LV_TOP,
     "hud_wyrm_name": boss_art.WYRM_NAME_TOP,
@@ -359,8 +360,10 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     # -- boss bar (boss_bar_art): graded v3 and the shade wyrm's own frame -----------------------
     boss = FontBuilder("projects:hud_boss")
     boss.group("hud_boss_emblem", [(f"boss_emblem_{g}", boss_art.emblem(g)) for g in boss_art.GRADES], 10)
-    boss.group("hud_boss_plate", [(f"boss_plate_{g}", boss_art.plate(g)) for g in boss_art.GRADES], 10 - boss_art.PLATE_TOP, columns=1)
+    boss.group("hud_boss_plate", [(f"boss_plate_{g}", boss_art.plate(g)) for g in boss_art.GRADES],
+               10 - (boss_art.PLATE_TOP - boss_art.PLATE_PAD), columns=1)
     rows = [(f"boss_fill_{w}", art.gauge_fill(w, boss_art.HP_ROWS, art.BOSS)) for w in BINARY]
+    rows += [(f"boss_fillc_{w}", art.gauge_fill(w, boss_art.HP_ROWS, boss_art.CALAMITY_HP)) for w in BINARY]
     rows += [(f"boss_trail_{w}", art.flat(w, boss_art.HP_ROWS, boss_art.TRAIL)) for w in BINARY]
     rows += [("boss_tick", art.flat(1, boss_art.HP_ROWS, (0, 0, 0, 120)))]
     boss.group("hud_boss_fill", rows, 10 - boss_art.HP_TOP)
