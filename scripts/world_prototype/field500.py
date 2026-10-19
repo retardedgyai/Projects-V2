@@ -740,13 +740,24 @@ def torii(cx, cz, y, ux, uz, half=3, h=6):
     for s2 in range(-half - 1, half + 2):
         if abs(s2) == half: continue
         bx, bz = P(s2); put(bx, nuki_y, bz, "red_concrete")
-    bx, bz = P(0); put(bx, nuki_y + 1, bz, "black_concrete")
+    big = h >= 14
+    bx, bz = P(0)
+    for yy in range(nuki_y + 1, y + h): put(bx, yy, bz, "polished_deepslate")       # the plaque, a dark board, not a hole
+    if big:                                                          # a big gate: two-block-thick posts look right at scale
+        for s2 in (-half, half):
+            for k in (1,):
+                bx2, bz2 = P(s2 + (k if s2 > 0 else -k))
+                put(bx2, y + 1, bz2, "polished_andesite")
+                for yy in range(y + 2, y + h + 1): put(bx2, yy, bz2, "red_concrete")
     for s2 in range(-half - 1, half + 2):
         bx, bz = P(s2); put(bx, y + h, bz, "red_concrete")
-    for s2 in range(-half - 2, half + 3):
-        bx, bz = P(s2); put(bx, y + h + 1, bz, "deepslate_tiles", shape="full" if abs(s2) < half + 2 else "slab")
-    for s2 in (-half - 2, half + 2):
-        bx, bz = P(s2); put(bx, y + h + 2, bz, "deepslate_tiles", shape="slab")
+    ext = half + (3 if big else 2)
+    for s2 in range(-ext, ext + 1):
+        bx, bz = P(s2); put(bx, y + h + 1, bz, "deepslate_tiles", shape="full" if abs(s2) < ext else "slab")
+        if big and abs(s2) < ext - 1: put(bx, y + h + 2, bz, "deepslate_tiles", shape="slab")
+    for s2 in (-ext, ext):
+        bx, bz = P(s2); put(bx, y + h + 2, bz, "deepslate_tiles", shape="slab" if not big else "full")
+        if big: put(bx, y + h + 3, bz, "deepslate_tiles", shape="slab")
     bx, bz = P(0)
     for (dx, dz) in ((0, 0),):
         pass
@@ -935,7 +946,7 @@ def torii_on(samples, d, every):
     for i2, (cx, cz, deck, u) in enumerate(samples):
         if .08 < u < .92 and i2 % every == 0:
             torii(cx, cz, deck, d[0], d[1], half=3, h=6)
-def landing_torii(samples, d, at_start, half=2, h=6):
+def landing_torii(samples, d, at_start, half=3, h=11):
     """A torii on the flat top just before/after a bridge, never on the slope."""
     pts = samples if not at_start else samples[::-1]
     for (cx, cz, deck, u) in pts:
@@ -948,7 +959,7 @@ landing_torii(BR1, D1, at_start=False)                              # arriving o
 landing_torii(BR2, D2, at_start=True)                               # leaving pillar 2 toward the boss
 P0x, P0z, P0y, _, P0r, _ = PILLARS[0]
 for (dx, dz) in ((0, -int(P0r * .6)),):                             # a single small torii marks the start of the sando on the first pillar
-    torii(P0x + dx, P0z + dz + 6, P0y, 0, 1, half=2, h=5)
+    torii(P0x + dx, P0z + dz + 6, P0y, 0, 1, half=3, h=10)
 for x in range(ex - 3, ex + 4):                                     # the plateau edge where the first bridge starts
     for z in range(ez - 4, ez + 1):
         UPPER[z, x] = max(UPPER[z, x], at(x, z))
@@ -1098,7 +1109,7 @@ for k2 in range(int(math.tau * (AR + 2))):                          # tamagaki: 
     put(x, SY_ + 1, z, "red_concrete", shape="fence"); put(x, SY_ + 2, z, "red_concrete", shape="slab")
     if k2 % 9 == 0: put(x, SY_ + 3, z, "lantern", shape="lantern")
 gx0, gz0 = SX_ + math.cos(ent_a) * (AR + 2), SZ_ + math.sin(ent_a) * (AR + 2)
-torii(gx0, gz0, SY_, -math.cos(ent_a), -math.sin(ent_a), half=4, h=9)   # the great torii at the entrance
+torii(gx0, gz0, SY_, -math.cos(ent_a), -math.sin(ent_a), half=5, h=17)   # the great torii at the entrance
 for k2 in range(16):                                                # lanterns on the gravel band
     a = ent_a + (k2 + .5) / 16 * math.tau
     if abs(math.atan2(math.sin(a - ent_a), math.cos(a - ent_a))) < .4: continue
@@ -1148,9 +1159,9 @@ for k2 in range(0, 40):
             for y in range(SY_ + 1, SY_ + 10):
                 if w.b.get((x, y, z), ("", "", ""))[1] in ("cherry_log", "cherry_leaves"): w.b.pop((x, y, z), None)
 for k2 in range(1, 9):
-    cx, cz = startx + ux2 * (3 + k2 * 7), startz + uz2 * (3 + k2 * 7)
+    cx, cz = startx + ux2 * (3 + k2 * 8), startz + uz2 * (3 + k2 * 8)
     if math.hypot(cx - SX_, cz - SZ_) < AR + 6: break
-    torii(cx, cz, SY_ - 1, ux2, uz2, half=3, h=7)
+    torii(cx, cz, SY_ - 1, ux2, uz2, half=3, h=12)
     for s2 in (-4, 4):
         stone_lantern(int(round(cx - uz2 * s2)), int(round(cz + ux2 * s2)), SY_)
 # the sacred sakura (goshinboku) behind the arena, opposite the entrance, wrapped in a shimenawa
