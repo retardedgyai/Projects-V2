@@ -340,7 +340,9 @@ class QuestEncounterCombat(
         val mob = mobs[targetId] ?: return false
         val target = mob.target ?: instance.players.minByOrNull { it.position.distanceSquared(mob.entity.position) } ?: return false
         mob.target = target
-        mob.abilities.cancel(); clearWarning(mob.entity.uuid)
+        // Whatever the free AI was doing (a flight, the pause between moves, an opening) ends here.
+        mob.maneuver = null; mob.combo = null; mob.openUntil = 0L
+        mob.abilities.reset(); clearWarning(mob.entity.uuid)
         val start = mob.abilities.tryStart(now, mob.entity.position, target.position, mob.life.health / mob.life.maximumHealth, only = abilityId) ?: return false
         mob.life.phase = QuestMobPhase.ATTACKING
         return handleAbilityEvent(mob, start, instance.players.toList())

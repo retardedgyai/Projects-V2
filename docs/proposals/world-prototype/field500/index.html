@@ -1,0 +1,134 @@
+<title>巨樹の根の丘</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;700&family=DotGothic16&display=swap">
+<style>
+/* layout: a field journal — one large plate, tabs along the top, a short note under the plate */
+:root {
+  --bg: #e9ecdf; --panel: #f7f8f1; --ink: #1f2a1c; --muted: #5d6a57; --line: #c8cfbb; --accent: #b4462f;
+  --plate: #12141f;
+  --f-body: "M PLUS 2", "Hiragino Sans", "Noto Sans CJK JP", sans-serif;
+  --f-label: "DotGothic16", "M PLUS 2", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #151a14; --panel: #1d241c; --ink: #e4ead9; --muted: #9aa78f; --line: #33402f; --accent: #e07257; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #151a14; --panel: #1d241c; --ink: #e4ead9; --muted: #9aa78f; --line: #33402f; --accent: #e07257; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); line-height: 1.7;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px }
+header h1 { font-family: var(--f-label); font-weight: 400; font-size: 1.9rem; margin: 0; letter-spacing: .04em; text-wrap: balance }
+header p { margin: 2px 0 0; color: var(--muted); font-size: .92rem }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px }
+.tabs button { font: inherit; font-size: .9rem; padding: 6px 14px; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  border-radius: 6px; cursor: pointer }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink) }
+.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.plate { background: var(--plate); border-radius: 8px; overflow: hidden }
+.plate img { display: block; width: 100%; height: auto }
+.note { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px }
+.note h2 { margin: 0; font-size: 1.05rem }
+.note p { margin: 4px 0 0; color: var(--muted); font-size: .92rem; max-width: 65ch }
+.lv { font-family: var(--f-label); font-size: .95rem; color: var(--accent); white-space: nowrap; padding-top: 2px }
+.rules { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px }
+.rules h2 { margin: 0 0 6px; font-size: 1.05rem }
+.rules ol { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; font-size: .92rem }
+.rules .src { margin-top: 10px; font-size: .8rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px }
+.rules a { color: var(--ink) }
+small.cap { color: var(--muted); font-size: .8rem }
+</style>
+<div class="wrap">
+  <header>
+    <h1>巨樹の根の丘</h1>
+    <p>500×500 ブロックのフィールド1枚。高さの違う3段を道でつなぎ、ガウル平原風の岩の柱と桜のボスがある。今回は WorldPainter の地形の作り方を調べて、地面と崖のブロックを作り直した。</p>
+  </header>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="plate"><img id="plate" alt=""></div>
+  <div class="note"><div><h2 id="n-title"></h2><p id="n-text"></p></div><div class="lv" id="n-lv"></div></div>
+  <section class="rules">
+    <h2>WorldPainter の作り方から取った決まり</h2>
+    <ol>
+      <li>地面の材料は傾きで決める。平地は草の混ぜ物、25〜45°は「丘」の混ぜ物（草・粗い土・石・安山岩・砂利＝3:3:3:2:1）、45°より急なら「岩」の混ぜ物（石65・安山岩10・丸石5.5・灰色の粉5・砂利4・土2・鉱石と苔石を少し）。</li>
+      <li>混ぜ物は1ブロックずつばらまかず、かたまり（ブロブ）で置く。境目だけ少しまだらにして、2つの地面がなじむようにする。</li>
+      <li>森の床は別の混ぜ物（ポドゾル・粗い土・草・苔）。水のそばは苔・草・泥。</li>
+      <li>崖は、上と外側に明るい石（石・安山岩）、真ん中につなぎの石（砂利・凝灰岩・丸石）、下とくぼみに暗い石（深層岩）。横じまにせず、縦の不規則なすじにする。苔は上のふちから水が伝うように縦に垂らす。</li>
+      <li>水辺は草を水ぎわまで残し、砂の帯を作らない。底は砂利と粘土。道は中央が踏み固めた土、縁ほど砂利と粗い土。</li>
+      <li>草花は全体に薄くまかず、草はかたまり、花は1種類ずつの群れ、森の中は羊歯。丘には苔むした小石を少し。</li>
+      <li>（今回追加）自然の地形でまっすぐな線を7ブロック以上続けない。段の高さは1〜3ブロックを混ぜる。</li>
+      <li>（今回追加）崖の足元には崩れ落ちた石の山（ガレ場）がある。砂利・丸石を下地に、ところどころ苔むした小岩。</li>
+      <li>（今回追加）崖面の仕上げは苔・光る地衣類・つる・垂れ根。滝の下は上より荒らす（砂利の縁、苔石）。</li>
+      <li>（今回追加）森の縁は段々に：草地 → 茂み → 若木 → 大木。木の下に落ち葉。</li>
+    </ol>
+    <h2 style="margin-top:12px">ボス周りで取った決まり</h2>
+    <ol>
+      <li>闘技場は広く平らで、中に引っかかる物を置かない。境目（段差・柵）がひと目で分かる。入口は1つ。</li>
+      <li>目印（御神木の大桜）は闘技場の外、入口の正面奥に置き、入った瞬間に見える。</li>
+      <li>鳥居は明神鳥居の形：石の台、朱の柱、柱の外まで出る貫、額、反り上がった笠木。石灯籠は台・竿・火袋・笠・宝珠。</li>
+      <li>和の色は朱・黒い瓦・白い石・桜色の4つにしぼり、床に模様（同心円と放射線）を入れる。</li>
+    </ol>
+    <div class="src">
+      <a href="https://bugnet.io/blog/how-to-design-a-boss-arena" target="_blank" rel="noopener">ボス闘技場の作り方</a>
+      <a href="https://buildingguide.app/tutorials/japanese-gate" target="_blank" rel="noopener">鳥居（笠木と貫）</a>
+      <a href="https://foreveryard.com/how-to-make-torii-gate-in-minecraft/" target="_blank" rel="noopener">鳥居の比率</a>
+      <a href="https://en.wikipedia.org/wiki/Shimenawa" target="_blank" rel="noopener">注連縄</a>
+      <a href="https://www.planetminecraft.com/projects/?keywords=sakura+arena" target="_blank" rel="noopener">桜の闘技場の作品（Planet Minecraft）</a>
+    </div>
+    <h2 style="margin-top:12px">地形の出典</h2>
+    <div class="src">
+      <a href="https://polystruct.github.io/creative/worldpainter/custom.html" target="_blank" rel="noopener">WorldPainter カスタム地形の例（配合）</a>
+      <a href="https://www.worldpainter.net/trac/wiki/Manual/Paints/Terrains" target="_blank" rel="noopener">WorldPainter 公式マニュアル（地形）</a>
+      <a href="https://hypixel.net/threads/guide-advanced-terraforming-part-2-world-painter.137630/" target="_blank" rel="noopener">Hypixel 上級地形ガイド（傾き55°で石）</a>
+      <a href="https://minecraftgradient.blog/deepslate-to-stone-gradient/" target="_blank" rel="noopener">崖のグラデーション（縦のすじ）</a>
+      <a href="https://blockblend.app/guides/minecraft-terrain-gradients" target="_blank" rel="noopener">地形のグラデーション配合</a>
+      <a href="https://www.minecraft.net/en-us/article/tutorial--tips-for-landscaping-and-terraforming" target="_blank" rel="noopener">minecraft.net 造園と地形のコツ（水辺）</a>
+      <a href="https://ender-chest.com/building/minecraft-terraforming-landscaping-guide" target="_blank" rel="noopener">EnderChest 地形ガイド（7ブロック・下地/混ぜ/仕上げ）</a>
+      <a href="https://en.wikipedia.org/wiki/Scree" target="_blank" rel="noopener">ガレ場（崖下の崩落石）</a>
+      <a href="https://en.wikipedia.org/wiki/Woodland_edge" target="_blank" rel="noopener">森の縁（茂み→若木→大木）</a>
+    </div>
+  </section>
+  <small class="cap">ゲームの外で、本物のブロックの絵を使って描いた試作。モブは形と色だけの仮置き。</small>
+</div>
+<script>
+const SHOTS = [
+  { id: "arena", tab: "ボス闘技場（入口側から）", img: "arena-nw.png", title: "桜のボス闘技場：参道から見たところ", text: "橋を渡ると、鳥居のトンネルと石灯籠の参道。大鳥居（明神鳥居：石の台、朱の柱、柱の外まで出た貫、額、反り上がった黒い笠木）をくぐると、一段高い円い石の床。床は5ブロックごとの同心円と8本の放射線、中央に金の印。まわりは朱の玉垣（低い柵）で、入口だけ開いている。闘技場の中には木も障害物も置かず、どこで戦っても見通せる。外側に砂利の帯と石灯籠16基、四方に瓦屋根の小さな社4棟。いちばん奥に注連縄を巻いたしだれ桜の御神木。今回：境内（闘技場から約35ブロック）の桜をいったん全部どけて、見通しを決めてから植え直した（入口と御神木の方向はあける）。床の中央に五弁の桜の紋（桜色と金）。玉垣の柱に灯り。社は二重屋根に。左右に睡蓮の浮く池（木の陰で絵では見えにくい）。", lv: "ボス" },
+  { id: "arenaprev", tab: "闘技場（前回）", img: "arena-nw-prev.png", title: "闘技場（前回）", text: "前回。柱にもともと生えていた桜が社や柵を隠していた。", lv: "前回" },
+  { id: "arena2", tab: "ボス闘技場（反対側から）", img: "arena-se.png", title: "反対側から：御神木が手前", text: "いつもの角度だと御神木が手前に来て闘技場を隠すので、入口側からの絵も作った。", lv: "ボス" },
+  { id: "scarp", tab: "崖（今回）", img: "f5-scarp.png", title: "崖：ギザギザの線、崩れた石、光る地衣類", text: "崖の線を細かくジグザグにし、まっすぐな段が7ブロック以上続かないようにした。段の高さも1〜3ブロックでばらばら。崖の足元には崩れ落ちた石（砂利・丸石・苔石の小岩）が溜まり、崖面には光る地衣類・垂れ根・つる。", lv: "今回" },
+  { id: "scarp1", tab: "崖（前回）", img: "v2-scarp.png", title: "崖（前回）", text: "前回。縦のすじと明暗はあるが、崖の線がまっすぐで階段が規則的。", lv: "前回" },
+  { id: "gap", tab: "中段（今回）", img: "f5-gap.png", title: "中段：森の縁と足元", text: "森と草地の境目に茂みと若木を置き、いきなり大木が立たないようにした。木の下には落ち葉。崖の線も入り組んだ。", lv: "今回" },
+  { id: "gap1", tab: "中段（前回）", img: "v2-gap.png", title: "中段（前回）", text: "前回。", lv: "前回" },
+  { id: "ramp", tab: "崖と坂（今回）", img: "f5-ramp.png", title: "段と坂（今回）", text: "最初の版は次のタブ。", lv: "今回" },
+  { id: "ramp0", tab: "崖と坂（前）", img: "before-ramp.png", title: "段と坂（前の版）", text: "前の版。地面は草ばかりで、崖は石の横じま。", lv: "前" },
+  { id: "gap", tab: "中段（新）", img: "f5-gap.png", title: "中段の一角（新しい材料）", text: "草地は草・粗い土・苔のかたまり、森の近くはポドゾルと羊歯。", lv: "新" },
+  { id: "gap0", tab: "中段（前）", img: "before-gap.png", title: "中段の一角（前の版）", text: "前の版。", lv: "前" },
+  { id: "pond", tab: "池（新）", img: "f5-pond.png", title: "池（新しい材料）", text: "水ぎわは苔・草・泥、底は砂利と粘土。砂の帯をやめた。", lv: "新" },
+  { id: "pond0", tab: "池（前）", img: "before-pond.png", title: "池（前の版）", text: "前の版。水ぎわに砂の帯がある。", lv: "前" },
+  { id: "mesa", tab: "柱の肌（新）", img: "f5-mesa.png", title: "岩の柱の肌（新しい材料）", text: "柱のくびれは影になるので暗い石、上の張り出しは明るい石。苔はふちから縦に垂れる。", lv: "新" },
+  { id: "spring1", tab: "柱の泉（新）", img: "f5-pillar1.png", title: "柱の泉と滝（新しい材料）", text: "前の版は次のタブ。", lv: "新" },
+  { id: "spring0", tab: "柱の泉（前）", img: "before-pillar1.png", title: "柱の泉と滝（前の版）", text: "前の版。", lv: "前" },
+  { id: "all", tab: "全体", img: "field500-guide.png", title: "全体の案内図", text: "南の低地・中央の中段・北の高台の3段。岩の柱を岩の橋で渡るほど桜が増え、いちばん高い柱が桜のボス。", lv: "500×500" },
+  { id: "pillars", tab: "岩の柱と桜", img: "f5-pillars.png", title: "岩の柱と桜のグラデーション", text: "高台から岩の橋で柱を渡っていくほど桜と鳥居が増える。", lv: "道" },
+  { id: "boss", tab: "ワールドボス（桜）", img: "f5-sakura.png", title: "ワールドボス：桜の闘技場", text: "いちばん高い柱の上。鳥居のトンネルと石灯籠の参道、花びらの床、奥に大きなしだれ桜。", lv: "ボス" },
+  { id: "check", tab: "検証", img: "field500-check.png", title: "検証：歩いて行けるか、空白がないか", text: "平地の99.6%と、柱の上と橋の全部（16777マス）に歩いて行ける。", lv: "検証" },
+];
+const tabs = document.getElementById("tabs");
+function show(id) {
+  const s = SHOTS.find(x => x.id === id) || SHOTS[0];
+  document.getElementById("plate").src = s.img;
+  document.getElementById("plate").alt = s.title;
+  document.getElementById("n-title").textContent = s.title;
+  document.getElementById("n-text").textContent = s.text;
+  document.getElementById("n-lv").textContent = s.lv;
+  for (const b of tabs.children) b.setAttribute("aria-selected", String(b.dataset.id === s.id));
+  try { localStorage.setItem("f5tab", s.id) } catch (e) {}
+}
+for (const s of SHOTS) {
+  const b = document.createElement("button");
+  b.id = "tab-" + s.id; b.dataset.id = s.id; b.role = "tab"; b.textContent = s.tab;
+  b.addEventListener("click", () => show(s.id));
+  tabs.appendChild(b);
+}
+let start = (location.hash || "").slice(1);
+if (!start) { try { start = localStorage.getItem("f5tab") || "" } catch (e) {} }
+show(start || "arena");
+</script>
