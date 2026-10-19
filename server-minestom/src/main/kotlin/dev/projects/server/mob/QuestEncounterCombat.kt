@@ -169,6 +169,8 @@ class QuestEncounterCombat(
     private val shaderFx = ShadeWyrmShaderFx(instance)
     private val lights = ShadeWyrmLights(instance)
     private val gimmicks = ShadeWyrmGimmicks(tier, shaderFx, lights = lights)
+    /** 桜牙獣's petal storm (only built when the encounter has one). */
+    private var sakuraFx: SakuraPetalFx? = null
     /** Players who have the boss glow post effect on (26.3 /posteffect, assets/projects/post_effect/shade_glow.json). */
     private val glowing = mutableSetOf<Player>()
     /** 翳の巣's rage clock: started when the wyrm enrages, it turns the arena's light violet (BossArenaFactory.SHADE_RAGE). */
@@ -465,6 +467,7 @@ class QuestEncounterCombat(
             mob.entity.kill()
             mob.model?.dispose()
             mob.view?.die()
+            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) sakuraFx?.death()
             // Health is already terminal before this callback can re-enter the runtime.
             onMobDefeated(attacker, mob.boss)
         } else {
@@ -489,6 +492,12 @@ class QuestEncounterCombat(
         rageClock?.let { if (!it.paused() && it.time() >= dev.projects.server.coreloop.adventure.BossArenaFactory.RAGE_FADE_TICKS) it.pause() }
         if (mobs.values.any { it.shade }) gimmicks.tick(nowMillis, instance.players.filter { canTarget(it) }) { p, amount, type ->
             if (typedDamagePlayer != null) typedDamagePlayer.invoke(p, amount, type) else damagePlayer(p, amount)
+        }
+        mobs.values.firstOrNull { it.definition.archetype == QuestMobArchetype.SAKURA_FANG }?.let { mob ->
+            // Ticks on after the death too, so the falling petals finish.
+            val fx = sakuraFx ?: SakuraPetalFx(instance).also { sakuraFx = it }
+            val view = mob.view
+            fx.tick(mob.entity.position, mob.enraged) { bone, px -> view?.point(bone, px) }
         }
         val players = instance.players.filter { canTarget(it) }
         if (actionsStoppedForReturn) {
@@ -539,6 +548,7 @@ class QuestEncounterCombat(
         glowing.forEach { it.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList())) }
         glowing.clear()
         shaderFx.dispose()
+        sakuraFx?.dispose()
         mobs.values.forEach { mob ->
             mob.abilities.cancel()
             stopNavigation(mob)
@@ -808,6 +818,7 @@ class QuestEncounterCombat(
             castingPose(mob, false)
             stopNavigation(mob)
             mob.view?.enrage(now)
+            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) sakuraFx?.enrage()
             mob.warningRetryAt = mob.enrageHoldUntil
             updateName(mob, if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) "怒り・花が開いた" else "怒り・翼を広げた")
             sound(mob.entity.position, "minecraft:entity.ravager.roar", 1.2f, 0.6f)
@@ -1091,6 +1102,8 @@ class QuestEncounterCombat(
                 if (event.frame.ability.id == TURN_SWEEP) mob.behindSince = 0L
                 updateName(mob, event.frame.ability.displayName)
                 mob.view?.ability(event.frame.ability.id)
+                if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG)
+                    sakuraFx?.start(event.frame.ability.id, event.frame.ability.telegraphMillis / 1000.0)
                 if (!drawWarning(mob, event.frame, false)) {
                     cancelWarning(mob)
                     return false

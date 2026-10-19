@@ -8,6 +8,9 @@
 //   noise, a hot leading edge, dissolving tails.
 // - Warrior iron strikes (scripts/build_warrior_iron_vfx.py): texels whose alpha is a marker. 253 = heat,
 //   self-lit and flickering; 121 / 65 = near / far glow halo.
+// - 桜牙獣 petal storm (SakuraPetalFx): items whose tint is blue == 78, green == 100 + heat * 100, red == fade. The
+//   texture is a data map (R mask, G along: the petal at 0 .. the ribbon end at 1, B across): a white-hot petal
+//   that cools to pink, trailing a glowing ribbon.
 // - 桜牙獣 (scripts/build_boss_sakura_fang.py): texels with alpha 200..215 and R/G/B low bits 1/2/3 glow, and a
 //   light runs along them: alpha - 200 is the texel's place on the flow (0 shoulders .. 15 tail tip).
 // The VFX colours are self-lit (no overlay, lightmap or glint) but go through the same OIT phases and fog as vanilla.
@@ -162,6 +165,26 @@ void main() {
             discard;
         }
         finishUnlit(fx);
+        return;
+    }
+    if (markerB == 78 && kind >= 100 && kind <= 200) {
+        float fade = rawColor.r;
+        float heat = float(kind - 100) / 100.0;
+        float along = color.g, across = color.b, mask = color.r;
+        vec3 core = vec3(1.0, .93, .96), hot = vec3(1.0, .58, .77), deep = vec3(.78, .22, .50);
+        vec4 fx;
+        if (along < .2) {                                  // the petal itself
+            fx = vec4(mix(mix(hot, core, .55 + .45 * heat), hot, across * .5), mask * min(1.0, fade * 1.4));
+        } else {                                           // its ribbon, fading behind it
+            float t = (along - .2) / .8;
+            float shimmer = .85 + .15 * sin(GameTime * 24000.0 * .8 + along * 30.0);
+            vec3 c = mix(mix(hot, core, heat * (1.0 - t)), deep, t * t);
+            fx = vec4(c * (1.1 - .4 * t), mask * pow(1.0 - t, 1.3) * .8 * fade * shimmer);
+        }
+        if (fx.a < .01) {
+            discard;
+        }
+        finishUnlit(fx * vec4(ColorModulator.rgb, ColorModulator.a));
         return;
     }
     int marker = int(color.a * 255.0 + 0.5);

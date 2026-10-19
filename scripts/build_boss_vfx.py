@@ -75,13 +75,35 @@ def curtain(u, v):
     return smooth(0, .18, u) * smooth(0, .18, 1 - u), u, 1 - v
 
 
+def streak(u, v):
+    """桜牙獣 petal with its light ribbon (scripts/build_boss_sakura_fang.py): the notched petal at the top (v < .2),
+    the ribbon fading down to the bottom. G = along (0 head .. 1 ribbon end), B = across."""
+    across = abs(2 * u - 1)
+    if v < .2:
+        w = v / .2                                       # 0 tip .. 1 base of the petal
+        half = (.35 + .65 * math.sin(math.pi * min(1, .15 + w * .85)) ** .7) * (1 - .5 * w * w)
+        if across > half or (w < .16 and across < .22):
+            return 0, 0, 0
+        return 1, v, across
+    return (1 - across ** 1.3) * (1 - (v - .2) / .8) ** .4, v, across
+
+
 SPRITES = {"slash": (128, 128, slash, "flat"), "ring": (64, 64, ring, "flat"), "beam": (32, 128, beam, "flat"),
            "beam_up": (128, 32, lambda u, v: beam(v, u), "upright"), "ring_up": (64, 64, ring, "upright"), "puff": (32, 32, puff, "upright"), "smoke": (32, 32, puff, "upright"), "disc": (32, 32, puff, "flat"),
-           "curtain": (32, 64, curtain, "upright")}
+           "curtain": (32, 64, curtain, "upright"),
+           "sakura_streak": (16, 80, streak, "cross")}
 
 
 def model(name, kind):
     face = {"texture": "#fx", "uv": [0, 0, 16, 16], "tintindex": 0}
+    if kind == "cross":                                   # two crossed upright quads: never seen edge-on
+        elements = [{"from": [0, 0, 8], "to": [16, 16, 8], "faces": {"north": face, "south": face}},
+                     {"from": [8, 0, 0], "to": [8, 16, 16], "faces": {"east": face, "west": face}}]
+        for e in elements:
+            e.update(light_emission=15, shade=False)
+        return {"ambientocclusion": False, "elements": elements,
+                "textures": {"fx": {"sprite": f"projects:item/boss_vfx/{name}", "force_translucent": True},
+                             "particle": f"projects:item/boss_vfx/{name}"}}
     if kind == "flat":
         element = {"from": [0, 8, 0], "to": [16, 8, 16], "faces": {"up": face}}
     else:

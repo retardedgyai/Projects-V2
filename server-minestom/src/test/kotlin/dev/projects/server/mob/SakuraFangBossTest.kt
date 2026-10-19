@@ -86,6 +86,36 @@ class SakuraFangBossTest {
         }
     }
 
+    @Test
+    fun `the petal storm follows each ability, stays under its cap and dies away after the death`() {
+        MinecraftServer.init(Auth.Offline())
+        val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
+        java.util.concurrent.CompletableFuture.allOf(*(-2..1).flatMap { x -> (-2..1).map { z -> instance.loadChunk(x, z) } }.toTypedArray()).join()
+        try {
+            val at = net.minestom.server.coordinate.Pos(0.0, 40.0, 0.0, 0f, 0f)       // yaw 0: facing +Z
+            val fx = SakuraPetalFx(instance)
+            val none: (String, net.minestom.server.coordinate.Vec) -> net.minestom.server.coordinate.Point? = { _, _ -> null }
+            repeat(40) { fx.tick(at, false, none) }
+            val idle = fx.liveCount
+            assertTrue(idle in 3..40, "idle shedding $idle")
+            fx.start("sakura-scatter", 1.7)
+            repeat(36) { fx.tick(at, false, none) }                                     // 1.8 s: just after the fling
+            assertTrue(fx.liveCount > idle + 40, "fan ${fx.liveCount}")
+            assertTrue(fx.liveCount <= SakuraPetalFx.CAP)
+            val forward = fx.snapshot().filter { it.second.length() > 10.0 }
+            assertTrue(forward.isNotEmpty() && forward.all { it.second.z() > 0 }, "the fan flies toward the facing (+Z)")
+            fx.start("sakura-bloom", 2.0)
+            repeat(50) { fx.tick(at, true, none) }
+            assertTrue(fx.liveCount <= SakuraPetalFx.CAP)
+            fx.death()
+            repeat(120) { fx.tick(at, true, none) }                                     // 6 s
+            assertEquals(0, fx.liveCount)
+            fx.dispose()
+        } finally {
+            MinecraftServer.getInstanceManager().unregisterInstance(instance)
+        }
+    }
+
     private class MemoryConnection : PlayerConnection() {
         override fun sendPacket(packet: SendablePacket) = Unit
         override fun getRemoteAddress(): SocketAddress = InetSocketAddress("127.0.0.1", 0)
