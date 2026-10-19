@@ -75,6 +75,7 @@ RAMPS = {
     "hide": ((16, 14, 22), (30, 27, 40), (50, 45, 64), (86, 78, 104)),
     "plate": ((20, 17, 26), (38, 32, 46), (62, 54, 74), (112, 100, 128)),
     "fur": ((112, 86, 102), (170, 142, 156), (218, 196, 206), (248, 238, 242)),
+    "shell": ((66, 56, 70), (112, 98, 112), (160, 144, 156), (210, 198, 206)),
     "claw": ((58, 50, 56), (108, 98, 102), (168, 158, 158), (226, 220, 214)),
     "mouth": ((52, 14, 30), (86, 24, 46), (124, 40, 66), (160, 64, 90)),
 }
@@ -94,7 +95,7 @@ def box_painter(mat, seed=0):
     """Top-lit ramp down each side, overlapping 6x4 scales where only some catch a light lip
     (the shade wyrm hand-painted look), bright top, shadowed bottom."""
     ramp = RAMPS[mat]
-    scaled = mat in ("hide", "plate")
+    scaled = mat in ("hide", "plate", "shell")
 
     def make(side, w, h):
         def paint(x, y, w, h):
@@ -238,6 +239,53 @@ def tufts(b, bone, root, direction, n, spread, L, W, axis, seed):
         b.fur(bone, root, d, cross(ax, d), L * (1 - .3 * abs(t) * 2), W, seed + k)
 
 
+# --- head: a long wedge pitched down, brow ridges, big swept-back horns, a fur beard -----------------
+HEAD_O = (0, 40.5, 27)          # back of the skull
+HEAD_PITCH = 20                 # degrees nose-down
+
+
+def head_frame():
+    a = math.radians(HEAD_PITCH)
+    f = [0, -math.sin(a), math.cos(a)]
+    u = [0, math.cos(a), math.sin(a)]
+    return f, u
+
+
+def H(x, y, z):
+    """Head-local (x side, y up, z forward) to world."""
+    f, u = head_frame()
+    return [HEAD_O[0] + x + u[0] * y + f[0] * z, HEAD_O[1] + u[1] * y + f[1] * z, HEAD_O[2] + u[2] * y + f[2] * z]
+
+
+def head(b):
+    f, u = head_frame()
+    hs = lambda bone, p, q, w, d, mat, **kw: b.seg(bone, H(*p), H(*q), w, d, mat, z_hint=u, **kw)
+    hs("skull", (0, 1.5, -1), (0, 1, 12), 12, 10, "hide", seed=15)                 # cranium
+    hs("skull", (0, .5, 11), (0, -.5, 22), 9, 8, "hide", seed=16)                  # muzzle
+    hs("skull", (0, -.6, 21), (0, -1.6, 29), 7, 6.5, "hide", seed=19)              # nose
+    hs("skull", (0, 1, 28), (0, -2.6, 31), 5, 3.6, "shell", seed=22)              # hooked nose tip
+    hs("skull", (0, 5.6, 1), (0, 3.8, 27), 5, 2, "shell", seed=17)                # shell running down the snout
+    hs("jaw", (0, -4.6, 2), (0, -6.4, 26), 8.5, 4.2, "hide", seed=18)             # deep lower jaw
+    hs("jaw", (0, -2.6, 6), (0, -4.2, 25), 6.6, 1, "mouth")
+    for s in (1, -1):
+        hs("skull", (5.4 * s, 4.6, 3), (4.6 * s, 3.6, 15), 3, 3, "shell", seed=23)  # brow ridge
+        hs("skull", (5.7 * s, 2.4, 9.5), (5.5 * s, 2.0, 13.5), 1, 1.2, flat_painter(EYE), name="glow_eye")
+        for z in (24, 19):
+            hs("skull", (2.8 * s, -2.4, z), (2.8 * s, -5.4, z + .4), 1.3, 1.3, "claw")   # upper fangs
+        hs("jaw", (2.4 * s, -3.6, 22), (2.4 * s, -1.4, 22.4), 1.1, 1.1, "claw")         # lower fangs
+        # horns: thick roots above the eyes, sweeping back past the neck, tips curling up, one side spike
+        hs("skull", (4.4 * s, 5.6, 7), (8.5 * s, 12, -4), 4.6, 4.6, "shell", seed=24)
+        hs("skull", (8.5 * s, 12, -4), (11 * s, 18, -14), 3.4, 3.4, "shell", seed=25)
+        hs("skull", (11 * s, 18, -14), (11.4 * s, 25, -19), 2.2, 2.2, "claw")
+        hs("skull", (7.6 * s, 10.5, -1), (12 * s, 10, -5), 1.6, 1.6, "claw")
+        hs("skull", (10 * s, 15.5, -10), (14 * s, 16, -14), 1.4, 1.4, "claw")
+        # cheek fur flaring back
+        tufts(b, "skull", H(6 * s, -1.2, 5), mat_vec([[1, 0, 0], [0, 1, 0], [0, 0, 1]], [s * .55, -.25, -1]), 5, 60, 13, 4, (s, 0, 0), 80 + s)
+    # beard: pale fur hanging under the jaw
+    for k, z in enumerate((6, 11, 16, 21)):
+        tufts(b, "jaw", H(0, -6.6, z), [-c for c in u], 4, 80, 9 - k, 3.5, f, 90 + k)
+
+
 # --- the beast --------------------------------------------------------------------------------------
 TAIL = [(0, 34, -30), (0, 40, -42), (0, 51, -51), (0, 64, -53), (0, 75, -48), (0, 81, -39)]
 BACK = [(0, 52, 7), (0, 50, -2), (0, 45, -12), (0, 43, -21)]
@@ -250,7 +298,7 @@ def build():
     b.bone("chest", "body", (0, 38, 4))
     b.bone("neck", "chest", (0, 42, 14))
     b.bone("skull", "neck", (0, 39, 27))
-    b.bone("jaw", "skull", (0, 31, 31))
+    b.bone("jaw", "skull", H(0, -4.6, 2))
     for s, side in ((1, "l"), (-1, "r")):
         b.bone(f"arm_{side}", "chest", (13 * s, 44, 12))
         b.bone(f"forearm_{side}", f"arm_{side}", (15 * s, 21, 6))
@@ -273,8 +321,8 @@ def build():
         # massive forearms: elbow back, forearm forward, wide paw
         b.seg(f"arm_{side}", (13 * s, 44, 12), (15 * s, 21, 6), 12, 13, "hide", seed=5)
         b.seg(f"forearm_{side}", (15 * s, 22, 6), (15 * s, 4, 18), 11, 12, "hide", seed=6)
-        b.seg(f"forearm_{side}", (17.5 * s, 21, 5), (18 * s, 7, 15), 3, 10, "plate", seed=7)   # forearm shell
-        b.seg(f"arm_{side}", (17 * s, 46, 13), (19 * s, 30, 9), 3, 12, "plate", seed=8)        # shoulder shell
+        b.seg(f"forearm_{side}", (17.5 * s, 21, 5), (18 * s, 7, 15), 3, 10, "shell", seed=7)   # forearm shell
+        b.seg(f"arm_{side}", (17 * s, 46, 13), (19 * s, 30, 9), 3, 12, "shell", seed=8)        # shoulder shell
         b.box(f"hand_{side}", (15 * s - 7, 0, 12), (15 * s + 7, 5, 27), "hide", seed=9)
         for k in (-4.4, 0, 4.4):
             b.seg(f"hand_{side}", (15 * s + k, 2.8, 25.5), (15 * s + k, .2, 31), 2.2, 2.2, "claw")
@@ -290,22 +338,7 @@ def build():
 
     # neck and head, carried low and forward
     b.seg("neck", (0, 43, 14), (0, 39, 28), 16, 16, "hide", seed=14)
-    b.seg("skull", (0, 40, 26), (0, 38, 37), 14, 12, "hide", z_hint=(0, 1, 0), seed=15)
-    b.seg("skull", (0, 38, 36), (0, 35.5, 44), 10.5, 8.5, "hide", z_hint=(0, 1, 0), seed=16)    # muzzle
-    b.seg("skull", (0, 36, 43), (0, 34, 51), 7.5, 6.5, "hide", z_hint=(0, 1, 0), seed=19)       # nose
-    b.seg("skull", (0, 42.5, 28), (0, 39.5, 45), 11, 3, "plate", z_hint=(0, 1, 0), seed=17)    # brow shell
-    b.seg("skull", (0, 42.5, 28), (0, 44, 20), 9, 2.5, "plate", z_hint=(0, 1, 0), seed=21)     # crest back
-    b.seg("jaw", (0, 31, 30), (0, 26.5, 46), 9, 4, "hide", z_hint=(0, 1, 0), seed=18)          # jaw, a little open
-    b.seg("jaw", (0, 31.4, 32), (0, 28.6, 45), 7, 1, "mouth", z_hint=(0, 1, 0))
-    for s in (1, -1):
-        b.seg("skull", (2.8 * s, 34.5, 48), (2.8 * s, 30.5, 48.5), 1.4, 1.4, "claw")             # upper fangs
-        b.seg("jaw", (2.6 * s, 28.5, 44), (2.6 * s, 31.5, 44.5), 1.2, 1.2, "claw")              # lower fangs
-    for s in (1, -1):
-        b.box("skull", (5.4 * s - .7, 38.4, 39), (5.4 * s + .7, 39.6, 41.6), flat_painter(EYE), name="glow_eye")
-        b.seg("skull", (5 * s, 42, 35), (8.5 * s, 48, 26), 3.4, 3.4, "plate")                 # horns, swept back
-        b.seg("skull", (8.5 * s, 48, 26), (9.5 * s, 51, 16), 2.4, 2.4, "plate")
-        b.seg("skull", (9.5 * s, 51, 16), (9.8 * s, 52, 11), 1.4, 1.4, "claw")
-        tufts(b, "skull", (6.5 * s, 35, 32), (s * .65, -.15, -.7), 4, 50, 10, 3.5, (s, 0, 0), 80 + s)  # cheek fur
+    head(b)
 
     # mane: rows of pale fur over neck and shoulders, standing back and up
     for z0, y0, L, bone in ((31, 44, 15, "skull"), (25, 47, 20, "neck"), (18, 50, 23, "neck"), (11, 50, 21, "chest"), (4, 48, 16, "chest")):

@@ -27,10 +27,16 @@ def main():
         row.paste(rbb.render(sc, pose, az=90, el=4, size=(W, H), scale=3.4, cy=.86, center=(0, 0, -4), bg=BG), (W, 0))
         rbb.text(row, (16, 12), label)
         tiles.append(row)
-    sheet = Image.new("RGB", (W * 2, H * 2 + 26), (20, 18, 24))
+    face = Image.new("RGB", (W * 2, H))
+    for k, az in enumerate((40, 90, 0)):
+        face.paste(rbb.render(sc, None, az=az, el=8, size=(W * 2 // 3, H), scale=6, cy=.6,
+                              center=(0, 40, 38), bg=BG).crop((0, 0, W * 2 // 3, H)), (k * (W * 2 // 3), 0))
+    rbb.text(face, (16, 12), "顔")
+    tiles.append(face)
+    sheet = Image.new("RGB", (W * 2, H * 3 + 26), (20, 18, 24))
     for i, t in enumerate(tiles):
         sheet.paste(t, (0, i * H))
-    rbb.text(sheet, (12, H * 2 + 4), "桜牙獣（仮） bbmodel を CPU で描いた絵。Minecraft の画面ではない", font=rbb.SMALL)
+    rbb.text(sheet, (12, H * 3 + 4), "桜牙獣（仮） bbmodel を CPU で描いた絵。Minecraft の画面ではない", font=rbb.SMALL)
     out = fang.ROOT / "build/boss-previews/sakura_fang_look.png"
     out.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(out)
