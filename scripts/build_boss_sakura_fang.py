@@ -573,6 +573,8 @@ def ease(kind, f):
         return 1 - (1 - f) ** 3
     if kind == "hold":
         return 0.0
+    if kind == "lin":
+        return f
     return f * f * (3 - 2 * f)
 
 
@@ -721,125 +723,188 @@ def looped(length, fn):
     return [(t, fn(t), "io") for t in ts]
 
 
+# --- Zinogre / Inagami-style motion ---------------------------------------------------------------------------
+# Rules taken from how those beasts move: the whole body moves and never freezes (holds keep drifting and shivering);
+# weight goes the other way first (anticipation), the hips lead and chest, neck, head and tail arrive after them
+# (the springs in follow_through add the lag); rear-ups pivot on planted hind feet; strikes crash the whole body
+# down and bounce; recoveries settle with an overshoot instead of easing into a pose.
+HIP = (0.0, 35.0, -25.0)          # hind-leg joint, the pivot of a rear-up
+BODY_PIVOT = (0.0, 34.0, -10.0)
+
+
+def rear(a):
+    """Body pitch a (editor degrees, negative = nose up) about the body pivot, with the body offset and hind-leg
+    counter-rotation that keep the hips over the planted hind feet."""
+    r = math.radians(a)
+    dy, dz = HIP[1] - BODY_PIVOT[1], HIP[2] - BODY_PIVOT[2]
+    ny = dy * math.cos(r) - dz * math.sin(r)
+    nz = dy * math.sin(r) + dz * math.cos(r)
+    return {"body": (a, 0, 0), "pos": (0, dy - ny, dz - nz), "thigh_l": (-a, 0, 0), "thigh_r": (-a, 0, 0)}
+
+
+def pose(*parts, **extra):
+    out = merged(*parts)
+    for k, v in extra.items():
+        out[k] = v if not isinstance(v, tuple) else tuple(out.get(k, (0, 0, 0))[i] + v[i] for i in range(3))
+    return out
+
+
 def idle_pose(t, L=2.4, enraged=False):
+    """Crouched and alive: a slow breath rolls through the shoulders, the head sweeps as if scenting, the weight
+    shifts from side to side and the raised tail sways in an S."""
     w = wave(t, L)
-    lag = lambda k: wave(t, L, -.12 * k)
-    p = {"chest": (1.2 * w, 0, 0), "neck": (-1.5 * w, 1.5 * wave(t, L, .25), 0), "skull": (1.5 * lag(2), 0, 0),
-         "jaw": (1 + w, 0, 0), "pos": (0, -.5 + .5 * w, 0)}
+    look = wave(t, L, .1)
+    sway = wave(t, L, .3)
+    p = {"chest": (2.0 * w, 1.5 * sway, 1.2 * sway), "body": (-.8 * w, -1.0 * sway, -1.0 * sway),
+         "neck": (-2.5 * w + 1.5 * wave(t, L / 2), 9.0 * look, 0), "skull": (2.0 * wave(t, L, -.15), 4.0 * look, 2.0 * look),
+         "jaw": (1.5 + 1.5 * max(0.0, wave(t, L / 2, .2)), 0, 0), "pos": (.6 * sway, -.8 + .8 * w, 0),
+         "arm_l": (1.5 * sway, 0, 0), "arm_r": (-1.5 * sway, 0, 0)}
     for k in range(1, 6):
-        p[f"tail_{k}"] = (1.6 * lag(k), 3.0 * wave(t, L, -.15 * k), 0)
+        p[f"tail_{k}"] = (2.5 * wave(t, L, -.1 * k), 6.0 * wave(t, L, .15 - .12 * k), 2.0 * wave(t, L, -.1 * k))
+    if enraged:                                   # lower, wider, snarling; the petals stay open and shiver
+        p = pose(p, chest=(4, 0, 0), neck=(8, 0, 0), skull=(4, 0, 0), jaw=(8 + 3 * w, 0, 0), pos=(0, -2, 0))
+        p["shells"] = 1.0
+        p["tremble"] = 2.0
+    return p
+
+
+def walk_pose(t, L=1.2, enraged=False):
+    """A wolf's prowl: diagonal gait, the shoulder blades roll up over each planted forefoot, the head dips on
+    every step and the body rolls; the tail swings against the hips."""
+    ph = t / L * 2 * math.pi
+    s1, c1 = math.sin(ph), math.cos(ph)
+    p = {"pos": (0, -1.6 * abs(math.sin(ph)) + .4, 0), "chest": (2.5 * math.cos(2 * ph), 3 * s1, 4 * s1),
+         "body": (1.2 * math.cos(2 * ph + .6), -2.5 * s1, -3 * s1), "neck": (4 * math.sin(2 * ph + .9), -3 * s1, 0),
+         "skull": (-3 * math.sin(2 * ph + 1.4), -2 * s1, 0)}
+    for side, ph2 in (("l", ph), ("r", ph + math.pi)):
+        s, c = math.sin(ph2), math.cos(ph2)
+        lift = max(0.0, c)
+        p[f"arm_{side}"] = (20 * s, 0, (3 if side == "l" else -3) * lift)
+        p[f"forearm_{side}"] = (-30 * lift, 0, 0)
+        p[f"hand_{side}"] = (22 * lift - 8 * s, 0, 0)
+    for side, ph2 in (("l", ph + math.pi), ("r", ph)):          # diagonal pairs
+        s, c = math.sin(ph2), math.cos(ph2)
+        lift = max(0.0, c)
+        p[f"thigh_{side}"] = (-18 * s, 0, 0)
+        p[f"shin_{side}"] = (16 * lift, 0, 0)
+        p[f"foot_{side}"] = (-14 * lift + 5 * s, 0, 0)
+    for k in range(1, 6):
+        p[f"tail_{k}"] = (3 * math.sin(2 * ph - .5 * k), 8 * math.sin(ph + math.pi - .45 * k), 0)
     if enraged:
-        p["neck"] = (6 - 1.5 * w, 2 * wave(t, L, .25), 0)
-        p["skull"] = (4 + 2 * lag(2), 0, 0)
-        p["jaw"] = (6 + 2 * w, 0, 0)
+        p = pose(p, neck=(8, 0, 0), chest=(3, 0, 0))
         p["shells"] = 1.0
         p["tremble"] = 1.5
     return p
 
 
-def walk_pose(t, L=1.2, enraged=False):
-    ph = t / L * 2 * math.pi
-    s1, c1 = math.sin(ph), math.cos(ph)
-    s2 = math.sin(ph + math.pi)
-    p = {"pos": (0, -1.0 * abs(math.sin(ph)), 0), "chest": (1.5 * c1, 2 * s1, 0), "neck": (2 * math.sin(2 * ph), -2 * s1, 0),
-         "skull": (-1.5 * math.sin(2 * ph), 0, 0)}
-    for side, s in (("l", s1), ("r", s2)):
-        lift = max(0.0, math.cos(ph if side == "l" else ph + math.pi))
-        p[f"arm_{side}"] = (16 * s, 0, 0)
-        p[f"forearm_{side}"] = (-22 * lift, 0, 0)
-        p[f"hand_{side}"] = (14 * lift - 6 * s, 0, 0)
-    for side, s in (("l", s2), ("r", s1)):          # diagonal gait: right hind with left fore
-        lift = max(0.0, math.cos(ph + math.pi if side == "l" else ph))
-        p[f"thigh_{side}"] = (-14 * s, 0, 0)
-        p[f"shin_{side}"] = (12 * lift, 0, 0)
-        p[f"foot_{side}"] = (-10 * lift + 4 * s, 0, 0)
-    for k in range(1, 6):
-        p[f"tail_{k}"] = (2 * math.sin(2 * ph - .5 * k), 4 * math.sin(ph - .4 * k), 0)
-    if enraged:
-        p["neck"] = (6 + p["neck"][0], p["neck"][1], 0)
-        p["shells"] = 1.0
-        p["tremble"] = 1.0
-    return p
-
-
-# Ability clips: (id, telegraph s, recovery s). Length = telegraph + recovery, impact pose at the telegraph.
 ABILITIES = {"sakura-claw": (1.2, 1.0), "sakura-tail": (1.5, 1.1), "sakura-scatter": (1.7, .9), "sakura-bloom": (2.0, 1.2)}
 CALM = {}
 
 
 def claw_keys(hit, end, shells):
-    """桜爪の叩きつけ: rear the right forearm high, shiver, slam it down, shake, recover."""
-    up = {"arm_r": (-75, 0, -8), "forearm_r": (-35, 0, 0), "hand_r": (-20, 0, 0), "chest": (-10, 0, 6), "pos": (0, 2, -1),
-          "neck": (-8, -10, 0), "skull": (-6, 0, 0), "jaw": (14, 0, 0), "arm_l": (-6, 0, 0), "tail_1": (8, 0, 0), "tail_2": (6, 0, 0),
-          "shells": shells, "tremble": 0}
-    shake = dict(up, tremble=3.0, chest=(-12, 0, 7))
-    slam = {"arm_r": (14, 0, 2), "forearm_r": (4, 0, 0), "hand_r": (-6, 0, 0), "chest": (10, 0, -4), "pos": (0, -2.5, 2),
-            "neck": (12, -4, 0), "skull": (8, 0, 0), "jaw": (20, 0, 0), "arm_l": (8, 0, 0), "tail_1": (-6, 0, 0), "tail_2": (-4, 0, 0),
-            "shells": shells + .25, "tremble": 2.0}
-    return [(0, dict(CALM, shells=shells), "io"), (hit * .7, up, "out"), (hit - .1, shake, "io"), (hit, slam, "in"),
-            (hit + .25, dict(slam, tremble=0, shells=shells), "out"), (end, dict(CALM, shells=shells), "io")]
+    """桜爪の叩きつけ (Zinogre's paw slam): sink back on the haunches, rear up on the hind legs with the right forearm
+    raised over the head, hang and shiver at the top, then throw the whole body down onto the paw; the impact bounces
+    the body, the left paw slaps down after it, and the beast settles with a snort."""
+    s = {"shells": shells}
+    sink = pose(rear(8), chest=(6, 0, 0), neck=(10, 0, 0), skull=(6, 0, 0), arm_r=(10, 0, 0), arm_l=(8, 0, 0),
+                tail_1=(-8, 0, 0), pos=(0, -2, -1), **s)
+    up = pose(rear(-42), chest=(-8, -10, -6), neck=(-18, -8, 0), skull=(-10, -6, 0), jaw=(18, 0, 0),
+              arm_r=(-120, 0, -10), forearm_r=(-40, 0, 0), hand_r=(-30, 0, 0), arm_l=(-50, 0, 6), forearm_l=(-30, 0, 0),
+              tail_1=(16, 0, 0), tail_2=(10, 0, 0), **s)
+    top = pose(up, rear(-4), arm_r=(-8, 0, 0), tremble=3.0, shells=shells + .1)
+    slam = pose(rear(14), chest=(12, 6, 4), neck=(16, 4, 0), skull=(10, 0, 0), jaw=(26, 0, 0), arm_r=(16, 0, 4),
+                forearm_r=(4, 0, 0), hand_r=(-8, 0, 0), arm_l=(-30, 0, 0), forearm_l=(-20, 0, 0),
+                tail_1=(-14, 0, 0), tail_2=(-8, 0, 0), pos=(0, -3, 4), shells=shells + .3, tremble=2.5)
+    bounce = pose(rear(4), chest=(4, 4, 2), neck=(6, 0, 0), jaw=(14, 0, 0), arm_r=(8, 0, 0), arm_l=(10, 0, 0),
+                  pos=(0, -1, 3), **s)
+    settle = pose(chest=(-2, 0, 0), neck=(-4, 0, 0), skull=(-3, 0, 0), pos=(0, 0, 1), **s)
+    return [(0, dict(s), "io"), (.3, sink, "io"), (hit * .72, up, "out"), (hit - .06, top, "io"), (hit, slam, "in"),
+            (hit + .14, bounce, "out"), (hit + .32, pose(bounce, arm_l=(14, 0, 0)), "io"), (hit + .7, settle, "io"),
+            (end, dict(s), "io")]
 
 
 def tail_keys(hit, end, shells):
-    """花尾の振り下ろし: crouch with the tail pulled low behind, then whip it over the back onto the ground ahead."""
-    wind = {"chest": (-10, 0, 0), "pos": (0, -2, -2), "neck": (-6, 0, 0), "skull": (-4, 0, 0), "jaw": (8, 0, 0),
-            "arm_l": (-8, 0, 0), "arm_r": (-8, 0, 0), "thigh_l": (10, 0, 0), "thigh_r": (10, 0, 0),
-            "tail_1": (-26, 0, 0), "tail_2": (-14, 0, 0), "tail_3": (-10, 0, 0), "tail_4": (-6, 0, 0), "tail_5": (-6, 0, 0),
-            "shells": shells, "tremble": 0}
-    coil = dict(wind, tremble=2.0, tail_1=(-30, 0, 0))
-    whip = {"chest": (16, 0, 0), "pos": (0, -3, 3), "neck": (14, 0, 0), "skull": (6, 0, 0), "jaw": (4, 0, 0),
-            "arm_l": (10, 0, 0), "arm_r": (10, 0, 0), "thigh_l": (-18, 0, 0), "thigh_r": (-18, 0, 0), "shin_l": (10, 0, 0), "shin_r": (10, 0, 0),
-            "tail_1": (58, 0, 0), "tail_2": (16, 0, 0), "tail_3": (-6, 0, 0), "tail_4": (-18, 0, 0), "tail_5": (-12, 0, 0),
-            "shells": shells + .4, "tremble": 2.5}
-    return [(0, dict(CALM, shells=shells), "io"), (hit * .75, wind, "io"), (hit - .12, coil, "io"), (hit, whip, "in"),
-            (hit + .3, dict(whip, tremble=0), "out"), (end, dict(CALM, shells=shells), "io")]
+    """花尾の宙返り (Zinogre's somersault): crouch and coil, spring up and flip forward so the petal tail comes over
+    the top and crashes down ahead, then land on all fours with a stagger."""
+    s = {"shells": shells}
+    crouch = pose(rear(10), pos=(0, -4, -2), chest=(10, 0, 0), neck=(16, 0, 0), skull=(8, 0, 0),
+                  arm_l=(-14, 0, 0), arm_r=(-14, 0, 0), forearm_l=(20, 0, 0), forearm_r=(20, 0, 0),
+                  shin_l=(20, 0, 0), shin_r=(20, 0, 0), tail_1=(-24, 0, 0), tail_2=(-12, 0, 0), tremble=1.5, **s)
+    takeoff = hit - .38
+    frames = [(0, dict(s), "io"), (.35, crouch, "io"), (takeoff - .05, pose(crouch, pos=(0, -5, -3), tremble=3.0), "io")]
+    # the flip: body pitch 0 -> 360 (nose down first) on a height arc; the tail is over the front at the strike
+    flip = []
+    t_land = hit + .22
+    for k in range(9):
+        u = k / 8                                     # 0 takeoff .. 1 landing
+        tt = takeoff + (t_land - takeoff) * u
+        ang = 360 * (u ** 1.15)
+        height = 34 * math.sin(math.pi * u)
+        tuck = math.sin(math.pi * u)
+        flip.append((tt, pose(body=(ang, 0, 0), pos=(0, height, 4 * u), neck=(20 * tuck, 0, 0), skull=(10 * tuck, 0, 0),
+                              arm_l=(-50 * tuck, 0, 0), arm_r=(-50 * tuck, 0, 0), thigh_l=(30 * tuck, 0, 0), thigh_r=(30 * tuck, 0, 0),
+                              shin_l=(20 * tuck, 0, 0), shin_r=(20 * tuck, 0, 0),
+                              tail_1=(-10 * tuck, 0, 0), tail_2=(-6 * tuck, 0, 0), shells=shells + .4 * tuck), "lin" if k else "in"))
+    land = pose(rear(10), pos=(0, -4, 4), chest=(10, 0, 0), neck=(12, 0, 0), jaw=(16, 0, 0), arm_l=(10, 0, 0), arm_r=(10, 0, 0),
+                shin_l=(16, 0, 0), shin_r=(16, 0, 0), tail_1=(-10, 0, 0), tremble=2.0, **s)
+    stagger = pose(rear(-4), pos=(0, 0, 3), chest=(-2, 4, 4), neck=(-6, 6, 0), **s)
+    return frames + flip + [(t_land + .12, land, "out"), (t_land + .45, stagger, "io"), (end, dict(s), "io")]
 
 
 def scatter_keys(hit, end, shells):
-    """散華: the petals open wide and shiver while the tail rises, then a lunge flings them out in a fan."""
-    gather = {"chest": (4, 0, 0), "pos": (0, -2, -1), "neck": (10, 0, 0), "skull": (6, 0, 0), "jaw": (10, 0, 0),
-              "tail_1": (18, 0, 0), "tail_2": (10, 0, 0), "thigh_l": (6, 0, 0), "thigh_r": (6, 0, 0), "shells": 1.25, "tremble": 4.0}
-    fling = {"chest": (10, 0, 0), "pos": (0, -1, 4), "neck": (2, 0, 0), "skull": (-10, 0, 0), "jaw": (34, 0, 0),
-             "arm_l": (-14, 0, 0), "arm_r": (-14, 0, 0), "tail_1": (34, 0, 0), "tail_2": (22, 0, 0), "tail_3": (14, 0, 0),
-             "shells": .35, "tremble": 0}
-    return [(0, dict(CALM, shells=shells), "io"), (hit * .8, gather, "io"), (hit - .08, dict(gather, shells=1.35, tremble=6.0), "io"),
-            (hit, fling, "in"), (hit + .3, dict(fling, jaw=(20, 0, 0)), "out"), (end, dict(CALM, shells=shells), "io")]
+    """散華: plant the feet, sink and let the petals flare and shake (a building snarl), draw back once more, then
+    a full-body thrust: forelegs brace, chest drives forward, head snaps up and the tail whips over, flinging them."""
+    gather = pose(rear(6), pos=(0, -3, -2), chest=(6, 0, 0), neck=(14, 0, 0), skull=(8, 0, 0), jaw=(10, 0, 0),
+                  arm_l=(-8, 0, -6), arm_r=(-8, 0, 6), tail_1=(20, 0, 0), tail_2=(12, 0, 0), shells=1.25, tremble=4.0)
+    draw = pose(gather, rear(4), pos=(0, -4, -5), neck=(20, 0, 0), shells=1.4, tremble=6.0)
+    fling = pose(rear(-12), pos=(0, 1, 6), chest=(-6, 0, 0), neck=(-14, 0, 0), skull=(-18, 0, 0), jaw=(38, 0, 0),
+                 arm_l=(-22, 0, -8), arm_r=(-22, 0, 8), forearm_l=(10, 0, 0), forearm_r=(10, 0, 0),
+                 tail_1=(40, 0, 0), tail_2=(26, 0, 0), tail_3=(16, 0, 0), shells=.35, tremble=0)
+    after = pose(rear(4), pos=(0, -1, 4), neck=(6, 0, 0), skull=(-4, 0, 0), jaw=(16, 0, 0), tail_1=(8, 0, 0), shells=shells)
+    return [(0, {"shells": shells}, "io"), (hit * .75, gather, "io"), (hit - .12, draw, "io"), (hit, fling, "in"),
+            (hit + .25, after, "out"), (end, {"shells": shells}, "io")]
 
 
 def bloom_keys(hit, end, shells):
-    """花嵐 (enraged only): rear up on the hind legs with every petal flared, then crash down and burst."""
-    rear = {"body": (-26, 0, 0), "pos": (0, 4, -3), "arm_l": (-50, 0, 0), "arm_r": (-46, 0, 0), "forearm_l": (-30, 0, 0), "forearm_r": (-34, 0, 0),
-            "thigh_l": (20, 0, 0), "thigh_r": (20, 0, 0), "shin_l": (-14, 0, 0), "shin_r": (-14, 0, 0), "foot_l": (6, 0, 0), "foot_r": (6, 0, 0),
-            "neck": (-14, 0, 0), "skull": (-14, 0, 0), "jaw": (30, 0, 0), "tail_1": (-14, 0, 0), "tail_2": (-6, 0, 0),
-            "shells": 1.35, "tremble": 3.0}
-    crash = {"body": (10, 0, 0), "pos": (0, -3, 3), "arm_l": (12, 0, 0), "arm_r": (12, 0, 0), "neck": (14, 0, 0), "skull": (8, 0, 0),
-             "jaw": (24, 0, 0), "tail_1": (10, 0, 0), "shells": .5, "tremble": 0}
-    return [(0, dict(CALM, shells=shells), "io"), (hit * .7, rear, "out"), (hit - .15, dict(rear, tremble=6.0, shells=1.45), "io"),
-            (hit, crash, "in"), (hit + .35, dict(crash, shells=1.2), "out"), (end, dict(CALM, shells=shells), "io")]
+    """花嵐 (enraged only): rear straight up on the hind legs, forelegs clawing the air, a howl to the sky with every
+    petal flared and shaking, then crash down on both forepaws; the body bounces twice before it settles."""
+    rise = pose(rear(-62), arm_l=(-80, 0, 10), arm_r=(-70, 0, -10), forearm_l=(-40, 0, 0), forearm_r=(-50, 0, 0),
+                neck=(-24, 0, 0), skull=(-22, 0, 0), jaw=(40, 0, 0), tail_1=(-6, 0, 0), shells=1.3, tremble=3.0)
+    claw = pose(rise, arm_l=(-60, 0, 10), arm_r=(-95, 0, -10), skull=(-26, 6, 0), shells=1.4, tremble=6.0)
+    crash = pose(rear(16), pos=(0, -4, 4), arm_l=(14, 0, 0), arm_r=(14, 0, 0), chest=(8, 0, 0), neck=(16, 0, 0), skull=(10, 0, 0),
+                 jaw=(30, 0, 0), tail_1=(-14, 0, 0), tail_2=(-10, 0, 0), shells=.6, tremble=3.0)
+    bounce = pose(rear(2), pos=(0, 0, 3), neck=(4, 0, 0), jaw=(16, 0, 0), shells=1.1)
+    return [(0, {"shells": shells}, "io"), (.25, pose(rear(6), pos=(0, -2, -1), neck=(10, 0, 0), shells=shells), "io"),
+            (hit * .6, rise, "out"), (hit - .14, claw, "io"), (hit, crash, "in"), (hit + .16, bounce, "out"),
+            (hit + .34, pose(rear(8), pos=(0, -2, 3), shells=1.0), "in"), (hit + .6, pose(bounce, shells=1.0), "out"),
+            (end, {"shells": shells}, "io")]
 
 
 def enrage_keys():
-    """5 s (QuestEncounterCombat.ENRAGE_HOLD_MILLIS): crouch, shiver, rear up and roar as the petals burst open at 2.5 s."""
-    crouch = {"pos": (0, -3, -1), "chest": (8, 0, 0), "neck": (14, 0, 0), "skull": (10, 0, 0), "tail_1": (-10, 0, 0), "shells": .1}
-    shiver = dict(crouch, tremble=5.0, shells=.3)
-    rear = {"body": (-24, 0, 0), "pos": (0, 4, -3), "arm_l": (-44, 0, 0), "arm_r": (-44, 0, 0), "forearm_l": (-26, 0, 0), "forearm_r": (-26, 0, 0),
-            "thigh_l": (18, 0, 0), "thigh_r": (18, 0, 0), "neck": (-26, 0, 0), "skull": (-18, 0, 0), "jaw": (36, 0, 0),
-            "tail_1": (-10, 0, 0), "shells": .3, "tremble": 2.0}
-    burst = dict(rear, shells=1.4, tremble=4.0)
-    land = {"body": (6, 0, 0), "pos": (0, -2, 2), "arm_l": (8, 0, 0), "arm_r": (8, 0, 0), "neck": (10, 0, 0), "skull": (4, 0, 0),
-            "jaw": (14, 0, 0), "shells": 1.0, "tremble": 1.0}
-    calm = dict(idle_pose(0, enraged=True))
-    return [(0, {}, "io"), (.6, crouch, "io"), (1.6, shiver, "io"), (2.3, rear, "out"), (2.5, burst, "in"),
-            (3.9, dict(burst, tremble=2.0), "io"), (4.3, land, "in"), (5.0, calm, "io")]
+    """5 s (QuestEncounterCombat.ENRAGE_HOLD_MILLIS): the beast stops, shudders low while the petals rattle, then
+    rears up and howls to the sky as they burst open at 2.5 s, holds the howl shaking, and drops into its new stance."""
+    crouch = pose(rear(10), pos=(0, -4, -1), chest=(10, 0, 0), neck=(18, 0, 0), skull=(12, 0, 0), jaw=(6, 0, 0),
+                  tail_1=(-14, 0, 0), shells=.15, tremble=2.0)
+    shiver = pose(crouch, shells=.35, tremble=6.0, neck=(22, -6, 0))
+    rise = pose(rear(-48), arm_l=(-60, 0, 8), arm_r=(-60, 0, -8), forearm_l=(-30, 0, 0), forearm_r=(-30, 0, 0),
+                neck=(-30, 0, 0), skull=(-24, 0, 0), jaw=(44, 0, 0), tail_1=(-10, 0, 0), shells=.4, tremble=3.0)
+    burst = pose(rise, rear(-6), shells=1.45, tremble=6.0)
+    land = pose(rear(14), pos=(0, -3, 3), arm_l=(10, 0, 0), arm_r=(10, 0, 0), neck=(16, 0, 0), skull=(8, 0, 0), jaw=(18, 0, 0),
+                shells=1.0, tremble=2.0)
+    return [(0, {}, "io"), (.6, crouch, "io"), (1.6, shiver, "io"), (2.3, rise, "out"), (2.5, burst, "in"),
+            (3.9, pose(burst, tremble=3.5, skull=(-4, 4, 0)), "io"), (4.25, land, "in"), (5.0, idle_pose(0, enraged=True), "io")]
 
 
 def death_keys(shells):
-    stagger = {"pos": (0, -1, -2), "chest": (-6, 0, 8), "neck": (-10, 0, 0), "jaw": (30, 0, 0), "shells": shells, "tremble": 3.0}
-    fall = {"pos": (0, -14, 0), "body": (0, 0, 72), "neck": (10, 0, 0), "skull": (12, 0, 0), "jaw": (22, 0, 0),
-            "arm_l": (20, 0, 0), "arm_r": (-24, 0, 0), "thigh_l": (-12, 0, 0), "thigh_r": (16, 0, 0),
-            "tail_1": (-14, 0, 0), "tail_2": (-12, 0, 0), "tail_3": (-10, 0, 0), "shells": shells * .3, "tremble": 0}
-    return [(0, {"shells": shells}, "io"), (.6, stagger, "io"), (1.5, fall, "in"), (1.8, dict(fall, pos=(0, -13, 0)), "out"),
-            (2.4, dict(fall, shells=0.0), "io")]
+    """Staggers, legs buckle one after another, rolls onto its side with a thud and a bounce; the petals close."""
+    hit = pose(rear(-10), pos=(0, 0, -3), chest=(-6, 0, 10), neck=(-20, 10, 0), jaw=(36, 0, 0), shells=shells, tremble=4.0)
+    buckle = pose(rear(10), pos=(0, -5, -2), chest=(8, 0, 18), arm_r=(30, 0, 0), forearm_r=(30, 0, 0), neck=(10, 14, 0),
+                  shells=shells * .8, tremble=2.0)
+    fall = pose(body=(0, 0, 76), pos=(0, -14, 0), neck=(12, 10, 0), skull=(14, 0, 0), jaw=(26, 0, 0),
+                arm_l=(24, 0, 0), arm_r=(-28, 0, 0), thigh_l=(-14, 0, 0), thigh_r=(18, 0, 0),
+                tail_1=(-16, 0, 0), tail_2=(-14, 0, 0), tail_3=(-12, 0, 0), shells=shells * .3)
+    return [(0, {"shells": shells}, "io"), (.35, hit, "out"), (.9, buckle, "io"), (1.45, fall, "in"),
+            (1.62, pose(fall, pos=(0, -12, 0)), "out"), (1.85, fall, "in"), (2.4, dict(fall, shells=0.0), "io")]
 
 
 def animate(m, b):
