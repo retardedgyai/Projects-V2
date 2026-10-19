@@ -54,6 +54,12 @@ class SakuraFangBossTest {
         // movement between attacks: a leap back, a dash to either side and a sideways prowl (BossModelView.canManeuver)
         for (once in listOf("hop_back", "dash_l", "dash_r", "hop_back_enraged", "dash_l_enraged", "dash_r_enraged"))
             assertFalse(clips.getAsJsonObject(once)["loop"].asBoolean, once)
+        // and its own moves between attack chains: a growl, a shake, a paw at the ground, a low creep (once clips)
+        for ((kind, millis) in QuestEncounterCombat.SAKURA_STAND_MILLIS + (ManeuverKind.STALK to 1600L)) for (tag in listOf("", "_enraged")) {
+            val clip = clips.getAsJsonObject(kind.name.lowercase() + tag)
+            assertFalse(clip["loop"].asBoolean, kind.name)
+            assertEquals(millis / 1000.0, clip["animation_length"].asDouble, 0.051, kind.name)
+        }
         for (loop in listOf("strafe_l", "strafe_r", "strafe_l_enraged", "strafe_r_enraged")) assertTrue(clips.getAsJsonObject(loop)["loop"].asBoolean, loop)
         // 三連桜爪 follow-ups only start as a chain
         assertTrue(definition.abilities.filter { it.id.startsWith("sakura-claw") && it.id != "sakura-claw" }.all { it.scripted })
@@ -94,6 +100,38 @@ class SakuraFangBossTest {
             while (combat.finaleState(boss.uuid)?.let { !it.first || it.second } == true && now < 40_000L) { combat.tick(now); now += 50 }
             assertTrue(combat.applyEffectDamage(boss.uuid, player, 99_999.0))
             assertEquals(1, victories)
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `between attack chains it rests and moves round its prey instead of attacking back to back`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("sakura", 1)
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "SakuraRest"))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        player.setInstance(arena.instance, arena.bossSpawn.sub(0.0, 0.0, 6.0)).join()
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            var attackTicks = 0
+            val moves = mutableSetOf<String>()
+            repeat(1200) {                                              // 60 s
+                now += 50; combat.tick(now); MinecraftServer.getSchedulerManager().processTick()
+                val clip = combat.shownClip(boss.uuid)?.first ?: return@repeat
+                if (clip.startsWith("sakura-")) attackTicks++
+                else if (clip in setOf("growl", "shake", "scrape", "stalk", "hop_back", "dash_l", "dash_r")) moves += clip
+            }
+            assertTrue(attackTicks < 1200 * .6, "attacking ${attackTicks * 50} ms of 60 s")
+            assertTrue(attackTicks > 0, "never attacked")
+            assertTrue(moves.size >= 3, "moves between attacks: $moves")
         } finally {
             combat.dispose(); player.remove(); arena.dispose()
         }

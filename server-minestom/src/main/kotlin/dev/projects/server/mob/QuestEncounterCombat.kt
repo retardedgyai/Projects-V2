@@ -63,7 +63,8 @@ internal class QuestMobLife(val maximumHealth: Double) {
 /** How long an enraging boss holds its roar before attacking again (matches the `enrage` model clip). */
 private const val ENRAGE_HOLD_MILLIS = 5000L
 
-internal enum class ManeuverKind { STRAFE, HOP_BACK, DASH }
+/** GROWL, SHAKE and SCRAPE stand in place (桜牙獣's moves between attacks); STALK creeps in on a far target. */
+internal enum class ManeuverKind { STRAFE, HOP_BACK, DASH, GROWL, SHAKE, SCRAPE, STALK }
 
 /** The carrier is moved from [from] to [to] between [moveFrom] and [moveTo] (hop/dash); a strafe paths instead. */
 internal class Maneuver(val kind: ManeuverKind, val from: Pos, val to: Pos, val moveFrom: Long, val moveTo: Long, val endAt: Long, val sign: Int)
@@ -101,6 +102,8 @@ class QuestEncounterCombat(
     ) {
         val life = QuestMobLife(definition.maximumHealth)
         val abilities = MobAbilityManager(definition.abilities, Random(entity.uuid.leastSignificantBits))
+        /** Picks the moves between attacks and the breathers (桜牙獣). */
+        val moveRandom = Random(entity.uuid.mostSignificantBits)
         var target: Player? = null
         var lastAttacker: Player? = null
         var nextPathAt = 0L
@@ -132,6 +135,9 @@ class QuestEncounterCombat(
         var maneuver: Maneuver? = null
         var nextManeuverAt = 0L
         var maneuvers = 0
+        var lastManeuver: ManeuverKind? = null
+        /** 桜牙獣: after an attack (and its combo) it moves round its prey until then instead of attacking again. */
+        var restUntil = 0L
         /** Where the model looks while it moves sideways or backward: at its target. */
         var faceYaw = 0f
         /** Since when the target has stood behind the model (0 = not behind); see [TURN_AFTER_MILLIS]. */
@@ -724,7 +730,8 @@ class QuestEncounterCombat(
             }
             mob.life.phase = QuestMobPhase.CHASING
         }
-        if (now >= mob.warningRetryAt && mob.entity.hasLineOfSight(target) && telegraphs.canStart(mob.entity.uuid)) {
+        val resting = mob.combo == null && now < mob.restUntil
+        if (!resting && now >= mob.warningRetryAt && mob.entity.hasLineOfSight(target) && telegraphs.canStart(mob.entity.uuid)) {
             val ratio = mob.life.health / mob.life.maximumHealth
             val silenced = crowded(mob, CrowdControl.SILENCE, now)
             val turn = if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) SAKURA_TURN else TURN_SWEEP
@@ -897,7 +904,7 @@ class QuestEncounterCombat(
         mob.slowedUntil = mob.slows.values.maxOfOrNull { it.until } ?: 0L
         val speed = mob.definition.movementSpeed * (1.0 - mob.slowPercent) *
             (if (mob.enraged) mob.definition.enragedSpeedMultiplier else 1.0) *
-            (if (mob.maneuver?.kind == ManeuverKind.STRAFE) STRAFE_SPEED else 1.0) *
+            (when (mob.maneuver?.kind) { ManeuverKind.STRAFE -> STRAFE_SPEED; ManeuverKind.STALK -> STALK_SPEED; else -> 1.0 }) *
             (if (mob.searching && mob.maneuver == null) SEARCH_SPEED else 1.0)
         if (mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue != speed) {
             mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = speed
@@ -918,8 +925,11 @@ class QuestEncounterCombat(
         val distance = horizontalLength(target.position.sub(here))
         val away = normalizeHorizontal(here.sub(target.position))
         val right = Vec(away.z(), 0.0, -away.x())            // the boss's right while it faces the target
+        val sakura = mob.definition.archetype == QuestMobArchetype.SAKURA_FANG
         val kind = when {
-            distance < 3.5 -> ManeuverKind.HOP_BACK
+            distance < 3.5 -> if (sakura && mob.lastManeuver == ManeuverKind.HOP_BACK) ManeuverKind.DASH else ManeuverKind.HOP_BACK
+            sakura && distance > 10.0 -> ManeuverKind.STALK
+            sakura && distance >= 3.5 -> pickSakuraManeuver(mob)
             distance in 4.0..10.0 -> if (mob.maneuvers % 3 == 2) ManeuverKind.DASH else ManeuverKind.STRAFE
             else -> return false
         }
@@ -936,20 +946,35 @@ class QuestEncounterCombat(
                 val toRight = (to.x() - here.x()) * right.x() + (to.z() - here.z()) * right.z() > 0
                 Maneuver(kind, here, to, now + 200, now + 500, now + 900, if (toRight) 1 else -1)
             }
-            ManeuverKind.STRAFE -> Maneuver(kind, here, here, now, now, now + 1600, sign)
+            ManeuverKind.STRAFE, ManeuverKind.STALK -> Maneuver(kind, here, here, now, now, now + 1600, sign)
+            ManeuverKind.GROWL, ManeuverKind.SHAKE, ManeuverKind.SCRAPE ->
+                Maneuver(kind, here, here, now, now, now + SAKURA_STAND_MILLIS.getValue(kind), 0)
         }
         mob.maneuvers++
-        mob.nextManeuverAt = maneuver.endAt + if (kind == ManeuverKind.STRAFE) 900 else 1700
+        mob.lastManeuver = kind
+        mob.nextManeuverAt = maneuver.endAt + if (sakura) SAKURA_MANEUVER_GAP else if (kind == ManeuverKind.STRAFE) 900 else 1700
         mob.maneuver = maneuver
         mob.faceYaw = yawToward(here, target.position)
-        if (kind != ManeuverKind.STRAFE) stopNavigation(mob)
+        if (kind != ManeuverKind.STRAFE && kind != ManeuverKind.STALK) stopNavigation(mob)
         when (kind) {
             ManeuverKind.HOP_BACK -> view.maneuver("hop_back")
             ManeuverKind.DASH -> view.maneuver(if (maneuver.sign > 0) "dash_l" else "dash_r")
             ManeuverKind.STRAFE -> mob.nextPathAt = now
+            ManeuverKind.STALK -> { mob.nextPathAt = now; view.maneuver("stalk") }
+            ManeuverKind.GROWL -> view.maneuver("growl")
+            ManeuverKind.SHAKE -> view.maneuver("shake")
+            ManeuverKind.SCRAPE -> view.maneuver("scrape")
         }
         updateMovementSpeed(mob, now)
         return true
+    }
+
+    /** 桜牙獣 at mid range: circling most often, then a side leap, now and then a growl, a shake or a paw at the
+     *  ground; never the same move twice running. */
+    private fun pickSakuraManeuver(mob: Mob): ManeuverKind {
+        val choices = SAKURA_MANEUVERS.filter { it.first != mob.lastManeuver }
+        var roll = mob.moveRandom.nextInt(choices.sumOf { it.second })
+        return choices.first { roll -= it.second; roll < 0 }.first
     }
 
     /** True while the maneuver holds the mob (no attacks, no chase). */
@@ -959,11 +984,11 @@ class QuestEncounterCombat(
             mob.combo = if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) when (maneuver.kind) {
                 ManeuverKind.HOP_BACK -> if (mob.enraged) "sakura-scatter" else null     // 飛び退き→散華
                 ManeuverKind.DASH -> "sakura-horn"                                       // 回り込み→突き上げ
-                ManeuverKind.STRAFE -> null
+                else -> null
             } else when (maneuver.kind) {
                 ManeuverKind.HOP_BACK -> if (mob.enraged) "shade-breath" else null   // 2 跳び退き→吐息
                 ManeuverKind.DASH -> "shade-sweep"                                   // 3 回り込み→薙ぎ
-                ManeuverKind.STRAFE -> null
+                else -> null
             }
             if (mob.combo != null) mob.warningRetryAt = now
             updateMovementSpeed(mob, now)
@@ -977,6 +1002,11 @@ class QuestEncounterCombat(
                 val radius = horizontalLength(here.sub(target.position)).coerceIn(5.0, 8.0)
                 val goal = safeRetreat(target.position.add(kotlin.math.cos(angle) * radius, 0.0, kotlin.math.sin(angle) * radius), mob.home, mob.definition.leashRange)
                 if (goal != null) mob.entity.navigator.setPathTo(goal, 0.5, null) else stopNavigation(mob)
+                mob.nextPathAt = now + 300L
+            }
+        } else if (maneuver.kind == ManeuverKind.STALK) {
+            if (now >= mob.nextPathAt) {
+                mob.entity.navigator.setPathTo(target.position, 6.0, null)
                 mob.nextPathAt = now + 300L
             }
         } else if (now >= maneuver.moveFrom) {
@@ -1209,6 +1239,8 @@ class QuestEncounterCombat(
                         else -> null
                     }
                     if (mob.combo != null) mob.warningRetryAt = lastTickAt
+                    // the chain is over: it moves round its prey for a while before the next attack
+                    else mob.restUntil = lastTickAt + if (mob.enraged) SAKURA_REST_ENRAGED.random(mob.moveRandom) else SAKURA_REST.random(mob.moveRandom)
                 }
             }
         }
@@ -1522,6 +1554,15 @@ class QuestEncounterCombat(
         const val TURN_SWEEP = "shade-turnsweep"
         /** 桜牙獣 answers someone at its back with the 360 tail spin. */
         const val SAKURA_TURN = "sakura-spin"
+        /** 桜牙獣's breather between attack chains (ms), and the pause between its moves. */
+        val SAKURA_REST = 2200L..3800L
+        val SAKURA_REST_ENRAGED = 1400L..2600L
+        const val SAKURA_MANEUVER_GAP = 250L
+        const val STALK_SPEED = .55
+        /** Its standing moves, the lengths of their clips (assets/bosses/sakura_fang.bbmodel). */
+        internal val SAKURA_STAND_MILLIS = mapOf(ManeuverKind.GROWL to 1600L, ManeuverKind.SHAKE to 1300L, ManeuverKind.SCRAPE to 1200L)
+        internal val SAKURA_MANEUVERS = listOf(ManeuverKind.STRAFE to 4, ManeuverKind.DASH to 2, ManeuverKind.GROWL to 1,
+            ManeuverKind.SHAKE to 1, ManeuverKind.SCRAPE to 1)
         /** 桜牙獣's big strikes that open a counter window [COUNTER_LEAD_MILLIS]..[COUNTER_CLOSE_MILLIS] before they land. */
         val SAKURA_COUNTERABLE = setOf("sakura-claw", "sakura-tail", "sakura-bloom", "sakura-charge", "sakura-howl", "sakura-rain", "sakura-pounce", "sakura-claw3")
         const val COUNTER_LEAD_MILLIS = 600L

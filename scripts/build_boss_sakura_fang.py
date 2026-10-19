@@ -1088,6 +1088,50 @@ def strafe_pose(t, sign, L=1.2, enraged=False):
     return pose(p, body=(0, 16 * sign, 0), neck=(0, -18 * sign, 0), skull=(0, -8 * sign, 0), chest=(0, 0, 4 * sign))
 
 
+def growl_keys(shells):
+    """1.6 s, 威嚇 (between attacks, standing): it drops its head low with the jaw half open, weaves it slowly from
+    side to side and rumbles (the petals rattle), then snaps it up at its prey."""
+    s = {"shells": shells}
+    low = pose(rear(6), pos=(0, -3, 0), chest=(8, 0, 0), neck=(26, 0, 0), skull=(10, 0, 0), jaw=(18, 0, 0),
+               arm_l=(-6, 0, -6), arm_r=(-6, 0, 6), tail_1=(10, 0, 0), shells=shells + .15, tremble=2.5)
+    return [(0, dict(s), "io"), (.25, low, "out"),
+            (.55, pose(low, neck=(0, 16, 0), skull=(0, 10, -6), chest=(0, 4, 0)), "io"),
+            (.9, pose(low, neck=(0, -16, 0), skull=(0, -10, 6), chest=(0, -4, 0)), "io"),
+            (1.15, pose(low, neck=(2, 6, 0), jaw=(10, 0, 0), tremble=4.0), "io"),
+            (1.3, pose(rear(-6), neck=(-14, 0, 0), skull=(-6, 0, 0), jaw=(26, 0, 0), shells=shells + .3, tremble=2.0), "out"),
+            (1.6, dict(s), "io")]
+
+
+def shake_keys(shells):
+    """1.3 s, 身震い (between attacks, standing): a dog shaking off water, head first and then the shoulders, the back
+    and the tail in turn, the petals clattering open and shut."""
+    keys = [(0, {"shells": shells}, "io"), (.15, pose(pos=(0, -2, 0), neck=(8, 0, 0)), "io")]
+    for k in range(8):                      # the shake runs down the body: each joint a little later than the last
+        t = .25 + k * .1
+        a = (-1) ** k * (1 - k / 10)
+        keys.append((t, pose(pos=(0, -2, 0), neck=(6, 0, 22 * a), skull=(0, 0, 16 * a), chest=(0, 0, 14 * a),
+                             body=(0, 0, 8 * a * (k > 1)), tail_1=(0, 18 * a * (k > 2), 0), tail_2=(0, 20 * a * (k > 3), 0),
+                             tail_3=(0, 18 * a * (k > 3), 0), shells=shells + (.4 if k % 2 else 0), tremble=3.0), "io"))
+    return keys + [(1.1, pose(neck=(-4, 0, 0), pos=(0, 1, 0), shells=shells), "out"), (1.3, {"shells": shells}, "io")]
+
+
+def scrape_keys(shells):
+    """1.2 s, 地を掻く (between attacks, standing): it rakes the ground twice with a forepaw like a bull, head low,
+    eyes on its prey."""
+    base = pose(rear(8), pos=(0, -3, 0), chest=(6, 0, 0), neck=(20, 0, 0), skull=(8, 0, 0), tail_1=(14, 0, 0), shells=shells)
+    up = pose(base, arm_r=(-48, 0, 0), forearm_r=(-50, 0, 0), hand_r=(-20, 0, 0), chest=(0, -4, 0))
+    back = pose(base, arm_r=(26, 0, 0), forearm_r=(-10, 0, 0), hand_r=(16, 0, 0), chest=(0, 3, 0), tremble=2.0)
+    return [(0, {"shells": shells}, "io"), (.2, base, "io"), (.35, up, "out"), (.5, back, "in"), (.68, up, "out"), (.84, back, "in"),
+            (1.0, base, "io"), (1.2, {"shells": shells}, "io")]
+
+
+def stalk_pose(t, enraged=False):
+    """忍び寄り (between attacks, moving in from afar): a slow, low creep, shoulders rolling, head level and the tail
+    held still and low."""
+    p = walk_pose(t, 1.6, enraged)
+    return pose(p, pos=(0, -5, 0), chest=(8, 0, 0), neck=(22, 0, 0), skull=(-8, 0, 0), tail_1=(-10, 0, 0), tail_2=(-4, 0, 0))
+
+
 def flinch_keys(shells):
     """1.0 s: a part breaks (QuestEncounterCombat.partBroken): the head snaps back, the body recoils and shakes it off."""
     s = {"shells": shells}
@@ -1258,6 +1302,10 @@ def animate(m, b):
         bake(b, f"hop_back{tag}", 1.1, hop_back_keys(sh))
         bake(b, f"dash_l{tag}", .9, dash_keys(1, sh))
         bake(b, f"dash_r{tag}", .9, dash_keys(-1, sh))
+        bake(b, f"growl{tag}", 1.6, growl_keys(sh))
+        bake(b, f"shake{tag}", 1.3, shake_keys(sh))
+        bake(b, f"scrape{tag}", 1.2, scrape_keys(sh))
+        bake(b, f"stalk{tag}", 1.6, looped(1.6, lambda t, e=bool(sh): stalk_pose(t, enraged=e)))
         bake(b, f"strafe_l{tag}", 1.2, looped(1.2, lambda t, e=bool(sh): strafe_pose(t, 1, enraged=e)), "loop")
         bake(b, f"strafe_r{tag}", 1.2, looped(1.2, lambda t, e=bool(sh): strafe_pose(t, -1, enraged=e)), "loop")
     bake(b, "enrage", 5.0, enrage_keys(), overlay=overlay_for("enrage", 2.5, 5.0))

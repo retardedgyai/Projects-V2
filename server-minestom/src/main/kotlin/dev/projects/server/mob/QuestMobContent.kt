@@ -163,29 +163,30 @@ internal object QuestMobContent {
                 )).copy(model = "shade_wyrm", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2,
                     enragedBones = setOf("horn_l", "horn_r", "cloak_l", "cloak_r", "horn_l_tip", "horn_r_tip", "cloak_l_tatters", "cloak_r_tatters"), foldedBones = setOf("wing_l", "wing_r"))
             // Fanged beast with sakura petal shells (scripts/build_boss_sakura_fang.py). Animation lengths in
-            // assets/bosses/sakura_fang.bbmodel equal telegraph+recovery of each ability below.
+            // assets/bosses/sakura_fang.bbmodel equal telegraph+recovery of each ability below. Cooldowns are long on
+            // purpose: between attack chains it rests and moves round its prey (QuestEncounterCombat.SAKURA_REST).
             QuestMobArchetype.SAKURA_FANG -> definition(EntityType.RAVAGER, 560.0, .14, 3.0, 1.0,
                 Material.AIR, attacks = listOf(
                     attack("sakura-claw", "桜爪の叩きつけ・横へ", MobAttackShape.Slam(6.0, 2.4), 5.0, 22.0,
-                        1200, 450, 1000, 2400, weight = 3),
+                        1200, 450, 1000, 6500, weight = 3),
                     attack("sakura-tail", "花尾の振り下ろし・横へ", MobAttackShape.Slam(9.0, 1.8), 8.5, 27.0,
-                        1500, 500, 1100, 3400, minimumRange = 2.5, weight = 2),
+                        1500, 500, 1100, 8000, minimumRange = 2.5, weight = 2),
                     attack("sakura-scatter", "散華・扇の外へ", MobAttackShape.Sweep(12.0, 40.0), 11.0, 20.0,
-                        1700, 600, 900, 3200, weight = 2),
+                        1700, 600, 900, 8000, weight = 2),
                     attack("sakura-bloom", "花嵐・獣から離れろ", MobAttackShape.Ring(8.0), 6.0, 30.0,
-                        2000, 0, 1200, 5000, health = .5, weight = 2),
+                        2000, 0, 1200, 10000, health = .5, weight = 2),
                     attack("sakura-horn", "枝角の突き上げ・横へ", MobAttackShape.Slam(4.8, 1.5), 4.2, 18.0,
-                        800, 350, 700, 2000, weight = 3),
+                        800, 350, 700, 6000, weight = 3),
                     attack("sakura-spin", "花尾の旋回・離れろ", MobAttackShape.Ring(5.6), 4.5, 20.0,
-                        1000, 0, 900, 3200, weight = 2),
+                        1000, 0, 900, 7500, weight = 2),
                     attack("sakura-howl", "散り際の遠吠え・離れろ", MobAttackShape.Ring(6.5), 5.5, 26.0,
-                        1600, 0, 1000, 7000, health = .5, weight = 1),
+                        1600, 0, 1000, 14000, health = .5, weight = 1),
                     attack("sakura-pounce", "花冠の飛びかかり・着地点から離れろ", MobAttackShape.Ring(3.6), 14.0, 26.0,
-                        1100, 550, 900, 4200, minimumRange = 5.0, target = true, weight = 2),
+                        1100, 550, 900, 9000, minimumRange = 5.0, target = true, weight = 2),
                     attack("sakura-rain", "花冠落とし・印から出ろ", MobAttackShape.Ring(3.2), 16.0, 22.0,
-                        1800, 1300, 800, 5200, minimumRange = 4.0, target = true, weight = 2),
+                        1800, 1300, 800, 11000, minimumRange = 4.0, target = true, weight = 2),
                     attack("sakura-charge", "花吹雪の突進・横へ", MobAttackShape.Slam(13.0, 2.0), 12.0, 28.0,
-                        1000, 450, 1200, 5000, minimumRange = 3.0, health = .5, weight = 2),
+                        1000, 450, 1200, 10000, minimumRange = 3.0, health = .5, weight = 2),
                     // 三連桜爪: the paw slam chains into a second blow, and once enraged into a third (QuestEncounterCombat).
                     attack("sakura-claw2", "桜爪・二の手", MobAttackShape.Slam(6.0, 2.4), 5.0, 20.0,
                         600, 250, 700, 0, scripted = true),
