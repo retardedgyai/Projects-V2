@@ -12,7 +12,9 @@ Front is +Z, +X is the beast's left, 16 px = 1 block. Every bone rests at rotati
 placed in world space, so a bone turns about its pivot (the joint). Animation names are the server
 contract (see docs/development/boss-model-pipeline.md); the clips here are placeholders until the shape OK.
 """
+import json
 import math
+import sys
 from pathlib import Path
 
 from boss_models import Model, ROOT
@@ -822,7 +824,7 @@ def walk_pose(t, L=1.2, enraged=False):
     for side, ph2 in (("l", ph), ("r", ph + math.pi)):
         s, c = math.sin(ph2), math.cos(ph2)
         lift = max(0.0, c)
-        p[f"arm_{side}"] = (20 * s, 0, (3 if side == "l" else -3) * lift)
+        p[f"arm_{side}"] = (-20 * s, 0, (3 if side == "l" else -3) * lift)
         p[f"forearm_{side}"] = (-30 * lift, 0, 0)
         p[f"hand_{side}"] = (22 * lift - 8 * s, 0, 0)
     for side, ph2 in (("l", ph + math.pi), ("r", ph)):          # diagonal pairs
@@ -1366,12 +1368,93 @@ def open_pose(b, f=1.0):
     return {name: matrix_euler(axis_angle(axis, deg * f)) for name, (axis, deg) in b.frames.items()}
 
 
+# Clips whose feet must stay on the ground: their body height is corrected frame by frame after baking.
+GROUNDED = ("idle", "idle_enraged", "walk", "walk_enraged", "strafe_l", "strafe_r", "strafe_l_enraged", "strafe_r_enraged",
+            "stalk", "stalk_enraged", "search")
+
+
+def ground_feet(path):
+    """Keeps the paws on the ground in the walking clips. Their poses swing and roll the legs freely, and the arcs
+    push paws through the floor (a dog paddling more than walking) or leave the hind pair hanging; here every frame
+    is posed with the real bones (scripts/boss_preview/rbb.py), the lowest corner of the fore pair and of the hind
+    pair measured, and the body pitched and raised so both pairs stand exactly where the paws stand at rest."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent / "boss_preview"))
+    import numpy as np
+    import rbb
+    sc = rbb.Scene(path)
+
+    def tree(bone):
+        return [bone] + [n for n, v in sc.bones.items() if v["parent"] == bone for n in tree(n)]
+
+    def cubes(limbs):
+        return [(bone, np.array([[x, y, z] for x in (c["from"][0], c["to"][0]) for y in (c["from"][1], c["to"][1])
+                                 for z in (c["from"][2], c["to"][2])])) for k in limbs for bone in tree(k) for c in sc.bones[bone]["cubes"]]
+    fore, hind = cubes(("hand_l", "hand_r")), cubes(("foot_l", "foot_r"))
+
+    def lowest(pose, paws):
+        mats = sc.mats(pose)
+        return min(float((corners @ mats[bone][:3, :3].T + mats[bone][:3, 3])[:, 1].min()) for bone, corners in paws)
+
+    def pitched(pose, d):
+        rot, pos, scl = pose.get("body", (np.zeros(3), np.zeros(3), np.ones(3)))
+        return {**pose, "body": (rot + np.array([d, 0, 0]), pos, scl)}
+    ground = min(lowest({}, fore), lowest({}, hind))
+    data = json.loads(path.read_text(encoding="utf-8"))
+    for anim in data["animations"]:
+        if anim["name"] not in GROUNDED:
+            continue
+        body = next(a for a in anim["animators"].values() if a["name"] == "body")
+        turns = {k["time"]: k for k in body["keyframes"] if k["channel"] == "rotation"}
+        for k in body["keyframes"]:
+            if k["channel"] != "position" or k["time"] not in turns:
+                continue
+            pose = sample_pose(anim, k["time"])
+            # pitch until the fore and hind pairs are level with each other (secant steps on the height gap)
+            gap = lambda d: lowest(pitched(pose, d), hind) - lowest(pitched(pose, d), fore)
+            d0, d1, g0 = 0.0, 1.0, gap(0.0)
+            for _ in range(4):
+                g1 = gap(d1)
+                if abs(g1 - g0) < 1e-6:
+                    break
+                d0, d1, g0 = d1, d1 - g1 * (d1 - d0) / (g1 - g0), g1
+            d = max(-8.0, min(8.0, d0))
+            pose = pitched(pose, d)
+            turns[k["time"]]["data_points"][0]["x"] = round(float(turns[k["time"]]["data_points"][0]["x"]) - d, 3)   # stored negated
+            low = min(lowest(pose, fore), lowest(pose, hind))
+            k["data_points"][0]["y"] = round(float(k["data_points"][0]["y"]) + ground - low, 3)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+
+
+def sample_pose(anim, t):
+    """The pose a clip shows at t (linear between keys), in rbb.Scene's form; editor x is stored negated."""
+    import numpy as np
+    pose = {}
+    for an in anim["animators"].values():
+        ch = {}
+        for k in an["keyframes"]:
+            d = k["data_points"][0]
+            ch.setdefault(k["channel"], []).append((k["time"], np.array([float(d["x"]), float(d["y"]), float(d["z"])])))
+        o = {}
+        for c, keys in ch.items():
+            keys.sort(key=lambda q: q[0])
+            v = keys[-1][1]
+            for (t0, v0), (t1, v1) in zip(keys, keys[1:]):
+                if t0 <= t <= t1:
+                    v = v0 + (v1 - v0) * ((t - t0) / (t1 - t0) if t1 > t0 else 1)
+                    break
+            o[c] = v
+        r = o.get("rotation", np.zeros(3))
+        pose[an["name"]] = (np.array([-r[0], r[1], r[2]]), o.get("position", np.zeros(3)), o.get("scale", np.ones(3)))
+    return pose
+
+
 def main():
     b = build()
     outliner = b.outliner()
     animate(b.m, b)
     out = Path(__import__("os").environ.get("SAKURA_OUT", ROOT / "assets/bosses/sakura_fang.bbmodel"))
     data = b.m.write(out, outliner)
+    ground_feet(out)
     print(f"{out}: {len(data['elements'])} cubes, {len(b.bones)} bones, {len(data['animations'])} animations")
     return b
 
