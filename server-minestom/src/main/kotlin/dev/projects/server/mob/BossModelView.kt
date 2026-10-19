@@ -133,6 +133,9 @@ internal class BossModelView(
 
     val partCount: Int get() = if (disposed) 0 else model.getParts().size
     internal val currentLoop: String get() = loop
+    /** The enraged parts (horns, fans) are out / the phase-one ones (wings) are folded away; hit spheres follow. */
+    internal var revealed = false; private set
+    internal var folded = false; private set
 
     fun show(player: Player) { if (!disposed) model.addViewer(player) }
     fun hide(player: Player) { if (!disposed && !dying) model.removeViewer(player) }
@@ -230,11 +233,13 @@ internal class BossModelView(
      * later is never mounted and stays where it was spawned. Showing the model again mounts every bone.
      */
     private fun reveal() {
+        revealed = true
         hiddenUntilEnraged.forEach { model.setBoneVisible(it, true) }
         for (viewer in model.viewers.toList()) { model.removeViewer(viewer); model.addViewer(viewer) }
     }
 
     private fun hideFolded() {
+        folded = true
         for (part in model.getParts()) {
             val name = part.name
             if (hiddenOnceEnraged.any { name == it || name.startsWith("${it}_") }) part.setVisible(false)
