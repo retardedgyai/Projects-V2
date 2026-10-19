@@ -126,13 +126,33 @@ def box_painter(mat, seed=0):
     return make
 
 
+def grad_painter(t0, t1, base="shell"):
+    """Box whose colour climbs from the `base` ramp into sakura pink between t0 and t1 along its length."""
+    ramp = RAMPS[base]
+
+    def make(side, w, h):
+        def paint(x, y, w, h):
+            along = 1 - y / max(1, h - 1) if side not in ("up", "down") else .5
+            t = max(0.0, min(1.0, t0 + (t1 - t0) * along))
+            k = t ** 1.3
+            tone = 3 if side == "up" else 0 if side == "down" else 2 if x > 0 else 3
+            c = ramp[tone]
+            p = PETAL[{0: 0, 1: 1, 2: 2, 3: 3}[tone]]
+            return tuple(int(c[i] + (p[i] - c[i]) * k) for i in range(3)) + (255,)
+        return paint, ("grad", base, round(t0, 2), round(t1, 2), side, w, h)
+    return make
+
+
+GLOW = (255, 150, 196)
+
+
 def flat_painter(color):
     def make(side, w, h):
         return (lambda x, y, w, h: color + (255,)), ("flat", color, w, h)
     return make
 
 
-def fur_painter(seed=0):
+def fur_painter(seed=0, tint=False):
     """Fur plate: strand clumps (2 px) hang from the root edge (local +Y), dark at the root and pale at
     the tips, jagged ends cut to transparent. Only the two big faces (east/west) are drawn."""
     pal = RAMPS["fur"]
@@ -151,8 +171,10 @@ def fur_painter(seed=0):
             t = 0 if f < .18 else 1 if f < .5 else 2 if f < .82 else 3
             if _h(seed, clump, 7) < .3:
                 t = max(0, t - 1)
+            if tint and f > .66:                                   # sakura-tinted tips
+                return PETAL[3 if f < .84 else 2] + (255,)
             return pal[t] + (255,)
-        return paint, ("fur", seed % 9, side, w, h)
+        return paint, ("fur", seed % 9, tint, side, w, h)
     return make
 
 
@@ -211,11 +233,11 @@ class Builder:
         paint = mat if callable(mat) else box_painter(mat, seed)
         self.m.cube(name or f"{bone}_{len(self.items[bone])}", lo, hi, self.items[bone], paint)
 
-    def fur(self, bone, root, tip_dir, width_dir, L, W, seed):
+    def fur(self, bone, root, tip_dir, width_dir, L, W, seed, tint=False):
         """Fur plate: root edge at `root`, strands hang toward tip_dir, plate spans width_dir."""
         d = unit(tip_dir)
         R = basis([-c for c in d], width_dir)
-        self.oriented(bone, f"{bone}_fur{len(self.items[bone])}", add(root, d, L / 2), [.05, L / 2, W / 2], R, fur_painter(seed))
+        self.oriented(bone, f"{bone}_fur{len(self.items[bone])}", add(root, d, L / 2), [.05, L / 2, W / 2], R, fur_painter(seed, tint))
 
     def petal(self, bone, base, out_dir, normal, L, W, kind="shell", r0=0.0):
         R = basis(out_dir, normal)
@@ -230,13 +252,13 @@ class Builder:
         return [made[n] for n, p, _ in self.bones if p is None]
 
 
-def tufts(b, bone, root, direction, n, spread, L, W, axis, seed):
+def tufts(b, bone, root, direction, n, spread, L, W, axis, seed, tint=False):
     """n fur plates fanned around `direction`, rotating about `axis`."""
     d0, ax = unit(direction), unit(axis)
     for k in range(n):
         t = (k / (n - 1) - .5) if n > 1 else 0.0
         d = mat_vec(axis_angle(ax, spread * t), d0)
-        b.fur(bone, root, d, cross(ax, d), L * (1 - .3 * abs(t) * 2), W, seed + k)
+        b.fur(bone, root, d, cross(ax, d), L * (1 - .3 * abs(t) * 2), W, seed + k, tint)
 
 
 # --- head: a long wedge pitched down, brow ridges, big swept-back horns, a fur beard -----------------
@@ -274,11 +296,16 @@ def head(b):
             hs("skull", (2.8 * s, -2.4, z), (2.8 * s, -5.4, z + .4), 1.3, 1.3, "claw")   # upper fangs
         hs("jaw", (2.5 * s, -3.6, 16), (2.5 * s, -1.4, 16.4), 1.1, 1.1, "claw")         # lower fangs
         # horns: thick roots above the eyes, sweeping back past the neck, tips curling up, one side spike
-        hs("skull", (4.4 * s, 5.6, 7), (8.5 * s, 12, -4), 4.6, 4.6, "shell", seed=24)
-        hs("skull", (8.5 * s, 12, -4), (11 * s, 18, -14), 3.4, 3.4, "shell", seed=25)
-        hs("skull", (11 * s, 18, -14), (11.4 * s, 25, -19), 2.2, 2.2, "claw")
-        hs("skull", (7.6 * s, 10.5, -1), (12 * s, 10, -5), 1.6, 1.6, "claw")
-        hs("skull", (10 * s, 15.5, -10), (14 * s, 16, -14), 1.4, 1.4, "claw")
+        pts = [(4.4, 5.6, 7), (7.4, 10, 0), (9.8, 14.2, -7), (11.4, 18.6, -12.5), (12, 23, -16), (11.4, 27, -18), (10.2, 29.6, -18.6)]
+        ws = [4.4, 3.7, 3.0, 2.3, 1.7, 1.2]
+        n = len(ws)
+        for k in range(n):
+            a, c = pts[k], pts[k + 1]
+            hs("skull", (a[0] * s, a[1], a[2]), (c[0] * s, c[1], c[2]), ws[k], ws[k], grad_painter(k / n, (k + 1) / n))
+        for (bx, by, bz), (tx, ty, tz), w, t in (((9.6, 13.6, -6), (14.6, 15.4, -10.5), 1.5, .55), ((11.6, 19.6, -13), (16, 23, -15.5), 1.2, .75),
+                                                  ((8, 11, -1.5), (11.6, 9.4, -6), 1.3, .45)):
+            hs("skull", (bx * s, by, bz), (tx * s, ty, tz), w, w, grad_painter(t, 1))
+        hs("skull", (5.9 * s, 2.6, 7.2), (6.4 * s, 4.8, .5), .6, .6, flat_painter(GLOW), name="glow_streak")   # eye streak
         # cheek fur flaring back
         tufts(b, "skull", H(6 * s, -1.2, 5), mat_vec([[1, 0, 0], [0, 1, 0], [0, 0, 1]], [s * .55, -.25, -1]), 5, 60, 13, 4, (s, 0, 0), 80 + s)
     # beard: pale fur hanging under the jaw
@@ -322,11 +349,22 @@ def build():
         # massive forearms: elbow back, forearm forward, wide paw
         b.seg(f"arm_{side}", (13 * s, 44, 12), (15 * s, 21, 6), 12, 13, "hide", seed=5)
         b.seg(f"forearm_{side}", (15 * s, 22, 6), (15 * s, 4, 18), 11, 12, "hide", seed=6)
-        b.seg(f"forearm_{side}", (17.5 * s, 21, 5), (18 * s, 7, 15), 3, 10, "shell", seed=7)   # forearm shell
-        b.seg(f"arm_{side}", (17 * s, 46, 13), (19 * s, 30, 9), 3, 12, "shell", seed=8)        # shoulder shell
+        for k, (top, bot, w) in enumerate((((17.6, 22, 4), (18.4, 15, 9), 11), ((18, 17, 7.5), (18.8, 10, 12.5), 10), ((18.2, 12, 11), (18.8, 5.5, 15.5), 8.5))):
+            T = (top[0] * s, top[1], top[2]); B = (bot[0] * s, bot[1], bot[2])
+            b.seg(f"forearm_{side}", T, B, 2.4, w, "shell", seed=7 + k)                         # layered forearm shells
+            b.seg(f"forearm_{side}", (B[0] + .9 * s, B[1] + .4, B[2] - w / 2 + .6), (B[0] + .9 * s, B[1] + .4, B[2] + w / 2 - .6), .6, .6,
+                  flat_painter(GLOW), name="glow_seam")
+            b.seg(f"forearm_{side}", (B[0], B[1] + 1.2, B[2] + w / 2 - 1), (B[0] + 1.6 * s, B[1] - 2.6, B[2] + w / 2 + 1.2), 1.4, 1.4, grad_painter(.3, 1))  # spur
+        for k, (top, bot, w) in enumerate((((17, 47, 14), (19, 37, 11), 13), ((18.6, 40, 11.5), (20, 30, 8.5), 11))):
+            T = (top[0] * s, top[1], top[2]); B = (bot[0] * s, bot[1], bot[2])
+            b.seg(f"arm_{side}", T, B, 2.6, w, "shell", seed=11 + k)                             # layered shoulder shells
+            b.seg(f"arm_{side}", (B[0] + .9 * s, B[1] + .4, B[2] - w / 2 + .6), (B[0] + .9 * s, B[1] + .4, B[2] + w / 2 - .6), .6, .6,
+                  flat_painter(GLOW), name="glow_seam")
         b.box(f"hand_{side}", (15 * s - 7, 0, 12), (15 * s + 7, 5, 27), "hide", seed=9)
         for k in (-4.4, 0, 4.4):
-            b.seg(f"hand_{side}", (15 * s + k, 2.8, 25.5), (15 * s + k, .2, 31), 2.2, 2.2, "claw")
+            x = 15 * s + k
+            b.seg(f"hand_{side}", (x, 3.4, 25), (x, 3, 30), 2.4, 2.4, "claw")
+            b.seg(f"hand_{side}", (x, 3, 30), (x, -.2, 32.6), 1.6, 1.6, grad_painter(.2, .9, "claw"))
         tufts(b, f"forearm_{side}", (15 * s, 22, 3), (s * .25, .1, -1), 4, 40, 10, 3.5, (1, 0, 0), 60 + s)
         # short crouched hind legs
         b.seg(f"thigh_{side}", (10 * s, 35, -25), (12 * s, 18, -16), 10, 12, "hide", seed=10)
@@ -337,13 +375,24 @@ def build():
             b.seg(f"foot_{side}", (12 * s + k, 2, -17.5), (12 * s + k, .2, -14), 1.6, 1.6, "claw")
         tufts(b, f"thigh_{side}", (11 * s, 33, -27), (s * .3, .1, -1), 4, 40, 9, 3.5, (1, 0, 0), 70 + s)
 
+    # glowing seams along the flanks and the tail sides (thin, sakura pink)
+    for s in (1, -1):
+        b.seg("chest", (13.3 * s, 33, 13), (13.3 * s, 30, -1), .6, .6, flat_painter(GLOW), name="glow_seam")
+        b.seg("chest", (13.3 * s, 38, 13), (13.3 * s, 36, 2), .6, .6, flat_painter(GLOW), name="glow_seam")
+        b.seg("body", (9.4 * s, 34.5, -3), (9.6 * s, 31.5, -27), .6, .6, flat_painter(GLOW), name="glow_seam")
+        for i in range(len(TAIL) - 1):
+            w = [13, 12, 11, 9.5, 8][i]
+            a, c = TAIL[i], TAIL[i + 1]
+            b.seg(f"tail_{i + 1}", (a[0] + (w / 2 + .1) * s, a[1], a[2]), (c[0] + (w / 2 + .1) * s, c[1], c[2]), .6, .6, flat_painter(GLOW), name="glow_seam", over=0)
+
     # neck and head, carried low and forward
     b.seg("neck", (0, 43, 14), (0, 39, 28), 16, 16, "hide", seed=14)
     head(b)
 
     # mane: rows of pale fur over neck and shoulders, standing back and up
-    for z0, y0, L, bone in ((31, 44, 15, "skull"), (25, 47, 20, "neck"), (18, 50, 23, "neck"), (11, 50, 21, "chest"), (4, 48, 16, "chest")):
-        tufts(b, bone, (0, y0 + 2, z0), (0, .75, -1), 11, 175, L * 1.3, 6, (0, 0, 1), z0)
+    for z0, y0, L, bone in ((31, 44, 15, "skull"), (27, 46, 19, "neck"), (22, 48, 22, "neck"), (17, 50, 24, "neck"),
+                            (11, 50, 22, "chest"), (5, 48, 18, "chest"), (-1, 46, 13, "chest")):
+        tufts(b, bone, (0, y0 + 2, z0), (0, .75, -1), 13, 175, L * 1.3, 5, (0, 0, 1), z0, tint=True)
 
     # tail: thick, curling up over the back
     widths = [(13, 11), (12, 10), (11, 9), (9.5, 8), (8, 7)]
@@ -368,6 +417,7 @@ def build():
             base = add(add(p, X, 1.4), U, top)
             out = unit(add(add(D, U, .95), X, .25))
             b.petal(name, base, out, X, L, L * .82)
+            b.petal(name, add(base, X, .7), out, X, L * .58, L * .44, kind="bud")      # inner petal
         b.frames[name] = splay(D, X, U, open_deg)
 
     up = [0, 1, 0]
