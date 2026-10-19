@@ -304,7 +304,10 @@ def render(motion, skin, t, view):
     since_imp = t - imp['t']
     eye = np.array(eye, float)
     focal = R.FOCAL
-    if view == 'first':
+    if view == 'first' and 'fp_grip' not in motion['tracks']:
+        focal = (R.H / 2) / math.tan(math.radians(35))  # Minecraft's default 70 degree vertical field of view
+        eye = np.array((0.0, EYE, 0.0)); target = (0, EYE - .55, 3.0)
+    if view == 'first' and 'fp_grip' in motion['tracks']:
         # The charge narrows the view (in game: the movement-speed FOV), the impact snaps it back.
         charge_t = min(1.0, max(0.0, (t - .7) / 2.0)) if t < imp['t'] else max(0.0, 1 - since_imp / .2)
         focal = R.FOCAL * (1 + .18 * charge_t)
@@ -333,10 +336,21 @@ def render(motion, skin, t, view):
         held = np.eye(4); held[:3, 0], held[:3, 1], held[:3, 2], held[:3, 3] = x, np.cross(z, x), z, to_world(g, 1)
         faces += sword_faces(held @ S(.55, .55, .55), glow, weapon)
     elif view == 'first':
-        # Held weapons in both hands (main hand and off hand): the puppet's blades and forearms as seen from the eye.
-        for name, m in parts.items():
-            if is_weapon(name): faces += sword_faces(m, glow, weapon)
-            elif name.endswith('_low') and name.startswith('arm'): faces += part_faces(name, m, skin)
+        # First person, as Better Combat shows it: the held weapons sweep through the lower half of the screen, in
+        # front of a camera that never moves. The game can only move the held item (no arm), so: the weapons alone,
+        # their root-space grip/blade carried into camera space around where Minecraft draws a held item.
+        tr = motion['tracks']
+        hands = [('r', 'grip_r', 'blade_r'), ('l', 'grip_l', 'blade_l')] if weapon['hands'] == 'dual' else [('r', 'grip', 'blade')]
+        to_world = lambda v, w: camera.eye * w + v[0] * camera.r + v[1] * camera.u + v[2] * camera.f
+        for side, gk, bk in hands:
+            g, b = sample(tr[gk], t, 'pos'), sample(tr[bk], t, 'dir')
+            # character right (-x) is screen right; fists ~0.9 m below the eye, pushed out in front of the camera
+            gc = np.array([-g[0] * 1.1, g[1] - .78, g[2] * .9 + .55])
+            bc = np.array([-b[0], b[1], b[2]])
+            z = to_world(bc, 0); z = z / np.linalg.norm(z)
+            x = np.cross(camera.u, z); x = x / (np.linalg.norm(x) + 1e-9)
+            held = np.eye(4); held[:3, 0], held[:3, 1], held[:3, 2], held[:3, 3] = x, np.cross(z, x), z, to_world(gc, 1)
+            faces += sword_faces(held @ S(.7, .7, .7), glow, weapon)
     else:
         for name, m in parts.items():
             faces += sword_faces(m, glow, weapon) if is_weapon(name) else part_faces(name, m, skin)
