@@ -73,10 +73,10 @@
 
 ### 紫の光（2026-10-19、26.3の機能）
 
-- **次元**：翳の巣だけ専用の次元型 `projects:shade_nest`（`BossArenaFactory.registerDimensions`、サーバー起動時に登録）。`BLOCK_LIGHT_TINT` を紫（#b34cff）にし、環境光・霧・空・空の光も紫寄り。ブロックの光がすべて紫になる（バニラは明るさ0と15の近くでは白へ寄せる）。
+- **次元と怒りの光**（藍「怒ったら周りが紫に」）：翳の巣だけ専用の次元型 `projects:shade_nest`（`BossArenaFactory.registerDimensions`、サーバー起動時に登録）。普段は普通の夜。専用の時計 `projects:shade_rage` に乗せたタイムラインが、時計0＝普通、60tick＝紫（ブロックの光の色#b34cff・環境光・霧・空の光）を持つ。時計は止めておき、竜が怒った瞬間に `QuestEncounterCombat` が動かす→3秒かけて紫に変わり、60tickで止める（バニラは明るさ0と15の近くでは白へ寄せる）。
 - **技の光**：`ShadeWyrmLights` が見えない光ブロック（`minecraft:light`）を空気の所にだけ置き、時間で消す。炸裂（真ん中13＋周り11、0.7秒）、飛びかかり・吐息（帯に沿って12、0.9秒）、薙ぎ（弧に12、0.5秒）、だまり（10、だまりが消えるまで）、だまりの破裂（14、0.6秒）、侵食の発症（12）、怒りの角（12、角について動く。折れると消える）。
 - **にじみ**：闘技場にいて竜が生きている間、`PostEffectsPacket` でポストエフェクト `projects:shade_glow` を出す（パックの `post_effect/shade_glow.json` と `shaders/post/shade_glow_*.fsh`、`scripts/shaders/post/` から `build_boss_vfx.py` がコピー）。画面の明るい紫だけを抜き出し、細い・太いぼかしを重ねて画面合成。バニラの上書きではない。
-- プレビュー：`fightclip.py <dump> t0 t1 out.gif before|violet|glow`（`lightfx.py` が光の式とにじみをCPUでまねる）。実機未確認。
+- プレビュー：`fightclip.py <dump> t0 t1 out.gif before|violet|glow|rage [倍率]`（`lightfx.py` が光の式とにじみをCPUでまねる）。実機未確認。
 
 ## 入口と報酬
 

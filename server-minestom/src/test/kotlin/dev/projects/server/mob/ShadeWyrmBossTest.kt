@@ -344,8 +344,10 @@ class ShadeWyrmBossTest {
             var now = 1_000L
             combat.tick(now)
             assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .52))
+            assertTrue(arena.instance.clock(BossArenaFactory.rageClock()).paused())
             repeat(110) { now += 50; combat.tick(now) }                        // the enrage roar
             assertTrue(combat.isEnraged(boss.uuid))
+            assertFalse(arena.instance.clock(BossArenaFactory.rageClock()).paused())   // the arena turns violet
             fun hitFrom(offset: Vec, share: Double) {
                 val yaw = Math.toRadians(boss.position.yaw().toDouble())
                 val ahead = Vec(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw))
@@ -365,12 +367,16 @@ class ShadeWyrmBossTest {
     }
 
     @Test
-    fun `the shade nest tints block light violet and pools light the floor until they burst`() {
+    fun `the shade nest holds its violet timeline at the calm end and pools light the floor until they burst`() {
         MinecraftServer.init(Auth.Offline())
         val arena = BossArenaFactory.create("shade", 1)
-        val type = requireNotNull(MinecraftServer.getDimensionTypeRegistry().get(arena.instance.dimensionType))
-        assertEquals(net.kyori.adventure.text.format.TextColor.color(BossArenaFactory.SHADE_LIGHT),
-            type.attributes().entries()[net.minestom.server.world.attribute.EnvironmentAttribute.BLOCK_LIGHT_TINT]?.argument())
+        // The violet comes from the rage timeline on its own clock, held at 0 (the ordinary night) until the enrage.
+        val rage = requireNotNull(MinecraftServer.getTimelineRegistry().get(BossArenaFactory.SHADE_RAGE))
+        val tint = requireNotNull(rage.tracks()[net.minestom.server.world.attribute.EnvironmentAttribute.BLOCK_LIGHT_TINT])
+        assertEquals(net.kyori.adventure.text.format.TextColor.color(BossArenaFactory.SHADE_LIGHT), tint.keyframes().last().value())
+        assertEquals(BossArenaFactory.RAGE_FADE_TICKS, tint.keyframes().last().ticks())
+        assertTrue(arena.instance.clock(BossArenaFactory.rageClock()).paused())
+        assertEquals(0L, arena.instance.clock(BossArenaFactory.rageClock()).time())
         val lights = ShadeWyrmLights(arena.instance)
         val gimmicks = ShadeWyrmGimmicks(1, ShadeWyrmShaderFx(arena.instance), kotlin.random.Random(2), lights)
         val dust = definition.abilities.single { it.id == "shade-dust" }

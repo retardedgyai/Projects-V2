@@ -168,6 +168,9 @@ class QuestEncounterCombat(
     private val gimmicks = ShadeWyrmGimmicks(tier, shaderFx, lights = lights)
     /** Players who have the boss glow post effect on (26.3 /posteffect, assets/projects/post_effect/shade_glow.json). */
     private val glowing = mutableSetOf<Player>()
+    /** 翳の巣's rage clock: started when the wyrm enrages, it turns the arena's light violet (BossArenaFactory.SHADE_RAGE). */
+    private val rageClock = if (instance.dimensionType.key() == dev.projects.server.coreloop.adventure.BossArenaFactory.SHADE_NEST)
+        instance.clock(dev.projects.server.coreloop.adventure.BossArenaFactory.rageClock()) else null
     @Volatile private var disposed = false
     private var bossSealed = false
     private var bossGateFraction = 0.0
@@ -477,6 +480,7 @@ class QuestEncounterCombat(
         shaderFx.tick()
         lights.tick(nowMillis)
         tickGlow()
+        rageClock?.let { if (!it.paused() && it.time() >= dev.projects.server.coreloop.adventure.BossArenaFactory.RAGE_FADE_TICKS) it.pause() }
         if (mobs.values.any { it.view != null }) gimmicks.tick(nowMillis, instance.players.filter { canTarget(it) }) { p, amount, type ->
             if (typedDamagePlayer != null) typedDamagePlayer.invoke(p, amount, type) else damagePlayer(p, amount)
         }
@@ -771,6 +775,7 @@ class QuestEncounterCombat(
             castingPose(mob, false)
             stopNavigation(mob)
             mob.view?.enrage(now)
+            if (mob.view != null) rageClock?.resume()
             mob.warningRetryAt = mob.enrageHoldUntil
             updateName(mob, "怒り・翼を広げた")
             sound(mob.entity.position, "minecraft:entity.ravager.roar", 1.2f, 0.6f)

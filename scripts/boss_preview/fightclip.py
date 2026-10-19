@@ -2,13 +2,13 @@
 
     SHADE_FIGHT_DUMP=/tmp/fight.jsonl ./gradlew :server-minestom:test --tests '*ShadeWyrmBossTest' --rerun
     python scripts/build_boss_vfx.py    # the shader data maps, if the pack was not built
-    python scripts/boss_preview/fightclip.py /tmp/fight.jsonl 0 11 out.gif [flat|before|violet|glow] [zoom]
+    python scripts/boss_preview/fightclip.py /tmp/fight.jsonl 0 11 out.gif [flat|before|violet|glow|rage] [zoom]
 
 Each frame: the wyrm where the server had it, turned the way the model faced, posed from the clip on show at that
 time, the shader displays the server showed (item.fsh's maths, see shaderclip.py), the player as a green post, and
 a small map of the arena. Blends between clips are not drawn. The last argument picks the lighting: flat (none),
 before (the overworld's warm block light), violet (翳の巣's tint and the server's light blocks), glow (violet plus the
-shade_glow post effect); see lightfx.py.
+shade_glow post effect), rage (calm until the enrage, then fading to violet as the server does, plus the glow); see lightfx.py.
 """
 import json
 import math
@@ -46,6 +46,7 @@ def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
     a_, e_ = math.radians(az), math.radians(el)
     cam = np.array([math.cos(e_) * math.sin(a_), math.sin(e_), math.cos(e_) * math.cos(a_)])
     right = np.cross([0, 1.0, 0], cam); right /= np.linalg.norm(right); up = np.cross(cam, right)
+    rage_at = next((r["t"] for r in rows if r["enraged"]), 1e9)
     frames = []
     step = max(1, round(20 / fps))
     for r in rows[::step]:
@@ -78,7 +79,8 @@ def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
         ox = W * .5 - np.array(center) @ right * zoom; oy = H * .72 + np.array(center) @ up * zoom
         proj = lambda p: (int(ox + p @ right * zoom), int(oy - p @ up * zoom))
         if mode != "flat":
-            LF.light(arr, zb, r.get("lights", []), "before" if mode == "before" else "violet", cam, right, up, ox, oy, zoom)
+            look = LF.rage_look((r["t"] - rage_at) / LF.RAGE_FADE) if mode == "rage" else "before" if mode == "before" else "violet"
+            LF.light(arr, zb, r.get("lights", []), look, cam, right, up, ox, oy, zoom)
         # floor dots every 2 blocks and the arena wall (radius 22)
         for gx in (range(-22, 23, 2) if mode == "flat" else ()):
             for gz in range(-22, 23, 2):
@@ -95,7 +97,7 @@ def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
         live = [dict(v) for v in r["shader"]]
         if live:
             SH.draw(arr, zb, live, 100 + r["t"], cam, right, up, ox, oy, zoom, tex)
-        if mode == "glow":
+        if mode in ("glow", "rage"):
             LF.bloom(arr)
         img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
         d = ImageDraw.Draw(img)

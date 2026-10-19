@@ -10,6 +10,11 @@ import net.minestom.server.instance.block.Block
 import net.minestom.server.registry.RegistryKey
 import net.minestom.server.world.DimensionType
 import net.minestom.server.world.attribute.EnvironmentAttribute
+import net.minestom.server.world.clock.WorldClock
+import net.minestom.server.world.timeline.Timeline
+import net.minestom.server.registry.RegistryTag
+import net.minestom.server.utils.EaseFunction
+import net.kyori.adventure.util.RGBLike
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.format.TextColor
 import java.util.concurrent.CompletableFuture
@@ -38,25 +43,48 @@ data class BossArena(
 
 /** Three concrete server-built arenas; no imported world or landscape mutation. */
 object BossArenaFactory {
-    /** 翳の巣 lives in its own dimension type (26.3 environment attributes): block light tinted violet, a violet night. */
+    /**
+     * 翳の巣 lives in its own dimension type whose light turns violet when the wyrm enrages (26.3 environment
+     * attributes): its timeline [SHADE_RAGE] runs on a clock of its own that stays at 0 (the ordinary night) until
+     * QuestEncounterCombat starts it, then blends block light, ambient light, fog and sky light to violet over
+     * [RAGE_FADE_TICKS].
+     */
     val SHADE_NEST: Key = Key.key("projects", "shade_nest")
+    val SHADE_RAGE: Key = Key.key("projects", "shade_rage")
+    const val RAGE_FADE_TICKS = 60
 
     /**
-     * Registers the arena dimensions. Dimension types reach a client only when it joins, so the server calls this
-     * once at start (CoreLoopServer); create() calls it too for tests and tools that build an arena directly.
+     * Registers the arena dimensions. Dimension types reach a client only when it joins, and an instance gets only
+     * the clocks registered before it is made, so the server calls this once at start (CoreLoopServer); create()
+     * calls it too for tests and tools that build an arena directly.
      */
     @Synchronized
     fun registerDimensions(): RegistryKey<DimensionType> {
         val registry = MinecraftServer.getDimensionTypeRegistry()
         registry.getKey(SHADE_NEST)?.let { return it }
+        val clock = MinecraftServer.getWorldClockRegistry().register(SHADE_RAGE, WorldClock.create())
+        fun <A> track(modifier: EnvironmentAttribute.Modifier<RGBLike, A>, calm: A, rage: A) =
+            Timeline.Track(modifier, listOf(Timeline.Keyframe(0, calm), Timeline.Keyframe(RAGE_FADE_TICKS, rage)), EaseFunction.IN_OUT_SINE)
+        val override = EnvironmentAttribute.Modifier.Override(EnvironmentAttribute.BLOCK_LIGHT_TINT.valueCodec())
+        @Suppress("UNCHECKED_CAST")                                       // composes with the day timeline's night
+        val multiply = EnvironmentAttribute.Modifier.RGB_OPERATORS.getValue(EnvironmentAttribute.Modifier.Operator.MULTIPLY) as EnvironmentAttribute.Modifier<RGBLike, RGBLike>
+        val white: RGBLike = TextColor.color(0xffffff)
+        val rage = MinecraftServer.getTimelineRegistry().register(SHADE_RAGE, Timeline.builder().clock(clock)
+            .track(EnvironmentAttribute.BLOCK_LIGHT_TINT, track(override, EnvironmentAttribute.BLOCK_LIGHT_TINT.defaultValue(), TextColor.color(SHADE_LIGHT)))
+            .track(EnvironmentAttribute.AMBIENT_LIGHT_COLOR, track(override, TextColor.color(0x0a0a0a), TextColor.color(0x1c1128)))
+            .track(EnvironmentAttribute.FOG_COLOR, track(multiply, white, TextColor.color(0xb080ff)))
+            .track(EnvironmentAttribute.SKY_LIGHT_COLOR, track(multiply, white, TextColor.color(0xa070ff)))
+            .build())
         val base = requireNotNull(registry.get(DimensionType.OVERWORLD))
         return registry.register(SHADE_NEST, DimensionType.builder(base)
-            .setAttribute(EnvironmentAttribute.BLOCK_LIGHT_TINT, TextColor.color(SHADE_LIGHT))
-            .setAttribute(EnvironmentAttribute.AMBIENT_LIGHT_COLOR, TextColor.color(0x1c1128))
-            .setAttribute(EnvironmentAttribute.FOG_COLOR, TextColor.color(0x140b20))
-            .setAttribute(EnvironmentAttribute.SKY_COLOR, TextColor.color(0x0b0612))
-            .setAttribute(EnvironmentAttribute.SKY_LIGHT_COLOR, TextColor.color(0x3a2660))
+            .timelines(RegistryTag.direct(Timeline.DAY, Timeline.MOON, Timeline.EARLY_GAME, rage))
             .build())
+    }
+
+    /** 翳の巣's rage clock (registered by [registerDimensions]). */
+    fun rageClock(): RegistryKey<WorldClock> {
+        registerDimensions()
+        return requireNotNull(MinecraftServer.getWorldClockRegistry().getKey(SHADE_RAGE))
     }
 
     /** The violet every block light in 翳の巣 takes (vanilla mixes it toward white near light level 0 and 15). */
@@ -77,6 +105,7 @@ object BossArenaFactory {
         instance.setChunkSupplier(::LightingChunk)
         instance.time = if (bossId == "trial" || bossId == "shade") 18_000L else 6_000L
         instance.defaultClock()?.pause()
+        if (bossId == "shade") instance.clock(rageClock()).run { time(0); pause() }
         instance.setWeather(Weather.CLEAR)
         instance.setGenerator { unit ->
             unit.modifier().fillHeight(0, 39, Block.DEEPSLATE)

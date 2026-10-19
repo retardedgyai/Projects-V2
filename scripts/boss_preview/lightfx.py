@@ -3,7 +3,7 @@
 - Block light: the arena's crying obsidian grid and pillar-top froglights (BossArenaFactory) plus the server's light blocks from the dump (ShadeWyrmLights),
   spread as vanilla does through open air (level minus the block distance), sampled per pixel at the surface.
 - lightmap.fsh's maths: ambient + sky light (night) + block light tinted by BLOCK_LIGHT_TINT, mixed toward white
-  near levels 0 and 15. "before" uses the overworld's values, "violet" the shade_nest dimension's.
+  near levels 0 and 15. "before" uses the overworld's values, "violet" the enraged values; rage_look() blends them as the shade_rage timeline does.
 - Bloom: shade_glow_extract.fsh, two box_blur passes per size, shade_glow_composite.fsh, with the radii scaled from a
   1920 px wide screen to the preview's width.
 """
@@ -27,6 +27,14 @@ LOOK = {
     "violet": (rgb(0xb34cff), rgb(0x1c1128), rgb(0x3a2660)),
 }
 SKY_FACTOR = .22
+RAGE_FADE = 3.0                                       # BossArenaFactory.RAGE_FADE_TICKS / 20
+
+
+def rage_look(f):
+    """The shade_rage timeline at f (0 = the calm night, 1 = enraged): tint and ambient blend, sky light multiplied."""
+    e = .5 - .5 * math.cos(math.pi * min(max(f, 0), 1))       # IN_OUT_SINE
+    (t0, a0, s0), (t1, a1, _) = LOOK["before"], LOOK["violet"]
+    return t0 + (t1 - t0) * e, a0 + (a1 - a0) * e, s0 * (1 + (rgb(0xa070ff) - 1) * e)
 GLOW = json.loads((ROOT / "scripts/shaders/post/shade_glow.json").read_text())
 
 
@@ -70,7 +78,7 @@ def block_light(P, lamps):
 
 
 def lightmap(level, look):
-    tint, amb, sky = LOOK[look]
+    tint, amb, sky = LOOK[look] if isinstance(look, str) else look
     bl = level / 15
     bright = bl / (4 - 3 * bl)
     mixf = .9 * (2 * bl - 1) ** 2
