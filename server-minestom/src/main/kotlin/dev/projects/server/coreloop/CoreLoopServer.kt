@@ -524,6 +524,25 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
                 player.sendMessage(Component.text(if (combatLab.enrageBoss(player)) "ボスを怒らせた（体力を怒りの境目の少し下へ）。" else "/bosstest のボス戦の中で使ってください。", NamedTextColor.GRAY))
             } } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("rage"))
+            // /bosstest sakura: 桜牙獣 in 散り桜の庭 instead of the shade wyrm.
+            addSyntax({ sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR, "sakura") } },
+                net.minestom.server.command.builder.arguments.ArgumentType.Literal("sakura"))
+        })
+        // Test-only: plays a player motion on the puppet (docs/development/player-motion.md). /motion stop ends it.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("motion").apply {
+            val name = net.minestom.server.command.builder.arguments.ArgumentType.Word("name")
+            val self = net.minestom.server.command.builder.arguments.ArgumentType.Literal("self")
+            setDefaultExecutor { sender, _ -> sender.sendMessage(Component.text("/motion greatsword_charge | dual_blades_dance [self] | stop（self：自分にも人形を見せる。F5で確認用）", NamedTextColor.GRAY)) }
+            addSyntax({ sender, context -> (sender as? Player)?.let { player ->
+                val motion = context.get(name)
+                if (motion == "stop") dev.projects.server.puppet.PlayerPuppet.stop(player)
+                else if (!dev.projects.server.puppet.PlayerPuppet.play(player, motion))
+                    player.sendMessage(Component.text("そのモーションはありません: $motion", NamedTextColor.YELLOW))
+            } }, name)
+            addSyntax({ sender, context -> (sender as? Player)?.let { player ->
+                if (!dev.projects.server.puppet.PlayerPuppet.play(player, context.get(name), showOwner = true))
+                    player.sendMessage(Component.text("そのモーションはありません: ${context.get(name)}", NamedTextColor.YELLOW))
+            } }, name, self)
         })
         MinecraftServer.getCommandManager().register(Command("effects").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let {
@@ -1088,7 +1107,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             contentSeed = plan.seed, encounterLevel = account(player)?.activeRun?.map?.level ?: CoreJourneyRules.floor(tier),
             typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) },
             crowdPlayer = { target, kind, millis, from -> actors[target.uuid]?.receiveCrowdControl(kind, millis, from) },
-            evading = { actors[it.uuid]?.evading == true })
+            evading = { actors[it.uuid]?.evading == true }, rollGrades = true)
         val run = requireNotNull(account(player)?.activeRun)
         val loot = CoreWorldLoot(player, runtime.instance, run,
             reward = { rewards.submit(player.uuid, it) },
@@ -1204,7 +1223,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (packed(player)) {
             val trail = session?.bossTrail?.update(health, maximum, System.currentTimeMillis()) ?: health
             bar.color(BossBar.Color.PINK)
-            bar.name(CoreBossBarHud.render(name, health, maximum, trail))
+            val hud = combat.bossHud()
+            bar.name(if (hud != null) CoreBossBarHud.render(hud, trail, combat.erosionShare(player.uuid)) else Component.empty())
         } else {
             bar.color(BossBar.Color.RED)
             bar.name(CoreLoopItems.text("$name  ${health.roundToInt()} / ${maximum.roundToInt()}", NamedTextColor.RED))

@@ -208,13 +208,14 @@ class MobAbilityManager(
      * this health, cooldown and range ignored (the encounter chose the moment: a combo always follows through).
      */
     fun tryStart(nowMillis: Long, origin: Pos, target: Point, healthRatio: Double = 1.0, plainOnly: Boolean = false,
-                 only: String? = null, facing: Vec? = null, weigh: ((MobAbility) -> Double)? = null): MobAbilityEvent.Started? {
+                 only: String? = null, facing: Vec? = null, weigh: ((MobAbility) -> Double)? = null,
+                 allowed: Set<String>? = null): MobAbilityEvent.Started? {
         if (current != null || nowMillis < nextSelectionAt) return null
         if (abs(origin.y() - target.y()) > 2.2) return null
         val distance = horizontalLength(target.sub(origin))
         val available = (if (plainOnly) abilities.take(1) else abilities).filter {
             it.id !in disabled && if (only != null) it.id == only && healthRatio <= it.maximumHealthRatio
-            else !it.scripted && distance in it.minimumStartRange..it.maximumStartRange &&
+            else !it.scripted && (allowed == null || it.id in allowed) && distance in it.minimumStartRange..it.maximumStartRange &&
                 healthRatio <= it.maximumHealthRatio && nowMillis >= readyAt.getOrDefault(it.id, Long.MIN_VALUE)
         }
         if (available.isEmpty()) return null

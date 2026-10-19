@@ -43,6 +43,16 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
     val poolCount: Int get() = pools.size
     fun erosionOf(player: UUID): Double = erosion[player]?.value ?: 0.0
 
+    /**
+     * Off while the viewer's pixel HUD is on: erosion is then drawn inside the wyrm's own boss bar
+     * (CoreBossBarHud), and a second vanilla bar would overlap that frame.
+     */
+    var vanillaBar = true
+        set(value) {
+            field = value
+            if (!value) for ((id, e) in erosion) if (e.shown) { viewers[id]?.hideBossBar(e.bar); e.shown = false }
+        }
+
     /** A wyrm ability hit [player]. */
     fun playerHit(player: Player, abilityId: String, now: Long) {
         if (abilityId in DUST) gain(player, if (abilityId in setOf("shade-channel", "shade-shell")) CAST_GAIN else HIT_GAIN, now)
@@ -111,7 +121,7 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
                 e.value = (e.value - DECAY_PER_SECOND / 20.0).coerceAtLeast(0.0)
             }
             e.bar.progress((e.value / FULL).toFloat().coerceIn(0f, 1f))
-            val show = e.value > 0.0
+            val show = vanillaBar && e.value > 0.0
             if (show != e.shown) { if (show) p.showBossBar(e.bar) else p.hideBossBar(e.bar); e.shown = show }
         }
     }

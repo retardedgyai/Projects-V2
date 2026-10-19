@@ -54,6 +54,11 @@ internal class QuestMobLife(val maximumHealth: Double) {
         return true
     }
 
+    fun heal(amount: Double) {
+        if (!isAlive || phase == QuestMobPhase.RETURNING || !amount.isFinite() || amount <= 0.0) return
+        health = (health + amount).coerceAtMost(maximumHealth)
+    }
+
     fun finishReturn() {
         if (!isAlive) return
         health = maximumHealth
@@ -64,7 +69,8 @@ internal class QuestMobLife(val maximumHealth: Double) {
 /** How long an enraging boss holds its roar before attacking again (matches the `enrage` model clip). */
 private const val ENRAGE_HOLD_MILLIS = 5000L
 
-internal enum class ManeuverKind { STRAFE, HOP_BACK, DASH, RELOCATE, ADVANCE }
+/** GROWL, SHAKE and SCRAPE stand in place (桜牙獣's moves between attacks); STALK creeps in on a far target. */
+internal enum class ManeuverKind { STRAFE, HOP_BACK, DASH, RELOCATE, ADVANCE, GROWL, SHAKE, SCRAPE, STALK }
 
 /** An attack that carries the body (2026-10-19, A): moved between [from] and [to] ms, [reach] blocks for a target that far. */
 private class Travel(val from: Long, val to: Long, val reach: (Double) -> Double)
@@ -100,6 +106,8 @@ class QuestEncounterCombat(
     private val crowdPlayer: ((Player, CrowdControl, Long, Pos) -> Unit)? = null,
     /** True while the player's dodge makes them untouchable: a move that only met dodges whiffs ([openAfter]). */
     private val evading: (Player) -> Boolean = { false },
+    /** Roll a grade (等級) and MODs for every non-boss mob; off for labs and fixed-balance tests. */
+    private val rollGrades: Boolean = false,
 ) {
     private data class SlowKey(val source: UUID?, val strength: Double)
     private data class Slow(val strength: Double, val until: Long)
@@ -112,6 +120,8 @@ class QuestEncounterCombat(
     ) {
         val life = QuestMobLife(definition.maximumHealth)
         val abilities = MobAbilityManager(definition.abilities, Random(entity.uuid.leastSignificantBits))
+        /** Picks the moves between attacks and the breathers (桜牙獣). */
+        val moveRandom = Random(entity.uuid.mostSignificantBits)
         var target: Player? = null
         var lastAttacker: Player? = null
         var nextPathAt = 0L
@@ -129,7 +139,14 @@ class QuestEncounterCombat(
         val crowd = mutableMapOf<CrowdControl, Long>()
         /** Where charm pulls toward and fear runs from. */
         var crowdSource: Pos? = null
-        /** Boss only: crowd control wears this down; at 0 the boss is broken until [brokenUntil]. */
+        var grade = MobGrade.COMMON
+        var mods: List<MobMod> = emptyList()
+        /** Last time a player's hit landed (再生 waits for a quiet spell). */
+        var hurtAt = 0L
+        var lastRegenAt = 0L
+        /** The attack being prepared (or a boss's gimmick notice), kept between plate refreshes. */
+        var notice: String? = null
+        /** Bosses and graded mobs from 精鋭 up: crowd control wears this down; at 0 the mob is broken until [brokenUntil]. */
         var breakGauge = BREAK_MAX
         /** When crowd control last wore the break gauge: it refills after [BREAK_REFILL_AFTER_MILLIS] without. */
         var lastCcAt = 0L
@@ -171,6 +188,9 @@ class QuestEncounterCombat(
         var maneuver: Maneuver? = null
         var nextManeuverAt = 0L
         var maneuvers = 0
+        var lastManeuver: ManeuverKind? = null
+        /** 桜牙獣: after an attack (and its combo) it moves round its prey until then instead of attacking again. */
+        var restUntil = 0L
         /** Where the model looks while it moves sideways or backward: at its target. */
         var faceYaw = 0f
         /** Since when the target has stood behind the model (0 = not behind); see [TURN_AFTER_MILLIS]. */
@@ -193,6 +213,20 @@ class QuestEncounterCombat(
         /** Enraged parts (gimmicks): damage dealt near the head and on each side, and what has broken. 0 = its right fan. */
         var hornDamage = 0.0
         var hornsBroken = false
+        /** 桜牙獣: the counter window of the strike being wound up (ms, 0 = none), and its torn tail shells. */
+        var counterFrom = 0L
+        var counterTo = 0L
+        var tailDamage = 0.0
+        var tailTorn = false
+        /** 桜紋の陣: when the next one starts, when the running one resolves (0 = none), its crests, the shown count. */
+        var sigilNextAt = 0L
+        var sigilEndsAt = 0L
+        var sigilCrests: List<Pos> = emptyList()
+        var sigilShown = -1L
+        /** 千本桜 (the last 25%): started, when it blows (0 = not running), the shown count. */
+        var finaleStarted = false
+        var finaleEndsAt = 0L
+        var finaleShown = -1L
         /** The enrage roar's wave (see [tickRageWave]): when it left the wyrm and from where; 0 = not yet. */
         var waveAt = 0L
         var waveFrom: Pos? = null
@@ -202,6 +236,9 @@ class QuestEncounterCombat(
     }
 
     private val mobs = linkedMapOf<UUID, Mob>()
+    private val gradeSeed = contentSeed
+    private val plates = MobPlates()
+    private var plateRefreshAt = 0L
     private val telegraphs = MobGroundTelegraph(instance)
     private val vfx = dev.projects.server.particle.ParticleAnimationScheduler()
     private val vfxHandles = mutableMapOf<UUID, dev.projects.server.particle.ParticleEffectHandle>()
@@ -217,6 +254,9 @@ class QuestEncounterCombat(
     private val shaderFx = ShadeWyrmShaderFx(instance)
     private val lights = ShadeWyrmLights(instance)
     private val gimmicks = ShadeWyrmGimmicks(tier, shaderFx, lights = lights)
+    /** 桜牙獣's petal storm and strike effects (only built when the encounter has one). */
+    private var sakuraFx: SakuraPetalFx? = null
+    private var sakuraStrike: SakuraStrikeFx? = null
     /** Players who have the boss glow post effect on (26.3 /posteffect, assets/projects/post_effect/shade_glow.json). */
     private val glowing = mutableSetOf<Player>()
     /** 翳の巣's rage clock: started when the wyrm enrages, it turns the arena's light violet (BossArenaFactory.SHADE_RAGE). */
@@ -243,6 +283,8 @@ class QuestEncounterCombat(
     internal fun maneuverCount(targetId: UUID): Int = mobs[targetId]?.maneuvers ?: 0
     internal fun partsBroken(targetId: UUID): List<Boolean> = mobs[targetId]?.let { listOf(it.hornsBroken, it.fanTorn[0], it.fanTorn[1]) } ?: emptyList()
     internal fun erosionOf(player: UUID): Double = gimmicks.erosionOf(player)
+    /** This player's erosion as a share of the eruption threshold (0..1), for the boss bar. */
+    internal fun erosionShare(player: UUID): Double = (gimmicks.erosionOf(player) / ShadeWyrmGimmicks.FULL).coerceIn(0.0, 1.0)
     internal val poolCount: Int get() = gimmicks.poolCount
     /** Fight preview dump: the model's clip and the shader displays on show. */
     internal fun shownClip(targetId: UUID): Pair<String, Long>? = mobs[targetId]?.view?.let { it.shownClip to it.shownSince }
@@ -300,7 +342,9 @@ class QuestEncounterCombat(
         val mob = mobs[targetId] ?: return false
         val target = mob.target ?: instance.players.minByOrNull { it.position.distanceSquared(mob.entity.position) } ?: return false
         mob.target = target
-        mob.abilities.cancel(); clearWarning(mob.entity.uuid)
+        // Whatever the free AI was doing (a flight, the pause between moves, an opening) ends here.
+        mob.maneuver = null; mob.combo = null; mob.openUntil = 0L
+        mob.abilities.reset(); clearWarning(mob.entity.uuid)
         val start = mob.abilities.tryStart(now, mob.entity.position, target.position, mob.life.health / mob.life.maximumHealth, only = abilityId) ?: return false
         mob.life.phase = QuestMobPhase.ATTACKING
         return handleAbilityEvent(mob, start, instance.players.toList())
@@ -365,6 +409,18 @@ class QuestEncounterCombat(
         if (mob.boss) return breakBoss(mob, targetId, kind.breakDamage, now, cc = kind)
         mob.crowd[kind] = maxOf(mob.crowd[kind] ?: 0L, now + durationMillis.coerceAtMost(5000L))
         mob.crowdSource = source.position
+        if (mob.grade.breaks && now >= mob.brokenUntil) {
+            mob.breakGauge = (mob.breakGauge - kind.breakDamage).coerceAtLeast(0.0)
+            if (mob.breakGauge <= 0.0) {
+                // A broken graded mob is stunned for the whole down time and takes +30%, like a broken boss.
+                mob.brokenUntil = now + BREAK_MILLIS
+                mob.breakGauge = BREAK_MAX
+                mob.crowd[CrowdControl.STUN] = maxOf(mob.crowd[CrowdControl.STUN] ?: 0L, mob.brokenUntil)
+                stopNavigation(mob)
+                sound(mob.entity.position, "minecraft:block.anvil.land", 0.8f, 0.7f)
+                particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.EXPLOSION, 1)
+            }
+        }
         if (kind.hard || kind == CrowdControl.FLINCH) {
             mob.abilities.cancel(); clearWarning(targetId); castingPose(mob, false)
             mob.life.phase = QuestMobPhase.CHASING
@@ -441,10 +497,13 @@ class QuestEncounterCombat(
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         return mobs[targetId]?.crowd?.filterValues { it > now }?.keys ?: emptySet()
     }
-    fun breakGauge(targetId: UUID): Double? = mobs[targetId]?.takeIf { it.boss }?.breakGauge
+    /** 桜牙獣's open counter window (ms), for tests. */
+    internal fun counterWindow(targetId: UUID): LongRange? = mobs[targetId]?.takeIf { it.counterTo != 0L }?.let { it.counterFrom..it.counterTo }
+    internal fun partsTorn(targetId: UUID): Pair<Boolean, Boolean>? = mobs[targetId]?.let { it.hornsBroken to it.tailTorn }
+    fun breakGauge(targetId: UUID): Double? = mobs[targetId]?.takeIf { it.boss || it.grade.breaks }?.breakGauge
     fun isBroken(targetId: UUID): Boolean {
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
-        return mobs[targetId]?.let { it.boss && now < it.brokenUntil } == true
+        return mobs[targetId]?.let { now < it.brokenUntil } == true
     }
     /** Moves a mob along the ground only as far as the path is clear (shared by pull and knockback). */
     private fun slide(mob: Mob, direction: Vec, distance: Double) {
@@ -557,11 +616,16 @@ class QuestEncounterCombat(
         val guarded = !effect && guarding(mob) &&
             normalizeHorizontal(source.sub(mob.entity.position)).dot(normalizeHorizontal(mob.entity.position.direction())) >= 0.5
         val healthBefore = mob.life.health
-        val part = if (effect || fieldOrigin != null || mob.view == null) 1.0 else partMultiplier(mob, attacker, projectile)
+        val part = if (effect || fieldOrigin != null || !mob.shade) 1.0 else partMultiplier(mob, attacker, projectile)
         if (part > 1.0) weakSpotHits += attacker.uuid else weakSpotHits -= attacker.uuid
         val mitigated = amount * part * (if (guarded) mob.definition.frontalDamageMultiplier else 1.0) *
-            (if (mob.boss && now < mob.brokenUntil) BROKEN_DAMAGE else 1.0)
-        val gated = if (mob.boss) minOf(mitigated, (mob.life.health - mob.life.maximumHealth * bossGateFraction).coerceAtLeast(0.0)) else mitigated
+            (if (now < mob.brokenUntil) BROKEN_DAMAGE else 1.0) *
+            (if (MobMod.IRONHIDE in mob.mods) MobMod.IRONHIDE_TAKEN else 1.0)
+        val gated = if (mob.boss) minOf(mitigated, (mob.life.health - mob.life.maximumHealth * bossGateFraction).coerceAtLeast(0.0)).let {
+            // 桜牙獣 cannot be pushed past 25% before its 千本桜 starts
+            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && !mob.finaleStarted)
+                minOf(it, (mob.life.health - mob.life.maximumHealth * FINALE_RATIO).coerceAtLeast(0.0)) else it
+        } else mitigated
         val gimmick = mob.abilities.current?.ability?.id
         if (gimmick == SHELL && mob.shellHealth > 0.0) {
             // 鱗粉の殻: the shell takes the hit, not the wyrm.
@@ -575,17 +639,19 @@ class QuestEncounterCombat(
         if (!mob.life.damage(gated)) return null
         val applied = healthBefore - mob.life.health
         mob.lastAttacker = attacker
+        mob.hurtAt = now
         if (gimmick == CHANNEL && mob.life.isAlive) {
             mob.castDamage += applied
             if (mob.castDamage >= mob.life.maximumHealth * CAST_SHARE) knockDown(mob, now, "詠唱を止めた・殴り放題")
         }
-        if (mob.view != null && applied > 0.0 && mob.life.isAlive) {
+        if (mob.shade && applied > 0.0 && mob.life.isAlive) {
             gimmicks.playerStruck(attacker)
             breakParts(mob, attacker, applied, now)
         }
+        if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && applied > 0.0 && mob.life.isAlive) sakuraHit(mob, attacker, applied, now)
         if (!mob.life.isAlive) {
             endGimmick(mob)
-            if (mob.view != null) { gimmicks.dispose(); lights.hold("horns-${mob.entity.uuid}", null, 0) }
+            if (mob.shade) { gimmicks.dispose(); lights.hold("horns-${mob.entity.uuid}", null, 0) }
             mob.abilities.cancel()
             clearWarning(mob.entity.uuid)
             castingPose(mob, false)
@@ -594,9 +660,11 @@ class QuestEncounterCombat(
             particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.POOF, 8)
             latestDefeat = QuestMobDefeat("mob:${mob.entity.uuid}", mob.entity.uuid, mob.definition.archetype,
                 mob.definition.archetype.rarity, mob.definition.dropKind, tier, mob.entity.position, attacker.uuid)
+            plates.hide(mob.entity.uuid)
             mob.entity.kill()
             mob.model?.dispose()
             mob.view?.die()
+            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) sakuraFx?.death()
             // Health is already terminal before this callback can re-enter the runtime.
             onMobDefeated(attacker, mob.boss)
         } else {
@@ -619,21 +687,38 @@ class QuestEncounterCombat(
         lights.tick(nowMillis)
         tickGlow()
         rageClock?.let { if (!it.paused() && it.time() >= dev.projects.server.coreloop.adventure.BossArenaFactory.RAGE_FADE_TICKS) it.pause() }
-        if (mobs.values.any { it.view != null && it.life.isAlive }) gimmicks.tick(nowMillis, instance.players.filter { canTarget(it) }) { p, amount, type ->
+        if (mobs.values.any { it.shade && it.life.isAlive }) gimmicks.tick(nowMillis, instance.players.filter { canTarget(it) }) { p, amount, type ->
             if (typedDamagePlayer != null) typedDamagePlayer.invoke(p, amount, type) else damagePlayer(p, amount)
+        }
+        mobs.values.firstOrNull { it.definition.archetype == QuestMobArchetype.SAKURA_FANG }?.let { mob ->
+            // Ticks on after the death too, so the falling petals finish.
+            val fx = sakuraFx ?: SakuraPetalFx(instance).also { sakuraFx = it }
+            val view = mob.view
+            // the petals take the model's facing (a strafe or dash faces the target, not the way the carrier walks)
+            fx.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, mob.enraged) { bone, px -> view?.point(bone, px) }
+            (sakuraStrike ?: SakuraStrikeFx(instance).also { sakuraStrike = it }).tick()
         }
         val players = instance.players.filter { canTarget(it) }
         if (actionsStoppedForReturn) {
             if (players.isEmpty()) return
             actionsStoppedForReturn = false
         }
+        if (pixelNameplates && nowMillis >= plateRefreshAt) {
+            // Icons and break timers change without an event (a slow wears off): refresh 4x a second;
+            // MobPlates only sends a packet when the text actually changed.
+            plateRefreshAt = nowMillis + 250L
+            mobs.values.filter { it.life.isAlive && isSpawned(it) }.forEach(::showHud)
+            plates.retain(mobs.values.filter { it.life.isAlive && isSpawned(it) && !it.boss }.mapTo(HashSet()) { it.entity.uuid })
+        }
         for (mob in mobs.values.toList()) {
             mob.spawnFailure?.let { throw IllegalStateException("Quest mob failed to spawn at ${mob.home}", it) }
             if (!mob.life.isAlive || !isSpawned(mob)) continue
             tickMob(mob, players, nowMillis)
             mob.model?.tick(mob.entity.position, nowMillis, mob.life.phase == QuestMobPhase.ATTACKING, mob.life.health / mob.life.maximumHealth)
-            if (mob.view != null) tickRageWave(mob, nowMillis)
-            if (mob.view != null) lights.hold("horns-${mob.entity.uuid}",
+            if (mob.shade) tickRageWave(mob, nowMillis)
+            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && mob.enraged) tickSakuraRoar(mob, nowMillis)
+            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) tickCounterGlow(mob, nowMillis)
+            if (mob.shade) lights.hold("horns-${mob.entity.uuid}",
                 if (mob.enraged && !mob.hornsBroken && nowMillis >= mob.enrageHoldUntil - 2500) mob.view?.point("skull", ShadeWyrmVfx.CROWN) else null, 12)
             mob.view?.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, nowMillis,
                 searching = mob.searching && mob.maneuver == null && !mob.abilities.isActive)
@@ -671,6 +756,9 @@ class QuestEncounterCombat(
         glowing.forEach { it.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList())) }
         glowing.clear()
         shaderFx.dispose()
+        sakuraFx?.dispose()
+        sakuraStrike?.dispose()
+        plates.dispose()
         mobs.values.forEach { mob ->
             mob.abilities.cancel()
             stopNavigation(mob)
@@ -687,8 +775,14 @@ class QuestEncounterCombat(
         val base = QuestMobContent.definition(tier, archetype)
         val rank = encounterLevel - ((tier - 1) * 10 + 1)
         val balance = dev.projects.server.coreloop.CoreMmoTuning.balance
-        val definition = base.copy(maximumHealth = base.maximumHealth * healthMultiplier * (1 + rank * balance.mobRankHealthPermille / 1000.0),
-            abilities = base.abilities.map { it.copy(damage = it.damage * damageMultiplier * (1 + rank * balance.mobRankDamagePermille / 1000.0)) })
+        val (grade, mods) = if (rollGrades) MobGrades.roll(gradeSeed * 31 + encounterIndex * 1_000_003L + position.hashCode(), archetype)
+            else MobGrade.COMMON to emptyList()
+        val might = if (MobMod.MIGHT in mods) MobMod.MIGHT_DAMAGE else 1.0
+        val definition = base.copy(
+            maximumHealth = base.maximumHealth * healthMultiplier * grade.health * (1 + rank * balance.mobRankHealthPermille / 1000.0),
+            movementSpeed = base.movementSpeed * (if (MobMod.SWIFT in mods) MobMod.SWIFT_SPEED else 1.0),
+            abilities = base.abilities.map { it.copy(damage = it.damage * damageMultiplier * grade.damage * might *
+                (1 + rank * balance.mobRankDamagePermille / 1000.0)) })
         val modelled = definition.model?.takeIf { BossModelView.available(it) }
         val entity = if (modelled != null) ModelCarrier(definition.entityType) else EntityCreature(definition.entityType)
         entity.isInvulnerable = true
@@ -702,6 +796,7 @@ class QuestEncounterCombat(
         entity.setEquipment(EquipmentSlot.HELMET, ItemStack.of(definition.helmet))
         entity.setEquipment(EquipmentSlot.CHESTPLATE, ItemStack.of(definition.chestplate))
         val mob = Mob(entity, position, encounterIndex, definition.boss, definition)
+        mob.grade = grade; mob.mods = mods
         mobs[entity.uuid] = mob
         updateName(mob)
         entity.setInstance(instance, position).whenComplete { _, error ->
@@ -739,9 +834,14 @@ class QuestEncounterCombat(
         if (mob.boss && mob.breakGauge < BREAK_MAX && now - mob.lastCcAt > BREAK_REFILL_AFTER_MILLIS)
             mob.breakGauge = minOf(BREAK_MAX, mob.breakGauge + BREAK_REFILL_PER_SECOND / 20.0)
         if (mob.boss && (bossSealed || now < bossStaggerUntil)) { stopNavigation(mob); return }
-        if (mob.boss && mob.brokenUntil in 1..now) { mob.brokenUntil = 0L; updateName(mob) }
+        if (mob.brokenUntil in 1..now) { mob.brokenUntil = 0L; updateName(mob) }
         if (mob.boss && now < mob.brokenUntil) { stopNavigation(mob); return }
         if (mob.crowd.values.removeAll { it <= now }) updateName(mob)
+        if (MobMod.REGEN in mob.mods && now - mob.hurtAt >= MobMod.REGEN_DELAY && mob.life.health < mob.life.maximumHealth &&
+            mob.life.phase != QuestMobPhase.RETURNING) {
+            mob.life.heal(mob.life.maximumHealth * MobMod.REGEN_PER_SECOND * (now - mob.lastRegenAt).coerceIn(0L, 1000L) / 1000.0)
+        }
+        mob.lastRegenAt = now
         updateMovementSpeed(mob, now)
         mob.entity.refreshActiveHand(guarding(mob), true, false)
         if (mob.life.phase == QuestMobPhase.RETURNING) {
@@ -789,6 +889,7 @@ class QuestEncounterCombat(
         if (tickEnrage(mob, now)) return
         tickGimmickBars(mob, now)
         if (now < mob.downUntil) { stopNavigation(mob); return }
+        if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && (tickFinale(mob, now) || tickSigil(mob, now))) return
         if (crowded(mob, CrowdControl.STUN, now) || crowded(mob, CrowdControl.AIRBORNE, now) || crowded(mob, CrowdControl.KNOCKBACK, now)) {
             if (!crowded(mob, CrowdControl.AIRBORNE, now)) stopNavigation(mob)
             return
@@ -806,7 +907,7 @@ class QuestEncounterCombat(
         }
         mob.maneuver?.let { if (tickManeuver(mob, it, target, now)) return }
         if (mob.abilities.isActive) {
-            for (event in mob.abilities.tick(now, aimAt(mob, target, now), if (mob.view != null) TURN_PER_TICK else null)) {
+            for (event in mob.abilities.tick(now, aimAt(mob, target, now), if (mob.shade) TURN_PER_TICK else null)) {
                 if (!handleAbilityEvent(mob, event, players)) return
                 if (disposed || !mob.life.isAlive) return
             }
@@ -816,7 +917,7 @@ class QuestEncounterCombat(
                 mob.entity.setView(Pos.ZERO.withDirection(frame.facing).yaw() + if (frame.ability.id == TAIL_SLAP) 180f else 0f, 0.0f)
                 carryThroughAbility(mob, frame, now)
                 behindFor(mob, target, now)                // standing behind it during an attack counts too
-                if (mob.view != null && !mob.counterShown && frame.phase != MobAbilityPhase.RECOVERY &&
+                if (mob.shade && !mob.counterShown && frame.phase != MobAbilityPhase.RECOVERY &&
                     counterWindow(frame.ability)?.let { now - frame.startedAt >= it.first } == true) {
                     mob.counterShown = true
                     counterGlow(mob)
@@ -833,6 +934,7 @@ class QuestEncounterCombat(
         }
         if (now < mob.openUntil && !gimmickDueNow(mob, now)) { stopNavigation(mob); return }
         val seen = mob.entity.hasLineOfSight(target)
+        val resting = mob.combo == null && now < mob.restUntil
         mob.prevTargetPos = mob.lastTargetPos ?: target.position
         mob.lastTargetPos = target.position
         if (seen) mob.lostSightSince = 0L else if (mob.lostSightSince == 0L) mob.lostSightSince = now
@@ -841,24 +943,24 @@ class QuestEncounterCombat(
             val silenced = crowded(mob, CrowdControl.SILENCE, now)
             val shellDue = mob.enraged && mob.nextShellAt != 0L && now >= mob.nextShellAt && ratio <= mob.definition.enrageHealthRatio
             val channelDue = mob.awakened && mob.nextChannelAt != 0L && now >= mob.nextChannelAt && ratio <= mob.definition.awakenHealthRatio
-            val gimmickDue = mob.view != null && (shellDue || channelDue)
-            if (mob.moveAfterAttack && mob.combo == null && !gimmickDue) {
+            val gimmickDue = mob.shade && (shellDue || channelDue)
+            if (mob.shade && mob.moveAfterAttack && mob.combo == null && !gimmickDue) {
                 mob.moveAfterAttack = false
                 if (!silenced && startManeuver(mob, target, now)) return
             }
             val behind = behindFor(mob, target, now)
             // The gimmicks come when due, ahead of a combo; then a combo; then someone at its back.
             val scripted = if (silenced) null else when {
-                mob.view != null && shellDue -> SHELL
-                mob.view != null && channelDue -> CHANNEL
+                mob.shade && shellDue -> SHELL
+                mob.shade && channelDue -> CHANNEL
                 mob.combo != null -> mob.combo
-                behind >= TAIL_SLAP_AFTER_MILLIS && now - mob.tailslapAt > TAIL_SLAP_AGAIN_MILLIS -> TAIL_SLAP
-                behind >= TURN_AFTER_MILLIS -> TURN_SWEEP
+                mob.shade && behind >= TAIL_SLAP_AFTER_MILLIS && now - mob.tailslapAt > TAIL_SLAP_AGAIN_MILLIS -> TAIL_SLAP
+                behind >= TURN_AFTER_MILLIS -> if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) SAKURA_TURN else TURN_SWEEP
                 else -> null
             }
             val aim = aimAt(mob, target, now)
             val scriptedStart = scripted?.let { mob.abilities.tryStart(now, mob.entity.position, aim, ratio, only = it,
-                facing = if (mob.view != null && it != TURN_SWEEP) mob.entity.position.direction() else null) }
+                facing = if (mob.shade && it != TURN_SWEEP) mob.entity.position.direction() else null) }
             // A combo that could not start yet (the 0.35 s between moves) waits for it rather than being lost or
             // replaced by a random move (the combos never fired before the 2026-10-19 review).
             if (scriptedStart == null && scripted != null && scripted == mob.combo) {
@@ -866,9 +968,10 @@ class QuestEncounterCombat(
                 if (now - mob.comboSince < COMBO_WAIT_MILLIS) return
             }
             mob.combo = null; mob.comboSince = 0L
-            val bodyFacing = if (mob.view != null) mob.entity.position.direction() else null
+            val bodyFacing = if (mob.shade) mob.entity.position.direction() else null
             val start = scriptedStart ?: mob.abilities.tryStart(now, mob.entity.position, aim, ratio, plainOnly = silenced,
-                facing = bodyFacing, weigh = if (mob.view != null) { a -> situationWeight(mob, target, a) } else null)
+                facing = bodyFacing, weigh = if (mob.shade) { a -> situationWeight(mob, target, a) } else null,
+                allowed = if (resting) SAKURA_LIGHT else null)    // 桜牙獣 resting: only its small blows
             if (start != null) {
                 mob.life.phase = QuestMobPhase.ATTACKING
                 stopNavigation(mob)
@@ -1092,7 +1195,7 @@ class QuestEncounterCombat(
 
     /** The gimmicks never wait for an opening to end. */
     private fun gimmickDueNow(mob: Mob, now: Long): Boolean {
-        if (mob.view == null) return false
+        if (!mob.shade) return false
         val ratio = mob.life.health / mob.life.maximumHealth
         return (mob.enraged && mob.nextShellAt != 0L && now >= mob.nextShellAt && ratio <= mob.definition.enrageHealthRatio) ||
             (mob.awakened && mob.nextChannelAt != 0L && now >= mob.nextChannelAt && ratio <= mob.definition.awakenHealthRatio)
@@ -1181,11 +1284,13 @@ class QuestEncounterCombat(
             castingPose(mob, false)
             stopNavigation(mob)
             mob.view?.enrage(now)
+            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) sakuraFx?.enrage()
             mob.warningRetryAt = mob.enrageHoldUntil
-            if (mob.view != null) mob.nextShellAt = mob.enrageHoldUntil + SHELL_FIRST_MILLIS
-            updateName(mob, "怒り・翼を広げた")
+            if (mob.shade) mob.nextShellAt = mob.enrageHoldUntil + SHELL_FIRST_MILLIS
+            updateName(mob, if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) "怒り・花が開いた" else "怒り・翼を広げた")
             sound(mob.entity.position, "minecraft:entity.ravager.roar", 1.2f, 0.6f)
-            particle(mob.entity.position.add(0.0, 2.0, 0.0), Particle.DUST.withColor(NamedTextColor.DARK_PURPLE).withScale(2.0f), 40)
+            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) mob.waveAt = -1L   // petals burst with the roar, see tickSakuraRoar
+            else particle(mob.entity.position.add(0.0, 2.0, 0.0), Particle.DUST.withColor(NamedTextColor.DARK_PURPLE).withScale(2.0f), 40)
             updateMovementSpeed(mob, now)
             return true
         }
@@ -1206,6 +1311,7 @@ class QuestEncounterCombat(
         telegraphs.clear(id)
         vfx.cancel(vfxHandles.remove(id))
         shaderFx.cancelWindup()
+        sakuraStrike?.cancelWindup()
     }
 
     /** Model bosses only: the wind-up cue is cut when the ability is, the strike always plays out. */
@@ -1230,7 +1336,8 @@ class QuestEncounterCombat(
         mob.slowedUntil = mob.slows.values.maxOfOrNull { it.until } ?: 0L
         val speed = mob.definition.movementSpeed * (1.0 - mob.slowPercent) *
             (if (mob.enraged) mob.definition.enragedSpeedMultiplier else if (mob.awakened) mob.definition.awakenSpeedMultiplier else 1.0) *
-            (if (mob.maneuver?.kind == ManeuverKind.STRAFE) STRAFE_SPEED else 1.0) *
+            (if (frenzied(mob)) MobMod.FRENZY_SPEED else 1.0) *
+            (when (mob.maneuver?.kind) { ManeuverKind.STRAFE -> STRAFE_SPEED; ManeuverKind.STALK -> STALK_SPEED; else -> 1.0 }) *
             (if (mob.searching && mob.maneuver == null) SEARCH_SPEED else 1.0)
         if (mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue != speed) {
             mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = speed
@@ -1252,12 +1359,15 @@ class QuestEncounterCombat(
         val distance = horizontalLength(target.position.sub(here))
         val away = normalizeHorizontal(here.sub(target.position))
         val right = Vec(away.z(), 0.0, -away.x())            // the boss's right while it faces the target
+        val sakura = mob.definition.archetype == QuestMobArchetype.SAKURA_FANG
         if (mob.nextRelocateAt == 0L) mob.nextRelocateAt = now + RELOCATE_FIRST_MILLIS
         val kind = when {
             mob.lostSightSince != 0L && now - mob.lostSightSince >= LOST_SIGHT_MILLIS && distance > 4.0 && view.has("relocate") -> ManeuverKind.ADVANCE
             now >= mob.nextRelocateAt && distance < 18.0 && view.has("relocate") -> ManeuverKind.RELOCATE
             distance > 10.0 && distance < 30.0 && now >= mob.nextAdvanceAt && view.has("relocate") -> ManeuverKind.ADVANCE
-            distance < 3.5 -> ManeuverKind.HOP_BACK
+            distance < 3.5 -> if (sakura && mob.lastManeuver == ManeuverKind.HOP_BACK) ManeuverKind.DASH else ManeuverKind.HOP_BACK
+            sakura && distance > 10.0 -> ManeuverKind.STALK
+            sakura && distance >= 3.5 -> pickSakuraManeuver(mob)
             distance in 4.0..10.0 -> if (mob.maneuvers % 3 == 2) ManeuverKind.DASH else ManeuverKind.STRAFE
             else -> return false
         }
@@ -1275,7 +1385,9 @@ class QuestEncounterCombat(
                 val toRight = (to.x() - here.x()) * right.x() + (to.z() - here.z()) * right.z() > 0
                 Maneuver(kind, here, to, now + 200, now + 500, now + 900, if (toRight) 1 else -1)
             }
-            ManeuverKind.STRAFE -> Maneuver(kind, here, here, now, now, now + 1600, sign)
+            ManeuverKind.STRAFE, ManeuverKind.STALK -> Maneuver(kind, here, here, now, now, now + 1600, sign)
+            ManeuverKind.GROWL, ManeuverKind.SHAKE, ManeuverKind.SCRAPE ->
+                Maneuver(kind, here, here, now, now, now + SAKURA_STAND_MILLIS.getValue(kind), 0)
             ManeuverKind.RELOCATE -> {
                 val to = relocateSpot(mob, target) ?: run { mob.nextRelocateAt = now + 5000; return false }
                 Maneuver(kind, here, to, now + 700, now + 2300, now + 3000, 0)
@@ -1289,18 +1401,31 @@ class QuestEncounterCombat(
         }
         if (kind == ManeuverKind.RELOCATE) mob.nextRelocateAt = now + if (mob.awakened || mob.enraged) RELOCATE_AGAIN_MILLIS else RELOCATE_CALM_MILLIS
         mob.maneuvers++
-        mob.nextManeuverAt = maneuver.endAt + if (kind == ManeuverKind.STRAFE) 900 else 1700
+        mob.lastManeuver = kind
+        mob.nextManeuverAt = maneuver.endAt + if (sakura) SAKURA_MANEUVER_GAP else if (kind == ManeuverKind.STRAFE) 900 else 1700
         mob.maneuver = maneuver
         mob.faceYaw = yawToward(here, target.position)
-        if (kind != ManeuverKind.STRAFE) stopNavigation(mob)
+        if (kind != ManeuverKind.STRAFE && kind != ManeuverKind.STALK) stopNavigation(mob)
         when (kind) {
             ManeuverKind.HOP_BACK -> view.maneuver("hop_back")
             ManeuverKind.DASH -> view.maneuver(if (maneuver.sign > 0) "dash_l" else "dash_r")
             ManeuverKind.STRAFE -> mob.nextPathAt = now
+            ManeuverKind.STALK -> { mob.nextPathAt = now; view.maneuver("stalk") }
+            ManeuverKind.GROWL -> view.maneuver("growl")
+            ManeuverKind.SHAKE -> view.maneuver("shake")
+            ManeuverKind.SCRAPE -> view.maneuver("scrape")
             ManeuverKind.RELOCATE, ManeuverKind.ADVANCE -> view.maneuver("relocate")
         }
         updateMovementSpeed(mob, now)
         return true
+    }
+
+    /** 桜牙獣 at mid range: circling most often, then a side leap, now and then a growl, a shake or a paw at the
+     *  ground; never the same move twice running. */
+    private fun pickSakuraManeuver(mob: Mob): ManeuverKind {
+        val choices = SAKURA_MANEUVERS.filter { it.first != mob.lastManeuver }
+        var roll = mob.moveRandom.nextInt(choices.sumOf { it.second })
+        return choices.first { roll -= it.second; roll < 0 }.first
     }
 
     /**
@@ -1321,13 +1446,20 @@ class QuestEncounterCombat(
     private fun tickManeuver(mob: Mob, maneuver: Maneuver, target: Player, now: Long): Boolean {
         if (now >= maneuver.endAt) {
             mob.maneuver = null
-            mob.combo = when (maneuver.kind) {
+            // 桜牙獣 only flows from a move into a blow while it rests; once rested, the next big attack comes first
+            mob.combo = if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) if (now >= mob.restUntil) null else when (maneuver.kind) {
+                ManeuverKind.HOP_BACK -> if (mob.enraged) "sakura-scatter" else "sakura-lunge"   // 飛び退き→散華／踏み込み爪
+                ManeuverKind.DASH -> if (mob.moveRandom.nextBoolean()) "sakura-horn" else "sakura-barge"   // 回り込み→突き上げ／体当たり
+                ManeuverKind.STRAFE -> if (mob.moveRandom.nextInt(3) == 0) null else SAKURA_LIGHT.random(mob.moveRandom)
+                else -> null
+            } else when (maneuver.kind) {
                 ManeuverKind.HOP_BACK -> if (mob.enraged) "shade-breath" else if (Random.nextDouble() < .6) "shade-pounce" else null   // 跳び退き→吐息/飛びかかり
                 ManeuverKind.DASH -> "shade-sweep"                                   // 3 回り込み→薙ぎ
                 ManeuverKind.STRAFE -> null
                 // 飛び移り→鱗粉弾 (第2形態から), 吐息 once enraged, else the dust burst where it landed
                 ManeuverKind.RELOCATE -> if (mob.enraged) "shade-breath" else if (mob.awakened) "shade-orb" else "shade-pounce"
                 ManeuverKind.ADVANCE -> if (Random.nextBoolean()) "shade-bite" else "shade-pounce"   // lands on them biting
+                else -> null
             }
             if (mob.combo != null) mob.warningRetryAt = now
             updateMovementSpeed(mob, now)
@@ -1341,6 +1473,11 @@ class QuestEncounterCombat(
                 val radius = horizontalLength(here.sub(target.position)).coerceIn(5.0, 8.0)
                 val goal = safeRetreat(target.position.add(kotlin.math.cos(angle) * radius, 0.0, kotlin.math.sin(angle) * radius), mob.home, mob.definition.leashRange)
                 if (goal != null) mob.entity.navigator.setPathTo(goal, 0.5, null) else stopNavigation(mob)
+                mob.nextPathAt = now + 300L
+            }
+        } else if (maneuver.kind == ManeuverKind.STALK) {
+            if (now >= mob.nextPathAt) {
+                mob.entity.navigator.setPathTo(target.position, 6.0, null)
                 mob.nextPathAt = now + 300L
             }
         } else if (now >= maneuver.moveFrom) {
@@ -1485,13 +1622,28 @@ class QuestEncounterCombat(
     private fun carryThroughAbility(mob: Mob, frame: MobAbilityFrame, now: Long) {
         if (frame.ability.id == "shade-bite") { driveForward(mob, frame, now); return }
         TRAVEL[frame.ability.id]?.let { travel(mob, frame, it, now); return }
-        if (frame.ability.id != "shade-dive") return
+        // shade-dive and 桜牙獣's pounce land on the target (the frame's origin); the charge runs down its strip.
+        val window = when (frame.ability.id) {
+            "shade-dive" -> DIVE_CARRY; "sakura-pounce" -> POUNCE_CARRY; "sakura-charge" -> CHARGE_CARRY
+            "sakura-lunge" -> LUNGE_CARRY; "sakura-barge" -> BARGE_CARRY; "sakura-hopswipe" -> HOP_CARRY
+            else -> return
+        }
         val from = mob.travelFrom ?: return
         val elapsed = now - frame.startedAt
-        if (elapsed < DIVE_CARRY.first) return
-        val k = ((elapsed - DIVE_CARRY.first).toDouble() / (DIVE_CARRY.last - DIVE_CARRY.first)).coerceIn(0.0, 1.0)
-        val e = k * k * (3 - 2 * k)
-        val to = frame.origin
+        if (elapsed < window.first) return
+        val k = ((elapsed - window.first).toDouble() / (window.last - window.first)).coerceIn(0.0, 1.0)
+        val e = if (frame.ability.id == "sakura-charge") k else k * k * (3 - 2 * k)
+        val shape = frame.ability.shape
+        val f = normalizeHorizontal(frame.facing)
+        val leash = mob.definition.leashRange
+        val to = when (frame.ability.id) {
+            "sakura-charge" -> if (shape is MobAttackShape.Slam) safeRetreat(frame.origin.add(f.mul(shape.length * .8)), mob.home, leash) ?: return else return
+            // the small blows travel: a spring forward, a shoulder thrown in, a hop to its right
+            "sakura-lunge" -> safeRetreat(from.add(f.mul(3.0)), mob.home, leash) ?: return
+            "sakura-barge" -> safeRetreat(from.add(f.mul(3.5)), mob.home, leash) ?: return
+            "sakura-hopswipe" -> safeRetreat(from.add(Vec(-f.z(), 0.0, f.x()).mul(2.5)), mob.home, leash) ?: return
+            else -> frame.origin
+        }
         val ground = telegraphs.groundHeight(to) ?: from.y()
         mob.entity.teleport(Pos(from.x() + (to.x() - from.x()) * e, from.y() + (ground - from.y()) * e, from.z() + (to.z() - from.z()) * e,
             mob.entity.position.yaw(), 0f))
@@ -1588,7 +1740,7 @@ class QuestEncounterCombat(
                 mob.chargeHits.clear()
                 mob.struckThisMove = false
                 mob.counterShown = false
-                if (event.frame.ability.id == TURN_SWEEP) mob.behindSince = 0L
+                if (event.frame.ability.id == TURN_SWEEP || event.frame.ability.id == SAKURA_TURN) mob.behindSince = 0L
                 if (event.frame.ability.id == TAIL_SLAP) mob.tailslapAt = lastTickAt
                 when (event.frame.ability.id) {
                     CHANNEL -> {
@@ -1604,18 +1756,27 @@ class QuestEncounterCombat(
                 }
                 updateName(mob, event.frame.ability.displayName)
                 mob.view?.ability(event.frame.ability.id)
+                if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) {
+                    val t = event.frame.ability.telegraphMillis
+                    if (event.frame.ability.id in SAKURA_COUNTERABLE && t >= 900) {
+                        mob.counterFrom = event.frame.startedAt + t - COUNTER_LEAD_MILLIS
+                        mob.counterTo = event.frame.startedAt + t - COUNTER_CLOSE_MILLIS
+                    } else { mob.counterFrom = 0L; mob.counterTo = 0L }
+                    sakuraFx?.start(event.frame.ability.id, event.frame.ability.telegraphMillis / 1000.0, event.frame.origin)
+                    sakuraStrike?.windup(event.frame.ability.id, event.frame) { bone, px -> mob.view?.point(bone, px) }
+                }
                 if (!drawWarning(mob, event.frame, false)) {
                     cancelWarning(mob)
                     return false
                 }
                 playVfx(mob, ShadeWyrmVfx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
-                if (mob.view != null) shaderFx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
+                if (mob.shade) shaderFx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
                 if (event.frame.ability.id == ORB) mob.view?.point("skull", ShadeWyrmVfx.SNOUT)?.let {
                     shaderFx.orb(Pos(it), event.frame.origin, ORB_RELEASE_TICKS, (event.frame.ability.telegraphMillis / 50).toInt() - ORB_RELEASE_TICKS)
                 }
                 mob.entity.refreshActiveHand(false, true, false)
                 castingPose(mob, true)
-                windupCue(mob, event.frame)
+                if (mob.shade) windupCue(mob, event.frame)       // the wyrm's wind-up sounds and arm light
             }
             is MobAbilityEvent.Locked -> {
                 if (!drawWarning(mob, event.frame, false)) { cancelWarning(mob); return false }
@@ -1632,7 +1793,7 @@ class QuestEncounterCombat(
                 castingPose(mob, false)
                 if (!drawWarning(mob, event.frame, true)) { cancelWarning(mob); return false }
                 playVfx(mob, ShadeWyrmVfx.hit(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
-                if (mob.view != null) shaderFx.strike(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
+                if (mob.shade) shaderFx.strike(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
                 sound(event.frame.origin,
                     if (mob.entity.entityMeta is SpellcasterIllagerMeta) "minecraft:entity.evoker.cast_spell"
                     else if (event.frame.ability.shape is MobAttackShape.Sweep) "minecraft:entity.player.attack.sweep"
@@ -1644,20 +1805,26 @@ class QuestEncounterCombat(
                         (event.frame.ability.shape is MobAttackShape.Ring || event.frame.ability.id in GIMMICKS || mob.entity.hasLineOfSight(player))
                     ) {
                         if (!evading(player)) mob.struckThisMove = true
-                        if (typedDamagePlayer != null) typedDamagePlayer.invoke(player, event.frame.ability.damage, event.frame.ability.damageType)
-                        else damagePlayer(player, event.frame.ability.damage)
+                        val dealt = event.frame.ability.damage * (if (frenzied(mob)) MobMod.FRENZY_DAMAGE else 1.0)
+                        if (typedDamagePlayer != null) typedDamagePlayer.invoke(player, dealt, event.frame.ability.damageType)
+                        else damagePlayer(player, dealt)
                         event.frame.ability.crowd?.let { crowdPlayer?.invoke(player, it, event.frame.ability.crowdMillis, event.frame.casterOrigin) }
-                        if (mob.view != null) gimmicks.playerHit(player, event.frame.ability.id, lastTickAt)
+                        if (MobMod.LEECH in mob.mods) mob.life.heal(mob.life.maximumHealth * MobMod.LEECH_RATIO)
+                        if (mob.shade) gimmicks.playerHit(player, event.frame.ability.id, lastTickAt)
                     }
                     if (disposed || actionsStoppedForReturn) return false
                 }
-                if (mob.view != null) { gimmicks.abilityHit(event.frame, lastTickAt); lightUp(event.frame) }
+                if (mob.shade) { gimmicks.abilityHit(event.frame, lastTickAt); lightUp(event.frame) }
                 if (event.frame.ability.id in GIMMICKS) { shaderFx.endTag(gimmickTag(mob)); mob.shellHealth = 0.0 }
+                if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) {
+                    sakuraBurst(event.frame)
+                    sakuraStrike?.strike(event.frame.ability.id, event.frame) { bone, px -> mob.view?.point(bone, px) }
+                }
             }
             is MobAbilityEvent.Finished -> {
                 clearWarning(mob.entity.uuid); updateName(mob)
                 if (event.abilityId in GIMMICKS) hideGimmickBars()
-                if (mob.view != null) {
+                if (mob.shade) {
                     val hugging = mob.target?.let { horizontalLength(it.position.sub(mob.entity.position)) < HUG_DISTANCE } == true
                     val whiffed = event.abilityId !in GIMMICKS && !mob.struckThisMove && players.any { p ->
                         canTarget(p) && p.instance === instance && horizontalLength(p.position.sub(mob.entity.position)) <= ENGAGED_DISTANCE }
@@ -1680,6 +1847,20 @@ class QuestEncounterCombat(
                             mob.moveAfterAttack = true; mob.nextManeuverAt = minOf(mob.nextManeuverAt, lastTickAt)
                         }
                     }
+                } else if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) {
+                    // 三連桜爪: the first slam always takes a second blow, the second a third once enraged.
+                    mob.combo = when (event.abilityId) {
+                        "sakura-claw" -> "sakura-claw2"
+                        "sakura-claw2" -> if (mob.enraged) "sakura-claw3" else null
+                        // once enraged it strings its moves: the somersault lands into the spin, the horn into the paw
+                        "sakura-tail" -> if (mob.enraged) "sakura-spin" else null
+                        "sakura-horn" -> if (mob.enraged) "sakura-claw" else null
+                        "sakura-pounce" -> if (mob.enraged) "sakura-horn" else null
+                        else -> null
+                    }
+                    if (mob.combo != null) mob.warningRetryAt = lastTickAt
+                    // the chain is over: it moves round its prey for a while before the next big attack
+                    else if (event.abilityId !in SAKURA_LIGHT) mob.restUntil = lastTickAt + if (mob.enraged) SAKURA_REST_ENRAGED.random(mob.moveRandom) else SAKURA_REST.random(mob.moveRandom)
                 }
             }
         }
@@ -1688,25 +1869,22 @@ class QuestEncounterCombat(
 
     /** Set by the server once the owner's UI pack is loaded; name tags then use the pixel nameplate. */
     var pixelNameplates = false
-        set(value) { field = value; mobs.values.filter { it.life.isAlive }.forEach { updateName(it) } }
+        set(value) {
+            field = value
+            gimmicks.vanillaBar = !value
+            if (!value) plates.dispose()
+            mobs.values.filter { it.life.isAlive }.forEach { updateName(it, it.notice) }
+        }
 
     private fun updateName(mob: Mob, attackName: String? = null) {
-        if (pixelNameplates) {
-            val rank = when (mob.definition.archetype.rarity) {
-                QuestMobRarity.BOSS -> dev.projects.server.coreloop.ui.CoreMobNameplate.Rank.BOSS
-                QuestMobRarity.ELITE -> dev.projects.server.coreloop.ui.CoreMobNameplate.Rank.ELITE
-                QuestMobRarity.NORMAL -> dev.projects.server.coreloop.ui.CoreMobNameplate.Rank.NORMAL
-            }
-            mob.entity.customName = dev.projects.server.coreloop.ui.CoreMobNameplate.render(encounterLevel, mob.definition.name,
-                mob.life.health, mob.life.maximumHealth, rank, mob.definition.archetype.weakness,
-                attackName ?: if (mob.life.phase == QuestMobPhase.RETURNING) "帰還中" else null)
-            return
-        }
+        mob.notice = attackName
+        if (pixelNameplates) { showHud(mob); return }
+        mob.entity.isCustomNameVisible = true
         val weakness = when (mob.definition.archetype.weakness) { "fire" -> "炎"; "ice" -> "氷"; else -> "雷" }
         val base = "T$tier ${mob.definition.name}  ${ceil(mob.life.health).toInt()}/${ceil(mob.life.maximumHealth).toInt()}  弱点:$weakness"
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         val crowd = when {
-            mob.boss && now < mob.brokenUntil -> "  ［崩れた！］"
+            now < mob.brokenUntil -> "  ［崩れ］"
             mob.boss -> "  崩し ${ceil(mob.breakGauge).toInt()}"
             else -> mob.crowd.filterValues { it > now }.keys.joinToString("") { "  ［${it.label}］" }
         }
@@ -1714,14 +1892,55 @@ class QuestEncounterCombat(
             mob.life.phase == QuestMobPhase.RETURNING -> "  帰還中"
             attackName != null -> "  $attackName"
             else -> ""
-        } + crowd
-        val color = when (mob.definition.archetype.rarity) {
-            QuestMobRarity.BOSS -> NamedTextColor.RED
-            QuestMobRarity.ELITE -> NamedTextColor.LIGHT_PURPLE
-            QuestMobRarity.NORMAL -> NamedTextColor.GOLD
+        } + crowd + mob.mods.joinToString("") { "  ${it.label}" }
+        val color = when {
+            mob.definition.archetype.rarity == QuestMobRarity.BOSS -> NamedTextColor.RED
+            mob.grade == MobGrade.COMMON && mob.definition.archetype.rarity == QuestMobRarity.NORMAL -> NamedTextColor.GOLD
+            else -> NamedTextColor.LIGHT_PURPLE
         }
-        mob.entity.customName = Component.text("Lv$encounterLevel " + base + suffix, color)
+        val grade = if (mob.grade == MobGrade.COMMON || mob.boss) "" else "［${mob.grade.label}］"
+        mob.entity.customName = Component.text("Lv$encounterLevel $grade" + base + suffix, color)
     }
+
+    /** Pixel HUD: bosses draw on the boss bar (see [bossHud]), every other mob on its overhead plate. */
+    private fun showHud(mob: Mob) {
+        mob.entity.isCustomNameVisible = false
+        if (mob.boss || !mob.life.isAlive || !isSpawned(mob)) return
+        plates.show(mob.entity, dev.projects.server.coreloop.ui.CoreMobNameplate.render(hud(mob)))
+    }
+
+    private fun hud(mob: Mob): MobHud {
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        val effects = buildList {
+            if (now < mob.brokenUntil) add(MobHudEffect(MobHudEffectKind.CC, "broken"))
+            if (mob.enraged || frenzied(mob)) add(MobHudEffect(MobHudEffectKind.BUFF, "rage"))
+            if (now < mob.exposedUntil) add(MobHudEffect(MobHudEffectKind.DEBUFF, "exposed"))
+            if (now < mob.slowedUntil && mob.slowPercent > 0.0) add(MobHudEffect(MobHudEffectKind.DEBUFF, "slow"))
+            if (now < mob.tauntedUntil) add(MobHudEffect(MobHudEffectKind.DEBUFF, "taunt"))
+            mob.crowd.filterValues { it > now }.keys.sortedBy { it.ordinal }
+                .forEach { add(MobHudEffect(MobHudEffectKind.CC, it.name.lowercase())) }
+        }
+        val breaks = mob.boss || mob.grade.breaks
+        return MobHud(encounterLevel, mob.definition.name, if (mob.boss) BossBars.grade(mob.definition.archetype) else mob.grade,
+            mob.mods, mob.life.health, mob.life.maximumHealth,
+            breakGauge = if (breaks) mob.breakGauge / BREAK_MAX else null,
+            broken = if (now < mob.brokenUntil) ((mob.brokenUntil - now).toDouble() / BREAK_MILLIS).coerceIn(0.0, 1.0) else null,
+            effects = effects,
+            notice = mob.notice ?: if (mob.life.phase == QuestMobPhase.RETURNING) "帰還中" else null,
+            dedicated = if (mob.boss) BossBars.dedicated(mob.definition.archetype) else null)
+    }
+
+    /** What the boss bar shows for the boss (null once there is none). */
+    internal fun bossHud(): MobHud? = mobs.values.firstOrNull { it.boss }?.let(::hud)
+
+    internal fun hudOf(targetId: UUID): MobHud? = mobs[targetId]?.let(::hud)
+    /** Tests: give a spawned mob a grade and MODs without its rolled health (stats stay as spawned). */
+    internal fun forceGrade(targetId: UUID, grade: MobGrade, mods: List<MobMod>) {
+        mobs[targetId]?.let { it.grade = grade; it.mods = mods; updateName(it) }
+    }
+    internal val plateCount: Int get() = plates.count
+
+    private fun frenzied(mob: Mob) = MobMod.FRENZY in mob.mods && mob.life.health <= mob.life.maximumHealth * MobMod.FRENZY_HEALTH
 
     private fun drawWarning(mob: Mob, frame: MobAbilityFrame, impact: Boolean): Boolean {
         // B (2026-10-19): the small attacks show no floor; they are read from the wyrm's wind-up and its sound.
@@ -1738,6 +1957,237 @@ class QuestEncounterCombat(
         }
         return true
     }
+
+    /** 桜牙獣's strikes scatter petals over the struck shape (vanilla particles, no shader). */
+    private fun sakuraBurst(frame: MobAbilityFrame) {
+        val o = frame.origin.add(0.0, .3, 0.0)
+        val f = normalizeHorizontal(frame.facing)
+        val pink = Particle.DUST.withColor(net.kyori.adventure.text.format.TextColor.color(0xff8fc0)).withScale(1.6f)
+        val points = when (val shape = frame.ability.shape) {
+            is MobAttackShape.Ring -> (0 until 24).map { k ->
+                val a = k * Math.PI / 12; val r = shape.radius * (if (k % 2 == 0) 1.0 else .55)
+                o.add(kotlin.math.cos(a) * r, 0.0, kotlin.math.sin(a) * r) }
+            is MobAttackShape.Slam -> (0..(shape.length / 1.5).toInt()).map { o.add(f.mul(it * 1.5)) }
+            is MobAttackShape.Sweep -> (-4..4).flatMap { k -> listOf(.45, .9).map { d ->
+                o.add(f.rotateAroundY(Math.toRadians(shape.halfAngleDegrees * k / 4.0)).mul(shape.radius * d)) } }
+            else -> listOf(o)
+        }
+        for (p in points) { particle(p, Particle.CHERRY_LEAVES, 6); particle(p, pink, 2) }
+    }
+
+    /** The enrage roar of 桜牙獣 (2.5 s into the hold, when its petals burst open): a ring of petals across the arena. */
+    private fun tickSakuraRoar(mob: Mob, now: Long) {
+        if (mob.waveAt != -1L || now < mob.enrageHoldUntil - 2500) return
+        mob.waveAt = now
+        sakuraStrike?.roar(mob.entity.position, RAGE_WAVE_RADIUS)
+        val o = mob.entity.position.add(0.0, 2.5, 0.0)
+        particle(o, Particle.CHERRY_LEAVES, 60)
+        for (k in 0 until 32) {
+            val a = k * Math.PI / 16
+            particle(o.add(kotlin.math.cos(a) * 6.0, -2.0, kotlin.math.sin(a) * 6.0), Particle.CHERRY_LEAVES, 4)
+        }
+    }
+
+    /**
+     * 桜牙獣's counter window: for the last moments before a big strike its horns flash blue. A hit from in front in that
+     * window throws it out of the strike: stagger, the `countered` clip, +30% damage taken while it is down.
+     */
+    private fun tickCounterGlow(mob: Mob, now: Long) {
+        if (mob.counterTo == 0L || now < mob.counterFrom) return
+        if (now > mob.counterTo || !mob.abilities.isActive) {
+            mob.counterFrom = 0L; mob.counterTo = 0L; updateName(mob); sakuraFx?.burstWreath(); return
+        }
+        if (now - mob.counterFrom < 60) {
+            // the cue is the concept itself: a wreath of petals whirls round its head and the horn tips burst into bloom
+            updateName(mob, "花輪が回った！ 正面から打て")
+            sound(mob.entity.position, "minecraft:block.amethyst_block.resonate", 1.4f, 1.6f)
+            sound(mob.entity.position, "minecraft:block.cherry_leaves.break", 1.4f, .8f)
+            sakuraFx?.wreath((mob.counterTo - mob.counterFrom) / 1000.0)
+            sakuraStrike?.counterBloom(((mob.counterTo - mob.counterFrom) / 50).toInt()) { bone, px -> mob.view?.point(bone, px) }
+        }
+        // without the pack: cherry leaves whirling at the horn tips
+        for (tip in listOf(Vec(11.4, 27.0, -18.0), Vec(-11.4, 27.0, -18.0))) {
+            val at = mob.view?.point("skull", Vec(tip.x(), 40.5 + tip.y() * .94 - tip.z() * .34, 27.0 + tip.y() * .34 + tip.z() * .94)) ?: continue
+            particle(Pos.fromPoint(at), Particle.CHERRY_LEAVES, 3)
+        }
+    }
+
+    /**
+     * 桜紋の陣 (enraged 桜牙獣, the party mechanic): it sits and howls while one sakura crest per player blooms on the
+     * ground round the arena. When the howl ends, every crest must have someone on it: then the spell backfires and it
+     * collapses. Each empty crest blasts the whole party, and whoever stands on none takes another blast.
+     */
+    private fun tickSigil(mob: Mob, now: Long): Boolean {
+        if (!mob.enraged || now < mob.enrageHoldUntil) return false
+        val players = instance.players.filter { canTarget(it) && it.position.distanceSquared(mob.home) <= mob.definition.leashRange * mob.definition.leashRange }
+        if (mob.sigilEndsAt == 0L) {
+            if (mob.sigilNextAt == 0L) mob.sigilNextAt = mob.enrageHoldUntil + SIGIL_FIRST_MILLIS
+            if (now < mob.sigilNextAt || mob.abilities.isActive || mob.maneuver != null || players.isEmpty()) return false
+            val count = players.size.coerceIn(1, 5)
+            val turn = Random.nextDouble(0.0, 2 * Math.PI)
+            mob.sigilCrests = (0 until count).map { k ->
+                val a = turn + k * 2 * Math.PI / count
+                val r = SIGIL_RING + (k % 2) * 1.5
+                val at = mob.home.add(kotlin.math.cos(a) * r, 0.0, kotlin.math.sin(a) * r)
+                Pos(at.x(), telegraphs.groundHeight(at) ?: mob.home.y(), at.z())
+            }
+            mob.sigilEndsAt = now + SIGIL_MILLIS
+            mob.sigilShown = -1L
+            mob.counterFrom = 0L; mob.counterTo = 0L
+            stopNavigation(mob)
+            mob.view?.maneuver("sigil")
+            sakuraStrike?.sigil(mob.sigilCrests, SIGIL_RADIUS, (SIGIL_MILLIS / 50).toInt())
+            sakuraFx?.sigil(mob.sigilCrests, SIGIL_MILLIS / 1000.0)
+            sound(mob.entity.position, "minecraft:entity.wolf.howl", 2.0f, .6f)
+            return true
+        }
+        if (now < mob.sigilEndsAt) {
+            stopNavigation(mob)
+            val left = (mob.sigilEndsAt - now + 999) / 1000
+            if (left != mob.sigilShown) { mob.sigilShown = left; updateName(mob, "桜紋の陣・一人ひとつ紋に立て（$left）") }
+            if ((now / 50) % 6 == 0L) {
+                val pink = Particle.DUST.withColor(net.kyori.adventure.text.format.TextColor.color(0xff8fc0)).withScale(1.3f)
+                for (c in mob.sigilCrests) for (k in 0 until 12) {
+                    val a = k * Math.PI / 6
+                    particle(c.add(kotlin.math.cos(a) * SIGIL_RADIUS, .15, kotlin.math.sin(a) * SIGIL_RADIUS), pink, 1)
+                }
+            }
+            return true
+        }
+        val filled = mob.sigilCrests.map { c -> players.any { horizontalLength(it.position.sub(c)) <= SIGIL_RADIUS } }
+        val scale = 1.65.pow(tier - 1) * damageMultiplier
+        sakuraStrike?.sigilResolve(mob.sigilCrests, filled)
+        sakuraFx?.sigilResolve(mob.sigilCrests)
+        if (filled.all { it }) {
+            mob.brokenUntil = now + SIGIL_BREAK_MILLIS
+            staggerBoss(maxOf(bossStaggerUntil, now + SIGIL_BREAK_MILLIS))
+            mob.view?.maneuver("countered")
+            updateName(mob, "陣が成った！ 崩れた")
+            sound(mob.entity.position, "minecraft:entity.ravager.stunned", 1.4f, .8f)
+        } else {
+            val empty = filled.count { !it }
+            for (p in players) {
+                val onCrest = mob.sigilCrests.any { horizontalLength(p.position.sub(it)) <= SIGIL_RADIUS }
+                val amount = SIGIL_DAMAGE * scale * (empty + if (onCrest) 0 else 1)
+                if (typedDamagePlayer != null) typedDamagePlayer.invoke(p, amount, dev.projects.server.coreloop.CoreDamageType.MAGICAL)
+                else damagePlayer(p, amount)
+            }
+            updateName(mob, "陣が崩れた（空いた紋 $empty）")
+            sound(mob.entity.position, "minecraft:entity.generic.explode", 1.2f, 1.2f)
+        }
+        mob.sigilEndsAt = 0L
+        mob.sigilCrests = emptyList()
+        mob.sigilNextAt = now + SIGIL_EVERY_MILLIS
+        mob.warningRetryAt = now + 400L
+        return false
+    }
+
+    /**
+     * 千本桜 (桜牙獣 at 25%, once): it bounds to the middle of the arena, sits and howls while a sakura crest spreads over
+     * the whole floor and the petals spiral in; when it blows, everyone it can see is struck — the pillars are the only
+     * cover. Spent, it collapses.
+     */
+    private fun tickFinale(mob: Mob, now: Long): Boolean {
+        if (mob.finaleStarted && mob.finaleEndsAt == 0L) return false
+        val players = instance.players.filter { canTarget(it) && it.position.distanceSquared(mob.home) <= mob.definition.leashRange * mob.definition.leashRange }
+        if (!mob.finaleStarted) {
+            if (mob.life.health > mob.life.maximumHealth * FINALE_RATIO || mob.sigilEndsAt != 0L || now < mob.enrageHoldUntil) return false
+            mob.finaleStarted = true
+            mob.finaleEndsAt = now + FINALE_MILLIS
+            mob.finaleShown = -1L
+            mob.abilities.cancel(); clearWarning(mob.entity.uuid); castingPose(mob, false); mob.maneuver = null; stopNavigation(mob)
+            mob.counterFrom = 0L; mob.counterTo = 0L
+            val centre = mob.home
+            val facing = players.minByOrNull { it.position.distanceSquared(centre) }?.let { yawToward(centre, it.position) } ?: centre.yaw()
+            mob.entity.teleport(Pos(centre.x(), centre.y(), centre.z(), facing, 0f))
+            mob.view?.maneuver("finale")
+            sakuraStrike?.finale(centre, (FINALE_MILLIS / 50).toInt())
+            sakuraFx?.finale(FINALE_MILLIS / 1000.0)
+            sound(centre, "minecraft:entity.wolf.howl", 2.0f, .5f)
+            return true
+        }
+        if (now < mob.finaleEndsAt) {
+            stopNavigation(mob)
+            val left = (mob.finaleEndsAt - now + 999) / 1000
+            if (left != mob.finaleShown) {
+                mob.finaleShown = left
+                updateName(mob, "千本桜・柱の陰へ（$left）")
+                if (left <= 3) sound(mob.entity.position, "minecraft:block.note_block.bell", 1.6f, .5f + .2f * (4 - left))
+            }
+            return true
+        }
+        mob.finaleEndsAt = 0L
+        val scale = 1.65.pow(tier - 1) * damageMultiplier
+        for (p in players) {
+            if (!mob.entity.hasLineOfSight(p)) continue                // behind a pillar: safe
+            val amount = FINALE_DAMAGE * scale
+            if (typedDamagePlayer != null) typedDamagePlayer.invoke(p, amount, dev.projects.server.coreloop.CoreDamageType.MAGICAL)
+            else damagePlayer(p, amount)
+        }
+        sakuraStrike?.finaleBlow(mob.entity.position, RAGE_WAVE_RADIUS)
+        sakuraFx?.finaleBlow()
+        sound(mob.entity.position, "minecraft:entity.generic.explode", 2.0f, .6f)
+        mob.brokenUntil = now + FINALE_SPENT_MILLIS
+        staggerBoss(maxOf(bossStaggerUntil, now + FINALE_SPENT_MILLIS))
+        mob.view?.maneuver("countered")
+        updateName(mob, "千本桜が散った…（崩れた）")
+        mob.warningRetryAt = now + FINALE_SPENT_MILLIS
+        mob.sigilNextAt = maxOf(mob.sigilNextAt, now + FINALE_SPENT_MILLIS + 8000L)
+        return false
+    }
+
+    /** 千本桜's state, for tests: started, running. */
+    internal fun finaleState(targetId: UUID): Pair<Boolean, Boolean>? = mobs[targetId]?.let { it.finaleStarted to (it.finaleEndsAt != 0L) }
+
+    /** 桜紋の陣's crests, for tests. */
+    internal fun sigilCrests(targetId: UUID): List<Pos> = mobs[targetId]?.sigilCrests ?: emptyList()
+
+    /** Where a hit on 桜牙獣 landed: the counter, and the parts it wears down (horns from in front, tail shells from behind). */
+    private fun sakuraHit(mob: Mob, attacker: Player, applied: Double, now: Long) {
+        val here = mob.entity.position
+        val yaw = Math.toRadians(here.yaw().toDouble())
+        val ahead = Vec(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw))
+        val off = Vec(attacker.position.x() - here.x(), 0.0, attacker.position.z() - here.z())
+        if (off.length() < 1e-6) return
+        val angle = Math.toDegrees(kotlin.math.acos(off.normalize().dot(ahead).coerceIn(-1.0, 1.0)))
+        if (mob.counterTo != 0L && now in mob.counterFrom..mob.counterTo && angle <= 80.0) {
+            mob.counterFrom = 0L; mob.counterTo = 0L
+            mob.abilities.cancel(); clearWarning(mob.entity.uuid); castingPose(mob, false); mob.maneuver = null; stopNavigation(mob)
+            staggerBoss(maxOf(bossStaggerUntil, now + COUNTER_STAGGER_MILLIS))
+            mob.brokenUntil = now + COUNTER_STAGGER_MILLIS
+            mob.view?.maneuver("countered")
+            sakuraFx?.burstWreath()
+            sakuraFx?.countered()
+            updateName(mob, "カウンター！ 崩れた")
+            sound(here, "minecraft:entity.ravager.stunned", 1.4f, .8f)
+            sound(here, "minecraft:block.amethyst_block.break", 1.2f, .7f)
+            return
+        }
+        val max = mob.life.maximumHealth
+        val head = here.add(ahead.mul(3.0))
+        if (!mob.hornsBroken && angle <= 60.0 && attacker.position.distance(head.withY(attacker.position.y())) <= HEAD_REACH) {
+            mob.hornDamage += applied
+            if (mob.hornDamage >= max * HORN_BREAK) {
+                mob.hornsBroken = true
+                mob.view?.hideBones(listOf("horn_l_tip", "horn_r_tip"))
+                mob.abilities.disable("sakura-horn")
+                sakuraFx?.partBurst(true)
+                partBroken(mob, now, 3000L, "枝角が折れた")
+            }
+        }
+        if (!mob.tailTorn && angle >= 110.0) {
+            mob.tailDamage += applied
+            if (mob.tailDamage >= max * FAN_TEAR) {
+                mob.tailTorn = true
+                mob.view?.hideBones(listOf("shell_t4_l", "shell_t4_r", "shell_t5_l", "shell_t5_r"))
+                mob.abilities.disable("sakura-scatter")
+                sakuraFx?.partBurst(false)
+                partBroken(mob, now, 2500L, "尾の花びらが散った")
+            }
+        }
+    }
+
+    private val Mob.shade: Boolean get() = definition.archetype == QuestMobArchetype.SHADE_WYRM
 
     private fun particle(position: Pos, type: Particle, count: Int = 1) {
         val spread = if (count > 8) 1.5f else 0f
@@ -1769,6 +2219,40 @@ class QuestEncounterCombat(
         const val SEARCH_SPEED = .3
         const val SEARCH_BEYOND = 14.0
         const val TURN_SWEEP = "shade-turnsweep"
+        /** 桜牙獣 answers someone at its back with the 360 tail spin. */
+        const val SAKURA_TURN = "sakura-spin"
+        /** 桜牙獣's breather between attack chains (ms), and the pause between its moves. */
+        val SAKURA_REST = 2200L..3800L
+        val SAKURA_REST_ENRAGED = 1400L..2600L
+        const val SAKURA_MANEUVER_GAP = 400L        // longer than MobAbilityManager's global cooldown, so a rested attack starts first
+        /** Its small blows on the move, the only attacks it throws while it rests. */
+        val SAKURA_LIGHT = setOf("sakura-lunge", "sakura-barge", "sakura-hopswipe")
+        val LUNGE_CARRY = 200L..500L
+        val BARGE_CARRY = 300L..650L
+        val HOP_CARRY = 200L..550L
+        const val STALK_SPEED = .55
+        /** Its standing moves, the lengths of their clips (assets/bosses/sakura_fang.bbmodel). */
+        internal val SAKURA_STAND_MILLIS = mapOf(ManeuverKind.GROWL to 1600L, ManeuverKind.SHAKE to 1300L, ManeuverKind.SCRAPE to 1200L)
+        internal val SAKURA_MANEUVERS = listOf(ManeuverKind.STRAFE to 4, ManeuverKind.DASH to 2, ManeuverKind.GROWL to 1,
+            ManeuverKind.SHAKE to 1, ManeuverKind.SCRAPE to 1)
+        /** 桜牙獣's big strikes that open a counter window [COUNTER_LEAD_MILLIS]..[COUNTER_CLOSE_MILLIS] before they land. */
+        val SAKURA_COUNTERABLE = setOf("sakura-claw", "sakura-tail", "sakura-bloom", "sakura-charge", "sakura-howl", "sakura-rain", "sakura-pounce", "sakura-claw3")
+        const val COUNTER_LEAD_MILLIS = 600L
+        const val COUNTER_CLOSE_MILLIS = 150L
+        const val COUNTER_STAGGER_MILLIS = 3500L
+        /** 桜紋の陣: first one this long after the enrage, then every [SIGIL_EVERY_MILLIS]; crests this far out. */
+        const val SIGIL_FIRST_MILLIS = 10_000L
+        const val SIGIL_EVERY_MILLIS = 40_000L
+        const val SIGIL_MILLIS = 6000L
+        const val SIGIL_RING = 7.0
+        const val SIGIL_RADIUS = 1.8
+        const val SIGIL_DAMAGE = 18.0
+        const val SIGIL_BREAK_MILLIS = 4500L
+        /** 千本桜: at this share of health, an 8 s howl, then a blow on everyone in its sight; spent for 5 s. */
+        const val FINALE_RATIO = .25
+        const val FINALE_MILLIS = 8000L
+        const val FINALE_DAMAGE = 70.0
+        const val FINALE_SPENT_MILLIS = 5000L
         /** Got behind it (usually while an attack holds its facing) for this long when it is free to act. */
         const val TURN_AFTER_MILLIS = 600L
         /** Behind it this long: the quick tail slap (once per [TAIL_SLAP_AGAIN_MILLIS]); still there: the turning sweep. */
@@ -1846,6 +2330,9 @@ class QuestEncounterCombat(
         const val ORB_RELEASE_TICKS = 24
         /** ms into shade-dive while the body is carried over the target (the clip hangs in the air then). */
         val DIVE_CARRY = 1000L..2300L
+        /** 桜牙獣's leap (sakura-pounce clip: airborne 0.6..1.1 s) and its charge (the gallop 0.55..1.35 s). */
+        val POUNCE_CARRY = 600L..1100L
+        val CHARGE_CARRY = 550L..1350L
         const val BREAK_MAX = 100.0
         const val BREAK_MILLIS = 4000L
         const val BROKEN_DAMAGE = 1.3

@@ -26,6 +26,7 @@ CHAIN = [
     # Only font/first_magic_canvas_*.json; the first_magic art itself is committed (partly hand-finished).
     ["build_first_magic_assets.py", "--fonts-only"],
     "build_boss_vfx.py",         # boss_vfx data maps + the core/item shader experiment
+    "build_player_puppet.py",    # combat_vfx/puppet: player skin parts, one tinted face per skin pixel
 ]
 
 
