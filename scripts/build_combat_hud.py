@@ -26,25 +26,21 @@ from PIL import Image, ImageDraw, ImageFont
 
 from build_core_hud_assets import SKILLS
 import combat_hud_art as art
+import mob_hud_art as mob_art
+import boss_bar_art as boss_art
 
 ROOT = Path(__file__).resolve().parents[1]
 HUD = "assets/minecraft/textures/gui/sprites/hud/"
 BOSS = "assets/minecraft/textures/gui/sprites/boss_bar/"
 FONT_PATH = ROOT / ".tools/core-menu/x12y12pxMaruMinya.ttf"
+# GNU Unifont (the client's own CJK font), pinned; OFL 1.1 / GPL2+ with the font embedding exception.
+UNIFONT_URL = "https://unifoundry.com/pub/unifont/unifont-17.0.04/font-builds/unifont_jp-17.0.04.hex.gz"
+UNIFONT_SHA256 = "a6195f525d998d883ed18aeba48bbbc281648ed41fd57b3c87af62e25b4158a1"
+UNIFONT_PATH = ROOT / ".tools/unifont/unifont_jp-17.0.04.hex.gz"
 
 # ---------------------------------------------------------------- palette (name tags, damage)
 OUT = (7, 8, 11)
 
-TINY = {
-    "0": ["111", "101", "101", "101", "111"], "1": ["010", "110", "010", "010", "111"],
-    "2": ["111", "001", "111", "100", "111"], "3": ["111", "001", "111", "001", "111"],
-    "4": ["101", "101", "111", "001", "001"], "5": ["111", "100", "111", "001", "111"],
-    "6": ["111", "100", "111", "101", "111"], "7": ["111", "001", "010", "010", "010"],
-    "8": ["111", "101", "111", "101", "111"], "9": ["111", "101", "111", "001", "111"],
-    "/": ["001", "001", "010", "100", "100"], "+": ["000", "010", "111", "010", "000"],
-    "L": ["100", "100", "100", "100", "111"], "v": ["000", "101", "101", "101", "010"],
-}
-TINY_CHARS = "0123456789/+Lv"
 BIG = {
     "0": [".###.", "##.##", "##.##", "##.##", "##.##", "##.##", ".###."],
     "1": [".##..", "###..", ".##..", ".##..", ".##..", ".##..", "####."],
@@ -236,28 +232,47 @@ def text_glyphs(chars):
     return result
 
 
-# ---------------------------------------------------------------- mob nameplate (world)
-TAG_FILL = 40
-TAG_COLORS = {
-    "normal": [(250, 120, 100), (214, 56, 56), (150, 34, 44)],
-    "elite": [(226, 170, 255), (164, 92, 222), (104, 52, 156)],
-    "boss": [(255, 196, 120), (232, 120, 48), (160, 66, 26)],
-}
-WEAKNESS = {
-    "fire": ["..#..", ".##..", ".###.", "#####", ".###."],
-    "ice": ["#.#.#", ".###.", "##.##", ".###.", "#.#.#"],
-    "thunder": ["...##", "..##.", ".####", "..##.", ".##.."],
-}
-WEAKNESS_COLOR = {"fire": (255, 140, 60), "ice": (150, 220, 255), "thunder": (255, 230, 90)}
+# ---------------------------------------------------------------- unifont text (boss bar rows)
+def unifont_glyphs(chars):
+    """Non-ASCII characters drawn exactly as the client draws them: Unifont's 16 px bitmaps shown 8 GUI px
+    tall. ASCII stays on minecraft:font/ascii.png. Returns [(char, 16x16 white image)] for drawable chars."""
+    import gzip, hashlib, urllib.request
+    if not UNIFONT_PATH.is_file():
+        UNIFONT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with urllib.request.urlopen(UNIFONT_URL, timeout=60) as response:
+            data = response.read()
+        assert hashlib.sha256(data).hexdigest() == UNIFONT_SHA256
+        UNIFONT_PATH.write_bytes(data)
+    assert hashlib.sha256(UNIFONT_PATH.read_bytes()).hexdigest() == UNIFONT_SHA256
+    wanted = {ord(c) for c in chars if ord(c) >= 0x80}
+    bitmaps = {}
+    with gzip.open(UNIFONT_PATH, "rt", encoding="ascii") as hexfile:
+        for line in hexfile:
+            code, bits = line.strip().split(":")
+            if int(code, 16) in wanted:
+                bitmaps[int(code, 16)] = bits
+    result = []
+    for code in sorted(bitmaps):
+        bits = bitmaps[code]
+        width = len(bits) // 4  # 32 hex digits = 8 px wide, 64 = 16 px wide
+        image = new(16, 16)
+        for y in range(16):
+            row = int(bits[y * width // 4:(y + 1) * width // 4], 16)
+            for x in range(width):
+                if row >> (width - 1 - x) & 1:
+                    put(image, x, y, (255, 255, 255))
+        if image.getchannel("A").getbbox():
+            result.append((chr(code), image))
+    return result
 
 
-def build_tag_frame():
-    image = new(TAG_FILL + 2, 5)
-    for y in range(5):
-        for x in range(TAG_FILL + 2):
-            edge = x in (0, TAG_FILL + 1) or y in (0, 4)
-            put(image, x, y, OUT if edge else (30, 12, 18))
-    return image
+BOSS_TEXT_FONTS = {  # font -> top of its 8 px text row (boss bar: ascent = 10 - top)
+    "hud_boss_name": boss_art.NAME_TOP,
+    "hud_boss_tag": boss_art.TAG_TOP,
+    "hud_boss_hp": boss_art.HP_TEXT_TOP,
+    "hud_boss_lv": boss_art.LV_TOP,
+    "hud_ded_erosion": boss_art.EROSION_LABEL_TOP,
+}
 
 
 # ---------------------------------------------------------------- vanilla-ascii number fonts
@@ -281,7 +296,6 @@ def number_provider(ascent):
 NUMBER_FONTS = {  # font -> ascent; numbers are white glyphs tinted by the component colour
     "hud_num_gauge": hud_ascent(art.GAUGE_TOP - 1),      # HP / MP values and the level, on the gauge row
     "hud_num_cd": hud_ascent(15),                         # cooldown seconds on a hotbar skill
-    "hud_num_boss": 10 - 5,                               # boss bar percentage
 }
 
 
@@ -342,29 +356,58 @@ def build_combat_hud(assets, pack, source, write_json, chars):
         text_rows.append((ord(c), row[2], row[3]))
     fonts.append(world)
 
-    # -- boss bar --------------------------------------------------------
+    # -- boss bar (boss_bar_art): graded v3 and the shade wyrm's own frame -----------------------
     boss = FontBuilder("projects:hud_boss")
-    boss.group("hud_boss_plate", [("boss_plate", art.boss_plate())], 10 - art.BOSS_TOP)
-    boss_rows = [(f"boss_fill_{w}", art.gauge_fill(w, art.BOSS_FILL_ROWS, art.BOSS)) for w in BINARY]
-    boss_rows += [(f"boss_trail_{w}", art.flat(w, art.BOSS_FILL_ROWS, art.TRAIL)) for w in BINARY]
-    boss_rows += [("boss_tick", art.boss_tick())]
-    boss.group("hud_boss_fill", boss_rows, 10 - art.BOSS_FILL_TOP)
+    boss.group("hud_boss_emblem", [(f"boss_emblem_{g}", boss_art.emblem(g)) for g in boss_art.GRADES], 10)
+    boss.group("hud_boss_plate", [(f"boss_plate_{g}", boss_art.plate(g)) for g in boss_art.GRADES],
+               10 - (boss_art.PLATE_TOP - boss_art.PLATE_PAD), columns=1)
+    rows = [(f"boss_fill_{w}", art.gauge_fill(w, boss_art.HP_ROWS, art.BOSS)) for w in BINARY]
+    rows += [(f"boss_fillc_{w}", art.gauge_fill(w, boss_art.HP_ROWS, boss_art.CALAMITY_HP)) for w in BINARY]
+    rows += [(f"boss_trail_{w}", art.flat(w, boss_art.HP_ROWS, boss_art.TRAIL)) for w in BINARY]
+    rows += [("boss_tick", art.flat(1, boss_art.HP_ROWS, (0, 0, 0, 120)))]
+    boss.group("hud_boss_fill", rows, 10 - boss_art.HP_TOP)
+    boss.group("hud_boss_cell", [("boss_cell", boss_art.cell(True)), ("boss_cellw", boss_art.cell(False))], 10 - boss_art.CELL_TOP)
+    boss.group("hud_boss_icon", [(f"boss_icon_{n}", boss_art.icon(n)) for n in boss_art.ICONS], 10 - boss_art.ICON_TOP)
+    # dedicated bosses: the normal bar, decorated — ornaments behind it, horns over the diamond, own HP colours
+    boss.group("hud_boss_plate_bare", [("boss_plate_calamity_bare", boss_art.plate("calamity", corners=False))],
+               10 - (boss_art.PLATE_TOP - boss_art.PLATE_PAD))
+    backs = []
+    for key, (left, right) in (("wyrm", boss_art.wyrm_back()), ("sakura", boss_art.sakura_back())):
+        backs += [(f"{key}_back_l", left), (f"{key}_back_r", right)]
+    boss.group("hud_ded_back", backs, 10, columns=1)
+    boss.group("hud_ded_front", [("wyrm_front", boss_art.wyrm_front()), ("sakura_front", boss_art.sakura_front())], 10)
+    rows = []
+    for key, ramp, trail in (("wyrm", boss_art.WYRM_HP, boss_art.WYRM_TRAIL), ("sakura", boss_art.SAKURA_HP, boss_art.SAKURA_TRAIL)):
+        rows += [(f"{key}_fill_{w}", art.gauge_fill(w, boss_art.HP_ROWS, ramp)) for w in BINARY]
+        rows += [(f"{key}_trail_{w}", art.flat(w, boss_art.HP_ROWS, trail)) for w in BINARY]
+    boss.group("hud_ded_fill", rows, 10 - boss_art.HP_TOP)
+    boss.group("hud_erosion", [("erosion_well", boss_art.erosion_well())], 10 - (boss_art.EROSION_TOP - 1))
+    boss.group("hud_erosion_cell", [("erosion_cell", boss_art.erosion_cell())], 10 - boss_art.EROSION_TOP)
     fonts.append(boss)
 
-    # -- mob nameplate (world, below the name line) -----------------------
-    def boxed(image):
-        backed = Image.new("RGBA", image.size, rgba(OUT))
-        backed.alpha_composite(image)
-        return backed
-    tiny = [(c, boxed(outlined(TINY[c], shade=digit_shade))) for c in TINY_CHARS]
+    # Boss bar text rows: ascii.png for ASCII, Unifont bitmaps for the rest, one font per row.
+    uni = unifont_glyphs(chars)
+    uni_rows = []
+    for key, top in BOSS_TEXT_FONTS.items():
+        builder = FontBuilder(f"projects:{key}")
+        builder.group(key, [(f"uni_{ord(c):X}", image) for c, image in uni], 10 - top, columns=32, display_height=8)
+        builder.extra = [number_provider(10 - top)]
+        if not uni_rows:
+            uni_rows = [(int(name[4:], 16), code, advance) for name, _, code, advance in builder.rows]
+        fonts.append(builder)
+    assert max(code for _, code, _ in uni_rows) < ASCII_BASE, "Unifont rows reached the ascii codepoints"
+
+    # -- mob plate (world text display, one 9 px line per row; mob_hud_art) ----------------
     big = [(c, outlined(BIG[c], shade=digit_shade)) for c in BIG_CHARS]
-    tag = FontBuilder("projects:hud_tag")
-    tag.group("hud_tag_frame", [("tag_frame", build_tag_frame())], 7 - 13)
-    for rarity, colors in TAG_COLORS.items():
-        tag.group(f"hud_tag_{rarity}", segments(f"tag_{rarity}", colors, BINARY[:6]), 7 - 14)
-    tag.group("hud_tag_weak", [(f"weak_{k}", outlined(v, ink=WEAKNESS_COLOR[k])) for k, v in WEAKNESS.items()], 7 - 12)
-    tag.group("hud_tag_tiny", [(f"tag_tiny_{c}", i) for c, i in tiny], 7 - 12)
-    fonts.append(tag)
+    plate = FontBuilder("projects:hud_plate")
+    plate.group("hud_plate_frame", [(f"plate_frame_{g}", mob_art.plate_frame(g)) for g in mob_art.GRADES], 7)
+    plate.group("hud_plate_icon", [(f"plate_icon_{n}", mob_art.icon(n)) for n in mob_art.ICONS], 7)
+    plate.group("hud_plate_hp", [(f"plate_hp_{w}", art.gauge_fill(w, mob_art.HP_ROWS, mob_art.HP)) for w in BINARY[:6]],
+                7 - mob_art.HP_TOP)
+    plate.group("hud_plate_break", [(f"plate_brk_{w}", art.gauge_fill(w, mob_art.BREAK_ROWS, mob_art.BREAK)) for w in BINARY[:6]] +
+                [(f"plate_brkw_{w}", art.gauge_fill(w, mob_art.BREAK_ROWS, mob_art.BROKEN)) for w in BINARY[:6]],
+                7 - mob_art.BREAK_TOP)
+    fonts.append(plate)
 
     # -- damage numbers (world text displays) ----------------------------
     damage = FontBuilder("projects:hud_damage")
@@ -380,11 +423,15 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     for builder in fonts:
         # Signed binary spaces in every HUD font let the server keep one text run per colour.
         providers = [{"type": "space", "advances": space}]
+        extra = getattr(builder, "extra", [])
+        if extra:
+            providers[0] = {"type": "space", "advances": space | {chr(ASCII_BASE + 32): ASCII_SPACE}}
         for sheet_name, sheet, provider in builder.providers:
             sheet.save(output / f"{sheet_name}.png", optimize=True)
             providers.append(provider)
+        providers += extra
         write_json(assets / f"font/{builder.key.split(':')[1]}.json", {"providers": providers})
-        if builder.key == "projects:hud_text":
+        if builder.key == "projects:hud_text" or builder.key.split(":")[1] in BOSS_TEXT_FONTS:
             continue
         rows += builder.rows
     for name, ascent in NUMBER_FONTS.items():
@@ -394,6 +441,9 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     (assets / "menu/hud-glyphs.tsv").write_text(
         "# name\tfont\tcode\tadvance; generated by build_combat_hud.py\n" +
         "".join(f"{name}\t{font}\t{code:X}\t{advance}\n" for name, font, code, advance in rows), encoding="utf-8")
+    (assets / "menu/hud-uni.tsv").write_text(
+        "# codepoint\tglyph\tadvance; generated by build_combat_hud.py (Unifont rows: " + ", ".join(BOSS_TEXT_FONTS) + ")\n" +
+        "".join(f"{cp:X}\t{code:X}\t{advance}\n" for cp, code, advance in uni_rows), encoding="utf-8")
     (assets / "menu/hud-text.tsv").write_text(
         "# codepoint\tglyph\tadvance; generated by build_combat_hud.py (font projects:hud_text)\n" +
         "".join(f"{cp:X}\t{code:X}\t{advance}\n" for cp, code, advance in text_rows), encoding="utf-8")
@@ -419,8 +469,9 @@ def build_combat_hud(assets, pack, source, write_json, chars):
                         "states": list(art.SKILL_STATES)},
         "buffs": {"left_x": art.BUFF_LEFT, "top": art.BUFF_TOP, "height": art.BUFF_H},
         "number_fonts": {k: v for k, v in NUMBER_FONTS.items()},
-        "boss_bar": {"plate_x": art.BOSS_X, "plate_width": art.BOSS_W, "plate_top": art.BOSS_TOP,
-                     "fill_x": art.BOSS_FILL_X, "fill_width": art.BOSS_FILL_W, "fill_top": art.BOSS_FILL_TOP},
+        "boss_bar": {"plate_x": boss_art.PLATE_X, "plate_width": boss_art.PLATE_W, "plate_top": boss_art.PLATE_TOP,
+                     "hp_x": boss_art.HP_X, "hp_width": boss_art.HP_W, "hp_top": boss_art.HP_TOP,
+                     "text_rows": BOSS_TEXT_FONTS},
         "blank_vanilla_sprites": sorted(vanilla_overrides()),
         "reskinned_vanilla_sprites": sorted(vanilla_reskins()),
     })

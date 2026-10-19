@@ -59,9 +59,11 @@ def width_of(text):
 class Fonts:
     def __init__(self):
         self.fonts, self.sheets = {}, {}
-        self.jp = ImageFont.truetype(next(f for f in ("C:/Windows/Fonts/BIZ-UDGothicR.ttc",
-                                                   "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc")
-                                         if Path(f).exists()), 15)
+        # GNU Unifont is what the client draws CJK with; use it when installed, else a gothic stands in.
+        self.unifont = next((f for f in ("/usr/share/fonts/opentype/unifont/unifont_jp.otf",) if Path(f).exists()), None)
+        self.jp = ImageFont.truetype(self.unifont, 16) if self.unifont else ImageFont.truetype(next(
+            f for f in ("C:/Windows/Fonts/BIZ-UDGothicR.ttc", "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc")
+            if Path(f).exists()), 15)
 
     def sheet(self, file):
         if file not in self.sheets:
@@ -101,7 +103,10 @@ class Fonts:
         mask = Image.new("L", (16, 16))
         d = ImageDraw.Draw(mask)
         d.fontmode = "1"
-        d.text((0, -self.jp.getbbox("国")[1] + 1), chr(code), font=self.jp, fill=255)
+        if self.unifont:
+            d.text((0, 14), chr(code), font=self.jp, anchor="ls", fill=255)
+        else:
+            d.text((0, -self.jp.getbbox("国")[1] + 1), chr(code), font=self.jp, fill=255)
         img = Image.new("RGBA", (16, 16), (255, 255, 255, 0))
         img.putalpha(mask)
         return img
@@ -168,6 +173,56 @@ def screen_for(fonts, actionbar, boss=None):
     return screen
 
 
+GRADES = ("common", "elite", "rare", "unique", "calamity")
+
+
+def draw_plate(screen, fonts, snapshots, grade, cx, bottom):
+    """A text display's lines, 9 GUI px apart, bottom line ending at `bottom` (anchored like the client)."""
+    lines = sorted((k for k in snapshots if k.startswith(f"plate-{grade}-")), key=lambda k: int(k.rsplit("-", 1)[1]))
+    top = bottom - 9 * len(lines)
+    for i, key in enumerate(lines):
+        line_top = top + 9 * i
+        shifted = dict(snapshots[key], glyphs=[dict(g, x=g["x"] + cx - W // 2) for g in snapshots[key]["glyphs"]])
+        draw(screen, fonts, shifted, lambda ascent, t=line_top: t if ascent is None else t + 7 - ascent)
+
+
+def mob_hud(fonts, snapshots):
+    """mob-hud-4x.png: the five grade plates over a field, the boss bar, and the boss bar while broken."""
+    if not any(k.startswith("plate-") for k in snapshots):
+        return
+    screen = screen_for(fonts, snapshots["actionbar-ready"], snapshots.get("boss-boss"))
+    for k, grade in enumerate(GRADES):
+        draw_plate(screen, fonts, snapshots, grade, 52 + k * 92, 150)
+    broken = screen_for(fonts, snapshots["actionbar-ready"], snapshots.get("boss-broken")).crop((0, 0, W * S, 34 * S))
+    sheet = Image.new("RGBA", (W * S, (H - 30 + 34) * S))
+    sheet.alpha_composite(screen.crop((0, 0, W * S, (H - 30) * S)))
+    sheet.alpha_composite(broken, (0, (H - 30) * S))
+    sheet.save(OUT / "mob-hud-4x.png")
+
+
+def boss_sheet(fonts, snapshots):
+    """boss-bars-4x.png: every boss bar state (grades, broken, the shade wyrm) on the field, cropped to the bar."""
+    keys = [k for k in ("boss-grade-elite", "boss-grade-rare", "boss-grade-unique", "boss-grade-calamity", "boss-broken",
+                        "boss-wyrm", "boss-wyrm-broken", "boss-wyrm-erosion", "boss-sakura") if k in snapshots]
+    if not keys:
+        return
+    crops = []
+    for key in keys:
+        screen = screen_for(fonts, snapshots["actionbar-ready"], snapshots[key])
+        h = 92 if "wyrm" in key or "sakura" in key else 78
+        crops.append(screen.crop(((W // 2 - 185) * S, 0, (W // 2 + 185) * S, h * S)))
+    cw = crops[0].width
+    rows = [crops[i:i + 2] for i in range(0, len(crops), 2)]
+    heights = [max(c.height for c in row) for row in rows]
+    sheet = Image.new("RGBA", (cw * 2 + 8, sum(heights) + 8 * (len(rows) - 1)), (20, 20, 24, 255))
+    y = 0
+    for row, h in zip(rows, heights):
+        for col, c in enumerate(row):
+            sheet.alpha_composite(c, (col * (cw + 8), y))
+        y += h + 8
+    sheet.save(OUT / "boss-bars-4x.png")
+
+
 def main():
     global S
     snapshots = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted((OUT / "snapshots").glob("*.json"))}
@@ -195,6 +250,8 @@ def main():
     if "boss-boss" in snapshots:
         image = screen_for(fonts, snapshots["actionbar-ready"], snapshots["boss-boss"])
         image.crop(((W // 2 - 120) * S, 0, (W // 2 + 120) * S, 30 * S)).resize((240 * 8, 30 * 8), Image.NEAREST).save(OUT / "boss-8x.png")
+    mob_hud(fonts, snapshots)
+    boss_sheet(fonts, snapshots)
     # The creator plays at GUI scale 2: the same view, 2 screen px per GUI px, then enlarged x4
     # like a zoomed in-game screenshot (compare with the client's F2 shots).
     S = 2
