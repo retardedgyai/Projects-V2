@@ -26,6 +26,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from build_core_hud_assets import SKILLS
 import combat_hud_art as art
+import mob_hud_art as mob_art
 
 ROOT = Path(__file__).resolve().parents[1]
 HUD = "assets/minecraft/textures/gui/sprites/hud/"
@@ -35,16 +36,6 @@ FONT_PATH = ROOT / ".tools/core-menu/x12y12pxMaruMinya.ttf"
 # ---------------------------------------------------------------- palette (name tags, damage)
 OUT = (7, 8, 11)
 
-TINY = {
-    "0": ["111", "101", "101", "101", "111"], "1": ["010", "110", "010", "010", "111"],
-    "2": ["111", "001", "111", "100", "111"], "3": ["111", "001", "111", "001", "111"],
-    "4": ["101", "101", "111", "001", "001"], "5": ["111", "100", "111", "001", "111"],
-    "6": ["111", "100", "111", "101", "111"], "7": ["111", "001", "010", "010", "010"],
-    "8": ["111", "101", "111", "101", "111"], "9": ["111", "101", "111", "001", "111"],
-    "/": ["001", "001", "010", "100", "100"], "+": ["000", "010", "111", "010", "000"],
-    "L": ["100", "100", "100", "100", "111"], "v": ["000", "101", "101", "101", "010"],
-}
-TINY_CHARS = "0123456789/+Lv"
 BIG = {
     "0": [".###.", "##.##", "##.##", "##.##", "##.##", "##.##", ".###."],
     "1": [".##..", "###..", ".##..", ".##..", ".##..", ".##..", "####."],
@@ -236,30 +227,6 @@ def text_glyphs(chars):
     return result
 
 
-# ---------------------------------------------------------------- mob nameplate (world)
-TAG_FILL = 40
-TAG_COLORS = {
-    "normal": [(250, 120, 100), (214, 56, 56), (150, 34, 44)],
-    "elite": [(226, 170, 255), (164, 92, 222), (104, 52, 156)],
-    "boss": [(255, 196, 120), (232, 120, 48), (160, 66, 26)],
-}
-WEAKNESS = {
-    "fire": ["..#..", ".##..", ".###.", "#####", ".###."],
-    "ice": ["#.#.#", ".###.", "##.##", ".###.", "#.#.#"],
-    "thunder": ["...##", "..##.", ".####", "..##.", ".##.."],
-}
-WEAKNESS_COLOR = {"fire": (255, 140, 60), "ice": (150, 220, 255), "thunder": (255, 230, 90)}
-
-
-def build_tag_frame():
-    image = new(TAG_FILL + 2, 5)
-    for y in range(5):
-        for x in range(TAG_FILL + 2):
-            edge = x in (0, TAG_FILL + 1) or y in (0, 4)
-            put(image, x, y, OUT if edge else (30, 12, 18))
-    return image
-
-
 # ---------------------------------------------------------------- vanilla-ascii number fonts
 ASCII_BASE = 0xE600   # ascii.png cell n (= codepoint n) is drawn by U+E600+n in every hud_num* font
 ASCII_SPACE = 4       # vanilla's own space advance (the ascii cell for ' ' is empty)
@@ -349,22 +316,23 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     boss_rows += [(f"boss_trail_{w}", art.flat(w, art.BOSS_FILL_ROWS, art.TRAIL)) for w in BINARY]
     boss_rows += [("boss_tick", art.boss_tick())]
     boss.group("hud_boss_fill", boss_rows, 10 - art.BOSS_FILL_TOP)
+    breaks = [(f"boss_brk_{w}", art.gauge_fill(w, art.BOSS_BREAK_ROWS, art.BREAK)) for w in BINARY]
+    breaks += [(f"boss_brkw_{w}", art.gauge_fill(w, art.BOSS_BREAK_ROWS, mob_art.BROKEN)) for w in BINARY]
+    boss.group("hud_boss_break", breaks, 10 - art.BOSS_BREAK_TOP)
+    boss.group("hud_boss_icon", [(f"boss_icon_{n}", mob_art.icon(n)) for n in mob_art.ICONS], 10 - 2)
     fonts.append(boss)
 
-    # -- mob nameplate (world, below the name line) -----------------------
-    def boxed(image):
-        backed = Image.new("RGBA", image.size, rgba(OUT))
-        backed.alpha_composite(image)
-        return backed
-    tiny = [(c, boxed(outlined(TINY[c], shade=digit_shade))) for c in TINY_CHARS]
+    # -- mob plate (world text display, one 9 px line per row; mob_hud_art) ----------------
     big = [(c, outlined(BIG[c], shade=digit_shade)) for c in BIG_CHARS]
-    tag = FontBuilder("projects:hud_tag")
-    tag.group("hud_tag_frame", [("tag_frame", build_tag_frame())], 7 - 13)
-    for rarity, colors in TAG_COLORS.items():
-        tag.group(f"hud_tag_{rarity}", segments(f"tag_{rarity}", colors, BINARY[:6]), 7 - 14)
-    tag.group("hud_tag_weak", [(f"weak_{k}", outlined(v, ink=WEAKNESS_COLOR[k])) for k, v in WEAKNESS.items()], 7 - 12)
-    tag.group("hud_tag_tiny", [(f"tag_tiny_{c}", i) for c, i in tiny], 7 - 12)
-    fonts.append(tag)
+    plate = FontBuilder("projects:hud_plate")
+    plate.group("hud_plate_frame", [(f"plate_frame_{g}", mob_art.plate_frame(g)) for g in mob_art.GRADES], 7)
+    plate.group("hud_plate_icon", [(f"plate_icon_{n}", mob_art.icon(n)) for n in mob_art.ICONS], 7)
+    plate.group("hud_plate_hp", [(f"plate_hp_{w}", art.gauge_fill(w, mob_art.HP_ROWS, mob_art.HP)) for w in BINARY[:6]],
+                7 - mob_art.HP_TOP)
+    plate.group("hud_plate_break", [(f"plate_brk_{w}", art.gauge_fill(w, mob_art.BREAK_ROWS, mob_art.BREAK)) for w in BINARY[:6]] +
+                [(f"plate_brkw_{w}", art.gauge_fill(w, mob_art.BREAK_ROWS, mob_art.BROKEN)) for w in BINARY[:6]],
+                7 - mob_art.BREAK_TOP)
+    fonts.append(plate)
 
     # -- damage numbers (world text displays) ----------------------------
     damage = FontBuilder("projects:hud_damage")

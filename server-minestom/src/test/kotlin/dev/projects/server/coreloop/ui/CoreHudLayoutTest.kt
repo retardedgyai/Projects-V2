@@ -3,6 +3,11 @@ package dev.projects.server.coreloop.ui
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
+import dev.projects.server.mob.MobGrade
+import dev.projects.server.mob.MobHud
+import dev.projects.server.mob.MobHudEffect
+import dev.projects.server.mob.MobHudEffectKind
+import dev.projects.server.mob.MobMod
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -57,6 +62,27 @@ class CoreHudLayoutTest {
         healthTrail = 171.0, level = 12, experience = .62, notice = "マナが足りません", classKey = job,
         buffs = listOf(CoreHudBuff(CoreHudBuffKind.WHETSTONE, 96.0, 180.0, false), CoreHudBuff(CoreHudBuffKind.POTION, 6.3, 10.0, true)))
 
+    private val effects = listOf(MobHudEffect(MobHudEffectKind.BUFF, "rage"), MobHudEffect(MobHudEffectKind.DEBUFF, "slow"),
+        MobHudEffect(MobHudEffectKind.CC, "stun"))
+
+    private fun bossHud() = MobHud(40, "裂け目の執行官", MobGrade.COMMON, emptyList(), 12480.0, 20000.0, .64, null,
+        listOf(MobHudEffect(MobHudEffectKind.BUFF, "rage"), MobHudEffect(MobHudEffectKind.DEBUFF, "exposed")))
+
+    /** One plate per grade, as the mock of 2026-10-19 laid them out. */
+    private val plates = listOf(
+        "common" to MobHud(12, "骨の兵士", MobGrade.COMMON, emptyList(), 170.0, 200.0, null, null,
+            listOf(MobHudEffect(MobHudEffectKind.DEBUFF, "slow"))),
+        "elite" to MobHud(14, "骨の槍兵", MobGrade.ELITE, listOf(MobMod.SWIFT), 180.0, 300.0, .45, null,
+            listOf(MobHudEffect(MobHudEffectKind.BUFF, "rage"), MobHudEffect(MobHudEffectKind.CC, "stun"))),
+        "rare" to MobHud(16, "墓守の騎士", MobGrade.RARE, listOf(MobMod.IRONHIDE, MobMod.LEECH), 300.0, 420.0, .55, null,
+            listOf(MobHudEffect(MobHudEffectKind.DEBUFF, "exposed"), MobHudEffect(MobHudEffectKind.DEBUFF, "slow"), MobHudEffect(MobHudEffectKind.CC, "root"))),
+        "unique" to MobHud(18, "朽ちた百人長", MobGrade.UNIQUE, listOf(MobMod.IRONHIDE, MobMod.MIGHT, MobMod.FRENZY), 240.0, 600.0, .65, null,
+            listOf(MobHudEffect(MobHudEffectKind.BUFF, "rage"), MobHudEffect(MobHudEffectKind.DEBUFF, "taunt"))),
+        "calamity" to MobHud(20, "灰冠のガルム", MobGrade.CALAMITY, listOf(MobMod.SWIFT, MobMod.IRONHIDE, MobMod.LEECH, MobMod.FRENZY),
+            720.0, 800.0, 1.0, .4, listOf(MobHudEffect(MobHudEffectKind.BUFF, "rage"), MobHudEffect(MobHudEffectKind.CC, "stun"),
+                MobHudEffect(MobHudEffectKind.DEBUFF, "slow"))),
+    )
+
     @Test fun `export HUD surfaces from the actual components for the preview`() {
         val root = generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
             .first { java.nio.file.Files.isRegularFile(it.resolve("settings.gradle.kts")) }
@@ -73,9 +99,9 @@ class CoreHudLayoutTest {
                 s.copy(remainingSeconds = if (i == 0) 8.0 else 0.0, resourceAvailable = i != 2, unlocked = i != 4) }, resource = 0.0,
                 level = 3, experience = .05, notice = "マナが足りません（必要 15）", classKey = "assassin"), true)),
         ) + CoreHudLayout.classes.map { Triple("actionbar", "class-$it", CoreUiComponents.hud(combat(it), true)) } + listOf(
-            Triple("boss", "boss", CoreBossBarHud.render("裂け目の執行官", 12480.0, 20000.0, 14900.0)),
-            Triple("nametag", "normal", CoreMobNameplate.render(14, "苔むした兵士", 120.0, 200.0, CoreMobNameplate.Rank.NORMAL, "fire", null)),
-            Triple("nametag", "elite", CoreMobNameplate.render(15, "裂け目の術師", 410.0, 420.0, CoreMobNameplate.Rank.ELITE, "ice", "氷結の槍")),
+            Triple("boss", "boss", CoreBossBarHud.render(bossHud(), 14900.0)),
+            Triple("boss", "broken", CoreBossBarHud.render(bossHud().copy(health = 8200.0, broken = .55), 9000.0)),
+        ) + plates.flatMap { (name, hud) -> CoreMobNameplate.lines(hud).mapIndexed { i, line -> Triple("plate", "$name-$i", line) } } + listOf(
             Triple("damage", "normal", CoreDamageNumbers.render(482.0, false, false)),
             Triple("damage", "critical", CoreDamageNumbers.render(1260.0, true, false)),
             Triple("damage", "weak", CoreDamageNumbers.render(733.0, false, true)),
@@ -131,9 +157,11 @@ class CoreHudLayoutTest {
                     CoreHudBuff(it, health % 7.0, 7.0, it != CoreHudBuffKind.WHETSTONE) })
             assertEquals(0, layout(CoreUiComponents.hud(state, true)).second)
         }
-        for (health in 0..20000 step 97) assertEquals(0, layout(CoreBossBarHud.render("執行官", health.toDouble(), 20000.0, health + 500.0)).second)
-        for (health in 0..200 step 3) assertEquals(0, layout(CoreMobNameplate.render(9, "兵士", health.toDouble(), 200.0,
-            CoreMobNameplate.Rank.ELITE, "thunder", null)).second)
+        for (health in 0..20000 step 97) assertEquals(0, layout(CoreBossBarHud.render(bossHud().copy(health = health.toDouble(),
+            breakGauge = health / 20000.0), health + 500.0)).second)
+        for (grade in MobGrade.entries) for (health in 0..200 step 3) for (line in CoreMobNameplate.lines(MobHud(9, "兵士", grade,
+            MobMod.entries.take(grade.mods), health.toDouble(), 200.0, if (grade.breaks) health / 200.0 else null, null, effects)))
+            assertEquals(0, layout(line).second)
         for (amount in listOf(0.0, 7.0, 99.0, 12345.0, Double.NaN)) for (crit in listOf(true, false))
             assertEquals(0, layout(CoreDamageNumbers.render(amount, crit, !crit)).second)
     }
@@ -186,7 +214,7 @@ class CoreHudLayoutTest {
     }
 
     @Test fun `boss bar keeps its plate gauge and percentage inside the plate`() {
-        val glyphs = layout(CoreBossBarHud.render("裂け目の執行官", 12480.0, 20000.0, 14900.0)).first
+        val glyphs = layout(CoreBossBarHud.render(bossHud(), 14900.0)).first
         assertEquals("62%", CoreBossBarHud.percent(12480.0, 20000.0))
         assertEquals(CoreBossBarHud.PLATE_X, glyphs.first { glyphName(it) == "boss_plate" }.x)
         val pct = glyphs.filter { it.font == "projects:hud_num_boss" }

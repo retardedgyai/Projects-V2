@@ -2,6 +2,8 @@ package dev.projects.server.coreloop.ui
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
+import dev.projects.server.mob.MobGrade
+import dev.projects.server.mob.MobHud
 import kotlin.math.roundToInt
 
 /** Floating damage numbers: pixel digits in a text display, centred on the hit. */
@@ -28,8 +30,9 @@ internal object CoreDamageNumbers {
 
 /**
  * Boss bar drawn by the name component of a PINK boss bar (whose vanilla sprites the pack blanks):
- * a charcoal plate with the rank gem, the name in the vanilla font on the title row, the remaining
- * percentage on the right, and a 220 px gauge with quarter marks and a trail of recent damage.
+ * a charcoal plate with the rank gem, Lv and name in the vanilla font on the title row, buff / debuff
+ * icons and the remaining percentage on the right, a 220 px gauge with quarter marks and a trail of
+ * recent damage, and the break gauge under it (white and draining while the boss is broken).
  */
 internal object CoreBossBarHud {
     const val PLATE_X = -115
@@ -38,51 +41,92 @@ internal object CoreBossBarHud {
     const val NAME_X = -99
     private val NAME: TextColor = TextColor.color(0xFFFFFF)
     private val NUMBER: TextColor = TextColor.color(0xFFFFFF)
+    private val BROKEN: TextColor = TextColor.color(0xFFF2A0)
+    private val NOTICE: TextColor = TextColor.color(0xFF8A70)
 
     fun percent(health: Double, maximum: Double): String =
         if (!health.isFinite() || !maximum.isFinite() || maximum <= 0.0) "0%" else "${(health / maximum * 100).coerceIn(0.0, 100.0).toInt()}%"
 
-    fun render(name: String, health: Double, maximum: Double, trail: Double): Component {
+    fun render(hud: MobHud, trail: Double): Component {
         val line = CoreHudLine()
         line.put(PLATE_X, "boss_plate")
-        val filled = CoreHudLayout.fillWidth(health, maximum, FILL)
-        val trailing = CoreHudLayout.fillWidth(maxOf(health, trail.takeIf { it.isFinite() } ?: health), maximum, FILL)
+        val filled = CoreHudLayout.fillWidth(hud.health, hud.maximumHealth, FILL)
+        val trailing = CoreHudLayout.fillWidth(maxOf(hud.health, trail.takeIf { it.isFinite() } ?: hud.health), hud.maximumHealth, FILL)
         line.fill("boss_fill", FILL_X, filled, 128)
         if (trailing > filled) line.fill("boss_trail", FILL_X + filled, trailing - filled, 128)
         for (q in 1..3) line.put(FILL_X + FILL * q / 4, "boss_tick")
-        val pct = percent(health, maximum)
-        line.number(FILL_X + FILL - (CoreHudGlyphs.numberWidth(pct) - 1), pct, CoreHudGlyphs.NUM_BOSS, NUMBER)
-        line.vanilla(NAME_X, name, NAME)
+        when {
+            hud.broken != null -> line.fill("boss_brkw", FILL_X, CoreHudLayout.fillWidth(hud.broken, 1.0, FILL), 128)
+            hud.breakGauge != null -> line.fill("boss_brk", FILL_X, CoreHudLayout.fillWidth(hud.breakGauge, 1.0, FILL), 128)
+        }
+        val pct = percent(hud.health, hud.maximumHealth)
+        val pctX = FILL_X + FILL - (CoreHudGlyphs.numberWidth(pct) - 1)
+        line.number(pctX, pct, CoreHudGlyphs.NUM_BOSS, NUMBER)
+        hud.effects.take(MAX_ICONS).forEachIndexed { index, effect -> line.put(pctX - 3 - (index + 1) * ICON_PITCH, "boss_icon_${effect.icon}") }
+        val level = "Lv${hud.level.coerceIn(0, 999)}"
+        line.vanilla(NAME_X, level, CoreMobNameplate.LEVEL)
+        val title = if (hud.broken != null) "崩れた！ 被ダメ+30%" else hud.notice ?: hud.name
+        line.vanilla(NAME_X + CoreUiComponents.width(level) + 4, title,
+            if (hud.broken != null) BROKEN else if (hud.notice != null) NOTICE else NAME)
         return line.build()
     }
+
+    const val ICON_PITCH = 10
+    const val MAX_ICONS = 6
 }
 
-/** Mob name tag: 12 px name (or the attack being prepared) over level, 40 px HP gauge and weakness. */
+/**
+ * Overhead mob HUD, one text-display line per row (top to bottom): buff / debuff / crowd-control icons,
+ * Lv + name in the vanilla font, the HP gauge (with the break gauge under it from 精鋭 up) in a frame that
+ * shows the grade, and the mob's MODs. Every line returns to its anchor, so the display centres each row.
+ */
 internal object CoreMobNameplate {
-    enum class Rank(val glyph: String, val color: TextColor) {
-        NORMAL("normal", TextColor.color(0xEDE3CF)),
-        ELITE("elite", TextColor.color(0xD9B3FF)),
-        BOSS("boss", TextColor.color(0xFFC77A)),
-    }
+    val LEVEL: TextColor = TextColor.color(0x80FF20)
     private val ATTACK: TextColor = TextColor.color(0xFF8A70)
-    private val LEVEL: TextColor = TextColor.color(0xC9CED6)
-    const val FILL = 40
+    private val MODS: TextColor = TextColor.color(0xD8D2C4)
+    const val FILL = 60
+    const val FILL_X = -FILL / 2
+    const val FRAME_X = FILL_X - 10
+    const val ICON_PITCH = 10
+    const val MAX_ICONS = 6
 
-    /** [weakness]: "fire" / "ice" / anything else is thunder (matches QuestMobArchetype.weakness). */
-    fun render(level: Int, name: String, health: Double, maximum: Double, rank: Rank, weakness: String, attack: String?): Component {
-        val line = CoreHudLine()
-        val title = attack ?: name
-        line.text(-CoreHudGlyphs.textWidth(title) / 2, title, CoreHudGlyphs.TEXT_WORLD, if (attack != null) ATTACK else rank.color)
-        val lv = "Lv${level.coerceIn(0, 999)}"
-        val lvWidth = CoreHudLine.digitsWidth(lv.length)
-        val left = -(lvWidth + 2 + FILL + 2 + 2 + 7) / 2
-        line.digits("tag_tiny", left, lv, LEVEL)
-        val frame = left + lvWidth + 2
-        line.put(frame, "tag_frame")
-        line.fill("tag_${rank.glyph}", frame + 1, CoreHudLayout.fillWidth(health, maximum, FILL), 32)
-        line.put(frame + FILL + 4, "weak_" + when (weakness) { "fire" -> "fire"; "ice" -> "ice"; else -> "thunder" })
-        return line.build()
+    fun color(grade: MobGrade): TextColor = TextColor.color(when (grade) {
+        MobGrade.COMMON -> 0xECE6DE
+        MobGrade.ELITE -> 0x6EA8FF
+        MobGrade.RARE -> 0xC48CFF
+        MobGrade.UNIQUE -> 0xFFD25A
+        MobGrade.CALAMITY -> 0xFF7A3A
+    })
+
+    fun lines(hud: MobHud): List<Component> = buildList {
+        val effects = hud.effects.take(MAX_ICONS)
+        if (effects.isNotEmpty()) add(CoreHudLine().apply {
+            val left = -(effects.size * ICON_PITCH - 1) / 2
+            effects.forEachIndexed { index, effect -> put(left + index * ICON_PITCH, "plate_icon_${effect.icon}") }
+        }.build())
+        add(CoreHudLine().apply {
+            val level = "Lv${hud.level.coerceIn(0, 999)}"
+            val title = hud.notice ?: hud.name
+            val levelWidth = CoreUiComponents.width(level)
+            val left = -(levelWidth + 4 + CoreUiComponents.width(title)) / 2
+            vanilla(left, level, LEVEL)
+            vanilla(left + levelWidth + 4, title, if (hud.notice != null) ATTACK else color(hud.grade))
+        }.build())
+        add(CoreHudLine().apply {
+            put(FRAME_X, "plate_frame_${hud.grade.name.lowercase()}")
+            fill("plate_hp", FILL_X, CoreHudLayout.fillWidth(hud.health, hud.maximumHealth, FILL), 32)
+            when {
+                hud.broken != null -> fill("plate_brkw", FILL_X, CoreHudLayout.fillWidth(hud.broken, 1.0, FILL), 32)
+                hud.breakGauge != null -> fill("plate_brk", FILL_X, CoreHudLayout.fillWidth(hud.breakGauge, 1.0, FILL), 32)
+            }
+        }.build())
+        if (hud.mods.isNotEmpty()) add(CoreHudLine().apply {
+            val text = hud.mods.joinToString("・") { it.label }
+            vanilla(-CoreUiComponents.width(text) / 2, text, MODS)
+        }.build())
     }
+
+    fun render(hud: MobHud): Component = Component.join(net.kyori.adventure.text.JoinConfiguration.newlines(), lines(hud))
 }
 
 /** Pale "recent damage" trail: holds briefly after a hit, then drains toward the current value. */

@@ -57,6 +57,8 @@ SLOT_ICON_TOP = 19
 BUFF_TOP, BUFF_LEFT = 55, -92
 BOSS_X, BOSS_W, BOSS_TOP = -115, 230, 0  # boss plate, from the screen top (title text row is y 3..10)
 BOSS_FILL_X, BOSS_FILL_W, BOSS_FILL_TOP, BOSS_FILL_ROWS = -110, 220, 17, 5
+BOSS_BREAK_TOP, BOSS_BREAK_ROWS, BOSS_H = 25, 3, 31  # break gauge well; plate height
+BREAK = (hexc("8a6a10"), hexc("e8c23a"), hexc("fff2a0")); BREAK_EMPTY = (30, 26, 12, 255)
 
 
 def new(w, h):
@@ -500,9 +502,11 @@ def buff_icon(kind, frame):
 # ---- boss bar ------------------------------------------------------------------------------------
 def boss_plate():
     """Plate with its gauge well and the rank gem; origin (BOSS_X, BOSS_TOP) from the screen top."""
-    img = new(BOSS_W, 26)
-    step_plate(img, 0, 0, BOSS_W, 26)
+    img = new(BOSS_W, BOSS_H)
+    step_plate(img, 0, 0, BOSS_W, BOSS_H)
     well(img, BOSS_FILL_X - BOSS_X, BOSS_FILL_X - BOSS_X + BOSS_FILL_W, BOSS_FILL_TOP - BOSS_TOP, BOSS_FILL_ROWS, BOSS_EMPTY)
+    # break gauge (2026-10-19 mob HUD): its own thin well under the HP gauge
+    well(img, BOSS_FILL_X - BOSS_X, BOSS_FILL_X - BOSS_X + BOSS_FILL_W, BOSS_BREAK_TOP - BOSS_TOP, BOSS_BREAK_ROWS, BREAK_EMPTY)
     gem(img, 8, 7 - BOSS_TOP + 2, "e8344a", 3)
     return img
 
