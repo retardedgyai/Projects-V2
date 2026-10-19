@@ -260,19 +260,19 @@ def H(x, y, z):
 def head(b):
     f, u = head_frame()
     hs = lambda bone, p, q, w, d, mat, **kw: b.seg(bone, H(*p), H(*q), w, d, mat, z_hint=u, **kw)
-    hs("skull", (0, 1.5, -1), (0, 1, 12), 12, 10, "hide", seed=15)                 # cranium
-    hs("skull", (0, .5, 11), (0, -.5, 22), 9, 8, "hide", seed=16)                  # muzzle
-    hs("skull", (0, -.6, 21), (0, -1.6, 29), 7, 6.5, "hide", seed=19)              # nose
-    hs("skull", (0, 1, 28), (0, -2.6, 31), 5, 3.6, "shell", seed=22)              # hooked nose tip
-    hs("skull", (0, 5.6, 1), (0, 3.8, 27), 5, 2, "shell", seed=17)                # shell running down the snout
-    hs("jaw", (0, -4.6, 2), (0, -6.4, 26), 8.5, 4.2, "hide", seed=18)             # deep lower jaw
-    hs("jaw", (0, -2.6, 6), (0, -4.2, 25), 6.6, 1, "mouth")
+    hs("skull", (0, 1.5, -1), (0, 1, 11), 12.5, 11, "hide", seed=15)                 # cranium
+    hs("skull", (0, .5, 10), (0, -.3, 17), 10, 8.5, "hide", seed=16)                  # muzzle
+    hs("skull", (0, -.4, 16), (0, -1.2, 21), 8, 7, "hide", seed=19)              # nose
+    hs("skull", (0, 1.4, 20.5), (0, -2.2, 23), 5.6, 3.8, "shell", seed=22)              # hooked nose tip
+    hs("skull", (0, 5.8, 1), (0, 4, 20), 5.4, 2, "shell", seed=17)                # shell running down the snout
+    hs("jaw", (0, -4.6, 2), (0, -6.2, 19), 9, 4.4, "hide", seed=18)             # deep lower jaw
+    hs("jaw", (0, -2.6, 5), (0, -4, 18), 7, 1, "mouth")
     for s in (1, -1):
-        hs("skull", (5.4 * s, 4.6, 3), (4.6 * s, 3.6, 15), 3, 3, "shell", seed=23)  # brow ridge
-        hs("skull", (5.7 * s, 2.4, 9.5), (5.5 * s, 2.0, 13.5), 1, 1.2, flat_painter(EYE), name="glow_eye")
-        for z in (24, 19):
+        hs("skull", (5.6 * s, 4.8, 2), (4.9 * s, 3.8, 12), 3, 3, "shell", seed=23)  # brow ridge
+        hs("skull", (5.9 * s, 2.4, 7.5), (5.7 * s, 2.0, 11), 1, 1.2, flat_painter(EYE), name="glow_eye")
+        for z in (18, 14):
             hs("skull", (2.8 * s, -2.4, z), (2.8 * s, -5.4, z + .4), 1.3, 1.3, "claw")   # upper fangs
-        hs("jaw", (2.4 * s, -3.6, 22), (2.4 * s, -1.4, 22.4), 1.1, 1.1, "claw")         # lower fangs
+        hs("jaw", (2.5 * s, -3.6, 16), (2.5 * s, -1.4, 16.4), 1.1, 1.1, "claw")         # lower fangs
         # horns: thick roots above the eyes, sweeping back past the neck, tips curling up, one side spike
         hs("skull", (4.4 * s, 5.6, 7), (8.5 * s, 12, -4), 4.6, 4.6, "shell", seed=24)
         hs("skull", (8.5 * s, 12, -4), (11 * s, 18, -14), 3.4, 3.4, "shell", seed=25)
@@ -282,7 +282,7 @@ def head(b):
         # cheek fur flaring back
         tufts(b, "skull", H(6 * s, -1.2, 5), mat_vec([[1, 0, 0], [0, 1, 0], [0, 0, 1]], [s * .55, -.25, -1]), 5, 60, 13, 4, (s, 0, 0), 80 + s)
     # beard: pale fur hanging under the jaw
-    for k, z in enumerate((6, 11, 16, 21)):
+    for k, z in enumerate((5, 9, 13, 17)):
         tufts(b, "jaw", H(0, -6.6, z), [-c for c in u], 4, 80, 9 - k, 3.5, f, 90 + k)
 
 
