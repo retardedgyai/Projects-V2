@@ -5,7 +5,7 @@ import numpy as np
 
 TEX = Path(__file__).parent / "tex"
 TINT = {"grass_block_top": (124, 189, 80), "oak_leaves": (89, 150, 52), "spruce_leaves": (97, 140, 86),
-        "birch_leaves": (128, 167, 85), "lily_pad": (60, 150, 60), "vine": (80, 140, 50), "jungle_leaves": (70, 160, 40), "moss_carpet": (255, 255, 255),
+        "birch_leaves": (128, 167, 85), "dark_oak_leaves": (70, 118, 40), "fern": (100, 160, 70), "vine": (80, 140, 50), "lily_pad": (60, 150, 60), "vine": (80, 140, 50), "jungle_leaves": (70, 160, 40), "moss_carpet": (255, 255, 255),
         "water_still": (63, 118, 228), "vine": (89, 150, 52), "short_grass": (124, 189, 80)}
 _cache = {}
 
@@ -49,7 +49,7 @@ class World:
         return v is not None and v[0] == "full" and v[1] not in ("glass", "water_still", "oak_leaves", "spruce_leaves")
 
 
-THIN = ("sheep_x", "sheep_z", "crop", "plant", "fire", "arm_z", "arm_x", "npc_low", "npc_high", "chain", "lantern", "post", "carpet", "shut_s", "shut_e", "pane_x", "pane_z", "water", "thinlog")
+THIN = ("deer", "beetle", "sprite", "boss", "cloth_e", "cloth_w", "rabbit", "boar", "frog", "wolf", "sheep_x", "sheep_z", "crop", "plant", "fire", "arm_z", "arm_x", "npc_low", "npc_high", "chain", "lantern", "post", "carpet", "shut_s", "shut_e", "pane_x", "pane_z", "water", "thinlog")
 
 
 def solid(world, p):
@@ -94,6 +94,25 @@ def boxes(shape):
         return [(.22, .35, .08, .78, .9, .86), (.32, .5, .82, .68, .85, 1.0, "white_terracotta"),
                 (.28, 0, .15, .4, .35, .27, "white_terracotta"), (.6, 0, .15, .72, .35, .27, "white_terracotta"),
                 (.28, 0, .67, .4, .35, .79, "white_terracotta"), (.6, 0, .67, .72, .35, .79, "white_terracotta")]
+    if shape == "cloth_e":   # thin sloped tent sheet rising toward +x (two half steps inside the block)
+        return [(0, 0, 0, .5, .55, 1), (.5, .45, 0, 1, 1, 1)]
+    if shape == "cloth_w":
+        return [(.5, 0, 0, 1, .55, 1), (0, .45, 0, .5, 1, 1)]
+    if shape == "rabbit": return [(.3, 0, .35, .7, .35, .65), (.35, .3, .55, .65, .5, .75), (.4, .5, .6, .47, .7, .66), (.53, .5, .6, .6, .7, .66)]
+    if shape == "boar":
+        return [(.05, .25, .2, .85, .8, .8), (.8, .3, .3, 1.0, .7, .7, "dark_oak_planks"), (.95, .4, .4, 1.0, .5, .6, "white_terracotta"),
+                (.15, 0, .25, .3, .25, .4), (.15, 0, .6, .3, .25, .75), (.6, 0, .25, .75, .25, .4), (.6, 0, .6, .75, .25, .75)]
+    if shape == "frog": return [(.2, 0, .2, .8, .3, .8), (.25, .3, .3, .4, .42, .45, "white_terracotta"), (.6, .3, .3, .75, .42, .45, "white_terracotta")]
+    if shape == "wolf":
+        return [(.1, .3, .3, .8, .7, .7), (.75, .35, .32, 1.0, .75, .68), (.9, .7, .35, .98, .9, .45), (.9, .7, .55, .98, .9, .65),
+                (0, .55, .45, .12, .65, .55), (.15, 0, .32, .27, .3, .44), (.15, 0, .56, .27, .3, .68), (.62, 0, .32, .74, .3, .44), (.62, 0, .56, .74, .3, .68)]
+    if shape == "deer":
+        return [(.1, .4, .3, .8, .8, .7), (.75, .6, .38, .95, .95, .62), (.82, .95, .3, .86, 1.0, .36, "dark_oak_planks"), (.82, .95, .64, .86, 1.0, .7, "dark_oak_planks"),
+                (.15, 0, .33, .25, .4, .43), (.15, 0, .57, .25, .4, .67), (.62, 0, .33, .72, .4, .43), (.62, 0, .57, .72, .4, .67)]
+    if shape == "beetle": return [(.2, 0, .25, .8, .35, .75), (.75, .05, .38, .95, .25, .62, "black_concrete")]
+    if shape == "sprite": return [(.35, .2, .35, .65, .75, .65), (.25, .75, .25, .75, 1.0, .75, "flowering_azalea_leaves")]
+    if shape == "boss":
+        return [(-.6, 0, -.6, 1.6, 2.2, 1.6), (-.2, 2.2, -.2, 1.2, 3.0, 1.2, "flowering_azalea_leaves")]
     if shape == "crop": return [(0, 0, 0, 1, .8, 1)]
     if shape == "plant": return [(.15, 0, .15, .85, .7, .85)]
     if shape == "fire": return [(.1, 0, .1, .9, .4, .9)]

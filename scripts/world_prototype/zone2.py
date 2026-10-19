@@ -202,6 +202,23 @@ def sheep(x, z):
     put(x, at(x, z) + 1, z, "white_wool", shape=R.choice(["sheep_x", "sheep_z"]))
 
 
+def hb_big(x, z):
+    """An old dark-oak: 2x2 trunk, broad flat crown."""
+    if used[z, x] or road[z, x] or lake[z, x] or slope[z, x] > 1.0 or x + 1 >= B or z + 1 >= B: return
+    g = at(x, z)
+    th = R.randint(8, 12)
+    for y in range(g + 1, g + th + 1):
+        for dx, dz in ((0, 0), (1, 0), (0, 1), (1, 1)): put(x + dx, y, z + dz, *LOGS("dark_oak_log"))
+    r = 4.5 + R.random() * 1.5
+    for dx in range(-6, 8):
+        for dz in range(-6, 8):
+            for dy in range(-2, 3):
+                q = ((dx - .5) / r) ** 2 + ((dz - .5) / r) ** 2 + dy * dy / 5
+                if q <= 1 - R.random() * .25 and (x + dx, g + th + dy, z + dz) not in w.b:
+                    put(x + dx, g + th + dy, z + dz, "oak_leaves")
+    mark(x - 4, z - 4, x + 5, z + 5)
+
+
 def oak(x, z, kind="oak"):
     if used[z, x] or road[z, x] or lake[z, x] or slope[z, x] > 1.1: return
     g = at(x, z)
@@ -374,7 +391,7 @@ for x in range(WX2 - 2, WX2 + 3):                                # cave mouth fa
 for (x, z) in ((WX2 - 3, WZ2 + 6), (WX2 + 4, WZ2 + 7), (WX2, WZ2 + 9)):
     put(x, at(x, z) + 1, z, "bone_block" if False else "white_terracotta", shape="slab")    # bones
 for (x, z) in ((WX2 - 1, WZ2 + 4), (WX2 + 3, WZ2 + 8), (WX2 - 5, WZ2 + 9), (WX2 + 6, WZ2 + 4)):
-    put(x, at(x, z) + 1, z, "light_gray_wool", shape=R.choice(["sheep_x", "sheep_z"]))    # wolves (stand-ins)
+    put(x, at(x, z) + 1, z, "light_gray_wool", shape="wolf")    # wolves (stand-ins)
 mark(WX2 - 10, WZ2 - 10, WX2 + 10, WZ2 + 10)
 
 # ---------------- the pond: jetty and a fisher's hut ----------------
@@ -432,21 +449,23 @@ path([(165, 190), (120, 120), (102, 90), (70, 60), (TX + 2, TZ + 7)])
 # ---------------- bandit camp in the western woods ----------------
 cg = at(62, 158)
 for (tx, tz, col) in ((50, 148, "brown_wool"), (70, 146, "red_wool"), (52, 168, "brown_wool"), (74, 166, "white_wool")):
-    # ridge along z, 7 long, 7 wide: cloth slopes as stair + slab pairs so each side is one smooth sheet
+    # A-frame: a thin cloth sheet on each side (rise 1 per block, 3 blocks out from the ridge), ridge pole on top,
+    # open dark front, cloth overhangs the back; poles and guy ropes outside
     for dz in range(-3, 4):
-        for dx in range(-3, 4):
-            y = cg + 1 + (3 - abs(dx)) // 1
-            if dx == 0:
-                put(tx, cg + 4, tz + dz, col, shape="slab")
-            else:
-                put(tx + dx, cg + 4 - abs(dx), tz + dz, col, shape="stair_e" if dx < 0 else "stair_w")
-        put(tx, cg + 1, tz + 3, col); put(tx, cg + 2, tz + 3, col); put(tx, cg + 3, tz + 3, col)    # closed back
-        for dx in (-1, 1):
-            put(tx + dx, cg + 1, tz + 3, col); put(tx + dx, cg + 2, tz + 3, col)
-    for y in range(cg + 1, cg + 6):                              # front and back poles poking out of the ridge
-        put(tx, y, tz - 4, "spruce_planks", shape="fence"); put(tx, y, tz + 4, "spruce_planks", shape="fence")
-    put(tx, cg + 1, tz - 3, "black_concrete", shape="shut_s"); put(tx, cg + 2, tz - 3, "black_concrete", shape="shut_s")
-    for dx in (-2, 2): put(tx + dx, cg + 1, tz - 4, "spruce_planks", shape="fence")    # guy-rope pegs
+        for k in range(3):
+            put(tx - 3 + k, cg + 1 + k, tz + dz, col, shape="cloth_e")
+            put(tx + 3 - k, cg + 1 + k, tz + dz, col, shape="cloth_w")
+        put(tx, cg + 4, tz + dz, *LOGS("spruce_log"), shape="thinlog") if False else put(tx, cg + 4, tz + dz, "spruce_planks", shape="arm_z")
+        if dz == 3:
+            for (dx, top) in ((-2, 1), (-1, 2), (0, 3), (1, 2), (2, 1)):
+                for y in range(cg + 1, cg + 1 + top): put(tx + dx, y, tz + dz, col, shape="shut_s")
+    for dx in range(-2, 3):                                      # dark inside seen through the open front
+        for y in range(cg + 1, cg + 4 - abs(dx)):
+            if abs(dx) < 2 or y == cg + 1: put(tx + dx, y, tz + 2, "black_concrete", shape="shut_s")
+    put(tx - 1, cg + 1, tz - 2, "spruce_planks", "spruce_trapdoor", shape="slab")    # bedroll / crate at the mouth
+    for y in range(cg + 1, cg + 5):
+        put(tx, y, tz - 4, "spruce_planks", shape="fence")
+    for dx in (-4, 4): put(tx + dx, cg + 1, tz - 3, "spruce_planks", shape="post")    # guy-rope pegs
 put(62, cg + 1, 157, "campfire_log_lit", shape="fire")
 for (dx, dz) in ((-2, 0), (2, 0), (0, -2), (0, 2)): put(62 + dx, cg + 1, 157 + dz, "spruce_log", "spruce_log", shape="slab")
 for x in range(42, 83):                                         # sharpened palisade with a gap toward the path
@@ -527,15 +546,150 @@ for _ in range(1400):
     if t and t[1] == "grass_block_top":
         put(x, at(x, z) + 1, z, R.choice(["poppy", "dandelion", "cornflower", "short_grass", "short_grass", "short_grass"]), shape="plant")
 
+# ---------------- landmarks: each one a different idea, each visible from far away ----------------
+RL = random.Random(91)
+STONEW = ["stone_bricks", "stone_bricks", "mossy_stone_bricks", "cracked_stone_bricks", "stone_bricks", "andesite"]
+
+
+def vines_down(x, y, z, n, face="shut_s"):
+    for k in range(n):
+        if (x, y - k, z) in w.b: break
+        put(x, y - k, z, "vine", shape=face)
+
+
+# 1. ruined aqueduct: a line of arches striding across the valley, crossing the north road on an intact span
+AZ, AX0, AX1 = 126, 104, 228
+deck = max(at(x, AZ) for x in range(AX0, AX1 + 1)) + 4
+SPAN = 12                                   # pier every 12 blocks (2 wide), 10-wide arch between
+broken = {3, 6, 7}                          # spans that have fallen
+for x in range(AX0, AX1 + 1):
+    i, o = divmod(x - AX0, SPAN)
+    pier = o < 2
+    if not pier and i in broken: continue
+    mid = AX0 + i * SPAN + 1.5 + SPAN / 2
+    half = (SPAN - 2) / 2
+    under = deck - 1 if pier else deck - 1 - int(round(math.sqrt(max(0, half * half - (x - mid) ** 2)) * .9))
+    for z in (AZ - 1, AZ, AZ + 1):
+        lo = at(x, z) + 1 if pier else under
+        for y in range(lo, deck + 1):
+            put(x, y, z, RL.choice(STONEW))
+        put(x, deck + 1, z, RL.choice(STONEW) if z != AZ else "water_still", shape="full" if z != AZ else "water")
+    if RL.random() < .15:
+        vines_down(x, under - (0 if pier else 0), AZ + 2, RL.randint(2, 6))
+    if pier and o == 0:
+        for z in (AZ - 2, AZ + 2):                              # buttresses
+            for y in range(at(x, z) + 1, at(x, z) + 6): put(x, y, z, RL.choice(STONEW))
+    mark(x, AZ - 3, x, AZ + 3)
+for i in broken:                                                # fallen blocks below the missing spans
+    for _ in range(26):
+        x = AX0 + i * SPAN + RL.randint(2, SPAN - 1); z = AZ + RL.randint(-5, 5)
+        if 0 <= z < B and not road[z, x]:
+            put(x, at(x, z) + 1, z, RL.choice(STONEW + ["mossy_cobblestone"]))
+            if RL.random() < .3: put(x, at(x, z) + 2, z, RL.choice(STONEW), shape="slab")
+for k in range(3):                                              # broken stubs of the missing spans
+    for i in broken:
+        for z in (AZ - 1, AZ + 1):
+            x = AX0 + i * SPAN + 2 + k
+            for y in range(deck - 2 + k, deck + 1): put(x, y, z, RL.choice(STONEW))
+
+# 2. the beast's bones: a huge ribcage half sunk in the downs, its skull toward the road
+BX, BZ, BL = 232, 42, 34
+bg = at(BX, BZ)
+BONE = ("bone_block_top", "bone_block_side")
+for t in range(BL):                                             # spine, sagging into the ground at the tail
+    x = BX + t; y = bg + 1 + int(5 * math.sin(math.pi * min(1, t / (BL * .8))))
+    for dy in (0, 1): put(x, y + dy, BZ, *BONE)
+    if t % 4 == 1 and 4 < t < BL - 6:                           # a pair of ribs every 4 blocks
+        h = 7 + int(6 * math.sin(math.pi * t / BL))
+        for side in (-1, 1):
+            if RL.random() < .12: continue                       # a few ribs are snapped off
+            for k in range(h * 2):
+                a = k / (h * 2) * math.pi * .95
+                z = BZ + side * round(math.sin(a) * (h * .9))
+                yy = y + 1 - round((1 - math.cos(a)) * h * .9) + h
+                if 0 <= z < B: put(x, max(at(x, z) + 1, yy - h), z, *BONE)
+sx0 = BX - 6                                                    # skull with tusks
+for x in range(sx0, BX):
+    for z in range(BZ - 3, BZ + 4):
+        for y in range(bg + 1, bg + 6):
+            d = ((x - (sx0 + 3)) / 3.2) ** 2 + ((z - BZ) / 3.2) ** 2 + ((y - bg - 3) / 2.6) ** 2
+            if d <= 1: put(x, y, z, *BONE)
+for z in (BZ - 2, BZ + 2):
+    w.b.pop((sx0 + 1, bg + 4, z), None); put(sx0 + 1, bg + 4, z, "black_concrete")   # eye sockets
+    for k in range(5): put(sx0 - 1 - k // 2, bg + 1 + k, z + (-1 if z < BZ else 1) * (k // 3), *BONE)   # tusks
+mark(BX - 8, BZ - 14, BX + BL + 2, BZ + 14)
+
+# 3. natural stone arch over the south path
+NX0, NX1, NZ = 180, 206, 283
+ng = max(at(x, NZ) for x in range(NX0, NX1 + 1))
+top = ng + 18
+for x in range(NX0, NX1 + 1):
+    c = (x - (NX0 + NX1) / 2) / ((NX1 - NX0) / 2)
+    inner = ng + 1 + int(round((1 - (c / .78) ** 2) ** .5 * 12)) if abs(c) < .78 else at(x, NZ) + 1
+    outer = top - int(abs(c) ** 3 * 4)
+    for z in range(NZ - 3, NZ + 4):
+        wobble = int(2 * math.sin(x * .7 + z))
+        for y in range(max(inner if abs(c) < .78 else at(x, z) + 1, 0), outer + wobble):
+            put(x, y, z, RL.choice(["stone", "andesite", "stone", "tuff", "mossy_cobblestone", "dripstone_block"]))
+        if RL.random() < .5: put(x, outer + wobble, z, RL.choice(["moss_block", "grass_block_top"]), "grass_block_side")
+for _ in range(14):
+    x = RL.randint(NX0 + 6, NX1 - 6); c = (x - (NX0 + NX1) / 2) / ((NX1 - NX0) / 2)
+    vines_down(x, ng + int(round((1 - (c / .78) ** 2) ** .5 * 12)), NZ + 2, RL.randint(2, 7))
+mark(NX0 - 2, NZ - 5, NX1 + 2, NZ + 5)
+
+# 4. the giant's sword: driven into a knoll, cracked earth around it
+SWX, SWZ = 248, 352
+sg = at(SWX, SWZ)
+for dx in range(-8, 9):                                         # cracked crater rim
+    for dz in range(-8, 9):
+        d = math.hypot(dx, dz)
+        if d < 8:
+            x, z = SWX + dx, SWZ + dz
+            put(x, at(x, z), z, RL.choice(["coarse_dirt", "gravel", "stone", "coarse_dirt", "andesite"]))
+            if 4 < d < 7 and RL.random() < .35: put(x, at(x, z) + 1, z, RL.choice(["stone", "cobblestone", "coarse_dirt"]))
+blade_len = 24
+for k in range(blade_len):                                     # blade, leaning a little toward the east
+    y = sg + 1 + k; ox = round(k * .18)
+    for bx in (-1, 0, 1):
+        put(SWX + bx + ox, y, SWZ, "iron_block" if bx == 0 or k % 5 else "smooth_stone")
+    if k < 3:
+        put(SWX + ox, y, SWZ - 1, "iron_block"); put(SWX + ox, y, SWZ + 1, "iron_block")
+gy0 = sg + 1 + blade_len; gox = round(blade_len * .18)
+for bx in range(-6, 7):                                         # crossguard
+    put(SWX + bx + gox, gy0, SWZ, "gold_block")
+    if abs(bx) > 4: put(SWX + bx + gox, gy0 + 1, SWZ, "gold_block")
+for k in range(1, 8):                                           # grip and pommel
+    put(SWX + gox + round(k * .18), gy0 + k, SWZ, "dark_oak_log_top", "dark_oak_log")
+put(SWX + gox + 1, gy0 + 8, SWZ, "amethyst_block"); put(SWX + gox + 1, gy0 + 9, SWZ, "gold_block", shape="slab")
+for k in range(5): put(SWX + gox - 3 + round(k * .18), gy0 - 1 - k, SWZ + 1, "red_wool", shape="shut_s")   # a torn cloth tied to the guard
+mark(SWX - 9, SWZ - 9, SWX + 9, SWZ + 9)
+
+# ---------------- the great tree: a landmark seen from the road, the old forest grows out from it ----------------
+import greattree
+GTX, GTZ = 300, 234
+greattree.build(w, put, at, B, road, GTX, GTZ, mark)
+
 # ---------------- woods: west and south edges, single oaks in the open ----------------
 forest = np.asarray(Image.fromarray(np.random.default_rng(41).random((B // 30 + 1, B // 30 + 1)).astype(np.float32), mode="F").resize((B, B), Image.BICUBIC))
 west = np.clip((140 - np.arange(B)[None, :]) / 90, 0, 1) * np.ones((B, 1))
 south = np.clip((np.arange(B)[:, None] - 330) / 50, 0, 1) * np.ones((1, B))
 dens = np.clip((forest - .45) * 1.4 + west * .8 + south * .6, 0, 1) ** 1.5 * .045 + .0008
+_zz, _xx = np.mgrid[0:B, 0:B]
+_band = np.zeros((B, B))
+for (ax, az, bx, bz) in ((300, 234, 352, 288), (352, 288, 345, 345), (300, 234, 390, 230)):
+    _ab = np.array([bx - ax, bz - az], float); _L2 = _ab @ _ab
+    _t = np.clip(((_xx - ax) * _ab[0] + (_zz - az) * _ab[1]) / _L2, 0, 1)
+    _d = np.hypot(_xx - ax - _t * _ab[0], _zz - az - _t * _ab[1])
+    _band = np.maximum(_band, np.clip(1 - _d / (26 + 10 * forest), 0, 1))
+dens = np.maximum(dens, _band ** 1.2 * .055)
+OLD = np.hypot(_xx - 300, _zz - 234)
 for z in range(3, B - 3):
     for x in range(3, B - 3):
         if R.random() < dens[z, x]:
-            oak(x, z, "birch" if R.random() < .3 else "oak")
+            if OLD[z, x] < 90 and _band[z, x] > .2 and R.random() < .35:
+                hb_big(x, z)
+            else:
+                oak(x, z, "birch" if R.random() < .3 else "oak")
 # plaza path to farms and pond
 path([(178, 205), (230, 255), (280, 290)])
 path([(178, 205), (165, 285)])
@@ -547,21 +701,27 @@ path([(300, 330), (330, 345), (WX2, WZ2 + 9)])
 
 # ---------------- mob spawn areas: plain field, monsters wander in patches (stand-ins: coloured bodies) ----------------
 SPAWNS = [  # (name, level, centre x, z, radius, count, colour)
-    ("野ウサギ", "Lv1-2", 235, 150, 38, 14, "white_terracotta"),
+    ("野ウサギ", "Lv1-2", 235, 150, 38, 14, "white_wool"),
     ("イノシシ", "Lv3-5", 305, 75, 62, 22, "brown_wool"),
     ("カエル", "Lv2-4", 115, 290, 55, 14, "lime_wool"),
     ("森ゴブリン", "Lv4-6", 85, 105, 48, 16, "green_wool"),
     ("オオカミ", "Lv5-7", 330, 320, 48, 16, "light_gray_wool"),
     ("盗賊", "Lv6-8", 62, 158, 28, 0, "black_wool"),
-    ("スケルトン", "Lv7-9", 196, 342, 26, 9, "white_wool"),
+    ("スケルトン", "Lv7-9", 196, 342, 26, 9, "white_terracotta"),
 ]
+
+
+MOB_SHAPE = {"white_wool": "rabbit", "brown_wool": "boar", "lime_wool": "frog", "light_gray_wool": "wolf"}
 
 
 def mob(x, z, colour):
     if not (2 <= x < B - 2 and 2 <= z < B - 2) or road[z, x] or lake[z, x] or slope[z, x] > 1.1: return False
     y = at(x, z) + 1
-    if (x, y, z) in w.b: return False
-    put(x, y, z, colour, shape=R.choice(["sheep_x", "sheep_z"]))
+    if (x, y, z) in w.b or (x, y + 1, z) in w.b: return False
+    if colour in MOB_SHAPE:
+        put(x, y, z, colour, shape=MOB_SHAPE[colour])
+    else:                                    # goblins and skeletons stand upright
+        put(x, y, z, colour, shape="npc_low"); put(x, y + 1, z, colour, shape="npc_high")
     return True
 
 

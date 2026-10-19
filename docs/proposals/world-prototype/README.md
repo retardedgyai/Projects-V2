@@ -34,3 +34,8 @@ python3 zone2.py 5          # 羊飼いの原（spine_*.npy が要る）、zone2
 ```
 
 `continent.py` / `closeup.py` は不採用の大陸案。
+
+## 500×500 フィールド「巨樹の根の丘」（2026-10-19）
+
+`field500/` に画像。`python3 field500.py`（`field500.pkl` を出す）→ `python3 field500_render.py overview boss tree ...`。
+採取5種＋釣り、散らばるモブ、狩り場3つ、ワールドボス1体。目印や狩り場は先に実例を見てから作る（Planet Minecraft／Wynncraft wiki）。
