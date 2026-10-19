@@ -836,7 +836,11 @@ def walk_pose(t, L=1.2, enraged=False):
     return p
 
 
-ABILITIES = {"sakura-claw": (1.2, 1.0), "sakura-tail": (1.5, 1.1), "sakura-scatter": (1.7, .9), "sakura-bloom": (2.0, 1.2)}
+ABILITIES = {"sakura-claw": (1.2, 1.0), "sakura-tail": (1.5, 1.1), "sakura-scatter": (1.7, .9), "sakura-bloom": (2.0, 1.2),
+             "sakura-horn": (.8, .7), "sakura-spin": (1.0, .9), "sakura-howl": (1.6, 1.0),
+             "sakura-claw2": (.6, .7), "sakura-claw3": (.9, 1.3)}
+# Only after the enrage: no phase-one twin is needed (the clip itself is authored with the petals open).
+ENRAGED_ONLY = {"sakura-bloom", "sakura-howl", "sakura-claw3"}
 CALM = {}
 
 
@@ -922,6 +926,102 @@ def bloom_keys(hit, end, shells):
             (hit * .6, rise, "out"), (hit - .14, claw, "io"), (hit, crash, "in"), (hit + .16, bounce, "out"),
             (hit + .34, pose(rear(8), pos=(0, -2, 3), shells=1.0), "in"), (hit + .55, pose(bounce, shells=1.0), "out"),
             (hit + .8, mie(1.0, -1), "out"), (hit + 1.0, pose(mie(1.0, -1), skull=(-4, 0, 0)), "io"), (end, {"shells": shells}, "io")]
+
+
+def horn_keys(hit, end, shells):
+    """枝角の突き上げ: dip the head low with the horns levelled, then a short lunge that throws the head up, horns
+    raking the air; it shakes the head as it backs off."""
+    s = {"shells": shells}
+    dip = pose(rear(8), pos=(0, -3, -3), chest=(8, 0, 0), neck=(26, 0, 0), skull=(20, 0, 0), jaw=(4, 0, 0),
+               arm_l=(-10, 0, 0), arm_r=(-10, 0, 0), tail_1=(10, 0, 0), tremble=1.5, **s)
+    thrust = pose(rear(-14), pos=(0, 2, 8), chest=(-8, 0, 0), neck=(-24, 0, 0), skull=(-34, 0, 0), jaw=(14, 0, 0),
+                  arm_l=(14, 0, 0), arm_r=(-20, 0, 0), tail_1=(-10, 0, 0), shells=shells + .2)
+    return [(0, dict(s), "io"), (hit * .7, dip, "io"), (hit - .05, pose(dip, pos=(0, -4, -4)), "io"), (hit, thrust, "in"),
+            (hit + .25, pose(thrust, skull=(-10, 14, 0), pos=(0, 0, 6)), "out"), (end, dict(s), "io")]
+
+
+def spin_keys(hit, end, shells):
+    """花尾の旋回 (Zinogre's 360 tail swipe): wind the body the other way, then spin on the spot with the petal tail
+    stretched out flat, the tail passing the front at the strike; it skids out of the turn and settles."""
+    s = {"shells": shells}
+    wind = pose(rear(6), pos=(0, -3, 0), body=(0, 28, 0), chest=(0, 10, 0), neck=(10, 20, 0), tail_1=(-12, -20, 0),
+                tail_2=(-8, -16, 0), tremble=1.5, **s)
+    start, stop = hit - .3, hit + .25
+    keys = [(0, dict(s), "io"), (start - .02, wind, "io")]
+    for k in range(7):
+        u = k / 6
+        yaw = 28 - (360 + 28) * u
+        flat = math.sin(math.pi * u)
+        keys.append((start + (stop - start) * u, pose(body=(0, yaw, 0), pos=(0, 3 * flat, 0), chest=(0, -10 * flat, 0),
+                                                      neck=(0, -14 * flat, 0), tail_1=(-16 * flat, 0, 0), tail_2=(-14 * flat, 0, 0),
+                                                      tail_3=(-12 * flat, 0, 0), tail_4=(-10 * flat, 0, 0),
+                                                      shells=shells + .35 * flat), "lin" if k else "in"))
+    skid = pose(rear(8), body=(0, -14, 0), pos=(0, -3, 0), neck=(6, 10, 0), tail_2=(0, 18, 0), **s)
+    return keys + [(stop + .18, skid, "out"), (stop + .4, pose(mie(shells), body=(0, 4, 0)), "io"), (end, dict(s), "io")]
+
+
+def howl_attack_keys(hit, end, shells):
+    """散り際の遠吠え (enraged only): it sits back and howls; at the strike every petal bursts open in a wave and the
+    blast of petals throws everything around it back."""
+    sit = sit_howl(1.0)
+    return [(0, {"shells": 1.0}, "io"), (.45, pose(sit, jaw=(-30, 0, 0), neck=(30, 0, 0), shells=1.0), "out"),
+            (hit - .2, pose(sit, jaw=(-30, 0, 0), neck=(36, 0, 0), shells=.6, tremble=6.0), "io"),
+            (hit, pose(sit, shells=1.55, tremble=5.0), "in"), (hit + .45, pose(sit, shells=1.3, skull=(-8, 0, 0)), "io"),
+            (end, {"shells": 1.0}, "io")]
+
+
+def claw2_keys(hit, end, shells):
+    """三連桜爪, second blow: no settling after the first slam, the left paw comes straight up and down."""
+    s = {"shells": shells}
+    up = pose(rear(-24), arm_l=(-100, 0, 8), forearm_l=(-36, 0, 0), hand_l=(-24, 0, 0), arm_r=(10, 0, 0),
+              chest=(-6, 8, 4), neck=(-10, 8, 0), jaw=(16, 0, 0), tremble=2.0, shells=shells + .1)
+    slam = pose(rear(16), pos=(0, -3, 3), arm_l=(16, 0, -4), chest=(16, -6, -4), neck=(20, -4, 0), skull=(10, 0, 0),
+                jaw=(26, 0, 0), tail_1=(-12, 0, 0), shells=shells + .3, tremble=2.5)
+    return [(0, pose(rear(10), pos=(0, -2, 3), **s), "io"), (hit * .75, up, "out"), (hit, slam, "in"),
+            (hit + .16, pose(rear(4), pos=(0, -1, 3), **s), "out"), (end, pose(rear(4), **s), "io")]
+
+
+def claw3_keys(hit, end, shells):
+    """三連桜爪, the last blow (enraged only): rear up high with both forepaws raised, crash down with both, the petals
+    flare in a wave and it holds the 見得."""
+    up = pose(rear(-52), arm_l=(-110, 0, 10), arm_r=(-110, 0, -10), forearm_l=(-40, 0, 0), forearm_r=(-40, 0, 0),
+              neck=(-24, 0, 0), skull=(-20, 0, 0), jaw=(36, 0, 0), tail_1=(18, 0, 0), shells=1.3, tremble=4.0)
+    slam = pose(rear(20), pos=(0, -5, 5), arm_l=(18, 0, 0), arm_r=(18, 0, 0), chest=(18, 0, 0), neck=(24, 0, 0), skull=(12, 0, 0),
+                jaw=(30, 0, 0), tail_1=(-16, 0, 0), tail_2=(-10, 0, 0), shells=1.5, tremble=3.0)
+    return [(0, pose(rear(4), pos=(0, -1, 3), shells=1.0), "io"), (hit * .7, up, "out"), (hit - .05, pose(up, rear(-4)), "io"),
+            (hit, slam, "in"), (hit + .16, pose(rear(6), pos=(0, -1, 4), shells=1.2), "out"),
+            (hit + .34, pose(rear(12), pos=(0, -3, 4), shells=1.0), "in"), (hit + .6, mie(1.0), "out"),
+            (hit + .9, pose(mie(1.0), skull=(-4, 0, 0)), "io"), (end, {"shells": 1.0}, "io")]
+
+
+# --- maneuvers (the server carries the body; QuestEncounterCombat.startManeuver timings) ---------------------
+def hop_back_keys(shells):
+    """1.1 s, moved back 4 blocks between 0.28 and 0.68 s: crouch, a bounding leap with the forelegs tucked, a soft
+    landing that sinks and rises."""
+    s = {"shells": shells}
+    crouch = pose(rear(10), pos=(0, -4, 0), arm_l=(-12, 0, 0), arm_r=(-12, 0, 0), shin_l=(18, 0, 0), shin_r=(18, 0, 0), **s)
+    air = pose(rear(-16), pos=(0, 16, 0), arm_l=(-50, 0, 0), arm_r=(-50, 0, 0), forearm_l=(-40, 0, 0), forearm_r=(-40, 0, 0),
+               thigh_l=(-20, 0, 0), thigh_r=(-20, 0, 0), neck=(-10, 0, 0), tail_1=(-14, 0, 0), shells=shells + .3)
+    land = pose(rear(8), pos=(0, -4, 0), arm_l=(8, 0, 0), arm_r=(8, 0, 0), neck=(14, 0, 0), shin_l=(18, 0, 0), shin_r=(18, 0, 0), **s)
+    return [(0, dict(s), "io"), (.26, crouch, "io"), (.48, air, "out"), (.68, land, "in"), (.85, pose(rear(-2), **s), "out"),
+            (1.1, dict(s), "io")]
+
+
+def dash_keys(sign, shells):
+    """0.9 s, moved 5 blocks sideways between 0.2 and 0.5 s: a low sideways bound, the body banked into it and the
+    tail swinging out behind, then a skid."""
+    s = {"shells": shells}
+    load = pose(pos=(0, -3, 0), chest=(0, 0, -10 * sign), body=(0, 0, -6 * sign), neck=(4, 14 * sign, 0), **s)
+    bound = pose(pos=(0, 9, 0), chest=(0, 0, 18 * sign), body=(0, 0, 14 * sign), neck=(-4, 18 * sign, 0),
+                 arm_l=(-30, 0, 0), arm_r=(-30, 0, 0), tail_1=(0, -24 * sign, 0), tail_2=(0, -18 * sign, 0), shells=shells + .25)
+    skid = pose(rear(6), pos=(0, -3, 0), chest=(0, 0, -8 * sign), body=(0, -10 * sign, 0), tail_2=(0, 20 * sign, 0), **s)
+    return [(0, dict(s), "io"), (.18, load, "io"), (.36, bound, "out"), (.52, skid, "in"), (.9, dict(s), "io")]
+
+
+def strafe_pose(t, sign, L=1.2, enraged=False):
+    """Circling its prey: the walk cycle turned into a sideways prowl, body angled in, head locked on."""
+    p = walk_pose(t, L, enraged)
+    return pose(p, body=(0, 16 * sign, 0), neck=(0, -18 * sign, 0), skull=(0, -8 * sign, 0), chest=(0, 0, 4 * sign))
 
 
 def enrage_keys():
@@ -1012,12 +1112,20 @@ def animate(m, b):
     bake(b, "idle_enraged", 2.4, looped(2.4, lambda t: idle_pose(t, enraged=True)), "loop")
     bake(b, "walk", 1.2, looped(1.2, lambda t: walk_pose(t)), "loop")
     bake(b, "walk_enraged", 1.2, looped(1.2, lambda t: walk_pose(t, enraged=True)), "loop")
-    for name, keys in (("sakura-claw", claw_keys), ("sakura-tail", tail_keys), ("sakura-scatter", scatter_keys), ("sakura-bloom", bloom_keys)):
+    for name, keys in (("sakura-claw", claw_keys), ("sakura-tail", tail_keys), ("sakura-scatter", scatter_keys), ("sakura-bloom", bloom_keys),
+                       ("sakura-horn", horn_keys), ("sakura-spin", spin_keys), ("sakura-howl", howl_attack_keys),
+                       ("sakura-claw2", claw2_keys), ("sakura-claw3", claw3_keys)):
         hit, rec = ABILITIES[name]
         ov = overlay_for(name, hit, hit + rec)
-        if name != "sakura-bloom":
+        if name not in ENRAGED_ONLY:
             bake(b, name, hit + rec, keys(hit, hit + rec, 0.0), overlay=ov)
-        bake(b, f"{name}_enraged" if name != "sakura-bloom" else name, hit + rec, keys(hit, hit + rec, 1.0), overlay=ov)
+        bake(b, name if name in ENRAGED_ONLY else f"{name}_enraged", hit + rec, keys(hit, hit + rec, 1.0), overlay=ov)
+    for tag, sh in (("", 0.0), ("_enraged", 1.0)):
+        bake(b, f"hop_back{tag}", 1.1, hop_back_keys(sh))
+        bake(b, f"dash_l{tag}", .9, dash_keys(1, sh))
+        bake(b, f"dash_r{tag}", .9, dash_keys(-1, sh))
+        bake(b, f"strafe_l{tag}", 1.2, looped(1.2, lambda t, e=bool(sh): strafe_pose(t, 1, enraged=e)), "loop")
+        bake(b, f"strafe_r{tag}", 1.2, looped(1.2, lambda t, e=bool(sh): strafe_pose(t, -1, enraged=e)), "loop")
     bake(b, "enrage", 5.0, enrage_keys(), overlay=overlay_for("enrage", 2.5, 5.0))
     bake(b, "death", 2.4, death_keys(0.0))
     bake(b, "death_enraged", 2.4, death_keys(1.0))

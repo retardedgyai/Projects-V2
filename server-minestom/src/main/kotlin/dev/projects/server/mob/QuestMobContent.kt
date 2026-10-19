@@ -122,7 +122,7 @@ internal object QuestMobContent {
             if (id in setOf("rift-bolt", "rift-pulse", "oracle-mark", "oracle-ray", "oracle-pulse",
                     "forge-cross", "forge-mark", "tide-ray", "tide-ring", "tide-center", "eclipse-mark", "eclipse-cross",
                     "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross",
-                    "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "sakura-scatter", "sakura-bloom"))
+                    "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "sakura-scatter", "sakura-bloom", "sakura-howl"))
                 dev.projects.server.coreloop.CoreDamageType.MAGICAL else dev.projects.server.coreloop.CoreDamageType.PHYSICAL, scripted
         )
         fun sweep(radius: Double = 3.4, damage: Double = 10.0) = attack(
@@ -174,6 +174,17 @@ internal object QuestMobContent {
                         1700, 600, 900, 3200, weight = 2),
                     attack("sakura-bloom", "花嵐・獣から離れろ", MobAttackShape.Ring(8.0), 6.0, 30.0,
                         2000, 0, 1200, 5000, health = .5, weight = 2),
+                    attack("sakura-horn", "枝角の突き上げ・横へ", MobAttackShape.Slam(4.8, 1.5), 4.2, 18.0,
+                        800, 350, 700, 2000, weight = 3),
+                    attack("sakura-spin", "花尾の旋回・離れろ", MobAttackShape.Ring(5.6), 4.5, 20.0,
+                        1000, 0, 900, 3200, weight = 2),
+                    attack("sakura-howl", "散り際の遠吠え・離れろ", MobAttackShape.Ring(6.5), 5.5, 26.0,
+                        1600, 0, 1000, 7000, health = .5, weight = 1),
+                    // 三連桜爪: the paw slam chains into a second blow, and once enraged into a third (QuestEncounterCombat).
+                    attack("sakura-claw2", "桜爪・二の手", MobAttackShape.Slam(6.0, 2.4), 5.0, 20.0,
+                        600, 250, 700, 0, scripted = true),
+                    attack("sakura-claw3", "桜爪・止め", MobAttackShape.Slam(7.0, 3.0), 6.0, 28.0,
+                        900, 300, 1300, 0, health = .5, scripted = true),
                 )).copy(model = "sakura_fang", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2)
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,
                 Material.IRON_AXE, attacks = listOf(sweep(), slam()))

@@ -700,7 +700,8 @@ class QuestEncounterCombat(
         if (now >= mob.warningRetryAt && mob.entity.hasLineOfSight(target) && telegraphs.canStart(mob.entity.uuid)) {
             val ratio = mob.life.health / mob.life.maximumHealth
             val silenced = crowded(mob, CrowdControl.SILENCE, now)
-            val scripted = if (silenced) null else mob.combo ?: if (behindFor(mob, target, now) >= TURN_AFTER_MILLIS) TURN_SWEEP else null
+            val turn = if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) SAKURA_TURN else TURN_SWEEP
+            val scripted = if (silenced) null else mob.combo ?: if (behindFor(mob, target, now) >= TURN_AFTER_MILLIS) turn else null
             mob.combo = null
             val aim = aimAt(mob, target, now)
             val start = scripted?.let { mob.abilities.tryStart(now, mob.entity.position, aim, ratio, only = it) }
@@ -927,7 +928,11 @@ class QuestEncounterCombat(
     private fun tickManeuver(mob: Mob, maneuver: Maneuver, target: Player, now: Long): Boolean {
         if (now >= maneuver.endAt) {
             mob.maneuver = null
-            mob.combo = when (maneuver.kind) {
+            mob.combo = if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) when (maneuver.kind) {
+                ManeuverKind.HOP_BACK -> if (mob.enraged) "sakura-scatter" else null     // 飛び退き→散華
+                ManeuverKind.DASH -> "sakura-horn"                                       // 回り込み→突き上げ
+                ManeuverKind.STRAFE -> null
+            } else when (maneuver.kind) {
                 ManeuverKind.HOP_BACK -> if (mob.enraged) "shade-breath" else null   // 2 跳び退き→吐息
                 ManeuverKind.DASH -> "shade-sweep"                                   // 3 回り込み→薙ぎ
                 ManeuverKind.STRAFE -> null
@@ -1099,7 +1104,7 @@ class QuestEncounterCombat(
         when (event) {
             is MobAbilityEvent.Started -> {
                 mob.travelFrom = mob.entity.position
-                if (event.frame.ability.id == TURN_SWEEP) mob.behindSince = 0L
+                if (event.frame.ability.id == TURN_SWEEP || event.frame.ability.id == SAKURA_TURN) mob.behindSince = 0L
                 updateName(mob, event.frame.ability.displayName)
                 mob.view?.ability(event.frame.ability.id)
                 if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG)
@@ -1148,7 +1153,18 @@ class QuestEncounterCombat(
                 if (mob.shade) { gimmicks.abilityHit(event.frame, lastTickAt); lightUp(event.frame) }
                 if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) sakuraBurst(event.frame)
             }
-            is MobAbilityEvent.Finished -> { clearWarning(mob.entity.uuid); updateName(mob) }
+            is MobAbilityEvent.Finished -> {
+                clearWarning(mob.entity.uuid); updateName(mob)
+                if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) {
+                    // 三連桜爪: the first slam always takes a second blow, the second a third once enraged.
+                    mob.combo = when (event.abilityId) {
+                        "sakura-claw" -> "sakura-claw2"
+                        "sakura-claw2" -> if (mob.enraged) "sakura-claw3" else null
+                        else -> null
+                    }
+                    if (mob.combo != null) mob.warningRetryAt = lastTickAt
+                }
+            }
         }
         return true
     }
@@ -1258,6 +1274,8 @@ class QuestEncounterCombat(
         const val SEARCH_SPEED = .3
         const val SEARCH_BEYOND = 14.0
         const val TURN_SWEEP = "shade-turnsweep"
+        /** 桜牙獣 answers someone at its back with the 360 tail spin. */
+        const val SAKURA_TURN = "sakura-spin"
         /** Got behind it (usually while an attack holds its facing) for this long when it is free to act. */
         const val TURN_AFTER_MILLIS = 600L
         /** ms into shade-dive while the body is carried over the target (the clip hangs in the air then). */

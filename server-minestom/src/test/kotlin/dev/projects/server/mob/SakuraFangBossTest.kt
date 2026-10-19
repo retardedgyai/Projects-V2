@@ -35,7 +35,7 @@ class SakuraFangBossTest {
     fun `every ability has a once clip timed to its telegraph and recovery`() {
         val clips = animations()
         assertEquals("sakura_fang", definition.model)
-        assertEquals(4, definition.abilities.size)
+        assertEquals(9, definition.abilities.size)
         for (ability in definition.abilities) {
             val clip = assertNotNull(clips.getAsJsonObject(ability.id), "missing clip ${ability.id}")
             assertFalse(clip["loop"].asBoolean, ability.id)
@@ -51,6 +51,12 @@ class SakuraFangBossTest {
         assertEquals(5.0, clips.getAsJsonObject("enrage")["animation_length"].asDouble, 0.051)
         assertEquals(setOf(1.0, definition.enrageHealthRatio), definition.abilities.map { it.maximumHealthRatio }.toSet())
         assertTrue(BossModelView.available("sakura_fang"))
+        // movement between attacks: a leap back, a dash to either side and a sideways prowl (BossModelView.canManeuver)
+        for (once in listOf("hop_back", "dash_l", "dash_r", "hop_back_enraged", "dash_l_enraged", "dash_r_enraged"))
+            assertFalse(clips.getAsJsonObject(once)["loop"].asBoolean, once)
+        for (loop in listOf("strafe_l", "strafe_r", "strafe_l_enraged", "strafe_r_enraged")) assertTrue(clips.getAsJsonObject(loop)["loop"].asBoolean, loop)
+        // 三連桜爪 follow-ups only start as a chain
+        assertTrue(definition.abilities.filter { it.id.startsWith("sakura-claw") && it.id != "sakura-claw" }.all { it.scripted })
     }
 
     @Test

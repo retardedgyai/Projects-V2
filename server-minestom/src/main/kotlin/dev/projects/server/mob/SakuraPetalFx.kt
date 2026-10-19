@@ -150,15 +150,16 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
         val t = time - abilityAt
         val strike = abilityAt + hit
         when (id) {
-            "sakura-claw" -> {
-                val tip = bone("hand_r", Vec(-15.0, 1.0, 31.0))
+            "sakura-claw", "sakura-claw2", "sakura-claw3" -> {
+                val tip = if (id == "sakura-claw2") bone("hand_l", Vec(15.0, 1.0, 31.0)) else bone("hand_r", Vec(-15.0, 1.0, 31.0))
+                val big = if (id == "sakura-claw3") 1.5 else if (id == "sakura-claw2") .6 else 1.0
                 if (t in .25..(hit - .05)) repeat(rate("gather", 70.0)) {      // petals spiral into the raised claw
                     val off = randomDir().mul(r(1.75, 2.75))
                     val tangent = off.cross(Vec(0.0, 1.0, 0.0)).normalize()
                     add(tip.add(off), off.mul(-1.9).add(tangent.mul(5.6)), .5, 0.0)
                 }
                 if (once("a:burst", strike)) {                                  // the slam throws them up along the strip
-                    repeat(count(110)) { add(f.px(r(-34.0, 34.0), 2.0, r(16.0, 96.0)), f.dir(r(-3.8, 3.8), r(8.8, 18.8), r(-1.9, 5.6)), r(1.2, 2.0)) }
+                    repeat(count((110 * big).toInt())) { add(f.px(r(-34.0, 34.0), 2.0, r(16.0, 96.0)), f.dir(r(-3.8, 3.8), r(8.8, 18.8), r(-1.9, 5.6)), r(1.2, 2.0)) }
                     repeat(count(48)) { k ->
                         val a = k * 2 * PI / count(48)
                         add(Vec(tip.x(), f.at.y() + .2, tip.z()), Vec(cos(a), .15, sin(a)).mul(r(17.5, 21.0)), .9, 3.0)
@@ -186,6 +187,31 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
                     repeat(count(170)) {
                         val a = Math.toRadians(r(-40.0, 40.0))
                         add(o.add(randomDir().mul(.4)), f.dir(sin(a), r(-.05, .12), cos(a)).mul(r(30.0, 40.0)), r(1.0, 1.6), 2.3)
+                    }
+                }
+            }
+            "sakura-horn" -> if (once("a:horn", strike)) {                       // the horns rake petals up and ahead
+                val head = bone("skull", Vec(0.0, 44.0, 40.0))
+                repeat(count(70)) {
+                    val a = Math.toRadians(r(-25.0, 25.0))
+                    add(head.add(randomDir().mul(.3)), f.dir(sin(a), r(.6, 1.4), cos(a)).mul(r(10.0, 16.0)), r(.9, 1.5), 2.0)
+                }
+            }
+            "sakura-spin" -> {
+                if (t in (hit - .3)..(hit + .25)) repeat(rate("spin", 120.0)) {   // the spinning tail throws a ring of petals
+                    val (b, px) = shells[3 + random.nextInt(shells.size - 3)]
+                    val p = bone(b, px)
+                    val radial = Vec(p.x() - f.at.x(), 0.0, p.z() - f.at.z()).let { if (it.length() < 1e-6) f.left else it.normalize() }
+                    val tangent = Vec(0.0, 1.0, 0.0).cross(radial)
+                    add(p, tangent.mul(-12.0).add(radial.mul(6.0)).add(0.0, r(.5, 2.5), 0.0), r(.8, 1.3), 1.4)
+                }
+            }
+            "sakura-howl" -> {
+                if (t in .45..(hit - .1)) repeat(rate("howl-shiver", 50.0)) { add(shell(), Vec(r(-1.5, 1.5), r(2.5, 5.0), r(-1.5, 1.5)), 1.0) }
+                if (once("a:howl", strike)) {                                   // the howl blasts every petal outward
+                    repeat(count(200)) {
+                        val a = r(0.0, 2 * PI); val d = Vec(cos(a), 0.0, sin(a))
+                        add(shell(), d.mul(r(20.0, 28.0)).add(0.0, r(2.0, 7.0), 0.0), r(.9, 1.5), 1.8)
                     }
                 }
             }
