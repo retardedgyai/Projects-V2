@@ -135,6 +135,7 @@ def state(shape, top, side):
         if n.endswith("_leaves"): pass
     elif shape in ("shut_n", "shut_w", "shut_e") or (shape == "shut_s" and n.endswith("trapdoor")):
         face = {"shut_s": "south", "shut_n": "north", "shut_e": "east", "shut_w": "west"}[shape]
+        if n.endswith("wall_banner"): return n, {"facing": {"south": "north", "north": "south", "east": "west", "west": "east"}[face] if False else face}
         if n.endswith("trapdoor"):
             return n, {"facing": face, "half": "bottom", "open": "true", "powered": "false", "waterlogged": "false"}
         if n == "vine" and shape == "shut_e": return n, {"west": "true", "north": "false", "south": "false", "east": "false", "up": "false"}

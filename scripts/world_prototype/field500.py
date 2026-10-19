@@ -258,10 +258,15 @@ for z in range(B):
 
 # talus: rockfall piles where a face meets the ground below it
 from collections import Counter as _C
+WATER_NEAR = np.where(lake | stream, 0, 999).astype(np.float32)
+_m = lake | stream
+for _step in range(1, 26):                                          # true (chessboard-ish) distance to any water, by dilation
+    _m = _m | np.roll(_m, 1, 0) | np.roll(_m, -1, 0) | np.roll(_m, 1, 1) | np.roll(_m, -1, 1)
+    WATER_NEAR = np.where(_m & (WATER_NEAR > _step), _step, WATER_NEAR)
 TALUS = ["gravel", "gravel", "cobblestone", "andesite", "stone", "tuff", "mossy_cobblestone"]
 for z in range(2, B - 2):
     for x in range(2, B - 2):
-        if slope[z, x] > 1.0 or road_d[z, x] < 4 or path_d[z, x] < 3 or lake[z, x] or stream[z, x]: continue
+        if slope[z, x] > 1.0 or road_d[z, x] < 4 or path_d[z, x] < 3 or lake[z, x] or stream[z, x] or WATER_NEAR[z, x] < 10: continue
         up = max(hi[z + dz, x + dx] for dx in (-2, -1, 0, 1, 2) for dz in (-2, -1, 0, 1, 2))
         if up - hi[z, x] < 5: continue                                # only right below a real face
         n = noise3(x, 0, z, 371, 2.5)
@@ -665,13 +670,15 @@ WSX, WSZ = RX - 2, RZ - 2
 for dx in range(-1, 2):
     for dz in range(-1, 2):
         put(WSX + dx, rg + 1, WSZ + dz, "chiseled_stone_bricks" if (dx, dz) == (0, 0) else "stone_bricks", shape="full" if (dx, dz) == (0, 0) else "slab")
-for y in range(rg + 2, rg + 5): put(WSX, y, WSZ, "polished_deepslate" if y != rg + 3 else "sea_lantern")
-put(WSX, rg + 5, WSZ, "sea_lantern", shape="lantern")
+for y in range(rg + 2, rg + 5): put(WSX, y, WSZ, "polished_deepslate")      # waystone: a dark stele with a lodestone cap
+put(WSX, rg + 5, WSZ, "lodestone_top", "lodestone_side")
+for dx, dz, f in ((1, 0, "w"), (-1, 0, "e"), (0, 1, "n"), (0, -1, "s")):
+    put(WSX + dx, rg + 2, WSZ + dz, "polished_deepslate", shape="stair_" + f)
 put(RX + 3, rg + 1, RZ + 2, "campfire_log_lit", shape="fire")
 for (dx, dz) in ((-2, 0), (2, 0), (0, 2)): put(RX + 3 + dx, rg + 1, RZ + 2 + dz, "spruce_log", "spruce_log", shape="slab")
 for y in range(rg + 1, rg + 4): put(RX + 5, y, RZ - 4, "spruce_planks", shape="fence")
-put(RX + 5, rg + 3, RZ - 5, "lime_wool", shape="arm_z"); put(RX + 6, rg + 3, RZ - 4, "orange_wool", shape="arm_x")
-put(RX + 4, rg + 2, RZ - 4, "light_blue_wool", shape="arm_x"); put(RX + 5, rg + 4, RZ - 4, "lantern", shape="lantern")
+put(RX + 5, rg + 3, RZ - 5, "lime_wall_banner", shape="shut_n"); put(RX + 6, rg + 3, RZ - 4, "orange_wall_banner", shape="shut_e")
+put(RX + 4, rg + 3, RZ - 4, "light_blue_wall_banner", shape="shut_w"); put(RX + 5, rg + 4, RZ - 4, "lantern", shape="lantern")
 mark(RX - 8, RZ - 8, RX + 8, RZ + 8)
 # bridge where the road crosses the stream
 for x in range(B):
@@ -879,7 +886,7 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
         out = rt * (1 + .22 * (noise3(math.cos(a) * 3 + seed, top_y * .25, math.sin(a) * 3, seed, 1.0) - .5) * 2)
         x, z = int(round(cx + math.cos(a) * (out + .6))), int(round(cz + math.sin(a) * (out + .6)))
         if not (0 <= x < B and 0 <= z < B): continue
-        drape = R.random() < .35
+        drape = False
         for k2 in range(R.randint(1, 3) if drape else R.randint(4, 14)):
             p = (x, top_y - k2, z)
             if p in w.b or p[1] <= at(x, z): break
@@ -1112,6 +1119,9 @@ for (x, y, z) in [p for p in w.b if abs(p[0] - SX_) <= PREC and abs(p[2] - SZ_) 
         w.b.pop((x, y, z), None)
 for (x, y, z) in [p for p in w.b if abs(p[0] - SX_) <= PREC and abs(p[2] - SZ_) <= PREC and p[1] == SY_ + 1]:
     if w.b[(x, y, z)][0] in ("carpet", "plant") and math.hypot(x - SX_, z - SZ_) <= PREC and UPPER[z, x] == SY_: w.b.pop((x, y, z), None)
+for (x, y, z) in [p for p in w.b if abs(p[0] - SX_) <= PREC and abs(p[2] - SZ_) <= PREC and SY_ - 3 <= p[1] <= SY_]:
+    if w.b[(x, y, z)][1] in ("cherry_log", "cherry_log_top", "oak_log", "oak_log_top") and math.hypot(x - SX_, z - SZ_) <= PREC:
+        put(x, y, z, "grass_block_top" if y == SY_ else "dirt", "grass_block_side" if y == SY_ else "dirt")
 for dx in range(-AR - 4, AR + 5):
     for dz in range(-AR - 4, AR + 5):
         d = math.hypot(dx, dz)
@@ -1396,13 +1406,13 @@ def bush_clump(x, z):
         a, b = x + R.randint(-1, 1), z + R.randint(-1, 1)
         y = at(a, b) + 1
         if (a, y, b) not in w.b:
-            put(a, y, b, R.choice(["oak_leaves", "azalea_leaves", "flowering_azalea_leaves", "bush"]),
-                shape="plant" if R.random() < .25 else ("slab" if R.random() < .4 else "full"))
+            put(a, y, b, R.choice(["bush", "bush", "azalea_leaves", "flowering_azalea_leaves", "sweet_berry_bush_stage3", "fern"]), shape="plant")
 
 
 EDGE_LO, EDGE_HI = .006, .02
 for z in range(4, B - 4):
     for x in range(4, B - 4):
+        if WATER_NEAR[z, x] < 18: continue                            # keep the water's surroundings open
         dz_ = dens[z, x]
         if EDGE_LO < dz_ < EDGE_HI:                                   # the woodland edge: low cover in front of the trees
             r2 = R.random()
@@ -1454,7 +1464,7 @@ for z in range(2, B - 2):
 
 
 # ---------- walkability pass: a slab on the low side of every one-block step along roads, trails, bridges and tops ----------
-STEP_SLAB = ["cobblestone", "stone", "mossy_cobblestone", "stone", "andesite"]
+STEP_SLAB = ["mud_bricks", "mud_bricks", "mud_bricks", "cobblestone", "mud_bricks"]
 def _top_at(x, z):
     return int(UPPER[z, x] if UPPER[z, x] >= 0 else hi[z, x])
 nstep = 0
@@ -1558,4 +1568,5 @@ if __name__ == "__main__":
     print("blocks", len(w.b))
     import pickle
     pickle.dump((w.b, hi, LABELS), open("field500.pkl", "wb")); pickle.dump((FILL, STATS), open("field500-fill.pkl", "wb"))
+
 

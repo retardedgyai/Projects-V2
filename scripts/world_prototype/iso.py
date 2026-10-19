@@ -11,6 +11,7 @@ _cache = {}
 
 
 def tex(name):
+    if name.endswith("_wall_banner"): name = name.replace("_wall_banner", "_wool")
     if name.endswith("_wood") and not (TEX / f"{name}.png").exists(): name = name[:-5] + "_log"
     if name not in _cache:
         im = Image.open(TEX / f"{name}.png").convert("RGBA")
