@@ -1,5 +1,6 @@
 {
   "comment": "溜め斬り (2026-10-19): a heavy charged overhead slash after Monster Hunter's great sword, studied frame by frame, not copied. Units: seconds, degrees, blocks. The puppet faces +z; its right is -x. root/torso/head rot = [pitch, yaw, roll], pitch + = bend forward, yaw + = turn to its left. grip = where the right fist holds the sword and blade = the blade's direction, both in the root's space (the root sits at hip height). Both arms reach the grip and the legs reach the feet by two-bone IK, so a crouch is just the root going down. fp_grip / fp_blade are the same for the first-person held weapon, in camera space (x right, y up, z forward): the owner's camera cannot follow the puppet, so first person shows the swing with the held item. Weight (2026-10-19, Creator: MH swings look heavy): the body sinks before it lifts and the blade drags up and settles; the swing is hips first, arms next, blade last; after the hit the blade bites deeper and pulls the body forward; the recovery waits a beat, then heaves the blade back up.",
+  "blockbench": "greatsword#greatsword_charge",
   "weapon": {"model": "weapons/greatsword_t3", "scale": 0.95, "grip": 4, "hands": "two"},
   "phases": [{"t": 0, "name": "構え"}, {"t": 0.7, "name": "溜め"}, {"t": 2.68, "name": "振り下ろし"}, {"t": 3.08, "name": "余韻"}],
   "stills": [0.0, 0.18, 0.62, 2.76, 2.81, 2.86, 3.3, 3.8],

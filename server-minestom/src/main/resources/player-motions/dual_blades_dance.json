@@ -1,5 +1,6 @@
 {
   "comment": "乱舞 (2026-10-19): Monster Hunter Wilds dual blades' blade dance, studied frame by frame from Capcom's weapon video, not copied. Same conventions as greatsword_charge.json; grip_r/blade_r and grip_l/blade_l are the two blades (root space). Six alternating cuts, each landing in 0.07 s and sticking for a beat while the other blade cocks for its turn, the torso whipping across each time; then both blades over the head and an X down. The blade's width follows its motion.",
+  "blockbench": "dual_blades#dual_blades_dance",
   "weapon": {"model": "weapons/dagger_t3", "scale": 1.0, "grip": 4.5, "hands": "dual"},
   "phases": [
     {"t": 0, "name": "構え"},

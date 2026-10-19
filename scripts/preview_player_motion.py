@@ -113,6 +113,11 @@ def blade_frame(track, root, t, grip):
         if width is not None: break
     if width is None:
         x = np.cross((0, 1, 0), z); x = x / (np.linalg.norm(x) + 1e-9); width = np.cross(z, x)
+    # Edge-to-edge is a line, not a direction: keep one consistent sign (toward world up, else the root's forward)
+    # so a cut that reverses does not spin the blade half a turn about its own axis in one tick.
+    ref = np.array([0.0, 1.0, 0.0]) - z * z[1]
+    if np.linalg.norm(ref) < .2: ref = (root @ np.array([0, 0, 1, 0]))[:3]
+    if width @ ref < 0: width = -width
     x = np.cross(width, z)
     m = np.eye(4); m[:3, 0], m[:3, 1], m[:3, 2], m[:3, 3] = x, width, z, grip
     return m
@@ -162,6 +167,29 @@ def pose(motion, t, base_yaw=0.0):
     return parts
 
 
+BB_SOURCE = {}
+
+
+def motion_pose(motion, t):
+    """The saved Blockbench animation when the motion names one (the source of truth), else the old IK keys."""
+    src = motion.get('blockbench')
+    if not src: return pose(motion, t)
+    import player_rig
+    if src not in BB_SOURCE:
+        model_name, anim_name = src.split('#')
+        model = player_rig.load(model_name)
+        BB_SOURCE[src] = (model, player_rig.animation(model, anim_name))
+    model, anim = BB_SOURCE[src]
+    frames = player_rig.pose(model, anim, t)
+    rename = {'weapon_r': 'sword' if motion.get('weapon', DEFAULT_WEAPON)['hands'] != 'dual' else 'blade_r', 'weapon_l': 'blade_l'}
+    out = {}
+    for name, m in frames.items():
+        if name == 'root': continue
+        if name == 'weapon_l' and motion.get('weapon', DEFAULT_WEAPON)['hands'] != 'dual': continue
+        out[rename.get(name, name)] = m
+    return out
+
+
 # ---------------------------------------------------------------- skin
 # Box UV origins on a 64x64 skin (wide arms): base layer, overlay layer, size (w, h, d) in px.
 SKIN_BOX = {'head': ((0, 0), (32, 0), (8, 8, 8)), 'torso': ((16, 16), (16, 32), (8, 12, 4)),
@@ -171,7 +199,7 @@ SKIN_BOX = {'head': ((0, 0), (32, 0), (8, 8, 8)), 'torso': ((16, 16), (16, 32), 
 PART_BOX = {
     'head': ('head', (0, 8), (-4, 0, -4), (8, 8, 8)), 'torso': ('torso', (0, 12), (-4, 0, -2), (8, 12, 4)),
     'arm_r_up': ('arm_r', (0, 6), (-3, -4, -2), (4, 6, 4)), 'arm_r_low': ('arm_r', (6, 12), (-2, -6, -2), (4, 6, 4)),
-    'arm_l_up': ('arm_l', (0, 6), (-2, -4, -2), (4, 6, 4)), 'arm_l_low': ('arm_l', (6, 12), (-2, -6, -2), (4, 6, 4)),
+    'arm_l_up': ('arm_l', (0, 6), (-1, -4, -2), (4, 6, 4)), 'arm_l_low': ('arm_l', (6, 12), (-2, -6, -2), (4, 6, 4)),
     'leg_r_up': ('leg_r', (0, 6), (-2, -6, -2), (4, 6, 4)), 'leg_r_low': ('leg_r', (6, 12), (-2, -6, -2), (4, 6, 4)),
     'leg_l_up': ('leg_l', (0, 6), (-2, -6, -2), (4, 6, 4)), 'leg_l_low': ('leg_l', (6, 12), (-2, -6, -2), (4, 6, 4)),
 }
@@ -266,7 +294,7 @@ def render(motion, skin, t, view):
     old = R.FOCAL; R.FOCAL = focal
     image = Image.new('RGBA', (R.W, R.H), R.BG + (255,))
     R.grid(image, camera)
-    parts = pose(motion, t)
+    parts = motion_pose(motion, t)
     glow, flash = charge_glow(motion, t)
     faces = []
     weapon = motion.get('weapon', DEFAULT_WEAPON)
