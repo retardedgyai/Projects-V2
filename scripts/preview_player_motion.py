@@ -219,7 +219,7 @@ def render(motion, skin, t, view):
     focal = R.FOCAL
     if view == 'first':
         # The charge narrows the view (in game: the movement-speed FOV), the impact snaps it back.
-        charge_t = min(1.0, max(0.0, (t - .35) / 2.0)) if t < imp['t'] else max(0.0, 1 - since_imp / .2)
+        charge_t = min(1.0, max(0.0, (t - .7) / 2.0)) if t < imp['t'] else max(0.0, 1 - since_imp / .2)
         focal = R.FOCAL * (1 + .18 * charge_t)
     if 0 <= since_imp < .35:  # impact shake (in game: the hurt-tilt the client plays for its own player)
         k = (1 - since_imp / .35) * .07
@@ -265,7 +265,7 @@ def render(motion, skin, t, view):
         d = np.minimum(np.minimum(xx, R.W - 1 - xx) / R.W, np.minimum(yy, R.H - 1 - yy) / R.H)
         a = np.clip((.16 - d) / .16, 0, 1) ** 1.6 * strength * 255
         image.alpha_composite(Image.fromarray(np.dstack([np.full_like(a, c) for c in colour] + [a]).astype('uint8')))
-    phase = '構え' if t < .35 else ('溜め' if t < 2.48 else ('振り下ろし' if t < imp['t'] else ('ヒットストップ' if since_imp < imp['hitstop'] else '余韻')))
+    phase = '構え' if t < .7 else ('溜め' if t < 2.68 else ('振り下ろし' if t < imp['t'] else ('ヒットストップ' if since_imp < imp['hitstop'] else '余韻')))
     level = max([e['level'] for e in motion['events'] if e['type'] == 'charge' and t >= e['t']] + [0])
     draw.text((10, 6), label, font=R.FONT, fill=(236, 226, 206))
     draw.text((10, 28), f'{t:.2f}秒　{phase}' + (f'　溜め{level}' if level and t < imp['t'] else ''), font=R.SMALL, fill=(190, 182, 170))
@@ -291,7 +291,7 @@ def main():
         frames.append(sheet)
     for name, ms in (('', round(1000 / FPS)), ('-slow', round(3000 / FPS))):
         frames[0].save(out / f'{args.motion}{name}.gif', save_all=True, append_images=frames[1:], duration=ms, loop=0)
-    for t in (0.0, .35, 1.2, 2.45, 2.62, 3.2):
+    for t in (0.0, .18, .62, 2.76, 2.81, 2.86, 3.3, 3.8):
         frames[min(int(t * FPS), len(frames) - 1)].save(out / f'{args.motion}-{t:.2f}.png')
     print(args.motion, len(frames), 'frames ->', out)
 

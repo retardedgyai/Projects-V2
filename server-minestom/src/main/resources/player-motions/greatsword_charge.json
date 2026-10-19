@@ -1,98 +1,132 @@
 {
-  "comment": "溜め斬り (2026-10-19): a heavy charged overhead slash after Monster Hunter's great sword, studied frame by frame, not copied. Units: seconds, degrees, blocks. The puppet faces +z; its right is -x. root/torso/head rot = [pitch, yaw, roll], pitch + = bend forward, yaw + = turn to its left. grip = where the right fist holds the sword and blade = the blade's direction, both in the root's space (the root sits at hip height). Both arms reach the grip and the legs reach the feet by two-bone IK, so a crouch is just the root going down. fp_grip / fp_blade are the same for the first-person held weapon, in camera space (x right, y up, z forward): the owner's camera cannot follow the puppet, so first person shows the swing with the held item.",
-  "length": 3.6,
+  "comment": "溜め斬り (2026-10-19): a heavy charged overhead slash after Monster Hunter's great sword, studied frame by frame, not copied. Units: seconds, degrees, blocks. The puppet faces +z; its right is -x. root/torso/head rot = [pitch, yaw, roll], pitch + = bend forward, yaw + = turn to its left. grip = where the right fist holds the sword and blade = the blade's direction, both in the root's space (the root sits at hip height). Both arms reach the grip and the legs reach the feet by two-bone IK, so a crouch is just the root going down. fp_grip / fp_blade are the same for the first-person held weapon, in camera space (x right, y up, z forward): the owner's camera cannot follow the puppet, so first person shows the swing with the held item. Weight (2026-10-19, Creator: MH swings look heavy): the body sinks before it lifts and the blade drags up and settles; the swing is hips first, arms next, blade last; after the hit the blade bites deeper and pulls the body forward; the recovery waits a beat, then heaves the blade back up.",
+  "length": 4.1,
   "events": [
-    {"t": 0.95, "type": "charge", "level": 1},
-    {"t": 1.65, "type": "charge", "level": 2},
-    {"t": 2.35, "type": "charge", "level": 3},
-    {"t": 2.6, "type": "impact", "hitstop": 0.25},
-    {"t": 3.6, "type": "end"}
+    {"t": 1.15, "type": "charge", "level": 1},
+    {"t": 1.85, "type": "charge", "level": 2},
+    {"t": 2.55, "type": "charge", "level": 3},
+    {"t": 2.86, "type": "impact", "hitstop": 0.22},
+    {"t": 4.1, "type": "end"}
   ],
   "shake": [
     {"t": 0.0, "amp": 0.0},
-    {"t": 0.45, "amp": 0.0},
-    {"t": 0.95, "amp": 0.6},
-    {"t": 1.65, "amp": 1.2},
-    {"t": 2.35, "amp": 2.2},
-    {"t": 2.48, "amp": 2.4},
-    {"t": 2.49, "amp": 0.0}
+    {"t": 0.7, "amp": 0.0},
+    {"t": 1.15, "amp": 0.6},
+    {"t": 1.85, "amp": 1.2},
+    {"t": 2.55, "amp": 2.2},
+    {"t": 2.68, "amp": 2.4},
+    {"t": 2.69, "amp": 0.0}
   ],
   "tracks": {
-    "fp_grip": [
-      {"t": 0.0, "pos": [0.34, -0.42, 0.62]},
-      {"t": 0.35, "pos": [0.46, 0.34, 0.85], "ease": "out"},
-      {"t": 2.48, "pos": [0.48, 0.38, 0.85], "ease": "inout"},
-      {"t": 2.54, "pos": [0.16, 0.34, 1.0], "ease": "in"},
-      {"t": 2.6, "pos": [0.12, -0.02, 1.0], "ease": "in"},
-      {"t": 2.85, "pos": [0.12, -0.03, 1.0], "ease": "hold"},
-      {"t": 3.6, "pos": [0.34, -0.42, 0.62], "ease": "inout"}
-    ],
-    "fp_blade": [
-      {"t": 0.0, "dir": [0.12, 0.35, 0.93]},
-      {"t": 0.35, "dir": [-0.15, 0.98, 0.05], "ease": "out"},
-      {"t": 2.48, "dir": [-0.12, 0.99, 0.0], "ease": "inout"},
-      {"t": 2.54, "dir": [-0.1, 0.62, 0.78], "ease": "in"},
-      {"t": 2.6, "dir": [-0.25, -0.8, 0.55], "ease": "in"},
-      {"t": 2.85, "dir": [-0.25, -0.81, 0.54], "ease": "hold"},
-      {"t": 3.6, "dir": [0.12, 0.35, 0.93], "ease": "inout"}
-    ],
     "root": [
-      {"t": 0.0, "pos": [0, 0, 0], "rot": [0, 0, 0]},
-      {"t": 0.35, "pos": [0, -0.16, -0.03], "rot": [0, -16, 0], "ease": "out"},
-      {"t": 2.35, "pos": [0, -0.24, -0.04], "rot": [0, -18, 0], "ease": "inout"},
-      {"t": 2.48, "pos": [0, -0.25, -0.05], "rot": [0, -20, 0], "ease": "out"},
-      {"t": 2.6, "pos": [0, -0.24, 0.12], "rot": [0, 8, 0], "ease": "in"},
-      {"t": 2.85, "pos": [0, -0.25, 0.13], "rot": [0, 9, 0], "ease": "hold"},
-      {"t": 3.6, "pos": [0, 0, 0.1], "rot": [0, 0, 0], "ease": "inout"}
+      {"t": 0, "pos": [0, 0, 0], "rot": [0, 0, 0]},
+      {"t": 0.18, "pos": [0, -0.1, 0.02], "rot": [0, -4, 0], "ease": "inout"},
+      {"t": 0.62, "pos": [0, -0.17, -0.03], "rot": [0, -16, 0], "ease": "out"},
+      {"t": 0.72, "pos": [0, -0.2, -0.04], "rot": [0, -17, 0], "ease": "inout"},
+      {"t": 2.68, "pos": [0, -0.25, -0.05], "rot": [0, -20, 0], "ease": "inout"},
+      {"t": 2.76, "pos": [0, -0.29, 0.05], "rot": [0, -4, 0], "ease": "in"},
+      {"t": 2.86, "pos": [0, -0.33, 0.16], "rot": [0, 8, 0], "ease": "in"},
+      {"t": 3.08, "pos": [0, -0.33, 0.16], "rot": [0, 8, 0], "ease": "hold"},
+      {"t": 3.3, "pos": [0, -0.37, 0.22], "rot": [0, 10, 0], "ease": "out"},
+      {"t": 3.45, "pos": [0, -0.37, 0.22], "rot": [0, 10, 0], "ease": "inout"},
+      {"t": 4.1, "pos": [0, 0, 0.12], "rot": [0, 0, 0], "ease": "inout"}
     ],
     "torso": [
-      {"t": 0.0, "rot": [4, 0, 0]},
-      {"t": 0.35, "rot": [10, -22, 2], "ease": "out"},
-      {"t": 2.35, "rot": [14, -26, 3], "ease": "inout"},
-      {"t": 2.48, "rot": [10, -30, 3], "ease": "out"},
-      {"t": 2.6, "rot": [34, 10, -2], "ease": "in"},
-      {"t": 2.85, "rot": [36, 10, -2], "ease": "hold"},
-      {"t": 3.6, "rot": [4, 0, 0], "ease": "inout"}
+      {"t": 0, "rot": [4, 0, 0]},
+      {"t": 0.18, "rot": [18, -2, 0], "ease": "inout"},
+      {"t": 0.62, "rot": [8, -24, 2], "ease": "out"},
+      {"t": 0.72, "rot": [12, -24, 3], "ease": "inout"},
+      {"t": 2.68, "rot": [12, -30, 3], "ease": "inout"},
+      {"t": 2.76, "rot": [0, -8, 1], "ease": "in"},
+      {"t": 2.86, "rot": [40, 10, -2], "ease": "in"},
+      {"t": 3.08, "rot": [40, 10, -2], "ease": "hold"},
+      {"t": 3.3, "rot": [48, 12, -2], "ease": "out"},
+      {"t": 3.45, "rot": [46, 12, -2], "ease": "inout"},
+      {"t": 3.75, "rot": [30, 6, 0], "ease": "inout"},
+      {"t": 4.1, "rot": [4, 0, 0], "ease": "inout"}
     ],
     "head": [
-      {"t": 0.0, "rot": [0, 0, 0]},
-      {"t": 0.35, "rot": [-6, 30, 0], "ease": "out"},
-      {"t": 2.48, "rot": [-8, 38, 0]},
-      {"t": 2.6, "rot": [-30, -10, 0], "ease": "in"},
-      {"t": 2.85, "rot": [-30, -10, 0], "ease": "hold"},
-      {"t": 3.6, "rot": [0, 0, 0], "ease": "inout"}
+      {"t": 0, "rot": [0, 0, 0]},
+      {"t": 0.18, "rot": [-10, 0, 0], "ease": "inout"},
+      {"t": 0.62, "rot": [-6, 30, 0], "ease": "out"},
+      {"t": 2.68, "rot": [-8, 38, 0], "ease": "inout"},
+      {"t": 2.76, "rot": [-4, 14, 0], "ease": "in"},
+      {"t": 2.86, "rot": [-30, -10, 0], "ease": "in"},
+      {"t": 3.3, "rot": [-30, -10, 0], "ease": "hold"},
+      {"t": 3.45, "rot": [-34, -12, 0], "ease": "inout"},
+      {"t": 4.1, "rot": [0, 0, 0], "ease": "inout"}
     ],
     "foot_r": [
-      {"t": 0.0, "pos": [-0.12, 0, 0.0]},
-      {"t": 0.3, "pos": [-0.34, 0, -0.36], "ease": "out"},
-      {"t": 2.48, "pos": [-0.34, 0, -0.36]},
-      {"t": 3.6, "pos": [-0.12, 0, 0.08], "ease": "inout"}
+      {"t": 0, "pos": [-0.12, 0, 0]},
+      {"t": 0.45, "pos": [-0.34, 0, -0.36], "ease": "out"},
+      {"t": 3.45, "pos": [-0.34, 0, -0.36]},
+      {"t": 4.1, "pos": [-0.14, 0, 0.06], "ease": "inout"}
     ],
     "foot_l": [
-      {"t": 0.0, "pos": [0.12, 0, 0.0]},
-      {"t": 0.3, "pos": [0.3, 0, 0.3], "ease": "out"},
-      {"t": 2.48, "pos": [0.3, 0, 0.3]},
-      {"t": 2.6, "pos": [0.3, 0, 0.5], "ease": "in"},
-      {"t": 2.85, "pos": [0.3, 0, 0.5], "ease": "hold"},
-      {"t": 3.6, "pos": [0.12, 0, 0.1], "ease": "inout"}
+      {"t": 0, "pos": [0.12, 0, 0]},
+      {"t": 0.45, "pos": [0.3, 0, 0.3], "ease": "out"},
+      {"t": 2.72, "pos": [0.3, 0, 0.3]},
+      {"t": 2.86, "pos": [0.3, 0, 0.5], "ease": "in"},
+      {"t": 3.45, "pos": [0.3, 0, 0.5]},
+      {"t": 4.1, "pos": [0.12, 0, 0.1], "ease": "inout"}
     ],
     "grip": [
-      {"t": 0.0, "pos": [-0.15, 0.15, 0.35]},
-      {"t": 0.35, "pos": [-0.2, 0.6, 0.16], "ease": "out"},
-      {"t": 2.48, "pos": [-0.22, 0.62, 0.12], "ease": "inout"},
-      {"t": 2.54, "pos": [-0.08, 1.02, 0.22], "ease": "in"},
-      {"t": 2.6, "pos": [0.0, 0.2, 0.52], "ease": "out"},
-      {"t": 2.85, "pos": [0.0, 0.19, 0.53], "ease": "hold"},
-      {"t": 3.6, "pos": [-0.15, 0.15, 0.35], "ease": "inout"}
+      {"t": 0, "pos": [-0.15, 0.15, 0.35]},
+      {"t": 0.18, "pos": [-0.14, 0.02, 0.36], "ease": "inout"},
+      {"t": 0.62, "pos": [-0.21, 0.64, 0.12], "ease": "out"},
+      {"t": 0.72, "pos": [-0.22, 0.58, 0.12], "ease": "inout"},
+      {"t": 2.68, "pos": [-0.22, 0.62, 0.12], "ease": "inout"},
+      {"t": 2.76, "pos": [-0.18, 0.78, 0.1], "ease": "in"},
+      {"t": 2.81, "pos": [-0.06, 1.0, 0.3], "ease": "in"},
+      {"t": 2.86, "pos": [0, 0.16, 0.52], "ease": "in"},
+      {"t": 3.08, "pos": [0, 0.16, 0.52], "ease": "hold"},
+      {"t": 3.3, "pos": [0, 0.06, 0.56], "ease": "out"},
+      {"t": 3.45, "pos": [0, 0.06, 0.56], "ease": "inout"},
+      {"t": 3.8, "pos": [-0.08, 0.12, 0.46], "ease": "inout"},
+      {"t": 4.1, "pos": [-0.15, 0.15, 0.35], "ease": "inout"}
     ],
     "blade": [
-      {"t": 0.0, "dir": [0, -0.25, 1]},
-      {"t": 0.35, "dir": [-0.22, 0.12, -0.97], "ease": "out"},
-      {"t": 2.48, "dir": [-0.25, 0.18, -0.95], "ease": "inout"},
-      {"t": 2.54, "dir": [-0.05, 0.85, 0.5], "ease": "in"},
-      {"t": 2.6, "dir": [0, -0.4, 0.92], "ease": "out"},
-      {"t": 2.85, "dir": [0, -0.41, 0.91], "ease": "hold"},
-      {"t": 3.6, "dir": [0, -0.25, 1], "ease": "inout"}
+      {"t": 0, "dir": [0, -0.25, 1]},
+      {"t": 0.18, "dir": [0, -0.45, 0.9], "ease": "inout"},
+      {"t": 0.62, "dir": [-0.22, 0.12, -0.97], "ease": "out"},
+      {"t": 0.72, "dir": [-0.24, 0.02, -0.97], "ease": "inout"},
+      {"t": 2.68, "dir": [-0.25, 0.18, -0.95], "ease": "inout"},
+      {"t": 2.76, "dir": [-0.2, 0.45, -0.87], "ease": "in"},
+      {"t": 2.81, "dir": [-0.05, 0.98, 0.15], "ease": "in"},
+      {"t": 2.86, "dir": [0, -0.42, 0.91], "ease": "in"},
+      {"t": 3.08, "dir": [0, -0.42, 0.91], "ease": "hold"},
+      {"t": 3.3, "dir": [0, -0.55, 0.84], "ease": "out"},
+      {"t": 3.45, "dir": [0, -0.55, 0.84], "ease": "inout"},
+      {"t": 3.8, "dir": [0, -0.4, 0.92], "ease": "inout"},
+      {"t": 4.1, "dir": [0, -0.25, 1], "ease": "inout"}
+    ],
+    "fp_grip": [
+      {"t": 0, "pos": [0.34, -0.42, 0.62]},
+      {"t": 0.18, "pos": [0.34, -0.52, 0.62], "ease": "inout"},
+      {"t": 0.62, "pos": [0.46, 0.34, 0.85], "ease": "out"},
+      {"t": 0.72, "pos": [0.46, 0.28, 0.85], "ease": "inout"},
+      {"t": 2.68, "pos": [0.48, 0.38, 0.85], "ease": "inout"},
+      {"t": 2.76, "pos": [0.4, 0.46, 0.9], "ease": "in"},
+      {"t": 2.81, "pos": [0.16, 0.34, 1.0], "ease": "in"},
+      {"t": 2.86, "pos": [0.12, -0.02, 1.0], "ease": "in"},
+      {"t": 3.08, "pos": [0.12, -0.02, 1.0], "ease": "hold"},
+      {"t": 3.3, "pos": [0.12, -0.1, 1.0], "ease": "out"},
+      {"t": 3.45, "pos": [0.12, -0.1, 1.0], "ease": "inout"},
+      {"t": 4.1, "pos": [0.34, -0.42, 0.62], "ease": "inout"}
+    ],
+    "fp_blade": [
+      {"t": 0, "dir": [0.12, 0.35, 0.93]},
+      {"t": 0.18, "dir": [0.12, 0.2, 0.97], "ease": "inout"},
+      {"t": 0.62, "dir": [-0.15, 0.98, 0.05], "ease": "out"},
+      {"t": 0.72, "dir": [-0.15, 0.95, 0.0], "ease": "inout"},
+      {"t": 2.68, "dir": [-0.12, 0.99, 0], "ease": "inout"},
+      {"t": 2.76, "dir": [-0.12, 0.95, -0.1], "ease": "in"},
+      {"t": 2.81, "dir": [-0.1, 0.62, 0.78], "ease": "in"},
+      {"t": 2.86, "dir": [-0.25, -0.8, 0.55], "ease": "in"},
+      {"t": 3.08, "dir": [-0.25, -0.8, 0.55], "ease": "hold"},
+      {"t": 3.3, "dir": [-0.25, -0.86, 0.45], "ease": "out"},
+      {"t": 3.45, "dir": [-0.25, -0.86, 0.45], "ease": "inout"},
+      {"t": 4.1, "dir": [0.12, 0.35, 0.93], "ease": "inout"}
     ]
   }
 }
