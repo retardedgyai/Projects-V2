@@ -64,7 +64,10 @@ internal class QuestMobLife(val maximumHealth: Double) {
 /** How long an enraging boss holds its roar before attacking again (matches the `enrage` model clip). */
 private const val ENRAGE_HOLD_MILLIS = 5000L
 
-internal enum class ManeuverKind { STRAFE, HOP_BACK, DASH, RELOCATE }
+internal enum class ManeuverKind { STRAFE, HOP_BACK, DASH, RELOCATE, ADVANCE }
+
+/** An attack that carries the body (2026-10-19, A): moved between [from] and [to] ms, [reach] blocks for a target that far. */
+private class Travel(val from: Long, val to: Long, val reach: (Double) -> Double)
 
 /** The second-form roar holds this long (the `awaken` clip). */
 private const val AWAKEN_HOLD_MILLIS = 3000L
@@ -158,6 +161,9 @@ class QuestEncounterCombat(
         var combo: String? = null
         /** Where an ability that carries the body (the dive) took off from. */
         var travelFrom: Pos? = null
+        /** Where a body-carrying attack ([TRAVEL]) ends, fixed when its move starts (the aim is locked by then). */
+        var travelTo: Pos? = null
+        var nextAdvanceAt = 0L
         /** Lost its target (far or out of sight): it creeps and searches. */
         var searching = false
         /** Enraged parts (gimmicks): damage dealt near the head and on each side, and what has broken. 0 = its right fan. */
@@ -265,6 +271,16 @@ class QuestEncounterCombat(
     fun bossHealth(): Double = mobs.values.firstOrNull { it.boss }?.life?.health ?: 0.0
     fun bossMaxHealth(): Double = mobs.values.firstOrNull { it.boss }?.life?.maximumHealth ?: 1.0
     internal fun healthOf(targetId: UUID): Double = mobs[targetId]?.life?.health ?: 0.0
+    /** Tests: start [abilityId] now at the mob's current target (or the nearest player), as a combo would. */
+    internal fun startAbilityForTest(targetId: UUID, abilityId: String, now: Long): Boolean {
+        val mob = mobs[targetId] ?: return false
+        val target = mob.target ?: instance.players.minByOrNull { it.position.distanceSquared(mob.entity.position) } ?: return false
+        mob.target = target
+        mob.abilities.cancel(); clearWarning(mob.entity.uuid)
+        val start = mob.abilities.tryStart(now, mob.entity.position, target.position, mob.life.health / mob.life.maximumHealth, only = abilityId) ?: return false
+        mob.life.phase = QuestMobPhase.ATTACKING
+        return handleAbilityEvent(mob, start, instance.players.toList())
+    }
     fun bossName(): String = mobs.values.firstOrNull { it.boss }?.definition?.name ?: ""
     fun bossEnrageRatio(): Double = mobs.values.firstOrNull { it.boss }?.definition?.enrageHealthRatio ?: 0.0
     fun weaknessOf(targetId: UUID): String? = mobs[targetId]?.definition?.archetype?.weakness
@@ -1027,6 +1043,7 @@ class QuestEncounterCombat(
         if (mob.nextRelocateAt == 0L) mob.nextRelocateAt = now + RELOCATE_FIRST_MILLIS
         val kind = when {
             now >= mob.nextRelocateAt && distance < 18.0 && view.has("relocate") -> ManeuverKind.RELOCATE
+            distance > 10.0 && distance < 30.0 && now >= mob.nextAdvanceAt && view.has("relocate") -> ManeuverKind.ADVANCE
             distance < 3.5 -> ManeuverKind.HOP_BACK
             distance in 4.0..10.0 -> if (mob.maneuvers % 3 == 2) ManeuverKind.DASH else ManeuverKind.STRAFE
             else -> return false
@@ -1049,6 +1066,12 @@ class QuestEncounterCombat(
                 val to = relocateSpot(mob, target) ?: return false
                 Maneuver(kind, here, to, now + 700, now + 2300, now + 3000, 0)
             }
+            ManeuverKind.ADVANCE -> {                     // C: the player got away: it flies straight at them
+                val toward = normalizeHorizontal(target.position.sub(here))
+                val to = safeRetreat(target.position.sub(toward.mul(4.0)), mob.home, leash) ?: return false
+                mob.nextAdvanceAt = now + ADVANCE_AGAIN_MILLIS
+                Maneuver(kind, here, to, now + 700, now + 2300, now + 3000, 0)
+            }
         }
         if (kind == ManeuverKind.RELOCATE) mob.nextRelocateAt = now + if (mob.awakened || mob.enraged) RELOCATE_AGAIN_MILLIS else RELOCATE_CALM_MILLIS
         mob.maneuvers++
@@ -1060,7 +1083,7 @@ class QuestEncounterCombat(
             ManeuverKind.HOP_BACK -> view.maneuver("hop_back")
             ManeuverKind.DASH -> view.maneuver(if (maneuver.sign > 0) "dash_l" else "dash_r")
             ManeuverKind.STRAFE -> mob.nextPathAt = now
-            ManeuverKind.RELOCATE -> view.maneuver("relocate")
+            ManeuverKind.RELOCATE, ManeuverKind.ADVANCE -> view.maneuver("relocate")
         }
         updateMovementSpeed(mob, now)
         return true
@@ -1090,6 +1113,7 @@ class QuestEncounterCombat(
                 ManeuverKind.STRAFE -> null
                 // 飛び移り→鱗粉弾 (第2形態から), 吐息 once enraged, else the dust burst where it landed
                 ManeuverKind.RELOCATE -> if (mob.enraged) "shade-breath" else if (mob.awakened) "shade-orb" else "shade-dust"
+                ManeuverKind.ADVANCE -> if (Random.nextBoolean()) "shade-bite" else "shade-pounce"   // lands on them biting
             }
             if (mob.combo != null) mob.warningRetryAt = now
             updateMovementSpeed(mob, now)
@@ -1150,7 +1174,10 @@ class QuestEncounterCombat(
     }
 
     /** A torn right fan (the side its wing-arm sweeps with) shortens the sweeps to [TORN_SWEEP_RADIUS]. */
-    private fun effectiveFrame(mob: Mob, frame: MobAbilityFrame): MobAbilityFrame {
+    private fun effectiveFrame(mob: Mob, raw: MobAbilityFrame): MobAbilityFrame {
+        // A carried attack strikes from where the body has got to (the charge keeps its band from the start).
+        val frame = if (raw.ability.id in TRAVEL && raw.ability.id != "shade-charge" && mob.view != null)
+            raw.copy(origin = mob.entity.position) else raw
         val shape = frame.ability.shape
         if (!mob.fanTorn[0] || shape !is MobAttackShape.Sweep || frame.ability.id !in setOf("shade-sweep", "shade-turnsweep")) return frame
         return frame.copy(ability = frame.ability.copy(shape = MobAttackShape.Sweep(minOf(shape.radius, TORN_SWEEP_RADIUS), shape.halfAngleDegrees)))
@@ -1223,6 +1250,7 @@ class QuestEncounterCombat(
 
     /** The dive carries the body over its target while it hangs in the air (between [DIVE_CARRY] ms of the clip). */
     private fun carryThroughAbility(mob: Mob, frame: MobAbilityFrame, now: Long) {
+        TRAVEL[frame.ability.id]?.let { travel(mob, frame, it, now); return }
         if (frame.ability.id != "shade-dive") return
         val from = mob.travelFrom ?: return
         val elapsed = now - frame.startedAt
@@ -1233,6 +1261,32 @@ class QuestEncounterCombat(
         val ground = telegraphs.groundHeight(to) ?: from.y()
         mob.entity.teleport(Pos(from.x() + (to.x() - from.x()) * e, from.y() + (ground - from.y()) * e, from.z() + (to.z() - from.z()) * e,
             mob.entity.position.yaw(), 0f))
+    }
+
+    /**
+     * The pounce lands on the player, the bites drive forward, the horn thrusts in, the charge bounds across the arena:
+     * the carrier moves with the clip (between the [Travel] window), so the wyrm comes at the player instead of
+     * standing still while the floor warns (藍「動き回らない・離れては殴るの繰り返し」).
+     */
+    private fun travel(mob: Mob, frame: MobAbilityFrame, travel: Travel, now: Long) {
+        val from = mob.travelFrom ?: return
+        val elapsed = now - frame.startedAt
+        if (elapsed < travel.from) return
+        val dir = normalizeHorizontal(frame.facing)
+        val to = mob.travelTo ?: run {
+            val distance = mob.target?.let { horizontalLength(it.position.sub(from)) } ?: 6.0
+            var reach = travel.reach(distance)
+            var spot: Pos? = null
+            while (spot == null && reach > 0.5) {               // stop short of the arena wall
+                spot = safeRetreat(from.add(dir.mul(reach)), mob.home, mob.definition.leashRange)
+                reach -= 1.0
+            }
+            (spot ?: from).also { mob.travelTo = it }
+        }
+        val k = ((elapsed - travel.from).toDouble() / (travel.to - travel.from)).coerceIn(0.0, 1.0)
+        val e = if (frame.ability.id == "shade-charge") k else k * k * (3 - 2 * k)
+        mob.entity.teleport(Pos(from.x() + (to.x() - from.x()) * e, from.y() + (to.y() - from.y()) * e, from.z() + (to.z() - from.z()) * e,
+            Pos.ZERO.withDirection(dir).yaw(), 0f))
     }
 
     private fun yawToward(from: Pos, to: net.minestom.server.coordinate.Point): Float =
@@ -1258,6 +1312,7 @@ class QuestEncounterCombat(
         when (event) {
             is MobAbilityEvent.Started -> {
                 mob.travelFrom = mob.entity.position
+                mob.travelTo = null
                 if (event.frame.ability.id == TURN_SWEEP) mob.behindSince = 0L
                 if (event.frame.ability.id == TAIL_SLAP) mob.tailslapAt = lastTickAt
                 when (event.frame.ability.id) {
@@ -1329,6 +1384,7 @@ class QuestEncounterCombat(
                     mob.combo = when (event.abilityId) {
                         "shade-bite" -> if (mob.awakened && Random.nextBoolean()) "shade-tailspin" else null
                         "shade-horn" -> if (Random.nextBoolean()) "shade-pounce" else null
+                        "shade-charge" -> if (Random.nextBoolean()) "shade-charge" else null   // turns at the wall and comes again
                         else -> null
                     }
                     if (mob.combo != null) mob.warningRetryAt = lastTickAt
@@ -1377,6 +1433,8 @@ class QuestEncounterCombat(
     }
 
     private fun drawWarning(mob: Mob, frame: MobAbilityFrame, impact: Boolean): Boolean {
+        // B (2026-10-19): the small attacks show no floor; they are read from the wyrm's wind-up and its sound.
+        if (mob.view != null && frame.ability.id in NO_FLOOR) return true
         if (!telegraphs.show(mob.entity.uuid, frame, impact, lastTickAt)) return false
         val color = when {
             impact -> NamedTextColor.RED
@@ -1417,6 +1475,18 @@ class QuestEncounterCombat(
         const val TURN_AFTER_MILLIS = 600L
         /** Behind it this long: the quick tail slap (once per [TAIL_SLAP_AGAIN_MILLIS]); still there: the turning sweep. */
         const val TAIL_SLAP = "shade-tailslap"
+        /** A (2026-10-19): attacks that carry the body, see [travel]. */
+        private val TRAVEL = mapOf(
+            "shade-pounce" to Travel(1120, 1400) { d -> (d - 2.0).coerceIn(2.0, 8.0) },
+            "shade-bite" to Travel(450, 1700) { d -> (d - 2.5).coerceIn(0.0, 3.6) },
+            "shade-horn" to Travel(850, 1050) { d -> (d - 1.5).coerceIn(0.0, 4.0) },
+            "shade-charge" to Travel(800, 2000) { _ -> 14.0 },
+        )
+        /** B (2026-10-19): read from the wind-up, no floor warning. */
+        val NO_FLOOR = setOf("shade-sweep", "shade-turnsweep", "shade-tailslap", "shade-bite", "shade-horn", "shade-tailspin",
+            "shade-pounce", "shade-pulse")
+        /** C (2026-10-19): flies at a player who got away, at most this often. */
+        const val ADVANCE_AGAIN_MILLIS = 8000L
         /** MMO gimmicks (see [knockDown]). */
         const val CHANNEL = "shade-channel"
         const val SHELL = "shade-shell"
