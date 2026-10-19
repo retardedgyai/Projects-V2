@@ -102,6 +102,8 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         CoreResource.BOSS_SIGIL -> CoreMenuArt.BOSS
         CoreResource.COMBAT_TOKEN -> CoreMenuArt.ORB
         CoreResource.AFFIX_DUST -> CoreMenuArt.DUST
+        CoreResource.MOONBELL, CoreResource.EMBER_MOSS, CoreResource.HOLLOW_CRYSTAL, CoreResource.WARM_ORE,
+        CoreResource.TIDEWING_FEATHER, CoreResource.WITHERED_CORE, CoreResource.ARCANE_CATALYST, CoreResource.MENDING_SEAL -> CoreMenuArt.ARCANE
     }
     private fun gearArt(gear: CoreGearSlot) = if (gear == CoreGearSlot.WEAPON) CoreMenuArt.WEAPON else CoreMenuArt.ARMOR
     /** A single piece on the anvil, not another rectangular menu card. */
@@ -292,10 +294,13 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val equipped = CoreSkillCatalog.equipped(a.journey, sheet.mods)
         val current = equipped[slot]
         val candidates = if (slot == 4) CoreSkillCatalog.skills(a.journey.job).drop(8) else CoreSkillCatalog.skills(a.journey.job).take(8)
-        val choice = candidate.takeIf { it in candidates.indices }
+        // Retired catalog entries stay in the list for old saves but are never offered.
+        val choices = if (slot == 4) CoreSkillCatalog.ultimateChoices(a.journey.job) else CoreSkillCatalog.normalChoices(a.journey.job)
+        val pages = (choices.size + 3) / 4
+        val choice = candidate.takeIf { it in choices }
         val preview = choice?.let { CoreSkillCatalog.modify(candidates[it],a.journey,sheet.mods) } ?: current
         val target = if(slot==4) "奥義" else "技能${slot+1}"
-        val selectedPage=if(slot==4)0 else page.coerceIn(0,1)
+        val selectedPage=page.coerceIn(0,pages-1)
         val canEquip=a.activeRun==null && CoreJourneyRules.skillUnlocked(a,slot) && choice!=null
         view(player, "${a.journey.job.displayName} / 技能編成", { skillBuild(player, slot, candidate, selectedPage) }) { v ->
             v.canvas.left("変更先：$target", lines("1. 上段で枠を選ぶ", "2. 候補で詳細を見る", "3. 右下で装備する", "", "現在の技能") + paragraph(current.name) + lines("", if(a.activeRun!=null) "遠征中は変更不可" else "港で無料変更", "重複する技は入替"))
@@ -307,20 +312,20 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 val item = CoreSkillTooltip.item(skill,sheet,a.journey,v.packed,!CoreJourneyRules.skillUnlocked(a,i))
                 tile(v, at, if (i == 4) 1 else 2, if (i == 4) "" else "${i+1}", item, if(i==slot) Tone.SELECTED else Tone.NEUTRAL, icon=true) { skillBuild(player, i) }
             }
-            candidates.withIndex().drop(selectedPage*4).take(4).forEachIndexed { shown, (i,raw) ->
+            choices.map { IndexedValue(it, candidates[it]) }.drop(selectedPage*4).take(4).forEachIndexed { shown, (i,raw) ->
                 val skill = CoreSkillCatalog.modify(raw, a.journey, sheet.mods)
                 val item = CoreSkillTooltip.item(skill,sheet,a.journey,v.packed)
                 val owned = if(slot == 4) a.journey.build.ultimate == i else a.journey.build.skills[slot] == i
-                val label=when(skill.icon) { "dash" -> "踏込斬り"; "hunt_storm" -> "狩場支配"; "mage_ult" -> "天火術式"; else -> skill.name }
+                val label=when(skill.icon) { "hunt_storm" -> "狩場支配"; "mage_ult" -> "天火術式"; else -> skill.name }
                 tile(v, listOf(18,22,27,31)[shown], 4, label, item,
                     if(choice==i) Tone.SELECTED else if(owned) Tone.PRIMARY else Tone.NEUTRAL, icon=true) {
                     skillBuild(player,slot,i,selectedPage)
                 }
             }
-            if(slot!=4) {
-                tile(v,36,3,"前の候補",tone=if(selectedPage==0)Tone.DISABLED else Tone.NEUTRAL) { skillBuild(player,slot,choice?:-1,0) }
-                tile(v,42,3,"次の候補",tone=if(selectedPage==1)Tone.DISABLED else Tone.NEUTRAL) { skillBuild(player,slot,choice?:-1,1) }
-                v.canvas.text(64,92,"${selectedPage+1} / 2",CoreUiComponents.GOLD,48)
+            if(pages>1) {
+                tile(v,36,3,"前の候補",tone=if(selectedPage==0)Tone.DISABLED else Tone.NEUTRAL) { skillBuild(player,slot,choice?:-1,selectedPage-1) }
+                tile(v,42,3,"次の候補",tone=if(selectedPage==pages-1)Tone.DISABLED else Tone.NEUTRAL) { skillBuild(player,slot,choice?:-1,selectedPage+1) }
+                v.canvas.text(64,92,"${selectedPage+1} / $pages",CoreUiComponents.GOLD,48)
             }
             back(v,player) { career(player) }
             tile(v,49,5,if(canEquip) "$target に装備" else if(a.activeRun!=null) "港で変更可能" else if(!CoreJourneyRules.skillUnlocked(a,slot)) "成長で解放" else "候補を選ぶ",tone=if(canEquip)Tone.PRIMARY else Tone.DISABLED) {
@@ -336,7 +341,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val sheet=game.combatSheet(player) ?: CoreCombatSheet.from(a)
         val equipped=CoreSkillCatalog.equipped(a.journey,sheet.mods)
         val candidates=CoreSkillCatalog.skills(CoreClass.WARRIOR).let { if(slot==4) it.drop(8) else it.take(8) }
-        val choice=candidate.takeIf { it in candidates.indices }
+        val choice=candidate.takeIf { CoreSkillCatalog.selectable(CoreClass.WARRIOR,slot,it) }
         val preview=choice?.let { CoreSkillCatalog.modify(candidates[it],a.journey,sheet.mods) } ?: equipped[slot]
         val identity=CoreWarriorSkillPresentation.skills.getValue(preview.icon)
         val target="キー${slot+2}"
@@ -377,7 +382,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                     CoreSkillTooltip.item(s,sheet,a.journey,v.packed,!CoreJourneyRules.skillUnlocked(a,i),
                         footer="キー${i+2} / この枠の技を変更"),if(i==slot)Tone.SELECTED else Tone.NEUTRAL,icon=true) { warriorSkills(player,i,-1) }
             }
-            val order=if(slot==4) listOf(0,1) else CoreWarriorSkillPresentation.candidateOrder
+            val order=if(slot==4) CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR) else CoreWarriorSkillPresentation.candidateOrder
             order.forEachIndexed { index,i ->
                 val skill=CoreSkillCatalog.modify(candidates[i],a.journey,sheet.mods)
                 val equippedHere=if(slot==4) a.journey.build.ultimate==i else a.journey.build.skills[slot]==i
@@ -419,7 +424,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             nodes.forEachIndexed { i, node ->
                 val learned=build.has(i)
                 val available=runCatching { build.toggle(i,budget) }.isSuccess
-                val art=CoreSkillCatalog.skills(a.journey.job)[when(i) { 2,5,8 -> 8+i/3%2;9,10,14 -> CoreClassTrees.signature(a.journey.job);11,13 -> 0;12 -> 3;15 -> 5;16,17 -> 9;else -> i.coerceAtMost(7) }].icon
+                val art=CoreSkillCatalog.skills(a.journey.job)[when(i) { 2,5,8 -> 8+i/3%2;9,10,14 -> CoreClassTrees.signature(a.journey.job);11,13 -> 0;12 -> 3;15 -> CoreClassTrees.support(a.journey.job);16,17 -> 9;else -> i.coerceAtMost(7) }].icon
                 var item=CoreLoopItems.icon(if(learned)Material.ENCHANTED_BOOK else Material.BOOK,node.name,node.description,
                     if(learned) "習得済み" else if(available) "習得可能 / 1ポイント" else "前提未達・ポイント不足・最終パッシブの排他", "クリック：詳細を確認")
                 if(v.packed)item=item.withItemModel("projects:core_ui/$art")
@@ -598,7 +603,8 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         card(v, ENHANCE_STANDARD, 3, 1, "通常", CoreMenuArt.ENHANCE, CoreLoopItems.icon(Material.IRON_INGOT, "通常強化", "追加の精錬触媒を消費しません", "素材Tierは装備Tierではなく強化段階によって決まります"),
             if (maximum) Tone.DISABLED else if (mode == CoreEnhancementMode.STANDARD) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(focused = false)) }
         val standard = CoreEnhancementCatalog.quote(a, s.gear)
-        card(v, ENHANCE_CATALYST, 3, 1, "触媒", CoreMenuArt.SHARD, CoreLoopItems.icon(Material.GLOWSTONE_DUST, "精錬触媒を追加", "追加素材を消費し成功率+15ポイント", "費用・成功率を表示してから実行できます"),
+        card(v, ENHANCE_CATALYST, 3, 1, "触媒", CoreMenuArt.SHARD, CoreLoopItems.icon(Material.GLOWSTONE_DUST, "精錬触媒を追加", "追加素材を消費し成功率+15ポイント",
+                "星鉄の触媒を所持していればそれを1個使い +${CoreMmoTuning.balance.researchCatalystBonusPercent}（魔術の研究品・市場で購入可）", "費用・成功率を表示してから実行できます"),
             if (maximum || standard.guaranteed) Tone.DISABLED else if (mode == CoreEnhancementMode.FOCUSED) Tone.SELECTED else Tone.NEUTRAL) { forge(player, s.copy(focused = true)) }
         if (CoreEconomy.broken(a, s.gear))
             card(v, 42, 3, 1, "修理へ", CoreMenuArt.ENHANCE, CoreLoopItems.icon(Material.ANVIL, "破損した装備を修理する")) { repairMenu(player, s.gear) }
@@ -802,6 +808,8 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         CoreResource.LEATHER -> "革"
         CoreResource.GATHERING_TABLET -> "石板"
         CoreResource.COMBAT_TOKEN -> "戦利品"
+        CoreResource.ARCANE_CATALYST -> "星鉄触媒"
+        CoreResource.MENDING_SEAL -> "封蝋"
         else -> resourceName(resource)
     }
 
@@ -989,6 +997,14 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 if (current > 0) { v.items[47] = CoreLoopItems.icon(Material.ARROW, "前へ"); v.actions[47] = { repairMenu(player, slot, current - 1) } }
                 if (current < last) { v.items[51] = CoreLoopItems.icon(Material.ARROW, "次へ"); v.actions[51] = { repairMenu(player, slot, current + 1) } }
             }
+            val seals = CoreAffixCatalog.gearTier(a, slot).toLong() * CoreMmoTuning.balance.researchSealsPerTier
+            val held = a.amount(CoreResource.MENDING_SEAL)
+            if (broken && selected == null) {
+                v.items[53] = CoreLoopItems.icon(if (held >= seals) Material.HONEYCOMB else Material.BARRIER,
+                    if (held >= seals) "修復の封蝋${seals}個で修理する" else "修復の封蝋が${seals - held}個不足",
+                    "予備装備を消費しない修理（魔術の研究品）", "所持 $held / 必要 $seals（Tier×${CoreMmoTuning.balance.researchSealsPerTier}）", "市場で研究者から購入できます")
+                if (held >= seals) v.actions[53] = { mutate(v, player, CoreAction.SealRepair(slot), a.revision) { equipmentStock(player) } }
+            }
             v.items[45] = CoreLoopItems.icon(Material.ARROW, "戻る")
             v.actions[45] = { if (selected == null) equipmentStock(player) else repairMenu(player, slot, current) }
         }
@@ -1022,7 +1038,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                     if (repairFor != null && tier != t) "修理材料はT${tier}のみ" else "T$t の出品を見る")
                 if (repairFor == null) v.actions[(t - 1) * 2] = { supplies(player, t, selected) }
             }
-            v.items[8] = CoreLoopItems.icon(Material.BOOK, "採取者・職人・戦闘者の市場", "素材は採取者が集め、職人が装備を制作", "戦利品券 → 銀貨 → 素材や装備を購入", "成約手数料5% / 出品時の消費なし",
+            v.items[8] = CoreLoopItems.icon(Material.BOOK, "採取者・職人・戦闘者の市場", "素材は採取者が集め、職人が装備を制作", "戦利品券 → 銀貨 → 素材や装備を購入", "魔術：研究素材と研究品（触媒・封蝋）はT1で売買", "成約手数料5% / 出品時の消費なし",
                 if (repairFor != null) "同Tier・同系統・+0・未破損のみ表示" else "クリックで素材フィルターを解除", "クリックで市場の全商品へ")
             v.actions[8] = { supplies(player, tier) }
             entries.drop(current * 36).take(36).forEachIndexed { index, entry ->
@@ -1213,6 +1229,11 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             (CoreLoopCatalog.refined.keys + CoreLoopCatalog.refined.values).forEachIndexed { i, r ->
                 v.items[10 + i] = CoreLoopItems.icon(CoreLoopItems.resourceMaterial(r), r.displayName)
                 v.actions[10 + i] = { orderQuote(player, tier, r) }
+            }
+            // Research goods exist only as T1: samples for researchers, products for smiths and fighters.
+            if (tier == 1) CoreResource.entries.filter { it.research }.forEachIndexed { i, r ->
+                v.items[37 + i] = CoreLoopItems.icon(CoreLoopItems.resourceMaterial(r), r.displayName, ResearchGoods.effect(r))
+                v.actions[37 + i] = { orderQuote(player, tier, r) }
             }
             CoreGearSlot.equipSlots.forEachIndexed { i, s -> v.items[30 + i] = CoreLoopItems.icon(if (s == CoreGearSlot.WEAPON) Material.IRON_SWORD else Material.IRON_CHESTPLATE, "T$tier ${s.displayName} +0")
                 v.actions[30 + i] = { orderQuote(player, tier, slot = s) } }

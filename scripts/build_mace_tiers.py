@@ -74,7 +74,7 @@ def build():
     base,parts,textures,anchors=geometry('mace',first)
     loaded={1:(base,parts,textures,anchors)}
     write_json(PACK/'pack.mcmeta',{'pack':{'description':'ProjectS mace tiers / isolated review',
-        'min_format':[88,0],'max_format':[88,0]}})
+        'min_format':[97, 1],'max_format':[97, 1]}})
     for tier in JOBS:
         pixels,textures,entry,base,parts,anchors=model_data(tier)
         key=tier_key(tier); manifest['tiers'][str(tier)]=entry

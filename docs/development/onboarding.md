@@ -59,7 +59,7 @@ Server:
 ./gradlew :server-minestom:run
 ```
 
-Client: Vanilla Minecraft 26.2を起動し、マルチプレイで `localhost` に接続します。
+Client: Vanilla Minecraft 26.3を起動し、マルチプレイで `localhost` に接続します。
 
 ## First Playground
 

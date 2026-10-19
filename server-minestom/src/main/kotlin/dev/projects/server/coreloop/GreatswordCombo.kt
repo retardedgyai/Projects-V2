@@ -1,6 +1,7 @@
 package dev.projects.server.coreloop
 
 import dev.projects.server.mob.CombatTarget
+import dev.projects.server.mob.meleeHit
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import kotlin.math.*
@@ -61,6 +62,7 @@ internal class GreatswordCombo {
 
 /** Feet-relative vertical overlap is symmetric on slopes, unlike comparing feet to mob center. */
 internal fun greatswordInRange(origin: Point, direction: Vec, target: CombatTarget, range: Double = 4.5, minDot: Double = .4): Boolean {
+    if (target.parts.isNotEmpty()) return target.parts.meleeHit(origin, direction, range, minDot)
     if (!listOf(origin.x(), origin.y(), origin.z(), direction.x(), direction.y(), direction.z(),
             target.position.x(), target.position.y(), target.position.z(), target.halfExtent.y(), range, minDot).all { it.isFinite() }) return false
     val dx = target.position.x() - origin.x()

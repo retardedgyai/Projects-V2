@@ -9,7 +9,8 @@ import json
 import shutil
 import struct
 import zlib
-from build_core_hud_assets import build_hud, SKILLS, class_ornament, fit_skill, skill_frame
+from build_core_hud_assets import SKILLS, class_ornament, fit_skill, skill_frame
+from build_combat_hud import build_combat_hud
 from build_core_menu_assets import build_menu
 from build_core_combat_models import build_combat_models
 from PIL import Image
@@ -71,7 +72,7 @@ def build():
         with Image.open(master) as original:
             # Frame is part of the menu icon, but never baked back into the authored master.
             skill_frame(fit_skill(original), 0, class_ornament(name, SOURCE), key_badge=False).save(ASSETS / f"textures/gui/skills/{name}.png")
-    write_json(PACK / "pack.mcmeta", {"pack": {"description": "ProjectS · 開拓者のUI / Vanilla 26.2", "min_format": [88, 0], "max_format": [88, 0]}})
+    write_json(PACK / "pack.mcmeta", {"pack": {"description": "ProjectS · 開拓者のUI / Vanilla 26.3", "min_format": [97, 1], "max_format": [97, 1]}})
     stats = [("attack", "attack_power"), ("speed", "attack_speed"), ("critical", "magic_power"), ("defense", "defense"),
              ("health", "health"), ("magic", "magic_power"), ("mana", "mana"), ("reward", "xp"), ("mod", "level")]
     skills = [(name, 0xE021 + index) for index, name in enumerate(SKILLS)]
@@ -143,10 +144,10 @@ def build():
         item_model(name, f"skills/{name}")
     image("blank", 1, 1, [])
     item_model("blank", "core/blank")
-    build_hud(ASSETS, SOURCE, write_json)
     build_menu()
-    from build_warrior_hud import build as build_warrior_hud
-    build_warrior_hud(ASSETS, write_json)
+    # After build_menu: it fetches the pinned MaruMinya font the HUD caption text is cut from.
+    from build_core_menu_assets import repertoire
+    build_combat_hud(ASSETS, PACK, SOURCE, write_json, repertoire())
     build_combat_models(ASSETS, write_json)
     paths = sorted(str(path.relative_to(PACK)).replace("\\", "/") for path in PACK.rglob("*") if path.is_file() and path.name != "index.txt")
     (PACK / "index.txt").write_text("\n".join(paths) + "\n", encoding="utf-8")

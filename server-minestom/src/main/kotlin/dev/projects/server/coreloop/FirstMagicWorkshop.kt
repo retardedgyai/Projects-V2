@@ -9,31 +9,34 @@ import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import java.nio.file.Path
 import java.util.UUID
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executor
 
-internal class FirstMagicService(directory: Path, private val io: Executor) {
+/** Samples live in the core ledger; this sidecar keeps research progress, ink and Essentia. Call on the ledger executor. */
+internal class FirstMagicService(directory: Path) {
     private val repository = FirstMagicRepository(directory)
     private val states = ConcurrentHashMap<UUID, FirstMagicState>()
 
     fun load(playerId: UUID) { states[playerId] = repository.load(playerId) }
     fun snapshot(playerId: UUID): FirstMagicState? = states[playerId]
-    fun change(playerId: UUID, action: FirstMagicAction): CompletableFuture<FirstMagicChange> = CompletableFuture.supplyAsync({
+    /** The rules see the ledger's sample counts; nothing is saved. */
+    fun preview(playerId: UUID, action: FirstMagicAction, samples: Map<AnomalousMaterial, Int>): FirstMagicChange {
         val before = requireNotNull(states[playerId]) { "First-magic state is not loaded" }
-        val result = FirstMagicRules.apply(before, action)
-        if (result.changed) {
-            repository.save(playerId, result.state)
-            states[playerId] = result.state
-        }
-        result
-    }, io)
-    fun forget(playerId: UUID) { io.execute { states.remove(playerId) } }
+        return FirstMagicRules.apply(before.copy(materialCounts = samples), action)
+    }
+    fun commit(playerId: UUID, state: FirstMagicState) {
+        val stored = state.copy(materialCounts = emptyMap())
+        repository.save(playerId, stored)
+        states[playerId] = stored
+    }
+    /** Only after the ledger holds the legacy samples (see ResearchDesk.migrateLegacyMaterials). */
+    fun clearLegacyMaterials(playerId: UUID) = commit(playerId, requireNotNull(states[playerId]))
+    fun forget(playerId: UUID) { states.remove(playerId) }
 }
 
 /** Clear native slots with a book-and-brass palette; usable with or without the optional resource pack. */
 internal class FirstMagicWorkshop(
     private val state: (Player) -> FirstMagicState?,
+    private val silver: (Player) -> Long,
     private val change: (Player, FirstMagicAction, () -> Unit) -> Unit,
     private val inColony: (Player) -> Boolean,
     private val exit: (Player) -> Unit,
@@ -90,7 +93,7 @@ internal class FirstMagicWorkshop(
             CoreLoopItems.icon(if (index < 9 || index >= 45 || index % 9 == 0 || index % 9 == 8)
                 Material.BROWN_STAINED_GLASS_PANE else Material.GRAY_STAINED_GLASS_PANE, " ")
         }
-    private enum class Page { DESK, DISTILLER, JARS, JOURNAL, RESEARCH, COMBINE }
+    private enum class Page { DESK, DISTILLER, JARS, JOURNAL, RESEARCH, COMBINE, CRAFT }
     private fun show(player: Player, page: Page, title: String, progress: FirstMagicState,
                      items: Array<ItemStack>, actions: Map<Int, () -> Unit>, redraw: () -> Unit) {
         if (!inColony(player)) return
@@ -103,6 +106,7 @@ internal class FirstMagicWorkshop(
                 Page.JOURNAL -> CoreMenuCanvas.Background.FIRST_MAGIC_JOURNAL
                 Page.RESEARCH -> CoreMenuCanvas.Background.FIRST_MAGIC_JOURNAL
                 Page.COMBINE -> CoreMenuCanvas.Background.FIRST_MAGIC_DESK
+                Page.CRAFT -> CoreMenuCanvas.Background.FIRST_MAGIC_DISTILLER
             })
             val known = progress.knownAspects.size
             val collected = AnomalousMaterial.entries.count { progress.count(it) > 0 }
@@ -123,8 +127,9 @@ internal class FirstMagicWorkshop(
                         CoreMenuCanvas.Line("紙上の小さな星図は"),
                         CoreMenuCanvas.Line("持ち帰った未知に応える"),
                         CoreMenuCanvas.Line(""),
-                        CoreMenuCanvas.Line("素材を選ぶと分析"),
-                        CoreMenuCanvas.Line("素材は消費しない"),
+                        CoreMenuCanvas.Line("未分析：分析は無料"),
+                        CoreMenuCanvas.Line("分析済：インク調合"),
+                        CoreMenuCanvas.Line("素材1・銀貨${CoreMmoTuning.balance.researchInkSilver}"),
                     ))
                 }
                 Page.DISTILLER -> {
@@ -133,7 +138,7 @@ internal class FirstMagicWorkshop(
                         CoreMenuCanvas.Line("炉が約3秒で加熱"),
                         CoreMenuCanvas.Line("冷却管からJarへ"),
                         CoreMenuCanvas.Line(""),
-                        CoreMenuCanvas.Line("投入素材は1個消費"),
+                        CoreMenuCanvas.Line("素材1・燃料 銀貨${CoreMmoTuning.balance.researchDistillSilver}"),
                         CoreMenuCanvas.Line("対応するJarを先に置く"),
                         CoreMenuCanvas.Line("Jar上限 16 / 性質"),
                     ))
@@ -183,6 +188,7 @@ internal class FirstMagicWorkshop(
                         CoreMenuCanvas.Line("固定点が全てつながれば解明"),
                         CoreMenuCanvas.Line(""),
                         CoreMenuCanvas.Line("解明 ${progress.unlockedResearch.size} / ${ResearchCatalog.all.size}"),
+                        CoreMenuCanvas.Line("解明で調合品が開く"),
                     ))
                     canvas.right("研究インク", listOf(
                         CoreMenuCanvas.Line("所持した性質を一つ消費"),
@@ -205,6 +211,24 @@ internal class FirstMagicWorkshop(
                         CoreMenuCanvas.Line("研究盤で接続できる"),
                         CoreMenuCanvas.Line(""),
                         CoreMenuCanvas.Line("火 + 風 → 光"),
+                    ))
+                }
+                Page.CRAFT -> {
+                    canvas.left("研究の調合台", listOf(
+                        CoreMenuCanvas.Line("解明した研究ごとに一品"),
+                        CoreMenuCanvas.Line("Essentia + 港の素材"),
+                        CoreMenuCanvas.Line("調合料 銀貨${CoreMmoTuning.balance.researchCraftSilver}"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("完成品は市場で売れる"),
+                        CoreMenuCanvas.Line("解明そのものは売れない"),
+                    ))
+                    canvas.right("誰が買うか", listOf(
+                        CoreMenuCanvas.Line("星鉄の触媒"),
+                        CoreMenuCanvas.Line("  鍛冶の強化成功率"),
+                        CoreMenuCanvas.Line("修復の封蝋"),
+                        CoreMenuCanvas.Line("  破損装備の修理"),
+                        CoreMenuCanvas.Line(""),
+                        CoreMenuCanvas.Line("所持 銀貨 ${silver(player)}"),
                     ))
                 }
             }
@@ -231,8 +255,10 @@ internal class FirstMagicWorkshop(
             val detail = if (known) material.aspects.entries.joinToString("  ") { "${it.key.name} ×${it.value}" } else "性質はまだ不明"
             items[materialSlots[index]] = magicIcon(player, materialArt(material), materialIcon(material),
                 "${material.label}  ×${progress.count(material)}", detail,
-                if (progress.count(material) > 0 && !known) "クリックで分析 / 素材は残る" else if (known) "記録帳に保存済み" else "遠征で拾える")
-            actions[materialSlots[index]] = { change(player, FirstMagicAction.Analyze(material)) { desk(player) } }
+                if (progress.count(material) > 0 && !known) "クリックで分析（無料）/ 素材は残る"
+                else if (known) "クリック：研究インク調合 素材1・銀貨${CoreMmoTuning.balance.researchInkSilver}" else "遠征で拾う / 港の市場で買う",
+                if (known) "インク ${material.researchAspects().joinToString(" ") { "${AspectCatalog.byId.getValue(it).name.substringBefore(" /")} +${CoreMmoTuning.balance.researchInkYield}" }}" else "")
+            actions[materialSlots[index]] = { change(player, if (known) FirstMagicAction.BrewInk(material) else FirstMagicAction.Analyze(material)) { desk(player) } }
         }
         FirstAspect.entries.forEachIndexed { index, aspect ->
             val known = aspect in progress.knownAspects
@@ -245,6 +271,8 @@ internal class FirstMagicWorkshop(
         actions[40] = { journal(player) }
         items[41] = magicIcon(player, "journal", Material.ENCHANTED_BOOK, "研究の星図", "六角盤で研究を解明する")
         actions[41] = { researchList(player) }
+        items[39] = magicIcon(player, "jar", Material.BLAZE_POWDER, "研究の調合台", "解明した研究から売れる品を作る", "銀貨 ${silver(player)}")
+        actions[39] = { craftList(player) }
         items[49] = magicIcon(player, "distiller", Material.BREWING_STAND, "蒸留器へ", "分析済み素材からEssentiaを抽出")
         actions[49] = { distiller(player) }
         show(player, Page.DESK, "観測工房・研究机", progress, items, actions) { desk(player) }
@@ -263,7 +291,8 @@ internal class FirstMagicWorkshop(
         AnomalousMaterial.entries.forEachIndexed { index, material ->
             val known = material in progress.studied
             val detail = if (known) material.aspects.entries.joinToString("  ") { "${it.key.name} +${it.value}" } else "研究机で先に分析"
-            items[materialSlots[index]] = magicIcon(player, materialArt(material), materialIcon(material), "${material.label} ×${progress.count(material)}", detail, "クリックで蒸留開始")
+            items[materialSlots[index]] = magicIcon(player, materialArt(material), materialIcon(material), "${material.label} ×${progress.count(material)}", detail,
+                "クリックで蒸留 / 素材1・燃料 銀貨${CoreMmoTuning.balance.researchDistillSilver}", "足りなければ港の市場で買う")
             actions[materialSlots[index]] = { startDistillation(player, material) }
         }
         FirstAspect.entries.forEachIndexed { index, aspect ->
@@ -287,6 +316,10 @@ internal class FirstMagicWorkshop(
         }
         if (material.aspects.keys.any { !jarPlaced(player, it) }) {
             player.sendMessage(CoreLoopItems.text("${material.label}に対応するJarを先に配置しよう", NamedTextColor.YELLOW))
+            return
+        }
+        if (silver(player) < CoreMmoTuning.balance.researchDistillSilver) {
+            player.sendMessage(CoreLoopItems.text("燃料の銀貨${CoreMmoTuning.balance.researchDistillSilver}枚が必要です", NamedTextColor.YELLOW))
             return
         }
         brewing[player.uuid] = material to (player.aliveTicks + 60)
@@ -383,6 +416,7 @@ internal class FirstMagicWorkshop(
             val unlocked = research.id in progress.unlockedResearch
             items[slots[index]] = CoreLoopItems.icon(if (unlocked) Material.ENCHANTED_BOOK else Material.BOOK,
                 "${if (unlocked) "✦" else "◇"} ${research.title}", research.description,
+                *unlockLore(research.id, unlocked).toTypedArray(),
                 if (unlocked) "解明済み / クリックで盤面を見る" else "クリックで研究を開く")
             actions[slots[index]] = { researchBoard(player, research.id) }
         }
@@ -392,6 +426,8 @@ internal class FirstMagicWorkshop(
         if ((page + 1) * 5 < ResearchCatalog.all.size) actions[44] = { researchList(player, page + 1) }
         items[40] = magicIcon(player, "desk", Material.LECTERN, "Aspectを合成", "新しい性質を発見する")
         actions[40] = { combineList(player) }
+        items[42] = magicIcon(player, "jar", Material.BLAZE_POWDER, "研究の調合台", "解明した研究から売れる品を作る")
+        actions[42] = { craftList(player) }
         items[49] = magicIcon(player, "journal", Material.WRITABLE_BOOK, "記録帳へ")
         actions[49] = { journal(player) }
         show(player, Page.RESEARCH, "研究の星図 ${page + 1}/2", progress, items, actions) { researchList(player, page) }
@@ -454,10 +490,50 @@ internal class FirstMagicWorkshop(
         actions[45] = { researchList(player) }
         items[49] = CoreLoopItems.icon(if (researchId in progress.unlockedResearch) Material.ENCHANTED_BOOK else Material.WRITABLE_BOOK,
             research.title, research.description,
-            if (researchId in progress.unlockedResearch) "研究解明済み" else "手がかり ${connected.size} / ${research.anchors.size} 接続")
+            if (researchId in progress.unlockedResearch) "研究解明済み" else "手がかり ${connected.size} / ${research.anchors.size} 接続",
+            *unlockLore(researchId, researchId in progress.unlockedResearch).toTypedArray())
         items[51] = CoreLoopItems.icon(Material.AMETHYST_SHARD, "Aspect合成へ")
         actions[51] = { combineList(player) }
         show(player, Page.RESEARCH, "研究盤・${research.title}", progress, items, actions) { researchBoard(player, researchId) }
+    }
+
+    private fun unlockLore(researchId: String, unlocked: Boolean): List<String> {
+        val recipe = ResearchRecipes.byResearch[researchId] ?: return emptyList()
+        return listOf(
+            "${if (unlocked) "解放済み" else "解明すると"}：${recipe.product.displayName}を調合できる",
+            "  Essentia ${recipe.essentiaLabel()} + ${recipe.materials.entries.joinToString { "${it.key.displayName}×${it.value}" }}",
+            "  調合料 銀貨${CoreMmoTuning.balance.researchCraftSilver}（消滅）",
+            "  ${ResearchGoods.effect(recipe.product)}",
+        )
+    }
+
+    fun craftList(player: Player) {
+        val progress = state(player) ?: return
+        if (!progress.deskRestored) { desk(player); return }
+        val items = frame(player)
+        val actions = mutableMapOf<Int, () -> Unit>()
+        items[4] = magicIcon(player, "jar", Material.BLAZE_POWDER, "研究の調合台",
+            "解明 ${progress.unlockedResearch.size} / ${ResearchCatalog.all.size}", "銀貨 ${silver(player)}")
+        val slots = listOf(10, 12, 14, 16, 22, 28, 30, 32, 34, 40)
+        ResearchRecipes.all.forEachIndexed { index, recipe ->
+            val research = ResearchCatalog.byId.getValue(recipe.researchId)
+            val unlocked = recipe.researchId in progress.unlockedResearch
+            val essentiaReady = recipe.essentia.all { (aspect, amount) -> progress.jar(aspect) >= amount }
+            val silverReady = silver(player) >= CoreMmoTuning.balance.researchCraftSilver
+            items[slots[index]] = CoreLoopItems.icon(if (!unlocked) Material.GRAY_DYE else CoreLoopItems.resourceMaterial(recipe.product),
+                "${if (unlocked) "✦" else "◇"} ${recipe.product.displayName}（${research.title}）",
+                "Essentia ${recipe.essentiaLabel()}  ${if (essentiaReady) "✓" else "不足"}",
+                "${recipe.materials.entries.joinToString { "${it.key.displayName}×${it.value}" }}（港の市場で購入可）",
+                "調合料 銀貨${CoreMmoTuning.balance.researchCraftSilver}  ${if (silverReady) "✓" else "不足"}",
+                ResearchGoods.effect(recipe.product),
+                if (!unlocked) "研究「${research.title}」を解明すると開く" else "クリックで1個調合 / 完成品は市場で売れる")
+            if (unlocked) actions[slots[index]] = { change(player, FirstMagicAction.Craft(recipe.researchId)) { craftList(player) } }
+        }
+        items[49] = magicIcon(player, "journal", Material.ENCHANTED_BOOK, "研究の星図へ")
+        actions[49] = { researchList(player) }
+        items[45] = magicIcon(player, "desk", Material.LECTERN, "研究机へ")
+        actions[45] = { desk(player) }
+        show(player, Page.CRAFT, "研究の調合台", progress, items, actions) { craftList(player) }
     }
 
     private fun chooseResearchInk(player: Player, researchId: String, slot: Int, page: Int = 0) {

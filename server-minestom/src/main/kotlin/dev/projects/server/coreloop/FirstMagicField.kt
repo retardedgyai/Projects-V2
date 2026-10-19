@@ -21,8 +21,10 @@ import java.util.concurrent.CompletableFuture
 internal class FirstMagicField(
     private val player: Player,
     private val runtime: VerdantRoadQuestRuntime,
-    private val collect: (AnomalousMaterial) -> CompletableFuture<FirstMagicChange>,
+    /** A durable ledger reward (once per run per sample); the sample is then a tradeable market good. */
+    private val collect: (AnomalousMaterial) -> CompletableFuture<CoreTransactionResult>,
     private val packed: (Player) -> Boolean,
+    private val collected: () -> Unit,
 ) {
     private class Find(val material: AnomalousMaterial, val position: Pos, val displays: List<Entity>) {
         var pending = false
@@ -88,24 +90,22 @@ internal class FirstMagicField(
         val find = finds.firstOrNull { target in it.displays } ?: return false
         if (closed || player.instance !== runtime.instance || !player.isOnline || find.claimed) return true
         if (player.position.distanceSquared(find.position) > 5.0 * 5.0 || find.pending) return true
-        if (!FirstMagicInventory.canAdd(player, find.material)) {
+        if (!CoreLoopItems.canCarry(player, ResearchGoods.material(find.material))) {
             player.sendMessage(CoreLoopItems.text("インベントリがいっぱいです。空きを作ってから採取してください", NamedTextColor.YELLOW))
             return true
         }
         find.pending = true
-        collect(find.material).whenComplete { change, failure ->
+        collect(find.material).whenComplete { result, failure ->
             MinecraftServer.getSchedulerManager().scheduleNextTick {
                 if (closed) return@scheduleNextTick
-                if (failure == null && change?.changed == true) {
-                    if (!FirstMagicInventory.add(player, find.material, packed(player))) {
-                        // Keep the saved find available for recovery after reconnect.
-                        player.sendMessage(CoreLoopItems.text("所持品に空きがなくなりました。再接続すると素材を復元できます", NamedTextColor.RED))
-                    } else player.sendMessage(CoreLoopItems.text("${find.material.label}を採取し、インベントリに入れた", NamedTextColor.AQUA))
+                if (failure == null && result?.successful == true) {
+                    player.sendMessage(CoreLoopItems.text("${find.material.label}を採取した。研究に使うか、港の市場で売れる", NamedTextColor.AQUA))
                     find.claimed = true
                     find.displays.forEach(Entity::remove)
+                    collected()
                 } else {
                     find.pending = false
-                    if (player.isOnline) player.sendMessage(CoreLoopItems.text(change?.message ?: "採取を保存できませんでした", NamedTextColor.RED))
+                    if (player.isOnline) player.sendMessage(CoreLoopItems.text(result?.message ?: "採取を保存できませんでした", NamedTextColor.RED))
                 }
             }
         }

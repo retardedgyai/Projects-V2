@@ -1,0 +1,2176 @@
+"""Throwaway direction mocks for the combat HUD rework (not the real pack output).
+
+    python scripts/mock_combat_hud_directions.py
+
+Draws the whole 480x270 GUI (GUI scale 4 at 1920x1080) for three directions and writes
+build/hud-preview/directions/<name>-2x.png and -4x.png. Vanilla sprites and the ascii font are read
+from the local 26.2 client jar for context only; nothing here goes into the pack.
+"""
+from pathlib import Path
+import math
+import os
+import zipfile
+
+from PIL import Image, ImageDraw, ImageFont
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "build/hud-preview/directions"
+JAR = zipfile.ZipFile(Path(os.environ.get("APPDATA", Path.home())) / ".minecraft/versions/26.2/26.2.jar")
+SKILLS = ROOT / "assets/core-ui/skills"
+MARU = ImageFont.truetype(str(ROOT / ".tools/core-menu/x12y12pxMaruMinya.ttf"), 12)
+W, H, C = 480, 270, 240
+HB_X, HB_Y = C - 91, H - 22
+
+
+def tex(path):
+    with JAR.open(f"assets/minecraft/textures/{path}.png") as f:
+        return Image.open(f).convert("RGBA")
+
+
+ASCII = tex("font/ascii")
+
+
+def rgba(hex_, a=255):
+    hex_ = hex_.lstrip("#")
+    return tuple(int(hex_[i:i + 2], 16) for i in (0, 2, 4)) + (a,)
+
+
+def over(canvas, box, color):
+    """Alpha-composite a filled rectangle; box is x0,y0,x1,y1 exclusive."""
+    x0, y0, x1, y1 = box
+    if x1 <= x0 or y1 <= y0:
+        return
+    canvas.alpha_composite(Image.new("RGBA", (x1 - x0, y1 - y0), color), (x0, y0))
+
+
+def px(canvas, x, y, color):
+    over(canvas, (x, y, x + 1, y + 1), color)
+
+
+def tinted(image, color):
+    out = Image.new("RGBA", image.size, color[:3] + (0,))
+    alpha = image.getchannel("A").point(lambda v: v * color[3] // 255)
+    out.putalpha(alpha)
+    return out
+
+
+# ---- text -------------------------------------------------------------------------------------
+
+def _mc_glyph(ch):
+    code = ord(ch)
+    cell = ASCII.crop((code % 16 * 8, code // 16 * 8, code % 16 * 8 + 8, code // 16 * 8 + 8))
+    if ch == " ":
+        return cell, 4
+    cols = [x for x in range(8) if any(cell.getpixel((x, y))[3] for y in range(8))]
+    return cell, (max(cols) + 2) if cols else 4
+
+
+def mc_width(s):
+    return sum(_mc_glyph(c)[1] for c in s) - 1
+
+
+def mc_text(canvas, x, y, s, color, shadow=True, outline=False):
+    for ch in s:
+        glyph, adv = _mc_glyph(ch)
+        if outline:
+            for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                canvas.alpha_composite(tinted(glyph, (0, 0, 0, 255)), (x + dx, y + dy))
+        elif shadow:
+            shade = tuple(v // 4 for v in color[:3]) + (color[3],)
+            canvas.alpha_composite(tinted(glyph, shade), (x + 1, y + 1))
+        canvas.alpha_composite(tinted(glyph, color), (x, y))
+        x += adv
+    return x
+
+
+def jp_mask(s):
+    box = MARU.getbbox(s)
+    mask = Image.new("L", (box[2] + 2, 14))
+    d = ImageDraw.Draw(mask)
+    d.fontmode = "1"
+    d.text((0, 0), s, font=MARU, fill=255)
+    return mask
+
+
+def jp_width(s):
+    return jp_mask(s).getbbox()[2]
+
+
+def jp_text(canvas, x, y, s, color, style="shadow"):
+    mask = jp_mask(s)
+    solid = lambda c: Image.merge("RGBA", [Image.new("L", mask.size, v) for v in c[:3]] + [mask.point(lambda v: v * c[3] // 255)])
+    if style == "outline":
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (-1, 1), (1, -1)):
+            canvas.alpha_composite(solid((0, 0, 0, 200)), (x + dx, y + dy))
+    elif style == "shadow":
+        canvas.alpha_composite(solid(tuple(v // 4 for v in color[:3]) + (color[3],)), (x + 1, y + 1))
+    canvas.alpha_composite(solid(color), (x, y))
+
+
+# ---- world ------------------------------------------------------------------------------------
+
+def world():
+    canvas = Image.new("RGBA", (W, H))
+    horizon = 112
+    grass = tex("block/grass_block_top")
+    green = (121, 192, 90)
+    sky_top, sky_low = (96, 140, 214), (178, 206, 238)
+    for y in range(H):
+        for x in range(W):
+            if y < horizon:
+                t = y / horizon
+                c = tuple(int(a + (b - a) * t) for a, b in zip(sky_top, sky_low))
+            else:
+                z = 900 / (y - horizon + 0.5)
+                u = int((x - C) * z / 180) % 16
+                v = int(z * 2) % 16
+                g = grass.getpixel((u, v))[0] / 255
+                base = tuple(int(k * g) for k in green)
+                fog = min(1.0, z / 120)
+                c = tuple(int(a + (b - a) * fog) for a, b in zip(base, sky_low))
+            canvas.putpixel((x, y), c + (255,))
+    # distant hills
+    for x in range(W):
+        top = horizon - int(6 + 5 * math.sin(x / 37) + 3 * math.sin(x / 13 + 1))
+        for y in range(top, horizon):
+            canvas.putpixel((x, y), (126, 168, 120, 255))
+    # a zombie standing in front (2x), stand-in for the boss
+    z = tex("entity/zombie/zombie")
+    fig = Image.new("RGBA", (16, 32))
+    fig.paste(z.crop((8, 8, 16, 16)), (4, 0))
+    fig.paste(z.crop((20, 20, 28, 32)), (4, 8))
+    fig.paste(z.crop((44, 20, 48, 32)), (0, 8))
+    fig.paste(z.crop((44, 20, 48, 32)).transpose(Image.FLIP_LEFT_RIGHT), (12, 8))
+    fig.paste(z.crop((4, 20, 8, 32)), (4, 20))
+    fig.paste(z.crop((4, 20, 8, 32)).transpose(Image.FLIP_LEFT_RIGHT), (8, 20))
+    fig = fig.resize((48, 96), Image.NEAREST)
+    canvas.alpha_composite(fig, (300, 60))
+    return canvas
+
+
+def hotbar(canvas, slot_icons=None):
+    canvas.alpha_composite(tex("gui/sprites/hud/hotbar"), (HB_X, HB_Y))
+    canvas.alpha_composite(tex("item/iron_sword"), (HB_X + 3, HB_Y + 3))
+    canvas.alpha_composite(tex("item/potion"), (HB_X + 3 + 20 * 7, HB_Y + 3))
+    for i, icon in (slot_icons or {}).items():
+        canvas.alpha_composite(icon, (HB_X + 3 + 20 * i, HB_Y + 3))
+    canvas.alpha_composite(tex("gui/sprites/hud/hotbar_selection"), (HB_X - 1, HB_Y - 1))
+    canvas.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+
+
+# ---- shared HUD state -------------------------------------------------------------------------
+
+HP, HP_MAX, HP_LOST = 132, 240, 28   # HP_LOST = just-taken chunk still fading
+MP, MP_MAX = 46, 100
+RAGE = 35                            # class resource 0..100
+BARRIER = 48
+BOSS, BOSS_MAX, BOSS_LOST = 12480, 20000, 900
+# (icon, cd seconds remaining, cd total, state) for hotbar keys 2..6
+SKILL_ROW = [("war_breach", 0, 8, "ready"), ("war_wound", 8, 12, "cd"), ("whirl", 0, 6, "ready"),
+             ("war_counter", 3, 10, "cd"), ("war_cry", 0, 20, "nomana")]
+BUFFS = [("砥石", "temp_mace", 96), ("回復", "heal_light", 7)]
+NOTICE = "マナが足りません"
+
+
+def icon(name, size=16):
+    with Image.open(SKILLS / f"{name}.png") as f:
+        img = f.convert("RGBA")
+    if img.width == size:
+        return img
+    small = img.resize((size, size), Image.LANCZOS)
+    small.putalpha(small.getchannel("A").point(lambda v: 255 if v >= 110 else 0))
+    return small
+
+
+def darken(img, k, tint=None):
+    out = img.copy()
+    pix = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = pix[x, y]
+            if tint:
+                l = (r + g + b) / 3
+                r, g, b = (int(l * t / 255) for t in tint)
+            pix[x, y] = (int(r * k), int(g * k), int(b * k), a)
+    return out
+
+
+def sweep(canvas, x, y, size, frac, color):
+    """Clockwise-from-top shadow over the remaining fraction of a cooldown."""
+    cx = cy = (size - 1) / 2
+    for j in range(size):
+        for i in range(size):
+            ang = (math.degrees(math.atan2(i - cx, -(j - cy))) + 360) % 360
+            if ang >= 360 * (1 - frac):
+                px(canvas, x + i, y + j, color)
+
+
+def chamfer_box(canvas, box, fill, edge=None, cut=2):
+    x0, y0, x1, y1 = box
+    for j in range(y0, y1):
+        d = max(0, cut - (j - y0), cut - (y1 - 1 - j))
+        over(canvas, (x0 + d, j, x1 - d, j + 1), fill)
+    if edge:
+        for j in range(y0, y1):
+            d = max(0, cut - (j - y0), cut - (y1 - 1 - j))
+            if j in (y0, y1 - 1):
+                over(canvas, (x0 + d, j, x1 - d, j + 1), edge)
+            else:
+                px(canvas, x0 + d, j, edge)
+                px(canvas, x1 - 1 - d, j, edge)
+
+
+def skill_x(key):  # hotbar key 2..6 -> slot left edge of its 20px cell
+    return HB_X + 1 + 20 * (key - 1)
+
+
+# ---- A: thin holographic lines ----------------------------------------------------------------
+
+def design_a():
+    cv = world()
+    hotbar(cv)
+    cyan, hp_c, mp_c, amber = rgba("6ff3ff"), rgba("ff6474"), rgba("5aa8ff"), rgba("ffc456")
+    # crosshair arcs: HP left, MP right, rage ticks below
+    cx, cy, r = C, H // 2, 19
+    for deg10 in range(1150, 2451, 4):
+        deg = deg10 / 10
+        t = (deg - 115) / 130
+        for rr in (r, r + 1):
+            x = round(cx + rr * math.sin(math.radians(deg)))
+            y = round(cy - rr * math.cos(math.radians(deg)))
+            px(cv, x, y, rgba("ffffff", 40))
+            if (1 - t) <= HP / HP_MAX:
+                px(cv, x, y, hp_c[:3] + (200,))
+            elif (1 - t) <= (HP + HP_LOST) / HP_MAX:
+                px(cv, x, y, rgba("ffffff", 150))
+            mx = round(cx - rr * math.sin(math.radians(deg)))
+            px(cv, mx, y, rgba("ffffff", 40))
+            if (1 - t) <= MP / MP_MAX:
+                px(cv, mx, y, mp_c[:3] + (200,))
+    for i in range(10):
+        lit = i < RAGE // 10
+        over(cv, (cx - 15 + i * 3, cy + 24, cx - 13 + i * 3, cy + 25), amber[:3] + (220,) if lit else rgba("ffffff", 45))
+    # left of the skill row: numbers
+    y = HB_Y - 21
+    mc_text(cv, HB_X - 46, y, f"{HP}", hp_c)
+    mc_text(cv, HB_X - 46 + mc_width(f"{HP}") + 2, y, f"/{HP_MAX}", rgba("ffffff", 150), shadow=False)
+    mc_text(cv, HB_X - 46, y + 10, f"{MP}", mp_c)
+    mc_text(cv, HB_X - 46 + mc_width(f"{MP}") + 2, y + 10, f"+{BARRIER}", rgba("e8f6ff", 170), shadow=False)
+    over(cv, (HB_X - 50, y - 1, HB_X - 49, y + 19), cyan[:3] + (120,))
+    mc_text(cv, HB_X - 46, y - 11, "LV12", rgba("ffffff", 170), shadow=False)
+    # skills: bracketed cells above hotbar keys 2..6
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = skill_x(k), HB_Y - 21
+        over(cv, (x, y, x + 18, y + 18), (8, 16, 26, 90))
+        ic = icon(name)
+        col = cyan
+        if state == "cd":
+            ic, col = darken(ic, .35), rgba("ffffff", 70)
+        elif state == "nomana":
+            ic, col = darken(ic, .7, tint=(110, 160, 255)), mp_c
+        cv.alpha_composite(ic, (x + 1, y + 1))
+        for (ax, ay, sx, sy) in ((x, y, 1, 1), (x + 17, y, -1, 1), (x, y + 17, 1, -1), (x + 17, y + 17, -1, -1)):
+            for d in range(3):
+                px(cv, ax + sx * d, ay, col)
+                px(cv, ax, ay + sy * d, col)
+        if state == "cd":
+            over(cv, (x + 1, y + 17, x + 1 + int(16 * (1 - cd / total)), y + 18), cyan)
+            s = str(cd)
+            mc_text(cv, x + 9 - mc_width(s) // 2, y + 5, s, rgba("ffffff"))
+    # buffs right of the skill row
+    bx = skill_x(7) + 2
+    for label, name, sec in BUFFS:
+        ic = icon(name, 16).resize((8, 8), Image.NEAREST)
+        cv.alpha_composite(ic, (bx, HB_Y - 18))
+        mc_text(cv, bx + 10, HB_Y - 18, f"{sec}", rgba("e8f6ff", 200), shadow=False)
+        bx += 26
+    # notice
+    w = jp_width(NOTICE)
+    jp_text(cv, C - w // 2, HB_Y - 50, NOTICE, rgba("cfe9ff"), style="outline")
+    over(cv, (C - w // 2 - 24, HB_Y - 44, C - w // 2 - 4, HB_Y - 43), cyan[:3] + (160,))
+    over(cv, (C + w // 2 + 4, HB_Y - 44, C + w // 2 + 24, HB_Y - 43), cyan[:3] + (160,))
+    # boss: hairline at top
+    name = "裂け目の執行官"
+    jp_text(cv, C - 100, 3, name, rgba("ffffff"), style="outline")
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, C + 100 - mc_width(pct), 5, pct, rgba("ffffff", 220), shadow=False)
+    over(cv, (C - 100, 18, C + 100, 20), rgba("ffffff", 40))
+    over(cv, (C - 100, 18, C - 100 + 200 * (BOSS + BOSS_LOST) // BOSS_MAX, 20), rgba("ffffff", 170))
+    over(cv, (C - 100, 18, C - 100 + 200 * BOSS // BOSS_MAX, 20), hp_c)
+    for e in (C - 102, C + 101):
+        over(cv, (e, 16, e + 1, 22), cyan[:3] + (180,))
+    return cv
+
+
+# ---- B: refined MMO console (AION2 / Lost Ark) ------------------------------------------------
+
+def design_b():
+    cv = world()
+    hotbar(cv)
+    panel, edge = (10, 14, 24, 190), rgba("9fb4d0", 110)
+    hp_c, hp_d, mp_c, amber = rgba("e8414f"), rgba("6b1820"), rgba("3d8bff"), rgba("ffb43c")
+    # player frame left of the hotbar
+    fx, fy, fw = HB_X - 110, HB_Y - 6, 106
+    chamfer_box(cv, (fx, fy, fx + fw, H - 1), panel, edge, cut=3)
+    jp_text(cv, fx + 3, fy - 15, "戦士", rgba("ffffff"), style="outline")
+    mc_text(cv, fx + 3 + jp_width("戦士") + 4, fy - 12, "Lv.12", rgba("ffd98a"))
+    bx, bw = fx + 4, fw - 8
+    over(cv, (bx, fy + 4, bx + bw, fy + 13), hp_d)
+    over(cv, (bx, fy + 4, bx + bw * (HP + BARRIER + HP_LOST) // HP_MAX, fy + 13), rgba("ffe2c4"))
+    over(cv, (bx, fy + 4, bx + bw * HP // HP_MAX, fy + 13), hp_c)
+    over(cv, (bx, fy + 4, bx + bw * HP // HP_MAX, fy + 5), rgba("ff8c96"))
+    hp_end = bx + bw * HP // HP_MAX
+    over(cv, (hp_end, fy + 4, hp_end + bw * BARRIER // HP_MAX, fy + 13), rgba("dfe9f7"))
+    s = f"{HP}/{HP_MAX}"
+    mc_text(cv, bx + bw // 2 - mc_width(s) // 2, fy + 5, s, rgba("ffffff"), outline=True)
+    over(cv, (bx, fy + 15, bx + bw, fy + 19), rgba("10224a"))
+    over(cv, (bx, fy + 15, bx + bw * MP // MP_MAX, fy + 19), mp_c)
+    for i in range(10):
+        x0 = bx + i * (bw + 1) // 10
+        over(cv, (x0, fy + 21, x0 + bw // 10 - 1, fy + 24), amber if i < RAGE // 10 else rgba("3a2a12"))
+    # skills above hotbar keys 2..6
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = skill_x(k) - 1, HB_Y - 23
+        e = rgba("ffffff", 200) if state == "ready" else rgba("9fb4d0", 110)
+        if state == "nomana":
+            e = mp_c
+        chamfer_box(cv, (x, y, x + 20, y + 20), panel, e, cut=2)
+        ic = icon(name)
+        if state == "nomana":
+            ic = darken(ic, .75, tint=(120, 160, 255))
+        cv.alpha_composite(ic, (x + 2, y + 2))
+        if state == "cd":
+            sweep(cv, x + 2, y + 2, 16, cd / total, (0, 0, 0, 170))
+            s = str(cd)
+            mc_text(cv, x + 10 - mc_width(s) // 2, y + 6, s, rgba("ffffff"))
+    # right of hotbar: dodge + buffs
+    rx = HB_X + 182 + 4
+    chamfer_box(cv, (rx, HB_Y - 6, rx + 20, HB_Y + 14), panel, edge, cut=2)
+    cv.alpha_composite(icon("dash"), (rx + 2, HB_Y - 4))
+    sweep(cv, rx + 2, HB_Y - 4, 16, .4, (0, 0, 0, 170))
+    mc_text(cv, rx + 23, HB_Y + 2, "SHIFT", rgba("9fb4d0"), shadow=False)
+    by = HB_Y - 23
+    bxx = HB_X - 110
+    for label, name, sec in BUFFS:
+        chamfer_box(cv, (bxx, by - 14, bxx + 12, by - 2), panel, edge, cut=1)
+        cv.alpha_composite(icon(name).resize((8, 8), Image.NEAREST), (bxx + 2, by - 12))
+        mc_text(cv, bxx + 14, by - 12, f"{sec}s", rgba("dfe7f2"))
+        bxx += 34
+    # notice banner
+    w = jp_width(NOTICE) + 60
+    for i in range(w):
+        a = int(170 * (1 - abs(i - w / 2) / (w / 2)) ** .6)
+        over(cv, (C - w // 2 + i, HB_Y - 62, C - w // 2 + i + 1, HB_Y - 46), (6, 10, 22, a))
+    jp_text(cv, C - jp_width(NOTICE) // 2, HB_Y - 60, NOTICE, rgba("9cc4ff"))
+    # boss frame
+    bw2 = 240
+    x0 = C - bw2 // 2
+    jp_text(cv, x0, 3, "裂け目の執行官", rgba("ffffff"), style="outline")
+    mc_text(cv, x0 + jp_width("裂け目の執行官") + 5, 6, "Lv.30", rgba("ffd98a"))
+    chamfer_box(cv, (x0 - 2, 17, x0 + bw2 + 2, 27), panel, edge, cut=3)
+    over(cv, (x0 + 1, 19, x0 + bw2 - 1, 25), hp_d)
+    over(cv, (x0 + 1, 19, x0 + 1 + (bw2 - 2) * (BOSS + BOSS_LOST) // BOSS_MAX, 25), rgba("ffe2c4"))
+    over(cv, (x0 + 1, 19, x0 + 1 + (bw2 - 2) * BOSS // BOSS_MAX, 25), hp_c)
+    over(cv, (x0 + 1, 19, x0 + 1 + (bw2 - 2) * BOSS // BOSS_MAX, 20), rgba("ff8c96"))
+    over(cv, (C, 18, C + 1, 26), rgba("ffffff", 200))  # phase notch at 50 %
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, x0 + bw2 - mc_width(pct), 6, pct, rgba("ffffff"))
+    return cv
+
+
+# ---- C: Minecraft-native (Wynncraft-like): skills live in the hotbar --------------------------
+
+def design_c():
+    cv = world()
+    icons = {}
+    cds = {}
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        ic = icon(name)
+        if state == "nomana":
+            ic = darken(ic, .45)
+        icons[k - 1] = ic
+        if state == "cd":
+            cds[k - 1] = (cd, total)
+    hotbar(cv, icons)
+    for i, (cd, total) in cds.items():  # vanilla item-cooldown overlay + count-style seconds
+        x, y = HB_X + 3 + 20 * i, HB_Y + 3
+        h = round(16 * cd / total)
+        over(cv, (x, y + 16 - h, x + 16, y + 16), (255, 255, 255, 127))
+        s = str(cd)
+        mc_text(cv, x + 17 - mc_width(s) - 1, y + 9, s, rgba("ffffff"))
+    # HP / MP where hearts and hunger used to be
+    y = HB_Y - 17
+    for x0, val, mx, col, dark, txt in ((HB_X, HP, HP_MAX, rgba("d4202c"), rgba("3b0b0e"), f"❤ {HP}/{HP_MAX}"),
+                                        (C + 1, MP, MP_MAX, rgba("2f6fe0"), rgba("0b1a3b"), f"{MP}/{MP_MAX} ✦")):
+        w = 90
+        over(cv, (x0, y, x0 + w, y + 10), rgba("000000", 255))
+        over(cv, (x0 + 1, y + 1, x0 + w - 1, y + 9), dark)
+        fill = (w - 2) * val // mx
+        over(cv, (x0 + 1, y + 1, x0 + 1 + fill, y + 9), col)
+        over(cv, (x0 + 1, y + 1, x0 + 1 + fill, y + 2), tuple(min(255, v + 70) for v in col[:3]) + (255,))
+        if col == rgba("d4202c"):
+            end = x0 + 1 + fill + (w - 2) * BARRIER // mx
+            over(cv, (x0 + 1 + fill, y + 1, end, y + 9), rgba("e8b830"))
+            over(cv, (end, y + 1, end + (w - 2) * HP_LOST // mx, y + 9), rgba("e8b0a0"))
+        mark, txt = txt[0] if txt[0] == "❤" else txt[-1], txt.strip("❤✦ ")
+        tx = x0 + w // 2 - (mc_width(txt) + 9) // 2
+        heart = ["0110110", "1111111", "1111111", "0111110", "0011100", "0001000"]
+        star = ["0001000", "0011100", "1111111", "0011100", "0110110", "0100010"]
+        shape, mx0 = (heart, tx) if mark == "❤" else (star, tx + mc_width(txt) + 3)
+        for j, row in enumerate(shape):
+            for i, v in enumerate(row):
+                if v == "1":
+                    px(cv, mx0 + i + 1, y + 3 + j, rgba("000000", 160))
+                    px(cv, mx0 + i, y + 2 + j, rgba("ffffff"))
+        mc_text(cv, tx + (9 if mark == "❤" else 0), y + 1, txt, rgba("ffffff"), outline=True)
+    # class resource in the xp-bar slot, level number like vanilla
+    over(cv, (HB_X, HB_Y - 6, HB_X + 182, HB_Y - 1), rgba("000000"))
+    over(cv, (HB_X + 1, HB_Y - 5, HB_X + 181, HB_Y - 2), rgba("3a2a12"))
+    over(cv, (HB_X + 1, HB_Y - 5, HB_X + 1 + 180 * RAGE // 100, HB_Y - 2), rgba("ffaa22"))
+    lv = "12"
+    mc_text(cv, C - mc_width(lv) // 2, HB_Y - 29, lv, rgba("80ff20"), outline=True)
+    # buffs: vanilla effect tiles, top right
+    bg = tex("gui/sprites/hud/effect_background")
+    ex = W - 25
+    for label, name, sec in BUFFS:
+        cv.alpha_composite(bg, (ex, 1))
+        cv.alpha_composite(icon(name, 16).resize((18, 18), Image.NEAREST) if False else icon(name), (ex + 4, 5))
+        s = f"{sec}"
+        mc_text(cv, ex + 12 - mc_width(s) // 2, 27, s, rgba("ffffff"))
+        ex -= 25
+    # notice where the action bar text sits
+    jp_text(cv, C - jp_width(NOTICE) // 2, HB_Y - 46, NOTICE, rgba("ff7070"))
+    # boss: the vanilla red boss bar
+    name = "裂け目の執行官"
+    jp_text(cv, C - jp_width(name) // 2, 1, name, rgba("ffffff"))
+    bg, prog = tex("gui/sprites/boss_bar/red_background"), tex("gui/sprites/boss_bar/red_progress")
+    cv.alpha_composite(bg, (C - 91, 14))
+    cv.alpha_composite(prog.crop((0, 0, 182 * BOSS // BOSS_MAX, 5)), (C - 91, 14))
+    return cv
+
+
+# ---- C2: C rebuilt on the Wynncraft 2.0 structure, gunmetal near-future material --------------
+# Reference studied: Wynncraft 2.0 HUD (Modrinth "The Wynncraft Pack" gallery). One material for
+# everything; HP/MP each in a bevelled plaque (number above a thin bar); a hex level badge between
+# them; a segmented strip over a reskinned hotbar.
+
+M = {"out": rgba("07090c"), "body": rgba("1f2730"), "hi": rgba("526170"), "lo": rgba("12171d"),
+     "inset": rgba("0c1015"), "inset_hi": rgba("2c3540"), "cyan": rgba("63e6ff")}
+
+
+def plaque(cv, box):
+    x0, y0, x1, y1 = box
+    over(cv, (x0 + 1, y0, x1 - 1, y1), M["out"])
+    over(cv, (x0, y0 + 1, x1, y1 - 1), M["out"])
+    over(cv, (x0 + 1, y0 + 1, x1 - 1, y1 - 1), M["body"])
+    over(cv, (x0 + 2, y0 + 1, x1 - 2, y0 + 2), M["hi"])
+    over(cv, (x0 + 1, y0 + 2, x0 + 2, y1 - 2), M["hi"][:3] + (120,))
+    over(cv, (x0 + 2, y1 - 2, x1 - 2, y1 - 1), M["lo"])
+
+
+def inset(cv, box):
+    x0, y0, x1, y1 = box
+    over(cv, (x0, y0, x1, y1), M["inset"])
+    over(cv, (x0, y1 - 1, x1, y1), M["inset_hi"])
+    over(cv, (x1 - 1, y0, x1, y1), M["inset_hi"])
+
+
+def thin_bar(cv, x, y, w, frac, col, back, extra=0.0, extra_col=None, trail=0.0):
+    inset(cv, (x - 1, y - 1, x + w + 1, y + 4))
+    over(cv, (x, y, x + w, y + 3), back)
+    f = round(w * frac)
+    if trail:
+        over(cv, (x, y, x + min(w, round(w * (frac + extra + trail))), y + 3), rgba("f3d6c8"))
+    if extra:
+        over(cv, (x + f, y, x + min(w, f + round(w * extra)), y + 3), extra_col)
+    over(cv, (x, y, x + f, y + 3), col)
+    over(cv, (x, y, x + f, y + 1), tuple(min(255, v + 80) for v in col[:3]) + (255,))
+
+
+def mark(cv, x, y, rows, col):
+    for j, row in enumerate(rows):
+        for i, v in enumerate(row):
+            if v == "1":
+                px(cv, x + i + 1, y + j + 1, rgba("000000", 150))
+                px(cv, x + i, y + j, col)
+
+
+HEART = ["01010", "11111", "11111", "01110", "00100"]
+DROP = ["00100", "01110", "11111", "11111", "01110"]
+
+
+def hex_badge(cv, cx, top, text):
+    rows = [2, 4, 6, 8, 10, 11, 11, 11, 11, 11, 11, 10, 8, 6, 4, 2]
+    for j, half in enumerate(rows):
+        over(cv, (cx - half - 1, top + j, cx + half + 1, top + j + 1), M["out"])
+    for j, half in enumerate(rows[1:-1], start=1):
+        hw = half - 1
+        over(cv, (cx - hw, top + j, cx + hw, top + j + 1), M["body"] if j > 2 else M["hi"])
+    for j, half in enumerate(rows[2:-2], start=2):
+        hw = half - 3
+        over(cv, (cx - hw, top + j, cx + hw, top + j + 1), M["inset"])
+    over(cv, (cx - 5, top + 13, cx + 5, top + 14), M["cyan"][:3] + (200,))
+    mc_text(cv, cx - mc_width(text) // 2, top + 4, text, rgba("e9fbff"))
+
+
+def hotbar_skin(cv, icons, cds):
+    x0, y0 = HB_X, HB_Y
+    plaque(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    for i in range(9):
+        sx = x0 + 2 + 20 * i
+        inset(cv, (sx, y0 + 2, sx + 18, y0 + 20))
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for i, ic in icons.items():
+        cv.alpha_composite(ic, (x0 + 3 + 20 * i, y0 + 3))
+    for i, (cd, total) in cds.items():
+        x, y = x0 + 3 + 20 * i, y0 + 3
+        h = round(16 * cd / total)
+        over(cv, (x, y + 16 - h, x + 16, y + 16), (255, 255, 255, 127))
+        s = str(cd)
+        mc_text(cv, x + 17 - mc_width(s), y + 9, s, rgba("ffffff"))
+    # selection: cyan frame around slot 1
+    sx = x0 + 1
+    for (a, b, c, d) in ((sx, y0 + 1, sx + 20, y0 + 2), (sx, y0 + 20, sx + 20, y0 + 21),
+                         (sx, y0 + 1, sx + 1, y0 + 21), (sx + 19, y0 + 1, sx + 20, y0 + 21)):
+        over(cv, (a, b, c, d), M["cyan"])
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+
+
+def design_c2():
+    cv = world()
+    icons, cds = {}, {}
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        ic = icon(name)
+        icons[k - 1] = darken(ic, .45) if state == "nomana" else ic
+        if state == "cd":
+            cds[k - 1] = (cd, total)
+    hotbar_skin(cv, icons, cds)
+    # segmented class-resource strip spanning the hotbar
+    sy = HB_Y - 6
+    plaque(cv, (HB_X - 1, sy, HB_X + 183, sy + 6))
+    for i in range(20):
+        x = HB_X + 2 + i * 9
+        over(cv, (x, sy + 2, x + 8, sy + 4), rgba("ffb545") if i < RAGE * 20 // 100 else rgba("3a2c16"))
+    # HP / MP plaques
+    py, pw = HB_Y - 26, 70
+    for x0, val, mx, col, back, glyph, extra in (
+            (HB_X - 1, HP, HP_MAX, rgba("e5414e"), rgba("3a1016"), HEART, BARRIER / HP_MAX),
+            (HB_X + 183 - pw, MP, MP_MAX, rgba("3b8cff"), rgba("0e1a36"), DROP, 0)):
+        plaque(cv, (x0, py, x0 + pw, py + 20))
+        s = f"{val} / {mx}"
+        mc_text(cv, x0 + pw // 2 - mc_width(s) // 2, py + 3, s, rgba("eef6ff"))
+        thin_bar(cv, x0 + 10, py + 13, pw - 14, val / mx, col, back, extra, rgba("dfe9f7"),
+                 trail=HP_LOST / HP_MAX if glyph is HEART else 0)
+        mark(cv, x0 + 3, py + 12, glyph, col)
+    # bridge + hex level badge
+    over(cv, (HB_X - 1 + pw, py + 8, HB_X + 183 - pw, py + 11), M["out"])
+    over(cv, (HB_X - 1 + pw, py + 9, HB_X + 183 - pw, py + 10), M["hi"])
+    hex_badge(cv, C, py + 1, "12")
+    # buffs: small plaques above the HP plaque
+    bx = HB_X - 1
+    for label, name, sec in BUFFS:
+        plaque(cv, (bx, py - 15, bx + 30, py - 2))
+        cv.alpha_composite(icon(name).resize((9, 9), Image.NEAREST), (bx + 2, py - 13))
+        mc_text(cv, bx + 13, py - 12, f"{sec}", rgba("e9fbff"))
+        bx += 32
+    # notice
+    jp_text(cv, C - jp_width(NOTICE) // 2, py - 30, NOTICE, rgba("8fc3ff"), style="outline")
+    # boss plaque
+    bw = 200
+    x0 = C - bw // 2
+    plaque(cv, (x0, 2, x0 + bw, 26))
+    name = "裂け目の執行官"
+    jp_text(cv, x0 + 5, 4, name, rgba("ffffff"))
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, x0 + bw - 5 - mc_width(pct), 6, pct, rgba("e9fbff"))
+    thin_bar(cv, x0 + 5, 19, bw - 10, BOSS / BOSS_MAX, rgba("e5414e"), rgba("3a1016"), trail=BOSS_LOST / BOSS_MAX)
+    over(cv, (C, 18, C + 1, 23), rgba("ffffff", 200))
+    return cv
+
+
+# ---- C3: C2 layout in a PSO2 NGS-like material ---------------------------------------------------
+# Reference studied: PSO2 NGS menus/HUD (official manual + player screenshots): deep navy glass
+# panels, a cyan header strip with a small diamond, thin bright rims, gold for rank/level.
+
+N = {"glass": (10, 22, 38, 215), "glass2": (16, 34, 56, 215), "rim": rgba("4fd8ff", 150),
+     "rim_hi": rgba("b8f3ff"), "line": rgba("2a6b8a"), "gold": rgba("ffd36b"), "gold_d": rgba("8a5a12"),
+     "text": rgba("eaf8ff"), "sub": rgba("8fb8cc")}
+
+
+def hgrad(cv, box, c0, c1):
+    x0, y0, x1, y1 = box
+    for x in range(x0, x1):
+        t = (x - x0) / max(1, x1 - x0 - 1)
+        over(cv, (x, y0, x + 1, y1), tuple(int(a + (b - a) * t) for a, b in zip(c0, c1)))
+
+
+def diamond(cv, cx, cy, col, r=2):
+    for j in range(-r, r + 1):
+        w = r - abs(j)
+        over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), col)
+
+
+def glass(cv, box, header=0, cut=3):
+    """Navy glass plate; top-left and bottom-right corners cut, bright top rim."""
+    x0, y0, x1, y1 = box
+    for j in range(y0, y1):
+        d = cut - (j - y0) if j - y0 < cut else 0
+        d2 = cut - (y1 - 1 - j) if y1 - 1 - j < cut else 0
+        over(cv, (x0 + d, j, x1 - d2, j + 1), N["glass"])
+        px(cv, x0 + d, j, N["rim"])
+        px(cv, x1 - 1 - d2, j, N["rim"])
+    over(cv, (x0 + cut, y0, x1, y0 + 1), N["rim_hi"])
+    over(cv, (x0, y1 - 1, x1 - cut, y1), N["rim"])
+    if header:
+        hgrad(cv, (x0 + 1, y0 + 1, x1 - 1, y0 + 1 + header), (40, 150, 200, 200), (20, 60, 100, 40))
+
+
+def gauge(cv, x, y, w, h, frac, c0, c1, back, ticks=10, extra=0.0, extra_col=None, trail=0.0):
+    over(cv, (x - 1, y - 1, x + w + 1, y + h + 1), (0, 0, 0, 200))
+    over(cv, (x, y, x + w, y + h), back)
+    f = round(w * frac)
+    if trail:
+        over(cv, (x + f, y, x + min(w, f + round(w * (extra + trail))), y + h), rgba("fff1e0", 220))
+    if extra:
+        over(cv, (x + f, y, x + min(w, f + round(w * extra)), y + h), extra_col)
+    hgrad(cv, (x, y, x + f, y + h), c0, c1)
+    over(cv, (x, y, x + f, y + 1), (255, 255, 255, 110))
+    if f:
+        over(cv, (x + f - 1, y - 1, x + f, y + h + 1), (255, 255, 255, 230))  # bright head
+    for i in range(1, ticks):
+        tx = x + w * i // ticks
+        over(cv, (tx, y + h - 1, tx + 1, y + h), (0, 0, 0, 120))
+
+
+def design_c3():
+    cv = world()
+    # hotbar: glass tray; skill keys 2..6 get a cyan cap, item slots stay plain
+    x0, y0 = HB_X, HB_Y
+    glass(cv, (x0 - 2, y0, x0 + 184, y0 + 22), cut=3)
+    for i in range(9):
+        sx = x0 + 2 + 20 * i
+        over(cv, (sx, y0 + 2, sx + 18, y0 + 20), N["glass2"])
+        over(cv, (sx, y0 + 19, sx + 18, y0 + 20), N["line"])
+        if 1 <= i <= 5:
+            over(cv, (sx, y0 + 2, sx + 18, y0 + 3), N["rim"])
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        i = k - 1
+        ic = icon(name)
+        x, y = x0 + 3 + 20 * i, y0 + 3
+        cv.alpha_composite(darken(ic, .45) if state == "nomana" else ic, (x, y))
+        if state == "cd":
+            h = round(16 * cd / total)
+            over(cv, (x, y + 16 - h, x + 16, y + 16), (255, 255, 255, 127))
+            s = str(cd)
+            mc_text(cv, x + 17 - mc_width(s), y + 9, s, rgba("ffffff"))
+        if state == "nomana":
+            over(cv, (x - 1, y + 16, x + 17, y + 17), rgba("3b8cff"))
+    sx = x0 + 1
+    for a, b, c, d in ((sx, y0 + 1, sx + 20, y0 + 2), (sx, y0 + 20, sx + 20, y0 + 21),
+                       (sx, y0 + 1, sx + 1, y0 + 21), (sx + 19, y0 + 1, sx + 20, y0 + 21)):
+        over(cv, (a, b, c, d), N["gold"])
+    diamond(cv, sx + 10, y0, N["gold"], 1)
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # class resource strip: ember gradient segments
+    sy = HB_Y - 6
+    glass(cv, (HB_X - 2, sy, HB_X + 184, sy + 6), cut=2)
+    lit = RAGE * 20 // 100
+    for i in range(20):
+        x = HB_X + 2 + i * 9
+        if i < lit:
+            hgrad(cv, (x, sy + 2, x + 8, sy + 4), (255, 120, 40, 255), (255, 214, 90, 255))
+        else:
+            over(cv, (x, sy + 2, x + 8, sy + 4), (70, 40, 20, 200))
+    over(cv, (HB_X + 2 + lit * 9 - 1, sy + 1, HB_X + 2 + lit * 9, sy + 5), rgba("fff4c0"))
+    # HP / MP glass plaques with a header strip
+    py, pw = HB_Y - 27, 72
+    for px0, label, val, mx, c0, c1, back, extra in (
+            (HB_X - 2, "HP", HP, HP_MAX, (200, 30, 60, 255), (255, 110, 120, 255), (50, 10, 20, 230), BARRIER / HP_MAX),
+            (HB_X + 184 - pw, "MP", MP, MP_MAX, (40, 90, 255, 255), (90, 200, 255, 255), (10, 20, 50, 230), 0)):
+        glass(cv, (px0, py, px0 + pw, py + 21), header=10)
+        mc_text(cv, px0 + 4, py + 2, label, rgba("bfe9ff"))
+        s = str(val)
+        x = px0 + pw - 4 - mc_width(f"/{mx}") - mc_width(s) - 1
+        mc_text(cv, x, py + 2, s, N["text"])
+        mc_text(cv, px0 + pw - 4 - mc_width(f"/{mx}"), py + 2, f"/{mx}", rgba("a9c8d8"))
+        gauge(cv, px0 + 4, py + 12, pw - 8, 5, val / mx, c0, c1, back, extra=extra,
+              extra_col=rgba("e8f2ff"), trail=HP_LOST / HP_MAX if label == "HP" else 0)
+    # class tab above the HP plaque
+    tab = "戦士"
+    tw = jp_width(tab) + 14
+    glass(cv, (HB_X - 2, py - 15, HB_X - 2 + tw, py - 1), cut=2)
+    diamond(cv, HB_X + 3, py - 8, N["gold"], 2)
+    jp_text(cv, HB_X + 8, py - 14, tab, N["text"])
+
+    # buffs above the MP plaque: green buff rim + timer
+    bx = HB_X + 184
+    for label, name, sec in BUFFS:
+        bx -= 30
+        glass(cv, (bx, py - 15, bx + 28, py - 1), cut=2)
+        over(cv, (bx + 2, py - 13, bx + 13, py - 3), rgba("6dffa8", 160))
+        cv.alpha_composite(icon(name).resize((9, 9), Image.NEAREST), (bx + 3, py - 12))
+        mc_text(cv, bx + 15, py - 11, f"{sec}", N["text"], shadow=False)
+    # centre: hex with the class emblem, gold rim
+    cx, top = C, py + 1
+    rows = [2, 4, 6, 8, 10, 11, 11, 11, 11, 11, 11, 10, 8, 6, 4, 2]
+    for j, half in enumerate(rows):
+        over(cv, (cx - half - 1, top + j, cx + half + 1, top + j + 1), N["gold_d"])
+    for j, half in enumerate(rows[1:-1], start=1):
+        over(cv, (cx - half + 1, top + j, cx + half - 1, top + j + 1), N["gold"] if j < 3 else (10, 22, 38, 255))
+    for j, half in enumerate(rows[3:-2], start=3):
+        over(cv, (cx - half + 2, top + j, cx + half - 2, top + j + 1), (20, 40, 66, 255))
+    mc_text(cv, cx - mc_width("12") // 2, top + 4, "12", N["gold"])
+    for side in (-1, 1):
+        a = cx + side * 13
+        b = HB_X - 2 + pw if side < 0 else HB_X + 184 - pw
+        lo, hi = min(a, b), max(a, b)
+        over(cv, (lo, py + 9, hi, py + 10), N["rim"])
+        diamond(cv, (lo + hi) // 2, py + 9, N["rim_hi"], 1)
+    # notice: navy band fading at the ends, cyan top line, diamond marks
+    nw = jp_width(NOTICE)
+    w = nw + 70
+    for i in range(w):
+        a = int(200 * (1 - abs(i - w / 2) / (w / 2)) ** .7)
+        over(cv, (C - w // 2 + i, py - 34, C - w // 2 + i + 1, py - 20), (10, 40, 70, a))
+        over(cv, (C - w // 2 + i, py - 34, C - w // 2 + i + 1, py - 33), (80, 220, 255, a))
+    diamond(cv, C - nw // 2 - 8, py - 27, N["rim_hi"])
+    diamond(cv, C + nw // 2 + 7, py - 27, N["rim_hi"])
+    jp_text(cv, C - nw // 2, py - 33, NOTICE, rgba("9fd0ff"))
+    # boss: glass plate, red rank diamond, gold Lv, ticked gauge with phase notch
+    bw = 220
+    bx0 = C - bw // 2
+    glass(cv, (bx0, 2, bx0 + bw, 28), header=13, cut=4)
+    diamond(cv, bx0 + 8, 8, rgba("ff4060"), 3)
+    name = "裂け目の執行官"
+    jp_text(cv, bx0 + 15, 2, name, rgba("ffffff"))
+    mc_text(cv, bx0 + 19 + jp_width(name), 5, "Lv30", N["gold"])
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - 6 - mc_width(pct), 5, pct, N["text"])
+    gauge(cv, bx0 + 6, 18, bw - 12, 5, BOSS / BOSS_MAX, (170, 20, 50, 255), (255, 90, 90, 255),
+          (50, 10, 20, 230), ticks=20, trail=BOSS_LOST / BOSS_MAX)
+    over(cv, (C, 16, C + 1, 25), N["gold"])
+    return cv
+
+
+# ---- C4: C2 layout in the AION2 / Lost Ark / Black Desert idiom --------------------------------
+# References studied (real screenshots): AION2 (Famitsu play report) — silver crest with the level
+# between thin HP/MP bars that run into it, dark slots with thin silver rims, boss bar in a silver
+# frame with arrow ends and a medallion; Lost Ark (Icy Veins raid shot) — saturated icons, darkened
+# cooldown with a big centred number, buff tiles with timers; Black Desert — diamond level badge
+# anchoring the bars.
+
+S = {"dark": rgba("0a0b0d"), "panel": (22, 24, 29, 225), "slot": (14, 15, 18, 235), "rim": rgba("8a929c"),
+     "rim_hi": rgba("d6dce2"), "rim_lo": rgba("3d424a"), "text": rgba("f2f4f7"), "sub": rgba("9aa2ab")}
+DIGIT3 = {"0": "111101101101111", "1": "010110010010111", "2": "111001111100111", "3": "111001111001111",
+          "4": "101101111001001", "5": "111100111001111", "6": "111100111101111", "7": "111001001010010",
+          "8": "111101111101111", "9": "111101111001111"}
+
+
+def tiny(cv, x, y, s, col):
+    for ch in s:
+        bits = DIGIT3[ch]
+        for j in range(5):
+            for i in range(3):
+                if bits[j * 3 + i] == "1":
+                    px(cv, x + i, y + j, col)
+        x += 4
+
+
+def arrow_bar(cv, x0, x1, y, h, frac, c0, c1, back, point="left", extra=0.0, trail=0.0):
+    """Thin silver-rimmed bar; the outer end is an arrow point, the inner end runs into the crest."""
+    total = h + 2
+    mid = (total - 1) / 2
+    w = x1 - x0
+    for j in range(total):
+        ind = int(abs(j - mid))
+        a, b = (x0 + ind, x1) if point == "left" else (x0, x1 - ind)
+        over(cv, (a, y + j, b, y + j + 1), S["dark"])
+    fx0, fx1 = x0 + total // 2 + 1, x1 - 1
+    if point == "right":
+        fx0, fx1 = x0 + 1, x1 - total // 2 - 1
+    fw = fx1 - fx0
+    over(cv, (fx0, y + 1, fx1, y + h + 1), back)
+    f = round(fw * frac)
+    if point == "left":  # HP fills from the crest outward? no: from the outer end inward, like AION2
+        start = fx0
+    else:
+        start = fx0
+    if trail or extra:
+        e = min(fw, f + round(fw * (extra + trail)))
+        over(cv, (start, y + 1, start + e, y + h + 1), rgba("fff0e6", 220) if trail else rgba("e8eef5"))
+    if extra:
+        over(cv, (start + f, y + 1, start + min(fw, f + round(fw * extra)), y + h + 1), rgba("e8eef5"))
+    hgrad(cv, (start, y + 1, start + f, y + h + 1), c0, c1)
+    over(cv, (start, y + 1, start + f, y + 2), (255, 255, 255, 90))
+    over(cv, (start, y + h, start + f, y + h + 1), (0, 0, 0, 70))
+    over(cv, (fx0, y, fx1, y + 1), S["rim"])
+    over(cv, (fx0, y + h + 1, fx1, y + h + 2), S["rim_lo"])
+
+
+def crest(cv, cx, top, level):
+    halves = [1, 3, 5, 7, 9, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+    for j, hw in enumerate(halves):
+        over(cv, (cx - hw - 1, top + j, cx + hw + 1, top + j + 1), S["dark"])
+    for j, hw in enumerate(halves[1:-1], start=1):
+        hw -= 1
+        hgrad(cv, (cx - hw, top + j, cx + hw, top + j + 1), (225, 230, 236, 255), (110, 118, 128, 255))
+    for j, hw in enumerate(halves[4:-4], start=4):
+        hw -= 4
+        if hw > 0:
+            over(cv, (cx - hw, top + j, cx + hw, top + j + 1), (24, 27, 32, 255))
+    # small blade emblem + level
+    over(cv, (cx, top + 5, cx + 1, top + 11), S["rim_hi"])
+    over(cv, (cx - 2, top + 9, cx + 3, top + 10), S["rim_hi"])
+    mc_text(cv, cx - mc_width(level) // 2 + 1, top + 12, level, S["text"])
+
+
+def design_c4():
+    cv = world()
+    x0, y0 = HB_X, HB_Y
+    # hotbar: charcoal tray, silver rim, dark slots with key numbers baked into the texture
+    over(cv, (x0 - 1, y0, x0 + 183, y0 + 22), S["dark"])
+    over(cv, (x0, y0 + 1, x0 + 182, y0 + 21), S["panel"])
+    over(cv, (x0, y0 + 1, x0 + 182, y0 + 2), S["rim"])
+    for i in range(9):
+        sx = x0 + 2 + 20 * i
+        over(cv, (sx, y0 + 2, sx + 18, y0 + 20), S["slot"])
+        over(cv, (sx, y0 + 2, sx + 18, y0 + 3), S["rim_lo"])
+        over(cv, (sx, y0 + 19, sx + 18, y0 + 20), S["rim_lo"])
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        ic = icon(name)
+        if state == "cd":
+            ic = darken(ic, .45)
+        elif state == "nomana":
+            ic = darken(ic, .55, tint=(110, 150, 255))
+        cv.alpha_composite(ic, (x, y))
+        if state == "cd":
+            s = str(cd)
+            mc_text(cv, x + 8 - mc_width(s) // 2 + 1, y + 4, s, S["text"], outline=True)
+    for i in range(9):
+        tiny(cv, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (200, 206, 214, 200))
+    sx = x0 + 1
+    for a, b, c, d in ((sx, y0 + 1, sx + 20, y0 + 2), (sx, y0 + 20, sx + 20, y0 + 21),
+                       (sx, y0 + 1, sx + 1, y0 + 21), (sx + 19, y0 + 1, sx + 20, y0 + 21)):
+        over(cv, (a, b, c, d), S["rim_hi"])
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # class resource: ember line between silver hairlines right above the hotbar
+    ry = y0 - 4
+    over(cv, (x0 - 1, ry, x0 + 183, ry + 4), S["dark"])
+    over(cv, (x0, ry + 1, x0 + 182, ry + 3), (60, 32, 14, 255))
+    hgrad(cv, (x0, ry + 1, x0 + 182 * RAGE // 100, ry + 3), (220, 90, 20, 255), (255, 210, 90, 255))
+    px(cv, x0 + 182 * RAGE // 100, ry + 1, rgba("fff6d0"))
+    px(cv, x0 + 182 * RAGE // 100, ry + 2, rgba("fff6d0"))
+    # HP / MP: arrow-ended bars running into the crest, number inside
+    by, bh = y0 - 16, 9
+    arrow_bar(cv, x0 - 1, C - 11, by, bh, HP / HP_MAX, (150, 20, 35, 255), (235, 60, 70, 255),
+              (40, 10, 14, 255), "left", extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX)
+    arrow_bar(cv, C + 11, x0 + 183, by, bh, MP / MP_MAX, (20, 80, 200, 255), (60, 170, 255, 255),
+              (10, 18, 40, 255), "right")
+    s = f"{HP}/{HP_MAX}"
+    mc_text(cv, (x0 + C - 11) // 2 - mc_width(s) // 2 + 3, by + 2, s, S["text"], outline=True)
+    s = f"{MP}/{MP_MAX}"
+    mc_text(cv, (C + 11 + x0 + 183) // 2 - mc_width(s) // 2 - 3, by + 2, s, S["text"], outline=True)
+    crest(cv, C, by - 9, "12")
+    # buffs: Lost Ark-style tiles above the HP bar, timers under
+    bx = x0 + 4
+    for label, name, sec in BUFFS:
+        over(cv, (bx, by - 15, bx + 12, by - 3), rgba("2f8f4e"))
+        over(cv, (bx + 1, by - 14, bx + 11, by - 4), S["slot"])
+        cv.alpha_composite(icon(name, 10), (bx + 1, by - 14))
+        tiny(cv, bx + 14, by - 11, str(sec), S["text"])
+        bx += 14 + 4 * len(str(sec)) + 4
+    # notice
+    nw = jp_width(NOTICE)
+    w = nw + 80
+    for i in range(w):
+        a = int(170 * (1 - abs(i - w / 2) / (w / 2)) ** .5)
+        over(cv, (C - w // 2 + i, by - 40, C - w // 2 + i + 1, by - 25), (8, 9, 12, a))
+    for side in (-1, 1):
+        ex = C + side * (nw // 2 + 6)
+        over(cv, (min(ex, ex + side * 18), by - 33, max(ex, ex + side * 18), by - 32), S["rim"])
+        diamond(cv, ex, by - 33, S["rim_hi"], 1)
+    jp_text(cv, C - nw // 2, by - 39, NOTICE, rgba("a8c4ff"))
+    # boss: silver frame with arrow ends, gold gauge, medallion, Lv disc
+    bw, top = 220, 16
+    bx0 = C - bw // 2
+    name = "裂け目の執行官"
+    lv = "30"
+    nx = C - (jp_width(name) + 16) // 2
+    for j in range(-5, 6):  # Lv disc
+        hw = int((30 - j * j) ** .5)
+        over(cv, (nx + 5 - hw - 1, 8 + j, nx + 5 + hw + 2, 8 + j + 1), S["dark"])
+        if abs(j) < 5:
+            over(cv, (nx + 5 - hw + 1, 8 + j, nx + 5 + hw, 8 + j + 1), (60, 64, 72, 255))
+    tiny(cv, nx + 2, 6, lv, S["text"])
+    jp_text(cv, nx + 14, 1, name, S["text"], style="outline")
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - 8 - mc_width(pct), 6, pct, S["text"], outline=True)
+    for j in range(9):  # frame with arrow ends both sides
+        ind = abs(j - 4)
+        over(cv, (bx0 + ind, top + j, bx0 + bw - ind, top + j + 1), S["dark"])
+    over(cv, (bx0 + 5, top + 1, bx0 + bw - 5, top + 2), S["rim_hi"])
+    over(cv, (bx0 + 5, top + 7, bx0 + bw - 5, top + 8), S["rim"])
+    gx0, gx1 = bx0 + 6, bx0 + bw - 6
+    gw = gx1 - gx0
+    over(cv, (gx0, top + 2, gx1, top + 7), (40, 30, 10, 255))
+    over(cv, (gx0, top + 2, gx0 + gw * (BOSS + BOSS_LOST) // BOSS_MAX, top + 7), rgba("fff0d8"))
+    hgrad(cv, (gx0, top + 2, gx0 + gw * BOSS // BOSS_MAX, top + 7), (200, 140, 20, 255), (255, 228, 90, 255))
+    over(cv, (gx0, top + 2, gx0 + gw * BOSS // BOSS_MAX, top + 3), (255, 255, 255, 110))
+    for q in (1, 2, 3):
+        qx = gx0 + gw * q // 4
+        over(cv, (qx, top + 2, qx + 1, top + 7), (0, 0, 0, 140))
+    for side in (bx0 + 2, bx0 + bw - 3):
+        diamond(cv, side, top + 4, S["rim_hi"], 2)
+    for j in range(-4, 5):  # medallion with a red gem under the centre
+        hw = 4 - abs(j)
+        over(cv, (C - hw - 1, top + 9 + j + 4, C + hw + 2, top + 10 + j + 4), S["dark"])
+    for j in range(-3, 4):
+        hw = 3 - abs(j)
+        over(cv, (C - hw, top + 13 + j, C + hw + 1, top + 14 + j), S["rim"])
+    diamond(cv, C, top + 13, rgba("e8344a"), 1)
+    return cv
+
+
+# ---- C5: pixel near-future (CrossCode grammar) carrying the MMO crest layout ------------------
+# Reference studied: CrossCode boss/HUD screenshot (radicalfishgames.com): 45-degree cut black
+# plates, a big bold pixel number, tiny caps labels, a diamond emblem, slanted segmented gauges,
+# flat 2-3 tone ramps instead of gradients. Layout keeps C2 / AION2: gauges run into a centre crest.
+
+P = {"plate": (12, 12, 17, 236), "plate2": (26, 27, 36, 240), "white": rgba("f4f4f6"), "label": rgba("9c9cae"),
+     "slot": (20, 21, 28, 240), "rim": rgba("4a4b5c"),
+     "hp": (rgba("7c1428"), rgba("dc2a40"), rgba("ff7068")), "mp": (rgba("153c8c"), rgba("2f7ef0"), rgba("74c6ff")),
+     "rage": (rgba("8a3c08"), rgba("ff9420"), rgba("ffd860")), "boss": (rgba("a04400"), rgba("ff8a00"), rgba("ffc650"))}
+BOLD = {
+    "0": [".####.", "##..##", "##..##", "##..##", "##..##", "##..##", "##..##", ".####."],
+    "1": ["..##..", ".###..", "..##..", "..##..", "..##..", "..##..", "..##..", ".####."],
+    "2": [".####.", "##..##", "....##", "...##.", "..##..", ".##...", "##....", "######"],
+    "3": [".####.", "##..##", "....##", "..###.", "....##", "....##", "##..##", ".####."],
+    "4": ["...##.", "..###.", ".####.", "##.##.", "##.##.", "######", "...##.", "...##."],
+    "5": ["######", "##....", "#####.", "....##", "....##", "....##", "##..##", ".####."],
+    "6": [".####.", "##....", "##....", "#####.", "##..##", "##..##", "##..##", ".####."],
+    "7": ["######", "....##", "...##.", "...##.", "..##..", "..##..", ".##...", ".##..."],
+    "8": [".####.", "##..##", "##..##", ".####.", "##..##", "##..##", "##..##", ".####."],
+    "9": [".####.", "##..##", "##..##", "##..##", ".#####", "....##", "....##", ".####."]}
+CAPS = {"H": "101101111101101", "P": "110101110100100", "M": "101111111101101", "L": "100100100100111",
+        "V": "101101101101010", "B": "110101110101110", "O": "111101101101111", "S": "111100111001111",
+        "%": "101001010100101"}
+
+
+def bold_width(s):
+    return len(s) * 7 - 1
+
+
+def bold(cv, x, y, s, col):
+    for ch in s:
+        rows = BOLD[ch]
+        for j, row in enumerate(rows):
+            for i, v in enumerate(row):
+                if v == "#":
+                    px(cv, x + i + 1, y + j + 1, (0, 0, 0, 255))
+        for j, row in enumerate(rows):
+            for i, v in enumerate(row):
+                if v == "#":
+                    px(cv, x + i, y + j, col)
+        x += 7
+
+
+def caps(cv, x, y, s, col):
+    for ch in s:
+        bits = CAPS.get(ch) or DIGIT3[ch]
+        for j in range(5):
+            for i in range(3):
+                if bits[j * 3 + i] == "1":
+                    px(cv, x + i, y + j, col)
+        x += 4
+
+
+def slant(cv, x0, x1, y, h, col, left="/", right="|"):
+    """Row-wise parallelogram: '/' leans right at the top, '\\' leans left at the top."""
+    for j in range(h):
+        a = x0 + (h - 1 - j if left == "/" else j if left == "\\" else 0)
+        b = x1 - (j if right == "/" else h - 1 - j if right == "\\" else 0)
+        over(cv, (a, y + j, b, y + j + 1), col)
+
+
+def slant_gauge(cv, x0, x1, y, frac, ramp, empty, left="/", right="|", grow="right", extra=0.0, trail=0.0):
+    h = 4
+    dark, base, light = ramp
+    for j in range(h):
+        a = x0 + (h - 1 - j if left == "/" else j if left == "\\" else 0)
+        b = x1 - (j if right == "/" else h - 1 - j if right == "\\" else 0)
+        w = b - a
+        f = round(w * frac)
+        over(cv, (a, y + j, b, y + j + 1), empty)
+        fa, fb = (a, a + f) if grow == "right" else (b - f, b)
+        if trail:
+            t = round(w * (frac + extra + trail))
+            over(cv, (a, y + j, a + t, y + j + 1), rgba("ffe8dc"))
+        if extra:
+            over(cv, (fb, y + j, fb + round(w * extra), y + j + 1), rgba("dfe6f0"))
+        over(cv, (fa, y + j, fb, y + j + 1), light if j == 0 else dark if j == h - 1 else base)
+        if f and 0 < f < w:
+            px(cv, fb - 1 if grow == "right" else fa, y + j, P["white"])
+
+
+def design_c5():
+    cv = world()
+    x0, y0 = HB_X, HB_Y
+    # hotbar: black plate, dark slots, 1px rims, key numbers baked in
+    over(cv, (x0 - 1, y0, x0 + 183, y0 + 22), P["plate"])
+    for i in range(9):
+        sx = x0 + 2 + 20 * i
+        over(cv, (sx, y0 + 2, sx + 18, y0 + 20), P["slot"])
+        over(cv, (sx, y0 + 2, sx + 18, y0 + 3), P["rim"])
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        ic = icon(name)
+        if state == "cd":
+            ic = darken(ic, .35)
+        elif state == "nomana":
+            ic = darken(ic, .6, tint=(110, 150, 255))
+        cv.alpha_composite(ic, (x, y))
+        if state == "cd":
+            s = str(cd)
+            bold(cv, x + 8 - bold_width(s) // 2, y + 4, s, P["white"])
+        if state == "nomana":
+            over(cv, (x - 1, y + 16, x + 17, y + 17), P["mp"][2])
+    for i in range(9):
+        caps(cv, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (170, 172, 190, 220))
+    sx = x0 + 1
+    for a, b, c, d in ((sx, y0 + 1, sx + 20, y0 + 2), (sx, y0 + 20, sx + 20, y0 + 21),
+                       (sx, y0 + 1, sx + 1, y0 + 21), (sx + 19, y0 + 1, sx + 20, y0 + 21)):
+        over(cv, (a, b, c, d), P["white"])
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # class resource: slanted pips above the hotbar
+    pip_y = y0 - 5
+    lit = RAGE * 20 // 100
+    for i in range(20):
+        px0 = x0 + 1 + i * 9
+        if i < lit:
+            slant(cv, px0, px0 + 8, pip_y, 4, P["rage"][1], left="/", right="/")
+            slant(cv, px0 + 3, px0 + 8, pip_y, 1, P["rage"][2], left="|", right="|")
+        else:
+            slant(cv, px0, px0 + 8, pip_y, 4, (40, 30, 24, 220), left="/", right="/")
+    # HP / MP plates: 45-degree outer cut, run into the crest
+    py, ph = y0 - 24, 18
+    slant(cv, x0 - 1, C - 8, py, ph, P["plate"], left="/", right="|")
+    slant(cv, C + 8, x0 + 183, py, ph, P["plate"], left="|", right="\\")
+    over(cv, (x0 + ph - 1, py, C - 8, py + 1), P["white"])        # bright top edges
+    over(cv, (C + 8, py, x0 + 183 - ph + 1, py + 1), P["white"])
+    caps(cv, x0 + ph + 1, py + 3, "HP", P["label"])
+    s = str(HP)
+    bold(cv, x0 + ph + 11, py + 2, s, P["white"])
+    mc_text(cv, x0 + ph + 12 + bold_width(s) + 1, py + 3, f"/{HP_MAX}", P["label"], shadow=False)
+    slant_gauge(cv, x0 + 3, C - 12, py + 12, HP / HP_MAX, P["hp"], (44, 14, 22, 255),
+                left="/", right="|", extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX)
+    caps(cv, C + 19, py + 3, "MP", P["label"])
+    s = str(MP)
+    bold(cv, C + 29, py + 2, s, P["white"])
+    mc_text(cv, C + 30 + bold_width(s) + 1, py + 3, f"/{MP_MAX}", P["label"], shadow=False)
+    slant_gauge(cv, C + 12, x0 + 179, py + 12, MP / MP_MAX, P["mp"], (14, 22, 50, 255),
+                left="|", right="\\")
+    # centre crest: black diamond, white rim, level in bold
+    cx, cy, r = C, py + 7, 15
+    for j in range(-r, r + 1):
+        w = r - abs(j)
+        over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), P["white"])
+        if w >= 1:
+            over(cv, (cx - w + 1, cy + j, cx + w, cy + j + 1), P["plate"][:3] + (255,))
+        if w >= 3:
+            px(cv, cx - w + 2, cy + j, P["rim"])
+            px(cv, cx + w - 2, cy + j, P["rim"])
+    caps(cv, cx - 3, cy - 9, "LV", P["label"])
+    bold(cv, cx - bold_width("12") // 2, cy - 3, "12", P["white"])
+    # buffs: slanted black tags above the HP plate, green top edge = buff
+    bx = x0 + ph - 4
+    for label, name, sec in BUFFS:
+        s = str(sec)
+        tw = 26 + 4 * len(s)
+        slant(cv, bx, bx + tw, py - 14, 12, P["plate"], left="/", right="/")
+        over(cv, (bx + 11, py - 14, bx + tw, py - 13), rgba("5fe08a"))
+        cv.alpha_composite(icon(name, 10), (bx + 10, py - 12))
+        caps(cv, bx + 22, py - 9, s, P["white"])
+        bx += tw - 6
+    # notice: black slanted strip
+    nw = jp_width(NOTICE)
+    slant(cv, C - nw // 2 - 14, C + nw // 2 + 14, py - 34, 15, P["plate"], left="/", right="/")
+    over(cv, (C - nw // 2 - 14 + 14, py - 34, C + nw // 2 + 14, py - 33), P["mp"][2])
+    jp_text(cv, C - nw // 2 - 1, py - 33, NOTICE, rgba("a9d2ff"), style="none")
+    # boss: slanted black strip with BOSS label + name, orange segmented gauge under it
+    bw = 240
+    bx0 = C - bw // 2
+    slant(cv, bx0, bx0 + bw, 2, 15, P["plate"], left="/", right="/")
+    over(cv, (bx0 + 15, 2, bx0 + bw, 3), P["white"])
+    caps(cv, bx0 + 16, 7, "BOSS", P["boss"][1])
+    jp_text(cv, bx0 + 36, 3, "裂け目の執行官", P["white"], style="none")
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    caps(cv, bx0 + bw - 18 - 4 * len(pct), 7, pct, P["white"])
+    slant(cv, bx0 - 2, bx0 + bw - 14, 17, 7, P["plate"], left="\\", right="\\")
+    slant_gauge(cv, bx0 + 2, bx0 + bw - 18, 18, BOSS / BOSS_MAX, P["boss"], (50, 26, 10, 255),
+                left="\\", right="\\", trail=BOSS_LOST / BOSS_MAX)
+    for q in (1, 2, 3):
+        qx = bx0 + 2 + (bw - 20) * q // 4
+        for j in range(4):
+            px(cv, qx + j, 18 + j, P["plate"][:3] + (255,))
+    return cv
+
+
+# ---- C6: modern MMO (AION2 / Lost Ark / BDO layout) x Minecraft materials --------------------
+# Concept corrected by the creator: "modern MMO x Minecraft", not near-future. Layout from AION2 /
+# Lost Ark (gauges run into a centre crest that carries the level); craft from C5 (flat 2-3 tone
+# ramps, bold pixel numbers); material from Minecraft itself: plates are tiled polished blackstone
+# with the Minecraft GUI bevel, rims and the crest are iron, accents are gems.
+
+def _stone_tile():
+    t = tex("block/polished_blackstone")
+    pix = t.load()
+    for y in range(16):
+        for x in range(16):
+            r, g, b, a = pix[x, y]
+            pix[x, y] = (int(r * .42) + 4, int(g * .42) + 4, int(b * .46) + 6, 245)
+    return t
+
+
+STONE = None
+IRON = (rgba("f0f0f0"), rgba("c6c6c6"), rgba("8c8c8c"), rgba("585858"), rgba("2e2e2e"))  # light..dark
+G = {"out": rgba("050506"), "inset": rgba("0f1012"), "text": rgba("f2f2f2"), "label": rgba("a0a0a0"),
+     "ruby": (rgba("6e0d1a"), rgba("d0263c"), rgba("ff8a8a")), "hp": (rgba("6c1020"), rgba("c8283a"), rgba("ff6a68")),
+     "mp": (rgba("143478"), rgba("2c6fe0"), rgba("78bcff")), "rage": (rgba("8a3a06"), rgba("f08a1a"), rgba("ffd25a")),
+     "boss": (rgba("7a1212"), rgba("d23a1e"), rgba("ff9a50")), "buff": rgba("4fd06e")}
+
+
+def stone_plate(cv, box, bevel=True):
+    """Minecraft-GUI plate: 1px dark outline, tiled blackstone fill, iron-ish bevel light TL / dark BR."""
+    global STONE
+    STONE = STONE or _stone_tile()
+    x0, y0, x1, y1 = box
+    over(cv, (x0 + 1, y0, x1 - 1, y1), G["out"])
+    over(cv, (x0, y0 + 1, x1, y1 - 1), G["out"])
+    for ty in range(y0 + 1, y1 - 1, 16):
+        for tx in range(x0 + 1, x1 - 1, 16):
+            tile = STONE.crop((0, 0, min(16, x1 - 1 - tx), min(16, y1 - 1 - ty)))
+            cv.alpha_composite(tile, (tx, ty))
+    if bevel:
+        over(cv, (x0 + 1, y0 + 1, x1 - 1, y0 + 2), IRON[3])
+        over(cv, (x0 + 1, y0 + 1, x0 + 2, y1 - 1), IRON[3])
+        over(cv, (x0 + 1, y1 - 2, x1 - 1, y1 - 1), (0, 0, 0, 200))
+        over(cv, (x1 - 2, y0 + 1, x1 - 1, y1 - 1), (0, 0, 0, 200))
+
+
+def inset_slot(cv, box):
+    x0, y0, x1, y1 = box
+    over(cv, (x0, y0, x1, y1), G["inset"])
+    over(cv, (x0, y0, x1, y0 + 1), (0, 0, 0, 255))
+    over(cv, (x0, y0, x0 + 1, y1), (0, 0, 0, 255))
+    over(cv, (x0, y1 - 1, x1, y1), (60, 60, 64, 255))
+    over(cv, (x1 - 1, y0, x1, y1), (60, 60, 64, 255))
+
+
+def ramp_gauge(cv, x0, x1, y, h, frac, ramp, empty, grow="right", extra=0.0, trail=0.0):
+    dark, base, light = ramp
+    inset_slot(cv, (x0 - 1, y - 1, x1 + 1, y + h + 1))
+    over(cv, (x0, y, x1, y + h), empty)
+    w = x1 - x0
+    f = round(w * frac)
+    fa, fb = (x0, x0 + f) if grow == "right" else (x1 - f, x1)
+    if trail:
+        t = round(w * trail)
+        over(cv, (fb, y, min(x1, fb + round(w * extra) + t), y + h), rgba("f6e2d2"))
+    if extra:
+        over(cv, (fb, y, min(x1, fb + round(w * extra)), y + h), rgba("dcdcdc"))
+        over(cv, (fb, y, min(x1, fb + round(w * extra)), y + 1), rgba("ffffff"))
+    over(cv, (fa, y, fb, y + h), base)
+    over(cv, (fa, y, fb, y + 1), light)
+    over(cv, (fa, y + h - 1, fb, y + h), dark)
+    for i in range(fa + 2, fb - 1, 6):           # pixel glints along the top like a polished bar
+        px(cv, i, y + 1, light)
+
+
+def gem(cv, cx, cy, ramp, r=2):
+    dark, base, light = ramp
+    for j in range(-r - 1, r + 2):
+        w = r + 1 - abs(j)
+        over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), G["out"])
+    for j in range(-r, r + 1):
+        w = r - abs(j)
+        over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), base if j < r else dark)
+    px(cv, cx - 1 if r > 1 else cx, cy - r + 1 if r > 1 else cy - 1, light)
+
+
+def iron_crest(cv, cx, top, level):
+    halves = [2, 4, 6, 8, 10, 12, 13, 13, 13, 13, 13, 13, 13, 13, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+    for j, hw in enumerate(halves):
+        over(cv, (cx - hw - 1, top + j, cx + hw + 1, top + j + 1), G["out"])
+    for j, hw in enumerate(halves[1:-1], start=1):  # iron ramp: light upper-left, dark lower-right
+        hw -= 1
+        over(cv, (cx - hw, top + j, cx, top + j + 1), IRON[1] if j < 6 else IRON[2])
+        over(cv, (cx, top + j, cx + hw, top + j + 1), IRON[2] if j < 6 else IRON[3])
+        px(cv, cx - hw, top + j, IRON[0])
+    for j, hw in enumerate(halves[5:-5], start=5):
+        hw -= 4
+        if hw > 0:
+            over(cv, (cx - hw, top + j, cx + hw, top + j + 1), G["out"] if j == 5 else (18, 18, 22, 255))
+    gem(cv, cx, top + 3, G["ruby"], 2)
+    bold(cv, cx - bold_width(level) // 2, top + 9, level, G["text"])
+
+
+def design_c6(crisp=False, dungeons=False):
+    """crisp=True (C8): same plates, item-slot icons at their real 32-texel resolution.
+    dungeons=True (D2): C8 layout drawn with D1's charcoal stepped plates, plain notice text."""
+    cv = world()
+    plate = (lambda c, box, bevel=True: step_plate(c, box)) if dungeons else stone_plate
+    top = Image.new("RGBA", (W, H)) if crisp else None
+    icons = []
+    x0, y0 = HB_X, HB_Y
+    plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    for i in range(9):
+        if dungeons:
+            d_slot(cv, x0 + 2 + 20 * i, y0 + 2)
+        else:
+            inset_slot(cv, (x0 + 2 + 20 * i, y0 + 2, x0 + 20 + 20 * i, y0 + 20))
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        if crisp:
+            icons.append((name, x, y, state))
+        else:
+            ic = icon(name)
+            if state == "cd":
+                ic = darken(ic, .35)
+            elif state == "nomana":
+                ic = darken(ic, .6, tint=(110, 150, 255))
+            cv.alpha_composite(ic, (x, y))
+        if state == "cd":
+            s = str(cd)
+            bold(top or cv, x + 8 - bold_width(s) // 2, y + 4, s, G["text"])
+    for i in range(9):
+        caps(top or cv, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (190, 190, 190, 220))
+    sx = x0 + 1  # selection: iron frame
+    for a, b, c, d, col in ((sx, y0 + 1, sx + 20, y0 + 2, IRON[0]), (sx, y0 + 1, sx + 1, y0 + 21, IRON[0]),
+                            (sx, y0 + 20, sx + 20, y0 + 21, IRON[2]), (sx + 19, y0 + 1, sx + 20, y0 + 21, IRON[2])):
+        over(cv, (a, b, c, d), col)
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # class resource: ember cells between plate and hotbar
+    ry = y0 - 5
+    plate(cv, (x0 - 1, ry, x0 + 183, ry + 6), bevel=False)
+    lit = RAGE * 20 // 100
+    for i in range(20):
+        cx0 = x0 + 2 + i * 9
+        if i < lit:
+            over(cv, (cx0, ry + 2, cx0 + 8, ry + 4), G["rage"][1])
+            over(cv, (cx0, ry + 2, cx0 + 8, ry + 3), G["rage"][2])
+        else:
+            over(cv, (cx0, ry + 2, cx0 + 8, ry + 4), (44, 30, 20, 255))
+    # HP / MP plates running into the iron crest
+    py, ph = y0 - 24, 20
+    plate(cv, (x0 - 1, py, C - 9, py + ph))
+    plate(cv, (C + 9, py, x0 + 183, py + ph))
+    mc_text(cv, x0 + 3, py + 3, "HP", G["label"])
+    s = str(HP)
+    bold(cv, x0 + 17, py + 3, s, G["text"])
+    mc_text(cv, x0 + 18 + bold_width(s) + 1, py + 4, f"/{HP_MAX}", G["label"])
+    ramp_gauge(cv, x0 + 3, C - 13, py + 13, 4, HP / HP_MAX, G["hp"], (34, 10, 14, 255),
+               extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX)
+    s = str(MP)
+    tx = x0 + 179 - (bold_width(s) + 2 + mc_width(f"/{MP_MAX}"))
+    bold(cv, tx, py + 3, s, G["text"])
+    mc_text(cv, tx + bold_width(s) + 2, py + 4, f"/{MP_MAX}", G["label"])
+    mc_text(cv, C + 17, py + 3, "MP", G["label"])
+    ramp_gauge(cv, C + 13, x0 + 179, py + 13, 4, MP / MP_MAX, G["mp"], (10, 16, 36, 255))
+    iron_crest(cv, C, py - 6, "12")
+    # buffs: small stone tiles with an emerald underline, seconds in the Minecraft font
+    bx = x0 - 1
+    for label, name, sec in BUFFS:
+        s = str(sec)
+        tw = 15 + mc_width(s) + 3
+        plate(cv, (bx, py - 14, bx + tw, py - 1))
+        if crisp:
+            icons.append((name, bx + 2, py - 12, "buff10"))
+        else:
+            cv.alpha_composite(icon(name, 10), (bx + 2, py - 12))
+        over(cv, (bx + 2, py - 3, bx + 12, py - 2), G["buff"])
+        mc_text(cv, bx + 14, py - 11, s, G["text"])
+        bx += tw + 2
+    # notice: stone strip, text in the creator's 12px font
+    nw = jp_width(NOTICE)
+    if not dungeons:
+        plate(cv, (C - nw // 2 - 8, py - 33, C + nw // 2 + 8, py - 17))
+        gem(cv, C - nw // 2 - 4, py - 25, G["mp"], 1)
+        gem(cv, C + nw // 2 + 3, py - 25, G["mp"], 1)
+    jp_text(cv, C - nw // 2, py - 32, NOTICE, rgba("9cc6ff"))
+    # boss: stone plate with a ruby rank gem, name, Lv, framed gauge with iron caps
+    bw = 230
+    bx0 = C - bw // 2
+    plate(cv, (bx0, 2, bx0 + bw, 28))
+    gem(cv, bx0 + 8, 9, G["ruby"], 3)
+    name = "裂け目の執行官"
+    jp_text(cv, bx0 + 16, 3, name, G["text"])
+    mc_text(cv, bx0 + 20 + jp_width(name), 6, "Lv.30", rgba("e8c46a"))
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - 5 - mc_width(pct), 6, pct, G["text"])
+    ramp_gauge(cv, bx0 + 5, bx0 + bw - 5, 19, 5, BOSS / BOSS_MAX, G["boss"], (36, 10, 8, 255),
+               trail=BOSS_LOST / BOSS_MAX)
+    for q in (1, 2, 3):
+        qx = bx0 + 5 + (bw - 10) * q // 4
+        over(cv, (qx, 19, qx + 1, 24), (0, 0, 0, 160))
+    return (cv, icons, top) if crisp else cv
+
+
+# ---- C7: C6 with fewer boxes and real-resolution skill icons ----------------------------------
+# What changed from C6: no stone plate behind HP/MP/notice/boss — gauges are iron-framed bars that
+# plug into the crest (one continuous piece, like AION2); skill icons are the 32 px art shown the way
+# the game shows an item texture in a slot (32 texels in 16 GUI px), not shrunk to mush.
+
+def iron_bar(cv, x0, x1, y, h, frac, ramp, empty, grow="right", extra=0.0, trail=0.0, caps_at=("l", "r")):
+    over(cv, (x0 - 1, y - 2, x1 + 1, y + h + 2), G["out"])
+    over(cv, (x0, y - 1, x1, y), IRON[1])
+    over(cv, (x0, y + h, x1, y + h + 1), IRON[3])
+    ramp_gauge(cv, x0 + 1, x1 - 1, y, h, frac, ramp, empty, grow=grow, extra=extra, trail=trail)
+    for side in caps_at:  # iron end caps with a rivet
+        cx = x0 - 3 if side == "l" else x1
+        over(cv, (cx, y - 3, cx + 4, y + h + 3), G["out"])
+        over(cv, (cx + 1, y - 2, cx + 3, y + h + 2), IRON[2])
+        over(cv, (cx + 1, y - 2, cx + 2, y + h + 2), IRON[1])
+        px(cv, cx + 1, y + h // 2, IRON[0])
+
+
+def design_c7():
+    cv = world()
+    top = Image.new("RGBA", (W, H))
+    icons = []
+    x0, y0 = HB_X, HB_Y
+    stone_plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    for i in range(9):
+        inset_slot(cv, (x0 + 2 + 20 * i, y0 + 2, x0 + 20 + 20 * i, y0 + 20))
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        icons.append((name, x, y, state))
+        if state == "cd":
+            s = str(cd)
+            bold(top, x + 8 - bold_width(s) // 2, y + 4, s, G["text"])
+    for i in range(9):
+        caps(top, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (210, 210, 210, 230))
+    sx = x0 + 1
+    for a, b, c, d, col in ((sx, y0 + 1, sx + 20, y0 + 2, IRON[0]), (sx, y0 + 1, sx + 1, y0 + 21, IRON[0]),
+                            (sx, y0 + 20, sx + 20, y0 + 21, IRON[2]), (sx + 19, y0 + 1, sx + 20, y0 + 21, IRON[2])):
+        over(cv, (a, b, c, d), col)
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # class resource: ember cells on the hotbar's top edge
+    ry = y0 - 4
+    over(cv, (x0 - 1, ry, x0 + 183, ry + 4), G["out"])
+    lit = RAGE * 20 // 100
+    for i in range(20):
+        cx0 = x0 + 1 + i * 9
+        if i < lit:
+            over(cv, (cx0, ry + 1, cx0 + 8, ry + 3), G["rage"][1])
+            over(cv, (cx0, ry + 1, cx0 + 8, ry + 2), G["rage"][2])
+        else:
+            over(cv, (cx0, ry + 1, cx0 + 8, ry + 3), (48, 32, 20, 255))
+    # HP / MP: long iron-framed bars wider than the hotbar, plugging into the crest
+    by, bh = y0 - 14, 5
+    iron_bar(cv, x0 + 3, C - 12, by, bh, HP / HP_MAX, G["hp"], (34, 10, 14, 255),
+             extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX, caps_at=("l",))
+    iron_bar(cv, C + 12, x0 + 179, by, bh, MP / MP_MAX, G["mp"], (10, 16, 36, 255), caps_at=("r",))
+    s = str(HP)
+    mc_text(cv, x0 + 3, by - 12, "HP", G["label"])
+    bold(cv, x0 + 3 + mc_width("HP") + 4, by - 13, s, G["text"])
+    mc_text(cv, x0 + 3 + mc_width("HP") + 5 + bold_width(s) + 1, by - 12, f"/{HP_MAX}", G["label"])
+    s = str(MP)
+    right = x0 + 179
+    tw = bold_width(s) + 2 + mc_width(f"/{MP_MAX}")
+    mc_text(cv, right - mc_width("MP"), by - 12, "MP", G["label"])
+    bold(cv, right - mc_width("MP") - 5 - tw, by - 13, s, G["text"])
+    mc_text(cv, right - mc_width("MP") - 5 - tw + bold_width(s) + 2, by - 12, f"/{MP_MAX}", G["label"])
+    iron_crest(cv, C, by - 13, "12")
+    # buffs: iron-rimmed squares floating above the HP numbers
+    bx = x0 + 3
+    for label, name, sec in BUFFS:
+        over(cv, (bx, by - 30, bx + 14, by - 16), G["out"])
+        over(cv, (bx + 1, by - 29, bx + 13, by - 17), IRON[2])
+        over(cv, (bx + 2, by - 28, bx + 12, by - 18), G["inset"])
+        icons.append((name, bx + 2, by - 28, "buff10"))
+        over(cv, (bx + 1, by - 17, bx + 13, by - 16), G["buff"])
+        mc_text(cv, bx + 16, by - 26, str(sec), G["text"])
+        bx += 16 + mc_width(str(sec)) + 5
+    # notice: floating text over a soft dark band
+    nw = jp_width(NOTICE)
+    w = nw + 60
+    for i in range(w):
+        a = int(150 * (1 - abs(i - w / 2) / (w / 2)) ** .5)
+        over(cv, (C - w // 2 + i, by - 52, C - w // 2 + i + 1, by - 37), (0, 0, 0, a))
+    gem(cv, C - nw // 2 - 7, by - 45, G["mp"], 1)
+    gem(cv, C + nw // 2 + 6, by - 45, G["mp"], 1)
+    jp_text(cv, C - nw // 2, by - 51, NOTICE, rgba("9cc6ff"), style="outline")
+    # boss: floating name, long iron-framed bar with ruby-capped ends
+    name = "裂け目の執行官"
+    bw = 240
+    bx0 = C - bw // 2
+    jp_text(cv, C - (jp_width(name) + 4 + mc_width("Lv.30")) // 2, 2, name, G["text"], style="outline")
+    mc_text(cv, C + (jp_width(name) - mc_width("Lv.30")) // 2 + 4, 5, "Lv.30", rgba("e8c46a"))
+    iron_bar(cv, bx0, bx0 + bw, 19, 5, BOSS / BOSS_MAX, G["boss"], (36, 10, 8, 255), trail=BOSS_LOST / BOSS_MAX)
+    for q in (1, 2, 3):
+        qx = bx0 + 1 + (bw - 2) * q // 4
+        over(cv, (qx, 19, qx + 1, 24), (0, 0, 0, 170))
+    gem(cv, bx0 - 6, 21, G["ruby"], 2)
+    gem(cv, bx0 + bw + 6, 21, G["ruby"], 2)
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - mc_width(pct), 8, pct, G["text"])
+    return cv, icons, top
+
+
+# ---- C9: C8 pushed toward AION2 / Lost Ark -------------------------------------------------------
+# From the references: the hotbar is grouped (weapon | 5 skills | consumables) with raised skill
+# frames; HP/MP numbers sit inside thicker gauges (AION2); the crest grows iron wings; plates end
+# in small iron tips; buff timers sit under the icon (Lost Ark); boss bar in an ornate frame with a
+# medallion (AION2).
+
+def dark_plate(cv, box):
+    """Sleeker plate than C6: darker, mostly translucent stone, same Minecraft bevel."""
+    global STONE
+    STONE = STONE or _stone_tile()
+    x0, y0, x1, y1 = box
+    over(cv, (x0 + 1, y0, x1 - 1, y1), G["out"])
+    over(cv, (x0, y0 + 1, x1, y1 - 1), G["out"])
+    for ty in range(y0 + 1, y1 - 1, 16):
+        for tx in range(x0 + 1, x1 - 1, 16):
+            tile = STONE.crop((0, 0, min(16, x1 - 1 - tx), min(16, y1 - 1 - ty)))
+            tile = Image.blend(tile, Image.new("RGBA", tile.size, (8, 8, 10, 235)), .45)
+            cv.alpha_composite(tile, (tx, ty))
+    over(cv, (x0 + 1, y0 + 1, x1 - 1, y0 + 2), IRON[3])
+    over(cv, (x0 + 1, y1 - 2, x1 - 1, y1 - 1), (0, 0, 0, 220))
+
+
+def plate_tip(cv, x, y, h, side):
+    """Small iron arrow tip on a plate's outer end; side=-1 points left, +1 right."""
+    mid = h // 2
+    for j in range(h):
+        d = abs(j - mid)
+        n = 4 - d if d < 4 else 0
+        for i in range(n + 1):
+            xx = x + side * i
+            px(cv, xx, y + j, G["out"] if i == n else IRON[1] if j < mid else IRON[2])
+
+
+def wings(cv, cx, y, reach):
+    """Two solid tapered iron blades off each side of the crest (light top edge, dark outline)."""
+    for side in (-1, 1):
+        for dy, length, thick in ((0, reach, 4), (5, reach - 8, 3)):
+            for i in range(length):
+                t = max(1, round(thick * (1 - i / length)))
+                xx = cx + side * (13 + i)
+                top_y = y + dy + (thick - t) // 2
+                over(cv, (xx, top_y - 1, xx + 1, top_y + t + 1), G["out"])
+                over(cv, (xx, top_y, xx + 1, top_y + t), IRON[2])
+                px(cv, xx, top_y, IRON[0] if dy == 0 else IRON[1])
+
+
+def skill_frame(cv, sx, y0):
+    over(cv, (sx - 1, y0 + 1, sx + 19, y0 + 21), G["out"])
+    over(cv, (sx, y0 + 2, sx + 18, y0 + 3), IRON[1])
+    over(cv, (sx, y0 + 2, sx + 1, y0 + 20), IRON[1])
+    over(cv, (sx, y0 + 19, sx + 18, y0 + 20), IRON[3])
+    over(cv, (sx + 17, y0 + 2, sx + 18, y0 + 20), IRON[3])
+    over(cv, (sx + 1, y0 + 3, sx + 17, y0 + 19), G["inset"])
+    for cx, cy in ((sx, y0 + 2), (sx + 17, y0 + 2), (sx, y0 + 19), (sx + 17, y0 + 19)):
+        px(cv, cx, cy, IRON[0])
+
+
+def key_tag(cv, x, y, s):
+    over(cv, (x, y, x + 4 * len(s) + 1, y + 7), (0, 0, 0, 210))
+    caps(cv, x + 1, y + 1, s, (225, 225, 225, 255))
+
+
+def design_c9(plain=False):
+    """plain=True (C10): the same piece without wings, plate tips or the boss medallion."""
+    cv = world()
+    top = Image.new("RGBA", (W, H))
+    icons = []
+    x0, y0 = HB_X, HB_Y
+    # hotbar: weapon | skills 2-6 | consumables, with iron dividers
+    dark_plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    for i in range(9):
+        sx = x0 + 2 + 20 * i
+        if 1 <= i <= 5:
+            skill_frame(cv, sx, y0)
+        else:
+            inset_slot(cv, (sx, y0 + 2, sx + 18, y0 + 20))
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        icons.append((name, x, y, state))
+        if state == "cd":
+            s = str(cd)
+            bold(top, x + 8 - bold_width(s) // 2, y + 4, s, G["text"])
+        if state == "nomana":
+            over(top, (x, y + 15, x + 16, y + 16), G["mp"][2])
+    for i in range(9):
+        key_tag(top, x0 + 2 + 20 * i, y0 + 2, str(i + 1))
+    sx = x0 + 1
+    for a, b, c, d, col in ((sx, y0 + 1, sx + 20, y0 + 2, IRON[0]), (sx, y0 + 1, sx + 1, y0 + 21, IRON[0]),
+                            (sx, y0 + 20, sx + 20, y0 + 21, IRON[1]), (sx + 19, y0 + 1, sx + 20, y0 + 21, IRON[1])):
+        over(cv, (a, b, c, d), col)
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # class resource strip
+    ry = y0 - 5
+    dark_plate(cv, (x0 - 1, ry, x0 + 183, ry + 6))
+    lit = RAGE * 20 // 100
+    for i in range(20):
+        cx0 = x0 + 2 + i * 9
+        col = G["rage"] if i < lit else None
+        over(cv, (cx0, ry + 2, cx0 + 8, ry + 4), col[1] if col else (44, 30, 20, 255))
+        if col:
+            over(cv, (cx0, ry + 2, cx0 + 8, ry + 3), col[2])
+    # HP / MP plates: thick gauges with the number inside, iron tips on the outer ends
+    ph = 15
+    py = ry - ph - 1
+    dark_plate(cv, (x0 + 3, py, C - 10, py + ph))
+    dark_plate(cv, (C + 10, py, x0 + 179, py + ph))
+    if not plain:
+        plate_tip(cv, x0 + 2, py, ph, -1)
+        plate_tip(cv, x0 + 180, py, ph, 1)
+    ramp_gauge(cv, x0 + 6, C - 13, py + 3, 9, HP / HP_MAX, G["hp"], (34, 10, 14, 255),
+               extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX)
+    ramp_gauge(cv, C + 13, x0 + 176, py + 3, 9, MP / MP_MAX, G["mp"], (10, 16, 36, 255))
+    s = f"{HP}/{HP_MAX}"
+    mc_text(cv, (x0 + 6 + C - 13) // 2 - mc_width(s) // 2, py + 4, s, G["text"], outline=True)
+    s = f"{MP}/{MP_MAX}"
+    mc_text(cv, (C + 13 + x0 + 176) // 2 - mc_width(s) // 2, py + 4, s, G["text"], outline=True)
+    # crest with wings over the plates
+    if not plain:
+        wings(cv, C, py - 5, 30)
+    iron_crest(cv, C, py - 9, "12")
+    # buffs: tiles with timers under the icon
+    bx = x0 + 3
+    for label, name, sec in BUFFS:
+        over(cv, (bx, py - 25, bx + 14, py - 11), G["out"])
+        over(cv, (bx + 1, py - 24, bx + 13, py - 12), G["buff"])
+        over(cv, (bx + 2, py - 23, bx + 12, py - 13), G["inset"])
+        icons.append((name, bx + 2, py - 23, "buff10"))
+        s = str(sec)
+        caps(cv, bx + 7 - (4 * len(s) - 1) // 2, py - 9, s, G["text"])
+        bx += 17
+    # notice
+    nw = jp_width(NOTICE)
+    dark_plate(cv, (C - nw // 2 - 8, py - 44, C + nw // 2 + 8, py - 28))
+    if not plain:
+        plate_tip(cv, C - nw // 2 - 9, py - 44, 16, -1)
+        plate_tip(cv, C + nw // 2 + 8, py - 44, 16, 1)
+    jp_text(cv, C - nw // 2, py - 43, NOTICE, rgba("9cc6ff"))
+    # boss: name over an ornate iron frame with arrow tips and a medallion
+    name = "裂け目の執行官"
+    bw = 220
+    bx0 = C - bw // 2
+    lvw = 12
+    nx = C - (jp_width(name) + lvw + 3) // 2
+    for j in range(-5, 6):  # Lv disc: iron rim, dark face
+        hw = int((30 - j * j) ** .5)
+        over(cv, (nx + 5 - hw - 1, 8 + j, nx + 5 + hw + 2, 9 + j), G["out"])
+        if abs(j) < 5:
+            over(cv, (nx + 5 - hw, 8 + j, nx + 5 + hw + 1, 9 + j), IRON[2])
+        if abs(j) < 4:
+            over(cv, (nx + 5 - hw + 1, 8 + j, nx + 5 + hw, 9 + j), (24, 24, 28, 255))
+    tiny(cv, nx + 2, 6, "30", rgba("e8c46a"))
+    jp_text(cv, nx + lvw + 3, 2, name, G["text"], style="outline")
+    dark_plate(cv, (bx0, 17, bx0 + bw, 28))
+    if not plain:
+        plate_tip(cv, bx0 - 1, 17, 11, -1)
+        plate_tip(cv, bx0 + bw, 17, 11, 1)
+    ramp_gauge(cv, bx0 + 3, bx0 + bw - 3, 20, 5, BOSS / BOSS_MAX, G["boss"], (36, 10, 8, 255),
+               trail=BOSS_LOST / BOSS_MAX)
+    for q in (1, 2, 3):
+        qx = bx0 + 3 + (bw - 6) * q // 4
+        over(cv, (qx, 20, qx + 1, 25), (0, 0, 0, 170))
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - mc_width(pct), 7, pct, G["text"], outline=True)
+    if not plain:
+        for j in range(-4, 5):  # medallion
+            w = 4 - abs(j)
+            over(cv, (C - w - 1, 31 + j, C + w + 2, 32 + j), G["out"])
+        for j in range(-3, 4):
+            w = 3 - abs(j)
+            over(cv, (C - w, 31 + j, C + w + 1, 32 + j), IRON[1] if j < 0 else IRON[2])
+        gem(cv, C, 31, G["ruby"], 1)
+    return cv, icons, top
+
+
+# ---- D1: modern MMO layout drawn in the Minecraft Dungeons idiom -------------------------------
+# References studied: Minecraft Dungeons HUD (official UI art on Behance) and the Java "Dungeons
+# Hotbar" resource pack (Modrinth): chunky stepped-corner charcoal plates with soft bevels, a big
+# heart container as the centre piece (HP fills it like liquid), Minecraft font for numbers, no
+# glow bands. Layout keeps the AION2 idea: one hero piece in the middle, gauges on both sides.
+
+D = {"out": rgba("0e0e11"), "plate": rgba("2c2c32"), "hi": rgba("4c4c56"), "lo": rgba("1b1b20"),
+     "slot": rgba("17171b"), "slot_hi": rgba("3c3c45"), "metal": (rgba("c4c5ce"), rgba("8d8e99"), rgba("5e5f6a"), rgba("3a3b43")),
+     "red": (rgba("8a0f1c"), rgba("e0202e"), rgba("ff6b66")), "blue": (rgba("1a4aa8"), rgba("3a8ef0"), rgba("8cc8ff")),
+     "amber": (rgba("9a4a08"), rgba("f39a1c"), rgba("ffd86a")), "text": rgba("ffffff"), "sub": rgba("b8b8c2")}
+
+
+def step_plate(cv, box, cut=2):
+    """Charcoal plate with staircase-cut corners, 1px outline, light top / dark bottom bevel."""
+    x0, y0, x1, y1 = box
+    for j in range(y0, y1):
+        k = min(j - y0, y1 - 1 - j)
+        d = cut - k if k < cut else 0
+        over(cv, (x0 + d, j, x1 - d, j + 1), D["out"])
+        if 0 < k:
+            dd = max(0, cut - k) + 1
+            over(cv, (x0 + dd, j, x1 - dd, j + 1), D["hi"] if k == 1 and j - y0 == 1 else
+                 D["lo"] if k == 1 else D["plate"])
+
+
+def d_slot(cv, x, y):
+    over(cv, (x, y, x + 18, y + 18), D["slot"])
+    over(cv, (x, y, x + 18, y + 1), D["out"])
+    over(cv, (x, y, x + 1, y + 18), D["out"])
+    over(cv, (x, y + 17, x + 18, y + 18), D["slot_hi"])
+    over(cv, (x + 17, y, x + 18, y + 18), D["slot_hi"])
+
+
+def heart_masks(w=39, h=35):
+    inside = set()
+    for j in range(h):
+        for i in range(w):
+            x = (i + .5 - w / 2) / (w / 2) * 1.18
+            y = 1.22 - (j + .5) / h * 2.35
+            if (x * x + y * y - 1) ** 3 - x * x * y ** 3 <= 0:
+                inside.add((i, j))
+    def erode(s, n):
+        for _ in range(n):
+            s = {(i, j) for (i, j) in s if all((i + a, j + b) in s for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)))}
+        return s
+    inner = erode(inside, 3)
+    outline = {(i + a, j + b) for (i, j) in inside for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1))} - inside
+    return inside, inner, outline
+
+
+def heart_container(cv, cx, top, frac, trail):
+    w, h = 39, 35
+    inside, inner, outline = heart_masks(w, h)
+    x0 = cx - w // 2
+    for i, j in outline:
+        px(cv, x0 + i, top + j, D["out"])
+    dark, base, light, deep = D["metal"][3], D["metal"][1], D["metal"][0], D["metal"][2]
+    for i, j in inside - inner:  # metal rim, lit from the top-left
+        col = light if (i + j) < w * .55 and j < h * .45 else base if j < h * .6 else deep
+        px(cv, x0 + i, top + j, col)
+    rows = [j for (_, j) in inner]
+    r0, r1 = min(rows), max(rows)
+    surface = r1 + 1 - round((r1 - r0 + 1) * frac)
+    trail_row = r1 + 1 - round((r1 - r0 + 1) * (frac + trail))
+    for i, j in inner:
+        if j >= surface:
+            col = D["red"][2] if j == surface else D["red"][0] if (i, j + 1) not in inner or j > r1 - 2 else D["red"][1]
+        elif j >= trail_row:
+            col = rgba("f2c8c0")
+        else:
+            col = rgba("1d1216")
+        px(cv, x0 + i, top + j, col)
+    for i, j in inner:  # a glint in the upper-left lobe
+        if (i, j) in {(9, 7), (8, 8), (9, 8), (8, 9)}:
+            px(cv, x0 + i, top + j, rgba("ffffff", 200))
+
+
+SKULL = ["011111110", "111111111", "110111011", "100111001", "111101111", "011111110", "001010100"]
+
+
+def design_d1():
+    cv = world()
+    top = Image.new("RGBA", (W, H))
+    icons = []
+    x0, y0 = HB_X, HB_Y
+    # console strip above the hotbar, then the hotbar itself (same charcoal, one piece)
+    step_plate(cv, (x0 - 2, y0 - 12, x0 + 184, y0 + 3))
+    step_plate(cv, (x0 - 2, y0, x0 + 184, y0 + 23))
+    for i in range(9):
+        d_slot(cv, x0 + 2 + 20 * i, y0 + 2)
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        icons.append((name, x, y, state))
+        if state == "cd":
+            s = str(cd)
+            mc_text(top, x + 8 - mc_width(s) // 2 + 1, y + 4, s, D["text"], outline=True)
+    for i in range(9):
+        caps(top, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (230, 230, 236, 230))
+    sx = x0 + 1
+    for a, b, c, d in ((sx, y0 + 1, sx + 20, y0 + 2), (sx, y0 + 20, sx + 20, y0 + 21),
+                       (sx, y0 + 1, sx + 1, y0 + 21), (sx + 19, y0 + 1, sx + 20, y0 + 21)):
+        over(cv, (a, b, c, d), D["text"])
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # gauges in the console: MP left, class resource right (Minecraft Dungeons puts its bars here)
+    gy = y0 - 8
+    for gx0, gx1, frac, ramp in ((x0 + 3, C - 22, MP / MP_MAX, D["blue"]), (C + 22, x0 + 179, RAGE / 100, D["amber"])):
+        over(cv, (gx0 - 1, gy - 1, gx1 + 1, gy + 4), D["out"])
+        over(cv, (gx0, gy, gx1, gy + 3), rgba("101014"))
+        f = round((gx1 - gx0) * frac)
+        over(cv, (gx0, gy, gx0 + f, gy + 3), ramp[1])
+        over(cv, (gx0, gy, gx0 + f, gy + 1), ramp[2])
+    # numbers above the console in the Minecraft font
+    ty = y0 - 22
+    mc_text(cv, x0, ty, f"{MP}/{MP_MAX}", rgba("9cd0ff"))
+    lv = "LV 12"
+    mc_text(cv, x0 + 182 - mc_width(lv), ty, lv, D["text"])
+    mc_text(cv, C + 22, ty, f"+{BARRIER}", rgba("e8e8f0"))
+    # centre piece: the heart container, its tip plugged into the console; HP number inside
+    heart_container(cv, C, y0 - 40, HP / HP_MAX, HP_LOST / HP_MAX)
+    s = str(HP)
+    bold(cv, C - bold_width(s) // 2, y0 - 31, s, D["text"])
+    caps(cv, C - (4 * 3 - 1) // 2, y0 - 21, str(HP_MAX), rgba("ffd8d4"))
+    # buffs: small stepped frames, timer beside
+    bx = x0
+    for label, name, sec in BUFFS:
+        step_plate(cv, (bx, ty - 16, bx + 14, ty - 2), cut=1)
+        icons.append((name, bx + 2, ty - 14, "buff10"))
+        mc_text(cv, bx + 16, ty - 13, f"{sec}s", D["text"])
+        bx += 18 + mc_width(f"{sec}s") + 3
+    # notice: plain text with a Minecraft-style shadow, like a vanilla title
+    nw = jp_width(NOTICE)
+    jp_text(cv, C - nw // 2, y0 - 66, NOTICE, rgba("a8d0ff"))
+    # boss: name, chunky stepped bar with a skull cap
+    name = "裂け目の執行官"
+    jp_text(cv, C - jp_width(name) // 2, 2, name, D["text"])
+    bw = 200
+    bx0 = C - bw // 2
+    step_plate(cv, (bx0, 16, bx0 + bw, 27), cut=2)
+    gx0, gx1 = bx0 + 3, bx0 + bw - 3
+    over(cv, (gx0, 19, gx1, 24), rgba("1d1216"))
+    f = round((gx1 - gx0) * BOSS / BOSS_MAX)
+    t = round((gx1 - gx0) * BOSS_LOST / BOSS_MAX)
+    over(cv, (gx0 + f, 19, gx0 + f + t, 24), rgba("f2c8c0"))
+    over(cv, (gx0, 19, gx0 + f, 24), D["red"][1])
+    over(cv, (gx0, 19, gx0 + f, 20), D["red"][2])
+    over(cv, (gx0, 23, gx0 + f, 24), D["red"][0])
+    step_plate(cv, (bx0 - 8, 13, bx0 + 7, 30), cut=2)
+    for j, row in enumerate(SKULL):
+        for i, v in enumerate(row):
+            if v == "1":
+                px(cv, bx0 - 5 + i, 18 + j, rgba("e8e6dc"))
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - mc_width(pct), 5, pct, D["text"])
+    return cv, icons, top
+
+
+# ---- E1-E3: D2 without the crest and the HP/MP labels, packed tighter --------------------------
+# Creator feedback on D2: the crest and the "HP"/"MP" words may not be needed; pack it tighter.
+#   E1: two plates, numbers above thin gauges, a small Lv chip in the seam
+#   E2: numbers inside thick gauges, Lv chip in the seam (one row shorter than E1)
+#   E3: one console block on the hotbar: both gauges + the resource cells, Lv beside the buffs
+
+def _e_hotbar(cv, top, icons):
+    x0, y0 = HB_X, HB_Y
+    step_plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    for i in range(9):
+        d_slot(cv, x0 + 2 + 20 * i, y0 + 2)
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        icons.append((name, x, y, state))
+        if state == "cd":
+            s = str(cd)
+            bold(top, x + 8 - bold_width(s) // 2, y + 4, s, G["text"])
+    for i in range(9):
+        caps(top, x0 + 3 + 20 * i, y0 + 3, str(i + 1), (200, 200, 206, 220))
+    sx = x0 + 1
+    for a, b, c, d, col in ((sx, y0 + 1, sx + 20, y0 + 2, IRON[0]), (sx, y0 + 1, sx + 1, y0 + 21, IRON[0]),
+                            (sx, y0 + 20, sx + 20, y0 + 21, IRON[2]), (sx + 19, y0 + 1, sx + 20, y0 + 21, IRON[2])):
+        over(cv, (a, b, c, d), col)
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+
+
+def _e_cells(cv, x0, x1, y):
+    lit = RAGE * 20 // 100
+    pitch = (x1 - x0 + 1) // 20
+    for i in range(20):
+        cx0 = x0 + i * pitch
+        if i < lit:
+            over(cv, (cx0, y, cx0 + pitch - 1, y + 2), G["rage"][1])
+            over(cv, (cx0, y, cx0 + pitch - 1, y + 1), G["rage"][2])
+        else:
+            over(cv, (cx0, y, cx0 + pitch - 1, y + 2), (44, 30, 20, 255))
+
+
+def _e_lv_chip(cv, cy):
+    s = "12"
+    w = mc_width(s) + 6
+    step_plate(cv, (C - w // 2, cy, C - w // 2 + w, cy + 12), cut=1)
+    mc_text(cv, C - mc_width(s) // 2, cy + 2, s, rgba("ffd77a"))
+
+
+def _e_inner_number(cv, x0, x1, y, val, mx):
+    s = f"{val}/{mx}"
+    mc_text(cv, (x0 + x1) // 2 - mc_width(s) // 2, y, s, G["text"], outline=True)
+
+
+def _e_top(cv, icons, buffs_y, lv_text=False):
+    x0 = HB_X
+    bx = x0 - 1
+    for label, name, sec in BUFFS:
+        s = str(sec)
+        tw = 15 + mc_width(s) + 3
+        step_plate(cv, (bx, buffs_y, bx + tw, buffs_y + 13))
+        icons.append((name, bx + 2, buffs_y + 2, "buff10"))
+        over(cv, (bx + 2, buffs_y + 11, bx + 12, buffs_y + 12), G["buff"])
+        mc_text(cv, bx + 14, buffs_y + 3, s, G["text"])
+        bx += tw + 2
+    if lv_text:
+        s = "Lv 12"
+        mc_text(cv, x0 + 183 - mc_width(s), buffs_y + 3, s, rgba("ffd77a"))
+    nw = jp_width(NOTICE)
+    jp_text(cv, C - nw // 2, buffs_y - 18, NOTICE, rgba("9cc6ff"))
+    # boss, as in D2
+    bw = 230
+    bx0 = C - bw // 2
+    step_plate(cv, (bx0, 2, bx0 + bw, 28))
+    gem(cv, bx0 + 8, 9, G["ruby"], 3)
+    name = "裂け目の執行官"
+    jp_text(cv, bx0 + 16, 3, name, G["text"])
+    mc_text(cv, bx0 + 20 + jp_width(name), 6, "Lv.30", rgba("e8c46a"))
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - 5 - mc_width(pct), 6, pct, G["text"])
+    ramp_gauge(cv, bx0 + 5, bx0 + bw - 5, 19, 5, BOSS / BOSS_MAX, G["boss"], (36, 10, 8, 255),
+               trail=BOSS_LOST / BOSS_MAX)
+    for q in (1, 2, 3):
+        qx = bx0 + 5 + (bw - 10) * q // 4
+        over(cv, (qx, 19, qx + 1, 24), (0, 0, 0, 160))
+
+
+def design_e(variant):
+    cv = world()
+    top = Image.new("RGBA", (W, H))
+    icons = []
+    x0, y0 = HB_X, HB_Y
+    _e_hotbar(cv, top, icons)
+    hp_args = dict(extra=BARRIER / HP_MAX, trail=HP_LOST / HP_MAX)
+    if variant in (1, 2):
+        ry = y0 - 5
+        step_plate(cv, (x0 - 1, ry, x0 + 183, ry + 6))
+        _e_cells(cv, x0 + 2, x0 + 181, ry + 2)
+    if variant == 1:
+        ph = 16
+        py = y0 - 5 - ph
+        step_plate(cv, (x0 - 1, py, C - 4, py + ph))
+        step_plate(cv, (C + 4, py, x0 + 183, py + ph))
+        s = str(HP)
+        bold(cv, x0 + 3, py + 3, s, G["text"])
+        mc_text(cv, x0 + 4 + bold_width(s) + 1, py + 4, f"/{HP_MAX}", G["label"])
+        s = str(MP)
+        tx = x0 + 179 - (bold_width(s) + 2 + mc_width(f"/{MP_MAX}"))
+        bold(cv, tx, py + 3, s, G["text"])
+        mc_text(cv, tx + bold_width(s) + 2, py + 4, f"/{MP_MAX}", G["label"])
+        ramp_gauge(cv, x0 + 3, C - 8, py + 12, 2, HP / HP_MAX, G["hp"], (34, 10, 14, 255), **hp_args)
+        ramp_gauge(cv, C + 8, x0 + 179, py + 12, 2, MP / MP_MAX, G["mp"], (10, 16, 36, 255))
+        _e_lv_chip(cv, py + 2)
+        _e_top(cv, icons, py - 15)
+    elif variant == 2:
+        ph = 13
+        py = y0 - 5 - ph
+        step_plate(cv, (x0 - 1, py, C - 1, py + ph))
+        step_plate(cv, (C + 1, py, x0 + 183, py + ph))
+        ramp_gauge(cv, x0 + 3, C - 5, py + 2, 9, HP / HP_MAX, G["hp"], (34, 10, 14, 255), **hp_args)
+        ramp_gauge(cv, C + 5, x0 + 179, py + 2, 9, MP / MP_MAX, G["mp"], (10, 16, 36, 255))
+        _e_inner_number(cv, x0 + 3, C - 12, py + 3, HP, HP_MAX)
+        _e_inner_number(cv, C + 12, x0 + 179, py + 3, MP, MP_MAX)
+        _e_lv_chip(cv, py)
+        _e_top(cv, icons, py - 15)
+    else:
+        ph = 18
+        py = y0 - ph
+        step_plate(cv, (x0 - 1, py, x0 + 183, y0 + 2))
+        ramp_gauge(cv, x0 + 3, C - 2, py + 2, 9, HP / HP_MAX, G["hp"], (34, 10, 14, 255), **hp_args)
+        ramp_gauge(cv, C + 2, x0 + 179, py + 2, 9, MP / MP_MAX, G["mp"], (10, 16, 36, 255), grow="left")
+        _e_inner_number(cv, x0 + 3, C - 2, py + 3, HP, HP_MAX)
+        _e_inner_number(cv, C + 2, x0 + 179, py + 3, MP, MP_MAX)
+        _e_cells(cv, x0 + 3, x0 + 179, py + 13)
+        _e_hotbar(cv, top, [])  # redraw the hotbar over the console's bottom edge
+        _e_top(cv, icons, py - 15, lv_text=True)
+    return cv, icons, top
+
+
+# ---- F1: E2 in Minecraft's own vocabulary ------------------------------------------------------
+# References studied: Wynncraft Rekindled World HUD (every number in the Minecraft font, white with
+# the vanilla shadow, "13726 / 13726"); Njol's HUD used on Monumenta (one segmented HP bar with
+# absorption appended in vanilla gold, vanilla icons on the bar ends, level shown like the vanilla XP
+# number: green with a black outline). So: no custom digits, no MaruMinya — Minecraft font only;
+# Japanese is drawn like vanilla's unifont (16 px glyph in 8 GUI px; DotGothic16 stands in here).
+
+# Unifont is not on this machine; a 16 px aliased gothic stands in (same cell size as vanilla).
+DOT16 = ImageFont.truetype(next(f for f in ("C:/Windows/Fonts/BIZ-UDGothicR.ttc", "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc")
+                                 if Path(f).exists()), 15)
+MANA_ICON = ["000010000", "000111000", "001111100", "011101110", "111000111", "011101110", "001111100", "000111000", "000010000"]
+
+
+def design_f1(center=0, emblem=None):
+    """center: 0 = level number only (F1); 1-3 = centre emblem variants (G1-G3)."""
+    cv = world()
+    top = Image.new("RGBA", (W, H))
+    icons, jp = [], []
+    x0, y0 = HB_X, HB_Y
+    # hotbar as in E2, minus the key captions (vanilla shows none)
+    step_plate(cv, (x0 - 1, y0, x0 + 183, y0 + 22))
+    for i in range(9):
+        d_slot(cv, x0 + 2 + 20 * i, y0 + 2)
+    cv.alpha_composite(tex("item/iron_sword"), (x0 + 3, y0 + 3))
+    cv.alpha_composite(tex("item/potion"), (x0 + 3 + 20 * 7, y0 + 3))
+    for k, (name, cd, total, state) in enumerate(SKILL_ROW, start=2):
+        x, y = x0 + 3 + 20 * (k - 1), y0 + 3
+        icons.append((name, x, y, state))
+        if state == "cd":
+            s = str(cd)
+            mc_text(top, x + 9 - mc_width(s) // 2, y + 4, s, rgba("ffffff"))
+    sx = x0 + 1
+    for a, b, c, d, col in ((sx, y0 + 1, sx + 20, y0 + 2, IRON[0]), (sx, y0 + 1, sx + 1, y0 + 21, IRON[0]),
+                            (sx, y0 + 20, sx + 20, y0 + 21, IRON[2]), (sx + 19, y0 + 1, sx + 20, y0 + 21, IRON[2])):
+        over(cv, (a, b, c, d), col)
+    cv.alpha_composite(tex("gui/sprites/hud/crosshair"), (C - 7, H // 2 - 7))
+    # resource cells
+    ry = y0 - 5
+    step_plate(cv, (x0 - 1, ry, x0 + 183, ry + 6))
+    _e_cells(cv, x0 + 2, x0 + 181, ry + 2)
+    # HP / MP: thick gauges, number inside in the Minecraft font, vanilla-style icons on the ends
+    ph = 13
+    py = ry - ph
+    step_plate(cv, (x0 - 1, py, C - 1, py + ph))
+    step_plate(cv, (C + 1, py, x0 + 183, py + ph))
+    gx0, gx1 = x0 + 13, C - 4
+    ramp_gauge(cv, gx0, gx1, py + 2, 9, HP / HP_MAX, G["hp"], (34, 10, 14, 255), trail=HP_LOST / HP_MAX)
+    w = gx1 - gx0
+    f = round(w * HP / HP_MAX)
+    over(cv, (gx0 + f, py + 2, gx0 + f + round(w * BARRIER / HP_MAX), py + 11), rgba("e3a91c"))   # absorption gold
+    over(cv, (gx0 + f, py + 2, gx0 + f + round(w * BARRIER / HP_MAX), py + 3), rgba("ffe066"))
+    for seg in range(40, HP_MAX, 40):  # a divider every 40 HP
+        sxp = gx0 + round(w * seg / HP_MAX)
+        over(cv, (sxp, py + 2, sxp + 1, py + 11), (0, 0, 0, 150))
+    cv.alpha_composite(tex("gui/sprites/hud/heart/container"), (x0 + 2, py + 2))
+    cv.alpha_composite(tex("gui/sprites/hud/heart/full"), (x0 + 2, py + 2))
+    mx0, mx1 = C + 4, x0 + 170
+    ramp_gauge(cv, mx0, mx1, py + 2, 9, MP / MP_MAX, G["mp"], (10, 16, 36, 255))
+    for j, row in enumerate(MANA_ICON):
+        for i, v in enumerate(row):
+            if v == "1":
+                px(cv, x0 + 172 + i, py + 2 + j, rgba("000000") if i in (0, 8) or j in (0, 8) else rgba("4aa8ff"))
+    px(cv, x0 + 175, py + 5, rgba("cfeaff"))
+    s = f"{HP} / {HP_MAX}"
+    mc_text(cv, (gx0 + gx1) // 2 - mc_width(s) // 2, py + 3, s, rgba("ffffff"))
+    s = f"{MP} / {MP_MAX}"
+    mc_text(cv, (mx0 + mx1) // 2 - mc_width(s) // 2, py + 3, s, rgba("ffffff"))
+    if center > 0:
+        centre_emblem(cv, icons, top, center, py, emblem)
+    elif center == 0:
+        lv = "12"
+        mc_text(cv, C - mc_width(lv) // 2, py - 5, lv, rgba("80ff20"), outline=True)   # vanilla XP-level look
+    # buffs
+    by = py - 15
+    bx = x0 - 1
+    for label, name, sec in BUFFS:
+        s = f"{sec}s"
+        tw = 15 + mc_width(s) + 3
+        step_plate(cv, (bx, by, bx + tw, by + 13))
+        icons.append((name, bx + 2, by + 2, "buff10"))
+        over(cv, (bx + 2, by + 11, bx + 12, by + 12), G["buff"])
+        mc_text(cv, bx + 14, by + 3, s, rgba("ffffff"))
+        bx += tw + 2
+    # notice + boss name in vanilla-style Japanese (8 GUI px tall)
+    nw = len(NOTICE) * 8
+    jp.append((NOTICE, C - nw // 2, by - 14, rgba("a8d0ff")))
+    bw = 230
+    bx0 = C - bw // 2
+    step_plate(cv, (bx0, 2, bx0 + bw, 26))
+    gem(cv, bx0 + 8, 9, G["ruby"], 3)
+    name = "裂け目の執行官"
+    jp.append((name, bx0 + 16, 5, rgba("ffffff")))
+    mc_text(cv, bx0 + 20 + len(name) * 8, 5, "Lv.30", rgba("80ff20"), outline=True)
+    pct = f"{BOSS * 100 // BOSS_MAX}%"
+    mc_text(cv, bx0 + bw - 5 - mc_width(pct), 5, pct, rgba("ffffff"))
+    ramp_gauge(cv, bx0 + 5, bx0 + bw - 5, 17, 5, BOSS / BOSS_MAX, G["boss"], (36, 10, 8, 255),
+               trail=BOSS_LOST / BOSS_MAX)
+    for q in (1, 2, 3):
+        qx = bx0 + 5 + (bw - 10) * q // 4
+        over(cv, (qx, 17, qx + 1, 22), (0, 0, 0, 160))
+    return cv, icons, top, jp
+
+
+def crossed_swords(cv, x, y):
+    """13x13 hand-placed crossed swords: steel blades, gold guards, leather grips."""
+    edge, mid, gold, grip = rgba("f2f2f8"), rgba("9a9aac"), rgba("e0b04a"), rgba("6e4424")
+    for side in (0, 1):
+        for t in range(9):
+            bx = x + (t if side == 0 else 12 - t)
+            px(cv, bx, y + t, edge)
+            px(cv, bx + (1 if side == 0 else -1), y + t, mid)
+        gx = x + (9 if side == 0 else 3)
+        for d in (-1, 0, 1):
+            px(cv, gx + d * (1 if side == 0 else -1), y + 9 - d, gold)  # guard, perpendicular
+        px(cv, x + (10 if side == 0 else 2), y + 10, grip)
+        px(cv, x + (11 if side == 0 else 1), y + 11, grip)
+        px(cv, x + (12 if side == 0 else 0), y + 12, gold)
+
+
+# Dedicated warrior emblems for the centre diamond, hand-placed at one texel per GUI pixel.
+EMB = {"o": rgba("0c0c10"), "L": rgba("f4f4fa"), "M": rgba("b4b6c4"), "D": rgba("6a6c7c"), "g": rgba("f2c454"),
+       "G": rgba("a8741e"), "b": rgba("5a3418"), "B": rgba("8a5a30"), "r": rgba("e0283c"), "R": rgba("ff9a9a"),
+       "e": rgba("ff8a1c"), "E": rgba("ffd860")}
+EMBLEM_SWORD = [
+    ".......o.......",
+    "......oRo......",
+    ".....orrro.....",
+    "......oro......",
+    "......oBo......",
+    "......obo......",
+    "......oBo......",
+    ".o...ooboo...o.",
+    "ogoooggggGoooGo",
+    "oggggggggGGGGGo",
+    ".oooooLMDooooo.",
+    "......LMD......",
+    ".....oLMDo.....",
+    ".....oLMDo.....",
+    ".....oLMDo.....",
+    ".....oLMDo.....",
+    ".....oLMDo.....",
+    "......oLDo.....",
+    "......oLo......",
+    ".......o.......",
+]
+EMBLEM_HELM = [
+    "......ooooo......",
+    "....ooLLLMMoo....",
+    "...oLLLLMMMMDo...",
+    "..oLLLLMMMMMMDo..",
+    "..oLLMMMMMMMMDo..",
+    ".oLLMMMMMMMMMMDo.",
+    ".oggggggggggggGo.",
+    ".oLMoooooooooMDo.",
+    ".oLMMMMMoMMMMMDo.",
+    ".oLMoMoMoMoMoMDo.",
+    ".oLMMMMMoMMMMMDo.",
+    ".oLMMMMMoMMMMMDo.",
+    "..oMMMMMMMMMMDo..",
+    "..ogggggggggGo...",
+    "...ooooooooooo...",
+]
+
+
+def draw_emblem(cv, kind, cx, cy):
+    rows = EMBLEM_HELM if kind == "helm" else EMBLEM_SWORD
+    h, w = len(rows), len(rows[0])
+    x0, y0 = cx - w // 2, cy - h // 2
+    for j, row in enumerate(rows):
+        for i, ch in enumerate(row):
+            if ch != ".":
+                px(cv, x0 + i, y0 + j, EMB[ch])
+    if kind == "flame":  # ember sparks climbing the blade
+        for dx, dy, ch in ((-3, 5, "e"), (3, 3, "E"), (-4, 1, "E"), (4, 7, "e"), (-2, 8, "E"), (3, -1, "e"),
+                           (-3, 2, "e"), (2, 6, "E")):
+            px(cv, cx + dx, cy + dy, EMB[ch])
+
+
+def centre_emblem(cv, icons, top, variant, py, emblem=None):
+    lvs = "12"
+    if variant == 1:  # charcoal hex, iron rim, crossed swords, level below
+        cx, ty = C, py - 11
+        rows = [1, 3, 5, 7, 9, 10] + [10] * 11 + [10, 9, 7, 5, 3, 1]
+        for j, hw in enumerate(rows):
+            over(cv, (cx - hw - 1, ty + j, cx + hw + 2, ty + j + 1), D["out"])
+        for j, hw in enumerate(rows[1:-1], start=1):
+            over(cv, (cx - hw, ty + j, cx + hw + 1, ty + j + 1), D["metal"][1] if j < 11 else D["metal"][2])
+            px(cv, cx - hw, ty + j, D["metal"][0] if j < 11 else D["metal"][1])
+        for j, hw in enumerate(rows[2:-2], start=2):
+            over(cv, (cx - hw + 2, ty + j, cx + hw - 1, ty + j + 1), D["plate"])
+        crossed_swords(cv, cx - 6, ty + 4)
+        mc_text(cv, cx - mc_width(lvs) // 2 + 1, ty + 18, lvs, rgba("80ff20"), outline=True)
+    elif variant == 2:  # iron diamond with the class's signature art inside
+        cx, cy, r = C, py + 4, 13
+        for j in range(-r - 1, r + 2):
+            w = r + 1 - abs(j)
+            over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), D["out"])
+        for j in range(-r, r + 1):
+            w = r - abs(j)
+            over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), D["metal"][1] if j < 0 else D["metal"][2])
+        for j in range(-r + 2, r - 1):
+            w = r - 2 - abs(j)
+            over(cv, (cx - w, cy + j, cx + w + 1, cy + j + 1), D["slot"])
+        if emblem:
+            draw_emblem(cv, emblem, cx, cy)
+        else:
+            icons.append(("war_ult", cx - 6, cy - 6, "sz12"))
+        mc_text(top, cx - mc_width(lvs) // 2 + 1, cy + 9, lvs, rgba("80ff20"), outline=True)
+    else:  # a bigger slot of the hotbar's own family, art inside, level where a stack count sits
+        x, y = C - 12, py - 8
+        step_plate(cv, (x - 2, y - 2, x + 26, y + 26), cut=2)
+        d_slot(cv, x + 1, y + 1)
+        over(cv, (x + 1, y + 1, x + 23, y + 23), D["slot"])
+        over(cv, (x + 1, y + 1, x + 23, y + 2), D["out"])
+        over(cv, (x + 1, y + 22, x + 23, y + 23), D["slot_hi"])
+        icons.append(("war_ult", x + 4, y + 4, "sz16"))
+        mc_text(top, x + 24 - mc_width(lvs), y + 16, lvs, rgba("80ff20"), outline=True)
+
+
+def vanilla_jp(out, jp, s):
+    """Japanese the way vanilla draws it: a 16 px bitmap glyph in 8 GUI px, 1 GUI px shadow."""
+    for text, x, y, col in jp:
+        for k, ch in enumerate(text):
+            mask = Image.new("L", (16, 16))
+            d = ImageDraw.Draw(mask)
+            d.fontmode = "1"
+            d.text((0, -DOT16.getbbox("国")[1] + 1), ch, font=DOT16, fill=255)
+            mask = mask.resize((8 * s, 8 * s), Image.NEAREST)
+            gx = (x + k * 8) * s
+            for off, c in ((s, tuple(v // 4 for v in col[:3]) + (255,)), (0, col)):
+                layer = Image.new("RGBA", mask.size, c)
+                layer.putalpha(mask)
+                out.alpha_composite(layer, (gx + off, y * s + off))
+
+
+def compose(result, s):
+    """Scale the GUI canvas, then lay item-slot icons at their real 32-texel resolution."""
+    if not isinstance(result, tuple):
+        return result.resize((W * s, H * s), Image.NEAREST)
+    base, icons, top = result[:3]
+    jp = result[3] if len(result) > 3 else []
+    out = base.resize((W * s, H * s), Image.NEAREST)
+    for name, x, y, state in icons:
+        size = 10 if state == "buff10" else int(state[2:]) if state.startswith("sz") else 16
+        with Image.open(SKILLS / f"{name}.png") as f:
+            ic = f.convert("RGBA").resize((size * s, size * s), Image.NEAREST if s % 2 == 0 else Image.LANCZOS)
+        if state == "cd":
+            ic = darken(ic, .35)
+        elif state == "nomana":
+            ic = darken(ic, .6, tint=(110, 150, 255))
+        out.alpha_composite(ic, (x * s, y * s))
+    out.alpha_composite(top.resize((W * s, H * s), Image.NEAREST))
+    vanilla_jp(out, jp, s)
+    return out
+
+
+def main():
+    OUT.mkdir(parents=True, exist_ok=True)
+    for name, fn in (("A-holo-lines", design_a), ("B-refined-mmo", design_b), ("C-minecraft-native", design_c),
+                     ("C2-wynn-structure", design_c2), ("C3-mmo-glass", design_c3), ("C4-aion-lostark", design_c4),
+                     ("C5-pixel-crosscode", design_c5), ("C6-modern-mmo-minecraft", design_c6),
+                     ("C7-modern-mmo-open", design_c7), ("C8-modern-mmo-boxes", lambda: design_c6(crisp=True)), ("C9-modern-mmo", design_c9), ("C10-modern-mmo-plain", lambda: design_c9(plain=True)), ("D1-dungeons-mmo", design_d1), ("D2-c8-layout-dungeons", lambda: design_c6(crisp=True, dungeons=True)),
+                     ("E1-compact", lambda: design_e(1)), ("E2-compact", lambda: design_e(2)), ("E3-compact", lambda: design_e(3)),
+                     ("F1-vanilla-vocab", design_f1),
+                     ("G1-centre-hex", lambda: design_f1(1)), ("G2-centre-diamond", lambda: design_f1(2)), ("G3-centre-slot", lambda: design_f1(3)),
+                     ("H1-emblem-sword", lambda: design_f1(2, "sword")), ("H2-emblem-helm", lambda: design_f1(2, "helm")), ("H3-emblem-flame", lambda: design_f1(2, "flame"))):
+        img = fn()
+        for s in (2, 4):
+            compose(img, s).save(OUT / f"{name}-{s}x.png")
+    print(f"wrote {OUT}")
+
+
+if __name__ == "__main__":
+    main()

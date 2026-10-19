@@ -31,11 +31,11 @@ import kotlin.test.assertTrue
 
 class BossArenaFactoryTest {
     @Test
-    fun `three dedicated arenas have distinct floors and clear entry boss and guardian spawns`() {
+    fun `dedicated arenas have distinct floors and clear entry boss and guardian spawns`() {
         MinecraftServer.init(Auth.Offline())
         val floors = mutableSetOf<String>()
         val bosses = mutableSetOf<QuestMobArchetype>()
-        for (id in listOf("rift", "ritual", "trial")) {
+        for (id in listOf("rift", "ritual", "trial", "shade")) {
             val arena = BossArenaFactory.create(id, 1)
             try {
                 assertTrue(arena.instance.chunks.all { it is LightingChunk })
@@ -44,7 +44,7 @@ class BossArenaFactoryTest {
                     val chunk = requireNotNull(arena.instance.getChunkAt(at))
                     val section = chunk.getSection(41 shr 4)
                     val x = at.blockX() and 15; val z = at.blockZ() and 15
-                    val level = if (id == "trial") section.blockLight().getLevel(x, 41 and 15, z)
+                    val level = if (id == "trial" || id == "shade") section.blockLight().getLevel(x, 41 and 15, z)
                         else section.skyLight().getLevel(x, 41 and 15, z)
                     assertTrue(level >= 5, "Dark $id arena at $at light=$level")
                 }
@@ -56,8 +56,8 @@ class BossArenaFactoryTest {
                 bosses += arena.archetype
             } finally { arena.dispose(); arena.dispose(); assertFalse(arena.instance.isRegistered) }
         }
-        assertEquals(3, floors.size)
-        assertEquals(3, bosses.size)
+        assertEquals(4, floors.size)
+        assertEquals(4, bosses.size)
     }
 
     @Test

@@ -41,6 +41,7 @@ data class CoreMarketOffer(val id: UUID, val price: Long, val material: CoreMate
         require((material == null) != (gearId == null))
         require(gearId == null || quantity == 1L)
         require(material == null || CoreEconomy.tradeable(material.resource))
+        require(material == null || !material.resource.research || material.tier == 1)
     }
 }
 data class CoreMarketEntry(val seller: UUID, val offer: CoreMarketOffer, val gear: CoreStoredGear?)
@@ -50,7 +51,7 @@ object CoreEconomy {
     const val MAX_GEAR = 432 // v10 armor sets expand into four individually owned pieces.
     const val MAX_OFFERS = 24
     const val DAILY_DELIVERIES = 3
-    fun tradeable(resource: CoreResource) = resource.raw || resource in CoreLoopCatalog.refined.values
+    fun tradeable(resource: CoreResource) = resource.raw || resource in CoreLoopCatalog.refined.values || resource.research
     fun identity(a: CoreAccount, slot: CoreGearSlot) = if (slot == CoreGearSlot.WEAPON) a.weaponIdentity else a.armor(slot).identity
     fun broken(a: CoreAccount, slot: CoreGearSlot) = if (slot == CoreGearSlot.WEAPON) a.weaponBroken else a.armor(slot).broken
     // Base variants share their family's repair supply, not equipment from unrelated classes.
