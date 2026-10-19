@@ -1127,28 +1127,28 @@ def sigil_keys():
 
 
 def finale_keys():
-    """8 s, 千本桜 (QuestEncounterCombat.FINALE_MILLIS) — its own motion, no sitting howl: it lands, rises onto its hind
-    legs with the forelegs spread like branches and the tail curled up behind its head like a halo, and turns slowly
-    on the spot while its petals open and close in waves; then it folds into a bud (crouched, head tucked, forelegs
-    drawn in, every petal shut) and shivers, and at 8 s it bursts open like a blossom."""
-    land = pose(rear(16), pos=(0, -5, 0), arm_l=(14, 0, 0), arm_r=(14, 0, 0), neck=(16, 0, 0), shells=1.0, tremble=2.0)
-    tree = dict(arm_l=(-70, 0, 55), arm_r=(-70, 0, -55), forearm_l=(-30, 0, 0), forearm_r=(-30, 0, 0), hand_l=(-20, 0, 0), hand_r=(-20, 0, 0),
-                neck=(-30, 0, 0), skull=(-20, 0, 0), jaw=(16, 0, 0),
-                tail_1=(40, 0, 0), tail_2=(34, 0, 0), tail_3=(32, 0, 0), tail_4=(30, 0, 0), tail_5=(26, 0, 0))
-    keys = [(0, {"shells": 1.0}, "io"), (.35, land, "out"), (1.6, pose(rear(-66), tree, shells=1.3), "out")]
-    for k in range(9):                                   # a slow turn on the spot, branches swaying, petals breathing
-        t = 2.0 + k * .5
-        sway = math.sin(k * 1.3)
-        keys.append((t, pose(rear(-66), tree, body=(0, -45 * (k + 1) + 0, 0), chest=(0, 0, 8 * sway),
-                             arm_l=(10 * sway, 0, 10 * sway), arm_r=(-10 * sway, 0, -10 * sway), pos=(0, 2 + 2 * abs(sway), 0),
-                             shells=1.2 + .35 * (k % 2), tremble=2.0 + .4 * k), "lin" if k else "io"))
-    bud = pose(rear(24), pos=(0, -8, 0), body=(0, -405, 0), chest=(14, 0, 0), neck=(50, 0, 0), skull=(30, 0, 0), jaw=(0, 0, 0),
-               arm_l=(36, 0, -24), arm_r=(36, 0, 24), forearm_l=(40, 0, 0), forearm_r=(40, 0, 0),
-               thigh_l=(-10, 0, 0), thigh_r=(-10, 0, 0),                 # the tail curls up over the back: a closed bud
-               tail_1=(60, 0, 0), tail_2=(50, 0, 0), tail_3=(45, 0, 0), tail_4=(40, 0, 0), tail_5=(30, 0, 0), shells=0.0)
-    bloom = pose(rear(-34), pos=(0, 4, 0), body=(0, -405, 0), arm_l=(-60, 0, 70), arm_r=(-60, 0, -70), forearm_l=(-20, 0, 0), forearm_r=(-20, 0, 0),
-                 neck=(-34, 0, 0), skull=(-24, 0, 0), jaw=(40, 0, 0), tail_1=(30, 0, 0), tail_2=(24, 0, 0), shells=1.75, tremble=3.0)
-    return keys + [(6.9, bud, "io"), (7.75, pose(bud, tremble=7.0, pos=(0, -9, 0)), "io"), (8.0, bloom, "in")]
+    """8 s, 千本桜 (QuestEncounterCombat.FINALE_MILLIS), 蓄花: Zinogre's charge-up, no sitting howl. Feet planted wide,
+    low, back arched; the body rocks harder and harder while the petals pulse open in waves; at 6.4 s it throws its
+    head up and roars standing on all fours, then leaps and slams both forepaws down at 8 s."""
+    low = pose(rear(14), pos=(0, -7, -2), arm_l=(10, 0, -14), arm_r=(10, 0, 14), forearm_l=(14, 0, 0), forearm_r=(14, 0, 0),
+               chest=(14, 0, 0), neck=(34, 0, 0), skull=(20, 0, 0), jaw=(10, 0, 0),
+               tail_1=(30, 0, 0), tail_2=(24, 0, 0), tail_3=(18, 0, 0), tail_4=(12, 0, 0))
+    keys = [(0, {"shells": 1.0}, "io"), (.35, pose(rear(16), pos=(0, -5, 0), neck=(16, 0, 0), shells=1.0, tremble=2.0), "out"),
+            (1.0, pose(low, shells=.6, tremble=2.0), "io")]
+    for k in range(10):                                   # the rocking builds: side to side, faster and wider
+        t = 1.45 + k * .48
+        g = (k + 1) / 10
+        s = (-1) ** k
+        keys.append((t, pose(low, body=(0, 0, 7 * g * s), chest=(0, 6 * g * s, 4 * g * s), neck=(-4 * g, 10 * g * s, 0),
+                             pos=(0, -1 * g, 0), shells=.6 + .9 * g * (1 if k % 2 else .7), tremble=2 + 5 * g), "io"))
+    roar = pose(rear(-18), pos=(0, 2, 0), arm_l=(-10, 0, -8), arm_r=(-10, 0, 8), chest=(-10, 0, 0), neck=(-44, 0, 0), skull=(-26, 0, 0),
+                jaw=(48, 0, 0), tail_1=(26, 0, 0), tail_2=(18, 0, 0), shells=1.7, tremble=6.0)
+    leap = pose(rear(-40), pos=(0, 16, 6), arm_l=(-90, 0, 6), arm_r=(-90, 0, -6), forearm_l=(-40, 0, 0), forearm_r=(-40, 0, 0),
+                neck=(-20, 0, 0), skull=(-14, 0, 0), jaw=(30, 0, 0), tail_1=(-10, 0, 0), shells=1.7, tremble=3.0)
+    slam = pose(rear(22), pos=(0, -7, 8), arm_l=(24, 0, -10), arm_r=(24, 0, 10), chest=(18, 0, 0), neck=(26, 0, 0), skull=(10, 0, 0),
+                jaw=(30, 0, 0), tail_1=(-20, 0, 0), tail_2=(-10, 0, 0), shells=1.8, tremble=3.0)
+    return keys + [(6.4, roar, "out"), (7.2, pose(roar, neck=(0, 12, 0), tremble=7.0), "io"), (7.55, pose(low, shells=1.7, tremble=5.0), "in"),
+                   (7.8, leap, "out"), (8.0, slam, "in")]
 
 
 def enrage_keys():
