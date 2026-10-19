@@ -131,7 +131,7 @@ internal class BossModelView(
         model.init(instance, origin)
         model.setGlobalRotation(modelYaw(origin.yaw()))
         animations = AnimationHandlerImpl(model)
-        hiddenUntilEnraged.forEach { model.setBoneVisible(it, false) }
+        under(hiddenUntilEnraged).forEach { it.setVisible(false) }
         animations.playRepeat(loop)
     }
 
@@ -139,6 +139,9 @@ internal class BossModelView(
     internal val currentLoop: String get() = loop
     /** The enraged parts (horns, fans) are out / the phase-one ones (wings) are folded away; hit spheres follow. */
     internal var revealed = false; private set
+    private var revealedAt = 0L
+    /** The fans have grown out (the enrage clip grows them from 2.15 s): only then do they take hits. */
+    internal val fansOut: Boolean get() = revealed && lastNow - revealedAt >= FANS_GROWN_MILLIS
     internal var folded = false; private set
 
     fun show(player: Player) { if (!disposed) model.addViewer(player) }
@@ -194,11 +197,15 @@ internal class BossModelView(
 
     val canManeuver: Boolean get() = !disposed && has("hop_back") && has("dash_l") && has("strafe_l")
 
-    /** A broken part (horn tips, fan tatters): hidden for good. */
+    /** A broken part (horn tips, fan tatters): hidden for good, with every bone named under it (`<name>_…`). */
     fun hideBones(names: Collection<String>) {
         if (disposed) return
-        names.forEach { model.setBoneVisible(it, false) }
+        under(names).forEach { it.setVisible(false) }
     }
+
+    /** The bones named [names] or `<name>_…` (a fan's rays and their tatters sit under `cloak_l_…`). */
+    private fun under(names: Collection<String>) =
+        model.getParts().filter { part -> names.any { part.name == it || part.name.startsWith("${it}_") } }
 
     /** WSEE's generated red "hit" texture state, briefly. */
     fun hurt(now: Long) {
@@ -256,8 +263,9 @@ internal class BossModelView(
      * later is never mounted and stays where it was spawned. Showing the model again mounts every bone.
      */
     private fun reveal() {
+        if (!revealed) revealedAt = lastNow
         revealed = true
-        hiddenUntilEnraged.forEach { model.setBoneVisible(it, true) }
+        under(hiddenUntilEnraged).forEach { it.setVisible(true) }
         for (viewer in model.viewers.toList()) { model.removeViewer(viewer); model.addViewer(viewer) }
     }
 
@@ -298,6 +306,7 @@ internal class BossModelView(
         private const val ENRAGE_REVEAL_MILLIS = 300L
         private const val ENRAGE_FOLD_MILLIS = 2500L
         private const val GAIT_SETTLE_MILLIS = 200L
+        private const val FANS_GROWN_MILLIS = 1850L
         /** shade_wyrm `awaken`: the roar peaks at 1.3 s; the glow comes in with it. */
         private const val AWAKEN_GLOW_MILLIS = 1300L
         fun available(modelId: String) = modelId in BossModelLibrary.models()

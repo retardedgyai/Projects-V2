@@ -101,5 +101,5 @@ internal object ShadeWyrmHitbox {
     )
 
     fun parts(view: BossModelView): List<HitSphere> =
-        (BODY + (if (view.revealed) FANS else emptyList()) + (if (view.folded) emptyList() else WINGS)).mapNotNull { s -> view.point(s.bone, s.px)?.let { HitSphere(it, s.radius) } }
+        (BODY + (if (view.fansOut) FANS else emptyList()) + (if (view.folded) emptyList() else WINGS)).mapNotNull { s -> view.point(s.bone, s.px)?.let { HitSphere(it, s.radius) } }
 }
