@@ -331,6 +331,15 @@ class Builder:
         return [made[n] for n, p, _ in self.bones if p is None]
 
 
+FUR = {}   # fur bone -> (wave phase, amplitude) for the wind sway layered on every clip
+
+
+def fur_bone(b, name, parent, pivot, phase, amp=1.0):
+    b.bone(name, parent, pivot)
+    FUR[name] = (phase, amp)
+    return name
+
+
 def tufts(b, bone, root, direction, n, spread, L, W, axis, seed, tint=False):
     """n fur plates fanned around `direction`, rotating about `axis`."""
     d0, ax = unit(direction), unit(axis)
@@ -386,10 +395,12 @@ def head(b):
             hs("skull", (bx * s, by, bz), (tx * s, ty, tz), w, w, grad_painter(t, 1))
         hs("skull", (5.9 * s, 2.6, 7.2), (6.4 * s, 4.8, .5), .6, .6, flat_painter(GLOW), name="glow_streak")   # eye streak
         # cheek fur flaring back
-        tufts(b, "skull", H(6 * s, -1.2, 5), mat_vec([[1, 0, 0], [0, 1, 0], [0, 0, 1]], [s * .55, -.25, -1]), 5, 60, 13, 4, (s, 0, 0), 80 + s)
+        cheek = fur_bone(b, f"cheekfur_{'l' if s > 0 else 'r'}", "skull", H(6 * s, -1.2, 5), .05, .8)
+        tufts(b, cheek, H(6 * s, -1.2, 5), mat_vec([[1, 0, 0], [0, 1, 0], [0, 0, 1]], [s * .55, -.25, -1]), 5, 60, 13, 4, (s, 0, 0), 80 + s)
     # beard: pale fur hanging under the jaw
     for k, z in enumerate((5, 9, 13, 17)):
-        tufts(b, "jaw", H(0, -6.6, z), [-c for c in u], 4, 80, 9 - k, 3.5, f, 90 + k)
+        beard = fur_bone(b, f"beard_{k + 1}", "jaw", H(0, -6.6, z), .08 * k, .9)
+        tufts(b, beard, H(0, -6.6, z), [-c for c in u], 4, 80, 9 - k, 3.5, f, 90 + k)
 
 
 # --- the beast --------------------------------------------------------------------------------------
@@ -422,7 +433,8 @@ def build():
     b.seg("body", (0, 32, -19), (0, 34, -31), 19, 18, "hide", seed=3)
     b.seg("chest", (0, 41, 0), (0, 44, 14), 20, 8, "plate", z_hint=(0, 1, 0), seed=4)       # shoulder plate
     for z in (14, 9, 4, -1):                                                                     # chest fur
-        tufts(b, "chest", (0, 27, z), (0, -1, -.35), 5, 70, 9, 4, (0, 0, 1), int(z) + 40)
+        chest = fur_bone(b, f"chestfur_{int(z) + 2}", "chest", (0, 27, z), .3 + .03 * (14 - z), .7)
+        tufts(b, chest, (0, 27, z), (0, -1, -.35), 5, 70, 9, 4, (0, 0, 1), int(z) + 40)
 
     for s, side in ((1, "l"), (-1, "r")):
         # massive forearms: elbow back, forearm forward, wide paw
@@ -444,7 +456,8 @@ def build():
             x = 15 * s + k
             b.seg(f"hand_{side}", (x, 3.4, 25), (x, 3, 30), 2.4, 2.4, "claw")
             b.seg(f"hand_{side}", (x, 3, 30), (x, -.2, 32.6), 1.6, 1.6, grad_painter(.2, .9, "claw"))
-        tufts(b, f"forearm_{side}", (15 * s, 22, 3), (s * .25, .1, -1), 4, 40, 10, 3.5, (1, 0, 0), 60 + s)
+        elbow = fur_bone(b, f"elbowfur_{side}", f"forearm_{side}", (15 * s, 22, 3), .25, .8)
+        tufts(b, elbow, (15 * s, 22, 3), (s * .25, .1, -1), 4, 40, 10, 3.5, (1, 0, 0), 60 + s)
         # short crouched hind legs
         b.seg(f"thigh_{side}", (10 * s, 35, -25), (12 * s, 18, -16), 10, 12, "hide", seed=10)
         b.seg(f"shin_{side}", (12 * s, 19, -16), (12 * s, 8, -30), 6, 6, "hide", seed=11)
@@ -452,7 +465,8 @@ def build():
         b.box(f"foot_{side}", (12 * s - 4.5, 0, -27), (12 * s + 4.5, 4, -17), "hide", seed=13)
         for k in (-3, 0, 3):
             b.seg(f"foot_{side}", (12 * s + k, 2, -17.5), (12 * s + k, .2, -14), 1.6, 1.6, "claw")
-        tufts(b, f"thigh_{side}", (11 * s, 33, -27), (s * .3, .1, -1), 4, 40, 9, 3.5, (1, 0, 0), 70 + s)
+        hip = fur_bone(b, f"hipfur_{side}", f"thigh_{side}", (11 * s, 33, -27), .5, .8)
+        tufts(b, hip, (11 * s, 33, -27), (s * .3, .1, -1), 4, 40, 9, 3.5, (1, 0, 0), 70 + s)
 
     # glowing seams along the flanks and the tail sides (thin, sakura pink)
     for s in (1, -1):
@@ -471,7 +485,8 @@ def build():
     # mane: rows of pale fur over neck and shoulders, standing back and up
     for z0, y0, L, bone in ((31, 44, 15, "skull"), (27, 46, 19, "neck"), (22, 48, 22, "neck"), (17, 50, 24, "neck"),
                             (11, 50, 22, "chest"), (5, 48, 18, "chest"), (-1, 46, 13, "chest")):
-        tufts(b, bone, (0, y0 + 2, z0), (0, .75, -1), 13, 175, L * 1.3, 5, (0, 0, 1), z0, tint=True)
+        mane = fur_bone(b, f"mane_{z0 + 2}", bone, (0, y0 + 2, z0), .04 * (31 - z0) / 4, 1.0)
+        tufts(b, mane, (0, y0 + 2, z0), (0, .75, -1), 13, 175, L * 1.3, 5, (0, 0, 1), z0, tint=True)
 
     # tail: thick, curling up over the back
     widths = [(13, 11), (12, 10), (11, 9), (9.5, 8), (8, 7)]
@@ -578,7 +593,7 @@ def bake(b, name, length, keys, loop="once", base=None):
             pose = blend(p0, p1, ease(kind, (t - t0) / max(1e-6, t1 - t0)))
         else:
             pose = keys[-1][1]
-        frames.append((t, merged(base, pose)))
+        frames.append((t, merged(base, pose, wind(t, pose.get("shells", 0.0)))))
     bones = {nm for nm, _, _ in b.bones}
     tracks = {}
     for t, pose in frames:
@@ -597,6 +612,20 @@ def bake(b, name, length, keys, loop="once", base=None):
             e = matrix_euler(axis_angle(axis, deg * shells + math.copysign(jitter, deg)))
             tracks.setdefault(shell, []).append((t, (round(-e[0], 3), round(e[1], 3), round(e[2], 3))))
     b.m.anim(name, length, tracks, loop)
+
+
+WIND_PERIOD = 1.2   # divides every loop length (idle 2.4, walk 1.2)
+
+
+def wind(t, shells=0.0):
+    """Fur sway: a wave that runs from the head back along the mane (x: strands lift and fall, z: a side
+    swing a quarter beat later). It bristles harder while the petals are open."""
+    gain = 1.0 + .6 * min(1.0, shells)
+    out = {}
+    for name, (phase, amp) in FUR.items():
+        a = 2 * math.pi * (t / WIND_PERIOD - phase)
+        out[name] = (5.0 * amp * gain * math.sin(a), 0.0, 3.0 * amp * gain * math.sin(a - 1.3))
+    return out
 
 
 def wave(t, period, phase=0.0):
