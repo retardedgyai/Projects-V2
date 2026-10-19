@@ -61,6 +61,15 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
     }
 
     fun enrage() { enrageAt = time }
+
+    private var burstAt = -1.0
+    private var burstKind = ""
+
+    /** Countered: the strike's petals scatter off the shells as it is thrown back. */
+    fun countered() { ability = null; burstAt = time; burstKind = "counter" }
+
+    /** A part broke: the horns' blossoms (horns) or the tail tip's shells (tail) burst away. */
+    fun partBurst(horns: Boolean) { burstAt = time; burstKind = if (horns) "horns" else "tail" }
     fun death() { deathAt = time; ability = null }
 
     /**
@@ -132,6 +141,14 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
         // always: petals shed from the shells and drift off in the wind (more once enraged)
         if (deathAt < 0) repeat(rate("shed", if (enraged) 16.0 else 6.0)) {
             add(shell(), f.dir(r(-1.0, 1.0), r(0.0, 1.6), r(-1.9, 0.0)), r(1.4, 2.2))
+        }
+        if (burstAt >= 0 && once("burst@$burstAt", burstAt)) {
+            val from: () -> Vec = when (burstKind) {
+                "horns" -> { { bone("skull", Vec(r(-12.0, 12.0), 64.0, 10.0)) } }
+                "tail" -> { { shells[5 + random.nextInt(3)].let { (b, px) -> bone(b, px) } } }
+                else -> { { shell() } }
+            }
+            repeat(count(if (burstKind == "counter") 220 else 140)) { add(from(), randomDir().mul(r(10.0, 20.0)).add(0.0, 3.0, 0.0), r(1.0, 1.8), 1.6) }
         }
         if (deathAt >= 0) {
             if (time - deathAt in .5..2.4) repeat(rate("fall", 40.0)) { add(shell(), f.dir(r(-1.2, 1.2), r(-.6, .6), r(-1.2, 1.2)), 1.8) }

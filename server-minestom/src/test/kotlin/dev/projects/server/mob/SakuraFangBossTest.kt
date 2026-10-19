@@ -82,11 +82,47 @@ class SakuraFangBossTest {
             assertFalse(combat.isEnraged(boss.uuid))
             assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .55))
             combat.tick(100)
+            // that blow also broke a part (horns from in front, tail shells from behind): the stagger holds it, then it enrages
+            assertTrue(combat.partsTorn(boss.uuid)!!.let { it.first || it.second })
+            combat.tick(3300)
             assertTrue(combat.isEnraged(boss.uuid))
-            combat.tick(1500)
-            combat.tick(6000)
+            combat.tick(4800)
+            combat.tick(9000)
             assertTrue(combat.applyEffectDamage(boss.uuid, player, 99_999.0))
             assertEquals(1, victories)
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `a hit from in front in the counter window throws it out of its strike, and parts break`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("sakura", 1)
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "SakuraCounter"))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        player.setInstance(arena.instance, arena.bossSpawn.add(0.0, 0.0, 3.5)).join()
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn, { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1000L
+            var window: LongRange? = null
+            while (now < 60_000L && window == null) {
+                player.teleport(boss.position.add(boss.position.direction().mul(3.0)).withY(boss.position.y()))
+                combat.tick(now)
+                window = combat.counterWindow(boss.uuid)?.takeIf { now in it }   // damage below lands at this tick's time
+                now += 50
+            }
+            assertNotNull(window, "a counterable strike opened its window")
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, 1.0))
+            assertTrue(combat.isBroken(boss.uuid), "countered: it is down and takes more damage")
+            // the horns break after enough damage from in front
+            repeat(20) { combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .01) }
+            assertEquals(true, combat.partsTorn(boss.uuid)?.first)
         } finally {
             combat.dispose(); player.remove(); arena.dispose()
         }

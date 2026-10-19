@@ -405,12 +405,17 @@ def head(b):
         pts = [(4.4, 5.6, 7), (7.4, 10, 0), (9.8, 14.2, -7), (11.4, 18.6, -12.5), (12, 23, -16), (11.4, 27, -18), (10.2, 29.6, -18.6)]
         ws = [4.4, 3.7, 3.0, 2.3, 1.7, 1.2]
         n = len(ws)
+        # the horns are their own bones so a part break can snap the outer half off (QuestEncounterCombat.sakuraHit)
+        side = "l" if s > 0 else "r"
+        b.bone(f"horn_{side}", "skull", H(pts[0][0] * s, pts[0][1], pts[0][2]))
+        b.bone(f"horn_{side}_tip", f"horn_{side}", H(pts[3][0] * s, pts[3][1], pts[3][2]))
         for k in range(n):
             a, c = pts[k], pts[k + 1]
-            hs("skull", (a[0] * s, a[1], a[2]), (c[0] * s, c[1], c[2]), ws[k], ws[k], grad_painter(k / n, (k + 1) / n))
-        for (bx, by, bz), (tx, ty, tz), w, t in (((9.6, 13.6, -6), (14.6, 15.4, -10.5), 1.5, .55), ((11.6, 19.6, -13), (16, 23, -15.5), 1.2, .75),
-                                                  ((8, 11, -1.5), (11.6, 9.4, -6), 1.3, .45)):
-            hs("skull", (bx * s, by, bz), (tx * s, ty, tz), w, w, grad_painter(t, 1))
+            hs(f"horn_{side}" if k < 3 else f"horn_{side}_tip", (a[0] * s, a[1], a[2]), (c[0] * s, c[1], c[2]), ws[k], ws[k], grad_painter(k / n, (k + 1) / n))
+        for (bx, by, bz), (tx, ty, tz), w, t, bone in (((9.6, 13.6, -6), (14.6, 15.4, -10.5), 1.5, .55, f"horn_{side}"),
+                                                        ((11.6, 19.6, -13), (16, 23, -15.5), 1.2, .75, f"horn_{side}_tip"),
+                                                        ((8, 11, -1.5), (11.6, 9.4, -6), 1.3, .45, f"horn_{side}")):
+            hs(bone, (bx * s, by, bz), (tx * s, ty, tz), w, w, grad_painter(t, 1))
         hs("skull", (5.9 * s, 2.6, 7.2), (6.4 * s, 4.8, .5), .6, .6, glow_painter(GLOW, 0.0), name="glow_streak")   # eye streak
         # cheek fur flaring back
         cheek = fur_bone(b, f"cheekfur_{'l' if s > 0 else 'r'}", "skull", H(6 * s, -1.2, 5), .05, .8)
@@ -1083,6 +1088,30 @@ def strafe_pose(t, sign, L=1.2, enraged=False):
     return pose(p, body=(0, 16 * sign, 0), neck=(0, -18 * sign, 0), skull=(0, -8 * sign, 0), chest=(0, 0, 4 * sign))
 
 
+def flinch_keys(shells):
+    """1.0 s: a part breaks (QuestEncounterCombat.partBroken): the head snaps back, the body recoils and shakes it off."""
+    s = {"shells": shells}
+    hit = pose(rear(-12), pos=(0, 1, -4), neck=(-24, 10, 0), skull=(-18, 8, 0), jaw=(30, 0, 0), chest=(-6, 0, 8),
+               arm_l=(-20, 0, 0), tail_1=(18, 0, 0), tremble=4.0, **s)
+    return [(0, dict(s), "io"), (.12, hit, "out"), (.4, pose(rear(6), pos=(0, -2, -3), neck=(10, -12, 0), **s), "io"),
+            (.65, pose(neck=(0, 14, 0), skull=(0, 10, 0), **s), "io"), (1.0, dict(s), "io")]
+
+
+def countered_keys(shells):
+    """3.5 s, the counter: thrown back off its strike, it stumbles, its legs give and it crashes onto its side, the
+    petals sagging; it thrashes, then scrambles up and shakes the petals back open."""
+    thrown = pose(rear(-30), pos=(0, 3, -6), neck=(-34, 0, 0), skull=(-24, 0, 0), jaw=(38, 0, 0), arm_l=(-60, 0, 0), arm_r=(-50, 0, 0),
+                  tail_1=(24, 0, 0), shells=shells + .3, tremble=5.0)
+    stumble = pose(rear(4), pos=(0, -2, -8), chest=(0, 0, 14), neck=(12, 18, 0), arm_r=(20, 0, 0), shells=shells)
+    down = pose(body=(0, 0, 70), pos=(0, -13, -8), neck=(8, 16, 0), skull=(10, 0, 0), jaw=(16, 0, 0), arm_l=(24, 0, 0), arm_r=(-30, 0, 0),
+                thigh_l=(-16, 0, 0), thigh_r=(20, 0, 0), tail_1=(-16, 0, 0), tail_2=(-12, 0, 0), shells=shells * .2)
+    thrash = pose(down, neck=(-6, 22, 0), arm_l=(-30, 0, 0), arm_r=(10, 0, 0), thigh_l=(-40, 0, 0), tremble=3.0)
+    rise = pose(rear(10), pos=(0, -4, -6), chest=(0, 0, 8), neck=(16, 0, 0), shells=shells * .5)
+    return [(0, {"shells": shells}, "io"), (.15, thrown, "out"), (.5, stumble, "io"), (.85, down, "in"), (1.0, pose(down, pos=(0, -11, -8)), "out"),
+            (1.15, down, "in"), (1.8, thrash, "io"), (2.3, down, "io"), (2.9, rise, "out"), (3.2, pose(rear(-4), pos=(0, 0, -6), neck=(-6, 0, 0), shells=shells + .2, tremble=4.0), "io"),
+            (3.5, {"shells": shells}, "io")]
+
+
 def enrage_keys():
     """5 s (QuestEncounterCombat.ENRAGE_HOLD_MILLIS), Zinogre's howl: the beast stops and shudders low while the petals
     rattle, sits back on its haunches and howls straight at the sky; at 2.5 s the petals burst open in a wave down the
@@ -1181,6 +1210,9 @@ def animate(m, b):
             bake(b, name, hit + rec, keys(hit, hit + rec, 0.0), overlay=ov)
         bake(b, name if name in ENRAGED_ONLY else f"{name}_enraged", hit + rec, keys(hit, hit + rec, 1.0), overlay=ov)
     bake(b, "search", 2.4, looped(2.4, lambda t: search_pose(t)), "loop")
+    for tag, sh in (("", 0.0), ("_enraged", 1.0)):
+        bake(b, f"flinch{tag}", 1.0, flinch_keys(sh))
+        bake(b, f"countered{tag}", 3.5, countered_keys(sh))
     for tag, sh in (("", 0.0), ("_enraged", 1.0)):
         bake(b, f"hop_back{tag}", 1.1, hop_back_keys(sh))
         bake(b, f"dash_l{tag}", .9, dash_keys(1, sh))

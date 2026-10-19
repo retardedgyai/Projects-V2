@@ -145,6 +145,11 @@ class QuestEncounterCombat(
         /** Enraged parts (gimmicks): damage dealt near the head and on each side, and what has broken. 0 = its right fan. */
         var hornDamage = 0.0
         var hornsBroken = false
+        /** 桜牙獣: the counter window of the strike being wound up (ms, 0 = none), and its torn tail shells. */
+        var counterFrom = 0L
+        var counterTo = 0L
+        var tailDamage = 0.0
+        var tailTorn = false
         /** The enrage roar's wave (see [tickRageWave]): when it left the wyrm and from where; 0 = not yet. */
         var waveAt = 0L
         var waveFrom: Pos? = null
@@ -330,6 +335,9 @@ class QuestEncounterCombat(
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         return mobs[targetId]?.crowd?.filterValues { it > now }?.keys ?: emptySet()
     }
+    /** 桜牙獣's open counter window (ms), for tests. */
+    internal fun counterWindow(targetId: UUID): LongRange? = mobs[targetId]?.takeIf { it.counterTo != 0L }?.let { it.counterFrom..it.counterTo }
+    internal fun partsTorn(targetId: UUID): Pair<Boolean, Boolean>? = mobs[targetId]?.let { it.hornsBroken to it.tailTorn }
     fun breakGauge(targetId: UUID): Double? = mobs[targetId]?.takeIf { it.boss }?.breakGauge
     fun isBroken(targetId: UUID): Boolean {
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
@@ -456,6 +464,7 @@ class QuestEncounterCombat(
             gimmicks.playerStruck(attacker)
             breakParts(mob, attacker, applied, now)
         }
+        if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && applied > 0.0 && mob.life.isAlive) sakuraHit(mob, attacker, applied, now)
         if (!mob.life.isAlive) {
             mob.abilities.cancel()
             clearWarning(mob.entity.uuid)
@@ -513,6 +522,7 @@ class QuestEncounterCombat(
             mob.model?.tick(mob.entity.position, nowMillis, mob.life.phase == QuestMobPhase.ATTACKING, mob.life.health / mob.life.maximumHealth)
             if (mob.shade) tickRageWave(mob, nowMillis)
             if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && mob.enraged) tickSakuraRoar(mob, nowMillis)
+            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) tickCounterGlow(mob, nowMillis)
             if (mob.shade) lights.hold("horns-${mob.entity.uuid}",
                 if (mob.enraged && !mob.hornsBroken && nowMillis >= mob.enrageHoldUntil - 2500) mob.view?.point("skull", ShadeWyrmVfx.CROWN) else null, 12)
             mob.view?.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, nowMillis,
@@ -1116,6 +1126,11 @@ class QuestEncounterCombat(
                 updateName(mob, event.frame.ability.displayName)
                 mob.view?.ability(event.frame.ability.id)
                 if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) {
+                    val t = event.frame.ability.telegraphMillis
+                    if (event.frame.ability.id in SAKURA_COUNTERABLE && t >= 900) {
+                        mob.counterFrom = event.frame.startedAt + t - COUNTER_LEAD_MILLIS
+                        mob.counterTo = event.frame.startedAt + t - COUNTER_CLOSE_MILLIS
+                    } else { mob.counterFrom = 0L; mob.counterTo = 0L }
                     sakuraFx?.start(event.frame.ability.id, event.frame.ability.telegraphMillis / 1000.0, event.frame.origin)
                     sakuraStrike?.windup(event.frame.ability.id, event.frame) { bone, px -> mob.view?.point(bone, px) }
                 }
@@ -1267,6 +1282,69 @@ class QuestEncounterCombat(
         }
     }
 
+    /**
+     * 桜牙獣's counter window: for the last moments before a big strike its horns flash blue. A hit from in front in that
+     * window throws it out of the strike: stagger, the `countered` clip, +30% damage taken while it is down.
+     */
+    private fun tickCounterGlow(mob: Mob, now: Long) {
+        if (mob.counterTo == 0L || now < mob.counterFrom) return
+        if (now > mob.counterTo || !mob.abilities.isActive) { mob.counterFrom = 0L; mob.counterTo = 0L; updateName(mob); return }
+        if (now - mob.counterFrom < 60) {
+            updateName(mob, "角が光った！ 正面から打て")
+            sound(mob.entity.position, "minecraft:block.amethyst_block.resonate", 1.4f, 1.6f)
+        }
+        val blue = Particle.DUST.withColor(net.kyori.adventure.text.format.TextColor.color(0x7fd8ff)).withScale(1.4f)
+        for (tip in listOf(Vec(11.4, 27.0, -18.0), Vec(-11.4, 27.0, -18.0))) {
+            val at = mob.view?.point("skull", Vec(tip.x(), 40.5 + tip.y() * .94 - tip.z() * .34, 27.0 + tip.y() * .34 + tip.z() * .94)) ?: continue
+            particle(Pos.fromPoint(at), blue, 3)
+            particle(Pos.fromPoint(at), Particle.END_ROD, 1)
+        }
+    }
+
+    /** Where a hit on 桜牙獣 landed: the counter, and the parts it wears down (horns from in front, tail shells from behind). */
+    private fun sakuraHit(mob: Mob, attacker: Player, applied: Double, now: Long) {
+        val here = mob.entity.position
+        val yaw = Math.toRadians(here.yaw().toDouble())
+        val ahead = Vec(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw))
+        val off = Vec(attacker.position.x() - here.x(), 0.0, attacker.position.z() - here.z())
+        if (off.length() < 1e-6) return
+        val angle = Math.toDegrees(kotlin.math.acos(off.normalize().dot(ahead).coerceIn(-1.0, 1.0)))
+        if (mob.counterTo != 0L && now in mob.counterFrom..mob.counterTo && angle <= 80.0) {
+            mob.counterFrom = 0L; mob.counterTo = 0L
+            mob.abilities.cancel(); clearWarning(mob.entity.uuid); castingPose(mob, false); mob.maneuver = null; stopNavigation(mob)
+            staggerBoss(maxOf(bossStaggerUntil, now + COUNTER_STAGGER_MILLIS))
+            mob.brokenUntil = now + COUNTER_STAGGER_MILLIS
+            mob.view?.maneuver("countered")
+            sakuraFx?.countered()
+            updateName(mob, "カウンター！ 崩れた")
+            sound(here, "minecraft:entity.ravager.stunned", 1.4f, .8f)
+            sound(here, "minecraft:block.amethyst_block.break", 1.2f, .7f)
+            return
+        }
+        val max = mob.life.maximumHealth
+        val head = here.add(ahead.mul(3.0))
+        if (!mob.hornsBroken && angle <= 60.0 && attacker.position.distance(head.withY(attacker.position.y())) <= HEAD_REACH) {
+            mob.hornDamage += applied
+            if (mob.hornDamage >= max * HORN_BREAK) {
+                mob.hornsBroken = true
+                mob.view?.hideBones(listOf("horn_l_tip", "horn_r_tip"))
+                mob.abilities.disable("sakura-horn")
+                sakuraFx?.partBurst(true)
+                partBroken(mob, now, 3000L, "枝角が折れた")
+            }
+        }
+        if (!mob.tailTorn && angle >= 110.0) {
+            mob.tailDamage += applied
+            if (mob.tailDamage >= max * FAN_TEAR) {
+                mob.tailTorn = true
+                mob.view?.hideBones(listOf("shell_t4_l", "shell_t4_r", "shell_t5_l", "shell_t5_r"))
+                mob.abilities.disable("sakura-scatter")
+                sakuraFx?.partBurst(false)
+                partBroken(mob, now, 2500L, "尾の花びらが散った")
+            }
+        }
+    }
+
     private val Mob.shade: Boolean get() = definition.archetype == QuestMobArchetype.SHADE_WYRM
 
     private fun particle(position: Pos, type: Particle, count: Int = 1) {
@@ -1294,6 +1372,11 @@ class QuestEncounterCombat(
         const val TURN_SWEEP = "shade-turnsweep"
         /** 桜牙獣 answers someone at its back with the 360 tail spin. */
         const val SAKURA_TURN = "sakura-spin"
+        /** 桜牙獣's big strikes that open a counter window [COUNTER_LEAD_MILLIS]..[COUNTER_CLOSE_MILLIS] before they land. */
+        val SAKURA_COUNTERABLE = setOf("sakura-claw", "sakura-tail", "sakura-bloom", "sakura-charge", "sakura-howl", "sakura-rain", "sakura-pounce", "sakura-claw3")
+        const val COUNTER_LEAD_MILLIS = 600L
+        const val COUNTER_CLOSE_MILLIS = 150L
+        const val COUNTER_STAGGER_MILLIS = 3500L
         /** Got behind it (usually while an attack holds its facing) for this long when it is free to act. */
         const val TURN_AFTER_MILLIS = 600L
         /** ms into shade-dive while the body is carried over the target (the clip hangs in the air then). */
