@@ -52,6 +52,27 @@ class CoreWeaponAttacksTest {
         assertTrue(lance.attacks[2].reaches(Vec.ZERO, forward, at(50.0, 3.0), lance.range), "the closing sweep is wide")
     }
 
+    /** For the preview page: every melee attack's server reach on a 0.1 m grid, top down, facing +z. */
+    @Test fun `export reach maps for the preview`() {
+        val out = mutableListOf<Map<String, Any>>()
+        for ((name, base) in listOf("大剣" to CoreWeaponBase.STANDARD, "重断大剣" to CoreWeaponBase.CLEAVER, "双短剣" to CoreWeaponBase.DAGGERS, "騎槍" to CoreWeaponBase.MACE)) {
+            val w = CoreWeaponCombat.of(base)!!
+            out += mapOf("name" to name, "range" to w.range, "slow" to w.attackSlow, "attacks" to w.attacks.map { a ->
+                val cells = mutableListOf<List<Int>>()
+                for (iz in -20..60) for (ix in -60..60) {
+                    val t = CombatTarget(UUID(0, 0), Vec(ix / 10.0, 0.0, iz / 10.0), Vec(.3, .9, .3))
+                    if (a.reaches(Vec.ZERO, forward, t, w.range)) cells += listOf(ix, iz)
+                }
+                mapOf("hitbox" to a.hitbox.name, "angle" to a.angle, "width" to a.width, "multiplier" to a.multiplier,
+                    "startup" to a.startup, "recovery" to a.recovery, "hand" to a.hand.name, "cells" to cells)
+            })
+        }
+        val cwd = java.nio.file.Path.of(System.getProperty("user.dir"))
+        val root = if (cwd.fileName.toString() == "server-minestom") cwd.parent else cwd
+        java.nio.file.Files.createDirectories(root.resolve(".tools"))
+        java.nio.file.Files.writeString(root.resolve(".tools/weapon-reach.json"), com.google.gson.Gson().toJson(out))
+    }
+
     @Test fun `ranged and casting weapons keep their own normal attacks`() {
         for (base in listOf(CoreWeaponBase.LONGBOW, CoreWeaponBase.STAFF, CoreWeaponBase.TOME)) assertNull(CoreWeaponCombat.of(base))
     }
