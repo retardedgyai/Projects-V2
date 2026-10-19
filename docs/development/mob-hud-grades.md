@@ -36,8 +36,20 @@ CC はそのまま効き、同時に CC の種類ごとの量（`CrowdControl.br
 - 絵：`scripts/mob_hud_art.py`（頭上）と `combat_hud_art.boss_plate`（ボスバー）。字形は `build_combat_hud.py` が `projects:hud_plate` に出す。
 - 確認：`./gradlew :server-minestom:test --tests '*CoreHudLayoutTest*'` → `python scripts/render_combat_hud_preview.py` → `build/hud-preview/mob-hud-4x.png`。
 
+## ボスバー（2026-10-19、v3＋専用）
+
+- 等級つきのボス（`BossBars.grade`）：戦闘HUDと同じ部品。中央の菱形にLv、等級が上がると翼が増え、厄災で冠と板の金の線。
+  板の中に「等級名＋ボス名」と％、太いHPゲージの中に数字、崩しゲージは怒りゲージと同じ20マス（崩れ中は白いマスが4秒で減る）。
+  精鋭＝執行官・守護者・預言者、希少＝灰燼の王・氷獄の巨兵・嵐の司祭、特異＝熔星の番人・蒼潮の記録者、厄災＝星蝕の王・黒翳竜。
+- 専用ボス（`BossBars.dedicated`）：ボスの形でバーを囲む（参考：Cataclysm 系の専用ボスバー。写さず考え方だけ）。
+  黒翳竜＝怒りの扇の翼（先の尖った羽根を重ね、内側を紫・先端を薄紫）と、桃色の角の目のない頭。名前はゲージの下。
+  桜牙獣の絵の案は共有メモ（mob-hud/boss_bar_dedicated.py）にある。ボスが main に入ったら `BossBars.dedicated` と `boss_bar_art` に足す。
+- 名前・数字の行：ボスバーの名前はバニラだと画面上端（y=3）にしか置けないので、行ごとのフォント（`hud_boss_name` など5つ）で置く。
+  ASCII は `minecraft:font/ascii.png`、日本語は GNU Unifont 17.0.04（クライアントと同じ字形、OFL 1.1）を版とハッシュ固定で取得して字形にする。
+- 絵：`scripts/boss_bar_art.py`。確認：`CoreHudLayoutTest` → `render_combat_hud_preview.py` → `build/hud-preview/boss-bars-4x.png`。
+
 ## まだのこと
 
 - 等級で報酬は変わらない（倒した時の落とし物は今までどおり）。
 - 弱点（炎・氷・雷）の印は頭上から外した。必要なら名前の行の右に戻す。
-- 黒翳竜の「侵食」バー（2本目のボスバー）が、背の伸びたボスの板と重なる（もともと板の高さ26で重なっていた）。
+- 黒翳竜の「侵食」バー（2本目のバニラのボスバー、y=22から）が、背の高い専用バー（y=2〜70）と重なる。侵食もこの絵の中に描くのがよい。

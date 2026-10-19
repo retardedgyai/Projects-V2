@@ -200,6 +200,29 @@ def mob_hud(fonts, snapshots):
     sheet.save(OUT / "mob-hud-4x.png")
 
 
+def boss_sheet(fonts, snapshots):
+    """boss-bars-4x.png: every boss bar state (grades, broken, the shade wyrm) on the field, cropped to the bar."""
+    keys = [k for k in ("boss-grade-elite", "boss-grade-rare", "boss-grade-unique", "boss-grade-calamity", "boss-broken",
+                        "boss-wyrm", "boss-wyrm-broken") if k in snapshots]
+    if not keys:
+        return
+    crops = []
+    for key in keys:
+        screen = screen_for(fonts, snapshots["actionbar-ready"], snapshots[key])
+        h = 84 if "wyrm" in key else 78
+        crops.append(screen.crop(((W // 2 - 185) * S, 0, (W // 2 + 185) * S, h * S)))
+    cw = crops[0].width
+    sheet = Image.new("RGBA", (cw * 2 + 8, sum(c.height for c in crops[::2]) + 8 * len(crops)), (20, 20, 24, 255))
+    y = [0, 0]
+    for i, c in enumerate(crops):
+        col = i % 2 if i < 5 else (i - 5)
+        if i == 5:
+            y = [max(y)] * 2
+        sheet.alpha_composite(c, (col * (cw + 8), y[col]))
+        y[col] += c.height + 8
+    sheet.crop((0, 0, sheet.width, max(y))).save(OUT / "boss-bars-4x.png")
+
+
 def main():
     global S
     snapshots = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted((OUT / "snapshots").glob("*.json"))}
@@ -228,6 +251,7 @@ def main():
         image = screen_for(fonts, snapshots["actionbar-ready"], snapshots["boss-boss"])
         image.crop(((W // 2 - 120) * S, 0, (W // 2 + 120) * S, 30 * S)).resize((240 * 8, 30 * 8), Image.NEAREST).save(OUT / "boss-8x.png")
     mob_hud(fonts, snapshots)
+    boss_sheet(fonts, snapshots)
     # The creator plays at GUI scale 2: the same view, 2 screen px per GUI px, then enlarged x4
     # like a zoomed in-game screenshot (compare with the client's F2 shots).
     S = 2

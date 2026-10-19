@@ -1244,11 +1244,13 @@ class QuestEncounterCombat(
                 .forEach { add(MobHudEffect(MobHudEffectKind.CC, it.name.lowercase())) }
         }
         val breaks = mob.boss || mob.grade.breaks
-        return MobHud(encounterLevel, mob.definition.name, mob.grade, mob.mods, mob.life.health, mob.life.maximumHealth,
+        return MobHud(encounterLevel, mob.definition.name, if (mob.boss) BossBars.grade(mob.definition.archetype) else mob.grade,
+            mob.mods, mob.life.health, mob.life.maximumHealth,
             breakGauge = if (breaks) mob.breakGauge / BREAK_MAX else null,
             broken = if (now < mob.brokenUntil) (mob.brokenUntil - now).toDouble() / BREAK_MILLIS else null,
             effects = effects,
-            notice = mob.notice ?: if (mob.life.phase == QuestMobPhase.RETURNING) "帰還中" else null)
+            notice = mob.notice ?: if (mob.life.phase == QuestMobPhase.RETURNING) "帰還中" else null,
+            dedicated = if (mob.boss) BossBars.dedicated(mob.definition.archetype) else null)
     }
 
     /** What the boss bar shows for the boss (null once there is none). */

@@ -45,7 +45,7 @@ class CoreHudLayoutTest {
     }
 
     private fun glyphName(placed: Placed): String? = placed.font.takeIf { it.isNotEmpty() }?.let { font ->
-        listOf("console", "emblem_warrior", "emblem_mage", "boss_plate").firstOrNull { name ->
+        listOf("console", "emblem_warrior", "emblem_mage", "boss_plate_elite", "boss_plate_calamity", "boss_emblem_calamity", "wyrm_frame_l").firstOrNull { name ->
             CoreHudGlyphs[name].let { it.font.asString() == font && it.char.code == placed.code } }
     }
 
@@ -101,6 +101,10 @@ class CoreHudLayoutTest {
         ) + CoreHudLayout.classes.map { Triple("actionbar", "class-$it", CoreUiComponents.hud(combat(it), true)) } + listOf(
             Triple("boss", "boss", CoreBossBarHud.render(bossHud(), 14900.0)),
             Triple("boss", "broken", CoreBossBarHud.render(bossHud().copy(health = 8200.0, broken = .55), 9000.0)),
+        ) + MobGrade.entries.drop(1).map { Triple("boss", "grade-${it.name.lowercase()}", CoreBossBarHud.render(bossHud().copy(grade = it), 14900.0)) } + listOf(
+            Triple("boss", "wyrm", CoreBossBarHud.render(bossHud().copy(name = "黒翳竜", grade = MobGrade.CALAMITY, dedicated = "shade_wyrm"), 14900.0)),
+            Triple("boss", "wyrm-broken", CoreBossBarHud.render(bossHud().copy(name = "黒翳竜", health = 8200.0, broken = .55,
+                grade = MobGrade.CALAMITY, dedicated = "shade_wyrm"), 9000.0)),
         ) + plates.flatMap { (name, hud) -> CoreMobNameplate.lines(hud).mapIndexed { i, line -> Triple("plate", "$name-$i", line) } } + listOf(
             Triple("damage", "normal", CoreDamageNumbers.render(482.0, false, false)),
             Triple("damage", "critical", CoreDamageNumbers.render(1260.0, true, false)),
@@ -213,13 +217,19 @@ class CoreHudLayoutTest {
         assertTrue(long.maxOf { it.x + it.advance } - long.minOf { it.x } <= CoreHudLayout.MAX_CAPTION_WIDTH)
     }
 
-    @Test fun `boss bar keeps its plate gauge and percentage inside the plate`() {
-        val glyphs = layout(CoreBossBarHud.render(bossHud(), 14900.0)).first
+    @Test fun `boss bar keeps its plate, emblem, name row and percentage where the art expects them`() {
         assertEquals("62%", CoreBossBarHud.percent(12480.0, 20000.0))
-        assertEquals(CoreBossBarHud.PLATE_X, glyphs.first { glyphName(it) == "boss_plate" }.x)
-        val pct = glyphs.filter { it.font == "projects:hud_num_boss" }
-        assertEquals(CoreBossBarHud.FILL_X + CoreBossBarHud.FILL, pct.maxOf { it.x + it.advance - 1 })
-        assertTrue(glyphs.filter { it.font == "" }.minOf { it.x } == CoreBossBarHud.NAME_X)
+        val glyphs = layout(CoreBossBarHud.render(bossHud().copy(grade = MobGrade.CALAMITY), 14900.0)).first
+        assertEquals(CoreBossBarHud.PLATE_X, glyphs.first { glyphName(it) == "boss_plate_calamity" }.x)
+        assertEquals(CoreBossBarHud.EMBLEM_X, glyphs.first { glyphName(it) == "boss_emblem_calamity" }.x)
+        val row = glyphs.filter { it.font == "projects:hud_boss_name" }
+        assertEquals(CoreBossBarHud.PLATE_X + 6, row.minOf { it.x }, "grade label starts the name row")
+        assertEquals(CoreBossBarHud.PLATE_X + CoreBossBarHud.PLATE_W - 6, row.maxOf { it.x + it.advance - 1 }, "percentage ends inside the plate")
+        val lit = glyphs.count { g -> CoreHudGlyphs["boss_cell"].let { it.font.asString() == g.font && it.char.code == g.code } }
+        assertEquals(13, lit, "64% of 20 break cells")
+        val wyrm = layout(CoreBossBarHud.render(bossHud().copy(dedicated = "shade_wyrm"), 14900.0)).first
+        assertEquals(CoreBossBarHud.WYRM_FRAME_X, wyrm.first { glyphName(it) == "wyrm_frame_l" }.x)
+        assertTrue(wyrm.none { it.font == "projects:hud_boss_name" })
     }
 
     @Test fun `override allowlist hides only the HUD parts the HUD replaces and reskins the hotbar`() {

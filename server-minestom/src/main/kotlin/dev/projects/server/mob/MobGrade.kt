@@ -75,7 +75,21 @@ internal data class MobHud(
     val effects: List<MobHudEffect>,
     /** The attack being prepared, or 帰還中; shown in place of the name. */
     val notice: String? = null,
+    /** A boss with its own boss bar frame (e.g. "shade_wyrm"); null = the graded bar. */
+    val dedicated: String? = null,
 )
+
+/** Boss bar look per boss (Creator 2026-10-19): bosses carry a grade from 精鋭 up; some have their own frame. */
+internal object BossBars {
+    fun grade(archetype: QuestMobArchetype): MobGrade = when (archetype) {
+        QuestMobArchetype.CINDER_REGENT, QuestMobArchetype.GLACIAL_COLOSSUS, QuestMobArchetype.TEMPEST_HIEROPHANT -> MobGrade.RARE
+        QuestMobArchetype.FORGE_SENTINEL, QuestMobArchetype.TIDE_ARCHIVIST -> MobGrade.UNIQUE
+        QuestMobArchetype.ECLIPSE_REGENT, QuestMobArchetype.SHADE_WYRM -> MobGrade.CALAMITY
+        else -> MobGrade.ELITE
+    }
+
+    fun dedicated(archetype: QuestMobArchetype): String? = if (archetype == QuestMobArchetype.SHADE_WYRM) "shade_wyrm" else null
+}
 
 internal enum class MobHudEffectKind { BUFF, DEBUFF, CC }
 

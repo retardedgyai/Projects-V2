@@ -8,8 +8,8 @@ The boss version of the same information lives on the boss bar plate (combat_hud
 import combat_hud_art as art
 from combat_hud_art import OUT, hexc, new, px, rect, gem
 
-PLATE_FILL = 60                 # HP / break gauge width
-PLATE_LEFT = -PLATE_FILL // 2   # inner gauge left edge
+PLATE_FILL = 61                 # HP / break gauge width (odd: symmetric about column 0)
+PLATE_LEFT = -(PLATE_FILL // 2)  # inner gauge left edge
 FRAME_PAD = 10                  # frame glyph starts this far left of the gauge (room for gems / spikes)
 HP_ROWS, BREAK_ROWS = 4, 2      # inside the frame: HP rows, one black row, break rows
 HP_TOP = 1                      # within the 9 px line
