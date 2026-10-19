@@ -58,7 +58,7 @@ POND = (105, 428)
 CLIFF_X = 455
 BOULDERS = (282, 428)
 MEADOW = (330, 258)
-LOW, MID, HIGH = 64, 74, 85
+LOW, MID, HIGH = 64, 75, 94
 
 # ---------------- terrain ----------------
 xs_ = np.arange(B, dtype=np.float32)
@@ -614,6 +614,122 @@ for x in range(B):
             if road[z, x] and road_d[z, x] > 2.4: put(x, at(x, z) + 1, z, "spruce_planks", shape="fence")
 
 
+# ---------------- Gaur-style rock pillars: narrow waists, wide overhanging grassy tops, joined by rock bridges ----------------
+UPPER = np.full((B, B), -1, np.int32)          # walkable heights above the ground layer (pillar tops, bridges)
+ROCK = ["stone", "andesite", "tuff", "stone", "andesite", "granite", "stone", "tuff"]
+
+
+def mesa(cx, cz, top_y, rb, rt, seed, needle=False):
+    base = min(at(cx + dx, cz + dz) for dx in (-int(rb), 0, int(rb)) for dz in (-int(rb), 0, int(rb))) - 2
+    Hm = top_y - base
+    for y in range(base, top_y + 1):
+        f = (y - base) / Hm
+        if f < .45: r = rb + (.6 * rb - rb) * (f / .45)
+        elif f < .82: r = .6 * rb + (rt - .6 * rb) * ((f - .45) / .37) ** 1.7
+        else: r = rt * (1 - max(0, f - .97) * 3)
+        ri = int(r * 1.25) + 2
+        for dx in range(-ri, ri + 1):
+            for dz in range(-ri, ri + 1):
+                a = math.atan2(dz, dx)
+                rr = r * (1 + .22 * (noise3(math.cos(a) * 3 + seed, y * .25, math.sin(a) * 3, seed, 1.0) - .5) * 2)
+                d = math.hypot(dx, dz)
+                if d > rr: continue
+                x, z = cx + dx, cz + dz
+                if not (0 <= x < B and 0 <= z < B) or y <= at(x, z) - 1: continue
+                if needle:
+                    put(x, y, z, "moss_block" if y >= top_y - 1 else ROCK[(y // 3 + seed) % len(ROCK)])
+                elif y == top_y:
+                    put(x, y, z, "grass_block_top", "grass_block_side"); UPPER[z, x] = top_y
+                elif y >= top_y - 2 and d > rr - 1.2:
+                    put(x, y, z, "dirt" if y == top_y - 1 else "rooted_dirt")
+                else:
+                    mat = ROCK[(y // 3 + seed) % len(ROCK)]
+                    if noise3(x, y, z, seed + 7, 2.5) > .7: mat = "moss_block"
+                    put(x, y, z, mat)
+    for _ in range(int(rt * 3)):                                    # vines and roots hanging from the overhang
+        a = R.random() * math.tau
+        x, z = int(round(cx + math.cos(a) * (rt - .5))), int(round(cz + math.sin(a) * (rt - .5)))
+        for k2 in range(R.randint(3, 12)):
+            p = (x, top_y - 1 - k2, z)
+            if p in w.b and k2 > 0: break
+            if k2 > 0: put(*p, "vine", shape="shut_s")
+    if needle:
+        mark(cx - int(rb) - 3, cz - int(rb) - 3, cx + int(rb) + 3, cz + int(rb) + 3)
+        return
+    for _ in range(int(rt * .35) + 1):                               # trees and bushes on top
+        a = R.random() * math.tau; rr = rt * .6 * math.sqrt(R.random())
+        x, z = int(round(cx + math.cos(a) * rr)), int(round(cz + math.sin(a) * rr))
+        th = R.randint(4, 7)
+        for y in range(top_y + 1, top_y + th + 1): put(x, y, z, *LOG("oak_log"))
+        for dx in range(-3, 4):
+            for dz in range(-3, 4):
+                for dy in range(-2, 2):
+                    if dx * dx + dz * dz + dy * dy * 2 <= 9 + R.random() * 3 and (x + dx, top_y + th + dy, z + dz) not in w.b:
+                        put(x + dx, top_y + th + dy, z + dz, "oak_leaves")
+    for _ in range(int(rt * rt * .5)):
+        a = R.random() * math.tau; rr = rt * .85 * math.sqrt(R.random())
+        x, z = int(round(cx + math.cos(a) * rr)), int(round(cz + math.sin(a) * rr))
+        if (x, top_y + 1, z) not in w.b: put(x, top_y + 1, z, R.choice(["short_grass", "short_grass", "poppy", "dandelion", "fern"]), shape="plant")
+    mark(cx - int(rb) - 3, cz - int(rb) - 3, cx + int(rb) + 3, cz + int(rb) + 3)
+
+
+def rock_bridge(p0, p1, rise=3, width=1.6):
+    """A natural rock bridge with a grassy walkable deck; the deck height goes into UPPER."""
+    L = math.dist((p0[0], p0[2]), (p1[0], p1[2])); n = int(L * 2)
+    for i in range(n + 1):
+        t = i / n
+        cx, cz = p0[0] + (p1[0] - p0[0]) * t, p0[2] + (p1[2] - p0[2]) * t
+        deck = int(round(p0[1] + (p1[1] - p0[1]) * t + rise * math.sin(math.pi * t)))
+        under = 2 + 5 * (1 - math.sin(math.pi * t)) + 2 * noise3(cx, 0, cz, 151, 3)       # thicker at the ends
+        wid = width + .8 * noise3(cx, 1, cz, 152, 4)
+        for dx in range(-4, 5):
+            for dz in range(-4, 5):
+                x, z = int(round(cx + dx)), int(round(cz + dz))
+                if not (0 <= x < B and 0 <= z < B): continue
+                d = math.hypot(x - cx, z - cz)
+                if d > wid + 1.2: continue
+                if d <= wid:
+                    put(x, deck, z, "grass_block_top", "grass_block_side"); UPPER[z, x] = max(UPPER[z, x], deck)
+                    if w.b.get((x, deck + 1, z), ("", "", ""))[1] in ("vine",): w.b.pop((x, deck + 1, z), None)
+                for y in range(int(deck - under * (1 - (d / (wid + 1.2)) ** 2)), deck):
+                    if y > at(x, z): put(x, y, z, ROCK[(y // 3) % len(ROCK)] if noise3(x, y, z, 153, 2) < .7 else "moss_block")
+        if i % 7 == 3:
+            for k2 in range(R.randint(2, 7)):
+                vx, vz = int(round(cx + R.uniform(-1, 1))), int(round(cz + R.uniform(-1, 1)))
+                p = (vx, deck - int(under) - k2, vz)
+                if p not in w.b and p[1] > at(vx, vz): put(*p, "vine", shape="shut_s")
+
+
+# three chained pillars south of the high plateau; the first is reached by a bridge from the plateau's edge
+ex, ez = 300, int(B2[300]) - 7
+EDGE_Y = at(ex, ez)
+PILLARS = [(300, 226, EDGE_Y + 9, 9, 18, 3), (304, 312, EDGE_Y + 14, 9.5, 19, 5), (362, 388, EDGE_Y + 11, 10, 21, 1)]
+for (px, pz, ty, rb, rt, sd) in PILLARS:
+    mesa(px, pz, ty, rb, rt, sd)
+rock_bridge((ex, EDGE_Y, ez - 2), (PILLARS[0][0], PILLARS[0][2], PILLARS[0][1] - 15), rise=1)
+rock_bridge((PILLARS[0][0], PILLARS[0][2], PILLARS[0][1] + 14), (PILLARS[1][0], PILLARS[1][2], PILLARS[1][1] - 15), rise=4)
+rock_bridge((PILLARS[1][0] + 10, PILLARS[1][2], PILLARS[1][1] + 12), (PILLARS[2][0] - 12, PILLARS[2][2], PILLARS[2][1] - 13), rise=4)
+for x in range(ex - 3, ex + 4):                                     # the plateau edge where the first bridge starts
+    for z in range(ez - 4, ez + 1):
+        UPPER[z, x] = max(UPPER[z, x], at(x, z))
+# rewards on the tops: a lookout cairn, a rare herb, a treasure barrel at the far end
+for (px, pz, ty, rb, rt, sd), what in zip(PILLARS, ("cairn", "herb", "treasure")):
+    if what == "cairn":
+        for y in range(ty + 1, ty + 4): put(px + 3, y, pz, R.choice(["mossy_cobblestone", "cobblestone"]))
+        put(px + 3, ty + 4, pz, "lantern", shape="lantern")
+    elif what == "herb":
+        for _ in range(8):
+            put(px + R.randint(-3, 3), ty + 1, pz + R.randint(-3, 3), "firefly_bush", shape="plant")
+    else:
+        put(px, ty + 1, pz, "barrel_top", "barrel_side"); put(px + 1, ty + 1, pz, "lantern", shape="lantern")
+    CONTENT.append((px, pz, "pillar"))
+
+# thin scenery spires on the plains (Gaur-style), out of the way of roads and places
+for (sx, sz, h2, r2) in ((160, 455, 34, 3.5), (450, 300, 30, 3.0), (40, 360, 26, 3.0), (470, 470, 32, 3.5)):
+    if anyway[sz, sx] < 10 or used[sz, sx]: continue
+    mesa(sx, sz, at(sx, sz) + h2, r2 * 1.4, r2 * .7, 2, needle=True)   # a rock needle: scenery, nothing to stand on
+
+
 # ---------------- main places count as content ----------------
 for p in (TREE, BOSS, FUNGAL, WOLF, TOWER, REST, BOULDERS, MEADOW, POND):
     CONTENT.append((p[0], p[1], "place"))
@@ -743,6 +859,13 @@ for z in range(4, B - 4):
             else: oak(x, z, "oak", big=R.random() < .08)
 scatter_plants(70, 280, 70, .05, ["fern", "short_grass", "brown_mushroom", "leaf_litter"])
 scatter_plants(250, 250, 240, .006, ["poppy", "dandelion", "short_grass", "short_grass"])
+for z in range(2, B - 2):
+    for x in range(2, B - 2):
+        if anyway[z, x] < 3 or lake[z, x] or stream[z, x] or R.random() > .16: continue
+        y = at(x, z) + 1
+        if (x, y, z) in w.b: continue
+        t2 = w.b.get((x, y - 1, z))
+        if t2 and t2[1] == "grass_block_top": put(x, y, z, "short_grass", shape="plant")
 
 
 
@@ -767,6 +890,20 @@ while q:
         nz, nx = z + dz, x + dx
         if 0 <= nz < B and 0 <= nx < B and not seen[nz, nx] and not block[nz, nx] and abs(int(hi[nz, nx]) - int(hi[z, x])) <= 1:
             seen[nz, nx] = True; q.append((nz, nx))
+# second layer: pillar tops and bridges, entered from reachable ground with a step of at most 1
+up_seen = np.zeros((B, B), bool)
+q = deque()
+for z in range(B):
+    for x in range(B):
+        if UPPER[z, x] >= 0 and seen[z, x] and abs(int(UPPER[z, x]) - int(hi[z, x])) <= 1:
+            up_seen[z, x] = True; q.append((z, x))
+while q:
+    z, x = q.popleft()
+    for dz, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        nz, nx = z + dz, x + dx
+        if 0 <= nz < B and 0 <= nx < B and not up_seen[nz, nx] and UPPER[nz, nx] >= 0 and abs(int(UPPER[nz, nx]) - int(UPPER[z, x])) <= 1:
+            up_seen[nz, nx] = True; q.append((nz, nx))
+UP_STATS = (int((UPPER >= 0).sum()), int(up_seen.sum()))
 land = ~lake & ~block
 scenic = slope > 1.3
 unreach = land & ~seen & ~scenic
@@ -781,7 +918,8 @@ for (tz, tx) in zip(ys[::3], xs2[::3]):
     tdist = np.minimum(tdist, np.hypot(xx - tx, zz - tz))
 empty = land & seen & (cdist > 40) & (tdist > 14) & (anyway > 4)
 STATS = {"reachable": float((land & seen).sum() / land.sum()), "unreachable_flat": int(unreach.sum()),
-         "scenic": float((scenic & land).sum() / land.sum()), "empty": float(empty.sum() / land.sum())}
+         "scenic": float((scenic & land).sum() / land.sum()), "empty": float(empty.sum() / land.sum()),
+         "upper_cells": UP_STATS[0], "upper_reached": UP_STATS[1]}
 print("checks", STATS)
 img = np.zeros((B, B, 3), np.uint8)
 shade = np.clip((hi - 55) / 40, 0, 1)
@@ -792,20 +930,22 @@ img[anyway < 2.5] = (236, 214, 150)
 img[logmask] = (40, 90, 40)
 img[empty] = (240, 200, 60)
 img[unreach] = (230, 50, 50)
+img[(UPPER >= 0) & up_seen] = (150, 210, 255)
+img[(UPPER >= 0) & ~up_seen] = (230, 50, 50)
 mapimg = Image.fromarray(img).resize((1000, 1000), Image.NEAREST)
 from PIL import ImageDraw, ImageFont
 dd = ImageDraw.Draw(mapimg)
 ff = ImageFont.truetype("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc", 15)
 for (cx, cz, kd) in CONTENT:
     dd.ellipse((cx * 2 - 4, cz * 2 - 4, cx * 2 + 4, cz * 2 + 4), fill=(255, 255, 255), outline=(0, 0, 0))
-dd.rectangle((10, 10, 360, 120), fill=(16, 18, 28))
+dd.rectangle((10, 10, 360, 140), fill=(16, 18, 28))
 for i2, (col, t2) in enumerate((((236, 214, 150), "道"), ((128, 124, 118), "崖（見るだけ）"), ((240, 200, 60), "空白（中身から40以上）"),
-                                ((230, 50, 50), "行けない平地"), ((255, 255, 255), "中身のある場所"))):
+                                ((230, 50, 50), "行けない場所"), ((150, 210, 255), "柱の上と岩の橋（行ける）"), ((255, 255, 255), "中身のある場所"))):
     dd.rectangle((18, 18 + i2 * 20, 32, 32 + i2 * 20), fill=col)
     dd.text((40, 16 + i2 * 20), t2, fill=(255, 255, 255), font=ff)
 mapimg.save("field500-check.png")
 
-LABELS = [(TREE, "大樹（根の洞＝ダンジョン入口）", (140, 230, 140)), (BOSS, "ワールドボス：根の主", (255, 90, 90)),
+LABELS = [((304, 312), "岩の柱と岩の橋（高台から渡れる）", (150, 210, 255)), (TREE, "大樹（根の洞＝ダンジョン入口）", (140, 230, 140)), (BOSS, "ワールドボス：根の主", (255, 90, 90)),
           (FUNGAL, "狩り場：キノコの窪地", (255, 150, 120)), (WOLF, "狩り場：狼の根穴", (255, 150, 120)),
           (TOWER, "狩り場＋展望：根に飲まれた石塔", (255, 150, 120)), (REST, "休憩所（転移石）", (255, 255, 255)),
           ((455, 175), "採鉱：根の割れた崖", (200, 200, 220)), (BOULDERS, "採石：岩の原", (200, 200, 200)),
