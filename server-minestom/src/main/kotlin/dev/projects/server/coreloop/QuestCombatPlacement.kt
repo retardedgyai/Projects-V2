@@ -17,11 +17,11 @@ internal object QuestCombatPlacement {
     }
 
     fun clear(instance: Instance, point: Pos): Boolean =
-        instance.getBlock(point.sub(0.0, 0.1, 0.0)).isSolid &&
+        instance.getBlock(point.sub(0.0, 0.1, 0.0)).solid() &&
             listOf(-0.35, 0.35).all { dx -> listOf(-0.35, 0.35).all { dz ->
                 listOf(0.05, 0.95, 1.9, 2.7).all { dy ->
                     val block = instance.getBlock(point.add(dx, dy, dz))
-                    !block.isSolid && !block.isLiquid
+                    !block.solid() && !block.liquid()
                 }
             } }
 }

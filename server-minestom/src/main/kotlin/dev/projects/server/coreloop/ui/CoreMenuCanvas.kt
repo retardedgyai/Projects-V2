@@ -282,11 +282,6 @@ class CoreMenuCanvas(private val title: String, private val background: Backgrou
         val ART_YS: Set<Int> = setOf(18, 28, 30, 36, 42, 48, 54, 56, 70, 72, 84, 90, 98, 108, 112, 126, 140, 154, 168, 182, 196)
         val FOCUS_SLOTS: List<Int> = occupiedSlots(18, 6, 3)
         /** Same approved glyph mapping, in padded cells positioned above the combat HUD. */
-        internal fun combatCaption(value: String): Component = Component.text(buildString {
-            value.codePoints().forEach { append(metric(it,TextStyle.EMPHASIS).glyph) }
-        },CoreUiComponents.IVORY).font(Key.key("projects:warrior_hud_status"))
-            .decoration(net.kyori.adventure.text.format.TextDecoration.BOLD,false)
-            .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC,false)
         private val CANVAS_FONT = Key.key("projects", "core_menu_canvas")
         private val MAGIC_DESK_FONT = Key.key("projects", "first_magic_canvas_desk")
         private val MAGIC_DISTILLER_FONT = Key.key("projects", "first_magic_canvas_distiller")

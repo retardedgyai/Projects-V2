@@ -3,6 +3,7 @@ package dev.projects.server.questmap
 import net.minestom.server.instance.Instance
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.block.Block
+import net.minestom.server.instance.block.BlockTags
 import java.util.Random
 import kotlin.math.roundToInt
 
@@ -40,13 +41,18 @@ internal object VerdantRoadQuestDecorator {
      * authoritative. This final pass runs after every structure, prop, and encounter scene so a new
      * asset call site cannot silently reintroduce the blocked-road regression.
      */
+    // 26.3 removed Block#blocksMotion(); the vanilla blocks_motion tag carries the same set.
+    private val blocksMotionTag = Block.staticRegistry().getTag(BlockTags.BLOCKS_MOTION)!!
+
+    private fun blocksMotion(block: Block) = blocksMotionTag.contains(block)
+
     internal fun enforceRouteClearance(instance: Instance, plan: QuestMapPlan) {
         for (z in 0 until plan.size) {
             for (x in 0 until plan.size) {
                 if (!isProtectedRouteCell(plan, x, z)) continue
                 val ground = plan.heightAt(x, z)
                 for (y in ground + 1..ground + ROUTE_VISUAL_CLEARANCE_HEIGHT) {
-                    if (instance.getBlock(x, y, z).blocksMotion()) {
+                    if (blocksMotion(instance.getBlock(x, y, z))) {
                         instance.setBlock(x, y, z, Block.AIR)
                     }
                 }
@@ -66,7 +72,7 @@ internal object VerdantRoadQuestDecorator {
                 val ground = plan.heightAt(x, z)
                 for (y in ground + 1..ground + ROUTE_VISUAL_CLEARANCE_HEIGHT) {
                     val block = instance.getBlock(x, y, z)
-                    if (block.blocksMotion()) {
+                    if (blocksMotion(block)) {
                         obstructions += "$x,$y,$z=${block.name()}"
                         if (obstructions.size >= limit) return obstructions
                     }

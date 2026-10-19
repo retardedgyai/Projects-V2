@@ -17,7 +17,8 @@ class CoreWarriorBladeChoreographyTest {
     @Test fun `all attacks use native contours with stable transform and valid model sequence`() {
         for(s in skills) repeat(s.pulses) { beat ->
             for(phase in CoreSkillVisualPhase.entries) for(p in CoreSkillChoreography.parts(effect(s,beat,phase=phase))) {
-                assertTrue(CoreWarriorBladeChoreography.owns(p))
+                // 地割り and 押し薙ぎ land as iron-mass plates (CoreWarriorIronChoreography); everything else is the blade.
+                assertTrue(CoreWarriorBladeChoreography.owns(p) || CoreWarriorIronChoreography.owns(p))
                 assertEquals(0,CoreCombatMeshes.interpolationTicks(p))
                 val poses=(0 until p.durationTicks).map { CoreSkillChoreography.pose(p,it.toDouble()) }
                 assertEquals(1,poses.map { it.offset to it.scale }.distinct().size)
@@ -41,13 +42,31 @@ class CoreWarriorBladeChoreographyTest {
         }
     }
 
-    @Test fun `core sweep has one frontal horizontal contour rather than a rotating combo`() {
+    @Test fun `core sweep is one frontal tilted iron crescent rather than a rotating combo`() {
         val s=skills.first { it.icon=="whirl" }
         assertEquals(1,s.pulses)
-        val blade=CoreSkillChoreography.parts(effect(s)).first()
-        assertEquals("warrior_skill:sweep:blade",blade.shape)
-        assertTrue(blade.offset.z()>0)
-        assertEquals(-.35,blade.pitch);assertEquals(-.08,blade.roll);assertEquals(0.0,blade.spin)
+        val arc=CoreSkillChoreography.parts(effect(s)).first()
+        assertEquals("war_iron:arc",arc.shape)
+        assertTrue(arc.offset.z()>0)
+        assertEquals(-.42,arc.pitch);assertEquals(0.0,arc.roll);assertEquals(0.0,arc.spin)
+    }
+
+    @Test fun `iron strikes replace only the landing pulse and ship every frame`() {
+        for(s in skills.filter { it.icon in CoreWarriorIronChoreography.sceneIds }) {
+            assertTrue(CoreSkillChoreography.parts(effect(s,phase=CoreSkillVisualPhase.PREPARE)).none(CoreWarriorIronChoreography::owns))
+            val pulse=CoreSkillChoreography.parts(effect(s))
+            assertTrue(pulse.isNotEmpty() && pulse.all(CoreWarriorIronChoreography::owns),s.icon)
+            assertTrue(CoreWarriorCompanions.parts(effect(s)).isEmpty(),s.icon)
+            for(p in pulse) {
+                assertFalse(CoreSkillChoreography.pose(p,-1.0).visible)
+                assertFalse(CoreSkillChoreography.pose(p,p.durationTicks.toDouble()).visible)
+                repeat(p.durationTicks) { age ->
+                    val pose=CoreSkillChoreography.pose(p,age.toDouble())
+                    assertTrue(pose.visible)
+                    assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/items/${pose.model}.json"),pose.model)
+                }
+            }
+        }
     }
 
     @Test fun `preparation stays in startup frames and contact is only target located`() {
@@ -56,7 +75,8 @@ class CoreWarriorBladeChoreographyTest {
             assertTrue(CoreSkillChoreography.pose(prepare,0.0).model.endsWith("blade_0"))
             assertTrue(CoreSkillChoreography.pose(prepare,(prepare.durationTicks-1).toDouble()).model.endsWith("blade_2"))
             val pulse=CoreSkillChoreography.parts(effect(s))
-            assertTrue(CoreSkillChoreography.pose(pulse.first(),0.0).model.endsWith("blade_3"))
+            if(s.icon !in CoreWarriorIronChoreography.sceneIds)
+                assertTrue(CoreSkillChoreography.pose(pulse.first(),0.0).model.endsWith("blade_3"))
             assertTrue(pulse.none { it.shape.contains("contact") })
             val contact=CoreSkillChoreography.parts(effect(s,phase=CoreSkillVisualPhase.CONTACT)).single()
             assertEquals(Vec(0.0,1.0,0.0),contact.offset)
@@ -85,7 +105,8 @@ class CoreWarriorBladeChoreographyTest {
         for(s in skills) repeat(s.pulses) { beat -> repeat(8) { heading ->
             val yaw=heading*PI/4
             for(phase in listOf(CoreSkillVisualPhase.PREPARE,CoreSkillVisualPhase.PULSE))
-            for(p in CoreSkillChoreography.parts(effect(s,beat,yaw,phase))) repeat(p.durationTicks) { age ->
+            // Iron plates are drawn on the item shader (fire, ground slabs thrust from below), not as folded blade models.
+            for(p in CoreSkillChoreography.parts(effect(s,beat,yaw,phase)).filterNot(CoreWarriorIronChoreography::owns)) repeat(p.durationTicks) { age ->
                 val pose=CoreSkillChoreography.pose(p,age.toDouble())
                 for(v in corners(pose.model)) {
                     val x=(v[0]-8)/16*pose.scale.x();val y=(v[1]-8)/16*pose.scale.y();val z=(v[2]-8)/16*pose.scale.z()

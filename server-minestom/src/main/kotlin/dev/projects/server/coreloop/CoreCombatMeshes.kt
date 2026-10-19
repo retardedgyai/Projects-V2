@@ -67,7 +67,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 val x=effect.origin.x()+part.offset.x(); val z=effect.origin.z()+part.offset.z()
                 val base=floor(effect.origin.y()).toInt()
                 val surface=(base+1 downTo base-2).firstOrNull { y ->
-                    instance.getBlock(Pos(x,y.toDouble(),z)).isSolid && !instance.getBlock(Pos(x,y+1.0,z)).isSolid
+                    instance.getBlock(Pos(x,y.toDouble(),z)).solid() && !instance.getBlock(Pos(x,y+1.0,z)).solid()
                 }
                 if(surface!=null) part=part.copy(offset=Vec(part.offset.x(),surface+1.12-effect.origin.y(),part.offset.z()))
             }
@@ -196,7 +196,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
         internal fun interpolationTicks(part: CoreCombatMeshPart)=
             // Approved v3 is an authored 20 Hz model sequence with a fixed transform.
             // Interpolating its initial zero scale would shrink/distort its first frames.
-            if(part.shape.startsWith("approved_dash_") || CoreWarriorBladeChoreography.owns(part) || CoreWarriorFlourish.owns(part)) 0
+            if(part.shape.startsWith("approved_dash_") || CoreWarriorBladeChoreography.owns(part) || CoreWarriorIronChoreography.owns(part) || CoreWarriorFlourish.owns(part)) 0
             else if(part.shape.startsWith("warrior_trace:") ||
                 part.shape.startsWith("flow:") && !part.shape.contains(":prepare:")) 2 else 1
         internal fun removalAge(part: CoreCombatMeshPart)=part.delayTicks+part.durationTicks+

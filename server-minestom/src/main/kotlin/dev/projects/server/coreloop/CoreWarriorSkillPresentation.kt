@@ -4,26 +4,26 @@ package dev.projects.server.coreloop
 internal object CoreWarriorSkillPresentation {
     data class Identity(val shortName: String, val role: String, val use: String)
     val skills = mapOf(
-        "dash" to Identity("踏込斬り", "接近・始動", "間合いを詰めて闘気を得る"),
-        "slam" to Identity("叩きつけ", "重撃・反撃", "狭い正面へ重撃。受け流し成功で素早く返す"),
-        "whirl" to Identity("薙ぎ払い", "集団・横薙ぎ", "前方の集団を一度で薙ぐ。背後には届かない"),
-        "war_guard" to Identity("受け流し", "防御・好機", "敵の攻撃直前に構え、反撃へつなぐ"),
-        "war_wound" to Identity("牽制斬り", "減速・間合い", "追ってくる敵を減速し、間合いを取り直す"),
+        "dash" to Identity("轟進", "つなぎ・突進", "突っ込んで敵を怯ませ、闘気を得る"),
+        "slam" to Identity("地割り", "大技・重撃", "闘気を注いで地を割る。3段目の直後なら速い"),
+        "whirl" to Identity("押し薙ぎ", "大技・集団", "前方の集団を薙いで押し出す。背後には届かない"),
+        "war_guard" to Identity("根張り", "状況・耐える", "避けられない攻撃を踏みとどまって受け、闘気に変える"),
+        "war_wound" to Identity("地走り", "状況・足止め", "亀裂を走らせて近づけない敵の足を止める"),
         "war_counter" to Identity("返し刃", "反撃・重撃", "受け流し直後の好機を攻撃に変える"),
         "war_cry" to Identity("雄叫び", "仲間・障壁", "交戦前に仲間を守る"),
         "war_breach" to Identity("破城突き", "接近・崩し", "踏み込んで敵の防御を崩す"),
-        "war_ult" to Identity("天断", "奥義・三連", "斬り上げ、返し、断撃へつなぐ"),
+        "war_ult" to Identity("鉄槌", "奥義・三連", "赤熱の大剣を三度振り下ろし、敵を打ち上げる"),
         "war_banner" to Identity("不屈の旗", "奥義・守護", "仲間への大きな障壁と自分の防御")
     )
-    // Each row contrasts a way to enter a fight with a payoff or protection.
-    val candidateOrder = listOf(0, 2, 3, 1, 4, 5, 7, 6)
+    // Rows: enter or heavy / crowd or reach / hold. Retired catalog entries (5, 6, 7) are not offered.
+    val candidateOrder = listOf(0, 1, 2, 4, 3)
     val candidateSlots = listOf(9, 14, 18, 23, 27, 32, 36, 41)
     val loadoutSlots = listOf(0, 2, 4, 6, 8)
 
-    fun combatCue(job: CoreClass, tick: Long, counterUntil: Long, guardUntil: Long): String {
+    fun combatCue(job: CoreClass, tick: Long, counterUntil: Long, guardUntil: Long, rampageUntil: Long = -1): String {
         if(job!=CoreClass.WARRIOR) return ""
-        if(counterUntil>=tick) return "反撃の好機 ${((counterUntil-tick+19)/20).coerceAtLeast(1)}秒"
-        if(guardUntil>=tick) return "防御 ${((guardUntil-tick+19)/20).coerceAtLeast(1)}秒"
+        if(rampageUntil>tick) return "赤熱 ${((rampageUntil-tick+19)/20).coerceAtLeast(1)}秒"
+        if(guardUntil>=tick) return "根張り ${((guardUntil-tick+19)/20).coerceAtLeast(1)}秒"
         return ""
     }
 

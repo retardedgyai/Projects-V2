@@ -4,8 +4,9 @@
 
 This optional server-distributed resource pack restores the earlier ProjectS tooltip artwork,
 adds three authored ability icons, and gives the solo core loop a charcoal / warm-gold presentation.
-It contains no client mod or protocol extension. The only `assets/minecraft/` overrides are 50 explicitly
-requested transparent player-heart/food HUD sprites; armour, experience, air and vehicle hearts remain.
+It contains no client mod or protocol extension. The only `assets/minecraft/` overrides are the transparent
+HUD sprites the pixel HUD replaces (hearts, food, armour row, experience bar, the pink boss bar); air and
+vehicle hearts remain. See [HUD layout](core-hud-layout.md).
 Japanese and Latin
 text explicitly retain `minecraft:default`; private-use characters alone use `projects:core_*` fonts.
 
@@ -34,10 +35,10 @@ failure supersedes an already queued success. Closing also unregisters the exact
 
 Presentation APIs are independent of account/loot rules:
 
-- `CoreUiComponents.hud(CoreHudState, packed)` returns positioned HP/mana bars at the original heart/food
-  locations, with three 32-pixel skill cards above them. Cards use clockwise cooldown masks and centred
-  remaining seconds; insufficient mana has its own blue state. Plain fallback retains Japanese
-  HP/mana/cooldown text and the optional hint. See [HUD layout](core-hud-layout.md) for exact coordinates.
+- `CoreUiComponents.hud(CoreHudState, packed)` returns the pixel combat HUD: a status plate on the hotbar
+  (HP/MP/resource/level/XP), five 36 px skill cards, buffs and a caption slot for notices. Plain fallback
+  retains Japanese HP/mana/cooldown text, buffs, notices and the optional hint. See
+  [HUD layout](core-hud-layout.md) for exact coordinates.
 - `CoreUiComponents.inventoryTitle(title, packed)` adds a frame for a six-row inventory only.
   The installed Vanilla 26.2 `AbstractContainerScreen.extractContents` bytecode calls `extractLabels`
   before `extractSlots`, so the title bitmap is a backdrop and item icons render above it. Socket recesses
@@ -109,7 +110,7 @@ The panel uses a restrained gold edge, charcoal socket recesses and a contrastin
 
 Most of the pack is generated, not committed. `:server-minestom:generateResourcePack` (a dependency of
 `processResources`, so every `gradlew build`/`test`/`run`) executes `python scripts/gen_resource_pack.py`,
-which runs `build_core_ui_assets.py` → `build_warrior_hud.py` → `build_ice_garden.py` →
+which runs `build_core_ui_assets.py` (menu font, then the pixel combat HUD in `build_combat_hud.py`) → `build_ice_garden.py` →
 `build_ice_garden_bloom.py` → `build_first_magic_assets.py --fonts-only` and then rewrites `index.txt`
 from every file in the pack. Requirements:
 Python 3.12 on `PATH` (override with `-PpythonExe=...`) and `pip install -r scripts/requirements.txt`.
