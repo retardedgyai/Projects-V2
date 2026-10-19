@@ -1127,19 +1127,28 @@ def sigil_keys():
 
 
 def finale_keys():
-    """8 s, 千本桜 (QuestEncounterCombat.FINALE_MILLIS): it lands in the middle, sits and howls the whole arena into
-    bloom, the howl swelling and its petals flaring wider and wider; it rises onto its hind legs with the forepaws
-    raised as the light peaks, and crashes down at 8 s."""
-    sit = sit_howl(1.2)
-    keys = [(0, pose(rear(14), pos=(0, -4, 0), shells=1.0), "io"), (.5, pose(sit, jaw=(-20, 0, 0)), "out")]
-    for k in range(6):
-        t = 1.2 + k * .9
-        keys.append((t, pose(sit, neck=(-4 * k, 10 * (-1) ** k, 0), shells=1.2 + .05 * k, tremble=2.0 + k), "io"))
-    rise = pose(rear(-58), arm_l=(-100, 0, 10), arm_r=(-100, 0, -10), forearm_l=(-40, 0, 0), forearm_r=(-40, 0, 0),
-                neck=(-30, 0, 0), skull=(-26, 0, 0), jaw=(46, 0, 0), shells=1.55, tremble=7.0)
-    crash = pose(rear(20), pos=(0, -6, 4), arm_l=(18, 0, 0), arm_r=(18, 0, 0), chest=(16, 0, 0), neck=(24, 0, 0), jaw=(30, 0, 0),
-                 shells=1.6, tremble=3.0)
-    return keys + [(7.0, rise, "out"), (7.75, pose(rise, rear(-4)), "io"), (8.0, crash, "in")]
+    """8 s, 千本桜 (QuestEncounterCombat.FINALE_MILLIS) — its own motion, no sitting howl: it lands, rises onto its hind
+    legs with the forelegs spread like branches and the tail curled up behind its head like a halo, and turns slowly
+    on the spot while its petals open and close in waves; then it folds into a bud (crouched, head tucked, forelegs
+    drawn in, every petal shut) and shivers, and at 8 s it bursts open like a blossom."""
+    land = pose(rear(16), pos=(0, -5, 0), arm_l=(14, 0, 0), arm_r=(14, 0, 0), neck=(16, 0, 0), shells=1.0, tremble=2.0)
+    tree = dict(arm_l=(-70, 0, 55), arm_r=(-70, 0, -55), forearm_l=(-30, 0, 0), forearm_r=(-30, 0, 0), hand_l=(-20, 0, 0), hand_r=(-20, 0, 0),
+                neck=(-30, 0, 0), skull=(-20, 0, 0), jaw=(16, 0, 0),
+                tail_1=(40, 0, 0), tail_2=(34, 0, 0), tail_3=(32, 0, 0), tail_4=(30, 0, 0), tail_5=(26, 0, 0))
+    keys = [(0, {"shells": 1.0}, "io"), (.35, land, "out"), (1.6, pose(rear(-66), tree, shells=1.3), "out")]
+    for k in range(9):                                   # a slow turn on the spot, branches swaying, petals breathing
+        t = 2.0 + k * .5
+        sway = math.sin(k * 1.3)
+        keys.append((t, pose(rear(-66), tree, body=(0, -45 * (k + 1) + 0, 0), chest=(0, 0, 8 * sway),
+                             arm_l=(10 * sway, 0, 10 * sway), arm_r=(-10 * sway, 0, -10 * sway), pos=(0, 2 + 2 * abs(sway), 0),
+                             shells=1.2 + .35 * (k % 2), tremble=2.0 + .4 * k), "lin" if k else "io"))
+    bud = pose(rear(24), pos=(0, -8, 0), body=(0, -405, 0), chest=(14, 0, 0), neck=(50, 0, 0), skull=(30, 0, 0), jaw=(0, 0, 0),
+               arm_l=(36, 0, -24), arm_r=(36, 0, 24), forearm_l=(40, 0, 0), forearm_r=(40, 0, 0),
+               thigh_l=(-10, 0, 0), thigh_r=(-10, 0, 0),                 # the tail curls up over the back: a closed bud
+               tail_1=(60, 0, 0), tail_2=(50, 0, 0), tail_3=(45, 0, 0), tail_4=(40, 0, 0), tail_5=(30, 0, 0), shells=0.0)
+    bloom = pose(rear(-34), pos=(0, 4, 0), body=(0, -405, 0), arm_l=(-60, 0, 70), arm_r=(-60, 0, -70), forearm_l=(-20, 0, 0), forearm_r=(-20, 0, 0),
+                 neck=(-34, 0, 0), skull=(-24, 0, 0), jaw=(40, 0, 0), tail_1=(30, 0, 0), tail_2=(24, 0, 0), shells=1.75, tremble=3.0)
+    return keys + [(6.9, bud, "io"), (7.75, pose(bud, tremble=7.0, pos=(0, -9, 0)), "io"), (8.0, bloom, "in")]
 
 
 def enrage_keys():
