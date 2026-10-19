@@ -4,9 +4,10 @@ Timings come from the server's own weapon table (CoreWeaponAttacksTest exports .
 attack's windup, recovery and swinging hand. The poses are keyed here as fist position + blade direction per hand
 (root space, see greatsword_charge.json), and the preview's IK makes the arms reach them.
 
-Principles (short Better Combat-style swings, not long showcase moves): each cut starts from where the previous
-one ended (a right sweep ends on the left, so the left sweep starts there), the blade covers its arc in two ticks,
-overshoots a little and settles, and the body turns into every cut before the arms. The warrior strikes on the
+Principles, from Better Combat footage (2026-10-19, frame by frame): pose to pose, not a constant glide: the cocked
+pose and the follow-through are held a beat and the swing between them is fast; the arc is big, passing in front
+at full arm's reach and ending with the arm across the body; two-handed blades rest on the right shoulder between
+swings. Each cut starts from where the previous one ended and the body turns into it. The warrior strikes on the
 press, so its swing plays at the press and its windup is spent recovering into the next cocked pose.
 
     python3 scripts/build_weapon_combo_motions.py      # writes player-motions/*_combo.json
@@ -21,7 +22,7 @@ TICK = .05
 # name: (weapon config, immediate strike, poses per attack)
 # pose = dict(start=(grip, blade), end=(grip, blade), torso=(start yaw, end yaw, pitch), dip=root drop at the hit)
 # For dual weapons each pose is per hand: {'r': (grip, blade), 'l': (...)}; the idle hand keeps its guard.
-GS_GUARD = ((-0.1, 0.25, 0.35), (0.0, 0.35, 0.94))
+GS_GUARD = ((-0.22, 0.62, 0.12), (-0.24, 0.1, -0.96))  # resting on the right shoulder, blade back (Better Combat claymore)
 GREATSWORD = {
     'weapon': {'model': 'weapons/greatsword_t3', 'scale': 0.95, 'grip': 4, 'hands': 'two', 'second': 3.2},
     'immediate': True, 'guard': GS_GUARD,
@@ -108,10 +109,16 @@ def build(name, label, spec, table):
         swing_end = impact if windup else t + TICK
         for h in end:
             put(h, swing_start, start[h], 'out' if not windup else None)
-            # the cut: two ticks, a small overshoot, then it settles
-            g, b = end[h]
-            over = (g, tuple(v * 1.0 for v in b))
-            put(h, swing_end, over, 'in')
+            # The arc passes in front at full reach: a middle key pushed out ahead of the body, blade pointing forward.
+            (gs, bs), (ge, be) = start[h], end[h]
+            mid_g = tuple((a_ + b_) / 2 for a_, b_ in zip(gs, ge))
+            mid_g = (mid_g[0], mid_g[1], max(mid_g[2], max(gs[2], ge[2])) + .24)
+            mid_b = tuple(a_ + b_ for a_, b_ in zip(bs, be))
+            mid_b = (mid_b[0] * .5, mid_b[1] * .5, abs(mid_b[2]) * .5 + .9)
+            put(h, (swing_start + swing_end) / 2, (mid_g, mid_b), 'in')
+            put(h, swing_end, end[h], 'out')
+            # The follow-through is held a beat before anything moves on (pose to pose).
+            put(h, swing_end + .12, (tuple(v * 1.04 if i != 1 else v for i, v in enumerate(ge)), be), 'out')
         tracks['torso'].append(key(swing_start, 'rot', (pitch * .4, y0, 0)))
         tracks['torso'].append(key(swing_end, 'rot', (pitch, y1, 0), 'in'))
         z = min(z + a.get('step', .05), .35)
