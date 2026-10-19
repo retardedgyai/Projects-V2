@@ -8,6 +8,8 @@
 //   noise, a hot leading edge, dissolving tails.
 // - Warrior iron strikes (scripts/build_warrior_iron_vfx.py): texels whose alpha is a marker. 253 = heat,
 //   self-lit and flickering; 121 / 65 = near / far glow halo.
+// - 桜牙獣 (scripts/build_boss_sakura_fang.py): texels with alpha 200..215 and R/G/B low bits 1/2/3 glow, and a
+//   light runs along them: alpha - 200 is the texel's place on the flow (0 shoulders .. 15 tail tip).
 // The VFX colours are self-lit (no overlay, lightmap or glint) but go through the same OIT phases and fog as vanilla.
 
 #include <minecraft:globals.glsl>
@@ -177,6 +179,20 @@ void main() {
         }
         vec4 lit = vec4(min(rgb, vec3(1.0)), alpha) * ColorModulator;
         finishUnlit(lit);
+        return;
+    }
+    ivec4 texel = ivec4(color * 255.0 + 0.5);
+    if (texel.a >= 200 && texel.a <= 215 && (texel.r & 3) == 1 && (texel.g & 3) == 2 && (texel.b & 3) == 3) {
+        float phase = float(texel.a - 200) / 15.0;
+        float t = GameTime * 1200.0;                                   // seconds
+        // Two waves of light run from the shoulders to the tail tip (2.2 s apart), a slow breath under them.
+        float d1 = abs(fract(t * .45 - phase + .5) - .5);
+        float d2 = abs(fract(t * .45 - phase) - .5);
+        float band = exp(-d1 * d1 * 140.0) + .45 * exp(-d2 * d2 * 260.0);
+        float breath = .9 + .1 * sin(t * 2.1);
+        vec3 rgb = color.rgb * breath * 1.08;
+        rgb = mix(rgb, vec3(1.0, .90, .95), clamp(band * .8, 0.0, .85));
+        finishUnlit(vec4(min(rgb, vec3(1.0)), 1.0) * ColorModulator);
         return;
     }
     #ifdef ALPHA_CUTOUT

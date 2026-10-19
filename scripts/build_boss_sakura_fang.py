@@ -257,7 +257,22 @@ def fur_painter(seed=0, tint=False):
     return make
 
 
-def petal_painter(kind="shell"):
+# --- glow marker for scripts/shaders/item.fsh --------------------------------------------------------
+# A texel glows (self-lit, with a light that flows along the body) when its alpha is 200..215 and the low bits
+# of R/G/B are 1/2/3. alpha - 200 is where it sits along the flow, 0 at the shoulders to 15 at the tail tip.
+def glow_mark(rgb, phase):
+    q = max(0, min(15, int(round(phase * 15))))
+    r, g, b_ = rgb
+    return ((r & ~3) | 1, (g & ~3) | 2, (b_ & ~3) | 3, 200 + q)
+
+
+def glow_painter(color, phase):
+    def make(side, w, h):
+        return (lambda x, y, w, h: glow_mark(color, phase)), ("glow", color, round(phase, 3), w, h)
+    return make
+
+
+def petal_painter(kind="shell", phase=None):
     """Sakura petal on the two big faces (north/south): narrow base, wide rounded top with the notch,
     smooth ramp from a deep base to a pale tip, a darker rim and a short centre vein. Tip = texture row 0."""
     def make(side, w, h):
@@ -278,8 +293,11 @@ def petal_painter(kind="shell"):
                 lvl -= 1.1
             elif abs(u) < 1.0 / w and v < .45:
                 lvl -= .7
-            return PETAL[max(0, min(4, int(lvl)))] + (255,)
-        return paint, ("petal", kind, big, w, h)
+            c = PETAL[max(0, min(4, int(lvl)))]
+            if phase is not None:
+                return glow_mark(c, min(1.0, phase + .05 * v))        # the light runs base -> tip inside a petal
+            return c + (255,)
+        return paint, ("petal", kind, big, w, h, None if phase is None else round(phase, 3))
     return make
 
 
@@ -318,10 +336,10 @@ class Builder:
         R = basis([-c for c in d], width_dir)
         self.oriented(bone, f"{bone}_fur{len(self.items[bone])}", add(root, d, L / 2), [.05, L / 2, W / 2], R, fur_painter(seed, tint))
 
-    def petal(self, bone, base, out_dir, normal, L, W, kind="shell", r0=0.0):
+    def petal(self, bone, base, out_dir, normal, L, W, kind="shell", r0=0.0, phase=None):
         R = basis(out_dir, normal)
         y = [R[i][1] for i in range(3)]
-        self.oriented(bone, f"{bone}_petal{len(self.items[bone])}", add(base, y, r0 + L / 2), [W / 2, L / 2, .5], R, petal_painter(kind))
+        self.oriented(bone, f"{bone}_petal{len(self.items[bone])}", add(base, y, r0 + L / 2), [W / 2, L / 2, .5], R, petal_painter(kind, phase))
 
     def outliner(self):
         made = {}
@@ -379,7 +397,7 @@ def head(b):
     hs("jaw", (0, -2.6, 5), (0, -4, 18), 7, 1, "mouth")
     for s in (1, -1):
         hs("skull", (5.6 * s, 4.8, 2), (4.9 * s, 3.8, 12), 3, 3, "shell", seed=23)  # brow ridge
-        hs("skull", (5.9 * s, 2.4, 7.5), (5.7 * s, 2.0, 11), 1, 1.2, flat_painter(EYE), name="glow_eye")
+        hs("skull", (5.9 * s, 2.4, 7.5), (5.7 * s, 2.0, 11), 1, 1.2, glow_painter(EYE, 0.0), name="glow_eye")
         for z in (18, 14):
             hs("skull", (2.8 * s, -2.4, z), (2.8 * s, -5.4, z + .4), 1.3, 1.3, "claw")   # upper fangs
         hs("jaw", (2.5 * s, -3.6, 16), (2.5 * s, -1.4, 16.4), 1.1, 1.1, "claw")         # lower fangs
@@ -393,7 +411,7 @@ def head(b):
         for (bx, by, bz), (tx, ty, tz), w, t in (((9.6, 13.6, -6), (14.6, 15.4, -10.5), 1.5, .55), ((11.6, 19.6, -13), (16, 23, -15.5), 1.2, .75),
                                                   ((8, 11, -1.5), (11.6, 9.4, -6), 1.3, .45)):
             hs("skull", (bx * s, by, bz), (tx * s, ty, tz), w, w, grad_painter(t, 1))
-        hs("skull", (5.9 * s, 2.6, 7.2), (6.4 * s, 4.8, .5), .6, .6, flat_painter(GLOW), name="glow_streak")   # eye streak
+        hs("skull", (5.9 * s, 2.6, 7.2), (6.4 * s, 4.8, .5), .6, .6, glow_painter(GLOW, 0.0), name="glow_streak")   # eye streak
         # cheek fur flaring back
         cheek = fur_bone(b, f"cheekfur_{'l' if s > 0 else 'r'}", "skull", H(6 * s, -1.2, 5), .05, .8)
         tufts(b, cheek, H(6 * s, -1.2, 5), mat_vec([[1, 0, 0], [0, 1, 0], [0, 0, 1]], [s * .55, -.25, -1]), 5, 60, 13, 4, (s, 0, 0), 80 + s)
@@ -444,13 +462,13 @@ def build():
             T = (top[0] * s, top[1], top[2]); B = (bot[0] * s, bot[1], bot[2])
             b.seg(f"forearm_{side}", T, B, 2.4, w, "shell", seed=7 + k)                         # layered forearm shells
             b.seg(f"forearm_{side}", (B[0] + .9 * s, B[1] + .4, B[2] - w / 2 + .6), (B[0] + .9 * s, B[1] + .4, B[2] + w / 2 - .6), .6, .6,
-                  flat_painter(GLOW), name="glow_seam")
+                  glow_painter(GLOW, .04), name="glow_seam")
             b.seg(f"forearm_{side}", (B[0], B[1] + 1.2, B[2] + w / 2 - 1), (B[0] + 1.6 * s, B[1] - 2.6, B[2] + w / 2 + 1.2), 1.4, 1.4, grad_painter(.3, 1))  # spur
         for k, (top, bot, w) in enumerate((((17, 47, 14), (19, 37, 11), 13), ((18.6, 40, 11.5), (20, 30, 8.5), 11))):
             T = (top[0] * s, top[1], top[2]); B = (bot[0] * s, bot[1], bot[2])
             b.seg(f"arm_{side}", T, B, 2.6, w, "shell", seed=11 + k)                             # layered shoulder shells
             b.seg(f"arm_{side}", (B[0] + .9 * s, B[1] + .4, B[2] - w / 2 + .6), (B[0] + .9 * s, B[1] + .4, B[2] + w / 2 - .6), .6, .6,
-                  flat_painter(GLOW), name="glow_seam")
+                  glow_painter(GLOW, .04), name="glow_seam")
         b.box(f"hand_{side}", (15 * s - 7, 0, 12), (15 * s + 7, 5, 27), "hide", seed=9)
         for k in (-4.4, 0, 4.4):
             x = 15 * s + k
@@ -470,13 +488,13 @@ def build():
 
     # glowing seams along the flanks and the tail sides (thin, sakura pink)
     for s in (1, -1):
-        b.seg("chest", (13.3 * s, 33, 13), (13.3 * s, 30, -1), .6, .6, flat_painter(GLOW), name="glow_seam")
-        b.seg("chest", (13.3 * s, 38, 13), (13.3 * s, 36, 2), .6, .6, flat_painter(GLOW), name="glow_seam")
-        b.seg("body", (9.4 * s, 34.5, -3), (9.6 * s, 31.5, -27), .6, .6, flat_painter(GLOW), name="glow_seam")
+        b.seg("chest", (13.3 * s, 33, 13), (13.3 * s, 30, -1), .6, .6, glow_painter(GLOW, .02), name="glow_seam")
+        b.seg("chest", (13.3 * s, 38, 13), (13.3 * s, 36, 2), .6, .6, glow_painter(GLOW, .02), name="glow_seam")
+        b.seg("body", (9.4 * s, 34.5, -3), (9.6 * s, 31.5, -27), .6, .6, glow_painter(GLOW, .1), name="glow_seam")
         for i in range(len(TAIL) - 1):
             w = [13, 12, 11, 9.5, 8][i]
             a, c = TAIL[i], TAIL[i + 1]
-            b.seg(f"tail_{i + 1}", (a[0] + (w / 2 + .1) * s, a[1], a[2]), (c[0] + (w / 2 + .1) * s, c[1], c[2]), .6, .6, flat_painter(GLOW), name="glow_seam", over=0)
+            b.seg(f"tail_{i + 1}", (a[0] + (w / 2 + .1) * s, a[1], a[2]), (c[0] + (w / 2 + .1) * s, c[1], c[2]), .6, .6, glow_painter(GLOW, .17 + .16 * i), name="glow_seam", over=0)
 
     # neck and head, carried low and forward
     b.seg("neck", (0, 43, 14), (0, 39, 28), 16, 16, "hide", seed=14)
@@ -501,7 +519,7 @@ def build():
         R = axis_angle(D, deg)
         return (D, deg) if dot(mat_vec(R, U), X) > 0 else (D, -deg)
 
-    def run(name, parent, a, c, X, U, sizes, open_deg, top):
+    def run(name, parent, a, c, X, U, sizes, open_deg, top, phases):
         D = unit([c[i] - a[i] for i in range(3)])
         b.bone(name, parent, a)
         n = len(sizes)
@@ -510,15 +528,15 @@ def build():
             p = [a[i] + (c[i] - a[i]) * f for i in range(3)]
             base = add(add(p, X, 1.4), U, top)
             out = unit(add(add(D, U, .95), X, .25))
-            b.petal(name, base, out, X, L, L * .82)
-            b.petal(name, add(base, X, .7), out, X, L * .58, L * .44, kind="bud")      # inner petal
+            b.petal(name, base, out, X, L, L * .82, phase=phases[k])
+            b.petal(name, add(base, X, .7), out, X, L * .58, L * .44, kind="bud", phase=phases[k] + .02)      # inner petal
         b.frames[name] = splay(D, X, U, open_deg)
 
     up = [0, 1, 0]
     for s, side in ((1, "l"), (-1, "r")):
         X = [s, 0, 0]
         # one dorsal row from the shoulders to the tail tip: petals point back-and-up and overlap
-        run(f"shell_b_{side}", "body", BACK[0], BACK[-1], X, up, [9, 10, 11], 50, 1.0)
+        run(f"shell_b_{side}", "body", BACK[0], BACK[-1], X, up, [9, 10, 11], 50, 1.0, [0.0, .05, .1])
         # tail: petals lie on the tail sides
         sizes = [[11, 12], [13, 14], [15, 16], [16, 15.5], [14, 12]]
         widths = [13, 12, 11, 9.5, 8]
@@ -529,12 +547,13 @@ def build():
             if i > 0:
                 side_dir = [-c for c in side_dir]                  # past the base the plates ride the outer edge of the curl
             U = unit(add(side_dir, D, -dot(side_dir, D)))
-            run(f"shell_t{i + 1}_{side}", f"tail_{i + 1}", TAIL[i], TAIL[i + 1], X, U, sizes[i], 50, widths[i] * .35)
+            run(f"shell_t{i + 1}_{side}", f"tail_{i + 1}", TAIL[i], TAIL[i + 1], X, U, sizes[i], 50, widths[i] * .35,
+                [.17 + .08 * (2 * i + k) for k in range(2)])
     # the tail ends in a small closed fan
     tip, prev = TAIL[-1], TAIL[-2]
     D = unit([tip[i] - prev[i] for i in range(3)])
     for k, sx in enumerate((-.45, 0, .45)):
-        b.petal("tail_5", add(tip, D, -3), unit(add(D, [1, 0, 0], sx)), [1, 0, 0] if sx == 0 else cross(D, [0, 0, 1]), 13 - 2 * abs(sx) * 2, 11)
+        b.petal("tail_5", add(tip, D, -3), unit(add(D, [1, 0, 0], sx)), [1, 0, 0] if sx == 0 else cross(D, [0, 0, 1]), 13 - 2 * abs(sx) * 2, 11, phase=.97)
     return b
 
 

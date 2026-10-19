@@ -65,8 +65,9 @@ FACES = {
 
 
 def render(sc, pose=None, hidden=(), az=36, el=16, size=(900, 640), scale=3.4, cx=.5, cy=.84, flat=None,
-           bg=((118, 122, 140), (64, 64, 78)), outline=True, center=None, unshaded=False, with_depth=False):
-    """with_depth=True also returns the depth buffer (larger = nearer the camera, -1e9 = empty)."""
+           bg=((118, 122, 140), (64, 64, 78)), outline=True, center=None, unshaded=False, with_depth=False, emissive=None):
+    """with_depth=True also returns the depth buffer (larger = nearer the camera, -1e9 = empty).
+    emissive(tex_rgba) -> (mask, rgb) lets a caller stand in for a shader: masked texels are drawn self-lit."""
     mats = sc.mats(pose)
     a, e = math.radians(az), math.radians(el)
     cam = np.array([math.cos(e) * math.sin(a), math.sin(e), math.cos(e) * math.cos(a)])
@@ -138,6 +139,10 @@ def render(sc, pose=None, hidden=(), az=36, el=16, size=(900, 640), scale=3.4, c
                     shade = .55 * shade + .45 * (.55 + .45 * max(0, n @ light))
                     k = 1.0 if ("glow" in cube["name"] or unshaded) else min(1.15, shade * 1.15)
                     col[y0:y1, x0:x1][ok] = tex[..., :3][ok] * k
+                    if emissive is not None:
+                        em, rgb = emissive(tex)
+                        sel = ok & em
+                        col[y0:y1, x0:x1][sel] = rgb[sel]
     img = np.clip(col, 0, 255).astype(np.uint8)
     if outline and flat is None:
         m = zb > -1e8
