@@ -40,6 +40,14 @@ def ease(kind, u):
     return u
 
 
+def slerp(a, b, w):
+    """Directions turn along the great circle at an even rate; a straight blend would snap through zero."""
+    a, b = a / np.linalg.norm(a), b / np.linalg.norm(b)
+    angle = math.acos(float(np.clip(a @ b, -1, 1)))
+    if angle < 1e-5: return a
+    return (math.sin((1 - w) * angle) * a + math.sin(w * angle) * b) / math.sin(angle)
+
+
 def sample(track, t, field):
     keys = [k for k in track if field in k]
     if t <= keys[0]['t']: return np.array(keys[0][field], float)
@@ -47,7 +55,8 @@ def sample(track, t, field):
         if t <= b['t']:
             u = (t - a['t']) / max(b['t'] - a['t'], 1e-9)
             w = ease(b.get('ease', 'linear'), u)
-            return np.array(a[field], float) * (1 - w) + np.array(b[field], float) * w
+            va, vb = np.array(a[field], float), np.array(b[field], float)
+            return slerp(va, vb, w) if field == 'dir' else va * (1 - w) + vb * w
     return np.array(keys[-1][field], float)
 
 
