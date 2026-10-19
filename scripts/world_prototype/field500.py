@@ -700,34 +700,108 @@ def rock_bridge(p0, p1, rise=3, width=1.6):
                 if p not in w.b and p[1] > at(vx, vz): put(*p, "vine", shape="shut_s")
 
 
-# three chained pillars south of the high plateau; the first is reached by a bridge from the plateau's edge
+# giant pillars stepping up and away from the high plateau's edge; each top is reached by a rock bridge from the one before
 ex, ez = 300, int(B2[300]) - 7
 EDGE_Y = at(ex, ez)
-PILLARS = [(300, 226, EDGE_Y + 9, 9, 18, 3), (304, 312, EDGE_Y + 14, 9.5, 19, 5), (362, 388, EDGE_Y + 11, 10, 21, 1)]
+PILLARS = [(300, 222, EDGE_Y + 10, 11, 24, 3), (300, 320, EDGE_Y + 20, 12, 27, 5),
+           (366, 400, EDGE_Y + 28, 13, 28, 1), (452, 318, EDGE_Y + 22, 9, 20, 7)]
 for (px, pz, ty, rb, rt, sd) in PILLARS:
     mesa(px, pz, ty, rb, rt, sd)
-rock_bridge((ex, EDGE_Y, ez - 2), (PILLARS[0][0], PILLARS[0][2], PILLARS[0][1] - 15), rise=1)
-rock_bridge((PILLARS[0][0], PILLARS[0][2], PILLARS[0][1] + 14), (PILLARS[1][0], PILLARS[1][2], PILLARS[1][1] - 15), rise=4)
-rock_bridge((PILLARS[1][0] + 10, PILLARS[1][2], PILLARS[1][1] + 12), (PILLARS[2][0] - 12, PILLARS[2][2], PILLARS[2][1] - 13), rise=4)
+
+
+def link(a, b, rise):
+    (ax, az, ay, _, art, _), (bx, bz, by, _, brt, _) = a, b
+    d = math.hypot(bx - ax, bz - az); ux, uz = (bx - ax) / d, (bz - az) / d
+    rock_bridge((ax + ux * (art - 5), ay, az + uz * (art - 5)), (bx - ux * (brt - 5), by, bz - uz * (brt - 5)), rise=rise)
+
+
+rock_bridge((ex, EDGE_Y, ez - 2), (PILLARS[0][0], PILLARS[0][2], PILLARS[0][1] - PILLARS[0][4] + 5), rise=1)
+link(PILLARS[0], PILLARS[1], 5)
+link(PILLARS[1], PILLARS[2], 6)
+link(PILLARS[2], PILLARS[3], 7)
 for x in range(ex - 3, ex + 4):                                     # the plateau edge where the first bridge starts
     for z in range(ez - 4, ez + 1):
         UPPER[z, x] = max(UPPER[z, x], at(x, z))
-# rewards on the tops: a lookout cairn, a rare herb, a treasure barrel at the far end
-for (px, pz, ty, rb, rt, sd), what in zip(PILLARS, ("cairn", "herb", "treasure")):
+
+# a spring on the second pillar: a pool on top, spilling over the west rim as a waterfall into a plunge pool below
+P1x, P1z, P1y, _, P1r, _ = PILLARS[1]
+for dx in range(-5, 6):
+    for dz in range(-5, 6):
+        if dx * dx + dz * dz <= 22:
+            put(P1x - 6 + dx, P1y, P1z + dz, "water_still", shape="water"); put(P1x - 6 + dx, P1y - 1, P1z + dz, "gravel")
+            UPPER[P1z + dz, P1x - 6 + dx] = -1
+for xx2 in range(P1x - P1r + 1, P1x - 10):                          # channel to the rim
+    for dz in (-1, 0, 1):
+        put(xx2, P1y, P1z + dz, "water_still", shape="water"); UPPER[P1z + dz, xx2] = -1
+fx = P1x - P1r
+gb = at(fx - 3, P1z)
+for y in range(gb + 1, P1y + 1):                                    # the fall, two blocks wide, spraying wider near the bottom
+    for dz in (-1, 0, 1):
+        put(fx, y, P1z + dz, "water_still")
+        if y < gb + 6: put(fx - 1, y, P1z + dz, "water_still", shape="water")
+for dx in range(-8, 9):                                             # plunge pool
+    for dz in range(-8, 9):
+        if dx * dx + dz * dz <= 50 and 0 <= fx - 2 + dx < B:
+            x2, z2 = fx - 2 + dx, P1z + dz
+            g2 = at(x2, z2)
+            for y in range(g2 - 2, g2 + 2): w.b.pop((x2, y, z2), None)
+            put(x2, g2 - 3, z2, "gravel"); put(x2, g2 - 2, z2, "water_still"); put(x2, g2 - 1, z2, "water_still", shape="water")
+            lake[z2, x2] = True
+CONTENT.append((fx, P1z, "falls"))
+
+# rewards on the tops: a lookout cairn, a rare herb patch by the spring, a treasure at the far end, a high camp
+for (px, pz, ty, rb, rt, sd), what in zip(PILLARS, ("cairn", "herb", "treasure", "camp")):
     if what == "cairn":
         for y in range(ty + 1, ty + 4): put(px + 3, y, pz, R.choice(["mossy_cobblestone", "cobblestone"]))
         put(px + 3, ty + 4, pz, "lantern", shape="lantern")
     elif what == "herb":
-        for _ in range(8):
-            put(px + R.randint(-3, 3), ty + 1, pz + R.randint(-3, 3), "firefly_bush", shape="plant")
-    else:
+        for _ in range(10):
+            put(px + R.randint(2, 8), ty + 1, pz + R.randint(-5, 5), "firefly_bush", shape="plant")
+    elif what == "treasure":
         put(px, ty + 1, pz, "barrel_top", "barrel_side"); put(px + 1, ty + 1, pz, "lantern", shape="lantern")
+    else:
+        put(px, ty + 1, pz, "campfire_log_lit", shape="fire")
+        for (dx, dz) in ((-2, 0), (2, 0), (0, 2)): put(px + dx, ty + 1, pz + dz, "spruce_log", "spruce_log", shape="slab")
     CONTENT.append((px, pz, "pillar"))
+spawn(PILLARS[2][0], PILLARS[2][1], 16, 5, "lime_wool", "sprite")
 
-# thin scenery spires on the plains (Gaur-style), out of the way of roads and places
-for (sx, sz, h2, r2) in ((160, 455, 34, 3.5), (450, 300, 30, 3.0), (40, 360, 26, 3.0), (470, 470, 32, 3.5)):
-    if anyway[sz, sx] < 10 or used[sz, sx]: continue
-    mesa(sx, sz, at(sx, sz) + h2, r2 * 1.4, r2 * .7, 2, needle=True)   # a rock needle: scenery, nothing to stand on
+
+# great stone arches over the road where it enters and leaves the zone: scenery gates (rounded rock, nothing to stand on)
+def stone_arch(p0, p1, height, r):
+    pts = bez(p0, ((p0[0] + p1[0]) / 2, max(p0[1], p1[1]) + height, (p0[2] + p1[2]) / 2), p1, 30)
+    for i2, (a, b) in enumerate(zip(pts, pts[1:])):
+        f = i2 / (len(pts) - 1)
+        rr = r * (1.5 - .6 * math.sin(math.pi * f))
+        tube(a, b, rr, rr, mat=None, follow=True)
+    for (x, y, z) in pts:
+        for dx in range(-int(r) - 2, int(r) + 3):
+            for dz in range(-int(r) - 2, int(r) + 3):
+                for dy in range(-int(r) - 2, int(r) + 3):
+                    v = w.b.get((int(round(x)) + dx, int(round(y)) + dy, int(round(z)) + dz))
+                    if v and v[1] in ("dark_oak_log", "mangrove_log", "stripped_dark_oak_log"):
+                        p = (int(round(x)) + dx, int(round(y)) + dy, int(round(z)) + dz)
+                        mat = ROCK[(p[1] // 3) % len(ROCK)]
+                        if noise3(*p, 161, 2.5) > .68: mat = "moss_block"
+                        put(*p, mat)
+    for (x, y, z) in pts:
+        mark(int(x) - 14, int(z) - 14, int(x) + 14, int(z) + 14)
+    for (x, y, z) in pts[6:-6:2]:
+        for _ in range(2):
+            vx, vz = int(round(x)) + R.randint(-2, 2), int(round(z)) + R.randint(-2, 2)
+            for k2 in range(1, R.randint(3, 14)):
+                p = (vx, int(y) - int(r) - k2, vz)
+                if p in w.b or p[1] <= at(vx, vz): break
+                put(*p, "vine", shape="shut_s")
+
+
+stone_arch((22, at(22, 425) - 1, 425), (40, at(40, 474) - 1, 474), 34, 4.5)                  # entering from the harbor
+stone_arch((470, at(470, 200) - 1, 200), (470, at(470, 268) - 1, 268), 40, 5)                # leaving east
+
+# rock needles in clusters on the plains: scenery that frames the views
+for (sx, sz, h2, r2) in ((150, 470, 48, 5), (172, 452, 36, 3.5), (130, 460, 28, 3), (40, 355, 44, 4.5), (60, 340, 30, 3.5),
+                         (470, 470, 52, 5.5), (448, 460, 34, 4), (460, 120, 40, 4), (20, 120, 36, 4), (235, 470, 30, 3.5)):
+    if not (5 <= sx < B - 5 and 5 <= sz < B - 5) or anyway[sz, sx] < 9 or used[sz, sx] or lake[sz, sx]: continue
+    mesa(sx, sz, at(sx, sz) + h2, r2 * 1.5, r2 * .8, 2, needle=True)
 
 
 # ---------------- main places count as content ----------------
@@ -861,7 +935,7 @@ scatter_plants(70, 280, 70, .05, ["fern", "short_grass", "brown_mushroom", "leaf
 scatter_plants(250, 250, 240, .006, ["poppy", "dandelion", "short_grass", "short_grass"])
 for z in range(2, B - 2):
     for x in range(2, B - 2):
-        if anyway[z, x] < 3 or lake[z, x] or stream[z, x] or R.random() > .16: continue
+        if anyway[z, x] < 3 or lake[z, x] or stream[z, x] or R.random() > .34: continue
         y = at(x, z) + 1
         if (x, y, z) in w.b: continue
         t2 = w.b.get((x, y - 1, z))
@@ -945,7 +1019,7 @@ for i2, (col, t2) in enumerate((((236, 214, 150), "道"), ((128, 124, 118), "崖
     dd.text((40, 16 + i2 * 20), t2, fill=(255, 255, 255), font=ff)
 mapimg.save("field500-check.png")
 
-LABELS = [((304, 312), "岩の柱と岩の橋（高台から渡れる）", (150, 210, 255)), (TREE, "大樹（根の洞＝ダンジョン入口）", (140, 230, 140)), (BOSS, "ワールドボス：根の主", (255, 90, 90)),
+LABELS = [((352, 300), "巨大な岩の柱と岩の橋・柱の滝（高台から渡れる）", (150, 210, 255)), ((60, 470), "岩の大アーチ（入口）", (220, 210, 190)), ((455, 290), "岩の大アーチ（出口）", (150, 210, 255)), (TREE, "大樹（根の洞＝ダンジョン入口）", (140, 230, 140)), (BOSS, "ワールドボス：根の主", (255, 90, 90)),
           (FUNGAL, "狩り場：キノコの窪地", (255, 150, 120)), (WOLF, "狩り場：狼の根穴", (255, 150, 120)),
           (TOWER, "狩り場＋展望：根に飲まれた石塔", (255, 150, 120)), (REST, "休憩所（転移石）", (255, 255, 255)),
           ((455, 175), "採鉱：根の割れた崖", (200, 200, 220)), (BOULDERS, "採石：岩の原", (200, 200, 200)),
