@@ -1,5 +1,8 @@
 package dev.projects.server.coreloop
 
+import dev.projects.server.mob.rayHit
+import dev.projects.server.mob.distanceTo
+
 import dev.projects.server.mob.CrowdControl
 import dev.projects.server.mob.QuestEncounterCombat
 import net.kyori.adventure.sound.Sound
@@ -408,7 +411,7 @@ internal class CorePlayerCombat(
                 if (classId == CoreClass.STARWEAVER && build.keystone == 1) classState.gain(1.0, classId, build)
                 if (classId == CoreClass.HEALER) grantNearbyShields(8 + abilityPower * .3, 4.0, 60)
                 if (s.formula.ad > 0 || s.formula.ap > 0) rangedStrike(enemies, action.direction, 18.0, .7, 1, 1.0, true)
-                else if (s.status == CoreSkillStatus.SLOW) enemies.combatTargets().filter { it.position.distance(action.origin) < 4 && visibleTo(it.id, enemies) }
+                else if (s.status == CoreSkillStatus.SLOW) enemies.combatTargets().filter { it.distanceTo(action.origin) < 4 && visibleTo(it.id, enemies) }
                     .forEach { enemies.applySlow(it.id, .5, 2500) }
                 if (actionsValid(enemies, epoch) && s.formula.ad == 0.0 && s.formula.ap == 0.0) {
                     emitSkillPulse(departure, 2.0, CoreSkillEndpoint.DEPARTURE)
@@ -423,7 +426,7 @@ internal class CorePlayerCombat(
             }
             CoreSkillMotion.PULL -> {
                 emitSkillPulse(player.position, s.radius)
-                val targets = enemies.combatTargets().filter { it.position.distance(player.position) <= s.radius && visibleTo(it.id, enemies) }
+                val targets = enemies.combatTargets().filter { it.distanceTo(player.position) <= s.radius && visibleTo(it.id, enemies) }
                 for (target in targets) {
                     hit(enemies, target.id, 1.0, true)
                     if (!actionsValid(enemies, epoch)) return
@@ -622,6 +625,8 @@ internal class CorePlayerCombat(
     private fun rangedStrike(enemies: QuestEncounterCombat, direction: Vec, range: Double, width: Double, count: Int, multiplier: Double, skill: Boolean) {
         val origin = player.position.add(0.0, 1.0, 0.0)
         val candidates = enemies.combatTargets().mapNotNull { target ->
+            if (target.parts.isNotEmpty()) return@mapNotNull target.parts.rayHit(origin, direction, range, width)
+                ?.takeIf { visibleTo(target.id, enemies) }?.let { target.id to it }
             val position = enemies.positionOf(target.id)?.add(0.0, 1.0, 0.0) ?: return@mapNotNull null
             val offset = position.sub(origin)
             val along = offset.x() * direction.x() + offset.y() * direction.y() + offset.z() * direction.z()
@@ -658,6 +663,8 @@ internal class CorePlayerCombat(
         val maximum=minOf(s.range,24.0-s.radius).coerceAtLeast(1.0)
         val aimed=enemies.combatTargets().mapNotNull { target ->
             val position=enemies.positionOf(target.id) ?: return@mapNotNull null
+            if(target.parts.isNotEmpty()) return@mapNotNull target.parts.rayHit(from,direction,maximum,.8)
+                ?.takeIf { visibleTo(target.id,enemies) }?.let { position to it }
             val offset=position.add(0.0,1.0,0.0).sub(from)
             val along=offset.x()*direction.x()+offset.y()*direction.y()+offset.z()*direction.z()
             if(along in 0.0..maximum && from.add(direction.mul(along)).distance(position.add(0.0,1.0,0.0)) < target.halfExtent.x()+.8 && visibleTo(target.id,enemies)) position to along else null
