@@ -68,7 +68,7 @@ class Skeleton:
         out = {}
         for name in self.order:
             b = self.bones[name]
-            r, pos = pose.get(name, (np.zeros(3), np.zeros(3)))
+            r, pos, *_ = pose.get(name, (np.zeros(3), np.zeros(3)))
             R = euler(b["rot"] + r)
             L = np.eye(4); L[:3, :3] = R; L[:3, 3] = b["pivot"] + pos - R @ b["pivot"]
             out[name] = out[b["parent"]] @ L if b["parent"] else L
@@ -323,9 +323,11 @@ def hop_back_pose(sk, rest_feet, t, enraged=False, theta=0.0):
     beat = K(t, [(0, 0), (.25, 64), (.31, 68), (.36, -12), (.44, 26), (.6, 30), (.7, 8), (.8, -4), (1.1, 0)])
     arm = "cloak" if enraged else "wing"
     for side, sg in (("l", 1), ("r", -1)):
-        add(p, f"{arm}_{side}", (K(t, [(0, 0), (.25, -10), (.36, 8), (.6, 0)]), 0, beat * (.55 if enraged else 1) * sg))
-        if not enraged:
-            add(p, f"wing_{side}_fore", (0, 0, K(t, [(0, 0), (.25, 25), (.36, -20), (.6, 10), (1.0, 0)]) * sg))
+        if enraged:
+            add(p, f"{arm}_{side}", (K(t, [(0, 0), (.25, -10), (.36, 8), (.6, 0)]), 0, beat * .55 * sg))
+        else:                                       # the membrane opens for the downbeat and the glide
+            open_wing(p, side, smooth(t, .12, .26) * (1 - smooth(t, .7, .95)),
+                      K(t, [(0, 0), (.25, 1), (.31, 1), (.36, -1), (.44, .2), (.6, .3), (.7, 0)]))
     add(p, "neck", (K(t, [(0, 0), (.25, 14), (.4, 8), (.72, 16), (1.1, 0)]) + (-10 if not enraged else 0), 0, 0))
     if not enraged:
         add(p, "skull", (8, 0, 0))
@@ -415,6 +417,44 @@ def shiver(t, a, b, hz=11.0):
     return math.sin(t * 2 * math.pi * hz) * smooth(t, a, a + .2) * (1 - smooth(t, b - .1, b))
 
 
+def open_wing(p, sd, a, beat=0.0):
+    """The folded wing opened by a (0..1), membrane spread: the root swung out and back, the forearm opened (the forearm
+    folding the other way is what made the wings stay shut in the air before the 2026-10-19 review); beat (-1..1)
+    flaps it."""
+    sg = 1 if sd == "l" else -1
+    add(p, f"wing_{sd}", (0, -30 * a * sg, (50 * a + 16 * beat) * sg))
+    add(p, f"wing_{sd}_fore", (0, 0, (25 * a + 14 * beat) * sg))
+    for h in ("hinge02", "hinge09", "hinge10", "hinge14"):
+        add(p, f"wing_{sd}_{h}", (0, 0, 14 * a * sg))
+
+
+def open_wings(p, a, beat=0.0):
+    for sd in ("l", "r"):
+        open_wing(p, sd, a, beat)
+
+
+# Wind (review 2026-10-19, 藍「羽は風で揺られるべき」): every clip gets a slow ripple through the wing membranes
+# (hinge by hinge, outward) and the fan rays (one after another), swelling and easing like gusts.
+WING_CHAIN = ("membrane", "hinge02", "hinge03", "hinge00", "hinge01", "hinge09", "hinge07", "hinge08", "hinge12",
+              "hinge13", "hinge14", "hinge16", "hinge10", "hinge11", "hinge15", "hand")
+
+
+def add_wind(p, t, period=None):
+    """period: a loop's length, so the ripple repeats exactly over it."""
+    def hz(f):
+        return f if period is None else max(1, round(period * f)) / period
+    w1, w2 = 2 * math.pi * hz(.55), 2 * math.pi * hz(.2)
+    gust = 1.0 + .45 * math.sin(w2 * t)
+    for sd, sg in (("l", 1), ("r", -1)):
+        ph = 0 if sd == "l" else 1.3
+        for k, h in enumerate(WING_CHAIN):
+            add(p, f"wing_{sd}_{h}", (1.1 * gust * math.sin(w1 * t - .45 * k + ph), 0, 3.0 * gust * math.sin(w1 * t - .5 * k + ph) * sg))
+        add(p, f"cloak_{sd}", (0, 0, 1.2 * gust * math.sin(w1 * t + ph) * sg))
+        for j in range(4):
+            add(p, f"cloak_{sd}_ray{j}", (3.5 * gust * math.sin(w1 * t - .8 * j + ph), 0, 6.0 * gust * math.sin(w1 * t - .7 * j + ph + .6) * sg))
+    return p
+
+
 def feet_with(rest_feet, **offsets):
     return {k: rest_feet[k] + np.array(offsets.get(k, (0, 0, 0)), float) for k in LEGS}
 
@@ -437,8 +477,8 @@ def sweep_pose(sk, rest_feet, theta, t, enraged):
     add(p, f"{arm}_l", (0, K(t, [(0, 0), (.6, 20), (.95, 34), (1.1, -50), (1.25, -62), (1.5, -30), (1.9, 0)]),
                         lift * K(t, [(0, 0), (.5, 30), (.9, 55), (1.0, 58), (1.1, 12), (1.25, 4), (1.6, 4), (2.0, 0)])))
     add(p, f"{arm}_r", (0, K(t, [(0, 0), (.8, 6), (1.2, -4), (1.7, 0)]), K(t, [(0, 0), (.8, -8), (1.2, 6), (1.7, 0)])))
-    if not enraged:
-        add(p, "wing_l_fore", (0, 0, K(t, [(0, 0), (.9, -20), (1.05, -30), (1.15, 25), (1.3, 10), (1.7, 0)])))
+    if not enraged:                                 # the swinging wing half opens, its membrane trailing the arc
+        open_wing(p, "l", .6 * smooth(t, .4, .9) * (1 - smooth(t, 1.4, 1.9)), K(t, [(0, 0), (.95, -.3), (1.15, .8), (1.4, 0)]))
     add(p, "tail", (0, K(t, [(0, 0), (.8, -25), (1.1, 15), (1.35, 30), (1.8, -5), (2.0, 0)]), 0))
     fl = (0, K(t, [(0, 0), (.6, 5), (.85, 0)]), K(t, [(0, 0), (.6, -3), (.85, -6), (1.6, -6), (2.0, 0)]))
     fr = (0, K(t, [(0, 0), (1.2, 0), (1.32, 4), (1.48, 0)]), K(t, [(0, 0), (1.2, 0), (1.48, 5), (2.0, 0)]))
@@ -461,7 +501,10 @@ def pounce_pose(sk, rest_feet, theta, t, enraged):
     arm = "cloak" if enraged else "wing"
     spread = K(t, [(0, 0), (.9, 8), (1.15, 20), (1.28, 55), (1.4, 25), (1.5, 10), (1.98, 30), (2.2, 5), (2.6, 0)])
     for side, sg in (("l", 1), ("r", -1)):
-        add(p, f"{arm}_{side}", (0, -10 * smooth(t, 1.1, 1.28) * (1 - smooth(t, 1.4, 1.6)) * sg, (.6 if enraged else 1) * spread * sg))
+        if enraged:
+            add(p, f"{arm}_{side}", (0, -10 * smooth(t, 1.1, 1.28) * (1 - smooth(t, 1.4, 1.6)) * sg, .6 * spread * sg))
+        else:                                       # the wings flare open through the leap
+            open_wing(p, side, .9 * bump(t, 1.05, 1.28, 1.7) + .4 * bump(t, 1.85, 2.0, 2.3))
     front = (0, K(t, [(0, 0), (1.12, 0), (1.25, 14), (1.4, 0), (1.85, 0), (1.98, 8), (2.1, 0)]),
              K(t, [(0, 0), (1.1, 0), (1.28, 22), (1.4, 30), (1.8, 30), (1.98, 20), (2.2, 4), (2.6, 0)]))
     hind = (0, K(t, [(0, 0), (1.15, 0), (1.25, 6), (1.35, 10), (1.48, 0), (1.92, 0), (2.0, 6), (2.12, 0)]),
@@ -495,21 +538,26 @@ def pulse_pose(sk, rest_feet, theta, t, enraged):
     """触角の共鳴: breathes in and lifts the head high on an S-curved neck, sensing side to side, the antennae
     spreading and quivering; thrusts the head down roaring (hit), the wings flung out, a shudder through the body."""
     p = {}
-    body(sk, p, (K(t, [(0, 0), (.7, -6), (1.05, -8), (1.2, 4), (1.5, 2), (2.0, 0)]), 0, .6 * shiver(t, 1.2, 1.6, 13)),
-         (0, K(t, [(0, 0), (.7, 4), (1.05, 5), (1.2, -3), (1.35, -2), (1.8, 0)]), 0))
+    body(sk, p, (K(t, [(0, 0), (.7, -14), (1.05, -18), (1.2, 6), (1.5, 3), (2.0, 0)]), 0, .6 * shiver(t, 1.2, 1.6, 13)),
+         (0, K(t, [(0, 0), (.7, 8), (1.05, 10), (1.2, -4), (1.35, -2), (1.8, 0)]), 0))
     trem = shiver(t, .7, 1.2, 14)
-    add(p, "neck", (K(t, [(0, 0), (.4, -10), (.9, -22), (1.08, -25), (1.2, 14), (1.35, 16), (1.8, 3), (2.3, 0)]),
+    add(p, "neck", (K(t, [(0, 0), (.4, -16), (.9, -34), (1.08, -38), (1.2, 18), (1.35, 20), (1.8, 3), (2.3, 0)]),
                     K(t, [(0, 0), (.4, 6), (.7, -6), (1.0, 4), (1.2, 0)]), 0))
     add(p, "skull", (K(t, [(0, 0), (.9, -6), (1.1, -7), (1.2, 5), (1.4, 3), (2.0, 0)]) + 1.5 * trem,
                      K(t, [(0, 0), (.5, -8), (.8, 8), (1.1, 0)]), 1.5 * trem))
     add(p, "jaw", (K(t, [(0, 0), (.9, 8), (1.15, 12), (1.22, 40), (1.6, 30), (1.9, 0)]), 0, 0))
-    spread = K(t, [(0, 0), (.6, 20), (1.1, 28), (1.2, -6), (1.5, 6), (2.0, 0)])
+    spread = K(t, [(0, 0), (.6, 40), (1.1, 52), (1.2, -6), (1.5, 8), (2.0, 0)])
+    grow = 1 + .7 * smooth(t, .3, .8) * (1 - smooth(t, 1.3, 1.8))   # the antennae fan out large while it listens
     arm = "cloak" if enraged else "wing"
     for side, sg in (("l", 1), ("r", -1)):
         add(p, f"crown_{side}", (-.4 * spread, (spread + 3 * trem) * sg, 0))
+        scale(p, f"crown_{side}", grow)
         if enraged:
             add(p, f"horn_{side}", (-.5 * spread, (.6 * spread + 3 * trem) * sg, 0))
-        add(p, f"{arm}_{side}", (0, 0, K(t, [(0, 0), (.7, -6), (1.2, 30), (1.4, 22), (1.9, 0)]) * (.6 if enraged else 1) * sg))
+        if enraged:
+            add(p, f"{arm}_{side}", (0, 0, K(t, [(0, 0), (.7, -6), (1.2, 30), (1.4, 22), (1.9, 0)]) * .6 * sg))
+        else:                                       # the wings flung open on the roar
+            open_wing(p, side, .9 * bump(t, 1.1, 1.25, 1.9))
     add(p, "tail", (K(t, [(0, 0), (.7, -6), (1.2, 10), (1.8, 0)]), 0, 0))
     return p, dict(rest_feet)
 
@@ -605,11 +653,12 @@ def dive_pose(sk, rest_feet, theta, t, enraged):
     beat = math.sin(2 * math.pi * 1.6 * t) * hover
     arm = "cloak" if enraged else "wing"
     for side, sg in (("l", 1), ("r", -1)):
-        z = K(t, [(0, 0), (.45, 60), (.6, 70), (.72, -10), (.9, 40)]) * (1 - hover) + (30 + 40 * beat) * hover
-        z = z * (1 - smooth(t, 2.0, 2.15)) + K(t, [(2.0, 0), (2.15, -24), (2.38, -24), (2.45, 30), (2.7, 10), (3.4, 0)]) * smooth(t, 2.0, 2.15)
-        add(p, f"{arm}_{side}", (0, 0, z * (.6 if enraged else 1) * sg))
-        if not enraged:
-            add(p, f"wing_{side}_fore", (0, 0, (-25 * beat) * sg))
+        if enraged:
+            z = K(t, [(0, 0), (.45, 60), (.6, 70), (.72, -10), (.9, 40)]) * (1 - hover) + (30 + 40 * beat) * hover
+            z = z * (1 - smooth(t, 2.0, 2.15)) + K(t, [(2.0, 0), (2.15, -24), (2.38, -24), (2.45, 30), (2.7, 10), (3.4, 0)]) * smooth(t, 2.0, 2.15)
+            add(p, f"{arm}_{side}", (0, 0, z * .6 * sg))
+        else:                                       # open and beating in the air, swept back for the plunge, flung out on impact
+            open_wing(p, side, smooth(t, .4, .7) * (1 - smooth(t, 2.0, 2.2)) + .8 * bump(t, 2.35, 2.45, 3.2), beat)
     add(p, "neck", (K(t, [(0, 0), (.45, 10), (.8, -10), (1.9, 8), (2.2, 16), (2.45, 4), (3.2, 0)]) + (-10 if not enraged else 0), 0, 0))
     if not enraged:
         add(p, "skull", (8, 0, 0))
@@ -693,7 +742,8 @@ def tailslap_pose(sk, rest_feet, theta, t, enraged):
     p = {}
     body(sk, p, (K(t, [(0, 0), (.45, 6), (.65, -4), (.72, -8), (1.0, -2), (1.5, 0)]), 0, 0),
          (0, K(t, [(0, 0), (.45, -3), (.7, 2), (1.0, 0)]), K(t, [(0, 0), (.45, 3), (.7, -2), (1.1, 0)])))
-    lift = K(t, [(0, 0), (.3, -30), (.5, -48), (.62, -40), (.7, 26), (.8, 34), (.95, 14), (1.1, 22), (1.5, 0)])
+    # +x lifts the tail here (it was the wrong way round before the 2026-10-19 review): high over the back, then down hard
+    lift = K(t, [(0, 0), (.3, 30), (.5, 50), (.62, 44), (.7, -24), (.8, -30), (.95, -10), (1.1, -16), (1.5, 0)])
     for k, b in enumerate(TAIL):
         add(p, b, (lift * (1 + .15 * k), 0, 0))
     add(p, "neck", (K(t, [(0, 0), (.5, -6), (.72, 6), (1.2, 0)]), K(t, [(0, 0), (.5, 16), (1.2, 4), (1.5, 0)]), 0))
@@ -739,11 +789,11 @@ def relocate_pose(sk, rest_feet, t, enraged=False, theta=0.0):
     solve_legs(sk, p, feet)
     arm = "cloak" if enraged else "wing"
     for side, sg in (("l", 1), ("r", -1)):
-        ground = K(t, [(0, 0), (.4, 55), (.6, -10), (.75, 30)]) * (1 - air) + K(t, [(2.3, 50), (2.5, 60), (2.7, 20), (3.0, 0)]) * smooth(t, 2.25, 2.35)
-        z = ground + (25 + 35 * beat) * air
-        add(p, f"{arm}_{side}", (0, 0, z * (.6 if enraged else 1) * sg))
-        if not enraged:
-            add(p, f"wing_{side}_fore", (0, 0, (-20 * beat) * sg))
+        if enraged:
+            ground = K(t, [(0, 0), (.4, 55), (.6, -10), (.75, 30)]) * (1 - air) + K(t, [(2.3, 50), (2.5, 60), (2.7, 20), (3.0, 0)]) * smooth(t, 2.25, 2.35)
+            add(p, f"{arm}_{side}", (0, 0, (ground + (25 + 35 * beat) * air) * .6 * sg))
+        else:                                       # wide open for the glide, a flare on landing
+            open_wing(p, side, smooth(t, .3, .6) * (1 - smooth(t, 2.6, 3.0)) + .3 * bump(t, 2.2, 2.4, 2.8), beat)
     add(p, "neck", (K(t, [(0, 0), (.4, 10), (.8, -8), (2.0, -4), (2.4, 10), (3.0, 0)]) + (-10 if not enraged else 0), 0, 0))
     if not enraged:
         add(p, "skull", (8, 0, 0))
@@ -771,10 +821,7 @@ def awaken_pose(sk, rest_feet, t):
     add(p, "skull", (K(t, [(0, 0), (1.3, -14), (2.2, -14), (2.6, 8), (3.0, 8)]), 0, 2 * roar))
     add(p, "jaw", (K(t, [(0, 0), (1.2, 6), (1.4, 42), (2.1, 40), (2.4, 6), (3.0, 0)]), 0, 0))
     for sd, sg in (("l", 1), ("r", -1)):
-        add(p, f"wing_{sd}", (0, -10 * rear * sg, (K(t, [(0, 0), (.9, -8), (1.3, 62), (2.2, 58), (2.6, -6), (3.0, 0)]) + 3 * trem) * sg))
-        add(p, f"wing_{sd}_fore", (0, 0, -36 * rear * sg))
-        for h in ("hinge02", "hinge09", "hinge10", "hinge14"):
-            add(p, f"wing_{sd}_{h}", (0, 0, 16 * rear * sg))
+        open_wing(p, sd, 1.15 * rear, .15 * trem + .25 * roar)
         add(p, f"crown_{sd}", (-10 * rear, 12 * roar * sg, 0))
     for k, b in enumerate(TAIL):
         add(p, b, (K(t, [(0, 0), (1.3, 16), (2.2, 14), (2.6, -6), (3.0, 0)]) * (1 + .2 * k), 4 * trem, 0))
@@ -790,12 +837,12 @@ def channel_pose(sk, rest_feet, theta, t, enraged):
     y = K(t, [(0, 0), (.4, -8), (.8, 34), (1.4, 44), (3.5, 50), (5.6, 56), (5.8, 60), (6.0, -8), (6.15, -10), (6.8, -3), (7.2, 0)])
     beat = math.sin(2 * math.pi * 1.1 * (t - .8)) * smooth(t, .8, 1.2) * (1 - smooth(t, 5.6, 5.8))
     y += 4 * beat
-    arch = K(t, [(0, 0), (.4, 8), (.8, -10), (1.4, -22), (5.5, -26), (5.8, 18), (6.0, 14), (6.4, 6), (7.2, 0)])
+    arch = K(t, [(0, 0), (.4, 8), (.8, -6), (1.4, -12), (5.5, -14), (5.8, 18), (6.0, 14), (6.4, 6), (7.2, 0)])
     if enraged:
         enraged_stance(sk, p, theta * (1 - air))
     body(sk, p, (arch, 0, 2 * beat * .5), (0, y, 0))
     tuck = np.array([0, y + 6 * air, 6 * air])
-    feet = {k: rest_feet[k] + (tuck if k.startswith("f") else np.array([0, y + 2 * air, -10 * air])) for k in rest_feet}
+    feet = {k: rest_feet[k] + (tuck if k.startswith("f") else np.array([0, y + 12 * air, 4 * air])) for k in rest_feet}
     solve_legs(sk, p, feet)
     arm = "cloak" if enraged else "wing"
     slam = bump(t, 5.85, 6.02, 6.7)
@@ -812,8 +859,8 @@ def channel_pose(sk, rest_feet, theta, t, enraged):
     add(p, "neck", (-34 * air + 30 * slam + (-10 if not enraged else 0), 0, 0))
     add(p, "skull", (-20 * air + 14 * slam + (8 if not enraged else 0), 0, 0))
     add(p, "jaw", (24 * air + 36 * bump(t, 5.95, 6.05, 6.6), 0, 0))
-    for k, b in enumerate(TAIL):
-        add(p, b, ((18 * air - 16 * slam) * (1 + .25 * k), 4 * beat, 0))
+    for k, b in enumerate(TAIL):                  # the tail curls under as a counterweight
+        add(p, b, ((-10 * air - 16 * slam) * (1 + .3 * k), 6 * beat, 0))
     return p, None
 
 
@@ -1045,11 +1092,27 @@ def springs(sk, poses, dt, loop):
 def baked(sk, name, length, fn, loop, fps=20, sub=3):
     """Samples fn(t) at fps*sub, adds the springs, keeps every sub-th frame as a keyframe."""
     n = int(round(length * fps)) * sub
-    poses = [fn(length * i / n) for i in range(n + (0 if loop else 1))]
+    poses = [add_wind(fn(length * i / n), length * i / n, length if loop else None) for i in range(n + (0 if loop else 1))]
     poses = springs(sk, poses, length / n, loop)
     if loop:
         poses.append(poses[0])
     return clip(sk, name, length, n // sub, poses[::sub], "loop" if loop else "once")
+
+
+def thin(values, tol):
+    """(index, value) keyframes that rebuild values within tol by linear interpolation (first and last kept): the wind
+    put every wing and fan bone in every clip, and a key on every frame made the model too big to load."""
+    v = [np.asarray(x, float) for x in values]
+    keep = [0]
+    for i in range(1, len(v) - 1):
+        a = keep[-1]
+        # can the segment from the last kept key reach i + 1 without passing tol at any frame in between?
+        b = i + 1
+        ok = all(np.abs(v[a] + (v[b] - v[a]) * (j - a) / (b - a) - v[j]).max() <= tol for j in range(a + 1, b))
+        if not ok:
+            keep.append(i)
+    keep.append(len(v) - 1)
+    return [(i, v[i]) for i in sorted(set(keep))]
 
 
 def clip(sk, name, length, frames, poses, loop):
@@ -1060,14 +1123,11 @@ def clip(sk, name, length, frames, poses, loop):
         scl = [(pose.get(b, (0, 0)) + (O3,))[2] for pose in poses]
         keys = []
         if any(np.abs(r).max() > 1e-3 for r in rot):
-            for i, r in enumerate(rot):
-                keys.append(("rotation", i, (-r[0], r[1], r[2])))
+            keys += [("rotation", i, (-r[0], r[1], r[2])) for i, r in thin(rot, .25)]
         if any(np.abs(q).max() > 1e-3 for q in pos):
-            for i, q in enumerate(pos):
-                keys.append(("position", i, (q[0], q[1], q[2])))
+            keys += [("position", i, (q[0], q[1], q[2])) for i, q in thin(pos, .08)]
         if any(np.abs(k - 1).max() > 1e-3 for k in scl):
-            for i, k in enumerate(scl):
-                keys.append(("scale", i, (k[0], k[1], k[2])))
+            keys += [("scale", i, (k[0], k[1], k[2])) for i, k in thin(scl, .005)]
         if keys:
             animators[sk.bones[b]["uuid"]] = {"name": b, "type": "bone", "keyframes": [
                 {"channel": ch, "data_points": [{"x": round(float(v[0]), 3), "y": round(float(v[1]), 3), "z": round(float(v[2]), 3)}],
