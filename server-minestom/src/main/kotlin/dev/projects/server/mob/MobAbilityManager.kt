@@ -144,6 +144,8 @@ data class MobAbility(
     val anchor: MobAbilityAnchor = MobAbilityAnchor.CASTER,
     val maximumHealthRatio: Double = 1.0,
     val damageType: dev.projects.server.coreloop.CoreDamageType = dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
+    /** Crowd control put on each player the hit lands on (QuestEncounterCombat crowdPlayer). */
+    val crowd: CrowdControl? = null, val crowdMillis: Long = 0,
 ) {
     init {
         require(id.isNotBlank() && maximumStartRange > 0.0 && damage > 0.0)

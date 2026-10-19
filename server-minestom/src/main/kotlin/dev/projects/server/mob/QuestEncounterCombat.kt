@@ -84,6 +84,8 @@ class QuestEncounterCombat(
     private val damageMultiplier: Double = 1.0,
     private val encounterLevel: Int = (tier - 1) * 10 + 1,
     private val typedDamagePlayer: ((Player, Double, CoreDamageType) -> Unit)? = null,
+    /** Receives an ability's crowd control for each player it hits, with the attack's origin. */
+    private val crowdPlayer: ((Player, CrowdControl, Long, Pos) -> Unit)? = null,
 ) {
     private data class SlowKey(val source: UUID?, val strength: Double)
     private data class Slow(val strength: Double, val until: Long)
@@ -807,6 +809,7 @@ class QuestEncounterCombat(
                     ) {
                         if (typedDamagePlayer != null) typedDamagePlayer.invoke(player, event.frame.ability.damage, event.frame.ability.damageType)
                         else damagePlayer(player, event.frame.ability.damage)
+                        event.frame.ability.crowd?.let { crowdPlayer?.invoke(player, it, event.frame.ability.crowdMillis, event.frame.casterOrigin) }
                     }
                     if (disposed || actionsStoppedForReturn) return false
                 }

@@ -82,13 +82,16 @@ internal class CorePlayerCombat(
     private var castCharges = 0
     private var lastConduitGain = -1L
     private val lessonAttempts = mutableMapOf<Int, Long>()
+    /** Crowd control this player is under (enemy attacks now, other players in PvP fields). */
+    internal val crowd = CorePlayerCrowdControl()
+    private var movementHeld = false
     val classId get() = journey().job
     val skillDefinitions get() = CoreSkillCatalog.equipped(journey(), statSource())
     val skillNames get() = skillDefinitions.map { it.name }
     fun skillAvailable(index: Int) = index in 0..4 && (journey().legacy || journey().level >= CoreSkillCatalog.unlockLevels[index])
     fun resourceAvailable(index: Int) = classState.canCast(skillDefinitions[index], journey().build)
     val weaponHint get() = "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}${if (raging) " 赤熱" else ""}"
-    val combatCue get() = CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil,rampageUntil)
+    val combatCue get() = crowd.cue(tickNumber) ?: CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil,rampageUntil)
     val chargeCount: Int? get() = if (classId == CoreClass.STARWEAVER) classState.resource.toInt() else null
     val resource get() = classState.resource
     val resourceMax get() = classState.cap(classId)
@@ -121,6 +124,7 @@ internal class CorePlayerCombat(
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
         if (defeated || player.openInventory != null) return
         val enemies = encounter() ?: return
+        if (!crowd.canAttack(tickNumber)) return
         if (pending != null || shot != null || tickNumber < nextNormalAt) { queueAction(CoreCombatFeel.NORMAL); return }
         queued = null
         if (feel.attackBreaksGuard) { classState.guardUntil = -1; classState.perfectUntil = -1 }
@@ -147,6 +151,7 @@ internal class CorePlayerCombat(
         if (id !in 0..4 || defeated || encounter() == null || player.openInventory != null) return
         if (!skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
+        if (!crowd.canCast(tickNumber)) { notice("${crowd.cue(tickNumber) ?: "行動不能"}：技を使えません"); return }
         val definition = skillDefinitions[id]
         if (raging) classState.fill(classId) // The ultimate is free while raging: rage refills before and after the spend.
         if (!classState.canCast(definition, journey().build)) { notice("${classId.resourceName}が足りません（必要 ${definition.spend} / 現在 ${resource.toInt()}）"); return }
@@ -217,6 +222,8 @@ internal class CorePlayerCombat(
 
     fun dodge() {
         if (defeated || encounter() == null || tickNumber < nextDodge) return
+        // Rule 3 of player CC: the dodge breaks every movement lock (it still costs the dodge cooldown).
+        if (crowd.escape(tickNumber)) { updateMovement(); sound(SoundEvent.ITEM_ARMOR_EQUIP_CHAIN, .7f, 1.4f) }
         // F cuts any follow-through for every class; the normal cadence (nextNormalAt) is still paid.
         queued = null
         if (normal.isAttacking) normal.endRecovery()
@@ -248,8 +255,9 @@ internal class CorePlayerCombat(
         if(player.isRemoved) { resetActions(); return }
         if (tickNumber % 20 == 0L) {
             manaValue = (manaValue + CoreCombatMath.manaRegeneration(statSource(), tickNumber - lastCombat > 100)).coerceAtMost(maxMana.toDouble())
-            player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = 0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0 + if (tickNumber < moveHasteUntil) .2 else 0.0)
+            updateMovement()
         }
+        crowdTick()
         val enemies = encounter() ?: run { resetActions(); return }
         if (weaponBroken()) { resetActions(); return }
         val epoch = actionEpoch
@@ -718,6 +726,57 @@ internal class CorePlayerCombat(
         }
     }
 
+    /**
+     * Crowd control landing on this player. [pvp] marks another player as the source (half duration).
+     * Diminishing returns and the dodge escape live in [CorePlayerCrowdControl]. Returns the ticks applied.
+     */
+    fun receiveCrowdControl(kind: CrowdControl, millis: Long, from: Pos?, pvp: Boolean = false): Int {
+        if (defeated) return 0
+        if (kind == CrowdControl.FLINCH || CorePlayerCrowdControl.INCAPACITATING.contains(kind)) {
+            // A flinch or anything incapacitating cancels the windup in progress.
+            queued = null
+            if (pending != null) { pending = null; vfx.cancel(preserveGarden = garden != null) }
+        }
+        val ticks = crowd.apply(kind, millis, tickNumber, pvp, from)
+        if (ticks <= 0) return 0
+        val away = from?.let { player.position.sub(it).let { d -> Vec(d.x(), 0.0, d.z()) } }
+            ?.takeIf { it.length() > 1e-6 }?.normalize() ?: flatFacing().mul(-1.0)
+        when (kind) {
+            CrowdControl.KNOCKBACK -> player.velocity = away.mul(11.0).withY(4.5)
+            CrowdControl.AIRBORNE -> player.velocity = Vec(0.0, 10.0, 0.0)
+            CrowdControl.BLIND -> player.addEffect(net.minestom.server.potion.Potion(net.minestom.server.potion.PotionEffect.BLINDNESS, 0, ticks))
+            else -> Unit
+        }
+        updateMovement()
+        sound(when (kind) {
+            CrowdControl.STUN -> SoundEvent.BLOCK_ANVIL_LAND
+            CrowdControl.ROOT -> SoundEvent.BLOCK_CHAIN_PLACE
+            else -> SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK
+        }, .5f, if (kind == CrowdControl.STUN) 1.6f else .8f)
+        notice(crowd.cue(tickNumber) ?: kind.label)
+        return ticks
+    }
+
+    /** Holds the player in place while a movement lock lasts; charm and fear walk the player for them. */
+    private fun crowdTick() {
+        if (crowd.canMove(tickNumber) == movementHeld) updateMovement() // a lock began or ended this tick
+        if (crowd.forced(tickNumber) && tickNumber % 4 == 0L) crowd.source?.let { from ->
+            val toward = Vec(from.x() - player.position.x(), 0.0, from.z() - player.position.z())
+            if (toward.length() > .6) {
+                val step = toward.normalize().mul(if (crowd.active(CrowdControl.FEAR, tickNumber)) -4.0 else 4.0)
+                player.velocity = step.withY(player.velocity.y())
+            }
+        }
+    }
+
+    private fun updateMovement() {
+        val held = !crowd.canMove(tickNumber)
+        movementHeld = held
+        player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = if (held) 0.0 else
+            0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0 + if (tickNumber < moveHasteUntil) .2 else 0.0)
+        player.getAttribute(Attribute.JUMP_STRENGTH).baseValue = if (held) 0.0 else JUMP_STRENGTH
+    }
+
     fun hurt(amount: Double, type: CoreDamageType = CoreDamageType.PHYSICAL) {
         if (defeated || encounter() == null || !amount.isFinite() || amount <= 0.0) return
         val snapshot = sheet
@@ -785,6 +844,7 @@ internal class CorePlayerCombat(
         normalEmpowerment = 1.0
         queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; rampageUntil = -1; lastHurtRage = -100
         classState.reset(); moveHasteUntil = -1; previousPosition = null
+        crowd.clear(); if (movementHeld) updateMovement()
         vfx.cancel()
         warriorMarks.clear()
         damageLabels.forEach { it.first.remove() }; damageLabels.clear()
@@ -892,5 +952,7 @@ internal class CorePlayerCombat(
         val SKILL_NAMES = listOf("轟進", "地割り", "押し薙ぎ")
         const val WHETSTONE_TICKS = 20L * 180
         const val NOTICE_MILLIS = 1_600L
+        /** Vanilla player jump strength, restored when a movement lock ends. */
+        const val JUMP_STRENGTH = 0.41999998688697815
     }
 }

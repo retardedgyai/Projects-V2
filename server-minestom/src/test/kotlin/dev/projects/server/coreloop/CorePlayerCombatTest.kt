@@ -968,6 +968,35 @@ class CorePlayerCombatTest {
         }
     }
 
+    @Test fun `a stunned player cannot attack cast or move and the dodge frees them`() = arena { h ->
+        assertEquals(20, h.actor.receiveCrowdControl(CrowdControl.STUN, 1000, h.player.position.add(0.0, 0.0, 2.0)))
+        h.ticks(1)
+        assertEquals(0.0, h.player.getAttribute(net.minestom.server.entity.attribute.Attribute.MOVEMENT_SPEED).baseValue)
+        assertEquals(0.0, h.player.getAttribute(net.minestom.server.entity.attribute.Attribute.JUMP_STRENGTH).baseValue)
+        assertTrue(h.actor.combatCue.startsWith("スタン "))
+        h.actor.attack(); h.actor.skill(1); h.ticks(15)
+        assertEquals(300.0, h.combat.bossHealth(), "no attack or skill while stunned")
+        h.actor.dodge(); h.ticks(1)
+        assertTrue(h.player.getAttribute(net.minestom.server.entity.attribute.Attribute.MOVEMENT_SPEED).baseValue > 0)
+        h.ticks(30); h.actor.attack()
+        assertTrue(h.combat.bossHealth() < 300.0, "free again after the dodge")
+    }
+
+    @Test fun `a shield guard's bash stuns the player through the enemy runtime`() = arena { h ->
+        h.combat.dispose()
+        val stunned = mutableListOf<CrowdControl>()
+        val encounter = QuestEncounterCombat(h.instance, 1, listOf(QuestCombatEncounter(listOf(Pos(8.5, 40.0, 10.0)), listOf(QuestMobArchetype.SHIELD_GUARD))),
+            Pos(40.0, 40.0, 40.0), onMobDefeated = { _, _ -> }, damagePlayer = { _, _ -> }, spawnBoss = false,
+            crowdPlayer = { _, kind, millis, from -> stunned += kind; h.actor.receiveCrowdControl(kind, millis, from) })
+        h.activeEncounter = encounter
+        try {
+            var t = 1000L
+            while (t < 9000L && CrowdControl.STUN !in stunned) { t += 50; encounter.tick(t) }
+            assertTrue(CrowdControl.STUN in stunned, "the guard landed a bash: $stunned")
+            assertTrue(h.actor.combatCue.startsWith("スタン "), h.actor.combatCue)
+        } finally { h.actor.resetActions(); encounter.dispose() }
+    }
+
     @Test fun `sword saint third hits take time off the heavy cooldowns`() = arena { h ->
         h.journey=CoreJourney.legacy(build=CoreClassBuild(nodes=8248));h.actor.reset()
         h.actor.skill(2);h.ticks(10)
