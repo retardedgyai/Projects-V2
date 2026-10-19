@@ -661,7 +661,7 @@ def follow_through(b, frames, loop):
             pose[name] = (o[0] + out[i][0], o[1], o[2] + out[i][1])
 
 
-def bake(b, name, length, keys, loop="once", base=None):
+def bake(b, name, length, keys, loop="once", base=None, overlay=None):
     """keys: [(time, pose, ease_into_this_key)]. Samples every STEP and writes linear keyframes."""
     base = base or {}
     frames = []
@@ -677,7 +677,10 @@ def bake(b, name, length, keys, loop="once", base=None):
             pose = blend(p0, p1, ease(kind, (t - t0) / max(1e-6, t1 - t0)))
         else:
             pose = keys[-1][1]
-        frames.append((t, merged(base, pose, wind(t, pose.get("shells", 0.0)))))
+        layers = [base, pose, wind(t, pose.get("shells", 0.0))]
+        if overlay:
+            layers.append(overlay(t))
+        frames.append((t, merged(*layers)))
     follow_through(b, frames, loop == "loop")
     bones = {nm for nm, _, _ in b.bones}
     tracks = {}
@@ -812,15 +815,16 @@ def claw_keys(hit, end, shells):
               arm_r=(-120, 0, -10), forearm_r=(-40, 0, 0), hand_r=(-30, 0, 0), arm_l=(-50, 0, 6), forearm_l=(-30, 0, 0),
               tail_1=(16, 0, 0), tail_2=(10, 0, 0), **s)
     top = pose(up, rear(-4), arm_r=(-8, 0, 0), tremble=3.0, shells=shells + .1)
-    slam = pose(rear(14), chest=(12, 6, 4), neck=(16, 4, 0), skull=(10, 0, 0), jaw=(26, 0, 0), arm_r=(16, 0, 4),
+    slam = pose(rear(18), chest=(18, 6, 4), neck=(24, 4, 0), skull=(12, 0, 0), jaw=(28, 0, 0), arm_r=(16, 0, 4),
                 forearm_r=(4, 0, 0), hand_r=(-8, 0, 0), arm_l=(-30, 0, 0), forearm_l=(-20, 0, 0),
                 tail_1=(-14, 0, 0), tail_2=(-8, 0, 0), pos=(0, -3, 4), shells=shells + .3, tremble=2.5)
     bounce = pose(rear(4), chest=(4, 4, 2), neck=(6, 0, 0), jaw=(14, 0, 0), arm_r=(8, 0, 0), arm_l=(10, 0, 0),
                   pos=(0, -1, 3), **s)
     settle = pose(chest=(-2, 0, 0), neck=(-4, 0, 0), skull=(-3, 0, 0), pos=(0, 0, 1), **s)
+    step_back = pose(rear(-6), pos=(0, 1, -2), arm_r=(-24, 0, 0), forearm_r=(-20, 0, 0), neck=(-8, 0, 0), jaw=(10, 0, 0), **s)
     return [(0, dict(s), "io"), (.3, sink, "io"), (hit * .72, up, "out"), (hit - .06, top, "io"), (hit, slam, "in"),
-            (hit + .14, bounce, "out"), (hit + .32, pose(bounce, arm_l=(14, 0, 0)), "io"), (hit + .7, settle, "io"),
-            (end, dict(s), "io")]
+            (hit + .14, bounce, "out"), (hit + .32, pose(bounce, arm_l=(14, 0, 0)), "io"), (hit + .55, step_back, "io"),
+            (hit + .8, settle, "io"), (end, dict(s), "io")]
 
 
 def tail_keys(hit, end, shells):
@@ -831,7 +835,9 @@ def tail_keys(hit, end, shells):
                   arm_l=(-14, 0, 0), arm_r=(-14, 0, 0), forearm_l=(20, 0, 0), forearm_r=(20, 0, 0),
                   shin_l=(20, 0, 0), shin_r=(20, 0, 0), tail_1=(-24, 0, 0), tail_2=(-12, 0, 0), tremble=1.5, **s)
     takeoff = hit - .38
-    frames = [(0, dict(s), "io"), (.35, crouch, "io"), (takeoff - .05, pose(crouch, pos=(0, -5, -3), tremble=3.0), "io")]
+    coil = pose(crouch, rear(6), pos=(0, -6, -4), tail_1=(-34, 0, 0), tail_2=(-18, 0, 0), neck=(22, 0, 0), tremble=3.0)
+    frames = [(0, dict(s), "io"), (.3, pose(rear(-6), pos=(0, 1, 1), neck=(-6, 0, 0), **s), "io"), (.6, crouch, "io"),
+              (takeoff - .05, coil, "io")]
     # the flip: body pitch 0 -> 360 (nose down first) on a height arc; the tail is over the front at the strike
     flip = []
     t_land = hit + .22
@@ -907,6 +913,63 @@ def death_keys(shells):
             (1.62, pose(fall, pos=(0, -12, 0)), "out"), (1.85, fall, "in"), (2.4, dict(fall, shells=0.0), "io")]
 
 
+def window(t, a, b, fade=.15):
+    """1 inside [a, b], easing in and out over `fade` seconds, 0 outside."""
+    if t <= a - fade or t >= b + fade:
+        return 0.0
+    k = min(1.0, (t - a + fade) / fade, (b + fade - t) / fade)
+    return k * k * (3 - 2 * k)
+
+
+def decay(t, at, rate=3.0):
+    return math.exp(-max(0.0, t - at) * rate) if t >= at else 0.0
+
+
+def overlay_for(name, hit, end):
+    """Continuous motion laid over the key poses so no stretch of a clip stands still."""
+    s = math.sin
+    if name == "sakura-claw":
+        def f(t):
+            w = window(t, .55, hit - .1, .12)
+            r = decay(t, hit + .3, 2.5)
+            return {"arm_r": (-18 * w * (t - .55) / max(.1, hit - .65), 0, 0),                   # the claw keeps drawing back
+                    "pos": (0, 2.5 * w * (t - .55) / max(.1, hit - .65), 0),                       # and the body keeps rising
+                    "chest": (0, 0, 2.5 * w * s(t * 18)),
+                    "neck": (0, 12 * r * s((t - hit) * 16), 0), "skull": (0, 8 * r * s((t - hit) * 16 - .8), 0),   # head shake
+                    "tail_2": (0, 14 * r * s((t - hit) * 9), 0), "tail_3": (0, 16 * r * s((t - hit) * 9 - .7), 0)}
+        return f
+    if name == "sakura-tail":
+        def f(t):
+            w = window(t, .3, hit - .42, .12)
+            freq = 3.5 + 3 * (t - .3)                                                                # the hip wiggle quickens
+            return {"body": (0, 7 * w * s(t * freq * 6.28), 0), "chest": (0, -5 * w * s(t * freq * 6.28 + .5), 0),
+                    "pos": (0, -1.2 * w * abs(s(t * freq * 6.28)), 0),
+                    "tail_3": (0, 12 * w * s(t * 5), 0), "tail_4": (0, 14 * w * s(t * 5 - .6), 0), "tail_5": (0, 16 * w * s(t * 5 - 1.2), 0),
+                    "neck": (0, 0, 3 * w * s(t * 9))}
+        return f
+    if name == "sakura-scatter":
+        def f(t):
+            g = window(t, .3, hit - .15, .12)
+            r = decay(t, hit + .35, 4.0)
+            return {"body": (0, 0, 4 * g * s(t * 30)), "chest": (0, 0, -4 * g * s(t * 30 + .4)),       # a shudder while gathering
+                    "neck": (0, 6 * r * s((t - hit) * 22), 10 * r * s((t - hit) * 22)),               # then a dog-like shake
+                    }
+        return f
+    if name == "sakura-bloom":
+        def f(t):
+            w = window(t, hit * .5, hit - .2, .12)
+            return {"arm_l": (22 * w * s(t * 12), 0, 0), "arm_r": (22 * w * s(t * 12 + 3.1), 0, 0),     # forepaws claw the air
+                    "skull": (0, 6 * w * s(t * 3), 0)}
+        return f
+    if name == "enrage":
+        def f(t):
+            w = window(t, 2.6, 3.8, .2)
+            return {"neck": (0, 10 * w * s(t * 2.6), 0), "skull": (0, 6 * w * s(t * 2.6 - .5), 0),       # the howl sweeps the sky
+                    "arm_l": (14 * w * s(t * 9), 0, 0), "arm_r": (14 * w * s(t * 9 + 3.1), 0, 0)}
+        return f
+    return None
+
+
 def animate(m, b):
     bake(b, "idle", 2.4, looped(2.4, lambda t: idle_pose(t)), "loop")
     bake(b, "idle_enraged", 2.4, looped(2.4, lambda t: idle_pose(t, enraged=True)), "loop")
@@ -914,10 +977,11 @@ def animate(m, b):
     bake(b, "walk_enraged", 1.2, looped(1.2, lambda t: walk_pose(t, enraged=True)), "loop")
     for name, keys in (("sakura-claw", claw_keys), ("sakura-tail", tail_keys), ("sakura-scatter", scatter_keys), ("sakura-bloom", bloom_keys)):
         hit, rec = ABILITIES[name]
+        ov = overlay_for(name, hit, hit + rec)
         if name != "sakura-bloom":
-            bake(b, name, hit + rec, keys(hit, hit + rec, 0.0))
-        bake(b, f"{name}_enraged" if name != "sakura-bloom" else name, hit + rec, keys(hit, hit + rec, 1.0))
-    bake(b, "enrage", 5.0, enrage_keys())
+            bake(b, name, hit + rec, keys(hit, hit + rec, 0.0), overlay=ov)
+        bake(b, f"{name}_enraged" if name != "sakura-bloom" else name, hit + rec, keys(hit, hit + rec, 1.0), overlay=ov)
+    bake(b, "enrage", 5.0, enrage_keys(), overlay=overlay_for("enrage", 2.5, 5.0))
     bake(b, "death", 2.4, death_keys(0.0))
     bake(b, "death_enraged", 2.4, death_keys(1.0))
 
