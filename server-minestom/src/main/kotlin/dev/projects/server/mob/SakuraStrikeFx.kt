@@ -171,6 +171,14 @@ internal class SakuraStrikeFx(instance: Instance) {
         }
     }
 
+    /** The counter window: a blossom opens on each horn tip and stays lit while the window is open. */
+    fun counterBloom(ticks: Int, point: (String, Vec) -> Point?) {
+        for (x in listOf(11.4, -11.4)) {
+            val at = point("skull", Vec(x, 40.5 + 27.0 * .94 + 18.0 * .34, 27.0 + 27.0 * .34 - 18.0 * .94))?.let(Pos::fromPoint) ?: continue
+            fx.add("sakura_blossom", 4, at, 0, ticks, Vec(.4, .4, 1.0), IDENTITY, grow = Vec(1.6, 1.6, 1.0), moveTicks = 4, billboard = true) { .05 }
+        }
+    }
+
     /** The enrage howl's petals bursting open: a wave rolls out to the arena wall. */
     fun roar(at: Pos, radius: Double) {
         val d = radius * 2.05

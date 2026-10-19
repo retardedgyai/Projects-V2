@@ -76,10 +76,50 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
      * One server tick. [at] is the boss (its yaw is the facing), [point] maps (bone, Blockbench px) to the world.
      * The petals move every tick; their displays are re-sent every [SEND_EVERY] ticks with that much interpolation.
      */
+    // --- the counter wreath ---------------------------------------------------------------------------------------
+    private val wreath = mutableListOf<Petal>()
+    private var wreathUntil = -1.0
+    private var wreathFrom = 0.0
+
+    /** The counter window opened: a wreath of petals whirls round its head for [seconds]. */
+    fun wreath(seconds: Double) { wreathFrom = time; wreathUntil = time + seconds }
+
+    /** The window closed (or the counter landed): the wreath bursts outward into ordinary petals. */
+    fun burstWreath() { wreathUntil = time }
+
+    private fun tickWreath(frame: Frame, point: (String, Vec) -> Point?) {
+        if (wreath.isEmpty() && time >= wreathUntil) return
+        if (time >= wreathUntil) {
+            for (q in wreath) {
+                val out = Vec(q.p.x() - wreathCentre.x(), 0.0, q.p.z() - wreathCentre.z()).let { if (it.length() < 1e-6) frame.left else it.normalize() }
+                q.v = out.mul(r(10.0, 16.0)).add(0.0, r(1.0, 4.0), 0.0); q.age = 0.0
+                if (petals.size < CAP) petals += Petal(q.p, q.v, r(.8, 1.3), 1.6, q.phase, q.flutter, q.spin).also { it.entity = q.entity } else q.entity?.remove()
+            }
+            wreath.clear()
+            return
+        }
+        wreathCentre = point("skull", WREATH_CENTRE)?.let { Vec(it.x(), it.y(), it.z()) } ?: frame.px(0.0, 50.0, 36.0)
+        while (wreath.size < WREATH_PETALS) wreath += Petal(wreathCentre, Vec.ZERO, 99.0, 0.0, r(0.0, 2 * PI), 0.0, r(4.0, 9.0))
+        val spin = (time - wreathFrom) * WREATH_TURN
+        val grow = minOf(1.0, (time - wreathFrom) / .15)
+        for ((k, q) in wreath.withIndex()) {
+            val a = spin + k * 2 * PI / WREATH_PETALS
+            val radius = WREATH_RADIUS * grow
+            val wobble = .25 * sin(a * 2 + spin)
+            val pos = wreathCentre.add(cos(a) * radius, wobble, sin(a) * radius)
+            q.v = Vec(-sin(a), 0.0, cos(a)).mul(radius * WREATH_TURN)
+            q.p = pos
+            q.age = .2
+            send(q)
+        }
+    }
+    private var wreathCentre: Vec = Vec.ZERO
+
     fun tick(at: Pos, enraged: Boolean, point: (String, Vec) -> Point?) {
         tick++
         val frame = Frame(at)
         emit(frame, enraged, point)
+        tickWreath(frame, point)
         val iterator = petals.iterator()
         while (iterator.hasNext()) {
             val q = iterator.next()
@@ -98,6 +138,8 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
     fun dispose() {
         petals.forEach { it.entity?.remove() }
         petals.clear()
+        wreath.forEach { it.entity?.remove() }
+        wreath.clear()
     }
 
     /** Where every live petal is (head, velocity), for tests and the preview dump. */
@@ -343,6 +385,11 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
         const val MARKER = 78
         const val DT = .05
         const val SEND_EVERY = 3
+        /** The counter wreath: petals whirling round the head (skull bone, Blockbench px) at this many radians a second. */
+        val WREATH_CENTRE = Vec(0.0, 48.0, 32.0)
+        const val WREATH_PETALS = 18
+        const val WREATH_RADIUS = 2.2
+        const val WREATH_TURN = 9.0
         const val CAP = 360
         /** As many petals as the preview (scripts/boss_preview/sakura_fx.py), the Creator's choice. */
         const val DENSITY = 1.0

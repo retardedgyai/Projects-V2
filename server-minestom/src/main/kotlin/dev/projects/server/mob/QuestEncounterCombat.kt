@@ -1288,16 +1288,21 @@ class QuestEncounterCombat(
      */
     private fun tickCounterGlow(mob: Mob, now: Long) {
         if (mob.counterTo == 0L || now < mob.counterFrom) return
-        if (now > mob.counterTo || !mob.abilities.isActive) { mob.counterFrom = 0L; mob.counterTo = 0L; updateName(mob); return }
-        if (now - mob.counterFrom < 60) {
-            updateName(mob, "角が光った！ 正面から打て")
-            sound(mob.entity.position, "minecraft:block.amethyst_block.resonate", 1.4f, 1.6f)
+        if (now > mob.counterTo || !mob.abilities.isActive) {
+            mob.counterFrom = 0L; mob.counterTo = 0L; updateName(mob); sakuraFx?.burstWreath(); return
         }
-        val blue = Particle.DUST.withColor(net.kyori.adventure.text.format.TextColor.color(0x7fd8ff)).withScale(1.4f)
+        if (now - mob.counterFrom < 60) {
+            // the cue is the concept itself: a wreath of petals whirls round its head and the horn tips burst into bloom
+            updateName(mob, "花輪が回った！ 正面から打て")
+            sound(mob.entity.position, "minecraft:block.amethyst_block.resonate", 1.4f, 1.6f)
+            sound(mob.entity.position, "minecraft:block.cherry_leaves.break", 1.4f, .8f)
+            sakuraFx?.wreath((mob.counterTo - mob.counterFrom) / 1000.0)
+            sakuraStrike?.counterBloom((mob.counterTo - mob.counterFrom) / 50) { bone, px -> mob.view?.point(bone, px) }
+        }
+        // without the pack: cherry leaves whirling at the horn tips
         for (tip in listOf(Vec(11.4, 27.0, -18.0), Vec(-11.4, 27.0, -18.0))) {
             val at = mob.view?.point("skull", Vec(tip.x(), 40.5 + tip.y() * .94 - tip.z() * .34, 27.0 + tip.y() * .34 + tip.z() * .94)) ?: continue
-            particle(Pos.fromPoint(at), blue, 3)
-            particle(Pos.fromPoint(at), Particle.END_ROD, 1)
+            particle(Pos.fromPoint(at), Particle.CHERRY_LEAVES, 3)
         }
     }
 
@@ -1315,6 +1320,7 @@ class QuestEncounterCombat(
             staggerBoss(maxOf(bossStaggerUntil, now + COUNTER_STAGGER_MILLIS))
             mob.brokenUntil = now + COUNTER_STAGGER_MILLIS
             mob.view?.maneuver("countered")
+            sakuraFx?.burstWreath()
             sakuraFx?.countered()
             updateName(mob, "カウンター！ 崩れた")
             sound(here, "minecraft:entity.ravager.stunned", 1.4f, .8f)
