@@ -720,23 +720,62 @@ def sakura_tree(x, z, g, size=1.0):
 
 
 def torii(cx, cz, y, ux, uz, half=3, h=6):
-    """A vermilion torii across a path heading (ux, uz): two posts, the nuki tie beam, the dark kasagi with upturned ends."""
+    """Myojin torii across a path heading (ux, uz): stone kamebara bases, vermilion hashira, the nuki tie beam running
+    past the posts, a dark gakuzuka plaque, the red shimaki and a dark kasagi whose ends turn up."""
     px, pz = -uz, ux
+    P = lambda s2: (int(round(cx + px * s2)), int(round(cz + pz * s2)))
     for s2 in (-half, half):
-        bx, bz = int(round(cx + px * s2)), int(round(cz + pz * s2))
-        put(bx, y, bz, "stone_bricks")
-        for yy in range(y + 1, y + h + 1): put(bx, yy, bz, "red_concrete", shape="post")
-    for s2 in range(-half - 2, half + 3):
-        bx, bz = int(round(cx + px * s2)), int(round(cz + pz * s2))
-        if abs(s2) <= half: put(bx, y + h - 1, bz, "red_concrete", shape="slab_t")
-        put(bx, y + h + 1, bz, "blackstone" if abs(s2) <= half + 1 else "blackstone", shape="full" if abs(s2) < half + 2 else "slab")
-        if abs(s2) <= half + 1: put(bx, y + h, bz, "red_concrete")
-    put(int(round(cx)), y + h, int(round(cz)), "gold_block")
+        bx, bz = P(s2)
+        put(bx, y + 1, bz, "polished_andesite")
+        for yy in range(y + 2, y + h + 1): put(bx, yy, bz, "red_concrete")
+    for s2 in range(-half - 1, half + 2):                            # nuki, one block past each post
+        bx, bz = P(s2)
+        put(bx, y + h - 2, bz, "red_concrete", shape="slab_t")
+    bx, bz = P(0)
+    put(bx, y + h - 1, bz, "black_concrete"); put(bx, y + h - 1, bz, "gold_block", shape="lantern")    # the plaque
+    for s2 in range(-half - 1, half + 2):                            # shimaki
+        bx, bz = P(s2); put(bx, y + h, bz, "red_concrete")
+    for s2 in range(-half - 2, half + 3):                            # kasagi
+        bx, bz = P(s2); put(bx, y + h + 1, bz, "deepslate_tiles")
+    for s2 in (-half - 3, half + 3):                                 # the upturned ends
+        bx, bz = P(s2); put(bx, y + h + 1, bz, "deepslate_tiles", shape="slab_t"); put(bx, y + h + 2, bz, "deepslate_tiles", shape="slab")
 
 
 def stone_lantern(x, z, y):
-    put(x, y + 1, z, "stone_bricks", shape="wall"); put(x, y + 2, z, "stone_bricks", shape="slab")
-    put(x, y + 2, z, "lantern", shape="lantern"); put(x, y + 3, z, "stone_bricks", shape="slab")
+    """Ishidoro: a pedestal, a slim post, the fire box, a wide roof, a jewel on top."""
+    put(x, y + 1, z, "polished_andesite")
+    put(x, y + 2, z, "stone_bricks", shape="wall")
+    put(x, y + 3, z, "polished_andesite", shape="slab")
+    put(x, y + 3, z, "lantern", shape="lantern")
+    put(x, y + 4, z, "deepslate_tiles")
+    for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        if (x + dx, y + 4, z + dz) not in w.b: put(x + dx, y + 4, z + dz, "deepslate_tiles", shape="slab")
+    put(x, y + 5, z, "polished_andesite", shape="post")
+
+
+def pavilion(cx, cz, y, r=3, roof="deepslate_tiles"):
+    """A small open shrine pavilion: raised stone floor, vermilion posts, a hipped tile roof with upturned eaves, a gold finial."""
+    for dx in range(-r, r + 1):
+        for dz in range(-r, r + 1):
+            put(cx + dx, y + 1, cz + dz, "polished_andesite" if max(abs(dx), abs(dz)) == r else "spruce_planks", shape="full")
+    for dx, dz in ((-r + 1, -r + 1), (r - 1, -r + 1), (-r + 1, r - 1), (r - 1, r - 1)):
+        for yy in range(y + 2, y + 6): put(cx + dx, yy, cz + dz, "red_concrete", shape="post")
+    for layer in range(3):                                           # roof: three shrinking tiers, the eaves one block past the posts
+        rr = r + 1 - layer
+        for dx in range(-rr, rr + 1):
+            for dz in range(-rr, rr + 1):
+                edge = max(abs(dx), abs(dz)) == rr
+                if edge or layer == 2:
+                    corner = abs(dx) == rr and abs(dz) == rr
+                    put(cx + dx, y + 6 + layer + (1 if corner and layer == 0 else 0), cz + dz, roof, shape="slab" if (edge and layer < 2) else "full")
+        for dx in range(-rr + 1, rr):
+            for dz in range(-rr + 1, rr):
+                put(cx + dx, y + 6 + layer, cz + dz, "dark_oak_planks" if layer < 2 else roof)
+    put(cx, y + 9, cz, "gold_block", shape="post")
+    put(cx, y + 5, cz, "lantern", shape="lantern")
+    put(cx, y + 2, cz, "barrel_top", "barrel_side")                  # offering box
+    for dx in range(-r, r + 1):
+        for dz in range(-r, r + 1): UPPER[cz + dz, cx + dx] = y + 1
 
 
 PLANTED = []
@@ -987,49 +1026,79 @@ for (px, pz, ty, rb, rt, sd), spawns, herbs, ore in TOPS:
 
 
 # ---------------- world boss: the sakura on the highest pillar ----------------
+# arena rules (boss-arena design + Japanese arena references): one open, readable circle with nothing inside to snag on;
+# the boundary is obvious (raised stone floor, red tamagaki fence); one entrance under a great torii; the landmark
+# (the sacred sakura with its shimenawa) stands behind, outside the fight; shrine pavilions and lanterns sit outside the fence.
 SX_, SZ_, SY_, _, SR_, _ = PILLARS[SAKURA]
 BOSS = (SX_, SZ_)
 AR = int(SR_ * .45)
-for dx in range(-AR - 2, AR + 3):                                   # arena floor: petals on moss, a stone ring at the edge
-    for dz in range(-AR - 2, AR + 3):
+ux2, uz2 = D2                                                       # the direction the visitor arrives from
+ent_a = math.atan2(-uz2, -ux2)
+FY = SY_ + 1                                                        # arena floor is one step up
+for dx in range(-AR - 4, AR + 5):
+    for dz in range(-AR - 4, AR + 5):
         d = math.hypot(dx, dz)
         x, z = SX_ + dx, SZ_ + dz
-        if UPPER[z, x] != SY_: continue
-        for y in range(SY_ + 1, SY_ + 4):
-            if w.b.get((x, y, z), ("", "", ""))[0] in ("plant", "carpet"): w.b.pop((x, y, z), None)
-        if d < AR:
-            put(x, SY_, z, "moss_block" if noise3(x, 0, z, 171, 3) > .55 else "grass_block_top", "grass_block_side")
-            if R.random() < .55: put(x, SY_ + 1, z, "pink_petals", shape="carpet")
-        elif d < AR + 1.5:
-            put(x, SY_, z, R.choice(["stone_bricks", "mossy_stone_bricks", "stone_bricks"]))
-for k2 in range(12):                                                # stone lanterns around the ring
-    a = k2 / 12 * math.tau
-    x, z = int(round(SX_ + math.cos(a) * (AR + 3))), int(round(SZ_ + math.sin(a) * (AR + 3)))
-    if UPPER[z, x] != SY_: continue
-    put(x, SY_ + 1, z, "stone_bricks", shape="wall"); put(x, SY_ + 2, z, "stone_bricks", shape="slab")
-    put(x, SY_ + 2, z, "lantern", shape="lantern"); put(x, SY_ + 3, z, "stone_bricks", shape="slab")
-# the walk from the last bridge to the arena: a tunnel of torii lined with stone lanterns
-ux2, uz2 = D2
+        if UPPER[z, x] != SY_ or d > AR + 3: continue
+        for y in range(SY_ + 1, SY_ + 12):
+            v = w.b.get((x, y, z), ("", "", ""))
+            if v[1] in ("cherry_log", "cherry_log_top", "cherry_leaves", "pink_petals", "pink_wool") or v[0] in ("plant", "carpet"): w.b.pop((x, y, z), None)
+        if d <= AR:
+            ring = abs(d - round(d / 5) * 5) < .5 and d > 2                  # concentric rings every 5
+            ang = math.atan2(dz, dx)
+            spoke = min(abs(((ang * 8 / math.tau) % 1) - .5), .5) > .44 and d > 4  # eight radial lines
+            if d < 2.6: mat = "gold_block" if d < 1.2 else "polished_diorite"   # the seal at the centre
+            elif ring: mat = "polished_andesite"
+            elif spoke: mat = "red_nether_bricks"
+            else: mat = "stone_bricks" if _h(x, 0, z, 61) > .18 else ("mossy_stone_bricks" if _h(x, 1, z, 62) > .5 else "cracked_stone_bricks")
+            put(x, FY, z, mat); put(x, SY_, z, "stone_bricks"); UPPER[z, x] = FY
+            if _h(x, 2, z, 63) < .1: put(x, FY + 1, z, "pink_petals", shape="carpet")   # a few petals blown in
+        elif d <= AR + 1.2:
+            put(x, FY, z, "polished_andesite", shape="slab"); UPPER[z, x] = FY      # a half-step lip all round
+        elif d <= AR + 3:
+            put(x, SY_, z, "gravel" if _h(x, 3, z, 64) < .7 else "stone_bricks")    # raked gravel band
+for k2 in range(int(math.tau * (AR + 2))):                          # tamagaki: a low red fence, open at the entrance
+    a = k2 / (AR + 2)
+    if abs(math.atan2(math.sin(a - ent_a), math.cos(a - ent_a))) < .32: continue
+    x, z = int(round(SX_ + math.cos(a) * (AR + 2))), int(round(SZ_ + math.sin(a) * (AR + 2)))
+    put(x, SY_ + 1, z, "red_concrete", shape="fence"); put(x, SY_ + 2, z, "red_concrete", shape="slab")
+gx0, gz0 = SX_ + math.cos(ent_a) * (AR + 2), SZ_ + math.sin(ent_a) * (AR + 2)
+torii(gx0, gz0, SY_, -math.cos(ent_a), -math.sin(ent_a), half=4, h=9)   # the great torii at the entrance
+for k2 in range(16):                                                # lanterns on the gravel band
+    a = ent_a + (k2 + .5) / 16 * math.tau
+    if abs(math.atan2(math.sin(a - ent_a), math.cos(a - ent_a))) < .4: continue
+    stone_lantern(int(round(SX_ + math.cos(a) * (AR + 5))), int(round(SZ_ + math.sin(a) * (AR + 5))), SY_)
+for off in (.85, -.85, 2.3, -2.3):                                   # four pavilions outside the fence
+    a = ent_a + off
+    px2, pz2 = int(round(SX_ + math.cos(a) * (AR + 11))), int(round(SZ_ + math.sin(a) * (AR + 11)))
+    if UPPER[pz2, px2] == SY_: pavilion(px2, pz2, SY_)
+# the walk from the last bridge to the arena: a tunnel of torii lined with stone lanterns, a stone path
 startx, startz = BR2[-1][0], BR2[-1][1]
-for k2 in range(1, 9):
-    cx, cz = startx + ux2 * k2 * 5, startz + uz2 * k2 * 5
-    if math.hypot(cx - SX_, cz - SZ_) < AR + 2: break
-    torii(cx, cz, SY_, ux2, uz2, half=2, h=5)
-    for s2 in (-4, 4):
-        stone_lantern(int(round(cx - uz2 * s2)), int(round(cz + ux2 * s2)), SY_)
-for k2 in range(0, 30):
+for k2 in range(0, 40):
     for s2 in (-1, 0, 1):
         x, z = int(round(startx + ux2 * k2 - uz2 * s2)), int(round(startz + uz2 * k2 + ux2 * s2))
-        if UPPER[z, x] == SY_ and math.hypot(x - SX_, z - SZ_) > AR: put(x, SY_, z, "stone_bricks" if (k2 + s2) % 3 else "mossy_stone_bricks")
-# the great sakura at the back of the arena
-GX_, GZ_ = SX_, SZ_ - AR - 6
-gtop = SY_ + 22
-sakura_tree(GX_, GZ_ - 4, SY_, size=2.6)                                 # the great weeping sakura
-for k2 in range(0):                                                  # (ring disabled: the pillar's own sakura frame the arena)
-    a = k2 / 10 * math.tau + .2
-    x, z = int(round(SX_ + math.cos(a) * (AR + 9))), int(round(SZ_ + math.sin(a) * (AR + 9)))
-    if UPPER[z, x] == SY_ and (x, SY_ + 1, z) not in w.b and math.hypot(x - GX_, z - GZ_) > 14: sakura_tree(x, z, SY_, size=1.4)
-put(SX_, SY_ + 1, SZ_, "pink_wool", shape="boss")                    # the sakura boss (stand-in)
+        if UPPER[z, x] == SY_ and math.hypot(x - SX_, z - SZ_) > AR + 1.5:
+            put(x, SY_, z, "polished_andesite" if s2 == 0 else "stone_bricks")
+            for y in range(SY_ + 1, SY_ + 10):
+                if w.b.get((x, y, z), ("", "", ""))[1] in ("cherry_log", "cherry_leaves"): w.b.pop((x, y, z), None)
+for k2 in range(1, 9):
+    cx, cz = startx + ux2 * k2 * 5, startz + uz2 * k2 * 5
+    if math.hypot(cx - SX_, cz - SZ_) < AR + 6: break
+    torii(cx, cz, SY_ - 1, ux2, uz2, half=2, h=6)
+    for s2 in (-4, 4):
+        stone_lantern(int(round(cx - uz2 * s2)), int(round(cz + ux2 * s2)), SY_)
+# the sacred sakura (goshinboku) behind the arena, opposite the entrance, wrapped in a shimenawa
+back = ent_a + math.pi
+GX_, GZ_ = int(round(SX_ + math.cos(back) * (AR + 12))), int(round(SZ_ + math.sin(back) * (AR + 12)))
+sakura_tree(GX_, GZ_, SY_, size=3.0)
+for k2 in range(36):
+    a = k2 / 36 * math.tau
+    x, z = int(round(GX_ + math.cos(a) * 4.6)), int(round(GZ_ + math.sin(a) * 4.6))
+    put(x, SY_ + 4, z, "hay_block_top", "hay_block_side", shape="slab_t")
+    if k2 % 4 == 0:
+        put(x, SY_ + 3, z, "white_wool", shape="shut_s"); put(x, SY_ + 2, z, "white_wool", shape="shut_s")
+stone_lantern(GX_ - 6, GZ_ + 6, SY_); stone_lantern(GX_ + 6, GZ_ + 6, SY_)
+put(SX_, FY + 1, SZ_, "pink_wool", shape="boss")                    # the sakura boss (stand-in)
 CONTENT.append((SX_, SZ_, "boss"))
 
 # great stone arches over the road where it enters and leaves the zone: scenery gates (rounded rock, nothing to stand on)

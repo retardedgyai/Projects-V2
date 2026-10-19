@@ -59,6 +59,21 @@ small.cap { color: var(--muted); font-size: .8rem }
       <li>（今回追加）崖面の仕上げは苔・光る地衣類・つる・垂れ根。滝の下は上より荒らす（砂利の縁、苔石）。</li>
       <li>（今回追加）森の縁は段々に：草地 → 茂み → 若木 → 大木。木の下に落ち葉。</li>
     </ol>
+    <h2 style="margin-top:12px">ボス周りで取った決まり</h2>
+    <ol>
+      <li>闘技場は広く平らで、中に引っかかる物を置かない。境目（段差・柵）がひと目で分かる。入口は1つ。</li>
+      <li>目印（御神木の大桜）は闘技場の外、入口の正面奥に置き、入った瞬間に見える。</li>
+      <li>鳥居は明神鳥居の形：石の台、朱の柱、柱の外まで出る貫、額、反り上がった笠木。石灯籠は台・竿・火袋・笠・宝珠。</li>
+      <li>和の色は朱・黒い瓦・白い石・桜色の4つにしぼり、床に模様（同心円と放射線）を入れる。</li>
+    </ol>
+    <div class="src">
+      <a href="https://bugnet.io/blog/how-to-design-a-boss-arena" target="_blank" rel="noopener">ボス闘技場の作り方</a>
+      <a href="https://buildingguide.app/tutorials/japanese-gate" target="_blank" rel="noopener">鳥居（笠木と貫）</a>
+      <a href="https://foreveryard.com/how-to-make-torii-gate-in-minecraft/" target="_blank" rel="noopener">鳥居の比率</a>
+      <a href="https://en.wikipedia.org/wiki/Shimenawa" target="_blank" rel="noopener">注連縄</a>
+      <a href="https://www.planetminecraft.com/projects/?keywords=sakura+arena" target="_blank" rel="noopener">桜の闘技場の作品（Planet Minecraft）</a>
+    </div>
+    <h2 style="margin-top:12px">地形の出典</h2>
     <div class="src">
       <a href="https://polystruct.github.io/creative/worldpainter/custom.html" target="_blank" rel="noopener">WorldPainter カスタム地形の例（配合）</a>
       <a href="https://www.worldpainter.net/trac/wiki/Manual/Paints/Terrains" target="_blank" rel="noopener">WorldPainter 公式マニュアル（地形）</a>
@@ -75,6 +90,8 @@ small.cap { color: var(--muted); font-size: .8rem }
 </div>
 <script>
 const SHOTS = [
+  { id: "arena", tab: "ボス闘技場（入口側から）", img: "arena-nw.png", title: "桜のボス闘技場：参道から見たところ", text: "橋を渡ると、鳥居のトンネルと石灯籠の参道。大鳥居（明神鳥居：石の台、朱の柱、柱の外まで出た貫、額、反り上がった黒い笠木）をくぐると、一段高い円い石の床。床は5ブロックごとの同心円と8本の放射線、中央に金の印。まわりは朱の玉垣（低い柵）で、入口だけ開いている。闘技場の中には木も障害物も置かず、どこで戦っても見通せる。外側に砂利の帯と石灯籠16基、四方に瓦屋根の小さな社4棟。いちばん奥に注連縄を巻いたしだれ桜の御神木。", lv: "ボス" },
+  { id: "arena2", tab: "ボス闘技場（反対側から）", img: "arena-se.png", title: "反対側から：御神木が手前", text: "いつもの角度だと御神木が手前に来て闘技場を隠すので、入口側からの絵も作った。", lv: "ボス" },
   { id: "scarp", tab: "崖（今回）", img: "f5-scarp.png", title: "崖：ギザギザの線、崩れた石、光る地衣類", text: "崖の線を細かくジグザグにし、まっすぐな段が7ブロック以上続かないようにした。段の高さも1〜3ブロックでばらばら。崖の足元には崩れ落ちた石（砂利・丸石・苔石の小岩）が溜まり、崖面には光る地衣類・垂れ根・つる。", lv: "今回" },
   { id: "scarp1", tab: "崖（前回）", img: "v2-scarp.png", title: "崖（前回）", text: "前回。縦のすじと明暗はあるが、崖の線がまっすぐで階段が規則的。", lv: "前回" },
   { id: "gap", tab: "中段（今回）", img: "f5-gap.png", title: "中段：森の縁と足元", text: "森と草地の境目に茂みと若木を置き、いきなり大木が立たないようにした。木の下には落ち葉。崖の線も入り組んだ。", lv: "今回" },
@@ -112,5 +129,5 @@ for (const s of SHOTS) {
 }
 let start = (location.hash || "").slice(1);
 if (!start) { try { start = localStorage.getItem("f5tab") || "" } catch (e) {} }
-show(start || "scarp");
+show(start || "arena");
 </script>
