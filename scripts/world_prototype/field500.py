@@ -1035,6 +1035,12 @@ AR = int(SR_ * .45)
 ux2, uz2 = D2                                                       # the direction the visitor arrives from
 ent_a = math.atan2(-uz2, -ux2)
 FY = SY_ + 1                                                        # arena floor is one step up
+PREC = AR + 17
+for (x, y, z) in [p for p in w.b if abs(p[0] - SX_) <= PREC and abs(p[2] - SZ_) <= PREC and SY_ < p[1] < SY_ + 30]:
+    if math.hypot(x - SX_, z - SZ_) <= PREC and w.b[(x, y, z)][1] in ("cherry_log", "cherry_log_top", "cherry_leaves", "pink_wool", "oak_log", "oak_leaves", "oak_log_top"):
+        w.b.pop((x, y, z), None)
+for (x, y, z) in [p for p in w.b if abs(p[0] - SX_) <= PREC and abs(p[2] - SZ_) <= PREC and p[1] == SY_ + 1]:
+    if w.b[(x, y, z)][0] in ("carpet", "plant") and math.hypot(x - SX_, z - SZ_) <= PREC and UPPER[z, x] == SY_: w.b.pop((x, y, z), None)
 for dx in range(-AR - 4, AR + 5):
     for dz in range(-AR - 4, AR + 5):
         d = math.hypot(dx, dz)
@@ -1047,7 +1053,16 @@ for dx in range(-AR - 4, AR + 5):
             ring = abs(d - round(d / 5) * 5) < .5 and d > 2                  # concentric rings every 5
             ang = math.atan2(dz, dx)
             spoke = min(abs(((ang * 8 / math.tau) % 1) - .5), .5) > .44 and d > 4  # eight radial lines
-            if d < 2.6: mat = "gold_block" if d < 1.2 else "polished_diorite"   # the seal at the centre
+            petal = False                                                    # a five-petal sakura crest (sakura-mon) at the centre
+            for pk in range(5):
+                pa = ent_a + pk / 5 * math.tau
+                qx, qz = dx - math.cos(pa) * 4.2, dz - math.sin(pa) * 4.2
+                along = qx * math.cos(pa) + qz * math.sin(pa); across = -qx * math.sin(pa) + qz * math.cos(pa)
+                notch = along > 1.6 and abs(across) < .7
+                if (along / 3.0) ** 2 + (across / 2.3) ** 2 <= 1 and not notch: petal = True
+            if d < 1.6: mat = "gold_block"
+            elif petal: mat = "pink_concrete"
+            elif d < 7.6: mat = "polished_diorite"
             elif ring: mat = "polished_andesite"
             elif spoke: mat = "red_nether_bricks"
             else: mat = "stone_bricks" if _h(x, 0, z, 61) > .18 else ("mossy_stone_bricks" if _h(x, 1, z, 62) > .5 else "cracked_stone_bricks")
@@ -1062,16 +1077,46 @@ for k2 in range(int(math.tau * (AR + 2))):                          # tamagaki: 
     if abs(math.atan2(math.sin(a - ent_a), math.cos(a - ent_a))) < .32: continue
     x, z = int(round(SX_ + math.cos(a) * (AR + 2))), int(round(SZ_ + math.sin(a) * (AR + 2)))
     put(x, SY_ + 1, z, "red_concrete", shape="fence"); put(x, SY_ + 2, z, "red_concrete", shape="slab")
+    if k2 % 9 == 0: put(x, SY_ + 3, z, "lantern", shape="lantern")
 gx0, gz0 = SX_ + math.cos(ent_a) * (AR + 2), SZ_ + math.sin(ent_a) * (AR + 2)
 torii(gx0, gz0, SY_, -math.cos(ent_a), -math.sin(ent_a), half=4, h=9)   # the great torii at the entrance
 for k2 in range(16):                                                # lanterns on the gravel band
     a = ent_a + (k2 + .5) / 16 * math.tau
     if abs(math.atan2(math.sin(a - ent_a), math.cos(a - ent_a))) < .4: continue
     stone_lantern(int(round(SX_ + math.cos(a) * (AR + 5))), int(round(SZ_ + math.sin(a) * (AR + 5))), SY_)
-for off in (.85, -.85, 2.3, -2.3):                                   # four pavilions outside the fence
+for off in (.85, -.85, 2.3, -2.3):                                   # four pavilions outside the fence, two-tier roofs
     a = ent_a + off
     px2, pz2 = int(round(SX_ + math.cos(a) * (AR + 11))), int(round(SZ_ + math.sin(a) * (AR + 11)))
-    if UPPER[pz2, px2] == SY_: pavilion(px2, pz2, SY_)
+    if UPPER[pz2, px2] == SY_:
+        pavilion(px2, pz2, SY_, r=3)
+        for layer in range(2):                                           # a second, smaller roof floating above the first
+            rr = 2 - layer
+            for dx in range(-rr, rr + 1):
+                for dz in range(-rr, rr + 1):
+                    put(px2 + dx, SY_ + 10 + layer, pz2 + dz, "deepslate_tiles", shape="slab" if max(abs(dx), abs(dz)) == rr and layer == 0 else "full")
+        for yy in (SY_ + 9,): put(px2, yy, pz2, "red_concrete", shape="post")
+        put(px2, SY_ + 12, pz2, "gold_block", shape="post")
+for off in (1.55, -1.55):                                            # reflecting ponds between the pavilions
+    a = ent_a + off
+    qx0, qz0 = SX_ + math.cos(a) * (AR + 10), SZ_ + math.sin(a) * (AR + 10)
+    for dx in range(-7, 8):
+        for dz in range(-7, 8):
+            x, z = int(round(qx0)) + dx, int(round(qz0)) + dz
+            d = math.hypot(dx / 1.3, dz)
+            if UPPER[z, x] != SY_ or d > 5.2: continue
+            if d <= 4.2:
+                put(x, SY_ - 2, z, "gravel"); put(x, SY_ - 1, z, "water_still"); put(x, SY_, z, "water_still", shape="water")
+                UPPER[z, x] = -1
+                if _h(x, 0, z, 71) < .12: put(x, SY_ + 1, z, "lily_pad", shape="carpet")
+            else:
+                put(x, SY_, z, "polished_andesite" if _h(x, 1, z, 72) < .6 else "mossy_stone_bricks")
+    stone_lantern(int(round(qx0)) + 5, int(round(qz0)) - 3, SY_)
+for k2 in range(8):                                                  # framing sakura on the precinct edge, kept out of the sightlines
+    a = ent_a + .45 + k2 / 8 * math.tau
+    rel = abs(math.atan2(math.sin(a - ent_a), math.cos(a - ent_a)))
+    if rel < .6 or rel > math.pi - .55: continue
+    x, z = int(round(SX_ + math.cos(a) * (AR + 16))), int(round(SZ_ + math.sin(a) * (AR + 16)))
+    if UPPER[z, x] == SY_: sakura_tree(x, z, SY_, size=1.5)
 # the walk from the last bridge to the arena: a tunnel of torii lined with stone lanterns, a stone path
 startx, startz = BR2[-1][0], BR2[-1][1]
 for k2 in range(0, 40):
