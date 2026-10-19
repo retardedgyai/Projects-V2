@@ -656,7 +656,7 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False):
     if needle:
         mark(cx - int(rb) - 3, cz - int(rb) - 3, cx + int(rb) + 3, cz + int(rb) + 3)
         return
-    for _ in range(int(rt * .35) + 1):                               # trees and bushes on top
+    for _ in range(int(rt * .55) + 1):                               # trees and bushes on top
         a = R.random() * math.tau; rr = rt * .6 * math.sqrt(R.random())
         x, z = int(round(cx + math.cos(a) * rr)), int(round(cz + math.sin(a) * rr))
         th = R.randint(4, 7)
@@ -676,10 +676,23 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False):
 def rock_bridge(p0, p1, rise=3, width=1.6):
     """A natural rock bridge with a grassy walkable deck; the deck height goes into UPPER."""
     L = math.dist((p0[0], p0[2]), (p1[0], p1[2])); n = int(L * 2)
+    cpt = lambda t: (int(round(p0[0] + (p1[0] - p0[0]) * t)), int(round(p0[2] + (p1[2] - p0[2]) * t)))
+    # the span between leaving the first top and reaching the second: the slope lives only there
+    ts = 0.0
+    for i in range(n + 1):
+        x0_, z0_ = cpt(i / n)
+        if UPPER[z0_, x0_] == p0[1]: ts = i / n
+        else: break
+    te = 1.0
+    for i in range(n, -1, -1):
+        x0_, z0_ = cpt(i / n)
+        if UPPER[z0_, x0_] == p1[1]: te = i / n
+        else: break
     for i in range(n + 1):
         t = i / n
         cx, cz = p0[0] + (p1[0] - p0[0]) * t, p0[2] + (p1[2] - p0[2]) * t
-        deck = int(round(p0[1] + (p1[1] - p0[1]) * t + rise * math.sin(math.pi * t)))
+        u = min(1, max(0, (t - ts) / max(1e-6, te - ts)))
+        deck = int(round(p0[1] + (p1[1] - p0[1]) * u + rise * math.sin(math.pi * u)))
         under = 2 + 5 * (1 - math.sin(math.pi * t)) + 2 * noise3(cx, 0, cz, 151, 3)       # thicker at the ends
         wid = width + .8 * noise3(cx, 1, cz, 152, 4)
         for dx in range(-4, 5):
@@ -703,8 +716,8 @@ def rock_bridge(p0, p1, rise=3, width=1.6):
 # giant pillars stepping up and away from the high plateau's edge; each top is reached by a rock bridge from the one before
 ex, ez = 300, int(B2[300]) - 7
 EDGE_Y = at(ex, ez)
-PILLARS = [(300, 222, EDGE_Y + 10, 11, 24, 3), (300, 320, EDGE_Y + 20, 12, 27, 5),
-           (366, 400, EDGE_Y + 28, 13, 28, 1), (452, 318, EDGE_Y + 22, 9, 20, 7)]
+PILLARS = [(300, 222, EDGE_Y + 10, 15, 38, 3), (296, 322, EDGE_Y + 20, 16, 42, 5),
+           (372, 408, EDGE_Y + 28, 17, 44, 1), (456, 318, EDGE_Y + 22, 13, 34, 7)]
 for (px, pz, ty, rb, rt, sd) in PILLARS:
     mesa(px, pz, ty, rb, rt, sd)
 
@@ -712,10 +725,10 @@ for (px, pz, ty, rb, rt, sd) in PILLARS:
 def link(a, b, rise):
     (ax, az, ay, _, art, _), (bx, bz, by, _, brt, _) = a, b
     d = math.hypot(bx - ax, bz - az); ux, uz = (bx - ax) / d, (bz - az) / d
-    rock_bridge((ax + ux * (art - 5), ay, az + uz * (art - 5)), (bx - ux * (brt - 5), by, bz - uz * (brt - 5)), rise=rise)
+    rock_bridge((ax + ux * art * .84, ay, az + uz * art * .84), (bx - ux * brt * .84, by, bz - uz * brt * .84), rise=rise)
 
 
-rock_bridge((ex, EDGE_Y, ez - 2), (PILLARS[0][0], PILLARS[0][2], PILLARS[0][1] - PILLARS[0][4] + 5), rise=1)
+rock_bridge((ex, EDGE_Y, ez - 2), (PILLARS[0][0], PILLARS[0][2], PILLARS[0][1] - PILLARS[0][4] * .84), rise=0)
 link(PILLARS[0], PILLARS[1], 5)
 link(PILLARS[1], PILLARS[2], 6)
 link(PILLARS[2], PILLARS[3], 7)
@@ -723,31 +736,34 @@ for x in range(ex - 3, ex + 4):                                     # the platea
     for z in range(ez - 4, ez + 1):
         UPPER[z, x] = max(UPPER[z, x], at(x, z))
 
-# a spring on the second pillar: a pool on top, spilling over the west rim as a waterfall into a plunge pool below
+# a spring on the second pillar: a pool on top, spilling over the south rim (toward the road) as a waterfall into a plunge pool
 P1x, P1z, P1y, _, P1r, _ = PILLARS[1]
 for dx in range(-5, 6):
     for dz in range(-5, 6):
         if dx * dx + dz * dz <= 22:
-            put(P1x - 6 + dx, P1y, P1z + dz, "water_still", shape="water"); put(P1x - 6 + dx, P1y - 1, P1z + dz, "gravel")
-            UPPER[P1z + dz, P1x - 6 + dx] = -1
-for xx2 in range(P1x - P1r + 1, P1x - 10):                          # channel to the rim
-    for dz in (-1, 0, 1):
-        put(xx2, P1y, P1z + dz, "water_still", shape="water"); UPPER[P1z + dz, xx2] = -1
-fx = P1x - P1r
-gb = at(fx - 3, P1z)
-for y in range(gb + 1, P1y + 1):                                    # the fall, two blocks wide, spraying wider near the bottom
-    for dz in (-1, 0, 1):
-        put(fx, y, P1z + dz, "water_still")
-        if y < gb + 6: put(fx - 1, y, P1z + dz, "water_still", shape="water")
+            put(P1x + 4 + dx, P1y, P1z + 4 + dz, "water_still", shape="water"); put(P1x + 4 + dx, P1y - 1, P1z + 4 + dz, "gravel")
+            UPPER[P1z + 4 + dz, P1x + 4 + dx] = -1
+fz = P1z + 9
+while UPPER[fz + 1, P1x + 4] == P1y: fz += 1                        # walk the channel out to the actual rim
+for zz2 in range(P1z + 9, fz + 1):
+    for dx in (3, 4, 5):
+        put(P1x + dx, P1y, zz2, "water_still", shape="water"); UPPER[zz2, P1x + dx] = -1
+fz += 1
+gb = at(P1x + 4, fz + 3)
+for y in range(gb + 1, P1y + 1):                                    # the fall, three blocks wide, spray near the bottom
+    for dx in (3, 4, 5):
+        put(P1x + dx, y, fz, "water_still")
+        if y < gb + 6: put(P1x + dx, y, fz + 1, "water_still", shape="water")
 for dx in range(-8, 9):                                             # plunge pool
     for dz in range(-8, 9):
-        if dx * dx + dz * dz <= 50 and 0 <= fx - 2 + dx < B:
-            x2, z2 = fx - 2 + dx, P1z + dz
+        if dx * dx + dz * dz <= 50:
+            x2, z2 = P1x + 4 + dx, fz + 3 + dz
             g2 = at(x2, z2)
             for y in range(g2 - 2, g2 + 2): w.b.pop((x2, y, z2), None)
             put(x2, g2 - 3, z2, "gravel"); put(x2, g2 - 2, z2, "water_still"); put(x2, g2 - 1, z2, "water_still", shape="water")
             lake[z2, x2] = True
-CONTENT.append((fx, P1z, "falls"))
+fx = P1x + 4
+CONTENT.append((fx, fz, "falls"))
 
 # rewards on the tops: a lookout cairn, a rare herb patch by the spring, a treasure at the far end, a high camp
 for (px, pz, ty, rb, rt, sd), what in zip(PILLARS, ("cairn", "herb", "treasure", "camp")):
@@ -763,7 +779,51 @@ for (px, pz, ty, rb, rt, sd), what in zip(PILLARS, ("cairn", "herb", "treasure",
         put(px, ty + 1, pz, "campfire_log_lit", shape="fire")
         for (dx, dz) in ((-2, 0), (2, 0), (0, 2)): put(px + dx, ty + 1, pz + dz, "spruce_log", "spruce_log", shape="slab")
     CONTENT.append((px, pz, "pillar"))
-spawn(PILLARS[2][0], PILLARS[2][1], 16, 5, "lime_wool", "sprite")
+def top_spawn(px, pz, ty, rad, count, colour, shape):
+    k = tries = 0
+    while k < count and tries < count * 30:
+        tries += 1
+        a = R.random() * math.tau; r = rad * math.sqrt(R.random())
+        x, z = int(round(px + math.cos(a) * r)), int(round(pz + math.sin(a) * r))
+        if UPPER[z, x] != ty or (x, ty + 1, z) in w.b and w.b[(x, ty + 1, z)][0] not in ("plant",): continue
+        w.b.pop((x, ty + 1, z), None)
+        if shape == "upright": put(x, ty + 1, z, colour, shape="npc_low"); put(x, ty + 2, z, colour, shape="npc_high")
+        else: put(x, ty + 1, z, colour, shape=shape)
+        k += 1
+
+
+def top_herbs(px, pz, ty, n):
+    for _ in range(n):
+        x, z = px + R.randint(-4, 4), pz + R.randint(-4, 4)
+        if UPPER[z, x] == ty and (x, ty + 1, z) not in w.b:
+            put(x, ty + 1, z, R.choice(["sweet_berry_bush_stage3", "firefly_bush", "fern", "azalea_leaves"]),
+                shape="slab" if "azalea" in w.b.get((x, ty + 1, z), ("", "", ""))[1] else "plant")
+
+
+def top_rocks(px, pz, ty, ore):
+    for dx in range(-3, 4):
+        for dz in range(-3, 4):
+            for dy in range(1, 4):
+                if dx * dx + dz * dz + dy * dy * 1.5 <= 11 and R.random() < .85:
+                    put(px + dx, ty + dy, pz + dz, R.choice(["stone", "andesite", "mossy_cobblestone"] + ([ore] if ore else [])))
+
+
+# content on each top: these are fields in the sky, with their own hunting and gathering
+TOPS = [  # sprites + herbs; beetles + sap; deer herd + iron; wolves (strong) + gold
+    (PILLARS[0], [("lime_wool", "sprite", 10)], 3, None),
+    (PILLARS[1], [("black_wool", "beetle", 8), ("brown_wool", "deer", 6)], 4, "iron_ore"),
+    (PILLARS[2], [("light_gray_wool", "wolf", 9), ("lime_wool", "sprite", 5)], 3, "gold_ore"),
+    (PILLARS[3], [("red_mushroom_block", "upright", 7)], 3, "copper_ore"),
+]
+for (px, pz, ty, rb, rt, sd), spawns, herbs, ore in TOPS:
+    for (col, shp, n) in spawns:
+        top_spawn(px, pz, ty, rt * .75, n, col, shp)
+    for k2 in range(herbs):
+        a = R.random() * math.tau; r = rt * .6 * math.sqrt(R.random())
+        top_herbs(int(px + math.cos(a) * r), int(pz + math.sin(a) * r), ty, 14)
+    if ore:
+        a = R.random() * math.tau
+        top_rocks(int(px + math.cos(a) * rt * .5), int(pz + math.sin(a) * rt * .5), ty, ore)
 
 
 # great stone arches over the road where it enters and leaves the zone: scenery gates (rounded rock, nothing to stand on)
@@ -1031,3 +1091,4 @@ if __name__ == "__main__":
     print("blocks", len(w.b))
     import pickle
     pickle.dump((w.b, hi, LABELS), open("field500.pkl", "wb")); pickle.dump((FILL, STATS), open("field500-fill.pkl", "wb"))
+
