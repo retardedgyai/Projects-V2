@@ -20,7 +20,7 @@ import kotlin.random.Random
  * - Erosion: dust hits add [HIT_GAIN], standing in a pool adds [POOL_GAIN_PER_SECOND]; at [FULL] it erupts (damage and a
  *   slow) and resets. Hitting the wyrm takes [HIT_RELIEF] off; after [DECAY_AFTER_MILLIS] without gain it decays.
  *   Shown as a second boss bar while above zero.
- * - Pools: the dust burst leaves 4 inside its circle, the breath 3 along its band (radius [POOL_RADIUS], [POOL_MILLIS],
+ * - Pools: the dust burst leaves 4 inside its circle, a thrown dust clot 1 where it lands, the breath 3 along its band (radius [POOL_RADIUS], [POOL_MILLIS],
  *   at most [MAX_POOLS]). The antennae pulse makes them all burst [BURST_DELAY_MILLIS] after its hit.
  */
 internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyrmShaderFx, private val random: Random = Random.Default,
@@ -58,6 +58,7 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
                 val f = frame.facing.withY(0.0).normalize()
                 for (k in 0 until 3) addPool(frame.origin.add(f.mul(shape.length * (k + 1) / 4.0)), now)
             }
+            "shade-orb" -> addPool(frame.origin, now)                      // the thrown clot lands as a pool
             "shade-pulse" -> if (pools.isNotEmpty()) {
                 burstAt = now + BURST_DELAY_MILLIS
                 pools.forEach { fx.poolWarning(it.at, it.tag) }
@@ -126,7 +127,7 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
     private fun flat(a: Pos, b: Pos): Double = sqrt((a.x() - b.x()) * (a.x() - b.x()) + (a.z() - b.z()) * (a.z() - b.z()))
 
     companion object {
-        val DUST = setOf("shade-dust", "shade-pulse", "shade-breath", "shade-storm")
+        val DUST = setOf("shade-dust", "shade-pulse", "shade-breath", "shade-storm", "shade-orb")
         const val FULL = 100.0
         const val HIT_GAIN = 20.0
         const val POOL_GAIN_PER_SECOND = 8.0

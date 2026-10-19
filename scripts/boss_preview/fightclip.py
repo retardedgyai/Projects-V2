@@ -24,7 +24,8 @@ ROOT = Path(__file__).resolve().parents[2]
 JP = {"idle": "待機", "walk": "歩き", "strafe": "横移動", "dash": "回り込み", "hop_back": "跳び退き", "search": "探りの歩み",
       "enrage": "怒り", "shade-sweep": "翼脚薙ぎ", "shade-pounce": "飛びかかり", "shade-dust": "鱗粉炸裂", "shade-pulse": "触角の共鳴",
       "shade-breath": "翳の吐息", "shade-storm": "鱗粉嵐", "shade-turnsweep": "振り向き薙ぎ", "shade-dive": "飛び上がり急降下", "death": "死亡",
-      "flinch": "怯み"}
+      "flinch": "怯み", "relocate": "飛び移り", "awaken": "第2形態へ", "shade-bite": "噛みつき3連", "shade-tailspin": "しっぽ回転",
+      "shade-horn": "角の突き上げ", "shade-tailslap": "背後への尾打ち", "shade-orb": "鱗粉弾"}
 
 
 def label(clip):
@@ -38,6 +39,9 @@ def label(clip):
 def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
     model = ROOT / "assets/bosses/shade_wyrm.bbmodel"
     sc = Scene(model)
+    import base64, io
+    atlases = [np.asarray(Image.open(io.BytesIO(base64.b64decode(t["source"].split(",", 1)[1]))).convert("RGBA")).astype(np.float32)
+               for t in json.loads(model.read_text(encoding="utf-8"))["textures"]]
     A = {a["name"]: a for a in json.loads(model.read_text(encoding="utf-8"))["animations"]}
     rows = [json.loads(l) for l in Path(dump).read_text().splitlines()]
     tex = {p.stem: np.asarray(Image.open(p).convert("RGBA")).astype(np.float32) for p in SH.TEX.glob("*.png")}
@@ -72,6 +76,7 @@ def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
             (("cloak_r_tatters",) if fan_left else ())
         px, pz = r["player"]
         center = (carrier[0], 0, carrier[2])           # on the wyrm's feet (the ground shadow is drawn under the centre)
+        sc.atlas = atlases[1 if r.get("glowing") and len(atlases) > 1 else 0]   # the second form's glowing texture
         panel, zb = render(sc, pose, hidden=hidden, az=az, el=el, size=(W, H), scale=zoom, center=center, cy=.72,
                            bg=((52, 50, 64), (22, 20, 28)), outline=False, with_depth=True, flat=None)
         arr = np.asarray(panel).astype(np.float32).copy()
@@ -80,7 +85,7 @@ def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
         if mode != "flat":
             # glow: the arena's light as the server's rage clock had it (the dump's "rage", 0 calm .. 1 violet)
             look = "before" if mode == "before" else LF.rage_look(r["rage"]) if "rage" in r else "violet"
-            LF.light(arr, zb, r.get("lights", []), look, cam, right, up, ox, oy, zoom)
+            LF.light(arr, zb, r.get("lights", []), look, cam, right, up, ox, oy, zoom, np.abs(render.alpha - 251) < .5)
         # floor dots every 2 blocks and the arena wall (radius 22)
         for gx in (range(-22, 23, 2) if mode == "flat" else ()):
             for gz in range(-22, 23, 2):
@@ -119,7 +124,7 @@ def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
             text(img, (bx + 80, by - 18), "侵食", SMALL, (210, 170, 250))
             d.rectangle((bx, by, bx + 200, by + 5), fill=(60, 48, 72)); d.rectangle((bx, by, bx + int(200 * er / 100), by + 5), fill=(196, 120, 240))
         broke = [n for n, b in zip(("角が折れた", "右の扇が裂けた", "左の扇が裂けた"), (horns, fan_right, fan_left)) if b]
-        hdr = f"{r['t']:5.1f}s  {label(r['clip'])}" + ("（怒り後）" if r["enraged"] else "") + (f"  [{'・'.join(broke)}]" if broke else "")
+        hdr = f"{r['t']:5.1f}s  {label(r['clip'])}" + ("（第3段階・怒り）" if r["enraged"] else "（第2形態）" if r.get("glowing") else "") + (f"  [{'・'.join(broke)}]" if broke else "")
         text(img, (10, 8), hdr, FONT, (236, 228, 244))
         frames.append(img.convert("P", palette=Image.ADAPTIVE, colors=128))
     frames[0].save(out, save_all=True, append_images=frames[1:], duration=round(1000 / fps), loop=0, optimize=True)

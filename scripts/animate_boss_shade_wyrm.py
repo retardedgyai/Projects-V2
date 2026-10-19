@@ -750,31 +750,33 @@ def relocate_pose(sk, rest_feet, t, enraged=False, theta=0.0):
     return p
 
 
-FRENZY_SECONDS = 3.0
+AWAKEN_SECONDS = 3.0
 
 
-def frenzy_pose(sk, rest_feet, t, theta=0.0):
-    """狂竜化 (2026-10-19, phase three at 35 %), 3.0 s, enraged: shudders low with the fans clamped, then rears onto
-    the hind legs, throws the fans wide and roars at the sky (1.3-2.3 s), and slams back down into the crouch."""
+def awaken_pose(sk, rest_feet, t):
+    """第2形態への目覚め (2026-10-19, HP70 %), 3.0 s, wings still folded-arm form: shudders low with the wings clamped
+    while the shade starts to glow through it, rears onto the hind legs with the wings thrown wide and roars at the
+    sky (1.3-2.3 s), and drops back onto the wing-arms. The server switches the glowing texture in at the roar."""
     p = {}
     rear = smooth(t, .9, 1.3) * (1 - smooth(t, 2.3, 2.6))
-    enraged_stance(sk, p, theta * (1 - rear))
     trem = math.sin(t * 2 * math.pi * 9) * smooth(t, .1, .3) * (1 - smooth(t, .8, .95))
     roar = math.sin(t * 2 * math.pi * 7) * smooth(t, 1.3, 1.45) * (1 - smooth(t, 2.1, 2.3))
-    body(sk, p, (K(t, [(0, 0), (.4, 6), (.9, 8), (1.3, -32), (2.2, -30), (2.6, 6), (3.0, 0)]) , 2 * trem, 2 * trem + 1.5 * roar),
+    body(sk, p, (K(t, [(0, 0), (.4, 6), (.9, 8), (1.3, -30), (2.2, -28), (2.6, 6), (3.0, 0)]), 2 * trem, 2 * trem + 1.5 * roar),
          (0, K(t, [(0, 0), (.4, -6), (.9, -7), (1.3, 10), (2.2, 9), (2.55, -6), (3.0, 0)]), K(t, [(0, 0), (1.3, -8), (2.3, -8), (2.6, 2), (3.0, 0)])))
     feet = {k: rest_feet[k] + (np.array([0, 30 * rear, -10 * rear]) if k.startswith("f") else np.zeros(3)) for k in rest_feet}
     solve_legs(sk, p, feet)
-    add(p, "neck", (K(t, [(0, 0), (.9, 16), (1.3, -26), (2.2, -24), (2.6, 4), (3.0, 0)]), 3 * roar, 0))
-    add(p, "skull", (K(t, [(0, 0), (1.3, -18), (2.2, -18), (2.6, 0)]), 0, 2 * roar))
+    add(p, "neck", (K(t, [(0, 0), (.9, 6), (1.3, -30), (2.2, -28), (2.6, -6), (3.0, -10)]), 3 * roar, 0))
+    add(p, "skull", (K(t, [(0, 0), (1.3, -14), (2.2, -14), (2.6, 8), (3.0, 8)]), 0, 2 * roar))
     add(p, "jaw", (K(t, [(0, 0), (1.2, 6), (1.4, 42), (2.1, 40), (2.4, 6), (3.0, 0)]), 0, 0))
     for sd, sg in (("l", 1), ("r", -1)):
-        add(p, f"cloak_{sd}", (0, 0, (K(t, [(0, 0), (.9, -14), (1.3, 34), (2.2, 30), (2.6, -8), (3.0, 0)]) + 3 * trem) * sg))
-        add(p, f"horn_{sd}", (0, 0, 2 * roar * sg))
+        add(p, f"wing_{sd}", (0, -10 * rear * sg, (K(t, [(0, 0), (.9, -8), (1.3, 62), (2.2, 58), (2.6, -6), (3.0, 0)]) + 3 * trem) * sg))
+        add(p, f"wing_{sd}_fore", (0, 0, -36 * rear * sg))
+        for h in ("hinge02", "hinge09", "hinge10", "hinge14"):
+            add(p, f"wing_{sd}_{h}", (0, 0, 16 * rear * sg))
+        add(p, f"crown_{sd}", (-10 * rear, 12 * roar * sg, 0))
     for k, b in enumerate(TAIL):
         add(p, b, (K(t, [(0, 0), (1.3, 16), (2.2, 14), (2.6, -6), (3.0, 0)]) * (1 + .2 * k), 4 * trem, 0))
     return p
-
 
 def flinch_pose(sk, rest_feet, t, enraged=False, theta=0.0):
     """怯み (a part broke), 1.4 s: snaps back and up, shakes its head, the fans jerk out, then gathers itself."""
@@ -1006,7 +1008,7 @@ def main(path=MODEL, carpal_drop=12.0):
         new[f"hop_back{suffix}"] = baked(sk, f"hop_back{suffix}", 1.1, lambda t, e=enraged: hop_back_pose(sk, rest_feet, t, e, theta), False)
     for suffix, enraged in (("", False), ("_enraged", True)):
         new[f"relocate{suffix}"] = baked(sk, f"relocate{suffix}", 3.0, lambda t, e=enraged: relocate_pose(sk, rest_feet, t, e, theta), False)
-    new["frenzy"] = baked(sk, "frenzy", FRENZY_SECONDS, lambda t: frenzy_pose(sk, rest_feet, t, theta), False)
+    new["awaken"] = baked(sk, "awaken", AWAKEN_SECONDS, lambda t: awaken_pose(sk, rest_feet, t), False)
     n = int(ENRAGE_SECONDS * 20)
     new["enrage"] = clip(sk, "enrage", ENRAGE_SECONDS, n,
                          [enrage_pose(sk, rest_feet, theta, ENRAGE_SECONDS * i / n) for i in range(n + 1)], "once")

@@ -146,12 +146,15 @@ data class MobAbility(
     val damageType: dev.projects.server.coreloop.CoreDamageType = dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
     /** Never picked at random; the encounter starts it by id when its situation comes up (a combo, a turn). */
     val scripted: Boolean = false,
+    /** Earlier hits (ms from the start) before the main one at [telegraphMillis], e.g. the first two of three bites. */
+    val earlyHitsMillis: List<Long> = emptyList(),
 ) {
     init {
         require(id.isNotBlank() && maximumStartRange > 0.0 && damage > 0.0)
         require(telegraphMillis > 0L && trackingMillis in 0 until telegraphMillis)
         require(recoveryMillis >= 0L && cooldownMillis >= 0L && weight > 0)
         require(minimumStartRange in 0.0..maximumStartRange && maximumHealthRatio in 0.0..1.0)
+        require(earlyHitsMillis.all { it in 1 until telegraphMillis } && earlyHitsMillis == earlyHitsMillis.sorted())
     }
 }
 
@@ -165,6 +168,8 @@ data class MobAbilityFrame(
     val phase: MobAbilityPhase,
     val startedAt: Long,
     val casterOrigin: Pos = origin,
+    /** How many of [MobAbility.earlyHitsMillis] have struck. */
+    val earlyHits: Int = 0,
 )
 
 sealed interface MobAbilityEvent {
@@ -238,6 +243,11 @@ class MobAbilityManager(
                     facing = normalizeHorizontal(target.sub(frame.casterOrigin)),
                 )
             }
+        }
+        while (frame.phase != MobAbilityPhase.RECOVERY && frame.earlyHits < frame.ability.earlyHitsMillis.size &&
+            elapsed >= frame.ability.earlyHitsMillis[frame.earlyHits]) {
+            events += MobAbilityEvent.Hit(frame)
+            frame = frame.copy(earlyHits = frame.earlyHits + 1)
         }
         if (frame.phase == MobAbilityPhase.LOCKED && elapsed >= frame.ability.telegraphMillis) {
             events += MobAbilityEvent.Hit(frame)

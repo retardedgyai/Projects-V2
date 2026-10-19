@@ -122,6 +122,10 @@ internal class BossModelView(
     private var hurtUntil = 0L
     private var revealAt = 0L
     private var foldAt = 0L
+    /** The texture state between hit flashes: "normal", or "frenzy" once the second form glows. */
+    private var baseState = "normal"
+    private var glowAt = 0L
+    internal var glowing = false; private set
 
     init {
         model.init(instance, origin)
@@ -146,7 +150,8 @@ internal class BossModelView(
         if (disposed || dying) return
         lastNow = now
         if (shownUntil != 0L && now >= shownUntil) shown(loop)
-        if (hurtUntil != 0L && now >= hurtUntil) { hurtUntil = 0L; model.setState("normal") }
+        if (hurtUntil != 0L && now >= hurtUntil) { hurtUntil = 0L; model.setState(baseState) }
+        if (glowAt != 0L && now >= glowAt) { glowAt = 0L; glow() }
         if (revealAt != 0L && now >= revealAt) { revealAt = 0L; reveal() }
         if (foldAt != 0L && now >= foldAt) { foldAt = 0L; hideFolded() }
         val dx = at.x() - last.x(); val dz = at.z() - last.z()
@@ -209,6 +214,24 @@ internal class BossModelView(
     }
 
     /**
+     * 第2形態 (2026-10-19): the `awaken` roar, and at its peak the glowing texture (the WSEE state "frenzy" from
+     * `shade_wyrm_frenzy.png`); its vein pixels are self-lit by the pack's item shader (alpha 251), so they show in
+     * the dark while the body stays dark.
+     */
+    fun awaken(now: Long) {
+        if (disposed || dying || glowing || glowAt != 0L) return
+        if (has("awaken")) { animations.playOnce("awaken", 2) {}; lastNow = now; shown("awaken", once = true) }
+        glowAt = now + AWAKEN_GLOW_MILLIS
+    }
+
+    private fun glow() {
+        if (disposed) return
+        glowing = true
+        baseState = "frenzy"
+        if (hurtUntil == 0L) model.setState(baseState)
+    }
+
+    /**
      * The enrage clip grows the rage bones from scale 0, so they are shown a moment after it starts (not while
      * WSEE still blends from the loop at full scale), and the bones it shrinks away are hidden after.
      */
@@ -265,7 +288,7 @@ internal class BossModelView(
     fun point(bone: String, px: net.minestom.server.coordinate.Point): net.minestom.server.coordinate.Point? =
         if (disposed) null else model.getBonePoint(bone, px.mul(0.25))
 
-    private fun has(animation: String) = animations.getAnimation(animation) != null
+    internal fun has(animation: String) = animations.getAnimation(animation) != null
 
     /** Once enraged, a clip authored in the enraged stance (`<name>_enraged`) replaces the phase-one one. */
     private fun phased(animation: String) = if (enraged && has("${animation}_enraged")) "${animation}_enraged" else animation
@@ -275,6 +298,8 @@ internal class BossModelView(
         private const val ENRAGE_REVEAL_MILLIS = 300L
         private const val ENRAGE_FOLD_MILLIS = 2500L
         private const val GAIT_SETTLE_MILLIS = 200L
+        /** shade_wyrm `awaken`: the roar peaks at 1.3 s; the glow comes in with it. */
+        private const val AWAKEN_GLOW_MILLIS = 1300L
         fun available(modelId: String) = modelId in BossModelLibrary.models()
         /**
          * Entity yaw -> WSEE model rotation. WSEE turns a model by (180 - rotation), so a Blockbench +Z front

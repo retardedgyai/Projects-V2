@@ -163,6 +163,14 @@ void main() {
         return;
     }
     int marker = int(color.a * 255.0 + 0.5);
+    if (marker == 251) {
+        // 黒翳竜 second form (shade_wyrm_frenzy.png, scripts/build_boss_shade_wyrm.py): the glowing veins are self-lit,
+        // breathing slowly, while the rest of the body takes the world's light as usual.
+        float n = vfxHash(floor((vfxPosition + CameraOffset) * 2.0));
+        float breathe = 0.9 + 0.1 * sin(GameTime * 24000.0 * 0.35 + n * 6.2832);
+        finishUnlit(vec4(min(color.rgb * vertexColor.rgb * breathe * 1.15, vec3(1.0)), 1.0) * ColorModulator);
+        return;
+    }
     if (marker == 253 || marker == 121 || marker == 65) {
         // Camera-relative, so the cells drift slightly as the camera moves: reads as heat shimmer.
         float n = vfxHash(floor((vfxPosition + CameraOffset) * 8.0));

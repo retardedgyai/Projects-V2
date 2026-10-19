@@ -108,6 +108,9 @@ INNER_VEIN = (56, 32, 84)
 # 第2形態 (2026-10-19, 藍がCを選んだ): the same atlas with the shade glowing through it. Only the violet parts change
 # (veins, dust flecks, the inner membrane, the hem, antennae, scale glints, claws); the dark hide stays dark, so the
 # glow reads as veins of light. The server switches to it with the WSEE texture state "frenzy" in phase two.
+SELF_LIT = 251
+
+
 def frenzy_pixel(p):
     """Violet pixels (blue well above green) light up toward a hot violet-white, scaled by how violet they are."""
     r, g, b, a = p
@@ -115,7 +118,8 @@ def frenzy_pixel(p):
         return p
     k = min(1.0, (b - g - 14) / 40) * min(1.0, (b - 46) / 50)
     hot = (min(255, int(r * 1.9 + 60)), min(255, int(g * 1.5 + 22)), min(255, int(b * 1.7 + 70)))
-    return tuple(int(c + (h - c) * k) for c, h in zip((r, g, b), hot)) + (a,)
+    # Alpha 251 marks the pixel self-lit for the pack's item shader (scripts/shaders/item.fsh): the veins glow in the dark.
+    return tuple(int(c + (h - c) * k) for c, h in zip((r, g, b), hot)) + (SELF_LIT if k > .3 else a,)
 
 
 def frenzy_pixels(pixels):
