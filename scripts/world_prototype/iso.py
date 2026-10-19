@@ -54,7 +54,7 @@ class World:
         return v is not None and v[0] == "full" and v[1] not in ("glass", "water_still", "oak_leaves", "spruce_leaves")
 
 
-THIN = ("shut_n", "shut_w", "deer", "beetle", "sprite", "boss", "cloth_e", "cloth_w", "rabbit", "boar", "frog", "wolf", "sheep_x", "sheep_z", "crop", "plant", "fire", "arm_z", "arm_x", "npc_low", "npc_high", "chain", "lantern", "post", "carpet", "shut_s", "shut_e", "pane_x", "pane_z", "water", "thinlog")
+THIN = ("shut_n", "shut_w", "deer", "beetle", "sprite", "boss", "cloth_e", "cloth_w", "rabbit", "boar", "frog", "wolf", "sheep_x", "sheep_z", "crop", "plant", "fire", "arm_z", "arm_x", "npc_low", "npc_high", "chain", "lantern", "post", "carpet", "shut_s", "shut_e", "pane_x", "pane_z", "water", "thinlog", "ceil")
 
 
 def solid(world, p):
@@ -134,6 +134,7 @@ def boxes(shape):
     if shape == "post": return [(.375, 0, .375, .625, 1, .625)]
     if shape == "thinlog": return [(.25, 0, .25, .75, 1, .75)]
     if shape == "carpet": return [(0, 0, 0, 1, .0625, 1)]
+    if shape == "ceil": return [(0, .9375, 0, 1, 1, 1)]
     if shape == "lantern": return [(.3125, 0, .3125, .6875, .5625, .6875)]
     if shape.startswith("fence"):  # fence_nesw flags e.g. fence_ns
         out = [(.375, 0, .375, .625, 1, .625)]

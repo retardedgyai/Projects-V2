@@ -42,8 +42,12 @@ def fbm(octaves, base, gain, seed):
 zz, xx = np.mgrid[0:B, 0:B].astype(np.float32)
 
 
+_WX, _WZ = None, None
 def bump(cx, cz, rx, rz, h, p=2.0):
-    d = np.sqrt(((xx - cx) / rx) ** 2 + ((zz - cz) / rz) ** 2)
+    global _WX, _WZ
+    if _WX is None: _WX, _WZ = (fbm(3, 6, .5, 901) - .5) * 2, (fbm(3, 6, .5, 902) - .5) * 2
+    d = np.sqrt(((xx + _WX * rx * .35 - cx) / rx) ** 2 + ((zz + _WZ * rz * .35 - cz) / rz) ** 2)
+    d = d * (1 + (fbm(3, 10, .5, 903 + int(cx)) - .5) * .5)
     t = np.clip(1 - d, 0, 1)
     return h * t ** p * (3 - 2 * t) if p == 0 else h * (t * t * (3 - 2 * t)) ** (p / 2)
 
@@ -76,8 +80,9 @@ RISE = .7 + fbm(3, 4, .5, 66) * .6                                              
 step1 = np.clip((B1[None, :] + jag - zz) / width + .5, 0, 1)    # 1 north of B1
 step2 = np.clip((B2[None, :] + jag * .8 - zz) / width + .5, 0, 1)    # 1 north of B2
 H = LOW + (MID - LOW) * RISE * step1 + (HIGH - MID) * RISE * step2
-H += (fbm(5, 3, .5, 1) - .5) * 7 + (fbm(4, 9, .5, 2) - .5) * 3           # gentle rolls inside each level
+H += (fbm(4, 3, .5, 1) - .5) * 7 + (fbm(2, 9, .5, 2) - .5) * 3           # gentle rolls inside each level
 H += bump(*TREE, 75, 65, 12)                                              # the tree hill
+H += bump(TREE[0] + 38, TREE[1] - 20, 22, 16, 4) + bump(TREE[0] - 45, TREE[1] + 10, 18, 26, 3)   # shoulders: not one perfect dome
 H += bump(*TOWER, 55, 45, 7)                                              # tower knoll
 _bd = np.hypot(xx - BOSS[0], zz - BOSS[1])
 _floor = float(np.median(H[_bd < 30])) - 3
@@ -98,7 +103,8 @@ PATHS = [[REST, (150, 252), (112, 240)],                                  # fung
          [(330, 255), (372, 214), (398, 196)],                            # foot of the mining scarp
          [(224, 140), (300, 112), (352, 96), (374, 90)],                  # boss arena
          [(218, 112), (160, 96), (108, 84)],                              # tower
-         [(110, 240), (80, 300), (70, 345), (90, 398)]]                   # west forest loop: fungal -> woods -> pond
+         [(110, 240), (80, 300), (70, 345), (90, 398)],                   # west forest loop: fungal -> woods -> pond
+         [(224, 170), (231, 148), (240, 137), (249, 131)]]    # to the great tree's hollow (dungeon)
 
 
 def polyline(pts, n=10):
@@ -178,6 +184,10 @@ gy_, gx_ = np.gradient(H)
 slope = np.hypot(gx_, gy_)
 used = np.zeros((B, B), bool)
 CONTENT = []                      # (x, z, kind) of everything a player can do something at
+LABELS_POI = []
+SECRETS = []
+def cache(x, y, z, what):
+    put(x, y, z, "barrel_top", "barrel_side"); SECRETS.append((x, z, what))
 
 
 def at(x, z):
@@ -251,7 +261,7 @@ for z in range(B):
             put(x, h, z, *(("moss_block",) if n > .72 else ("grass_block_top", "grass_block_side") if n > .64 else (TM.cliff_block(x, h, z, (h - fb) / (ft - fb), recess),)))
             continue
         top = TM.surface(x, z, min(slope[z, x], .4) if near_water else slope[z, x], FOREST_F[z, x], DAMP_F[z, x])
-        if 0 < anyway[z, x] - 2 < 2.5 and _h(x, 3, z, 11) < .2: top = ("coarse_dirt", "coarse_dirt")     # trampled verge
+        if 0 < anyway[z, x] - 2 < 1.2 and noise3(x, 3, z, 11, 3) > .62: top = ("coarse_dirt", "coarse_dirt")     # trampled verge, in runs
         put(x, h, z, *top)
         if slope[z, x] < 1.2:  # half steps so nothing on walkable ground needs a jump
             ups = [hi[z + dz, x + dx] for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)) if 0 <= x + dx < B and 0 <= z + dz < B]
@@ -376,7 +386,7 @@ def scatter_plants(cx, cz, rad, density, kinds):
         put(x, y, z, kind, shape="plant" if kind not in ("moss_block", "leaf_litter", "dark_oak_leaves") else "carpet")
 
 
-def oak(x, z, kind="oak", big=False, form=None):
+def oak(x, z, kind="oak", big=False, form=None, lift=0):
     """Broadleaf/conifer with a form: round, tall, wide, lean, snag. Forms vary the silhouette so a forest is not a field of lollipops."""
     if not (3 <= x < B - 4 and 3 <= z < B - 4) or used[z, x] or road[z, x] or lake[z, x] or stream[z, x] or slope[z, x] > 1.0: return
     g = at(x, z)
@@ -393,7 +403,7 @@ def oak(x, z, kind="oak", big=False, form=None):
         mark(x - 2, z - 2, x + 2, z + 2); return
     form = form or R.choices(["round", "tall", "wide", "lean", "snag"], [4, 3, 3, 2, .4])[0]
     cells = ((0, 0), (1, 0), (0, 1), (1, 1)) if big else ((0, 0),)
-    th = {"round": R.randint(5, 7), "tall": R.randint(9, 12), "wide": R.randint(4, 6), "lean": R.randint(6, 8), "snag": R.randint(5, 8)}[form] + (4 if big else 0)
+    th = {"round": R.randint(5, 7), "tall": R.randint(9, 12), "wide": R.randint(4, 6), "lean": R.randint(6, 8), "snag": R.randint(5, 8)}[form] + (4 if big else 0) + lift
     lx, lz = (R.choice((-1, 1)), R.choice((-1, 1))) if form == "lean" else (0, 0)
     top = (x, z)
     for i, y in enumerate(range(g + 1, g + th + 1)):
@@ -457,21 +467,65 @@ put(hx - 2, TG + 1, hz + 3, "soul_lantern", shape="lantern"); put(hx + 1, TG + 1
 
 # ---------------- giant roots surfacing across the land ----------------
 TX0, TZ0 = TREE
-ROOTS = [((TX0 - 10, TG, TZ0 + 6), (214, TG + 12, 136), (192, at(192, 142), 142), 3.2, 1.6),            # arches over the north road
-         ((TX0 + 14, TG - 2, TZ0 - 4), (300, TG + 8, 104), (345, at(345, 95), 95), 2.8, 1.4),            # toward the boss
-         ((TX0 - 12, TG - 2, TZ0 + 12), (188, TG + 6, 182), (150, at(150, 214), 214), 2.8, 1.4),         # pours over the scarp
-         ((TX0 - 6, TG - 2, TZ0 - 16), (170, TG + 8, 84), (125, at(125, 78), 78), 2.6, 1.2),             # toward the tower
-         ((345, at(345, 95) + 1, 95), (372, at(372, 90) + 10, 90), (392, at(392, 58), 58), 1.8, 1.0)]
-for (p0, apex, p2, r0, r1) in ROOTS:
-    root_arch(p0, apex, p2, r0, r1)
-# smaller roots breaking the surface in the meadows
-for _ in range(26):
-    x, z = R.randrange(30, 470), R.randrange(30, 470)
-    if anyway[z, x] < 8 or lake[z, x] or used[z, x]: continue
-    a = R.random() * math.tau; L = R.uniform(8, 16)
-    p0 = (x, at(x, z) - 1, z); p2 = (x + math.cos(a) * L, at(int(x + math.cos(a) * L), int(z + math.sin(a) * L)) - 1, z + math.sin(a) * L)
-    apex = ((p0[0] + p2[0]) / 2, max(p0[1], p2[1]) + R.uniform(2, 4), (p0[2] + p2[2]) / 2)
-    if 0 <= int(p2[0]) < B and 0 <= int(p2[2]) < B: root_arch(p0, apex, p2, 1.2, .7, hang=False)
+def surface_root(pts, r0, r1, seed, bury_road=True):
+    """A root running out from the tree just under the turf: it heaves up as a mossy hump, sinks back under the grass,
+    and comes up again further on, thinner each time. Where it crosses a road or water it stays under (the road was laid over it)."""
+    pl = polyline(pts, 6)
+    seg = np.r_[0, np.hypot(*np.diff(pl, axis=0).T)]; s_ = np.cumsum(seg); L = float(s_[-1])
+    n = int(L * 2)
+    for i in range(n + 1):
+        d = L * i / n
+        j = int(np.searchsorted(s_, d)); j = min(len(pl) - 1, max(1, j))
+        t = (d - s_[j - 1]) / max(1e-6, seg[j])
+        x = pl[j - 1][0] + (pl[j][0] - pl[j - 1][0]) * t; z = pl[j - 1][1] + (pl[j][1] - pl[j - 1][1]) * t
+        f = d / L
+        lat = (noise3(d * .08, 0, 0, seed, 1) - .5) * 6 * min(1, f * 4)          # it wanders
+        ang = math.atan2(pl[j][1] - pl[j - 1][1], pl[j][0] - pl[j - 1][0]) + math.pi / 2
+        x += math.cos(ang) * lat; z += math.sin(ang) * lat
+        r = r0 * (1 - f) ** .9 + r1 * f
+        xi, zi = int(round(x)), int(round(z))
+        if not (1 <= xi < B - 1 and 1 <= zi < B - 1): continue
+        g = at(xi, zi)
+        if bury_road and (anyway[zi, xi] < 4 or lake[zi, xi] or stream[zi, xi]): continue
+        e = math.sin(d / (9 + noise3(d * .05, 3, 0, seed, 1) * 10) + seed) * .5 + .5 # 1 heaved up .. 0 under the turf
+        e = max(e, 1 - f * 6)                                                    # always up near the trunk
+        if e < .35: continue
+        cy = g - r + r * 1.3 * e
+        ri = int(math.ceil(r))
+        for dx in range(-ri, ri + 1):
+            for dz in range(-ri, ri + 1):
+                for dy in range(-ri, ri + 1):
+                    if dx * dx + dz * dz + dy * dy > r * r + .3: continue
+                    px, py, pz = xi + dx, int(round(cy)) + dy, zi + dz
+                    if not (0 <= px < B and 0 <= pz < B): continue
+                    gg = at(px, pz)
+                    if py < gg: continue
+                    top = dx * dx + dz * dz + (dy + 1) ** 2 > r * r + .3
+                    if top and noise3(px, py, pz, 31, 2.5) > .5: put(px, py, pz, "moss_block")
+                    else: put(px, py, pz, *bark(px, py, pz))
+        if e > .5 and r > 1.2:                                                   # torn turf along the heave
+            for dx, dz in ((ri + 1, 0), (-ri - 1, 0), (0, ri + 1), (0, -ri - 1)):
+                a, b2 = xi + dx, zi + dz
+                if 0 <= a < B and 0 <= b2 < B and not road[b2, a] and (a, at(a, b2), b2) in w.b and _h(a, 0, b2, seed) < .5:
+                    put(a, at(a, b2), b2, "rooted_dirt")
+                    if _h(a, 1, b2, seed) < .3 and (a, at(a, b2) + 1, b2) not in w.b: put(a, at(a, b2) + 1, b2, "fern", shape="plant")
+
+
+# one great root arches over the north road as a gate; the rest run out under the turf, surfacing and sinking
+root_arch((TX0 - 10, TG, TZ0 + 6), (214, TG + 12, 136), (192, at(192, 142), 142), 3.2, 1.6)
+RR = [[(TX0 + 12, TZ0 - 2), (290, 108), (345, 95), (392, 70)],                 # toward the boss hollow
+      [(TX0 - 10, TZ0 + 12), (196, 168), (165, 205), (148, 225)],             # down the scarp
+      [(TX0 - 8, TZ0 - 12), (195, 92), (150, 84), (118, 80)],                 # toward the tower
+      [(TX0 + 10, TZ0 + 12), (275, 160), (300, 190)],
+      [(TX0 + 4, TZ0 - 14), (255, 70), (270, 35)],
+      [(TX0 - 14, TZ0 + 2), (185, 125), (160, 140)],
+      [(TX0 + 14, TZ0 + 6), (285, 130), (320, 145), (340, 170)]]
+for i, pts in enumerate(RR):
+    surface_root(pts, 2.6 if i < 3 else 2.0, .5, 500 + i * 17)
+    if len(pts) > 2:                                                        # a side root forks off near the middle
+        mx, mz = pts[len(pts) // 2]; a0 = math.atan2(pts[-1][1] - pts[0][1], pts[-1][0] - pts[0][0]) + (1 if i % 2 else -1) * .9
+        surface_root([(mx, mz), (mx + math.cos(a0) * 22, mz + math.sin(a0) * 22)], 1.3, .4, 600 + i * 13)
+CONTENT.append((300, 120, "roots"))
 
 # ---------------- world boss: 根の主, a hollow walled in by roots ----------------
 BX, BZ = BOSS
@@ -479,20 +533,24 @@ bg = at(BX, BZ)
 for x in range(BX - 36, BX + 37):                                 # arena floor: root-bound earth, rings of moss
     for z in range(BZ - 36, BZ + 37):
         d = math.hypot(x - BX, z - BZ)
-        if d < 30 and 0 <= x < B and 0 <= z < B:
+        if d < 30 * (1 + .16 * math.sin(3 * math.atan2(z - BZ, x - BX) + 1) + .08 * math.sin(5 * math.atan2(z - BZ, x - BX))) and 0 <= x < B and 0 <= z < B:
             for y in range(at(x, z) + 1, at(x, z) + 6): w.b.pop((x, y, z), None)
             n = noise3(x, 0, z, 51, 3)
             put(x, at(x, z), z, "rooted_dirt" if n > .55 else "moss_block" if n > .4 else "coarse_dirt" if n > .25 else "podzol_top", "podzol_side")
 mark(BX - 36, BZ - 36, BX + 36, BZ + 36)
-for k2 in range(14):                                              # the wall: overlapping root arcs, one gap toward the road
-    a0 = k2 / 14 * math.tau
-    if abs(math.atan2(math.sin(a0 - 2.6), math.cos(a0 - 2.6))) < .35: continue
-    a1 = a0 + math.tau / 14 * 1.3
-    p0 = (BX + math.cos(a0) * 31, bg - 1, BZ + math.sin(a0) * 31)
-    p2 = (BX + math.cos(a1) * 31, bg - 1, BZ + math.sin(a1) * 31)
+RAD = lambda a: 31 * (1 + .16 * math.sin(3 * a + 1) + .08 * math.sin(5 * a))
+a0 = 0.0
+while a0 < math.tau - .2:                                          # the wall: root arcs of uneven span and height, a wide gap to the road
+    span = R.uniform(.38, .7)
+    a1 = a0 + span
+    if abs(math.atan2(math.sin(a0 + span / 2 - 2.6), math.cos(a0 + span / 2 - 2.6))) < .45: a0 = a1 - .05; continue
+    p0 = (BX + math.cos(a0) * RAD(a0), bg - 1, BZ + math.sin(a0) * RAD(a0))
+    p2 = (BX + math.cos(a1) * RAD(a1), bg - 1, BZ + math.sin(a1) * RAD(a1))
     am = (a0 + a1) / 2
-    apex = (BX + math.cos(am) * 30, bg + R.uniform(16, 22), BZ + math.sin(am) * 30)
-    root_arch(p0, apex, p2, 2.4, 1.8, follow=False)
+    hgt = R.choice([R.uniform(5, 9), R.uniform(12, 18), R.uniform(18, 26)])
+    apex = (BX + math.cos(am) * (RAD(am) + R.uniform(-4, 3)), bg + hgt, BZ + math.sin(am) * (RAD(am) + R.uniform(-4, 3)))
+    root_arch(p0, apex, p2, R.uniform(1.8, 3.2), R.uniform(1.2, 2.0), follow=False)
+    a0 = a1 - R.uniform(.05, .15)
 # the stump at the centre, glowing cracks
 for y in range(bg + 1, bg + 6):
     r = 6.5 - (y - bg) * .35
@@ -527,23 +585,33 @@ for x in range(FX - 50, FX + 51):
         if not (0 <= x < B and 0 <= z < B) or road[z, x] or lake[z, x] or stream[z, x]: continue
         d = math.hypot((x - FX) / 48, (z - FZ) / 40)
         if d < 1:
-            n = noise3(x, 0, z, 71, 7)
+            n = noise3(x, 0, z, 71, 14)
             g = at(x, z)
-            if d < .7 and n > .64:
-                put(x, g, z, "water_still", shape="water")               # damp pools
-            elif n > .45 or d < .5:
-                put(x, g, z, "podzol_top", "podzol_side") if n < .55 else put(x, g, z, "moss_block")
+            if math.hypot(x - FX + 2, z - FZ - 8) < 6 + 2 * noise3(x, 1, z, 72, 3) and not used[z, x]:
+                put(x, g, z, "water_still", shape="water")               # one dark pool in the bottom of the hollow
+            elif n > .42 or d < .55:
+                put(x, g, z, "podzol_top", "podzol_side") if n < .6 else put(x, g, z, "moss_block")
 
 
 def giant_mushroom(x, z, height, cap_r, red=True):
     g = at(x, z)
-    lean = (R.uniform(-1.5, 1.5), R.uniform(-1.5, 1.5))
+    la = R.uniform(0, math.tau); lm = height * R.uniform(.18, .3)
+    lean = (math.cos(la) * lm, math.sin(la) * lm)
     top = (x + lean[0], g + height, z + lean[1])
-    tube((x, g - 1, z), (x + lean[0] * .4, g + height * .5, z + lean[1] * .4), 1.9, 1.4, mat=("mushroom_stem",))
-    tube((x + lean[0] * .4, g + height * .5, z + lean[1] * .4), top, 1.4, 1.2, mat=("mushroom_stem",))
-    for k2 in range(5):                                           # root flare
-        a = k2 / 5 * math.tau
-        tube((x, g + 1.5, z), (x + math.cos(a) * 3.5, g - 1, z + math.sin(a) * 3.5), 1.0, .6, mat=("mushroom_stem",))
+    pts = bez((x, g - 1, z), (x - lean[0] * .3, g + height * .55, z - lean[1] * .3), top, 10)   # a stem that bows, then reaches for light
+    for i, (p0, p1) in enumerate(zip(pts, pts[1:])):
+        r_ = 1.1 + (1 - i / 10) * (.5 + height * .04)
+        tube(p0, p1, r_, r_, mat=("mushroom_stem",))
+    for k2 in range(6):                                           # root flare: thick at the stem, gripping the ground
+        a = k2 / 6 * math.tau + R.uniform(-.3, .3); L = R.uniform(3, 5.5)
+        tube((x, g + 2, z), (x + math.cos(a) * L, g - 1, z + math.sin(a) * L), 1.3, .5, mat=("mushroom_stem",))
+    for dx in range(-6, 7):                                       # mycelium spreads round the foot
+        for dz in range(-6, 7):
+            if math.hypot(dx, dz) < 4 + 2.5 * noise3(x + dx, 0, z + dz, 73, 2) and (x + dx, at(x + dx, z + dz), z + dz) in w.b:
+                if w.b[(x + dx, at(x + dx, z + dz), z + dz)][1] in ("podzol_top", "moss_block", "grass_block_top", "coarse_dirt"):
+                    put(x + dx, at(x + dx, z + dz), z + dz, "mycelium_top", "mycelium_side")
+    for (px_, py_, pz_) in pts[2:-2:2]:                            # glow lichen up the stem
+        put(int(round(px_)) + 2, int(py_), int(round(pz_)), "glow_lichen", shape="shut_s")
     cap = "red_mushroom_block" if red else "brown_mushroom_block"
     ri = int(cap_r) + 1
     for dx in range(-ri, ri + 1):
@@ -571,7 +639,6 @@ def giant_mushroom(x, z, height, cap_r, red=True):
 for (mx, mz, h, r, red) in ((FX - 10, FZ - 6, 18, 9, True), (FX + 18, FZ + 10, 13, 7, False), (FX - 28, FZ + 16, 11, 6, True),
                              (FX + 6, FZ - 26, 9, 5, False), (FX + 30, FZ - 14, 8, 5, True), (FX - 30, FZ - 18, 7, 4, False)):
     giant_mushroom(mx, mz, h, r, red)
-scatter_plants(FX, FZ, 42, .09, ["red_mushroom", "brown_mushroom", "red_mushroom", "fern", "moss_block", "glow_lichen"])
 spawn(FX, FZ, 38, 16, "red_mushroom_block", "upright")              # fungal parasites
 mark(FX - 40, FZ - 32, FX + 40, FZ + 32)
 
@@ -617,15 +684,16 @@ for (dy, wdx, wdz) in ((3, 0, 6), (9, 6, 0), (15, 0, 6)):           # windows
     for y in range(tg + dy, tg + dy + 3):
         for k2 in (-1, 0, 1):
             w.b.pop((TX + wdx + (k2 if wdx == 0 else 0), y, TZ + wdz + (k2 if wdz == 0 else 0)), None)
-for k2 in range(5):                                                # roots spiral up the tower and burst from the top
-    a0 = k2 / 5 * math.tau
-    prev = (TX + math.cos(a0) * 9, tg - 1, TZ + math.sin(a0) * 9)
+for k2, (a0, turn, rise, r0_) in enumerate(((.4, .35, 3.4, 1.5), (2.9, -.22, 2.6, 1.1), (4.6, .5, 4.2, .8))):   # three roots, each its own way up
+    prev = (TX + math.cos(a0) * 10, tg - 1, TZ + math.sin(a0) * 10)
+    a = a0
     for s in range(1, 9):
-        a = a0 + s * .7
-        r = 6.6 if s < 8 else 3
-        cur = (TX + math.cos(a) * r, tg + s * 3, TZ + math.sin(a) * r)
-        tube(prev, cur, max(.55, .95 - s * .05), max(.5, .9 - s * .05), moss_top=True)
+        a += turn * (1 + .6 * math.sin(s * 1.7 + k2))
+        r = 6.6 if s < 7 else 4
+        cur = (TX + math.cos(a) * r, tg + s * rise, TZ + math.sin(a) * r)
+        tube(prev, cur, max(.6, r0_ - s * .09), max(.55, r0_ - (s + 1) * .09), moss_top=True)
         prev = cur
+        if prev[1] > tg + 24: break
 for y in range(tg + 1, tg + 4):                                     # keep the doorway clear of the roots too
     for k2 in (-1, 0, 1):
         for dz in range(3, 10): w.b.pop((TX + k2, y, TZ + dz), None)
@@ -664,25 +732,46 @@ for _ in range(20):                                                  # fallen ru
 mark(400, 140, B - 1, 200)
 
 # ---------------- quarrying: the boulder field (south) ----------------
+# Glacial erratics: angular blocks of very different sizes, tilted and half sunk, clustered where the ice dropped them:
+# one huge split boulder, a few medium ones leaning on each other, and a spill of small stones down the slope.
 QX, QZ = BOULDERS
-for _ in range(13):
-    a = R.random() * math.tau; r = 42 * math.sqrt(R.random())
-    x, z = int(QX + math.cos(a) * r * 1.4), int(QZ + math.sin(a) * r * .8)
-    if not (6 <= x < B - 6 and 6 <= z < B - 6) or road_d[z, x] < 6 or used[z, x]: continue
-    g = at(x, z); s = R.uniform(4.5, 7.5)
-    kind = R.choice([["stone", "andesite", "stone"], ["granite", "stone"], ["tuff", "stone", "andesite"], ["calcite", "andesite"]])
-    for dx in range(-9, 10):
-        for dz in range(-9, 10):
-            for dy in range(-2, 9):
-                q = (dx / s) ** 2 + (dz / (s * .8)) ** 2 + (dy / (s * .75)) ** 2
-                if q <= .85 + noise3(x + dx, g + dy, z + dz, 111, 2.5) * .35 and g + dy > at(x + dx, z + dz) - 3:
-                    layer = kind[(dy + 9) // 2 % len(kind)]
-                    put(x + dx, g + dy, z + dz, "moss_block" if dy > s * .55 and noise3(x + dx, dy, z + dz, 112, 2) > .45 else layer)
-    for _k in range(6):                                              # small stones around each outcrop
-        a2 = R.random() * math.tau; r2 = s + R.uniform(1, 4)
-        x2, z2 = int(x + math.cos(a2) * r2), int(z + math.sin(a2) * r2)
-        if 0 <= x2 < B and 0 <= z2 < B and not road[z2, x2]: put(x2, at(x2, z2) + 1, z2, R.choice(kind), shape=R.choice(["full", "slab"]))
-    mark(x - 9, z - 9, x + 9, z + 9)
+def erratic(x, z, s, seed, tilt=.25, split=False):
+    rng = random.Random(seed)
+    planes = []
+    for _ in range(9):                                             # a convex block cut by random planes: flat faces, sharp edges
+        th, ph = rng.uniform(0, math.tau), rng.uniform(-1.2, 1.3)
+        planes.append((math.cos(ph) * math.cos(th), math.sin(ph), math.cos(ph) * math.sin(th), s * rng.uniform(.75, 1.05)))
+    planes.append((0, -1, 0, s * .35))                               # sunk into the ground
+    tx, tz = rng.uniform(-tilt, tilt), rng.uniform(-tilt, tilt)
+    sa = rng.uniform(0, math.pi)
+    g = at(x, z); body = rng.choice(["stone", "andesite", "tuff"]); ri = int(s * 1.5) + 1
+    for dx in range(-ri, ri + 1):
+        for dz in range(-ri, ri + 1):
+            for dy in range(-ri, ri + 1):
+                px, py, pz = dx + dy * tx, dy, dz + dy * tz
+                if not all(px * a1 + py * b1 + pz * c1 <= d1 for a1, b1, c1, d1 in planes): continue
+                if split and abs(px * math.cos(sa) + pz * math.sin(sa)) < .7: continue      # the crack through the big one
+                X, Y, Z = x + dx, g + dy, z + dz
+                if not (0 <= X < B and 0 <= Z < B) or Y < at(X, Z) - 1: continue
+                up = all(not (px * a1 + (py + 1) * b1 + pz * c1 <= d1) for a1, b1, c1, d1 in planes[:1]) or not all(
+                    px * a1 + (py + 1) * b1 + pz * c1 <= d1 for a1, b1, c1, d1 in planes)
+                v = noise3(X, Y, Z, seed % 997, 3.0)
+                mat = "moss_block" if up and v > .45 else ("mossy_cobblestone" if up and v > .38 else
+                      ("cobblestone" if v < .2 else "iron_ore" if _h(X, Y, Z, seed) < .012 else body))
+                put(X, Y, Z, mat)
+    mark(x - ri, z - ri, x + ri, z + ri)
+import random
+erratic(QX, QZ, 9.5, 1201, tilt=.15, split=True)
+MED = [(QX - 26, QZ - 10, 5.5), (QX - 20, QZ - 3, 4.0), (QX + 24, QZ + 6, 6.0), (QX + 9, QZ - 22, 4.5)]
+for i, (x, z, s2) in enumerate(MED):
+    if road_d[z, x] > 6: erratic(x, z, s2, 1300 + i * 7, tilt=.35)
+for i in range(26):                                                  # the spill: small stones trailing south-west, downhill
+    t = R.random(); x = int(QX - 10 - t * 40 + R.gauss(0, 6)); z = int(QZ + 6 + t * 18 + R.gauss(0, 5))
+    if 6 <= x < B - 6 and 6 <= z < B - 6 and road_d[z, x] > 5 and not used[z, x]:
+        if R.random() < .35: erratic(x, z, R.uniform(1.6, 2.6), 1400 + i, tilt=.4)
+        else:
+            g = at(x, z); put(x, g + 1, z, R.choice(["stone", "andesite", "mossy_cobblestone", "cobblestone"]), shape=R.choice(["full", "slab", "slab"]))
+CONTENT.append((QX, QZ, "quarry"))
 
 # ---------------- herbalism: flower meadows; skinning: deer and boar ----------------
 MX, MZ = MEADOW
@@ -867,7 +956,7 @@ def chochin(x, y, z):
     put(x, y - 1, z, "red_concrete", shape="lantern")
 
 
-def pavilion(cx, cz, y, r=3, roof="deepslate_tiles"):
+def pavilion(cx, cz, y, r=3, roof="deepslate_tiles", kind="open", face=(0, 1)):
     """A small open shrine pavilion: raised stone floor, vermilion posts, a hipped tile roof with upturned eaves, a gold finial."""
     for dx in range(-r, r + 1):
         for dz in range(-r, r + 1):
@@ -885,9 +974,27 @@ def pavilion(cx, cz, y, r=3, roof="deepslate_tiles"):
         for dx in range(-rr + 1, rr):
             for dz in range(-rr + 1, rr):
                 put(cx + dx, y + 6 + layer, cz + dz, "dark_oak_planks" if layer < 2 else roof)
-    put(cx, y + 9, cz, "gold_block", shape="post")
+    put(cx, y + 9, cz, "gold_block" if kind == "hall" else roof, shape="post")
     put(cx, y + 5, cz, "lantern", shape="lantern")
-    put(cx, y + 2, cz, "barrel_top", "barrel_side")                  # offering box
+    if kind == "hall":                                               # a closed sanctuary: white plaster between dark posts, open only at the front
+        for dx in range(-r + 1, r):
+            for dz in range(-r + 1, r):
+                if max(abs(dx), abs(dz)) != r - 1: continue
+                front = (dx * face[0] + dz * face[1]) == r - 1 and abs(dx * face[1] - dz * face[0]) <= 1
+                if front: continue
+                corner = abs(dx) == r - 1 and abs(dz) == r - 1
+                for yy in range(y + 2, y + 6):
+                    put(cx + dx, yy, cz + dz, "red_concrete" if corner else ("dark_oak_planks" if yy in (y + 2, y + 5) else "white_concrete"))
+        put(cx - face[0] * (r - 2), y + 2, cz - face[1] * (r - 2), "gold_block", shape="slab")    # the mirror on the altar
+        for k in (-1, 0, 1):                                         # steps up to the front
+            put(cx + face[0] * (r + 1) + face[1] * k, y + 1, cz + face[1] * (r + 1) - face[0] * k, "polished_andesite", shape="slab")
+    elif kind == "chozuya":                                          # the water basin under its own small roof, a dipper laid across
+        for dx in (-1, 0, 1):
+            for dz in (-1, 0, 1):
+                put(cx + dx, y + 2, cz + dz, "polished_andesite" if (dx or dz) else "water_still", shape="full" if (dx or dz) else "water")
+        put(cx + 1, y + 3, cz, "bamboo_block", shape="thinlog")
+    else:
+        put(cx, y + 2, cz, "barrel_top", "barrel_side")              # offering box
     for dx in range(-r, r + 1):
         for dz in range(-r, r + 1): UPPER[cz + dz, cx + dx] = y + 1
 
@@ -902,17 +1009,18 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
     Hm = top_y - base
     for y in range(base, top_y + 1):
         f = (y - base) / Hm
-        if f < .45: r = rb + (.6 * rb - rb) * (f / .45)
-        elif f < .82: r = .6 * rb + (rt - .6 * rb) * ((f - .45) / .37) ** 1.7
+        if f < .45: r = rb + (.72 * rb - rb) * (f / .45)
+        elif f < .82: r = .72 * rb + (rt - .72 * rb) * ((f - .45) / .37) ** 1.7
         else: r = rt * (1 - max(0, f - .97) * 3)
         ri = int(r * 1.25) + 2
         for dx in range(-ri, ri + 1):
             for dz in range(-ri, ri + 1):
                 a = math.atan2(dz, dx)
                 rr = r * (1 + .22 * (noise3(math.cos(a) * 3 + seed, y * .25, math.sin(a) * 3, seed, 1.0) - .5) * 2)
+                x, z = cx + dx, cz + dz
+                if not needle and y < top_y - 3: rr *= 1 + TM.ledge(x, y + seed * 5, z) * 1.4    # weathered beds: ledges and notches
                 d = math.hypot(dx, dz)
                 if d > rr: continue
-                x, z = cx + dx, cz + dz
                 if not (0 <= x < B and 0 <= z < B) or y <= at(x, z) - 1: continue
                 if needle:
                     put(x, y, z, "moss_block" if y >= top_y - 1 else TM.cliff_block(x, y, z, f, .2 * (d < rr - 1)))
@@ -924,9 +1032,8 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
                     n = noise3(x, y, z, seed + 7, 2.2)
                     up_open = y > base + 2 and f > .45                          # the overhang's underside and the waist
                     rec = .12 if .35 < f < .75 else 0.0                              # the waist: only a little darker
-                    mossy = TM.moss_streak(x, y, z, top_y) or (f > .8 and n > .62)    # streaks from the lip, the overhang's belly
-                    mossy = mossy or (f < .5 and n > .58)                          # the stem gathers moss too
-                    mat = "moss_block" if mossy else TM.cliff_block(x, y, z, .45 + f * .55, rec)
+                    mossy = top_y - y <= 6 and TM.moss_streak(x, y, z, top_y)       # streaks drip from the lip only
+                    mat = "moss_block" if mossy else TM.strata(x, y + seed * 5, z)
                     put(x, y, z, mat)
     for _ in range(int(rt * (10 if not needle else 2))):           # a curtain of vines and leaf drapes from the lip
         a = R.random() * math.tau
@@ -967,8 +1074,9 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
     mark(cx - int(rb) - 3, cz - int(rb) - 3, cx + int(rb) + 3, cz + int(rb) + 3)
 
 
-def rock_bridge(p0, p1, rise=3, width=2.2, sakura=0.0):
+def rock_bridge(p0, p1, rise=3, width=2.2, sakura=0.0, style="rock"):
     rise = min(rise, 2)
+    if style == "rope": width = 1.5; rise = -2
     samples = []
     """A natural rock bridge with a grassy walkable deck; the deck height goes into UPPER."""
     L = math.dist((p0[0], p0[2]), (p1[0], p1[2])); n = int(L * 2)
@@ -997,16 +1105,29 @@ def rock_bridge(p0, p1, rise=3, width=2.2, sakura=0.0):
                 if not (0 <= x < B and 0 <= z < B): continue
                 d = math.hypot(x - cx, z - cz)
                 if d > wid + 1.2: continue
+                if style == "rope":
+                    if d <= 1.5 and UPPER[z, x] < deck:
+                        put(x, deck, z, "spruce_planks"); UPPER[z, x] = deck
+                    elif 1.5 < d <= 2.5 and i % 5 == 0 and (x, deck, z) not in w.b:
+                        put(x, deck, z, "spruce_log", "spruce_log"); put(x, deck + 1, z, "spruce_planks", shape="fence")
+                    elif 1.5 < d <= 2.5 and (x, deck + 1, z) not in w.b and UPPER[z, x] < deck:
+                        put(x, deck + 1, z, "iron_chain", shape="chain")
+                    continue
                 if d <= wid:
-                    put(x, deck, z, "grass_block_top", "grass_block_side"); UPPER[z, x] = max(UPPER[z, x], deck)
+                    top_ = ("grass_block_top", "grass_block_side") if style == "rock" else (("moss_block",) if noise3(x, 0, z, 154, 2) > .45 else ("grass_block_top", "grass_block_side"))
+                    put(x, deck, z, *top_); UPPER[z, x] = max(UPPER[z, x], deck)
                     if w.b.get((x, deck + 1, z), ("", "", ""))[1] in ("vine",): w.b.pop((x, deck + 1, z), None)
+                if style == "root":
+                    for y in range(int(deck - (1.5 + under * .5) * (1 - (d / (wid + 1.2)) ** 2)), deck):
+                        if y > at(x, z): put(x, y, z, *bark(x, y, z))
+                    continue
                 for y in range(int(deck - under * (1 - (d / (wid + 1.2)) ** 2)), deck):
                     if y > at(x, z): put(x, y, z, TM.cliff_block(x, y, z, .55 + (y - deck) / 20, .2) if noise3(x, y, z, 153, 2) < .5 else "moss_block")
                 if wid < d <= wid + 1.2 and (x, deck, z) not in w.b:
                     put(x, deck, z, "cherry_leaves" if R.random() < sakura else ("azalea_leaves" if (x + z) % 3 else "oak_leaves"))
                 if d <= wid and R.random() < sakura * .5 and (x, deck + 1, z) not in w.b: put(x, deck + 1, z, "pink_petals", shape="carpet")
         samples.append((cx, cz, deck, u))
-        if i % 7 == 3:
+        if i % 7 == 3 and style != "rope":
             for k2 in range(R.randint(2, 7)):
                 vx, vz = int(round(cx + R.uniform(-1, 1))), int(round(cz + R.uniform(-1, 1)))
                 p = (vx, deck - int(under) - k2, vz)
@@ -1026,16 +1147,16 @@ for k2, (px, pz, ty, rb, rt, sd) in enumerate(PILLARS):
     mesa(px, pz, ty, rb, rt, sd, sakura=SAK[k2], clear=(.66 if k2 == SAKURA else 0))
 
 
-def link(a, b, rise, sak=0.0):
+def link(a, b, rise, sak=0.0, style="rock"):
     (ax, az, ay, _, art, _), (bx, bz, by, _, brt, _) = a, b
     d = math.hypot(bx - ax, bz - az); ux, uz = (bx - ax) / d, (bz - az) / d
-    return rock_bridge((ax + ux * art * .84, ay, az + uz * art * .84), (bx - ux * brt * .84, by, bz - uz * brt * .84), rise=rise, sakura=sak), (ux, uz)
+    return rock_bridge((ax + ux * art * .84, ay, az + uz * art * .84), (bx - ux * brt * .84, by, bz - uz * brt * .84), rise=rise, sakura=sak, style=style), (ux, uz)
 
 
 BR0 = rock_bridge((ex, EDGE_Y, ez - 2), (PILLARS[0][0], PILLARS[0][2], PILLARS[0][1] - PILLARS[0][4] * .84), rise=0, sakura=.15)
-BR1, D1 = link(PILLARS[0], PILLARS[1], 5, .45)
+BR1, D1 = link(PILLARS[0], PILLARS[1], 5, .45, style="root")              # a great root grown across
 BR2, D2 = link(PILLARS[1], PILLARS[2], 6, .85)
-BR3, D3 = link(PILLARS[2], PILLARS[3], 7, .9)
+BR3, D3 = link(PILLARS[2], PILLARS[3], 7, .9, style="rope")              # a rope bridge, the last crossing
 # the sando: torii appear along the route and grow denser toward the boss (one, then a few, then a tunnel of them)
 def torii_on(samples, d, every):
     for i2, (cx, cz, deck, u) in enumerate(samples):
@@ -1098,10 +1219,43 @@ for (px, pz, ty, rb, rt, sd), what in zip(PILLARS, ("cairn", "herb", "treasure",
             put(px + R.randint(2, 8), ty + 1, pz + R.randint(-5, 5), "firefly_bush", shape="plant")
     elif what == "treasure":
         pass                                                         # the sakura arena, built below
-    else:
-        put(px, ty + 1, pz, "campfire_log_lit", shape="fire")
-        for (dx, dz) in ((-2, 0), (2, 0), (0, 2)): put(px + dx, ty + 1, pz + dz, "spruce_log", "spruce_log", shape="slab")
+    else:                                                            # the far pillar: an old watchtower, fallen in, a fire someone still keeps
+        wx, wz = px + 8, pz - 6
+        for y in range(ty - 1, ty + 13):
+            for dx in range(-5, 6):
+                for dz in range(-5, 6):
+                    d = math.hypot(dx, dz)
+                    if 3.6 < d <= 5:
+                        ang = math.atan2(dz, dx)
+                        lim = ty + 4 + int(8 * max(0, math.cos(ang - .8))) + int(3 * noise3(wx + dx, 0, wz + dz, 171, 2))
+                        door = abs(dx) <= 1 and dz > 0 and y <= ty + 3
+                        if y <= lim and not door:
+                            put(wx + dx, y, wz + dz, R.choice(["stone_bricks", "mossy_stone_bricks", "cracked_stone_bricks", "mossy_stone_bricks"]))
+        for k in range(14):                                            # its fallen stones lie down the slope of the top
+            a2 = R.uniform(-.6, .9); r2 = R.uniform(6, 12)
+            x2, z2 = int(wx + math.cos(a2) * r2), int(wz + math.sin(a2) * r2)
+            if UPPER[z2, x2] == ty and (x2, ty + 1, z2) not in w.b:
+                put(x2, ty + 1, z2, R.choice(["stone_bricks", "mossy_stone_bricks", "cobblestone"]), shape=R.choice(["full", "slab", "slab"]))
+        put(wx, ty + 1, wz, "campfire_log_lit", shape="fire")
+        for (dx, dz) in ((-2, 0), (2, 0)): put(wx + dx, ty + 1, wz + dz, "spruce_log", "spruce_log", shape="slab")
+        cache(wx - 2, ty + 1, wz - 2, "見張り台の跡")
+        LABELS_POI.append(((wx, wz), "柱の上の見張り台跡", (220, 210, 190)))
     CONTENT.append((px, pz, "pillar"))
+# the first pillar is splitting: a cleft runs down its south face, ferns and a crooked tree grow in it
+P0x_, P0z_, P0y_, P0rb_, P0r_, _ = PILLARS[0]
+for y in range(P0y_ - 26, P0y_ + 1):
+    f = (P0y_ - y) / 26
+    wdt = 1.6 * (1 - f) + .4
+    for dx in range(-3, 4):
+        for z in range(P0z_, P0z_ + int(P0r_ * 1.3)):
+            off = math.sin((P0y_ - y) * .25) * 1.5
+            if abs(dx - off) <= wdt and (P0x_ + dx, y, z) in w.b:
+                inner = (P0x_ + dx, y, z - 1) in w.b
+                if z > P0z_ + P0r_ * .75 - 6 * f:
+                    w.b.pop((P0x_ + dx, y, z), None); UPPER[z, P0x_ + dx] = -1 if y == P0y_ else UPPER[z, P0x_ + dx]
+for y in range(P0y_ - 20, P0y_ - 2, 3):
+    zz3 = max([z for z in range(P0z_, P0z_ + int(P0r_ * 1.3)) if (P0x_, y, z) in w.b] or [P0z_])
+    put(P0x_ + R.choice((-1, 0, 1)), y, zz3 + 1, R.choice(["fern", "hanging_roots", "vine"]), shape="plant")
 def top_spawn(px, pz, ty, rad, count, colour, shape):
     k = tries = 0
     while k < count and tries < count * 30:
@@ -1188,11 +1342,8 @@ for dx in range(-AR - 4, AR + 5):
                 along = qx * math.cos(pa) + qz * math.sin(pa); across = -qx * math.sin(pa) + qz * math.cos(pa)
                 notch = along > 1.6 and abs(across) < .7
                 if (along / 3.0) ** 2 + (across / 2.3) ** 2 <= 1 and not notch: petal = True
-            if d < 1.6: mat = "gold_block"
-            elif petal: mat = "pink_concrete"
-            elif d < 7.6: mat = "polished_diorite"
+            if d < 2.6: mat = "chiseled_stone_bricks" if d < 1.2 else "polished_andesite"
             elif ring: mat = "polished_andesite"
-            elif spoke: mat = "red_nether_bricks"
             else: mat = "stone_bricks" if _h(x, 0, z, 61) > .18 else ("mossy_stone_bricks" if _h(x, 1, z, 62) > .5 else "cracked_stone_bricks")
             put(x, FY, z, mat); put(x, SY_, z, "stone_bricks"); UPPER[z, x] = FY
             if _h(x, 2, z, 63) < .1: put(x, FY + 1, z, "pink_petals", shape="carpet")   # a few petals blown in
@@ -1212,11 +1363,13 @@ for k2 in range(16):                                                # lanterns o
     a = ent_a + (k2 + .5) / 16 * math.tau
     if abs(math.atan2(math.sin(a - ent_a), math.cos(a - ent_a))) < .4: continue
     stone_lantern(int(round(SX_ + math.cos(a) * (AR + 5))), int(round(SZ_ + math.sin(a) * (AR + 5))), SY_, tall=True)
-for off in (.85, -.85, 2.3, -2.3):                                   # four pavilions outside the fence, two-tier roofs
+for off, kind, rr0 in ((.85, "chozuya", 2), (-.85, "open", 3), (2.3, "hall", 5), (-2.3, "hall", 3)):   # a main hall, a small shrine, an open hall, the basin
     a = ent_a + off
     px2, pz2 = int(round(SX_ + math.cos(a) * (AR + 11))), int(round(SZ_ + math.sin(a) * (AR + 11)))
+    fc = (-math.cos(a), -math.sin(a)); fc = (int(round(fc[0])), 0) if abs(fc[0]) > abs(fc[1]) else (0, int(round(fc[1])))
     if UPPER[pz2, px2] == SY_:
-        pavilion(px2, pz2, SY_, r=4 if abs(off) < 1 else 3)
+        pavilion(px2, pz2, SY_, r=rr0, kind=kind, face=fc)
+        if rr0 < 5: continue
         for layer in range(2):                                           # a second, smaller roof floating above the first
             rr = 2 - layer
             for dx in range(-rr, rr + 1):
@@ -1260,48 +1413,70 @@ for k2 in range(1, 9):
     cx, cz = startx + ux2 * (3 + k2 * 8), startz + uz2 * (3 + k2 * 8)
     if math.hypot(cx - SX_, cz - SZ_) < AR + 6: break
     torii(cx, cz, SY_ - 1, ux2, uz2, half=3, h=12)
-    for s2 in (-4, 4):
-        stone_lantern(int(round(cx - uz2 * s2)), int(round(cz + ux2 * s2)), SY_)
+    lx0, lz0 = cx + ux2 * 4, cz + uz2 * 4
+    if math.hypot(lx0 - SX_, lz0 - SZ_) > AR + 6:
+        for s2 in (-4, 4):
+            stone_lantern(int(round(lx0 - uz2 * s2)), int(round(lz0 + ux2 * s2)), SY_)
 # the sacred sakura (goshinboku) behind the arena, opposite the entrance, wrapped in a shimenawa
 back = ent_a + math.pi
 GX_, GZ_ = int(round(SX_ + math.cos(back) * (AR + 12))), int(round(SZ_ + math.sin(back) * (AR + 12)))
 sakura_tree(GX_, GZ_, SY_, size=3.0)
-for k2 in range(36):
-    a = k2 / 36 * math.tau
-    x, z = int(round(GX_ + math.cos(a) * 4.6)), int(round(GZ_ + math.sin(a) * 4.6))
-    put(x, SY_ + 4, z, "hay_block_top", "hay_block_side", shape="slab_t")
-    if k2 % 4 == 0:
-        put(x, SY_ + 3, z, "white_wool", shape="shut_s"); put(x, SY_ + 2, z, "white_wool", shape="shut_s")
+for k2 in range(48):
+    a = k2 / 48 * math.tau
+    x, z = int(round(GX_ + math.cos(a) * 4.8)), int(round(GZ_ + math.sin(a) * 4.8))
+    put(x, SY_ + 4 + (k2 % 3 == 0), z, "hay_block_top", "hay_block_side")
+    if k2 % 6 == 0:
+        x2, z2 = int(round(GX_ + math.cos(a) * 5.8)), int(round(GZ_ + math.sin(a) * 5.8))
+        sh = "shut_e" if abs(math.cos(a)) > abs(math.sin(a)) and math.cos(a) > 0 else "shut_w" if abs(math.cos(a)) > abs(math.sin(a)) else "shut_s" if math.sin(a) > 0 else "shut_n"
+        put(x2, SY_ + 3, z2, "white_wall_banner", shape=sh)
 stone_lantern(GX_ - 6, GZ_ + 6, SY_); stone_lantern(GX_ + 6, GZ_ + 6, SY_)
 put(SX_, FY + 1, SZ_, "pink_wool", shape="boss")                    # the sakura boss (stand-in)
 CONTENT.append((SX_, SZ_, "boss"))
 
 # great stone arches over the road where it enters and leaves the zone: scenery gates (rounded rock, nothing to stand on)
 def stone_arch(p0, p1, height, r):
-    pts = bez(p0, ((p0[0] + p1[0]) / 2, max(p0[1], p1[1]) + height, (p0[2] + p1[2]) / 2), p1, 30)
-    for i2, (a, b) in enumerate(zip(pts, pts[1:])):
+    """A natural rock arch: a broad, flat-sided band of bedded rock (wider than thick), turf and a small tree on its back,
+    a few ledges, vines from the soffit. Thick legs that spread into the ground."""
+    pts = bez(p0, ((p0[0] + p1[0]) / 2, max(p0[1], p1[1]) + height, (p0[2] + p1[2]) / 2), p1, 40)
+    ax, az = p1[0] - p0[0], p1[2] - p0[2]; al = math.hypot(ax, az); ax, az = ax / al, az / al
+    nx, nz = -az, ax                                                  # across the band
+    seen = set()
+    for i2, (x, y, z) in enumerate(pts):
         f = i2 / (len(pts) - 1)
-        rr = r * (1.5 - .6 * math.sin(math.pi * f))
-        tube(a, b, rr, rr, mat=None, follow=True)
-    for (x, y, z) in pts:
-        for dx in range(-int(r) - 2, int(r) + 3):
-            for dz in range(-int(r) - 2, int(r) + 3):
-                for dy in range(-int(r) - 2, int(r) + 3):
-                    v = w.b.get((int(round(x)) + dx, int(round(y)) + dy, int(round(z)) + dz))
-                    if v and v[1] in ("dark_oak_log", "mangrove_log", "stripped_dark_oak_log", "dark_oak_wood", "mangrove_wood", "spruce_wood"):
-                        p = (int(round(x)) + dx, int(round(y)) + dy, int(round(z)) + dz)
-                        mat = TM.cliff_block(p[0], p[1], p[2], .7, 0)
-                        if noise3(*p, 161, 2.5) > .68: mat = "moss_block"
-                        put(*p, mat)
-    for (x, y, z) in pts:
-        mark(int(x) - 14, int(z) - 14, int(x) + 14, int(z) + 14)
-    for (x, y, z) in pts[6:-6:2]:
+        leg = max(0, 1 - min(f, 1 - f) * 5)                           # 1 at the feet, 0 from a fifth in
+        wdt = r * 1.5 + leg * r * 1.6                                 # wide band
+        th = r * .9 + leg * r * 1.2                                   # thinner than wide
+        for k in range(-int(wdt) - 1, int(wdt) + 2):
+            for dy in range(-int(th) - 1, int(th) + 2):
+                for dl in (-1, 0, 1):
+                    if abs(k) > wdt or abs(dy) > th * (1 - .25 * (abs(k) / max(1, wdt)) ** 4): continue
+                    px, py, pz = int(round(x + nx * k + ax * dl * .5)), int(round(y + dy)), int(round(z + nz * k + az * dl * .5))
+                    if (px, py, pz) in seen or not (0 <= px < B and 0 <= pz < B) or py < at(px, pz) - 1: continue
+                    seen.add((px, py, pz))
+                    put(px, py, pz, TM.strata(px, py, pz))
+    for (px, py, pz) in list(seen):                                   # turf on its back, moss where it is flat enough
+        if (px, py + 1, pz) not in seen and (px, py - 1, pz) in seen and py > at(px, pz) + 2:
+            put(px, py, pz, "grass_block_top", "grass_block_side") if noise3(px, py, pz, 162, 2) > .3 else put(px, py, pz, "moss_block")
+            if _h(px, py, pz, 163) < .12: put(px, py + 1, pz, R.choice(["short_grass", "fern", "short_grass"]), shape="plant")
+    top_i = len(pts) // 2 + R.randint(-4, 4)
+    tx, ty, tz = pts[top_i]
+    ty = max(py for (px, py, pz) in seen if px == int(round(tx)) and pz == int(round(tz))) if any(px == int(round(tx)) and pz == int(round(tz)) for (px, py, pz) in seen) else int(ty)
+    for yy in range(ty + 1, ty + 5): put(int(round(tx)), yy, int(round(tz)), *LOG("oak_log"))   # a wind-bent tree on the crown
+    for dx in range(-3, 4):
+        for dz in range(-3, 4):
+            for dy in range(-1, 2):
+                if dx * dx + dz * dz + dy * dy * 3 <= 7 + R.random() * 2: put(int(round(tx)) + dx + 1, ty + 5 + dy, int(round(tz)) + dz, "oak_leaves")
+    for (x, y, z) in pts[8:-8:2]:                                    # vines and roots hanging from the soffit
         for _ in range(2):
-            vx, vz = int(round(x)) + R.randint(-2, 2), int(round(z)) + R.randint(-2, 2)
-            for k2 in range(1, R.randint(3, 14)):
-                p = (vx, int(y) - int(r) - k2, vz)
+            vx, vz = int(round(x + nx * R.uniform(-r, r))), int(round(z + nz * R.uniform(-r, r)))
+            under = [py for (px, py, pz) in seen if px == vx and pz == vz]
+            if not under: continue
+            for k2 in range(1, R.randint(3, 12)):
+                p = (vx, min(under) - k2, vz)
                 if p in w.b or p[1] <= at(vx, vz): break
                 put(*p, "vine", shape="shut_s")
+    for (x, y, z) in pts:
+        mark(int(x) - 14, int(z) - 14, int(x) + 14, int(z) + 14)
 
 
 stone_arch((22, at(22, 425) - 1, 425), (40, at(40, 474) - 1, 474), 34, 4.5)                  # entering from the harbor
@@ -1440,8 +1615,6 @@ def level_pad(x0, z0, x1, z1, y):
                 if v and v[0] in ("plant", "carpet", "slab"): w.b.pop((x, yy, z), None)
             hi[z, x] = y
 
-
-LABELS_POI = []
 
 
 def soften(x0, z0, x1, z1):
@@ -1618,6 +1791,136 @@ if best:
     place("小川の崩れた石橋", x, z, "story", 5)
 print("authored places", [f[2] for f in FILL])
 
+# ---------------- the dungeon entrance ----------------
+# Under the great tree's knoll, opening south onto the path to the boss: two great roots frame a dark mouth in the bank,
+# light glows from deep inside, two worn guardians stand on either side. A passage runs north under the trunk to the gate.
+M0 = (241, 132)
+yd = at(*M0)
+level_pad(M0[0] - 5, M0[1] - 1, M0[0] + 5, M0[1] + 3, yd)            # a small level apron before the mouth
+for x in range(M0[0] - 6, M0[0] + 7):
+    for z in range(M0[1] - 19, M0[1] + 1):
+        t = M0[1] - z                                                # depth into the bank
+        d = abs(x - M0[0])
+        rad = 2.5 if t < 13 else 4.5
+        roof = (5 if t < 13 else 7) - (d / rad) ** 2 * 2
+        top = max(at(x, z), yd + 8)
+        for y in range(yd - 1, top + 1):
+            hgt = y - yd
+            if d <= rad and 1 <= hgt <= roof:
+                w.b.pop((x, y, z), None)
+            elif d <= rad + 2 and -1 <= hgt and (y <= at(x, z) or t >= 1):
+                if t == 0 and y > at(x, z): continue
+                if (x, y, z) not in w.b or w.b[(x, y, z)][0] != "full":
+                    put(x, y, z, *(("rooted_dirt",) if _h(x, y, z, 81) < .55 else ("dirt",) if _h(x, y, z, 82) < .6 else ("coarse_dirt",)))
+        if d <= rad:
+            put(x, yd, z, *(("dirt_path_top", "dirt_path_side") if d < 1.2 and t < 13 else ("moss_block",) if _h(x, 0, z, 78) < .5 else ("rooted_dirt",)))
+            if t > 2 and _h(x, 2, z, 79) < .25 and (x, yd + int(roof) + 1, z) in w.b:
+                put(x, yd + int(roof), z, "hanging_roots", shape="plant")
+for t in range(1, 13, 3):                                            # root strands across the passage ceiling
+    pts = bez((M0[0] - 3.5, yd + 2, M0[1] - t), (M0[0], yd + 6.2, M0[1] - t - 1), (M0[0] + 3.5, yd + 2, M0[1] - t + .5), 8)
+    for p0, p1 in zip(pts, pts[1:]): tube(p0, p1, .6, .6)
+for t in (4, 9):
+    put(M0[0] + (2 if t == 4 else -2), yd + 1, M0[1] - t, "shroomlight")
+# the frame: two great roots coming down out of the knoll and crossing over the mouth
+for side in (-1, 1):
+    pts = bez((M0[0] + side * 7, yd + 9, M0[1] - 5), (M0[0] + side * 4.5, yd + 9, M0[1] + .5), (M0[0] - side * 1.5, yd + 6.5, M0[1] + .5), 10)
+    pts += bez((M0[0] + side * 4.5, yd + 9, M0[1] + .5), (M0[0] + side * 4.2, yd + 3, M0[1] + 1.2), (M0[0] + side * 4.6, yd - 1, M0[1] + 1.5), 8)
+    for i, (p0, p1) in enumerate(zip(pts, pts[1:])):
+        r = 1.9 if i < 10 else 1.6 - (i - 10) * .06
+        tube(p0, p1, r, r, moss_top=True)
+for x in range(M0[0] - 2, M0[0] + 3):                                 # keep the opening clear of the frame
+    for y in range(yd + 1, yd + 5):
+        for z in range(M0[1] - 1, M0[1] + 3): w.b.pop((x, y, z), None)
+for k in range(9):                                                   # vines and hanging roots over the lintel
+    x = M0[0] - 4 + k
+    for y in range(yd + 9, yd + 3, -1):
+        if (x, y, M0[1] + 2) in w.b or (x, y, M0[1] + 1) in w.b:
+            for j in range(1, 2 + int(_h(x, 0, 0, 83) * 3)):
+                if (x, y - j, M0[1] + 3) not in w.b and y - j > yd + 2: put(x, y - j, M0[1] + 3, "vine" if _h(x, j, 0, 84) < .6 else "hanging_roots", shape="shut_s" if _h(x, j, 0, 84) < .6 else "plant")
+            break
+GX, GZ = M0[0], M0[1] - 17                                           # the gate in the chamber at the far end
+for x in range(M0[0] - 7, M0[0] + 8):                                # seal the chamber: the knoll is hollow behind it
+    for z in range(GZ - 3, GZ):
+        for y in range(yd - 1, yd + 10): put(x, y, z, "rooted_dirt" if _h(x, y, z, 85) < .5 else "dirt")
+for x in range(M0[0] - 7, M0[0] + 8):
+    for z in range(GZ, M0[1] - 10):
+        for y in (yd + 8, yd + 9):
+            if (x, y, z) not in w.b: put(x, y, z, "dirt")
+        for y in range(yd, yd + 8):
+            if abs(x - M0[0]) > 4.5 and (x, y, z) not in w.b: put(x, y, z, "rooted_dirt")
+for k in (-2, -1, 0, 1, 2):
+    for y in range(yd + 1, yd + 7):
+        frame = abs(k) == 2 or y == yd + 6
+        put(GX + k, y, GZ, *(("chiseled_stone_bricks",) if frame and k == 0 else ("mossy_stone_bricks",) if frame else ("black_concrete",)))
+for k in (-3, 3): put(GX + k, yd + 1, GZ + 1, "soul_lantern", shape="lantern")
+LABELS_POI.append(((GX, GZ), "根の洞の門（ダンジョン）", (200, 230, 160)))
+for sgn in (1, -1):                                                  # two worn guardians on the apron
+    sx, sz = M0[0] + 6 * sgn, M0[1] + 2
+    g = at(sx, sz)
+    for dx in (-1, 0, 1):
+        for dz in (-1, 0, 1): put(sx + dx, g + 1, sz + dz, "stone_bricks" if (dx or dz) else "chiseled_stone_bricks", shape="slab" if (dx and dz) else "full")
+    put(sx, g + 2, sz, "mossy_stone_bricks"); put(sx, g + 3, sz, "mossy_stone_bricks"); put(sx, g + 4, sz, "chiseled_stone_bricks")
+    put(sx, g + 5, sz, "mossy_stone_bricks", shape="slab"); put(sx, g + 6, sz, "moss_block", shape="carpet")
+mark(M0[0] - 9, M0[1] - 20, M0[0] + 9, M0[1] + 4)
+
+# ---------------- secrets: places only the curious find ----------------
+# 1. behind the falls: a dry pocket in the scarp, reached from the plunge pool
+_fall = [(x, z) for z in range(300, 390) for x in range(B) if stream[z, x] and slope[z, x] > 1.0]
+if _fall:
+    fx, fz = _fall[len(_fall) // 2]
+    lowz = max(range(fz - 6, fz + 7), key=lambda zz2: -at(fx, zz2) if 0 <= zz2 < B else -999)
+    fy = at(fx, lowz) + 1                                          # pool level
+    dirz = -1 if lowz > fz else 1                                  # into the rock, upstream
+    for k in range(1, 9):
+        cz2 = lowz + dirz * k
+        for dx in (-2, -1, 0, 1, 2) if 2 < k < 8 else (-1, 0, 1):
+            X = fx + dx + (2 if k > 1 else 0)
+            for y in range(fy, fy + (4 if 2 < k < 8 else 3)):
+                w.b.pop((X, y, cz2), None)
+            put(X, fy - 1, cz2, R.choice(["mossy_cobblestone", "gravel", "moss_block", "stone"]))
+    cache(fx + 3, fy, lowz + dirz * 7, "滝の裏の洞")
+    put(fx + 1, fy, lowz + dirz * 7, "lantern", shape="lantern")
+    for k in range(3): put(fx + 2 + R.randint(-1, 1), fy + 2 + (k == 0), lowz + dirz * (3 + k * 2), "glow_lichen", shape="shut_s")
+# 2. under the stone tower: a stair down to a little crypt
+TX_, TZ_ = TOWER; tg_ = at(TX_, TZ_)
+for k in range(5):
+    for y in range(tg_ - k - 1, tg_ - k + 3): w.b.pop((TX_ - 1, y, TZ_ - 1 + k), None); w.b.pop((TX_, y, TZ_ - 1 + k), None)
+    put(TX_ - 1, tg_ - k - 1, TZ_ - 1 + k, "stone_bricks", shape="stair_s"); put(TX_, tg_ - k - 1, TZ_ - 1 + k, "stone_bricks", shape="stair_s")
+for dx in range(-3, 3):
+    for dz in range(4, 10):
+        for y in range(tg_ - 6, tg_ - 2): w.b.pop((TX_ + dx, y, TZ_ + dz), None)
+        put(TX_ + dx, tg_ - 7, TZ_ + dz, R.choice(["mossy_stone_bricks", "cracked_stone_bricks", "stone_bricks"]))
+        put(TX_ + dx, tg_ - 2, TZ_ + dz, "stone_bricks")
+        for y in range(tg_ - 6, tg_ - 2):
+            if dx in (-3, 2) or dz in (4, 9):
+                if not (dz == 4 and dx in (-1, 0)): put(TX_ + dx, y, TZ_ + dz, R.choice(["mossy_stone_bricks", "stone_bricks", "cracked_stone_bricks"]))
+cache(TX_ + 1, tg_ - 6, TZ_ + 8, "石塔の地下")
+put(TX_ - 2, tg_ - 6, TZ_ + 8, "bone_block_top", "bone_block_side", shape="slab"); put(TX_ - 2, tg_ - 6, TZ_ + 6, "soul_lantern", shape="lantern")
+for k in range(4): put(TX_ + R.randint(-2, 1), tg_ - 3, TZ_ + R.randint(5, 8), "hanging_roots", shape="plant")
+# 3. the pond floor: a sunken skiff with its cargo, seen through the water from the jetty
+_deep = min(((x, z) for z in range(B) for x in range(B) if lake[z, x]), key=lambda p: hi[p[1], p[0]])
+dx0, dz0 = _deep
+for k in range(-3, 4):
+    for j in (-1, 0, 1):
+        if abs(k) == 3 and j: continue
+        X, Z = dx0 + k, dz0 + j; y = hi[Z, X] + 1
+        put(X, y, Z, "spruce_planks", shape="slab" if j == 0 else "full")
+cache(dx0, hi[dz0, dx0] + 2, dz0, "池の底の小舟")
+put(dx0 + 2, hi[dz0, dx0] + 2, dz0, "sea_lantern", shape="slab")
+# 4. a ledge on the side of the second pillar, reached by a vine ladder from its top
+P1x_, P1z_, P1y_, _, P1r_, _ = PILLARS[1]
+lx, lz = P1x_ - int(P1r_ * .82), P1z_ + 6
+while (lx, P1y_, lz) not in w.b and lx < P1x_: lx += 1
+for k in range(1, 10): put(lx - 1, P1y_ - k, lz, "vine", shape="shut_w")
+for dx in range(-4, 0):
+    for dz in (-1, 0, 1):
+        put(lx + dx, P1y_ - 10, lz + dz, "moss_block" if _h(dx, 0, dz, 9) < .5 else "mossy_cobblestone")
+        if dx == -4 or abs(dz) == 1: pass
+cache(lx - 3, P1y_ - 9, lz, "柱の岩棚")
+put(lx - 2, P1y_ - 9, lz + 1, "fern", shape="plant")
+for (x, z, what) in SECRETS: CONTENT.append((x, z, "secret"))
+print("secrets", [s3 for _, _, s3 in SECRETS])
+
 # ---------------- forests: old dark-oak forest (west, woodcutting), birch on the tree hill, spruce on the east ridge ----------------
 forest = fbm(4, 6, .5, 121)
 west = np.clip((150 - xx) / 120, 0, 1)
@@ -1655,11 +1958,48 @@ for z in range(4, B - 4):
             if r2 < .004: young_tree(x, z)
             elif r2 < .02: bush_clump(x, z)
             continue
+        if noise3(x, 0, z, 610, 16) > .76: continue                    # a clearing: light comes down, ferns and flowers instead
         if R.random() < dens[z, x]:
+            lf = R.randint(3, 6) if dens[z, x] > .02 else 0          # inside a wood the trunks stand tall and the roof is overhead
             if x > CLIFF_X - 4: oak(x, z, "spruce")
-            elif west[z, x] > .3 and R.random() < .55: oak(x, z, "dark", big=R.random() < .3)
-            elif treehill[z, x] > .4 and R.random() < .4: oak(x, z, "birch")
-            else: oak(x, z, "oak", big=R.random() < .08)
+            elif west[z, x] > .3 and R.random() < .55: oak(x, z, "dark", big=R.random() < .3, lift=lf)
+            elif treehill[z, x] > .4 and R.random() < .4: oak(x, z, "birch", lift=lf)
+            else: oak(x, z, "oak", big=R.random() < .08, lift=lf)
+FALLEN = 0                                                           # the forest floor: fallen trunks, mossy rocks
+for _ in range(9000):
+    x, z = R.randrange(10, B - 10), R.randrange(10, B - 10)
+    if dens[z, x] < .025 or anyway[z, x] < 4 or slope[z, x] > .8 or WATER_NEAR[z, x] < 10: continue
+    if R.random() < .55:
+        a = R.random() * math.tau; L = R.randint(6, 11); kind = "dark_oak_log" if west[z, x] > .3 else "oak_log"
+        cells = [(int(round(x + math.cos(a) * k)), int(round(z + math.sin(a) * k))) for k in range(L)]
+        if any(not (2 <= cx < B - 2 and 2 <= cz < B - 2) or used[cz, cx] or anyway[cz, cx] < 3 for cx, cz in cells): continue
+        g0 = at(x, z)
+        for k, (cx, cz) in enumerate(cells):
+            gy = max(at(cx, cz) + 1, g0 + 1 - k // 4)
+            if (cx, gy, cz) in w.b and w.b[(cx, gy, cz)][0] == "full": break
+            for yy in range(gy, gy + 2):
+                if w.b.get((cx, yy, cz), ("",))[0] in ("plant", "carpet"): w.b.pop((cx, yy, cz), None)
+            put(cx, gy, cz, kind, kind)
+            r4 = _h(cx, gy, cz, 611)
+            if r4 < .35: put(cx, gy + 1, cz, "moss_block", shape="carpet")
+            elif r4 < .45: put(cx, gy + 1, cz, R.choice(["brown_mushroom", "red_mushroom", "fern"]), shape="plant")
+        if R.random() < .6:                                          # the root plate it tore up
+            cx, cz = cells[0]
+            for dy in range(0, 3):
+                for k in (-1, 0, 1):
+                    px3, pz3 = int(round(cx - math.sin(a) * k - math.cos(a))), int(round(cz + math.cos(a) * k - math.sin(a)))
+                    put(px3, at(cx, cz) + 1 + dy, pz3, "rooted_dirt" if dy < 2 else "moss_block", shape="full" if dy < 2 else "slab")
+        mark(min(c[0] for c in cells), min(c[1] for c in cells), max(c[0] for c in cells), max(c[1] for c in cells))
+    else:
+        g0 = at(x, z); rr4 = R.uniform(1.2, 2.2)
+        for dx in range(-3, 4):
+            for dz in range(-3, 4):
+                for dy in range(0, 3):
+                    if (dx / rr4) ** 2 + (dz / (rr4 * .8)) ** 2 + (dy / (rr4 * .7)) ** 2 <= 1 + noise3(x + dx, dy, z + dz, 612, 1.5) * .3:
+                        put(x + dx, g0 + dy, z + dz, "moss_block" if dy == int(rr4 * .7) or _h(dx, dy, dz, 613) < .3 else R.choice(["mossy_cobblestone", "stone", "andesite"]))
+        mark(x - 3, z - 3, x + 3, z + 3)
+    FALLEN += 1
+    if FALLEN >= 60: break
 LONE = []                                                            # a few big lone trees standing in the open: landmarks in the meadows
 for _ in range(4000):
     x, z = R.randrange(15, B - 15), R.randrange(15, B - 15)
@@ -1675,7 +2015,6 @@ for (x, y, z), v in list(w.b.items()):
         g = at(x, z)
         if (x, g + 1, z) not in w.b and w.b.get((x, g, z), ("", "", ""))[1] in ("grass_block_top", "podzol_top", "coarse_dirt", "moss_block"):
             put(x, g + 1, z, "leaf_litter", shape="carpet")
-scatter_plants(250, 250, 240, .006, ["poppy", "dandelion", "short_grass", "short_grass"])
 # ground cover in clumps and drifts: grass tufts where the clump noise is high, flowers in single-species drifts,
 # ferns in shade and damp ground, a few small mossy stones on the hills
 FLOWERS = ["poppy", "dandelion", "cornflower", "oxeye_daisy", "azure_bluet", "allium"]
@@ -1686,13 +2025,13 @@ for z in range(2, B - 2):
         if (x, y, z) in w.b: continue
         t2 = w.b.get((x, y - 1, z))
         if not t2: continue
-        clump = noise3(x, 0, z, 401, 2.2)
-        drift = noise3(x, 0, z, 402, 7.0)
+        clump = noise3(x, 0, z, 401, 5.0)
+        drift = noise3(x, 0, z, 402, 14.0)
         top = t2[1]
         if top == "grass_block_top":
             if anyway[z, x] < 5 and _h(x, 9, z, 48) < .6: continue      # trodden near paths
-            if drift > .72 and _h(x, 2, z, 41) < .55 and FOREST_F[z, x] < .35:
-                put(x, y, z, FLOWERS[int(noise3(x, 0, z, 403, 12) * 6) % 6], shape="plant")
+            if drift > .78 and _h(x, 2, z, 41) < (drift - .76) * 2.2 and FOREST_F[z, x] < .35:
+                put(x, y, z, FLOWERS[int(noise3(x, 0, z, 403, 30) * 12) % 6], shape="plant")
             elif clump > .52 and _h(x, 3, z, 42) < (clump - .45) * 2.2:
                 put(x, y, z, "tall_grass_top" if clump > .78 and _h(x, 4, z, 43) < .4 else "short_grass", shape="plant")
             elif FOREST_F[z, x] > .5 and _h(x, 5, z, 44) < .08:
@@ -1708,6 +2047,7 @@ for z in range(2, B - 2):
 
 
 
+REEDS = [(POND[0] - 30, POND[1] - 8, 11), (POND[0] + 22, POND[1] + 14, 8), (236, 300, 7)]
 # reeds and stones at the waterline: sugar cane in clumps, a few mossy stones, lily pads on the shallows
 for z in range(2, B - 2):
     for x in range(2, B - 2):
@@ -1716,10 +2056,29 @@ for z in range(2, B - 2):
         y = at(x, z) + 1
         if (x, y, z) in w.b and w.b[(x, y, z)][0] not in ("plant", "carpet"): continue
         r3 = noise3(x, 0, z, 421, 3)
-        if r3 > .58 and _h(x, 1, z, 71) < .7:
+        bed = any(math.hypot(x - a, z - b2) < rr for a, b2, rr in REEDS)
+        if bed and r3 > .45 and _h(x, 1, z, 71) < .75:
             for k in range(1 + int(_h(x, 2, z, 72) * 3)): put(x, y + k, z, "sugar_cane", shape="plant")
         elif _h(x, 3, z, 73) < .05:
             put(x, y, z, "mossy_cobblestone")
+
+# ---------------- night: things that glow, so the dark field still has a shape ----------------
+# fireflies over the water's edge, lichen glowing under the great roots, a lantern at each place people stop
+nff = 0
+for _ in range(6000):
+    x, z = R.randrange(5, B - 5), R.randrange(5, B - 5)
+    if not (2 <= WATER_NEAR[z, x] <= 5) or road[z, x] or trail[z, x] or used[z, x]: continue
+    for k in range(R.randint(4, 8)):
+        a2, b2 = x + R.randint(-3, 3), z + R.randint(-3, 3)
+        if 0 <= a2 < B and 0 <= b2 < B and not (lake[b2, a2] or stream[b2, a2] or road[b2, a2]) and (a2, at(a2, b2) + 1, b2) not in w.b:
+            put(a2, at(a2, b2) + 1, b2, "firefly_bush", shape="plant")
+    nff += 1
+    if nff >= 16: break
+nlich = 0
+for (x, y, z), v in list(w.b.items()):
+    if v[1] in ("dark_oak_wood", "mangrove_wood", "spruce_wood", "dark_oak_log", "mangrove_log") and y > at(x, z) + 3 and (x, y - 1, z) not in w.b and _h(x, y, z, 901) < .14:
+        put(x, y - 1, z, "glow_lichen", shape="ceil"); nlich += 1
+print("night: firefly clusters", nff, "lichen", nlich)
 
 # ---------- walkability pass: a slab on the low side of every one-block step along roads, trails, bridges and tops ----------
 STEP_SLAB = ["mud_bricks", "mud_bricks", "mud_bricks", "cobblestone", "mud_bricks"]
@@ -1828,6 +2187,6 @@ LABELS = LABELS + LABELS_POI
 if __name__ == "__main__":
     print("blocks", len(w.b))
     import pickle
-    pickle.dump((w.b, hi, LABELS), open("field500.pkl", "wb")); pickle.dump((FILL, STATS), open("field500-fill.pkl", "wb"))
+    np.save("upper.npy", UPPER); pickle.dump((w.b, hi, LABELS), open("field500.pkl", "wb")); pickle.dump((FILL, STATS), open("field500-fill.pkl", "wb"))
 
 

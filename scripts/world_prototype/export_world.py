@@ -117,6 +117,9 @@ def state(shape, top, side):
         if n == "moss_block": return "moss_carpet", {}
         if n in NO_SLAB_KEEP_FULL or n.endswith("_leaves"): pass
         else: return None                           # terrain half-steps that have no slab block: leave the step bare
+    elif shape == "ceil":
+        if n == "glow_lichen": return n, {"up": "true", "down": "false", "north": "false", "south": "false", "east": "false", "west": "false", "waterlogged": "false"}
+        return None
     elif shape == "carpet":
         if n == "pink_petals": return n, {"flower_amount": "4", "facing": "north"}
         if n in ("leaf_litter", "dark_oak_leaves"): return "leaf_litter", {"segment_amount": "4", "facing": "north"}
@@ -138,6 +141,7 @@ def state(shape, top, side):
         if n.endswith("wall_banner"): return n, {"facing": {"south": "north", "north": "south", "east": "west", "west": "east"}[face] if False else face}
         if n.endswith("trapdoor"):
             return n, {"facing": face, "half": "bottom", "open": "true", "powered": "false", "waterlogged": "false"}
+        if n == "vine" and shape == "shut_w": return n, {"east": "true", "north": "false", "south": "false", "west": "false", "up": "false"}
         if n == "vine" and shape == "shut_e": return n, {"west": "true", "north": "false", "south": "false", "east": "false", "up": "false"}
         return None
     elif shape == "shut_s":
