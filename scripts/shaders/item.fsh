@@ -6,6 +6,8 @@
 //   texture is a data map (R = shape mask, G = flow coordinate along the effect, B = across), the tint red is the
 //   effect's progress (0..1, driven by the server every tick) and the colour is computed here: emissive, moving
 //   noise, a hot leading edge, dissolving tails.
+//   Kinds 7..9 are the warrior's heat cut (sprite war_slash): white-hot head, cooling to red and ember; 7 is the
+//   hottest, 8 and 9 burn cooler (鉄槌's first falls).
 // - Warrior iron strikes (scripts/build_warrior_iron_vfx.py): texels whose alpha is a marker. 253 = heat,
 //   self-lit and flickering; 121 / 65 = near / far glow halo.
 // The VFX colours are self-lit (no overlay, lightmap or glint) but go through the same OIT phases and fog as vanilla.
@@ -86,6 +88,33 @@ vec3 ramp(float h) {
     return mix(c, vec3(1.0, .80, .95), smoothstep(.7, 1.0, h));
 }
 
+// Forge palette: cold iron, deep red, orange, yellow, white-hot.
+vec3 forge(float h) {
+    vec3 c = mix(vec3(.07, .03, .03), vec3(.58, .05, .04), smoothstep(.0, .3, h));
+    c = mix(c, vec3(1.0, .42, .08), smoothstep(.3, .6, h));
+    c = mix(c, vec3(1.0, .80, .36), smoothstep(.6, .82, h));
+    return mix(c, vec3(1.0, .97, .88), smoothstep(.82, 1.0, h));
+}
+
+// 7..9 heat cut: the head runs along flow with p; behind it the cut cools and tears into embers.
+vec4 heatCut(vec4 data, float kind, float p) {
+    float mask = data.r, flow = data.g, across = data.b;
+    float t = GameTime * 1200.0;
+    float hot = kind < 7.5 ? 1.0 : (kind < 8.5 ? .82 : .64);
+    float head = 1.3 * (1.0 - pow(1.0 - p, 5.0));     // lands within two ticks, like a heavy blade
+    float behind = head - flow;
+    float trail = clamp(1.0 - behind / .95, 0.0, 1.0) * step(0.0, behind);
+    float ember = fbm(vec2(flow * 11.0 - t * 1.5, across * 7.0 + t * .4));
+    float body = mask * trail * smoothstep(.2, .55, ember * .7 + trail * .7);
+    float edge = smoothstep(.88, 1.0, trail) * mask;
+    float heat = (body * (.35 + .6 * trail) + edge * .5 + mask * across * trail * .25) * hot;
+    float alpha = min(1.0, body * 1.8 + edge) * (1.0 - smoothstep(.7, 1.0, p));
+    // Posterised like the hand-drawn plates beside it: five heat steps, a solid body and one translucent halo step.
+    heat = floor(clamp(heat, 0.0, 1.0) * 5.0 + .5) / 5.0;
+    alpha = alpha > .5 ? 1.0 : (alpha > .15 ? .5 : 0.0);
+    return vec4(forge(heat), alpha);
+}
+
 vec4 shadeVfx(vec4 data, float kind, float p) {
     float mask = data.r, flow = data.g, across = data.b;
     float t = GameTime * 1200.0;                       // seconds
@@ -154,8 +183,8 @@ void main() {
     vec4 color = texture(Sampler0, texCoord0);
     int markerB = int(rawColor.b * 255.0 + .5);
     int kind = int(rawColor.g * 255.0 + .5);
-    if (markerB == 77 && kind >= 1 && kind <= 6) {
-        vec4 fx = shadeVfx(color, float(kind), rawColor.r);
+    if (markerB == 77 && kind >= 1 && kind <= 9) {
+        vec4 fx = kind >= 7 ? heatCut(color, float(kind), rawColor.r) : shadeVfx(color, float(kind), rawColor.r);
         if (fx.a < .01) {
             discard;
         }

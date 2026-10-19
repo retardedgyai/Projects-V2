@@ -48,6 +48,21 @@ def slash(u, v):
     return max(0, band) ** .8 * ends, (a + half) / (2 * half), (r - .36) / .64
 
 
+def war_slash(u, v):
+    """Warrior heat cut (2026-10-19): the 黒翳竜 crescent made heavy. ±100° about +Z, a band that thickens toward the
+    head (flow 1), so the leading edge reads as the mass of the blade and the tail as the cut it leaves."""
+    x, z = 2 * u - 1, 2 * v - 1
+    r, a = math.hypot(x, z), math.atan2(x, z)
+    half = math.radians(100)
+    if abs(a) > half or not .28 < r <= 1:
+        return 0, 0, 0
+    flow = (a + half) / (2 * half)
+    width = .14 + .2 * flow
+    band = 1 - abs(r - .74) / width
+    ends = smooth(0, .08, (half - abs(a)) / (2 * half))
+    return max(0, band) ** .6 * ends, flow, (r - .28) / .72
+
+
 def ring(u, v):
     x, z = 2 * u - 1, 2 * v - 1
     r = math.hypot(x, z)
@@ -75,7 +90,7 @@ def curtain(u, v):
     return smooth(0, .18, u) * smooth(0, .18, 1 - u), u, 1 - v
 
 
-SPRITES = {"slash": (128, 128, slash, "flat"), "ring": (64, 64, ring, "flat"), "beam": (32, 128, beam, "flat"),
+SPRITES = {"slash": (128, 128, slash, "flat"), "war_slash": (64, 64, war_slash, "flat"), "ring": (64, 64, ring, "flat"), "beam": (32, 128, beam, "flat"),
            "beam_up": (128, 32, lambda u, v: beam(v, u), "upright"), "ring_up": (64, 64, ring, "upright"), "puff": (32, 32, puff, "upright"), "smoke": (32, 32, puff, "upright"),
            "curtain": (32, 64, curtain, "upright")}
 

@@ -31,7 +31,7 @@ internal object CoreCombatPresentation {
 internal class CoreCombatMeshes(private val owner: Player) {
     private data class Live(val entity: Entity,val instance: Instance,val part: CoreCombatMeshPart,
         val ownerStart: Pos,val baseYaw: Double,var age: Int=-2,var model: String="",val cancelled: AtomicBoolean=AtomicBoolean(),
-        var lastUpdateNanos: Long=0,var maxUpdateGapNanos: Long=0,var updateCount: Int=0)
+        var lastUpdateNanos: Long=0,var maxUpdateGapNanos: Long=0,var updateCount: Int=0,var tint: Int?=null)
     private val live=mutableListOf<Live>()
     internal val size get()=live.size
 
@@ -78,8 +78,8 @@ internal class CoreCombatMeshes(private val owner: Player) {
             live+=record
             entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
                 val initial=CoreSkillChoreography.pose(part,0.0)
-                record.model=initial.model
-                meta.setItemStack(ItemStack.of(Material.PAPER).withItemModel("projects:${record.model}"))
+                record.model=initial.model;record.tint=initial.tint
+                meta.setItemStack(stack(record.model,initial.tint))
                 meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
                 meta.setBrightness(15,15);meta.setViewRange(1.0f)
                 meta.setTransformationInterpolationDuration(interpolationTicks(part))
@@ -106,6 +106,13 @@ internal class CoreCombatMeshes(private val owner: Player) {
             }
         }
         return true
+    }
+
+    private fun stack(model: String, tint: Int?): ItemStack {
+        val item=ItemStack.of(Material.PAPER).withItemModel("projects:$model")
+        return if(tint==null) item else item.with(net.minestom.server.component.DataComponents.CUSTOM_MODEL_DATA,
+            net.minestom.server.item.component.CustomModelData(emptyList(),emptyList(),emptyList(),
+                listOf(net.kyori.adventure.text.format.TextColor.color(tint))))
     }
 
     fun tick() {
@@ -152,8 +159,8 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 meta.setScale(if(pose.visible) pose.scale else Vec.ZERO)
                 meta.setTranslation(offset)
                 meta.setLeftRotation(CoreCombatMeshArt.rotation(pose.yaw+facing,pose.pitch,pose.roll))
-                if(v.model!=pose.model) {
-                    meta.setItemStack(ItemStack.of(Material.PAPER).withItemModel("projects:${pose.model}"));v.model=pose.model
+                if(v.model!=pose.model || v.tint!=pose.tint) {
+                    meta.setItemStack(stack(pose.model,pose.tint));v.model=pose.model;v.tint=pose.tint
                 }
             }
             if(v.entity.instance===v.instance) {

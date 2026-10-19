@@ -50,7 +50,7 @@ def item_model(key, cmd=None):
         for entry in item['entries']:
             if cmd is not None and cmd >= entry['threshold']: chosen = entry['model']
         item = chosen
-    return model_json(item['model'].split(':')[1]), tuple(t['value'] for t in item.get('tints', [{'value': 0xffffff}]))
+    return model_json(item['model'].split(':')[1]), tuple(t.get('value', t.get('default', 0xffffff)) for t in item.get('tints', [{'value': 0xffffff}]))
 
 
 @lru_cache(maxsize=4096)
@@ -83,7 +83,65 @@ def element_rotation(e):
     return T(*o) @ rot @ T(-o[0], -o[1], -o[2])
 
 
-def model_faces(model, tints, matrix):
+# ---------- scripts/shaders/item.fsh, the heat cut (kinds 7..9), redone in numpy for the preview ----------
+def _fract(v):
+    return v - np.floor(v)
+
+
+def _hash(x, y):
+    x, y = _fract(x * 123.34), _fract(y * 456.21)
+    d = x * (x + 45.32) + y * (y + 45.32)
+    return _fract((x + d) * (y + d))
+
+
+def _noise(x, y):
+    ix, iy, fx, fy = np.floor(x), np.floor(y), x - np.floor(x), y - np.floor(y)
+    ux, uy = fx * fx * (3 - 2 * fx), fy * fy * (3 - 2 * fy)
+    a, b, c, d = _hash(ix, iy), _hash(ix + 1, iy), _hash(ix, iy + 1), _hash(ix + 1, iy + 1)
+    return (a + (b - a) * ux) + ((c + (d - c) * ux) - (a + (b - a) * ux)) * uy
+
+
+def _fbm(x, y):
+    return .55 * _noise(x, y) + .3 * _noise(x * 2.1 + 7.3, y * 2.1 + 7.3) + .15 * _noise(x * 4.3 + 1.7, y * 4.3 + 1.7)
+
+
+def _smooth(a, b, x):
+    t = np.clip((x - a) / (b - a), 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+def _mix(a, b, t):
+    return a + (np.asarray(b) - a) * t[..., None]
+
+
+def _forge(h):
+    c = _mix(np.broadcast_to(np.array((.07, .03, .03)), h.shape + (3,)), (.58, .05, .04), _smooth(0, .3, h))
+    c = _mix(c, (1.0, .42, .08), _smooth(.3, .6, h))
+    c = _mix(c, (1.0, .80, .36), _smooth(.6, .82, h))
+    return _mix(c, (1.0, .97, .88), _smooth(.82, 1.0, h))
+
+
+def heat_cut(data, kind, p, t):
+    d = np.asarray(data).astype(float) / 255
+    mask, flow, across = d[..., 0], d[..., 1], d[..., 2]
+    hot = 1.0 if kind == 7 else .82 if kind == 8 else .64
+    behind = 1.3 * (1 - (1 - p) ** 5) - flow
+    trail = np.clip(1 - behind / .95, 0, 1) * (behind >= 0)
+    ember = _fbm(flow * 11 - t * 1.5, across * 7 + t * .4)
+    body = mask * trail * _smooth(.2, .55, ember * .7 + trail * .7)
+    edge = _smooth(.88, 1.0, trail) * mask
+    heat = np.clip((body * (.35 + .6 * trail) + edge * .5 + mask * across * trail * .25) * hot, 0, 1)
+    alpha = np.clip(np.minimum(1, body * 1.8 + edge) * (1 - _smooth(.7, 1.0, np.array(p))), 0, 1)
+    heat = np.floor(heat * 5 + .5) / 5
+    alpha = np.where(alpha > .5, 1.0, np.where(alpha > .15, .5, 0.0))
+    rgba = np.dstack((_forge(heat), alpha)) * 255
+    return Image.fromarray(rgba.astype('uint8'))
+
+
+SHADER_TIME = [0.0]
+
+
+def model_faces(model, tints, matrix, tint=None):
     """Faces of a block/item model (pixel units) placed by matrix: (world corners, texture image or rgba)."""
     out = []
     for e in model.get('elements', []):
@@ -94,7 +152,12 @@ def model_faces(model, tints, matrix):
             face = e['faces'].get(name)
             if not face: continue
             tex_name = model['textures'][face['texture'][1:]]
+            if isinstance(tex_name, dict): tex_name = tex_name['sprite']
             while tex_name.startswith('#'): tex_name = model['textures'][tex_name[1:]]
+            if tint is not None and tint & 255 == 77 and 7 <= (tint >> 8) & 255 <= 9:
+                img = heat_cut(texture(tex_name, 0xffffff), (tint >> 8) & 255, ((tint >> 16) & 255) / 255, SHADER_TIME[0])
+                out.append(([corners[i] for i in ids], img))
+                continue
             tint = tints[face.get('tintindex', 0)] if 'tintindex' in face else 0xffffff
             img = texture(tex_name, tint)
             uv = face.get('uv', [0, 0, 16, 16])
@@ -182,16 +245,17 @@ def weapon_faces(hand, pose):
 def display_faces(d):
     model, tints = item_model(d['model'])
     m = T(*d['offset']) @ Rq(d['quaternion']) @ S(*d['scale']) @ T(-.5, -.5, -.5) @ S(1 / 16, 1 / 16, 1 / 16)
-    return model_faces(model, tints, m)
+    return model_faces(model, tints, m, d.get('tint') if d.get('tint', -1) >= 0 else None)
 
 
 def weapon_pose(scene, tick):
     """CoreArmamentPresentation clips: PREPARE from the cast for the startup, RELEASE from the pulse for 12 ticks."""
     cast, startup = scene['castTick'], scene['startup']
-    if scene['id'] == 'war_guard': return (tick // 2) % 12  # guard motif keeps the idle frames
+    sid = scene['id'].removesuffix('_shader')
+    if sid == 'war_guard': return (tick // 2) % 12  # guard motif keeps the idle frames
     if cast <= tick < cast + startup and startup > 1:
         return 12 + (tick - cast) * 5 // max(startup - 1, 1)
-    if scene['id'] == 'war_ult':  # every one of the three falls is its own 8-tick release
+    if sid == 'war_ult':  # every one of the three falls is its own 8-tick release
         for k in range(scene.get('pulses', 1)):
             start = cast + startup + 8 * k
             if start <= tick < start + 8: return 18 + (tick - start) * 5 // 7
@@ -289,6 +353,7 @@ VIEWS = {'behind': ('背後（F5視点）', (0.0, 3.0, -3.76), (0.0, .25, 4.0)),
 
 def render(scene, tick, view):
     frame = scene['frames'][tick]
+    SHADER_TIME[0] = tick / 20
     origin = np.array(scene['frames'][0]['player'][:3])
     label, eye, target = VIEWS[view]
     camera = Camera(eye, target)
@@ -314,7 +379,7 @@ def render(scene, tick, view):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ids', default='dash,slam,whirl,war_wound,war_guard,war_ult')
+    parser.add_argument('--ids', default='dash,slam,whirl,war_wound,war_guard,war_ult,slam_shader,whirl_shader,war_ult_shader')
     parser.add_argument('--out', default='.tools/cast')
     parser.add_argument('--frames', default='.tools/warrior-cast-frames.json')
     args = parser.parse_args()

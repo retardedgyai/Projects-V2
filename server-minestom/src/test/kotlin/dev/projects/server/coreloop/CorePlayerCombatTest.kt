@@ -361,7 +361,9 @@ class CorePlayerCombatTest {
     @Test fun `warrior casts export the player and every spawned display for the cast preview`() {
         fun xyz(v: net.minestom.server.coordinate.Point)=listOf(v.x(),v.y(),v.z())
         val casts=listOf("dash" to 0,"slam" to 1,"whirl" to 2,"war_guard" to 3,"war_wound" to 3,"war_ult" to 4)
-        val scenes=casts.map { (icon,slot) -> var scene=emptyMap<String,Any>(); arena { h ->
+        // The shader-cut trial is recorded as extra scenes "<id>_shader" next to the drawn plates.
+        val runs=casts.map { Triple(it.first,it.second,false) }+casts.filter { it.first in CoreWarriorIronChoreography.sceneIds }.map { Triple(it.first,it.second,true) }
+        val scenes=runs.map { (icon,slot,shader) -> var scene=emptyMap<String,Any>(); CoreWarriorIronChoreography.shaderCut=shader; try { arena { h ->
             CoreCombatPresentation.pack(h.player,true)
             if(icon=="war_wound") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=4)); h.actor.reset() }
             assertEquals(icon,h.actor.skillDefinitions[slot].icon)
@@ -374,14 +376,15 @@ class CorePlayerCombatTest {
                     val model=m.itemStack.get(DataComponents.ITEM_MODEL)?.toString()?.substringAfter("projects:") ?: return@mapNotNull null
                     if(m.scale.x()==0.0&&m.scale.y()==0.0&&m.scale.z()==0.0) return@mapNotNull null
                     mapOf("model" to model,"offset" to xyz(e.position.add(m.translation)),"scale" to xyz(m.scale),
-                        "quaternion" to m.leftRotation.map { it.toDouble() })
+                        "quaternion" to m.leftRotation.map { it.toDouble() },
+                        "tint" to (m.itemStack.get(DataComponents.CUSTOM_MODEL_DATA)?.colors()?.firstOrNull()?.let { (it.red() shl 16) or (it.green() shl 8) or it.blue() } ?: -1))
                 }) }
             repeat(4) { record(); h.ticks(1) }
             h.actor.skill(slot)
             repeat(76) { record(); h.ticks(1) }
-            scene=mapOf("id" to icon,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
+            scene=mapOf("id" to if(shader) "${icon}_shader" else icon,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
             CoreCombatPresentation.forget(h.player)
-        }; scene }
+        } } finally { CoreWarriorIronChoreography.shaderCut=false }; scene }
         val cwd=java.nio.file.Path.of(System.getProperty("user.dir"))
         val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd
         java.nio.file.Files.createDirectories(root.resolve(".tools"))
