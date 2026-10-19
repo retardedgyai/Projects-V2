@@ -19,6 +19,8 @@ import shaderclip  # noqa: E402
 import sakura_clips  # noqa: E402
 import sakura_glow  # noqa: E402
 import build_boss_sakura_fang as fang  # noqa: E402
+import sakura_fx  # noqa: E402
+import sakura_fx_styles  # noqa: E402
 
 
 def sakura_ramp(h):
@@ -54,9 +56,18 @@ def main(dump, out):
                 by_tick.setdefault(r["tick"], []).append(r)
         hit = fang.ABILITIES.get(name, (2.5, 0))[0]
         v = dict(az=35, el=26, size=(560, 360), scale=zoom * 1.6, center=(0, 20, 40), cy=.66)
+        storm = sakura_fx.Fx(name)                         # the petal storm (look B) that plays with the strike in game
+        look = sakura_fx_styles.Style("B")
+        st = 0
         n = int(a["length"] / .1)
         for i in range(n + 1):
             t = min(a["length"], i * .1)
+            while st * sakura_fx.DT <= t:
+                tt = st * sakura_fx.DT
+                storm.emit(tt, sc, sakura_clips.sample(a, min(tt, a["length"])))
+                storm.step(tt)
+                look.hist = {id(q): (look.hist.get(id(q), []) + [q.p.copy()])[-look.trail:] for q in storm.petals}
+                st += 1
             pose = sakura_clips.sample(a, t)
             live = by_tick.get(int(round(t / .05)) - 1, [])
             panel, zb = rbb.render(sc, pose, bg=BG, outline=False, with_depth=True, emissive=sakura_glow.shader(t), **v)
@@ -69,6 +80,7 @@ def main(dump, out):
             oy = H * v["cy"] + np.array(v["center"], float) @ up * v["scale"]
             shaderclip.draw(arr, zb, live, 100 + t, cam, right, up, ox, oy, v["scale"], textures)
             img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
+            img = look.draw(img, zb, storm.petals, t, (v["az"], v["el"], v["size"], v["scale"], v["cy"], v["center"]), [])
             on = hit - .02 <= t <= hit + .3
             rbb.text(img, (8, 4), f"{label}  {t:.1f}s" + ("  ← 決め" if on else ""), rbb.SMALL, (255, 150, 190) if on else (236, 228, 244))
             frames.append(img)

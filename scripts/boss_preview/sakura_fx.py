@@ -78,20 +78,22 @@ class Fx:
     def emit(self, t, sc, pose):
         r = self.rng
         c = self.clip
-        hit = {"sakura-claw": 1.2, "sakura-tail": 1.5, "sakura-scatter": 1.7, "sakura-bloom": 2.0}.get(c)
-        enraged = c.endswith("_enraged") or c in ("sakura-bloom",)
+        hit = fang.ABILITIES.get(c.replace("_enraged", ""), (None,))[0]
+        enraged = c.endswith("_enraged") or c in fang.ENRAGED_ONLY
         # always: a few petals shed from the shells and drift off in the wind (more once enraged)
         for _ in range(self.rate("shed", 16 if enraged or (c == "enrage" and t > 2.5) else 6)):
             self.add(self.shell_point(sc, pose), np.array([r.uniform(-15, 15), r.uniform(0, 25), r.uniform(-30, 0)]), r.uniform(1.4, 2.2))
-        if c == "sakura-claw":
-            tip = sc.point("hand_r", (-15, 1, 31), pose)
-            if .25 <= t <= 1.15:                                   # petals spiral into the raised claw
+        base = c.replace("_enraged", "")
+        if base in ("sakura-claw", "sakura-claw2", "sakura-claw3"):
+            tip = sc.point("hand_l", (15, 1, 31), pose) if base == "sakura-claw2" else sc.point("hand_r", (-15, 1, 31), pose)
+            big = 1.5 if base == "sakura-claw3" else .6 if base == "sakura-claw2" else 1.0
+            if .25 <= t <= hit - .05:                              # petals spiral into the raised claw
                 for _ in range(self.rate("gather", 70)):
                     off = rand_dir(r) * r.uniform(28, 44)
                     tang = np.cross(off, [0, 1, 0]); tang /= (np.linalg.norm(tang) + 1e-6)
                     self.add(tip + off, -off * 1.9 + tang * 90, .5, drag=0.0)
             if self.once("burst", t, hit):                         # the slam throws the petals up along the strip
-                for _ in range(110):
+                for _ in range(int(110 * big)):
                     p = np.array([r.uniform(-34, 34), 2, r.uniform(16, 96)])
                     self.add(p, np.array([r.uniform(-60, 60), r.uniform(140, 300), r.uniform(-30, 90)]), r.uniform(1.2, 2.0))
                 for k in range(48):                                # and a flat shock ring from the paw
@@ -120,6 +122,28 @@ class Fx:
                     a = math.radians(r.uniform(-40, 40))
                     d = np.array([math.sin(a), r.uniform(-.05, .12), math.cos(a)])
                     self.add(o + rand_dir(r) * 6, d * r.uniform(480, 640), r.uniform(1.0, 1.6), drag=2.3)
+        elif base == "sakura-horn":
+            if self.once("horn", t, hit):                          # the horns rake petals up and ahead
+                head = sc.point("skull", (0, 44, 40), pose)
+                for _ in range(140):
+                    a = math.radians(r.uniform(-25, 25))
+                    self.add(head + rand_dir(r) * 5, np.array([math.sin(a), r.uniform(.6, 1.4), math.cos(a)]) * r.uniform(160, 256), r.uniform(.9, 1.5), drag=2.0)
+        elif base == "sakura-spin":
+            if hit - .3 <= t <= hit + .25:                         # the spinning tail throws a ring of petals
+                for _ in range(self.rate("spin", 120)):
+                    bone = r.choice([b for b in self.shell_bones if "_t" in b])
+                    p = sc.point(bone, sc.bones[bone]["pivot"], pose)
+                    radial = p * [1, 0, 1]; radial = radial / (np.linalg.norm(radial) + 1e-6)
+                    tang = np.cross([0, 1, 0], radial)
+                    self.add(p, -tang * 190 + radial * 96 + [0, r.uniform(8, 40), 0], r.uniform(.8, 1.3), drag=1.4)
+        elif base == "sakura-howl":
+            if .45 <= t <= hit - .1:
+                for _ in range(self.rate("howl", 50)):
+                    self.add(self.shell_point(sc, pose), np.array([r.uniform(-24, 24), r.uniform(40, 80), r.uniform(-24, 24)]), 1.0)
+            if self.once("howl", t, hit):                          # the howl blasts every petal outward
+                for _ in range(400):
+                    a = r.uniform(0, 2 * math.pi); d = np.array([math.cos(a), 0, math.sin(a)])
+                    self.add(self.shell_point(sc, pose), d * r.uniform(320, 450) + [0, r.uniform(32, 110), 0], r.uniform(.9, 1.5), drag=1.8)
         elif c == "sakura-bloom":
             if t <= hit - .1:                                      # a vortex rises round the beast
                 radius = 40 + 70 * (t / hit)
