@@ -58,6 +58,8 @@ internal object CoreBossBarHud {
     private val BROKEN: TextColor = TextColor.color(0xFFF2A0)
     private val NOTICE: TextColor = TextColor.color(0xFF8A70)
     private val WYRM_NAME: TextColor = TextColor.color(0xE0D4FF)
+    private val SAKURA_NAME: TextColor = TextColor.color(0xFFD8E4)
+    private val EROSION: TextColor = TextColor.color(0xD0A8FF)
 
     fun percent(health: Double, maximum: Double): String =
         if (!health.isFinite() || !maximum.isFinite() || maximum <= 0.0) "0%" else "${(health / maximum * 100).coerceIn(0.0, 100.0).toInt()}%"
@@ -70,8 +72,15 @@ internal object CoreBossBarHud {
      */
     fun centred(width: Int): Int = -(width - 1) / 2
 
-    fun render(hud: MobHud, trail: Double): Component =
-        if (hud.dedicated == "shade_wyrm") wyrm(hud, trail) else graded(hud, trail)
+    /** Dedicated frames by [MobHud.dedicated]: the key's glyph family (frame, fill, trail). */
+    private val DEDICATED = mapOf("shade_wyrm" to "wyrm", "sakura_fang" to "sakura")
+    const val EROSION_X = -45
+    const val EROSION_CELLS = 10
+    const val EROSION_PITCH = 9
+
+    /** [erosion]: this viewer's 黒翳竜 erosion 0..1 (drawn under the name while above zero). */
+    fun render(hud: MobHud, trail: Double, erosion: Double = 0.0): Component =
+        DEDICATED[hud.dedicated]?.let { dedicated(it, hud, trail, erosion) } ?: graded(hud, trail)
 
     /** [fill]: the fill glyph family (boss_fill, boss_fillc, wyrm_fill); the trail is that family's *_trail. */
     private fun CoreHudLine.gauge(fill: String, x: Int, width: Int, hud: MobHud, trail: Double) {
@@ -119,23 +128,29 @@ internal object CoreBossBarHud {
         return line.build()
     }
 
-    private fun wyrm(hud: MobHud, trail: Double): Component {
+    private fun dedicated(key: String, hud: MobHud, trail: Double, erosion: Double): Component {
         val line = CoreHudLine()
-        line.put(WYRM_FRAME_X, "wyrm_frame_l")
-        line.put(0, "wyrm_frame_r")
-        line.gauge("wyrm_fill", WYRM_HP_X, WYRM_HP_W, hud, trail)
-        line.cells("wyrm", hud)
+        line.put(WYRM_FRAME_X, "${key}_frame_l")
+        line.put(0, "${key}_frame_r")
+        line.gauge("${key}_fill", WYRM_HP_X, WYRM_HP_W, hud, trail)
+        line.cells("ded", hud)
         val icons = hud.effects.take(MAX_ICONS)
         icons.forEachIndexed { i, effect ->
-            line.put(WYRM_HP_X + WYRM_HP_W - icons.size * ICON_PITCH + 1 + i * ICON_PITCH, "wyrm_icon_${effect.icon}")
+            line.put(WYRM_HP_X + WYRM_HP_W - icons.size * ICON_PITCH + 1 + i * ICON_PITCH, "ded_icon_${effect.icon}")
         }
         val lv = "Lv${hud.level.coerceIn(0, 999)}"
-        val (title, color) = title(hud) ?: (hud.name to WYRM_NAME)
+        val (title, color) = title(hud) ?: (hud.name to (if (key == "sakura") SAKURA_NAME else WYRM_NAME))
         val left = centred(CoreHudGlyphs.uniWidth(lv) + 4 + CoreHudGlyphs.uniWidth(title))
-        line.uni(left, lv, CoreHudGlyphs.WYRM_NAME, CoreMobNameplate.LEVEL)
-        line.uni(left + CoreHudGlyphs.uniWidth(lv) + 4, title, CoreHudGlyphs.WYRM_NAME, color)
+        line.uni(left, lv, CoreHudGlyphs.DED_NAME, CoreMobNameplate.LEVEL)
+        line.uni(left + CoreHudGlyphs.uniWidth(lv) + 4, title, CoreHudGlyphs.DED_NAME, color)
         val pct = percent(hud.health, hud.maximumHealth)
-        line.uni(WYRM_HP_X + WYRM_HP_W + 2 - CoreHudGlyphs.uniWidth(pct), pct, CoreHudGlyphs.WYRM_PCT, WHITE)
+        line.uni(WYRM_HP_X + WYRM_HP_W + 2 - CoreHudGlyphs.uniWidth(pct), pct, CoreHudGlyphs.DED_PCT, WHITE)
+        if (erosion > 0.0 && erosion.isFinite()) {
+            line.put(EROSION_X - 2, "erosion_well")
+            val lit = kotlin.math.ceil(erosion.coerceIn(0.0, 1.0) * EROSION_CELLS).toInt()
+            for (i in 0 until lit) line.put(EROSION_X + i * EROSION_PITCH, "erosion_cell")
+            line.uni(EROSION_X - 4 - CoreHudGlyphs.uniWidth("侵食"), "侵食", CoreHudGlyphs.DED_EROSION, EROSION)
+        }
         return line.build()
     }
 }

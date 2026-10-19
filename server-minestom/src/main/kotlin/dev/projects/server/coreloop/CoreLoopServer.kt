@@ -1197,7 +1197,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             val trail = session?.bossTrail?.update(health, maximum, System.currentTimeMillis()) ?: health
             bar.color(BossBar.Color.PINK)
             val hud = combat.bossHud()
-            bar.name(if (hud != null) CoreBossBarHud.render(hud, trail) else Component.empty())
+            bar.name(if (hud != null) CoreBossBarHud.render(hud, trail, combat.erosionShare(player.uuid)) else Component.empty())
         } else {
             bar.color(BossBar.Color.RED)
             bar.name(CoreLoopItems.text("$name  ${health.roundToInt()} / ${maximum.roundToInt()}", NamedTextColor.RED))

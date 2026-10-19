@@ -105,6 +105,10 @@ class CoreHudLayoutTest {
             Triple("boss", "wyrm", CoreBossBarHud.render(bossHud().copy(name = "黒翳竜", grade = MobGrade.CALAMITY, dedicated = "shade_wyrm"), 14900.0)),
             Triple("boss", "wyrm-broken", CoreBossBarHud.render(bossHud().copy(name = "黒翳竜", health = 8200.0, broken = .55,
                 grade = MobGrade.CALAMITY, dedicated = "shade_wyrm"), 9000.0)),
+            Triple("boss", "wyrm-erosion", CoreBossBarHud.render(bossHud().copy(name = "黒翳竜", grade = MobGrade.CALAMITY,
+                dedicated = "shade_wyrm"), 14900.0, erosion = .64)),
+            Triple("boss", "sakura", CoreBossBarHud.render(bossHud().copy(name = "桜牙獣", grade = MobGrade.CALAMITY,
+                dedicated = "sakura_fang"), 14900.0)),
         ) + plates.flatMap { (name, hud) -> CoreMobNameplate.lines(hud).mapIndexed { i, line -> Triple("plate", "$name-$i", line) } } + listOf(
             Triple("damage", "normal", CoreDamageNumbers.render(482.0, false, false)),
             Triple("damage", "critical", CoreDamageNumbers.render(1260.0, true, false)),
@@ -231,6 +235,12 @@ class CoreHudLayoutTest {
         val wyrm = layout(CoreBossBarHud.render(bossHud().copy(dedicated = "shade_wyrm"), 14900.0)).first
         assertEquals(CoreBossBarHud.WYRM_FRAME_X, wyrm.first { glyphName(it) == "wyrm_frame_l" }.x)
         assertTrue(wyrm.none { it.font == "projects:hud_boss_name" })
+        assertTrue(wyrm.none { it.font == "projects:hud_ded_erosion" }, "no erosion gauge at zero")
+        val eroded = layout(CoreBossBarHud.render(bossHud().copy(dedicated = "shade_wyrm"), 14900.0, erosion = .35)).first
+        val cells = eroded.count { g -> CoreHudGlyphs["erosion_cell"].let { it.font.asString() == g.font && it.char.code == g.code } }
+        assertEquals(4, cells, "35% erosion lights 4 of 10 cells")
+        val sakura = layout(CoreBossBarHud.render(bossHud().copy(dedicated = "sakura_fang"), 14900.0)).first
+        assertTrue(sakura.any { g -> CoreHudGlyphs["sakura_frame_l"].let { it.font.asString() == g.font && it.char.code == g.code } })
     }
 
     @Test fun `override allowlist hides only the HUD parts the HUD replaces and reskins the hotbar`() {

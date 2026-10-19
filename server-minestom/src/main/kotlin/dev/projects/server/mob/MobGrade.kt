@@ -85,10 +85,15 @@ internal object BossBars {
         QuestMobArchetype.CINDER_REGENT, QuestMobArchetype.GLACIAL_COLOSSUS, QuestMobArchetype.TEMPEST_HIEROPHANT -> MobGrade.RARE
         QuestMobArchetype.FORGE_SENTINEL, QuestMobArchetype.TIDE_ARCHIVIST -> MobGrade.UNIQUE
         QuestMobArchetype.ECLIPSE_REGENT, QuestMobArchetype.SHADE_WYRM -> MobGrade.CALAMITY
-        else -> MobGrade.ELITE
+        else -> if (archetype.name == "SAKURA_FANG") MobGrade.CALAMITY else MobGrade.ELITE
     }
 
-    fun dedicated(archetype: QuestMobArchetype): String? = if (archetype == QuestMobArchetype.SHADE_WYRM) "shade_wyrm" else null
+    /** By name, so 桜牙獣 (SAKURA_FANG, still on play/gyai/boss-sakura) gets its frame the moment it lands. */
+    fun dedicated(archetype: QuestMobArchetype): String? = when (archetype.name) {
+        "SHADE_WYRM" -> "shade_wyrm"
+        "SAKURA_FANG" -> "sakura_fang"
+        else -> null
+    }
 }
 
 internal enum class MobHudEffectKind { BUFF, DEBUFF, CC }

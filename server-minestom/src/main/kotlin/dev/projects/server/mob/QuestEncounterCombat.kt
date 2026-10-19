@@ -212,6 +212,8 @@ class QuestEncounterCombat(
     internal fun maneuverCount(targetId: UUID): Int = mobs[targetId]?.maneuvers ?: 0
     internal fun partsBroken(targetId: UUID): List<Boolean> = mobs[targetId]?.let { listOf(it.hornsBroken, it.fanTorn[0], it.fanTorn[1]) } ?: emptyList()
     internal fun erosionOf(player: UUID): Double = gimmicks.erosionOf(player)
+    /** This player's erosion as a share of the eruption threshold (0..1), for the boss bar. */
+    internal fun erosionShare(player: UUID): Double = (gimmicks.erosionOf(player) / ShadeWyrmGimmicks.FULL).coerceIn(0.0, 1.0)
     internal val poolCount: Int get() = gimmicks.poolCount
     /** Fight preview dump: the model's clip and the shader displays on show. */
     internal fun shownClip(targetId: UUID): Pair<String, Long>? = mobs[targetId]?.view?.let { it.shownClip to it.shownSince }
@@ -1196,6 +1198,7 @@ class QuestEncounterCombat(
     var pixelNameplates = false
         set(value) {
             field = value
+            gimmicks.vanillaBar = !value
             if (!value) plates.dispose()
             mobs.values.filter { it.life.isAlive }.forEach { updateName(it, it.notice) }
         }

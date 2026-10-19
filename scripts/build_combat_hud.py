@@ -271,8 +271,9 @@ BOSS_TEXT_FONTS = {  # font -> top of its 8 px text row (boss bar: ascent = 10 -
     "hud_boss_tag": boss_art.TAG_TOP,
     "hud_boss_hp": boss_art.HP_TEXT_TOP,
     "hud_boss_lv": boss_art.LV_TOP,
-    "hud_wyrm_name": boss_art.WYRM_NAME_TOP,
-    "hud_wyrm_pct": boss_art.WYRM_PCT_TOP,
+    "hud_ded_name": boss_art.DED_NAME_TOP,
+    "hud_ded_pct": boss_art.DED_PCT_TOP,
+    "hud_ded_erosion": boss_art.EROSION_LABEL_TOP,
 }
 
 
@@ -369,14 +370,21 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     boss.group("hud_boss_fill", rows, 10 - boss_art.HP_TOP)
     boss.group("hud_boss_cell", [("boss_cell", boss_art.cell(True)), ("boss_cellw", boss_art.cell(False))], 10 - boss_art.CELL_TOP)
     boss.group("hud_boss_icon", [(f"boss_icon_{n}", boss_art.icon(n)) for n in boss_art.ICONS], 10 - boss_art.ICON_TOP)
-    left, right = boss_art.wyrm_frame()
-    boss.group("hud_wyrm_frame", [("wyrm_frame_l", left), ("wyrm_frame_r", right)], 10, columns=1)
-    rows = [(f"wyrm_fill_{w}", art.gauge_fill(w, boss_art.WYRM_HP_ROWS, boss_art.WYRM_HP)) for w in BINARY]
-    rows += [(f"wyrm_trail_{w}", art.flat(w, boss_art.WYRM_HP_ROWS, boss_art.WYRM_TRAIL)) for w in BINARY]
-    boss.group("hud_wyrm_fill", rows, 10 - boss_art.WYRM_BAR_Y)
-    boss.group("hud_wyrm_cell", [("wyrm_cell", boss_art.wyrm_cell(True)), ("wyrm_cellw", boss_art.wyrm_cell(False))],
-               10 - (boss_art.WYRM_BAR_Y + 8))
-    boss.group("hud_wyrm_icon", [(f"wyrm_icon_{n}", boss_art.icon(n)) for n in boss_art.ICONS], 10 - boss_art.WYRM_ICON_TOP)
+    # dedicated bars (shade wyrm, sakura beast): their own frames on shared rows
+    frames = []
+    for key, (left, right) in (("wyrm", boss_art.wyrm_frame()), ("sakura", boss_art.sakura_frame())):
+        frames += [(f"{key}_frame_l", left), (f"{key}_frame_r", right)]
+    boss.group("hud_ded_frame", frames, 10, columns=1)
+    rows = []
+    for key, ramp, trail in (("wyrm", boss_art.WYRM_HP, boss_art.WYRM_TRAIL), ("sakura", boss_art.SAKURA_HP, boss_art.SAKURA_TRAIL)):
+        rows += [(f"{key}_fill_{w}", art.gauge_fill(w, boss_art.WYRM_HP_ROWS, ramp)) for w in BINARY]
+        rows += [(f"{key}_trail_{w}", art.flat(w, boss_art.WYRM_HP_ROWS, trail)) for w in BINARY]
+    boss.group("hud_ded_fill", rows, 10 - boss_art.DED_BAR_Y)
+    boss.group("hud_ded_cell", [("ded_cell", boss_art.ded_cell(True)), ("ded_cellw", boss_art.ded_cell(False))],
+               10 - (boss_art.DED_BAR_Y + 8))
+    boss.group("hud_ded_icon", [(f"ded_icon_{n}", boss_art.icon(n)) for n in boss_art.ICONS], 10 - boss_art.DED_ICON_TOP)
+    boss.group("hud_erosion", [("erosion_well", boss_art.erosion_well())], 10 - (boss_art.EROSION_TOP - 1))
+    boss.group("hud_erosion_cell", [("erosion_cell", boss_art.erosion_cell())], 10 - boss_art.EROSION_TOP)
     fonts.append(boss)
 
     # Boss bar text rows: ascii.png for ASCII, Unifont bitmaps for the rest, one font per row.
@@ -465,7 +473,7 @@ def build_combat_hud(assets, pack, source, write_json, chars):
         "number_fonts": {k: v for k, v in NUMBER_FONTS.items()},
         "boss_bar": {"plate_x": boss_art.PLATE_X, "plate_width": boss_art.PLATE_W, "plate_top": boss_art.PLATE_TOP,
                      "hp_x": boss_art.HP_X, "hp_width": boss_art.HP_W, "hp_top": boss_art.HP_TOP,
-                     "wyrm_bar_y": boss_art.WYRM_BAR_Y, "text_rows": BOSS_TEXT_FONTS},
+                     "dedicated_bar_y": boss_art.DED_BAR_Y, "text_rows": BOSS_TEXT_FONTS},
         "blank_vanilla_sprites": sorted(vanilla_overrides()),
         "reskinned_vanilla_sprites": sorted(vanilla_reskins()),
     })

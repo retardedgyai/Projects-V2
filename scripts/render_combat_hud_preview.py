@@ -203,24 +203,24 @@ def mob_hud(fonts, snapshots):
 def boss_sheet(fonts, snapshots):
     """boss-bars-4x.png: every boss bar state (grades, broken, the shade wyrm) on the field, cropped to the bar."""
     keys = [k for k in ("boss-grade-elite", "boss-grade-rare", "boss-grade-unique", "boss-grade-calamity", "boss-broken",
-                        "boss-wyrm", "boss-wyrm-broken") if k in snapshots]
+                        "boss-wyrm", "boss-wyrm-broken", "boss-wyrm-erosion", "boss-sakura") if k in snapshots]
     if not keys:
         return
     crops = []
     for key in keys:
         screen = screen_for(fonts, snapshots["actionbar-ready"], snapshots[key])
-        h = 84 if "wyrm" in key else 78
+        h = 92 if "wyrm" in key or "sakura" in key else 78
         crops.append(screen.crop(((W // 2 - 185) * S, 0, (W // 2 + 185) * S, h * S)))
     cw = crops[0].width
-    sheet = Image.new("RGBA", (cw * 2 + 8, sum(c.height for c in crops[::2]) + 8 * len(crops)), (20, 20, 24, 255))
-    y = [0, 0]
-    for i, c in enumerate(crops):
-        col = i % 2 if i < 5 else (i - 5)
-        if i == 5:
-            y = [max(y)] * 2
-        sheet.alpha_composite(c, (col * (cw + 8), y[col]))
-        y[col] += c.height + 8
-    sheet.crop((0, 0, sheet.width, max(y))).save(OUT / "boss-bars-4x.png")
+    rows = [crops[i:i + 2] for i in range(0, len(crops), 2)]
+    heights = [max(c.height for c in row) for row in rows]
+    sheet = Image.new("RGBA", (cw * 2 + 8, sum(heights) + 8 * (len(rows) - 1)), (20, 20, 24, 255))
+    y = 0
+    for row, h in zip(rows, heights):
+        for col, c in enumerate(row):
+            sheet.alpha_composite(c, (col * (cw + 8), y))
+        y += h + 8
+    sheet.save(OUT / "boss-bars-4x.png")
 
 
 def main():

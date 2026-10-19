@@ -248,18 +248,22 @@ def _wyrm_canvas(bar_y, height):
             p = layer.getpixel((xx, y)) if 0 <= y < height else (0, 0, 0, 0)
             if p[3] and p[:3] != OUT[:3]:
                 px(layer, xx, y, WY["mote"])
-    # slim plate round the gauge, with its wells
+    _slim_plate(layer, C, bar_y, WY["plate"], WYRM_EMPTY)
+    _wyrm_head(layer, C, bar_y - 18)
+    return layer
+
+
+def _slim_plate(layer, C, bar_y, mat, empty):
+    """The dedicated bars' slim plate round the gauge: HP well (6 rows) and the empty break cells (2 rows)."""
     gx = C + WYRM_HP_X
     rect(layer, gx - 4, bar_y - 3, gx + WYRM_HP_W + 4, bar_y + 13, OUT)
-    rect(layer, gx - 3, bar_y - 2, gx + WYRM_HP_W + 3, bar_y + 12, WY["plate"][1])
-    rect(layer, gx - 3, bar_y - 2, gx + WYRM_HP_W + 3, bar_y - 1, WY["plate"][3])
-    rect(layer, gx - 3, bar_y + 11, gx + WYRM_HP_W + 3, bar_y + 12, WY["plate"][0])
-    well(layer, gx, gx + WYRM_HP_W, bar_y, WYRM_HP_ROWS, WYRM_EMPTY)
+    rect(layer, gx - 3, bar_y - 2, gx + WYRM_HP_W + 3, bar_y + 12, mat[1])
+    rect(layer, gx - 3, bar_y - 2, gx + WYRM_HP_W + 3, bar_y - 1, mat[3])
+    rect(layer, gx - 3, bar_y + 11, gx + WYRM_HP_W + 3, bar_y + 12, mat[0])
+    well(layer, gx, gx + WYRM_HP_W, bar_y, WYRM_HP_ROWS, empty)
     for i in range(CELL_COUNT):
         x = C + WYRM_CELL_X + i * CELL_PITCH
         rect(layer, x, bar_y + 8, x + CELL_PITCH - 1, bar_y + 8 + WYRM_CELL_ROWS, art.RAGE_EMPTY)
-    _wyrm_head(layer, C, bar_y - 18)
-    return layer
 
 
 def _wyrm_layout():
@@ -271,23 +275,132 @@ def _wyrm_layout():
 
 
 WYRM_BAR_Y = _wyrm_layout()
-WYRM_NAME_TOP = WYRM_BAR_Y + 16    # Lv + name, centred under the gauge
-WYRM_PCT_TOP = WYRM_BAR_Y - 12     # percentage, right end above the gauge
-WYRM_ICON_TOP = WYRM_BAR_Y + 15
+# Every dedicated bar shares the wyrm's rows, so the text fonts are shared too.
+DED_BAR_Y = WYRM_BAR_Y
+DED_NAME_TOP = DED_BAR_Y + 16      # Lv + name, centred under the gauge
+DED_PCT_TOP = DED_BAR_Y - 12       # percentage, right end above the gauge
+DED_ICON_TOP = DED_BAR_Y + 15
+EROSION_TOP = DED_BAR_Y + 28       # 黒翳竜's erosion gauge (per player), under the name, only while above zero
+EROSION_X, EROSION_CELLS, EROSION_PITCH = -45, 10, 9
+EROSION_LABEL_TOP = EROSION_TOP - 3
 
 
-def wyrm_frame():
-    """(left half, right half): the frame is wider than one 256 px glyph."""
-    full = _wyrm_canvas(WYRM_BAR_Y, WYRM_BAR_Y + 14)
+def _split(full):
     C = WYRM_FRAME_HALF
     return full.crop((0, 0, C, full.height)), full.crop((C, 0, 2 * C, full.height))
 
 
-def wyrm_cell(lit):
+def wyrm_frame():
+    """(left half, right half): the frame is wider than one 256 px glyph."""
+    return _split(_wyrm_canvas(DED_BAR_Y, DED_BAR_Y + 14))
+
+
+def ded_cell(lit):
     img = new(CELL_PITCH - 1, WYRM_CELL_ROWS)
     rect(img, 0, 0, img.width, WYRM_CELL_ROWS, art.BREAK[1] if lit else hexc("ffffff"))
     rect(img, 0, 0, img.width, 1, art.BREAK[2] if lit else hexc("ffffff"))
     return img
+
+
+def erosion_well():
+    """Ten empty cells for the erosion gauge, on a dark violet strip."""
+    img = new(EROSION_CELLS * EROSION_PITCH + 3, 5)
+    rect(img, 0, 0, img.width, 5, OUT)
+    rect(img, 1, 1, img.width - 1, 4, WY["plate"][1])
+    for i in range(EROSION_CELLS):
+        rect(img, 2 + i * EROSION_PITCH, 1, 2 + i * EROSION_PITCH + EROSION_PITCH - 1, 4, (40, 26, 56, 255))
+    return img
+
+
+def erosion_cell():
+    img = new(EROSION_PITCH - 1, 3)
+    rect(img, 0, 0, img.width, 3, hexc("b070ff")); rect(img, 0, 0, img.width, 1, hexc("e0c8ff"))
+    rect(img, 0, 2, img.width, 3, hexc("6a2ab0"))
+    return img
+
+
+# ---- sakura beast (桜牙獣) ---------------------------------------------------------------------------
+SK = dict(s0=hexc("1e1c26"), s1=hexc("2c2a38"), s2=hexc("3c3a4c"), s3=hexc("56546a"),
+          fur0=hexc("8a8292"), fur1=hexc("c8c0cc"), fur2=hexc("f0ecf0"), horn=hexc("b8b0b0"), horn_hi=hexc("e8e2dc"),
+          p0=hexc("c8507a"), p1=hexc("f08aa8"), p2=hexc("ffc0d4"), eye=hexc("ff5a9a"),
+          plate=(hexc("161420"), hexc("26242e"), hexc("34323e"), hexc("56546a")))
+SAKURA_HP = (hexc("8a1a3a"), hexc("e0507a"), hexc("ffb0c8"))
+SAKURA_EMPTY = (36, 12, 20, 255)
+SAKURA_TRAIL = hexc("d898aa")
+
+
+def _blossom(layer, cx, cy, r):
+    """Five round petals with a notch at each tip, pale toward the centre, a dark-pink heart."""
+    m = Image.new("L", layer.size); d = ImageDraw.Draw(m)
+    for k in range(5):
+        a = -math.pi / 2 + k * 2 * math.pi / 5
+        pcx, pcy, pr = cx + math.cos(a) * r * .62, cy + math.sin(a) * r * .62, r * .56
+        d.ellipse([pcx - pr, pcy - pr, pcx + pr, pcy + pr], fill=255)
+    for k in range(5):
+        a = -math.pi / 2 + k * 2 * math.pi / 5
+        tx, ty = cx + math.cos(a) * r * 1.2, cy + math.sin(a) * r * 1.2
+        d.polygon([(tx + math.cos(a + 2.4) * 1.6, ty + math.sin(a + 2.4) * 1.6), (cx + math.cos(a) * r * .8, cy + math.sin(a) * r * .8),
+                   (tx + math.cos(a - 2.4) * 1.6, ty + math.sin(a - 2.4) * 1.6)], fill=0)
+    for y in range(int(cy - r - 2), int(cy + r + 3)):
+        for x in range(int(cx - r - 2), int(cx + r + 3)):
+            if 0 <= x < layer.width and 0 <= y < layer.height and m.getpixel((x, y)):
+                dd = math.hypot(x - cx, y - cy)
+                px(layer, x, y, SK["p2"] if dd < r * .45 else SK["p1"] if y < cy + r * .3 else SK["p0"])
+    px(layer, cx, cy, SK["p0"])
+
+
+def _sakura_head(img, cx, top):
+    """Wolf head from the front: dark slate muzzle, pink eyes, pale horns sweeping up and back, ears."""
+    head = new(img.width, img.height)
+    rows = [(7, 0), (8, 1), (8, 2), (8, 3), (7, 4), (6, 5), (5, 6), (4, 7), (4, 8), (3, 9), (3, 10), (2, 11)]
+    for half, j in rows:
+        rect(head, cx - half, top + j, cx + half + 1, top + j + 1, SK["s2"] if j < 3 else SK["s1"] if j < 8 else SK["s3"])
+    rect(head, cx - 2, top + 9, cx + 3, top + 12, SK["fur1"])
+    for side in (-1, 1):
+        px(head, cx + side * 4, top + 4, SK["eye"]); px(head, cx + side * 5, top + 4, SK["eye"])
+        for i in range(16):
+            x = cx + side * (5 + (i * i) // 40); y = top + 1 - i
+            px(head, x, y, SK["horn_hi"] if i > 9 else SK["horn"]); px(head, x + side, y, SK["horn"] if i < 11 else SK["horn_hi"])
+        for i in range(4):
+            px(head, cx + side * (8 + i // 2), top - i, SK["s2"])
+    img.alpha_composite(_outline(head))
+
+
+def _sakura_canvas(bar_y, height):
+    C = WYRM_FRAME_HALF
+    layer = new(2 * C, height)
+    # the tail: out of the plate's left end, sweeping out and curling up; blossoms ride its outer edge
+    p0, p1, p2, p3 = (C - 113, bar_y + 6), (C - 146, bar_y + 8), (C - 156, bar_y - 20), (C - 138, bar_y - 30)
+    pts = []
+    for i in range(60):
+        u = i / 59
+        pts.append(tuple((1 - u) ** 3 * a + 3 * (1 - u) ** 2 * u * b + 3 * (1 - u) * u * u * c + u ** 3 * d
+                         for a, b, c, d in zip(p0, p1, p2, p3)))
+    for i, (x, y) in enumerate(pts):
+        th = 6 if i < 20 else 5 if i < 40 else 4
+        for t in range(th):
+            px(layer, round(x) - t // 2, round(y) + t - th // 2, SK["s3"] if t == 0 else SK["s2"] if t < th - 1 else SK["s1"])
+    for i, r in ((26, 4), (44, 5), (59, 6)):
+        x, y = pts[i]
+        _blossom(layer, round(x) - 3, round(y) - 2, r)
+    # mane: five broad locks swept up and outward behind the head
+    bx, by = C - 6, bar_y - 4
+    d = ImageDraw.Draw(layer)
+    for k, (ang, length, w) in enumerate(((112, 24, 3.6), (128, 28, 3.8), (144, 27, 3.6), (160, 23, 3.2), (174, 17, 2.8))):
+        a_ = math.radians(ang)
+        tip = (bx + math.cos(a_) * length, by - math.sin(a_) * length * .85)
+        n = (-math.sin(a_) * w, -math.cos(a_) * w)
+        bend = (bx + math.cos(a_ + .25) * length * .6, by - math.sin(a_ + .25) * length * .55)
+        _poly(layer, [(bx + n[0], by + n[1]), bend, tip, (bx - n[0], by - n[1])], SK["fur2"] if k % 2 == 0 else SK["fur1"])
+        d.line([(bx, by), (round(tip[0]), round(tip[1]))], fill=SK["fur0"], width=1)
+    layer = _outline(_mirror(layer, C))
+    _slim_plate(layer, C, bar_y, SK["plate"], SAKURA_EMPTY)
+    _sakura_head(layer, C, bar_y - 15)
+    return layer
+
+
+def sakura_frame():
+    return _split(_sakura_canvas(DED_BAR_Y, DED_BAR_Y + 14))
 
 
 ICONS = mob_art.ICONS
