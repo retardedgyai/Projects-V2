@@ -1126,6 +1126,22 @@ def sigil_keys():
     return keys
 
 
+def finale_keys():
+    """8 s, 千本桜 (QuestEncounterCombat.FINALE_MILLIS): it lands in the middle, sits and howls the whole arena into
+    bloom, the howl swelling and its petals flaring wider and wider; it rises onto its hind legs with the forepaws
+    raised as the light peaks, and crashes down at 8 s."""
+    sit = sit_howl(1.2)
+    keys = [(0, pose(rear(14), pos=(0, -4, 0), shells=1.0), "io"), (.5, pose(sit, jaw=(-20, 0, 0)), "out")]
+    for k in range(6):
+        t = 1.2 + k * .9
+        keys.append((t, pose(sit, neck=(-4 * k, 10 * (-1) ** k, 0), shells=1.2 + .05 * k, tremble=2.0 + k), "io"))
+    rise = pose(rear(-58), arm_l=(-100, 0, 10), arm_r=(-100, 0, -10), forearm_l=(-40, 0, 0), forearm_r=(-40, 0, 0),
+                neck=(-30, 0, 0), skull=(-26, 0, 0), jaw=(46, 0, 0), shells=1.55, tremble=7.0)
+    crash = pose(rear(20), pos=(0, -6, 4), arm_l=(18, 0, 0), arm_r=(18, 0, 0), chest=(16, 0, 0), neck=(24, 0, 0), jaw=(30, 0, 0),
+                 shells=1.6, tremble=3.0)
+    return keys + [(7.0, rise, "out"), (7.75, pose(rise, rear(-4)), "io"), (8.0, crash, "in")]
+
+
 def enrage_keys():
     """5 s (QuestEncounterCombat.ENRAGE_HOLD_MILLIS), Zinogre's howl: the beast stops and shudders low while the petals
     rattle, sits back on its haunches and howls straight at the sky; at 2.5 s the petals burst open in a wave down the
@@ -1228,6 +1244,7 @@ def animate(m, b):
         bake(b, f"flinch{tag}", 1.0, flinch_keys(sh))
         bake(b, f"countered{tag}", 3.5, countered_keys(sh))
     bake(b, "sigil", 6.0, sigil_keys())
+    bake(b, "finale", 8.0, finale_keys())
     for tag, sh in (("", 0.0), ("_enraged", 1.0)):
         bake(b, f"hop_back{tag}", 1.1, hop_back_keys(sh))
         bake(b, f"dash_l{tag}", .9, dash_keys(1, sh))

@@ -88,6 +88,10 @@ class SakuraFangBossTest {
             assertTrue(combat.isEnraged(boss.uuid))
             combat.tick(4800)
             combat.tick(9000)
+            // it cannot die before its 千本桜 (held at a quarter); let that play out, then finish it
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, 99_999.0))
+            var now = 9050L
+            while (combat.finaleState(boss.uuid)?.let { !it.first || it.second } == true && now < 40_000L) { combat.tick(now); now += 50 }
             assertTrue(combat.applyEffectDamage(boss.uuid, player, 99_999.0))
             assertEquals(1, victories)
         } finally {
@@ -171,6 +175,44 @@ class SakuraFangBossTest {
     }
 
     @Test
+    fun `千本桜 at a quarter health cannot be skipped and spares whoever hides behind a pillar`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("sakura", 1)
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "SakuraFinale"))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        player.setInstance(arena.instance, arena.bossSpawn.add(0.0, 0.0, 6.0)).join()
+        var hurt = 0.0
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn, { _, _ -> }, { _, amount -> hurt += amount },
+            explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1000L
+            combat.tick(now)
+            player.teleport(boss.position.sub(boss.position.direction().mul(5.0)))
+            combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .52)       // enrage
+            repeat(200) { now += 50; combat.tick(now) }
+            combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .9)         // far more than is left
+            assertTrue(combat.isAlive(boss.uuid), "held at a quarter until 千本桜 starts")
+            // hide behind the +X pillar (the arena's pillars stand 19..20.5 out from the middle)
+            val hide = arena.bossSpawn.add(21.6, 0.0, 0.0)
+            var started = false
+            while (now < 120_000L && !started) { now += 50; player.teleport(hide); combat.tick(now); started = combat.finaleState(boss.uuid)?.first == true }
+            assertTrue(started)
+            val before = hurt
+            while (combat.finaleState(boss.uuid)?.second == true) { now += 50; player.teleport(hide); combat.tick(now) }
+            assertEquals(before, hurt, 1e-9, "behind the pillar: spared")
+            assertTrue(combat.isBroken(boss.uuid), "spent, it collapses")
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, 99_999.0))
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
     fun `the petal storm follows each ability, stays under its cap and dies away after the death`() {
         MinecraftServer.init(Auth.Offline())
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
@@ -224,6 +266,21 @@ class SakuraFangBossTest {
                 for (v in fx.views()) {
                     fun vec(p: net.minestom.server.coordinate.Point) = "[${p.x()},${p.y()},${p.z()}]"
                     lines += "{\"ability\":\"$id\",\"phase\":\"shader\",\"tick\":$tick,\"sprite\":\"${v.sprite}\",\"kind\":${v.kind}," +
+                        "\"progress\":${v.progress},\"at\":${vec(v.at)},\"scale\":${vec(v.scale)},\"translation\":${vec(v.translation)}," +
+                        "\"rotation\":[${v.rotation.joinToString(",")}],\"billboard\":${v.billboard}}"
+                }
+            }
+            fx.dispose()
+        }
+        run {                                                // 千本桜: the floor's crest for 8 s, then the blow
+            val fx = SakuraStrikeFx(instance)
+            fx.finale(net.minestom.server.coordinate.Pos.ZERO, 160)
+            repeat(200) { tick ->
+                if (tick == 160) fx.finaleBlow(net.minestom.server.coordinate.Pos.ZERO, 22.0)
+                fx.tick()
+                for (v in fx.views()) {
+                    fun vec(p: net.minestom.server.coordinate.Point) = "[${p.x()},${p.y()},${p.z()}]"
+                    lines += "{\"ability\":\"finale\",\"phase\":\"shader\",\"tick\":$tick,\"sprite\":\"${v.sprite}\",\"kind\":${v.kind}," +
                         "\"progress\":${v.progress},\"at\":${vec(v.at)},\"scale\":${vec(v.scale)},\"translation\":${vec(v.translation)}," +
                         "\"rotation\":[${v.rotation.joinToString(",")}],\"billboard\":${v.billboard}}"
                 }

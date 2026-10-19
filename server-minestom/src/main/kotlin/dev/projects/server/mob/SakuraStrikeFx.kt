@@ -171,6 +171,26 @@ internal class SakuraStrikeFx(instance: Instance) {
         }
     }
 
+    /** 千本桜: a crest of light spreads over the whole floor and brightens while it howls. */
+    fun finale(at: Pos, ticks: Int) {
+        fx.add("sakura_crest", 2, at.add(0.0, .15, 0.0), 0, ticks, Vec(4.0, 1.0, 4.0), IDENTITY, grow = Vec(44.0, 1.0, 44.0),
+            moveTicks = ticks - 10) { .05 + .4 * it * it }
+        fx.add("sakura_ring", 2, at.add(0.0, .1, 0.0), 0, ticks, Vec(44.0, 1.0, 44.0), IDENTITY, grow = Vec(6.0, 1.0, 6.0), moveTicks = ticks) { .2 + .3 * it }
+        fx.add("sakura_blossom", 4, at.add(0.0, 5.0, 0.0), ticks / 2, ticks / 2, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(6.0, 6.0, 1.0),
+            moveTicks = ticks / 2, billboard = true) { .05 }
+    }
+
+    /** 千本桜 blows: the floor's crest bursts, rings race to the wall, a wall of petals stands up round the arena. */
+    fun finaleBlow(at: Pos, radius: Double) {
+        crest(at, radius * 2.0, IDENTITY, life = 24)
+        roar(at, radius)
+        fx.add("sakura_blossom", 4, at.add(0.0, 4.0, 0.0), 0, 16, Vec(6.0, 6.0, 1.0), IDENTITY, grow = Vec(14.0, 14.0, 1.0), moveTicks = 14, billboard = true)
+        ring(at, radius - 1.5, 32) { dir, width ->
+            fx.add("sakura_curtain", 5, at, 2, 16, Vec(width, 1.0, 1.0), ShadeWyrmShaderFx.yawTo(dir),
+                translation = dir.mul(3.0).add(0.0, .5, 0.0), grow = Vec(width * 2.0, 4.0, 1.0), slide = dir.mul(radius - 1.5).add(0.0, 2.0, 0.0), moveTicks = 10)
+        }
+    }
+
     /** 桜紋の陣: a crest of light on each spot, brightening as the howl runs out, with a ring of petals round its edge. */
     fun sigil(crests: List<Pos>, radius: Double, ticks: Int) {
         for (c in crests) {

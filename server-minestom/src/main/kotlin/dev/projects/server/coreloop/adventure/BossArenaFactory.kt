@@ -139,7 +139,9 @@ object BossArenaFactory {
                 unit.modifier().setBlock(x, 39, z, floor)
                 if (distance in 22.0..23.5) for (y in 40..43) unit.modifier().setBlock(x, y, z,
                     when (bossId) { "ritual" -> Block.BLUE_ICE; "sakura" -> Block.CHERRY_LEAVES; else -> Block.POLISHED_DEEPSLATE })
-                if (distance in 19.0..20.5 && (abs(dx) < 1 || abs(dz) < 1)) {
+                // 散り桜の庭's pillars are wider: they are the cover from 桜牙獣's 千本桜
+                val pillar = if (bossId == "sakura") 1.6 else 1.0
+                if (distance in 19.0..20.5 && (abs(dx) < pillar || abs(dz) < pillar)) {
                     for (y in 40..44) unit.modifier().setBlock(x, y, z, Block.POLISHED_DEEPSLATE)
                     unit.modifier().setBlock(x, 45, z, when (bossId) {
                         "rift" -> Block.SHROOMLIGHT; "shade" -> Block.PEARLESCENT_FROGLIGHT; "sakura" -> Block.PEARLESCENT_FROGLIGHT; else -> Block.SEA_LANTERN })

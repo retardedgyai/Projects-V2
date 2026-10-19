@@ -155,6 +155,10 @@ class QuestEncounterCombat(
         var sigilEndsAt = 0L
         var sigilCrests: List<Pos> = emptyList()
         var sigilShown = -1L
+        /** 千本桜 (the last 25%): started, when it blows (0 = not running), the shown count. */
+        var finaleStarted = false
+        var finaleEndsAt = 0L
+        var finaleShown = -1L
         /** The enrage roar's wave (see [tickRageWave]): when it left the wyrm and from where; 0 = not yet. */
         var waveAt = 0L
         var waveFrom: Pos? = null
@@ -461,7 +465,11 @@ class QuestEncounterCombat(
         val healthBefore = mob.life.health
         val mitigated = amount * (if (guarded) mob.definition.frontalDamageMultiplier else 1.0) *
             (if (mob.boss && now < mob.brokenUntil) BROKEN_DAMAGE else 1.0)
-        val gated = if (mob.boss) minOf(mitigated, (mob.life.health - mob.life.maximumHealth * bossGateFraction).coerceAtLeast(0.0)) else mitigated
+        val gated = if (mob.boss) minOf(mitigated, (mob.life.health - mob.life.maximumHealth * bossGateFraction).coerceAtLeast(0.0)).let {
+            // 桜牙獣 cannot be pushed past 25% before its 千本桜 starts
+            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && !mob.finaleStarted)
+                minOf(it, (mob.life.health - mob.life.maximumHealth * FINALE_RATIO).coerceAtLeast(0.0)) else it
+        } else mitigated
         if (!mob.life.damage(gated)) return null
         val applied = healthBefore - mob.life.health
         mob.lastAttacker = attacker
@@ -679,7 +687,7 @@ class QuestEncounterCombat(
         (mob.entity.entityMeta as MobMeta).isAggressive = true
         if (tickChallengeBarrier(mob, now)) return
         if (tickEnrage(mob, now)) return
-        if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && tickSigil(mob, now)) return
+        if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && (tickFinale(mob, now) || tickSigil(mob, now))) return
         if (crowded(mob, CrowdControl.STUN, now) || crowded(mob, CrowdControl.AIRBORNE, now) || crowded(mob, CrowdControl.KNOCKBACK, now)) {
             if (!crowded(mob, CrowdControl.AIRBORNE, now)) stopNavigation(mob)
             return
@@ -1382,6 +1390,63 @@ class QuestEncounterCombat(
         return false
     }
 
+    /**
+     * 千本桜 (桜牙獣 at 25%, once): it bounds to the middle of the arena, sits and howls while a sakura crest spreads over
+     * the whole floor and the petals spiral in; when it blows, everyone it can see is struck — the pillars are the only
+     * cover. Spent, it collapses.
+     */
+    private fun tickFinale(mob: Mob, now: Long): Boolean {
+        if (mob.finaleStarted && mob.finaleEndsAt == 0L) return false
+        val players = instance.players.filter { canTarget(it) && it.position.distanceSquared(mob.home) <= mob.definition.leashRange * mob.definition.leashRange }
+        if (!mob.finaleStarted) {
+            if (mob.life.health > mob.life.maximumHealth * FINALE_RATIO || mob.sigilEndsAt != 0L || now < mob.enrageHoldUntil) return false
+            mob.finaleStarted = true
+            mob.finaleEndsAt = now + FINALE_MILLIS
+            mob.finaleShown = -1L
+            mob.abilities.cancel(); clearWarning(mob.entity.uuid); castingPose(mob, false); mob.maneuver = null; stopNavigation(mob)
+            mob.counterFrom = 0L; mob.counterTo = 0L
+            val centre = mob.home
+            val facing = players.minByOrNull { it.position.distanceSquared(centre) }?.let { yawToward(centre, it.position) } ?: centre.yaw()
+            mob.entity.teleport(Pos(centre.x(), centre.y(), centre.z(), facing, 0f))
+            mob.view?.maneuver("finale")
+            sakuraStrike?.finale(centre, (FINALE_MILLIS / 50).toInt())
+            sakuraFx?.finale(FINALE_MILLIS / 1000.0)
+            sound(centre, "minecraft:entity.wolf.howl", 2.0f, .5f)
+            return true
+        }
+        if (now < mob.finaleEndsAt) {
+            stopNavigation(mob)
+            val left = (mob.finaleEndsAt - now + 999) / 1000
+            if (left != mob.finaleShown) {
+                mob.finaleShown = left
+                updateName(mob, "千本桜・柱の陰へ（$left）")
+                if (left <= 3) sound(mob.entity.position, "minecraft:block.note_block.bell", 1.6f, .5f + .2f * (4 - left))
+            }
+            return true
+        }
+        mob.finaleEndsAt = 0L
+        val scale = 1.65.pow(tier - 1) * damageMultiplier
+        for (p in players) {
+            if (!mob.entity.hasLineOfSight(p)) continue                // behind a pillar: safe
+            val amount = FINALE_DAMAGE * scale
+            if (typedDamagePlayer != null) typedDamagePlayer.invoke(p, amount, dev.projects.server.coreloop.CoreDamageType.MAGICAL)
+            else damagePlayer(p, amount)
+        }
+        sakuraStrike?.finaleBlow(mob.entity.position, RAGE_WAVE_RADIUS)
+        sakuraFx?.finaleBlow()
+        sound(mob.entity.position, "minecraft:entity.generic.explode", 2.0f, .6f)
+        mob.brokenUntil = now + FINALE_SPENT_MILLIS
+        staggerBoss(maxOf(bossStaggerUntil, now + FINALE_SPENT_MILLIS))
+        mob.view?.maneuver("countered")
+        updateName(mob, "千本桜が散った…（崩れた）")
+        mob.warningRetryAt = now + FINALE_SPENT_MILLIS
+        mob.sigilNextAt = maxOf(mob.sigilNextAt, now + FINALE_SPENT_MILLIS + 8000L)
+        return false
+    }
+
+    /** 千本桜's state, for tests: started, running. */
+    internal fun finaleState(targetId: UUID): Pair<Boolean, Boolean>? = mobs[targetId]?.let { it.finaleStarted to (it.finaleEndsAt != 0L) }
+
     /** 桜紋の陣's crests, for tests. */
     internal fun sigilCrests(targetId: UUID): List<Pos> = mobs[targetId]?.sigilCrests ?: emptyList()
 
@@ -1470,6 +1535,11 @@ class QuestEncounterCombat(
         const val SIGIL_RADIUS = 1.8
         const val SIGIL_DAMAGE = 18.0
         const val SIGIL_BREAK_MILLIS = 4500L
+        /** 千本桜: at this share of health, an 8 s howl, then a blow on everyone in its sight; spent for 5 s. */
+        const val FINALE_RATIO = .25
+        const val FINALE_MILLIS = 8000L
+        const val FINALE_DAMAGE = 70.0
+        const val FINALE_SPENT_MILLIS = 5000L
         /** Got behind it (usually while an attack holds its facing) for this long when it is free to act. */
         const val TURN_AFTER_MILLIS = 600L
         /** ms into shade-dive while the body is carried over the target (the clip hangs in the air then). */

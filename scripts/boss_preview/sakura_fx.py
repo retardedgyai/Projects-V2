@@ -173,6 +173,15 @@ class Fx:
                 for _ in range(120):
                     a = math.radians(r.uniform(-50, 50))
                     self.add(o + rand_dir(r) * 6, np.array([math.sin(a), r.uniform(.3, .9), math.cos(a)]) * r.uniform(160, 288), r.uniform(.9, 1.4), drag=2.0)
+        elif c == "finale":
+            if t < 8.0:
+                for _ in range(self.rate("finale", 70 + 50 * t)):
+                    a = r.uniform(0, 2 * math.pi); rr = r.uniform(160, 320)
+                    p = np.array([math.cos(a) * rr, r.uniform(5, 64), math.sin(a) * rr])
+                    self.add(p, np.array([-math.cos(a), 0, -math.sin(a)]) * rr * .9 + np.array([-math.sin(a), 0, math.cos(a)]) * 112 + [0, r.uniform(16, 48), 0], r.uniform(1.0, 1.3), drag=.2)
+            if self.once("blow", t, 8.0):
+                for _ in range(360):
+                    self.add(self.shell_point(sc, pose), rand_dir(r) * r.uniform(160, 512) + [0, 48, 0], r.uniform(1.0, 1.8), drag=1.6)
         elif c == "sigil":
             crests = [np.array([math.cos(math.pi / 2 + (k - 1) * 2 * math.pi / 3) * 112, 0, math.sin(math.pi / 2 + (k - 1) * 2 * math.pi / 3) * 112]) for k in range(3)]
             if t < 6.0:

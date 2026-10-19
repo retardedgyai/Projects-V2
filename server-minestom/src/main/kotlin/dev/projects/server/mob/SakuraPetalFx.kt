@@ -80,6 +80,15 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
         }
     }
 
+    private var finaleUntil = -1.0
+    private var finaleFrom = 0.0
+
+    /** 千本桜: petals stream in from the whole arena and spiral up round it for [seconds]. */
+    fun finale(seconds: Double) { finaleFrom = time; finaleUntil = time + seconds }
+
+    /** 千本桜 blows: everything bursts outward. */
+    fun finaleBlow() { finaleUntil = time; burstAt = time; burstKind = "finale" }
+
     /** Countered: the strike's petals scatter off the shells as it is thrown back. */
     fun countered() { ability = null; burstAt = time; burstKind = "counter" }
 
@@ -199,6 +208,12 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
         if (deathAt < 0) repeat(rate("shed", if (enraged) 16.0 else 6.0)) {
             add(shell(), f.dir(r(-1.0, 1.0), r(0.0, 1.6), r(-1.9, 0.0)), r(1.4, 2.2))
         }
+        if (time < finaleUntil) repeat(rate("finale", 70.0 + 50.0 * (time - finaleFrom))) {
+            val a = r(0.0, 2 * PI); val rr = r(10.0, 20.0)
+            val p = Vec(f.at.x() + cos(a) * rr, f.at.y() + r(.3, 4.0), f.at.z() + sin(a) * rr)
+            val inward = Vec(-cos(a), 0.0, -sin(a))
+            add(p, inward.mul(rr * .9).add(Vec(-sin(a), 0.0, cos(a)).mul(7.0)).add(0.0, r(1.0, 3.0), 0.0), r(1.0, 1.3), .2)
+        }
         if (time < sigilUntil) for ((n, c) in sigilCrests.withIndex()) repeat(rate("sigil$n", 26.0)) {
             val a = r(0.0, 2 * PI); val d = Vec(cos(a), 0.0, sin(a))
             add(c.add(d.mul(1.8)).add(0.0, .2, 0.0), Vec(-d.z(), 0.0, d.x()).mul(4.0).add(0.0, r(2.0, 4.0), 0.0).sub(d.mul(1.0)), r(1.0, 1.6), .3)
@@ -209,7 +224,9 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
                 "tail" -> { { shells[5 + random.nextInt(3)].let { (b, px) -> bone(b, px) } } }
                 else -> { { shell() } }
             }
-            repeat(count(if (burstKind == "counter") 220 else 140)) { add(from(), randomDir().mul(r(10.0, 20.0)).add(0.0, 3.0, 0.0), r(1.0, 1.8), 1.6) }
+            repeat(count(when (burstKind) { "finale" -> 360; "counter" -> 220; else -> 140 })) {
+                add(from(), randomDir().mul(r(10.0, if (burstKind == "finale") 32.0 else 20.0)).add(0.0, 3.0, 0.0), r(1.0, 1.8), 1.6)
+            }
         }
         if (deathAt >= 0) {
             if (time - deathAt in .5..2.4) repeat(rate("fall", 40.0)) { add(shell(), f.dir(r(-1.2, 1.2), r(-.6, .6), r(-1.2, 1.2)), 1.8) }
