@@ -1004,6 +1004,16 @@ class CorePlayerCombatTest {
         }
     }
 
+    @Test fun `walking slows while a greatsword swing lasts and recovers after`() = arena { h ->
+        h.ticks(1)
+        val speed = { h.player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue }
+        val free = speed()
+        h.actor.attack(); h.ticks(1)
+        assertEquals(free * (1 - CoreWeaponCombat.of(CoreWeaponBase.STANDARD)!!.attackSlow), speed(), 1e-6)
+        h.ticks(40)
+        assertEquals(free, speed(), 1e-6)
+    }
+
     @Test fun `CC resistance stones shorten the stun a player receives`() = arena(
         stats = CoreAffixStats(additional = mapOf(CoreAffixStat.CC_RESIST to 50.0))) { h ->
         assertEquals(10, h.actor.receiveCrowdControl(CrowdControl.STUN, 1000, null))

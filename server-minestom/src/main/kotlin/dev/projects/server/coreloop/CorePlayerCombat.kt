@@ -87,6 +87,7 @@ internal class CorePlayerCombat(
     private var movementHeld = false
     /** Warrior: 根張り caught a blow; a 地割り before this tick is the return strike (CoreBreak.RIPOSTE). */
     private var riposteUntil = -1L
+    private var attackSlowed = false
     val classId get() = journey().job
     val skillDefinitions get() = CoreSkillCatalog.equipped(journey(), statSource())
     val skillNames get() = skillDefinitions.map { it.name }
@@ -139,14 +140,16 @@ internal class CorePlayerCombat(
             sound(if (classId == CoreClass.RANGER) SoundEvent.ENTITY_ARROW_SHOOT else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .65f, 1.2f)
             return
         }
-        normal.press(attackSpeed * if (raging) CoreWarriorRules.RAMPAGE_HASTE else 1.0, quick = classId == CoreClass.ASSASSIN, immediate = feel.immediateNormal)?.let { swing ->
+        val weapon = CoreWeaponCombat.of(weaponBase())
+        normal.press(attackSpeed * if (raging) CoreWarriorRules.RAMPAGE_HASTE else 1.0, quick = classId == CoreClass.ASSASSIN, immediate = feel.immediateNormal,
+            attacks = weapon?.attacks ?: GreatswordCombo.DEFAULT)?.let { swing ->
             nextNormalAt = tickNumber + swing.totalTicks
             normalEmpowerment = if(classId == CoreClass.TEMPLAR && classState.counterUntil >= tickNumber) 1.35 else 1.0
             if(normalEmpowerment > 1) classState.counterUntil = -1
             normalDirection = flatFacing()
             lastCombat = tickNumber
             if (swing.impactTick == 0) releaseNormal(enemies, swing)
-            else vfx.startSound(swing.step)
+            else vfx.startSound(swing.beat)
         }
     }
 
@@ -364,25 +367,27 @@ internal class CorePlayerCombat(
     }
 
     /** Same server-owned strike for input-time warrior AA and delayed other melee jobs. */
+    /** The weapon's normal-attack reach (Better Combat attack_range); 4.5 for melee without a table. */
+    private fun reach() = CoreWeaponCombat.of(weaponBase())?.range ?: if (classId == CoreClass.ASSASSIN) 3.0 else 4.5
+
     private fun releaseNormal(enemies: QuestEncounterCombat, swing: GreatswordCombo.Swing): Boolean {
         val epoch = actionEpoch
-        vfx.swingSound(swing.step)
-        player.swingMainHand()
-        if (classId == CoreClass.WARRIOR) vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.step - 1], player.position, normalDirection)
+        vfx.swingSound(swing.beat)
+        // Better Combat manner: the off hand swings the off-hand attacks of a dual weapon.
+        if (swing.attack.hand == CoreAttackHand.OFF) player.swingOffHand() else player.swingMainHand()
+        if (classId == CoreClass.WARRIOR) vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.beat - 1], player.position, normalDirection)
         else vfx.play(CoreClassEffect(classId, CoreSkillMotion.CONE, player.position, normalDirection,
-            if (classId == CoreClass.ASSASSIN) 3.0 else 4.5, swing.step == 3, reverse = swing.step == 2))
+            reach(), swing.finisher, reverse = swing.beat == 2))
         var connected = false
-        val heavyFinish = swing.step == 3 && weaponBase() == CoreWeaponBase.CLEAVER
         for (target in enemies.combatTargets()) {
-            if (greatswordInRange(player.position, normalDirection, target, range = if (classId == CoreClass.ASSASSIN) 3.0 else 4.5,
-                    minDot = if (heavyFinish) .9 else .4) && visibleTo(target.id, enemies)) {
-                hit(enemies, target.id, swing.multiplier * normalEmpowerment * if (heavyFinish) 1.65 else 1.0, skill = false, heavy = swing.step == 3)
+            if (swing.attack.reaches(player.position, normalDirection, target, reach()) && visibleTo(target.id, enemies)) {
+                hit(enemies, target.id, swing.multiplier * normalEmpowerment, skill = false, heavy = swing.finisher)
                 connected = true
                 if (!actionsValid(enemies, epoch)) return false
             }
         }
-        if (connected && swing.step == 3 && weaponBase() == CoreWeaponBase.FLOW) manaValue = min(maxMana.toDouble(), manaValue + 8)
-        if (connected && swing.step == 3 && classId == CoreClass.WARRIOR) {
+        if (connected && swing.finisher && weaponBase() == CoreWeaponBase.FLOW) manaValue = min(maxMana.toDouble(), manaValue + 8)
+        if (connected && swing.finisher && classId == CoreClass.WARRIOR) {
             finisherUntil = tickNumber + CoreWarriorRules.FINISHER_TICKS
             if (journey().build.keystone == 1) skillDefinitions.forEachIndexed { i, s ->
                 if (s.icon in CoreWarriorRules.heavy) readyAt[i] = maxOf(tickNumber, readyAt[i] - CoreWarriorRules.SAINT_REFUND_TICKS)
@@ -776,7 +781,7 @@ internal class CorePlayerCombat(
 
     /** Holds the player in place while a movement lock lasts; charm and fear walk the player for them. */
     private fun crowdTick() {
-        if (crowd.canMove(tickNumber) == movementHeld) updateMovement() // a lock began or ended this tick
+        if (crowd.canMove(tickNumber) == movementHeld || normal.isAttacking != attackSlowed) updateMovement() // a lock or a swing began or ended
         if (crowd.forced(tickNumber) && tickNumber % 4 == 0L) crowd.source?.let { from ->
             val toward = Vec(from.x() - player.position.x(), 0.0, from.z() - player.position.z())
             if (toward.length() > .6) {
@@ -789,8 +794,11 @@ internal class CorePlayerCombat(
     private fun updateMovement() {
         val held = !crowd.canMove(tickNumber)
         movementHeld = held
+        attackSlowed = normal.isAttacking
+        // Attacking slows walking (Better Combat manner), by the weapon's own amount.
+        val swinging = if (attackSlowed) 1 - (CoreWeaponCombat.of(weaponBase())?.attackSlow ?: 0.0) else 1.0
         player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue = if (held) 0.0 else
-            0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0 + if (tickNumber < moveHasteUntil) .2 else 0.0)
+            0.1 * swinging * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0 + if (tickNumber < moveHasteUntil) .2 else 0.0)
         player.getAttribute(Attribute.JUMP_STRENGTH).baseValue = if (held) 0.0 else JUMP_STRENGTH
     }
 
