@@ -65,6 +65,9 @@ internal data class QuestMobDefinition(
     val abilities: List<MobAbility>,
     /** Blockbench model id under assets/bosses/ (null = vanilla body or WardenModel). */
     val model: String? = null,
+    /** At or below this ratio a model boss takes its second form once (a held roar, the glowing texture). 0 = never. */
+    val awakenHealthRatio: Double = 0.0,
+    val awakenSpeedMultiplier: Double = 1.0,
     /** At or below this health ratio the mob enrages once: a held roar, then [enragedSpeedMultiplier]. 0 = never. */
     val enrageHealthRatio: Double = 0.0,
     val enragedSpeedMultiplier: Double = 1.0,
@@ -94,6 +97,10 @@ internal data class QuestMobDefinition(
 
 /** Concrete content recipes; every archetype combines actual attack and movement behavior. */
 internal object QuestMobContent {
+    /** 黒翳竜's three phases (2026-10-19, 藍): the second form (glowing) at 70 %, the angry form (fans, horns) at 35 %. */
+    const val AWAKEN = .7
+    const val RAGE = .35
+
     fun boss(seed: Long): QuestMobArchetype = listOf(
         QuestMobArchetype.EXECUTIONER, QuestMobArchetype.IRON_WARDEN, QuestMobArchetype.RIFT_ORACLE,
     )[Math.floorMod(seed xor (seed ushr 32), 3).toInt()]
@@ -115,14 +122,16 @@ internal object QuestMobContent {
         val boss = archetype.rarity == QuestMobRarity.BOSS
         fun attack(id: String, label: String, shape: MobAttackShape, range: Double, damage: Double,
             warning: Long = 1000, tracking: Long = 400, recovery: Long = 850, cooldown: Long = 1900,
-            minimumRange: Double = 0.0, target: Boolean = false, health: Double = 1.0, weight: Int = 1, scripted: Boolean = false) = MobAbility(
+            minimumRange: Double = 0.0, target: Boolean = false, health: Double = 1.0, weight: Int = 1, scripted: Boolean = false,
+            earlyHits: List<Long> = emptyList()) = MobAbility(
             id, label, shape, range, damage * factor, warning, tracking, recovery, cooldown, weight,
             minimumRange, if (target) MobAbilityAnchor.TARGET else MobAbilityAnchor.CASTER, health,
             if (id in setOf("rift-bolt", "rift-pulse", "oracle-mark", "oracle-ray", "oracle-pulse",
                     "forge-cross", "forge-mark", "tide-ray", "tide-ring", "tide-center", "eclipse-mark", "eclipse-cross",
                     "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross",
-                    "shade-dust", "shade-pulse", "shade-breath", "shade-storm"))
-                dev.projects.server.coreloop.CoreDamageType.MAGICAL else dev.projects.server.coreloop.CoreDamageType.PHYSICAL, scripted
+                    "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "shade-orb", "shade-channel", "shade-shell"))
+                dev.projects.server.coreloop.CoreDamageType.MAGICAL else dev.projects.server.coreloop.CoreDamageType.PHYSICAL, scripted,
+            earlyHits,
         )
         fun sweep(radius: Double = 3.4, damage: Double = 10.0) = attack(
             "sweep", "横薙ぎ", MobAttackShape.Sweep(radius), radius - 0.4, damage, weight = 3,
@@ -140,7 +149,8 @@ internal object QuestMobContent {
         return when (archetype) {
             // Blind wyrm on wing-arms (docs/development/shade-wyrm-boss.md). Animation lengths in
             // assets/bosses/shade_wyrm.bbmodel equal telegraph+recovery of each ability below.
-            QuestMobArchetype.SHADE_WYRM -> definition(EntityType.RAVAGER, 560.0, .13, 3.0, 1.0,
+            // HP 2800 (2026-10-19, 藍「1人で約5分」): a Tier-1 player deals ~8-15 damage a second while dodging.
+            QuestMobArchetype.SHADE_WYRM -> definition(EntityType.RAVAGER, 2800.0, .13, 3.0, 1.0,
                 Material.AIR, attacks = listOf(
                     attack("shade-sweep", "翼脚薙ぎ・背後か距離を取れ", MobAttackShape.Sweep(7.0, 90.0), 4.8, 22.0,
                         1100, 400, 900, 2200, weight = 3),
@@ -151,15 +161,35 @@ internal object QuestMobContent {
                     attack("shade-pulse", "触角の共鳴・竜から離れろ", MobAttackShape.Ring(4.6), 4.5, 20.0,
                         1200, 0, 1100, 3600),
                     attack("shade-breath", "翳の吐息・大きく横へ", MobAttackShape.Slam(18.0, 2.4), 17.0, 30.0,
-                        1600, 450, 1000, 3600, health = .5, weight = 3),
+                        1600, 450, 1000, 3600, health = RAGE, weight = 3),
                     attack("shade-storm", "鱗粉嵐・竜の懐へ", MobAttackShape.Ring(15.0, 4.0), 15.0, 32.0,
-                        2200, 0, 1300, 6000, health = .5, weight = 2),
+                        2200, 0, 1300, 6000, health = RAGE, weight = 2),
+                    // 2026-10-19 (藍が選んだ行動): three bites (the first two are early hits), from phase one.
+                    attack("shade-bite", "噛みつき3連・正面から離れろ", MobAttackShape.Slam(5.5, 1.6), 5.0, 12.0,
+                        1600, 600, 800, 4200, weight = 3, earlyHits = listOf(700L, 1150L)),
+                    // Phase two (第2形態) on: the tail spin, the horn upthrust and the thrown dust clot.
+                    attack("shade-tailspin", "しっぽ回転・離れろ", MobAttackShape.Ring(6.0), 5.5, 24.0,
+                        1250, 0, 1150, 5200, health = AWAKEN, weight = 2),
+                    attack("shade-horn", "角の突き上げ・横へ", MobAttackShape.Slam(4.5, 1.8), 4.2, 26.0,
+                        1000, 450, 1000, 4000, health = AWAKEN, weight = 2),
+                    attack("shade-orb", "鱗粉弾・落下点から離れろ", MobAttackShape.Ring(2.8), 18.0, 20.0,
+                        1800, 900, 400, 5000, minimumRange = 5.0, target = true, health = AWAKEN, weight = 2),
+                    // MMO gimmicks (2026-10-19), started on a timer by QuestEncounterCombat: the cast to interrupt (second form
+                    // on: damage it enough while it hangs in the air, or the whole arena blasts) and the shell to break
+                    // (enraged: break it in time, or it bursts round the wyrm).
+                    attack("shade-channel", "翳の大詠唱・殴って止めろ", MobAttackShape.Ring(22.0), 40.0, 35.0,
+                        6000, 0, 1200, 40_000, health = AWAKEN, scripted = true),
+                    attack("shade-shell", "鱗粉の殻・殻を割れ", MobAttackShape.Ring(10.0), 40.0, 40.0,
+                        12_000, 0, 1200, 45_000, health = RAGE, scripted = true),
+                    // Someone behind it: the quick tail slap first, the turning sweep if they stay (QuestEncounterCombat).
+                    attack("shade-tailslap", "背後への尾打ち・後ろから離れろ", MobAttackShape.Sweep(6.0, 70.0), 7.0, 18.0,
+                        700, 250, 800, 4000, scripted = true),
                     // Only when the player got behind it during an attack and stays there (QuestEncounterCombat).
                     attack("shade-turnsweep", "振り向き薙ぎ・距離を取れ", MobAttackShape.Sweep(6.5, 90.0), 7.0, 22.0,
                         900, 300, 900, 5000, scripted = true),
                     attack("shade-dive", "飛び上がり急降下・落下点から離れろ", MobAttackShape.Ring(4.5), 30.0, 28.0,
                         2400, 1600, 1400, 9000, minimumRange = 12.0, target = true, weight = 2),
-                )).copy(model = "shade_wyrm", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2,
+                )).copy(model = "shade_wyrm", awakenHealthRatio = AWAKEN, awakenSpeedMultiplier = 1.1, enrageHealthRatio = RAGE, enragedSpeedMultiplier = 1.2,
                     enragedBones = setOf("horn_l", "horn_r", "cloak_l", "cloak_r", "horn_l_tip", "horn_r_tip", "cloak_l_tatters", "cloak_r_tatters"), foldedBones = setOf("wing_l", "wing_r"))
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,
                 Material.IRON_AXE, attacks = listOf(sweep(), slam()))

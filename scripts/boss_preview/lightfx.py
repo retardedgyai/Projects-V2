@@ -88,8 +88,9 @@ def lightmap(level, look):
     return col * .5 + ng * .5                                                  # BrightnessFactor 0.5 (the default)
 
 
-def light(arr, zb, dyn, look, cam, right, up, ox, oy, zoom):
-    """Relights the rendered frame in place: the wyrm by the light at each pixel, the empty pixels as the floor."""
+def light(arr, zb, dyn, look, cam, right, up, ox, oy, zoom, self_lit=None):
+    """Relights the rendered frame in place: the wyrm by the light at each pixel, the empty pixels as the floor.
+    self_lit: a mask of wyrm pixels whose texel is self-lit (alpha 251, the second form's veins): left unlit."""
     H, W = zb.shape
     X, Y = np.meshgrid(np.arange(W) + .5, np.arange(H) + .5)
     a, b = (X - ox) / zoom, (oy - Y) / zoom
@@ -105,6 +106,8 @@ def light(arr, zb, dyn, look, cam, right, up, ox, oy, zoom):
     floor = np.where(emissive[..., None], alb, alb * lm) * 255
     floor = np.where(inside[..., None], floor, (8, 6, 12))
     wyrm = arr / 255 * lm * 1.25 * 255
+    if self_lit is not None:
+        wyrm = np.where(self_lit[..., None], arr * 1.15, wyrm)
     arr[:] = np.where(model[..., None], wyrm, floor)
 
 

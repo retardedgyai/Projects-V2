@@ -61,6 +61,32 @@ object BossModelPack {
         return root.toString()
     }
 
+    /**
+     * WSEE texture states (`<file>.states` beside the model): every extra embedded texture `<model>_<state>.png` (same
+     * atlas layout) becomes a state `<state>` that puts it on every bone, switched with `model.setState`. The 黒翳竜's
+     * `shade_wyrm_frenzy.png` is its second form (BossModelView.awaken). Null when the model has one texture.
+     */
+    fun textureStates(bbmodel: String): String? {
+        val root = JsonParser.parseString(bbmodel).asJsonObject
+        val textures = root.getAsJsonArray("textures").map { it.asJsonObject["name"].asString }
+        if (textures.size < 2) return null
+        val bones = mutableListOf<String>()
+        fun walk(node: JsonElement) {
+            if (!node.isJsonObject) return
+            bones += node.asJsonObject["name"].asString
+            node.asJsonObject.getAsJsonArray("children")?.forEach(::walk)
+        }
+        root.getAsJsonArray("outliner").forEach(::walk)
+        val base = textures[0].removeSuffix(".png")
+        val states = com.google.gson.JsonObject()
+        for (texture in textures.drop(1)) {
+            val mapping = com.google.gson.JsonObject()
+            bones.forEach { mapping.addProperty(it, texture) }
+            states.add(texture.removeSuffix(".png").removePrefix("${base}_"), mapping)
+        }
+        return states.toString()
+    }
+
     /** Replaces pack/assets/worldseed and the data dir completely; returns the number of models. */
     @OptIn(ExperimentalPathApi::class)
     fun generate(source: Path, pack: Path, data: Path): Int {
@@ -70,7 +96,11 @@ object BossModelPack {
         try {
             ModelEngine.setModelMaterial(CARRIER)
             val sources = staging.resolve("bbmodels").createDirectories()
-            for (model in models) sources.resolve(model.fileName.toString()).writeText(forWseeRuntime(model.readText()))
+            for (model in models) {
+                val text = model.readText()
+                sources.resolve(model.fileName.toString()).writeText(forWseeRuntime(text))
+                textureStates(text)?.let { sources.resolve("${model.fileName}.states").writeText(it) }
+            }
             val modelData = staging.resolve("data")
             val config = PackBuilder.generate(sources, staging.resolve("pack"), modelData)
             val target = pack.resolve("assets/worldseed")

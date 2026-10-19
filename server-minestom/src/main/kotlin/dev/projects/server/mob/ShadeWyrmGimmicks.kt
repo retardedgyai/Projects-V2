@@ -20,7 +20,7 @@ import kotlin.random.Random
  * - Erosion: dust hits add [HIT_GAIN], standing in a pool adds [POOL_GAIN_PER_SECOND]; at [FULL] it erupts (damage and a
  *   slow) and resets. Hitting the wyrm takes [HIT_RELIEF] off; after [DECAY_AFTER_MILLIS] without gain it decays.
  *   Shown as a second boss bar while above zero.
- * - Pools: the dust burst leaves 4 inside its circle, the breath 3 along its band (radius [POOL_RADIUS], [POOL_MILLIS],
+ * - Pools: the dust burst leaves 4 inside its circle, a thrown dust clot 1 where it lands, the breath 3 along its band (radius [POOL_RADIUS], [POOL_MILLIS],
  *   at most [MAX_POOLS]). The antennae pulse makes them all burst [BURST_DELAY_MILLIS] after its hit.
  */
 internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyrmShaderFx, private val random: Random = Random.Default,
@@ -43,7 +43,7 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
 
     /** A wyrm ability hit [player]. */
     fun playerHit(player: Player, abilityId: String, now: Long) {
-        if (abilityId in DUST) gain(player, HIT_GAIN, now)
+        if (abilityId in DUST) gain(player, if (abilityId == "shade-channel") CAST_GAIN else HIT_GAIN, now)
     }
 
     /** A wyrm ability struck (whether or not anyone was in it). */
@@ -57,6 +57,11 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
             "shade-breath" -> if (shape is MobAttackShape.Slam) {
                 val f = frame.facing.withY(0.0).normalize()
                 for (k in 0 until 3) addPool(frame.origin.add(f.mul(shape.length * (k + 1) / 4.0)), now)
+            }
+            "shade-orb" -> addPool(frame.origin, now)                      // the thrown clot lands as a pool
+            "shade-shell" -> if (shape is MobAttackShape.Ring) repeat(6) {        // the burst shell scatters its dust
+                val a = it * Math.PI / 3 + random.nextDouble(-.3, .3); val r = shape.radius * random.nextDouble(.35, .8)
+                addPool(frame.origin.add(cos(a) * r, 0.0, sin(a) * r), now)
             }
             "shade-pulse" -> if (pools.isNotEmpty()) {
                 burstAt = now + BURST_DELAY_MILLIS
@@ -126,9 +131,11 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
     private fun flat(a: Pos, b: Pos): Double = sqrt((a.x() - b.x()) * (a.x() - b.x()) + (a.z() - b.z()) * (a.z() - b.z()))
 
     companion object {
-        val DUST = setOf("shade-dust", "shade-pulse", "shade-breath", "shade-storm")
+        val DUST = setOf("shade-dust", "shade-pulse", "shade-breath", "shade-storm", "shade-orb", "shade-channel")
         const val FULL = 100.0
         const val HIT_GAIN = 20.0
+        /** The cast that was not interrupted soaks everyone in dust. */
+        const val CAST_GAIN = 40.0
         const val POOL_GAIN_PER_SECOND = 8.0
         const val HIT_RELIEF = 6.0
         const val DECAY_AFTER_MILLIS = 5000L

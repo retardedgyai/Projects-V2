@@ -3,6 +3,7 @@ package dev.projects.server.mob
 import dev.projects.server.coreloop.CoreDamageType
 import dev.projects.server.coreloop.CoreCombatMath
 import dev.projects.server.coreloop.CoreAffixStats
+import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -63,7 +64,10 @@ internal class QuestMobLife(val maximumHealth: Double) {
 /** How long an enraging boss holds its roar before attacking again (matches the `enrage` model clip). */
 private const val ENRAGE_HOLD_MILLIS = 5000L
 
-internal enum class ManeuverKind { STRAFE, HOP_BACK, DASH }
+internal enum class ManeuverKind { STRAFE, HOP_BACK, DASH, RELOCATE }
+
+/** The second-form roar holds this long (the `awaken` clip). */
+private const val AWAKEN_HOLD_MILLIS = 3000L
 
 /** The carrier is moved from [from] to [to] between [moveFrom] and [moveTo] (hop/dash); a strafe paths instead. */
 internal class Maneuver(val kind: ManeuverKind, val from: Pos, val to: Pos, val moveFrom: Long, val moveTo: Long, val endAt: Long, val sign: Int)
@@ -128,6 +132,20 @@ class QuestEncounterCombat(
         @Volatile var view: BossModelView? = null
         var enraged = false
         var enrageHoldUntil = 0L
+        /** 第2形態 (glowing) since its roar; see [tickAwaken]. */
+        var awakened = false
+        var awakenHoldUntil = 0L
+        var tailslapAt = 0L
+        var nextRelocateAt = 0L
+        /** An attack just ended: move (strafe, dart, hop, fly) before the next one. */
+        var moveAfterAttack = false
+        /** MMO gimmicks (see [tickGimmickCast]): when the next cast / shell comes, what has been dealt into them. */
+        var nextChannelAt = 0L
+        var nextShellAt = 0L
+        var castDamage = 0.0
+        var shellHealth = 0.0
+        /** Knocked down (the cast broken, the shell shattered): no attacks, no movement until then. */
+        var downUntil = 0L
         /** Model bosses: a move round the target between attacks (see [startManeuver]). */
         var maneuver: Maneuver? = null
         var nextManeuverAt = 0L
@@ -201,6 +219,8 @@ class QuestEncounterCombat(
     internal fun modelFacing(targetId: UUID): Float? = mobs[targetId]?.let { if (it.maneuver != null) it.faceYaw else it.entity.position.yaw() }
     internal fun shaderViews() = shaderFx.views()
     internal fun lightsOn() = lights.snapshot()
+    internal fun isAwakened(targetId: UUID): Boolean = mobs[targetId]?.awakened ?: false
+    internal fun isGlowing(targetId: UUID): Boolean = mobs[targetId]?.view?.glowing ?: false
     /** How far the arena's light has turned violet (0..1), for the preview dump. */
     internal fun rageShown(): Double = rageClock?.let { (it.time().toDouble() / dev.projects.server.coreloop.adventure.BossArenaFactory.RAGE_FADE_TICKS).coerceIn(0.0, 1.0) } ?: 0.0
 
@@ -244,6 +264,7 @@ class QuestEncounterCombat(
     fun isBoss(targetId: UUID): Boolean = mobs[targetId]?.boss == true
     fun bossHealth(): Double = mobs.values.firstOrNull { it.boss }?.life?.health ?: 0.0
     fun bossMaxHealth(): Double = mobs.values.firstOrNull { it.boss }?.life?.maximumHealth ?: 1.0
+    internal fun healthOf(targetId: UUID): Double = mobs[targetId]?.life?.health ?: 0.0
     fun bossName(): String = mobs.values.firstOrNull { it.boss }?.definition?.name ?: ""
     fun bossEnrageRatio(): Double = mobs.values.firstOrNull { it.boss }?.definition?.enrageHealthRatio ?: 0.0
     fun weaknessOf(targetId: UUID): String? = mobs[targetId]?.definition?.archetype?.weakness
@@ -446,9 +467,21 @@ class QuestEncounterCombat(
         val mitigated = amount * (if (guarded) mob.definition.frontalDamageMultiplier else 1.0) *
             (if (mob.boss && now < mob.brokenUntil) BROKEN_DAMAGE else 1.0)
         val gated = if (mob.boss) minOf(mitigated, (mob.life.health - mob.life.maximumHealth * bossGateFraction).coerceAtLeast(0.0)) else mitigated
+        val gimmick = mob.abilities.current?.ability?.id
+        if (gimmick == SHELL && mob.shellHealth > 0.0) {
+            // 鱗粉の殻: the shell takes the hit, not the wyrm.
+            mob.lastAttacker = attacker
+            mob.shellHealth -= mitigated
+            if (mob.shellHealth <= 0.0) knockDown(mob, now, "殻が割れた・殴り放題")
+            return mitigated
+        }
         if (!mob.life.damage(gated)) return null
         val applied = healthBefore - mob.life.health
         mob.lastAttacker = attacker
+        if (gimmick == CHANNEL && mob.life.isAlive) {
+            mob.castDamage += applied
+            if (mob.castDamage >= mob.life.maximumHealth * CAST_SHARE) knockDown(mob, now, "詠唱を止めた・殴り放題")
+        }
         if (mob.view != null && applied > 0.0 && mob.life.isAlive) {
             gimmicks.playerStruck(attacker)
             breakParts(mob, attacker, applied, now)
@@ -535,6 +568,7 @@ class QuestEncounterCombat(
         vfx.cancelAll()
         gimmicks.dispose()
         lights.dispose()
+        hideGimmickBars()
         glowing.forEach { it.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList())) }
         glowing.clear()
         shaderFx.dispose()
@@ -649,7 +683,10 @@ class QuestEncounterCombat(
         }
         (mob.entity.entityMeta as MobMeta).isAggressive = true
         if (tickChallengeBarrier(mob, now)) return
+        if (tickAwaken(mob, now)) return
         if (tickEnrage(mob, now)) return
+        tickGimmickBars(mob, now)
+        if (now < mob.downUntil) { stopNavigation(mob); return }
         if (crowded(mob, CrowdControl.STUN, now) || crowded(mob, CrowdControl.AIRBORNE, now) || crowded(mob, CrowdControl.KNOCKBACK, now)) {
             if (!crowded(mob, CrowdControl.AIRBORNE, now)) stopNavigation(mob)
             return
@@ -673,7 +710,8 @@ class QuestEncounterCombat(
             }
             val frame = mob.abilities.current?.let { effectiveFrame(mob, it) }
             if (frame != null) {
-                mob.entity.setView(Pos.ZERO.withDirection(frame.facing).yaw(), 0.0f)
+                // The tail slap strikes behind without turning: the body keeps its back to the player.
+                mob.entity.setView(Pos.ZERO.withDirection(frame.facing).yaw() + if (frame.ability.id == TAIL_SLAP) 180f else 0f, 0.0f)
                 carryThroughAbility(mob, frame, now)
                 behindFor(mob, target, now)                // standing behind it during an attack counts too
                 if (frame.phase != MobAbilityPhase.RECOVERY && now >= mob.nextWarningAt) {
@@ -689,7 +727,22 @@ class QuestEncounterCombat(
         if (now >= mob.warningRetryAt && mob.entity.hasLineOfSight(target) && telegraphs.canStart(mob.entity.uuid)) {
             val ratio = mob.life.health / mob.life.maximumHealth
             val silenced = crowded(mob, CrowdControl.SILENCE, now)
-            val scripted = if (silenced) null else mob.combo ?: if (behindFor(mob, target, now) >= TURN_AFTER_MILLIS) TURN_SWEEP else null
+            val gimmickDue = mob.view != null && ((mob.enraged && mob.nextShellAt != 0L && now >= mob.nextShellAt) ||
+                (mob.awakened && mob.nextChannelAt != 0L && now >= mob.nextChannelAt))
+            if (mob.moveAfterAttack && mob.combo == null && !gimmickDue) {
+                mob.moveAfterAttack = false
+                if (!silenced && startManeuver(mob, target, now)) return
+            }
+            val behind = behindFor(mob, target, now)
+            // The gimmicks come when due, ahead of a combo; then a combo; then someone at its back.
+            val scripted = if (silenced) null else when {
+                mob.nextShellAt != 0L && mob.enraged && now >= mob.nextShellAt -> SHELL
+                mob.nextChannelAt != 0L && mob.awakened && now >= mob.nextChannelAt -> CHANNEL
+                mob.combo != null -> mob.combo
+                behind >= TAIL_SLAP_AFTER_MILLIS && now - mob.tailslapAt > TAIL_SLAP_AGAIN_MILLIS -> TAIL_SLAP
+                behind >= TURN_AFTER_MILLIS -> TURN_SWEEP
+                else -> null
+            }
             mob.combo = null
             val aim = aimAt(mob, target, now)
             val start = scripted?.let { mob.abilities.tryStart(now, mob.entity.position, aim, ratio, only = it) }
@@ -794,6 +847,99 @@ class QuestEncounterCombat(
         }
     }
 
+    /**
+     * 第2形態 (2026-10-19): at the definition's awaken ratio, once, before any enrage: the attack stops, the
+     * `awaken` roar is held (no attacks: a chance to hit it), the body starts to glow; then a little faster, with the
+     * phase-two abilities (their maximumHealthRatio) unlocked by the health ratio itself.
+     */
+    private fun tickAwaken(mob: Mob, now: Long): Boolean {
+        val threshold = mob.definition.awakenHealthRatio
+        if (!mob.awakened) {
+            if (threshold <= 0.0 || mob.enraged || mob.life.health / mob.life.maximumHealth > threshold) return false
+            mob.awakened = true
+            mob.maneuver = null
+            mob.awakenHoldUntil = now + AWAKEN_HOLD_MILLIS
+            mob.abilities.cancel()
+            clearWarning(mob.entity.uuid)
+            castingPose(mob, false)
+            stopNavigation(mob)
+            mob.view?.awaken(now)
+            mob.warningRetryAt = mob.awakenHoldUntil
+            mob.nextRelocateAt = mob.awakenHoldUntil + 4000              // flies off soon after it wakes
+            mob.nextChannelAt = mob.awakenHoldUntil + CHANNEL_FIRST_MILLIS
+            updateName(mob, "第2形態・鱗粉が光る")
+            sound(mob.entity.position, "minecraft:entity.ravager.roar", 1.1f, 0.8f)
+            particle(mob.entity.position.add(0.0, 2.0, 0.0), Particle.DUST.withColor(NamedTextColor.LIGHT_PURPLE).withScale(1.6f), 30)
+            updateMovementSpeed(mob, now)
+            return true
+        }
+        if (mob.enraged || now >= mob.awakenHoldUntil) return false
+        stopNavigation(mob)
+        return true
+    }
+
+    /**
+     * MMO gimmicks (2026-10-19, 藍が選んだ2つ): 翳の大詠唱 (second form on, every [CHANNEL_AGAIN_MILLIS]) hangs in the air
+     * for 6 s; [CAST_SHARE] of its health dealt in that time interrupts it. 鱗粉の殻 (enraged, every [SHELL_AGAIN_MILLIS])
+     * holds 12 s with a shell of [SHELL_SHARE] that soaks the damage. Either broken: knocked down for [DOWN_MILLIS]
+     * (broken: +30 % damage taken). Not broken: the ability's own hit (the arena blast / the shell burst).
+     */
+    private fun knockDown(mob: Mob, now: Long, label: String) {
+        val shell = mob.abilities.current?.ability?.id == SHELL
+        mob.abilities.cancel()
+        clearWarning(mob.entity.uuid)
+        castingPose(mob, false)
+        stopNavigation(mob)
+        if (shell) shaderFx.shellBreak(mob.entity.position, gimmickTag(mob)) else shaderFx.endTag(gimmickTag(mob))
+        mob.shellHealth = 0.0
+        mob.downUntil = now + DOWN_MILLIS
+        mob.brokenUntil = maxOf(mob.brokenUntil, now + DOWN_MILLIS)
+        mob.warningRetryAt = mob.downUntil
+        mob.view?.maneuver("down")
+        hideGimmickBars()
+        updateName(mob, label)
+        sound(mob.entity.position, "minecraft:block.anvil.land", 1.0f, 0.5f)
+        sound(mob.entity.position, "minecraft:entity.ravager.stunned", 1.2f, 0.7f)
+    }
+
+    private val castBar: BossBar = BossBar.bossBar(Component.text("翳の大詠唱", NamedTextColor.LIGHT_PURPLE), 0f, BossBar.Color.PURPLE, BossBar.Overlay.PROGRESS)
+    private val gaugeBar: BossBar = BossBar.bossBar(Component.text("止める量", NamedTextColor.GOLD), 0f, BossBar.Color.YELLOW, BossBar.Overlay.NOTCHED_10)
+    private val barViewers = mutableSetOf<Player>()
+
+    private fun gimmickTag(mob: Mob) = "gimmick-${mob.entity.uuid}"
+
+    /** The cast's / shell's two bars: time left, and how far the interrupt / the shell has got. */
+    private fun tickGimmickBars(mob: Mob, now: Long) {
+        val frame = mob.abilities.current
+        if (frame == null || frame.ability.id !in GIMMICKS) {
+            // Ended or cut short some other way (a part broke, a phase change, a break): nothing left on screen.
+            if (barViewers.isNotEmpty()) { hideGimmickBars(); shaderFx.endTag(gimmickTag(mob)) }
+            return
+        }
+        val id = frame.ability.id
+        val k = ((now - frame.startedAt).toFloat() / frame.ability.telegraphMillis).coerceIn(0f, 1f)
+        val left = ((frame.ability.telegraphMillis - (now - frame.startedAt)) / 1000.0).coerceAtLeast(0.0)
+        castBar.name(Component.text("${if (id == SHELL) "鱗粉の殻" else "翳の大詠唱"}  ${"%.1f".format(left)}秒", NamedTextColor.LIGHT_PURPLE))
+        castBar.progress(1f - k)
+        gaugeBar.name(Component.text(if (id == SHELL) "殻の耐久" else "止める量", NamedTextColor.GOLD))
+        gaugeBar.progress(if (id == SHELL) (mob.shellHealth / (mob.life.maximumHealth * SHELL_SHARE)).toFloat().coerceIn(0f, 1f)
+            else (mob.castDamage / (mob.life.maximumHealth * CAST_SHARE)).toFloat().coerceIn(0f, 1f))
+        val viewers = instance.players.toSet()
+        for (p in viewers - barViewers) { p.showBossBar(castBar); p.showBossBar(gaugeBar) }
+        barViewers += viewers
+    }
+
+    private fun hideGimmickBars() {
+        for (p in barViewers) { p.hideBossBar(castBar); p.hideBossBar(gaugeBar) }
+        barViewers.clear()
+    }
+
+    /** The cast / shell showing right now (preview dump): name, time left 0..1, gauge 0..1; null when none. */
+    internal fun gimmickBars(): Triple<String, Float, Float>? = mobs.values.firstNotNullOfOrNull { mob ->
+        mob.abilities.current?.takeIf { it.ability.id in GIMMICKS }?.let { Triple(it.ability.id, castBar.progress(), gaugeBar.progress()) }
+    }
+    internal fun isDown(targetId: UUID): Boolean = mobs[targetId]?.let { lastTickAt < it.downUntil } ?: false
+
     /** One-way rage at the definition's health ratio: a held roar (no attacks), then faster with new abilities. */
     private fun tickEnrage(mob: Mob, now: Long): Boolean {
         val threshold = mob.definition.enrageHealthRatio
@@ -808,6 +954,7 @@ class QuestEncounterCombat(
             stopNavigation(mob)
             mob.view?.enrage(now)
             mob.warningRetryAt = mob.enrageHoldUntil
+            if (mob.view != null) mob.nextShellAt = mob.enrageHoldUntil + SHELL_FIRST_MILLIS
             updateName(mob, "怒り・翼を広げた")
             sound(mob.entity.position, "minecraft:entity.ravager.roar", 1.2f, 0.6f)
             particle(mob.entity.position.add(0.0, 2.0, 0.0), Particle.DUST.withColor(NamedTextColor.DARK_PURPLE).withScale(2.0f), 40)
@@ -854,7 +1001,7 @@ class QuestEncounterCombat(
         mob.slowPercent = mob.slows.values.maxOfOrNull { it.strength } ?: 0.0
         mob.slowedUntil = mob.slows.values.maxOfOrNull { it.until } ?: 0L
         val speed = mob.definition.movementSpeed * (1.0 - mob.slowPercent) *
-            (if (mob.enraged) mob.definition.enragedSpeedMultiplier else 1.0) *
+            (if (mob.enraged) mob.definition.enragedSpeedMultiplier else if (mob.awakened) mob.definition.awakenSpeedMultiplier else 1.0) *
             (if (mob.maneuver?.kind == ManeuverKind.STRAFE) STRAFE_SPEED else 1.0) *
             (if (mob.searching && mob.maneuver == null) SEARCH_SPEED else 1.0)
         if (mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue != speed) {
@@ -870,13 +1017,16 @@ class QuestEncounterCombat(
      */
     private fun startManeuver(mob: Mob, target: Player, now: Long): Boolean {
         val view = mob.view ?: return false
-        if (!view.canManeuver || now < mob.nextManeuverAt || mob.enraged && now < mob.enrageHoldUntil) return false
+        if (!view.canManeuver || now < mob.nextManeuverAt || mob.enraged && now < mob.enrageHoldUntil ||
+            mob.awakened && now < mob.awakenHoldUntil) return false
         if (behindFor(mob, target, now) > 0L) return false          // someone at its back: hold still and turn on them
         val here = mob.entity.position
         val distance = horizontalLength(target.position.sub(here))
         val away = normalizeHorizontal(here.sub(target.position))
         val right = Vec(away.z(), 0.0, -away.x())            // the boss's right while it faces the target
+        if (mob.nextRelocateAt == 0L) mob.nextRelocateAt = now + RELOCATE_FIRST_MILLIS
         val kind = when {
+            now >= mob.nextRelocateAt && distance < 18.0 && view.has("relocate") -> ManeuverKind.RELOCATE
             distance < 3.5 -> ManeuverKind.HOP_BACK
             distance in 4.0..10.0 -> if (mob.maneuvers % 3 == 2) ManeuverKind.DASH else ManeuverKind.STRAFE
             else -> return false
@@ -895,7 +1045,12 @@ class QuestEncounterCombat(
                 Maneuver(kind, here, to, now + 200, now + 500, now + 900, if (toRight) 1 else -1)
             }
             ManeuverKind.STRAFE -> Maneuver(kind, here, here, now, now, now + 1600, sign)
+            ManeuverKind.RELOCATE -> {
+                val to = relocateSpot(mob, target) ?: return false
+                Maneuver(kind, here, to, now + 700, now + 2300, now + 3000, 0)
+            }
         }
+        if (kind == ManeuverKind.RELOCATE) mob.nextRelocateAt = now + if (mob.awakened || mob.enraged) RELOCATE_AGAIN_MILLIS else RELOCATE_CALM_MILLIS
         mob.maneuvers++
         mob.nextManeuverAt = maneuver.endAt + if (kind == ManeuverKind.STRAFE) 900 else 1700
         mob.maneuver = maneuver
@@ -905,9 +1060,24 @@ class QuestEncounterCombat(
             ManeuverKind.HOP_BACK -> view.maneuver("hop_back")
             ManeuverKind.DASH -> view.maneuver(if (maneuver.sign > 0) "dash_l" else "dash_r")
             ManeuverKind.STRAFE -> mob.nextPathAt = now
+            ManeuverKind.RELOCATE -> view.maneuver("relocate")
         }
         updateMovementSpeed(mob, now)
         return true
+    }
+
+    /**
+     * 飛び移り: a spot across the arena, 10-16 blocks from where it stands and as far from the player as the leash
+     * allows (it takes the fight elsewhere); null when no spot is open.
+     */
+    private fun relocateSpot(mob: Mob, target: Player): Pos? {
+        val here = mob.entity.position
+        return (0 until 12).mapNotNull { k ->
+            val a = k * Math.PI / 6
+            val r = if (k % 2 == 0) 12.0 else 16.0
+            safeRetreat(mob.home.add(kotlin.math.cos(a) * r * .8, 0.0, kotlin.math.sin(a) * r * .8), mob.home, mob.definition.leashRange)
+        }.filter { horizontalLength(it.sub(here)) in 8.0..20.0 }
+            .maxByOrNull { horizontalLength(it.sub(target.position)) - .3 * horizontalLength(it.sub(here)) }
     }
 
     /** True while the maneuver holds the mob (no attacks, no chase). */
@@ -918,6 +1088,8 @@ class QuestEncounterCombat(
                 ManeuverKind.HOP_BACK -> if (mob.enraged) "shade-breath" else null   // 2 跳び退き→吐息
                 ManeuverKind.DASH -> "shade-sweep"                                   // 3 回り込み→薙ぎ
                 ManeuverKind.STRAFE -> null
+                // 飛び移り→鱗粉弾 (第2形態から), 吐息 once enraged, else the dust burst where it landed
+                ManeuverKind.RELOCATE -> if (mob.enraged) "shade-breath" else if (mob.awakened) "shade-orb" else "shade-dust"
             }
             if (mob.combo != null) mob.warningRetryAt = now
             updateMovementSpeed(mob, now)
@@ -1087,6 +1259,19 @@ class QuestEncounterCombat(
             is MobAbilityEvent.Started -> {
                 mob.travelFrom = mob.entity.position
                 if (event.frame.ability.id == TURN_SWEEP) mob.behindSince = 0L
+                if (event.frame.ability.id == TAIL_SLAP) mob.tailslapAt = lastTickAt
+                when (event.frame.ability.id) {
+                    CHANNEL -> {
+                        mob.castDamage = 0.0
+                        mob.nextChannelAt = lastTickAt + CHANNEL_AGAIN_MILLIS
+                        shaderFx.channel(mob.entity.position, gimmickTag(mob), (event.frame.ability.telegraphMillis / 50).toInt())
+                    }
+                    SHELL -> {
+                        mob.shellHealth = mob.life.maximumHealth * SHELL_SHARE
+                        mob.nextShellAt = lastTickAt + SHELL_AGAIN_MILLIS
+                        shaderFx.shell(mob.entity.position, gimmickTag(mob), (event.frame.ability.telegraphMillis / 50).toInt())
+                    }
+                }
                 updateName(mob, event.frame.ability.displayName)
                 mob.view?.ability(event.frame.ability.id)
                 if (!drawWarning(mob, event.frame, false)) {
@@ -1095,6 +1280,9 @@ class QuestEncounterCombat(
                 }
                 playVfx(mob, ShadeWyrmVfx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
                 if (mob.view != null) shaderFx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
+                if (event.frame.ability.id == ORB) mob.view?.point("skull", ShadeWyrmVfx.SNOUT)?.let {
+                    shaderFx.orb(Pos(it), event.frame.origin, ORB_RELEASE_TICKS, (event.frame.ability.telegraphMillis / 50).toInt() - ORB_RELEASE_TICKS)
+                }
                 mob.entity.refreshActiveHand(false, true, false)
                 castingPose(mob, true)
                 sound(event.frame.origin, "minecraft:block.note_block.hat", 0.7f, 0.8f)
@@ -1131,8 +1319,22 @@ class QuestEncounterCombat(
                     if (disposed || actionsStoppedForReturn) return false
                 }
                 if (mob.view != null) { gimmicks.abilityHit(event.frame, lastTickAt); lightUp(event.frame) }
+                if (event.frame.ability.id in GIMMICKS) { shaderFx.endTag(gimmickTag(mob)); mob.shellHealth = 0.0 }
             }
-            is MobAbilityEvent.Finished -> { clearWarning(mob.entity.uuid); updateName(mob) }
+            is MobAbilityEvent.Finished -> {
+                clearWarning(mob.entity.uuid); updateName(mob)
+                if (event.abilityId in GIMMICKS) hideGimmickBars()
+                if (mob.view != null) {
+                    // 連携技: some attacks lead straight into another (half the time).
+                    mob.combo = when (event.abilityId) {
+                        "shade-bite" -> if (mob.awakened && Random.nextBoolean()) "shade-tailspin" else null
+                        "shade-horn" -> if (Random.nextBoolean()) "shade-pounce" else null
+                        else -> null
+                    }
+                    if (mob.combo != null) mob.warningRetryAt = lastTickAt
+                    else { mob.moveAfterAttack = true; mob.nextManeuverAt = minOf(mob.nextManeuverAt, lastTickAt) }
+                }
+            }
         }
         return true
     }
@@ -1213,6 +1415,28 @@ class QuestEncounterCombat(
         const val TURN_SWEEP = "shade-turnsweep"
         /** Got behind it (usually while an attack holds its facing) for this long when it is free to act. */
         const val TURN_AFTER_MILLIS = 600L
+        /** Behind it this long: the quick tail slap (once per [TAIL_SLAP_AGAIN_MILLIS]); still there: the turning sweep. */
+        const val TAIL_SLAP = "shade-tailslap"
+        /** MMO gimmicks (see [knockDown]). */
+        const val CHANNEL = "shade-channel"
+        const val SHELL = "shade-shell"
+        val GIMMICKS = setOf(CHANNEL, SHELL)
+        const val CAST_SHARE = .025
+        const val SHELL_SHARE = .04
+        const val DOWN_MILLIS = 4000L
+        const val CHANNEL_FIRST_MILLIS = 12_000L
+        const val CHANNEL_AGAIN_MILLIS = 40_000L
+        const val SHELL_FIRST_MILLIS = 15_000L
+        const val SHELL_AGAIN_MILLIS = 45_000L
+        const val TAIL_SLAP_AFTER_MILLIS = 350L
+        const val TAIL_SLAP_AGAIN_MILLIS = 6000L
+        /** 飛び移り: first after this long, then this often (more often from the second form). */
+        const val RELOCATE_FIRST_MILLIS = 15_000L
+        const val RELOCATE_CALM_MILLIS = 26_000L
+        const val RELOCATE_AGAIN_MILLIS = 18_000L
+        /** 鱗粉弾: the clot leaves the jaws 1.2 s in (the clip) and lands at the telegraph's end. */
+        const val ORB = "shade-orb"
+        const val ORB_RELEASE_TICKS = 24
         /** ms into shade-dive while the body is carried over the target (the clip hangs in the air then). */
         val DIVE_CARRY = 1000L..2300L
         const val BREAK_MAX = 100.0

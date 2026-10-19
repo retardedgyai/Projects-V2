@@ -134,6 +134,76 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                         slide = dir.mul(1.0).add(0.0, 1.2, 0.0), moveTicks = 16, billboard = true)
                 }
             }
+            "shade-bite" -> if (shape is MobAttackShape.Slam) {
+                // A snap of the jaws at the end of the band: a small crescent and a burst of dust where the teeth meet.
+                val jaws = o.add(f.mul(shape.length * .8)).add(0.0, 1.2, 0.0)
+                add("slash", 1, jaws, 0, 6, Vec(2.6, 1.0, 2.6), mul(yaw, mul(qx(PI / 2), qz(.3))))
+                add("puff", 4, jaws, 0, 9, Vec(1.8, 1.8, 1.0), IDENTITY, grow = Vec(2.8, 2.8, 1.0), moveTicks = 8, billboard = true)
+            }
+            "shade-tailspin" -> if (shape is MobAttackShape.Ring) {
+                // The tail sweeps the whole circle: two flat crescents round it and a dust wake along the rim.
+                val d = shape.radius * 2.1
+                add("slash", 1, o.add(0.0, .7, 0.0), 0, 9, Vec(d, 1.0, d), yaw)
+                add("slash", 1, o.add(0.0, .7, 0.0), 0, 9, Vec(d, 1.0, d), mul(yaw, qy(PI)))
+                add("ring", 2, o.add(0.0, .12, 0.0), 0, 9, Vec(2.0, 1.0, 2.0), IDENTITY, grow = Vec(d, 1.0, d), moveTicks = 5)
+                for (n in 0 until 12) {
+                    val a = n * 2 * PI / 12
+                    val dir = Vec(cos(a), 0.0, sin(a))
+                    add("puff", 4, o.add(dir.mul(shape.radius * .85)).add(0.0, .6, 0.0), n / 4, 11, Vec(2.0, 2.0, 1.0), IDENTITY,
+                        slide = dir.mul(1.0).add(0.0, .5, 0.0), moveTicks = 10, billboard = true)
+                }
+            }
+            "shade-horn" -> if (shape is MobAttackShape.Slam) {
+                // The head heaves up: a rising ring at the tip of the thrust and dust thrown upward.
+                val tip = o.add(f.mul(shape.length * .75))
+                add("ring_up", 2, tip.add(0.0, 1.6, 0.0), 0, 8, Vec(1.0, 1.0, 1.0), yaw, grow = Vec(4.0, 4.0, 1.0), moveTicks = 6)
+                add("ring", 2, tip.add(0.0, .12, 0.0), 0, 9, Vec(1.5, 1.0, 1.5), yaw, grow = Vec(5.0, 1.0, 5.0), moveTicks = 5)
+                repeat(4) { n ->
+                    add("puff", 4, tip.add(right.mul((n - 1.5) * .6)).add(0.0, .8, 0.0), n / 2, 13, Vec(2.2, 2.2, 1.0), IDENTITY,
+                        slide = Vec(0.0, 2.4, 0.0), moveTicks = 12, billboard = true)
+                }
+            }
+            "shade-tailslap" -> if (shape is MobAttackShape.Sweep) {
+                // The tail comes down behind it (facing points at the player behind): a vertical crescent and a shock.
+                val down = o.add(f.mul(shape.radius * .7))
+                add("slash", 1, down.add(0.0, 1.4, 0.0), 0, 7, Vec(3.6, 1.0, 3.6), mul(yaw, qz(PI / 2)))
+                add("ring", 2, down.add(0.0, .12, 0.0), 0, 9, Vec(1.5, 1.0, 1.5), yaw, grow = Vec(5.5, 1.0, 5.5), moveTicks = 5)
+                add("puff", 4, down.add(0.0, .6, 0.0), 0, 12, Vec(2.6, 2.6, 1.0), IDENTITY, grow = Vec(3.6, 3.6, 1.0), moveTicks = 10, billboard = true)
+            }
+            "shade-channel" -> if (shape is MobAttackShape.Ring) {
+                // The plunge lands: one shock wave rolls across the whole arena, dust erupting along it.
+                val d = shape.radius * 2.05
+                add("ring", 2, o.add(0.0, .12, 0.0), 0, 14, Vec(2.0, 1.0, 2.0), IDENTITY, grow = Vec(d, 1.0, d), moveTicks = 12) { .2 + .6 * it }
+                add("ring", 2, o.add(0.0, .1, 0.0), 2, 14, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(d * .9, 1.0, d * .9), moveTicks = 12)
+                add("puff", 4, o.add(0.0, 1.6, 0.0), 0, 14, Vec(5.0, 5.0, 1.0), IDENTITY, grow = Vec(10.0, 10.0, 1.0), moveTicks = 12, billboard = true)
+                for (n in 0 until 24) {
+                    val a = n * 2 * PI / 24
+                    val dir = Vec(cos(a), 0.0, sin(a))
+                    val r = 4.0 + (n % 4) * 4.5
+                    add("puff", 4, o.add(dir.mul(r)).add(0.0, .8, 0.0), (r / 2).toInt(), 12, Vec(2.6, 2.6, 1.0), IDENTITY,
+                        slide = Vec(0.0, 1.6, 0.0), moveTicks = 11, billboard = true)
+                }
+            }
+            "shade-shell" -> if (shape is MobAttackShape.Ring) {
+                // The shell bursts: shards of hardened dust flung out and a ring the size of the blast.
+                val d = shape.radius * 2.05
+                add("ring", 2, o.add(0.0, .12, 0.0), 0, 10, Vec(2.0, 1.0, 2.0), IDENTITY, grow = Vec(d, 1.0, d), moveTicks = 6)
+                for (n in 0 until 16) {
+                    val a = n * 2 * PI / 16
+                    val dir = Vec(cos(a), 0.0, sin(a))
+                    add("curtain", 5, o, 0, 10, Vec(1.4, 2.2, 1.0), yawTo(dir), translation = dir.mul(3.0).add(0.0, 1.2, 0.0),
+                        slide = dir.mul(shape.radius).add(0.0, 1.0, 0.0), moveTicks = 8)
+                    if (n % 2 == 0) add("puff", 4, o.add(dir.mul(4.0)).add(0.0, 1.2, 0.0), n % 3, 12, Vec(2.8, 2.8, 1.0), IDENTITY,
+                        slide = dir.mul(4.0), moveTicks = 10, billboard = true)
+                }
+            }
+            "shade-orb" -> if (shape is MobAttackShape.Ring) {
+                // The clot lands and bursts: a dust burst, a ring the size of the blast, smoke rising (a pool stays).
+                val r = shape.radius
+                add("puff", 4, o.add(0.0, .8, 0.0), 0, 12, Vec(3.0, 3.0, 1.0), IDENTITY, grow = Vec(4.6, 4.6, 1.0), moveTicks = 10, billboard = true)
+                add("ring", 2, o.add(0.0, .12, 0.0), 0, 9, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(r * 2.1, 1.0, r * 2.1), moveTicks = 5)
+                add("smoke", 6, o.add(0.0, 1.4, 0.0), 2, 18, Vec(3.2, 3.2, 1.0), IDENTITY, slide = Vec(0.0, 1.4, 0.0), moveTicks = 16, billboard = true)
+            }
             "shade-pounce" -> if (shape is MobAttackShape.Slam) {
                 // Both wing-arms slam down side by side: a crater under each, the ground cracking out, one wide shock.
                 val mid = o.add(f.mul(shape.length * .58))
@@ -339,6 +409,55 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         add("ring", 2, at.add(0.0, .12, 0.0), 0, ticks + 2, Vec(2.0, 1.0, 2.0), IDENTITY, grow = Vec(d, 1.0, d), moveTicks = ticks) { .25 + .5 * it }
         add("ring", 2, at.add(0.0, .1, 0.0), 3, ticks, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(d * .9, 1.0, d * .9), moveTicks = ticks - 1) { .5 + .4 * it }
         add("puff", 4, at.add(0.0, 2.5, 0.0), 0, 10, Vec(3.0, 3.0, 1.0), IDENTITY, grow = Vec(7.0, 7.0, 1.0), moveTicks = 8, billboard = true)
+    }
+
+    /** 鱗粉弾 in flight: a glowing clot leaves the jaws after [delay] ticks and travels to where it lands in [ticks]. */
+    fun orb(from: Pos, to: Pos, delay: Int, ticks: Int) {
+        val path = Vec(to.x() - from.x(), to.y() + .6 - from.y(), to.z() - from.z())
+        add("puff", 4, from, delay, ticks + 1, Vec(1.4, 1.4, 1.0), IDENTITY, slide = path, moveTicks = ticks, billboard = true) { .55 }
+        add("smoke", 6, from, delay + 1, ticks + 2, Vec(1.2, 1.2, 1.0), IDENTITY, slide = path.mul(.92), moveTicks = ticks, billboard = true) { .3 }
+    }
+
+    /** 翳の大詠唱: dust drawn up off the whole floor toward the wyrm hanging above [at], for [ticks]. */
+    fun channel(at: Pos, tag: String, ticks: Int) {
+        addingTag = tag
+        try {
+            add("ring", 2, at.add(0.0, .1, 0.0), 0, ticks, Vec(43.0, 1.0, 43.0), IDENTITY) { .1 + .35 * it * it }
+            for (n in 0 until 18) {
+                val a = n * 2 * PI / 18
+                val from = Vec(cos(a), 0.0, sin(a)).mul(6.0 + (n % 3) * 4.0)
+                val start = (n * 13) % ticks.coerceAtLeast(1) / 3
+                add("puff", 4, at.add(from).add(0.0, .6, 0.0), start, ticks - start, Vec(1.4, 1.4, 1.0), IDENTITY,
+                    slide = from.mul(-1.0).add(0.0, 3.2, 0.0), moveTicks = ticks - start, billboard = true) { .35 + .4 * it }
+            }
+        } finally { addingTag = null }
+    }
+
+    /** 鱗粉の殻: a shell of hardened dust round the curled-up wyrm at [at] while it holds, for [ticks]. */
+    fun shell(at: Pos, tag: String, ticks: Int) {
+        addingTag = tag
+        try {
+            add("ring", 2, at.add(0.0, .1, 0.0), 0, ticks, Vec(2.0, 1.0, 2.0), IDENTITY, grow = Vec(8.0, 1.0, 8.0), moveTicks = 12) { .45 }
+            for (n in 0 until 14) {
+                val a = n * 2 * PI / 14
+                val dir = Vec(cos(a), 0.0, sin(a))
+                add("curtain", 5, at, 2 + n % 3, ticks - 4, Vec(1.0, .5, 1.0), yawTo(dir), translation = dir.mul(3.4).add(0.0, .2, 0.0),
+                    grow = Vec(1.9, 4.2, 1.0), slide = dir.mul(3.4).add(0.0, 2.0, 0.0), moveTicks = 12) { .55 + .2 * it }
+            }
+            add("disc", 6, at.add(0.0, 4.0, 0.0), 6, ticks - 8, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(6.4, 1.0, 6.4), moveTicks = 10) { .4 }
+        } finally { addingTag = null }
+    }
+
+    /** The shell shattered: shards flung out from [at]. */
+    fun shellBreak(at: Pos, tag: String) {
+        endTag(tag)
+        for (n in 0 until 12) {
+            val a = n * 2 * PI / 12
+            val dir = Vec(cos(a), 0.0, sin(a))
+            add("curtain", 5, at, 0, 9, Vec(1.6, 2.4, 1.0), yawTo(dir), translation = dir.mul(3.4).add(0.0, 1.4, 0.0),
+                slide = dir.mul(6.0).add(0.0, -.6, 0.0), moveTicks = 8)
+        }
+        add("puff", 4, at.add(0.0, 2.0, 0.0), 0, 12, Vec(4.0, 4.0, 1.0), IDENTITY, grow = Vec(7.0, 7.0, 1.0), moveTicks = 10, billboard = true)
     }
 
     /** The player's erosion erupted: a violet burst around them. */
