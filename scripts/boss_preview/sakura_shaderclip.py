@@ -30,6 +30,7 @@ def sakura_ramp(h):
 
 
 shaderclip.ramp = sakura_ramp
+shaderclip.UPRIGHT = shaderclip.UPRIGHT + ("sakura_blossom", "sakura_curtain")
 
 ORDER = [("sakura-claw", "桜爪の叩きつけ", 1.0), ("sakura-claw2", "桜爪・二の手", 1.0), ("sakura-claw3", "桜爪・止め（怒り後）", 1.0),
          ("sakura-tail", "花尾の宙返り", .9), ("sakura-horn", "枝角の突き上げ", 1.1), ("sakura-spin", "花尾の旋回", .9),
