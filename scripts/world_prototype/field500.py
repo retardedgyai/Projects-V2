@@ -47,40 +47,55 @@ def bump(cx, cz, rx, rz, h, p=2.0):
     return h * t ** p * (3 - 2 * t) if p == 0 else h * (t * t * (3 - 2 * t)) ** (p / 2)
 
 
-# ---------------- places ----------------
-TREE = (238, 150)
-REST = (196, 300)
-BOSS = (395, 95)
-FUNGAL = (95, 200)
-WOLF = (405, 360)
-TOWER = (85, 70)
-POND = (110, 410)
-CLIFF_X = 455                 # the root-cracked cliff runs north-south at the east edge
-BOULDERS = (290, 420)
-MEADOW = (330, 250)
+# ---------------- places: three levels, low (south) -> mid -> high (north) ----------------
+TREE = (240, 118)
+REST = (200, 265)
+BOSS = (400, 85)
+FUNGAL = (95, 235)
+WOLF = (415, 392)
+TOWER = (80, 75)
+POND = (105, 428)
+CLIFF_X = 455
+BOULDERS = (282, 428)
+MEADOW = (330, 258)
+LOW, MID, HIGH = 64, 74, 85
 
 # ---------------- terrain ----------------
-H = G + (fbm(5, 3, .5, 1) - .5) * 14 + (fbm(4, 9, .5, 2) - .5) * 5
-H += bump(*TREE, 85, 75, 14)                                   # the tree hill
-H += bump(85, 70, 70, 60, 16)                                  # tower hill
+xs_ = np.arange(B, dtype=np.float32)
+n1 = np.asarray(Image.fromarray(np.random.default_rng(5).random((1, 12)).astype(np.float32), mode="F").resize((B, 1), Image.BICUBIC))[0]
+n2 = np.asarray(Image.fromarray(np.random.default_rng(6).random((1, 12)).astype(np.float32), mode="F").resize((B, 1), Image.BICUBIC))[0]
+B1 = 345 + (n1 - .5) * 30          # low / mid scarp (z, per x)
+B2 = 172 + (n2 - .5) * 30          # mid / high scarp
+CLIFF_Z = np.broadcast_to(B2[None, :], (B, B))
+step1 = np.clip((B1[None, :] - zz) / 3 + .5, 0, 1)    # 1 north of B1
+step2 = np.clip((B2[None, :] - zz) / 3 + .5, 0, 1)    # 1 north of B2
+H = LOW + (MID - LOW) * step1 + (HIGH - MID) * step2
+H += (fbm(5, 3, .5, 1) - .5) * 7 + (fbm(4, 9, .5, 2) - .5) * 3           # gentle rolls inside each level
+H += bump(*TREE, 75, 65, 12)                                              # the tree hill
+H += bump(*TOWER, 55, 45, 7)                                              # tower knoll
 _bd = np.hypot(xx - BOSS[0], zz - BOSS[1])
 _floor = float(np.median(H[_bd < 30])) - 3
 _t = np.clip((_bd - 28) / 14, 0, 1); _t = _t * _t * (3 - 2 * _t)
-H = H * _t + _floor * (1 - _t)                                     # boss hollow: one flat floor, eased rim
-H -= bump(*FUNGAL, 48, 40, 8)                                  # fungal hollow
-H -= bump(*POND, 60, 45, 10)                                   # pond basin
-CLIFF_Z = 178 + (fbm(4, 8, .5, 4) - .5) * 14                   # escarpment line, wandering a little
-scarp = np.clip((CLIFF_Z - zz) / 3, 0, 1) * np.clip((xx - 405) / 25, 0, 1)
-H += scarp * (16 + (fbm(4, 12, .5, 3) - .5) * 5)
+H = H * _t + _floor * (1 - _t)                                            # boss hollow: one flat floor
+H -= bump(*FUNGAL, 46, 38, 6)                                             # fungal hollow
+H -= bump(*POND, 55, 40, 5)                                               # pond basin
 H = H.astype(np.float32)
 
-# road: harbor (SW) -> rest point -> fork north (past the tree) and east (to the next zone)
-ROADS = [[(0, 455), (60, 430), (130, 380), REST],
-         [REST, (215, 250), (225, 210), (190, 120), (205, 40), (215, 0)],
-         [REST, (260, 290), (330, 270), (395, 250), (440, 210), (499, 200)]]
+# roads and side paths: every place sits on one; all are graded so the levels connect without a jump
+ROADS = [[(0, 452), (55, 440), (120, 392), (170, 330), REST],
+         [REST, (215, 225), (226, 185), (222, 150), (205, 60), (215, 0)],
+         [REST, (265, 262), (330, 255), (400, 250), (450, 236), (499, 232)]]
+PATHS = [[REST, (150, 252), (112, 240)],                                  # fungal hollow
+         [(120, 392), (114, 408)],                                        # pond
+         [(212, 280), (238, 325), (262, 372), (278, 412)],                # boulder field (down the scarp)
+         [(278, 412), (340, 420), (398, 410)],                            # wolf den
+         [(330, 255), (372, 214), (398, 196)],                            # foot of the mining scarp
+         [(224, 140), (300, 112), (352, 96), (374, 90)],                  # boss arena
+         [(218, 112), (160, 96), (108, 84)],                              # tower
+         [(110, 240), (80, 300), (70, 345), (90, 398)]]                   # west forest loop: fungal -> woods -> pond
 
 
-def polyline(pts, n=24):
+def polyline(pts, n=10):
     out = []
     for a, b in zip(pts, pts[1:]):
         for t in np.linspace(0, 1, n, endpoint=False):
@@ -95,41 +110,65 @@ def polyline(pts, n=24):
     return out
 
 
-road_d = np.full((B, B), 999.0, np.float32)
-for pts in ROADS:
-    pl = polyline(pts)
-    for a, b in zip(pl, pl[1:]):
+def dist_idx(pl):
+    d = np.full((B, B), 999.0, np.float32); idx = np.zeros((B, B), np.int32)
+    for i, (a, b) in enumerate(zip(pl, pl[1:])):
         ab = b - a; L2 = float(ab @ ab) + 1e-9
         t = np.clip(((xx - a[0]) * ab[0] + (zz - a[1]) * ab[1]) / L2, 0, 1)
-        d = np.hypot(xx - a[0] - t * ab[0], zz - a[1] - t * ab[1])
-        road_d = np.minimum(road_d, d)
-road = road_d < 3.2
+        dd = np.hypot(xx - a[0] - t * ab[0], zz - a[1] - t * ab[1])
+        m = dd < d; d[m] = dd[m]; idx[m] = i
+    return d, idx
+
+
+def sample(Hm, x, z):
+    return float(Hm[int(min(B - 1, max(0, round(z)))), int(min(B - 1, max(0, round(x))))])
+
+
+road_d = np.full((B, B), 999.0, np.float32)
+path_d = np.full((B, B), 999.0, np.float32)
 k = np.exp(-np.linspace(-2, 2, 25) ** 2); k /= k.sum()
-sm = H.copy()
-for _ in range(2):
-    for ax in (0, 1):
-        sm = np.apply_along_axis(lambda v: np.convolve(np.pad(v, 12, mode="edge"), k, "valid"), ax, sm)
-blend = np.clip(1 - (road_d - 3) / 7, 0, 1); blend = blend * blend * (3 - 2 * blend)
-H = H * (1 - blend) + sm * blend
+for kind, pts_list in (("road", ROADS), ("path", PATHS)):
+    for pts in pts_list:
+        pl = polyline(pts)
+        sm = H
+        prof = np.array([sample(sm, x, z) for x, z in pl], np.float32)
+        prof = np.convolve(np.pad(prof, 6, mode="edge"), np.ones(13) / 13, "valid")
+        seg = np.r_[0, np.hypot(*np.diff(pl, axis=0).T)]
+        MAXG = .28
+        for _ in range(30):
+            for i in range(1, len(prof)): prof[i] = np.clip(prof[i], prof[i - 1] - MAXG * seg[i], prof[i - 1] + MAXG * seg[i])
+            for i in range(len(prof) - 2, -1, -1): prof[i] = np.clip(prof[i], prof[i + 1] - MAXG * seg[i + 1], prof[i + 1] + MAXG * seg[i + 1])
+        d, idx = dist_idx(pl)
+        level = prof[np.clip(idx, 0, len(prof) - 1)]
+        width, fall = (3.2, 9) if kind == "road" else (1.7, 7)
+        t = np.clip(1 - (d - width) / fall, 0, 1); t = t * t * (3 - 2 * t)
+        H = (H * (1 - t) + level * t).astype(np.float32)
+        if kind == "road": road_d = np.minimum(road_d, d)
+        else: path_d = np.minimum(path_d, d)
+road = road_d < 3.2
+trail = (path_d < 1.7) & ~road
+anyway = np.minimum(road_d, path_d)
+
 # the pond
-pond_d = np.sqrt(((xx - POND[0]) / 38) ** 2 + ((zz - POND[1]) / 26) ** 2) + (fbm(4, 14, .5, 7) - .5) * .4
-lake = (pond_d < 1) & ~road
-WL = int(np.percentile(H[lake], 20)) if lake.any() else SEA
+pond_d = np.sqrt(((xx - POND[0]) / 36) ** 2 + ((zz - POND[1]) / 24) ** 2) + (fbm(4, 14, .5, 7) - .5) * .4
+lake = (pond_d < 1) & ~road & ~trail
+WL = int(np.percentile(H[lake], 25)) if lake.any() else SEA
 H = np.where(lake, np.minimum(H, WL - 1 - (1 - pond_d) * 4), H)
-# a stream from the tree hill down to the pond, under a bridge on the road
-stream_pts = polyline([(205, 190), (180, 250), (165, 320), (140, 370), (118, 395)], 10)
-st_d = np.full((B, B), 999.0, np.float32)
-for a, b in zip(stream_pts, stream_pts[1:]):
-    ab = b - a; L2 = float(ab @ ab) + 1e-9
-    t = np.clip(((xx - a[0]) * ab[0] + (zz - a[1]) * ab[1]) / L2, 0, 1)
-    st_d = np.minimum(st_d, np.hypot(xx - a[0] - t * ab[0], zz - a[1] - t * ab[1]))
-stream = (st_d < 1.6) & ~lake
-H = np.where(st_d < 4, H - np.clip(1 - st_d / 4, 0, 1) * 2.5, H)
+# a stream from the tree hill, over both scarps as waterfalls, into the pond
+stream_pl = polyline([(262, 150), (272, 205), (252, 245), (236, 300), (205, 345), (165, 375), (128, 412)], 8)
+sprof = np.array([sample(H, x, z) for x, z in stream_pl], np.float32)
+sprof = np.minimum.accumulate(sprof) - 1.5
+st_d, st_i = dist_idx(stream_pl)
+stream = (st_d < 1.6) & ~lake & ~road & ~trail
+chan = sprof[np.clip(st_i, 0, len(sprof) - 1)]
+bank = np.clip(1 - (st_d - 1.6) / 3, 0, 1) * (anyway > 4)
+H = np.where(stream, np.minimum(H, chan), H * (1 - bank * .6) + np.minimum(H, chan + 1.5) * bank * .6).astype(np.float32)
 
 hi = np.round(H).astype(int)
 gy_, gx_ = np.gradient(H)
 slope = np.hypot(gx_, gy_)
 used = np.zeros((B, B), bool)
+CONTENT = []                      # (x, z, kind) of everything a player can do something at
 
 
 def at(x, z):
@@ -146,36 +185,39 @@ for z in range(B):
         h = hi[z, x]
         nb = min(hi[max(0, z - 1), x], hi[min(B - 1, z + 1), x], hi[z, max(0, x - 1)], hi[z, min(B - 1, x + 1)])
         lo = h - 6 if x in (0, B - 1) or z in (0, B - 1) else min(nb, h) - 1
-        cliff = x > 400 and abs(z - CLIFF_Z[z, x]) < 6 and slope[z, x] > 1.2
+        face = slope[z, x] > 1.3
         for y in range(lo, h):
-            if cliff:
-                band = (y // 3) % 4
-                put(x, y, z, ("stone", "andesite", "stone", "tuff")[band])
+            if face:
+                put(x, y, z, ("stone", "andesite", "stone", "tuff", "stone", "cobblestone")[(y // 2 + (x // 9)) % 6])
             else:
-                put(x, y, z, "dirt" if h - y <= 2 and slope[z, x] < 1.4 else "stone")
+                put(x, y, z, "dirt" if h - y <= 2 else "stone")
         if lake[z, x]:
             put(x, h, z, "sand" if WL - h < 2 else "gravel")
             for y in range(h + 1, WL + 1): put(x, y, z, "water_still", shape="water")
             continue
         if stream[z, x]:
             put(x, h - 1, z, "gravel"); put(x, h, z, "water_still", shape="water")
+            up = max([hi[z + dz, x + dx] for dx in (-1, 0, 1) for dz in (-1, 0, 1)
+                      if 0 <= x + dx < B and 0 <= z + dz < B and stream[z + dz, x + dx]] + [h])
+            for y in range(h + 1, up): put(x, y, z, "water_still")          # waterfall down the scarp
             continue
         if road[z, x]:
             t = (x * 7 + z * 13) % 9
             put(x, h, z, *(("dirt_path_top", "dirt_path_side") if t < 6 else ("gravel",) if t < 8 else ("coarse_dirt",)))
             continue
-        if cliff or slope[z, x] > 1.6:
-            put(x, h, z, R.choice(["stone", "andesite", "stone", "mossy_cobblestone", "tuff"]))
+        if trail[z, x]:
+            put(x, h, z, *(("dirt_path_top", "dirt_path_side") if (x + z) % 4 else ("coarse_dirt",)))
+            continue
+        if face:
+            put(x, h, z, R.choice(["stone", "andesite", "mossy_cobblestone", "tuff", "moss_block"]))
             continue
         p = patch[z, x]
         top = ("grass_block_top", "grass_block_side") if p > .3 else ("moss_block",) if p > .25 else ("podzol_top", "podzol_side")
         put(x, h, z, *top)
-        if slope[z, x] < 1.1:  # half steps so nothing on walkable ground needs a jump
+        if slope[z, x] < 1.2:  # half steps so nothing on walkable ground needs a jump
             ups = [hi[z + dz, x + dx] for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)) if 0 <= x + dx < B and 0 <= z + dz < B]
             if any(u == h + 1 for u in ups):
                 put(x, h + 1, z, top[0], top[-1], shape="slab")
-for (x, z) in ((172, 293), (171, 294), (173, 292)):  # (placeholder, bridges are added below)
-    pass
 
 
 # ---------------- shared builders ----------------
@@ -231,6 +273,7 @@ def root_arch(p0, apex, p2, r0, r1, hang=True, follow=True):
 
 
 def scatter_plants(cx, cz, rad, density, kinds):
+    if rad < 120: CONTENT.append((cx, cz, "plants"))
     for _ in range(int(rad * rad * density)):
         a = R.random() * math.tau; r = rad * math.sqrt(R.random())
         x, z = int(round(cx + math.cos(a) * r)), int(round(cz + math.sin(a) * r))
@@ -281,6 +324,7 @@ def mob(x, z, colour, shape):
 
 
 def spawn(cx, cz, rad, count, colour, shape):
+    if rad < 120: CONTENT.append((cx, cz, "mob"))
     k = tries = 0
     while k < count and tries < count * 40:
         tries += 1
@@ -304,17 +348,18 @@ for y in range(TG - 5, TG + 1):
 put(hx - 2, TG + 1, hz + 3, "soul_lantern", shape="lantern"); put(hx + 1, TG + 1, hz + 3, "soul_lantern", shape="lantern")
 
 # ---------------- giant roots surfacing across the land ----------------
-ROOTS = [((TREE[0] + 12, TG, TREE[1] + 14), (262, TG + 14, 220), (276, at(276, 262), 262), 3.2, 1.6),     # arches over the road
-         ((TREE[0] + 14, TG - 2, TREE[1] - 6), (300, TG + 8, 120), (345, at(345, 110), 110), 2.8, 1.4),
-         ((TREE[0] - 14, TG - 2, TREE[1] + 4), (170, TG + 9, 175), (125, at(125, 190), 190), 2.8, 1.4),   # toward the fungal hollow
-         ((TREE[0] - 6, TG - 2, TREE[1] - 16), (205, TG + 10, 95), (150, at(150, 72), 72), 2.6, 1.2),     # toward the tower
-         ((345, at(345, 110) + 1, 110), (372, at(372, 104) + 10, 104), (392, at(392, 70), 70), 1.8, 1.0)]
+TX0, TZ0 = TREE
+ROOTS = [((TX0 - 10, TG, TZ0 + 6), (214, TG + 12, 136), (192, at(192, 142), 142), 3.2, 1.6),            # arches over the north road
+         ((TX0 + 14, TG - 2, TZ0 - 4), (300, TG + 8, 104), (345, at(345, 95), 95), 2.8, 1.4),            # toward the boss
+         ((TX0 - 12, TG - 2, TZ0 + 12), (188, TG + 6, 182), (150, at(150, 214), 214), 2.8, 1.4),         # pours over the scarp
+         ((TX0 - 6, TG - 2, TZ0 - 16), (170, TG + 8, 84), (125, at(125, 78), 78), 2.6, 1.2),             # toward the tower
+         ((345, at(345, 95) + 1, 95), (372, at(372, 90) + 10, 90), (392, at(392, 58), 58), 1.8, 1.0)]
 for (p0, apex, p2, r0, r1) in ROOTS:
     root_arch(p0, apex, p2, r0, r1)
 # smaller roots breaking the surface in the meadows
 for _ in range(26):
     x, z = R.randrange(30, 470), R.randrange(30, 470)
-    if road_d[z, x] < 8 or lake[z, x] or used[z, x]: continue
+    if anyway[z, x] < 8 or lake[z, x] or used[z, x]: continue
     a = R.random() * math.tau; L = R.uniform(8, 16)
     p0 = (x, at(x, z) - 1, z); p2 = (x + math.cos(a) * L, at(int(x + math.cos(a) * L), int(z + math.sin(a) * L)) - 1, z + math.sin(a) * L)
     apex = ((p0[0] + p2[0]) / 2, max(p0[1], p2[1]) + R.uniform(2, 4), (p0[2] + p2[2]) / 2)
@@ -449,7 +494,10 @@ for y in range(tg - 2, tg + 26):
             if 4.5 < d <= 6:
                 broken = y > tg + 14 + int(8 * noise3(TX + dx, 0, TZ + dz, 91, 3)) or (y > tg + 6 and noise3(TX + dx, y, TZ + dz, 92, 2) > .78)
                 if not broken: put(TX + dx, y, TZ + dz, R.choice(["stone_bricks", "mossy_stone_bricks", "cracked_stone_bricks", "stone_bricks", "mossy_stone_bricks"]))
-for (dy, wdx, wdz) in ((3, 0, 6), (9, 6, 0), (15, 0, 6)):           # windows and the door
+for y in range(tg + 1, tg + 4):                                     # ground-level doorway on the south side, kept clear of roots
+    for k2 in (-1, 0, 1):
+        for dz in range(3, 10): w.b.pop((TX + k2, y, TZ + dz), None)
+for (dy, wdx, wdz) in ((3, 0, 6), (9, 6, 0), (15, 0, 6)):           # windows
     for y in range(tg + dy, tg + dy + 3):
         for k2 in (-1, 0, 1):
             w.b.pop((TX + wdx + (k2 if wdx == 0 else 0), y, TZ + wdz + (k2 if wdz == 0 else 0)), None)
@@ -462,6 +510,9 @@ for k2 in range(3):                                                # roots spira
         cur = (TX + math.cos(a) * r, tg + s * 3, TZ + math.sin(a) * r)
         tube(prev, cur, 1.6 - s * .1, 1.5 - s * .1, moss_top=True)
         prev = cur
+for y in range(tg + 1, tg + 4):                                     # keep the doorway clear of the roots too
+    for k2 in (-1, 0, 1):
+        for dz in range(3, 10): w.b.pop((TX + k2, y, TZ + dz), None)
 for (dx, dz) in ((0, 0), (3, 2), (-2, 3)):                         # a crown of leaves where the roots break through
     for ddx in range(-5, 6):
         for ddz in range(-5, 6):
@@ -520,13 +571,13 @@ for _ in range(13):
 # ---------------- herbalism: flower meadows; skinning: deer and boar ----------------
 MX, MZ = MEADOW
 scatter_plants(MX, MZ, 60, .28, ["poppy", "dandelion", "cornflower", "wildflowers", "short_grass", "short_grass", "fern"])
-scatter_plants(300, 380, 40, .18, ["poppy", "dandelion", "wildflowers", "short_grass", "sweet_berry_bush_stage3"])
+scatter_plants(300, 392, 40, .18, ["poppy", "dandelion", "wildflowers", "short_grass", "sweet_berry_bush_stage3"])
 for (hx2, hz2) in ((310, 235), (355, 262), (338, 300), (300, 385), (150, 260)):     # rare herb nodes: firefly bushes
     for _ in range(6):
         x, z = hx2 + R.randint(-3, 3), hz2 + R.randint(-3, 3)
         if (x, at(x, z) + 1, z) not in w.b and not road[z, x]: put(x, at(x, z) + 1, z, "firefly_bush" if R.random() < .5 else "bush", shape="plant")
 spawn(MX, MZ, 55, 12, "brown_wool", "deer")
-spawn(320, 170, 40, 8, "brown_wool", "deer")
+spawn(320, 140, 40, 8, "brown_wool", "deer")
 spawn(260, 390, 45, 10, "dark_oak_planks", "boar")
 
 # ---------------- scattered mobs across the whole field ----------------
@@ -558,16 +609,131 @@ mark(RX - 8, RZ - 8, RX + 8, RZ + 8)
 # bridge where the road crosses the stream
 for x in range(B):
     for z in range(B):
-        if road[z, x] and st_d[z, x] < 2.5:
+        if (road[z, x] or trail[z, x]) and st_d[z, x] < 2.5:
             put(x, at(x, z), z, "spruce_planks")
-            if road_d[z, x] > 2.4: put(x, at(x, z) + 1, z, "spruce_planks", shape="fence")
+            if road[z, x] and road_d[z, x] > 2.4: put(x, at(x, z) + 1, z, "spruce_planks", shape="fence")
+
+
+# ---------------- main places count as content ----------------
+for p in (TREE, BOSS, FUNGAL, WOLF, TOWER, REST, BOULDERS, MEADOW, POND):
+    CONTENT.append((p[0], p[1], "place"))
+for xc in range(410, 499, 12):
+    CONTENT.append((xc, int(B2[xc]) + 4, "ore"))
+
+
+# ---------------- fill the gaps: small things worth walking to, all from the theme ----------------
+def sap_pool(x, z):           # 樹液溜まり: amber sap pooled in a ring of roots; beetles feed on it (gathering: sap)
+    g = at(x, z)
+    for k2 in range(5):
+        a0 = k2 / 5 * math.tau + R.random() * .4
+        p0 = (x + math.cos(a0) * 6, g - 1, z + math.sin(a0) * 6)
+        p2 = (x + math.cos(a0 + 1.3) * 6, g - 1, z + math.sin(a0 + 1.3) * 6)
+        apex = (x + math.cos(a0 + .65) * 7, g + R.uniform(2, 4), z + math.sin(a0 + .65) * 7)
+        root_arch(p0, apex, p2, 1.1, .8, hang=False)
+    for dx in range(-3, 4):
+        for dz in range(-3, 4):
+            if dx * dx + dz * dz <= 8 + R.random() * 3:
+                put(x + dx, g, z + dz, "honey_block_top", "honey_block_side")
+                w.b.pop((x + dx, g + 1, z + dz), None)
+    spawn(x, z, 9, 4, "black_wool", "beetle")
+    mark(x - 8, z - 8, x + 8, z + 8)
+
+
+def beetle_mound(x, z):       # 甲虫の巣塚: a dirt mound riddled with holes
+    g = at(x, z)
+    for dx in range(-5, 6):
+        for dz in range(-5, 6):
+            d = math.hypot(dx, dz)
+            if d < 5:
+                top = g + int((1 - d / 5) * 4)
+                for y in range(at(x + dx, z + dz) + 1, top + 1):
+                    hole = noise3(x + dx, y, z + dz, 131, 1.2) > .8
+                    put(x + dx, y, z + dz, "black_concrete" if hole else R.choice(["coarse_dirt", "rooted_dirt", "coarse_dirt", "mud"]))
+    spawn(x, z, 10, 5, "black_wool", "beetle")
+    mark(x - 6, z - 6, x + 6, z + 6)
+
+
+def herb_thicket(x, z):       # 薬草の茂み: dense berries, azalea and a rare firefly bush (gathering: herbs)
+    for _ in range(40):
+        a = R.random() * math.tau; r = 5 * math.sqrt(R.random())
+        px, pz = int(round(x + math.cos(a) * r)), int(round(z + math.sin(a) * r))
+        if anyway[pz, px] < 2 or lake[pz, px]: continue
+        y = at(px, pz) + 1
+        if (px, y, pz) in w.b: continue
+        kind = R.choice(["sweet_berry_bush_stage3", "azalea_leaves", "flowering_azalea_leaves", "fern", "poppy", "sweet_berry_bush_stage3"])
+        put(px, y, pz, kind, shape="slab" if "azalea" in kind else "plant")
+    put(x, at(x, z) + 1, z, "firefly_bush", shape="plant")
+    CONTENT.append((x, z, "herb")); mark(x - 5, z - 5, x + 5, z + 5)
+
+
+def ore_outcrop(x, z):        # 小さな露頭: a rock lump with ore (gathering: mining)
+    g = at(x, z); s2 = R.uniform(2.5, 3.5)
+    for dx in range(-4, 5):
+        for dz in range(-4, 5):
+            for dy in range(-1, 5):
+                if (dx / s2) ** 2 + (dz / s2) ** 2 + (dy / (s2 * .9)) ** 2 <= 1 + noise3(x + dx, dy, z + dz, 141, 1.5) * .3:
+                    put(x + dx, g + dy, z + dz, R.choice(["stone", "andesite", "iron_ore", "coal_ore", "stone", "copper_ore"]))
+    CONTENT.append((x, z, "ore")); mark(x - 4, z - 4, x + 4, z + 4)
+
+
+def fallen_root(x, z):        # 倒れた根: a dead root log with mushrooms growing on it (gathering: mushrooms, wood)
+    a = R.random() * math.tau; L = R.uniform(10, 15); g = at(x, z)
+    p0 = (x - math.cos(a) * L / 2, g + 1, z - math.sin(a) * L / 2); p2 = (x + math.cos(a) * L / 2, g + 1, z + math.sin(a) * L / 2)
+    tube(p0, p2, 1.6, 1.2, follow=True, moss_top=True)
+    for k2 in range(6):
+        f = R.random()
+        px, pz = int(round(p0[0] + (p2[0] - p0[0]) * f)), int(round(p0[2] + (p2[2] - p0[2]) * f))
+        top = max((yy for (xx2, yy, zz2) in [(px, y, pz) for y in range(g, g + 5)] if (xx2, yy, zz2) in w.b), default=g)
+        put(px, top + 1, pz, R.choice(["red_mushroom", "brown_mushroom", "red_mushroom"]), shape="plant")
+    CONTENT.append((x, z, "fallen")); mark(x - 8, z - 8, x + 8, z + 8)
+
+
+def sprite_ring(x, z):        # 根の精の輪: a ring of root sprouts where root sprites gather
+    g = at(x, z)
+    for k2 in range(9):
+        a = k2 / 9 * math.tau
+        px, pz = int(round(x + math.cos(a) * 5)), int(round(z + math.sin(a) * 5))
+        for y in range(at(px, pz) + 1, at(px, pz) + 2 + k2 % 2): put(px, y, pz, *LOG("mangrove_log"), shape="thinlog")
+        put(px, at(px, pz) + 3 + k2 % 2, pz, "flowering_azalea_leaves", shape="slab")
+    put(x, g + 1, z, "moss_block"); put(x, g + 2, z, "glow_lichen", shape="carpet")
+    spawn(x, z, 9, 4, "lime_wool", "sprite")
+    mark(x - 6, z - 6, x + 6, z + 6)
+
+
+def content_dist():
+    pts = np.array([(c[0], c[1]) for c in CONTENT], np.float32)
+    d = np.full((B, B), 999.0, np.float32)
+    for (cx, cz) in pts:
+        d = np.minimum(d, np.hypot(xx - cx, zz - cz))
+    return d
+
+
+FILL = []
+cd = content_dist()
+cand = [(x, z) for z in range(14, B - 14, 7) for x in range(14, B - 14, 7)]
+R.shuffle(cand)
+for (x, z) in cand:
+    if cd[z, x] < 34 or anyway[z, x] < 6 or lake[z, x] or stream[z, x] or slope[z, x] > .9 or used[z, x]: continue
+    lvl = "high" if z < B2[x] - 4 else "low" if z > B1[x] + 4 else "mid"
+    near_scarp = min(abs(z - B1[x]), abs(z - B2[x])) < 16
+    opts = (["ore"] if near_scarp else []) + {"high": ["sap", "sprite", "fallen", "herb"], "mid": ["sap", "beetle", "herb", "fallen"],
+                                              "low": ["beetle", "herb", "fallen", "sprite"]}[lvl]
+    CAP = {"sap": 7, "sprite": 10, "beetle": 10, "herb": 26, "fallen": 18, "ore": 14}
+    opts = [o for o in opts if sum(1 for f in FILL if f[2] == o) < CAP[o]]
+    if not opts: continue
+    kind = "ore" if near_scarp and "ore" in opts and R.random() < .6 else R.choice(opts)
+    {"sap": sap_pool, "beetle": beetle_mound, "herb": herb_thicket, "ore": ore_outcrop, "fallen": fallen_root, "sprite": sprite_ring}[kind](x, z)
+    FILL.append((x, z, kind))
+    if kind in ("sap", "beetle", "sprite"): CONTENT.append((x, z, kind))
+    cd = np.minimum(cd, np.hypot(xx - x, zz - z))
+print("fill", len(FILL), {k: sum(1 for f in FILL if f[2] == k) for k in ("sap", "beetle", "herb", "ore", "fallen", "sprite")})
 
 # ---------------- forests: old dark-oak forest (west, woodcutting), birch on the tree hill, spruce on the east ridge ----------------
 forest = fbm(4, 6, .5, 121)
 west = np.clip((150 - xx) / 120, 0, 1)
 north = np.clip((60 - zz) / 60, 0, 1)
 treehill = np.exp(-(((xx - TREE[0]) / 90) ** 2 + ((zz - TREE[1]) / 80) ** 2))
-dens = np.clip((forest - .48) * 2 + west * .8 + north * .5 + treehill * .35, 0, 1) ** 1.6 * .035 + .0008
+dens = np.clip((forest - .48) * 2 + west * .8 + north * .5 + treehill * .35, 0, 1) ** 1.6 * .035 + .0025
 for z in range(4, B - 4):
     for x in range(4, B - 4):
         if R.random() < dens[z, x]:
@@ -578,15 +744,76 @@ for z in range(4, B - 4):
 scatter_plants(70, 280, 70, .05, ["fern", "short_grass", "brown_mushroom", "leaf_litter"])
 scatter_plants(250, 250, 240, .006, ["poppy", "dandelion", "short_grass", "short_grass"])
 
+
+
+# ---------------- checks: can every piece of land be reached on foot, and is anything far from content ----------------
+from collections import deque
+FULL_SOLID = lambda v: v is not None and v[0] == "full" and v[1] not in ("oak_leaves", "dark_oak_leaves", "birch_leaves", "spruce_leaves",
+                                                                         "azalea_leaves", "flowering_azalea_leaves", "water_still", "glass")
+walk_h = hi.copy()
+block = np.zeros((B, B), bool)
+for z in range(B):
+    for x in range(B):
+        h = hi[z, x]
+        if lake[z, x]: block[z, x] = True; continue
+        a, b2 = w.b.get((x, h + 1, z)), w.b.get((x, h + 2, z))
+        if FULL_SOLID(a) and FULL_SOLID(b2): block[z, x] = True
+seen = np.zeros((B, B), bool)
+start = (452, 1)
+q = deque([start]); seen[start] = True
+while q:
+    z, x = q.popleft()
+    for dz, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        nz, nx = z + dz, x + dx
+        if 0 <= nz < B and 0 <= nx < B and not seen[nz, nx] and not block[nz, nx] and abs(int(hi[nz, nx]) - int(hi[z, x])) <= 1:
+            seen[nz, nx] = True; q.append((nz, nx))
+land = ~lake & ~block
+scenic = slope > 1.3
+unreach = land & ~seen & ~scenic
+logmask = np.zeros((B, B), bool)
+for (x, y, z), v in w.b.items():
+    if v[0] == "full" and v[2] in ("oak_log", "dark_oak_log", "birch_log", "spruce_log") and y > hi[z, x] + 1: logmask[z, x] = True
+treed = np.zeros((B, B), np.float32)
+ys, xs2 = np.nonzero(logmask)
+cdist = content_dist()
+tdist = np.full((B, B), 999.0, np.float32)
+for (tz, tx) in zip(ys[::3], xs2[::3]):
+    tdist = np.minimum(tdist, np.hypot(xx - tx, zz - tz))
+empty = land & seen & (cdist > 40) & (tdist > 14) & (anyway > 4)
+STATS = {"reachable": float((land & seen).sum() / land.sum()), "unreachable_flat": int(unreach.sum()),
+         "scenic": float((scenic & land).sum() / land.sum()), "empty": float(empty.sum() / land.sum())}
+print("checks", STATS)
+img = np.zeros((B, B, 3), np.uint8)
+shade = np.clip((hi - 55) / 40, 0, 1)
+img[...] = (np.stack([60 + shade * 90, 110 + shade * 90, 60 + shade * 60], -1)).astype(np.uint8)
+img[scenic & land] = (128, 124, 118)
+img[lake | stream] = (70, 130, 210)
+img[anyway < 2.5] = (236, 214, 150)
+img[logmask] = (40, 90, 40)
+img[empty] = (240, 200, 60)
+img[unreach] = (230, 50, 50)
+mapimg = Image.fromarray(img).resize((1000, 1000), Image.NEAREST)
+from PIL import ImageDraw, ImageFont
+dd = ImageDraw.Draw(mapimg)
+ff = ImageFont.truetype("/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc", 15)
+for (cx, cz, kd) in CONTENT:
+    dd.ellipse((cx * 2 - 4, cz * 2 - 4, cx * 2 + 4, cz * 2 + 4), fill=(255, 255, 255), outline=(0, 0, 0))
+dd.rectangle((10, 10, 360, 120), fill=(16, 18, 28))
+for i2, (col, t2) in enumerate((((236, 214, 150), "道"), ((128, 124, 118), "崖（見るだけ）"), ((240, 200, 60), "空白（中身から40以上）"),
+                                ((230, 50, 50), "行けない平地"), ((255, 255, 255), "中身のある場所"))):
+    dd.rectangle((18, 18 + i2 * 20, 32, 32 + i2 * 20), fill=col)
+    dd.text((40, 16 + i2 * 20), t2, fill=(255, 255, 255), font=ff)
+mapimg.save("field500-check.png")
+
 LABELS = [(TREE, "大樹（根の洞＝ダンジョン入口）", (140, 230, 140)), (BOSS, "ワールドボス：根の主", (255, 90, 90)),
           (FUNGAL, "狩り場：キノコの窪地", (255, 150, 120)), (WOLF, "狩り場：狼の根穴", (255, 150, 120)),
           (TOWER, "狩り場＋展望：根に飲まれた石塔", (255, 150, 120)), (REST, "休憩所（転移石）", (255, 255, 255)),
           ((455, 175), "採鉱：根の割れた崖", (200, 200, 220)), (BOULDERS, "採石：岩の原", (200, 200, 200)),
           (MEADOW, "植物採取・皮（鹿）：花の原", (255, 200, 230)), (POND, "釣り：池", (120, 190, 255)),
-          ((60, 300), "伐採：黒樫の古い森", (170, 220, 120)), ((262, 232), "根のアーチ（街道の上）", (220, 200, 160)),
+          ((60, 300), "伐採：黒樫の古い森", (170, 220, 120)), ((196, 160), "根のアーチ（街道の上）", (220, 200, 160)),
           ((20, 455), "→ 開拓港", (120, 200, 255)), ((215, 8), "→ 北の地域", (200, 255, 200)), ((488, 200), "→ 東の地域", (200, 255, 200))]
 
 if __name__ == "__main__":
     print("blocks", len(w.b))
     import pickle
-    pickle.dump((w.b, hi, LABELS), open("field500.pkl", "wb"))
+    pickle.dump((w.b, hi, LABELS), open("field500.pkl", "wb")); pickle.dump((FILL, STATS), open("field500-fill.pkl", "wb"))
