@@ -141,6 +141,44 @@ class SakuraFangBossTest {
     }
 
     @Test
+    fun `petals fly the way the mirrored model in game moves`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("sakura", 1)
+        assertTrue(BossModelView.available("sakura_fang"))
+        val at = arena.bossSpawn.withView(0f, 0f)                    // facing +Z: its right is -X
+        val view = BossModelView("sakura_fang", arena.instance, at, emptySet(), emptySet())
+        try {
+            view.tick(at, 0)
+            // WSEE mirrors Blockbench X: the model's +X paw (hand_l) stands on the beast's right
+            assertTrue(view.point("hand_l", net.minestom.server.coordinate.Vec(15.0, 1.0, 31.0))!!.x() < at.x())
+            fun sense(p: net.minestom.server.coordinate.Point, v: net.minestom.server.coordinate.Vec) = (p.z() - at.z()) * v.x() - (p.x() - at.x()) * v.z()
+            // 花尾の旋回: the thrown petals turn the same way round as the tail sweeping through the hit
+            val fx = SakuraPetalFx(arena.instance)
+            view.ability("sakura-spin"); fx.start("sakura-spin", 1.0)
+            var tail = view.point("tail_5", net.minestom.server.coordinate.Vec(0.0, 78.0, -43.0))!!
+            var tailSense = 0.0
+            for (tick in 1..24) {
+                view.tick(at, tick * 50L); MinecraftServer.getSchedulerManager().processTick()
+                fx.tick(at, false) { b, px -> view.point(b, px) }
+                val next = view.point("tail_5", net.minestom.server.coordinate.Vec(0.0, 78.0, -43.0))!!
+                if (tick in 16..22) tailSense += sense(tail, net.minestom.server.coordinate.Vec(next.x() - tail.x(), 0.0, next.z() - tail.z()))
+                tail = next
+            }
+            val petalSense = fx.snapshot().sumOf { (p, v) -> sense(p, v) }
+            assertTrue(tailSense * petalSense > 0, "tail $tailSense petals $petalSense")
+            fx.dispose()
+            // 踏み込み爪: the paw rakes across to its right, and so does the fan of petals
+            val rake = SakuraPetalFx(arena.instance)
+            rake.start("sakura-lunge", .55)
+            repeat(14) { rake.tick(at, false) { _, _ -> null } }
+            assertTrue(rake.snapshot().sumOf { (_, v) -> v.x() } < 0, "the rake's petals fly to its right (-X)")
+            rake.dispose()
+        } finally {
+            view.dispose(); arena.dispose()
+        }
+    }
+
+    @Test
     fun `a hit from in front in the counter window throws it out of its strike, and parts break`() {
         MinecraftServer.init(Auth.Offline())
         val arena = BossArenaFactory.create("sakura", 1)

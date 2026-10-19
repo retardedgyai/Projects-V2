@@ -129,7 +129,7 @@ class Fx:
             if self.once("rake", t, hit):
                 paw = sc.point("hand_r", (-15, 1, 31), pose)
                 for _ in range(90):
-                    a = math.radians(r.uniform(-70, 30))
+                    a = math.radians(r.uniform(-30, 70))
                     self.add(paw + rand_dir(r) * 5, np.array([math.sin(a), r.uniform(.2, .9), math.cos(a)]) * r.uniform(192, 320), r.uniform(.8, 1.3), drag=2.0)
         elif base == "sakura-barge":
             if .1 <= t <= hit - .05:
@@ -149,7 +149,7 @@ class Fx:
                     p = sc.point(bone, sc.bones[bone]["pivot"], pose)
                     radial = p * [1, 0, 1]; radial = radial / (np.linalg.norm(radial) + 1e-6)
                     tang = np.cross([0, 1, 0], radial)
-                    self.add(p, tang * 208 + radial * 80 + [0, r.uniform(8, 40), 0], r.uniform(.8, 1.2), drag=1.4)
+                    self.add(p, -tang * 208 + radial * 80 + [0, r.uniform(8, 40), 0], r.uniform(.8, 1.2), drag=1.4)
         elif base == "sakura-horn":
             if self.once("horn", t, hit):                          # the horns rake petals up and ahead
                 head = sc.point("skull", (0, 44, 40), pose)

@@ -115,7 +115,7 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
         if (wreath.isEmpty() && time >= wreathUntil) return
         if (time >= wreathUntil) {
             for (q in wreath) {
-                val out = Vec(q.p.x() - wreathCentre.x(), 0.0, q.p.z() - wreathCentre.z()).let { if (it.length() < 1e-6) frame.left else it.normalize() }
+                val out = Vec(q.p.x() - wreathCentre.x(), 0.0, q.p.z() - wreathCentre.z()).let { if (it.length() < 1e-6) frame.side else it.normalize() }
                 q.v = out.mul(r(10.0, 16.0)).add(0.0, r(1.0, 4.0), 0.0); q.age = 0.0
                 if (petals.size < CAP) petals += Petal(q.p, q.v, r(.8, 1.3), 1.6, q.phase, q.flutter, q.spin).also { it.entity = q.entity } else q.entity?.remove()
             }
@@ -173,11 +173,12 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
     private inner class Frame(val at: Pos) {
         private val yaw = Math.toRadians(at.yaw().toDouble())
         val forward = Vec(-sin(yaw), 0.0, cos(yaw))
-        val left = Vec(cos(yaw), 0.0, sin(yaw))         // Blockbench +X: the beast's left
-        val wind: Vec = left.mul(WIND_X).add(forward.mul(WIND_Z))
+        /** Blockbench +X: WSEE mirrors it, so in game it is the beast's right (BossModelView; SakuraFangBossTest checks). */
+        val side = Vec(-cos(yaw), 0.0, -sin(yaw))
+        val wind: Vec = side.mul(WIND_X).add(forward.mul(WIND_Z))
         /** Model px (Blockbench, +Z front) -> world, ignoring the animation. */
-        fun px(x: Double, y: Double, z: Double): Vec = Vec(at.x(), at.y(), at.z()).add(left.mul(x / 16)).add(0.0, y / 16, 0.0).add(forward.mul(z / 16))
-        fun dir(x: Double, y: Double, z: Double): Vec = left.mul(x).add(0.0, y, 0.0).add(forward.mul(z))
+        fun px(x: Double, y: Double, z: Double): Vec = Vec(at.x(), at.y(), at.z()).add(side.mul(x / 16)).add(0.0, y / 16, 0.0).add(forward.mul(z / 16))
+        fun dir(x: Double, y: Double, z: Double): Vec = side.mul(x).add(0.0, y, 0.0).add(forward.mul(z))
     }
 
     private fun rate(key: String, perSecond: Double): Int {
@@ -271,7 +272,7 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
                 if (once("a:rake", strike)) {                                   // and the rake flings a fan across its front
                     val paw = bone("hand_r", Vec(-15.0, 1.0, 31.0))
                     repeat(count(90)) {
-                        val a = Math.toRadians(r(-70.0, 30.0))
+                        val a = Math.toRadians(r(-30.0, 70.0))   // the paw rakes across to its right
                         add(paw.add(randomDir().mul(.3)), f.dir(sin(a), r(.2, .9), cos(a)).mul(r(12.0, 20.0)), r(.8, 1.3), 2.0)
                     }
                 }
@@ -288,7 +289,7 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
                 if (t in (hit - .12)..(hit + .15)) repeat(rate("whip", 130.0)) { // the whipping tail throws an arc of petals
                     val (b, px) = shells[3 + random.nextInt(shells.size - 3)]
                     val p = bone(b, px)
-                    val radial = Vec(p.x() - f.at.x(), 0.0, p.z() - f.at.z()).let { if (it.length() < 1e-6) f.left else it.normalize() }
+                    val radial = Vec(p.x() - f.at.x(), 0.0, p.z() - f.at.z()).let { if (it.length() < 1e-6) f.side else it.normalize() }
                     add(p, Vec(0.0, 1.0, 0.0).cross(radial).mul(13.0).add(radial.mul(5.0)).add(0.0, r(.5, 2.5), 0.0), r(.8, 1.2), 1.4)
                 }
             }
@@ -305,7 +306,7 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
                 if (t in .2..(hit - .05)) repeat(rate("orbit", 60.0)) {         // petals peel off and orbit, widening
                     val p = shell()
                     val radial = Vec(p.x() - f.at.x(), 0.0, p.z() - f.at.z())
-                    val tangent = Vec(0.0, 1.0, 0.0).cross(radial).let { if (it.length() < 1e-6) f.left else it.normalize() }
+                    val tangent = Vec(0.0, 1.0, 0.0).cross(radial).let { if (it.length() < 1e-6) f.side else it.normalize() }
                     add(p, tangent.mul(9.4).add(radial.mul(.8)).add(0.0, 1.9, 0.0), 1.0, .4)
                 }
                 if (once("a:fan", strike)) {                                    // the lunge flings a fan of petals forward
@@ -327,9 +328,10 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
                 if (t in (hit - .3)..(hit + .25)) repeat(rate("spin", 120.0)) {   // the spinning tail throws a ring of petals
                     val (b, px) = shells[3 + random.nextInt(shells.size - 3)]
                     val p = bone(b, px)
-                    val radial = Vec(p.x() - f.at.x(), 0.0, p.z() - f.at.z()).let { if (it.length() < 1e-6) f.left else it.normalize() }
+                    val radial = Vec(p.x() - f.at.x(), 0.0, p.z() - f.at.z()).let { if (it.length() < 1e-6) f.side else it.normalize() }
                     val tangent = Vec(0.0, 1.0, 0.0).cross(radial)
-                    add(p, tangent.mul(-12.0).add(radial.mul(6.0)).add(0.0, r(.5, 2.5), 0.0), r(.8, 1.3), 1.4)
+                    // the same way round as the tail (in game the model is mirrored, so not the preview's way)
+                    add(p, tangent.mul(12.0).add(radial.mul(6.0)).add(0.0, r(.5, 2.5), 0.0), r(.8, 1.3), 1.4)
                 }
             }
             "sakura-howl" -> {

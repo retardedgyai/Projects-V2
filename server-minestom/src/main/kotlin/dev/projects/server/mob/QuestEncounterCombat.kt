@@ -526,7 +526,8 @@ class QuestEncounterCombat(
             // Ticks on after the death too, so the falling petals finish.
             val fx = sakuraFx ?: SakuraPetalFx(instance).also { sakuraFx = it }
             val view = mob.view
-            fx.tick(mob.entity.position, mob.enraged) { bone, px -> view?.point(bone, px) }
+            // the petals take the model's facing (a strafe or dash faces the target, not the way the carrier walks)
+            fx.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, mob.enraged) { bone, px -> view?.point(bone, px) }
             (sakuraStrike ?: SakuraStrikeFx(instance).also { sakuraStrike = it }).tick()
         }
         val players = instance.players.filter { canTarget(it) }
