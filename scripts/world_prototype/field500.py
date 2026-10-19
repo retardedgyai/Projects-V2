@@ -179,6 +179,18 @@ H = np.where(stream, np.minimum(H, chan), H * (1 - bank) + np.minimum(H, chan + 
 pbank = np.clip((1.35 - pond_d) / .35, 0, 1) * (pond_d >= 1)           # the pond shore slopes into the water
 H = np.where(pbank > 0, H * (1 - pbank) + (WL + .4) * pbank, H).astype(np.float32)
 
+# break the onion rings on smooth hillsides: a little mid-scale relief where the ground already slopes, away from roads and water
+_gy, _gx = np.gradient(H); _sl = np.hypot(_gx, _gy)
+_m = np.clip((_sl - .08) * 6, 0, 1) * np.clip((anyway - 7) / 6, 0, 1) * (~lake) * np.clip((st_d - 4) / 4, 0, 1)
+H = (H + (fbm(3, 28, .5, 777) - .5) * 4.0 * _m).astype(np.float32)
+# benches: on the knolls the ground rises in flat shelves and short steep risers (where the rock shelves show),
+# not in an even onion-ring slope. Bench height varies with a slow noise so the shelves do not line up.
+_hill = np.clip(bump(*TOWER, 60, 50, 1.0) * 2.2 + bump(*TREE, 80, 70, 1.0) * 1.6, 0, 1) * np.clip((anyway - 6) / 6, 0, 1) * (~lake)
+_step = 3.0 + fbm(2, 8, .5, 778) * 2.5
+_ph = fbm(2, 6, .5, 779) * 3
+_q = (H + _ph) / _step; _f = _q - np.floor(_q)
+_bench = (np.floor(_q) + np.clip((_f - .62) / .38, 0, 1) ** 1.5) * _step - _ph
+H = (H * (1 - _hill * .85) + _bench * _hill * .85).astype(np.float32)
 hi = np.round(H).astype(int)
 gy_, gx_ = np.gradient(H)
 slope = np.hypot(gx_, gy_)
@@ -276,6 +288,21 @@ _m = lake | stream
 for _step in range(1, 26):                                          # true (chessboard-ish) distance to any water, by dilation
     _m = _m | np.roll(_m, 1, 0) | np.roll(_m, -1, 0) | np.roll(_m, 1, 1) | np.roll(_m, -1, 1)
     WATER_NEAR = np.where(_m & (WATER_NEAR > _step), _step, WATER_NEAR)
+# rock shelves breaking through the turf on hillsides: the bones of the hill showing, in a few long bands
+nshelf = 0
+for z in range(3, B - 3):
+    for x in range(3, B - 3):
+        if not (.3 < slope[z, x] < 1.0) or anyway[z, x] < 6 or WATER_NEAR[z, x] < 8 or used[z, x]: continue
+        n = noise3(x * .6, 0, z * 1.4, 381, 6) if (x // 1) else 0          # bands stretched across the slope
+        if n < .74: continue
+        g = hi[z, x]
+        put(x, g, z, TM.strata(x, g, z))
+        if n > .8:
+            put(x, g + 1, z, TM.strata(x, g + 1, z) if _h(x, 0, z, 382) > .3 else "mossy_cobblestone")
+            if n > .86 and _h(x, 1, z, 383) < .5: put(x, g + 2, z, "moss_block", shape="slab")
+        nshelf += 1
+print("rock shelves", nshelf)
+
 TALUS = ["gravel", "gravel", "cobblestone", "andesite", "stone", "tuff", "mossy_cobblestone"]
 for z in range(2, B - 2):
     for x in range(2, B - 2):
@@ -413,10 +440,10 @@ def oak(x, z, kind="oak", big=False, form=None, lift=0):
     tx, tz = top; ty = g + th
     if form == "snag":                                              # dead tree: two bare limbs, a few leaves at most
         for (dx, dz) in ((1, 0), (-1, 1)):
-            for k in range(1, 3): put(tx + dx * k, ty - 2 + k, tz + dz * k, *LOG(logn))
+            for k in range(1, 3): put(tx + dx * k, ty - 2 + k, tz + dz * k, logn.replace("_log", "_wood"))
         mark(x - 1, z - 1, x + 2, z + 2); return
     for (dx, dz) in ((1, 0), (-1, 0), (0, 1), (0, -1)):              # a couple of short limbs under the crown
-        if R.random() < .5: put(tx + dx * 2, ty - 1, tz + dz * 2, *LOG(logn))
+        if R.random() < .5: put(tx + dx * 2, ty - 1, tz + dz * 2, logn.replace("_log", "_wood"))
     r = {"round": 2.8, "tall": 2.3, "wide": 4.4, "lean": 3.0}[form] + (1.6 if big else 0) + R.random() * .7
     sq = {"round": .75, "tall": 1.2, "wide": .45, "lean": .7}[form]
     lumps = [(0, 0, 0)] + [(R.uniform(-1.8, 1.8), R.uniform(-1.5, 1) * (2 if form == "tall" else 1), R.uniform(-1.8, 1.8)) for _ in range(2 if not big else 3)]
@@ -831,13 +858,13 @@ def sakura_tree(x, z, g, size=1.0):
     rs = random.Random(x * 9973 + z)
     th = int(5 + 3 * size)
     lean = (rs.uniform(-1.5, 1.5), rs.uniform(-1.5, 1.5))
-    tube((x, g, z), (x + lean[0], g + th, z + lean[1]), 1.2 * size + .3, .8 * size + .2, mat=("cherry_log_top", "cherry_log"))
+    tube((x, g, z), (x + lean[0], g + th, z + lean[1]), 1.2 * size + .3, .8 * size + .2, mat=("cherry_wood", "cherry_wood"))
     tops = []
     for k in range(rs.randint(4, 6)):
         a = k / 5 * math.tau + rs.uniform(-.4, .4)
         L = (4 + 2.5 * size) * rs.uniform(.8, 1.1)
         e = (x + lean[0] + math.cos(a) * L, g + th + rs.uniform(1, 3) * size, z + lean[1] + math.sin(a) * L)
-        tube((x + lean[0], g + th - 1, z + lean[1]), e, .7 * size + .2, .45, mat=("cherry_log_top", "cherry_log"))
+        tube((x + lean[0], g + th - 1, z + lean[1]), e, .7 * size + .2, .45, mat=("cherry_wood", "cherry_wood"))
         tops.append(e)
     tops.append((x + lean[0], g + th + 2.5 * size, z + lean[1]))
     rim = []
@@ -851,7 +878,7 @@ def sakura_tree(x, z, g, size=1.0):
                     if q <= .85 + noise3(tx + dx, ty + dy, tz + dz, 181, 1.6) * .35:
                         p = (int(round(tx)) + dx, int(round(ty)) + dy, int(round(tz)) + dz)
                         if p not in w.b:
-                            put(*p, "cherry_leaves" if rs.random() > .08 else "pink_wool")
+                            put(*p, "cherry_leaves")
                         if dy == -2 or q > .7: rim.append(p)
     for p in rs.sample(rim, min(len(rim), int(len(rim) * .12))):         # weeping tips: 1-2 blocks, the crown's ragged hem
         for k2 in range(1, rs.randint(2, 3)):
@@ -1316,12 +1343,12 @@ ent_a = math.atan2(-uz2, -ux2)
 FY = SY_ + 1                                                        # arena floor is one step up
 PREC = AR + 17
 for (x, y, z) in [p for p in w.b if abs(p[0] - SX_) <= PREC and abs(p[2] - SZ_) <= PREC and SY_ < p[1] < SY_ + 30]:
-    if math.hypot(x - SX_, z - SZ_) <= PREC and w.b[(x, y, z)][1] in ("cherry_log", "cherry_log_top", "cherry_leaves", "pink_wool", "oak_log", "oak_leaves", "oak_log_top"):
+    if math.hypot(x - SX_, z - SZ_) <= PREC and w.b[(x, y, z)][1] in ("cherry_log", "cherry_log_top", "cherry_wood", "cherry_leaves", "pink_wool", "oak_log", "oak_leaves", "oak_log_top"):
         w.b.pop((x, y, z), None)
 for (x, y, z) in [p for p in w.b if abs(p[0] - SX_) <= PREC and abs(p[2] - SZ_) <= PREC and p[1] == SY_ + 1]:
     if w.b[(x, y, z)][0] in ("carpet", "plant") and math.hypot(x - SX_, z - SZ_) <= PREC and UPPER[z, x] == SY_: w.b.pop((x, y, z), None)
 for (x, y, z) in [p for p in w.b if abs(p[0] - SX_) <= PREC and abs(p[2] - SZ_) <= PREC and SY_ - 3 <= p[1] <= SY_]:
-    if w.b[(x, y, z)][1] in ("cherry_log", "cherry_log_top", "oak_log", "oak_log_top") and math.hypot(x - SX_, z - SZ_) <= PREC:
+    if w.b[(x, y, z)][1] in ("cherry_log", "cherry_log_top", "cherry_wood", "oak_log", "oak_log_top") and math.hypot(x - SX_, z - SZ_) <= PREC:
         put(x, y, z, "grass_block_top" if y == SY_ else "dirt", "grass_block_side" if y == SY_ else "dirt")
 for dx in range(-AR - 4, AR + 5):
     for dz in range(-AR - 4, AR + 5):
@@ -1330,7 +1357,7 @@ for dx in range(-AR - 4, AR + 5):
         if UPPER[z, x] != SY_ or d > AR + 3: continue
         for y in range(SY_ + 1, SY_ + 12):
             v = w.b.get((x, y, z), ("", "", ""))
-            if v[1] in ("cherry_log", "cherry_log_top", "cherry_leaves", "pink_petals", "pink_wool") or v[0] in ("plant", "carpet"): w.b.pop((x, y, z), None)
+            if v[1] in ("cherry_log", "cherry_log_top", "cherry_wood", "cherry_leaves", "pink_petals", "pink_wool") or v[0] in ("plant", "carpet"): w.b.pop((x, y, z), None)
         if d <= AR:
             ring = abs(d - (AR - 2.5)) < .55                                  # one ring near the edge
             ang = math.atan2(dz, dx)
@@ -1408,7 +1435,7 @@ for k2 in range(0, 40):
         if UPPER[z, x] == SY_ and math.hypot(x - SX_, z - SZ_) > AR + 1.5:
             put(x, SY_, z, "polished_andesite" if s2 == 0 else ("stone_bricks" if k2 % 4 else "chiseled_stone_bricks"))
             for y in range(SY_ + 1, SY_ + 10):
-                if w.b.get((x, y, z), ("", "", ""))[1] in ("cherry_log", "cherry_leaves"): w.b.pop((x, y, z), None)
+                if w.b.get((x, y, z), ("", "", ""))[1] in ("cherry_log", "cherry_wood", "cherry_leaves"): w.b.pop((x, y, z), None)
 for k2 in range(1, 9):
     cx, cz = startx + ux2 * (3 + k2 * 8), startz + uz2 * (3 + k2 * 8)
     if math.hypot(cx - SX_, cz - SZ_) < AR + 6: break
