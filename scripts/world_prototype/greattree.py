@@ -152,12 +152,12 @@ def build(w, put, at, B, road, cx, cz, mark, seed=77):
                p[1] + math.sin(pitch) * length,
                p[2] + math.sin(yaw) * math.cos(pitch) * length)
         # a slight kink halfway so limbs are not ruler-straight
-        midp = ((p[0] + end[0]) / 2 + R.uniform(-1.2, 1.2), (p[1] + end[1]) / 2 + R.uniform(-.8, 1.2), (p[2] + end[2]) / 2 + R.uniform(-1.2, 1.2))
+        midp = ((p[0] + end[0]) / 2 + R.uniform(-1.2, 1.2), (p[1] + end[1]) / 2 + length * .1 + R.uniform(-.5, .8), (p[2] + end[2]) / 2 + R.uniform(-1.2, 1.2))   # limbs arch up, then sag
         r1 = max(.5, r * .62)
         tube(p, midp, r, (r + r1) / 2)
         tube(midp, end, (r + r1) / 2, r1)
+        if depth <= 1: tips.append(end if depth == 0 else midp)     # mid-limb pads too, so the crown is one canopy
         if depth == 0:
-            tips.append(end)
             return
         for _ in range(R.choice((2, 2, 3))):
             grow(end, (yaw + R.uniform(-.75, .75), max(-.15, min(1.1, pitch + R.uniform(-.35, .25)))),
@@ -178,17 +178,17 @@ def build(w, put, at, B, road, cx, cz, mark, seed=77):
     leaf_cells = {}
     for (tx, ty, tz) in tips:
         # each tip: 3-4 overlapping lumps of different sizes, so the crown is clumpy rather than layered
-        lumps = [(tx, ty, tz, R.uniform(3.2, 4.4))]
-        for _ in range(R.randint(2, 3)):
-            lumps.append((tx + R.uniform(-3, 3), ty + R.uniform(-1.5, 2), tz + R.uniform(-3, 3), R.uniform(2.2, 3.4)))
+        lumps = [(tx, ty, tz, R.uniform(4.6, 6.2))]                  # broad flat pads that overlap into one layered canopy
+        for _ in range(R.randint(1, 2)):
+            lumps.append((tx + R.uniform(-3, 3), ty + R.uniform(-1, 1.5), tz + R.uniform(-3, 3), R.uniform(3.4, 4.6)))
         for (lx, ly, lz, r) in lumps:
             ri = int(r) + 2
             for dx in range(-ri, ri + 1):
                 for dz in range(-ri, ri + 1):
                     for dy in range(-ri, ri + 1):
-                        q = (dx / r) ** 2 + (dz / r) ** 2 + (dy / (r * .78)) ** 2
-                        nz = noise3(lx + dx, ly + dy, lz + dz, 11, 1.6)
-                        if q <= .7 + nz * .6:
+                        q = (dx / r) ** 2 + (dz / r) ** 2 + (dy / (r * (.42 if dy > 0 else .32))) ** 2
+                        nz = noise3(lx + dx, ly + dy, lz + dz, 11, 2.4)
+                        if q <= .75 + nz * .5 and nz > .22:
                             p = (int(round(lx)) + dx, int(round(ly)) + dy, int(round(lz)) + dz)
                             if p not in taken: leaf_cells[p] = (p[1] - ly) / r
     for p, dy in leaf_cells.items():

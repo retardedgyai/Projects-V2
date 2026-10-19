@@ -350,11 +350,12 @@ def stump(cx, cz, D=15, seed=3):
     R = random.Random(seed)
     rad = D / 2
     g = at(cx, cz)
-    H = int(D * .3)                                                      # low enough that the roots ramp up onto the cut face
+    H = int(D * .55)                                                     # a tall drum: reads as a stump from far
     yt = g + H
     wob = lambda a, k=0: 1 + .06 * math.sin(5 * a + seed + k) + .04 * math.sin(9 * a + 2 * seed + k)
     step_dir = R.uniform(0, math.tau)                                    # the felling step: one third of the face stands a block higher
     sdx, sdz = math.cos(step_dir), math.sin(step_dir)
+    fy = lambda dx, dz: yt + (1 if (dx * sdx + dz * sdz) > rad * .33 else 0) + int(round(-dz / rad * 2.5))
     for dx in range(-int(rad * 1.7) - 1, int(rad * 1.7) + 2):
         for dz in range(-int(rad * 1.7) - 1, int(rad * 1.7) + 2):
             a = math.atan2(dz, dx); d = math.hypot(dx, dz)
@@ -362,7 +363,7 @@ def stump(cx, cz, D=15, seed=3):
             x, z = cx + dx, cz + dz
             gg = at(x, z)
             high = (dx * sdx + dz * sdz) > rad * .33
-            ytop = yt + (1 if high else 0)
+            ytop = fy(dx, dz)                                              # the cut slopes down toward the south: the rings face the road
             for y in range(gg - 1, ytop + 1):
                 f = max(0, (g + 3 - y)) / 3                                  # flare over the bottom 3 layers
                 rr = rad * wob(a) * (1 + .5 * f) + flute
@@ -399,19 +400,23 @@ def stump(cx, cz, D=15, seed=3):
     for k in range(3):
         a = R.uniform(0, math.tau)
         for j in range(int(rad * .45), int(rad * .95)):
-            p = (int(round(cx + math.cos(a) * j)), yt + (1 if (math.cos(a) * j * sdx + math.sin(a) * j * sdz) > rad * .33 else 0), int(round(cz + math.sin(a) * j)))
+            p = (int(round(cx + math.cos(a) * j)), fy(int(round(math.cos(a) * j)), int(round(math.sin(a) * j))), int(round(cz + math.sin(a) * j)))
             if p in G.w.b: put(*p, "dark_oak_log_top", "dark_oak_log")
-    # the hinge: a strip of splinters along the step line
+    # the hinge: a strip of splinters standing up along the step line (the torn fibres when the tree went over)
     for j in range(-int(rad * .8), int(rad * .8) + 1):
-        x = int(round(cx + sdx * rad * .33 - sdz * j)); z = int(round(cz + sdz * rad * .33 + sdx * j))
-        for k in range(1 + int(_h(x, 0, z, 765) * 3)):
-            if (x, yt + 1, z) in G.w.b and k < 2: put(x, yt + 2 + k, z, "stripped_oak_log_top", "stripped_oak_log", shape="slab" if k == 1 or _h(x, 1, z, 765) < .4 else "full")
+        dx_, dz_ = int(round(sdx * rad * .33 - sdz * j)), int(round(sdz * rad * .33 + sdx * j))
+        x, z = cx + dx_, cz + dz_
+        y0 = fy(dx_ + int(round(sdx)), dz_ + int(round(sdz)))
+        if (x, y0, z) not in G.w.b: continue
+        tall = int(1 + 5 * max(0, math.sin(j / (rad * .8) * 2.4 + seed)) * (.4 + .6 * _h(x, 2, z, 766)))
+        for q in range(tall):
+            put(x, y0 + 1 + q, z, *(("stripped_dark_oak_log_top", "stripped_dark_oak_log") if q < tall - 1 else ("dark_oak_planks",)), shape="full" if q < tall - 1 else "fence")
     # moss creeps over the rim on the shaded side only
     for dx in range(-int(rad) - 1, int(rad) + 2):
         for dz in range(-int(rad) - 1, 0):
             d = math.hypot(dx, dz)
             if rad - 1.6 < d < rad + .4 and _h(dx, 3, dz, 766) < .45:
-                y = yt + (1 if (dx * sdx + dz * sdz) > rad * .33 else 0)
+                y = fy(dx, dz)
                 if (cx + dx, y + 1, cz + dz) not in G.w.b: put(cx + dx, y + 1, cz + dz, "moss_block", shape="carpet")
     # buttress roots: tall thin plates of unequal length, convex profile, diving and surfacing once more
     angs = []
@@ -421,12 +426,12 @@ def stump(cx, cz, D=15, seed=3):
     for k, a in enumerate(angs):
         major = k < 2
         Lr = D * (R.uniform(1.6, 2.3) if major else R.uniform(.6, 1.0))
-        h0 = (H - 1) if major else H * R.uniform(.35, .5)
+        h0 = H * (R.uniform(.6, .75) if major else R.uniform(.3, .45))
         ca, sa = math.cos(a), math.sin(a)
         for i in range(int(Lr * 2)):
             l = i / 2
             f = l / Lr
-            hh = h0 * (1 - f) ** .6 if f < .82 else (max(0, math.sin((f - .82) / .18 * math.pi) * 1.3) if major else 0)  # dives, then a hump
+            hh = h0 * (1 - f) ** 1.8 if f < .82 else (max(0, math.sin((f - .82) / .18 * math.pi) * 1.3) if major else 0)  # dives, then a hump
             th = 2.5 * (1 - f) + 1
             for tq in range(-int(th // 2) - 1, int(th // 2) + 2):
                 if abs(tq) > th / 2: continue

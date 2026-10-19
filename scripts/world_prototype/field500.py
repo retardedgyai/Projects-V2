@@ -203,7 +203,12 @@ _step = 3.0 + fbm(2, 8, .5, 778) * 2.5
 _ph = fbm(2, 6, .5, 779) * 3
 _q = (H + _ph) / _step; _f = _q - np.floor(_q)
 _bench = (np.floor(_q) + np.clip((_f - .62) / .38, 0, 1) ** 1.5) * _step - _ph
-H = (H * (1 - _hill * .85) + _bench * _hill * .85).astype(np.float32)
+# (the bench terraces made onion rings worse; off)
+# contour warp: on gentle open ground a small mid-scale wobble makes each 1-block contour wander and break into short runs
+# with varied tread widths, instead of long parallel rings (terraforming rules: no runs > ~7, no repeated step rhythm)
+_gy2, _gx2 = np.gradient(H); _sl2 = np.hypot(_gx2, _gy2)
+_wm = np.clip((anyway - 5) / 5, 0, 1) * (~lake) * np.clip((st_d - 4) / 4, 0, 1) * np.clip((.8 - _sl2) / .4, 0, 1)
+H = (H + ((fbm(3, 22, .5, 780) - .5) * 2.2 + (fbm(2, 60, .5, 781) - .5) * .9) * _wm).astype(np.float32)
 hi = np.round(H).astype(int)
 gy_, gx_ = np.gradient(H)
 slope = np.hypot(gx_, gy_)
@@ -1098,7 +1103,11 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
                 a = math.atan2(dz, dx)
                 rr = r * (1 + .22 * (noise3(math.cos(a) * 3 + seed, y * .25, math.sin(a) * 3, seed, 1.0) - .5) * 2)
                 x, z = cx + dx, cz + dz
-                if not needle and y < top_y - 3: rr *= 1 + TM.ledge(x, y + seed * 5, z) * 1.4    # weathered beds: ledges and notches
+                if not needle and y < top_y - 5:
+                    nl = 3 + seed % 3                                   # an uneven lobed plan, not a lathe-turned disc
+                    rr *= 1 + (.14 * math.cos(nl * a + seed) + .07 * math.cos((nl + 2) * a + seed * 2)) * min(1, (top_y - 5 - y) / 6)
+                    fis = (a * 7 + seed) % math.tau                     # vertical fissures cut into the stem and waist
+                    if y < top_y - 4 and min(fis, math.tau - fis) < .09 + .05 * math.sin(seed + a): rr -= 2.2
                 d = math.hypot(dx, dz)
                 if d > rr: continue
                 if not (0 <= x < B and 0 <= z < B) or y <= at(x, z) - 1: continue
@@ -1111,9 +1120,10 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
                 else:
                     n = noise3(x, y, z, seed + 7, 2.2)
                     up_open = y > base + 2 and f > .45                          # the overhang's underside and the waist
-                    rec = .12 if .35 < f < .75 else 0.0                              # the waist: only a little darker
-                    mossy = top_y - y <= 6 and TM.moss_streak(x, y, z, top_y)       # streaks drip from the lip only
-                    mat = "moss_block" if mossy else TM.strata(x, y + seed * 5, z)
+                    rec = .3 if .45 < f < .8 else 0.0                                    # the overhang belly sits in shadow                              # the waist: only a little darker
+                    mossy = top_y - y <= 16 and TM.moss_streak(x, y, z, top_y)       # streaks drip from the lip only
+                    dd = max(.5, math.hypot(dx, dz)); ex_ = -(dx / dd * .6 + dz / dd * .8)       # which way this face looks: the sunlit side is pale
+                    mat = "moss_block" if mossy else TM.cliff_block(x, y, z, .35 + f * .45, rec + (.35 if d < rr - 1.2 else 0), ex_)
                     put(x, y, z, mat)
     for _ in range(int(rt * (10 if not needle else 2))):           # a curtain of vines and leaf drapes from the lip
         a = R.random() * math.tau
@@ -1923,7 +1933,7 @@ ZA = 206                                                             # the aqued
 _rx = int(min(range(150, 260), key=lambda xx: road_d[ZA, xx]))
 AQ = SP.aqueduct(_rx - (4 * 12 + 3 + 4), ZA, bays=7, collapsed=5, seed=21, root_from=(236, 150))
 FT = SP.fallen_trunk(24, 262, .25, L=52, seed=31)
-ST = SP.stump(322, 132, D=15, seed=41)
+ST = SP.stump(322, 132, D=19, seed=41)
 for (x, z, kind) in ((_rx, ZA, "aqueduct"), (50, 268, "trunk"), (322, 132, "stump")): CONTENT.append((x, z, kind))
 LABELS_POI += [((_rx, ZA), "根に貫かれた水道橋", (220, 210, 190)), ((50, 268), "倒れた巨樹", (170, 220, 120)), ((322, 132), "巨大な切り株", (220, 190, 150))]
 print("set pieces: aqueduct x0", _rx - 55, "springline", AQ["Ys"])
@@ -2143,8 +2153,21 @@ for _ in range(4000):
     if dens[z, x] > .004 or used[z, x] or slope[z, x] > .6 or WATER_NEAR[z, x] < 18 or anyway[z, x] < 8: continue
     if any(math.hypot(x - a, z - b2) < 45 for a, b2 in LONE): continue
     LONE.append((x, z)); oak(x, z, "oak", big=True, form=R.choice(["wide", "round", "wide"]))
-    if len(LONE) >= 22: break
-print("lone trees", len(LONE))
+    if len(LONE) >= 7: break
+GROVES = []
+for _ in range(3000):
+    x, z = R.randrange(30, B - 30), R.randrange(30, B - 30)
+    if dens[z, x] > .004 or used[z, x] or slope[z, x] > .6 or WATER_NEAR[z, x] < 20 or anyway[z, x] < 12: continue
+    if any(math.hypot(x - a, z - b2) < 70 for a, b2 in GROVES + LONE): continue
+    GROVES.append((x, z))
+    oak(x, z, "oak", big=True, form="wide")
+    for k in range(R.randint(4, 8)):
+        a = R.uniform(0, math.tau); r = R.uniform(6, 13)
+        tx, tz = int(x + math.cos(a) * r), int(z + math.sin(a) * r)
+        if R.random() < .6: oak(tx, tz, R.choice(["oak", "oak", "birch"]), form=R.choice(["round", "tall", "lean"]))
+        else: young_tree(tx, tz)
+    if len(GROVES) >= 6: break
+print("lone trees", len(LONE), "groves", len(GROVES))
 scatter_plants(70, 280, 70, .05, ["fern", "short_grass", "brown_mushroom", "leaf_litter"])
 # leaf litter under canopies: find ground cells shaded by leaves within 6 blocks above
 for (x, y, z), v in list(w.b.items()):
@@ -2230,9 +2253,12 @@ for z in range(1, B - 1):
         for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             if _top_at(x + dx, z + dz) == y + 1 and (road[z + dz, x + dx] or trail[z + dz, x + dx] or UPPER[z + dz, x + dx] >= 0):
                 on_path = road[z, x] or trail[z, x]
-                mat = "mud_bricks" if on_path else "stone_bricks"
-                face = {(1, 0): "e", (-1, 0): "w", (0, 1): "s", (0, -1): "n"}[(dx, dz)]
-                put(x, y + 1, z, mat, shape="stair_" + face); nstep += 1
+                if on_path:                                           # a half-buried flat stone, not a placeholder stair
+                    put(x, y + 1, z, ("cobblestone", "mossy_cobblestone", "stone", "cobblestone")[int(_h(x, 0, z, 91) * 4)], shape="slab")
+                else:
+                    face = {(1, 0): "e", (-1, 0): "w", (0, 1): "s", (0, -1): "n"}[(dx, dz)]
+                    put(x, y + 1, z, "stone_bricks", shape="stair_" + face)
+                nstep += 1
                 break
 print("step slabs", nstep)
 
