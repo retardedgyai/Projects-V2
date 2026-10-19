@@ -2,7 +2,7 @@
 
     SHADE_FIGHT_DUMP=/tmp/fight.jsonl ./gradlew :server-minestom:test --tests '*ShadeWyrmBossTest' --rerun
     python scripts/build_boss_vfx.py    # the shader data maps, if the pack was not built
-    python scripts/boss_preview/fightclip.py /tmp/fight.jsonl 0 11 out.gif [flat|before|violet|glow]
+    python scripts/boss_preview/fightclip.py /tmp/fight.jsonl 0 11 out.gif [flat|before|violet|glow] [zoom]
 
 Each frame: the wyrm where the server had it, turned the way the model faced, posed from the clip on show at that
 time, the shader displays the server showed (item.fsh's maths, see shaderclip.py), the player as a green post, and
@@ -35,13 +35,13 @@ def label(clip):
     return base
 
 
-def main(dump, t0, t1, out, mode="flat", fps=10):
+def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
     model = ROOT / "assets/bosses/shade_wyrm.bbmodel"
     sc = Scene(model)
     A = {a["name"]: a for a in json.loads(model.read_text(encoding="utf-8"))["animations"]}
     rows = [json.loads(l) for l in Path(dump).read_text().splitlines()]
     tex = {p.stem: np.asarray(Image.open(p).convert("RGBA")).astype(np.float32) for p in SH.TEX.glob("*.png")}
-    W, H, zoom = 640, 400, 1.0
+    W, H, zoom = 640, 400, float(zoom)
     az, el = 30, 30
     a_, e_ = math.radians(az), math.radians(el)
     cam = np.array([math.cos(e_) * math.sin(a_), math.sin(e_), math.cos(e_) * math.cos(a_)])
@@ -125,4 +125,4 @@ def main(dump, t0, t1, out, mode="flat", fps=10):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), sys.argv[4], *sys.argv[5:6])
+    main(sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), sys.argv[4], *sys.argv[5:7])
