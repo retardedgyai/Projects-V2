@@ -122,19 +122,29 @@ def _forge(h):
 
 
 def heat_cut(data, kind, p, t):
+    """scripts/shaders/item.fsh heatCut, line for line."""
     d = np.asarray(data).astype(float) / 255
-    mask, flow, across = d[..., 0], d[..., 1], d[..., 2]
+    field, flow, across = d[..., 0], d[..., 1], d[..., 2]
     hot = 1.0 if kind == 7 else .82 if kind == 8 else .64
-    behind = 1.3 * (1 - (1 - p) ** 5) - flow
-    trail = np.clip(1 - behind / .95, 0, 1) * (behind >= 0)
-    ember = _fbm(flow * 11 - t * 1.5, across * 7 + t * .4)
-    body = mask * trail * _smooth(.2, .55, ember * .7 + trail * .7)
-    edge = _smooth(.88, 1.0, trail) * mask
-    heat = np.clip((body * (.35 + .6 * trail) + edge * .5 + mask * across * trail * .25) * hot, 0, 1)
-    alpha = np.clip(np.minimum(1, body * 1.8 + edge) * (1 - _smooth(.7, 1.0, np.array(p))), 0, 1)
-    heat = np.floor(heat * 5 + .5) / 5
-    alpha = np.where(alpha > .5, 1.0, np.where(alpha > .15, .5, 0.0))
-    rgba = np.dstack((_forge(heat), alpha)) * 255
+    head = 1.3 * (1 - (1 - p) ** 5)
+    behind = head - flow
+    lit = (behind >= 0).astype(float)
+    trail = np.clip(1 - behind, 0, 1) * lit
+    fade = 1 - _smooth(.55, 1.0, np.array(p))
+    core = _smooth(.6, .74, field)
+    ember = _fbm(flow * 14 - t * 2.2, across * 9 + t * .6)
+    sparks = _smooth(.72, .9, _fbm(flow * 40 - t * 6, across * 30))
+    blade = core * lit * _smooth(.15, .5, ember * .8 + trail * .9) * fade
+    head_flash = _smooth(.86, 1.0, trail) * lit
+    heat = np.clip((.25 + .7 * trail + .3 * head_flash) * hot + sparks * .3 * (1 - trail), 0, 1)
+    blade_color = _forge(heat) * (1 + .35 * head_flash)[..., None]
+    glow = field * field * (.35 + .65 * trail) * lit * fade * (.7 + .3 * ember)
+    glow_color = _forge(.42 + .4 * trail * hot)
+    glow_alpha = np.clip(glow * (.55 + .6 * head_flash), 0, .85)
+    alpha = blade + glow_alpha * (1 - blade)
+    safe = np.maximum(alpha, 1e-4)[..., None]
+    rgb = np.minimum((blade_color * blade[..., None] + glow_color * (glow_alpha * (1 - blade))[..., None]) / safe, 1)
+    rgba = np.dstack((rgb, np.where(alpha < .004, 0, alpha))) * 255
     return Image.fromarray(rgba.astype('uint8'))
 
 

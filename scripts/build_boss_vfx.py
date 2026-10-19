@@ -49,18 +49,20 @@ def slash(u, v):
 
 
 def war_slash(u, v):
-    """Warrior heat cut (2026-10-19): the 黒翳竜 crescent made heavy. ±100° about +Z, a band that thickens toward the
-    head (flow 1), so the leading edge reads as the mass of the blade and the tail as the cut it leaves."""
+    """Warrior heat cut (2026-10-19): the 黒翳竜 crescent made heavy, ±100° about +Z, flow 0 at the -X end.
+    R is a soft proximity field around the blade's path (1 on the path, falling to 0 well outside it), so the shader
+    can draw a hard white core and a soft glow from the same channel. The band thickens toward the head (flow 1)."""
     x, z = 2 * u - 1, 2 * v - 1
     r, a = math.hypot(x, z), math.atan2(x, z)
     half = math.radians(100)
-    if abs(a) > half or not .28 < r <= 1:
+    over = math.radians(18)                       # the glow runs a little past both ends
+    if abs(a) > half + over or not .12 < r <= 1:
         return 0, 0, 0
-    flow = (a + half) / (2 * half)
-    width = .14 + .2 * flow
-    band = 1 - abs(r - .74) / width
-    ends = smooth(0, .08, (half - abs(a)) / (2 * half))
-    return max(0, band) ** .6 * ends, flow, (r - .28) / .72
+    flow = min(1.0, max(0.0, (a + half) / (2 * half)))
+    width = .12 + .18 * flow
+    field = max(0.0, 1 - abs(r - .72) / (width * 2.8))
+    ends = smooth(0, 1, (half + over - abs(a)) / (over * 2.2))
+    return field * ends, flow, (r - .12) / .88
 
 
 def ring(u, v):
@@ -90,7 +92,7 @@ def curtain(u, v):
     return smooth(0, .18, u) * smooth(0, .18, 1 - u), u, 1 - v
 
 
-SPRITES = {"slash": (128, 128, slash, "flat"), "war_slash": (64, 64, war_slash, "flat"), "ring": (64, 64, ring, "flat"), "beam": (32, 128, beam, "flat"),
+SPRITES = {"slash": (128, 128, slash, "flat"), "war_slash": (128, 128, war_slash, "flat"), "ring": (64, 64, ring, "flat"), "beam": (32, 128, beam, "flat"),
            "beam_up": (128, 32, lambda u, v: beam(v, u), "upright"), "ring_up": (64, 64, ring, "upright"), "puff": (32, 32, puff, "upright"), "smoke": (32, 32, puff, "upright"),
            "curtain": (32, 64, curtain, "upright")}
 
