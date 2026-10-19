@@ -17,7 +17,8 @@ import numpy as np
 from PIL import Image
 import iso
 import greattree
-from greattree import noise3, bark
+from greattree import noise3, bark, _h
+import terrainmat as TM
 
 B = 500
 G = 70
@@ -180,39 +181,61 @@ def mark(x0, z0, x1, z1):
 
 
 patch = fbm(4, 20, .55, 11)
+import terrainmat as TM
+# context fields for the surface rules: forest-ness (where trees will stand), damp ground (near water), local face extent
+_forest = fbm(4, 6, .5, 121)
+FOREST_F = np.clip((_forest - .48) * 2 + np.clip((150 - xx) / 120, 0, 1) * .8 + np.clip((60 - zz) / 60, 0, 1) * .5, 0, 1)
+_wd = np.minimum(np.where(lake, 0, 99), st_d)
+for _ in range(1):
+    pass
+DAMP_F = np.clip(1 - (_wd - 2) / 6, 0, 1)
+pondd = np.sqrt(((xx - POND[0]) / 36) ** 2 + ((zz - POND[1]) / 24) ** 2)
+DAMP_F = np.maximum(DAMP_F, np.clip((1.25 - pondd) / .25, 0, 1))
+from numpy.lib.stride_tricks import sliding_window_view as _sw
+_pad = np.pad(hi, 4, mode="edge")
+LOCAL_MIN = _sw(_pad, (9, 9)).min(axis=(2, 3)); LOCAL_MAX = _sw(_pad, (9, 9)).max(axis=(2, 3))
+_pad1 = np.pad(H, 2, mode="edge")
+LOCAL_AVG = _sw(_pad1, (5, 5)).mean(axis=(2, 3))
 for z in range(B):
     for x in range(B):
         h = hi[z, x]
         nb = min(hi[max(0, z - 1), x], hi[min(B - 1, z + 1), x], hi[z, max(0, x - 1)], hi[z, min(B - 1, x + 1)])
         lo = h - 6 if x in (0, B - 1) or z in (0, B - 1) else min(nb, h) - 1
         face = slope[z, x] > 1.3
+        fb, ft = LOCAL_MIN[z, x], max(LOCAL_MAX[z, x], LOCAL_MIN[z, x] + 1)
+        recess = float(np.clip((LOCAL_AVG[z, x] - H[z, x]) / 3, 0, 1))
         for y in range(lo, h):
-            if face:
-                put(x, y, z, ("stone", "andesite", "stone", "tuff", "stone", "cobblestone")[(y // 2 + (x // 9)) % 6])
+            if face or h - y > 2:
+                put(x, y, z, TM.cliff_block(x, y, z, (y - fb) / (ft - fb), recess))
             else:
-                put(x, y, z, "dirt" if h - y <= 2 else "stone")
+                put(x, y, z, "coarse_dirt" if (h - y == 2 and _h(x, y, z, 5) < .3) else "dirt")
         if lake[z, x]:
-            put(x, h, z, "sand" if WL - h < 2 else "gravel")
+            put(x, h, z, TM.bed_block(x, z) if WL - h >= 1 else "grass_block_top", "grass_block_side")
             for y in range(h + 1, WL + 1): put(x, y, z, "water_still", shape="water")
             continue
         if stream[z, x]:
-            put(x, h - 1, z, "gravel"); put(x, h, z, "water_still", shape="water")
+            put(x, h - 1, z, TM.bed_block(x, z)); put(x, h, z, "water_still", shape="water")
             up = max([hi[z + dz, x + dx] for dx in (-1, 0, 1) for dz in (-1, 0, 1)
                       if 0 <= x + dx < B and 0 <= z + dz < B and stream[z + dz, x + dx]] + [h])
             for y in range(h + 1, up): put(x, y, z, "water_still")          # waterfall down the scarp
             continue
-        if road[z, x]:
-            t = (x * 7 + z * 13) % 9
-            put(x, h, z, *(("dirt_path_top", "dirt_path_side") if t < 6 else ("gravel",) if t < 8 else ("coarse_dirt",)))
+        if road[z, x]:                                                    # worn centre, gravel and coarse dirt toward the verges
+            edge = road_d[z, x] / 3.2
+            v = TM.noise3(x, 0, z, 331, 2.0) * .7 + _h(x, 1, z, 9) * .3
+            name = "dirt_path_top" if v > edge * .7 else ("gravel" if v > edge * .45 else "coarse_dirt")
+            put(x, h, z, name, TM.SIDE.get(name, name))
             continue
         if trail[z, x]:
-            put(x, h, z, *(("dirt_path_top", "dirt_path_side") if (x + z) % 4 else ("coarse_dirt",)))
+            v = TM.noise3(x, 0, z, 332, 1.6)
+            name = "dirt_path_top" if v > .35 else "coarse_dirt"
+            put(x, h, z, name, TM.SIDE.get(name, name))
             continue
-        if face:
-            put(x, h, z, R.choice(["stone", "andesite", "mossy_cobblestone", "tuff", "moss_block"]))
+        if face:                                                          # a ledge on the face: moss and grass collect on top
+            n = TM.noise3(x, h, z, 341, 2)
+            put(x, h, z, *(("moss_block",) if n > .72 else ("grass_block_top", "grass_block_side") if n > .64 else (TM.cliff_block(x, h, z, (h - fb) / (ft - fb), recess),)))
             continue
-        p = patch[z, x]
-        top = ("grass_block_top", "grass_block_side") if p > .3 else ("moss_block",) if p > .25 else ("podzol_top", "podzol_side")
+        top = TM.surface(x, z, slope[z, x], FOREST_F[z, x], DAMP_F[z, x])
+        if 0 < anyway[z, x] - 2 < 2.5 and _h(x, 3, z, 11) < .5: top = ("coarse_dirt", "coarse_dirt")     # trampled verge
         put(x, h, z, *top)
         if slope[z, x] < 1.2:  # half steps so nothing on walkable ground needs a jump
             ups = [hi[z + dz, x + dx] for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)) if 0 <= x + dx < B and 0 <= z + dz < B]
@@ -703,7 +726,7 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
                 x, z = cx + dx, cz + dz
                 if not (0 <= x < B and 0 <= z < B) or y <= at(x, z) - 1: continue
                 if needle:
-                    put(x, y, z, "moss_block" if y >= top_y - 1 else ROCK[(y // 3 + seed) % len(ROCK)])
+                    put(x, y, z, "moss_block" if y >= top_y - 1 else TM.cliff_block(x, y, z, f, .2 * (d < rr - 1)))
                 elif y == top_y:
                     put(x, y, z, "grass_block_top", "grass_block_side"); UPPER[z, x] = top_y
                 elif y >= top_y - 3 and d > rr - 1.6:
@@ -711,7 +734,9 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
                 else:
                     n = noise3(x, y, z, seed + 7, 2.2)
                     up_open = y > base + 2 and f > .45                          # the overhang's underside and the waist
-                    mat = "moss_block" if n > (.42 if up_open else .5) else ROCK[(y // 4 + seed) % len(ROCK)]
+                    rec = .5 if .35 < f < .75 else 0.0                               # the waist sits in shadow: darker blocks
+                    mossy = TM.moss_streak(x, y, z, top_y) or (f > .8 and n > .62)    # streaks from the lip, the overhang's belly
+                    mat = "moss_block" if mossy else TM.cliff_block(x, y, z, f, rec)
                     put(x, y, z, mat)
     for _ in range(int(rt * (10 if not needle else 2))):           # a curtain of vines and leaf drapes from the lip
         a = R.random() * math.tau
@@ -785,7 +810,7 @@ def rock_bridge(p0, p1, rise=3, width=1.6, sakura=0.0):
                     put(x, deck, z, "grass_block_top", "grass_block_side"); UPPER[z, x] = max(UPPER[z, x], deck)
                     if w.b.get((x, deck + 1, z), ("", "", ""))[1] in ("vine",): w.b.pop((x, deck + 1, z), None)
                 for y in range(int(deck - under * (1 - (d / (wid + 1.2)) ** 2)), deck):
-                    if y > at(x, z): put(x, y, z, ROCK[(y // 4) % len(ROCK)] if noise3(x, y, z, 153, 2) < .5 else "moss_block")
+                    if y > at(x, z): put(x, y, z, TM.cliff_block(x, y, z, .55 + (y - deck) / 20, .2) if noise3(x, y, z, 153, 2) < .5 else "moss_block")
                 if wid < d <= wid + 1.2 and (x, deck, z) not in w.b:
                     put(x, deck, z, "cherry_leaves" if R.random() < sakura else ("azalea_leaves" if (x + z) % 3 else "oak_leaves"))
                 if d <= wid and R.random() < sakura * .5 and (x, deck + 1, z) not in w.b: put(x, deck + 1, z, "pink_petals", shape="carpet")
@@ -985,7 +1010,7 @@ def stone_arch(p0, p1, height, r):
                     v = w.b.get((int(round(x)) + dx, int(round(y)) + dy, int(round(z)) + dz))
                     if v and v[1] in ("dark_oak_log", "mangrove_log", "stripped_dark_oak_log"):
                         p = (int(round(x)) + dx, int(round(y)) + dy, int(round(z)) + dz)
-                        mat = ROCK[(p[1] // 3) % len(ROCK)]
+                        mat = TM.cliff_block(p[0], p[1], p[2], .7, 0)
                         if noise3(*p, 161, 2.5) > .68: mat = "moss_block"
                         put(*p, mat)
     for (x, y, z) in pts:
@@ -1138,13 +1163,33 @@ for z in range(4, B - 4):
             else: oak(x, z, "oak", big=R.random() < .08)
 scatter_plants(70, 280, 70, .05, ["fern", "short_grass", "brown_mushroom", "leaf_litter"])
 scatter_plants(250, 250, 240, .006, ["poppy", "dandelion", "short_grass", "short_grass"])
+# ground cover in clumps and drifts: grass tufts where the clump noise is high, flowers in single-species drifts,
+# ferns in shade and damp ground, a few small mossy stones on the hills
+FLOWERS = ["poppy", "dandelion", "cornflower", "oxeye_daisy", "azure_bluet", "allium"]
 for z in range(2, B - 2):
     for x in range(2, B - 2):
-        if anyway[z, x] < 3 or lake[z, x] or stream[z, x] or R.random() > .34: continue
+        if anyway[z, x] < 3 or lake[z, x] or stream[z, x]: continue
         y = at(x, z) + 1
         if (x, y, z) in w.b: continue
         t2 = w.b.get((x, y - 1, z))
-        if t2 and t2[1] == "grass_block_top": put(x, y, z, "short_grass", shape="plant")
+        if not t2: continue
+        clump = noise3(x, 0, z, 401, 2.2)
+        drift = noise3(x, 0, z, 402, 7.0)
+        top = t2[1]
+        if top == "grass_block_top":
+            if drift > .72 and _h(x, 2, z, 41) < .55:
+                put(x, y, z, FLOWERS[int(noise3(x, 0, z, 403, 12) * 6) % 6], shape="plant")
+            elif clump > .52 and _h(x, 3, z, 42) < (clump - .45) * 2.2:
+                put(x, y, z, "tall_grass_top" if clump > .78 and _h(x, 4, z, 43) < .4 else "short_grass", shape="plant")
+            elif FOREST_F[z, x] > .5 and _h(x, 5, z, 44) < .08:
+                put(x, y, z, "fern", shape="plant")
+        elif top in ("podzol_top", "moss_block", "coarse_dirt"):
+            if _h(x, 6, z, 45) < (.14 if top == "podzol_top" else .08):
+                put(x, y, z, R.choice(["fern", "fern", "short_grass", "brown_mushroom", "leaf_litter"]), shape="plant" if top != "moss_block" else "plant")
+            elif top == "moss_block" and _h(x, 7, z, 46) < .25:
+                put(x, y, z, "moss_block", shape="carpet")
+        elif top in ("stone", "andesite", "gravel", "cobblestone") and _h(x, 8, z, 47) < .03:
+            put(x, y, z, "mossy_cobblestone", shape="slab")
 
 
 

@@ -1,0 +1,106 @@
+<title>巨樹の根の丘</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;700&family=DotGothic16&display=swap">
+<style>
+/* layout: a field journal — one large plate, tabs along the top, a short note under the plate */
+:root {
+  --bg: #e9ecdf; --panel: #f7f8f1; --ink: #1f2a1c; --muted: #5d6a57; --line: #c8cfbb; --accent: #b4462f;
+  --plate: #12141f;
+  --f-body: "M PLUS 2", "Hiragino Sans", "Noto Sans CJK JP", sans-serif;
+  --f-label: "DotGothic16", "M PLUS 2", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #151a14; --panel: #1d241c; --ink: #e4ead9; --muted: #9aa78f; --line: #33402f; --accent: #e07257; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #151a14; --panel: #1d241c; --ink: #e4ead9; --muted: #9aa78f; --line: #33402f; --accent: #e07257; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); line-height: 1.7;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px }
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px }
+header h1 { font-family: var(--f-label); font-weight: 400; font-size: 1.9rem; margin: 0; letter-spacing: .04em; text-wrap: balance }
+header p { margin: 2px 0 0; color: var(--muted); font-size: .92rem }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px }
+.tabs button { font: inherit; font-size: .9rem; padding: 6px 14px; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  border-radius: 6px; cursor: pointer }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink) }
+.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.plate { background: var(--plate); border-radius: 8px; overflow: hidden }
+.plate img { display: block; width: 100%; height: auto }
+.note { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px }
+.note h2 { margin: 0; font-size: 1.05rem }
+.note p { margin: 4px 0 0; color: var(--muted); font-size: .92rem; max-width: 65ch }
+.lv { font-family: var(--f-label); font-size: .95rem; color: var(--accent); white-space: nowrap; padding-top: 2px }
+.rules { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 18px }
+.rules h2 { margin: 0 0 6px; font-size: 1.05rem }
+.rules ol { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; font-size: .92rem }
+.rules .src { margin-top: 10px; font-size: .8rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px }
+.rules a { color: var(--ink) }
+small.cap { color: var(--muted); font-size: .8rem }
+</style>
+<div class="wrap">
+  <header>
+    <h1>巨樹の根の丘</h1>
+    <p>500×500 ブロックのフィールド1枚。高さの違う3段を道でつなぎ、ガウル平原風の岩の柱と桜のボスがある。今回は WorldPainter の地形の作り方を調べて、地面と崖のブロックを作り直した。</p>
+  </header>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="plate"><img id="plate" alt=""></div>
+  <div class="note"><div><h2 id="n-title"></h2><p id="n-text"></p></div><div class="lv" id="n-lv"></div></div>
+  <section class="rules">
+    <h2>WorldPainter の作り方から取った決まり</h2>
+    <ol>
+      <li>地面の材料は傾きで決める。平地は草の混ぜ物、25〜45°は「丘」の混ぜ物（草・粗い土・石・安山岩・砂利＝3:3:3:2:1）、45°より急なら「岩」の混ぜ物（石65・安山岩10・丸石5.5・灰色の粉5・砂利4・土2・鉱石と苔石を少し）。</li>
+      <li>混ぜ物は1ブロックずつばらまかず、かたまり（ブロブ）で置く。境目だけ少しまだらにして、2つの地面がなじむようにする。</li>
+      <li>森の床は別の混ぜ物（ポドゾル・粗い土・草・苔）。水のそばは苔・草・泥。</li>
+      <li>崖は、上と外側に明るい石（石・安山岩）、真ん中につなぎの石（砂利・凝灰岩・丸石）、下とくぼみに暗い石（深層岩）。横じまにせず、縦の不規則なすじにする。苔は上のふちから水が伝うように縦に垂らす。</li>
+      <li>水辺は草を水ぎわまで残し、砂の帯を作らない。底は砂利と粘土。道は中央が踏み固めた土、縁ほど砂利と粗い土。</li>
+      <li>草花は全体に薄くまかず、草はかたまり、花は1種類ずつの群れ、森の中は羊歯。丘には苔むした小石を少し。</li>
+    </ol>
+    <div class="src">
+      <a href="https://polystruct.github.io/creative/worldpainter/custom.html" target="_blank" rel="noopener">WorldPainter カスタム地形の例（配合）</a>
+      <a href="https://www.worldpainter.net/trac/wiki/Manual/Paints/Terrains" target="_blank" rel="noopener">WorldPainter 公式マニュアル（地形）</a>
+      <a href="https://hypixel.net/threads/guide-advanced-terraforming-part-2-world-painter.137630/" target="_blank" rel="noopener">Hypixel 上級地形ガイド（傾き55°で石）</a>
+      <a href="https://minecraftgradient.blog/deepslate-to-stone-gradient/" target="_blank" rel="noopener">崖のグラデーション（縦のすじ）</a>
+      <a href="https://blockblend.app/guides/minecraft-terrain-gradients" target="_blank" rel="noopener">地形のグラデーション配合</a>
+      <a href="https://www.minecraft.net/en-us/article/tutorial--tips-for-landscaping-and-terraforming" target="_blank" rel="noopener">minecraft.net 造園と地形のコツ（水辺）</a>
+    </div>
+  </section>
+  <small class="cap">ゲームの外で、本物のブロックの絵を使って描いた試作。モブは形と色だけの仮置き。</small>
+</div>
+<script>
+const SHOTS = [
+  { id: "scarp", tab: "崖の肌（新）", img: "f5-scarp.png", title: "崖の肌：下が暗く上が明るい、縦のすじ", text: "段の崖。下とくぼみは深層岩・凝灰岩、上は安山岩・石。縦にすじが入り、横じまにならない。ふちから苔と草が少し垂れる。足元の草地は草のかたまりと、1種類ずつの花の群れ。", lv: "新" },
+  { id: "ramp", tab: "崖と坂（新）", img: "f5-ramp.png", title: "段と坂（新しい材料）", text: "同じ場所の前の版は次のタブ。草地に草のかたまりと花の群れ、道は中央が土で縁が砂利と粗い土、崖は暗い下から明るい上へ。", lv: "新" },
+  { id: "ramp0", tab: "崖と坂（前）", img: "before-ramp.png", title: "段と坂（前の版）", text: "前の版。地面は草ばかりで、崖は石の横じま。", lv: "前" },
+  { id: "gap", tab: "中段（新）", img: "f5-gap.png", title: "中段の一角（新しい材料）", text: "草地は草・粗い土・苔のかたまり、森の近くはポドゾルと羊歯。", lv: "新" },
+  { id: "gap0", tab: "中段（前）", img: "before-gap.png", title: "中段の一角（前の版）", text: "前の版。", lv: "前" },
+  { id: "pond", tab: "池（新）", img: "f5-pond.png", title: "池（新しい材料）", text: "水ぎわは苔・草・泥、底は砂利と粘土。砂の帯をやめた。", lv: "新" },
+  { id: "pond0", tab: "池（前）", img: "before-pond.png", title: "池（前の版）", text: "前の版。水ぎわに砂の帯がある。", lv: "前" },
+  { id: "mesa", tab: "柱の肌（新）", img: "f5-mesa.png", title: "岩の柱の肌（新しい材料）", text: "柱のくびれは影になるので暗い石、上の張り出しは明るい石。苔はふちから縦に垂れる。", lv: "新" },
+  { id: "spring1", tab: "柱の泉（新）", img: "f5-pillar1.png", title: "柱の泉と滝（新しい材料）", text: "前の版は次のタブ。", lv: "新" },
+  { id: "spring0", tab: "柱の泉（前）", img: "before-pillar1.png", title: "柱の泉と滝（前の版）", text: "前の版。", lv: "前" },
+  { id: "all", tab: "全体", img: "field500-guide.png", title: "全体の案内図", text: "南の低地・中央の中段・北の高台の3段。岩の柱を岩の橋で渡るほど桜が増え、いちばん高い柱が桜のボス。", lv: "500×500" },
+  { id: "pillars", tab: "岩の柱と桜", img: "f5-pillars.png", title: "岩の柱と桜のグラデーション", text: "高台から岩の橋で柱を渡っていくほど桜と鳥居が増える。", lv: "道" },
+  { id: "boss", tab: "ワールドボス（桜）", img: "f5-sakura.png", title: "ワールドボス：桜の闘技場", text: "いちばん高い柱の上。鳥居のトンネルと石灯籠の参道、花びらの床、奥に大きなしだれ桜。", lv: "ボス" },
+  { id: "check", tab: "検証", img: "field500-check.png", title: "検証：歩いて行けるか、空白がないか", text: "平地の99.6%と、柱の上と橋の全部（16777マス）に歩いて行ける。", lv: "検証" },
+];
+const tabs = document.getElementById("tabs");
+function show(id) {
+  const s = SHOTS.find(x => x.id === id) || SHOTS[0];
+  document.getElementById("plate").src = s.img;
+  document.getElementById("plate").alt = s.title;
+  document.getElementById("n-title").textContent = s.title;
+  document.getElementById("n-text").textContent = s.text;
+  document.getElementById("n-lv").textContent = s.lv;
+  for (const b of tabs.children) b.setAttribute("aria-selected", String(b.dataset.id === s.id));
+  try { localStorage.setItem("f5tab", s.id) } catch (e) {}
+}
+for (const s of SHOTS) {
+  const b = document.createElement("button");
+  b.id = "tab-" + s.id; b.dataset.id = s.id; b.role = "tab"; b.textContent = s.tab;
+  b.addEventListener("click", () => show(s.id));
+  tabs.appendChild(b);
+}
+let start = (location.hash || "").slice(1);
+if (!start) { try { start = localStorage.getItem("f5tab") || "" } catch (e) {} }
+show(start || "scarp");
+</script>
