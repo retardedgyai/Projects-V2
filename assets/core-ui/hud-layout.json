@@ -61,16 +61,22 @@
   },
   "number_fonts": {
     "hud_num_gauge": -28,
-    "hud_num_cd": -50,
-    "hud_num_boss": 5
+    "hud_num_cd": -50
   },
   "boss_bar": {
-    "plate_x": -115,
-    "plate_width": 230,
-    "plate_top": 0,
-    "fill_x": -110,
-    "fill_width": 220,
-    "fill_top": 17
+    "plate_x": -118,
+    "plate_width": 237,
+    "plate_top": 28,
+    "hp_x": -112,
+    "hp_width": 225,
+    "hp_top": 41,
+    "text_rows": {
+      "hud_boss_name": 32,
+      "hud_boss_tag": 22,
+      "hud_boss_hp": 42,
+      "hud_boss_lv": 17,
+      "hud_ded_erosion": 60
+    }
   },
   "blank_vanilla_sprites": [
     "assets/minecraft/textures/gui/sprites/boss_bar/pink_background.png",

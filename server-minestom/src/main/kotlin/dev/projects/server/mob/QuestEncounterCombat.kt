@@ -54,6 +54,11 @@ internal class QuestMobLife(val maximumHealth: Double) {
         return true
     }
 
+    fun heal(amount: Double) {
+        if (!isAlive || phase == QuestMobPhase.RETURNING || !amount.isFinite() || amount <= 0.0) return
+        health = (health + amount).coerceAtMost(maximumHealth)
+    }
+
     fun finishReturn() {
         if (!isAlive) return
         health = maximumHealth
@@ -98,6 +103,8 @@ class QuestEncounterCombat(
     private val typedDamagePlayer: ((Player, Double, CoreDamageType) -> Unit)? = null,
     /** True while the player's dodge makes them untouchable: a move that only met dodges whiffs ([openAfter]). */
     private val evading: (Player) -> Boolean = { false },
+    /** Roll a grade (等級) and MODs for every non-boss mob; off for labs and fixed-balance tests. */
+    private val rollGrades: Boolean = false,
 ) {
     private data class SlowKey(val source: UUID?, val strength: Double)
     private data class Slow(val strength: Double, val until: Long)
@@ -127,7 +134,14 @@ class QuestEncounterCombat(
         val crowd = mutableMapOf<CrowdControl, Long>()
         /** Where charm pulls toward and fear runs from. */
         var crowdSource: Pos? = null
-        /** Boss only: crowd control wears this down; at 0 the boss is broken until [brokenUntil]. */
+        var grade = MobGrade.COMMON
+        var mods: List<MobMod> = emptyList()
+        /** Last time a player's hit landed (再生 waits for a quiet spell). */
+        var hurtAt = 0L
+        var lastRegenAt = 0L
+        /** The attack being prepared (or a boss's gimmick notice), kept between plate refreshes. */
+        var notice: String? = null
+        /** Bosses and graded mobs from 精鋭 up: crowd control wears this down; at 0 the mob is broken until [brokenUntil]. */
         var breakGauge = BREAK_MAX
         /** When crowd control last wore the break gauge: it refills after [BREAK_REFILL_AFTER_MILLIS] without. */
         var lastCcAt = 0L
@@ -200,6 +214,9 @@ class QuestEncounterCombat(
     }
 
     private val mobs = linkedMapOf<UUID, Mob>()
+    private val gradeSeed = contentSeed
+    private val plates = MobPlates()
+    private var plateRefreshAt = 0L
     private val telegraphs = MobGroundTelegraph(instance)
     private val vfx = dev.projects.server.particle.ParticleAnimationScheduler()
     private val vfxHandles = mutableMapOf<UUID, dev.projects.server.particle.ParticleEffectHandle>()
@@ -241,6 +258,8 @@ class QuestEncounterCombat(
     internal fun maneuverCount(targetId: UUID): Int = mobs[targetId]?.maneuvers ?: 0
     internal fun partsBroken(targetId: UUID): List<Boolean> = mobs[targetId]?.let { listOf(it.hornsBroken, it.fanTorn[0], it.fanTorn[1]) } ?: emptyList()
     internal fun erosionOf(player: UUID): Double = gimmicks.erosionOf(player)
+    /** This player's erosion as a share of the eruption threshold (0..1), for the boss bar. */
+    internal fun erosionShare(player: UUID): Double = (gimmicks.erosionOf(player) / ShadeWyrmGimmicks.FULL).coerceIn(0.0, 1.0)
     internal val poolCount: Int get() = gimmicks.poolCount
     /** Fight preview dump: the model's clip and the shader displays on show. */
     internal fun shownClip(targetId: UUID): Pair<String, Long>? = mobs[targetId]?.view?.let { it.shownClip to it.shownSince }
@@ -298,7 +317,9 @@ class QuestEncounterCombat(
         val mob = mobs[targetId] ?: return false
         val target = mob.target ?: instance.players.minByOrNull { it.position.distanceSquared(mob.entity.position) } ?: return false
         mob.target = target
-        mob.abilities.cancel(); clearWarning(mob.entity.uuid)
+        // Whatever the free AI was doing (a flight, the pause between moves, an opening) ends here.
+        mob.maneuver = null; mob.combo = null; mob.openUntil = 0L
+        mob.abilities.reset(); clearWarning(mob.entity.uuid)
         val start = mob.abilities.tryStart(now, mob.entity.position, target.position, mob.life.health / mob.life.maximumHealth, only = abilityId) ?: return false
         mob.life.phase = QuestMobPhase.ATTACKING
         return handleAbilityEvent(mob, start, instance.players.toList())
@@ -398,6 +419,18 @@ class QuestEncounterCombat(
         }
         mob.crowd[kind] = maxOf(mob.crowd[kind] ?: 0L, now + durationMillis.coerceAtMost(5000L))
         mob.crowdSource = source.position
+        if (mob.grade.breaks && now >= mob.brokenUntil) {
+            mob.breakGauge = (mob.breakGauge - kind.breakDamage).coerceAtLeast(0.0)
+            if (mob.breakGauge <= 0.0) {
+                // A broken graded mob is stunned for the whole down time and takes +30%, like a broken boss.
+                mob.brokenUntil = now + BREAK_MILLIS
+                mob.breakGauge = BREAK_MAX
+                mob.crowd[CrowdControl.STUN] = maxOf(mob.crowd[CrowdControl.STUN] ?: 0L, mob.brokenUntil)
+                stopNavigation(mob)
+                sound(mob.entity.position, "minecraft:block.anvil.land", 0.8f, 0.7f)
+                particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.EXPLOSION, 1)
+            }
+        }
         if (kind.hard || kind == CrowdControl.FLINCH) {
             mob.abilities.cancel(); clearWarning(targetId); castingPose(mob, false)
             mob.life.phase = QuestMobPhase.CHASING
@@ -416,10 +449,10 @@ class QuestEncounterCombat(
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         return mobs[targetId]?.crowd?.filterValues { it > now }?.keys ?: emptySet()
     }
-    fun breakGauge(targetId: UUID): Double? = mobs[targetId]?.takeIf { it.boss }?.breakGauge
+    fun breakGauge(targetId: UUID): Double? = mobs[targetId]?.takeIf { it.boss || it.grade.breaks }?.breakGauge
     fun isBroken(targetId: UUID): Boolean {
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
-        return mobs[targetId]?.let { it.boss && now < it.brokenUntil } == true
+        return mobs[targetId]?.let { now < it.brokenUntil } == true
     }
     /** Moves a mob along the ground only as far as the path is clear (shared by pull and knockback). */
     private fun slide(mob: Mob, direction: Vec, distance: Double) {
@@ -535,7 +568,8 @@ class QuestEncounterCombat(
         val part = if (effect || fieldOrigin != null || mob.view == null) 1.0 else partMultiplier(mob, attacker, projectile)
         if (part > 1.0) weakSpotHits += attacker.uuid else weakSpotHits -= attacker.uuid
         val mitigated = amount * part * (if (guarded) mob.definition.frontalDamageMultiplier else 1.0) *
-            (if (mob.boss && now < mob.brokenUntil) BROKEN_DAMAGE else 1.0)
+            (if (now < mob.brokenUntil) BROKEN_DAMAGE else 1.0) *
+            (if (MobMod.IRONHIDE in mob.mods) MobMod.IRONHIDE_TAKEN else 1.0)
         val gated = if (mob.boss) minOf(mitigated, (mob.life.health - mob.life.maximumHealth * bossGateFraction).coerceAtLeast(0.0)) else mitigated
         val gimmick = mob.abilities.current?.ability?.id
         if (gimmick == SHELL && mob.shellHealth > 0.0) {
@@ -550,6 +584,7 @@ class QuestEncounterCombat(
         if (!mob.life.damage(gated)) return null
         val applied = healthBefore - mob.life.health
         mob.lastAttacker = attacker
+        mob.hurtAt = now
         if (gimmick == CHANNEL && mob.life.isAlive) {
             mob.castDamage += applied
             if (mob.castDamage >= mob.life.maximumHealth * CAST_SHARE) knockDown(mob, now, "詠唱を止めた・殴り放題")
@@ -569,6 +604,7 @@ class QuestEncounterCombat(
             particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.POOF, 8)
             latestDefeat = QuestMobDefeat("mob:${mob.entity.uuid}", mob.entity.uuid, mob.definition.archetype,
                 mob.definition.archetype.rarity, mob.definition.dropKind, tier, mob.entity.position, attacker.uuid)
+            plates.hide(mob.entity.uuid)
             mob.entity.kill()
             mob.model?.dispose()
             mob.view?.die()
@@ -601,6 +637,13 @@ class QuestEncounterCombat(
         if (actionsStoppedForReturn) {
             if (players.isEmpty()) return
             actionsStoppedForReturn = false
+        }
+        if (pixelNameplates && nowMillis >= plateRefreshAt) {
+            // Icons and break timers change without an event (a slow wears off): refresh 4x a second;
+            // MobPlates only sends a packet when the text actually changed.
+            plateRefreshAt = nowMillis + 250L
+            mobs.values.filter { it.life.isAlive && isSpawned(it) }.forEach(::showHud)
+            plates.retain(mobs.values.filter { it.life.isAlive && isSpawned(it) && !it.boss }.mapTo(HashSet()) { it.entity.uuid })
         }
         for (mob in mobs.values.toList()) {
             mob.spawnFailure?.let { throw IllegalStateException("Quest mob failed to spawn at ${mob.home}", it) }
@@ -646,6 +689,7 @@ class QuestEncounterCombat(
         glowing.forEach { it.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList())) }
         glowing.clear()
         shaderFx.dispose()
+        plates.dispose()
         mobs.values.forEach { mob ->
             mob.abilities.cancel()
             stopNavigation(mob)
@@ -662,8 +706,14 @@ class QuestEncounterCombat(
         val base = QuestMobContent.definition(tier, archetype)
         val rank = encounterLevel - ((tier - 1) * 10 + 1)
         val balance = dev.projects.server.coreloop.CoreMmoTuning.balance
-        val definition = base.copy(maximumHealth = base.maximumHealth * healthMultiplier * (1 + rank * balance.mobRankHealthPermille / 1000.0),
-            abilities = base.abilities.map { it.copy(damage = it.damage * damageMultiplier * (1 + rank * balance.mobRankDamagePermille / 1000.0)) })
+        val (grade, mods) = if (rollGrades) MobGrades.roll(gradeSeed * 31 + encounterIndex * 1_000_003L + position.hashCode(), archetype)
+            else MobGrade.COMMON to emptyList()
+        val might = if (MobMod.MIGHT in mods) MobMod.MIGHT_DAMAGE else 1.0
+        val definition = base.copy(
+            maximumHealth = base.maximumHealth * healthMultiplier * grade.health * (1 + rank * balance.mobRankHealthPermille / 1000.0),
+            movementSpeed = base.movementSpeed * (if (MobMod.SWIFT in mods) MobMod.SWIFT_SPEED else 1.0),
+            abilities = base.abilities.map { it.copy(damage = it.damage * damageMultiplier * grade.damage * might *
+                (1 + rank * balance.mobRankDamagePermille / 1000.0)) })
         val modelled = definition.model?.takeIf { BossModelView.available(it) }
         val entity = if (modelled != null) ModelCarrier(definition.entityType) else EntityCreature(definition.entityType)
         entity.isInvulnerable = true
@@ -677,6 +727,7 @@ class QuestEncounterCombat(
         entity.setEquipment(EquipmentSlot.HELMET, ItemStack.of(definition.helmet))
         entity.setEquipment(EquipmentSlot.CHESTPLATE, ItemStack.of(definition.chestplate))
         val mob = Mob(entity, position, encounterIndex, definition.boss, definition)
+        mob.grade = grade; mob.mods = mods
         mobs[entity.uuid] = mob
         updateName(mob)
         entity.setInstance(instance, position).whenComplete { _, error ->
@@ -714,9 +765,14 @@ class QuestEncounterCombat(
         if (mob.boss && mob.breakGauge < BREAK_MAX && now - mob.lastCcAt > BREAK_REFILL_AFTER_MILLIS)
             mob.breakGauge = minOf(BREAK_MAX, mob.breakGauge + BREAK_REFILL_PER_SECOND / 20.0)
         if (mob.boss && (bossSealed || now < bossStaggerUntil)) { stopNavigation(mob); return }
-        if (mob.boss && mob.brokenUntil in 1..now) { mob.brokenUntil = 0L; updateName(mob) }
+        if (mob.brokenUntil in 1..now) { mob.brokenUntil = 0L; updateName(mob) }
         if (mob.boss && now < mob.brokenUntil) { stopNavigation(mob); return }
         if (mob.crowd.values.removeAll { it <= now }) updateName(mob)
+        if (MobMod.REGEN in mob.mods && now - mob.hurtAt >= MobMod.REGEN_DELAY && mob.life.health < mob.life.maximumHealth &&
+            mob.life.phase != QuestMobPhase.RETURNING) {
+            mob.life.heal(mob.life.maximumHealth * MobMod.REGEN_PER_SECOND * (now - mob.lastRegenAt).coerceIn(0L, 1000L) / 1000.0)
+        }
+        mob.lastRegenAt = now
         updateMovementSpeed(mob, now)
         mob.entity.refreshActiveHand(guarding(mob), true, false)
         if (mob.life.phase == QuestMobPhase.RETURNING) {
@@ -1205,6 +1261,7 @@ class QuestEncounterCombat(
         mob.slowedUntil = mob.slows.values.maxOfOrNull { it.until } ?: 0L
         val speed = mob.definition.movementSpeed * (1.0 - mob.slowPercent) *
             (if (mob.enraged) mob.definition.enragedSpeedMultiplier else if (mob.awakened) mob.definition.awakenSpeedMultiplier else 1.0) *
+            (if (frenzied(mob)) MobMod.FRENZY_SPEED else 1.0) *
             (if (mob.maneuver?.kind == ManeuverKind.STRAFE) STRAFE_SPEED else 1.0) *
             (if (mob.searching && mob.maneuver == null) SEARCH_SPEED else 1.0)
         if (mob.entity.getAttribute(Attribute.MOVEMENT_SPEED).baseValue != speed) {
@@ -1619,8 +1676,10 @@ class QuestEncounterCombat(
                         (event.frame.ability.shape is MobAttackShape.Ring || event.frame.ability.id in GIMMICKS || mob.entity.hasLineOfSight(player))
                     ) {
                         if (!evading(player)) mob.struckThisMove = true
-                        if (typedDamagePlayer != null) typedDamagePlayer.invoke(player, event.frame.ability.damage, event.frame.ability.damageType)
-                        else damagePlayer(player, event.frame.ability.damage)
+                        val dealt = event.frame.ability.damage * (if (frenzied(mob)) MobMod.FRENZY_DAMAGE else 1.0)
+                        if (typedDamagePlayer != null) typedDamagePlayer.invoke(player, dealt, event.frame.ability.damageType)
+                        else damagePlayer(player, dealt)
+                        if (MobMod.LEECH in mob.mods) mob.life.heal(mob.life.maximumHealth * MobMod.LEECH_RATIO)
                         if (mob.view != null) gimmicks.playerHit(player, event.frame.ability.id, lastTickAt)
                     }
                     if (disposed || actionsStoppedForReturn) return false
@@ -1662,25 +1721,22 @@ class QuestEncounterCombat(
 
     /** Set by the server once the owner's UI pack is loaded; name tags then use the pixel nameplate. */
     var pixelNameplates = false
-        set(value) { field = value; mobs.values.filter { it.life.isAlive }.forEach { updateName(it) } }
+        set(value) {
+            field = value
+            gimmicks.vanillaBar = !value
+            if (!value) plates.dispose()
+            mobs.values.filter { it.life.isAlive }.forEach { updateName(it, it.notice) }
+        }
 
     private fun updateName(mob: Mob, attackName: String? = null) {
-        if (pixelNameplates) {
-            val rank = when (mob.definition.archetype.rarity) {
-                QuestMobRarity.BOSS -> dev.projects.server.coreloop.ui.CoreMobNameplate.Rank.BOSS
-                QuestMobRarity.ELITE -> dev.projects.server.coreloop.ui.CoreMobNameplate.Rank.ELITE
-                QuestMobRarity.NORMAL -> dev.projects.server.coreloop.ui.CoreMobNameplate.Rank.NORMAL
-            }
-            mob.entity.customName = dev.projects.server.coreloop.ui.CoreMobNameplate.render(encounterLevel, mob.definition.name,
-                mob.life.health, mob.life.maximumHealth, rank, mob.definition.archetype.weakness,
-                attackName ?: if (mob.life.phase == QuestMobPhase.RETURNING) "帰還中" else null)
-            return
-        }
+        mob.notice = attackName
+        if (pixelNameplates) { showHud(mob); return }
+        mob.entity.isCustomNameVisible = true
         val weakness = when (mob.definition.archetype.weakness) { "fire" -> "炎"; "ice" -> "氷"; else -> "雷" }
         val base = "T$tier ${mob.definition.name}  ${ceil(mob.life.health).toInt()}/${ceil(mob.life.maximumHealth).toInt()}  弱点:$weakness"
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         val crowd = when {
-            mob.boss && now < mob.brokenUntil -> "  ［崩れた！］"
+            now < mob.brokenUntil -> "  ［崩れ］"
             mob.boss -> "  崩し ${ceil(mob.breakGauge).toInt()}"
             else -> mob.crowd.filterValues { it > now }.keys.joinToString("") { "  ［${it.label}］" }
         }
@@ -1688,14 +1744,55 @@ class QuestEncounterCombat(
             mob.life.phase == QuestMobPhase.RETURNING -> "  帰還中"
             attackName != null -> "  $attackName"
             else -> ""
-        } + crowd
-        val color = when (mob.definition.archetype.rarity) {
-            QuestMobRarity.BOSS -> NamedTextColor.RED
-            QuestMobRarity.ELITE -> NamedTextColor.LIGHT_PURPLE
-            QuestMobRarity.NORMAL -> NamedTextColor.GOLD
+        } + crowd + mob.mods.joinToString("") { "  ${it.label}" }
+        val color = when {
+            mob.definition.archetype.rarity == QuestMobRarity.BOSS -> NamedTextColor.RED
+            mob.grade == MobGrade.COMMON && mob.definition.archetype.rarity == QuestMobRarity.NORMAL -> NamedTextColor.GOLD
+            else -> NamedTextColor.LIGHT_PURPLE
         }
-        mob.entity.customName = Component.text("Lv$encounterLevel " + base + suffix, color)
+        val grade = if (mob.grade == MobGrade.COMMON || mob.boss) "" else "［${mob.grade.label}］"
+        mob.entity.customName = Component.text("Lv$encounterLevel $grade" + base + suffix, color)
     }
+
+    /** Pixel HUD: bosses draw on the boss bar (see [bossHud]), every other mob on its overhead plate. */
+    private fun showHud(mob: Mob) {
+        mob.entity.isCustomNameVisible = false
+        if (mob.boss || !mob.life.isAlive || !isSpawned(mob)) return
+        plates.show(mob.entity, dev.projects.server.coreloop.ui.CoreMobNameplate.render(hud(mob)))
+    }
+
+    private fun hud(mob: Mob): MobHud {
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        val effects = buildList {
+            if (now < mob.brokenUntil) add(MobHudEffect(MobHudEffectKind.CC, "broken"))
+            if (mob.enraged || frenzied(mob)) add(MobHudEffect(MobHudEffectKind.BUFF, "rage"))
+            if (now < mob.exposedUntil) add(MobHudEffect(MobHudEffectKind.DEBUFF, "exposed"))
+            if (now < mob.slowedUntil && mob.slowPercent > 0.0) add(MobHudEffect(MobHudEffectKind.DEBUFF, "slow"))
+            if (now < mob.tauntedUntil) add(MobHudEffect(MobHudEffectKind.DEBUFF, "taunt"))
+            mob.crowd.filterValues { it > now }.keys.sortedBy { it.ordinal }
+                .forEach { add(MobHudEffect(MobHudEffectKind.CC, it.name.lowercase())) }
+        }
+        val breaks = mob.boss || mob.grade.breaks
+        return MobHud(encounterLevel, mob.definition.name, if (mob.boss) BossBars.grade(mob.definition.archetype) else mob.grade,
+            mob.mods, mob.life.health, mob.life.maximumHealth,
+            breakGauge = if (breaks) mob.breakGauge / BREAK_MAX else null,
+            broken = if (now < mob.brokenUntil) ((mob.brokenUntil - now).toDouble() / BREAK_MILLIS).coerceIn(0.0, 1.0) else null,
+            effects = effects,
+            notice = mob.notice ?: if (mob.life.phase == QuestMobPhase.RETURNING) "帰還中" else null,
+            dedicated = if (mob.boss) BossBars.dedicated(mob.definition.archetype) else null)
+    }
+
+    /** What the boss bar shows for the boss (null once there is none). */
+    internal fun bossHud(): MobHud? = mobs.values.firstOrNull { it.boss }?.let(::hud)
+
+    internal fun hudOf(targetId: UUID): MobHud? = mobs[targetId]?.let(::hud)
+    /** Tests: give a spawned mob a grade and MODs without its rolled health (stats stay as spawned). */
+    internal fun forceGrade(targetId: UUID, grade: MobGrade, mods: List<MobMod>) {
+        mobs[targetId]?.let { it.grade = grade; it.mods = mods; updateName(it) }
+    }
+    internal val plateCount: Int get() = plates.count
+
+    private fun frenzied(mob: Mob) = MobMod.FRENZY in mob.mods && mob.life.health <= mob.life.maximumHealth * MobMod.FRENZY_HEALTH
 
     private fun drawWarning(mob: Mob, frame: MobAbilityFrame, impact: Boolean): Boolean {
         // B (2026-10-19): the small attacks show no floor; they are read from the wyrm's wind-up and its sound.
