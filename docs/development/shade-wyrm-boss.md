@@ -73,7 +73,7 @@
 
 ### 紫の光（2026-10-19、26.3の機能）
 
-- **次元と怒りの光**（藍「怒ったら周りが紫に」）：翳の巣だけ専用の次元型 `projects:shade_nest`（`BossArenaFactory.registerDimensions`、サーバー起動時に登録）。普段は普通の夜。専用の時計 `projects:shade_rage` に乗せたタイムラインが、時計0＝普通、60tick＝紫（ブロックの光の色#b34cff・環境光・霧・空の光）を持つ。時計は止めておき、竜が怒った瞬間に `QuestEncounterCombat` が動かす→3秒かけて紫に変わり、60tickで止める（バニラは明るさ0と15の近くでは白へ寄せる）。
+- **怒りの波と紫の光**（藍「怒ったら竜から波動が広がって周りが紫に」）：翳の巣だけ専用の次元型 `projects:shade_nest`（`BossArenaFactory.registerDimensions`、サーバー起動時に登録）。普段は普通の夜。怒りの咆哮（怒りの2.5秒後、立ち上がる所）で `QuestEncounterCombat.tickRageWave` が、竜から闘技場の壁（半径22）まで1.2秒で広がる紫の輪（シェーダー表示2重）と、輪の先頭に光ブロック（13）を出す。同時に専用の時計 `projects:shade_rage` を動かし、その時計に乗せたタイムライン（0tick＝普通、24tick＝紫：ブロックの光の色#b34cff・環境光・霧・空の光）で、波が壁に届くのと同時に紫になりきる。色は闘技場全体で一緒に変わる（場所ごとには変えられない）。
 - **技の光**：`ShadeWyrmLights` が見えない光ブロック（`minecraft:light`）を空気の所にだけ置き、時間で消す。炸裂（真ん中13＋周り11、0.7秒）、飛びかかり・吐息（帯に沿って12、0.9秒）、薙ぎ（弧に12、0.5秒）、だまり（10、だまりが消えるまで）、だまりの破裂（14、0.6秒）、侵食の発症（12）、怒りの角（12、角について動く。折れると消える）。
 - **にじみ**：闘技場にいて竜が生きている間、`PostEffectsPacket` でポストエフェクト `projects:shade_glow` を出す（パックの `post_effect/shade_glow.json` と `shaders/post/shade_glow_*.fsh`、`scripts/shaders/post/` から `build_boss_vfx.py` がコピー）。画面の明るい紫だけを抜き出し、細い・太いぼかしを重ねて画面合成。バニラの上書きではない。
 - プレビュー：`fightclip.py <dump> t0 t1 out.gif before|violet|glow|rage [倍率]`（`lightfx.py` が光の式とにじみをCPUでまねる）。実機未確認。

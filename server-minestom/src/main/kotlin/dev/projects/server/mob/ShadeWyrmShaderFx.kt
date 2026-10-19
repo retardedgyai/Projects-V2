@@ -333,6 +333,14 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         add("smoke", 6, at.add(0.0, 1.8, 0.0), 2, 18, Vec(3.6, 3.6, 1.0), IDENTITY, slide = Vec(0.0, 1.4, 0.0), moveTicks = 16, billboard = true)
     }
 
+    /** The enrage roar: a violet wave growing from the wyrm to [radius] over [ticks], a second one just behind it. */
+    fun rageWave(at: Pos, radius: Double, ticks: Int) {
+        val d = radius * 2.05
+        add("ring", 2, at.add(0.0, .12, 0.0), 0, ticks + 2, Vec(2.0, 1.0, 2.0), IDENTITY, grow = Vec(d, 1.0, d), moveTicks = ticks) { .25 + .5 * it }
+        add("ring", 2, at.add(0.0, .1, 0.0), 3, ticks, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(d * .9, 1.0, d * .9), moveTicks = ticks - 1) { .5 + .4 * it }
+        add("puff", 4, at.add(0.0, 2.5, 0.0), 0, 10, Vec(3.0, 3.0, 1.0), IDENTITY, grow = Vec(7.0, 7.0, 1.0), moveTicks = 8, billboard = true)
+    }
+
     /** The player's erosion erupted: a violet burst around them. */
     fun erupt(at: Pos) {
         add("puff", 4, at.add(0.0, 1.0, 0.0), 0, 12, Vec(2.6, 2.6, 1.0), IDENTITY, grow = Vec(4.0, 4.0, 1.0), moveTicks = 10, billboard = true)

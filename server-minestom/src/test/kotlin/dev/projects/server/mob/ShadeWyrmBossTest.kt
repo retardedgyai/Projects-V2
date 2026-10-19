@@ -461,6 +461,7 @@ class ShadeWyrmBossTest {
                 if (tick == 440) combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .55)
                 if (t >= 27.5 && tick % 10 == 0) combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .015)   // it fights back
                 now += 50; combat.tick(now); boss.tick(now); MinecraftServer.getSchedulerManager().processTick()
+                arena.instance.clock(BossArenaFactory.rageClock()).run { if (!paused()) time(time() + 1) }   // the instance tick's job
                 val (clip, since) = combat.shownClip(boss.uuid) ?: ("idle" to now)
                 val shader = combat.shaderViews().joinToString(",") { v ->
                     "{\"sprite\":\"${v.sprite}\",\"kind\":${v.kind},\"progress\":${v.progress},\"at\":[${v.at.x() - c.x()},${v.at.y() - c.y()},${v.at.z() - c.z()}]," +
@@ -471,7 +472,7 @@ class ShadeWyrmBossTest {
                 lines += "{\"t\":${"%.2f".format(t + .05)},\"boss\":[${boss.position.x() - c.x()},${boss.position.y() - c.y()},${boss.position.z() - c.z()}]," +
                     "\"yaw\":${combat.modelFacing(boss.uuid) ?: 0f},\"clip\":\"$clip\",\"clipT\":${(now - since) / 1000.0}," +
                     "\"player\":[${p.x() - c.x()},${p.z() - c.z()}],\"enraged\":${combat.isEnraged(boss.uuid)}," +
-                    "\"broken\":[${combat.partsBroken(boss.uuid).joinToString(",")}],\"lights\":[${combat.lightsOn().entries.joinToString(",") { (b, l) -> "[${b.x() - c.blockX()},${b.y() - c.blockY()},${b.z() - c.blockZ()},$l]" }}],\"erosion\":${combat.erosionOf(player.uuid)},\"shader\":[$shader]}"
+                    "\"rage\":${combat.rageShown()},\"broken\":[${combat.partsBroken(boss.uuid).joinToString(",")}],\"lights\":[${combat.lightsOn().entries.joinToString(",") { (b, l) -> "[${b.x() - c.blockX()},${b.y() - c.blockY()},${b.z() - c.blockZ()},$l]" }}],\"erosion\":${combat.erosionOf(player.uuid)},\"shader\":[$shader]}"
             }
         } finally {
             combat.dispose(); player.remove(); arena.dispose()

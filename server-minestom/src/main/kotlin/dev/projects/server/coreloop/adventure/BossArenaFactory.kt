@@ -46,12 +46,12 @@ object BossArenaFactory {
     /**
      * 翳の巣 lives in its own dimension type whose light turns violet when the wyrm enrages (26.3 environment
      * attributes): its timeline [SHADE_RAGE] runs on a clock of its own that stays at 0 (the ordinary night) until
-     * QuestEncounterCombat starts it, then blends block light, ambient light, fog and sky light to violet over
-     * [RAGE_FADE_TICKS].
+     * the wyrm's enrage roar sends its wave out (QuestEncounterCombat), then blends block light, ambient light, fog
+     * and sky light to violet over [RAGE_FADE_TICKS], the time the wave takes to reach the wall.
      */
     val SHADE_NEST: Key = Key.key("projects", "shade_nest")
     val SHADE_RAGE: Key = Key.key("projects", "shade_rage")
-    const val RAGE_FADE_TICKS = 60
+    const val RAGE_FADE_TICKS = 24
 
     /**
      * Registers the arena dimensions. Dimension types reach a client only when it joins, and an instance gets only
@@ -64,7 +64,7 @@ object BossArenaFactory {
         registry.getKey(SHADE_NEST)?.let { return it }
         val clock = MinecraftServer.getWorldClockRegistry().register(SHADE_RAGE, WorldClock.create())
         fun <A> track(modifier: EnvironmentAttribute.Modifier<RGBLike, A>, calm: A, rage: A) =
-            Timeline.Track(modifier, listOf(Timeline.Keyframe(0, calm), Timeline.Keyframe(RAGE_FADE_TICKS, rage)), EaseFunction.IN_OUT_SINE)
+            Timeline.Track(modifier, listOf(Timeline.Keyframe(0, calm), Timeline.Keyframe(RAGE_FADE_TICKS, rage)), EaseFunction.LINEAR)
         val override = EnvironmentAttribute.Modifier.Override(EnvironmentAttribute.BLOCK_LIGHT_TINT.valueCodec())
         @Suppress("UNCHECKED_CAST")                                       // composes with the day timeline's night
         val multiply = EnvironmentAttribute.Modifier.RGB_OPERATORS.getValue(EnvironmentAttribute.Modifier.Operator.MULTIPLY) as EnvironmentAttribute.Modifier<RGBLike, RGBLike>

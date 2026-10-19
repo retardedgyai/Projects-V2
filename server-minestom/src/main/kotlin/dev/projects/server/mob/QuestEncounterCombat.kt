@@ -145,6 +145,9 @@ class QuestEncounterCombat(
         /** Enraged parts (gimmicks): damage dealt near the head and on each side, and what has broken. 0 = its right fan. */
         var hornDamage = 0.0
         var hornsBroken = false
+        /** The enrage roar's wave (see [tickRageWave]): when it left the wyrm and from where; 0 = not yet. */
+        var waveAt = 0L
+        var waveFrom: Pos? = null
         var sloppyUntil = 0L
         val fanDamage = DoubleArray(2)
         val fanTorn = BooleanArray(2)
@@ -198,6 +201,8 @@ class QuestEncounterCombat(
     internal fun modelFacing(targetId: UUID): Float? = mobs[targetId]?.let { if (it.maneuver != null) it.faceYaw else it.entity.position.yaw() }
     internal fun shaderViews() = shaderFx.views()
     internal fun lightsOn() = lights.snapshot()
+    /** How far the arena's light has turned violet (0..1), for the preview dump. */
+    internal fun rageShown(): Double = rageClock?.let { (it.time().toDouble() / dev.projects.server.coreloop.adventure.BossArenaFactory.RAGE_FADE_TICKS).coerceIn(0.0, 1.0) } ?: 0.0
 
     init {
         require(tier in 1..4)
@@ -494,6 +499,7 @@ class QuestEncounterCombat(
             if (!mob.life.isAlive || !isSpawned(mob)) continue
             tickMob(mob, players, nowMillis)
             mob.model?.tick(mob.entity.position, nowMillis, mob.life.phase == QuestMobPhase.ATTACKING, mob.life.health / mob.life.maximumHealth)
+            if (mob.view != null) tickRageWave(mob, nowMillis)
             if (mob.view != null) lights.hold("horns-${mob.entity.uuid}",
                 if (mob.enraged && !mob.hornsBroken && nowMillis >= mob.enrageHoldUntil - 2500) mob.view?.point("skull", ShadeWyrmVfx.CROWN) else null, 12)
             mob.view?.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, nowMillis,
@@ -762,6 +768,31 @@ class QuestEncounterCombat(
         return true
     }
 
+    /**
+     * The enrage roar (2.5 s into the hold, when the model rears up) sends a violet wave from the wyrm to the arena
+     * wall: a ring display grows to [RAGE_WAVE_RADIUS] over [RAGE_WAVE_MILLIS], light blocks flash along its front,
+     * and the arena's rage clock starts so the light turns violet as the wave crosses it (BossArenaFactory.SHADE_RAGE).
+     */
+    private fun tickRageWave(mob: Mob, now: Long) {
+        if (!mob.enraged) return
+        if (mob.waveAt == 0L) {
+            if (now < mob.enrageHoldUntil - 2500) return
+            mob.waveAt = now
+            mob.waveFrom = mob.entity.position
+            shaderFx.rageWave(mob.entity.position, RAGE_WAVE_RADIUS, (RAGE_WAVE_MILLIS / 50).toInt())
+            rageClock?.resume()
+        }
+        val from = mob.waveFrom ?: return
+        val age = now - mob.waveAt
+        if (age > RAGE_WAVE_MILLIS || (age / 50) % 2 != 0L) return
+        val r = RAGE_WAVE_RADIUS * age / RAGE_WAVE_MILLIS
+        val n = maxOf(4, (2 * Math.PI * r / 4.0).toInt())
+        for (k in 0 until n) {
+            val a = k * 2 * Math.PI / n
+            lights.flash(from.add(kotlin.math.cos(a) * r, 0.0, kotlin.math.sin(a) * r), 13, 150)
+        }
+    }
+
     /** One-way rage at the definition's health ratio: a held roar (no attacks), then faster with new abilities. */
     private fun tickEnrage(mob: Mob, now: Long): Boolean {
         val threshold = mob.definition.enrageHealthRatio
@@ -775,7 +806,6 @@ class QuestEncounterCombat(
             castingPose(mob, false)
             stopNavigation(mob)
             mob.view?.enrage(now)
-            if (mob.view != null) rageClock?.resume()
             mob.warningRetryAt = mob.enrageHoldUntil
             updateName(mob, "怒り・翼を広げた")
             sound(mob.entity.position, "minecraft:entity.ravager.roar", 1.2f, 0.6f)
@@ -1166,6 +1196,9 @@ class QuestEncounterCombat(
     companion object {
         /** A strafe walks at this share of the walking speed, the pace its clip is timed to (1.6 of 2.6 blocks/s). */
         const val STRAFE_SPEED = .62
+        /** The enrage wave reaches the arena wall (radius 22) as the light finishes turning violet. */
+        const val RAGE_WAVE_RADIUS = 22.0
+        val RAGE_WAVE_MILLIS = dev.projects.server.coreloop.adventure.BossArenaFactory.RAGE_FADE_TICKS * 50L
         val GLOW: net.kyori.adventure.key.Key = net.kyori.adventure.key.Key.key("projects", "shade_glow")
         /** Gimmicks: horn break (12 % of max health from near the head), fan tear (10 % per side). */
         const val HEAD_REACH = 6.0
