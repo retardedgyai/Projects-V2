@@ -515,7 +515,11 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         })
         // Test-only: the Blockbench boss in its own arena via the skill lab (no reward, no save).
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("bosstest").apply {
-            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR, "shade") } }
+            // /bosstest [tier]: without a tier, the tier of the player's level (review 2026-10-19: always tier 1 before).
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR, "shade",
+                ((account(it)?.journey?.level ?: 1) - 1) / 10 + 1) } }
+            val tierArg = net.minestom.server.command.builder.arguments.ArgumentType.Integer("tier").between(1, 4)
+            addSyntax({ sender, context -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR, "shade", context.get(tierArg)) } }, tierArg)
             // /bosstest rage: drops the boss just under its enrage ratio, to watch the enrage without the fight.
             addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
                 player.sendMessage(Component.text(if (combatLab.enrageBoss(player)) "ボスを怒らせた（体力を怒りの境目の少し下へ）。" else "/bosstest のボス戦の中で使ってください。", NamedTextColor.GRAY))
@@ -536,7 +540,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (previous != null && player.aliveTicks - previous < 2) return true
         if (combatLab.contains(player)) {
             if (action == "journal") { combatLab.menu(player); return true }
-            if (action == "potion") { combatLab.actor(player)?.refillTraining(); return true }
+            if (action == "potion") { combatLab.potion(player); return true }
             if (action != "weapon" && action?.startsWith("skill:") != true) return true
         }
         when {
