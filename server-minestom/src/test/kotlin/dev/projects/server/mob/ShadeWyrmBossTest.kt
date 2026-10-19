@@ -186,8 +186,9 @@ class ShadeWyrmBossTest {
         try {
             val boss = combat.entities().single()
             var now = 1_000L
-            repeat(400) { now += 50; combat.tick(now); MinecraftServer.getSchedulerManager().processTick() }
-            assertTrue(combat.maneuverCount(boss.uuid) > 0, "no maneuver in 20 s")
+            // Openings after each move (2026-10-19) leave fewer moves, so fewer chances to move after one: watch 40 s.
+            repeat(800) { now += 50; combat.tick(now); MinecraftServer.getSchedulerManager().processTick() }
+            assertTrue(combat.maneuverCount(boss.uuid) > 0, "no maneuver in 40 s")
         } finally {
             combat.dispose(); player.remove(); arena.dispose()
         }
@@ -486,20 +487,23 @@ class ShadeWyrmBossTest {
             val boss = combat.entities().single()
             var now = 1_000L
             combat.tick(now)
-            fun biteFrom(distance: Double): Long {
+            fun moveFrom(id: String, distance: Double): Long {
+                now += 5_000; combat.tick(now)
+                // Set the scene after the free AI's tick (it may have flown off), then start the bite from it.
                 boss.teleport(arena.bossSpawn).join()
                 player.teleport(arena.bossSpawn.add(0.0, 0.0, -distance)).join()
-                now += 5_000; combat.tick(now); now += 2_000; combat.tick(now)    // whatever it was doing has ended
-                assertTrue(combat.startAbilityForTest(boss.uuid, "shade-bite", now))
+                assertTrue(combat.startAbilityForTest(boss.uuid, id, now))
                 var guard = 0
                 while (combat.busy(boss.uuid) && guard++ < 200) { now += 50; combat.tick(now) }
                 return combat.openFor(boss.uuid)
             }
             val open = QuestEncounterCombat.OPENING.getValue("shade-bite")
-            assertEquals(open, biteFrom(3.0), "a bite that lands leaves its plain opening")
-            assertEquals(open + QuestEncounterCombat.WHIFF_MILLIS, biteFrom(9.8), "a bite that reaches nobody whiffs")
+            assertEquals(open, moveFrom("shade-bite", 3.0), "a bite that lands leaves its plain opening")
+            // The bite lunges ~10 blocks; the sweep (7 blocks, no lunge) shows a whiff on someone close but out of reach.
+            assertEquals(QuestEncounterCombat.OPENING.getValue("shade-sweep") + QuestEncounterCombat.WHIFF_MILLIS, moveFrom("shade-sweep", 9.5),
+                "a move that reaches nobody near it whiffs")
             dodging = true
-            assertEquals(open + QuestEncounterCombat.WHIFF_MILLIS, biteFrom(3.0), "a bite that only met a dodge whiffs too")
+            assertEquals(open + QuestEncounterCombat.WHIFF_MILLIS, moveFrom("shade-bite", 3.0), "a bite that only met a dodge whiffs too")
             dodging = false
             val before = boss.position
             now += 300; combat.tick(now)
@@ -605,6 +609,11 @@ class ShadeWyrmBossTest {
             guard = 0
             while (combat.gimmickBars()?.first != QuestEncounterCombat.SHELL && guard++ < 900) { now += 50; combat.tick(now) }
             assertEquals(QuestEncounterCombat.SHELL, combat.gimmickBars()?.first)
+            // It may have flown or leapt during the enrage: strike from its side, in reach (no head multiplier).
+            run {
+                val yaw = Math.toRadians(boss.position.yaw().toDouble())
+                player.teleport(boss.position.add(Vec(-kotlin.math.cos(yaw), 0.0, -kotlin.math.sin(yaw)).mul(4.0))).join()
+            }
             val before = combat.healthOf(boss.uuid)
             assertNotNull(combat.applyDamageAmount(boss.uuid, player, max * .02))
             assertEquals(before, combat.healthOf(boss.uuid), "the shell takes the hit")
