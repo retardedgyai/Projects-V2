@@ -380,7 +380,7 @@ ABILITIES = {"shade-sweep": (1.1, 2.0), "shade-pounce": (1.4, 2.6), "shade-dust"
              "shade-bite": (1.6, 2.4), "shade-tailspin": (1.25, 2.4), "shade-horn": (1.0, 2.0),
              "shade-tailslap": (.7, 1.5), "shade-orb": (1.2, 2.2),
              # MMO gimmicks (2026-10-19): the cast to interrupt (second form on), the shell to break (enraged)
-             "shade-channel": (6.0, 7.2), "shade-shell": (12.0, 13.2),
+             "shade-channel": (6.0, 7.2), "shade-shell": (9.0, 10.2),
              # 2026-10-19 (A: attacks move the body): the charge across the arena
              "shade-charge": (1.4, 3.0)}
 PHASE_ONE = ("shade-sweep", "shade-pounce", "shade-dust", "shade-pulse", "shade-turnsweep", "shade-dive",
@@ -676,13 +676,14 @@ def bite_pose(sk, rest_feet, theta, t, enraged):
     p = {}
     hits = (.7, 1.15, 1.6)
     lunge = sum(bump(t, h - .18, h, h + .2) * (1.4 if k == 2 else 1.0) for k, h in enumerate(hits))
-    side = K(t, [(0, 0), (.5, 0), (.7, 14), (.95, 6), (1.15, -14), (1.4, -4), (1.6, 0), (2.4, 0)])
+    # the tell: the head weaves side to side, jaws parting, before the first snap (the horn instead drops to the ground)
+    side = K(t, [(0, 0), (.15, 12), (.32, -12), (.5, 6), (.7, 14), (.95, 6), (1.15, -14), (1.4, -4), (1.6, 0), (2.4, 0)])
     body(sk, p, (K(t, [(0, 0), (.5, 6), (1.6, 8), (2.0, 2), (2.4, 0)]) + 3 * lunge, .5 * side, 0),
          (0, K(t, [(0, 0), (.5, -4), (1.8, -4), (2.4, 0)]), 10 * lunge + K(t, [(0, 0), (.5, -4), (.7, 4), (1.6, 12), (2.0, 6), (2.4, 0)])))
     add(p, "neck", (K(t, [(0, 0), (.5, 12), (1.8, 10), (2.4, 0)]) - 8 * lunge, side, 0))
     add(p, "skull", (-6 * lunge, .6 * side, -.3 * side))
     jaw = sum(bump(t, h - .22, h - .06, h + .02) for h in hits)
-    add(p, "jaw", (36 * jaw, 0, 0))
+    add(p, "jaw", (36 * jaw + 18 * bump(t, .05, .3, .55), 0, 0))
     arm = "cloak" if enraged else "wing"
     for sd, sg in (("l", 1), ("r", -1)):
         add(p, f"{arm}_{sd}", (0, -6 * lunge * sg, (.6 if enraged else 1) * (K(t, [(0, 0), (.5, 14), (1.8, 14), (2.4, 0)]) + 6 * lunge) * sg))
@@ -724,8 +725,9 @@ def horn_pose(sk, rest_feet, theta, t, enraged):
     """角の突き上げ (2026-10-19): drops the head to the ground, antennae/horns forward, the hind legs bunching; heaves
     head and shoulders up and forward in one thrust (hit at 1.0 s), rearing a little after it; comes back down."""
     p = {}
-    body(sk, p, (K(t, [(0, 0), (.5, 10), (.85, 14), (1.0, -10), (1.2, -16), (1.5, -6), (2.0, 0)]), 0, 0),
-         (0, K(t, [(0, 0), (.5, -6), (.85, -8), (1.0, 4), (1.2, 8), (1.6, 0)]), K(t, [(0, 0), (.85, -4), (1.0, 10), (1.2, 12), (1.7, 2), (2.0, 0)])))
+    # the tell: a deep crouch, rump high and hind legs bunched, the crown scraping the ground (no jaw, no weave)
+    body(sk, p, (K(t, [(0, 0), (.4, 16), (.85, 20), (1.0, -10), (1.2, -16), (1.5, -6), (2.0, 0)]), 0, 0),
+         (0, K(t, [(0, 0), (.4, -12), (.85, -14), (1.0, 4), (1.2, 8), (1.6, 0)]), K(t, [(0, 0), (.85, -6), (1.0, 10), (1.2, 12), (1.7, 2), (2.0, 0)])))
     add(p, "neck", (K(t, [(0, 0), (.5, 26), (.85, 32), (1.0, -10), (1.2, -24), (1.6, -6), (2.0, 0)]), 0, 0))
     add(p, "skull", (K(t, [(0, 0), (.5, 20), (.85, 24), (1.0, -14), (1.2, -20), (1.7, 0)]), 0, 0))
     add(p, "jaw", (K(t, [(0, 0), (1.0, 4), (1.2, 18), (1.6, 0)]), 0, 0))
@@ -867,15 +869,15 @@ def channel_pose(sk, rest_feet, theta, t, enraged):
 
 
 def shell_pose(sk, rest_feet, theta, t, enraged):
-    """鱗粉の殻 (2026-10-19, MMO gimmick: break the shell in time), enraged, 13.2 s, burst at 12.0 s: curls up tight,
+    """鱗粉の殻 (2026-10-19, MMO gimmick: break the shell in time), enraged, 10.2 s, burst at 9.0 s (review 2026-10-19: 12 s was too long): curls up tight,
     head tucked under and the tail drawn round to it, and folds the fans in over itself like a cocoon (they draw in to
     0.6 size and wrap round the front; the dust hardens into a shell round it, a server display); breathes slowly inside,
-    trembling more as the shell nears bursting; if it holds to 12.0 s, the fans fly open and it rears with a roar."""
+    trembling more as the shell nears bursting; if it holds to 9.0 s, the fans fly open and it rears with a roar."""
     p = {}
-    wrap = smooth(t, .2, 1.2) * (1 - smooth(t, 11.75, 12.0))
+    wrap = smooth(t, .2, 1.2) * (1 - smooth(t, 8.75, 9.0))
     breathe = math.sin(t * 2 * math.pi * .45) * wrap
-    trem = math.sin(t * 2 * math.pi * 10) * smooth(t, 8.5, 10.5) * (1 - smooth(t, 11.7, 11.9))
-    burst = bump(t, 11.85, 12.05, 12.9)
+    trem = math.sin(t * 2 * math.pi * 10) * smooth(t, 5.8, 7.6) * (1 - smooth(t, 8.7, 8.9))
+    burst = bump(t, 8.85, 9.05, 9.9)
     enraged_stance(sk, p, theta * (1 - wrap))
     body(sk, p, (10 * wrap - 30 * burst, 6 * wrap, .8 * trem), (0, -14 * wrap + 2 * breathe + 10 * burst, -4 * wrap))
     feet = {k: v + np.array([0, 0, (4 if k.startswith("h") else -2) * wrap]) for k, v in rest_feet.items()}

@@ -42,7 +42,10 @@ internal class CoreCombatLab(
     private val seed: () -> Long = System::nanoTime,
 ) {
     /** [bossId] != null: a dedicated boss arena (/bosstest) instead of a random map. */
-    private class Entry(val player: Player, val loadout: CoreLabLoadout, val bossId: String? = null) {
+    private class Entry(val player: Player, val loadout: CoreLabLoadout, val bossId: String? = null, val tier: Int = 1) {
+        /** The boss lab's potion works like the real one (review 2026-10-19): [LAB_POTIONS] charges, [LAB_POTION_COOLDOWN_MILLIS] apart. */
+        var potions = LAB_POTIONS
+        var potionReadyAt = 0L
         @Volatile var runtime: VerdantRoadQuestRuntime? = null
         @Volatile var arena: BossArena? = null
         val instance get() = arena?.instance ?: runtime?.instance
@@ -81,11 +84,12 @@ internal class CoreCombatLab(
     }
 
     /** [bossId]: dev-only /bosstest. The boss fights back at real strength; nothing is rewarded or saved. */
-    fun enter(player: Player, job: CoreClass, bossId: String? = null) {
+    /** [tier]: the boss's tier and the test character's gear tier (1-4), so difficulty can be measured at that tier. */
+    fun enter(player: Player, job: CoreClass, bossId: String? = null, tier: Int = 1) {
         if (contains(player)) { menu(player); return }
         val command = if (bossId != null) "/bosstest" else "/skilltest"
         if (!eligible(player)) { player.sendMessage(CoreLoopItems.text("港へ帰還してから $command を実行してください。")); return }
-        val entry = Entry(player, CoreLabLoadout(player.uuid, job), bossId)
+        val entry = Entry(player, CoreLabLoadout(player.uuid, job), bossId, tier.coerceIn(1, 4))
         if (bossId != null) { entry.loadout.free = false; entry.loadout.retaliation = true }
         if (entries.putIfAbsent(player.uuid, entry) != null) return
         player.closeInventory(); resetOriginal(player)
@@ -93,7 +97,7 @@ internal class CoreCombatLab(
             else "テスト専用のランダムマップを生成しています。報酬・成長・装備の保存はありません。"))
         CompletableFuture.supplyAsync({
             if (entries[player.uuid] !== entry || entry.returning) throw java.util.concurrent.CancellationException("Lab entry cancelled")
-            if (bossId != null) entry.arena = BossArenaFactory.create(bossId, 1)
+            if (bossId != null) entry.arena = BossArenaFactory.create(bossId, entry.tier)
             else entry.runtime = VerdantRoadQuestRuntime.prepare(seed()).join()
         }, executor)
             .whenComplete { _, error -> nextTick {
@@ -106,10 +110,16 @@ internal class CoreCombatLab(
                     player.sendMessage(CoreLoopItems.text("テスト用マップを生成できませんでした。保存データは変更していません。"))
                     return@nextTick
                 }
-                entry.actor = CorePlayerCombat(player, { 1 }, { 1 }, { if (entry.returning) null else entry.combat },
+                entry.actor = CorePlayerCombat(player, { entry.tier }, { entry.tier }, { if (entry.returning) null else entry.combat },
                     journey = { entry.loadout.journey }, weaponBase = { entry.loadout.weaponBase }) {
                     nextTick { if (entries[player.uuid] === entry && !entry.returning) {
                         entry.actor?.reset(); player.teleport(spawn)
+                        // A lost boss fight starts over: the boss comes back whole too, the potions refill.
+                        if (entry.bossId != null) {
+                            runCatching { spawnTargets(entry) }
+                            entry.potions = LAB_POTIONS; entry.potionReadyAt = 0L
+                            player.sendMessage(CoreLoopItems.text("倒れた。ボスも最初からやり直し（ポーション${LAB_POTIONS}個）。"))
+                        }
                     } }
                 }
                 entry.transferring = true
@@ -128,7 +138,7 @@ internal class CoreCombatLab(
                         entry.actor?.reset(); entry.actor?.refillTraining()
                         refresh(player)
                         player.sendMessage(CoreLoopItems.text(if (bossId != null)
-                            "${entry.arena?.displayName}に到着。${entry.combat?.bossName()}が待っています。手帳 [9] で職業・技・再配置、帰還は /hub。"
+                            "${entry.arena?.displayName}に到着（Tier${entry.tier}）。${entry.combat?.bossName()}が待っています。ポーションは${LAB_POTIONS}個・再使用10秒。手帳 [9] で職業・技・再配置、帰還は /hub。"
                             else "試験場に到着。手帳 [9] または /skilltest で職業・技・敵を変更できます。帰還は /hub。"))
                         println("CORE_SKILL_LAB_ENTERED player=${player.username} " +
                             (entry.runtime?.let { "seed=${it.plan.seed}" } ?: "boss=$bossId"))
@@ -141,12 +151,13 @@ internal class CoreCombatLab(
 
     private fun spawnTargets(entry: Entry) {
         entry.arena?.let { arena ->
-            val next = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            val next = QuestEncounterCombat(arena.instance, entry.tier, emptyList(), arena.bossSpawn,
                 onMobDefeated = { _, boss -> if (boss) nextTick {
                     entry.player.sendMessage(CoreLoopItems.text("${arena.displayName}の主を討伐（テストのため報酬なし）。手帳 [9] で再配置できます。"))
                 } },
                 damagePlayer = { _, damage -> if (!entry.loadout.free) entry.actor?.hurt(damage) },
                 typedDamagePlayer = { _, damage, type -> if (!entry.loadout.free) entry.actor?.hurt(damage, type) },
+                evading = { entry.actor?.evading == true },
                 canTarget = { it === entry.player && !entry.returning },
                 explicitBossArchetype = arena.archetype)
             entry.actor?.resetActions(); entry.combat?.dispose(); entry.combat = next
@@ -167,6 +178,7 @@ internal class CoreCombatLab(
             onMobDefeated = { _, _ -> }, // No loot, XP, account callback or completion transition.
             damagePlayer = { _, damage -> if (!entry.loadout.free) entry.actor?.hurt(damage) },
             typedDamagePlayer = { _, damage, type -> if (!entry.loadout.free) entry.actor?.hurt(damage, type) },
+            evading = { entry.actor?.evading == true },
             // This predicate also authorizes incoming player hits. Pausing AI must not disable damage.
             canTarget = { it === entry.player && !entry.returning },
             spawnBoss = false, healthMultiplier = 20.0)
@@ -190,10 +202,27 @@ internal class CoreCombatLab(
         player.inventory.setItemStack(8, ItemStack.of(Material.NETHER_STAR).withCustomName(CoreLoopItems.text("スキル試験場の設定"))
             .withLore(CoreLoopItems.text("右クリック：職業・技・試験条件・敵の再配置"))
             .withTag(CoreLoopItems.actionTag, "journal"))
-        player.inventory.setItemStack(6, ItemStack.of(Material.POTION).withCustomName(CoreLoopItems.text("テスト用の全補充"))
+        val bossLab = entry.bossId != null && !entry.loadout.free
+        player.inventory.setItemStack(6, if (bossLab) ItemStack.of(Material.POTION).withCustomName(CoreLoopItems.text("回復ポーション（残り${entry.potions}）"))
+            .withLore(CoreLoopItems.text("右クリック：最大HPの45%を回復 / 再使用10秒（本番と同じ）"))
+            .withTag(CoreLoopItems.actionTag, "potion")
+            else ItemStack.of(Material.POTION).withCustomName(CoreLoopItems.text("テスト用の全補充"))
             .withLore(CoreLoopItems.text("右クリック：HP・マナ・固有ゲージ・クールダウンを補充"))
             .withTag(CoreLoopItems.actionTag, "potion"))
         return true
+    }
+
+    /** The potion item: a full refill in the skill lab or free mode, the real potion in a boss fight at normal rules. */
+    fun potion(player: Player) {
+        val entry = entries[player.uuid]?.takeIf { it.player === player && !it.returning } ?: return
+        val actor = entry.actor ?: return
+        if (entry.bossId == null || entry.loadout.free) { actor.refillTraining(); return }
+        val now = System.currentTimeMillis()
+        when {
+            entry.potions <= 0 -> player.sendMessage(CoreLoopItems.text("ポーションがもうない。"))
+            now < entry.potionReadyAt -> player.sendMessage(CoreLoopItems.text("ポーションはあと${(entry.potionReadyAt - now + 999) / 1000}秒で使える。"))
+            else -> { actor.healPotion(); entry.potions--; entry.potionReadyAt = now + LAB_POTION_COOLDOWN_MILLIS; refresh(player) }
+        }
     }
 
     fun click(event: InventoryPreClickEvent): Boolean {
@@ -236,8 +265,8 @@ internal class CoreCombatLab(
         button(37, Material.REDSTONE, "条件：${if (state.free) "制限なし" else "通常条件"}", "制限なし＝毎tick補充・無敵。通常条件＝実際の資源と待ち時間") {
             state.free = !state.free; changed()
         }
-        if (entry.bossId != null) button(38, Material.ARMOR_STAND, "ボスを再配置", "HP満タンで初期位置に戻す。報酬なし") {
-            spawnTargets(entry); if (state.free) actor.refillTraining(); player.closeInventory()
+        if (entry.bossId != null) button(38, Material.ARMOR_STAND, "ボスを再配置", "HP満タンで初期位置に戻す。ポーションも戻す。報酬なし") {
+            spawnTargets(entry); entry.potions = LAB_POTIONS; entry.potionReadyAt = 0L; refresh(player); if (state.free) actor.refillTraining(); player.closeInventory()
         } else button(38, Material.ARMOR_STAND, "目の前に敵を再配置", "HP20倍の敵3体。古い敵と攻撃状態は消去。報酬なし") {
             try { spawnTargets(entry); if (state.free) actor.refillTraining(); player.closeInventory() }
             catch (failure: Exception) { player.sendMessage(CoreLoopItems.text("敵を置ける広さがありません。道など広い場所で再試行してください。")) }
@@ -293,3 +322,6 @@ internal class CoreCombatLab(
     fun close() { entries.values.toList().forEach { disconnect(it.player) } }
     private fun nextTick(action: () -> Unit) { MinecraftServer.getSchedulerManager().scheduleNextTick { action() } }
 }
+
+private const val LAB_POTIONS = 3
+private const val LAB_POTION_COOLDOWN_MILLIS = 10_000L

@@ -139,6 +139,9 @@ internal class BossModelView(
     internal val currentLoop: String get() = loop
     /** The enraged parts (horns, fans) are out / the phase-one ones (wings) are folded away; hit spheres follow. */
     internal var revealed = false; private set
+    private var revealedAt = 0L
+    /** The fans have grown out (the enrage clip grows them from 2.15 s): only then do they take hits. */
+    internal val fansOut: Boolean get() = revealed && lastNow - revealedAt >= FANS_GROWN_MILLIS
     internal var folded = false; private set
 
     fun show(player: Player) { if (!disposed) model.addViewer(player) }
@@ -260,6 +263,7 @@ internal class BossModelView(
      * later is never mounted and stays where it was spawned. Showing the model again mounts every bone.
      */
     private fun reveal() {
+        if (!revealed) revealedAt = lastNow
         revealed = true
         under(hiddenUntilEnraged).forEach { it.setVisible(true) }
         for (viewer in model.viewers.toList()) { model.removeViewer(viewer); model.addViewer(viewer) }
@@ -302,6 +306,7 @@ internal class BossModelView(
         private const val ENRAGE_REVEAL_MILLIS = 300L
         private const val ENRAGE_FOLD_MILLIS = 2500L
         private const val GAIT_SETTLE_MILLIS = 200L
+        private const val FANS_GROWN_MILLIS = 1850L
         /** shade_wyrm `awaken`: the roar peaks at 1.3 s; the glow comes in with it. */
         private const val AWAKEN_GLOW_MILLIS = 1300L
         fun available(modelId: String) = modelId in BossModelLibrary.models()

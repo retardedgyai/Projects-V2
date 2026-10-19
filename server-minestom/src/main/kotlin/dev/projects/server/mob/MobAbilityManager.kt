@@ -206,7 +206,7 @@ class MobAbilityManager(
      * this health, cooldown and range ignored (the encounter chose the moment: a combo always follows through).
      */
     fun tryStart(nowMillis: Long, origin: Pos, target: Point, healthRatio: Double = 1.0, plainOnly: Boolean = false,
-                 only: String? = null): MobAbilityEvent.Started? {
+                 only: String? = null, facing: Vec? = null, weigh: ((MobAbility) -> Double)? = null): MobAbilityEvent.Started? {
         if (current != null || nowMillis < nextSelectionAt) return null
         if (abs(origin.y() - target.y()) > 2.2) return null
         val distance = horizontalLength(target.sub(origin))
@@ -217,18 +217,22 @@ class MobAbilityManager(
         }
         if (available.isEmpty()) return null
         val choices = available.filter { it.id != previousAbilityId }.ifEmpty { available }
-        var roll = random.nextInt(choices.sumOf { it.weight })
-        val selected = choices.first { roll -= it.weight; roll < 0 }
+        // [weigh]: the encounter's read of the situation multiplies each move's weight (a move that would reach where
+        // the player is going counts more); without it, the plain weights.
+        val weights = choices.map { it.weight * (weigh?.invoke(it) ?: 1.0).coerceAtLeast(0.0) }
+        var roll = random.nextDouble() * weights.sum().coerceAtLeast(1e-9)
+        val selected = choices.indices.firstOrNull { roll -= weights[it]; roll < 0 }?.let { choices[it] } ?: choices.last()
         val frame = MobAbilityFrame(
             selected, if (selected.anchor == MobAbilityAnchor.TARGET) Pos(target) else origin,
-            normalizeHorizontal(target.sub(origin)), MobAbilityPhase.TRACKING, nowMillis, origin,
+            facing?.let(::normalizeHorizontal) ?: normalizeHorizontal(target.sub(origin)), MobAbilityPhase.TRACKING, nowMillis, origin,
         )
         current = frame
         previousAbilityId = selected.id
         return MobAbilityEvent.Started(frame)
     }
 
-    fun tick(nowMillis: Long, target: Point?): List<MobAbilityEvent> {
+    /** [maxTurn]: the most (radians) the aim may turn toward the target this tick; null = it snaps to the target. */
+    fun tick(nowMillis: Long, target: Point?, maxTurn: Double? = null): List<MobAbilityEvent> {
         var frame = current ?: return emptyList()
         val events = mutableListOf<MobAbilityEvent>()
         val elapsed = nowMillis - frame.startedAt
@@ -238,9 +242,10 @@ class MobAbilityManager(
                 frame = frame.copy(phase = MobAbilityPhase.LOCKED)
                 events += MobAbilityEvent.Locked(frame)
             } else if (target != null) {
+                val want = normalizeHorizontal(target.sub(frame.casterOrigin))
                 frame = frame.copy(
                     origin = if (frame.ability.anchor == MobAbilityAnchor.TARGET) Pos(target) else frame.origin,
-                    facing = normalizeHorizontal(target.sub(frame.casterOrigin)),
+                    facing = if (maxTurn == null) want else turnToward(frame.facing, want, maxTurn),
                 )
             }
         }
@@ -277,6 +282,16 @@ class MobAbilityManager(
 }
 
 internal fun horizontal(point: Point): Vec = Vec(point.x(), 0.0, point.z())
+
+/** [from] turned toward [to] (both horizontal) by at most [maxRadians]. */
+internal fun turnToward(from: Vec, to: Vec, maxRadians: Double): Vec {
+    val a = kotlin.math.atan2(from.z(), from.x()); val b = kotlin.math.atan2(to.z(), to.x())
+    var d = b - a
+    while (d > Math.PI) d -= 2 * Math.PI
+    while (d < -Math.PI) d += 2 * Math.PI
+    val r = a + d.coerceIn(-maxRadians, maxRadians)
+    return Vec(kotlin.math.cos(r), 0.0, kotlin.math.sin(r))
+}
 internal fun horizontalLength(point: Point): Double = sqrt(point.x() * point.x() + point.z() * point.z())
 internal fun normalizeHorizontal(point: Point): Vec {
     val length = horizontalLength(point)

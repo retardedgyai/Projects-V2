@@ -130,7 +130,9 @@ internal object QuestMobContent {
                     "forge-cross", "forge-mark", "tide-ray", "tide-ring", "tide-center", "eclipse-mark", "eclipse-cross",
                     "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross",
                     "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "shade-orb", "shade-channel", "shade-shell"))
-                dev.projects.server.coreloop.CoreDamageType.MAGICAL else dev.projects.server.coreloop.CoreDamageType.PHYSICAL, scripted,
+                dev.projects.server.coreloop.CoreDamageType.MAGICAL
+            else if (id in setOf("shade-channel", "shade-shell")) dev.projects.server.coreloop.CoreDamageType.TRUE   // a failed gimmick
+            else dev.projects.server.coreloop.CoreDamageType.PHYSICAL, scripted,
             earlyHits,
         )
         fun sweep(radius: Double = 3.4, damage: Double = 10.0) = attack(
@@ -152,46 +154,46 @@ internal object QuestMobContent {
             // HP 2800 (2026-10-19, 藍「1人で約5分」): a Tier-1 player deals ~8-15 damage a second while dodging.
             QuestMobArchetype.SHADE_WYRM -> definition(EntityType.RAVAGER, 2800.0, .13, 3.0, 1.0,
                 Material.AIR, attacks = listOf(
-                    attack("shade-sweep", "翼脚薙ぎ・背後か距離を取れ", MobAttackShape.Sweep(7.0, 90.0), 4.8, 22.0,
-                        1100, 400, 900, 2200, weight = 3),
-                    attack("shade-pounce", "飛びかかり・大きく横へ", MobAttackShape.Slam(5.5, 3.0), 9.5, 27.0,
-                        1400, 500, 1200, 3400, minimumRange = 3.0, weight = 2),
-                    attack("shade-dust", "鱗粉炸裂・竜から離れろ", MobAttackShape.Ring(8.5), 16.0, 23.0,
+                    attack("shade-sweep", "翼脚薙ぎ", MobAttackShape.Sweep(7.0, 90.0), 4.8, 22.0,
+                        1100, 850, 900, 2200, weight = 3),
+                    attack("shade-pounce", "飛びかかり", MobAttackShape.Slam(5.5, 3.0), 9.5, 27.0,
+                        1400, 1150, 1200, 3400, minimumRange = 3.0, weight = 2),
+                    attack("shade-dust", "鱗粉炸裂", MobAttackShape.Ring(8.5, 2.5), 7.5, 23.0,
                         1700, 500, 900, 2800, weight = 2),
-                    attack("shade-pulse", "触角の共鳴・竜から離れろ", MobAttackShape.Ring(4.6), 4.5, 20.0,
-                        1200, 0, 1100, 3600),
-                    attack("shade-breath", "翳の吐息・大きく横へ", MobAttackShape.Slam(18.0, 2.4), 17.0, 30.0,
-                        1600, 450, 1000, 3600, health = RAGE, weight = 3),
-                    attack("shade-storm", "鱗粉嵐・竜の懐へ", MobAttackShape.Ring(15.0, 4.0), 15.0, 32.0,
+                    attack("shade-pulse", "触角の共鳴", MobAttackShape.Ring(4.6), 4.5, 20.0,
+                        1200, 0, 1100, 3600, weight = 3),
+                    attack("shade-breath", "翳の吐息", MobAttackShape.Slam(18.0, 2.4), 17.0, 30.0,
+                        1600, 1300, 1000, 3600, health = RAGE, weight = 3),
+                    attack("shade-storm", "鱗粉嵐", MobAttackShape.Ring(15.0, 4.0), 15.0, 32.0,
                         2200, 0, 1300, 6000, health = RAGE, weight = 2),
                     // 2026-10-19 (藍が選んだ行動): three bites (the first two are early hits), from phase one.
-                    attack("shade-bite", "噛みつき3連・正面から離れろ", MobAttackShape.Slam(5.5, 1.6), 5.0, 12.0,
-                        1600, 600, 800, 4200, weight = 3, earlyHits = listOf(700L, 1150L)),
+                    attack("shade-bite", "噛みつき", MobAttackShape.Slam(5.5, 1.6), 5.0, 14.0,
+                        1600, 1450, 800, 4200, weight = 3, earlyHits = listOf(700L, 1150L)),
                     // Phase two (第2形態) on: the tail spin, the horn upthrust and the thrown dust clot.
-                    attack("shade-tailspin", "しっぽ回転・離れろ", MobAttackShape.Ring(6.0), 5.5, 24.0,
+                    attack("shade-tailspin", "しっぽ回転", MobAttackShape.Ring(6.0), 5.5, 24.0,
                         1250, 0, 1150, 5200, health = AWAKEN, weight = 2),
-                    attack("shade-horn", "角の突き上げ・横へ", MobAttackShape.Slam(4.5, 1.8), 4.2, 26.0,
-                        1000, 450, 1000, 4000, health = AWAKEN, weight = 2),
-                    attack("shade-orb", "鱗粉弾・落下点から離れろ", MobAttackShape.Ring(2.8), 18.0, 20.0,
-                        1800, 900, 400, 5000, minimumRange = 5.0, target = true, health = AWAKEN, weight = 2),
+                    attack("shade-horn", "角の突き上げ", MobAttackShape.Slam(4.5, 1.8), 4.2, 26.0,
+                        1000, 800, 1000, 4000, health = AWAKEN, weight = 2),
+                    attack("shade-orb", "鱗粉弾", MobAttackShape.Ring(2.8), 18.0, 20.0,
+                        1800, 1550, 400, 5000, minimumRange = 5.0, target = true, health = AWAKEN, weight = 2),
                     // 突進 (2026-10-19, A: attacks move the body): bounds ~14 blocks across the arena along its band.
-                    attack("shade-charge", "突進・横へ避けろ", MobAttackShape.Slam(14.0, 1.8), 16.0, 26.0,
+                    attack("shade-charge", "突進", MobAttackShape.Slam(14.0, 1.8), 16.0, 26.0,
                         1400, 700, 1600, 7000, minimumRange = 6.0, weight = 2),
                     // MMO gimmicks (2026-10-19), started on a timer by QuestEncounterCombat: the cast to interrupt (second form
                     // on: damage it enough while it hangs in the air, or the whole arena blasts) and the shell to break
                     // (enraged: break it in time, or it bursts round the wyrm).
-                    attack("shade-channel", "翳の大詠唱・殴って止めろ", MobAttackShape.Ring(22.0), 40.0, 35.0,
+                    attack("shade-channel", "翳の大詠唱・殴って止めろ", MobAttackShape.Ring(22.0), 40.0, 85.0,
                         6000, 0, 1200, 40_000, health = AWAKEN, scripted = true),
-                    attack("shade-shell", "鱗粉の殻・殻を割れ", MobAttackShape.Ring(10.0), 40.0, 40.0,
-                        12_000, 0, 1200, 45_000, health = RAGE, scripted = true),
+                    attack("shade-shell", "鱗粉の殻・殻を割れ", MobAttackShape.Ring(22.0), 40.0, 80.0,
+                        9000, 0, 1200, 45_000, health = RAGE, scripted = true),
                     // Someone behind it: the quick tail slap first, the turning sweep if they stay (QuestEncounterCombat).
-                    attack("shade-tailslap", "背後への尾打ち・後ろから離れろ", MobAttackShape.Sweep(6.0, 70.0), 7.0, 18.0,
-                        700, 250, 800, 4000, scripted = true),
+                    attack("shade-tailslap", "尾打ち", MobAttackShape.Sweep(6.0, 70.0), 7.0, 18.0,
+                        700, 500, 800, 4000, scripted = true),
                     // Only when the player got behind it during an attack and stays there (QuestEncounterCombat).
-                    attack("shade-turnsweep", "振り向き薙ぎ・距離を取れ", MobAttackShape.Sweep(6.5, 90.0), 7.0, 22.0,
-                        900, 300, 900, 5000, scripted = true),
-                    attack("shade-dive", "飛び上がり急降下・落下点から離れろ", MobAttackShape.Ring(4.5), 30.0, 28.0,
-                        2400, 1600, 1400, 9000, minimumRange = 12.0, target = true, weight = 2),
+                    attack("shade-turnsweep", "振り向き薙ぎ", MobAttackShape.Sweep(6.5, 90.0), 7.0, 22.0,
+                        900, 650, 900, 5000, scripted = true),
+                    attack("shade-dive", "急降下", MobAttackShape.Ring(4.5), 30.0, 28.0,
+                        2400, 2150, 1400, 9000, minimumRange = 12.0, target = true, weight = 2),
                 )).copy(model = "shade_wyrm", awakenHealthRatio = AWAKEN, awakenSpeedMultiplier = 1.1, enrageHealthRatio = RAGE, enragedSpeedMultiplier = 1.2,
                     enragedBones = setOf("horn_l", "horn_r", "cloak_l", "cloak_r", "horn_l_tip", "horn_r_tip", "cloak_l_tatters", "cloak_r_tatters"), foldedBones = setOf("wing_l", "wing_r"))
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,
