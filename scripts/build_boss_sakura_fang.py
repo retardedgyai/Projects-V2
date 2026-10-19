@@ -92,10 +92,10 @@ def _h(*k):
     return (n & 0xffff) / 65535.0
 
 
-SKIN = __import__("os").environ.get("SAKURA_SKIN", "old")
+SKIN = __import__("os").environ.get("SAKURA_SKIN", "fur")
 # 5 tones, hue shifting from cold indigo shadows to warm mauve lights (no black outline, no noise).
-HIDE5 = ((13, 11, 26), (27, 23, 44), (46, 39, 66), (74, 59, 90), (112, 86, 118))
-SHELL5 = ((60, 48, 66), (98, 84, 102), (144, 128, 142), (190, 176, 186), (232, 222, 228))
+HIDE5 = ((20, 8, 38), (46, 18, 74), (84, 32, 112), (138, 58, 150), (204, 112, 186))   # vivid: indigo shadow -> magenta plum -> orchid
+SHELL5 = ((70, 38, 82), (118, 72, 128), (172, 120, 176), (222, 176, 214), (252, 228, 244))
 
 
 def skin_painter(mat, seed=0):
@@ -158,6 +158,8 @@ def skin_painter(mat, seed=0):
                 lv = L + .9 - 1.7 * f                          # each strand light at its root, dark where the next one overlaps
                 if x % 2 and ph == 0:
                     lv += .3
+                if ph == 0 and side != "down" and (side == "up" or v < .4):
+                    return PETAL[3 if (x // 2) % 3 else 2] + (255,)   # sakura sheen on the tips the light catches
                 return tone(lv)
             return tone(L)
         return paint, ("skin", kind, mat, side, w, h, seed % 9)
