@@ -11,6 +11,7 @@ _cache = {}
 
 
 def tex(name):
+    if name == "smooth_quartz": name = "quartz_block_bottom"
     if name.endswith("_wall_banner"): name = name.replace("_wall_banner", "_wool")
     if not (TEX / f"{name}.png").exists():
         for suf in ("_side", "_log", "_top"):

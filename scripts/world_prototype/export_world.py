@@ -170,7 +170,7 @@ def state(shape, top, side):
         pass
     elif shape.startswith("stair"):
         facing = {"n": "north", "s": "south", "e": "east", "w": "west"}[shape.split("_")[1]]
-        st = n.replace("bricks", "brick").replace("tiles", "tile") + "_stairs"
+        st = n.replace("bricks", "brick").replace("tiles", "tile").replace("_planks", "") + "_stairs"
         if st in VALID: return st, {"facing": facing, "half": "top" if shape.endswith("_t") else "bottom", "shape": "straight", "waterlogged": "false"}
     elif shape == "fire":
         return "campfire", {"lit": "true", "facing": "north", "signal_fire": "false", "waterlogged": "false"}

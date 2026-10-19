@@ -12,6 +12,11 @@ import iso
 
 CUT = {"plant", "ceil", "shut_n", "shut_s", "shut_e", "shut_w", "lantern", "post", "fence", "chain", "fire", "pane_x", "pane_z",
        "thinlog", "crop", "wall", "cloth_e", "cloth_w"}
+BOXES = {"slab": (0, 0, 0, 1, .5, 1), "slab_t": (0, .5, 0, 1, 1, 1), "carpet": (0, 0, 0, 1, .0625, 1), "ceil": (0, .9375, 0, 1, 1, 1),
+         "shut_s": (0, 0, 0, 1, 1, .1875), "shut_n": (0, 0, .8125, 1, 1, 1), "shut_w": (.8125, 0, 0, 1, 1, 1), "shut_e": (0, 0, 0, .1875, 1, 1),
+         "post": (.375, 0, .375, .625, 1, .625), "fence": (.375, 0, .375, .625, 1, .625), "wall": (.25, 0, .25, .75, 1, .75),
+         "lantern": (.3, 0, .3, .7, .55, .7), "chain": (.44, 0, .44, .56, 1, .56), "thinlog": (.3, 0, .3, .7, 1, .7)}
+BOXA = None
 MOB = {"deer", "beetle", "sprite", "boss", "rabbit", "boar", "frog", "wolf", "sheep_x", "sheep_z", "npc_low", "npc_high", "arm_x", "arm_z"}
 
 
@@ -25,13 +30,14 @@ def build(b):
     ys = [k[1] for k in b]; y0, y1 = min(ys), max(ys)
     X = max(k[0] for k in b) + 1; Z = max(k[2] for k in b) + 1
     G = np.zeros((X, y1 - y0 + 2, Z), np.uint16)
-    cls = [0]; tops = [None]; sides = [None]
+    cls = [0]; tops = [None]; sides = [None]; boxes = [(0, 0, 0, 1, 1, 1)]
     for (x, y, z), (shape, top, side) in b.items():
         if shape in MOB: continue
-        c = 2 if shape == "slab" or shape.startswith("stair") and not shape.endswith("_t") else 3 if shape in ("carpet",) else 4 if shape == "water" or top == "water_still" else 5 if shape in CUT else 1
-        k = (c, top, side)
+        bx = BOXES.get("slab" if shape.startswith("stair") and not shape.endswith("_t") else shape)
+        c = 4 if shape == "water" or top == "water_still" else 2 if bx else 5 if shape in CUT else 1
+        k = (c, top, side, bx)
         if k not in keys:
-            keys[k] = len(cls); cls.append(c); tops.append(top); sides.append(side)
+            keys[k] = len(cls); cls.append(c); tops.append(top); sides.append(side); boxes.append(bx or (0, 0, 0, 1, 1, 1))
         if x >= 0 and z >= 0: G[x, y - y0, z] = keys[k]
     n = len(cls)
     TT = np.zeros((n, 16, 16, 4), np.float32); TS = np.zeros((n, 16, 16, 4), np.float32)
@@ -45,6 +51,8 @@ def build(b):
         if cls[i] == 1:                                         # full blocks: leaves keep holes, everything else opaque
             if not ("leaves" in tops[i] or tops[i] in ("glass", "iron_bars", "mangrove_roots_top")):
                 TT[i, ..., 3] = 1; TS[i, ..., 3] = 1
+    global BOXA
+    BOXA = np.array(boxes, np.float64)
     return G, y0, np.array(cls, np.int8), TT, TS
 
 
@@ -94,19 +102,23 @@ def render(G, y0, CLS, TT, TS, eye, target, fov=75, W=800, H=450, maxd=260):
             col[k] += trans[k, None] * .5 * np.array([.20, .36, .62]); trans[k] *= .5
         inwater[idx] = wmask
         solid = (c == 1) | (c == 5)
-        slab = (c == 2) | (c == 3)
         hitmask |= solid
-        if slab.any():
-            hh = np.where(c == 2, .5, .07)
-            enter_low = fr[:, 1] <= hh + 1e-6
-            dy = D[idx, 1]
+        boxm = (c == 2)
+        if boxm.any():
+            bi = np.nonzero(boxm)[0]
+            bb = BOXA[m[bi]]
+            lo = p[bi] + bb[:, :3]; hi_ = p[bi] + bb[:, 3:]
+            Dd = D[idx[bi]]
             with np.errstate(divide="ignore", invalid="ignore"):
-                tyh = (p[:, 1] + hh - O[1]) / dy
-            down = (dy < 0) & (tyh >= t0) & (tyh <= t1)
-            s_hit = slab & (enter_low | down)
-            topface = slab & ~enter_low & down
-            th = np.where(topface, tyh, th); nrm = np.where(topface, 1, nrm)
-            hitmask |= s_hit
+                ta = (lo - O) / Dd; tb = (hi_ - O) / Dd
+            ta = np.nan_to_num(ta, nan=-1e9, posinf=1e9, neginf=-1e9); tb = np.nan_to_num(tb, nan=1e9, posinf=1e9, neginf=-1e9)
+            tn3 = np.minimum(ta, tb); tf3 = np.maximum(ta, tb)
+            tn = tn3.max(1); tf = tf3.min(1)
+            ok_ = (tn <= tf) & (tf >= t0[bi]) & (tn <= t1[bi] + 1e-9)
+            tn = np.maximum(tn, t0[bi])
+            hb = bi[ok_]
+            th[hb] = tn[ok_]; nrm[hb] = np.argmax(tn3[ok_], 1)
+            hitmask[hb] = True
         if hitmask.any():
             hk = np.nonzero(hitmask)[0]
             k = idx[hk]

@@ -562,8 +562,8 @@ for x in range(BX - 36, BX + 37):                                 # arena floor:
         d = math.hypot(x - BX, z - BZ)
         if d < 30 * (1 + .16 * math.sin(3 * math.atan2(z - BZ, x - BX) + 1) + .08 * math.sin(5 * math.atan2(z - BZ, x - BX))) and 0 <= x < B and 0 <= z < B:
             for y in range(at(x, z) + 1, at(x, z) + 6): w.b.pop((x, y, z), None)
-            n = noise3(x, 0, z, 51, 3)
-            put(x, at(x, z), z, "rooted_dirt" if n > .55 else "moss_block" if n > .4 else "coarse_dirt" if n > .25 else "podzol_top", "podzol_side")
+            n = noise3(x, 0, z, 51, 10)
+            put(x, at(x, z), z, *(("moss_block",) if n > .62 else ("podzol_top", "podzol_side")))
 mark(BX - 36, BZ - 36, BX + 36, BZ + 36)
 RAD = lambda a: 31 * (1 + .16 * math.sin(3 * a + 1) + .08 * math.sin(5 * a))
 a0 = 0.0
@@ -586,8 +586,7 @@ for y in range(bg + 1, bg + 6):
             d = math.hypot(dx, dz)
             if d <= r * (1 + .12 * math.cos(5 * math.atan2(dz, dx))):
                 ring = d > r - 1.3 or y == bg + 5
-                crack = noise3(BX + dx, y, BZ + dz, 61, 1.5) > .72
-                put(BX + dx, y, BZ + dz, *(("shroomlight",) if crack and ring else bark(BX + dx, y, BZ + dz) if ring else ("stripped_dark_oak_log",)))
+                put(BX + dx, y, BZ + dz, *(bark(BX + dx, y, BZ + dz) if ring else ("stripped_dark_oak_log",)))
 for dx in range(-5, 6):
     for dz in range(-5, 6):
         if math.hypot(dx, dz) < 5: put(BX + dx, bg + 6, BZ + dz, "stripped_dark_oak_log", "stripped_dark_oak_log", shape="slab") if math.hypot(dx, dz) > 1 else None
@@ -595,16 +594,6 @@ for k2 in range(6):                                               # the boss its
     pass
 spawn(BX, BZ, 24, 12, "lime_wool", "sprite")                        # root sprites gather around the old stump
 spawn(BX, BZ, 24, 8, "black_wool", "beetle")
-for _ in range(40):                                               # bones and broken weapons of those who came before
-    a = R.random() * math.tau; r = R.uniform(10, 26)
-    x, z = int(BX + math.cos(a) * r), int(BZ + math.sin(a) * r)
-    if (x, at(x, z) + 1, z) not in w.b:
-        put(x, at(x, z) + 1, z, R.choice(["bone_block_top", "bone_block_top", "iron_bars", "spruce_planks"]), shape=R.choice(["slab", "carpet", "post"]))
-for _ in range(10):
-    a = R.random() * math.tau; r = R.uniform(8, 24)
-    x, z = int(BX + math.cos(a) * r), int(BZ + math.sin(a) * r)
-    for y in range(at(x, z) + 1, at(x, z) + 3): put(x, y, z, "sea_lantern" if y == at(x, z) + 2 else "dark_oak_log", shape="post")
-
 # ---------------- grind spot: the fungal hollow ----------------
 FX, FZ = FUNGAL
 for x in range(FX - 50, FX + 51):
@@ -829,16 +818,23 @@ for x in range(RX - 7, RX + 8):
 WSX, WSZ = RX - 2, RZ - 2
 for dx in range(-1, 2):
     for dz in range(-1, 2):
-        put(WSX + dx, rg + 1, WSZ + dz, "chiseled_stone_bricks" if (dx, dz) == (0, 0) else "stone_bricks", shape="full" if (dx, dz) == (0, 0) else "slab")
-for y in range(rg + 2, rg + 5): put(WSX, y, WSZ, "polished_deepslate")      # waystone: a dark stele with a lodestone cap
+        put(WSX + dx, rg + 1, WSZ + dz, "stone_bricks", shape="slab")
+for dx, dz, f in ((1, 0, "w"), (-1, 0, "e"), (0, 1, "n"), (0, -1, "s")):   # waystone: a broad-footed dark stone, flared at the base
+    put(WSX + dx, rg + 1, WSZ + dz, "polished_deepslate", shape="stair_" + f)
+for y in range(rg + 1, rg + 5): put(WSX, y, WSZ, "polished_deepslate" if y != rg + 3 else "chiseled_deepslate")
 put(WSX, rg + 5, WSZ, "lodestone_top", "lodestone_side")
-for dx, dz, f in ((1, 0, "w"), (-1, 0, "e"), (0, 1, "n"), (0, -1, "s")):
-    put(WSX + dx, rg + 2, WSZ + dz, "polished_deepslate", shape="stair_" + f)
+put(WSX + 1, rg + 2, WSZ, "moss_block", shape="carpet")
 put(RX + 3, rg + 1, RZ + 2, "campfire_log_lit", shape="fire")
 for (dx, dz) in ((-2, 0), (2, 0), (0, 2)): put(RX + 3 + dx, rg + 1, RZ + 2 + dz, "spruce_log", "spruce_log", shape="slab")
-for y in range(rg + 1, rg + 4): put(RX + 5, y, RZ - 4, "spruce_planks", shape="fence")
-put(RX + 5, rg + 3, RZ - 5, "lime_wall_banner", shape="shut_n"); put(RX + 6, rg + 3, RZ - 4, "orange_wall_banner", shape="shut_e")
-put(RX + 4, rg + 3, RZ - 4, "light_blue_wall_banner", shape="shut_w"); put(RX + 5, rg + 4, RZ - 4, "lantern", shape="lantern")
+# the signpost: a stout stripped post on a stone footing, plank boards pointing down each road at different heights, a capped top
+SPX, SPZ = RX + 5, RZ - 4
+for dx, dz, f in ((1, 0, "w"), (-1, 0, "e"), (0, 1, "n"), (0, -1, "s")):
+    put(SPX + dx, rg + 1, SPZ + dz, "cobblestone", shape="stair_" + f)
+for y in range(rg + 1, rg + 5): put(SPX, y, SPZ, "stripped_spruce_log_top", "stripped_spruce_log")
+put(SPX, rg + 5, SPZ, "spruce_planks", shape="slab")
+for k in (1, 2): put(SPX + k, rg + 4, SPZ, "spruce_trapdoor", shape="shut_s")      # east: to the next zone
+for k in (1, 2): put(SPX, rg + 3, SPZ - k, "spruce_trapdoor", shape="shut_w")      # north: to the great tree
+for k in (1, 2): put(SPX - k, rg + 2, SPZ, "spruce_trapdoor", shape="shut_n")      # west: back to the harbour
 mark(RX - 8, RZ - 8, RX + 8, RZ + 8)
 # bridge where the road crosses the stream
 for x in range(B):
@@ -1666,30 +1662,37 @@ def place(name, x, z, kind, half=6):
 
 
 
-# 1. 根に呑まれた荷馬車: a caravan caught when the roots rose; the cart lifted and split, cargo spilled, a cold camp beside it
+# 1. 根に呑まれた荷馬車: a covered wagon stopped where a root heaved up through the track; the root broke the front axle,
+# the wagon sits nose-down, canvas torn where the root came through; the crates it carried lie where they slid off.
 s1 = find_spot(150, 318, need=8)
 if s1:
-    x, z = s1; g = at(x, z); level_pad(x - 6, z - 6, x + 6, z + 6, g)
-    for dx in range(-3, 4):                                           # cart bed, tilted up at one end by a root
-        tilt = max(0, dx) // 2
-        for dz in (-1, 0, 1): put(x + dx, g + 1 + tilt, z + dz, "spruce_planks", shape="slab_t")
-        for dz in (-2, 2): put(x + dx, g + 2 + tilt, z + dz, "spruce_planks", shape="fence")          # side rails
-    for dx in range(-2, 3):                                           # a torn canvas cover
-        for dz in (-1, 0, 1):
-            if (dx + dz) % 3: put(x + dx, g + 4 + max(0, dx) // 2 + (1 if dz == 0 else 0), z + dz, "white_wool", shape="slab")
-    for dx in (-3, 3):
-        for dz in (-2, 2): put(x + dx, g + 1 + (max(0, dx) // 2), z + dz, "dark_oak_planks", shape="fence")
-    put(x - 2, g + 1, z - 2, "stripped_spruce_log", "stripped_spruce_log"); put(x - 2, g + 1, z + 2, "stripped_spruce_log", "stripped_spruce_log")  # wheels
-    for dz in (-1, 0, 1): put(x - 4, g + 1, z + dz, "spruce_planks", shape="fence")                       # shaft
-    root_arch((x - 8, g - 1, z - 5), (x + 1, g + 6, z - 4), (x + 9, g - 1, z - 6), 1.8, .8, hang=True)   # the root that rose behind it
-    for (dx, dz) in ((2, 3), (3, 4), (4, 2), (-1, 4)):                 # spilled barrels and sacks
-        put(x + dx, g + 1, z + dz, *(("barrel_top", "barrel_side") if (dx + dz) % 2 else ("brown_wool",)), shape="full" if (dx + dz) % 2 else "slab")
-    put(x - 4, g + 1, z - 4, "campfire", shape="fire") if False else None
-    for (dx, dz) in ((-5, -4), (-4, -5), (-3, -4), (-4, -3)): put(x + dx, g + 1, z + dz, "cobblestone", shape="slab")   # cold fire ring
-    put(x - 4, g, z - 4, "coarse_dirt")
-    put(x - 6, g + 1, z - 2, "spruce_log", "spruce_log", shape="slab")
-    for yy in range(g + 1, g + 3): put(x + 5, yy, z - 5, "spruce_planks", shape="fence")             # a torn banner on a pole
-    put(x + 5, g + 3, z - 5, "white_wool", shape="shut_s")
+    x, z = s1; g = at(x, z); level_pad(x - 7, z - 6, x + 7, z + 6, g)
+    WOOD = "spruce_planks"
+    for dx in range(-3, 4):                                           # the bed, one block above the ground, front end (west) dropped
+        yb = g + 1 if dx > -2 else g
+        for dz in (-1, 0, 1): put(x + dx, yb, z + dz, WOOD, shape="slab_t" if dx > -2 else "slab")
+    for dx in (1, 3):                                                 # rear wheels: dark trapdoor discs against the bed sides
+        put(x + dx, g + 1, z - 2, "dark_oak_trapdoor", shape="shut_n"); put(x + dx, g + 1, z + 2, "dark_oak_trapdoor", shape="shut_s")
+    put(x - 2, g + 1, z + 2, "dark_oak_trapdoor", shape="shut_s")     # one front wheel still on, the other lies flat in the grass
+    put(x - 3, g + 1, z - 3, "dark_oak_trapdoor", shape="carpet")
+    for dx in range(-1, 4):                                           # canvas: sides one high, a roof row above, torn open at the front
+        for dz in (-1, 1): put(x + dx, g + 2, z + dz, "white_wool")
+        put(x + dx, g + 3, z, "white_wool")
+        for dz in (-1, 1): put(x + dx, g + 3, z + dz, "smooth_quartz", shape="slab")
+    for dz in (-1, 0, 1): w.b.pop((x - 1, g + 3, z + dz), None)      # the torn front hoop: bare bent wood shows
+    put(x - 1, g + 2, z - 1, "spruce_planks", shape="post"); put(x - 1, g + 2, z + 1, "spruce_planks", shape="post")
+    put(x - 1, g + 3, z, "spruce_planks", shape="slab")
+    put(x + 4, g + 2, z, "white_wool")                                # the back is laced shut
+    for dz in (-1, 1): put(x + 4, g + 2, z + dz, "white_wool", shape="slab")
+    for dz in (-1, 1): put(x - 4, g + 1, z + dz, "spruce_planks", shape="post")   # the shafts, resting on the ground
+    put(x - 5, g + 1, z - 1, "spruce_planks", shape="carpet"); put(x - 5, g + 1, z + 1, "spruce_planks", shape="carpet")
+    root_arch((x - 9, g - 1, z + 4), (x - 3, g + 4, z - 1), (x + 2, g - 1, z - 7), 1.9, 1.0, hang=False)   # the root that stopped it
+    for (dx, dz, k) in ((-3, 3, "b"), (-4, 4, "c"), (-5, 2, "c"), (-2, 4, "s")):   # what slid off the front
+        if k == "b": put(x + dx, g + 1, z + dz, "barrel_top", "barrel_side")
+        elif k == "c": put(x + dx, g + 1, z + dz, "spruce_planks", "spruce_planks")
+        else: put(x + dx, g + 1, z + dz, "brown_wool", shape="slab")
+    for (dx, dz) in ((4, -4), (5, -5), (6, -4), (5, -3)): put(x + dx, g + 1, z + dz, "cobblestone", shape="slab")   # their cold fire
+    put(x + 5, g, z - 4, "coarse_dirt"); put(x + 6, g + 1, z - 2, "spruce_log", "spruce_log", shape="slab")
     place("根に呑まれた荷馬車", x, z, "story")
 
 # 2. 崩れた見張り小屋: on the high scarp edge, looking down over the mid level; half the floor has fallen
@@ -1702,14 +1705,21 @@ if s2:
             edge = max(abs(dx), abs(dz)) == 3
             put(x + dx, g, z + dz, "cobblestone" if edge else "spruce_planks")
             if edge:
-                hgt = 4 - (2 if dz > 0 and dx > -1 else 0) - (1 if (dx * 7 + dz) % 3 == 0 else 0)   # the downhill side has crumbled
-                for yy in range(g + 1, g + 1 + max(1, hgt)):
+                cd = math.hypot(dx - 3, dz - 3)                        # the valley-side corner has fallen, the rest stands to the eaves
+                hgt = 5 if cd > 4.5 else max(0, int(cd * 1.1) - 1)
+                for yy in range(g + 1, g + 1 + hgt):
                     put(x + dx, yy, z + dz, R.choice(["stone_bricks", "mossy_stone_bricks", "cracked_stone_bricks", "cobblestone"]))
-    for yy in range(g + 1, g + 4): w.b.pop((x, yy, z - 3), None)    # doorway
-    for dx in range(-3, 1):                                          # what is left of the roof: a corner of planks
-        for dz in range(-3, 0): put(x + dx, g + 5, z + dz, "spruce_planks", shape="slab")
+    for yy in range(g + 1, g + 4): w.b.pop((x, yy, z - 3), None)    # doorway, with a timber lintel
+    put(x, g + 4, z - 3, "spruce_log", "spruce_log")
+    for dz in (-1, 1): w.b.pop((x - 3, g + 3, z + dz), None)         # small windows
+    for dz in range(-3, 4): put(x - 2, g + 6, z + dz, "spruce_log", "spruce_log")   # roof beams: one whole, one snapped and hanging
+    for dz in range(-3, 1): put(x + 1, g + 6, z + dz, "spruce_log", "spruce_log")
+    put(x + 1, g + 5, z + 1, "spruce_log", "spruce_log"); put(x + 1, g + 4, z + 2, "spruce_log", "spruce_log")
+    for dx in range(-3, 0):                                          # a corner of the roof still on, the rest fell in
+        for dz in range(-3, 0): put(x + dx, g + 7, z + dz, "spruce_planks", shape="slab")
+    for (dx, dz) in ((1, 1), (2, 2), (0, 2), (2, 0)): put(x + dx, g + 1, z + dz, R.choice(["cobblestone", "mossy_stone_bricks", "spruce_planks"]), shape="slab")
     put(x - 2, g + 1, z - 2, "barrel_top", "barrel_side"); put(x - 1, g + 1, z - 2, "spruce_planks", "spruce_trapdoor", shape="slab")
-    put(x - 2, g + 4, z - 2, "lantern", shape="lantern")
+    put(x - 2, g + 1, z - 1, "lantern", shape="lantern")
     for (dx, dz) in ((4, 4), (5, 3), (3, 5)): put(x + dx, at(x + dx, z + dz) + 1, z + dz, "mossy_stone_bricks", shape="slab")
     place("崩れた見張り小屋", x, z, "story", 4)
 
@@ -1737,9 +1747,13 @@ if s3:
     for dz in range(3, 12):
         for yy in range(g + 1, g + 4):
             for dx in (-1, 0, 1): w.b.pop((x + dx, yy, z + dz), None)
+    for side in (-1, 1):                                             # two roots come down either side of the mouth and cross over it
+        pts = bez((x + side * 6, g + 6, mz - 4), (x + side * 3, g + 6, mz + 1), (x - side * 1, g + 4.5, mz + 1), 8)
+        pts += bez((x + side * 3, g + 6, mz + 1), (x + side * 2.6, g + 2, mz + 1.5), (x + side * 3, g - 1, mz + 2), 6)
+        for p0, p1 in zip(pts, pts[1:]): tube(p0, p1, .7, .7, moss_top=True)
     for yy in range(g + 1, g + 4):
-        put(x - 2, yy, mz, "mossy_stone_bricks"); put(x + 2, yy, mz, "mossy_stone_bricks")
-    for dx in range(-2, 3): put(x + dx, g + 4, mz, "mossy_stone_bricks" if dx % 2 else "cracked_stone_bricks")
+        for dx in (-1, 0, 1):
+            for dz in range(mz - 1, mz + 3): w.b.pop((x + dx, yy, z + dz - z + dz * 0) if False else (x + dx, yy, dz), None)
     for dx in (-1, 0, 1):
         for dz in range(mz + 1, z + 12): put(x + dx, at(x + dx, dz), dz, "coarse_dirt" if (dx + dz) % 3 else "gravel")
     for k in range(3): put(x - 1 + k, g + 3, mz - 1, "hanging_roots", shape="shut_s")
@@ -1748,35 +1762,51 @@ if s3:
     put(x + 1, g, z - 2, "red_mushroom", shape="plant"); put(x - 1, g, z, "brown_mushroom", shape="plant")
     place("根の下の隠し洞", x, z, "secret", 11)
 
-# 4. 古い樹液採り場: someone once tapped the great tree's roots; spouts, pails, a sticky pool, a tool rack
+# 4. 古い樹液採り場: a great root arches out of the ground; three spouts are cut into its flank, a pail under each,
+# and a couple of filled casks wait to be carried off.
 s4 = find_spot(205, 190, need=5)
 if s4:
-    x, z = s4; g = at(x, z); level_pad(x - 5, z - 5, x + 5, z + 5, g)
-    tube((x - 6, g - 1, z - 2), (x + 6, g + 2, z - 2), 1.4, 1.2, follow=True, moss_top=True)   # an exposed root lying across
-    for dx in (-3, 0, 3):                                            # spouts into pails under the root
-        put(x + dx, g + 1, z, "cauldron")
-        put(x + dx, g + 2, z - 1, "spruce_planks", "spruce_trapdoor", shape="shut_s")
-    for dx in range(-2, 3):                                          # the sticky pool
-        for dz in range(2, 5): put(x + dx, g, z + dz, "honey_block_top", "honey_block_side")
-    for yy in range(g + 1, g + 4): put(x + 4, yy, z + 3, "spruce_planks", shape="fence")
-    for yy in range(g + 1, g + 4): put(x + 4, yy, z + 5, "spruce_planks", shape="fence")
-    put(x + 4, g + 3, z + 4, "spruce_planks", shape="slab_t")
-    put(x - 4, g + 1, z + 4, "barrel_top", "barrel_side")
+    x, z = s4; g = at(x, z); level_pad(x - 6, z - 4, x + 6, z + 5, g)
+    root_arch((x - 7, g - 1, z - 2), (x, g + 5, z - 3), (x + 7, g - 1, z - 2), 2.0, 1.4, hang=False)
+    for dx in (-3, 0, 3):
+        ys_ = [yy for yy in range(g + 1, g + 9) if (x + dx, yy, z - 2) in w.b]
+        if not ys_: continue
+        sy = min(ys_)
+        for zz3 in range(z - 2, z + 2):                                # walk out to the root's south face
+            if (x + dx, sy + 1, zz3) not in w.b: break
+        put(x + dx, sy + 1, zz3, "spruce_trapdoor", shape="shut_n") if (x + dx, sy + 1, zz3) not in w.b else None   # the spout
+        put(x + dx, g + 1, zz3, "cauldron")
+    put(x + 4, g + 1, z + 3, "barrel_top", "barrel_side"); put(x + 5, g + 1, z + 3, "barrel_top", "barrel_side")
+    put(x + 5, g + 2, z + 3, "honey_block_top", "honey_block_side", shape="slab")
     spawn(x, z + 6, 7, 3, "black_wool", "beetle")
-    place("古い樹液採り場", x, z, "gather", 5)
+    place("古い樹液採り場", x, z, "gather", 6)
 
-# 5. 道端の祠: a small stone shrine where the east road leaves the rest point; the first hint of the sakura beyond
+# 5. 道端の祠: a hokora (a little roadside shrine) on a stone plinth with a gabled roof, a small torii before it,
+# a lantern inside; a young sakura behind is the first hint of what waits on the pillars.
 s5 = find_spot(262, 252, r=25, need=3, near_road=(4, 9))
 if s5:
-    x, z = s5; g = at(x, z); level_pad(x - 3, z - 3, x + 3, z + 3, g)
-    for dx in range(-1, 2):
-        for dz in range(-1, 2): put(x + dx, g + 1, z + dz, "stone_bricks", shape="slab")
-    put(x, g + 2, z, "polished_andesite"); put(x, g + 3, z, "polished_andesite")
-    _hip_roof(x, g + 4, z)
-    put(x, g + 2, z + 1, "red_concrete", shape="shut_s")                # a red bib on the little guardian
-    put(x - 2, g + 1, z + 2, "flowering_azalea_leaves", shape="plant"); put(x + 2, g + 1, z + 2, "pink_petals", shape="carpet")
-    sakura_tree(x + 4, z - 4, g, size=.8)
-    place("道端の祠", x, z, "story", 3)
+    x, z = s5; g = at(x, z); level_pad(x - 3, z - 3, x + 3, z + 6, g)
+    for dx in (-1, 0, 1):
+        for dz in (-1, 0): put(x + dx, g + 1, z + dz, "polished_andesite")
+        put(x + dx, g + 1, z + 1, "polished_andesite", shape="slab")    # the step
+    for dx in (-1, 0, 1): put(x + dx, g + 2, z - 1, "dark_oak_planks"); put(x + dx, g + 3, z - 1, "dark_oak_planks")
+    for dx in (-1, 1): put(x + dx, g + 2, z, "stripped_dark_oak_log_top", "stripped_dark_oak_log"); put(x + dx, g + 3, z, "stripped_dark_oak_log_top", "stripped_dark_oak_log")
+    put(x, g + 2, z, "lantern", shape="lantern")
+    for dx in (-1, 0, 1):
+        for dz in (-1, 0): put(x + dx, g + 4, z + dz, "dark_oak_planks")
+    for dx in range(-2, 3):                                            # gabled roof, ridge running across the front, eaves overhanging
+        put(x + dx, g + 4, z + 1, "dark_oak_planks", shape="stair_n"); put(x + dx, g + 4, z - 2, "dark_oak_planks", shape="stair_s")
+        put(x + dx, g + 5, z, "dark_oak_planks", shape="stair_n"); put(x + dx, g + 5, z - 1, "dark_oak_planks", shape="stair_s")
+    for dx in (-1, 1):                                                 # the little torii: posts three high, thin tie-beam, a red lintel capped black
+        for yy in (g + 1, g + 2, g + 3): put(x + dx, yy, z + 4, "red_concrete", shape="fence")
+    put(x, g + 3, z + 4, "mangrove_planks", shape="slab_t")
+    for dx in (-1, 0, 1): put(x + dx, g + 4, z + 4, "mangrove_planks")
+    for dx in (-2, 2): put(x + dx, g + 4, z + 4, "mangrove_planks", shape="slab_t")
+    for dx in range(-2, 3): put(x + dx, g + 5, z + 4, "polished_blackstone", shape="slab")
+    for dz in (2, 3, 5, 6): put(x, g, z + dz, "gravel")
+    for (dx, dz) in ((-2, 2), (2, 1), (-3, 0)): put(x + dx, g + 1, z + dz, "pink_petals", shape="carpet")
+    sakura_tree(x + 5, z - 5, g, size=.7)
+    place("道端の祠", x, z, "story", 4)
 
 # 6. 狩人の休み場: a lean-to on the edge of the west woods, hides on a rack, a chopping block
 s6 = find_spot(70, 300, need=4)
@@ -1793,29 +1823,40 @@ if s6:
     put(x + 1, g + 1, z - 3, "campfire", shape="fire")
     place("狩人の休み場", x, z, "story", 4)
 
-# 7. 小川の崩れた石橋: an older road crossed the stream here; two arch stubs remain, the stream runs between
+# 7. 小川の崩れた石橋: an old arched bridge over the stream; the keystone and middle of the span have fallen into the water,
+# leaving the two halves of the arch reaching toward each other, the old ramps grassed over.
 best = None
 for i, (sx, sz) in enumerate(stream_pl):
     ix, iz = int(sx), int(sz)
     if 220 < sz < 340 and anyway[iz, ix] > 14 and (UPPER[max(0, iz - 14):iz + 15, max(0, ix - 14):ix + 15] < 0).all() and slope[iz, ix] < .8:
         best = (int(sx), int(sz)); break
-if best:
+if False:
     x, z = best; g = at(x, z)
-    deck = g + 5
-    for side in (-1, 1):                                             # two abutments and the springing of an arch, the middle span gone
-        for k in range(1, 7):
-            bx = x + side * (1 + k)
-            under = deck - 1 - (3 if k <= 2 else 0) + (0 if k > 2 else -max(0, 3 - k))
+    RA = 5.0; deck = g + 6
+    STONE = ["stone_bricks", "stone_bricks", "mossy_stone_bricks", "cracked_stone_bricks"]
+    for side in (-1, 1):
+        for k in range(0, 11):
+            bx = x + side * k
+            dk = deck - max(0, k - 6)                                  # the ramps down at each end
+            under = g + math.sqrt(max(0, RA * RA - k * k)) if k < RA else -99
+            broken = k < 2 or (k == 2 and side == 1)                   # the fallen middle, one side gone a little further
+            if broken: continue
+            top_k = dk if not (k == 2 or (k == 3 and side == 1)) else dk - 1   # the broken ends crumble lower
             for dz in (-1, 0, 1):
-                for yy in range(at(bx, z + dz) + 1, deck + 1):
-                    if k <= 2 and yy < deck - 1 - (2 - k): continue      # the arch opening over the stream
-                    put(bx, yy, z + dz, R.choice(["stone_bricks", "mossy_stone_bricks", "cracked_stone_bricks", "mossy_cobblestone"]))
-                put(bx, deck + 1, z + dz, "stone_bricks", shape="slab") if dz != 0 and k > 1 else None
-            if k == 1:
-                for dz in (-1, 0, 1): w.b.pop((bx, deck, z + dz), None)
-    for (dx, dz) in ((0, 2), (1, -2), (-1, 3)):                       # fallen stones in the water
-        put(x + dx, at(x + dx, z + dz) + 1, z + dz, "mossy_stone_bricks", shape="slab")
-    place("小川の崩れた石橋", x, z, "story", 5)
+                gz = at(bx, z + dz)
+                for yy in range(max(gz + 1, int(math.ceil(under))), top_k + 1):
+                    put(bx, yy, z + dz, R.choice(STONE))
+                if top_k == dk and 2 < k < 8:                           # turf on the old deck, a parapet stub here and there
+                    put(bx, dk, z + dz, "moss_block" if dz == 0 or _h(bx, 0, z + dz, 5) < .5 else R.choice(STONE))
+                if dz != 0 and 3 < k < 8 and _h(bx, 1, z + dz, 6) < .55: put(bx, dk + 1, z + dz, "stone_bricks", shape="slab")
+            if k < RA and under > g:                                    # voussoir edge: the arch ring reads as cut stone
+                for dz in (-1, 1): put(bx, int(math.ceil(under)), z + dz, "stone_bricks" if side == -1 else "mossy_stone_bricks")
+    for (dx, dz, sh) in ((0, 1, "full"), (1, -1, "slab"), (-1, 2, "slab"), (2, 1, "full")):   # the fallen keystones in the water
+        put(x + dx, at(x + dx, z + dz) + 1, z + dz, "mossy_stone_bricks", shape=sh)
+    for k in range(3, 8):
+        for side in (-1, 1):
+            if _h(k, side, 0, 7) < .5: put(x + side * k, deck - max(0, k - 6) - 1 - int(_h(k, side, 1, 8) * 2), z + 2, "vine", shape="shut_s")
+    place("小川の崩れた石橋", x, z, "story", 10)
 print("authored places", [f[2] for f in FILL])
 
 # ---------------- the dungeon entrance ----------------
@@ -2065,7 +2106,7 @@ for z in range(2, B - 2):
                 put(x, y, z, "fern", shape="plant")
         elif top in ("podzol_top", "moss_block", "coarse_dirt"):
             if _h(x, 6, z, 45) < (.14 if top == "podzol_top" else .08):
-                put(x, y, z, R.choice(["fern", "fern", "short_grass", "brown_mushroom", "leaf_litter"]), shape="plant" if top != "moss_block" else "plant")
+                k_ = R.choice(["fern", "fern", "short_grass", "brown_mushroom", "leaf_litter"]); put(x, y, z, k_, shape="carpet" if k_ == "leaf_litter" else "plant")
             elif top == "moss_block" and _h(x, 7, z, 46) < .25:
                 put(x, y, z, "moss_block", shape="carpet")
         elif top in ("stone", "andesite", "gravel", "cobblestone") and _h(x, 8, z, 47) < .03:
@@ -2177,6 +2218,16 @@ empty = land & seen & (cdist > 40) & (tdist > 14) & (anyway > 4)
 STATS = {"reachable": float((land & seen).sum() / land.sum()), "unreachable_flat": int(unreach.sum()),
          "scenic": float((scenic & land).sum() / land.sum()), "empty": float(empty.sum() / land.sum()),
          "upper_cells": UP_STATS[0], "upper_reached": UP_STATS[1]}
+for _pass in range(3):                                              # tidy: blocks that touch nothing (left by diagonal tubes) are removed
+    lone = [p for p, v in w.b.items() if v[0] in ("full", "slab", "slab_t") and not any(
+        (p[0] + a, p[1] + b2, p[2] + c) in w.b for a, b2, c in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)))]
+    for p in lone: w.b.pop(p, None)
+FLOAT = []
+for (x, y, z), v in w.b.items():
+    if v[0] in ("full", "slab", "slab_t") and not any((x + a, y + b2, z + c) in w.b for a, b2, c in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1))):
+        FLOAT.append((x, y, z, v[1]))
+STATS["floating"] = len(FLOAT)
+print("floating sample", FLOAT[:12])
 print("checks", STATS)
 img = np.zeros((B, B, 3), np.uint8)
 shade = np.clip((hi - 55) / 40, 0, 1)
