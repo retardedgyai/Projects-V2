@@ -43,7 +43,7 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
 
     /** A wyrm ability hit [player]. */
     fun playerHit(player: Player, abilityId: String, now: Long) {
-        if (abilityId in DUST) gain(player, HIT_GAIN, now)
+        if (abilityId in DUST) gain(player, if (abilityId == "shade-channel") CAST_GAIN else HIT_GAIN, now)
     }
 
     /** A wyrm ability struck (whether or not anyone was in it). */
@@ -59,6 +59,10 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
                 for (k in 0 until 3) addPool(frame.origin.add(f.mul(shape.length * (k + 1) / 4.0)), now)
             }
             "shade-orb" -> addPool(frame.origin, now)                      // the thrown clot lands as a pool
+            "shade-shell" -> if (shape is MobAttackShape.Ring) repeat(6) {        // the burst shell scatters its dust
+                val a = it * Math.PI / 3 + random.nextDouble(-.3, .3); val r = shape.radius * random.nextDouble(.35, .8)
+                addPool(frame.origin.add(cos(a) * r, 0.0, sin(a) * r), now)
+            }
             "shade-pulse" -> if (pools.isNotEmpty()) {
                 burstAt = now + BURST_DELAY_MILLIS
                 pools.forEach { fx.poolWarning(it.at, it.tag) }
@@ -127,9 +131,11 @@ internal class ShadeWyrmGimmicks(private val tier: Int, private val fx: ShadeWyr
     private fun flat(a: Pos, b: Pos): Double = sqrt((a.x() - b.x()) * (a.x() - b.x()) + (a.z() - b.z()) * (a.z() - b.z()))
 
     companion object {
-        val DUST = setOf("shade-dust", "shade-pulse", "shade-breath", "shade-storm", "shade-orb")
+        val DUST = setOf("shade-dust", "shade-pulse", "shade-breath", "shade-storm", "shade-orb", "shade-channel")
         const val FULL = 100.0
         const val HIT_GAIN = 20.0
+        /** The cast that was not interrupted soaks everyone in dust. */
+        const val CAST_GAIN = 40.0
         const val POOL_GAIN_PER_SECOND = 8.0
         const val HIT_RELIEF = 6.0
         const val DECAY_AFTER_MILLIS = 5000L

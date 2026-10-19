@@ -25,7 +25,7 @@ JP = {"idle": "待機", "walk": "歩き", "strafe": "横移動", "dash": "回り
       "enrage": "怒り", "shade-sweep": "翼脚薙ぎ", "shade-pounce": "飛びかかり", "shade-dust": "鱗粉炸裂", "shade-pulse": "触角の共鳴",
       "shade-breath": "翳の吐息", "shade-storm": "鱗粉嵐", "shade-turnsweep": "振り向き薙ぎ", "shade-dive": "飛び上がり急降下", "death": "死亡",
       "flinch": "怯み", "relocate": "飛び移り", "awaken": "第2形態へ", "shade-bite": "噛みつき3連", "shade-tailspin": "しっぽ回転",
-      "shade-horn": "角の突き上げ", "shade-tailslap": "背後への尾打ち", "shade-orb": "鱗粉弾"}
+      "shade-horn": "角の突き上げ", "shade-tailslap": "背後への尾打ち", "shade-orb": "鱗粉弾", "shade-channel": "翳の大詠唱", "shade-shell": "鱗粉の殻", "down": "ダウン"}
 
 
 def label(clip):
@@ -123,6 +123,16 @@ def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
             d.rectangle((bx - 4, by - 18, bx + 204, by + 10), fill=(16, 12, 22))
             text(img, (bx + 80, by - 18), "侵食", SMALL, (210, 170, 250))
             d.rectangle((bx, by, bx + 200, by + 5), fill=(60, 48, 72)); d.rectangle((bx, by, bx + int(200 * er / 100), by + 5), fill=(196, 120, 240))
+        bars = r.get("bars")
+        if bars:                                      # the MMO gimmick's two boss bars: time left, interrupt / shell
+            gid, left, gauge = bars
+            bx, by = W // 2 - 100, 78
+            d.rectangle((bx - 4, by - 18, bx + 204, by + 22), fill=(16, 12, 22))
+            text(img, (bx, by - 18), "翳の大詠唱（殴って止めろ）" if gid == "shade-channel" else "鱗粉の殻（割れ）", SMALL, (226, 190, 255))
+            d.rectangle((bx, by, bx + 200, by + 5), fill=(60, 48, 72)); d.rectangle((bx, by, bx + int(200 * left), by + 5), fill=(196, 120, 240))
+            d.rectangle((bx, by + 10, bx + 200, by + 15), fill=(60, 52, 30)); d.rectangle((bx, by + 10, bx + int(200 * gauge), by + 15), fill=(255, 200, 90))
+        if r.get("down"):
+            text(img, (W // 2 - 90, 70), "ダウン！ 殴り放題", MID, (255, 220, 140))
         broke = [n for n, b in zip(("角が折れた", "右の扇が裂けた", "左の扇が裂けた"), (horns, fan_right, fan_left)) if b]
         hdr = f"{r['t']:5.1f}s  {label(r['clip'])}" + ("（第3段階・怒り）" if r["enraged"] else "（第2形態）" if r.get("glowing") else "") + (f"  [{'・'.join(broke)}]" if broke else "")
         text(img, (10, 8), hdr, FONT, (236, 228, 244))

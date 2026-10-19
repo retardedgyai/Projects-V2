@@ -129,7 +129,7 @@ internal object QuestMobContent {
             if (id in setOf("rift-bolt", "rift-pulse", "oracle-mark", "oracle-ray", "oracle-pulse",
                     "forge-cross", "forge-mark", "tide-ray", "tide-ring", "tide-center", "eclipse-mark", "eclipse-cross",
                     "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross",
-                    "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "shade-orb"))
+                    "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "shade-orb", "shade-channel", "shade-shell"))
                 dev.projects.server.coreloop.CoreDamageType.MAGICAL else dev.projects.server.coreloop.CoreDamageType.PHYSICAL, scripted,
             earlyHits,
         )
@@ -174,6 +174,13 @@ internal object QuestMobContent {
                         1000, 450, 1000, 4000, health = AWAKEN, weight = 2),
                     attack("shade-orb", "鱗粉弾・落下点から離れろ", MobAttackShape.Ring(2.8), 18.0, 20.0,
                         1800, 900, 400, 5000, minimumRange = 5.0, target = true, health = AWAKEN, weight = 2),
+                    // MMO gimmicks (2026-10-19), started on a timer by QuestEncounterCombat: the cast to interrupt (second form
+                    // on: damage it enough while it hangs in the air, or the whole arena blasts) and the shell to break
+                    // (enraged: break it in time, or it bursts round the wyrm).
+                    attack("shade-channel", "翳の大詠唱・殴って止めろ", MobAttackShape.Ring(22.0), 40.0, 35.0,
+                        6000, 0, 1200, 40_000, health = AWAKEN, scripted = true),
+                    attack("shade-shell", "鱗粉の殻・殻を割れ", MobAttackShape.Ring(10.0), 40.0, 40.0,
+                        12_000, 0, 1200, 45_000, health = RAGE, scripted = true),
                     // Someone behind it: the quick tail slap first, the turning sweep if they stay (QuestEncounterCombat).
                     attack("shade-tailslap", "背後への尾打ち・後ろから離れろ", MobAttackShape.Sweep(6.0, 70.0), 7.0, 18.0,
                         700, 250, 800, 4000, scripted = true),
