@@ -149,7 +149,8 @@ internal object QuestMobContent {
         return when (archetype) {
             // Blind wyrm on wing-arms (docs/development/shade-wyrm-boss.md). Animation lengths in
             // assets/bosses/shade_wyrm.bbmodel equal telegraph+recovery of each ability below.
-            QuestMobArchetype.SHADE_WYRM -> definition(EntityType.RAVAGER, 560.0, .13, 3.0, 1.0,
+            // HP 2800 (2026-10-19, 藍「1人で約5分」): a Tier-1 player deals ~8-15 damage a second while dodging.
+            QuestMobArchetype.SHADE_WYRM -> definition(EntityType.RAVAGER, 2800.0, .13, 3.0, 1.0,
                 Material.AIR, attacks = listOf(
                     attack("shade-sweep", "翼脚薙ぎ・背後か距離を取れ", MobAttackShape.Sweep(7.0, 90.0), 4.8, 22.0,
                         1100, 400, 900, 2200, weight = 3),
