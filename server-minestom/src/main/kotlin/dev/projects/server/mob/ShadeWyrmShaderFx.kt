@@ -170,6 +170,17 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
                 add("ring", 2, down.add(0.0, .12, 0.0), 0, 9, Vec(1.5, 1.0, 1.5), yaw, grow = Vec(5.5, 1.0, 5.5), moveTicks = 5)
                 add("puff", 4, down.add(0.0, .6, 0.0), 0, 12, Vec(2.6, 2.6, 1.0), IDENTITY, grow = Vec(3.6, 3.6, 1.0), moveTicks = 10, billboard = true)
             }
+            "shade-charge" -> if (shape is MobAttackShape.Slam) {
+                // The charge tears the ground along its band: dust thrown up behind the running body, a shock at the end.
+                for (n in 0 until 10) {
+                    val at = o.add(f.mul(shape.length * (n + .5) / 10)).add(0.0, .5, 0.0)
+                    add("puff", 4, at, n, 12, Vec(2.2, 2.2, 1.0), IDENTITY, slide = right.mul(if (n % 2 == 0) 1.4 else -1.4).add(0.0, .8, 0.0),
+                        grow = Vec(3.2, 3.2, 1.0), moveTicks = 11, billboard = true)
+                    if (n % 3 == 0) add("smoke", 6, at.add(0.0, .4, 0.0), n + 2, 16, Vec(2.6, 2.6, 1.0), IDENTITY, slide = Vec(0.0, 1.2, 0.0), moveTicks = 14, billboard = true)
+                }
+                val end = o.add(f.mul(shape.length))
+                add("ring", 2, end.add(0.0, .12, 0.0), 10, 10, Vec(1.5, 1.0, 1.5), yaw, grow = Vec(6.0, 1.0, 6.0), moveTicks = 6)
+            }
             "shade-channel" -> if (shape is MobAttackShape.Ring) {
                 // The plunge lands: one shock wave rolls across the whole arena, dust erupting along it.
                 val d = shape.radius * 2.05

@@ -40,7 +40,7 @@ class ShadeWyrmBossTest {
     fun `every ability has a once clip timed to its telegraph and recovery`() {
         val clips = animations()
         assertEquals("shade_wyrm", definition.model)
-        assertTrue(definition.abilities.size in 4..16)
+        assertTrue(definition.abilities.size in 4..18)
         for (ability in definition.abilities) {
             val clip = assertNotNull(clips.getAsJsonObject(ability.id), "missing clip ${ability.id}")
             assertFalse(clip["loop"].asBoolean, ability.id)
@@ -504,6 +504,31 @@ class ShadeWyrmBossTest {
             assertEquals(before, combat.healthOf(boss.uuid), "the shell takes the hit")
             assertNotNull(combat.applyDamageAmount(boss.uuid, player, max * .025))
             assertTrue(combat.isDown(boss.uuid), "the shell broke")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `the pounce carries the wyrm onto the player and the small attacks show no floor`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val c = arena.bossSpawn
+        val player = testPlayer(arena, c.add(0.0, 0.0, -9.0), "Pounce")
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), c,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            combat.tick(now)
+            val start = boss.position
+            assertTrue(combat.startAbilityForTest(boss.uuid, "shade-pounce", now), "the pounce starts")
+            var floor = 0
+            repeat(30) { now += 50; combat.tick(now); floor = maxOf(floor, combat.groundDisplayCount) }
+            val moved = horizontalLength(boss.position.sub(start))
+            assertTrue(moved > 4.0, "the pounce leaps at the player (moved $moved)")
+            assertTrue(boss.position.distance(player.position) < start.distance(player.position) - 3.0, "closer: ${boss.position} vs ${start} player ${player.position}")
+            assertEquals(0, floor, "the pounce is read from the wind-up, not the floor")
         } finally {
             combat.dispose(); player.remove(); arena.dispose()
         }

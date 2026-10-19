@@ -12,6 +12,7 @@ the shade_glow post effect); see lightfx.py.
 """
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -25,7 +26,7 @@ JP = {"idle": "待機", "walk": "歩き", "strafe": "横移動", "dash": "回り
       "enrage": "怒り", "shade-sweep": "翼脚薙ぎ", "shade-pounce": "飛びかかり", "shade-dust": "鱗粉炸裂", "shade-pulse": "触角の共鳴",
       "shade-breath": "翳の吐息", "shade-storm": "鱗粉嵐", "shade-turnsweep": "振り向き薙ぎ", "shade-dive": "飛び上がり急降下", "death": "死亡",
       "flinch": "怯み", "relocate": "飛び移り", "awaken": "第2形態へ", "shade-bite": "噛みつき3連", "shade-tailspin": "しっぽ回転",
-      "shade-horn": "角の突き上げ", "shade-tailslap": "背後への尾打ち", "shade-orb": "鱗粉弾", "shade-channel": "翳の大詠唱", "shade-shell": "鱗粉の殻", "down": "ダウン"}
+      "shade-horn": "角の突き上げ", "shade-tailslap": "背後への尾打ち", "shade-orb": "鱗粉弾", "shade-channel": "翳の大詠唱", "shade-shell": "鱗粉の殻", "down": "ダウン", "shade-charge": "突進"}
 
 
 def label(clip):
@@ -76,7 +77,8 @@ def main(dump, t0, t1, out, mode="flat", zoom=1.0, fps=10):
             (("cloak_r_tatters",) if fan_left else ())
         hidden = tuple(b for b in sc.bones if any(b == h or b.startswith(h + "_") for h in hidden))   # rays and their tatters
         px, pz = r["player"]
-        center = (carrier[0], 0, carrier[2])           # on the wyrm's feet (the ground shadow is drawn under the centre)
+        # on the wyrm's feet (the ground shadow is drawn under the centre); SHADE_FIXED_CAMERA=1 holds the arena still
+        center = (0, 0, 0) if os.environ.get("SHADE_FIXED_CAMERA") else (carrier[0], 0, carrier[2])
         sc.atlas = atlases[1 if r.get("glowing") and len(atlases) > 1 else 0]   # the second form's glowing texture
         panel, zb = render(sc, pose, hidden=hidden, az=az, el=el, size=(W, H), scale=zoom, center=center, cy=.72,
                            bg=((52, 50, 64), (22, 20, 28)), outline=False, with_depth=True, flat=None)

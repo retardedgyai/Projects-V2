@@ -380,9 +380,11 @@ ABILITIES = {"shade-sweep": (1.1, 2.0), "shade-pounce": (1.4, 2.6), "shade-dust"
              "shade-bite": (1.6, 2.4), "shade-tailspin": (1.25, 2.4), "shade-horn": (1.0, 2.0),
              "shade-tailslap": (.7, 1.5), "shade-orb": (1.2, 2.2),
              # MMO gimmicks (2026-10-19): the cast to interrupt (second form on), the shell to break (enraged)
-             "shade-channel": (6.0, 7.2), "shade-shell": (12.0, 13.2)}
+             "shade-channel": (6.0, 7.2), "shade-shell": (12.0, 13.2),
+             # 2026-10-19 (A: attacks move the body): the charge across the arena
+             "shade-charge": (1.4, 3.0)}
 PHASE_ONE = ("shade-sweep", "shade-pounce", "shade-dust", "shade-pulse", "shade-turnsweep", "shade-dive",
-             "shade-bite", "shade-tailspin", "shade-horn", "shade-tailslap", "shade-orb", "shade-channel")
+             "shade-bite", "shade-tailspin", "shade-horn", "shade-tailslap", "shade-orb", "shade-channel", "shade-charge")
 TAIL = ("tail", "tail_2", "tail_mid", "tail_end")
 
 
@@ -917,6 +919,34 @@ def down_pose(sk, rest_feet, t, enraged=False, theta=0.0):
         add(p, b, (-6 * drop, 12 * thrash * (1 + .3 * i), 0))
     return p
 
+def charge_pose(sk, rest_feet, theta, t, enraged):
+    """突進 (2026-10-19, 藍「動き回らない・離れては殴るだけ」), 3.0 s, hit at 1.4 s: digs in low with the head down and
+    the wing-arms drawn back; bounds across the arena on all fours, body stretched long and low, the wings half open and
+    trailing (the server carries it ~14 blocks between 0.8 and 2.0 s); skids round side-on to a stop and shakes itself."""
+    run = smooth(t, .75, .9) * (1 - smooth(t, 1.95, 2.15))
+    phase = (max(0.0, t - .8) * 3.2) % 1.0
+    p = walk_pose(sk, rest_feet, phase, enraged, theta) if run > .01 else {}
+    if run <= .01 and enraged:
+        enraged_stance(sk, p, theta)
+    if run <= .01:
+        solve_legs(sk, p, rest_feet)
+    dig = smooth(t, 0, .5) * (1 - smooth(t, .75, .9))
+    skid = bump(t, 1.95, 2.2, 2.7)
+    gallop = math.sin(phase * 2 * math.pi) * run
+    body(sk, p, (10 * dig + 6 * run + 4 * gallop, 35 * skid, -10 * skid), (0, -6 * dig - 4 * run + 3 * abs(gallop), 0))
+    add(p, "neck", (18 * dig + 10 * run - 6 * skid, -14 * skid, 0))
+    add(p, "skull", (10 * dig + 6 * run, -10 * skid, 0))
+    add(p, "jaw", (20 * run + 16 * bump(t, 2.2, 2.4, 2.8), 0, 0))
+    for sd, sg in (("l", 1), ("r", -1)):
+        if enraged:
+            add(p, f"cloak_{sd}", (0, (14 * run) * sg, (-12 * dig + 10 * run + 6 * gallop) * sg))
+        else:
+            open_wing(p, sd, .45 * run + .2 * skid, .5 * gallop)
+    for k, b in enumerate(TAIL):
+        add(p, b, (-6 * run, (8 * gallop - 30 * skid) * (1 + .2 * k), 0))
+    return p, None
+
+
 def flinch_pose(sk, rest_feet, t, enraged=False, theta=0.0):
     """怯み (a part broke), 1.4 s: snaps back and up, shakes its head, the fans jerk out, then gathers itself."""
     p = {}
@@ -965,7 +995,7 @@ POSES = {"shade-sweep": sweep_pose, "shade-pounce": pounce_pose, "shade-dust": d
          "shade-pulse": pulse_pose, "shade-breath": breath_pose, "shade-storm": storm_pose,
          "shade-turnsweep": turnsweep_pose, "shade-dive": dive_pose, "shade-bite": bite_pose,
          "shade-tailspin": tailspin_pose, "shade-horn": horn_pose, "shade-tailslap": tailslap_pose, "shade-orb": orb_pose,
-         "shade-channel": channel_pose, "shade-shell": shell_pose}
+         "shade-channel": channel_pose, "shade-shell": shell_pose, "shade-charge": charge_pose}
 
 
 def ability_pose(sk, rest_feet, theta, name, t, enraged):

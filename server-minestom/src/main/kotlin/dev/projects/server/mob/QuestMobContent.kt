@@ -174,6 +174,9 @@ internal object QuestMobContent {
                         1000, 450, 1000, 4000, health = AWAKEN, weight = 2),
                     attack("shade-orb", "鱗粉弾・落下点から離れろ", MobAttackShape.Ring(2.8), 18.0, 20.0,
                         1800, 900, 400, 5000, minimumRange = 5.0, target = true, health = AWAKEN, weight = 2),
+                    // 突進 (2026-10-19, A: attacks move the body): bounds ~14 blocks across the arena along its band.
+                    attack("shade-charge", "突進・横へ避けろ", MobAttackShape.Slam(14.0, 1.8), 16.0, 26.0,
+                        1400, 700, 1600, 7000, minimumRange = 6.0, weight = 2),
                     // MMO gimmicks (2026-10-19), started on a timer by QuestEncounterCombat: the cast to interrupt (second form
                     // on: damage it enough while it hangs in the air, or the whole arena blasts) and the shell to break
                     // (enraged: break it in time, or it bursts round the wyrm).
