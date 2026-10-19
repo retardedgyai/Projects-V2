@@ -264,6 +264,34 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
                     }
                 }
             }
+            "sakura-lunge" -> {
+                if (t in .2..(hit - .02)) repeat(rate("spring", 90.0)) {       // the spring leaves a streak of petals
+                    add(shell(), f.dir(r(-1.5, 1.5), r(.3, 2.0), r(-4.0, -1.5)), r(.7, 1.1), 1.0)
+                }
+                if (once("a:rake", strike)) {                                   // and the rake flings a fan across its front
+                    val paw = bone("hand_r", Vec(-15.0, 1.0, 31.0))
+                    repeat(count(90)) {
+                        val a = Math.toRadians(r(-70.0, 30.0))
+                        add(paw.add(randomDir().mul(.3)), f.dir(sin(a), r(.2, .9), cos(a)).mul(r(12.0, 20.0)), r(.8, 1.3), 2.0)
+                    }
+                }
+            }
+            "sakura-barge" -> {
+                if (t in .1..(hit - .05)) repeat(rate("load", 40.0)) { add(shell(), Vec(r(-1.0, 1.0), r(1.5, 3.5), r(-1.0, 1.0)), .8) }
+                if (once("a:barge", strike)) repeat(count(130)) {               // the flank slams every petal loose ahead
+                    val a = Math.toRadians(r(-60.0, 60.0))
+                    add(shell(), f.dir(sin(a), r(.05, .45), cos(a)).mul(r(12.0, 22.0)), r(.9, 1.4), 2.0)
+                }
+            }
+            "sakura-hopswipe" -> {
+                if (t in .2..(hit - .05)) repeat(rate("hop", 60.0)) { add(shell(), f.dir(r(-3.0, -1.0), r(.5, 2.0), r(-1.0, 1.0)), .8, 1.0) }
+                if (t in (hit - .12)..(hit + .15)) repeat(rate("whip", 130.0)) { // the whipping tail throws an arc of petals
+                    val (b, px) = shells[3 + random.nextInt(shells.size - 3)]
+                    val p = bone(b, px)
+                    val radial = Vec(p.x() - f.at.x(), 0.0, p.z() - f.at.z()).let { if (it.length() < 1e-6) f.left else it.normalize() }
+                    add(p, Vec(0.0, 1.0, 0.0).cross(radial).mul(13.0).add(radial.mul(5.0)).add(0.0, r(.5, 2.5), 0.0), r(.8, 1.2), 1.4)
+                }
+            }
             "sakura-tail" -> {
                 if (t in .3..(hit - .05)) repeat(rate("stream", 40.0)) {        // the coiling tail sheds a stream
                     val (b, px) = shells[3 + random.nextInt(shells.size - 3)]

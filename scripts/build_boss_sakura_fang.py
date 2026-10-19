@@ -844,7 +844,9 @@ def walk_pose(t, L=1.2, enraged=False):
 ABILITIES = {"sakura-claw": (1.2, 1.0), "sakura-tail": (1.5, 1.1), "sakura-scatter": (1.7, .9), "sakura-bloom": (2.0, 1.2),
              "sakura-horn": (.8, .7), "sakura-spin": (1.0, .9), "sakura-howl": (1.6, 1.0),
              "sakura-claw2": (.6, .7), "sakura-claw3": (.9, 1.3),
-             "sakura-pounce": (1.1, .9), "sakura-rain": (1.8, .8), "sakura-charge": (1.0, 1.2)}
+             "sakura-pounce": (1.1, .9), "sakura-rain": (1.8, .8), "sakura-charge": (1.0, 1.2),
+             # small, quick blows thrown on the move between the big ones (Zinogre attacks while it travels)
+             "sakura-lunge": (.55, .55), "sakura-barge": (.65, .65), "sakura-hopswipe": (.6, .6)}
 # Only after the enrage: no phase-one twin is needed (the clip itself is authored with the petals open).
 ENRAGED_ONLY = {"sakura-bloom", "sakura-howl", "sakura-claw3", "sakura-charge"}
 CALM = {}
@@ -1047,6 +1049,51 @@ def rain_keys(hit, end, shells):
             (hit - .15, pose(sit, skull=(-6, 0, 0), tremble=4.0), "io"),
             (hit, pose(rear(-8), neck=(20, 0, 0), skull=(14, 0, 0), jaw=(8, 0, 0), shells=shells + .2), "in"),
             (hit + .3, pose(rear(-4), neck=(4, 0, 0), shells=shells), "out"), (end, {"shells": shells}, "io")]
+
+
+def lunge_keys(hit, end, shells):
+    """踏み込み爪 (small, on the move): it sinks and cocks the right paw, springs forward (the server carries it 3
+    blocks, 0.2..0.5 s) and rakes the paw down and across as it lands, the body twisting into the blow."""
+    s = {"shells": shells}
+    cock = pose(rear(10), pos=(0, -4, -2), chest=(6, -8, 0), neck=(16, -6, 0), arm_r=(-30, 0, 10), forearm_r=(-40, 0, 0),
+                thigh_l=(10, 0, 0), thigh_r=(10, 0, 0), tail_1=(12, 0, 0), shells=shells + .1, tremble=1.5)
+    spring = pose(rear(-12), pos=(0, 7, 6), chest=(-6, -10, 0), neck=(-4, -8, 0), arm_l=(-30, 0, 0), arm_r=(-95, 0, 16),
+                  forearm_r=(-30, 0, 0), hand_r=(-20, 0, 0), thigh_l=(30, 0, 0), thigh_r=(30, 0, 0), tail_1=(-16, 0, 0), tail_2=(-10, 0, 0),
+                  shells=shells + .35)
+    rake = pose(rear(14), pos=(0, -5, 8), body=(0, 14, -6), chest=(12, 16, -6), neck=(20, 14, 0), skull=(6, 8, 0), jaw=(16, 0, 0),
+                arm_r=(30, 0, -26), forearm_r=(6, 0, 0), hand_r=(24, 0, 0), arm_l=(10, 0, 0), tail_1=(6, -24, 0), tail_2=(0, -20, 0),
+                shells=shells + .45, tremble=2.0)
+    return [(0, dict(s), "io"), (.18, cock, "out"), (.38, spring, "out"), (hit, rake, "in"),
+            (hit + .2, pose(rake, rear(-4), body=(0, -6, 2), pos=(0, 1, 0)), "out"), (end, dict(s), "io")]
+
+
+def barge_keys(hit, end, shells):
+    """花肩の体当たり (small, on the move): Zinogre's shoulder barge — it swings its flank round toward its prey,
+    leans away to load, then throws the whole side of its body into it (carried 3.5 blocks, 0.3..0.65 s), the
+    petals on that side slamming open."""
+    s = {"shells": shells}
+    load = pose(rear(6), pos=(0, -3, 0), body=(0, 48, 12), chest=(4, 10, 8), neck=(10, -30, 0), skull=(0, -16, 0),
+                arm_l=(-14, 0, -10), arm_r=(10, 0, 18), tail_1=(0, 30, 0), tail_2=(0, 20, 0), shells=shells + .1, tremble=2.0)
+    slam = pose(rear(-4), pos=(0, 3, 4), body=(0, 64, -20), chest=(-4, 16, -14), neck=(-6, -36, -6), skull=(-6, -20, 0), jaw=(20, 0, 0),
+                arm_l=(-40, 0, -24), arm_r=(24, 0, 30), thigh_l=(-20, 0, 0), tail_1=(0, -14, 0), tail_2=(0, -24, 0), tail_3=(0, -20, 0),
+                shells=shells + .55)
+    return [(0, dict(s), "io"), (.32, load, "out"), (hit, slam, "in"), (hit + .18, pose(slam, body=(0, -6, 8), pos=(0, -3, 0), tremble=3.0), "out"),
+            (hit + .45, pose(body=(0, 14, 0), neck=(0, -10, 0), shells=shells), "io"), (end, dict(s), "io")]
+
+
+def hopswipe_keys(hit, end, shells):
+    """跳ね尾払い (small, on the move): a quick hop to the side (carried 2.5 blocks, 0.2..0.55 s) that turns into a
+    whip of the tail across its front as it lands, the head turned the other way to keep its prey in sight."""
+    s = {"shells": shells}
+    crouch = pose(rear(8), pos=(0, -4, 0), arm_l=(-8, 0, 0), arm_r=(-8, 0, 0), shin_l=(14, 0, 0), shin_r=(14, 0, 0),
+                  tail_1=(10, 30, 0), tail_2=(6, 24, 0), tail_3=(0, 20, 0), shells=shells + .1)
+    air = pose(rear(-8), pos=(0, 11, 0), body=(0, -20, -10), arm_l=(-40, 0, -10), arm_r=(-40, 0, 10), forearm_l=(-30, 0, 0), forearm_r=(-30, 0, 0),
+               thigh_l=(-16, 0, 0), thigh_r=(-16, 0, 0), neck=(0, 20, 0), tail_1=(0, 40, 0), tail_2=(0, 34, 0), tail_3=(0, 30, 0), shells=shells + .3)
+    whip = pose(rear(6), pos=(0, -3, 0), body=(0, 26, 6), chest=(0, 14, 0), neck=(4, 30, 0), skull=(0, 14, 0), jaw=(10, 0, 0),
+                arm_l=(10, 0, 0), arm_r=(10, 0, 0), tail_1=(-6, -50, 0), tail_2=(-4, -46, 0), tail_3=(0, -40, 0), tail_4=(0, -36, 0), tail_5=(0, -30, 0),
+                shells=shells + .5, tremble=2.0)
+    return [(0, dict(s), "io"), (.16, crouch, "out"), (.38, air, "out"), (hit, whip, "in"),
+            (hit + .2, pose(whip, body=(0, -8, 0), tail_2=(0, 12, 0), tail_3=(0, 16, 0)), "out"), (end, dict(s), "io")]
 
 
 def search_pose(t, L=2.4, enraged=False):
@@ -1286,7 +1333,8 @@ def animate(m, b):
     for name, keys in (("sakura-claw", claw_keys), ("sakura-tail", tail_keys), ("sakura-scatter", scatter_keys), ("sakura-bloom", bloom_keys),
                        ("sakura-horn", horn_keys), ("sakura-spin", spin_keys), ("sakura-howl", howl_attack_keys),
                        ("sakura-claw2", claw2_keys), ("sakura-claw3", claw3_keys),
-                       ("sakura-pounce", pounce_keys), ("sakura-rain", rain_keys), ("sakura-charge", charge_keys)):
+                       ("sakura-pounce", pounce_keys), ("sakura-rain", rain_keys), ("sakura-charge", charge_keys),
+                       ("sakura-lunge", lunge_keys), ("sakura-barge", barge_keys), ("sakura-hopswipe", hopswipe_keys)):
         hit, rec = ABILITIES[name]
         ov = overlay_for(name, hit, hit + rec)
         if name not in ENRAGED_ONLY:

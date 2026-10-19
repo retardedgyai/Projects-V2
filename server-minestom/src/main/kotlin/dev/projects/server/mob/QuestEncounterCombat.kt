@@ -731,7 +731,7 @@ class QuestEncounterCombat(
             mob.life.phase = QuestMobPhase.CHASING
         }
         val resting = mob.combo == null && now < mob.restUntil
-        if (!resting && now >= mob.warningRetryAt && mob.entity.hasLineOfSight(target) && telegraphs.canStart(mob.entity.uuid)) {
+        if (now >= mob.warningRetryAt && mob.entity.hasLineOfSight(target) && telegraphs.canStart(mob.entity.uuid)) {
             val ratio = mob.life.health / mob.life.maximumHealth
             val silenced = crowded(mob, CrowdControl.SILENCE, now)
             val turn = if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) SAKURA_TURN else TURN_SWEEP
@@ -739,7 +739,8 @@ class QuestEncounterCombat(
             mob.combo = null
             val aim = aimAt(mob, target, now)
             val start = scripted?.let { mob.abilities.tryStart(now, mob.entity.position, aim, ratio, only = it) }
-                ?: mob.abilities.tryStart(now, mob.entity.position, aim, ratio, plainOnly = silenced)
+                ?: mob.abilities.tryStart(now, mob.entity.position, aim, ratio, plainOnly = silenced,
+                    allowed = if (resting) SAKURA_LIGHT else null)    // resting, it only throws its small blows
             if (start != null) {
                 mob.life.phase = QuestMobPhase.ATTACKING
                 stopNavigation(mob)
@@ -981,9 +982,11 @@ class QuestEncounterCombat(
     private fun tickManeuver(mob: Mob, maneuver: Maneuver, target: Player, now: Long): Boolean {
         if (now >= maneuver.endAt) {
             mob.maneuver = null
-            mob.combo = if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) when (maneuver.kind) {
-                ManeuverKind.HOP_BACK -> if (mob.enraged) "sakura-scatter" else null     // 飛び退き→散華
-                ManeuverKind.DASH -> "sakura-horn"                                       // 回り込み→突き上げ
+            // 桜牙獣 only flows from a move into a blow while it rests; once rested, the next big attack comes first
+            mob.combo = if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) if (now >= mob.restUntil) null else when (maneuver.kind) {
+                ManeuverKind.HOP_BACK -> if (mob.enraged) "sakura-scatter" else "sakura-lunge"   // 飛び退き→散華／踏み込み爪
+                ManeuverKind.DASH -> if (mob.moveRandom.nextBoolean()) "sakura-horn" else "sakura-barge"   // 回り込み→突き上げ／体当たり
+                ManeuverKind.STRAFE -> if (mob.moveRandom.nextInt(3) == 0) null else SAKURA_LIGHT.random(mob.moveRandom)
                 else -> null
             } else when (maneuver.kind) {
                 ManeuverKind.HOP_BACK -> if (mob.enraged) "shade-breath" else null   // 2 跳び退き→吐息
@@ -1128,16 +1131,27 @@ class QuestEncounterCombat(
     /** The dive carries the body over its target while it hangs in the air (between [DIVE_CARRY] ms of the clip). */
     private fun carryThroughAbility(mob: Mob, frame: MobAbilityFrame, now: Long) {
         // shade-dive and 桜牙獣's pounce land on the target (the frame's origin); the charge runs down its strip.
-        val window = when (frame.ability.id) { "shade-dive" -> DIVE_CARRY; "sakura-pounce" -> POUNCE_CARRY; "sakura-charge" -> CHARGE_CARRY; else -> return }
+        val window = when (frame.ability.id) {
+            "shade-dive" -> DIVE_CARRY; "sakura-pounce" -> POUNCE_CARRY; "sakura-charge" -> CHARGE_CARRY
+            "sakura-lunge" -> LUNGE_CARRY; "sakura-barge" -> BARGE_CARRY; "sakura-hopswipe" -> HOP_CARRY
+            else -> return
+        }
         val from = mob.travelFrom ?: return
         val elapsed = now - frame.startedAt
         if (elapsed < window.first) return
         val k = ((elapsed - window.first).toDouble() / (window.last - window.first)).coerceIn(0.0, 1.0)
         val e = if (frame.ability.id == "sakura-charge") k else k * k * (3 - 2 * k)
         val shape = frame.ability.shape
-        val to = if (frame.ability.id == "sakura-charge" && shape is MobAttackShape.Slam)
-            (safeRetreat(frame.origin.add(frame.facing.mul(shape.length * .8)), mob.home, mob.definition.leashRange) ?: return)
-        else frame.origin
+        val f = normalizeHorizontal(frame.facing)
+        val leash = mob.definition.leashRange
+        val to = when (frame.ability.id) {
+            "sakura-charge" -> if (shape is MobAttackShape.Slam) safeRetreat(frame.origin.add(f.mul(shape.length * .8)), mob.home, leash) ?: return else return
+            // the small blows travel: a spring forward, a shoulder thrown in, a hop to its right
+            "sakura-lunge" -> safeRetreat(from.add(f.mul(3.0)), mob.home, leash) ?: return
+            "sakura-barge" -> safeRetreat(from.add(f.mul(3.5)), mob.home, leash) ?: return
+            "sakura-hopswipe" -> safeRetreat(from.add(Vec(-f.z(), 0.0, f.x()).mul(2.5)), mob.home, leash) ?: return
+            else -> frame.origin
+        }
         val ground = telegraphs.groundHeight(to) ?: from.y()
         mob.entity.teleport(Pos(from.x() + (to.x() - from.x()) * e, from.y() + (ground - from.y()) * e, from.z() + (to.z() - from.z()) * e,
             mob.entity.position.yaw(), 0f))
@@ -1239,8 +1253,8 @@ class QuestEncounterCombat(
                         else -> null
                     }
                     if (mob.combo != null) mob.warningRetryAt = lastTickAt
-                    // the chain is over: it moves round its prey for a while before the next attack
-                    else mob.restUntil = lastTickAt + if (mob.enraged) SAKURA_REST_ENRAGED.random(mob.moveRandom) else SAKURA_REST.random(mob.moveRandom)
+                    // the chain is over: it moves round its prey for a while before the next big attack
+                    else if (event.abilityId !in SAKURA_LIGHT) mob.restUntil = lastTickAt + if (mob.enraged) SAKURA_REST_ENRAGED.random(mob.moveRandom) else SAKURA_REST.random(mob.moveRandom)
                 }
             }
         }
@@ -1557,7 +1571,12 @@ class QuestEncounterCombat(
         /** 桜牙獣's breather between attack chains (ms), and the pause between its moves. */
         val SAKURA_REST = 2200L..3800L
         val SAKURA_REST_ENRAGED = 1400L..2600L
-        const val SAKURA_MANEUVER_GAP = 250L
+        const val SAKURA_MANEUVER_GAP = 400L        // longer than MobAbilityManager's global cooldown, so a rested attack starts first
+        /** Its small blows on the move, the only attacks it throws while it rests. */
+        val SAKURA_LIGHT = setOf("sakura-lunge", "sakura-barge", "sakura-hopswipe")
+        val LUNGE_CARRY = 200L..500L
+        val BARGE_CARRY = 300L..650L
+        val HOP_CARRY = 200L..550L
         const val STALK_SPEED = .55
         /** Its standing moves, the lengths of their clips (assets/bosses/sakura_fang.bbmodel). */
         internal val SAKURA_STAND_MILLIS = mapOf(ManeuverKind.GROWL to 1600L, ManeuverKind.SHAKE to 1300L, ManeuverKind.SCRAPE to 1200L)

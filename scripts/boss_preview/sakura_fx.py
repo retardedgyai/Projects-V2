@@ -122,6 +122,34 @@ class Fx:
                     a = math.radians(r.uniform(-40, 40))
                     d = np.array([math.sin(a), r.uniform(-.05, .12), math.cos(a)])
                     self.add(o + rand_dir(r) * 6, d * r.uniform(480, 640), r.uniform(1.0, 1.6), drag=2.3)
+        elif base == "sakura-lunge":                               # the small blows (SakuraPetalFx, same numbers x16)
+            if .2 <= t <= hit - .02:
+                for _ in range(self.rate("spring", 90)):
+                    self.add(self.shell_point(sc, pose), np.array([r.uniform(-24, 24), r.uniform(5, 32), r.uniform(-64, -24)]), r.uniform(.7, 1.1), drag=1.0)
+            if self.once("rake", t, hit):
+                paw = sc.point("hand_r", (-15, 1, 31), pose)
+                for _ in range(90):
+                    a = math.radians(r.uniform(-70, 30))
+                    self.add(paw + rand_dir(r) * 5, np.array([math.sin(a), r.uniform(.2, .9), math.cos(a)]) * r.uniform(192, 320), r.uniform(.8, 1.3), drag=2.0)
+        elif base == "sakura-barge":
+            if .1 <= t <= hit - .05:
+                for _ in range(self.rate("load", 40)):
+                    self.add(self.shell_point(sc, pose), np.array([r.uniform(-16, 16), r.uniform(24, 56), r.uniform(-16, 16)]), .8)
+            if self.once("barge", t, hit):
+                for _ in range(130):
+                    a = math.radians(r.uniform(-60, 60))
+                    self.add(self.shell_point(sc, pose), np.array([math.sin(a), r.uniform(.05, .45), math.cos(a)]) * r.uniform(192, 352), r.uniform(.9, 1.4), drag=2.0)
+        elif base == "sakura-hopswipe":
+            if .2 <= t <= hit - .05:
+                for _ in range(self.rate("hop", 60)):
+                    self.add(self.shell_point(sc, pose), np.array([r.uniform(-48, -16), r.uniform(8, 32), r.uniform(-16, 16)]), .8, drag=1.0)
+            if hit - .12 <= t <= hit + .15:
+                for _ in range(self.rate("whip", 130)):
+                    bone = r.choice([b for b in self.shell_bones if "_t" in b])
+                    p = sc.point(bone, sc.bones[bone]["pivot"], pose)
+                    radial = p * [1, 0, 1]; radial = radial / (np.linalg.norm(radial) + 1e-6)
+                    tang = np.cross([0, 1, 0], radial)
+                    self.add(p, tang * 208 + radial * 80 + [0, r.uniform(8, 40), 0], r.uniform(.8, 1.2), drag=1.4)
         elif base == "sakura-horn":
             if self.once("horn", t, hit):                          # the horns rake petals up and ahead
                 head = sc.point("skull", (0, 44, 40), pose)

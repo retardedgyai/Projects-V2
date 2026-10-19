@@ -187,6 +187,14 @@ internal object QuestMobContent {
                         1800, 1300, 800, 11000, minimumRange = 4.0, target = true, weight = 2),
                     attack("sakura-charge", "花吹雪の突進・横へ", MobAttackShape.Slam(13.0, 2.0), 12.0, 28.0,
                         1000, 450, 1200, 10000, minimumRange = 3.0, health = .5, weight = 2),
+                    // Small, quick blows thrown on the move (QuestEncounterCombat.SAKURA_LIGHT): the only attacks it uses while
+                    // it rests between its big ones; the server carries the body through each.
+                    attack("sakura-lunge", "踏み込み爪・横へ", MobAttackShape.Slam(6.0, 1.7), 5.0, 12.0,
+                        550, 250, 550, 3000, weight = 2),
+                    attack("sakura-barge", "花肩の体当たり・横へ", MobAttackShape.Slam(6.0, 2.2), 5.5, 14.0,
+                        650, 300, 650, 3600, minimumRange = 1.5, weight = 2),
+                    attack("sakura-hopswipe", "跳ね尾払い・離れろ", MobAttackShape.Sweep(5.5, 75.0), 4.5, 12.0,
+                        600, 250, 600, 3200, weight = 2),
                     // 三連桜爪: the paw slam chains into a second blow, and once enraged into a third (QuestEncounterCombat).
                     attack("sakura-claw2", "桜爪・二の手", MobAttackShape.Slam(6.0, 2.4), 5.0, 20.0,
                         600, 250, 700, 0, scripted = true),

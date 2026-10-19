@@ -69,6 +69,31 @@ internal class SakuraStrikeFx(instance: Instance) {
         val yaw = ShadeWyrmShaderFx.yawTo(f)
         val shape = frame.ability.shape
         when (abilityId) {
+            "sakura-lunge" -> if (shape is MobAttackShape.Slam) {
+                // The paw rakes across where it lands: a tilted crescent, three short gouges and a blossom puff.
+                val at = frame.casterOrigin.add(f.mul(3.6))
+                fx.add("sakura_slash", 1, at.add(0.0, 1.1, 0.0), 0, 8, Vec(4.2, 1.0, 4.2), ShadeWyrmShaderFx.mul(yaw, ShadeWyrmShaderFx.qx(-.35)))
+                for (k in -1..1) fx.add("sakura_trail", 3, at.add(right.mul(k * .5)).add(f.mul(.8)).add(0.0, .1, 0.0), k + 1, 10,
+                    Vec(.3, 1.0, 1.0), yaw, grow = Vec(.45, 1.0, 2.6), moveTicks = 3)
+                fx.add("sakura_blossom", 4, at.add(f.mul(1.0)).add(0.0, .9, 0.0), 0, 10, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(2.4, 2.4, 1.0),
+                    slide = Vec(0.0, .6, 0.0), moveTicks = 9, billboard = true)
+            }
+            "sakura-barge" -> if (shape is MobAttackShape.Slam) {
+                // The flank hits: a shock ring where the shoulder lands and a short wall of petals thrown ahead.
+                val at = frame.casterOrigin.add(f.mul(4.2))
+                fx.add("sakura_ring", 2, at.add(0.0, .12, 0.0), 0, 10, Vec(1.5, 1.0, 1.5), yaw, grow = Vec(5.0, 1.0, 5.0), moveTicks = 6)
+                fx.add("sakura_curtain", 5, at, 0, 11, Vec(2.4, .8, 1.0), yaw, translation = Vec(0.0, .4, 0.0), grow = Vec(4.4, 2.6, 1.0),
+                    slide = f.mul(1.6).add(0.0, .8, 0.0), moveTicks = 8)
+                fx.add("sakura_blossom", 4, at.add(0.0, 1.6, 0.0), 0, 10, Vec(1.4, 1.4, 1.0), IDENTITY, grow = Vec(3.2, 3.2, 1.0), moveTicks = 9, billboard = true)
+            }
+            "sakura-hopswipe" -> if (shape is MobAttackShape.Sweep) {
+                // The tail whips across its front as it lands: a wide low crescent and a second, fainter echo.
+                val at = frame.casterOrigin.add(right.mul(2.5))
+                val d = shape.radius * 2.0
+                fx.add("sakura_slash", 1, at.add(0.0, .7, 0.0), 0, 8, Vec(d, 1.0, d), yaw)
+                fx.add("sakura_slash", 1, at.add(0.0, 1.2, 0.0), 2, 8, Vec(d * .8, 1.0, d * .8), ShadeWyrmShaderFx.mul(yaw, ShadeWyrmShaderFx.qy(.35)))
+                fx.add("sakura_ring", 2, at.add(0.0, .12, 0.0), 0, 10, Vec(1.5, 1.0, 1.5), IDENTITY, grow = Vec(4.0, 1.0, 4.0), moveTicks = 6)
+            }
             "sakura-claw", "sakura-claw2", "sakura-claw3" -> if (shape is MobAttackShape.Slam) {
                 // The paw lands: a shock ring, three claw gouges torn down the strip and a puff of petals.
                 val big = if (abilityId == "sakura-claw3") 1.5 else if (abilityId == "sakura-claw2") .8 else 1.0

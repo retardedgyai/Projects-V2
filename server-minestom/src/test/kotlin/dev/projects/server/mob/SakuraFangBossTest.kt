@@ -35,7 +35,7 @@ class SakuraFangBossTest {
     fun `every ability has a once clip timed to its telegraph and recovery`() {
         val clips = animations()
         assertEquals("sakura_fang", definition.model)
-        assertEquals(12, definition.abilities.size)
+        assertEquals(15, definition.abilities.size)
         for (ability in definition.abilities) {
             val clip = assertNotNull(clips.getAsJsonObject(ability.id), "missing clip ${ability.id}")
             assertFalse(clip["loop"].asBoolean, ability.id)
@@ -106,7 +106,7 @@ class SakuraFangBossTest {
     }
 
     @Test
-    fun `between attack chains it rests and moves round its prey instead of attacking back to back`() {
+    fun `between attack chains it rests, moving round its prey and throwing small blows on the move`() {
         MinecraftServer.init(Auth.Offline())
         val arena = BossArenaFactory.create("sakura", 1)
         val connection = MemoryConnection()
@@ -123,15 +123,18 @@ class SakuraFangBossTest {
             var now = 1_000L
             var attackTicks = 0
             val moves = mutableSetOf<String>()
+            val light = mutableSetOf<String>()
             repeat(1200) {                                              // 60 s
                 now += 50; combat.tick(now); MinecraftServer.getSchedulerManager().processTick()
                 val clip = combat.shownClip(boss.uuid)?.first ?: return@repeat
                 if (clip.startsWith("sakura-")) attackTicks++
+                if (clip.removeSuffix("_enraged") in QuestEncounterCombat.SAKURA_LIGHT) light += clip
                 else if (clip in setOf("growl", "shake", "scrape", "stalk", "hop_back", "dash_l", "dash_r")) moves += clip
             }
             assertTrue(attackTicks < 1200 * .6, "attacking ${attackTicks * 50} ms of 60 s")
             assertTrue(attackTicks > 0, "never attacked")
             assertTrue(moves.size >= 3, "moves between attacks: $moves")
+            assertTrue(light.size >= 2, "small blows on the move: $light")
         } finally {
             combat.dispose(); player.remove(); arena.dispose()
         }
