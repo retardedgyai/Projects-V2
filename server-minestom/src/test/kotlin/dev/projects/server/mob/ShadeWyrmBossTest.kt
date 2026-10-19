@@ -416,6 +416,37 @@ class ShadeWyrmBossTest {
         }
     }
 
+    @Test
+    fun `hits land on the head, wings and tail through spheres that follow the bones`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            combat.tick(1_000L); combat.tick(1_050L)
+            val target = combat.combatTargets().single()
+            assertEquals(ShadeWyrmHitbox.BODY.size + ShadeWyrmHitbox.WINGS.size, target.parts.size)
+            val head = target.parts[ShadeWyrmHitbox.BODY.indexOfFirst { it.bone == "skull" }]
+            val boss = combat.entities().single().position
+            assertTrue(head.center.distance(boss) > 3.0, "the head is well ahead of the carrier: ${head.center} vs $boss")
+            // Aimed from 10 blocks off at the head, a wing tip and the tail end: each ray finds the body.
+            for (part in listOf(head, target.parts.last(), target.parts[ShadeWyrmHitbox.BODY.indexOfFirst { it.bone == "tail_end" }])) {
+                val eye = part.center.add(Vec(7.0, 2.0, 7.0))
+                val dir = Vec.fromPoint(part.center.sub(eye)).normalize()
+                assertNotNull(target.parts.rayHit(eye, dir, 24.0, .65), "ray at ${part.center}")
+                // Turned away from it, it misses.
+                assertEquals(null, target.parts.rayHit(eye, dir.mul(-1.0), 24.0, .65))
+            }
+            // A sword swing beside the tail reaches it although the carrier is ~7 blocks away.
+            val tail = target.parts[ShadeWyrmHitbox.BODY.indexOfFirst { it.bone == "tail_end" }].center
+            val feet = Vec(tail.x() + 3.0, boss.y(), tail.z())
+            assertTrue(target.parts.meleeHit(feet, Vec(-1.0, 0.0, 0.0), 4.5, .4))
+            assertFalse(target.parts.meleeHit(feet, Vec(1.0, 0.0, 0.0), 4.5, .4))
+        } finally {
+            combat.dispose(); arena.dispose()
+        }
+    }
+
     /**
      * `SHADE_FIGHT_DUMP=<file> ./gradlew :server-minestom:test --tests '*ShadeWyrmBossTest' --rerun` runs a scripted
      * 40 s fight through the real encounter code and writes, per tick, where the wyrm is, where it looks, the clip on
