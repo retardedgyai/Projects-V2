@@ -379,7 +379,7 @@ class CorePlayerCombatTest {
             repeat(4) { record(); h.ticks(1) }
             h.actor.skill(slot)
             repeat(76) { record(); h.ticks(1) }
-            scene=mapOf("id" to icon,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"frames" to frames)
+            scene=mapOf("id" to icon,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
             CoreCombatPresentation.forget(h.player)
         }; scene }
         val cwd=java.nio.file.Path.of(System.getProperty("user.dir"))

@@ -191,7 +191,11 @@ def weapon_pose(scene, tick):
     if scene['id'] == 'war_guard': return (tick // 2) % 12  # guard motif keeps the idle frames
     if cast <= tick < cast + startup and startup > 1:
         return 12 + (tick - cast) * 5 // max(startup - 1, 1)
-    if cast + startup <= tick < cast + startup + 12:
+    if scene['id'] == 'war_ult':  # every one of the three falls is its own 8-tick release
+        for k in range(scene.get('pulses', 1)):
+            start = cast + startup + 8 * k
+            if start <= tick < start + 8: return 18 + (tick - start) * 5 // 7
+    elif cast + startup <= tick < cast + startup + 12:
         return 18 + (tick - cast - startup) * 5 // 11
     return (tick // 2) % 12
 

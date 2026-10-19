@@ -71,9 +71,13 @@ class CoreWarriorBladeChoreographyTest {
 
     @Test fun `preparation stays in startup frames and contact is only target located`() {
         for(s in skills) {
-            val prepare=CoreSkillChoreography.parts(effect(s,phase=CoreSkillVisualPhase.PREPARE)).single()
-            assertTrue(CoreSkillChoreography.pose(prepare,0.0).model.endsWith("blade_0"))
-            assertTrue(CoreSkillChoreography.pose(prepare,(prepare.durationTicks-1).toDouble()).model.endsWith("blade_2"))
+            // 鉄槌's windup is the held greatsword rising (CoreArmamentPresentation), not a ghost blade.
+            if(s.icon=="war_ult") assertTrue(CoreSkillChoreography.parts(effect(s,phase=CoreSkillVisualPhase.PREPARE)).isEmpty())
+            else {
+                val prepare=CoreSkillChoreography.parts(effect(s,phase=CoreSkillVisualPhase.PREPARE)).single()
+                assertTrue(CoreSkillChoreography.pose(prepare,0.0).model.endsWith("blade_0"))
+                assertTrue(CoreSkillChoreography.pose(prepare,(prepare.durationTicks-1).toDouble()).model.endsWith("blade_2"))
+            }
             val pulse=CoreSkillChoreography.parts(effect(s))
             val first=CoreSkillChoreography.pose(pulse.first(),0.0).model
             // The iron strikes (slam, sweep) start their own plate sequence at frame 0.
