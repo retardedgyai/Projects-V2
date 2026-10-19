@@ -50,7 +50,7 @@ class World:
         return v is not None and v[0] == "full" and v[1] not in ("glass", "water_still", "oak_leaves", "spruce_leaves")
 
 
-THIN = ("deer", "beetle", "sprite", "boss", "cloth_e", "cloth_w", "rabbit", "boar", "frog", "wolf", "sheep_x", "sheep_z", "crop", "plant", "fire", "arm_z", "arm_x", "npc_low", "npc_high", "chain", "lantern", "post", "carpet", "shut_s", "shut_e", "pane_x", "pane_z", "water", "thinlog")
+THIN = ("shut_n", "shut_w", "deer", "beetle", "sprite", "boss", "cloth_e", "cloth_w", "rabbit", "boar", "frog", "wolf", "sheep_x", "sheep_z", "crop", "plant", "fire", "arm_z", "arm_x", "npc_low", "npc_high", "chain", "lantern", "post", "carpet", "shut_s", "shut_e", "pane_x", "pane_z", "water", "thinlog")
 
 
 def solid(world, p):
@@ -86,6 +86,8 @@ def boxes(shape):
     if shape == "slab_t": return [(0, .5, 0, 1, 1, 1)]
     if shape == "water": return [(0, 0, 0, 1, .875, 1)]
     if shape == "shut_s": return [(0, 0, 0, 1, 1, .1875)]
+    if shape == "shut_n": return [(0, 0, .8125, 1, 1, 1)]
+    if shape == "shut_w": return [(.8125, 0, 0, 1, 1, 1)]
     if shape == "shut_e": return [(0, 0, 0, .1875, 1, 1)]
     if shape == "sheep_x":   # body along x, white wool; head and legs darker
         return [(.08, .35, .22, .86, .9, .78), (.82, .5, .32, 1.0, .85, .68, "white_terracotta"),

@@ -133,6 +133,12 @@ def state(shape, top, side):
         if n == "leaf_litter": return n, {"segment_amount": "4", "facing": "north"}
         if n == "sweet_berry_bush": return n, {"age": "3"}
         if n.endswith("_leaves"): pass
+    elif shape in ("shut_n", "shut_w", "shut_e") or (shape == "shut_s" and n.endswith("trapdoor")):
+        face = {"shut_s": "south", "shut_n": "north", "shut_e": "east", "shut_w": "west"}[shape]
+        if n.endswith("trapdoor"):
+            return n, {"facing": face, "half": "bottom", "open": "true", "powered": "false", "waterlogged": "false"}
+        if n == "vine" and shape == "shut_e": return n, {"west": "true", "north": "false", "south": "false", "east": "false", "up": "false"}
+        return None
     elif shape == "shut_s":
         if n == "vine": return n, {"north": "true", "south": "false", "east": "false", "west": "false", "up": "false"}
         if n == "glow_lichen": return n, {"north": "true", "down": "false", "up": "false", "south": "false", "east": "false", "west": "false", "waterlogged": "false"}
@@ -146,6 +152,7 @@ def state(shape, top, side):
         if n == "dark_oak_log": return "dark_oak_fence", {}
         if n == "polished_andesite": return "andesite_wall", {}
         if n == "dark_oak_planks": return "dark_oak_fence", {}
+        if n == "iron_chain": return "chain", {"axis": "y", "waterlogged": "false"}
     elif shape == "wall":
         if n == "stone_bricks": return "stone_brick_wall", {}
         if n == "polished_andesite": return "andesite_wall", {}

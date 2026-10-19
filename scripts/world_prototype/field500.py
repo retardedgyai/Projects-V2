@@ -137,7 +137,7 @@ for kind, pts_list in (("road", ROADS), ("path", PATHS)):
         prof = np.array([sample(sm, x, z) for x, z in pl], np.float32)
         prof = np.convolve(np.pad(prof, 6, mode="edge"), np.ones(13) / 13, "valid")
         seg = np.r_[0, np.hypot(*np.diff(pl, axis=0).T)]
-        MAXG = .28
+        MAXG = .2
         for _ in range(30):
             for i in range(1, len(prof)): prof[i] = np.clip(prof[i], prof[i - 1] - MAXG * seg[i], prof[i - 1] + MAXG * seg[i])
             for i in range(len(prof) - 2, -1, -1): prof[i] = np.clip(prof[i], prof[i + 1] - MAXG * seg[i + 1], prof[i + 1] + MAXG * seg[i + 1])
@@ -739,7 +739,11 @@ def torii(cx, cz, y, ux, uz, half=3, h=6):
         for yy in range(y + 2, y + h + 1): put(bx, yy, bz, "red_concrete")
     for s2 in range(-half - 1, half + 2):
         if abs(s2) == half: continue
-        bx, bz = P(s2); put(bx, nuki_y, bz, "red_concrete")
+        bx, bz = P(s2)
+        put(bx, nuki_y, bz, "red_nether_bricks" if abs(s2) == half + 1 else "red_concrete", shape="slab_t" if abs(s2) == half + 1 else "full")
+    if h >= 10 and half >= 3:                                       # paper lanterns hang under the nuki
+        for s2 in (-(half // 2 + 1), half // 2 + 1):
+            bx, bz = P(s2); chochin(bx, nuki_y - 1, bz)
     big = h >= 14
     bx, bz = P(0)
     for yy in range(nuki_y + 1, y + h): put(bx, yy, bz, "polished_deepslate")       # the plaque, a dark board, not a hole
@@ -763,15 +767,51 @@ def torii(cx, cz, y, ux, uz, half=3, h=6):
         pass
 
 
-def stone_lantern(x, z, y):
-    """Ishidoro: a stone base, a slim wall post, the lit fire box, a hipped roof (centre + four stairs), a small jewel."""
-    put(x, y + 1, z, "polished_andesite")
-    put(x, y + 2, z, "stone_bricks", shape="wall")
-    put(x, y + 3, z, "lantern", shape="lantern")
-    put(x, y + 4, z, "deepslate_tiles")
+def _firebox(x, y, z, frame="dark_oak_trapdoor"):
+    """A lit fire box: the lantern in the middle, open trapdoors on the four sides as the paper screens."""
+    put(x, y, z, "lantern", shape="lantern")
+    for dx, dz, sh in ((1, 0, "shut_e"), (-1, 0, "shut_w"), (0, 1, "shut_s"), (0, -1, "shut_n")):
+        put(x + dx, y, z + dz, frame, shape=sh)
+
+
+def _hip_roof(x, y, z, mat="deepslate_tiles"):
+    """3x3 hipped cap: a block in the centre, stairs on the sides rising toward it, slabs on the corners."""
+    put(x, y, z, mat)
     for dx, dz, f in ((1, 0, "w"), (-1, 0, "e"), (0, 1, "n"), (0, -1, "s")):
-        if (x + dx, y + 4, z + dz) not in w.b: put(x + dx, y + 4, z + dz, "deepslate_tiles", shape="stair_" + f)
-    put(x, y + 5, z, "polished_andesite", shape="post")
+        put(x + dx, y, z + dz, mat, shape="stair_" + f)
+    for dx, dz in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
+        put(x + dx, y, z + dz, mat, shape="slab")
+
+
+def stone_lantern(x, z, y, tall=False):
+    """Kasuga-style ishidoro: a stepped foot, a slender shaft, the screened fire box, a 3x3 hipped roof, a jewel.
+    tall=True: a 3x3 plinth and a longer shaft, for the precinct."""
+    put(x, y + 1, z, "polished_andesite")
+    if tall:
+        for dx, dz, f in ((1, 0, "w"), (-1, 0, "e"), (0, 1, "n"), (0, -1, "s")):
+            put(x + dx, y + 1, z + dz, "stone_bricks", shape="stair_" + f)
+        for dx, dz in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
+            put(x + dx, y + 1, z + dz, "stone_bricks", shape="slab")
+        put(x, y + 2, z, "chiseled_stone_bricks")
+        for yy in (y + 3, y + 4): put(x, yy, z, "stone_bricks", shape="wall")
+        fy = y + 6
+    else:
+        put(x, y + 2, z, "stone_bricks", shape="wall")
+        put(x, y + 3, z, "stone_bricks", shape="wall")
+        fy = y + 5
+    put(x, fy - 1, z, "polished_andesite")                         # chudai: the platform the fire box sits on
+    for dx in (-1, 0, 1):
+        for dz in (-1, 0, 1):
+            if dx or dz: put(x + dx, fy - 1, z + dz, "polished_andesite", shape="slab_t")
+    _firebox(x, fy, z)
+    _hip_roof(x, fy + 1, z)
+    put(x, fy + 2, z, "polished_andesite", shape="post")
+
+
+def chochin(x, y, z):
+    """A hanging red paper lantern: chain and a red body."""
+    put(x, y, z, "iron_chain", shape="chain")
+    put(x, y - 1, z, "red_concrete", shape="lantern")
 
 
 def pavilion(cx, cz, y, r=3, roof="deepslate_tiles"):
@@ -873,7 +913,8 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
     mark(cx - int(rb) - 3, cz - int(rb) - 3, cx + int(rb) + 3, cz + int(rb) + 3)
 
 
-def rock_bridge(p0, p1, rise=3, width=1.6, sakura=0.0):
+def rock_bridge(p0, p1, rise=3, width=2.2, sakura=0.0):
+    rise = min(rise, 2)
     samples = []
     """A natural rock bridge with a grassy walkable deck; the deck height goes into UPPER."""
     L = math.dist((p0[0], p0[2]), (p1[0], p1[2])); n = int(L * 2)
@@ -1113,7 +1154,7 @@ torii(gx0, gz0, SY_, -math.cos(ent_a), -math.sin(ent_a), half=5, h=17)   # the g
 for k2 in range(16):                                                # lanterns on the gravel band
     a = ent_a + (k2 + .5) / 16 * math.tau
     if abs(math.atan2(math.sin(a - ent_a), math.cos(a - ent_a))) < .4: continue
-    stone_lantern(int(round(SX_ + math.cos(a) * (AR + 5))), int(round(SZ_ + math.sin(a) * (AR + 5))), SY_)
+    stone_lantern(int(round(SX_ + math.cos(a) * (AR + 5))), int(round(SZ_ + math.sin(a) * (AR + 5))), SY_, tall=True)
 for off in (.85, -.85, 2.3, -2.3):                                   # four pavilions outside the fence, two-tier roofs
     a = ent_a + off
     px2, pz2 = int(round(SX_ + math.cos(a) * (AR + 11))), int(round(SZ_ + math.sin(a) * (AR + 11)))
@@ -1155,7 +1196,7 @@ for k2 in range(0, 40):
     for s2 in (-1, 0, 1):
         x, z = int(round(startx + ux2 * k2 - uz2 * s2)), int(round(startz + uz2 * k2 + ux2 * s2))
         if UPPER[z, x] == SY_ and math.hypot(x - SX_, z - SZ_) > AR + 1.5:
-            put(x, SY_, z, "polished_andesite" if s2 == 0 else "stone_bricks")
+            put(x, SY_, z, "polished_andesite" if s2 == 0 else ("stone_bricks" if k2 % 4 else "chiseled_stone_bricks"))
             for y in range(SY_ + 1, SY_ + 10):
                 if w.b.get((x, y, z), ("", "", ""))[1] in ("cherry_log", "cherry_leaves"): w.b.pop((x, y, z), None)
 for k2 in range(1, 9):
@@ -1410,6 +1451,24 @@ for z in range(2, B - 2):
             put(x, y, z, "mossy_cobblestone", shape="slab")
 
 
+
+
+# ---------- walkability pass: a slab on the low side of every one-block step along roads, trails, bridges and tops ----------
+STEP_SLAB = ["cobblestone", "stone", "mossy_cobblestone", "stone", "andesite"]
+def _top_at(x, z):
+    return int(UPPER[z, x] if UPPER[z, x] >= 0 else hi[z, x])
+nstep = 0
+for z in range(1, B - 1):
+    for x in range(1, B - 1):
+        if not (road[z, x] or trail[z, x] or UPPER[z, x] >= 0) or lake[z, x] or stream[z, x]: continue
+        y = _top_at(x, z)
+        if (x, y + 1, z) in w.b and w.b[(x, y + 1, z)][0] not in ("plant", "carpet"): continue
+        for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            if _top_at(x + dx, z + dz) == y + 1 and (road[z + dz, x + dx] or trail[z + dz, x + dx] or UPPER[z + dz, x + dx] >= 0):
+                mat = "stone_bricks" if UPPER[z, x] >= 0 and not (road[z, x] or trail[z, x]) else STEP_SLAB[(x * 7 + z * 3) % 5]
+                put(x, y + 1, z, mat, shape="slab"); nstep += 1
+                break
+print("step slabs", nstep)
 
 # ---------------- checks: can every piece of land be reached on foot, and is anything far from content ----------------
 from collections import deque
