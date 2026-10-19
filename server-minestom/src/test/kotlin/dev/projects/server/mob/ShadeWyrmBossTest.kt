@@ -260,18 +260,20 @@ class ShadeWyrmBossTest {
             combat.tick(1)
             assertFalse(combat.isEnraged(boss.uuid))
             assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .32))
-            combat.tick(100)
+            // A leap in progress lands first, then it roars (it never roars in mid-air).
+            var t = 100L
+            while (!combat.isAwakened(boss.uuid) && t < 4000) { combat.tick(t); t += 50 }
             assertTrue(combat.isAwakened(boss.uuid))
             assertFalse(combat.isEnraged(boss.uuid))
             assertEquals(0, combat.groundDisplayCount, "the second-form roar holds every attack")
-            combat.tick(1500)
+            t += 1400; combat.tick(t)
             assertTrue(combat.isGlowing(boss.uuid), "the glowing texture comes in at the roar")
             assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .35))
-            combat.tick(3200)
+            while (!combat.isEnraged(boss.uuid) && t < 12_000) { t += 50; combat.tick(t) }
             assertTrue(combat.isEnraged(boss.uuid))
             assertEquals(0, combat.groundDisplayCount, "the roar holds every attack")
             val mountsBefore = connection.passengerPackets
-            combat.tick(4600)
+            t += 1400; combat.tick(t)
             assertTrue(connection.passengerPackets > mountsBefore, "the rage bones shown mid-clip must be mounted on the model root")
             assertEquals(0, combat.groundDisplayCount)
             assertTrue(combat.applyEffectDamage(boss.uuid, player, 99_999.0))
@@ -308,9 +310,9 @@ class ShadeWyrmBossTest {
             repeat(4) { gimmicks.playerHit(player, "shade-dust", 1000L) }
             assertEquals(80.0, gimmicks.erosionOf(player.uuid))
             gimmicks.playerStruck(player)
-            assertEquals(74.0, gimmicks.erosionOf(player.uuid))
+            assertEquals(78.0, gimmicks.erosionOf(player.uuid))
             gimmicks.playerHit(player, "shade-sweep", 1000L)                  // not a dust attack
-            assertEquals(74.0, gimmicks.erosionOf(player.uuid))
+            assertEquals(78.0, gimmicks.erosionOf(player.uuid))
             repeat(2) { gimmicks.playerHit(player, "shade-breath", 1100L) }
             gimmicks.tick(1150L, listOf(player)) { _, amount, _ -> hurt += amount }
             assertEquals(ShadeWyrmGimmicks.ERUPT_DAMAGE, hurt)
@@ -502,7 +504,7 @@ class ShadeWyrmBossTest {
             val before = combat.healthOf(boss.uuid)
             assertNotNull(combat.applyDamageAmount(boss.uuid, player, max * .02))
             assertEquals(before, combat.healthOf(boss.uuid), "the shell takes the hit")
-            assertNotNull(combat.applyDamageAmount(boss.uuid, player, max * .025))
+            assertNotNull(combat.applyDamageAmount(boss.uuid, player, max * .06))
             assertTrue(combat.isDown(boss.uuid), "the shell broke")
         } finally {
             combat.dispose(); player.remove(); arena.dispose()

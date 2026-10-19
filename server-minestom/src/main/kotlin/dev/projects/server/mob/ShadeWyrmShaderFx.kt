@@ -422,6 +422,14 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
         add("puff", 4, at.add(0.0, 2.5, 0.0), 0, 10, Vec(3.0, 3.0, 1.0), IDENTITY, grow = Vec(7.0, 7.0, 1.0), moveTicks = 8, billboard = true)
     }
 
+    /** A wind-up tell: a glow gathering on the part that will strike (the wing tip, the jaws, the crown, the tail tip). */
+    fun cue(at: Pos, ticks: Int) {
+        addingWindup = true
+        try {
+            add("puff", 4, at, 0, ticks, Vec(.5, .5, 1.0), IDENTITY, grow = Vec(1.9, 1.9, 1.0), moveTicks = ticks, billboard = true) { .25 + .6 * it }
+        } finally { addingWindup = false }
+    }
+
     /** 鱗粉弾 in flight: a glowing clot leaves the jaws after [delay] ticks and travels to where it lands in [ticks]. */
     fun orb(from: Pos, to: Pos, delay: Int, ticks: Int) {
         val path = Vec(to.x() - from.x(), to.y() + .6 - from.y(), to.z() - from.z())
