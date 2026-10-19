@@ -40,7 +40,7 @@ class ShadeWyrmBossTest {
     fun `every ability has a once clip timed to its telegraph and recovery`() {
         val clips = animations()
         assertEquals("shade_wyrm", definition.model)
-        assertTrue(definition.abilities.size in 4..6)
+        assertTrue(definition.abilities.size in 4..8)
         for (ability in definition.abilities) {
             val clip = assertNotNull(clips.getAsJsonObject(ability.id), "missing clip ${ability.id}")
             assertFalse(clip["loop"].asBoolean, ability.id)
@@ -151,6 +151,91 @@ class ShadeWyrmBossTest {
     }
 
     @Test
+    fun `moving sideways while facing ahead plays the strafe, to the carrier's right as strafe_l`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val view = BossModelView("shade_wyrm", arena.instance, arena.bossSpawn.withView(0f, 0f), definition.enragedBones, definition.foldedBones)
+        try {
+            assertTrue(view.canManeuver)
+            // Yaw 0 faces +Z; the carrier's right is -X.
+            var at = arena.bossSpawn.withView(0f, 0f)
+            repeat(6) { at = at.add(-.08, 0.0, 0.0); view.tick(at, it * 50L) }
+            assertEquals("strafe_l", view.currentLoop)
+            repeat(6) { at = at.add(.08, 0.0, 0.0); view.tick(at, 400L + it * 50L) }
+            assertEquals("strafe_r", view.currentLoop)
+        } finally {
+            view.dispose(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `the wyrm moves round its target between attacks`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "ShadeMove"))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        player.setInstance(arena.instance, arena.bossSpawn.add(0.0, 0.0, 6.5)).join()
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            repeat(400) { now += 50; combat.tick(now); MinecraftServer.getSchedulerManager().processTick() }
+            assertTrue(combat.maneuverCount(boss.uuid) > 0, "no maneuver in 20 s")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `scripted abilities never come up at random and start by name`() {
+        val manager = MobAbilityManager(definition.abilities, kotlin.random.Random(3))
+        val turn = definition.abilities.single { it.id == "shade-turnsweep" }
+        assertTrue(turn.scripted)
+        var now = 0L
+        repeat(200) {
+            now += 10_000
+            val started = manager.tryStart(now, Pos(0.0, 64.0, 0.0), Pos(0.0, 64.0, 5.0))
+            assertTrue(started?.frame?.ability?.id != "shade-turnsweep")
+            manager.cancel()
+        }
+        val forced = assertNotNull(manager.tryStart(now + 10_000, Pos(0.0, 64.0, 0.0), Pos(0.0, 64.0, -5.0), only = "shade-turnsweep"))
+        assertEquals("shade-turnsweep", forced.frame.ability.id)
+    }
+
+    @Test
+    fun `the dive carries the wyrm onto a far player`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "ShadeDive"))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        val spot = arena.bossSpawn.add(0.0, 0.0, 17.0)
+        player.setInstance(arena.instance, spot).join()
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            var closest = Double.MAX_VALUE
+            repeat(120) {
+                now += 50; combat.tick(now); MinecraftServer.getSchedulerManager().processTick()
+                closest = minOf(closest, boss.position.distance(spot))
+            }
+            assertTrue(closest < 2.0, "the dive should land on the player: closest ${"%.1f".format(closest)} blocks")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
     fun `arena fight shows the model enrages once at half health and plays out its death`() {
         MinecraftServer.init(Auth.Offline())
         val arena = BossArenaFactory.create("shade", 1)
@@ -192,9 +277,214 @@ class ShadeWyrmBossTest {
         }
     }
 
+    private fun testPlayer(arena: dev.projects.server.coreloop.adventure.BossArena, at: Pos, name: String): Player {
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), name))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        player.setInstance(arena.instance, at).join()
+        return player
+    }
+
+    @Test
+    fun `dust erosion builds up, erupts at full and attacking relieves it`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, 6.0), "Erode")
+        val gimmicks = ShadeWyrmGimmicks(1, ShadeWyrmShaderFx(arena.instance), kotlin.random.Random(1))
+        var hurt = 0.0
+        try {
+            repeat(4) { gimmicks.playerHit(player, "shade-dust", 1000L) }
+            assertEquals(80.0, gimmicks.erosionOf(player.uuid))
+            gimmicks.playerStruck(player)
+            assertEquals(74.0, gimmicks.erosionOf(player.uuid))
+            gimmicks.playerHit(player, "shade-sweep", 1000L)                  // not a dust attack
+            assertEquals(74.0, gimmicks.erosionOf(player.uuid))
+            repeat(2) { gimmicks.playerHit(player, "shade-breath", 1100L) }
+            gimmicks.tick(1150L, listOf(player)) { _, amount, _ -> hurt += amount }
+            assertEquals(ShadeWyrmGimmicks.ERUPT_DAMAGE, hurt)
+            assertEquals(0.0, gimmicks.erosionOf(player.uuid))
+        } finally {
+            gimmicks.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `the dust burst leaves pools and the antennae pulse bursts them`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val gimmicks = ShadeWyrmGimmicks(1, ShadeWyrmShaderFx(arena.instance), kotlin.random.Random(2))
+        val dust = definition.abilities.single { it.id == "shade-dust" }
+        val pulse = definition.abilities.single { it.id == "shade-pulse" }
+        val c = arena.bossSpawn
+        try {
+            gimmicks.abilityHit(MobAbilityFrame(dust, c, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L), 1000L)
+            assertEquals(4, gimmicks.poolCount)
+            gimmicks.abilityHit(MobAbilityFrame(pulse, c, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L), 2000L)
+            gimmicks.tick(2000L + ShadeWyrmGimmicks.BURST_DELAY_MILLIS - 50, emptyList()) { _, _, _ -> }
+            assertEquals(4, gimmicks.poolCount)
+            gimmicks.tick(2000L + ShadeWyrmGimmicks.BURST_DELAY_MILLIS, emptyList()) { _, _, _ -> }
+            assertEquals(0, gimmicks.poolCount)
+        } finally {
+            gimmicks.dispose(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `enraged horns break from the front and each fan tears from its side`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, -20.0), "Parts")
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            combat.tick(now)
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .52))
+            assertTrue(arena.instance.clock(BossArenaFactory.rageClock()).paused())
+            repeat(110) { now += 50; combat.tick(now) }                        // the enrage roar
+            assertTrue(combat.isEnraged(boss.uuid))
+            assertFalse(arena.instance.clock(BossArenaFactory.rageClock()).paused())   // the arena turns violet
+            fun hitFrom(offset: Vec, share: Double) {
+                val yaw = Math.toRadians(boss.position.yaw().toDouble())
+                val ahead = Vec(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw))
+                val right = Vec(-kotlin.math.cos(yaw), 0.0, -kotlin.math.sin(yaw))
+                player.teleport(boss.position.add(ahead.mul(offset.z())).add(right.mul(offset.x()))).join()
+                assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * share))
+            }
+            hitFrom(Vec(0.0, 0.0, 6.0), .13)
+            assertEquals(listOf(true, false, false), combat.partsBroken(boss.uuid))
+            hitFrom(Vec(5.0, 0.0, 0.0), .11)
+            assertEquals(listOf(true, true, false), combat.partsBroken(boss.uuid))
+            hitFrom(Vec(-5.0, 0.0, 0.0), .11)
+            assertEquals(listOf(true, true, true), combat.partsBroken(boss.uuid))
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `the shade nest holds its violet timeline at the calm end and pools light the floor until they burst`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        // The violet comes from the rage timeline on its own clock, held at 0 (the ordinary night) until the enrage.
+        val rage = requireNotNull(MinecraftServer.getTimelineRegistry().get(BossArenaFactory.SHADE_RAGE))
+        val tint = requireNotNull(rage.tracks()[net.minestom.server.world.attribute.EnvironmentAttribute.BLOCK_LIGHT_TINT])
+        assertEquals(net.kyori.adventure.text.format.TextColor.color(BossArenaFactory.SHADE_LIGHT), tint.keyframes().last().value())
+        assertEquals(BossArenaFactory.RAGE_FADE_TICKS, tint.keyframes().last().ticks())
+        assertTrue(arena.instance.clock(BossArenaFactory.rageClock()).paused())
+        assertEquals(0L, arena.instance.clock(BossArenaFactory.rageClock()).time())
+        val lights = ShadeWyrmLights(arena.instance)
+        val gimmicks = ShadeWyrmGimmicks(1, ShadeWyrmShaderFx(arena.instance), kotlin.random.Random(2), lights)
+        val dust = definition.abilities.single { it.id == "shade-dust" }
+        val pulse = definition.abilities.single { it.id == "shade-pulse" }
+        val c = arena.bossSpawn
+        fun lit() = lights.snapshot().keys.count { arena.instance.getBlock(it).compare(net.minestom.server.instance.block.Block.LIGHT) }
+        try {
+            gimmicks.abilityHit(MobAbilityFrame(dust, c, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L), 1000L)
+            assertTrue(lit() in 1..4)                                         // two pools may share a block
+            gimmicks.abilityHit(MobAbilityFrame(pulse, c, Vec(0.0, 0.0, 1.0), MobAbilityPhase.LOCKED, 0L), 2000L)
+            val burst = 2000L + ShadeWyrmGimmicks.BURST_DELAY_MILLIS
+            lights.tick(burst); gimmicks.tick(burst, emptyList()) { _, _, _ -> }
+            assertTrue(lights.snapshot().values.all { it == 14 })             // the burst flashes brighter
+            lights.tick(burst + 600)
+            assertEquals(0, lit())
+            assertTrue(lights.snapshot().isEmpty())
+        } finally {
+            gimmicks.dispose(); lights.dispose(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `players in the arena get the glow post effect while the wyrm lives`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, -20.0), "Glow")
+        val connection = player.playerConnection as MemoryConnection
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            combat.tick(1_000L); combat.tick(1_050L)
+            assertEquals(listOf(listOf(QuestEncounterCombat.GLOW)), connection.postEffects)
+            combat.dispose()
+            assertEquals(listOf(listOf(QuestEncounterCombat.GLOW), emptyList()), connection.postEffects)
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    /**
+     * `SHADE_FIGHT_DUMP=<file> ./gradlew :server-minestom:test --tests '*ShadeWyrmBossTest' --rerun` runs a scripted
+     * 40 s fight through the real encounter code and writes, per tick, where the wyrm is, where it looks, the clip on
+     * show and the shader displays, for scripts/boss_preview/fightclip.py. The player: in front, then running round it,
+     * far away, inside its reach, enrages it, inside its reach again, mid range.
+     */
+    @Test
+    fun `dump a scripted fight for the preview`() {
+        val path = System.getenv("SHADE_FIGHT_DUMP") ?: return
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "ShadeFight"))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        val c = arena.bossSpawn
+        player.setInstance(arena.instance, c.add(0.0, 0.0, -6.0)).join()
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        val lines = mutableListOf<String>()
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            for (tick in 0 until 800) {
+                val t = tick * .05
+                val b = boss.position
+                val facing = Math.toRadians((combat.modelFacing(boss.uuid) ?: 0f).toDouble())
+                val ahead = Vec(-kotlin.math.sin(facing), 0.0, kotlin.math.cos(facing))
+                val want = when {
+                    t < 6 -> c.add(0.0, 0.0, -6.0)
+                    t < 11 -> b.add(kotlin.math.cos(t * 2.1) * 4.5, 0.0, kotlin.math.sin(t * 2.1) * 4.5)   // run round it
+                    t < 18 -> c.add(0.0, 0.0, -17.0)                      // far away
+                    t < 22 -> b.add(ahead.mul(2.5))                       // inside its reach
+                    t < 27 -> c.add(0.0, 0.0, -8.0)
+                    t < 33 -> b.add(ahead.mul(2.5))
+                    t < 36.5 -> b.add(Vec(-kotlin.math.cos(facing), 0.0, -kotlin.math.sin(facing)).mul(4.5))   // its right side
+                    else -> b.add(Vec(kotlin.math.cos(facing), 0.0, kotlin.math.sin(facing)).mul(4.5))         // its left side
+                }
+                player.teleport(Pos(want.x(), c.y(), want.z())).join()
+                player.health = 20f
+                if (tick == 440) combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .55)
+                if (t >= 27.5 && tick % 10 == 0) combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .015)   // it fights back
+                now += 50; combat.tick(now); boss.tick(now); MinecraftServer.getSchedulerManager().processTick()
+                arena.instance.clock(BossArenaFactory.rageClock()).run { if (!paused()) time(time() + 1) }   // the instance tick's job
+                val (clip, since) = combat.shownClip(boss.uuid) ?: ("idle" to now)
+                val shader = combat.shaderViews().joinToString(",") { v ->
+                    "{\"sprite\":\"${v.sprite}\",\"kind\":${v.kind},\"progress\":${v.progress},\"at\":[${v.at.x() - c.x()},${v.at.y() - c.y()},${v.at.z() - c.z()}]," +
+                        "\"scale\":[${v.scale.x()},${v.scale.y()},${v.scale.z()}],\"translation\":[${v.translation.x()},${v.translation.y()},${v.translation.z()}]," +
+                        "\"rotation\":[${v.rotation.joinToString(",")}],\"billboard\":${v.billboard}}"
+                }
+                val p = player.position
+                lines += "{\"t\":${"%.2f".format(t + .05)},\"boss\":[${boss.position.x() - c.x()},${boss.position.y() - c.y()},${boss.position.z() - c.z()}]," +
+                    "\"yaw\":${combat.modelFacing(boss.uuid) ?: 0f},\"clip\":\"$clip\",\"clipT\":${(now - since) / 1000.0}," +
+                    "\"player\":[${p.x() - c.x()},${p.z() - c.z()}],\"enraged\":${combat.isEnraged(boss.uuid)}," +
+                    "\"rage\":${combat.rageShown()},\"broken\":[${combat.partsBroken(boss.uuid).joinToString(",")}],\"lights\":[${combat.lightsOn().entries.joinToString(",") { (b, l) -> "[${b.x() - c.blockX()},${b.y() - c.blockY()},${b.z() - c.blockZ()},$l]" }}],\"erosion\":${combat.erosionOf(player.uuid)},\"shader\":[$shader]}"
+            }
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+        java.io.File(path).writeText(lines.joinToString("\n"))
+    }
+
     private class MemoryConnection : PlayerConnection() {
         var passengerPackets = 0
+        val postEffects = mutableListOf<List<net.kyori.adventure.key.Key>>()
         override fun sendPacket(packet: SendablePacket) {
+            if (packet is net.minestom.server.network.packet.server.common.PostEffectsPacket) postEffects += packet.postEffects()
             if (packet is net.minestom.server.network.packet.server.play.SetPassengersPacket) passengerPackets++
         }
         override fun getRemoteAddress(): SocketAddress = InetSocketAddress("127.0.0.1", 0)

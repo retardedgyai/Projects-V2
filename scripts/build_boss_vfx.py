@@ -76,7 +76,7 @@ def curtain(u, v):
 
 
 SPRITES = {"slash": (128, 128, slash, "flat"), "ring": (64, 64, ring, "flat"), "beam": (32, 128, beam, "flat"),
-           "beam_up": (128, 32, lambda u, v: beam(v, u), "upright"), "ring_up": (64, 64, ring, "upright"), "puff": (32, 32, puff, "upright"), "smoke": (32, 32, puff, "upright"),
+           "beam_up": (128, 32, lambda u, v: beam(v, u), "upright"), "ring_up": (64, 64, ring, "upright"), "puff": (32, 32, puff, "upright"), "smoke": (32, 32, puff, "upright"), "disc": (32, 32, puff, "flat"),
            "curtain": (32, 64, curtain, "upright")}
 
 
@@ -103,6 +103,14 @@ def build(pack=PACK):
             path = pack / f"assets/projects/{sub}/boss_vfx/{name}.json"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
+    # The arena glow (26.3 post effect, turned on per player by the server): our own namespace, no vanilla override.
+    post = pack / "assets/projects/shaders/post"
+    post.mkdir(parents=True, exist_ok=True)
+    for f in ("shade_glow_extract.fsh", "shade_glow_composite.fsh"):
+        shutil.copyfile(SHADERS / "post" / f, post / f)
+    effect = pack / "assets/projects/post_effect/shade_glow.json"
+    effect.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(SHADERS / "post" / "shade_glow.json", effect)
     core = pack / "assets/minecraft/shaders/core"
     core.mkdir(parents=True, exist_ok=True)
     for f in SHADER_FILES:

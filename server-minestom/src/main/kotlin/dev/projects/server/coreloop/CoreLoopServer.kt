@@ -55,6 +55,7 @@ object CoreLoopServer {
     fun start() {
         CoreMmoTuning.balance = CoreMmoBalance.load(Path.of("config", "projects", "mmo-balance.properties"))
         val server = MinecraftServer.init(Auth.Offline())
+        dev.projects.server.coreloop.adventure.BossArenaFactory.registerDimensions()   // before anyone joins
         val hub = MinecraftServer.getInstanceManager().createInstanceContainer()
         val harbor = HarborScene.build(hub)
         val game = CoreLoopGame(hub, harbor)

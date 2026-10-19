@@ -7,6 +7,16 @@ import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
+import net.minestom.server.registry.RegistryKey
+import net.minestom.server.world.DimensionType
+import net.minestom.server.world.attribute.EnvironmentAttribute
+import net.minestom.server.world.clock.WorldClock
+import net.minestom.server.world.timeline.Timeline
+import net.minestom.server.registry.RegistryTag
+import net.minestom.server.utils.EaseFunction
+import net.kyori.adventure.util.RGBLike
+import net.kyori.adventure.key.Key
+import net.kyori.adventure.text.format.TextColor
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
@@ -33,6 +43,53 @@ data class BossArena(
 
 /** Three concrete server-built arenas; no imported world or landscape mutation. */
 object BossArenaFactory {
+    /**
+     * 翳の巣 lives in its own dimension type whose light turns violet when the wyrm enrages (26.3 environment
+     * attributes): its timeline [SHADE_RAGE] runs on a clock of its own that stays at 0 (the ordinary night) until
+     * the wyrm's enrage roar sends its wave out (QuestEncounterCombat), then blends block light, ambient light, fog
+     * and sky light to violet over [RAGE_FADE_TICKS], the time the wave takes to reach the wall.
+     */
+    val SHADE_NEST: Key = Key.key("projects", "shade_nest")
+    val SHADE_RAGE: Key = Key.key("projects", "shade_rage")
+    const val RAGE_FADE_TICKS = 24
+
+    /**
+     * Registers the arena dimensions. Dimension types reach a client only when it joins, and an instance gets only
+     * the clocks registered before it is made, so the server calls this once at start (CoreLoopServer); create()
+     * calls it too for tests and tools that build an arena directly.
+     */
+    @Synchronized
+    fun registerDimensions(): RegistryKey<DimensionType> {
+        val registry = MinecraftServer.getDimensionTypeRegistry()
+        registry.getKey(SHADE_NEST)?.let { return it }
+        val clock = MinecraftServer.getWorldClockRegistry().register(SHADE_RAGE, WorldClock.create())
+        fun <A> track(modifier: EnvironmentAttribute.Modifier<RGBLike, A>, calm: A, rage: A) =
+            Timeline.Track(modifier, listOf(Timeline.Keyframe(0, calm), Timeline.Keyframe(RAGE_FADE_TICKS, rage)), EaseFunction.LINEAR)
+        val override = EnvironmentAttribute.Modifier.Override(EnvironmentAttribute.BLOCK_LIGHT_TINT.valueCodec())
+        @Suppress("UNCHECKED_CAST")                                       // composes with the day timeline's night
+        val multiply = EnvironmentAttribute.Modifier.RGB_OPERATORS.getValue(EnvironmentAttribute.Modifier.Operator.MULTIPLY) as EnvironmentAttribute.Modifier<RGBLike, RGBLike>
+        val white: RGBLike = TextColor.color(0xffffff)
+        val rage = MinecraftServer.getTimelineRegistry().register(SHADE_RAGE, Timeline.builder().clock(clock)
+            .track(EnvironmentAttribute.BLOCK_LIGHT_TINT, track(override, EnvironmentAttribute.BLOCK_LIGHT_TINT.defaultValue(), TextColor.color(SHADE_LIGHT)))
+            .track(EnvironmentAttribute.AMBIENT_LIGHT_COLOR, track(override, TextColor.color(0x0a0a0a), TextColor.color(0x1c1128)))
+            .track(EnvironmentAttribute.FOG_COLOR, track(multiply, white, TextColor.color(0xb080ff)))
+            .track(EnvironmentAttribute.SKY_LIGHT_COLOR, track(multiply, white, TextColor.color(0xa070ff)))
+            .build())
+        val base = requireNotNull(registry.get(DimensionType.OVERWORLD))
+        return registry.register(SHADE_NEST, DimensionType.builder(base)
+            .timelines(RegistryTag.direct(Timeline.DAY, Timeline.MOON, Timeline.EARLY_GAME, rage))
+            .build())
+    }
+
+    /** 翳の巣's rage clock (registered by [registerDimensions]). */
+    fun rageClock(): RegistryKey<WorldClock> {
+        registerDimensions()
+        return requireNotNull(MinecraftServer.getWorldClockRegistry().getKey(SHADE_RAGE))
+    }
+
+    /** The violet every block light in 翳の巣 takes (vanilla mixes it toward white near light level 0 and 15). */
+    const val SHADE_LIGHT = 0xb34cff
+
     fun create(bossId: String, tier: Int): BossArena {
         require(tier in 1..4)
         val archetype = when (bossId) {
@@ -43,10 +100,12 @@ object BossArenaFactory {
             "shade" -> QuestMobArchetype.SHADE_WYRM
             else -> error("Unknown trial boss: $bossId")
         }
-        val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
+        val instance = if (bossId == "shade") MinecraftServer.getInstanceManager().createInstanceContainer(registerDimensions())
+            else MinecraftServer.getInstanceManager().createInstanceContainer()
         instance.setChunkSupplier(::LightingChunk)
         instance.time = if (bossId == "trial" || bossId == "shade") 18_000L else 6_000L
         instance.defaultClock()?.pause()
+        if (bossId == "shade") instance.clock(rageClock()).run { time(0); pause() }
         instance.setWeather(Weather.CLEAR)
         instance.setGenerator { unit ->
             unit.modifier().fillHeight(0, 39, Block.DEEPSLATE)
@@ -59,12 +118,13 @@ object BossArenaFactory {
                 val floor = when (bossId) {
                     "rift" -> if (abs(dx) < 2 || abs(dz) < 2) Block.POLISHED_BLACKSTONE else Block.RED_NETHER_BRICKS
                     "ritual" -> if (distance in 4.5..5.5 || distance in 15.5..16.5) Block.BLUE_ICE else Block.SMOOTH_QUARTZ
-                    // The wyrm's nest: dust-stained blackstone, sculk drifts, a sparse grid of dim lights.
+                    // The wyrm's nest: pale tuff (it takes the violet light), sculk drifts, amethyst stains and a sparse grid
+                    // of crying obsidian (light 10) so the violet light of its effects is what lights the floor.
                     "shade" -> when {
-                        Math.floorMod(x, 8) == 0 && Math.floorMod(z, 8) == 0 -> Block.PEARLESCENT_FROGLIGHT
+                        Math.floorMod(x, 8) == 0 && Math.floorMod(z, 8) == 0 -> Block.CRYING_OBSIDIAN
                         distance < 3.5 || Math.floorMod(x * 31 + z * 17, 11) == 0 -> Block.SCULK
-                        Math.floorMod(x * 7 + z * 13, 9) == 0 -> Block.CRYING_OBSIDIAN
-                        else -> Block.POLISHED_BLACKSTONE
+                        Math.floorMod(x * 7 + z * 13, 9) == 0 -> Block.AMETHYST_BLOCK
+                        else -> Block.POLISHED_TUFF
                     }
                     else -> if ((x + z) % 7 == 0) Block.SEA_LANTERN else Block.PRISMARINE_BRICKS
                 }

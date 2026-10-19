@@ -108,14 +108,26 @@ def swing_curl(phase, duty):
     return math.sin(math.pi * min(1, f * 1.4)) if f < .72 else 0.0
 
 
-def solve_legs(sk, pose, targets):
-    """Two-bone IK in each leg's y-z plane; the paw counter-rotates to stay flat."""
+def solve_legs(sk, pose, targets, lateral=False):
+    """Two-bone IK in each leg's y-z plane; the paw counter-rotates to stay flat.
+    lateral: first roll the whole leg about its root (z) so the foot also reaches a sideways target exactly."""
     M = sk.mats(pose)
     for key, (r, m, e) in LEGS.items():
         R0, j1, j2 = sk.bones[r]["pivot"], sk.bones[m]["pivot"], sk.bones[e]["pivot"]
         L1 = np.linalg.norm((j1 - R0)[1:]); L2 = np.linalg.norm((j2 - j1)[1:])
         P = M[sk.bones[r]["parent"]]
         d = np.linalg.inv(P[:3, :3]) @ (targets[key] - P[:3, 3]) - R0
+        roll = turn = 0.0
+        if lateral:
+            r0 = j2 - R0
+            if key.startswith("f"):           # fore feet hang below the shoulder: roll the leg sideways (about z)
+                roll = math.atan2(d[0], -d[1]) - math.atan2(r0[0], -r0[1])
+                c, s_ = math.cos(-roll), math.sin(-roll)
+                d = np.array([d[0] * c - d[1] * s_, d[0] * s_ + d[1] * c, d[2]])
+            else:                             # hind feet trail far behind the hip: swing the leg about y instead
+                turn = math.atan2(d[0], d[2]) - math.atan2(r0[0], r0[2])
+                c, s_ = math.cos(-turn), math.sin(-turn)
+                d = np.array([d[0] * c + d[2] * s_, d[1], -d[0] * s_ + d[2] * c])
         dist = max(1e-3, min(L1 + L2 - .01, math.hypot(d[1], d[2])))
         base = math.degrees(math.atan2(d[2], d[1]))
         a1 = math.degrees(math.acos(max(-1, min(1, (L1 ** 2 + dist ** 2 - L2 ** 2) / (2 * L1 * dist)))))
@@ -126,7 +138,20 @@ def solve_legs(sk, pose, targets):
         seg2 = seg1 - bend * (180 - a2)
         q1 = seg1 - ang(j1 - R0)
         q2 = (seg2 - ang(j2 - j1)) - q1
-        add(pose, r, (q1, 0, 0)); add(pose, m, (q2, 0, 0)); add(pose, e, (-(q1 + q2), 0, 0))
+        add(pose, r, (q1, math.degrees(turn), math.degrees(roll))); add(pose, m, (q2, 0, 0))
+        add(pose, e, (-(q1 + q2), -math.degrees(turn), -math.degrees(roll)))
+
+
+def solve_legs_exact(sk, pose, targets, rounds=4):
+    """solve_legs with lateral reach, re-aimed a few times so the planar approximation's error (a few px) vanishes."""
+    base = {k: tuple(np.array(v, float).copy() for v in val) for k, val in pose.items()}
+    aim = {k: np.array(v, float) for k, v in targets.items()}
+    for _ in range(rounds):
+        trial = {k: tuple(v.copy() for v in val) for k, val in base.items()}
+        solve_legs(sk, trial, aim, lateral=True)
+        for k, (r, m, e) in LEGS.items():
+            aim[k] = aim[k] - (sk.point(e, trial) - targets[k])
+    pose.clear(); pose.update(trial)
 
 
 HIPS = np.array([0, 30.0, -36.0])        # the crouch pivots here so the hind legs keep their stance
@@ -206,15 +231,26 @@ def enrage_pose(sk, rest_feet, theta, t):
     return p
 
 
+# The walk is timed to the server's ground speed so the planted feet do not skate: a stance foot slides back one
+# stride over duty * cycle seconds, which must equal the carrier's speed (0.13 blocks/tick = 41.6 px/s, x1.2 enraged).
+WALK = dict(stride=34, duty=.7, enraged_stride=36)
+WALK_SPEED = 41.6                                # px/s
+
+
+def walk_cycle(enraged):
+    stride = WALK["enraged_stride"] if enraged else WALK["stride"]
+    return stride / (WALK["duty"] * WALK_SPEED * (1.2 if enraged else 1.0))
+
+
 def walk_pose(sk, rest_feet, t, enraged=False, theta=0.0):
-    duty, stride, lift = .7, 18, 11
+    duty, stride, lift = WALK["duty"], WALK["stride"], 11
     ph = {"hl": 0, "fl": .25, "hr": .5, "fr": .75}
     roll, bob, sway = 1.5, .35, .6
     s = math.sin(2 * math.pi * t)
     p = {}
     if enraged:
         enraged_stance(sk, p, theta)
-        stride, lift = 20, 8
+        stride, lift = WALK["enraged_stride"], 8
     add(p, "body", (0, sway * s, roll * math.sin(2 * math.pi * (t + .25))), (0, -bob * abs(s), 0))
     targets = {}
     for k in LEGS:
@@ -234,6 +270,98 @@ def walk_pose(sk, rest_feet, t, enraged=False, theta=0.0):
     return p
 
 
+# ---- moving round the player (draft 2, 2026-10-17) ----
+# Read from the Wilds moveset (youtube.com/watch?v=RS93ksVExN8): Gore never bounces. It stalks low on wide-planted
+# wing-arms with the head down and locked on its prey (Bite, 39-42 s), whips round on the spot and darts along the
+# ground stretched long and low (Double Dart, 49-51 s), and repositions with one heavy wingbeat (Side Dive, 77-82 s).
+# The server moves the carrier; the clips keep the body over it (no horizontal travel).
+STRAFE = dict(stride=24, duty=.75, speed=25.6)    # px, -, px/s: 1.6 blocks/s
+
+
+def strafe_cycle():
+    return STRAFE["stride"] / (STRAFE["duty"] * STRAFE["speed"])
+
+
+def strafe_pose(sk, rest_feet, t, sign, enraged=False, theta=0.0):
+    """横移動: a low, deliberate sidestep round the player (sign +1 toward model +X). Weight shifts onto each planted
+    foot, the head stays low and locked on, the tail drags. Feet are placed exactly (lateral IK), so nothing skates."""
+    duty, stride = STRAFE["duty"], STRAFE["stride"]
+    ph = {"fl": 0, "hl": .25, "fr": .5, "hr": .75} if sign > 0 else {"fr": 0, "hr": .25, "fl": .5, "hl": .75}
+    p = {}
+    if enraged:
+        enraged_stance(sk, p, theta)
+    w = 2 * math.pi * t
+    body(sk, p, (3, 4 * sign, -1.5 * sign + 1.2 * math.sin(2 * w)), (1.5 * math.sin(2 * w) * sign, -6 - .5 * math.sin(2 * w) ** 2, 0))
+    targets = {}
+    for k in LEGS:
+        lift = 7 if k.startswith("f") else 4
+        dy, dz = foot_offset((t + ph[k]) % 1, duty, stride, lift, False)
+        targets[k] = rest_feet[k] + np.array([dz * sign, dy, 0])   # stance: the foot drifts back against the travel
+    solve_legs_exact(sk, p, targets)
+    add(p, "neck", (8 if not enraged else 4, -8 * sign, 0)); add(p, "skull", (6 if not enraged else 0, -6 * sign, 0))
+    arm = "cloak" if enraged else "wing"
+    for side, sg in (("l", 1), ("r", -1)):
+        add(p, f"{arm}_{side}", (0, 0, (6 if not enraged else 2) * sg))
+    for k, b in enumerate(TAIL):
+        add(p, b, (4, (5 + 2 * k) * sign + 2 * math.sin(w - .6 * (k + 1)), 0))
+    return p
+
+
+def hop_back_pose(sk, rest_feet, t, enraged=False, theta=0.0):
+    """跳び退き, 1.1 s: sinks low with the wings unfurling overhead; one heavy downbeat lifts it off and back
+    (the server carries it ~4 blocks between 0.28 s and 0.68 s); glides with the wings spread, the head still down on
+    the player; lands hind feet first, the wing-arms slam down, and it rises slowly as the wings settle."""
+    p = {}
+    y = K(t, [(0, 0), (.25, -8), (.33, 6), (.5, 9), (.64, 3), (.72, -7), (.85, -4), (1.1, 0)])
+    pitch = K(t, [(0, 0), (.25, 6), (.34, -8), (.55, -5), (.66, 2), (.74, 5), (1.1, 0)])
+    if enraged:
+        enraged_stance(sk, p, theta)
+    body(sk, p, (pitch, 0, 0), (0, y, 0))
+    air = smooth(t, .3, .36) * (1 - smooth(t, .62, .72))
+    fore = (0, y + 10 * air, 8 * air); hind = (0, y + 4 * air * (1 - smooth(t, .58, .64)), -4 * air)
+    solve_legs(sk, p, feet_with(rest_feet, fl=fore, fr=fore, hl=hind, hr=hind))
+    beat = K(t, [(0, 0), (.25, 64), (.31, 68), (.36, -12), (.44, 26), (.6, 30), (.7, 8), (.8, -4), (1.1, 0)])
+    arm = "cloak" if enraged else "wing"
+    for side, sg in (("l", 1), ("r", -1)):
+        add(p, f"{arm}_{side}", (K(t, [(0, 0), (.25, -10), (.36, 8), (.6, 0)]), 0, beat * (.55 if enraged else 1) * sg))
+        if not enraged:
+            add(p, f"wing_{side}_fore", (0, 0, K(t, [(0, 0), (.25, 25), (.36, -20), (.6, 10), (1.0, 0)]) * sg))
+    add(p, "neck", (K(t, [(0, 0), (.25, 14), (.4, 8), (.72, 16), (1.1, 0)]) + (-10 if not enraged else 0), 0, 0))
+    if not enraged:
+        add(p, "skull", (8, 0, 0))
+    add(p, "jaw", (K(t, [(0, 0), (.3, 12), (.5, 4), (.75, 14), (1.0, 0)]), 0, 0))
+    add(p, "tail", (K(t, [(0, 0), (.3, -8), (.55, 6), (.75, -4), (1.0, 0)]), 0, 0))
+    return p
+
+
+def dash_side_pose(sk, rest_feet, t, sign, enraged=False, theta=0.0):
+    """回り込み (dart), 0.9 s: whips its body toward the side and crouches; darts along the ground stretched long
+    and low with the wings swept back like a spearhead (the server carries it ~5 blocks aside between 0.2 s and
+    0.5 s); skids to a stop and whips back round past the player, then settles facing it."""
+    p = {}
+    yaw = K(t, [(0, 0), (.18, 55), (.5, 62), (.62, -18), (.75, 6), (.9, 0)]) * sign
+    y = K(t, [(0, 0), (.18, -8), (.3, -6), (.48, -7), (.58, -9), (.72, -2), (.9, 0)])
+    pitch = K(t, [(0, 0), (.18, 7), (.35, 5), (.55, 8), (.7, 2), (.9, 0)])
+    if enraged:
+        enraged_stance(sk, p, theta)
+    body(sk, p, (pitch, yaw, -6 * sign * smooth(t, .5, .58) * (1 - smooth(t, .62, .8))), (0, y, 0))
+    run = smooth(t, .2, .26) * (1 - smooth(t, .48, .56))
+    stride = math.sin(2 * math.pi * (t - .2) / .15)                 # quick strides while darting
+    fore = (0, y + 8 * run * max(0.0, stride), 10 * run); hind = (0, y + 5 * run * max(0.0, -stride), -6 * run)
+    solve_legs(sk, p, feet_with(rest_feet, fl=fore, fr=fore, hl=hind, hr=hind))
+    arm = "cloak" if enraged else "wing"
+    for side, sg in (("l", 1), ("r", -1)):
+        add(p, f"{arm}_{side}", (K(t, [(0, 0), (.2, 10), (.5, 12), (.65, 0)]), 0,
+                                 K(t, [(0, 0), (.2, -12), (.5, -14), (.62, 16), (.9, 0)]) * (.5 if enraged else 1) * sg))
+    add(p, "neck", (K(t, [(0, 0), (.18, 10), (.5, 14), (.62, 4), (.9, 0)]) + (-10 if not enraged else 0),
+                    K(t, [(0, 0), (.18, -20), (.5, -16), (.62, 14), (.8, 0)]) * sign, 0))
+    if not enraged:
+        add(p, "skull", (8, 0, 0))
+    for k, b in enumerate(TAIL):
+        add(p, b, (-4 * run, K(t, [(0, 0), (.2, -10), (.5, -8), (.62, 18), (.8, -4), (.9, 0)]) * sign * (1 + .3 * k), 0))
+    return p
+
+
 # ---- abilities, idle and death: keyed beats + secondary motion ----
 # Read from the Wilds tempered Gore Magala moveset (youtube.com/watch?v=RS93ksVExN8, 2026-10-17): the body moves
 # first and everything hanging off it follows late (neck -> skull -> antennae, shoulder -> elbow -> wrist ->
@@ -244,8 +372,9 @@ def walk_pose(sk, rest_feet, t, enraged=False, theta=0.0):
 # Each clip is telegraph + recovery long and hits on the telegraph time (the server's contract). The four phase-one
 # abilities also get an `<id>_enraged` twin in the crouch with the fans, which the server plays once enraged.
 ABILITIES = {"shade-sweep": (1.1, 2.0), "shade-pounce": (1.4, 2.6), "shade-dust": (1.7, 2.6),
-             "shade-pulse": (1.2, 2.3), "shade-breath": (1.6, 2.6), "shade-storm": (2.2, 3.5)}
-PHASE_ONE = ("shade-sweep", "shade-pounce", "shade-dust", "shade-pulse")
+             "shade-pulse": (1.2, 2.3), "shade-breath": (1.6, 2.6), "shade-storm": (2.2, 3.5),
+             "shade-turnsweep": (.9, 1.8), "shade-dive": (2.4, 3.8)}
+PHASE_ONE = ("shade-sweep", "shade-pounce", "shade-dust", "shade-pulse", "shade-turnsweep", "shade-dive")
 TAIL = ("tail", "tail_2", "tail_mid", "tail_end")
 
 
@@ -419,12 +548,124 @@ def storm_pose(sk, rest_feet, theta, t, enraged):
     return p, feet_with(rest_feet, fl=front, fr=front)
 
 
+def rotated_feet(rest_feet, yaw_deg, pivot):
+    R = euler(np.array([0, yaw_deg, 0]))
+    return {k: R @ (v - pivot) + pivot for k, v in rest_feet.items()}
+
+
+def turnsweep_pose(sk, rest_feet, theta, t, enraged):
+    """振り向き薙ぎ (Back Sweep): it has its back to the player; it coils, then whips its whole body round on the spot
+    (the feet stepping round under it) and the wing-arm rakes across behind it on the hit (0.9 s)."""
+    p = {}
+    yaw = K(t, [(0, 180), (.3, 172), (.62, 150), (.9, -18), (1.05, -30), (1.35, -8), (1.8, 0)])
+    pivot = sk.bones["body"]["pivot"]
+    add(p, "body", (K(t, [(0, 0), (.6, 6), (.9, 4), (1.4, 0)]), yaw, K(t, [(0, 0), (.6, 8), (.95, -10), (1.3, 0)])),
+        (0, K(t, [(0, 0), (.6, -5), (.95, -2), (1.4, 0)]), 0))
+    if enraged:
+        enraged_stance(sk, p, theta)
+    step = bump(t, .66, .76, .9)
+    feet = rotated_feet(rest_feet, yaw, pivot)
+    for k in feet:
+        feet[k] = feet[k] + np.array([0, 6 * step * (1 if k.startswith("f") else .6), 0])
+    solve_legs(sk, p, feet)
+    arm = "cloak" if enraged else "wing"
+    add(p, f"{arm}_l", (0, K(t, [(0, 0), (.6, 26), (.85, 30), (.92, -56), (1.1, -64), (1.4, -24), (1.8, 0)]),
+                        (.75 if enraged else 1) * K(t, [(0, 0), (.5, 40), (.85, 52), (.92, 10), (1.2, 4), (1.8, 0)])))
+    add(p, "neck", (K(t, [(0, 0), (.6, 8), (.9, -4), (1.4, 0)]) + (-10 if not enraged else 0), K(t, [(0, 0), (.62, 30), (.9, -16), (1.2, 4), (1.6, 0)]), 0))
+    if not enraged:
+        add(p, "skull", (8, 0, 0))
+    add(p, "jaw", (K(t, [(0, 0), (.88, 6), (.95, 24), (1.3, 0)]), 0, 0))
+    for k, b in enumerate(TAIL):
+        add(p, b, (0, K(t, [(0, 0), (.6, -30), (.95, 40), (1.2, 20), (1.6, 0)]) * (1 + .25 * k), 0))
+    return p, None
+
+
+def dive_pose(sk, rest_feet, theta, t, enraged):
+    """飛び上がり急降下 (Dive), hit at 2.4 s: crouches with the wings raised, beats up off the ground, hangs high with
+    heavy wingbeats while the server carries it over the target, folds and plunges nose-first onto it, wings flung out
+    flat on impact, then pushes itself up."""
+    p = {}
+    y = K(t, [(0, 0), (.45, -8), (.7, 20), (1.0, 52), (1.4, 64), (1.9, 66), (2.15, 58), (2.4, -6), (2.55, -9), (3.0, -3), (3.8, 0)])
+    hover = smooth(t, .6, .8) * (1 - smooth(t, 2.0, 2.15))
+    y += 3 * math.sin(2 * math.pi * 1.6 * t) * hover
+    pitch = K(t, [(0, 0), (.45, 6), (.7, -16), (1.1, -6), (1.9, 4), (2.15, 24), (2.4, 14), (2.6, 8), (3.2, 0)])
+    if enraged:
+        enraged_stance(sk, p, theta * (1 - hover))
+    body(sk, p, (pitch, 0, 0), (0, y, 0))
+    air = smooth(t, .65, .75) * (1 - smooth(t, 2.3, 2.4))
+    tuck = np.array([0, y + 6 * air, 4 * air])
+    feet = {k: rest_feet[k] + (tuck if k.startswith("f") else np.array([0, y + 2 * air, -6 * air])) for k in rest_feet}
+    solve_legs(sk, p, feet)
+    beat = math.sin(2 * math.pi * 1.6 * t) * hover
+    arm = "cloak" if enraged else "wing"
+    for side, sg in (("l", 1), ("r", -1)):
+        z = K(t, [(0, 0), (.45, 60), (.6, 70), (.72, -10), (.9, 40)]) * (1 - hover) + (30 + 40 * beat) * hover
+        z = z * (1 - smooth(t, 2.0, 2.15)) + K(t, [(2.0, 0), (2.15, -24), (2.38, -24), (2.45, 30), (2.7, 10), (3.4, 0)]) * smooth(t, 2.0, 2.15)
+        add(p, f"{arm}_{side}", (0, 0, z * (.6 if enraged else 1) * sg))
+        if not enraged:
+            add(p, f"wing_{side}_fore", (0, 0, (-25 * beat) * sg))
+    add(p, "neck", (K(t, [(0, 0), (.45, 10), (.8, -10), (1.9, 8), (2.2, 16), (2.45, 4), (3.2, 0)]) + (-10 if not enraged else 0), 0, 0))
+    if not enraged:
+        add(p, "skull", (8, 0, 0))
+    add(p, "jaw", (K(t, [(0, 0), (2.1, 10), (2.42, 36), (2.8, 10), (3.2, 0)]), 0, 0))
+    for k, b in enumerate(TAIL):
+        add(p, b, (K(t, [(0, 0), (.8, 18), (1.9, 12), (2.3, -14), (2.6, 6), (3.2, 0)]) * (1 + .2 * k), 2 * beat, 0))
+    return p, None
+
+
+def flinch_pose(sk, rest_feet, t, enraged=False, theta=0.0):
+    """怯み (a part broke), 1.4 s: snaps back and up, shakes its head, the fans jerk out, then gathers itself."""
+    p = {}
+    if enraged:
+        enraged_stance(sk, p, theta)
+    snap = K(t, [(0, 0), (.1, 1), (.5, .7), (1.4, 0)])
+    shake = math.sin(t * 2 * math.pi * 6) * smooth(t, .1, .2) * (1 - smooth(t, .6, .9))
+    body(sk, p, (-10 * snap, 4 * shake, 3 * shake), (0, 2 * snap, -3 * snap))
+    solve_legs(sk, p, dict(rest_feet))
+    add(p, "neck", (-24 * snap, 14 * shake, 0)); add(p, "skull", (-18 * snap, 10 * shake, 6 * shake))
+    add(p, "jaw", (30 * K(t, [(0, 0), (.1, 1), (.6, .6), (1.1, 0)]), 0, 0))
+    arm = "cloak" if enraged else "wing"
+    for side, sg in (("l", 1), ("r", -1)):
+        add(p, f"{arm}_{side}", (0, 0, 16 * bump(t, 0, .12, .7) * sg))
+    for k, b in enumerate(TAIL):
+        add(p, b, (-10 * snap, 8 * shake * (1 + .3 * k), 0))
+    return p
+
+
+SEARCH = dict(stride=18, duty=.72, cycle=2.0)
+
+
+def search_pose(sk, rest_feet, t):
+    """探りの歩み (loop): lost its prey, it slows to a creeping walk, head low and sweeping side to side, the antennae
+    flicking; every other step it stops a beat to listen."""
+    duty, stride = SEARCH["duty"], SEARCH["stride"]
+    ph = {"hl": 0, "fl": .25, "hr": .5, "fr": .75}
+    w = 2 * math.pi * t
+    p = {}
+    body(sk, p, (4, 3 * math.sin(w), 0), (0, -4, 0))
+    targets = {k: rest_feet[k] + np.array([0, *foot_offset((t + ph[k]) % 1, duty, stride, 7 if k.startswith("f") else 3, k.startswith("f"))]) for k in LEGS}
+    solve_legs(sk, p, targets)
+    for k in ("fl", "fr"):
+        add(p, LEGS[k][2], (45 * swing_curl((t + ph[k]) % 1, duty), 0, 0))
+    sweep = math.sin(w) * 28
+    add(p, "neck", (12, sweep * .6, 0)); add(p, "skull", (6 + 4 * math.sin(2 * w), sweep * .5, 6 * math.sin(w)))
+    flick = bump(t, .2, .24, .32) + bump(t, .62, .66, .74)
+    for side, sg in (("l", 1), ("r", -1)):
+        add(p, f"crown_{side}", (-10 * flick, 14 * flick * sg, 0))
+    for k, b in enumerate(TAIL):
+        add(p, b, (3, 4 * (1 + .4 * k) * math.sin(w - .7 * (k + 1)), 0))
+    return p
+
+
 POSES = {"shade-sweep": sweep_pose, "shade-pounce": pounce_pose, "shade-dust": dust_pose,
-         "shade-pulse": pulse_pose, "shade-breath": breath_pose, "shade-storm": storm_pose}
+         "shade-pulse": pulse_pose, "shade-breath": breath_pose, "shade-storm": storm_pose,
+         "shade-turnsweep": turnsweep_pose, "shade-dive": dive_pose}
 
 
 def ability_pose(sk, rest_feet, theta, name, t, enraged):
     p, feet = POSES[name](sk, rest_feet, theta, t, enraged)
+    if feet is None:                               # the pose placed its own stance and feet
+        return p
     if enraged:
         enraged_stance(sk, p, theta)
     solve_legs(sk, p, feet)
@@ -584,11 +825,21 @@ def main(path=MODEL, carpal_drop=12.0):
     sk = Skeleton(data)
     rest_feet = {k: sk.point(v[2]) for k, v in LEGS.items()}
     theta = crouch_angle(data, carpal_drop)
-    frames, length = 16, 2.4
     new = {}
     for name, enraged in (("walk", False), ("walk_enraged", True)):
-        poses = [walk_pose(sk, rest_feet, i / frames, enraged, theta) for i in range(frames + 1)]
-        new[name] = clip(sk, name, length, frames, poses, "loop")
+        new[name] = baked(sk, name, round(walk_cycle(enraged), 2), lambda t, e=enraged: walk_pose(sk, rest_feet, t / round(walk_cycle(e), 2), e, theta), True)
+    for suffix, enraged in (("", False), ("_enraged", True)):
+        for side, sign in (("l", 1), ("r", -1)):
+            T = round(strafe_cycle(), 2)
+            new[f"strafe_{side}{suffix}"] = baked(sk, f"strafe_{side}{suffix}", T,
+                                                  lambda t, sg=sign, e=enraged: strafe_pose(sk, rest_feet, t / T, sg, e, theta), True)
+            new[f"dash_{side}{suffix}"] = baked(sk, f"dash_{side}{suffix}", .9,
+                                                lambda t, sg=sign, e=enraged: dash_side_pose(sk, rest_feet, t, sg, e, theta), False)
+    new["search"] = baked(sk, "search", SEARCH["cycle"], lambda t: search_pose(sk, rest_feet, t / SEARCH["cycle"]), True)
+    for suffix, enraged in (("", False), ("_enraged", True)):
+        new[f"flinch{suffix}"] = baked(sk, f"flinch{suffix}", 1.4, lambda t, e=enraged: flinch_pose(sk, rest_feet, t, e, theta), False)
+    for suffix, enraged in (("", False), ("_enraged", True)):
+        new[f"hop_back{suffix}"] = baked(sk, f"hop_back{suffix}", 1.1, lambda t, e=enraged: hop_back_pose(sk, rest_feet, t, e, theta), False)
     n = int(ENRAGE_SECONDS * 20)
     new["enrage"] = clip(sk, "enrage", ENRAGE_SECONDS, n,
                          [enrage_pose(sk, rest_feet, theta, ENRAGE_SECONDS * i / n) for i in range(n + 1)], "once")
