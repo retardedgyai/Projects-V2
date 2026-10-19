@@ -425,8 +425,11 @@ internal class ShadeWyrmShaderFx(private val instance: Instance) {
     /** 鱗粉弾 in flight: a glowing clot leaves the jaws after [delay] ticks and travels to where it lands in [ticks]. */
     fun orb(from: Pos, to: Pos, delay: Int, ticks: Int) {
         val path = Vec(to.x() - from.x(), to.y() + .6 - from.y(), to.z() - from.z())
+        addingWindup = true                              // a cancelled throw takes its clot with it (cancelWindup)
+        try {
         add("puff", 4, from, delay, ticks + 1, Vec(1.4, 1.4, 1.0), IDENTITY, slide = path, moveTicks = ticks, billboard = true) { .55 }
         add("smoke", 6, from, delay + 1, ticks + 2, Vec(1.2, 1.2, 1.0), IDENTITY, slide = path.mul(.92), moveTicks = ticks, billboard = true) { .3 }
+        } finally { addingWindup = false }
     }
 
     /** 翳の大詠唱: dust drawn up off the whole floor toward the wyrm hanging above [at], for [ticks]. */
