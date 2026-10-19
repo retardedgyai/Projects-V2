@@ -27,6 +27,7 @@ MOTIONS = ROOT / 'server-minestom/src/main/resources/player-motions'
 K = .9375 / 16                      # one skin pixel in blocks (the player model's scale)
 SWORD = 'weapons/greatsword_t3'
 SWORD_SCALE = .95                   # the held greatsword is ~1.8 m: a hunter's blade, not a vanilla sword
+DEFAULT_WEAPON = {'model': SWORD, 'scale': SWORD_SCALE, 'grip': 4, 'hands': 'two'}
 EYE = 1.62
 FPS = 30
 
@@ -95,6 +96,28 @@ def frame_along(origin, down, side_hint):
     return m
 
 
+def blade_frame(track, root, t, grip):
+    """Blade along its keyed direction; its width (edge to edge) lies along the way the blade is moving, so the
+    edge leads the cut. While the blade is still, the nearest motion within 0.25 s decides; failing that, the
+    flat faces sideways."""
+    z = (root @ np.append(sample(track, t, 'dir'), 0))[:3]
+    z = z / np.linalg.norm(z)
+    width = None
+    for dt in (.01, .03, .06, .1, .16, .25):
+        for sgn in (1, -1):
+            a = sample(track, t + sgn * dt, 'dir'); b = sample(track, t + sgn * dt + .01, 'dir')
+            v = (root @ np.append(b - a, 0))[:3]
+            v = v - z * (v @ z)
+            if np.linalg.norm(v) > 1e-4:
+                width = v / np.linalg.norm(v); break
+        if width is not None: break
+    if width is None:
+        x = np.cross((0, 1, 0), z); x = x / (np.linalg.norm(x) + 1e-9); width = np.cross(z, x)
+    x = np.cross(width, z)
+    m = np.eye(4); m[:3, 0], m[:3, 1], m[:3, 2], m[:3, 3] = x, width, z, grip
+    return m
+
+
 def pose(motion, t, base_yaw=0.0):
     """World matrices for every part at time t (blocks; y up; the puppet faces +z before base_yaw)."""
     tr = motion['tracks']
@@ -106,21 +129,26 @@ def pose(motion, t, base_yaw=0.0):
     tor = sample(tr['torso'], t, 'rot') + [jitter(1), jitter(2) * .5, jitter(3) * .5]
     torso = root @ rot(*tor)
     head = torso @ T(0, 12 * K, 0) @ rot(*sample(tr['head'], t, 'rot'))
-    # The sword: fist at grip, blade along the keyed direction, its flat facing sideways.
-    grip = (root @ np.append(sample(tr['grip'], t, 'pos'), 1))[:3]
-    blade = (root @ np.append(sample(tr['blade'], t, 'dir'), 0))[:3]
-    z = blade / np.linalg.norm(blade)
-    x = np.cross((0, 1, 0), z); x = x / (np.linalg.norm(x) + 1e-9)
-    sword = np.eye(4); sword[:3, 0], sword[:3, 1], sword[:3, 2], sword[:3, 3] = x, np.cross(z, x), z, grip
+    weapon = motion.get('weapon', DEFAULT_WEAPON)
     side = (torso @ np.array([1, 0, 0, 0]))[:3]
-    arms = {}
-    for name, sx, target in (('r', -5, grip), ('l', 5, grip - z * 3.2 * K)):
+    arms, weapons, targets = {}, {}, {}
+    if weapon['hands'] == 'dual':
+        for hand in ('r', 'l'):
+            g = (root @ np.append(sample(tr[f'grip_{hand}'], t, 'pos'), 1))[:3]
+            weapons[f'blade_{hand}'] = blade_frame(tr[f'blade_{hand}'], root, t, g)
+            targets[hand] = g
+    else:
+        g = (root @ np.append(sample(tr['grip'], t, 'pos'), 1))[:3]
+        w = blade_frame(tr['blade'], root, t, g)
+        weapons['sword'] = w
+        targets = {'r': g, 'l': g - w[:3, 2] * 3.2 * K}
+    for name, sx in (('r', -5), ('l', 5)):
         sh = (torso @ np.array([sx * K, 10 * K, 0, 1]))[:3]
         pole = (torso @ np.array([np.sign(sx), -1, -.6, 0]))[:3]
-        elbow, hand = two_bone(sh, target, 4 * K + 1e-3, 5.5 * K, pole)
+        elbow, hand = two_bone(sh, targets[name], 4 * K + 1e-3, 5.5 * K, pole)
         arms[f'arm_{name}_up'] = frame_along(sh, elbow - sh, side)
         arms[f'arm_{name}_low'] = frame_along(elbow, hand - elbow, side)
-    parts = {'torso': torso, 'head': head, **arms, 'sword': sword}
+    parts = {'torso': torso, 'head': head, **arms, **weapons}
     fwd = (root @ np.array([0, 0, 1, 0]))[:3]
     for side, sx in (('r', -1.9), ('l', 1.9)):
         hip = (root @ np.array([sx * K, 0, 0, 1]))[:3]
@@ -178,13 +206,14 @@ def part_faces(name, m, skin, glow=None):
     return out
 
 
-def sword_faces(m, glow):
-    model, tints = R.item_model(SWORD, 0.0)
+def sword_faces(m, glow, weapon=DEFAULT_WEAPON):
+    model, tints = R.item_model(weapon['model'], 0.0)
     # Model space: grip around y=4, blade toward +y, its width (edge to edge) along x. Put the grip at the fist, the
     # blade along +z and the width along the frame's y, i.e. in the swing plane: the edge leads the cut and the flat
     # faces sideways. (The first version laid the width across the swing, so it struck with the flat.)
-    place = (m @ S(SWORD_SCALE, SWORD_SCALE, SWORD_SCALE) @ Rx(math.pi / 2) @ Ry(math.pi / 2)
-             @ T(-.5, -4 / 16, -.5) @ S(1 / 16, 1 / 16, 1 / 16))
+    sc = weapon['scale']
+    place = (m @ S(sc, sc, sc) @ Rx(math.pi / 2) @ Ry(math.pi / 2)
+             @ T(-.5, -weapon['grip'] / 16, -.5) @ S(1 / 16, 1 / 16, 1 / 16))
     faces = R.model_faces(model, tints, place)
     if glow is None: return faces
     out = []
@@ -240,7 +269,9 @@ def render(motion, skin, t, view):
     parts = pose(motion, t)
     glow, flash = charge_glow(motion, t)
     faces = []
-    if view == 'first':
+    weapon = motion.get('weapon', DEFAULT_WEAPON)
+    is_weapon = lambda n: n == 'sword' or n.startswith('blade_')
+    if view == 'first' and 'fp_grip' in motion['tracks']:
         # The owner never sees their puppet (it would sit around the camera): the held greatsword swings instead,
         # in camera space, with the same charge glow.
         tr = motion['tracks']
@@ -251,10 +282,15 @@ def render(motion, skin, t, view):
         z = to_world(b, 0); z = z / np.linalg.norm(z)
         x = np.cross(camera.u, z); x = x / (np.linalg.norm(x) + 1e-9)
         held = np.eye(4); held[:3, 0], held[:3, 1], held[:3, 2], held[:3, 3] = x, np.cross(z, x), z, to_world(g, 1)
-        faces += sword_faces(held @ S(.55, .55, .55), glow)
+        faces += sword_faces(held @ S(.55, .55, .55), glow, weapon)
+    elif view == 'first':
+        # Held weapons in both hands (main hand and off hand): the puppet's blades and forearms as seen from the eye.
+        for name, m in parts.items():
+            if is_weapon(name): faces += sword_faces(m, glow, weapon)
+            elif name.endswith('_low') and name.startswith('arm'): faces += part_faces(name, m, skin)
     else:
         for name, m in parts.items():
-            faces += sword_faces(m, glow) if name == 'sword' else part_faces(name, m, skin)
+            faces += sword_faces(m, glow, weapon) if is_weapon(name) else part_faces(name, m, skin)
     # A plain dummy 3 m ahead so the reach reads.
     lo, hi = (-.45, 0, 2.6), (.45, 2.0, 3.5)
     corners = [np.array([hi[j] if i & (1 << j) else lo[j] for j in range(3)]) for i in range(8)]
@@ -274,8 +310,9 @@ def render(motion, skin, t, view):
         d = np.minimum(np.minimum(xx, R.W - 1 - xx) / R.W, np.minimum(yy, R.H - 1 - yy) / R.H)
         a = np.clip((.16 - d) / .16, 0, 1) ** 1.6 * strength * 255
         image.alpha_composite(Image.fromarray(np.dstack([np.full_like(a, c) for c in colour] + [a]).astype('uint8')))
-    phase = '構え' if t < .7 else ('溜め' if t < 2.68 else ('振り下ろし' if t < imp['t'] else ('ヒットストップ' if since_imp < imp['hitstop'] else '余韻')))
     level = max([e['level'] for e in motion['events'] if e['type'] == 'charge' and t >= e['t']] + [0])
+    phase = next((p['name'] for p in reversed(motion.get('phases', [])) if t >= p['t']), '')
+    if 0 <= since_imp < imp['hitstop']: phase = 'ヒットストップ'
     draw.text((10, 6), label, font=R.FONT, fill=(236, 226, 206))
     draw.text((10, 28), f'{t:.2f}秒　{phase}' + (f'　溜め{level}' if level and t < imp['t'] else ''), font=R.SMALL, fill=(190, 182, 170))
     return image.convert('RGB')
@@ -300,8 +337,8 @@ def main():
         frames.append(sheet)
     for name, ms in (('', round(1000 / FPS)), ('-slow', round(3000 / FPS))):
         frames[0].save(out / f'{args.motion}{name}.gif', save_all=True, append_images=frames[1:], duration=ms, loop=0)
-    for t in (0.0, .18, .62, 2.76, 2.81, 2.86, 3.3, 3.8):
-        frames[min(int(t * FPS), len(frames) - 1)].save(out / f'{args.motion}-{t:.2f}.png')
+    for t in motion.get('stills', []):
+        frames[min(int(round(t * FPS)), len(frames) - 1)].save(out / f'{args.motion}-{t:.2f}.png')
     print(args.motion, len(frames), 'frames ->', out)
 
 
