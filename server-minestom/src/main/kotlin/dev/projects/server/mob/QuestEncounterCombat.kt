@@ -150,6 +150,11 @@ class QuestEncounterCombat(
         var counterTo = 0L
         var tailDamage = 0.0
         var tailTorn = false
+        /** 桜紋の陣: when the next one starts, when the running one resolves (0 = none), its crests, the shown count. */
+        var sigilNextAt = 0L
+        var sigilEndsAt = 0L
+        var sigilCrests: List<Pos> = emptyList()
+        var sigilShown = -1L
         /** The enrage roar's wave (see [tickRageWave]): when it left the wyrm and from where; 0 = not yet. */
         var waveAt = 0L
         var waveFrom: Pos? = null
@@ -674,6 +679,7 @@ class QuestEncounterCombat(
         (mob.entity.entityMeta as MobMeta).isAggressive = true
         if (tickChallengeBarrier(mob, now)) return
         if (tickEnrage(mob, now)) return
+        if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && tickSigil(mob, now)) return
         if (crowded(mob, CrowdControl.STUN, now) || crowded(mob, CrowdControl.AIRBORNE, now) || crowded(mob, CrowdControl.KNOCKBACK, now)) {
             if (!crowded(mob, CrowdControl.AIRBORNE, now)) stopNavigation(mob)
             return
@@ -1306,6 +1312,79 @@ class QuestEncounterCombat(
         }
     }
 
+    /**
+     * 桜紋の陣 (enraged 桜牙獣, the party mechanic): it sits and howls while one sakura crest per player blooms on the
+     * ground round the arena. When the howl ends, every crest must have someone on it: then the spell backfires and it
+     * collapses. Each empty crest blasts the whole party, and whoever stands on none takes another blast.
+     */
+    private fun tickSigil(mob: Mob, now: Long): Boolean {
+        if (!mob.enraged || now < mob.enrageHoldUntil) return false
+        val players = instance.players.filter { canTarget(it) && it.position.distanceSquared(mob.home) <= mob.definition.leashRange * mob.definition.leashRange }
+        if (mob.sigilEndsAt == 0L) {
+            if (mob.sigilNextAt == 0L) mob.sigilNextAt = mob.enrageHoldUntil + SIGIL_FIRST_MILLIS
+            if (now < mob.sigilNextAt || mob.abilities.isActive || mob.maneuver != null || players.isEmpty()) return false
+            val count = players.size.coerceIn(1, 5)
+            val turn = Random.nextDouble(0.0, 2 * Math.PI)
+            mob.sigilCrests = (0 until count).map { k ->
+                val a = turn + k * 2 * Math.PI / count
+                val r = SIGIL_RING + (k % 2) * 1.5
+                val at = mob.home.add(kotlin.math.cos(a) * r, 0.0, kotlin.math.sin(a) * r)
+                Pos(at.x(), telegraphs.groundHeight(at) ?: mob.home.y(), at.z())
+            }
+            mob.sigilEndsAt = now + SIGIL_MILLIS
+            mob.sigilShown = -1L
+            mob.counterFrom = 0L; mob.counterTo = 0L
+            stopNavigation(mob)
+            mob.view?.maneuver("sigil")
+            sakuraStrike?.sigil(mob.sigilCrests, SIGIL_RADIUS, (SIGIL_MILLIS / 50).toInt())
+            sakuraFx?.sigil(mob.sigilCrests, SIGIL_MILLIS / 1000.0)
+            sound(mob.entity.position, "minecraft:entity.wolf.howl", 2.0f, .6f)
+            return true
+        }
+        if (now < mob.sigilEndsAt) {
+            stopNavigation(mob)
+            val left = (mob.sigilEndsAt - now + 999) / 1000
+            if (left != mob.sigilShown) { mob.sigilShown = left; updateName(mob, "桜紋の陣・一人ひとつ紋に立て（$left）") }
+            if ((now / 50) % 6 == 0L) {
+                val pink = Particle.DUST.withColor(net.kyori.adventure.text.format.TextColor.color(0xff8fc0)).withScale(1.3f)
+                for (c in mob.sigilCrests) for (k in 0 until 12) {
+                    val a = k * Math.PI / 6
+                    particle(c.add(kotlin.math.cos(a) * SIGIL_RADIUS, .15, kotlin.math.sin(a) * SIGIL_RADIUS), pink, 1)
+                }
+            }
+            return true
+        }
+        val filled = mob.sigilCrests.map { c -> players.any { horizontalLength(it.position.sub(c)) <= SIGIL_RADIUS } }
+        val scale = 1.65.pow(tier - 1) * damageMultiplier
+        sakuraStrike?.sigilResolve(mob.sigilCrests, filled)
+        sakuraFx?.sigilResolve(mob.sigilCrests)
+        if (filled.all { it }) {
+            mob.brokenUntil = now + SIGIL_BREAK_MILLIS
+            staggerBoss(maxOf(bossStaggerUntil, now + SIGIL_BREAK_MILLIS))
+            mob.view?.maneuver("countered")
+            updateName(mob, "陣が成った！ 崩れた")
+            sound(mob.entity.position, "minecraft:entity.ravager.stunned", 1.4f, .8f)
+        } else {
+            val empty = filled.count { !it }
+            for (p in players) {
+                val onCrest = mob.sigilCrests.any { horizontalLength(p.position.sub(it)) <= SIGIL_RADIUS }
+                val amount = SIGIL_DAMAGE * scale * (empty + if (onCrest) 0 else 1)
+                if (typedDamagePlayer != null) typedDamagePlayer.invoke(p, amount, dev.projects.server.coreloop.CoreDamageType.MAGICAL)
+                else damagePlayer(p, amount)
+            }
+            updateName(mob, "陣が崩れた（空いた紋 $empty）")
+            sound(mob.entity.position, "minecraft:entity.generic.explode", 1.2f, 1.2f)
+        }
+        mob.sigilEndsAt = 0L
+        mob.sigilCrests = emptyList()
+        mob.sigilNextAt = now + SIGIL_EVERY_MILLIS
+        mob.warningRetryAt = now + 400L
+        return false
+    }
+
+    /** 桜紋の陣's crests, for tests. */
+    internal fun sigilCrests(targetId: UUID): List<Pos> = mobs[targetId]?.sigilCrests ?: emptyList()
+
     /** Where a hit on 桜牙獣 landed: the counter, and the parts it wears down (horns from in front, tail shells from behind). */
     private fun sakuraHit(mob: Mob, attacker: Player, applied: Double, now: Long) {
         val here = mob.entity.position
@@ -1383,6 +1462,14 @@ class QuestEncounterCombat(
         const val COUNTER_LEAD_MILLIS = 600L
         const val COUNTER_CLOSE_MILLIS = 150L
         const val COUNTER_STAGGER_MILLIS = 3500L
+        /** 桜紋の陣: first one this long after the enrage, then every [SIGIL_EVERY_MILLIS]; crests this far out. */
+        const val SIGIL_FIRST_MILLIS = 10_000L
+        const val SIGIL_EVERY_MILLIS = 40_000L
+        const val SIGIL_MILLIS = 6000L
+        const val SIGIL_RING = 7.0
+        const val SIGIL_RADIUS = 1.8
+        const val SIGIL_DAMAGE = 18.0
+        const val SIGIL_BREAK_MILLIS = 4500L
         /** Got behind it (usually while an attack holds its facing) for this long when it is free to act. */
         const val TURN_AFTER_MILLIS = 600L
         /** ms into shade-dive while the body is carried over the target (the clip hangs in the air then). */

@@ -65,6 +65,21 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
     private var burstAt = -1.0
     private var burstKind = ""
 
+    private var sigilCrests: List<Vec> = emptyList()
+    private var sigilUntil = -1.0
+
+    /** 桜紋の陣: petals spiral up off every crest until it resolves. */
+    fun sigil(crests: List<Pos>, seconds: Double) { sigilCrests = crests.map { Vec(it.x(), it.y(), it.z()) }; sigilUntil = time + seconds }
+
+    /** It resolved: a burst of petals off each crest. */
+    fun sigilResolve(crests: List<Pos>) {
+        sigilUntil = time
+        for (c in crests) repeat(count(60)) {
+            val a = r(0.0, 2 * PI); val d = Vec(cos(a), 0.0, sin(a))
+            add(Vec(c.x(), c.y() + .4, c.z()).add(d.mul(r(.2, 1.4))), d.mul(r(6.0, 12.0)).add(0.0, r(4.0, 10.0), 0.0), r(.9, 1.5), 1.8)
+        }
+    }
+
     /** Countered: the strike's petals scatter off the shells as it is thrown back. */
     fun countered() { ability = null; burstAt = time; burstKind = "counter" }
 
@@ -183,6 +198,10 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
         // always: petals shed from the shells and drift off in the wind (more once enraged)
         if (deathAt < 0) repeat(rate("shed", if (enraged) 16.0 else 6.0)) {
             add(shell(), f.dir(r(-1.0, 1.0), r(0.0, 1.6), r(-1.9, 0.0)), r(1.4, 2.2))
+        }
+        if (time < sigilUntil) for ((n, c) in sigilCrests.withIndex()) repeat(rate("sigil$n", 26.0)) {
+            val a = r(0.0, 2 * PI); val d = Vec(cos(a), 0.0, sin(a))
+            add(c.add(d.mul(1.8)).add(0.0, .2, 0.0), Vec(-d.z(), 0.0, d.x()).mul(4.0).add(0.0, r(2.0, 4.0), 0.0).sub(d.mul(1.0)), r(1.0, 1.6), .3)
         }
         if (burstAt >= 0 && once("burst@$burstAt", burstAt)) {
             val from: () -> Vec = when (burstKind) {

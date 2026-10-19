@@ -129,6 +129,48 @@ class SakuraFangBossTest {
     }
 
     @Test
+    fun `桜紋の陣 backfires when every crest is held and blasts the party when one is empty`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("sakura", 1)
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "SakuraSigil"))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        player.setInstance(arena.instance, arena.bossSpawn.add(0.0, 0.0, 6.0)).join()
+        var hurt = 0.0
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn, { _, _ -> }, { _, amount -> hurt += amount },
+            explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1000L
+            combat.tick(now)
+            // enrage from behind (no part break from in front), then wait for the sigil
+            player.teleport(boss.position.sub(boss.position.direction().mul(5.0)))
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .52))
+            var crests = emptyList<net.minestom.server.coordinate.Pos>()
+            while (now < 80_000L && crests.isEmpty()) { now += 50; combat.tick(now); crests = combat.sigilCrests(boss.uuid) }
+            assertEquals(1, crests.size, "one crest per player")
+            // first one: stand on it -> it backfires
+            player.teleport(crests[0].add(0.0, .1, 0.0))
+            val before = hurt
+            while (combat.sigilCrests(boss.uuid).isNotEmpty()) { now += 50; player.teleport(crests[0].add(0.0, .1, 0.0)); combat.tick(now) }
+            assertTrue(combat.isBroken(boss.uuid), "held crest: it collapses")
+            assertEquals(before, hurt, 1e-9)
+            // next one: stand off it -> blasted
+            var next = emptyList<net.minestom.server.coordinate.Pos>()
+            while (now < 200_000L && next.isEmpty()) { now += 50; combat.tick(now); next = combat.sigilCrests(boss.uuid) }
+            assertEquals(1, next.size)
+            val hurtBefore = hurt
+            while (combat.sigilCrests(boss.uuid).isNotEmpty()) { now += 50; player.teleport(next[0].add(6.0, .1, 6.0)); combat.tick(now) }
+            assertTrue(hurt > hurtBefore, "empty crest: the party is blasted")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
     fun `the petal storm follows each ability, stays under its cap and dies away after the death`() {
         MinecraftServer.init(Auth.Offline())
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
@@ -182,6 +224,23 @@ class SakuraFangBossTest {
                 for (v in fx.views()) {
                     fun vec(p: net.minestom.server.coordinate.Point) = "[${p.x()},${p.y()},${p.z()}]"
                     lines += "{\"ability\":\"$id\",\"phase\":\"shader\",\"tick\":$tick,\"sprite\":\"${v.sprite}\",\"kind\":${v.kind}," +
+                        "\"progress\":${v.progress},\"at\":${vec(v.at)},\"scale\":${vec(v.scale)},\"translation\":${vec(v.translation)}," +
+                        "\"rotation\":[${v.rotation.joinToString(",")}],\"billboard\":${v.billboard}}"
+                }
+            }
+            fx.dispose()
+        }
+        run {                                                // 桜紋の陣 with three crests: the middle one left empty
+            val fx = SakuraStrikeFx(instance)
+            val crests = (0 until 3).map { k -> val a = Math.PI / 2 + (k - 1) * 2 * Math.PI / 3
+                net.minestom.server.coordinate.Pos(kotlin.math.cos(a) * 7.0, 0.0, kotlin.math.sin(a) * 7.0) }
+            fx.sigil(crests, 1.8, 120)
+            repeat(160) { tick ->
+                if (tick == 120) fx.sigilResolve(crests, listOf(true, false, true))
+                fx.tick()
+                for (v in fx.views()) {
+                    fun vec(p: net.minestom.server.coordinate.Point) = "[${p.x()},${p.y()},${p.z()}]"
+                    lines += "{\"ability\":\"sigil\",\"phase\":\"shader\",\"tick\":$tick,\"sprite\":\"${v.sprite}\",\"kind\":${v.kind}," +
                         "\"progress\":${v.progress},\"at\":${vec(v.at)},\"scale\":${vec(v.scale)},\"translation\":${vec(v.translation)}," +
                         "\"rotation\":[${v.rotation.joinToString(",")}],\"billboard\":${v.billboard}}"
                 }

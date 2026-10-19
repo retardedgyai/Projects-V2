@@ -171,6 +171,32 @@ internal class SakuraStrikeFx(instance: Instance) {
         }
     }
 
+    /** 桜紋の陣: a crest of light on each spot, brightening as the howl runs out, with a ring of petals round its edge. */
+    fun sigil(crests: List<Pos>, radius: Double, ticks: Int) {
+        for (c in crests) {
+            fx.add("sakura_crest", 2, c.add(0.0, .14, 0.0), 0, ticks, Vec(radius * .6, 1.0, radius * .6), IDENTITY,
+                grow = Vec(radius * 2.2, 1.0, radius * 2.2), moveTicks = 10) { .05 + .45 * it * it }
+            fx.add("sakura_ring", 2, c.add(0.0, .1, 0.0), 0, ticks, Vec(radius * 2.1, 1.0, radius * 2.1), IDENTITY) { .25 + .2 * it }
+            fx.add("sakura_blossom", 4, c.add(0.0, 1.6, 0.0), 0, ticks, Vec(.6, .6, 1.0), IDENTITY, grow = Vec(1.4, 1.4, 1.0),
+                moveTicks = ticks, billboard = true) { .05 }
+        }
+    }
+
+    /** 桜紋の陣 resolved: held crests bloom and fade, empty ones burst. */
+    fun sigilResolve(crests: List<Pos>, filled: List<Boolean>) {
+        for ((c, held) in crests.zip(filled)) {
+            if (held) {
+                crest(c, 4.5, IDENTITY)
+                fx.add("sakura_blossom", 4, c.add(0.0, 1.4, 0.0), 0, 12, Vec(1.4, 1.4, 1.0), IDENTITY, grow = Vec(3.2, 3.2, 1.0), moveTicks = 10, billboard = true)
+            } else {
+                fx.add("sakura_ring", 2, c.add(0.0, .12, 0.0), 0, 12, Vec(2.0, 1.0, 2.0), IDENTITY, grow = Vec(14.0, 1.0, 14.0), moveTicks = 8)
+                fx.add("sakura_blossom", 4, c.add(0.0, 2.0, 0.0), 0, 14, Vec(2.5, 2.5, 1.0), IDENTITY, grow = Vec(6.0, 6.0, 1.0), moveTicks = 12, billboard = true)
+                fx.add("sakura_curtain", 5, c, 0, 14, Vec(4.0, 1.0, 1.0), IDENTITY, translation = Vec(0.0, .5, 0.0), grow = Vec(6.0, 4.0, 1.0),
+                    slide = Vec(0.0, 2.0, 0.0), moveTicks = 10)
+            }
+        }
+    }
+
     /** The counter window: a blossom opens on each horn tip and stays lit while the window is open. */
     fun counterBloom(ticks: Int, point: (String, Vec) -> Point?) {
         for (x in listOf(11.4, -11.4)) {

@@ -173,6 +173,18 @@ class Fx:
                 for _ in range(120):
                     a = math.radians(r.uniform(-50, 50))
                     self.add(o + rand_dir(r) * 6, np.array([math.sin(a), r.uniform(.3, .9), math.cos(a)]) * r.uniform(160, 288), r.uniform(.9, 1.4), drag=2.0)
+        elif c == "sigil":
+            crests = [np.array([math.cos(math.pi / 2 + (k - 1) * 2 * math.pi / 3) * 112, 0, math.sin(math.pi / 2 + (k - 1) * 2 * math.pi / 3) * 112]) for k in range(3)]
+            if t < 6.0:
+                for n, cc in enumerate(crests):
+                    for _ in range(self.rate(f"sigil{n}", 26)):
+                        a = r.uniform(0, 2 * math.pi); d = np.array([math.cos(a), 0, math.sin(a)])
+                        self.add(cc + d * 29 + [0, 3, 0], np.array([-d[2], 0, d[0]]) * 64 + [0, r.uniform(32, 64), 0] - d * 16, r.uniform(1.0, 1.6), drag=.3)
+            if self.once("resolve", t, 6.0):
+                for cc in crests:
+                    for _ in range(60):
+                        a = r.uniform(0, 2 * math.pi); d = np.array([math.cos(a), 0, math.sin(a)])
+                        self.add(cc + d * r.uniform(3, 22) + [0, 6, 0], d * r.uniform(96, 192) + [0, r.uniform(64, 160), 0], r.uniform(.9, 1.5), drag=1.8)
         elif c == "sakura-bloom":
             if t <= hit - .1:                                      # a vortex rises round the beast
                 radius = 40 + 70 * (t / hit)

@@ -52,6 +52,7 @@ def sample(a, name, t):
     return pose
 
 
+SIGIL = [("sigil", "桜紋の陣（怒り後・協力）：紋に一人ずつ立つ", .55)]
 NEW = [("sakura-pounce", "花冠の飛びかかり（新）", .8), ("sakura-rain", "花冠落とし（新）", .8), ("sakura-charge", "花吹雪の突進（新・怒り後）", .55)]
 ORDER = [("sakura-claw", "桜爪の叩きつけ", 1.0), ("sakura-claw2", "桜爪・二の手", 1.0), ("sakura-claw3", "桜爪・止め（怒り後）", 1.0),
          ("sakura-tail", "花尾の宙返り", .9), ("sakura-horn", "枝角の突き上げ", 1.1), ("sakura-spin", "花尾の旋回", .9),
@@ -66,15 +67,16 @@ def main(dump, out, which="all"):
     rows = [json.loads(l) for l in Path(dump).read_text().splitlines()]
     textures = {p.stem: np.asarray(Image.open(p).convert("RGBA")).astype(np.float32) for p in shaderclip.TEX.glob("*.png")}
     frames, keys = [], []
-    for name, label, zoom in (NEW if which == "new" else ORDER + NEW if which == "all" else ORDER):
+    for name, label, zoom in (NEW if which == "new" else SIGIL if which == "sigil" else ORDER + NEW if which == "all" else ORDER):
         clip = name if name in fang.ENRAGED_ONLY or name == "enrage" else name
         a = anims[clip]
         by_tick = {}
         for r in rows:
             if r["ability"] == name:
                 by_tick.setdefault(r["tick"], []).append(r)
-        hit = fang.ABILITIES.get(name, (2.5, 0))[0]
-        v = dict(az=35, el=26, size=(560, 360), scale=zoom * 1.6, center=(0, 20, 40 + (70 if name in dict((n, 0) for n, _, _ in NEW) else 0)), cy=.66)
+        hit = fang.ABILITIES.get(name, (6.0 if name == "sigil" else 2.5, 0))[0]
+        v = dict(az=35, el=48 if name == "sigil" else 26, size=(560, 360), scale=zoom * 1.6,
+                 center=(0, 20, 0 if name == "sigil" else 40 + (70 if name in dict((n, 0) for n, _, _ in NEW) else 0)), cy=.6 if name == "sigil" else .66)
         storm = sakura_fx.Fx(name)                         # the petal storm (look B) that plays with the strike in game
         look = sakura_fx_styles.Style("B")
         st = 0

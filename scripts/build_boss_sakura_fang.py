@@ -1112,6 +1112,20 @@ def countered_keys(shells):
             (3.5, {"shells": shells}, "io")]
 
 
+def sigil_keys():
+    """6 s, 桜紋の陣 (QuestEncounterCombat.SIGIL_MILLIS): it sits back and howls the crests into bloom, swings its
+    head round the arena as if counting them, the howl rising and the petals flaring; at the end the head drops."""
+    sit = sit_howl(1.2)
+    keys = [(0, {"shells": 1.0}, "io"), (.4, pose(sit, jaw=(-20, 0, 0)), "out")]
+    for k in range(5):                                   # the head sweeps from one side of the arena to the other
+        t = .9 + k * .95
+        side = (-1) ** k
+        keys.append((t, pose(sit, neck=(4, 26 * side, 0), skull=(0, 12 * side, 0), shells=1.2 + .05 * k, tremble=2.0 + k), "io"))
+    keys += [(5.6, pose(sit, shells=1.5, tremble=6.0), "io"), (5.85, pose(rear(-6), neck=(22, 0, 0), skull=(12, 0, 0), jaw=(10, 0, 0), shells=1.1), "in"),
+             (6.0, {"shells": 1.0}, "io")]
+    return keys
+
+
 def enrage_keys():
     """5 s (QuestEncounterCombat.ENRAGE_HOLD_MILLIS), Zinogre's howl: the beast stops and shudders low while the petals
     rattle, sits back on its haunches and howls straight at the sky; at 2.5 s the petals burst open in a wave down the
@@ -1213,6 +1227,7 @@ def animate(m, b):
     for tag, sh in (("", 0.0), ("_enraged", 1.0)):
         bake(b, f"flinch{tag}", 1.0, flinch_keys(sh))
         bake(b, f"countered{tag}", 3.5, countered_keys(sh))
+    bake(b, "sigil", 6.0, sigil_keys())
     for tag, sh in (("", 0.0), ("_enraged", 1.0)):
         bake(b, f"hop_back{tag}", 1.1, hop_back_keys(sh))
         bake(b, f"dash_l{tag}", .9, dash_keys(1, sh))
