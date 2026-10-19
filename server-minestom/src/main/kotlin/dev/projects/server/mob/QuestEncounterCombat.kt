@@ -102,6 +102,8 @@ class QuestEncounterCombat(
     private val damageMultiplier: Double = 1.0,
     private val encounterLevel: Int = (tier - 1) * 10 + 1,
     private val typedDamagePlayer: ((Player, Double, CoreDamageType) -> Unit)? = null,
+    /** Receives an ability's crowd control for each player it hits, with the attack's origin. */
+    private val crowdPlayer: ((Player, CrowdControl, Long, Pos) -> Unit)? = null,
     /** True while the player's dodge makes them untouchable: a move that only met dodges whiffs ([openAfter]). */
     private val evading: (Player) -> Boolean = { false },
     /** Roll a grade (等級) and MODs for every non-boss mob; off for labs and fixed-balance tests. */
@@ -404,42 +406,7 @@ class QuestEncounterCombat(
         if (!mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING || (mob.boss && bossSealed) || mob.guardianIds.any(::isAlive) ||
             source.instance !== instance || !canTarget(source)) return false
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
-        if (mob.boss) {
-            if (now < mob.brokenUntil) return false
-            if (counterOpen(mob, now)) {
-                knockDown(mob, now, "カウンター・殴り放題", COUNTER_DOWN_MILLIS)
-                return true
-            }
-            mob.breakGauge = (mob.breakGauge - kind.breakDamage).coerceAtLeast(0.0)
-            mob.lastCcAt = now
-            // A cast / shell is broken by its own rule (damage), never by the break gauge; a break tool still counts
-            // toward that damage, so choosing the right skill matters during the gimmick.
-            val gimmick = mob.abilities.current?.ability?.id
-            if (gimmick in GIMMICKS) {
-                mob.breakGauge = maxOf(mob.breakGauge, 1.0)
-                val share = mob.life.maximumHealth * (if (kind.hard) CC_CAST_HARD else CC_CAST_SOFT)
-                if (gimmick == CHANNEL) {
-                    mob.castDamage += share
-                    if (mob.castDamage >= mob.life.maximumHealth * CAST_SHARE) knockDown(mob, now, "詠唱を止めた・殴り放題")
-                } else if (gimmick == SHELL && mob.shellHealth > 0.0) {
-                    mob.shellHealth -= share
-                    if (mob.shellHealth <= 0.0) knockDown(mob, now, "殻が割れた・殴り放題")
-                }
-                updateName(mob)
-                return true
-            }
-            if (mob.breakGauge <= 0.0) {
-                mob.brokenUntil = now + BREAK_MILLIS
-                mob.maneuver = null
-                mob.breakGauge = BREAK_MAX
-                mob.abilities.cancel(); clearWarning(targetId); castingPose(mob, false); stopNavigation(mob)
-                mob.life.phase = QuestMobPhase.CHASING
-                sound(mob.entity.position, "minecraft:block.anvil.land", 1.0f, 0.5f)
-                particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.EXPLOSION, 2)
-            }
-            updateName(mob)
-            return true
-        }
+        if (mob.boss) return breakBoss(mob, targetId, kind.breakDamage, now, cc = kind)
         mob.crowd[kind] = maxOf(mob.crowd[kind] ?: 0L, now + durationMillis.coerceAtMost(5000L))
         mob.crowdSource = source.position
         if (mob.grade.breaks && now >= mob.brokenUntil) {
@@ -468,6 +435,64 @@ class QuestEncounterCombat(
         updateName(mob)
         return true
     }
+    /**
+     * Wears [amount] off a boss's break gauge from a hit that already landed (players' break, CoreBreak).
+     * Regular enemies have no gauge. Returns false when nothing could be broken (not a boss, already broken, sealed).
+     */
+    fun applyBreak(targetId: UUID, amount: Double, source: Player): Boolean {
+        if (disposed || !amount.isFinite() || amount <= 0.0) return false
+        val mob = mobs[targetId] ?: return false
+        if (!mob.boss || !mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING || bossSealed || mob.guardianIds.any(::isAlive) ||
+            source.instance !== instance || !canTarget(source)) return false
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        return breakBoss(mob, targetId, amount, now)
+    }
+
+    /**
+     * The one place a boss's break gauge wears down: crowd control ([cc], applyCrowdControl) and players' per-hit
+     * break (applyBreak, CoreBreak). Crowd control landing in a glowing charge's window is a counter and knocks the
+     * boss down; during a big cast or a shell crowd control counts toward stopping it instead. Neither path breaks
+     * the gauge during those gimmicks: they end by their own rule.
+     */
+    private fun breakBoss(mob: Mob, targetId: UUID, amount: Double, now: Long, cc: CrowdControl? = null): Boolean {
+        if (now < mob.brokenUntil) return false
+        if (cc != null && counterOpen(mob, now)) {
+            knockDown(mob, now, "カウンター・殴り放題", COUNTER_DOWN_MILLIS)
+            return true
+        }
+        mob.breakGauge = (mob.breakGauge - amount).coerceAtLeast(0.0)
+        mob.lastCcAt = now  // any break, CC or hit, holds off the refill (BREAK_REFILL_AFTER_MILLIS)
+        // A cast / shell is broken by its own rule (damage), never by the break gauge; a break tool still counts
+        // toward that damage, so choosing the right skill matters during the gimmick.
+        val gimmick = mob.abilities.current?.ability?.id
+        if (gimmick in GIMMICKS) {
+            mob.breakGauge = maxOf(mob.breakGauge, 1.0)
+            if (cc != null) {
+                val share = mob.life.maximumHealth * (if (cc.hard) CC_CAST_HARD else CC_CAST_SOFT)
+                if (gimmick == CHANNEL) {
+                    mob.castDamage += share
+                    if (mob.castDamage >= mob.life.maximumHealth * CAST_SHARE) knockDown(mob, now, "詠唱を止めた・殴り放題")
+                } else if (gimmick == SHELL && mob.shellHealth > 0.0) {
+                    mob.shellHealth -= share
+                    if (mob.shellHealth <= 0.0) knockDown(mob, now, "殻が割れた・殴り放題")
+                }
+            }
+            updateName(mob)
+            return true
+        }
+        if (mob.breakGauge <= 0.0) {
+            mob.brokenUntil = now + BREAK_MILLIS
+            mob.maneuver = null
+            mob.breakGauge = BREAK_MAX
+            mob.abilities.cancel(); clearWarning(targetId); castingPose(mob, false); stopNavigation(mob)
+            mob.life.phase = QuestMobPhase.CHASING
+            sound(mob.entity.position, "minecraft:block.anvil.land", 1.0f, 0.5f)
+            particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.EXPLOSION, 2)
+        }
+        updateName(mob)
+        return true
+    }
+
     fun crowdControl(targetId: UUID): Set<CrowdControl> {
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         return mobs[targetId]?.crowd?.filterValues { it > now }?.keys ?: emptySet()
@@ -1783,6 +1808,7 @@ class QuestEncounterCombat(
                         val dealt = event.frame.ability.damage * (if (frenzied(mob)) MobMod.FRENZY_DAMAGE else 1.0)
                         if (typedDamagePlayer != null) typedDamagePlayer.invoke(player, dealt, event.frame.ability.damageType)
                         else damagePlayer(player, dealt)
+                        event.frame.ability.crowd?.let { crowdPlayer?.invoke(player, it, event.frame.ability.crowdMillis, event.frame.casterOrigin) }
                         if (MobMod.LEECH in mob.mods) mob.life.heal(mob.life.maximumHealth * MobMod.LEECH_RATIO)
                         if (mob.shade) gimmicks.playerHit(player, event.frame.ability.id, lastTickAt)
                     }

@@ -13,6 +13,12 @@ enum class CoreClass(val displayName: String, val description: String) {
     val melee get() = this == WARRIOR || this == ASSASSIN || this == TEMPLAR
     val resourceName get() = when (this) { WARRIOR -> "闘気"; RANGER -> "集中"; MAGE -> "術式"; STARWEAVER -> "星"; ASSASSIN -> "機会"; TEMPLAR -> "決意"; HEALER -> "信仰" }
     val healthFactor get() = when (this) { WARRIOR -> 1.0; RANGER -> .72; MAGE -> .8; STARWEAVER -> .8; ASSASSIN -> .75; TEMPLAR -> 1.4; HEALER -> .9 }
+    /**
+     * Class base AR / MR added before gear (2026-10-19, Creator: toughness comes from each class's default stats, not
+     * a damage-reduction perk). The warrior is fairly tough, the templar the toughest, the assassin and ranger the softest.
+     */
+    val baseArmor get() = when (this) { WARRIOR -> 40.0; TEMPLAR -> 70.0; HEALER -> 20.0; ASSASSIN -> 10.0; RANGER -> 10.0; MAGE -> 5.0; STARWEAVER -> 10.0 }
+    val baseResist get() = when (this) { WARRIOR -> 25.0; TEMPLAR -> 50.0; HEALER -> 40.0; ASSASSIN -> 10.0; RANGER -> 15.0; MAGE -> 35.0; STARWEAVER -> 25.0 }
     val passive get() = when(this) {
         WARRIOR -> "殴って、殴られて闘気を溜める。地割りは闘気を全部注いで重くなり、闘気100で赤熱する。3段目の直後の地割りは速い。"
         RANGER -> "同じ獲物への通常攻撃で集中が育ち、威力が最大20%増す。獲物変更で集中半減。"

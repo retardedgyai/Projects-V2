@@ -34,7 +34,7 @@ class CoreAffixTest {
     }
 
     @Test fun `catalog deterministic source rolls span all live stats and four ranks`() {
-        assertEquals(48, CoreAffixCatalog.definitions.size)
+        assertEquals(49, CoreAffixCatalog.definitions.size)
         assertEquals(CoreAffixStat.entries.toSet(), CoreAffixCatalog.definitions.map { it.stat }.toSet())
         val seen = mutableSetOf<String>()
         for (tier in 1..4) {

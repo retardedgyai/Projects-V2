@@ -42,13 +42,13 @@ class CoreWarriorBladeChoreographyTest {
         }
     }
 
-    @Test fun `core sweep is one frontal tilted iron crescent rather than a rotating combo`() {
+    @Test fun `core sweep has one frontal crescent tilted toward the wielder rather than a rotating combo`() {
         val s=skills.first { it.icon=="whirl" }
         assertEquals(1,s.pulses)
         val arc=CoreSkillChoreography.parts(effect(s)).first()
         assertEquals("war_iron:arc",arc.shape)
-        assertTrue(arc.offset.z()>0)
-        assertEquals(-.42,arc.pitch);assertEquals(0.0,arc.roll);assertEquals(0.0,arc.spin)
+        assertTrue(arc.pitch<0);assertEquals(0.0,arc.roll);assertEquals(0.0,arc.spin)
+        assertFalse(arc.secondary)
     }
 
     @Test fun `iron strikes replace only the landing pulse and ship every frame`() {
@@ -71,12 +71,18 @@ class CoreWarriorBladeChoreographyTest {
 
     @Test fun `preparation stays in startup frames and contact is only target located`() {
         for(s in skills) {
-            val prepare=CoreSkillChoreography.parts(effect(s,phase=CoreSkillVisualPhase.PREPARE)).single()
-            assertTrue(CoreSkillChoreography.pose(prepare,0.0).model.endsWith("blade_0"))
-            assertTrue(CoreSkillChoreography.pose(prepare,(prepare.durationTicks-1).toDouble()).model.endsWith("blade_2"))
+            // 鉄槌's windup is the held greatsword rising (CoreArmamentPresentation), not a ghost blade.
+            if(s.icon=="war_ult") assertTrue(CoreSkillChoreography.parts(effect(s,phase=CoreSkillVisualPhase.PREPARE)).isEmpty())
+            else {
+                val prepare=CoreSkillChoreography.parts(effect(s,phase=CoreSkillVisualPhase.PREPARE)).single()
+                assertTrue(CoreSkillChoreography.pose(prepare,0.0).model.endsWith("blade_0"))
+                assertTrue(CoreSkillChoreography.pose(prepare,(prepare.durationTicks-1).toDouble()).model.endsWith("blade_2"))
+            }
             val pulse=CoreSkillChoreography.parts(effect(s))
-            if(s.icon !in CoreWarriorIronChoreography.sceneIds)
-                assertTrue(CoreSkillChoreography.pose(pulse.first(),0.0).model.endsWith("blade_3"))
+            val first=CoreSkillChoreography.pose(pulse.first(),0.0).model
+            // The iron strikes (slam, sweep) start their own plate sequence at frame 0.
+            assertTrue(if(s.icon in CoreWarriorIronChoreography.sceneIds) first.startsWith("combat_vfx/warrior_iron/") && first.endsWith("_0")
+                else first.endsWith("blade_3"),first)
             assertTrue(pulse.none { it.shape.contains("contact") })
             val contact=CoreSkillChoreography.parts(effect(s,phase=CoreSkillVisualPhase.CONTACT)).single()
             assertEquals(Vec(0.0,1.0,0.0),contact.offset)
@@ -94,8 +100,13 @@ class CoreWarriorBladeChoreographyTest {
                         DoubleArray(3) { axis -> (if(c and (1 shl axis)==0) lo[axis] else hi[axis]).asDouble }.also { v ->
                             e.getAsJsonObject("rotation")?.let { r ->
                                 val o=r.getAsJsonArray("origin"); val a=Math.toRadians(r.get("angle").asDouble)
-                                val y=v[1]-o[1].asDouble; val z=v[2]-o[2].asDouble
-                                v[1]=o[1].asDouble+y*cos(a)-z*sin(a);v[2]=o[2].asDouble+y*sin(a)+z*cos(a)
+                                if(r.get("axis").asString=="z") {
+                                    val x=v[0]-o[0].asDouble; val y=v[1]-o[1].asDouble
+                                    v[0]=o[0].asDouble+x*cos(a)-y*sin(a);v[1]=o[1].asDouble+x*sin(a)+y*cos(a)
+                                } else {
+                                    val y=v[1]-o[1].asDouble; val z=v[2]-o[2].asDouble
+                                    v[1]=o[1].asDouble+y*cos(a)-z*sin(a);v[2]=o[2].asDouble+y*sin(a)+z*cos(a)
+                                }
                             }
                         }
                     }

@@ -39,6 +39,7 @@ enum class CoreAffixStat(val displayName: String, val percent: Boolean = true) {
     OUTGOING_HEALING("与回復量"), INCOMING_HEALING("被回復量"),
     LIFESTEAL("ライフスティール"),
     SHIELD_POWER("シールド量"),
+    CC_RESIST("CC耐性"),
     WAR_AFTERSHOCK("戦士・余波", false), MAGE_ECHO("メイジ・残響", false), HUNT_RETURN("狩人・追矢", false),
     ASS_VENOM("暗殺者・毒印", false), TEMP_GRAVITY("聖騎士・重力", false), HEAL_CONVERSION("治療師・予防", false), STAR_ORBIT("星織り・公転", false),
 }
@@ -149,6 +150,7 @@ object CoreAffixCatalog {
         CoreAffixDefinition("projects:receptivity", "受容の刻印石", CoreAffixStat.INCOMING_HEALING, CoreAffixCategory.DEFENSE, 5, 10, 3),
         CoreAffixDefinition("projects:siphon", "吸命の刻印石", CoreAffixStat.LIFESTEAL, CoreAffixCategory.OFFENSE, 1, 2, 1),
         CoreAffixDefinition("projects:sanctuary", "庇護の刻印石", CoreAffixStat.SHIELD_POWER, CoreAffixCategory.DEFENSE, 6, 12, 4),
+        CoreAffixDefinition("projects:steadfast", "不動の刻印石", CoreAffixStat.CC_RESIST, CoreAffixCategory.DEFENSE, 5, 10, 4),
         CoreAffixDefinition("projects:aftershock", "余波の刻印石", CoreAffixStat.WAR_AFTERSHOCK, CoreAffixCategory.OFFENSE, 1, 4, 1, weight=3),
         CoreAffixDefinition("projects:spell-echo", "残響の刻印石", CoreAffixStat.MAGE_ECHO, CoreAffixCategory.OFFENSE, 1, 4, 1, weight=3),
         CoreAffixDefinition("projects:returning-arrow", "追矢の刻印石", CoreAffixStat.HUNT_RETURN, CoreAffixCategory.OFFENSE, 1, 4, 1, weight=3),

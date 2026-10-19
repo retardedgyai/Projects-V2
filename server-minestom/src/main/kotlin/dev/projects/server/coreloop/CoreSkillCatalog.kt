@@ -48,7 +48,13 @@ data class CoreSkillDefinition(
         add("${journey?.job?.resourceName ?: "固有資源"}：必要 $spend / 命中で +$gain")
         add("マナ $mana / 再使用 ${CoreCombatMath.number(cooldownTicks(sheet.mods) / 20.0)}秒")
         add("発生 ${CoreCombatMath.number(startupTicks(sheet) / 20.0)}秒 / ${if (type == CoreDamageType.MAGICAL) "詠唱速度" else "攻撃速度"}で短縮")
-        if(crowd != null) add("${crowd.label} ${CoreCombatMath.number(crowdMillis / 1000.0)}秒 / ボスには効かず崩し-${CoreCombatMath.number(crowd.breakDamage)}")
+        if(crowd != null) add("${crowd.label} ${CoreCombatMath.number(crowdMillis / 1000.0)}秒（ボスには効かない）")
+        if (journey != null && !retired) {
+            val breakPower = CoreBreak.skill(journey.job, icon)
+            if (breakPower > 0) add(if (journey.job == CoreClass.WARRIOR && icon == "slam")
+                "ボスの崩し ${CoreCombatMath.number(breakPower)}＋注いだ闘気10ごとに+1（最大+${CoreCombatMath.number(CoreBreak.SLAM_RAGE_MAX)}）・3段目の直後${CoreCombatMath.number(CoreBreak.FINISHER)}倍・根張りの直後${CoreCombatMath.number(CoreBreak.RIPOSTE)}倍"
+                else "ボスの崩し ${CoreCombatMath.number(breakPower)}${if (pulses > 1) "（1回ごと）" else ""}")
+        }
         if(motion == CoreSkillMotion.GUARD) add("最初の0.6秒：被害80%軽減 / 以降55%軽減 / ${duration/20.0}秒")
         if(status != CoreSkillStatus.NONE) add(when(status) { CoreSkillStatus.MARK -> "印6秒：消費技の最初の命中が35%強化"; CoreSkillStatus.EXPOSE -> "防御崩し4秒：敵のAR・MRを20%低下"; CoreSkillStatus.POISON -> "毒3秒：1秒ごとに係数の30%（重複しない）"; else -> "減速：敵の移動を40%低下" })
         if(icon=="mage_garden") {

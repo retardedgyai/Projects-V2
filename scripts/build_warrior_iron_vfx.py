@@ -1,4 +1,4 @@
-"""Iron-mass warrior skill plates (2026-10-17): 地割り (slam) and 押し薙ぎ (whirl).
+"""Iron-mass warrior skill plates (2026-10-17): 地割り (slam), 押し薙ぎ (whirl), and 鉄槌 (war_ult, 2026-10-19).
 
 The Creator rejected formula shapes ("ださい"). The main shapes are therefore hand-placed 32x32 pixel masters
 (rows below), drawn after the references: SamusDev "Dragon Warrior" (a thick glowing crescent, bright head, torn
@@ -437,10 +437,14 @@ def rock(x, z, w, d, h, y0=8.0, axis=None, angle=0.0, glow=None):
     """One broken chunk: a main block and a smaller offset cap so the top edge is not a clean box.
     Anything below the ground plane (y=8) is cut away; glow adds a hot band where it leaves the ground."""
     out = []
+    if axis and angle:
+        y0 += math.tan(math.radians(abs(angle))) * max(w, d) / 2 + .1   # a tilted base corner must not sink below the ground
     pivot = [x, max(8.0, y0), z]
     for lo, hi, top in (((x - w / 2, y0, z - d / 2), (x + w / 2, y0 + h, z + d / 2), 'L'),
                         ((x - w * .3, y0 + h * .55, z - d * .2), (x + w * .15, y0 + h * 1.25, z + d * .35), 'L')):
-        lo = [lo[0], max(8.0, lo[1]), lo[2]]
+        # Clip at the ground, and keep a tilted block's lowest corner above it too.
+        floor = 8.0 + (math.tan(math.radians(abs(angle))) * max(w, d) / 2 + .1 if axis and angle else 0.0)
+        lo = [lo[0], max(floor, lo[1]), lo[2]]
         if hi[1] <= 8.05:
             continue
         out.append(cuboid(lo, hi, top=top, axis=axis, angle=angle, pivot=pivot))
@@ -490,11 +494,33 @@ def rim(frame):
     return elements
 
 
-SOLID = {'heave': (12, heave), 'rim': (16, rim)}
+# 鉄槌 finale (2026-10-19): a tight cluster of tall pillars bursting out under the target, the launch made visible.
+# (x, z, width, depth, height, tilt axis, tilt); tilts lean away from the centre so the cluster flowers open.
+PILLAR = [(8.0, 8.4, 2.6, 2.6, 11.0, None, 0.0), (5.6, 9.6, 2.0, 2.2, 8.0, 'z', 22.5), (10.6, 9.4, 2.2, 2.0, 8.6, 'z', -22.5),
+          (7.0, 11.4, 1.8, 1.8, 6.4, 'x', -22.5), (9.4, 6.0, 1.8, 2.0, 6.8, 'x', 22.5), (4.6, 6.6, 1.4, 1.4, 4.2, 'z', 22.5),
+          (11.8, 6.4, 1.4, 1.6, 4.6, 'z', -22.5)]
+PILLAR_RISE = [-1.0, -.45, -.1, 0.0, 0.0, 0.0, 0.0, -.1, -.25, -.45, -.65, -.85, -1.0, -1.0]
 
 
-CLIPS = {'cleave': (8, cleave), 'burst': (9, burst), 'rift': (16, rift), 'shards': (12, lambda f: shards(f, False)),
-         'arc': (11, arc), 'wshards': (12, lambda f: shards(f, True))}
+def pillar(frame):
+    elements = []
+    if frame >= len(PILLAR_RISE):
+        return elements
+    glow = 'W' if frame < 2 else 'Y' if frame < 5 else 'O' if frame < 8 else 'R' if frame < 11 else 'D'
+    for x, z, w, d, h, axis, angle in PILLAR:
+        h *= .7  # the launch must read without walling off the target
+        elements += rock(x, z, w, d, h, 8.0 + PILLAR_RISE[frame] * h, axis, angle, glow)
+    return elements
+
+
+SOLID = {'heave': (12, heave), 'rim': (16, rim), 'pillar': (14, pillar)}
+
+
+CLIPS = {'cleave': (8, cleave), 'burst': (9, burst), 'burstx': (9, burst), 'rift': (16, rift), 'shards': (12, lambda f: shards(f, False)),
+         'arc': (11, arc), 'wshards': (12, lambda f: shards(f, True)),
+         # 鉄槌: the three falls heat up. The first cut is red, the second orange, the last the full white-hot cleave.
+         'ucleave_r': (8, lambda f: cool(cleave(f), 2)), 'ucleave_o': (8, lambda f: cool(cleave(f), 1)),
+         'uburst_o': (9, lambda f: cool(burst(f), 1))}
 
 
 def palette_inks():

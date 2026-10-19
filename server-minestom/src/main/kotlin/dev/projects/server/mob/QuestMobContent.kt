@@ -123,7 +123,8 @@ internal object QuestMobContent {
         val boss = archetype.rarity == QuestMobRarity.BOSS
         fun attack(id: String, label: String, shape: MobAttackShape, range: Double, damage: Double,
             warning: Long = 1000, tracking: Long = 400, recovery: Long = 850, cooldown: Long = 1900,
-            minimumRange: Double = 0.0, target: Boolean = false, health: Double = 1.0, weight: Int = 1, scripted: Boolean = false,
+            minimumRange: Double = 0.0, target: Boolean = false, health: Double = 1.0, weight: Int = 1,
+            cc: CrowdControl? = null, ccMillis: Long = 0, scripted: Boolean = false,
             earlyHits: List<Long> = emptyList()) = MobAbility(
             id, label, shape, range, damage * factor, warning, tracking, recovery, cooldown, weight,
             minimumRange, if (target) MobAbilityAnchor.TARGET else MobAbilityAnchor.CASTER, health,
@@ -134,7 +135,8 @@ internal object QuestMobContent {
                     "sakura-scatter", "sakura-bloom", "sakura-howl", "sakura-rain"))
                 dev.projects.server.coreloop.CoreDamageType.MAGICAL
             else if (id in setOf("shade-channel", "shade-shell")) dev.projects.server.coreloop.CoreDamageType.TRUE   // a failed gimmick
-            else dev.projects.server.coreloop.CoreDamageType.PHYSICAL, scripted,
+            else dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
+            cc, ccMillis, scripted,
             earlyHits,
         )
         fun sweep(radius: Double = 3.4, damage: Double = 10.0) = attack(
@@ -142,7 +144,7 @@ internal object QuestMobContent {
         )
         fun slam(length: Double = 5.8, width: Double = 1.25, damage: Double = 14.0) = attack(
             "slam", "前方叩きつけ", MobAttackShape.Slam(length, width), length - 0.4, damage,
-            1450, 550, 1400, 3000, weight = 2,
+            1450, 550, 1400, 3000, weight = 2, cc = CrowdControl.KNOCKBACK, ccMillis = 400,
         )
         fun definition(type: EntityType, hp: Double, speed: Double, distance: Double, scale: Double,
             weapon: Material, offhand: Material = Material.AIR, helmet: Material = Material.AIR,
@@ -242,19 +244,19 @@ internal object QuestMobContent {
             QuestMobArchetype.SHIELD_GUARD -> definition(EntityType.HUSK, 66.0, 0.105, 2.0, 1.0,
                 Material.IRON_SWORD, Material.SHIELD, Material.CHAINMAIL_HELMET, Material.CHAINMAIL_CHESTPLATE, 0.45,
                 listOf(attack("shield-bash", "盾の強打", MobAttackShape.Slam(3.4, 1.25), 3.0, 12.0,
-                    1150, 350, 1250, 2400), sweep(3.0, 9.0)))
+                    1150, 350, 1250, 2400, cc = CrowdControl.STUN, ccMillis = 600), sweep(3.0, 9.0)))
             QuestMobArchetype.RIFT_CASTER -> definition(EntityType.EVOKER, 36.0, 0.13, 8.0, 1.0,
                 Material.BLAZE_ROD, attacks = listOf(
                     attack("rift-bolt", "裂け目の槍", MobAttackShape.Slam(13.0, 0.75), 12.5, 12.0,
-                        1250, 450, 1100, 2300, minimumRange = 3.0),
+                        1250, 450, 1100, 2300, minimumRange = 3.0, cc = CrowdControl.ROOT, ccMillis = 800),
                     attack("rift-pulse", "拒絶の波", MobAttackShape.Ring(3.0), 3.5, 8.0,
-                        1050, 0, 1400, 2800),
+                        1050, 0, 1400, 2800, cc = CrowdControl.KNOCKBACK, ccMillis = 300),
                 ))
             QuestMobArchetype.ELITE_BRUTE -> definition(EntityType.PIGLIN_BRUTE, 105.0, 0.15, 2.0, 1.15,
                 Material.NETHERITE_AXE, chest = Material.GOLDEN_CHESTPLATE, attacks = listOf(
                     sweep(4.0, 15.0), slam(6.0, 1.6, 20.0),
                     attack("rage-pulse", "憤怒の震撃", MobAttackShape.Ring(4.3), 4.0, 16.0,
-                        1400, 0, 1500, 4500, health = 0.6),
+                        1400, 0, 1500, 4500, health = 0.6, cc = CrowdControl.AIRBORNE, ccMillis = 600),
                 ))
             QuestMobArchetype.EXECUTIONER -> definition(EntityType.VINDICATOR, 300.0, 0.12, 2.0, 1.35,
                 Material.NETHERITE_AXE, attacks = listOf(sweep(4.2, 16.0), slam(7.0, 1.6, 24.0),
@@ -266,7 +268,7 @@ internal object QuestMobContent {
                     attack("warden-ring", "城壁の震動", MobAttackShape.Ring(6.0, 2.3), 6.0, 26.0,
                         1700, 0, 1600, 4000),
                     attack("warden-crush", "鉄槌", MobAttackShape.Ring(3.4), 3.5, 20.0,
-                        1300, 0, 1500, 3200)))
+                        1300, 0, 1500, 3200, cc = CrowdControl.STUN, ccMillis = 800)))
             QuestMobArchetype.RIFT_ORACLE -> definition(EntityType.EVOKER, 280.0, 0.125, 8.0, 1.25,
                 Material.BLAZE_ROD, Material.ENCHANTED_BOOK, attacks = listOf(
                     attack("oracle-mark", "崩壊の刻印", MobAttackShape.Ring(2.8), 14.0, 22.0,

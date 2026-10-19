@@ -146,7 +146,7 @@ def pose(motion, t, base_yaw=0.0):
         g = (root @ np.append(sample(tr['grip'], t, 'pos'), 1))[:3]
         w = blade_frame(tr['blade'], root, t, g)
         weapons['sword'] = w
-        targets = {'r': g, 'l': g - w[:3, 2] * 3.2 * K}
+        targets = {'r': g, 'l': g - w[:3, 2] * weapon.get('second', 3.2) * K}
     for name, sx in (('r', -5), ('l', 5)):
         sh = (torso @ np.array([sx * K, 10 * K, 0, 1]))[:3]
         pole = (torso @ np.array([np.sign(sx), -1, -.6, 0]))[:3]
@@ -258,7 +258,7 @@ def charge_glow(motion, t):
     level, since = 0, None
     for e in motion['events']:
         if e['type'] == 'charge' and t >= e['t']: level, since = e['level'], t - e['t']
-    impact = next(e for e in motion['events'] if e['type'] == 'impact')
+    impact = impact_at(motion)
     if level == 0 or t >= impact['t'] + .05: return None, 0
     held = {1: (25, 18, 4), 2: (45, 28, 6), 3: (70, 18, 4)}[level]
     flash = max(0.0, 1 - since / .18)
@@ -266,7 +266,28 @@ def charge_glow(motion, t):
 
 
 def impact_at(motion):
-    return next(e for e in motion['events'] if e['type'] == 'impact')
+    return next((e for e in motion['events'] if e['type'] == 'impact'), {'t': 1e9, 'hitstop': 0})
+
+
+REACH = {}
+
+
+def reach_outline(label, attack):
+    """The server's reach area of one attack (CoreWeaponAttacksTest export) as a ground polygon around the player."""
+    if label not in REACH:
+        REACH[label] = {w['name']: w for w in json.loads((ROOT / '.tools/weapon-reach.json').read_text())}[label]
+    cells = REACH[label]['attacks'][attack]['cells']
+    pts = np.array(cells, float) / 10
+    poly = []
+    for deg in range(-180, 180, 4):
+        a = math.radians(deg)
+        d = np.array([math.sin(a), math.cos(a)])
+        proj = pts @ d
+        lateral = np.abs(pts[:, 0] * d[1] - pts[:, 1] * d[0])
+        near = proj[lateral < .08]
+        r = near.max() if len(near) and near.max() > 0 else 0.0
+        poly.append((d[0] * r, d[1] * r))
+    return poly
 
 
 VIEWS = {
@@ -283,7 +304,10 @@ def render(motion, skin, t, view):
     since_imp = t - imp['t']
     eye = np.array(eye, float)
     focal = R.FOCAL
-    if view == 'first':
+    if view == 'first' and 'fp_grip' not in motion['tracks']:
+        focal = (R.H / 2) / math.tan(math.radians(35))  # Minecraft's default 70 degree vertical field of view
+        eye = np.array((0.0, EYE, 0.0)); target = (0, EYE - .55, 3.0)
+    if view == 'first' and 'fp_grip' in motion['tracks']:
         # The charge narrows the view (in game: the movement-speed FOV), the impact snaps it back.
         charge_t = min(1.0, max(0.0, (t - .7) / 2.0)) if t < imp['t'] else max(0.0, 1 - since_imp / .2)
         focal = R.FOCAL * (1 + .18 * charge_t)
@@ -312,10 +336,25 @@ def render(motion, skin, t, view):
         held = np.eye(4); held[:3, 0], held[:3, 1], held[:3, 2], held[:3, 3] = x, np.cross(z, x), z, to_world(g, 1)
         faces += sword_faces(held @ S(.55, .55, .55), glow, weapon)
     elif view == 'first':
-        # Held weapons in both hands (main hand and off hand): the puppet's blades and forearms as seen from the eye.
-        for name, m in parts.items():
-            if is_weapon(name): faces += sword_faces(m, glow, weapon)
-            elif name.endswith('_low') and name.startswith('arm'): faces += part_faces(name, m, skin)
+        # First person, as Better Combat shows it: the held weapons sweep through the lower half of the screen, in
+        # front of a camera that never moves. The game can only move the held item (no arm), so: the weapons alone,
+        # their root-space grip/blade carried into camera space around where Minecraft draws a held item.
+        tr = motion['tracks']
+        hands = [('r', 'grip_r', 'blade_r'), ('l', 'grip_l', 'blade_l')] if weapon['hands'] == 'dual' else [('r', 'grip', 'blade')]
+        to_world = lambda v, w: camera.eye * w + v[0] * camera.r + v[1] * camera.u + v[2] * camera.f
+        to_cam = lambda v: np.array([-v[0], v[1], v[2]])  # character right (-x) is screen right
+        for side, gk, bk in hands:
+            g = sample(tr[gk], t, 'pos')
+            # fists ~0.8 m below the eye, pushed out in front of the camera
+            gc = np.array([-g[0] * 1.1, g[1] - .78, g[2] * .9 + .55])
+            # Same blade frame as third person (edge leads the cut), built in camera space and then placed.
+            frame = blade_frame(tr[bk], np.diag([-1.0, 1.0, 1.0, 1.0]), t, np.zeros(3))
+            cam_basis = np.column_stack((camera.r, camera.u, camera.f))
+            held = np.eye(4)
+            held[:3, :3] = cam_basis @ frame[:3, :3]
+            if np.linalg.det(held[:3, :3]) < 0: held[:3, 0] = -held[:3, 0]  # the mirror flips handedness back
+            held[:3, 3] = to_world(gc, 1)
+            faces += sword_faces(held @ S(.7, .7, .7), glow, weapon)
     else:
         for name, m in parts.items():
             faces += sword_faces(m, glow, weapon) if is_weapon(name) else part_faces(name, m, skin)
@@ -323,6 +362,16 @@ def render(motion, skin, t, view):
     lo, hi = (-.45, 0, 2.6), (.45, 2.0, 3.5)
     corners = [np.array([hi[j] if i & (1 << j) else lo[j] for j in range(3)]) for i in range(8)]
     faces += [([corners[i] for i in ids], ('shade', (92, 70, 66))) for _, ids in R.FACES]
+    # The server's hit area flashes on the ground for a few frames after each hit.
+    for e in motion['events']:
+        if e['type'] == 'hit' and 0 <= t - e['t'] < .2 and motion.get('reach'):
+            fade = 1 - (t - e['t']) / .2
+            poly = [camera.cam(np.array((x, .02, z))) for x, z in reach_outline(motion['reach'], e['attack'])]
+            poly = R.clip(poly)
+            if len(poly) >= 3:
+                layer = Image.new('RGBA', image.size, (0, 0, 0, 0))
+                ImageDraw.Draw(layer).polygon([camera.screen(c) for c in poly], fill=(249, 115, 22, int(110 * fade)))
+                image.alpha_composite(layer)
     R.draw_faces(image, camera, faces)
     R.FOCAL = old
     draw = ImageDraw.Draw(image)

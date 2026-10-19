@@ -144,6 +144,8 @@ data class MobAbility(
     val anchor: MobAbilityAnchor = MobAbilityAnchor.CASTER,
     val maximumHealthRatio: Double = 1.0,
     val damageType: dev.projects.server.coreloop.CoreDamageType = dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
+    /** Crowd control put on each player the hit lands on (QuestEncounterCombat crowdPlayer). */
+    val crowd: CrowdControl? = null, val crowdMillis: Long = 0,
     /** Never picked at random; the encounter starts it by id when its situation comes up (a combo, a turn). */
     val scripted: Boolean = false,
     /** Earlier hits (ms from the start) before the main one at [telegraphMillis], e.g. the first two of three bites. */

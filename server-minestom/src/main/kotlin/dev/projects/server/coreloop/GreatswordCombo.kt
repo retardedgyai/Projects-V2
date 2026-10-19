@@ -6,10 +6,16 @@ import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import kotlin.math.*
 
-/** Core-loop weapon only: one accepted press, one impact; no client hit declarations. */
+/**
+ * Core-loop melee combo: one accepted press, one impact; no client hit declarations. The attacks come from the
+ * weapon ([CoreWeaponCombat], Better Combat manner); without one it is the original three greatsword swings.
+ */
 internal class GreatswordCombo {
-    data class Swing(val step: Int, val impactTick: Int, val totalTicks: Int) {
-        val multiplier: Double get() = doubleArrayOf(1.0, 1.15, 1.85)[step - 1]
+    data class Swing(val step: Int, val impactTick: Int, val totalTicks: Int,
+        val attack: CoreWeaponAttack = DEFAULT[(step - 1).coerceIn(0, 2)], val finisher: Boolean = step == 3) {
+        val multiplier: Double get() = attack.multiplier
+        /** 1, 2 alternate through the combo and 3 is the closing attack: what sounds and swing art key on. */
+        val beat: Int get() = if (finisher) 3 else (step - 1) % 2 + 1
     }
     var swing: Swing? = null
         private set
@@ -20,23 +26,24 @@ internal class GreatswordCombo {
     private var buffered = false
     val isAttacking: Boolean get() = swing != null
 
-    fun press(speed: Double, quick: Boolean = false, immediate: Boolean = false): Swing? {
+    fun press(speed: Double, quick: Boolean = false, immediate: Boolean = false, attacks: List<CoreWeaponAttack> = DEFAULT): Swing? {
         val current = swing
         if (current != null) {
             if (elapsed >= current.totalTicks - 6) buffered = true
             return null
         }
-        if (idleTicks >= RESET_TICKS) nextStep = 1
+        if (idleTicks >= RESET_TICKS || nextStep > attacks.size) nextStep = 1
         val step = nextStep
-        nextStep = step % 3 + 1
+        nextStep = step % attacks.size + 1
+        val attack = attacks[step - 1]
         val haste = if (speed.isFinite()) speed.coerceIn(.75, 2.1) else 1.0
-        val startup = round((if (quick) 3.0 else if (step == 3) 10.0 else 7.0) / (1 + .25 * (haste - 1))).toInt().coerceAtLeast(if(quick) 2 else 4)
-        val recovery = round((if(quick) intArrayOf(8, 8, 12) else intArrayOf(12, 14, 19))[step - 1] / haste).toInt().coerceAtLeast(if(quick) 5 else 7)
+        val startup = round(attack.startup / (1 + .25 * (haste - 1))).toInt().coerceAtLeast(if(quick) 2 else 4)
+        val recovery = round(attack.recovery / haste).toInt().coerceAtLeast(if(quick) 5 else 7)
         elapsed = 0
         idleTicks = 0
         // Immediate AA spends its former startup AFTER the hit. Preserve cadence and
         // the one-slot late input buffer; repeated clicks cannot create extra strikes.
-        return Swing(step, if (immediate) 0 else startup + 1, startup + 1 + recovery).also { swing = it }
+        return Swing(step, if (immediate) 0 else startup + 1, startup + 1 + recovery, attack, step == attacks.size).also { swing = it }
     }
 
     /** Returns the sole impact frame; recovery includes a two/three-tick contact hold. */
@@ -57,7 +64,12 @@ internal class GreatswordCombo {
     fun reset() { swing = null; elapsed = 0; nextStep = 1; idleTicks = RESET_TICKS; buffered = false }
     fun holdSequence() { idleTicks = -20 }
 
-    companion object { const val RESET_TICKS = 18 }
+    companion object {
+        const val RESET_TICKS = 18
+        /** The original three greatsword swings, for melee without a weapon table. */
+        val DEFAULT = listOf(CoreWeaponAttack(CoreHitbox.HORIZONTAL, 1.0, 7, 12, angle = 132.0),
+            CoreWeaponAttack(CoreHitbox.HORIZONTAL, 1.15, 7, 14, angle = 132.0), CoreWeaponAttack(CoreHitbox.HORIZONTAL, 1.85, 10, 19, angle = 132.0))
+    }
 }
 
 /** Feet-relative vertical overlap is symmetric on slopes, unlike comparing feet to mob center. */

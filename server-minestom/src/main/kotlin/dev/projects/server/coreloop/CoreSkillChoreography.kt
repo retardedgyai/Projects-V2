@@ -5,8 +5,9 @@ import kotlin.math.*
 
 /** An effect's readable phrase is longer than its damage beat. Never feeds back into hit timing. */
 internal enum class CoreMeshMotion { LINEAR, SNAP, SWEEP, REVOLVE, THRUST, FALL, RADIATE, ORBIT, GATHER, FLOAT, EMERGE }
+/** [tint]: a shader-coloured part's per-tick marker colour (scripts/shaders/item.fsh), sent as custom model data. */
 internal data class CoreMeshPose(val offset: Vec, val scale: Vec, val yaw: Double, val pitch: Double,
-    val roll: Double, val model: String, val visible: Boolean)
+    val roll: Double, val model: String, val visible: Boolean, val tint: Int? = null)
 
 internal object CoreSkillChoreography {
     // Explicit durations in server ticks. Assassin is not allowed to disappear in three frames.

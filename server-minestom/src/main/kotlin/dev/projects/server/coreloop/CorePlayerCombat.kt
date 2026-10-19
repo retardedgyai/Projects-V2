@@ -99,13 +99,18 @@ internal class CorePlayerCombat(
     private var castCharges = 0
     private var lastConduitGain = -1L
     private val lessonAttempts = mutableMapOf<Int, Long>()
+    /** Crowd control this player is under (enemy attacks now, other players in PvP fields). */
+    internal val crowd = CorePlayerCrowdControl()
+    private var movementHeld = false
+    /** Warrior: 根張り caught a blow; a 地割り before this tick is the return strike (CoreBreak.RIPOSTE). */
+    private var riposteUntil = -1L
     val classId get() = journey().job
     val skillDefinitions get() = CoreSkillCatalog.equipped(journey(), statSource())
     val skillNames get() = skillDefinitions.map { it.name }
     fun skillAvailable(index: Int) = index in 0..4 && (journey().legacy || journey().level >= CoreSkillCatalog.unlockLevels[index])
     fun resourceAvailable(index: Int) = classState.canCast(skillDefinitions[index], journey().build)
     val weaponHint get() = "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}${if (raging) " 赤熱" else ""}"
-    val combatCue get() = CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil,rampageUntil)
+    val combatCue get() = crowd.cue(tickNumber) ?: CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil,rampageUntil)
     val chargeCount: Int? get() = if (classId == CoreClass.STARWEAVER) classState.resource.toInt() else null
     val resource get() = classState.resource
     val resourceMax get() = classState.cap(classId)
@@ -132,12 +137,15 @@ internal class CorePlayerCombat(
 
     private data class PendingSkill(val id: Int, val definition: CoreSkillDefinition, val origin: Pos, val direction: Vec, val startup: Int,
         var elapsed: Int = 0, var gained: Boolean = false, val empowered: Double = 0.0, val counter: Boolean = false,
-        val boost: Double = 1.0, val gardenCells: List<Pos>? = null)
+        val boost: Double = 1.0, val gardenCells: List<Pos>? = null,
+        /** Break gauge damage each hit on a boss does (CoreBreak), fixed at the cast. */
+        val breakAmount: Double = 0.0)
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
         if (defeated || player.openInventory != null || staggered) return
         val enemies = encounter() ?: return
+        if (!crowd.canAttack(tickNumber)) return
         if (pending != null || shot != null || tickNumber < nextNormalAt) { queueAction(CoreCombatFeel.NORMAL); return }
         queued = null
         if (feel.attackBreaksGuard) { classState.guardUntil = -1; classState.perfectUntil = -1 }
@@ -148,14 +156,16 @@ internal class CorePlayerCombat(
             sound(if (classId == CoreClass.RANGER) SoundEvent.ENTITY_ARROW_SHOOT else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .65f, 1.2f)
             return
         }
-        normal.press(attackSpeed * if (raging) CoreWarriorRules.RAMPAGE_HASTE else 1.0, quick = classId == CoreClass.ASSASSIN, immediate = feel.immediateNormal)?.let { swing ->
+        val weapon = CoreWeaponCombat.of(weaponBase())
+        normal.press(attackSpeed * if (raging) CoreWarriorRules.RAMPAGE_HASTE else 1.0, quick = classId == CoreClass.ASSASSIN, immediate = feel.immediateNormal,
+            attacks = weapon?.attacks ?: GreatswordCombo.DEFAULT)?.let { swing ->
             nextNormalAt = tickNumber + swing.totalTicks
             normalEmpowerment = if(classId == CoreClass.TEMPLAR && classState.counterUntil >= tickNumber) 1.35 else 1.0
             if(normalEmpowerment > 1) classState.counterUntil = -1
             normalDirection = flatFacing()
             lastCombat = tickNumber
             if (swing.impactTick == 0) releaseNormal(enemies, swing)
-            else vfx.startSound(swing.step)
+            else vfx.startSound(swing.beat)
         }
     }
 
@@ -164,6 +174,7 @@ internal class CorePlayerCombat(
         if (id !in 0..4 || defeated || encounter() == null || player.openInventory != null || staggered) return
         if (!skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
+        if (!crowd.canCast(tickNumber)) { notice("${crowd.cue(tickNumber) ?: "行動不能"}：技を使えません"); return }
         val definition = skillDefinitions[id]
         if (raging) classState.fill(classId) // The ultimate is free while raging: rage refills before and after the spend.
         if (!classState.canCast(definition, journey().build)) { notice("${classId.resourceName}が足りません（必要 ${definition.spend} / 現在 ${resource.toInt()}）"); return }
@@ -201,15 +212,22 @@ internal class CorePlayerCombat(
             definition.motion !in setOf(CoreSkillMotion.SHIELD,CoreSkillMotion.HEAL,CoreSkillMotion.GUARD)
         if (counter) { skillBoost *= 1.35; classState.counterUntil = -1 }
         var castDefinition = definition
+        // Break is fixed at the cast: a rampage that the slam closes still counts for that slam.
+        val rampageAtCast = raging
+        var breakAmount = CoreBreak.skill(classId, definition.icon)
         if (classId == CoreClass.WARRIOR && definition.icon in CoreWarriorRules.heavy) {
             // Rage never gates the heavy skills; when it is there they take it for a heavier hit.
             if (definition.icon == "slam") {
                 // The slam pours in everything; during a rampage it is the closing blow.
-                skillBoost *= 1 + classState.consumeAll(CoreWarriorRules.RAGE_COST) * CoreWarriorRules.SLAM_PERCENT_PER_RAGE / 100.0
+                val poured = classState.consumeAll(CoreWarriorRules.RAGE_COST)
+                skillBoost *= 1 + poured * CoreWarriorRules.SLAM_PERCENT_PER_RAGE / 100.0
+                breakAmount = CoreBreak.slam(poured)
+                if (tickNumber <= riposteUntil) { breakAmount *= CoreBreak.RIPOSTE; riposteUntil = -1; notice("返しの一撃") }
                 if (raging) { skillBoost *= 1 + CoreWarriorRules.RAMPAGE_DAMAGE_PERCENT / 100.0; rampageUntil = -1; classState.drain() }
             } else if (classState.consume(CoreWarriorRules.RAGE_COST)) skillBoost *= 1 + CoreWarriorRules.RAGE_BONUS_PERCENT / 100.0
             if (definition.icon == "slam" && tickNumber <= finisherUntil) {
                 skillBoost *= 1 + CoreWarriorRules.FINISHER_BONUS_PERCENT / 100.0; finisherUntil = -1
+                breakAmount *= CoreBreak.FINISHER
                 castDefinition = definition.copy(startup = minOf(CoreWarriorRules.FINISHER_STARTUP, definition.startup))
             }
         }
@@ -224,7 +242,8 @@ internal class CorePlayerCombat(
         val startup = castDefinition.startupTicks(sheet)
         pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
             if (definition.motion == CoreSkillMotion.RAY) player.position.direction() else flatFacing(), startup,
-            empowered = spentFrom, counter = counter, boost = skillBoost, gardenCells = gardenCells)
+            empowered = spentFrom, counter = counter, boost = skillBoost, gardenCells = gardenCells,
+            breakAmount = breakAmount * if (rampageAtCast) CoreBreak.RAMPAGE else 1.0)
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
@@ -238,6 +257,8 @@ internal class CorePlayerCombat(
         // or the startup of a heavy skill / ultimate. Pressed then, it fires the moment the commitment ends.
         if (committed()) { dodgeQueuedUntil = tickNumber + DODGE_BUFFER_TICKS; return }
         dodgeQueuedUntil = -1
+        // Rule 3 of player CC: the dodge breaks every movement lock (it still costs the dodge cooldown).
+        if (crowd.escape(tickNumber)) { refreshMovement(); sound(SoundEvent.ITEM_ARMOR_EQUIP_CHAIN, .7f, 1.4f) }
         queued = null
         if (normal.isAttacking) normal.endRecovery()
         classState.guardUntil = -1; classState.perfectUntil = -1
@@ -272,6 +293,7 @@ internal class CorePlayerCombat(
             baseSpeed = 0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0 + if (tickNumber < moveHasteUntil) .2 else 0.0)
         }
         applySpeed(speedFactor())
+        crowdTick()
         val enemies = encounter() ?: run { resetActions(); return }
         if (weaponBroken()) { resetActions(); return }
         slide?.let { s ->
@@ -353,11 +375,12 @@ internal class CorePlayerCombat(
 
     /** Walking while acting: rooted for heavy startups and while staggered, slowed while casting or swinging. */
     private fun speedFactor(): Double {
-        if (defeated || staggered) return 0.0
+        if (defeated || staggered || !crowd.canMove(tickNumber)) return 0.0
         val action = pending
         if (action != null && action.elapsed < action.startup)
             return if (action.startup >= HEAVY_STARTUP || action.definition.ultimate) 0.0 else CAST_SPEED
-        return if (normal.isAttacking && classId.melee) SWING_SPEED else 1.0
+        // Swinging: the weapon's own slowdown (Better Combat manner, CoreWeaponCombat), else the general one.
+        return if (normal.isAttacking && classId.melee) CoreWeaponCombat.of(weaponBase())?.let { 1 - it.attackSlow } ?: SWING_SPEED else 1.0
     }
 
     private fun applySpeed(factor: Double) {
@@ -423,25 +446,27 @@ internal class CorePlayerCombat(
     }
 
     /** Same server-owned strike for input-time warrior AA and delayed other melee jobs. */
+    /** The weapon's normal-attack reach (Better Combat attack_range); 4.5 for melee without a table. */
+    private fun reach() = CoreWeaponCombat.of(weaponBase())?.range ?: if (classId == CoreClass.ASSASSIN) 3.0 else 4.5
+
     private fun releaseNormal(enemies: QuestEncounterCombat, swing: GreatswordCombo.Swing): Boolean {
         val epoch = actionEpoch
-        vfx.swingSound(swing.step)
-        player.swingMainHand()
-        if (classId == CoreClass.WARRIOR) vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.step - 1], player.position, normalDirection)
+        vfx.swingSound(swing.beat)
+        // Better Combat manner: the off hand swings the off-hand attacks of a dual weapon.
+        if (swing.attack.hand == CoreAttackHand.OFF) player.swingOffHand() else player.swingMainHand()
+        if (classId == CoreClass.WARRIOR) vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.beat - 1], player.position, normalDirection)
         else vfx.play(CoreClassEffect(classId, CoreSkillMotion.CONE, player.position, normalDirection,
-            if (classId == CoreClass.ASSASSIN) 3.0 else 4.5, swing.step == 3, reverse = swing.step == 2))
+            reach(), swing.finisher, reverse = swing.beat == 2))
         var connected = false
-        val heavyFinish = swing.step == 3 && weaponBase() == CoreWeaponBase.CLEAVER
         for (target in enemies.combatTargets()) {
-            if (greatswordInRange(player.position, normalDirection, target, range = if (classId == CoreClass.ASSASSIN) 3.0 else 4.5,
-                    minDot = if (heavyFinish) .9 else .4) && visibleTo(target.id, enemies)) {
-                hit(enemies, target.id, swing.multiplier * normalEmpowerment * if (heavyFinish) 1.65 else 1.0, skill = false, heavy = swing.step == 3)
+            if (swing.attack.reaches(player.position, normalDirection, target, reach()) && visibleTo(target.id, enemies)) {
+                hit(enemies, target.id, swing.multiplier * normalEmpowerment, skill = false, heavy = swing.finisher)
                 connected = true
                 if (!actionsValid(enemies, epoch)) return false
             }
         }
-        if (connected && swing.step == 3 && weaponBase() == CoreWeaponBase.FLOW) manaValue = min(maxMana.toDouble(), manaValue + 8)
-        if (connected && swing.step == 3 && classId == CoreClass.WARRIOR) {
+        if (connected && swing.finisher && weaponBase() == CoreWeaponBase.FLOW) manaValue = min(maxMana.toDouble(), manaValue + 8)
+        if (connected && swing.finisher && classId == CoreClass.WARRIOR) {
             finisherUntil = tickNumber + CoreWarriorRules.FINISHER_TICKS
             if (journey().build.keystone == 1) skillDefinitions.forEachIndexed { i, s ->
                 if (s.icon in CoreWarriorRules.heavy) readyAt[i] = maxOf(tickNumber, readyAt[i] - CoreWarriorRules.SAINT_REFUND_TICKS)
@@ -658,7 +683,12 @@ internal class CorePlayerCombat(
         // Warrior weight: the third normal hit and every hit while raging make the target flinch.
         val crowd = definition?.crowd?.let { it to definition.crowdMillis }
             ?: if (classId == CoreClass.WARRIOR && (raging || (!skill && heavy))) CrowdControl.FLINCH to CoreWarriorRules.FLINCH_MILLIS else null
-        if (crowd != null) enemies.applyCrowdControl(id, crowd.first, crowd.second, player)
+        if (enemies.isBoss(id)) {
+            // Bosses take break, not crowd control: the warrior breaks the most, every class a little (CoreBreak).
+            val amount = if (skill) skillAction?.breakAmount ?: 0.0
+                else CoreBreak.normal(classId, heavy) * if (raging) CoreBreak.RAMPAGE else 1.0
+            enemies.applyBreak(id, amount, player)
+        } else if (crowd != null) enemies.applyCrowdControl(id, crowd.first, crowd.second, player)
         val venom = stats.bonus(CoreAffixStat.ASS_VENOM)
         if (classId == CoreClass.ASSASSIN && ((venom > 0 && definition?.status == CoreSkillStatus.MARK) ||
                 (!skill && build.keystone == 2 && classState.marked(id, tickNumber)))) {
@@ -806,6 +836,57 @@ internal class CorePlayerCombat(
         }
     }
 
+    /**
+     * Crowd control landing on this player. [pvp] marks another player as the source (half duration).
+     * Diminishing returns and the dodge escape live in [CorePlayerCrowdControl]. Returns the ticks applied.
+     */
+    fun receiveCrowdControl(kind: CrowdControl, millis: Long, from: Pos?, pvp: Boolean = false): Int {
+        if (defeated) return 0
+        if (kind == CrowdControl.FLINCH || CorePlayerCrowdControl.INCAPACITATING.contains(kind)) {
+            // A flinch or anything incapacitating cancels the windup in progress.
+            queued = null
+            if (pending != null) { pending = null; vfx.cancel(preserveGarden = garden != null) }
+        }
+        val ticks = crowd.apply(kind, millis, tickNumber, pvp, from, sheet.mods.bonus(CoreAffixStat.CC_RESIST))
+        if (ticks <= 0) return 0
+        val away = from?.let { player.position.sub(it).let { d -> Vec(d.x(), 0.0, d.z()) } }
+            ?.takeIf { it.length() > 1e-6 }?.normalize() ?: flatFacing().mul(-1.0)
+        when (kind) {
+            CrowdControl.KNOCKBACK -> player.velocity = away.mul(11.0).withY(4.5)
+            CrowdControl.AIRBORNE -> player.velocity = Vec(0.0, 10.0, 0.0)
+            CrowdControl.BLIND -> player.addEffect(net.minestom.server.potion.Potion(net.minestom.server.potion.PotionEffect.BLINDNESS, 0, ticks))
+            else -> Unit
+        }
+        refreshMovement()
+        sound(when (kind) {
+            CrowdControl.STUN -> SoundEvent.BLOCK_ANVIL_LAND
+            CrowdControl.ROOT -> SoundEvent.BLOCK_CHAIN_PLACE
+            else -> SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK
+        }, .5f, if (kind == CrowdControl.STUN) 1.6f else .8f)
+        notice(crowd.cue(tickNumber) ?: kind.label)
+        return ticks
+    }
+
+    /** Holds the player in place while a movement lock lasts; charm and fear walk the player for them. */
+    private fun crowdTick() {
+        if (crowd.canMove(tickNumber) == movementHeld) refreshMovement() // a lock began or ended this tick
+        if (crowd.forced(tickNumber) && tickNumber % 4 == 0L) crowd.source?.let { from ->
+            val toward = Vec(from.x() - player.position.x(), 0.0, from.z() - player.position.z())
+            if (toward.length() > .6) {
+                val step = toward.normalize().mul(if (crowd.active(CrowdControl.FEAR, tickNumber)) -4.0 else 4.0)
+                player.velocity = step.withY(player.velocity.y())
+            }
+        }
+    }
+
+    /** Applies the walking speed now and locks/unlocks jumping with the movement lock. */
+    private fun refreshMovement() {
+        val held = !crowd.canMove(tickNumber)
+        movementHeld = held
+        applySpeed(speedFactor())
+        player.getAttribute(Attribute.JUMP_STRENGTH).baseValue = if (held) 0.0 else JUMP_STRENGTH
+    }
+
     /** [blow] false for damage that is not a strike (ticking effects, setup): it never staggers. */
     fun hurt(amount: Double, type: CoreDamageType = CoreDamageType.PHYSICAL, blow: Boolean = true) {
         if (defeated || encounter() == null || !amount.isFinite() || amount <= 0.0) return
@@ -822,6 +903,7 @@ internal class CorePlayerCombat(
             val perfect = tickNumber <= classState.perfectUntil
             adjusted *= if (perfect) .2 else .45
             classState.guarded(classId, tickNumber, journey().build)
+            if (classId == CoreClass.WARRIOR) riposteUntil = tickNumber + CoreBreak.RIPOSTE_TICKS
             if (classId == CoreClass.WARRIOR && perfect) {
                 // One read per stance; it shows the catch but refreshes nothing (the parry/slam reset was removed, D06).
                 classState.perfectUntil = -1
@@ -879,9 +961,11 @@ internal class CorePlayerCombat(
         garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; rampageUntil = -1; lastHurtRage = -100
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; rampageUntil = -1; lastHurtRage = -100; riposteUntil = -1
         classState.reset(); moveHasteUntil = -1; previousPosition = null
+        crowd.clear()
         evadeUntil = -1; dodgeQueuedUntil = -1; slide = null; staggerUntil = -1
+        if (movementHeld) { movementHeld = false; player.getAttribute(Attribute.JUMP_STRENGTH).baseValue = JUMP_STRENGTH }
         if (appliedSpeed >= 0 && appliedSpeed != baseSpeed) applySpeed(1.0)
         vfx.cancel()
         warriorMarks.clear()
@@ -992,6 +1076,8 @@ internal class CorePlayerCombat(
         val SKILL_NAMES = listOf("轟進", "地割り", "押し薙ぎ")
         const val WHETSTONE_TICKS = 20L * 180
         const val NOTICE_MILLIS = 1_600L
+        /** Vanilla player jump strength, restored when a movement lock ends. */
+        const val JUMP_STRENGTH = 0.41999998688697815
         const val DODGE_DISTANCE = 2.6
         const val DODGE_SLIDE_TICKS = 4
         /** About 0.35 s of evasion from the press, a little longer than the slide. */

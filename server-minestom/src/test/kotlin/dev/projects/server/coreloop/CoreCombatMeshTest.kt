@@ -26,12 +26,21 @@ class CoreCombatMeshTest {
                 CoreCombatPresentation.pack(it,true)
                 assertEquals(CoreCombatPresentation.Detail.SUBDUED,CoreCombatPresentation.cycle(it))
             }
-            // 地割り and 押し薙ぎ land as iron-mass plates without the flourish bodies.
-            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR).filterNot {
-                CoreWarriorIronChoreography.handles(CoreSkillEffect(CoreClass.WARRIOR,it,owner.position,Vec(0.0,0.0,1.0)))
-            }) {
-                meshes.play(CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0)))
+            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR)) {
+                val effect=CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0))
+                meshes.play(effect)
                 repeat(3) { meshes.tick() }
+                if(CoreWarriorIronChoreography.handles(effect)) {
+                    // The iron strikes carry their identity in their own plates; only the body plates show when subdued.
+                    val iron=owner.instance.entities.filter { entity ->
+                        (entity.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta)
+                            ?.itemStack?.get(net.minestom.server.component.DataComponents.ITEM_MODEL)?.contains("warrior_iron/")==true
+                    }
+                    val bodies=CoreWarriorIronChoreography.parts(effect)!!.count { !it.secondary }
+                    assertEquals(bodies,iron.count { owner in it.viewers && observer in it.viewers },skill.icon)
+                    meshes.cancel()
+                    continue
+                }
                 val identity=owner.instance.entities.filter { entity ->
                     val model=(entity.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta)
                         ?.itemStack?.get(net.minestom.server.component.DataComponents.ITEM_MODEL)

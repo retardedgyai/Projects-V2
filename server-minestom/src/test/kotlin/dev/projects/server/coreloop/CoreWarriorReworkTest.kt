@@ -89,6 +89,7 @@ class CoreWarriorReworkTest {
         assertContains(slam, "闘気30以上なら全部注ぎ込み、闘気1につき威力+1%")
         assertContains(slam, "赤熱中に撃つと")
         assertContains(slam, "通常3段目の命中から0.6秒以内")
+        assertContains(slam, "ボスの崩し 12＋注いだ闘気10ごとに+1")
         assertFalse("30.0" in slam)
         assertContains(warrior.first { it.icon == "whirl" }.tooltip(sheet, j).joinToString("\n"), "闘気30以上なら自動で30使い、威力+30%")
         assertFalse("闘気30" in warrior.first { it.icon == "dash" }.tooltip(sheet, j).joinToString("\n"))

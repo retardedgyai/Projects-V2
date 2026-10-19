@@ -6,6 +6,8 @@
 //   texture is a data map (R = shape mask, G = flow coordinate along the effect, B = across), the tint red is the
 //   effect's progress (0..1, driven by the server every tick) and the colour is computed here: emissive, moving
 //   noise, a hot leading edge, dissolving tails.
+//   Kinds 7..9 are the warrior's heat cut (sprite war_slash): white-hot head, cooling to red and ember; 7 is the
+//   hottest, 8 and 9 burn cooler (鉄槌's first falls).
 // - Warrior iron strikes (scripts/build_warrior_iron_vfx.py): texels whose alpha is a marker. 253 = heat,
 //   self-lit and flickering; 121 / 65 = near / far glow halo.
 // - 桜牙獣 petal storm (SakuraPetalFx): items whose tint is blue == 78, green == 100 + heat * 100, red == fade. The
@@ -91,6 +93,45 @@ vec3 ramp(float h) {
     return mix(c, vec3(1.0, .80, .95), smoothstep(.7, 1.0, h));
 }
 
+// Forge palette: cold iron, deep red, orange, yellow, white-hot.
+vec3 forge(float h) {
+    vec3 c = mix(vec3(.07, .03, .03), vec3(.58, .05, .04), smoothstep(.0, .3, h));
+    c = mix(c, vec3(1.0, .42, .08), smoothstep(.3, .6, h));
+    c = mix(c, vec3(1.0, .80, .36), smoothstep(.6, .82, h));
+    return mix(c, vec3(1.0, .97, .88), smoothstep(.82, 1.0, h));
+}
+
+// 7..9 heat cut: a smooth self-lit blade of heat, not pixel steps. R is a proximity field around the blade path:
+// above .64 is the blade itself, below it a soft glow. The white-hot head runs along flow with p (landing within
+// two ticks); behind it the blade cools through yellow and orange to red, tears into flickering embers, and the
+// glow around it fades with it. GameTime keeps the embers moving every frame between server ticks.
+vec4 heatCut(vec4 data, float kind, float p) {
+    float field = data.r, flow = data.g, across = data.b;
+    float t = GameTime * 1200.0;
+    float hot = kind < 7.5 ? 1.0 : (kind < 8.5 ? .82 : .64);
+    float head = 1.3 * (1.0 - pow(1.0 - p, 5.0));
+    float behind = head - flow;
+    float lit = step(0.0, behind);
+    float trail = clamp(1.0 - behind / 1.0, 0.0, 1.0) * lit;     // 1 at the head, 0 a full blade length behind
+    float fade = 1.0 - smoothstep(.55, 1.0, p);
+    float core = smoothstep(.6, .74, field);
+    float ember = fbm(vec2(flow * 14.0 - t * 2.2, across * 9.0 + t * .6));
+    float sparks = smoothstep(.72, .9, fbm(vec2(flow * 40.0 - t * 6.0, across * 30.0)));
+    // The blade: solid near the head, breaking into embers as it cools.
+    float blade = core * lit * smoothstep(.15, .5, ember * .8 + trail * .9) * fade;
+    float headFlash = smoothstep(.86, 1.0, trail) * lit;
+    float heat = clamp((.25 + .7 * trail + .3 * headFlash) * hot + sparks * .3 * (1.0 - trail), 0.0, 1.0);
+    vec3 bladeColor = forge(heat) * (1.0 + .35 * headFlash);
+    // The glow: soft and wide, hottest just behind the head, fading out with the cut.
+    float glow = field * field * (.35 + .65 * trail) * lit * fade * (.7 + .3 * ember);
+    vec3 glowColor = forge(.42 + .4 * trail * hot);
+    float glowAlpha = clamp(glow * (.55 + .6 * headFlash), 0.0, .85);
+    float alpha = blade + glowAlpha * (1.0 - blade);
+    if (alpha < .004) return vec4(0.0);
+    vec3 rgb = (bladeColor * blade + glowColor * glowAlpha * (1.0 - blade)) / alpha;
+    return vec4(min(rgb, vec3(1.0)), clamp(alpha, 0.0, 1.0));
+}
+
 // 桜牙獣 (marker 79): the same shapes in sakura: deep plum body, pink, pale blossom, a white-pink core.
 vec3 sakuraRamp(float h) {
     vec3 c = mix(vec3(.14, .03, .09), vec3(.78, .20, .47), smoothstep(.0, .35, h));
@@ -167,8 +208,9 @@ void main() {
     vec4 color = texture(Sampler0, texCoord0);
     int markerB = int(rawColor.b * 255.0 + .5);
     int kind = int(rawColor.g * 255.0 + .5);
-    if ((markerB == 77 || markerB == 79) && kind >= 1 && kind <= 6) {
-        vec4 fx = shadeVfx(color, float(kind), rawColor.r, markerB == 79);
+    if ((markerB == 77 || markerB == 79) && kind >= 1 && kind <= (markerB == 77 ? 9 : 6)) {
+        vec4 fx = markerB == 77 && kind >= 7 ? heatCut(color, float(kind), rawColor.r)
+            : shadeVfx(color, float(kind), rawColor.r, markerB == 79);
         if (fx.a < .01) {
             discard;
         }

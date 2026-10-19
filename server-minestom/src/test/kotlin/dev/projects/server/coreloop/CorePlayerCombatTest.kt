@@ -333,8 +333,8 @@ class CorePlayerCombatTest {
     fun `armor damage reduction and potion healing use logical max health`() = arena(armorTier = 2) { h ->
         assertEquals(130, h.actor.maxHealth)
         h.actor.hurt(20.0)
-        assertEquals(112.0, h.actor.health)
-        assertEquals(20f * 112f / 130f, h.player.health, 0.0001f)
+        assertEquals(113.92857, h.actor.health, .00001)
+        assertEquals(20f * 113.92857f / 130f, h.player.health, 0.0001f)
         h.actor.healPotion()
         assertEquals(130.0, h.actor.health)
         assertEquals(20f, h.player.health)
@@ -357,6 +357,41 @@ class CorePlayerCombatTest {
         assertEquals(300.0, h.combat.bossHealth())
     }
 
+    /** Records what a real warrior cast puts in the world, tick by tick, for scripts/preview_warrior_cast.py (player + skill). */
+    @Test fun `warrior casts export the player and every spawned display for the cast preview`() {
+        fun xyz(v: net.minestom.server.coordinate.Point)=listOf(v.x(),v.y(),v.z())
+        val casts=listOf("dash" to 0,"slam" to 1,"whirl" to 2,"war_guard" to 3,"war_wound" to 3,"war_ult" to 4)
+        // The shader-cut trial is recorded as extra scenes "<id>_shader" next to the drawn plates.
+        val runs=casts.map { Triple(it.first,it.second,false) }+casts.filter { it.first in CoreWarriorIronChoreography.sceneIds }.map { Triple(it.first,it.second,true) }
+        val scenes=runs.map { (icon,slot,shader) -> var scene=emptyMap<String,Any>(); CoreWarriorIronChoreography.shaderCut=shader; try { arena { h ->
+            CoreCombatPresentation.pack(h.player,true)
+            if(icon=="war_wound") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=4)); h.actor.reset() }
+            assertEquals(icon,h.actor.skillDefinitions[slot].icon)
+            h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
+            val frames=mutableListOf<Map<String,Any>>()
+            fun record() { frames+=mapOf("player" to xyz(h.player.position)+h.player.position.yaw().toDouble(),
+                "targets" to h.combat.combatTargets().map { xyz(it.position) },
+                "displays" to h.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }.mapNotNull { e ->
+                    val m=e.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+                    val model=m.itemStack.get(DataComponents.ITEM_MODEL)?.toString()?.substringAfter("projects:") ?: return@mapNotNull null
+                    if(m.scale.x()==0.0&&m.scale.y()==0.0&&m.scale.z()==0.0) return@mapNotNull null
+                    mapOf("model" to model,"offset" to xyz(e.position.add(m.translation)),"scale" to xyz(m.scale),
+                        "quaternion" to m.leftRotation.map { it.toDouble() },
+                        "tint" to (m.itemStack.get(DataComponents.CUSTOM_MODEL_DATA)?.colors()?.firstOrNull()?.let { (it.red() shl 16) or (it.green() shl 8) or it.blue() } ?: -1))
+                }) }
+            repeat(4) { record(); h.ticks(1) }
+            h.actor.skill(slot)
+            repeat(76) { record(); h.ticks(1) }
+            scene=mapOf("id" to if(shader) "${icon}_shader" else icon,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
+            CoreCombatPresentation.forget(h.player)
+        } } finally { CoreWarriorIronChoreography.shaderCut=false }; scene }
+        val cwd=java.nio.file.Path.of(System.getProperty("user.dir"))
+        val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd
+        java.nio.file.Files.createDirectories(root.resolve(".tools"))
+        java.nio.file.Files.writeString(root.resolve(".tools/warrior-cast-frames.json"),com.google.gson.Gson().toJson(scenes))
+        assertTrue(scenes.all { s -> (s["frames"] as List<*>).any { (it as Map<*,*>)["displays"].let { d -> (d as List<*>).isNotEmpty() } } })
+    }
+
     @Test fun `dodge slides over a few ticks and evades every hit but true damage while it lasts`() = arena { h ->
         val origin=h.player.position
         h.actor.dodge(); assertEquals(.65,h.player.position.distance(origin),1e-5)
@@ -377,8 +412,9 @@ class CorePlayerCombatTest {
         assertEquals(300.0,h.combat.bossHealth()); assertFalse(h.actor.staggered)
         assertEquals(.1,h.player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue,1e-9)
         h.actor.reset()
-        h.actor.hurt(50.0); assertTrue(h.actor.staggered)
-        h.actor.hurt(20.0); assertEquals(50.0,h.actor.health,1e-9,"a downed player is not juggled")
+        // The warrior's base armor (AR 40) takes the edge off: 60 lands as ~53, over the 45% knockdown share.
+        h.actor.hurt(60.0); assertTrue(h.actor.staggered)
+        h.actor.hurt(20.0); assertEquals(100.0-60.0*300/340,h.actor.health,1e-9,"a downed player is not juggled")
         h.actor.reset(); h.player.teleport(origin).join()
         h.actor.classState.guardUntil=1000
         h.actor.hurt(60.0); assertFalse(h.actor.staggered); assertEquals(origin,h.player.position)
@@ -437,7 +473,7 @@ class CorePlayerCombatTest {
         stats = CoreAffixStats(healthFlat = 20.0, mitigationPercent = 20.0, moveSpeedPercent = 20.0)) { h ->
         assertEquals(150, h.actor.maxHealth)
         h.actor.hurt(20.0)
-        assertEquals(135.6, h.actor.health, 0.00001)
+        assertEquals(137.142857, h.actor.health, 0.00001)
         assertEquals(20f, h.player.getAttribute(Attribute.MAX_HEALTH).baseValue.toFloat())
         h.ticks(20)
         assertEquals(0.12, h.player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue, 0.00001)
@@ -621,12 +657,12 @@ class CorePlayerCombatTest {
         h.actor.reset()
         assertEquals(100, h.actor.maxHealth)
         h.actor.hurt(20.0)
-        assertEquals(80.0, h.actor.health, .00001)
+        assertEquals(100.0 - 20.0 * 300 / 340, h.actor.health, .00001)
         h.armorBroken = false
         h.actor.reset()
         assertEquals(304, h.actor.maxHealth)
         h.actor.hurt(20.0)
-        assertEquals(290.0, h.actor.health, .00001)
+        assertEquals(291.195122, h.actor.health, .00001)
     }
 
     @Test fun `real Mage spell gains AP not AD and matches the tooltip preview`() {
@@ -651,12 +687,13 @@ class CorePlayerCombatTest {
 
     @Test fun `player AR and MR mitigate different incoming types`() = arena(
         stats = CoreAffixStats(additional = mapOf(CoreAffixStat.AR_FLAT to 300.0))) { h ->
-        h.actor.hurt(20.0, CoreDamageType.PHYSICAL)
-        assertEquals(90.0, h.actor.health)
-        h.actor.hurt(20.0, CoreDamageType.MAGICAL)
-        assertEquals(70.0, h.actor.health)
+        h.actor.hurt(20.0, CoreDamageType.PHYSICAL) // AR 300 + warrior base 40
+        val afterPhysical = 100.0 - 20.0 * 300 / 640
+        assertEquals(afterPhysical, h.actor.health, .00001)
+        h.actor.hurt(20.0, CoreDamageType.MAGICAL) // warrior base MR 25 only
+        assertEquals(afterPhysical - 20.0 * 300 / 325, h.actor.health, .00001)
         h.actor.hurt(Double.NaN)
-        assertEquals(70.0, h.actor.health)
+        assertEquals(afterPhysical - 20.0 * 300 / 325, h.actor.health, .00001)
     }
 
     @Test fun `lifesteal uses overkill-capped health loss and cannot trigger recursively from burn`() = arena(
@@ -664,9 +701,9 @@ class CorePlayerCombatTest {
         h.actor.hurt(60.0, blow = false)
         h.combat.applyEffectDamage(h.combat.combatTargets().single().id, h.player, 296.0)
         h.actor.attack(); h.ticks(8)
-        assertEquals(40.0 + 4 * .5 * .33, h.actor.health, .000001)
+        assertEquals(47.718824, h.actor.health, .000001)
         h.ticks(80)
-        assertEquals(40.0 + 4 * .5 * .33, h.actor.health, .000001)
+        assertEquals(47.718824, h.actor.health, .000001)
     }
 
     @Test fun `only cast speed shortens a Mage skill while physical attack speed does not`() {
@@ -707,7 +744,7 @@ class CorePlayerCombatTest {
     @Test fun `warrior hold guard reduces real incoming damage and turns it into rage without a counter`() = arena { h ->
         h.actor.skill(3); h.ticks(1)
         assertTrue(h.actor.combatCue.startsWith("根張り "))
-        h.actor.hurt(50.0); assertEquals(90.0, h.actor.health)
+        h.actor.hurt(50.0); assertEquals(100.0 - 10.0 * 300 / 340, h.actor.health, .00001)
         assertEquals(30.0, h.actor.resource)
         assertEquals(-1L, h.actor.classState.counterUntil)
         h.actor.skill(1); h.ticks(12)
@@ -749,7 +786,7 @@ class CorePlayerCombatTest {
         val value=h.actor.skillDefinitions[1].preview(h.actor.sheet);val before=h.actor.health
         h.actor.skill(1);h.ticks(6)
         assertEquals(before+value*.5,h.actor.health,.00001);assertEquals(value*.5,h.actor.shield,.00001)
-        h.actor.hurt(value*.25);assertEquals(before+value*.5,h.actor.health,.00001);assertEquals(value*.25,h.actor.shield,.00001)
+        h.actor.hurt(value*.25);assertEquals(before+value*.5,h.actor.health,.00001);assertEquals(value*.5-value*.25*300/320,h.actor.shield,.00001) // healer base AR 20
         h.ticks(100);assertEquals(0.0,h.actor.shield)
     }
     @Test fun `templar shielding supports nearby allies but never passes walls`() = arena { h ->
@@ -870,7 +907,7 @@ class CorePlayerCombatTest {
 
     @Test fun `guard can cancel AA follow through but cannot bypass its attack cadence`() = arena { h ->
         h.actor.attack(); h.actor.skill(3); h.ticks(1)
-        h.actor.hurt(50.0); assertEquals(90.0, h.actor.health)
+        h.actor.hurt(50.0); assertEquals(100.0 - 10.0 * 300 / 340, h.actor.health, .00001)
         h.actor.attack(); h.ticks(8)
         assertEquals(288.0, h.combat.bossHealth())
         h.ticks(6); h.actor.attack(); h.ticks(5)
@@ -891,7 +928,7 @@ class CorePlayerCombatTest {
         h.actor.skill(1);h.ticks(12)
         h.actor.skill(3);h.ticks(1) // Guard cancels only the completed hit's recovery.
         val cd=h.actor.cooldownRemaining(1);assertTrue(cd>0)
-        h.actor.hurt(50.0);assertEquals(90.0,h.actor.health)
+        h.actor.hurt(50.0);assertEquals(100.0 - 10.0 * 300 / 340,h.actor.health,.00001)
         assertEquals(cd,h.actor.cooldownRemaining(1))
         assertFalse(h.actor.combatCue.startsWith("反撃"))
     }
@@ -1003,6 +1040,79 @@ class CorePlayerCombatTest {
             h.actor.attack()
             assertTrue(CrowdControl.FLINCH in e.crowdControl(id))
         }
+    }
+
+    @Test fun `walking slows while a greatsword swing lasts and recovers after`() = arena { h ->
+        h.ticks(1)
+        val speed = { h.player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue }
+        val free = speed()
+        h.actor.attack(); h.ticks(1)
+        assertEquals(free * (1 - CoreWeaponCombat.of(CoreWeaponBase.STANDARD)!!.attackSlow), speed(), 1e-6)
+        h.ticks(40)
+        assertEquals(free, speed(), 1e-6)
+    }
+
+    @Test fun `CC resistance stones shorten the stun a player receives`() = arena(
+        stats = CoreAffixStats(additional = mapOf(CoreAffixStat.CC_RESIST to 50.0))) { h ->
+        assertEquals(10, h.actor.receiveCrowdControl(CrowdControl.STUN, 1000, null))
+    }
+
+    @Test fun `a stunned player cannot attack cast or move and the dodge frees them`() = arena { h ->
+        assertEquals(20, h.actor.receiveCrowdControl(CrowdControl.STUN, 1000, h.player.position.add(0.0, 0.0, 2.0)))
+        h.ticks(1)
+        assertEquals(0.0, h.player.getAttribute(net.minestom.server.entity.attribute.Attribute.MOVEMENT_SPEED).baseValue)
+        assertEquals(0.0, h.player.getAttribute(net.minestom.server.entity.attribute.Attribute.JUMP_STRENGTH).baseValue)
+        assertTrue(h.actor.combatCue.startsWith("スタン "))
+        h.actor.attack(); h.actor.skill(1); h.ticks(15)
+        assertEquals(300.0, h.combat.bossHealth(), "no attack or skill while stunned")
+        h.actor.dodge(); h.ticks(1)
+        assertTrue(h.player.getAttribute(net.minestom.server.entity.attribute.Attribute.MOVEMENT_SPEED).baseValue > 0)
+        h.ticks(30); h.actor.attack()
+        assertTrue(h.combat.bossHealth() < 300.0, "free again after the dodge")
+    }
+
+    @Test fun `a shield guard's bash stuns the player through the enemy runtime`() = arena { h ->
+        h.combat.dispose()
+        val stunned = mutableListOf<CrowdControl>()
+        val encounter = QuestEncounterCombat(h.instance, 1, listOf(QuestCombatEncounter(listOf(Pos(8.5, 40.0, 10.0)), listOf(QuestMobArchetype.SHIELD_GUARD))),
+            Pos(40.0, 40.0, 40.0), onMobDefeated = { _, _ -> }, damagePlayer = { _, _ -> }, spawnBoss = false,
+            crowdPlayer = { _, kind, millis, from -> stunned += kind; h.actor.receiveCrowdControl(kind, millis, from) })
+        h.activeEncounter = encounter
+        try {
+            var t = 1000L
+            while (t < 9000L && CrowdControl.STUN !in stunned) { t += 50; encounter.tick(t) }
+            assertTrue(CrowdControl.STUN in stunned, "the guard landed a bash: $stunned")
+            assertTrue(h.actor.combatCue.startsWith("スタン "), h.actor.combatCue)
+        } finally { h.actor.resetActions(); encounter.dispose() }
+    }
+
+    @Test fun `the warrior's slam breaks the boss by the rage poured in and takes no crowd control`() = arena { h ->
+        val id = h.combat.combatTargets().single().id
+        h.actor.classState.gain(30.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(12)
+        assertEquals(100.0 - (12.0 + 3.0), h.combat.breakGauge(id)!!, .0001)
+        assertTrue(h.combat.crowdControl(id).isEmpty())
+    }
+
+    @Test fun `normal hits break a little and the third-hit slam breaks half again as much`() = arena { h ->
+        val id = h.combat.combatTargets().single().id
+        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
+        assertEquals(100.0 - (2.0 + 2.0 + 5.0), h.combat.breakGauge(id)!!, .0001)
+        h.ticks(6);h.actor.skill(1);h.ticks(3)
+        assertEquals(100.0 - 9.0 - (12.0 + 3.0) * CoreBreak.FINISHER, h.combat.breakGauge(id)!!, .0001)
+    }
+
+    @Test fun `a slam right after the hold guard catches a blow is the return strike`() = arena { h ->
+        val id = h.combat.combatTargets().single().id
+        h.actor.skill(3); h.ticks(1); h.actor.hurt(20.0) // perfect catch: +30 rage
+        h.ticks(5); h.actor.skill(1); h.ticks(12)
+        assertEquals(100.0 - (12.0 + 3.0) * CoreBreak.RIPOSTE, h.combat.breakGauge(id)!!, .0001)
+    }
+
+    @Test fun `other classes break a little with every hit`() = arena(bossDistance = 2.0) { h ->
+        h.journey = CoreJourney.legacy(job = CoreClass.ASSASSIN); h.base = CoreWeaponBase.DAGGERS; h.actor.reset()
+        val id = h.combat.combatTargets().single().id
+        h.actor.attack(); h.ticks(12)
+        assertEquals(100.0 - CoreBreak.NORMAL, h.combat.breakGauge(id)!!, .0001)
     }
 
     @Test fun `sword saint third hits take time off the heavy cooldowns`() = arena { h ->
