@@ -5,7 +5,7 @@ import numpy as np
 
 TEX = Path(__file__).parent / "tex"
 TINT = {"grass_block_top": (124, 189, 80), "oak_leaves": (89, 150, 52), "spruce_leaves": (97, 140, 86),
-        "birch_leaves": (128, 167, 85), "dark_oak_leaves": (70, 118, 40), "fern": (100, 160, 70), "vine": (80, 140, 50), "lily_pad": (60, 150, 60), "vine": (80, 140, 50), "jungle_leaves": (70, 160, 40), "moss_carpet": (255, 255, 255),
+        "birch_leaves": (128, 167, 85), "pink_petals_stem": (255,255,255), "dark_oak_leaves": (70, 118, 40), "fern": (100, 160, 70), "vine": (80, 140, 50), "lily_pad": (60, 150, 60), "vine": (80, 140, 50), "jungle_leaves": (70, 160, 40), "moss_carpet": (255, 255, 255),
         "water_still": (63, 118, 228), "vine": (89, 150, 52), "short_grass": (124, 189, 80)}
 _cache = {}
 
