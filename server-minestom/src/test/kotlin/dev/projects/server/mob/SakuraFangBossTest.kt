@@ -122,6 +122,38 @@ class SakuraFangBossTest {
         }
     }
 
+    /** `SAKURA_VFX_DUMP=<file> ./gradlew :server-minestom:test --tests '*SakuraFangBossTest' --rerun` writes the strike
+     * effects (SakuraStrikeFx, facing +Z from the origin, blocks) for scripts/boss_preview/sakura_shaderclip.py. */
+    @Test
+    fun `dump the strike effects for the preview`() {
+        val path = System.getenv("SAKURA_VFX_DUMP") ?: return
+        MinecraftServer.init(Auth.Offline())
+        val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
+        for (x in -2..1) for (z in -2..1) instance.loadChunk(x, z).join()
+        val lines = mutableListOf<String>()
+        for (ability in definition.abilities + listOf<MobAbility?>(null)) {
+            val fx = SakuraStrikeFx(instance)
+            val id = ability?.id ?: "enrage"
+            val hitTick = if (ability == null) 50 else (ability.telegraphMillis / 50).toInt()
+            val frame = ability?.let { MobAbilityFrame(it, net.minestom.server.coordinate.Pos.ZERO, net.minestom.server.coordinate.Vec(0.0, 0.0, 1.0),
+                MobAbilityPhase.LOCKED, 0L, net.minestom.server.coordinate.Pos.ZERO) }
+            if (frame != null) fx.windup(id, frame) { _, _ -> null }
+            repeat(hitTick + 40) { tick ->
+                if (tick == hitTick) { if (frame != null) fx.strike(id, frame) { _, _ -> null } else fx.roar(net.minestom.server.coordinate.Pos.ZERO, 22.0) }
+                fx.tick()
+                for (v in fx.views()) {
+                    fun vec(p: net.minestom.server.coordinate.Point) = "[${p.x()},${p.y()},${p.z()}]"
+                    lines += "{\"ability\":\"$id\",\"phase\":\"shader\",\"tick\":$tick,\"sprite\":\"${v.sprite}\",\"kind\":${v.kind}," +
+                        "\"progress\":${v.progress},\"at\":${vec(v.at)},\"scale\":${vec(v.scale)},\"translation\":${vec(v.translation)}," +
+                        "\"rotation\":[${v.rotation.joinToString(",")}],\"billboard\":${v.billboard}}"
+                }
+            }
+            fx.dispose()
+        }
+        MinecraftServer.getInstanceManager().unregisterInstance(instance)
+        java.io.File(path).writeText(lines.joinToString("\n"))
+    }
+
     private class MemoryConnection : PlayerConnection() {
         override fun sendPacket(packet: SendablePacket) = Unit
         override fun getRemoteAddress(): SocketAddress = InetSocketAddress("127.0.0.1", 0)

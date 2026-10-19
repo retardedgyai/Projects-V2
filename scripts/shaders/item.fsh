@@ -91,7 +91,14 @@ vec3 ramp(float h) {
     return mix(c, vec3(1.0, .80, .95), smoothstep(.7, 1.0, h));
 }
 
-vec4 shadeVfx(vec4 data, float kind, float p) {
+// 桜牙獣 (marker 79): the same shapes in sakura: deep plum body, pink, pale blossom, a white-pink core.
+vec3 sakuraRamp(float h) {
+    vec3 c = mix(vec3(.14, .03, .09), vec3(.78, .20, .47), smoothstep(.0, .35, h));
+    c = mix(c, vec3(1.0, .62, .80), smoothstep(.35, .7, h));
+    return mix(c, vec3(1.0, .94, .97), smoothstep(.7, 1.0, h));
+}
+
+vec4 shadeVfx(vec4 data, float kind, float p, bool sakura) {
     float mask = data.r, flow = data.g, across = data.b;
     float t = GameTime * 1200.0;                       // seconds
     float n = fbm(vec2(flow * 9.0 - t * 2.4, across * 5.0 + t * .7));
@@ -127,7 +134,8 @@ vec4 shadeVfx(vec4 data, float kind, float p) {
         heat = mask * .18 + edge * .55 + n * .1;
         alpha = step(threshold, v) * mask * .85;
     }
-    return vec4(ramp(clamp(heat, 0.0, 1.0)), clamp(alpha, 0.0, 1.0));
+    float h = clamp(heat, 0.0, 1.0);
+    return vec4(sakura ? sakuraRamp(h) : ramp(h), clamp(alpha, 0.0, 1.0));
 }
 
 float vfxHash(vec3 cell) {
@@ -159,8 +167,8 @@ void main() {
     vec4 color = texture(Sampler0, texCoord0);
     int markerB = int(rawColor.b * 255.0 + .5);
     int kind = int(rawColor.g * 255.0 + .5);
-    if (markerB == 77 && kind >= 1 && kind <= 6) {
-        vec4 fx = shadeVfx(color, float(kind), rawColor.r);
+    if ((markerB == 77 || markerB == 79) && kind >= 1 && kind <= 6) {
+        vec4 fx = shadeVfx(color, float(kind), rawColor.r, markerB == 79);
         if (fx.a < .01) {
             discard;
         }

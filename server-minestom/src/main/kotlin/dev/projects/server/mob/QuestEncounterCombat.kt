@@ -169,8 +169,9 @@ class QuestEncounterCombat(
     private val shaderFx = ShadeWyrmShaderFx(instance)
     private val lights = ShadeWyrmLights(instance)
     private val gimmicks = ShadeWyrmGimmicks(tier, shaderFx, lights = lights)
-    /** 桜牙獣's petal storm (only built when the encounter has one). */
+    /** 桜牙獣's petal storm and strike effects (only built when the encounter has one). */
     private var sakuraFx: SakuraPetalFx? = null
+    private var sakuraStrike: SakuraStrikeFx? = null
     /** Players who have the boss glow post effect on (26.3 /posteffect, assets/projects/post_effect/shade_glow.json). */
     private val glowing = mutableSetOf<Player>()
     /** 翳の巣's rage clock: started when the wyrm enrages, it turns the arena's light violet (BossArenaFactory.SHADE_RAGE). */
@@ -498,6 +499,7 @@ class QuestEncounterCombat(
             val fx = sakuraFx ?: SakuraPetalFx(instance).also { sakuraFx = it }
             val view = mob.view
             fx.tick(mob.entity.position, mob.enraged) { bone, px -> view?.point(bone, px) }
+            (sakuraStrike ?: SakuraStrikeFx(instance).also { sakuraStrike = it }).tick()
         }
         val players = instance.players.filter { canTarget(it) }
         if (actionsStoppedForReturn) {
@@ -549,6 +551,7 @@ class QuestEncounterCombat(
         glowing.clear()
         shaderFx.dispose()
         sakuraFx?.dispose()
+        sakuraStrike?.dispose()
         mobs.values.forEach { mob ->
             mob.abilities.cancel()
             stopNavigation(mob)
@@ -845,6 +848,7 @@ class QuestEncounterCombat(
         telegraphs.clear(id)
         vfx.cancel(vfxHandles.remove(id))
         shaderFx.cancelWindup()
+        sakuraStrike?.cancelWindup()
     }
 
     /** Model bosses only: the wind-up cue is cut when the ability is, the strike always plays out. */
@@ -1107,8 +1111,10 @@ class QuestEncounterCombat(
                 if (event.frame.ability.id == TURN_SWEEP || event.frame.ability.id == SAKURA_TURN) mob.behindSince = 0L
                 updateName(mob, event.frame.ability.displayName)
                 mob.view?.ability(event.frame.ability.id)
-                if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG)
+                if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) {
                     sakuraFx?.start(event.frame.ability.id, event.frame.ability.telegraphMillis / 1000.0)
+                    sakuraStrike?.windup(event.frame.ability.id, event.frame) { bone, px -> mob.view?.point(bone, px) }
+                }
                 if (!drawWarning(mob, event.frame, false)) {
                     cancelWarning(mob)
                     return false
@@ -1151,7 +1157,10 @@ class QuestEncounterCombat(
                     if (disposed || actionsStoppedForReturn) return false
                 }
                 if (mob.shade) { gimmicks.abilityHit(event.frame, lastTickAt); lightUp(event.frame) }
-                if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) sakuraBurst(event.frame)
+                if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) {
+                    sakuraBurst(event.frame)
+                    sakuraStrike?.strike(event.frame.ability.id, event.frame) { bone, px -> mob.view?.point(bone, px) }
+                }
             }
             is MobAbilityEvent.Finished -> {
                 clearWarning(mob.entity.uuid); updateName(mob)
@@ -1241,6 +1250,7 @@ class QuestEncounterCombat(
     private fun tickSakuraRoar(mob: Mob, now: Long) {
         if (mob.waveAt != -1L || now < mob.enrageHoldUntil - 2500) return
         mob.waveAt = now
+        sakuraStrike?.roar(mob.entity.position, RAGE_WAVE_RADIUS)
         val o = mob.entity.position.add(0.0, 2.5, 0.0)
         particle(o, Particle.CHERRY_LEAVES, 60)
         for (k in 0 until 32) {
