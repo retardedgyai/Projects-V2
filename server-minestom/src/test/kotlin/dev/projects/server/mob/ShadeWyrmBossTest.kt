@@ -40,7 +40,7 @@ class ShadeWyrmBossTest {
     fun `every ability has a once clip timed to its telegraph and recovery`() {
         val clips = animations()
         assertEquals("shade_wyrm", definition.model)
-        assertTrue(definition.abilities.size in 4..8)
+        assertTrue(definition.abilities.size in 4..18)
         for (ability in definition.abilities) {
             val clip = assertNotNull(clips.getAsJsonObject(ability.id), "missing clip ${ability.id}")
             assertFalse(clip["loop"].asBoolean, ability.id)
@@ -52,9 +52,11 @@ class ShadeWyrmBossTest {
             }
         }
         for (loop in listOf("idle", "walk", "idle_enraged", "walk_enraged")) assertTrue(clips.getAsJsonObject(loop)["loop"].asBoolean, loop)
+        for (once in listOf("awaken", "relocate", "relocate_enraged")) assertFalse(clips.getAsJsonObject(once)["loop"].asBoolean, once)
         for (once in listOf("enrage", "death", "death_enraged")) assertFalse(clips.getAsJsonObject(once)["loop"].asBoolean, once)
-        // Phase two: the abilities gated at the enrage ratio exist and nothing is gated elsewhere.
-        assertEquals(setOf(1.0, definition.enrageHealthRatio), definition.abilities.map { it.maximumHealthRatio }.toSet())
+        // Three phases: abilities unlock at the second form (70 %) and at the enrage (35 %), nowhere else.
+        assertEquals(setOf(1.0, definition.awakenHealthRatio, definition.enrageHealthRatio), definition.abilities.map { it.maximumHealthRatio }.toSet())
+        assertTrue(definition.awakenHealthRatio > definition.enrageHealthRatio)
         assertTrue(BossModelView.available("shade_wyrm"))
     }
 
@@ -236,7 +238,7 @@ class ShadeWyrmBossTest {
     }
 
     @Test
-    fun `arena fight shows the model enrages once at half health and plays out its death`() {
+    fun `arena fight goes through the glowing second form, then the enrage, and plays out its death`() {
         MinecraftServer.init(Auth.Offline())
         val arena = BossArenaFactory.create("shade", 1)
         val connection = MemoryConnection()
@@ -257,12 +259,21 @@ class ShadeWyrmBossTest {
             assertTrue(target.halfExtent.x() >= 2.0)
             combat.tick(1)
             assertFalse(combat.isEnraged(boss.uuid))
-            assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .55))
-            combat.tick(100)
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .32))
+            // A leap in progress lands first, then it roars (it never roars in mid-air).
+            var t = 100L
+            while (!combat.isAwakened(boss.uuid) && t < 4000) { combat.tick(t); t += 50 }
+            assertTrue(combat.isAwakened(boss.uuid))
+            assertFalse(combat.isEnraged(boss.uuid))
+            assertEquals(0, combat.groundDisplayCount, "the second-form roar holds every attack")
+            t += 1400; combat.tick(t)
+            assertTrue(combat.isGlowing(boss.uuid), "the glowing texture comes in at the roar")
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .35))
+            while (!combat.isEnraged(boss.uuid) && t < 12_000) { t += 50; combat.tick(t) }
             assertTrue(combat.isEnraged(boss.uuid))
             assertEquals(0, combat.groundDisplayCount, "the roar holds every attack")
             val mountsBefore = connection.passengerPackets
-            combat.tick(1500)
+            t += 1400; combat.tick(t)
             assertTrue(connection.passengerPackets > mountsBefore, "the rage bones shown mid-clip must be mounted on the model root")
             assertEquals(0, combat.groundDisplayCount)
             assertTrue(combat.applyEffectDamage(boss.uuid, player, 99_999.0))
@@ -299,9 +310,9 @@ class ShadeWyrmBossTest {
             repeat(4) { gimmicks.playerHit(player, "shade-dust", 1000L) }
             assertEquals(80.0, gimmicks.erosionOf(player.uuid))
             gimmicks.playerStruck(player)
-            assertEquals(74.0, gimmicks.erosionOf(player.uuid))
+            assertEquals(78.0, gimmicks.erosionOf(player.uuid))
             gimmicks.playerHit(player, "shade-sweep", 1000L)                  // not a dust attack
-            assertEquals(74.0, gimmicks.erosionOf(player.uuid))
+            assertEquals(78.0, gimmicks.erosionOf(player.uuid))
             repeat(2) { gimmicks.playerHit(player, "shade-breath", 1100L) }
             gimmicks.tick(1150L, listOf(player)) { _, amount, _ -> hurt += amount }
             assertEquals(ShadeWyrmGimmicks.ERUPT_DAMAGE, hurt)
@@ -343,9 +354,9 @@ class ShadeWyrmBossTest {
             val boss = combat.entities().single()
             var now = 1_000L
             combat.tick(now)
-            assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .52))
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .66))
             assertTrue(arena.instance.clock(BossArenaFactory.rageClock()).paused())
-            repeat(110) { now += 50; combat.tick(now) }                        // the enrage roar
+            repeat(180) { now += 50; combat.tick(now) }                        // the second-form roar, then the enrage roar
             assertTrue(combat.isEnraged(boss.uuid))
             assertFalse(arena.instance.clock(BossArenaFactory.rageClock()).paused())   // the arena turns violet
             fun hitFrom(offset: Vec, share: Double) {
@@ -355,11 +366,11 @@ class ShadeWyrmBossTest {
                 player.teleport(boss.position.add(ahead.mul(offset.z())).add(right.mul(offset.x()))).join()
                 assertTrue(combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * share))
             }
-            hitFrom(Vec(0.0, 0.0, 6.0), .13)
+            hitFrom(Vec(0.0, 0.0, 6.0), .121)
             assertEquals(listOf(true, false, false), combat.partsBroken(boss.uuid))
-            hitFrom(Vec(5.0, 0.0, 0.0), .11)
+            hitFrom(Vec(5.0, 0.0, 0.0), .101)
             assertEquals(listOf(true, true, false), combat.partsBroken(boss.uuid))
-            hitFrom(Vec(-5.0, 0.0, 0.0), .11)
+            hitFrom(Vec(-5.0, 0.0, 0.0), .101)
             assertEquals(listOf(true, true, true), combat.partsBroken(boss.uuid))
         } finally {
             combat.dispose(); player.remove(); arena.dispose()
@@ -447,9 +458,191 @@ class ShadeWyrmBossTest {
         }
     }
 
+    @Test
+    fun `the triple bite strikes three times and only the last one ends it`() {
+        val bite = definition.abilities.single { it.id == "shade-bite" }
+        val manager = MobAbilityManager(listOf(bite))
+        val origin = Pos(0.0, 40.0, 0.0)
+        assertNotNull(manager.tryStart(0L, origin, origin.add(0.0, 0.0, 3.0), only = "shade-bite"))
+        val hits = mutableListOf<Long>()
+        var now = 0L
+        while (manager.isActive) {
+            now += 50
+            manager.tick(now, origin.add(0.0, 0.0, 3.0)).forEach { if (it is MobAbilityEvent.Hit) hits += now }
+        }
+        assertEquals(listOf(700L, 1150L, 1600L), hits)
+        assertEquals(bite.telegraphMillis + bite.recoveryMillis, now)
+    }
+
+    @Test
+    fun `after a move it stands open, longer when it whiffed or only met a dodge`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, -4.0), "Open")
+        var dodging = false
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype, evading = { dodging })
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            combat.tick(now)
+            fun biteFrom(distance: Double): Long {
+                boss.teleport(arena.bossSpawn).join()
+                player.teleport(arena.bossSpawn.add(0.0, 0.0, -distance)).join()
+                now += 5_000; combat.tick(now); now += 2_000; combat.tick(now)    // whatever it was doing has ended
+                assertTrue(combat.startAbilityForTest(boss.uuid, "shade-bite", now))
+                var guard = 0
+                while (combat.busy(boss.uuid) && guard++ < 200) { now += 50; combat.tick(now) }
+                return combat.openFor(boss.uuid)
+            }
+            val open = QuestEncounterCombat.OPENING.getValue("shade-bite")
+            assertEquals(open, biteFrom(3.0), "a bite that lands leaves its plain opening")
+            assertEquals(open + QuestEncounterCombat.WHIFF_MILLIS, biteFrom(9.8), "a bite that reaches nobody whiffs")
+            dodging = true
+            assertEquals(open + QuestEncounterCombat.WHIFF_MILLIS, biteFrom(3.0), "a bite that only met a dodge whiffs too")
+            dodging = false
+            val before = boss.position
+            now += 300; combat.tick(now)
+            assertEquals(before, boss.position, "it stands still while open")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `a break skill on the white flash of a heavy wind-up knocks the wyrm down`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, -8.0), "Counter")
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            combat.tick(now)
+            assertTrue(combat.startAbilityForTest(boss.uuid, "shade-pounce", now))
+            val start = now
+            now += 100; combat.tick(now)
+            assertTrue(combat.applyCrowdControl(boss.uuid, CrowdControl.FLINCH, 300, player))
+            assertFalse(combat.isDown(boss.uuid), "before the flash a break skill only wears the gauge")
+            while (now < start + 700) { now += 50; combat.tick(now) }
+            assertTrue(combat.applyCrowdControl(boss.uuid, CrowdControl.FLINCH, 300, player))
+            assertTrue(combat.isDown(boss.uuid), "on the flash it is a counter")
+            assertFalse(combat.busy(boss.uuid))
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `the head takes more and the tail less, and break skills wear the cast down`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, -8.0), "Weak")
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            val max = combat.bossMaxHealth()
+            var now = 1_000L
+            combat.tick(now)
+            fun hitFrom(offset: Vec): Double {
+                val yaw = Math.toRadians(boss.position.yaw().toDouble())
+                val ahead = Vec(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw))
+                val right = Vec(-kotlin.math.cos(yaw), 0.0, -kotlin.math.sin(yaw))
+                player.teleport(boss.position.add(ahead.mul(offset.z())).add(right.mul(offset.x()))).join()
+                val before = combat.healthOf(boss.uuid)!!
+                assertNotNull(combat.applyDamageAmount(boss.uuid, player, 10.0))
+                return before - combat.healthOf(boss.uuid)!!
+            }
+            assertEquals(10.0 * QuestEncounterCombat.HEAD_MULTIPLIER, hitFrom(Vec(0.0, 0.0, 6.0)), 1e-6)
+            assertTrue(combat.takeWeakSpot(player), "a head hit is flagged for the damage number")
+            assertFalse(combat.takeWeakSpot(player), "the flag is read once")
+            assertEquals(10.0, hitFrom(Vec(5.0, 0.0, 0.0)), 1e-6)
+            assertEquals(10.0 * QuestEncounterCombat.TAIL_MULTIPLIER, hitFrom(Vec(0.0, 0.0, -6.0)), 1e-6)
+            assertFalse(combat.takeWeakSpot(player))
+
+            player.teleport(arena.bossSpawn.add(0.0, 0.0, -8.0)).join()
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, max * .32))           // the second form
+            var guard = 0
+            while (combat.gimmickBars()?.first != QuestEncounterCombat.CHANNEL && guard++ < 600) { now += 50; combat.tick(now) }
+            assertEquals(QuestEncounterCombat.CHANNEL, combat.gimmickBars()?.first)
+            val hits = kotlin.math.ceil(QuestEncounterCombat.CAST_SHARE / QuestEncounterCombat.CC_CAST_HARD).toInt()
+            repeat(hits - 1) { assertTrue(combat.applyCrowdControl(boss.uuid, CrowdControl.STUN, 1000, player)) }
+            assertFalse(combat.isDown(boss.uuid))
+            assertEquals(QuestEncounterCombat.CHANNEL, combat.gimmickBars()?.first, "crowd control never cancels the cast by itself")
+            combat.applyCrowdControl(boss.uuid, CrowdControl.STUN, 1000, player)
+            assertTrue(combat.isDown(boss.uuid), "enough break skills during the cast interrupt it")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `hitting the cast hard enough knocks the wyrm down, and the shell soaks damage until it breaks`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val player = testPlayer(arena, arena.bossSpawn.add(0.0, 0.0, -8.0), "Gimmick")
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            val max = combat.bossMaxHealth()
+            var now = 1_000L
+            combat.tick(now)
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, max * .32))           // the second form
+            var guard = 0
+            while (combat.gimmickBars()?.first != QuestEncounterCombat.CHANNEL && guard++ < 600) { now += 50; combat.tick(now) }
+            assertEquals(QuestEncounterCombat.CHANNEL, combat.gimmickBars()?.first, "the cast comes ${QuestEncounterCombat.CHANNEL_FIRST_MILLIS} ms after waking")
+            assertFalse(combat.isDown(boss.uuid))
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, max * QuestEncounterCombat.CAST_SHARE * 1.05))
+            assertTrue(combat.isDown(boss.uuid), "enough damage during the cast interrupts it")
+            assertEquals(null, combat.gimmickBars())
+            now += QuestEncounterCombat.DOWN_MILLIS + 50; combat.tick(now)
+            assertFalse(combat.isDown(boss.uuid))
+
+            assertTrue(combat.applyEffectDamage(boss.uuid, player, max * .35))           // the enrage
+            guard = 0
+            while (combat.gimmickBars()?.first != QuestEncounterCombat.SHELL && guard++ < 900) { now += 50; combat.tick(now) }
+            assertEquals(QuestEncounterCombat.SHELL, combat.gimmickBars()?.first)
+            val before = combat.healthOf(boss.uuid)
+            assertNotNull(combat.applyDamageAmount(boss.uuid, player, max * .02))
+            assertEquals(before, combat.healthOf(boss.uuid), "the shell takes the hit")
+            assertNotNull(combat.applyDamageAmount(boss.uuid, player, max * .06))
+            assertTrue(combat.isDown(boss.uuid), "the shell broke")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `the pounce carries the wyrm onto the player and the small attacks show no floor`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("shade", 1)
+        val c = arena.bossSpawn
+        val player = testPlayer(arena, c.add(0.0, 0.0, -9.0), "Pounce")
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), c,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1_000L
+            combat.tick(now)
+            val start = boss.position
+            assertTrue(combat.startAbilityForTest(boss.uuid, "shade-pounce", now), "the pounce starts")
+            var floor = 0
+            repeat(30) { now += 50; combat.tick(now); floor = maxOf(floor, combat.groundDisplayCount) }
+            val moved = horizontalLength(boss.position.sub(start))
+            assertTrue(moved > 4.0, "the pounce leaps at the player (moved $moved)")
+            assertTrue(boss.position.distance(player.position) < start.distance(player.position) - 3.0, "closer: ${boss.position} vs ${start} player ${player.position}")
+            assertEquals(0, floor, "the pounce is read from the wind-up, not the floor")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
     /**
      * `SHADE_FIGHT_DUMP=<file> ./gradlew :server-minestom:test --tests '*ShadeWyrmBossTest' --rerun` runs a scripted
-     * 40 s fight through the real encounter code and writes, per tick, where the wyrm is, where it looks, the clip on
+     * 75 s fight through the real encounter code and writes, per tick, where the wyrm is, where it looks, the clip on
      * show and the shader displays, for scripts/boss_preview/fightclip.py. The player: in front, then running round it,
      * far away, inside its reach, enrages it, inside its reach again, mid range.
      */
@@ -472,7 +665,7 @@ class ShadeWyrmBossTest {
         try {
             val boss = combat.entities().single()
             var now = 1_000L
-            for (tick in 0 until 800) {
+            for (tick in 0 until 1500) {
                 val t = tick * .05
                 val b = boss.position
                 val facing = Math.toRadians((combat.modelFacing(boss.uuid) ?: 0f).toDouble())
@@ -485,12 +678,15 @@ class ShadeWyrmBossTest {
                     t < 27 -> c.add(0.0, 0.0, -8.0)
                     t < 33 -> b.add(ahead.mul(2.5))
                     t < 36.5 -> b.add(Vec(-kotlin.math.cos(facing), 0.0, -kotlin.math.sin(facing)).mul(4.5))   // its right side
-                    else -> b.add(Vec(kotlin.math.cos(facing), 0.0, kotlin.math.sin(facing)).mul(4.5))         // its left side
+                    t < 40 -> b.add(Vec(kotlin.math.cos(facing), 0.0, kotlin.math.sin(facing)).mul(4.5))       // its left side
+                    t < 48 -> b.add(ahead.mul(-4.5))                      // at its back
+                    else -> c.add(kotlin.math.cos(t * .4) * 9.0, 0.0, kotlin.math.sin(t * .4) * 9.0)   // circling at mid range
                 }
                 player.teleport(Pos(want.x(), c.y(), want.z())).join()
                 player.health = 20f
-                if (tick == 440) combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .55)
-                if (t >= 27.5 && tick % 10 == 0) combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .015)   // it fights back
+                if (tick == 200) combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .32)   // the second form
+                if (tick == 560) combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .35)   // the enrage
+                if (t >= 27.5 && tick % 10 == 0) combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .006)   // it fights back
                 now += 50; combat.tick(now); boss.tick(now); MinecraftServer.getSchedulerManager().processTick()
                 arena.instance.clock(BossArenaFactory.rageClock()).run { if (!paused()) time(time() + 1) }   // the instance tick's job
                 val (clip, since) = combat.shownClip(boss.uuid) ?: ("idle" to now)
@@ -503,7 +699,7 @@ class ShadeWyrmBossTest {
                 lines += "{\"t\":${"%.2f".format(t + .05)},\"boss\":[${boss.position.x() - c.x()},${boss.position.y() - c.y()},${boss.position.z() - c.z()}]," +
                     "\"yaw\":${combat.modelFacing(boss.uuid) ?: 0f},\"clip\":\"$clip\",\"clipT\":${(now - since) / 1000.0}," +
                     "\"player\":[${p.x() - c.x()},${p.z() - c.z()}],\"enraged\":${combat.isEnraged(boss.uuid)}," +
-                    "\"rage\":${combat.rageShown()},\"broken\":[${combat.partsBroken(boss.uuid).joinToString(",")}],\"lights\":[${combat.lightsOn().entries.joinToString(",") { (b, l) -> "[${b.x() - c.blockX()},${b.y() - c.blockY()},${b.z() - c.blockZ()},$l]" }}],\"erosion\":${combat.erosionOf(player.uuid)},\"shader\":[$shader]}"
+                    "\"rage\":${combat.rageShown()},\"glowing\":${combat.isGlowing(boss.uuid)},\"down\":${combat.isDown(boss.uuid)},\"bars\":${combat.gimmickBars()?.let { (id, left, gauge) -> "[\"$id\",$left,$gauge]" } ?: "null"},\"broken\":[${combat.partsBroken(boss.uuid).joinToString(",")}],\"lights\":[${combat.lightsOn().entries.joinToString(",") { (b, l) -> "[${b.x() - c.blockX()},${b.y() - c.blockY()},${b.z() - c.blockZ()},$l]" }}],\"erosion\":${combat.erosionOf(player.uuid)},\"shader\":[$shader]}"
             }
         } finally {
             combat.dispose(); player.remove(); arena.dispose()

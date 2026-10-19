@@ -23,7 +23,7 @@ data class HitSphere(val center: Point, val radius: Double)
 internal fun List<HitSphere>.rayHit(origin: Point, direction: Vec, range: Double, tolerance: Double): Double? = mapNotNull { s ->
     val offset = s.center.sub(origin)
     val along = offset.x() * direction.x() + offset.y() * direction.y() + offset.z() * direction.z()
-    if (along !in 0.0..range + s.radius) return@mapNotNull null
+    if (along !in -s.radius..range + s.radius) return@mapNotNull null      // a shot from inside a sphere still hits it
     if (origin.add(direction.mul(along)).distance(s.center) > s.radius + tolerance) null else along.coerceAtLeast(0.0)
 }.minOrNull()
 
