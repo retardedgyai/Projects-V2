@@ -288,6 +288,7 @@ def head(b):
 
 # --- the beast --------------------------------------------------------------------------------------
 TAIL = [(0, 34, -30), (0, 40, -42), (0, 51, -51), (0, 64, -53), (0, 75, -48), (0, 81, -39)]
+CURL = (0, 62, -38)   # centre of the tail curl
 BACK = [(0, 52, 7), (0, 50, -2), (0, 45, -12), (0, 43, -21)]
 
 
@@ -350,42 +351,46 @@ def build():
         bone = f"tail_{i + 1}"
         w, d = widths[i]
         b.seg(bone, TAIL[i], TAIL[i + 1], w, d, "hide", seed=20 + i)
-    # the closed bud at the tip
+    # sakura shells: short, broad petals overlapping like Zinogre's tail plates, pointing toward the tip.
+    # One bone per run of petals and side; opening swings the run about its own spine axis.
+    def splay(D, X, U, deg):
+        """Rotation about the spine axis that tips the dorsal row out toward its own side."""
+        R = axis_angle(D, deg)
+        return R if dot(mat_vec(R, U), X) > 0 else axis_angle(D, -deg)
+
+    def run(name, parent, a, c, X, U, sizes, open_deg, top):
+        D = unit([c[i] - a[i] for i in range(3)])
+        b.bone(name, parent, a)
+        n = len(sizes)
+        for k, L in enumerate(sizes):
+            f = (k + .3) / n
+            p = [a[i] + (c[i] - a[i]) * f for i in range(3)]
+            base = add(add(p, X, 1.4), U, top)
+            out = unit(add(add(D, U, .95), X, .25))
+            b.petal(name, base, out, X, L, L * .82)
+        b.frames[name] = splay(D, X, U, open_deg)
+
+    up = [0, 1, 0]
+    for s, side in ((1, "l"), (-1, "r")):
+        X = [s, 0, 0]
+        # one dorsal row from the shoulders to the tail tip: petals point back-and-up and overlap
+        run(f"shell_b_{side}", "body", BACK[0], BACK[-1], X, up, [9, 10, 11], 50, 1.0)
+        # tail: petals lie on the tail sides
+        sizes = [[11, 12], [13, 14], [15, 16], [16, 15.5], [14, 12]]
+        widths = [13, 12, 11, 9.5, 8]
+        for i in range(len(TAIL) - 1):
+            D = unit([TAIL[i + 1][j] - TAIL[i][j] for j in range(3)])
+            mid = [(TAIL[i][j] + TAIL[i + 1][j]) / 2 for j in range(3)]
+            side_dir = [CURL[j] - mid[j] for j in range(3)]
+            if i > 0:
+                side_dir = [-c for c in side_dir]                  # past the base the plates ride the outer edge of the curl
+            U = unit(add(side_dir, D, -dot(side_dir, D)))
+            run(f"shell_t{i + 1}_{side}", f"tail_{i + 1}", TAIL[i], TAIL[i + 1], X, U, sizes[i], 50, widths[i] * .35)
+    # the tail ends in a small closed fan
     tip, prev = TAIL[-1], TAIL[-2]
-    t = unit([tip[i] - prev[i] for i in range(3)])
-    for k in range(5):
-        a = k * 72
-        side = mat_vec(axis_angle(t, a), [1, 0, 0])
-        b.petal("tail_5", add(tip, t, -2), add(t, side, .28), side, 10, 8, kind="bud")
-
-    # sakura shells: one bone per petal (left/right) so each swings out about its own base
-    def shells(points, sizes, parent_of, tag):
-        for k, (p, L) in enumerate(zip(points, sizes)):
-            parent, T = parent_of(k)
-            U = unit(add([0, 1, 0], T, -dot([0, 1, 0], T)))
-            if abs(dot([0, 1, 0], T)) > .8:                       # the tail tip turns over: up is the old "back"
-                U = unit(cross([1, 0, 0], T))
-            for s, side in ((1, "l"), (-1, "r")):
-                X = [s, 0, 0]
-                base = add(add(p, X, 1.6), U, 1.0)
-                closed_out = unit(add(add([-c for c in T], U, .14), X, .3))
-                closed_n = unit(add(U, X, .25))
-                open_out = unit(add(add(X, U, .6), T, -.2))
-                name = f"shell_{tag}{k + 1}_{side}"
-                b.bone(name, parent, base)
-                b.petal(name, base, closed_out, closed_n, L, L * .74)
-                hinge = cross(closed_out, open_out)               # lift the petal off the body
-                angle = math.degrees(math.acos(max(-1, min(1, dot(closed_out, open_out)))))
-                b.frames[name] = axis_angle(hinge, angle)
-
-    BT = unit([BACK[-1][i] - BACK[0][i] for i in range(3)])
-    shells(BACK, [12, 14, 15, 14], lambda k: ("chest" if k < 2 else "body", [-c for c in BT]), "b")
-    tail_pts, tail_parent = [], []
-    for i in range(len(TAIL) - 1):
-        for f in (.3, .78):
-            tail_pts.append([TAIL[i][j] + (TAIL[i + 1][j] - TAIL[i][j]) * f for j in range(3)])
-            tail_parent.append((f"tail_{i + 1}", unit([TAIL[i][j] - TAIL[i + 1][j] for j in range(3)])))
-    shells(tail_pts, [14, 15, 17, 18, 19, 19, 18, 17, 15, 12], lambda k: tail_parent[k], "t")
+    D = unit([tip[i] - prev[i] for i in range(3)])
+    for k, sx in enumerate((-.45, 0, .45)):
+        b.petal("tail_5", add(tip, D, -3), unit(add(D, [1, 0, 0], sx)), [1, 0, 0] if sx == 0 else cross(D, [0, 0, 1]), 13 - 2 * abs(sx) * 2, 11)
     return b
 
 
