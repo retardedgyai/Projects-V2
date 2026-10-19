@@ -116,18 +116,32 @@ def build(w, put, at, B, road, cx, cz, mark, seed=77):
                                     set_wood(px, py, pz)
 
     roots_end = []
-    for k in range(11):
-        a = k / 11 * math.tau + R.uniform(-.2, .2)
-        L = R.uniform(12, 22)
-        start = (cx + math.cos(a) * 4, g0 + R.uniform(2, 4), cz + math.sin(a) * 4)
-        mid = (cx + math.cos(a + R.uniform(-.3, .3)) * L * .55, g0 + 1.2, cz + math.sin(a + R.uniform(-.3, .3)) * L * .55)
-        end = (cx + math.cos(a + R.uniform(-.4, .4)) * L, g0 - 1, cz + math.sin(a + R.uniform(-.4, .4)) * L)
-        tube(start, mid, 2.0, 1.2, ground_follow=True, root=True)
-        tube(mid, end, 1.2, .5, ground_follow=True, root=True)
-        if R.random() < .6:
-            a2 = a + R.choice((-1, 1)) * R.uniform(.5, .9)
-            tube(mid, (mid[0] + math.cos(a2) * 7, g0 - 1, mid[2] + math.sin(a2) * 7), 1.0, .5, ground_follow=True, root=True)
-        roots_end.append(end)
+    # buttress roots as tall thin plates (not tubes): unequal lengths and spacing, a convex top that runs down into the soil,
+    # each fading into the ground through mangrove roots and rooted dirt; the big ones surface once more as a low hump
+    a = R.uniform(0, math.tau)
+    for k in range(9):
+        a += math.radians(R.uniform(30, 52))
+        major = k % 3 == 0
+        L = R.uniform(18, 26) if major else R.uniform(9, 15)
+        h0 = R.uniform(6, 8) if major else R.uniform(3, 5)
+        bend = R.uniform(-.25, .25)
+        for i in range(int(L * 2)):
+            l = i / 2; f = l / L
+            aa = a + bend * f
+            x0, z0 = cx + math.cos(aa) * (4 + l), cz + math.sin(aa) * (4 + l)
+            hh = h0 * (1 - f) ** .7 if f < .85 else (math.sin((f - .85) / .15 * math.pi) * 1.4 if major else 0)
+            th = 3.0 * (1 - f) + 1
+            for tq in range(-2, 3):
+                if abs(tq) > th / 2: continue
+                x = int(round(x0 - math.sin(aa) * tq)); z = int(round(z0 + math.cos(aa) * tq))
+                if not (0 <= x < B and 0 <= z < B) or road[z, x]: continue
+                gg = at(x, z)
+                ht = int(round(hh))
+                for y in range(gg - 1, gg + ht + 1):
+                    set_wood(x, y, z, moss_ok=(y == gg + ht))
+                if f > .7 and R.random() < .35:
+                    put(x, gg, z, *(("mangrove_roots_top", "mangrove_roots_side") if R.random() < .5 else ("rooted_dirt",)))
+        roots_end.append((cx + math.cos(a) * (4 + L), g0 - 1, cz + math.sin(a) * (4 + L)))
 
     # ---- branches: recursive, tapering, each tip carries a leaf cluster
     tips = []
@@ -181,9 +195,9 @@ def build(w, put, at, B, road, cx, cz, mark, seed=77):
         x, y, z = p
         if (x, y, z) in w.b: continue
         if dy > .15:
-            kind = "flowering_azalea_leaves" if _h(x, y, z, 4) < .05 else LEAF_TOP[int(_h(x, y, z, 5) * 4)]
+            kind = "flowering_azalea_leaves" if _h(x, y, z, 4) < .05 else LEAF_TOP[min(len(LEAF_TOP) - 1, int(_h(x, y, z, 5) * len(LEAF_TOP)))]
         else:
-            kind = LEAF_UNDER[int(_h(x, y, z, 6) * 3)]
+            kind = LEAF_UNDER[min(len(LEAF_UNDER) - 1, int(_h(x, y, z, 6) * len(LEAF_UNDER)))]
         put(x, y, z, kind)
     under = [p for p in leaf_cells if (p[0], p[1] - 1, p[2]) not in leaf_cells and (p[0], p[1] - 1, p[2]) not in w.b]
     R.shuffle(under)
@@ -221,5 +235,5 @@ def build(w, put, at, B, road, cx, cz, mark, seed=77):
         if 0 <= x < B and 0 <= z < B:
             for dx in range(-1, 2):
                 for dz in range(-1, 2):
-                    if R.random() < .7: put(x + dx, at(x + dx, z + dz) + 1, z + dz, R.choice(["mossy_cobblestone", "stone", "andesite"]))
+                    pass
     mark(cx - 34, cz - 34, cx + 34, cz + 34)

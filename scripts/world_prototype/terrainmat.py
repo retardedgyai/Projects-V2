@@ -26,7 +26,7 @@ DAMP = [("moss_block", 3), ("grass_block_top", 4), ("mud", 1)]
 BED = [("gravel", 3), ("clay", 2), ("dirt", 1), ("sand", 1)]
 SIDE = {"grass_block_top": "grass_block_side", "podzol_top": "podzol_side", "dirt_path_top": "dirt_path_side"}
 # cliff gradient, dark -> light
-CLIFF = ["cobbled_deepslate", "tuff", "tuff", "cobblestone", "gravel", "andesite", "andesite", "stone", "stone"]
+CLIFF = ["cobbled_deepslate", "tuff", "tuff", "cobblestone", "andesite", "andesite", "stone", "stone"]     # ordered dark -> light, no skipped steps
 
 
 def pick_mix(mix, x, z, seed, blob=4.0):
@@ -56,12 +56,13 @@ def surface(x, z, slope, forest, damp, seed=301):
     return (name, SIDE.get(name, name))
 
 
-def cliff_block(x, y, z, frac, recess, seed=311):
-    """A block inside a rock face. frac: 0 at the foot, 1 at the top of the face. recess: 0 open face .. 1 deep crack.
-    Vertical patches come from noise stretched along y."""
-    v = noise3(x * 1.0, y * .2, z * 1.0, seed, 2.6)                     # tall streaks
-    w2 = noise3(x, y, z, seed + 1, 1.3)
-    t = .08 + frac * .78 + (v - .5) * .9 + (w2 - .5) * .22 - recess * .55
+def cliff_block(x, y, z, frac, recess, expo=0.0, seed=311):
+    """A block inside a rock face, shaded by its form (terraformers' rule: value follows light, not noise).
+    frac: 0 at the foot .. 1 at the top of the face. recess: 0 open .. 1 deep hollow. expo: -1 faces away from the sun .. 1 faces it.
+    The noise only nudges by one palette step, in 2-3 block clusters, so neighbours never skip a step."""
+    t = .12 + frac * .5 + expo * .28 - recess * .55
+    c = noise3(x, y * .7, z, seed, 1.6)
+    t += (c - .5) * .22
     i = int(max(0, min(len(CLIFF) - 1, t * len(CLIFF))))
     return CLIFF[i]
 

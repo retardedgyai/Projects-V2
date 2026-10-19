@@ -91,6 +91,19 @@ H = H * _t + _floor * (1 - _t)                                            # boss
 H -= bump(*FUNGAL, 46, 38, 6)                                             # fungal hollow
 H -= bump(*POND, 55, 40, 5)                                               # pond basin
 H = H.astype(np.float32)
+import os as _os, erode as _er
+if _os.path.exists('h_eroded.npy') and _os.path.getmtime('h_eroded.npy') > _os.path.getmtime('erode.py') and _os.environ.get('REERODE') != '1':
+    H = np.load('h_eroded.npy')
+else:
+    _H0 = H.copy()
+    _gy, _gx = np.gradient(H); _sl0 = np.hypot(_gx, _gy)
+    H = _er.hydraulic(H, n=140000, steps=70, seed=11, radius=3)
+    _d = H - _H0                                                  # keep the gullies and fans, drop the fine rill fur:
+    for _ in range(2):                                            # blur the change, and keep less of it on gentle ground
+        _p = np.pad(_d, 2, mode="edge"); _d = sum(_p[a:a + B, b:b + B] for a in range(5) for b in range(5)) / 25
+    H = _H0 + _d * np.clip(.35 + _sl0 * 2.5, 0, 1.4)
+    H = _er.thermal(H, talus=1.6, rate=.2, iters=12)
+    np.save('h_eroded.npy', H); np.save('h_raw.npy', _H0)
 
 # roads and side paths: every place sits on one; all are graded so the levels connect without a jump
 ROADS = [[(0, 452), (55, 440), (120, 392), (170, 330), REST],
@@ -226,6 +239,8 @@ _pad = np.pad(hi, 4, mode="edge")
 LOCAL_MIN = _sw(_pad, (9, 9)).min(axis=(2, 3)); LOCAL_MAX = _sw(_pad, (9, 9)).max(axis=(2, 3))
 _pad1 = np.pad(H, 2, mode="edge")
 LOCAL_AVG = _sw(_pad1, (5, 5)).mean(axis=(2, 3))
+_gl = np.maximum(slope, 1e-3)
+EXPO = np.clip((-gx_ * .6 - gy_ * .8) / _gl, -1, 1)                  # sun from the south-east: faces turned to it are lit
 for z in range(B):
     for x in range(B):
         h = hi[z, x]
@@ -239,7 +254,7 @@ for z in range(B):
             if near_water and h - y <= 3:
                 put(x, y, z, "dirt" if h - y > 1 or _h(x, y, z, 6) < .7 else "coarse_dirt"); continue
             if face or h - y > 2:
-                put(x, y, z, TM.cliff_block(x, y, z, (y - fb) / (ft - fb), recess))
+                put(x, y, z, TM.cliff_block(x, y, z, (y - fb) / (ft - fb), recess, EXPO[z, x]))
             else:
                 put(x, y, z, "coarse_dirt" if (h - y == 2 and _h(x, y, z, 5) < .3) else "dirt")
         if lake[z, x]:
@@ -270,7 +285,7 @@ for z in range(B):
             continue
         if face:                                                          # a ledge on the face: moss and grass collect on top
             n = TM.noise3(x, h, z, 341, 2)
-            put(x, h, z, *(("moss_block",) if n > .72 else ("grass_block_top", "grass_block_side") if n > .64 else (TM.cliff_block(x, h, z, (h - fb) / (ft - fb), recess),)))
+            put(x, h, z, *(("moss_block",) if n > .84 and recess > .2 else (TM.cliff_block(x, h, z, (h - fb) / (ft - fb), recess, EXPO[z, x]),)))
             continue
         top = TM.surface(x, z, min(slope[z, x], .4) if near_water else slope[z, x], FOREST_F[z, x], DAMP_F[z, x])
         if 0 < anyway[z, x] - 2 < 1.2 and noise3(x, 3, z, 11, 3) > .62: top = ("coarse_dirt", "coarse_dirt")     # trampled verge, in runs
@@ -294,7 +309,7 @@ for z in range(3, B - 3):
     for x in range(3, B - 3):
         if not (.3 < slope[z, x] < 1.0) or anyway[z, x] < 6 or WATER_NEAR[z, x] < 8 or used[z, x]: continue
         n = noise3(x * .6, 0, z * 1.4, 381, 6) if (x // 1) else 0          # bands stretched across the slope
-        if n < .74: continue
+        if True: continue
         g = hi[z, x]
         put(x, g, z, TM.strata(x, g, z))
         if n > .8:
@@ -850,39 +865,81 @@ ROCK = ["stone", "andesite", "stone", "tuff", "stone", "andesite"]
 
 
 def sakura_tree(x, z, g, size=1.0):
-    """A big weeping sakura: dark leaning trunk, spreading limbs, a wide layered pink crown with long hanging strands."""
+    """A Somei Yoshino: short thick trunk forking low into 3-5 spreading limbs, an umbrella crown wider than tall built of
+    separate blossom pads at different heights, with gaps where the dark limbs show through (research-builds.md recipe 5)."""
     rs = random.Random(x * 9973 + z)
-    th = int(5 + 3 * size)
-    lean = (rs.uniform(-1.5, 1.5), rs.uniform(-1.5, 1.5))
-    tube((x, g, z), (x + lean[0], g + th, z + lean[1]), 1.2 * size + .3, .8 * size + .2, mat=("cherry_wood", "cherry_wood"))
-    tops = []
-    for k in range(rs.randint(4, 6)):
-        a = k / 5 * math.tau + rs.uniform(-.4, .4)
-        L = (4 + 2.5 * size) * rs.uniform(.8, 1.1)
-        e = (x + lean[0] + math.cos(a) * L, g + th + rs.uniform(1, 3) * size, z + lean[1] + math.sin(a) * L)
-        tube((x + lean[0], g + th - 1, z + lean[1]), e, .7 * size + .2, .45, mat=("cherry_wood", "cherry_wood"))
-        tops.append(e)
-    tops.append((x + lean[0], g + th + 2.5 * size, z + lean[1]))
-    rim = []
-    for (tx, ty, tz) in tops:
-        r = (3.0 + 1.6 * size) * rs.uniform(.85, 1.1)
-        ri = int(r) + 1
+    H = 9 + 9 * size
+    W = H * rs.uniform(1.3, 1.55)
+    D = max(1.2, H / 8)
+    fork = g + H * rs.uniform(.2, .28)
+    lean = (rs.uniform(-1, 1) * H / 9, rs.uniform(-1, 1) * H / 9)
+    def wood(px, py, pz, base=False):
+        n = "dark_oak_wood" if base or _h(px, py, pz, 801) < .2 else ("mangrove_wood" if _h(px, py, pz, 802) < .1 else "cherry_wood")
+        return (n, n)
+    top = (x + lean[0] * .4, fork, z + lean[1] * .4)
+    for y in range(int(g) - 1, int(fork) + 1):                       # trunk with a flared foot
+        t = (y - g) / max(1, fork - g)
+        r = D / 2 * (1 + max(0, .15 - t) * 6) if t < .15 else D / 2
+        cx_, cz_ = x + lean[0] * .4 * max(0, t), z + lean[1] * .4 * max(0, t)
+        ri = int(r) + 2
         for dx in range(-ri, ri + 1):
             for dz in range(-ri, ri + 1):
-                for dy in range(-2, 3):
-                    q = (dx / r) ** 2 + (dz / r) ** 2 + (dy / (r * .5)) ** 2
-                    if q <= .85 + noise3(tx + dx, ty + dy, tz + dz, 181, 1.6) * .35:
-                        p = (int(round(tx)) + dx, int(round(ty)) + dy, int(round(tz)) + dz)
-                        if p not in w.b:
-                            put(*p, "cherry_leaves")
-                        if dy == -2 or q > .7: rim.append(p)
-    for p in rs.sample(rim, min(len(rim), int(len(rim) * .12))):         # weeping tips: 1-2 blocks, the crown's ragged hem
-        for k2 in range(1, rs.randint(2, 3)):
-            q2 = (p[0], p[1] - k2, p[2])
-            if q2 in w.b or q2[1] <= at(p[0], p[2]) + 2: break
-            put(*q2, "cherry_leaves")
-    for _ in range(int(40 * size)):                                     # petals on the ground beneath
-        a = rs.random() * math.tau; r = (6 + 4 * size) * math.sqrt(rs.random())
+                if math.hypot(dx, dz) <= r + .35:
+                    px, pz = int(round(cx_ + dx)), int(round(cz_ + dz))
+                    put(px, y, pz, *wood(px, y, pz, base=t < .2))
+    pads = []
+    nl = rs.randint(3, 5)
+    a0 = rs.uniform(0, math.tau)
+    def limb(p, ang, elev, L, r, depth):
+        e = (p[0] + math.cos(ang) * math.cos(elev) * L, p[1] + math.sin(elev) * L, p[2] + math.sin(ang) * math.cos(elev) * L)
+        mid = ((p[0] + e[0]) / 2, (p[1] + e[1]) / 2 + L * .08, (p[2] + e[2]) / 2)        # limbs arch, then droop
+        pts = bez(p, mid, e, max(3, int(L)))
+        for i, (q0, q1) in enumerate(zip(pts, pts[1:])):
+            rr = r * (1 - .35 * i / len(pts))
+            n0 = int(math.dist(q0, q1) * 2) + 1
+            for k in range(n0 + 1):
+                f = k / n0
+                cxp, cyp, czp = q0[0] + (q1[0] - q0[0]) * f, q0[1] + (q1[1] - q0[1]) * f, q0[2] + (q1[2] - q0[2]) * f
+                ri = int(math.ceil(rr))
+                for dx in range(-ri, ri + 1):
+                    for dy in range(-ri, ri + 1):
+                        for dz in range(-ri, ri + 1):
+                            if dx * dx + dy * dy + dz * dz <= rr * rr + .3:
+                                px, py, pz = int(round(cxp)) + dx, int(round(cyp)) + dy, int(round(czp)) + dz
+                                put(px, py, pz, *wood(px, py, pz))
+        if depth < 2:
+            for s_ in (-1, 1):
+                limb(e, ang + s_ * rs.uniform(.35, .7), max(-.1, elev - rs.uniform(.15, .35)), L * rs.uniform(.55, .7), max(.5, r * .7), depth + 1)
+        else:
+            pads.append(e)
+    for k in range(nl):
+        ang = a0 + k / nl * math.tau + rs.uniform(-.35, .35)
+        reach = W / 2 * rs.uniform(.38, .5)
+        limb(top, ang, math.radians(rs.uniform(30, 50)), reach, max(.6, D / 2 * .72), 0)
+    limb(top, rs.uniform(0, math.tau), math.radians(70), H * .25, max(.6, D / 2 * .6), 1)    # a leader up the middle
+    ps = max(1.0, size)
+    for (px, py, pz) in pads:                                       # blossom pads: domed top, flatter thinner underside, gaps
+        rx = rs.uniform(3, 4.5) * (.7 + .3 * ps); ry = rs.uniform(1.8, 2.6) * (.8 + .2 * ps)
+        ri = int(rx) + 1
+        for dx in range(-ri, ri + 1):
+            for dz in range(-ri, ri + 1):
+                for dy in range(-int(ry) - 1, int(ry) + 2):
+                    q = (dx / rx) ** 2 + (dz / rx) ** 2 + (dy / (ry if dy > 0 else ry * .7)) ** 2
+                    if q > 1: continue
+                    fill = .78 if q < .55 else .32
+                    if dy < 0: fill *= .6
+                    p = (int(round(px)) + dx, int(round(py)) + dy, int(round(pz)) + dz)
+                    if p in w.b or rs.random() > fill: continue
+                    put(*p, "flowering_azalea_leaves" if (dy < 0 and q < .5 and rs.random() < .3) else "cherry_leaves")
+        for _ in range(int(rx * 1.5)):                               # the hem droops a little
+            a = rs.uniform(0, math.tau)
+            p = (int(round(px + math.cos(a) * rx * .9)), int(round(py - ry * .5)), int(round(pz + math.sin(a) * rx * .9)))
+            for k in range(rs.randint(1, 3)):
+                q2 = (p[0], p[1] - k, p[2])
+                if q2 in w.b or q2[1] <= at(p[0], p[2]) + 2: break
+                put(*q2, "cherry_leaves")
+    for _ in range(int(60 * size)):                                     # petals under the drip line, thinning toward the trunk
+        a = rs.random() * math.tau; r = W / 2 * math.sqrt(rs.uniform(.15, 1.1))
         px, pz = int(round(x + math.cos(a) * r)), int(round(z + math.sin(a) * r))
         if 0 <= px < B and 0 <= pz < B:
             gy2 = UPPER[pz, px] if UPPER[pz, px] >= 0 else at(px, pz)
@@ -1664,7 +1721,7 @@ def place(name, x, z, kind, half=6):
 
 # 1. 根に呑まれた荷馬車: a covered wagon stopped where a root heaved up through the track; the root broke the front axle,
 # the wagon sits nose-down, canvas torn where the root came through; the crates it carried lie where they slid off.
-s1 = find_spot(150, 318, need=8)
+s1 = None and find_spot(150, 318, need=8)
 if s1:
     x, z = s1; g = at(x, z); level_pad(x - 7, z - 6, x + 7, z + 6, g)
     WOOD = "spruce_planks"
@@ -1697,7 +1754,7 @@ if s1:
 
 # 2. 崩れた見張り小屋: on the high scarp edge, looking down over the mid level; half the floor has fallen
 xs = 128; zs = int(B2[xs]) - 7
-s2 = find_spot(xs, zs, r=20, need=4)
+s2 = None and find_spot(xs, zs, r=20, need=4)
 if s2:
     x, z = s2; g = at(x, z); level_pad(x - 4, z - 4, x + 4, z + 4, g)
     for dx in range(-3, 4):
@@ -1724,7 +1781,7 @@ if s2:
     place("崩れた見張り小屋", x, z, "story", 4)
 
 # 3. 根の下の隠し洞: a low mound held by roots, with a dark mouth; inside a small chamber lit by glowing roots
-s3 = find_spot(335, 145, need=10)
+s3 = None and find_spot(335, 145, need=10)
 if s3:
     x, z = s3; g = at(x, z)
     for dx in range(-10, 11):
@@ -1764,7 +1821,7 @@ if s3:
 
 # 4. 古い樹液採り場: a great root arches out of the ground; three spouts are cut into its flank, a pail under each,
 # and a couple of filled casks wait to be carried off.
-s4 = find_spot(205, 190, need=5)
+s4 = None and find_spot(205, 190, need=5)
 if s4:
     x, z = s4; g = at(x, z); level_pad(x - 6, z - 4, x + 6, z + 5, g)
     root_arch((x - 7, g - 1, z - 2), (x, g + 5, z - 3), (x + 7, g - 1, z - 2), 2.0, 1.4, hang=False)
@@ -1783,7 +1840,7 @@ if s4:
 
 # 5. 道端の祠: a hokora (a little roadside shrine) on a stone plinth with a gabled roof, a small torii before it,
 # a lantern inside; a young sakura behind is the first hint of what waits on the pillars.
-s5 = find_spot(262, 252, r=25, need=3, near_road=(4, 9))
+s5 = None and find_spot(262, 252, r=25, need=3, near_road=(4, 9))
 if s5:
     x, z = s5; g = at(x, z); level_pad(x - 3, z - 3, x + 3, z + 6, g)
     for dx in (-1, 0, 1):
@@ -1809,7 +1866,7 @@ if s5:
     place("道端の祠", x, z, "story", 4)
 
 # 6. 狩人の休み場: a lean-to on the edge of the west woods, hides on a rack, a chopping block
-s6 = find_spot(70, 300, need=4)
+s6 = None and find_spot(70, 300, need=4)
 if s6:
     x, z = s6; g = at(x, z); level_pad(x - 4, z - 4, x + 4, z + 4, g)
     for dz in range(-2, 3):
@@ -1858,6 +1915,18 @@ if False:
             if _h(k, side, 0, 7) < .5: put(x + side * k, deck - max(0, k - 6) - 1 - int(_h(k, side, 1, 8) * 2), z + 2, "vine", shape="shut_s")
     place("小川の崩れた石橋", x, z, "story", 10)
 print("authored places", [f[2] for f in FILL])
+
+# ---------------- large set pieces (research-builds.md recipes): fewer, bigger, one hero element each ----------------
+import sys as _sys2, setpieces as SP
+SP.bind(_sys2.modules[__name__])
+ZA = 206                                                             # the aqueduct crosses the mid level west-east; the north road runs through one arch
+_rx = int(min(range(150, 260), key=lambda xx: road_d[ZA, xx]))
+AQ = SP.aqueduct(_rx - (4 * 12 + 3 + 4), ZA, bays=7, collapsed=5, seed=21, root_from=(236, 150))
+FT = SP.fallen_trunk(24, 262, .25, L=52, seed=31)
+ST = SP.stump(322, 132, D=15, seed=41)
+for (x, z, kind) in ((_rx, ZA, "aqueduct"), (50, 268, "trunk"), (322, 132, "stump")): CONTENT.append((x, z, kind))
+LABELS_POI += [((_rx, ZA), "根に貫かれた水道橋", (220, 210, 190)), ((50, 268), "倒れた巨樹", (170, 220, 120)), ((322, 132), "巨大な切り株", (220, 190, 150))]
+print("set pieces: aqueduct x0", _rx - 55, "springline", AQ["Ys"])
 
 # ---------------- the dungeon entrance ----------------
 # Under the great tree's knoll, opening south onto the path to the boss: two great roots frame a dark mouth in the bank,
