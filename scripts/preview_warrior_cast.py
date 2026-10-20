@@ -179,6 +179,13 @@ def model_faces(model, tints, matrix, tint=None):
             if uv[1] > uv[3]: crop = crop.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
             if uv[0] > uv[2]: crop = crop.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
             if face.get('rotation'): crop = crop.rotate(-face['rotation'], expand=True, resample=Image.Resampling.NEAREST)
+            if e.get('shade', True) and model.get('_shade'):
+                # Minecraft's face shade (up 1, down .5, z sides .8, x sides .6), on the face's world normal.
+                c0, c1, c2 = (corners[i] for i in ids[:3])
+                n = np.cross(c1 - c0, c2 - c0); n = n / (np.linalg.norm(n) + 1e-9)
+                k = n[1] ** 2 * (1.0 if n[1] > 0 else .5) + n[0] ** 2 * .6 + n[2] ** 2 * .8
+                arr = np.array(crop.convert('RGBA')).astype(float); arr[..., :3] *= k
+                crop = Image.fromarray(arr.astype('uint8'))
             if crop.size == (1, 1):
                 ink = crop.getpixel((0, 0))
                 if ink[3] == 0: continue
@@ -254,6 +261,7 @@ def weapon_faces(hand, pose):
 
 def display_faces(d, camera=None):
     model, tints = item_model(d['model'])
+    model = {**model, '_shade': 'warrior_ref/gslab' in d['model'] or 'warrior_ref/chunk' in d['model']}
     rot = Rq(d['quaternion'])
     if d.get('billboard') and camera is not None:
         # Billboard CENTER: the display faces the camera; its own rotation then turns it in the screen plane.

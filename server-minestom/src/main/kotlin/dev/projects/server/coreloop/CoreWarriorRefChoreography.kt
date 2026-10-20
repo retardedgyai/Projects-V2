@@ -37,33 +37,31 @@ internal object CoreWarriorRefChoreography {
         val centre = local(0.0, .12, impact)
         val chest = local(0.0, 1.1, impact)
         val out = mutableListOf<CoreCombatMeshPart>()
-        // 地割り after Braum's Glacial Fissure: the ground splits along a line (no slash band, no hit flash).
+        // 地割り: the ground splits along a line (Braum's Glacial Fissure), its objects drawn like the reference's: broad
+        // slabs of ground in the block-texture style, a crown of them at the blow and two rows standing up along the
+        // fissure in a wave; only the fissure and the slabs' torn edges glow; plain chunks thrown at the wave's front.
         val start = 1.6
         val length = 7.0
         val steps = 8
-        out += part("field", local(0.0, .12, start + length / 2), 1.0, yaw, 44, delay = 2).copy(scale = Vec(2.8, 1.0, length + .6))
         out += part("fissure", local(0.0, .12, start + length / 2), 1.0, yaw, 40).copy(scale = Vec(1.5, 1.0, length))
-        // The burst at the blow: a tall fan of shards.
-        for (k in 0 until 7) {
-            val a = yaw + (k - 3) * .42 + PI
-            val r = .5 + .3 * hash(k, 21)
-            val at = Vec(local(0.0, 0.0, start).x() - sin(a) * r, .12, local(0.0, 0.0, start).z() - cos(a) * r)
-            out += part("shard$k", at, 1.9 + .8 * hash(k, 22), a + PI, 34, pitch = -.35 - .2 * hash(k, 23))
+        val blow = local(0.0, .12, start + .8)
+        for (k in 0 until 6) {  // the crown at the blow, leaning outward with gaps, its glowing face to the centre
+            val a = yaw + k / 6.0 * 2 * PI + .3 + (hash(k, 20) - .5) * .4
+            val r = .85 + .25 * hash(k, 21)
+            out += part("gslab$k", Vec(blow.x() + sin(a) * r, .12, blow.z() + cos(a) * r), .85 + .6 * hash(k, 22), a + PI, 34,
+                pitch = -(.3 + .15 * hash(k, 23)))
         }
-        // The wave: shard clusters in two rows running forward, one step a tick, light streaks at its front.
-        for (i in 1..steps) {
+        for (i in 1..steps) {  // two rows standing up along the fissure, one step a tick
             val along = start + i * length / steps
             for ((n, side) in listOf(-1.0, 1.0).withIndex()) {
                 val k = 10 + i * 2 + n
-                val at = local(side * (.55 + .25 * hash(k, 24)), .12, along + .2 * hash(k, 25))
-                val lean = yaw + side * (PI / 2) + (hash(k, 26) - .5) * .6
-                out += part("shard$k", at, (1.1 + .7 * hash(k, 27)) * (1 - i / (steps + 4.0)), lean, 34 - i, pitch = .25 + .2 * hash(k, 28), delay = i)
+                val at = local(side * (.6 + .15 * hash(k, 24)), .12, along + .2 * hash(k, 25))
+                // Face the fissure: the slab's glowing north face looks at the line.
+                out += part("gslab$k", at, (1.0 + .4 * hash(k, 27)) * (1 - i / (steps + 6.0)), yaw - side * PI / 2 + (hash(k, 26) - .5) * .4,
+                    34 - i, pitch = -(.3 + .2 * hash(k, 28)), delay = i)
             }
-            for (n in 0 until 2) {
-                val k = 40 + i * 2 + n
-                out += part("streak$k", local((hash(k, 29) - .5) * 1.4, .3, along), 1.0 + .5 * hash(k, 30), 0.0, 5, ground = false,
-                    delay = i, roll = -.55 + (hash(k, 31) - .5) * .5, billboard = true)
-            }
+            for (n in 0 until 2) out += part("chunk${40 + i * 2 + n}", local((hash(i, n, 29) - .5) * 1.2, .4, along), .5 + .3 * hash(i, n, 30),
+                yaw, 14, ground = false, delay = i)
         }
         return out
     }
@@ -83,6 +81,23 @@ internal object CoreWarriorRefChoreography {
                 CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/fissure_$stage", live)
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
+            name.startsWith("gslab") -> {
+                val height = p.scale.y() * 12.0 / 16.0
+                val up = when {
+                    tick < 3 -> doubleArrayOf(.0, .8, 1.12)[tick]
+                    tick < p.durationTicks - 8 -> 1.0
+                    else -> 1.0 - (tick - (p.durationTicks - 8)) / 7.0
+                }.coerceIn(0.0, 1.2)
+                val k = name.removePrefix("gslab").toInt()
+                CoreMeshPose(p.offset.add(0.0, -height * (1 - up), 0.0), p.scale, p.yaw, p.pitch * up.coerceAtMost(1.0), 0.0, "$DIR/gslab_${k % 3}", live)
+            }
+            name.startsWith("chunk") -> {
+                val k = name.removePrefix("chunk").toInt()
+                val s = t.coerceAtLeast(0.0) / 20.0
+                val a = p.yaw + (hash(k, 33) - .5) * 2.4
+                val y = (5.0 + 3.0 * hash(k, 34)) * s - 9.8 * s * s / 2
+                CoreMeshPose(p.offset.add(sin(a) * 2.0 * s, max(y, -.3), cos(a) * 2.0 * s), p.scale, p.yaw + t * .4, t * .5, t * .3, "$DIR/chunk", live)
+            }
             name.startsWith("shard") -> {
                 val height = p.scale.y() * 18.0 / 16.0
                 val up = when {

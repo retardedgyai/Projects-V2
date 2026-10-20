@@ -340,6 +340,52 @@ def field_texture():
     return img
 
 
+# ---------------------------------------------------------------- 地割り objects drawn like the reference's (2026-10-20,
+# read at full size from Gorebound Devourer's Maw and Gorging Rush): broad flat slabs, not spikes; a block-texture style
+# of one base tone with 2-4 pixel clusters of two other tones; plain darker sides; the game's face shading does the
+# light (shade on), and only the heat (the fissure, the slab's torn edge) glows.
+GROUND_TOP = ((150, 142, 132), (126, 118, 110), (174, 166, 156))      # base, dark spots, light spots
+GROUND_SIDE = ((112, 104, 98), (94, 88, 84))
+HOT = ((236, 84, 36), (255, 170, 70), (178, 40, 30))
+
+
+def clustered(base, spots, seed, size=16, density=.16):
+    """A block-style texture: the base tone with clusters (2-4 px) of each spot tone."""
+    img = Image.new('RGBA', (size, size), base + (255,))
+    px = img.load()
+    for n, tone in enumerate(spots):
+        for k in range(int(size * size * density / 3)):
+            x, y = int(_h(k, n, seed) * size), int(_h(k, n, seed, 1) * size)
+            for dx, dy in ((0, 0), (1, 0), (0, 1), (1, 1))[: 2 + int(_h(k, n, seed, 2) * 3)]:
+                px[(x + dx) % size, (y + dy) % size] = tone + (255,)
+    return img
+
+
+def slab_textures(seed):
+    top = clustered(GROUND_TOP[0], GROUND_TOP[1:], seed, density=.09)
+    side = clustered(GROUND_SIDE[0], GROUND_SIDE[1:], seed + 7, density=.06)
+    hot = clustered(HOT[0], HOT[1:], seed + 3, density=.25)
+    return top, side, hot
+
+
+def ground_slab_model(top, side, hot):
+    """A broad slab of ground (14 x 3 x 12 units) standing on its torn edge at y=8; that edge (north) glows."""
+    def f(t, uv): return {'texture': t, 'uv': uv}
+    return {'textures': {'top': top, 'side': side, 'hot': hot, 'particle': top}, 'elements': [
+        {'from': [1, 8, 6.5], 'to': [15, 20, 9.5], 'faces': {
+            'north': f('#top', [1, 0, 15, 12]), 'south': f('#side', [1, 0, 15, 12]),
+            'east': f('#side', [6, 0, 9, 12]), 'west': f('#side', [6, 0, 9, 12]),
+            'up': f('#side', [1, 6, 15, 9]), 'down': f('#hot', [1, 6, 15, 9])}},
+        # the hot torn edge along the bottom of the face
+        {'from': [1, 8, 6.4], 'to': [15, 9, 6.5], 'shade': False, 'faces': {'north': f('#hot', [0, 0, 16, 2])}}]}
+
+
+def chunk_model(tex):
+    return {'textures': {'0': tex, 'particle': tex}, 'elements': [
+        {'from': [5, 5, 5], 'to': [11, 11, 11], 'faces': {k: {'texture': '#0', 'uv': [0, 0, 6, 6]}
+                                                           for k in ('north', 'south', 'east', 'west', 'up', 'down')}}]}
+
+
 # The reference's light is see-through (studied at full size, 2026-10-20): only the white core is opaque, the colour
 # around it lets the world show through, and a faint halo spills past the edge. The dark outline is dropped.
 # Alphas avoid the shader markers (253, 121, 65, 200..215 in scripts/shaders/item.fsh).
@@ -439,6 +485,11 @@ def build(assets, write):
         model(f'ring_{st}', centred_model(texture(f'ring_{st}', glow(ring_texture(st)))))
     for st in range(3):
         model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', glow(twinkle_texture(st)))))
+    for n in range(3):
+        top, side, hot = slab_textures(n * 11)
+        model(f'gslab_{n}', ground_slab_model(texture(f'gslab_top_{n}', top), texture(f'gslab_side_{n}', side),
+                                              texture(f'gslab_hot_{n}', hot)))
+    model('chunk', chunk_model(texture('chunk', clustered(GROUND_SIDE[0], (GROUND_TOP[1], (54, 50, 48)), 4, density=.3))))
     shard = rock_shard_texture()
     for n, amount in enumerate((0.0, .4, .75)):
         model(f'shard_{n}', shard_model(texture(f'shard_{n}', dissolve(shard, amount, 5) if amount else shard)))
