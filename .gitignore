@@ -42,4 +42,6 @@ replay_pid*.log
 /server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/item/boss_vfx/
 /server-minestom/src/main/resources/core-ui-pack/assets/projects/shaders/post/shade_glow_*.fsh
 /server-minestom/src/main/resources/core-ui-pack/assets/projects/post_effect/shade_glow.json
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/shaders/post/sakura_light.fsh
+/server-minestom/src/main/resources/core-ui-pack/assets/projects/post_effect/sakura_light.json
 /server-minestom/src/main/resources/boss-models/

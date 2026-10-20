@@ -231,6 +231,25 @@ def model(name, kind):
                          "particle": f"projects:item/boss_vfx/{name}"}}
 
 
+def light_probe(pack):
+    """The point-light probe (SakuraLight.kt): a tiny two-sided quad in the check colour item.fsh looks for. item.vsh
+    moves it onto the screen's data row, so it is never seen where it stands."""
+    tex = pack / "assets/projects/textures/item/boss_vfx/light_probe.png"
+    tex.parent.mkdir(parents=True, exist_ok=True)
+    Image.new("RGBA", (4, 4), (83, 76, 49, 255)).save(tex)
+    face = {"texture": "#probe", "uv": [0, 0, 16, 16], "tintindex": 0}
+    files = {"models": {"ambientocclusion": False, "textures": {"probe": "projects:item/boss_vfx/light_probe",
+                                                                "particle": "projects:item/boss_vfx/light_probe"},
+                        "elements": [{"from": [7.9, 7.9, 8], "to": [8.1, 8.1, 8], "shade": False,
+                                      "faces": {"north": face, "south": face}}]},
+             "items": {"model": {"type": "minecraft:model", "model": "projects:boss_vfx/light_probe",
+                                 "tints": [{"type": "minecraft:custom_model_data", "index": 0, "default": 16777215}]}}}
+    for sub, value in files.items():
+        path = pack / f"assets/projects/{sub}/boss_vfx/light_probe.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
+
+
 def build(pack=PACK):
     for name, (w, h, fn, kind) in SPRITES.items():
         tex = pack / f"assets/projects/textures/item/boss_vfx/{name}.png"   # item/ is in the vanilla items atlas
@@ -242,14 +261,16 @@ def build(pack=PACK):
             path = pack / f"assets/projects/{sub}/boss_vfx/{name}.json"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
+    light_probe(pack)
     # The arena glow (26.3 post effect, turned on per player by the server): our own namespace, no vanilla override.
     post = pack / "assets/projects/shaders/post"
     post.mkdir(parents=True, exist_ok=True)
-    for f in ("shade_glow_extract.fsh", "shade_glow_composite.fsh"):
+    for f in ("shade_glow_extract.fsh", "shade_glow_composite.fsh", "sakura_light.fsh"):
         shutil.copyfile(SHADERS / "post" / f, post / f)
-    effect = pack / "assets/projects/post_effect/shade_glow.json"
-    effect.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(SHADERS / "post" / "shade_glow.json", effect)
+    for name in ("shade_glow", "sakura_light"):
+        effect = pack / f"assets/projects/post_effect/{name}.json"
+        effect.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(SHADERS / "post" / f"{name}.json", effect)
     core = pack / "assets/minecraft/shaders/core"
     core.mkdir(parents=True, exist_ok=True)
     for f in SHADER_FILES:
