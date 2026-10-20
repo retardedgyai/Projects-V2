@@ -72,11 +72,11 @@ n2 = np.asarray(Image.fromarray(np.random.default_rng(6).random((1, 12)).astype(
 B1 = 345 + (n1 - .5) * 30          # low / mid scarp (z, per x)
 B2 = 172 + (n2 - .5) * 30          # mid / high scarp
 CLIFF_Z = np.broadcast_to(B2[None, :], (B, B))
-jag = (fbm(4, 40, .55, 61) - .5) * 9 + (fbm(3, 90, .5, 62) - .5) * 3          # notches every few blocks
+jag = (fbm(4, 40, .55, 61) - .5) * 8 + (fbm(2, 18, .5, 62) - .5) * 26          # notches, plus bays and spurs every 20-30 blocks          # notches every few blocks
 width = 2 + fbm(4, 25, .5, 63) * 5                                              # some faces sheer, some broken into steps
 GAPS = fbm(3, 5, .5, 64)
-width = np.where(GAPS > .6, 2 + (GAPS - .6) * 120, width)                       # here and there the scarp dissolves into a grassy slope
-RISE = .7 + fbm(3, 4, .5, 66) * .6                                              # and its height swells and drops along its length
+width = np.where(GAPS > .56, 2 + (GAPS - .56) * 120, width)                       # here and there the scarp dissolves into a grassy slope
+RISE = .45 + fbm(3, 7, .5, 66) * .95                                              # and its height swells and drops along its length
 step1 = np.clip((B1[None, :] + jag - zz) / width + .5, 0, 1)    # 1 north of B1
 step2 = np.clip((B2[None, :] + jag * .8 - zz) / width + .5, 0, 1)    # 1 north of B2
 H = LOW + (MID - LOW) * RISE * step1 + (HIGH - MID) * RISE * step2
@@ -170,7 +170,8 @@ for kind, pts_list in (("road", ROADS), ("path", PATHS)):
         H = (H * (1 - t) + level * t).astype(np.float32)
         if kind == "road": road_d = np.minimum(road_d, d)
         else: path_d = np.minimum(path_d, d)
-road = road_d < 3.2
+RW = 1.7 + fbm(3, 10, .5, 341) * 1.6                                            # the road narrows and widens: 2-3 wide, not a 6-wide strip
+road = road_d < RW
 trail = (path_d < 1.7) & ~road
 anyway = np.minimum(road_d, path_d)
 
@@ -278,10 +279,12 @@ for z in range(B):
             for y in range(h + 1, up): put(x, y, z, "water_still")          # waterfall down the scarp
             continue
         if road[z, x]:                                                    # worn centre, gravel and coarse dirt toward the verges
-            edge = road_d[z, x] / 3.2
-            v = TM.noise3(x, 0, z, 331, 2.0) * .7 + _h(x, 1, z, 9) * .3
-            name = "dirt_path_top" if v > edge * .45 else ("gravel" if v > edge * .3 else "coarse_dirt")
-            put(x, h, z, name, TM.SIDE.get(name, name))
+            edge = road_d[z, x] / RW[z, x]                                # 0 centre .. 1 verge
+            v = TM.noise3(x, 0, z, 331, 3.0)
+            if edge < .45 + (v - .5) * .5: name = "dirt_path_top"           # the trodden line wanders inside the road
+            elif edge < .8 + (v - .5) * .4: name = "coarse_dirt"
+            else: name = "grass_block_top"                                  # the verge is ragged: turf creeps in
+            put(x, h, z, name, TM.SIDE.get(name, "grass_block_side" if name == "grass_block_top" else name))
             continue
         if trail[z, x]:
             v = TM.noise3(x, 0, z, 332, 1.6)
@@ -629,6 +632,11 @@ for x in range(FX - 50, FX + 51):
                 put(x, g, z, *(("moss_block",) if n > .66 else ("podzol_top", "podzol_side")))
 
 
+def G_get(p):
+    v = w.b.get(p)
+    return v[1] if v else None
+
+
 def giant_mushroom(x, z, height, cap_r, red=True):
     g = at(x, z)
     la = R.uniform(0, math.tau); lm = height * R.uniform(.18, .3)
@@ -646,6 +654,11 @@ def giant_mushroom(x, z, height, cap_r, red=True):
             if math.hypot(dx, dz) < 4 + 2.5 * noise3(x + dx, 0, z + dz, 73, 2) and (x + dx, at(x + dx, z + dz), z + dz) in w.b:
                 if w.b[(x + dx, at(x + dx, z + dz), z + dz)][1] in ("podzol_top", "moss_block", "grass_block_top", "coarse_dirt"):
                     put(x + dx, at(x + dx, z + dz), z + dz, "mycelium_top", "mycelium_side")
+    for (px_, py_, pz_) in pts[:4]:                                # moss creeps up the foot of the stem on the shaded side
+        for dx in range(-3, 4):
+            for dz in range(-3, 1):
+                p = (int(round(px_)) + dx, int(py_), int(round(pz_)) + dz)
+                if G_get(p) == "mushroom_stem" and _h(*p, 621) < .55: put(*p, "moss_block")
     for (px_, py_, pz_) in pts[2:-2:2]:                            # glow lichen up the stem
         put(int(round(px_)) + 2, int(py_), int(round(pz_)), "glow_lichen", shape="shut_s")
     cap = "red_mushroom_block" if red else "brown_mushroom_block"
@@ -976,7 +989,7 @@ def torii(cx, cz, y, ux, uz, half=3, h=6):
     big = h >= 14
     bx, bz = P(0)
     for yy in range(nuki_y + 1, y + h): put(bx, yy, bz, "polished_deepslate")       # the plaque, a dark board, not a hole
-    if big:                                                          # a big gate: two-block-thick posts look right at scale
+    if False:                                                        # (doubled posts removed: they read as a theme-park gate)
         for s2 in (-half, half):
             for k in (1,):
                 bx2, bz2 = P(s2 + (k if s2 > 0 else -k))
@@ -1141,6 +1154,30 @@ def mesa(cx, cz, top_y, rb, rt, seed, needle=False, sakura=0.0, clear=0.0):
     if needle:
         mark(cx - int(rb) - 3, cz - int(rb) - 3, cx + int(rb) + 3, cz + int(rb) + 3)
         return
+    for k in range(int(rb * 2.2)):                                  # rockfall apron: boulders of three sizes downhill of the stem
+        a = R.uniform(0, math.tau); rr = rb * R.uniform(1.0, 1.9)
+        x, z = int(round(cx + math.cos(a) * rr)), int(round(cz + math.sin(a) * rr))
+        if not (3 <= x < B - 3 and 3 <= z < B - 3) or road_d[z, x] < 4 or lake[z, x] or stream[z, x]: continue
+        g = at(x, z); sz = R.choice([.8, .8, 1.3, 1.3, 2.2])
+        for dx in range(-3, 4):
+            for dz in range(-3, 4):
+                for dy in range(0, 3):
+                    if (dx / sz) ** 2 + (dz / sz) ** 2 + (dy / (sz * .8)) ** 2 <= 1:
+                        put(x + dx, g + dy, z + dz, "moss_block" if dy == int(sz * .8) and _h(x + dx, dy, z + dz, 622) < .6 else TM.cliff_block(x + dx, g + dy, z + dz, .5, .2))
+    la = R.uniform(0, math.tau)                                     # two ledges on one flank, vines hanging off their lips
+    for k, (fy, w_) in enumerate(((.35, 2.4), (.6, 1.8))):
+        y = int(base + Hm * fy)
+        for dd in range(-5, 6):
+            a = la + dd * .07
+            r0 = rb * .75 + (rt - rb * .75) * max(0, fy - .45) / .37
+            for t in range(int(w_ + 1)):
+                x, z = int(round(cx + math.cos(a) * (r0 + t))), int(round(cz + math.sin(a) * (r0 + t)))
+                if (x, y, z) not in w.b and abs(dd) < 5 - t:
+                    put(x, y, z, TM.cliff_block(x, y, z, .6, 0)); put(x, y + 1, z, "moss_block", shape="carpet")
+                    if t == int(w_) and _h(x, y, z, 623) < .5:
+                        for j in range(1, R.randint(3, 9)):
+                            if (x, y - j, z) in w.b or y - j <= at(x, z): break
+                            put(x, y - j, z, "vine", shape="shut_s")
     for _ in range(int(rt * (.55 - .3 * sakura)) + 1):               # trees on top: sakura share follows the route gradient (sakura are big, so fewer)
         a = R.random() * math.tau; rr = rt * (clear + (.7 - clear) * math.sqrt(R.random()))
         x, z = int(round(cx + math.cos(a) * rr)), int(round(cz + math.sin(a) * rr))
@@ -2250,7 +2287,7 @@ for z in range(2, B - 2):
     for x in range(2, B - 2):
         if anyway[z, x] < 2.5 or lake[z, x] or stream[z, x] or used[z, x]: continue
         h = hi[z, x]
-        if (x, h + 1, z) in w.b or w.b.get((x, h, z), ("",))[1] not in ("grass_block_top", "podzol_top", "moss_block", "coarse_dirt"): continue
+        if (x, h + 1, z) in w.b or w.b.get((x, h, z), ("", "", ""))[1] not in ("grass_block_top", "podzol_top", "moss_block", "coarse_dirt"): continue
         if not any(hi[z + dz, x + dx] == h + 1 for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1))): continue
         r = _h(x, 77, z, 991)
         if r < .55: put(x, h + 1, z, "short_grass", shape="plant")
@@ -2265,7 +2302,7 @@ for z in range(2, B - 2):
         if road[z, x] or trail[z, x] or anyway[z, x] > 4.5: continue
         h = hi[z, x]
         if not any((road[z + dz, x + dx] or trail[z + dz, x + dx]) and hi[z + dz, x + dx] < h for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1))): continue
-        if w.b.get((x, h, z), ("",))[1] != "grass_block_top": continue
+        if w.b.get((x, h, z), ("", "", ""))[1] != "grass_block_top": continue
         r = noise3(x, 0, z, 993, 2.5)
         if r < .35: put(x, h, z, "rooted_dirt")
         elif r < .5: put(x, h, z, "coarse_dirt")
