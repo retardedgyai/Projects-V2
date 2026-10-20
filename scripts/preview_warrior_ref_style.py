@@ -1,36 +1,42 @@
-"""Warrior skills drawn by the reference rules (2026-10-20, Creator: 「このリファレンスで見ながらウォーリアーのスキル作ってみて」).
+"""Warrior skills drawn by the reference rules (2026-10-20, Creator: 「このリファレンスで見ながらウォーリアーのスキル作ってみて」,
+then 「本当にみたか？全然違う　差を埋めて」 → 「6技全部作り直して」).
 
-References: wolf awwent's Outer Gods classes (Gorebound Devourer, Threadweaver), see docs/development/class-cd-rework.md.
+References: wolf awwent's Outer Gods classes (Gorebound Devourer, Threadweaver), studied frame by frame at 1080p.
 Rules taken from them (never their shapes):
-- one class colour (red-hot iron) plus a white core; glowing things have no shading and bloom;
-- solid things (rock spikes, iron slabs, the hammer) are their own shaded models;
-- big pixel-art drawn on the ground (cracks, rings) that flash white and cool down to red, then dark;
-- every hit: a white spiky flash and black shards flying out;
-- thin glowing lines (speed lines, the arc of a sweep, roots) with a white core.
+- no bloom and no soft gradients: glowing things are flat, unlit, hard-edged pixel art;
+- coarse pixels, about the size of a block texture's (16-32 per block), and big effects;
+- 3-4 flat tones per effect (outline deep red, red, cream, a white-hot core), cooling in steps;
+- designed silhouettes with a motif. The warrior's motif is red-hot iron: blades of iron rising from the ground,
+  molten cracks, a riveted hammer;
+- solid things carry a pixel texture (iron with molten seams), not plain colour;
+- debris are big dark flat plates tumbling out, not small cubes;
+- a hit raises a cage of flame-tongue boards around the target, and the target flashes red.
 
-This is a look-only preview with scripted timing (it does not run the server); the player, greatsword and
-cameras are preview_warrior_cast's. Once the look is chosen, the same pieces go into the pack and the
-choreography.
+A look-only preview with scripted timing (no server): the player, greatsword and cameras are preview_warrior_cast's,
+the ground is a grass texture under an overcast sky so the effects are seen as in a world.
 
 Usage: python3 scripts/preview_warrior_ref_style.py [--ids slam,...] [--out .tools/rpage]
 """
 import argparse
 import math
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw
 
 import preview_warrior_cast as pc
 
 ROOT = Path(__file__).resolve().parents[1]
-WHITE = (255, 248, 232)
-HOT = (255, 196, 120)
-RED = (255, 70, 36)
-DEEP = (170, 24, 22)
-IRON = (52, 46, 50)
-ROCK = (74, 60, 58)
-SHARD = (18, 14, 16)
+
+# the warrior's set: four flat tones and the iron
+OUTLINE = (128, 18, 26)
+RED = (232, 52, 38)
+CREAM = (255, 214, 140)
+CORE = (255, 250, 232)
+IRON = ((30, 26, 30), (44, 38, 42), (60, 52, 56))
+PLATE = ((26, 22, 26), (40, 34, 38))
+COOL = [(CORE, CREAM, RED), (CREAM, RED, OUTLINE), (RED, OUTLINE, (70, 16, 20)), (OUTLINE, (70, 16, 20), None)]
 
 
 def _h(*v):
@@ -38,41 +44,226 @@ def _h(*v):
     return x - math.floor(x)
 
 
-def heat(t):
-    """0 = just hit (white) .. 1 = cooled (dark red)."""
-    stops = [(0, WHITE), (.15, HOT), (.4, RED), (.75, DEEP), (1, (60, 12, 14))]
-    for (a, ca), (b, cb) in zip(stops, stops[1:]):
-        if t <= b:
-            k = (t - a) / (b - a)
-            return tuple(int(ca[i] + (cb[i] - ca[i]) * k) for i in range(3))
-    return stops[-1][1]
+# ---------------------------------------------------------------- textures (all hard-edged, flat tones)
+@lru_cache(maxsize=None)
+def grass(blocks=26):
+    n = blocks * 16
+    tones = ((86, 128, 52), (96, 140, 58), (78, 118, 48), (104, 150, 62))
+    img = Image.new('RGBA', (n, n))
+    px = img.load()
+    for y in range(n):
+        for x in range(n):
+            px[x, y] = tones[int(_h(x, y) * 4)] + (255,)
+    return img
+
+
+@lru_cache(maxsize=None)
+def iron_tex(w, h, seam=True, seed=0):
+    """Dark iron, three tones in pixel noise, a molten seam zig-zagging up the middle and a hot top edge."""
+    img = Image.new('RGBA', (w, h))
+    px = img.load()
+    for y in range(h):
+        for x in range(w):
+            px[x, y] = IRON[min(2, int(_h(x, y, seed) * 3.2))] + (255,)
+    if seam:
+        x = w // 2
+        for y in range(h):
+            x = min(w - 2, max(1, x + (1 if _h(y, seed, 3) > .7 else -1 if _h(y, seed, 3) < .3 else 0)))
+            px[x, y] = (RED if y > h * .3 else CREAM) + (255,)
+        for x in range(w):  # the hot edge
+            px[x, 0] = CREAM + (255,)
+            if h > 2: px[x, 1] = RED + (255,)
+    return img
+
+
+@lru_cache(maxsize=None)
+def plate_tex(seed):
+    img = Image.new('RGBA', (6, 6))
+    for y in range(6):
+        for x in range(6):
+            img.putpixel((x, y), PLATE[int(_h(x, y, seed) * 2)] + (255,))
+    return img
+
+
+@lru_cache(maxsize=None)
+def flame_tongue(stage, seed=0, w=24, h=40):
+    """A tongue of flame drawn as one silhouette in insets (dark rim, red, cream, white core); stage cools it."""
+    img = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    lean = (_h(seed) - .5) * 6
+    def shape(k):
+        cx, base = w / 2, h - 1
+        return [(cx - w * .42 * k, base), (cx - w * .46 * k, base - h * .35 * k), (cx - w * .2 * k + lean * .3, base - h * .55 * k),
+                (cx - w * .3 * k + lean * .5, base - h * .78 * k), (cx + lean, base - h * k + 1),
+                (cx + w * .12 * k + lean * .6, base - h * .7 * k), (cx + w * .34 * k + lean * .2, base - h * .82 * k),
+                (cx + w * .3 * k, base - h * .45 * k), (cx + w * .44 * k, base - h * .25 * k), (cx + w * .4 * k, base)]
+    d.polygon(shape(1.0), fill=OUTLINE + (255,))
+    for tone, k in zip((RED, CREAM, CORE)[:3 - stage], (.82, .58, .34)):  # cooling drops the inner insets
+        d.polygon(shape(k), fill=tone + (255,))
+    return img
+
+
+@lru_cache(maxsize=None)
+def crack_decal(size, branches, seed, stage, reach_step=4):
+    """Molten cracks: thick jagged lines, a dark rim, red, and a cream core that cools in steps."""
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    paths = []
+    c = size / 2
+    reach = reach_step / 4
+    for b in range(branches):
+        a = (b + _h(b, seed) * .7) / branches * math.tau
+        pts = [(c, c)]
+        x, y = c, c
+        steps = int(size * .45 * reach * (.65 + .35 * _h(b, seed, 2)) / 3)
+        for s in range(steps):
+            a += (_h(b, s, seed) - .5) * .9
+            x += math.cos(a) * 3; y += math.sin(a) * 3
+            pts.append((x, y))
+            if _h(b, s, seed, 7) > .86 and s > 1:
+                fa = a + (1.0 if _h(s, b) > .5 else -1.0)
+                paths.append(([(x, y), (x + math.cos(fa) * 6, y + math.sin(fa) * 6), (x + math.cos(fa + .4) * 10, y + math.sin(fa + .4) * 10)], 1))
+        paths.append((pts, 2))
+    d = ImageDraw.Draw(img)
+    rim, mid, core = COOL[stage]
+    for layer, tone in ((0, rim), (1, mid), (2, core)):
+        if tone is None: continue
+        for pts, weight in paths:
+            if layer == 2 and weight == 1: continue
+            d.line(pts, fill=tone + (255,), width={0: 5, 1: 3, 2: 1}[layer] + (weight - 1))
+    return img
+
+
+@lru_cache(maxsize=None)
+def ring_decal(size, stage):
+    """A molten ring with rivets: the hammer's stamp on the ground."""
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    rim, mid, core = COOL[stage]
+    c = size / 2
+    r = c - 4
+    for tone, wd in ((rim, 5), (mid, 3), (core, 1)):
+        if tone: d.ellipse((c - r, c - r, c + r, c + r), outline=tone + (255,), width=wd)
+    for k in range(12):
+        a = k / 12 * math.tau
+        x, y = c + math.cos(a) * (c * .72), c + math.sin(a) * (c * .72)
+        d.rectangle((x - 2, y - 2, x + 2, y + 2), fill=(rim or OUTLINE) + (255,))
+        if mid: d.rectangle((x - 1, y - 1, x + 1, y + 1), fill=mid + (255,))
+    return img
+
+
+@lru_cache(maxsize=None)
+def drag_decal(length, stage, seed=3):
+    img = Image.new('RGBA', (10, length), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    rim, mid, core = COOL[stage]
+    pts, x = [], 5
+    for y in range(0, length + 3, 3):
+        x = min(7, max(2, x + (_h(y, seed) - .5) * 3)); pts.append((x, y))
+    for tone, wd in ((rim, 5), (mid, 3), (core, 1)):
+        if tone: d.line(pts, fill=tone + (255,), width=wd)
+    return img
+
+
+@lru_cache(maxsize=None)
+def roots_decal(size, grow_step, stage):
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    rim, mid, core = COOL[stage]
+    c = size / 2
+    lines, knots = [], []
+    for b in range(8):
+        a = b / 8 * math.tau + .3
+        pts, x, y = [(c, c)], c, c
+        for s in range(int(11 * grow_step / 4)):
+            a += (_h(b, s, 4) - .5) * .8
+            x += math.cos(a) * 3.2; y += math.sin(a) * 3.2; pts.append((x, y))
+            if s % 3 == 2: knots.append((x, y))  # knots along the root, like the rune knots on the reference's threads
+        lines.append(pts)
+    for tone, wd in ((rim, 4), (mid, 2), (core, 1)):
+        if tone:
+            for p in lines: d.line(p, fill=tone + (255,), width=wd)
+    for p in knots:
+        d.rectangle((p[0] - 2, p[1] - 2, p[0] + 2, p[1] + 2), fill=(rim or OUTLINE) + (255,))
+        if mid: d.point(p, fill=(core or mid) + (255,))
+    return img
+
+
+@lru_cache(maxsize=None)
+def screen_cracks(w, h, stage):
+    """The ultimate's last blow cracks the screen for a moment: big hard pixel cracks over the view."""
+    small = Image.new('RGBA', (w // 6, h // 6), (0, 0, 0, 0))
+    d = ImageDraw.Draw(small)
+    sw, sh = small.size
+    tone = (OUTLINE, RED, (90, 14, 20))[stage]
+    for b in range(7):
+        a = b / 7 * math.tau + .4
+        x, y = sw / 2, sh / 2
+        pts = [(x, y)]
+        for s in range(14):
+            a += (_h(b, s, 11) - .5) * .8
+            x += math.cos(a) * 3.5; y += math.sin(a) * 3.5; pts.append((x, y))
+        d.line(pts, fill=tone + (210,), width=2)
+    return small.resize((w, h), Image.NEAREST)
+
+
+@lru_cache(maxsize=None)
+def arc_decal(stage):
+    img = Image.new('RGBA', (96, 54), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    rim, mid, core = COOL[stage]
+    box = (4, 6, 92, 100)
+    for tone, wd in ((rim, 6), (mid, 4), (core, 1)):
+        if tone: d.arc(box, 190, 350, fill=tone + (255,), width=wd)
+    for k in range(7):  # gouges cut by the sweep
+        a = math.radians(200 + k * 22)
+        x, y = 48 + math.cos(a) * 36, 53 + math.sin(a) * 40
+        d.line([(x, y), (x + math.cos(a) * 6, y + math.sin(a) * 6)], fill=(rim or OUTLINE) + (255,), width=3)
+    return img
+
+
+@lru_cache(maxsize=None)
+def hammer_tex():
+    img = iron_tex(24, 12, False, 2).copy()
+    px = img.load()
+    for x in range(24):  # a molten seam around the head's middle, rivets on it
+        px[x, 6] = RED + (255,); px[x, 5] = OUTLINE + (255,)
+    for x in (3, 9, 15, 21):
+        for dx in (0, 1):
+            for y in (2, 3, 9, 10): px[x + dx, y] = (88, 80, 84, 255)
+    return img
 
 
 # ---------------------------------------------------------------- geometry
-def box(lo, hi, color, glow=False, top_scale=1.0, yaw=0.0, center=None):
-    """A shaded (or glowing) box; top_scale < 1 tapers it into a spike."""
+def textured_box(lo, hi, tex, top_scale=1.0, yaw=0.0, tilt=(0.0, 0.0), center=None):
     lo, hi = np.array(lo, float), np.array(hi, float)
     c = (lo + hi) / 2 if center is None else np.array(center, float)
+    base_y = lo[1]
     ca, sa = math.cos(yaw), math.sin(yaw)
     corners = []
     for i in range(8):
         p = np.array([hi[j] if i & (1 << j) else lo[j] for j in range(3)])
-        if i & 2:  # top: taper toward the centre
+        if i & 2:
             p[0] = c[0] + (p[0] - c[0]) * top_scale; p[2] = c[2] + (p[2] - c[2]) * top_scale
         d = p - c
-        corners.append(c + np.array((d[0] * ca - d[2] * sa, d[1], d[0] * sa + d[2] * ca)))
-    content = ('glow', color) if glow else ('shade', color)
-    return [([corners[i] for i in ids], content) for _, ids in pc.FACES]
+        q = c + np.array((d[0] * ca - d[2] * sa, d[1], d[0] * sa + d[2] * ca))
+        q[0] += tilt[0] * (q[1] - base_y); q[2] += tilt[1] * (q[1] - base_y)
+        corners.append(q)
+    return [([corners[i] for i in ids], tex) for _, ids in pc.FACES]
 
 
-def spike(base, radius, height, color=ROCK, lean=(0, 0), yaw=0.0):
+def blade(base, height, width, yaw, tilt, seed=0):
+    """An iron blade rising from the ground: a flat tapered slab with a molten seam and a hot edge."""
     x, y, z = base
-    f = box((x - radius, y, z - radius), (x + radius, y + height, z + radius), color, top_scale=.12, yaw=yaw)
-    for corners, _ in f:  # lean the tip
-        for k, p in enumerate(corners):
-            if p[1] > y + height * .5:
-                corners[k] = p + np.array((lean[0], 0, lean[1])) * ((p[1] - y) / max(height, 1e-6))
-    return f
+    return textured_box((x - width / 2, y, z - .07), (x + width / 2, y + height, z + .07),
+                        iron_tex(8, 24, True, seed % 4), top_scale=.15, yaw=yaw, tilt=tilt, center=(x, y, z))
+
+
+def plane(center, yaw, w, h, tex, y0=0.0):
+    """A vertical board, both sides."""
+    c = np.array(center, float)
+    r = np.array((math.cos(yaw), 0, math.sin(yaw))) * w / 2
+    pts = [c + (0, y0 + h, 0) - r, c + (0, y0 + h, 0) + r, c + (0, y0, 0) + r, c + (0, y0, 0) - r]
+    return [(pts, tex), (pts[::-1], tex.transpose(Image.FLIP_LEFT_RIGHT))]
 
 
 def ground_quad(center, half_w, half_l, yaw=0.0, y=.02):
@@ -82,114 +273,63 @@ def ground_quad(center, half_w, half_l, yaw=0.0, y=.02):
     return [at(half_w, half_l), at(-half_w, half_l), at(-half_w, -half_l), at(half_w, -half_l)]
 
 
-def billboard(camera, center, r):
-    return [center - camera.r * r + camera.u * r, center + camera.r * r + camera.u * r,
-            center + camera.r * r - camera.u * r, center - camera.r * r - camera.u * r]
+def flame_cage(at, since, size=1.0, seed=0):
+    """The hit: tongues of flame stood up around the target, rising then cooling in steps."""
+    if not 0 <= since < 8: return []
+    stage = 0 if since < 2 else 1 if since < 4 else 2 if since < 6 else 3
+    grow = (.6, 1.0, 1.1, 1.1, 1.0, .9, .8, .6)[since]
+    out = []
+    for k in range(5):  # boards stood in a ring around the target, facing out
+        a = k / 5 * math.tau + seed
+        c = np.array(at, float) + np.array((math.cos(a), 0, math.sin(a))) * .55 * size
+        out += plane(c, a + math.pi / 2, 1.2 * size * grow, 2.5 * size * grow, flame_tongue(stage, seed * 5 + k))
+    return out
 
 
-# ---------------------------------------------------------------- pixel art (ground and flashes)
-def crack_art(size, branches, seed, age, reach=1.0):
-    """Cracks running out from the centre: white at the core, cooling outward and with age."""
-    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    c = size / 2
-    for b in range(branches):
-        a = (b + _h(b, seed) * .6) / branches * math.tau
-        x, y = c, c
-        steps = int(size * .48 * reach * (.7 + .3 * _h(b, seed, 2)))
-        for s in range(steps):
-            a += (_h(b, s, seed) - .5) * .7
-            x += math.cos(a); y += math.sin(a)
-            if not (0 <= x < size and 0 <= y < size): break
-            t = min(1, age + s / max(steps, 1) * .5)
-            col = heat(t)
-            img.putpixel((int(x), int(y)), col + (255,))
-            if s < steps * .6 and 0 <= int(x) + 1 < size:
-                img.putpixel((int(x) + 1, int(y)), heat(min(1, t + .25)) + (220,))
-            if _h(b, s, seed, 7) > .9:  # a fork
-                fx, fy, fa = x, y, a + (.9 if _h(s, b) > .5 else -.9)
-                for k in range(int(steps * .25)):
-                    fx += math.cos(fa); fy += math.sin(fa)
-                    if 0 <= fx < size and 0 <= fy < size:
-                        img.putpixel((int(fx), int(fy)), heat(min(1, t + .3)) + (230,))
-    return img
-
-
-def ring_art(size, radius, age, width=2):
-    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    c = (size - 1) / 2
-    for y in range(size):
-        for x in range(size):
-            d = math.hypot(x - c, y - c)
-            if abs(d - radius) < width / 2 + .5 * _h(x, y):
-                img.putpixel((x, y), heat(min(1, age + .1)) + (255,))
-            elif abs(d - radius * .62) < .7 and int(math.degrees(math.atan2(y - c, x - c))) % 30 < 14:
-                img.putpixel((x, y), heat(min(1, age + .35)) + (230,))  # an inner dashed ring, like a seal
-    return img
-
-
-def line_art(w, length, progress, age, seed):
-    """A crack running along the ground (rows = length)."""
-    img = Image.new('RGBA', (w, length), (0, 0, 0, 0))
-    x = w / 2
-    for y in range(int(length * progress)):
-        x = min(w - 2, max(1, x + (_h(y, seed) - .5) * 1.6))
-        t = min(1, age + (progress * length - y) / length * .6)
-        img.putpixel((int(x), length - 1 - y), heat(t) + (255,))
-        img.putpixel((int(x) + 1, length - 1 - y), heat(min(1, t + .3)) + (200,))
-    return img
-
-
-def star_art(size, k, rays=8, seed=0):
-    """The hit flash: a spiky star, white core and red rim, swelling then thinning out."""
-    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-    c = (size - 1) / 2
-    grow = [.45, .8, 1, .9, .6][min(k, 4)]
-    for y in range(size):
-        for x in range(size):
-            a = math.atan2(y - c, x - c); d = math.hypot(x - c, y - c) / c
-            spike = abs(math.cos(a * rays / 2 + seed)) ** 6
-            limit = grow * (.28 + .72 * spike * (.6 + .4 * _h(round(a * rays / math.pi), seed)))
-            if d < limit:
-                core = d < limit * (.55 - k * .1)
-                img.putpixel((x, y), (WHITE if core else RED) + (255,))
-    return img
-
-
-STAR = [[star_art(32, k, seed=s) for k in range(5)] for s in range(3)]
-
-
-# ---------------------------------------------------------------- effects that live in time
-class Shards:
-    def __init__(self, origin, count, speed, seed, up=4.0):
+class Plates:
+    """Big dark flat plates thrown out and tumbling."""
+    def __init__(self, origin, count, speed, seed, up=4.5):
         self.parts = []
         for i in range(count):
             a = _h(i, seed) * math.tau
-            v = np.array((math.cos(a) * speed * (.5 + _h(i, seed, 1)), up * (.4 + _h(i, seed, 3)),
+            v = np.array((math.cos(a) * speed * (.5 + _h(i, seed, 1)), up * (.5 + _h(i, seed, 3)),
                           math.sin(a) * speed * (.5 + _h(i, seed, 1))))
-            self.parts.append((np.array(origin, float), v, .06 + .08 * _h(i, seed, 5)))
+            spin = np.array((_h(i, seed, 6) - .5, _h(i, seed, 7) - .5, _h(i, seed, 8) - .5)) * 14
+            self.parts.append((np.array(origin, float), v, .22 + .2 * _h(i, seed, 5), spin, i))
 
     def faces(self, t):
         out = []
-        for p, v, s in self.parts:
+        for p, v, s, spin, i in self.parts:
             q = p + v * t + np.array((0, -9.8, 0)) * t * t / 2
-            if q[1] < 0: q[1] = 0
-            out += box(q - s, q + s, SHARD, yaw=t * 7)
+            if q[1] < .02: q[1] = .02
+            rot = pc.Rx(spin[0] * t) @ pc.Ry(spin[1] * t) @ pc.Rz(spin[2] * t)
+            pts = [q + (rot @ np.array((dx * s, 0, dz * s, 1.0)))[:3] for dx, dz in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+            tex = plate_tex(i % 5)
+            out += [(pts, tex), (pts[::-1], tex)]
         return out
 
 
-def ribbon(layer, glow, camera, pts, width, color=RED, core=True):
-    """A thin glowing line through 3D points, drawn on screen with a white core."""
-    d1, d2 = ImageDraw.Draw(layer), ImageDraw.Draw(glow)
+def thin_line(layer, camera, pts, tone, px=2):
+    """Hard 1-2 pixel lines through 3D points (no anti-aliasing, no glow)."""
+    d = ImageDraw.Draw(layer)
     scr = []
     for p in pts:
-        c = camera.cam(p)
-        if c[2] < .2: scr.append(None); continue
-        scr.append((camera.screen(c), pc.FOCAL / c[2]))
+        c = camera.cam(np.array(p, float))
+        scr.append(camera.screen(c) if c[2] > .2 else None)
     for a, b in zip(scr, scr[1:]):
-        if a is None or b is None: continue
-        w = max(1, int(width * (a[1] + b[1]) / 2))
-        for d in (d1, d2): d.line([a[0], b[0]], fill=color + (255,), width=w)
-        if core: d1.line([a[0], b[0]], fill=WHITE + (255,), width=max(1, w // 3))
+        if a and b: d.line([a, b], fill=tone + (255,), width=px)
+
+
+def strip(camera, layer, pts, widths, tones):
+    """A crisp flat band along 3D points; widths per point (in blocks, vertical), drawn as layered bands."""
+    d = ImageDraw.Draw(layer)
+    for scale, tone in zip((1.0, .62, .25), tones):
+        if tone is None: continue
+        for (p0, w0), (p1, w1) in zip(zip(pts, widths), zip(pts[1:], widths[1:])):
+            quad = [p0 + (0, w0 * scale / 2, 0), p1 + (0, w1 * scale / 2, 0), p1 - (0, w1 * scale / 2, 0), p0 - (0, w0 * scale / 2, 0)]
+            cs = [camera.cam(q) for q in quad]
+            if min(c[2] for c in cs) < .2: continue
+            d.polygon([camera.screen(c) for c in cs], fill=tone + (255,))
 
 
 # ---------------------------------------------------------------- skills
@@ -199,6 +339,8 @@ class Skill:
     length = 40
     pose_id = 'slam'
     startup = 10
+    targets = ()
+    stagger = 0
 
     def player(self, tick): return np.zeros(3), 0.0
 
@@ -206,268 +348,252 @@ class Skill:
         s = tick - (self.cast + self.startup - 3)
         return s / 6 if 0 <= s < 6 else None
 
-    def scene(self, tick, camera):
-        """Returns (faces, glow_faces, draw_fn(layer, glow, camera)) for this tick."""
-        return [], [], None
+    def scene(self, tick, camera): return [], None
+
+    def target_hit(self, k): return self.impact + k * self.stagger
 
     @property
     def impact(self): return self.cast + self.startup
 
 
-def hit_flash(camera, at, since, seed=0, size=1.2):
-    if 0 <= since < 5:
-        return [(billboard(camera, np.array(at, float), size * (1 + since * .15)), STAR[seed % 3][since])]
-    return []
+def stage_of(since, step=6):
+    return min(3, max(0, since // step))
 
 
 class Dash(Skill):  # 轟進
     name, pose_id, startup, length = '轟進', 'dash', 4, 30
+    targets = ((0, 0, 5.6),)
 
     def player(self, tick):
         k = min(1, max(0, (tick - self.cast) / self.startup))
         return np.array((0, 0, 4.0 * (1 - (1 - k) ** 2))), 0.0
 
     def scene(self, tick, camera):
-        faces, glow = [], []
+        faces = []
         pos, _ = self.player(tick)
         since = tick - self.impact
-        if tick >= self.cast:  # scorched drag line along the path
-            age = min(1, max(0, since) / 18)
-            art = line_art(6, 64, min(1, (tick - self.cast) / self.startup), age, 3)
-            q = (ground_quad((0, 0, pos[2] / 2 + .2), .25, max(.3, pos[2] / 2 + .2)), art)
-            faces.append(q); glow.append(q)
-        tip = pos + np.array((0, 1.1, 1.6))
-        faces += hit_flash(camera, tip + (0, 0, .4), since, 1, 1.0)
-        glow += hit_flash(camera, tip + (0, 0, .4), since, 1, 1.0)
-        if since >= 0: faces += Shards(tip, 10, 3.0, 11, 2.5).faces(since / 20)
+        if tick > self.cast:
+            stage = stage_of(max(0, since), 5)
+            length = max(.4, pos[2])
+            faces.append((ground_quad((0, 0, length / 2), .32, length / 2), drag_decal(max(8, int(length * 16)), stage)))
+        tgt = np.array(self.targets[0])
+        faces += flame_cage(tgt, since, 1.0, 1)
+        if since >= 0: faces += Plates(tgt + (0, .9, 0), 7, 3.2, 11, 3.5).faces(since / 20)
 
-        def draw(layer, g, cam):
-            if self.cast <= tick < self.impact + 6:
-                fade = 1 if tick < self.impact else 1 - (tick - self.impact) / 6
-                for k, (dx, dy) in enumerate(((-.45, .5), (.4, .8), (-.3, 1.3), (.5, 1.5), (0, 1.0))):
-                    z1 = pos[2] - .3; z0 = max(0, z1 - 2.6 * fade - _h(k) * .8)
-                    ribbon(layer, g, cam, [np.array((dx, dy, z0)), np.array((dx, dy, z1))], .03)
-            if 0 <= since < 4:  # the thrust line ahead of the blade
-                ribbon(layer, g, cam, [tip, tip + np.array((0, 0, 3.2 - since * .5))], .06)
-        return faces, glow, draw
+        def draw(layer, cam):
+            if self.cast <= tick < self.impact + 5:
+                fade = 1 if tick < self.impact else 1 - (tick - self.impact) / 5
+                for k, (dx, dy) in enumerate(((-.5, .55), (.45, .85), (-.35, 1.35), (.55, 1.55), (.05, 1.05), (-.6, 1.8))):
+                    z1 = pos[2] - .25; z0 = max(-.5, z1 - (2.4 + _h(k) * 1.4) * fade)
+                    thin_line(layer, cam, [(dx, dy, z0), (dx, dy, z1)], CREAM if k % 3 == 0 else RED, 2)
+        return faces, draw
 
 
 class Slam(Skill):  # 地割り
-    name, pose_id, startup, length = '地割り', 'slam', 12, 44
-    at = np.array((0, 0, 2.4))
+    name, pose_id, startup, length = '地割り', 'slam', 12, 46
+    at = np.array((0, 0, 2.6))
+    targets = ((-.9, 0, 3.6), (1.0, 0, 3.3))
+    stagger = 1
 
     def scene(self, tick, camera):
-        faces, glow = [], []
+        faces = []
         since = tick - self.impact
         if since >= 0:
-            age = min(1, since / 26)
-            reach = min(1, (since + 1) / 3)
-            q = (ground_quad(self.at, 3.2, 3.2), crack_art(64, 9, 5, age, reach)); faces.append(q); glow.append(q)
-            rise = min(1, (since + 1) / 3) * (1 if since < 20 else max(0, 1 - (since - 20) / 8))
-            for k in range(7):  # rock spikes thrown up in a fan
-                a = math.radians(-60 + k * 20)
-                r = 1.0 + 1.1 * _h(k, 2)
-                base = self.at + np.array((math.sin(a) * r, 0, math.cos(a) * r * .7))
-                h = (1.0 + 1.2 * _h(k, 9)) * rise
-                if h > .05: faces += spike(base, .28 + .12 * _h(k, 4), h, lean=(math.sin(a) * .5, math.cos(a) * .3), yaw=k)
-                # the red-hot seam at each spike's foot
-                if h > .05: glow.append((ground_quad(base, .34, .34, k, .03), crack_art(8, 4, k, age + .2)))
-            faces += Shards(self.at + (0, .3, 0), 16, 4.0, 3).faces(since / 20)
-        faces += hit_flash(camera, self.at + (0, .8, 0), since, 0, 1.6)
-        glow += hit_flash(camera, self.at + (0, .8, 0), since, 0, 1.6)
-        return faces, glow, None
+            stage = stage_of(since, 7)
+            faces.append((ground_quad(self.at, 3.6, 3.6), crack_decal(96, 8, 5, stage, min(4, since + 2))))
+            rise = min(1, (since + 1) / 2.5) * (1 if since < 22 else max(0, 1 - (since - 22) / 6))
+            for k in range(9):  # iron blades thrown up out of the crack in a fan
+                a = math.radians(-70 + k * 17.5)
+                r = 1.0 + 1.3 * _h(k, 2)
+                base = self.at + np.array((math.sin(a) * r, 0, math.cos(a) * r * .8 - .3))
+                h = (1.1 + 1.0 * _h(k, 9)) * rise
+                if h > .05:
+                    faces += blade(base, h, .5 + .15 * _h(k, 4), -a, (math.sin(a) * .45, math.cos(a) * .3), k)
+            faces += Plates(self.at + (0, .3, 0), 12, 4.2, 3).faces(since / 20)
+        for k, t in enumerate(self.targets):
+            faces += flame_cage(np.array(t), since - k, .9, k + 2)
+        return faces, None
 
 
 class Whirl(Skill):  # 押し薙ぎ
-    name, pose_id, startup, length = '押し薙ぎ', 'whirl', 6, 30
+    name, pose_id, startup, length = '押し薙ぎ', 'whirl', 6, 32
+    targets = ((-1.8, 0, 1.8), (.2, 0, 2.7), (1.9, 0, 1.5))
+    stagger = 1
 
     def scene(self, tick, camera):
-        faces, glow = [], []
+        faces = []
         since = tick - self.impact
         if since >= 0:
-            q = (ground_quad((0, 0, 1.3), 2.8, 1.5), arc_ground(min(1, since / 18)))
-            faces.append(q); glow.append(q)
-            for k, z in enumerate((2.2, 1.6, 2.5)):
-                x = (-1.4, 1.5, .1)[k]
-                faces += Shards((x, 1.0, z), 6, 2.5, 20 + k, 2.0).faces(since / 20)
-                faces += hit_flash(camera, (x, 1.0, z), since - k, k, .7)
-                glow += hit_flash(camera, (x, 1.0, z), since - k, k, .7)
+            faces.append((ground_quad((0, 0, 1.2), 3.2, 1.8), arc_decal(stage_of(since, 5))))
+        for k, t in enumerate(self.targets):
+            hit = since - k
+            faces += flame_cage(np.array(t), hit, .75, k + 5)
+            if hit >= 0: faces += Plates(np.array(t) + (0, 1.0, 0), 4, 2.6, 20 + k, 2.4).faces(hit / 20)
 
-        def draw(layer, g, cam):
-            # the sweep: 180 degrees from the left to the right in 3 ticks, its tail fading
+        def draw(layer, cam):
             s = tick - self.impact + 3
-            if 0 <= s < 10:
-                head = min(1, s / 3); tail = max(0, (s - 4) / 6)
-                pts = []
-                for i in range(25):
-                    u = tail + (head - tail) * i / 24
-                    a = math.radians(90 - 180 * u)
-                    pts.append(np.array((math.sin(a) * 2.6, 1.0 + .25 * math.sin(u * math.pi), math.cos(a) * 2.6 * .9 + .2)))
-                ribbon(layer, g, cam, pts, .16)
-                inner = [p * np.array((.8, 1, .8)) for p in pts]
-                ribbon(layer, g, cam, inner, .025, DEEP, core=False)
-        return faces, glow, draw
-
-
-def arc_ground(age):
-    img = Image.new('RGBA', (64, 34), (0, 0, 0, 0))
-    for y in range(34):
-        for x in range(64):
-            d = math.hypot((x - 31.5) / 31.5, (y - 33) / 33)
-            if .9 < d < .94 + .03 * _h(x, y): img.putpixel((x, y), heat(min(1, age + .35)) + (255,))
-            elif .6 < d < .64 and x % 5 < 3: img.putpixel((x, y), heat(min(1, age + .4)) + (220,))
-    return img
+            if not 0 <= s < 9: return
+            head = min(1, s / 3); tail = max(0, (s - 3) / 6)
+            pts, widths = [], []
+            for i in range(30):
+                u = tail + (head - tail) * i / 29
+                a = math.radians(95 - 190 * u)
+                pts.append(np.array((math.sin(a) * 2.9, 1.0 + .3 * math.sin(u * math.pi), math.cos(a) * 2.9 * .85 + .2)))
+                widths.append(.06 + .55 * (i / 29) ** 1.5)  # thin at the tail, full at the leading edge
+            strip(cam, layer, pts, widths, (OUTLINE, RED, CREAM) if s < 5 else (OUTLINE, RED, None))
+        return faces, draw
 
 
 class Guard(Skill):  # 根張り
-    name, pose_id, startup, length = '根張り', 'war_guard', 2, 52
+    name, pose_id, startup, length = '根張り', 'war_guard', 2, 54
 
     def swing(self, tick): return None
 
     def scene(self, tick, camera):
-        faces, glow = [], []
+        faces = []
         t = tick - self.impact
         if t >= 0:
-            end = max(0, (t - 40) / 8)
-            rise = min(1, (t + 1) / 4) * (1 - end)
-            for k in range(8):  # iron slabs planted in a ring
+            end = max(0, (t - 42) / 6)
+            stage = 0 if t < 4 else 1 if t < 30 else 2
+            faces.append((ground_quad((0, 0, 0), 2.8, 2.8), roots_decal(96, min(4, t + 1), stage)))
+            rise = min(1, (t + 1) / 3) * (1 - end)
+            for k in range(8):  # an iron wall planted in a ring, each slab hot along its top
                 a = k / 8 * math.tau + .2
-                c = np.array((math.sin(a) * 1.35, 0, math.cos(a) * 1.35))
-                h = 1.3 * rise * (.8 + .3 * _h(k))
+                c = np.array((math.sin(a) * 1.45, 0, math.cos(a) * 1.45))
+                h = 1.5 * rise * (.85 + .3 * _h(k))
                 if h > .05:
-                    faces += box(c - (.32, 0, .07), c + (.32, h, .07), IRON, yaw=-a, center=c)
-                    glow += box(c + (-.3, h - .06, -.08), c + (.3, h, .08), RED, glow=True, yaw=-a, center=c)
-            q = (ground_quad((0, 0, 0), 2.4, 2.4), roots_art(min(1, (t + 1) / 6), min(1, end + max(0, t - 8) / 60)))
-            faces.append(q); glow.append(q)
-        return faces, glow, None
-
-
-def roots_art(grow, age):
-    img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
-    for b in range(10):
-        a = b / 10 * math.tau
-        x = y = 31.5
-        for s in range(int(30 * grow)):
-            a += (_h(b, s, 4) - .5) * .5
-            x += math.cos(a); y += math.sin(a)
-            if 0 <= x < 64 and 0 <= y < 64:
-                img.putpixel((int(x), int(y)), heat(min(1, age + s / 60)) + (255,))
-            if _h(b, s) > .88:
-                for k in range(4):
-                    xx, yy = int(x + math.cos(a + 1.1) * k), int(y + math.sin(a + 1.1) * k)
-                    if 0 <= xx < 64 and 0 <= yy < 64: img.putpixel((xx, yy), heat(min(1, age + .3)) + (220,))
-    return img
+                    faces += textured_box(c - (.42, 0, .1), c + (.42, h, .1), iron_tex(12, 20, True, k % 4), top_scale=.9, yaw=-a, center=c)
+            if t < 8: faces += Plates((0, .1, 0), 6, 2.4, 9, 2.6).faces(t / 20)
+        return faces, None
 
 
 class Wound(Skill):  # 地走り
-    name, pose_id, startup, length = '地走り', 'war_wound', 5, 46
+    name, pose_id, startup, length = '地走り', 'war_wound', 5, 48
+    targets = ((.3, 0, 7.4),)
+    stagger = 11
 
     def scene(self, tick, camera):
-        faces, glow = [], []
+        faces = []
         since = tick - self.impact
         if since >= 0:
-            run = min(1, (since + 1) / 12)  # 7 m in 0.6 s
-            age = max(0, (since - 12) / 24)
-            q = (ground_quad((0, 0, 4.5), .5, 3.5), line_art(8, 112, run, age * .8, 9)); faces.append(q); glow.append(q)
-            for k in range(9):  # spikes popping up one by one behind the running crack
-                z = 1.4 + k * .72
-                born = since - (z - 1) / 7 * 12
+            run = min(1, (since + 1) / 12)
+            stage = stage_of(max(0, since - 10), 6)
+            length = 7 * run
+            faces.append((ground_quad((0, 0, .8 + length / 2), .8, max(.2, length / 2)), drag_decal(max(8, int(length * 16)), stage, 9)))
+            for k in range(10):  # blades breaking out one after another behind the running crack
+                z = 1.3 + k * .66
+                born = since - (z - .8) / 7 * 12
                 if born < 0: continue
-                h = min(1, (born + 1) / 2) * (1 if born < 16 else max(0, 1 - (born - 16) / 6)) * (.9 + .6 * _h(k, 1))
-                x = (.28 if k % 2 else -.28) + (_h(k) - .5) * .2
-                if h > .05: faces += spike((x, 0, z), .26, h * 1.4, lean=(x * .9, .25), yaw=k * .7)
-                if h > .05: glow.append((ground_quad((x, 0, z), .3, .3, k, .03), crack_art(8, 4, k, .2)))
-                if 0 <= born < 3:
-                    faces += Shards((x, .2, z), 4, 1.6, 40 + k, 2.2).faces(born / 20)
-        return faces, glow, None
+                h = min(1, (born + 1) / 2) * (1 if born < 16 else max(0, 1 - (born - 16) / 5)) * (1.0 + .7 * _h(k, 1))
+                x = (.3 if k % 2 else -.3) + (_h(k) - .5) * .2
+                if h > .05: faces += blade((x, 0, z), h, .5, k * .9, (x * .8, .22), k)
+                if 0 <= born < 4: faces += Plates((x, .2, z), 3, 1.8, 40 + k, 2.6).faces(born / 20)
+            faces += flame_cage(np.array(self.targets[0]), since - 11, .9, 7)
+        return faces, None
+
+    def target_hit(self, k): return self.impact + 11
 
 
 class Ult(Skill):  # 鉄槌
-    name, pose_id, startup, length = '鉄槌', 'war_ult', 10, 66
-    at = np.array((0, 0, 3.0))
+    name, pose_id, startup, length = '鉄槌', 'war_ult', 10, 70
+    at = np.array((0, 0, 3.2))
     falls = (14, 26, 38)
+    targets = ((0, 0, 3.2),)
 
     def swing(self, tick):
         for f in self.falls:
             if 0 <= tick - (f - 3) < 6: return (tick - (f - 3)) / 6
         return None
 
+    def target_hit(self, k): return None
+
     def scene(self, tick, camera):
-        faces, glow = [], []
+        faces = []
         for n, f in enumerate(self.falls):
             s = tick - f
-            big = 1 + .35 * n
-            # the hammer: drops in 4 ticks, rests 3, lifts and fades
-            if -4 <= s < 7:
-                y = 4.5 * (1 - min(1, (s + 4) / 4)) ** 2 if s < 0 else (0 if s < 3 else (s - 3) * .9)
-                head_lo = self.at + np.array((-1.0 * big, y, -.55 * big))
-                head_hi = self.at + np.array((1.0 * big, y + 1.0 * big, .55 * big))
-                faces += box(head_lo, head_hi, IRON)
-                glow += box(head_lo + (.05, -.01, .05), head_hi * np.array((1, 0, 1)) + (-.05, y + .08, -.05), RED, glow=True)
-                faces += box(self.at + (-.12, y + 1.0 * big, -.12), self.at + (.12, y + 3.6 * big, .12), (40, 34, 36))
+            big = 1 + .3 * n
+            if -4 <= s < 7:  # the hammer: riveted iron with a molten seam, slammed down and lifted away
+                y = 5.0 * (1 - min(1, (s + 4) / 4)) ** 2 if s < 0 else (0 if s < 3 else (s - 3) * 1.1)
+                faces += textured_box(self.at + (-1.1 * big, y, -.6 * big), self.at + (1.1 * big, y + 1.1 * big, .6 * big), hammer_tex())
+                faces += textured_box(self.at + (-.13, y + 1.1 * big, -.13), self.at + (.13, y + 3.8 * big, .13), iron_tex(4, 32, False, 1))
             if s >= 0:
-                age = min(1, s / 30)
-                q = (ground_quad(self.at, 2.6 * big, 2.6 * big), ring_art(64, 20 + 4 * n, age))
-                faces.append(q); glow.append(q)
-                q = (ground_quad(self.at, 2.4 * big, 2.4 * big, n, .03), crack_art(64, 7, n, age, min(1, (s + 1) / 3)))
-                faces.append(q); glow.append(q)
-                faces += Shards(self.at + (0, .4, 0), 14, 4.5 * big, 70 + n, 3.5).faces(s / 20)
-                rise = min(1, (s + 1) / 3) * (1 if s < 9 else max(0, 1 - (s - 9) / 5))
-                for k in range(6):
-                    a = k / 6 * math.tau + n
-                    base = self.at + np.array((math.sin(a), 0, math.cos(a))) * 2.0 * big
-                    if rise > .05: faces += spike(base, .25, (.9 + .5 * _h(k, n)) * rise * big, lean=(math.sin(a) * .5, math.cos(a) * .5), yaw=k)
-            faces += hit_flash(camera, self.at + (0, 1.6 * big, 0), s, n, .9 * big)
-            glow += hit_flash(camera, self.at + (0, 1.6 * big, 0), s, n, .9 * big)
-        return faces, glow, None
+                stage = stage_of(s, 8)
+                faces.append((ground_quad(self.at, 2.8 * big, 2.8 * big), ring_decal(96, stage)))
+                faces.append((ground_quad(self.at, 2.6 * big, 2.6 * big, n * .7, .03), crack_decal(96, 7, n + 1, stage, min(4, s + 2))))
+                faces += Plates(self.at + (0, .4, 0), 10, 4.6 * big, 70 + n, 4.0).faces(s / 20)
+                rise = min(1, (s + 1) / 2.5) * (1 if s < 9 else max(0, 1 - (s - 9) / 4))
+                for k in range(8):
+                    a = k / 8 * math.tau + n * .4
+                    base = self.at + np.array((math.sin(a), 0, math.cos(a))) * 2.2 * big
+                    if rise > .05: faces += blade(base, (1.0 + .6 * _h(k, n)) * rise * big, .32, -a, (math.sin(a) * .5, math.cos(a) * .5), k + n)
+            faces += flame_cage(self.at, s, 1.1 * big, n * 3)
+        return faces, None
 
-    def white_frame(self, tick):
-        return tick - self.falls[-1] in (0,)
+    def overlay(self, tick):
+        s = tick - self.falls[-1]
+        return s if 0 <= s < 6 else None
 
 
 SKILLS = {'dash': Dash, 'slam': Slam, 'whirl': Whirl, 'war_wound': Wound, 'war_guard': Guard, 'war_ult': Ult}
 
 
 # ---------------------------------------------------------------- render
-def make_camera(view):
-    label, eye, target = pc.VIEWS[view]
-    camera = pc.Camera(eye, target)
-    camera.cam_dir_light = camera.cam(camera.eye + np.array((.3, 1.0, -.5)) / np.linalg.norm((.3, 1.0, -.5)))
-    return label, camera
+VIEWS = {'behind': ('背後（F5視点）', (0.0, 3.2, -4.2), (0.0, .6, 4.0)), 'side': ('横から', (-6.4, 2.4, 2.0), (0.0, 1.0, 2.6))}
+
+
+def sky(image):
+    d = ImageDraw.Draw(image)
+    top, low = np.array((156, 146, 156)), np.array((196, 186, 190))
+    for y in range(pc.H):
+        d.line([(0, y), (pc.W, y)], fill=tuple(int(v) for v in top + (low - top) * (y / pc.H)))
+
+
+def target_faces(p, red):
+    lo, hi = (p[0] - .25, p[1], p[2] - .25), (p[0] + .25, p[1] + 1.5, p[2] + .25)
+    corners = [np.array([hi[j] if i & (1 << j) else lo[j] for j in range(3)]) for i in range(8)]
+    col = (220, 40, 40) if red else (176, 140, 112)
+    return [([corners[i] for i in ids], ('shade', col)) for _, ids in pc.FACES]
+
+
+def _ground_tiles():
+    tex, tiles = grass(), []
+    for i in range(13):
+        for j in range(13):
+            x, z = -13 + 2 * i + 1, -10 + 2 * j + 1
+            tiles.append((ground_quad((x, 0, z), 1, 1, 0, 0), tex.crop((i * 32, j * 32, i * 32 + 32, j * 32 + 32))))
+    return tiles
+
+
+GROUND = _ground_tiles()
 
 
 def render(skill, tick, view):
-    label, camera = make_camera(view)
-    image = Image.new('RGBA', (pc.W, pc.H), pc.BG + (255,))
-    pc.grid(image, camera)
+    label, eye, target = VIEWS[view]
+    camera = pc.Camera(eye, target)
+    camera.cam_dir_light = camera.cam(camera.eye + np.array((.3, 1.0, -.5)) / np.linalg.norm((.3, 1.0, -.5)))
+    image = Image.new('RGBA', (pc.W, pc.H), (0, 0, 0, 255))
+    sky(image)
+    pc.draw_faces(image, camera, GROUND)
     pos, yaw = skill.player(tick)
     faces, hand = pc.player_faces(pos, yaw, skill.swing(tick))
     scene = {'castTick': skill.cast, 'startup': skill.startup, 'id': skill.pose_id, 'pulses': 3}
     faces += pc.weapon_faces(hand, pc.weapon_pose(scene, tick))
-    extra, glow_faces, draw = skill.scene(tick, camera)
-    pc.draw_faces(image, camera, [(c, flat(v) if isinstance(v, tuple) and v[0] == 'glow' else v) for c, v in faces + extra])
-    # glowing things also go on a bloom layer
-    glow = Image.new('RGBA', (pc.W, pc.H), (0, 0, 0, 0))
-    pc.draw_faces(glow, camera, [(c, flat(v)) for c, v in glow_faces])
-    lines = Image.new('RGBA', (pc.W, pc.H), (0, 0, 0, 0))
-    if draw: draw(lines, glow, camera)
-    image.alpha_composite(lines)
-    bloom = np.array(glow.filter(ImageFilter.GaussianBlur(7))).astype(np.float32)
-    arr = np.array(image).astype(np.float32)
-    arr[..., :3] = np.minimum(255, arr[..., :3] + bloom[..., :3] * (bloom[..., 3:] / 255) * 1.1)
-    image = Image.fromarray(arr.astype(np.uint8))
-    if isinstance(skill, Ult) and skill.white_frame(tick):
-        g = np.array(image.convert('L')); image = Image.fromarray(np.where(g > 70, 0, 255).astype(np.uint8)).convert('RGBA')
+    for k, t in enumerate(skill.targets):
+        h = skill.target_hit(k)
+        faces += target_faces(np.array(t), h is not None and 0 <= tick - h < 6)
+    extra, draw = skill.scene(tick, camera)
+    pc.draw_faces(image, camera, faces + extra)
+    if draw:
+        lines = Image.new('RGBA', (pc.W, pc.H), (0, 0, 0, 0))
+        draw(lines, camera)
+        image.alpha_composite(lines)
+    if isinstance(skill, Ult) and skill.overlay(tick) is not None:
+        image.alpha_composite(screen_cracks(pc.W, pc.H, min(2, skill.overlay(tick) // 2)))
     d = ImageDraw.Draw(image)
-    d.text((10, 6), f"{skill.name}　{label}", font=pc.FONT, fill=(236, 226, 206))
+    d.text((10, 6), f"{skill.name}　{label}", font=pc.FONT, fill=(255, 255, 255), stroke_width=2, stroke_fill=(30, 26, 30))
     phase = '待機' if tick < skill.cast else '構え' if tick < skill.impact else '発動'
-    d.text((10, 28), f"{(tick - skill.cast) / 20:+.2f}秒　{phase}", font=pc.SMALL, fill=(170, 164, 154))
+    d.text((10, 28), f"{(tick - skill.cast) / 20:+.2f}秒　{phase}", font=pc.SMALL, fill=(240, 236, 230), stroke_width=2, stroke_fill=(30, 26, 30))
     return image.convert('RGB')
-
-
-def flat(v):
-    """Glowing faces fill flat (no face light); a plain RGB tuple is pc.draw_faces' unshaded fill."""
-    return v[1] if isinstance(v, tuple) else v
 
 
 def main():
