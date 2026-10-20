@@ -11,9 +11,34 @@ import numpy as np
 SAVES = os.path.expanduser("~/.minecraft/saves")
 LAUNCH = ("export __GL_THREADED_OPTIMIZATIONS=0; unset WAYLAND_DISPLAY; "
           "~/.local/opt/portablemc-5.0.5-linux-x86_64-gnu/portablemc start 26.3 -a -u MMOLOVER --join-world {w} --jvm-arg=-Xmx3G")
-HOLD = 120          # ticks per view (6 s)
+HOLD = 200          # ticks per view (10 s: far chunks need time to load)
 LEAD = 200          # ticks before the first view (chunks around spawn load)
 GEOM = "1920,0 1920x1080"
+
+
+def mc_window():
+    """The Minecraft window's (x, y, w, h) if it is actually on screen (on its monitor's active workspace), else None.
+    Never click or capture otherwise: the screen then shows the user's own windows."""
+    try:
+        cl = json.loads(subprocess.run(["hyprctl", "clients", "-j"], capture_output=True, text=True).stdout)
+        mons = json.loads(subprocess.run(["hyprctl", "monitors", "-j"], capture_output=True, text=True).stdout)
+    except Exception:
+        return None
+    active = {m["id"]: m["activeWorkspace"]["id"] for m in mons}
+    for c in cl:
+        if c.get("class") == "com.mojang.minecraft" and c.get("title", "").startswith("Minecraft 26") and c.get("mapped") and not c.get("hidden"):
+            if active.get(c["monitor"]) == c["workspace"]["id"]:
+                return (c["at"][0], c["at"][1], c["size"][0], c["size"][1])
+    return None
+
+
+def wait_window(timeout=60):
+    t = time.time() + timeout
+    while time.time() < t:
+        r = mc_window()
+        if r: return r
+        time.sleep(1)
+    return None
 
 
 def resolve(views, hi, up):
@@ -47,7 +72,7 @@ def make_pack(world, views):
     json.dump({"values": ["tour:tick"]}, open(os.path.join(d, "data", "minecraft", "tags", "function", "tick.json"), "w"))
     F = lambda n, s: open(os.path.join(d, "data", "tour", "function", n + ".mcfunction"), "w").write(s)
     F("load", f"scoreboard objectives add tour dummy\nscoreboard players set #t tour -{LEAD}\n")
-    tick = ["scoreboard players add #t tour 1", "effect give @a night_vision infinite 0 true"]
+    tick = ["execute if entity @a run scoreboard players add #t tour 1", "effect give @a night_vision infinite 0 true"]
     for i, (name, x, y, z, yaw, pitch) in enumerate(views):
         t = i * HOLD
         tick.append(f"execute if score #t tour matches {t} run gamemode spectator @a")
@@ -76,9 +101,15 @@ def main():
     while time.time() < t_end:
         txt = open(os.path.join(out, "client.log")).read()
         if clicked < 2 and "shulker_boxes.png-atlas" in txt:     # the old-format world asks to upgrade: load anyway, then "yes"
-            time.sleep(6 if clicked == 0 else 0)
-            subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "xclick.py"), "3038", "254"]); time.sleep(6)
-            subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "xclick.py"), "2724", "588"]); clicked = 2
+            time.sleep(6)
+            win = wait_window(90)
+            if not win:
+                print("マイクラの画面が見えていないので、クリックも撮影もしない（ワークスペースにマイクラを表示してね）"); subprocess.run("pkill -f Xmx3G", shell=True); return
+            wx, wy, ww, wh = win
+            here = os.path.join(os.path.dirname(os.path.abspath(__file__)), "xclick.py")
+            subprocess.run([sys.executable, here, str(wx + int(ww * .582)), str(wy + int(wh * .235))]); time.sleep(6)      # load anyway
+            if mc_window(): subprocess.run([sys.executable, here, str(wx + int(ww * .419)), str(wy + int(wh * .544))])   # yes
+            clicked = 2
         if "joined the game" in txt or "が世界に参加しました" in txt or "ゲームに参加しました" in txt:
             joined = time.time(); break
         time.sleep(1)
@@ -86,10 +117,13 @@ def main():
         print("client did not join in time"); return
     start = joined + LEAD / 20
     for i, v in enumerate(views):
-        at = start + i * HOLD / 20 + 5.0                               # near the end of the hold, chunks loaded
+        at = start + i * HOLD / 20 + 3.5                               # the join message comes ~5 s after the player exists
         while time.time() < at: time.sleep(.2)
         path = os.path.join(out, f"{i:02d}_{v[0]}.png")
-        subprocess.run(["grim", "-g", GEOM, path])
+        win = mc_window()
+        if not win:
+            print("skip (マイクラが画面に出ていない)", v[0], flush=True); continue
+        subprocess.run(["grim", "-g", f"{win[0]},{win[1]} {win[2]}x{win[3]}", path])
         print("shot", path, flush=True)
     subprocess.run("pkill -f Xmx3G", shell=True)
 

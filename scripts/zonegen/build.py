@@ -11,11 +11,19 @@ for st in ("macro", "lakes", "streams", "places", "obstacles", "roads", "solve",
 bl = Blocks(z); bl.build(); print("blocks", len(bl.b), round(time.time() - t0, 1), flush=True)
 c = kit.Ctx(z, bl)
 setpieces.bind(c)
+import places
+places.bind(c)
 for p in zone1.SPEC.get("pieces", []):
     x, zz = p["at"]
     if p["kind"] == "great_tree":
         c.reserve("大樹", x, zz, p["r"], allow_route=True)
+        places.knoll(x, zz + 2, 24, 9)
+        places.dungeon((x, zz), c.at(x, zz))
         greattree.build(bl, c.put, c.at, z.B, c.route, x, zz, c.mark, seed=77)
+    elif p["kind"] in ("rest", "fungal", "hollow", "wolf", "tower", "boulders"):
+        fn = {"rest": places.rest_point, "fungal": places.fungal, "hollow": places.root_hollow, "wolf": places.wolf_den,
+              "tower": places.tower, "boulders": places.boulders}[p["kind"]]
+        fn(x, zz)
     elif p["kind"] == "aqueduct":
         rx = int(min(range(150, 280), key=lambda xx: z.road_d[zz, xx]))
         x0 = rx - (4 * 12 + 3 + 4)
@@ -38,6 +46,12 @@ print("pillars", round(time.time() - t0, 1), flush=True)
 print("pieces", [(q["name"], q["clash"]) for q in c.pieces], round(time.time() - t0, 1), flush=True)
 nt = kit.forests(c, zone1.SPEC); print("trees", nt, round(time.time() - t0, 1), flush=True)
 kit.ground_cover(c); print("cover", round(time.time() - t0, 1), flush=True)
+for zc in range(z.B):                                           # solid ground under every column, whatever the pieces dug
+    for xc in range(z.B):
+        hc = int(z.hi[zc, xc])
+        for y in range(hc - 4, hc):
+            if (xc, y, zc) not in bl.b: bl.b[(xc, y, zc)] = ("full", "dirt", "dirt")
+        if (xc, hc, zc) not in bl.b: bl.b[(xc, hc, zc)] = ("full", "coarse_dirt", "coarse_dirt")
 for _ in range(3):                                              # tidy: loose single blocks left by diagonal tubes
     lone = [p for p, v in bl.b.items() if v[0] in ("full", "slab", "slab_t") and "leaves" not in v[1] and not any(
         (p[0] + a, p[1] + b2, p[2] + d) in bl.b for a, b2, d in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)))]

@@ -146,6 +146,8 @@ class Zone:
         self.obst = np.zeros((self.B, self.B), bool)
         for p in self.spec.get("pillars", []):
             self.obst |= np.hypot(self.xx - p[0], self.zz - p[1]) < p[3] + 5
+        for (x, z, r) in self.spec.get("obstacles", []):
+            self.obst |= np.hypot(self.xx - x, self.zz - z) < r
 
     # ---------------- 4 roads ----------------
     def route(self, a, b, kind):
@@ -200,6 +202,17 @@ class Zone:
             seq = [places[n]["at"] if isinstance(n, str) else n for n in e["via"]]
             for a, b in zip(seq, seq[1:]):                     # every leg is its own route with its own profile
                 self.lay_route(self.route(a, b, e["kind"]), e)
+        # junctions: a path meeting a road (or its verge) at another height eases to it, one block per block
+        rt = (self.kind == 1) | (self.kind == 7)
+        pth = self.kind == 2
+        H = self.H
+        for _ in range(30):
+            p = np.pad(np.where(rt | pth, H, np.nan), 1, constant_values=np.nan)
+            nb = np.stack([p[1:-1, 2:], p[1:-1, :-2], p[2:, 1:-1], p[:-2, 1:-1]])
+            with np.errstate(all="ignore"):
+                mn = np.nanmin(nb, 0); mx = np.nanmax(nb, 0)
+            H = np.where(pth, np.clip(H, np.nan_to_num(mx - .9, nan=-1e9), np.nan_to_num(mn + .9, nan=1e9)), H).astype(np.float32)
+        self.H = H
 
     def lay_route(self, pts, e):
         if True:
@@ -210,7 +223,7 @@ class Zone:
             fixed = np.full(len(prof), np.nan, np.float32)
             for i in range(len(prof)):                         # honour locked cells on the way (pads, earlier roads)
                 X, Z = int(round(pts[i][0])), int(round(pts[i][1]))
-                if self.kind[Z, X] in (1, 2, 5): fixed[i] = self.H[Z, X]
+                if self.kind[Z, X] in (1, 2, 5, 7): fixed[i] = self.H[Z, X]
             fx = ~np.isnan(fixed)
             for _ in range(60):
                 prof[fx] = fixed[fx]
