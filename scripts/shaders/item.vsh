@@ -80,6 +80,7 @@ void main() {
         vec2 c = vec2(corner == 1 || corner == 2 ? 1.0 : 0.0, corner >= 2 ? 1.0 : 0.0);
         if (((gl_VertexIndex >> 2) & 1) == 1) c = c.yx;
         vec4 near = ProjMat * vec4(0.0, 0.0, -0.2, 1.0);
+        if (!(near.w > 0.0)) near = vec4(0.0, 0.0, 0.0, 1.0);   // not a perspective projection: stay on screen
         vec2 ndc = -1.0 + 2.0 * c * vec2(LIGHT_PROBE_PIXELS, 1.0) / ScreenSize;
         gl_Position = vec4(ndc * near.w, near.z, near.w);
     }
