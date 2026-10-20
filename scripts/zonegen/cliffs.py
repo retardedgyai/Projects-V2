@@ -147,3 +147,79 @@ def sculpt(bl, Z, R):
                 b[(x, h + 1, z)] and b.pop((x, h + 1, z), None)
                 n_e += 1
     return dict(buttress=n_b, cracks=n_c, edges=n_e)
+
+
+def rockmass(bl, Z, x0, x1, z0, z1, R):
+    """A cliff built as a builder would sculpt it: the face is a pile of big rock plates (rounded, tilted boxes of
+    different sizes), each plate one family of stone so it reads as one rock, overlapping and stepping out so their
+    undersides throw shadow. Tops carry turf and moss, undersides are the darkest stone, joints between plates are dark."""
+    b = bl.b; hi = Z.hi; kind = Z.kind; B = Z.B
+    route = (kind == 1) | (kind == 2) | (kind == 3) | (kind == 4) | (kind == 7)
+    # the face line: for each x, the z where the ground drops most toward the south
+    line = []
+    for x in range(x0, x1 + 1):
+        col = hi[z0:z1, x].astype(int)
+        d = np.diff(col)
+        i = int(np.argmin(d))
+        if d[i] > -3: continue
+        zf = z0 + i
+        top, low = int(hi[zf, x]), int(hi[min(B - 1, zf + 6), x])
+        line.append((x, zf, top, low))
+    FAM = [("stone", "andesite", "cobblestone"), ("andesite", "stone", "tuff"), ("tuff", "cobbled_deepslate", "andesite"),
+           ("stone", "stone", "andesite"), ("cobblestone", "andesite", "mossy_cobblestone")]
+    plates = []
+    i = 0
+    while i < len(line):
+        x, zf, top, low = line[i]
+        H = top - low
+        w = R.randint(5, 11)
+        y = low
+        while y < top - 1:                                             # plates stacked up the face, each set a little back
+            h = R.randint(3, 6)
+            plates.append(dict(c=(x + w / 2 + R.uniform(-1, 1), y + h / 2, zf + R.uniform(-.5, 2.5) - (y - low) / max(1, H) * 3),
+                               hs=(w / 2 + R.uniform(0, 1.5), h / 2 + .3, R.uniform(1.5, 3.2)), r=R.uniform(.6, 1.4),
+                               yaw=R.uniform(-.25, .25), tilt=R.uniform(-.18, .18), fam=R.choice(FAM)))
+            y += h - R.randint(0, 1)
+        i += max(1, int(w * R.uniform(.6, .9)))
+    filled = {}
+    for k, p in enumerate(plates):
+        cx, cy, cz = p["c"]; ax, ay, az = p["hs"]; r = p["r"]
+        cyaw, syaw = math.cos(p["yaw"]), math.sin(p["yaw"]); ct, st = math.cos(p["tilt"]), math.sin(p["tilt"])
+        R_ = int(max(ax, ay, az) + r + 2)
+        for X in range(int(cx) - R_, int(cx) + R_ + 1):
+            for Y in range(int(cy) - R_, int(cy) + R_ + 1):
+                for Zc in range(int(cz) - R_, int(cz) + R_ + 1):
+                    if not (0 <= X < B and 0 <= Zc < B) or route[Zc, X]: continue
+                    px, py, pz = X - cx, Y - cy, Zc - cz
+                    px, pz = px * cyaw - pz * syaw, px * syaw + pz * cyaw         # yaw
+                    py, px = py * ct - px * st, py * st + px * ct                 # tilt (bedding dips along the face)
+                    qx, qy, qz = abs(px) - ax + r, abs(py) - ay + r, abs(pz) - az + r
+                    d = math.sqrt(max(qx, 0) ** 2 + max(qy, 0) ** 2 + max(qz, 0) ** 2) + min(max(qx, qy, qz), 0) - r
+                    d += (noise3(X, Y, Zc, 411 + k, 2.0) - .5) * .9
+                    if d < 0 and Y > hi[Zc, X] - 4:
+                        filled[(X, Y, Zc)] = k
+    for (X, Y, Zc), k in filled.items():
+        fam = plates[k]["fam"]
+        above = (X, Y + 1, Zc) in filled or ((X, Y + 1, Zc) in b and b[(X, Y + 1, Zc)][0] == "full")
+        below = (X, Y - 1, Zc) in filled or (X, Y - 1, Zc) in b
+        joint = any(filled.get((X + a, Y + c, Zc + e), k) != k for a, c, e in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)))
+        if not above and Y >= hi[Zc, X] - 1 and _h(X, Y, Zc, 412) < .7:
+            m = "moss_block" if _h(X, Y, Zc, 413) < .55 else "grass_block_top"
+        elif not below:
+            m = "cobbled_deepslate" if _h(X, Y, Zc, 414) < .6 else "deepslate"
+        elif joint:
+            m = "tuff" if _h(X, Y, Zc, 415) < .5 else "cobbled_deepslate"
+        else:
+            v = noise3(X, Y * .5, Zc, 416 + k, 2.5)
+            m = fam[0] if v < .55 else fam[1] if v < .85 else fam[2]
+        b[(X, Y, Zc)] = ("full", m, "grass_block_side" if m == "grass_block_top" else m)
+        if m in ("moss_block", "grass_block_top") and (X, Y + 1, Zc) not in b and _h(X, Y, Zc, 417) < .3:
+            b[(X, Y + 1, Zc)] = ("plant", "fern" if _h(X, Y, Zc, 418) < .5 else "short_grass", "fern")
+    # hanging roots and vines from the deepest undersides
+    for (X, Y, Zc), k in filled.items():
+        if (X, Y - 1, Zc) not in b and _h(X, Y, Zc, 419) < .12:
+            for j in range(1, 2 + int(_h(X, Y, Zc, 420) * 5)):
+                q = (X, Y - j, Zc)
+                if q in b or Y - j <= hi[Zc, X]: break
+                b[q] = ("plant", "hanging_roots" if j < 3 else "vine", "vine")
+    return dict(plates=len(plates), blocks=len(filled))

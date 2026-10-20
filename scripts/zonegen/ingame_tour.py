@@ -27,9 +27,19 @@ def mc_window():
     active = {m["id"]: m["activeWorkspace"]["id"] for m in mons}
     for c in cl:
         if c.get("class") == "com.mojang.minecraft" and c.get("title", "").startswith("Minecraft 26") and c.get("mapped") and not c.get("hidden"):
-            if active.get(c["monitor"]) == c["workspace"]["id"]:
+            if active.get(c["monitor"]) == c["workspace"]["id"] and c["monitor"] == 1:   # only on DP-3
                 return (c["at"][0], c["at"][1], c["size"][0], c["size"][1])
     return None
+
+
+def to_dp3():
+    """The user keeps monitor DP-3 free for the game: put our window there (never leave it on their main screen)."""
+    try:
+        mons = json.loads(subprocess.run(["hyprctl", "monitors", "-j"], capture_output=True, text=True).stdout)
+        ws = [m["activeWorkspace"]["id"] for m in mons if m["name"] == "DP-3"][0]
+        subprocess.run(["hyprctl", "dispatch", "movetoworkspacesilent", f"{ws},class:com.mojang.minecraft"], capture_output=True)
+    except Exception:
+        pass
 
 
 def wait_window(timeout=60):
@@ -100,6 +110,7 @@ def main():
     clicked = 0
     while time.time() < t_end:
         txt = open(os.path.join(out, "client.log")).read()
+        if "shulker_boxes.png-atlas" in txt: to_dp3()
         if clicked < 2 and "shulker_boxes.png-atlas" in txt:     # the old-format world asks to upgrade: load anyway, then "yes"
             time.sleep(6)
             win = wait_window(90)

@@ -8,7 +8,11 @@ t0 = time.time()
 z = Zone(zone1.SPEC)
 for st in ("macro", "lakes", "streams", "places", "obstacles", "roads", "solve", "detail", "quantize"):
     getattr(z, st)(); print(st, round(time.time() - t0, 1), flush=True)
-bl = Blocks(z); bl.build(); print("blocks", len(bl.b), round(time.time() - t0, 1), flush=True)
+bl = Blocks(z); bl.build()
+import cliffs as _cl, random as _rnd
+# rockmass trial (2026-10-20): reads as confetti, not as plates; off until reworked
+# print("rockmass", _cl.rockmass(bl, z, 305, 385, 150, 200, _rnd.Random(7)), flush=True)
+if True: print("blocks", len(bl.b), "cliffs", bl.cliff_stats, round(time.time() - t0, 1), flush=True)
 c = kit.Ctx(z, bl)
 setpieces.bind(c)
 import places
