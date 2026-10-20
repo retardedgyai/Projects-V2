@@ -33,23 +33,28 @@ internal object CoreWarriorRefChoreography {
                  ground: Boolean = true, roll: Double = 0.0, billboard: Boolean = false) =
             CoreCombatMeshPart("$PREFIX$name", "steel", at, Vec(scale, scale, scale), yaw = partYaw, pitch = pitch, roll = roll,
                 durationTicks = life, startSize = 1.0, endSize = 1.0, delayTicks = delay, ground = ground, billboard = billboard)
-        val impact = 3.6  // the blow lands ahead of where the lunge ends
-        val centre = local(0.0, .12, impact)
-        val chest = local(0.0, 1.1, impact)
         val out = mutableListOf<CoreCombatMeshPart>()
-        // 地割り, the Chained Colossus: the ground splits and the buried giant's fingers break out in a row on both sides
-        // of the crack, one after another, throw the enemy up, close over the line and drag back under.
-        val start = 1.4
-        val length = 7.0
-        out += part("gcrack", local(0.0, .12, start + length / 2), 1.0, yaw, 46).copy(scale = Vec(1.5, 1.0, length))
-        for (f in 0 until 6) {
-            val side = if (f % 2 == 0) -1.0 else 1.0
-            val base = local(side * .85, .12, start + .8 + f * 1.05)
-            val size = 1.0 - f * .04
-            // Facing the crack: the finger curls toward the line.
-            val face = yaw - side * PI / 2
-            for (seg in 0 until 3) out += part("fing${f * 3 + seg}", base, size, face, 40, delay = f, ground = seg == 0)
+        // 地割り in the Guts mood (Creator 2026-10-20): no light, the weight alone. The slab lands, the ground caves in a
+        // crater, a dark crack runs on, clods are thrown up along it (the knock-up) and tumble back, dust rolls out,
+        // and the swing leaves a dark band of wind.
+        val impact = 1.9
+        val length = 6.0
+        out += part("wind", local(.3, 1.9, 2.0), 5.0, yaw + PI / 2 - 1.15, 8, ground = false)
+        out += part("crater", local(0.0, .12, impact), 3.4, yaw, 44)
+        out += part("dcrack", local(0.0, .12, impact + 1.2 + length / 2), 1.0, yaw, 42, delay = 1).copy(scale = Vec(1.6, 1.0, length))
+        for (k in 0 until 16) {
+            val along = impact + .4 + (k / 2) * (length + .6) / 8
+            val side = if (k % 2 == 0) -1.0 else 1.0
+            out += part("clod$k", local(side * (.3 + .5 * hash(k, 61)), .2, along), .45 + .35 * hash(k, 62), yaw + hash(k, 63) * 6.0,
+                22, ground = false, delay = k / 2)
         }
+        for (k in 0 until 7) {
+            val a = yaw + k / 7.0 * 2 * PI
+            out += part("dust$k", local(0.0, .7, impact).add(sin(a) * 1.3, 0.0, cos(a) * 1.3), 1.6 + .6 * hash(k, 64), 0.0, 18,
+                ground = false, delay = 1 + k % 3, billboard = true, roll = hash(k, 65) * 6.0)
+        }
+        for (k in 0 until 5) out += part("dust${10 + k}", local((hash(k, 66) - .5) * 1.2, .6, impact + 1.6 + k * 1.2), 1.2, 0.0, 16,
+            ground = false, delay = 2 + k, billboard = true, roll = hash(k, 67) * 6.0)
         return out
     }
 
@@ -68,6 +73,21 @@ internal object CoreWarriorRefChoreography {
                 CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/fissure_$stage", live)
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
+            name == "wind" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/wind_${tick.coerceAtMost(7)}", live)
+            name == "crater" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
+                "$DIR/crater_${when { tick < 34 -> 0; tick < 39 -> 1; else -> 2 }}", live)
+            name == "dcrack" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
+                "$DIR/dcrack_${when { tick < 32 -> 0; tick < 37 -> 1; else -> 2 }}", live)
+            name.startsWith("clod") -> {
+                val k = name.removePrefix("clod").toInt()
+                val s = t.coerceAtLeast(0.0) / 20.0
+                val y = (6.5 + 3.0 * hash(k, 71)) * s - 18.0 * s * s / 2
+                val a = p.yaw
+                CoreMeshPose(p.offset.add(sin(a) * .8 * s, max(y, -.1), cos(a) * .8 * s), p.scale, p.yaw + t * .3, t * .45, t * .25,
+                    "$DIR/clod", live)
+            }
+            name.startsWith("dust") -> CoreMeshPose(p.offset.add(0.0, t.coerceAtLeast(0.0) * .02, 0.0), p.scale.mul(1.0 + tick * .05),
+                0.0, 0.0, p.roll, "$DIR/dust_${(tick * 5 / p.durationTicks).coerceAtMost(4)}", live)
             name.startsWith("fing") -> {
                 val idx = name.removePrefix("fing").toInt()
                 val seg = idx % 3

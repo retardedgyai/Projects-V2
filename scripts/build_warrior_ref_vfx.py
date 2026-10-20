@@ -592,6 +592,84 @@ def finger_segment(iron, chain, bone, length, width, nail):
     return {'textures': {'iron': iron, 'chain': chain, 'bone': bone, 'particle': iron}, 'elements': els}
 
 
+# ---------------------------------------------------------------- 地割り, the Guts mood (2026-10-20, Creator: 「ベルセルクの
+# ガッツみたいな雰囲気」). No light, no summoning: the weight alone. A crater caved in where the slab lands, a dark crack
+# running on, clods of earth thrown up and tumbling, dust rolling out, and the swing leaving a dark band of wind.
+EARTH = ((112, 92, 74), (96, 78, 62), (128, 108, 88), (78, 62, 50))
+SHADOW = (46, 38, 34)
+DUST = ((150, 138, 124), (128, 116, 104), (172, 160, 146))
+
+
+def crater_pixels(stage):
+    """48 x 48 seen from above: a raised broken rim, the floor sunk into shadow, black cracks out from the centre."""
+    img = Image.new('RGBA', (48, 48), (0, 0, 0, 0))
+    px = img.load()
+    c = 23.5
+    for y in range(48):
+        for x in range(48):
+            d = math.hypot(x - c, y - c) + 2.2 * (_h(x // 2, y // 2, 3) - .5)
+            v = _h(x // 2, y // 2, 7)
+            if d > 22: continue
+            if d > 18: col = EARTH[2] if v > .45 else EARTH[0]                 # the thrown-up rim
+            elif d > 15: col = EARTH[1] if v > .3 else EARTH[3]
+            elif d > 8: col = EARTH[3] if v > .35 else SHADOW                   # the sunken floor
+            else: col = SHADOW if v > .25 else (30, 24, 22)
+            px[x, y] = col + (255,)
+    d = ImageDraw.Draw(img)
+    for k in range(7):                                                         # black cracks from the centre
+        a = k / 7 * math.tau + .4
+        pts, x, y = [(c, c)], c, c
+        for s_ in range(6):
+            a += (_h(k, s_, 9) - .5) * .7
+            x += math.cos(a) * 3.6; y += math.sin(a) * 3.6; pts.append((x, y))
+        d.line(pts, fill=(20, 16, 14, 255), width=2 if k % 2 else 1)
+    if stage: img = dissolve(img, (0, .35, .7)[stage], 13)
+    return img
+
+
+def dark_crack(stage, length=112, width=24, seed=23):
+    """The crack with no light: a jagged black gap, a lit lip on one side and loose earth along it."""
+    img = chasm_pixels(3, length, width, seed)
+    px = img.load()
+    for y in range(length):
+        for x in range(width):
+            r, g, b, a = px[x, y]
+            if a and (r, g, b) not in (WALL_LIT, WALL_DARK, STONE_T[2]): px[x, y] = (22, 18, 16, 255)
+            elif a and (r, g, b) == WALL_LIT: px[x, y] = EARTH[2] + (255,)
+            elif a and (r, g, b) == WALL_DARK: px[x, y] = EARTH[3] + (255,)
+    if stage: img = dissolve(img, (0, .4, .75)[stage], 17)
+    return img
+
+
+def dust_puff(frame, seed=0):
+    """A puff of dust as a lumpy pixel cloud: three tones in 2 px clusters, swelling then thinning out."""
+    img = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+    px = img.load()
+    r = (7, 10, 12, 13, 14)[frame]
+    for y in range(32):
+        for x in range(32):
+            lump = 2.5 * math.sin(math.atan2(y - 16, x - 16) * 5 + seed) + 1.5 * _h(x // 3, y // 3, seed)
+            if math.hypot(x - 16, y - 16) > r + lump: continue
+            v = _h(x // 2, y // 2, seed, 4)
+            col = DUST[2] if v > .7 and y < 16 else DUST[1] if v < .3 or y > 20 else DUST[0]
+            px[x, y] = col + ((215, 200, 170, 120, 70)[frame],)
+    return dissolve(img, (0, 0, .15, .4, .65)[frame], seed + 9) if frame > 1 else img
+
+
+def wind_band(frame):
+    """The swing's dark trail: the blade's crescent in near-black and grey, see-through, burning away from its tail."""
+    img = slash_texture(min(frame, 7))
+    px = img.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            if not a: continue
+            lum = (r + g + b) / 3
+            tone = (196, 188, 180) if lum > 230 else (88, 82, 80) if lum > 150 else (36, 32, 32)
+            px[x, y] = tone + (int(a * .8),)
+    return img
+
+
 def lump_model(top, side, under, seed):
     """A lump of ground: a main box and 1-2 smaller ones stuck on, base at y=8, all with grass on top."""
     def f(t, uv): return {'texture': t, 'uv': uv}
@@ -709,6 +787,15 @@ def build(assets, write):
         model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', glow(twinkle_texture(st)))))
     for st in range(4):
         model(f'gcrack_{st}', ground_model(texture(f'gcrack_{st}', chasm_pixels(st))))
+    for st in range(3):
+        model(f'crater_{st}', ground_model(texture(f'crater_{st}', crater_pixels(st))))
+        model(f'dcrack_{st}', ground_model(texture(f'dcrack_{st}', dark_crack(st))))
+    for f in range(5):
+        model(f'dust_{f}', centred_model(texture(f'dust_{f}', dust_puff(f))))
+    for f in range(8):
+        model(f'wind_{f}', centred_model(texture(f'wind_{f}', wind_band(f))))
+    model('clod', lump_model(texture('clod_top', block_tex(EARTH, 31)), texture('clod_side', block_tex(EARTH, 32)),
+                             texture('clod_under', block_tex(EARTH, 33)), 4))
     iron, chain, bone = texture('colossus_iron', iron_plate(3)), texture('colossus_chain', chain_band(4)), texture('colossus_bone', bone_tex(5))
     for n, (length, width) in enumerate(FINGER):
         model(f'finger_{n}', finger_segment(iron, chain, bone, length, width, n == 2))
