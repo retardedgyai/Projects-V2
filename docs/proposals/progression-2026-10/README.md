@@ -10,3 +10,4 @@
 - `territory-life.html` — Albion 型の領地の一生（宣戦布告・領地戦・維持費・荒れる）を動かす見本。
 - `horn-gear-ideas.html` — 枝角を装備で使う14案（☆で選ぶ）。
 - `unique-traits.html` — 装備の層と、桜牙の型・桜角の首飾りのユニーク特性を組む見本。
+- `sakura-map.html` — 桜牙獣の素材の流れを1枚で見る全体図（いちばん新しい）。公開版 https://claude.ai/artifact/M1QDTSnWbrUuTmh6ZTbT2Q
