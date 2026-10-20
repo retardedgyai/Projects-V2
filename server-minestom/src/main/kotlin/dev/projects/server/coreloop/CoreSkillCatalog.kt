@@ -18,6 +18,8 @@ data class CoreSkillDefinition(
     val retired: Boolean = false,
     /** Put on every enemy a hit lands on; bosses take it as break gauge damage instead. */
     val crowd: CrowdControl? = null, val crowdMillis: Long = 0,
+    /** A second crowd control put on with the first, lasting this long from the hit (地割り: thrown up, then stunned). */
+    val stunAfterMillis: Long = 0,
 ) {
     val tags get() = buildSet {
         add(CoreAttackTag.SKILL)
@@ -48,7 +50,8 @@ data class CoreSkillDefinition(
         add("${journey?.job?.resourceName ?: "固有資源"}：必要 $spend / 命中で +$gain")
         add("マナ $mana / 再使用 ${CoreCombatMath.number(cooldownTicks(sheet.mods) / 20.0)}秒")
         add("発生 ${CoreCombatMath.number(startupTicks(sheet) / 20.0)}秒 / ${if (type == CoreDamageType.MAGICAL) "詠唱速度" else "攻撃速度"}で短縮")
-        if(crowd != null) add("${crowd.label} ${CoreCombatMath.number(crowdMillis / 1000.0)}秒（ボスには効かない）")
+        if(crowd != null) add("${crowd.label} ${CoreCombatMath.number(crowdMillis / 1000.0)}秒" +
+            (if (stunAfterMillis > 0) "→スタン ${CoreCombatMath.number((stunAfterMillis - crowdMillis) / 1000.0)}秒" else "") + "（ボスには効かない）")
         if (journey != null && !retired) {
             val breakPower = CoreBreak.skill(journey.job, icon)
             if (breakPower > 0) add(if (journey.job == CoreClass.WARRIOR && icon == "slam")
@@ -176,7 +179,7 @@ object CoreSkillCatalog {
             // Rage never gates a normal skill: the slam pours all of it in, the sweep takes 30, the cap starts a rampage (CoreWarriorRules).
             CoreClass.WARRIOR -> listOf(
                 s("轟進", "dash", "鉄塊の刃を突き出して突っ込み、敵を怯ませる。闘気を得る", CoreSkillMotion.LUNGE, 6.0, 1.2, mana=8, cd=100, startup=5).cc(CrowdControl.FLINCH, 300),
-                s("地割り", "slam", "溜めた闘気を全部叩き込んで地を割る。正面の敵はスタン。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE).cc(CrowdControl.STUN, 1000),
+                s("地割り", "slam", "溜めた闘気を全部叩き込んで地を割る。正面の敵を打ち上げ、落ちた後もスタン。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE).cc(CrowdControl.AIRBORNE, 700).copy(stunAfterMillis = 1500),
                 s("押し薙ぎ", "whirl", "前方180度を一度で薙ぎ、正面の敵をまとめて押し出す", CoreSkillMotion.CONE, 10.0, 2.0, mana=10, cd=200, startup=4, gain=0, radius=4.2).cc(CrowdControl.KNOCKBACK, 400),
                 s("根張り", "war_guard", "2秒踏みとどまって被害を減らし、受けた攻撃を闘気に変える。反撃は付かない", CoreSkillMotion.GUARD, 0.0, 0.0, mana=8, cd=400, startup=1, gain=0, duration=40),
                 s("地走り", "war_wound", "前方7mの地面に亀裂を走らせ、線上の敵の足を止める。闘気を得る", CoreSkillMotion.CONE, 5.0, 1.3, mana=8, cd=320, startup=3, radius=7.0).cc(CrowdControl.ROOT, 1500),

@@ -694,7 +694,11 @@ internal class CorePlayerCombat(
             val amount = if (skill) skillAction?.breakAmount ?: 0.0
                 else CoreBreak.normal(classId, heavy) * if (raging) CoreBreak.RAMPAGE else 1.0
             enemies.applyBreak(id, amount, player)
-        } else if (crowd != null) enemies.applyCrowdControl(id, crowd.first, crowd.second, player)
+        } else if (crowd != null) {
+            // 地割り: the stun is put on first so it outlasts the launch; the launch then throws the target up.
+            if ((definition?.stunAfterMillis ?: 0) > 0) enemies.applyCrowdControl(id, CrowdControl.STUN, definition!!.stunAfterMillis, player)
+            enemies.applyCrowdControl(id, crowd.first, crowd.second, player)
+        }
         val venom = stats.bonus(CoreAffixStat.ASS_VENOM)
         if (classId == CoreClass.ASSASSIN && ((venom > 0 && definition?.status == CoreSkillStatus.MARK) ||
                 (!skill && build.keystone == 2 && classState.marked(id, tickNumber)))) {
