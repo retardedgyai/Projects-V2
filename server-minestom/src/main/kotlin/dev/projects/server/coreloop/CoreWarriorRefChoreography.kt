@@ -60,14 +60,18 @@ internal object CoreWarriorRefChoreography {
         out += part("furrow", local(0.0, .12, impact - .6 + furrow / 2), 1.0, yaw, 44).copy(scale = Vec(furrow, 1.0, furrow))
         // The furrow's lips: turf torn up along both edges and tipped outward, biggest at the blow, coming up as the
         // furrow runs out (4 ticks for its whole length).
-        for (jj in 0 until 9) {
-            val tt = 1.0 - jj / 9.0                                        // 1 at the blow .. 0 far ahead
-            val along = impact - .4 + (1 - tt) * (furrow - .6)
-            val hw = (1.2 + 12.5 * tt.pow(1.4)) / 16.0
+        // Irregular on purpose (Creator: not tiles): sizes, gaps, tilt and shape differ piece by piece, a few gaps left.
+        for (jj in 0 until 12) {
             for ((n, side) in listOf(-1.0, 1.0).withIndex()) {
                 val k = jj * 2 + n
-                out += part("turf$k", local(side * (hw + .25), .12, along + (hash(k, 91) - .5) * .3), .55 + .75 * tt,
-                    yaw + (hash(k, 92) - .5) * .5, 34 - jj, delay = ((1 - tt) * 4).toInt(), roll = -side * (.45 + .3 * hash(k, 93)))
+                if (hash(k, 94) < .2) continue                             // a gap here and there
+                val tt = (1.0 - (jj + hash(k, 95) * .8) / 12.0).coerceIn(0.0, 1.0)   // 1 at the blow .. 0 far ahead
+                val along = impact - .4 + (1 - tt) * (furrow - .6)
+                val hw = (1.2 + 12.5 * tt.pow(1.4)) / 16.0
+                val size = (.35 + .8 * tt) * (.6 + .8 * hash(k, 96))
+                out += part("turf$k", local(side * (hw + .15 + .2 * hash(k, 91)), .12, along), size,
+                    yaw + (hash(k, 92) - .5) * 1.4, 34 - jj, delay = ((1 - tt) * 4).toInt(),
+                    roll = -side * (.15 + .8 * hash(k, 93)), pitch = (hash(k, 97) - .5) * .5)
             }
         }
         // Clods thrown up at the furrow's head as it runs (the knock-up), grass-topped turf among the earth.
@@ -117,8 +121,9 @@ internal object CoreWarriorRefChoreography {
                     tick < p.durationTicks - 7 -> 1.0
                     else -> 1.0 - (tick - (p.durationTicks - 7)) / 6.0
                 }.coerceIn(0.0, 1.2)
-                CoreMeshPose(p.offset.add(0.0, -p.scale.y() * .3 * (1 - up.coerceAtMost(1.0)), 0.0), p.scale, p.yaw, 0.0,
-                    p.roll * up, "$DIR/turf", live)
+                val k = name.removePrefix("turf").toInt()
+                CoreMeshPose(p.offset.add(0.0, -p.scale.y() * .3 * (1 - up.coerceAtMost(1.0)), 0.0), p.scale, p.yaw, p.pitch * up,
+                    p.roll * up, "$DIR/turf_${(hash(k, 98) * 3).toInt().coerceAtMost(2)}", live)
             }
             name.startsWith("clod") -> {
                 val k = name.removePrefix("clod").toInt()

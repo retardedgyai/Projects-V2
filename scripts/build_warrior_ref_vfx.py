@@ -883,12 +883,19 @@ def build(assets, write):
         model(f'crater_{st}', ground_model(texture(f'crater_{st}', crater_pixels(st))))
         model(f'dcrack_{st}', ground_model(texture(f'dcrack_{st}', dark_crack(st))))
     grass_top, turf_side = texture('turf_top', block_tex(GRASS, 51)), texture('turf_side', grass_side(52))
-    model('turf', {'textures': {'top': grass_top, 'side': turf_side, 'under': texture('turf_under', block_tex(EARTH, 53)),
-                                'particle': turf_side}, 'elements': [
-        {'from': [2, 8, 3], 'to': [14, 12, 13], 'faces': {
-            'up': {'texture': '#top', 'uv': [2, 3, 14, 13]}, 'down': {'texture': '#under', 'uv': [2, 3, 14, 13]},
-            'north': {'texture': '#side', 'uv': [2, 0, 14, 4]}, 'south': {'texture': '#side', 'uv': [2, 0, 14, 4]},
-            'east': {'texture': '#side', 'uv': [3, 0, 13, 4]}, 'west': {'texture': '#side', 'uv': [3, 0, 13, 4]}}}]})
+    def turf_box(lo, hi):
+        def f(t, uv): return {'texture': t, 'uv': uv}
+        return {'from': lo, 'to': hi, 'faces': {
+            'up': f('#top', [lo[0], lo[2], hi[0], hi[2]]), 'down': f('#under', [lo[0], lo[2], hi[0], hi[2]]),
+            'north': f('#side', [lo[0], 0, hi[0], hi[1] - lo[1]]), 'south': f('#side', [lo[0], 0, hi[0], hi[1] - lo[1]]),
+            'east': f('#side', [lo[2], 0, hi[2], hi[1] - lo[1]]), 'west': f('#side', [lo[2], 0, hi[2], hi[1] - lo[1]])}}
+    turf_tex = {'top': grass_top, 'side': turf_side, 'under': texture('turf_under', block_tex(EARTH, 53)), 'particle': turf_side}
+    # Three torn shapes so the lips are not tiles: a whole slab, one with a corner broken off, two plates overlapping.
+    TURFS = [[turf_box([2, 8, 3], [14, 12, 13])],
+             [turf_box([2, 8, 3], [10, 12, 13]), turf_box([10, 8, 6], [14, 11, 13])],
+             [turf_box([1, 8, 4], [9, 11, 12]), turf_box([6, 9.5, 2], [15, 13, 10])]]
+    for n, els in enumerate(TURFS):
+        model(f'turf_{n}', {'textures': turf_tex, 'elements': els})
     model('turfclod', lump_model(grass_top, turf_side, texture('turf_under', block_tex(EARTH, 53)), 7))
     for st in range(7):
         # Square texture (a tall one reads as an animation strip): the furrow down the middle third.
