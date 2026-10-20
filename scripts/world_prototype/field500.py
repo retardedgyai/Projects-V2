@@ -159,7 +159,7 @@ for kind, pts_list in (("road", ROADS), ("path", PATHS)):
         prof = np.array([sample(sm, x, z) for x, z in pl], np.float32)
         prof = np.convolve(np.pad(prof, 6, mode="edge"), np.ones(13) / 13, "valid")
         seg = np.r_[0, np.hypot(*np.diff(pl, axis=0).T)]
-        MAXG = .2
+        MAXG = .12 if kind == "road" else .16                       # gentler grades: steps on the road come 8+ blocks apart
         for _ in range(30):
             for i in range(1, len(prof)): prof[i] = np.clip(prof[i], prof[i - 1] - MAXG * seg[i], prof[i - 1] + MAXG * seg[i])
             for i in range(len(prof) - 2, -1, -1): prof[i] = np.clip(prof[i], prof[i + 1] - MAXG * seg[i + 1], prof[i + 1] + MAXG * seg[i + 1])
@@ -597,7 +597,7 @@ while a0 < math.tau - .2:                                          # the wall: r
     p0 = (BX + math.cos(a0) * RAD(a0), bg - 1, BZ + math.sin(a0) * RAD(a0))
     p2 = (BX + math.cos(a1) * RAD(a1), bg - 1, BZ + math.sin(a1) * RAD(a1))
     am = (a0 + a1) / 2
-    hgt = R.choice([R.uniform(5, 9), R.uniform(12, 18), R.uniform(18, 26)])
+    hgt = R.choice([R.uniform(13, 18), R.uniform(18, 26)])           # no low croquet hoops
     apex = (BX + math.cos(am) * (RAD(am) + R.uniform(-4, 3)), bg + hgt, BZ + math.sin(am) * (RAD(am) + R.uniform(-4, 3)))
     root_arch(p0, apex, p2, R.uniform(1.8, 3.2), R.uniform(1.2, 2.0), follow=False)
     a0 = a1 - R.uniform(.05, .15)
@@ -1301,7 +1301,7 @@ def landing_torii(samples, d, at_start, half=3, h=11):
 
 
 landing_torii(BR1, D1, at_start=False)                              # arriving on pillar 2
-landing_torii(BR2, D2, at_start=True)                               # leaving pillar 2 toward the boss
+pass                                                                 # (second torii in a row removed)
 P0x, P0z, P0y, _, P0r, _ = PILLARS[0]
 for (dx, dz) in ((0, -int(P0r * .6)),):                             # a single small torii marks the start of the sando on the first pillar
     torii(P0x + dx, P0z + dz + 6, P0y, 0, 1, half=3, h=10)
@@ -1551,8 +1551,8 @@ for k2 in range(1, 9):
             stone_lantern(int(round(lx0 - uz2 * s2)), int(round(lz0 + ux2 * s2)), SY_)
 # the sacred sakura (goshinboku) behind the arena, opposite the entrance, wrapped in a shimenawa
 back = ent_a + math.pi
-GX_, GZ_ = int(round(SX_ + math.cos(back) * (AR + 12))), int(round(SZ_ + math.sin(back) * (AR + 12)))
-sakura_tree(GX_, GZ_, SY_, size=3.0)
+GX_, GZ_ = int(round(SX_ + math.cos(back) * (AR + 15))), int(round(SZ_ + math.sin(back) * (AR + 15)))
+sakura_tree(GX_, GZ_, SY_, size=2.2)            # behind the ring, so the fight is under open sky
 for k2 in range(48):
     a = k2 / 48 * math.tau
     x, z = int(round(GX_ + math.cos(a) * 4.8)), int(round(GZ_ + math.sin(a) * 4.8))
