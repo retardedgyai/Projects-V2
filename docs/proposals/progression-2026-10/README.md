@@ -9,3 +9,4 @@
 - `territory-ideas.html` — オープンワールドの領地の形12案（☆で選ぶ）。
 - `territory-life.html` — Albion 型の領地の一生（宣戦布告・領地戦・維持費・荒れる）を動かす見本。
 - `horn-gear-ideas.html` — 枝角を装備で使う14案（☆で選ぶ）。
+- `unique-traits.html` — 装備の層と、桜牙の型・桜角の首飾りのユニーク特性を組む見本。

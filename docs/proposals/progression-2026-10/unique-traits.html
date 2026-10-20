@@ -1,0 +1,144 @@
+<title>型とユニーク特性</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header, layer stack (Tier → 型 → ユニーク特性 → MOD → 強化) next to a builder (pick 型 and 特性 for a 大剣 or 首飾り), then the 3 ways to decide the trait */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --sakura: #f2a3c0; --uniq: #f0a35e; --green: #9fd49a;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1200px; margin: 0 auto; padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.02rem; margin: 0; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 10px; min-width: 0; align-content: start; }
+.two { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 14px; align-items: start; }
+@media (max-width: 880px) { .two { grid-template-columns: 1fr; } }
+.layers { display: grid; gap: 6px; }
+.layer { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 10px; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; align-items: baseline; }
+.layer b { font-size: .95rem; }
+.layer span { font-size: .86rem; color: var(--muted); }
+.layer.new { border-color: #6a4a30; }
+.layer.new b { color: var(--uniq); }
+.layer.type b { color: var(--sakura); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font: inherit; font-size: .88rem; color: var(--fg); cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.chip:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.lbl { font-size: .78rem; color: var(--muted); letter-spacing: .06em; }
+.tip { background: #0f131d; border: 2px solid #6a4a30; border-radius: 6px; padding: 12px 14px; display: grid; gap: 4px; font-size: .9rem; }
+.tip .nm { font-size: 1.05rem; font-weight: 700; color: var(--uniq); }
+.tip .sub { color: var(--muted); font-size: .82rem; }
+.tip .ty { color: var(--sakura); }
+.tip .un { color: var(--uniq); border-top: 1px solid #2a2a36; padding-top: 6px; margin-top: 2px; }
+.tip .md { color: #8fb6ff; }
+.tip .num { font-family: var(--num); }
+.ways { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 880px) { .ways { grid-template-columns: 1fr; } }
+.way { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 4px; }
+.way .k { font-family: var(--num); color: var(--gold); }
+.way.rec { border-color: var(--gold); }
+.small { font-size: .84rem; }
+.rec-tag { font-size: .72rem; color: #1a1405; background: var(--gold); border-radius: 6px; padding: 0 6px; margin-left: 6px; }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>型とユニーク特性 ── 枝角の使い道</h1>
+    <p>藍が選んだ <b>3 新しい武器の型「桜牙」・4 装身具・14 職人しか加工できない</b> に、「属性よりユニーク特性。1つの装備に1つだけ。型に個性があって、その一個下にユニーク特性」を足した形。右で型と特性を選ぶと、装備の説明（ツールチップ）がどう見えるかが変わる。</p>
+  </header>
+
+  <div class="two">
+    <div class="panel">
+      <h2>装備の層（上ほど大きな差）</h2>
+      <div class="layers">
+        <div class="layer"><b>Tier</b><span>土台の数字。T1〜T4。場所で決まる。</span></div>
+        <div class="layer type"><b>型</b><span>手触りと個性。振りの速さ・一撃の重さ・届き方。今のコードの開拓・連撃・重断に、枝角で作る<b>桜牙</b>を足す。</span></div>
+        <div class="layer new"><b>ユニーク特性</b><span>1つの装備に1つだけ。ボスの素材でしか付かない「その装備だけの技」。同じ特性は2つの装備で重ねられない。</span></div>
+        <div class="layer"><b>MOD</b><span>6個まで。数字の組み合わせ（今のまま）。</span></div>
+        <div class="layer"><b>強化</b><span>+30 まで（今のまま）。</span></div>
+      </div>
+      <p class="small">作るのは<b>武器製造／装身具の職人</b>（Lv30 から、仮）だけ。枝角を持っている人は職人に頼むか、職人に枝角を売る。</p>
+    </div>
+
+    <div class="panel">
+      <h2>組んでみる</h2>
+      <div class="lbl">装備</div>
+      <div class="chips" id="slot"></div>
+      <div class="lbl" id="typeLbl">型</div>
+      <div class="chips" id="types"></div>
+      <div class="lbl">ユニーク特性（1つだけ）</div>
+      <div class="chips" id="traits"></div>
+      <div class="tip" id="tip" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>次に決めること：ユニーク特性はどう決まる？</h2>
+    <div class="ways">
+      <div class="way"><span class="k">A 型ごとに固定</span><span class="small">桜牙の大剣なら必ず「花開く四段目」。作れば同じ物ができる。分かりやすい。</span></div>
+      <div class="way rec"><span class="k">B 候補から選ぶ<span class="rec-tag">おすすめ</span></span><span class="small">枝角で作るとき、そのボスの特性3〜4個から1つ選ぶ。ほかのボスの素材なら別の候補。「何と組み合わせるか」を自分で考えられる。</span></div>
+      <div class="way"><span class="k">C ランダム</span><span class="small">作ると候補のどれかが付く。狙いの特性まで作り直す。市場で「当たり」が売り買いされる。</span></div>
+    </div>
+  </div>
+</main>
+
+<script>
+(() => {
+  const SLOTS = { sword: '大剣', neck: '首飾り（装身具）' };
+  const TYPES = {
+    sword: [
+      { id: 'std', n: '開拓の型', d: 'ふつうの振り。くせがない。', now: true },
+      { id: 'flow', n: '連撃の型', d: '振りが速く、つながる。一撃は軽い。', now: true },
+      { id: 'cleave', n: '重断の型', d: '遅いが重い。崩しが強い。', now: true },
+      { id: 'sakura', n: '桜牙の型', d: '振るたびに花びらがたまり、4段目で花が開いて前に飛ぶ。速さと重さの中間。', sakura: true },
+    ],
+    neck: [
+      { id: 'neck', n: '桜角の首飾り', d: '装身具の新しい枠。最大HP と会心が少し上がる。MOD も付く。', sakura: true },
+    ],
+  };
+  const TRAITS = [
+    { id: 't1', n: '散り際', d: 'HP が30%を切ると、攻撃+25%。' },
+    { id: 't2', n: '花吹雪の残り香', d: '部位を壊すと10秒、周りの仲間の攻撃+10%。' },
+    { id: 't3', n: '返り咲き', d: '1回の戦いで1度だけ、倒れても花びらに包まれて起き上がる。' },
+    { id: 't4', n: '風に舞う', d: '回避のあと0.5秒、次の一撃が必ず会心。' },
+    { id: 't5', n: '桜紋', d: '当てた所に桜紋。3つ重ねると弾けて大きなダメージ。' },
+  ];
+  let slot = 'sword', type = 'sakura', trait = 't5';
+  const $ = id => document.getElementById(id);
+  function chips(el, list, cur, key) {
+    el.innerHTML = list.map(x => `<button class="chip" data-${key}="${x.id}" aria-pressed="${x.id === cur}">${x.n}</button>`).join('');
+  }
+  function render() {
+    $('slot').innerHTML = Object.entries(SLOTS).map(([k, n]) => `<button class="chip" data-slot="${k}" aria-pressed="${k === slot}">${n}</button>`).join('');
+    const types = TYPES[slot];
+    if (!types.some(t => t.id === type)) type = types[types.length - 1].id;
+    chips($('types'), types, type, 'type');
+    const t = types.find(x => x.id === type);
+    const canTrait = !!t.sakura;
+    chips($('traits'), canTrait ? TRAITS : [], trait, 'trait');
+    if (!canTrait) $('traits').innerHTML = '<span class="small" style="color:var(--muted)">今の型にはユニーク特性は付かない（ボスの素材で作る型だけ）。</span>';
+    const tr = TRAITS.find(x => x.id === trait);
+    const name = slot === 'sword' ? (t.sakura ? '桜牙の大剣' : `T3 大剣（${t.n}）`) : '桜角の首飾り';
+    $('tip').innerHTML = `<span class="nm" style="${t.sakura ? '' : 'color:var(--fg)'}">${name}<span class="num" style="color:var(--gold)"> +12</span></span>
+      <span class="sub">T3　${slot === 'sword' ? '攻撃 ×2.72' : '最大HP +6%・会心 +3%'}　作った人：<span style="color:var(--fg)">鍛冶のミナ</span>（武器製造 Lv34）</span>
+      <span class="ty">型：${t.n} ── ${t.d}</span>
+      ${canTrait ? `<span class="un">◆ ${tr.n}：${tr.d}</span>` : ''}
+      <span class="md">攻撃力 +7%　会心率 +4%　CD短縮 +5%　最大HP +6%</span>`;
+  }
+  document.querySelector('main').addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    if (b.dataset.slot) slot = b.dataset.slot;
+    if (b.dataset.type) type = b.dataset.type;
+    if (b.dataset.trait) trait = b.dataset.trait;
+    render();
+  });
+  render();
+})();
+</script>
