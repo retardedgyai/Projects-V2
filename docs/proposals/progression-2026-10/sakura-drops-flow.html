@@ -1,0 +1,170 @@
+<title>桜牙獣の素材の流れ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header, flow diagram (two lanes from the boss: 枝角 → 社/町, 花びら → 職人 → 魔術 → 巻物 → 市場), step detail, town stages, numbers, next question */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --sakura: #f2a3c0; --violet: #b49ae8; --green: #9fd49a; --red: #e58b80;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1200px; margin: 0 auto; padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.02rem; margin: 0; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.flow { overflow-x: auto; border-radius: 12px; background: #0f1420; border: 1px solid var(--line); }
+.flow svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.node { cursor: pointer; }
+.node rect { fill: var(--panel2); stroke: var(--line); stroke-width: 1.5; }
+.node.on rect { stroke: var(--gold); stroke-width: 2.5; }
+.node:focus-visible rect { stroke: var(--cyan); stroke-width: 3; }
+.node text { fill: var(--fg); font-family: var(--sans); font-size: 13px; text-anchor: middle; }
+.node text.who { fill: var(--muted); font-size: 11px; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 860px) { .split { grid-template-columns: 1fr; } }
+.det h2 { color: var(--gold); }
+.row { display: grid; grid-template-columns: 6em minmax(0, 1fr); gap: 4px 10px; font-size: .9rem; }
+.row .k { color: var(--muted); }
+.stages { display: grid; gap: 8px; }
+.stage { display: grid; grid-template-columns: 4.5em minmax(0, 1fr); gap: 10px; align-items: center; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.stage .n { font-family: var(--num); color: var(--sakura); font-size: 1.05rem; }
+.stage.got { border-color: #7a4a5e; }
+.bar { height: 10px; background: #222b40; border-radius: 5px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--sakura); transition: width .3s; }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { background: var(--panel2); border: 1px solid #7a4a5e; color: var(--sakura); border-radius: 8px; padding: 4px 14px; font: inherit; cursor: pointer; }
+.btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.num { font-family: var(--num); font-variant-numeric: tabular-nums; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid #1f2740; vertical-align: top; }
+th { color: var(--muted); font-weight: 500; }
+.tw { overflow-x: auto; }
+.q { border-color: #5b4a2a; }
+.sak { color: var(--sakura); } .vio { color: var(--violet); } .gold { color: var(--gold); } .cy { color: var(--cyan); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>桜牙獣の素材の流れ</h1>
+    <p>決まった5案をつなげた形：<b class="sak">社に奉納して町が咲く</b>・<b class="vio">桜の相</b>・<b class="vio">桜の巻物</b>・<b class="gold">職人だけが加工</b>・<b>部位で使い道が違う</b>。箱を押すと、そこで誰が何を得るかが出る。</p>
+  </header>
+
+  <div class="split">
+    <div class="flow">
+      <svg viewBox="0 0 800 420" role="img" aria-label="桜牙獣から枝角は社と町へ、花びら甲殻は職人と魔術を通って巻物になり市場へ流れる図">
+        <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#5b6a90"/></marker></defs>
+        <g stroke="#5b6a90" stroke-width="2" fill="none" marker-end="url(#ar)">
+          <path d="M150 190 C190 190 190 90 228 90"/>
+          <path d="M150 230 C190 230 190 320 228 320"/>
+          <path d="M352 90 L428 90"/>
+          <path d="M352 320 L428 320"/>
+          <path d="M552 320 L618 320"/>
+          <path d="M680 296 L680 244"/>
+          <path d="M680 186 C680 150 620 120 560 112" stroke-dasharray="4 5"/>
+          <path d="M618 206 C520 206 240 206 152 214" stroke-dasharray="4 5"/>
+        </g>
+        <text x="190" y="140" fill="#f2a3c0" font-size="12" font-family="M PLUS 2, sans-serif">正面で折る</text>
+        <text x="190" y="285" fill="#f2a3c0" font-size="12" font-family="M PLUS 2, sans-serif">尾を斬る</text>
+        <text x="300" y="200" fill="#959bb0" font-size="11" font-family="M PLUS 2, sans-serif">巻物を使ってまた挑む</text>
+
+        <g class="node" data-i="0" tabindex="0" role="button" aria-label="桜牙獣"><rect x="20" y="170" width="130" height="80" rx="12"/><text x="85" y="205">桜牙獣</text><text class="who" x="85" y="226">ワールドボス</text></g>
+        <g class="node" data-i="1" tabindex="0" role="button" aria-label="枝角"><rect x="230" y="60" width="120" height="60" rx="10"/><text x="290" y="86">桜牙獣の枝角</text><text class="who" x="290" y="106">折った人</text></g>
+        <g class="node" data-i="2" tabindex="0" role="button" aria-label="桜の社に奉納"><rect x="430" y="60" width="130" height="60" rx="10"/><text x="495" y="86">桜の社に奉納</text><text class="who" x="495" y="106">誰でも</text></g>
+        <g class="node" data-i="3" tabindex="0" role="button" aria-label="港が咲く"><rect x="610" y="40" width="170" height="100" rx="10"/><text x="695" y="80">港が咲く</text><text class="who" x="695" y="102">サーバー全体</text><text class="who" x="695" y="120">茶屋 → 街道 → 祭り</text></g>
+        <g class="node" data-i="4" tabindex="0" role="button" aria-label="花びら甲殻"><rect x="230" y="290" width="120" height="60" rx="10"/><text x="290" y="316">桜の花びら甲殻</text><text class="who" x="290" y="336">斬った人＋参加者</text></g>
+        <g class="node" data-i="5" tabindex="0" role="button" aria-label="皮革精製の職人"><rect x="430" y="290" width="120" height="60" rx="10"/><text x="490" y="316">皮革精製の職人</text><text class="who" x="490" y="336">Lv20から（仮）</text></g>
+        <g class="node" data-i="6" tabindex="0" role="button" aria-label="魔術で蒸留"><rect x="620" y="296" width="160" height="56" rx="10"/><text x="700" y="320">魔術：蒸留 → 桜の相</text><text class="who" x="700" y="340">魔術の人</text></g>
+        <g class="node" data-i="7" tabindex="0" role="button" aria-label="桜の巻物"><rect x="620" y="186" width="160" height="56" rx="10"/><text x="700" y="210">桜の巻物・桜鉄の触媒</text><text class="who" x="700" y="230">刻印する人 → 市場</text></g>
+      </svg>
+    </div>
+    <div class="panel det" id="det" aria-live="polite"></div>
+  </div>
+
+  <div class="panel">
+    <h2>港が咲く（サーバー全体の奉納）</h2>
+    <p>3〜5人のテストに合わせた数。本番は人数に合わせて上げる。押すと奉納のふり。</p>
+    <div class="btns"><button class="btn" id="give">枝角を1本奉納</button><button class="btn" id="give5">5本</button><span class="num" id="count"></span><button class="btn" id="reset" style="border-color:var(--line);color:var(--muted)">戻す</button></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="stages" id="stages"></div>
+  </div>
+
+  <div class="panel">
+    <h2>数の目安（テスト・仮）</h2>
+    <div class="tw"><table>
+      <thead><tr><th>何</th><th>数</th><th>メモ</th></tr></thead>
+      <tbody>
+        <tr><td>桜牙獣が湧く</td><td class="num">2時間ごと</td><td>テストは決まった時刻にも呼べるように</td></tr>
+        <tr><td>枝角</td><td class="num">1〜2本</td><td>正面で角を折った人（折れた本数ぶん）</td></tr>
+        <tr><td>花びら甲殻</td><td class="num">斬った人 3／参加者 1</td><td>尾の甲殻を散らした人が多め。参加者は全員少しもらえる</td></tr>
+        <tr><td>職人の加工</td><td class="num">甲殻1 → 花弁片3</td><td>皮革精製 Lv20 から。加工料は職人が決めて市場で受ける</td></tr>
+        <tr><td>蒸留</td><td class="num">花弁片1 → 桜の相2</td><td>桜の相は風＋生命の上の相（ここでしか取れない）</td></tr>
+        <tr><td>桜の巻物</td><td class="num">桜の相2＋紙1</td><td>10分間 部位破壊のダメージ+30%。使うと消える</td></tr>
+        <tr><td>桜鉄の触媒</td><td class="num">桜の相3＋T3インゴット1</td><td>強化の成功率 +35（星鉄 +25 の上）</td></tr>
+        <tr><td>奉納の記録</td><td class="num">売れない</td><td>社の石碑に名前と本数。苦労の証</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="panel q">
+    <h2>次に決めること（1つ）</h2>
+    <p>枝角を奉納した人に、自分の得として何を返す？ ── 町が咲くのはみんなの得なので、自分だけの見返りがないと「市場で売ったほうが得」になる。</p>
+  </div>
+</main>
+
+<script>
+(() => {
+  const STEPS = [
+    { t: '桜牙獣（ワールドボス）', who: '戦う人みんな', get: '倒すと参加者全員に花びら甲殻1・銀貨・オーブ。正面で角を折った人に枝角、尾の甲殻を散らした人に花びら甲殻が多め。', why: 'どこを狙うかで、手に入る物と行き先が変わる（部位で使い道が違う）。', link: '桜牙獣の部位破壊（PR #169）：正面12%で枝角、背後10%で尾の甲殻。' },
+    { t: '桜牙獣の枝角', who: '角を折った人', get: '社に奉納するか、市場で売る。', why: '奉納したい人が市場で買う。だから角を折るのが上手い人は稼げる。', link: '' },
+    { t: '桜の社に奉納', who: '誰でも', get: '社の石碑に名前と本数が刻まれる（売れない記録）＋本人への見返り（次に決める）。', why: '奉納の合計で、港に新しい物が開く。', link: '社は桜の闘技場（柱の上）にある。' },
+    { t: '港が咲く', who: 'サーバーの全員', get: '段階ごとに港が便利になる（下の「港が咲く」）。', why: 'みんなで進める目標。自分の得（便利な町）のために奉納する人が集まる。', link: '港の建物は遠征マップ／港のセッションと相談。' },
+    { t: '桜の花びら甲殻', who: '尾を斬った人・参加者', get: 'そのままでは使えない。職人に加工してもらうか、市場で売る。', why: '戦う人は加工代を払うか、職人に売る。', link: '' },
+    { t: '皮革精製の職人', who: '皮革精製 Lv20 から（仮）', get: '甲殻1 → 桜の花弁片3。加工料や花弁片の値段は職人が決める。', why: '鍛冶・精製の道が「他人へのサービス」になる（今の穴を埋める）。', link: '今のコードの皮革精製（CoreProfessions TANNING）にレシピを足すだけ。' },
+    { t: '魔術：蒸留 → 桜の相', who: '魔術の人', get: '花弁片1 → 桜の相2。ここでしか取れない相。', why: '魔術の人がボス素材を買う理由になる。相は売れる。', link: '魔術の芯（見る・解く・抜く・混ぜる・作る）の「抜く」。' },
+    { t: '桜の巻物・桜鉄の触媒', who: '刻印する人 → 市場', get: '桜の巻物（10分 部位破壊+30%）・桜鉄の触媒（強化 +35）。', why: '使うと消える＝毎回買われる。戦う人が買って、また桜牙獣に挑む。', link: '魔術の枝「刻印術」（巻物）の入口。' },
+  ];
+  const det = document.getElementById('det');
+  const nodes = [...document.querySelectorAll('.node')];
+  function show(i) {
+    nodes.forEach(n => n.classList.toggle('on', +n.dataset.i === i));
+    const s = STEPS[i];
+    det.innerHTML = `<h2>${s.t}</h2>
+      <div class="row"><span class="k">誰が</span><span>${s.who}</span>
+      <span class="k">得る物</span><span>${s.get}</span>
+      <span class="k">なぜ回る</span><span>${s.why}</span>
+      ${s.link ? `<span class="k">つながり</span><span class="cy">${s.link}</span>` : ''}</div>`;
+  }
+  nodes.forEach(n => {
+    n.addEventListener('click', () => show(+n.dataset.i));
+    n.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(+n.dataset.i); } });
+  });
+  show(0);
+
+  const STAGES = [
+    { n: 10, t: '港に桜が植わる', d: '見た目だけ。港の広場に桜の木。「咲き始めた」が見える。' },
+    { n: 30, t: '桜の茶屋', d: '宿の回復が速い。茶屋で桜の団子（短いバフの食べ物）が買える。' },
+    { n: 60, t: '桜の街道', d: '港から根の丘への街道が速く歩ける。' },
+    { n: 100, t: '桜の祭り', d: '週末に祭り。桜牙獣が「満開」で湧き、報酬が多い。' },
+  ];
+  let count = 0;
+  try { count = +(localStorage.getItem('sk-offer') || 0); } catch (e) {}
+  function renderStages() {
+    const max = STAGES[STAGES.length - 1].n;
+    document.getElementById('count').textContent = `奉納 ${count} 本`;
+    document.getElementById('bar').style.width = Math.min(100, count / max * 100) + '%';
+    document.getElementById('stages').innerHTML = STAGES.map(s => `<div class="stage ${count >= s.n ? 'got' : ''}"><span class="n">${s.n}本</span><span><b>${count >= s.n ? '✓ ' : ''}${s.t}</b><br><span style="color:var(--muted);font-size:.88rem">${s.d}</span></span></div>`).join('');
+    try { localStorage.setItem('sk-offer', String(count)); } catch (e) {}
+  }
+  document.getElementById('give').addEventListener('click', () => { count++; renderStages(); });
+  document.getElementById('give5').addEventListener('click', () => { count += 5; renderStages(); });
+  document.getElementById('reset').addEventListener('click', () => { count = 0; renderStages(); });
+  renderStages();
+})();
+</script>

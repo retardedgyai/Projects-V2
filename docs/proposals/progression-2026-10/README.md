@@ -4,3 +4,4 @@
 - 設計のまとめは `docs/development/progression-design.md`。
 - `boss-parts-ideas.html` — ボス部位の使い道24案（☆で選ぶ）。公開版 https://claude.ai/artifact/MHHThbU2Cv3jDQnRhxJDrF
 - `world-boss-items.html` — ワールドボス（桜牙獣）の落とし物10案とボスの種類ごとの分け方。公開版 https://claude.ai/artifact/AGdnYxFtKSGwVAEPdmQZwg
+- `sakura-drops-flow.html` — 決まった5案をつなげた桜牙獣の素材の流れ。公開版 https://claude.ai/artifact/JAnJDvbPi75yH244C17jGu
