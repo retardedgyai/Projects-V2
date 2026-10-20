@@ -210,6 +210,12 @@ _bench = (np.floor(_q) + np.clip((_f - .62) / .38, 0, 1) ** 1.5) * _step - _ph
 _gy2, _gx2 = np.gradient(H); _sl2 = np.hypot(_gx2, _gy2)
 _wm = np.clip((anyway - 5) / 5, 0, 1) * (~lake) * np.clip((st_d - 4) / 4, 0, 1) * np.clip((.8 - _sl2) / .4, 0, 1)
 H = (H + ((fbm(3, 22, .5, 780) - .5) * 2.2 + (fbm(2, 60, .5, 781) - .5) * .9) * _wm).astype(np.float32)
+_near = (anyway < 7) & ~lake
+for _ in range(6):
+    _p = np.pad(H, 1, mode="edge")
+    _mn = np.minimum.reduce([_p[1:-1, 2:], _p[1:-1, :-2], _p[2:, 1:-1], _p[:-2, 1:-1]])
+    _mx = np.maximum.reduce([_p[1:-1, 2:], _p[1:-1, :-2], _p[2:, 1:-1], _p[:-2, 1:-1]])
+    H = np.where(_near, np.clip(H, _mx - .9, _mn + .9), H).astype(np.float32)
 hi = np.round(H).astype(int)
 gy_, gx_ = np.gradient(H)
 slope = np.hypot(gx_, gy_)
@@ -939,7 +945,7 @@ def sakura_tree(x, z, g, size=1.0):
     limb(top, rs.uniform(0, math.tau), math.radians(70), H * .25, max(.6, D / 2 * .6), 1)    # a leader up the middle
     ps = max(1.0, size)
     for (px, py, pz) in pads:                                       # blossom pads: domed top, flatter thinner underside, gaps
-        rx = rs.uniform(3, 4.5) * (.7 + .3 * ps); ry = rs.uniform(1.8, 2.6) * (.8 + .2 * ps)
+        rx = rs.uniform(3, 4.2) * (.7 + .3 * ps); ry = rx * rs.uniform(.6, .75)                 # rounder: a dome, not a table top
         ri = int(rx) + 1
         for dx in range(-ri, ri + 1):
             for dz in range(-ri, ri + 1):
@@ -951,7 +957,7 @@ def sakura_tree(x, z, g, size=1.0):
                     p = (int(round(px)) + dx, int(round(py)) + dy, int(round(pz)) + dz)
                     if p in w.b or rs.random() > fill: continue
                     put(*p, "flowering_azalea_leaves" if (dy < 0 and q < .5 and rs.random() < .3) else "cherry_leaves")
-        for _ in range(int(rx * 1.5)):                               # the hem droops a little
+        for _ in range(int(rx * .5)):                                # the hem droops a little (a few strands, not a curtain)
             a = rs.uniform(0, math.tau)
             p = (int(round(px + math.cos(a) * rx * .9)), int(round(py - ry * .5)), int(round(pz + math.sin(a) * rx * .9)))
             for k in range(rs.randint(1, 3)):
@@ -970,6 +976,8 @@ def torii(cx, cz, y, ux, uz, half=3, h=6):
     """Myojin torii across a path heading (ux, uz). Posts are whole from base to shimaki; the nuki is one beam that runs
     through the posts and one block past them; a small dark plaque sits between nuki and shimaki; the dark kasagi is one
     block wider than the shimaki on each side and its tips turn up by a half block."""
+    if abs(ux) >= abs(uz): ux, uz = math.copysign(1, ux), 0.0          # a torii stands square to the grid: diagonals staircase
+    else: ux, uz = 0.0, math.copysign(1, uz)
     px, pz = -uz, ux
     P = lambda s2: (int(round(cx + px * s2)), int(round(cz + pz * s2)))
     nuki_y = y + h - 2
@@ -1226,6 +1234,20 @@ def rock_bridge(p0, p1, rise=3, width=2.2, sakura=0.0, style="rock"):
         cx, cz = p0[0] + (p1[0] - p0[0]) * t, p0[2] + (p1[2] - p0[2]) * t
         u = min(1, max(0, (t - ts) / max(1e-6, te - ts)))
         deck = int(round(p0[1] + (p1[1] - p0[1]) * u + rise * math.sin(math.pi * u)))
+        if style == "rope":
+            ux_, uz_ = (p1[0] - p0[0]) / L, (p1[2] - p0[2]) / L
+            for s_ in (-1.5, -1, -.5, 0, .5, 1, 1.5, -2.2, 2.2):
+                x, z = int(round(cx - uz_ * s_)), int(round(cz + ux_ * s_))
+                if UPPER[z, x] >= deck and abs(s_) < 2: continue
+                if abs(s_) < 2:
+                    put(x, deck, z, "spruce_planks", shape="slab_t"); UPPER[z, x] = max(UPPER[z, x], deck)
+                    w.b.pop((x, deck + 1, z), None)
+                elif UPPER[z, x] < deck:
+                    put(x, deck, z, "spruce_planks", shape="slab_t")
+                    put(x, deck + 1, z, *(("spruce_log", "spruce_log") if i % 12 == 0 else ("spruce_planks",)), shape="full" if i % 12 == 0 else "fence")
+                    if i % 12 == 0: put(x, deck + 2, z, "spruce_planks", shape="fence")
+            samples.append((cx, cz, deck, u))
+            continue
         under = 2 + 5 * (1 - math.sin(math.pi * t)) + 2 * noise3(cx, 0, cz, 151, 3)       # thicker at the ends
         wid = width + .8 * noise3(cx, 1, cz, 152, 4)
         for dx in range(-4, 5):
@@ -1286,6 +1308,12 @@ BR0 = rock_bridge((ex, EDGE_Y, ez - 2), (PILLARS[0][0], PILLARS[0][2], PILLARS[0
 BR1, D1 = link(PILLARS[0], PILLARS[1], 5, .45, style="root")              # a great root grown across
 BR2, D2 = link(PILLARS[1], PILLARS[2], 6, .85)
 BR3, D3 = link(PILLARS[2], PILLARS[3], 7, .9, style="rope")              # a rope bridge, the last crossing
+for (cx_, cz_, dk_, u_) in BR3:                                    # close any diagonal-only seam between the rope deck and the tops
+    for dx in (-1, 0, 1):
+        for dz in (-1, 0, 1):
+            x_, z_ = int(round(cx_)) + dx, int(round(cz_)) + dz
+            if UPPER[z_, x_] < 0:
+                put(x_, dk_, z_, "spruce_planks", shape="slab_t"); UPPER[z_, x_] = dk_
 # the sando: torii appear along the route and grow denser toward the boss (one, then a few, then a tunnel of them)
 def torii_on(samples, d, every):
     for i2, (cx, cz, deck, u) in enumerate(samples):
@@ -1378,7 +1406,7 @@ for y in range(P0y_ - 26, P0y_ + 1):
     for dx in range(-3, 4):
         for z in range(P0z_, P0z_ + int(P0r_ * 1.3)):
             off = math.sin((P0y_ - y) * .25) * 1.5
-            if abs(dx - off) <= wdt and (P0x_ + dx, y, z) in w.b:
+            if abs(dx - off) <= wdt and (P0x_ + dx, y, z) in w.b and y > hi[z, P0x_ + dx] + 1:
                 inner = (P0x_ + dx, y, z - 1) in w.b
                 if z > P0z_ + P0r_ * .75 - 6 * f:
                     w.b.pop((P0x_ + dx, y, z), None); UPPER[z, P0x_ + dx] = -1 if y == P0y_ else UPPER[z, P0x_ + dx]
@@ -2323,8 +2351,9 @@ for z in range(1, B - 1):
         for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             if _top_at(x + dx, z + dz) == y + 1 and (road[z + dz, x + dx] or trail[z + dz, x + dx] or UPPER[z + dz, x + dx] >= 0):
                 on_path = road[z, x] or trail[z, x]
+                if on_path and not ((road[z - dz, x - dx] or trail[z - dz, x - dx]) and _top_at(x - dx, z - dz) == y): continue   # a side edge, not a step in the run
                 if on_path:                                           # a half-buried flat stone, not a placeholder stair
-                    put(x, y + 1, z, ("cobblestone", "mossy_cobblestone", "stone", "cobblestone")[int(_h(x, 0, z, 91) * 4)], shape="slab")
+                    put(x, y + 1, z, "mud_bricks", shape="slab")
                 else:
                     face = {(1, 0): "e", (-1, 0): "w", (0, 1): "s", (0, -1): "n"}[(dx, dz)]
                     put(x, y + 1, z, "stone_bricks", shape="stair_" + face)
@@ -2367,6 +2396,8 @@ while q:
         if 0 <= nz < B and 0 <= nx < B and not up_seen[nz, nx] and UPPER[nz, nx] >= 0 and abs(int(UPPER[nz, nx]) - int(UPPER[z, x])) <= 1:
             up_seen[nz, nx] = True; q.append((nz, nx))
 UP_STATS = (int((UPPER >= 0).sum()), int(up_seen.sum()))
+np.save('up_seen.npy', up_seen)
+for k_, P_ in enumerate(PILLARS): print('pillar', k_, 'reached', bool(up_seen[P_[1], P_[0]]), 'top', P_[2])
 land = ~lake & ~block
 scenic = slope > 1.3
 unreach = land & ~seen & ~scenic
