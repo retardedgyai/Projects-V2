@@ -1,0 +1,154 @@
+<title>ボス部位の使い道</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header + filter chips, then a grid of idea cards (pick with ☆), picked tray sticky at bottom */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --sakura: #f2a3c0; --shade: #a98be0; --green: #9fd49a; --red: #e58b80;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1320px; margin: 0 auto; padding-block: 20px 140px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filters .lbl { font-size: .8rem; color: var(--muted); margin-right: 4px; }
+.f { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px 14px; font-size: .88rem; }
+.f[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card.picked { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.card.rec { background: linear-gradient(var(--panel), var(--panel)) padding-box; }
+.top { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+.key { font-family: var(--num); color: var(--gold); margin-right: 6px; }
+.name { font-weight: 700; font-size: 1.02rem; }
+.star { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; font-size: .85rem; white-space: nowrap; }
+.card.picked .star { color: #1a1405; background: var(--gold); border-color: var(--gold); }
+.what { color: var(--fg); margin: 0; }
+.ex { font-size: .86rem; color: var(--sakura); margin: 0; }
+.ex b { font-weight: 500; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: .75rem; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; color: var(--muted); }
+.tag.path { color: var(--cyan); border-color: #2f5560; }
+.tag.cost-軽 { color: var(--green); border-color: #3d5a3a; }
+.tag.cost-中 { color: var(--gold); border-color: #5b5030; }
+.tag.cost-重 { color: var(--red); border-color: #6a3a36; }
+.tag.recm { color: #1a1405; background: var(--gold); border-color: var(--gold); }
+.note { font-size: .8rem; color: var(--muted); margin: 0; }
+.tray { position: fixed; left: 0; right: 0; bottom: 0; background: #10141f; border-top: 1px solid var(--line);
+  padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.tray .in { max-width: 1320px; margin: 0 auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tray .list { flex: 1 1 300px; min-width: 0; font-size: .9rem; }
+.tray .list .muted { color: var(--muted); }
+.copy { background: var(--gold); color: #1a1405; border: 0; border-radius: 8px; padding: 6px 16px; font-weight: 700; }
+.copy:disabled { opacity: .4; cursor: not-allowed; }
+#copied { font-size: .82rem; color: var(--green); }
+textarea { width: 100%; box-sizing: border-box; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: .85rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>ボスの部位、何に使う？ ── 24案</h1>
+    <p>黒翳竜・桜牙獣の部位破壊で取れる素材（<span style="color:var(--shade)">触角・翼膜</span>／<span style="color:var(--sakura)">枝角・花びら甲殻</span>）の使い道。いいと思った案に ☆ を付けて、下の「選んだ案を送る文」をコピーして返してください。いくつ選んでも、組み合わせてもOK。</p>
+  </header>
+  <div class="filters" role="group" aria-label="道で絞る">
+    <span class="lbl">得をする道</span>
+    <button class="f" data-f="all" aria-pressed="true">全部</button>
+    <button class="f" data-f="戦闘" aria-pressed="false">戦闘</button>
+    <button class="f" data-f="魔術" aria-pressed="false">魔術</button>
+    <button class="f" data-f="鍛冶" aria-pressed="false">鍛冶</button>
+    <button class="f" data-f="採取" aria-pressed="false">採取</button>
+    <button class="f" data-f="経済" aria-pressed="false">お金・市場</button>
+    <button class="f" data-f="見た目" aria-pressed="false">見た目・記録</button>
+    <button class="f" data-f="rec" aria-pressed="false">おすすめだけ</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="tray">
+  <div class="in">
+    <div class="list" id="picked"><span class="muted">まだ選んでいない。気になる案の ☆ を押す。</span></div>
+    <button class="copy" id="copy" disabled>選んだ案を送る文をコピー</button>
+    <span id="copied" aria-live="polite"></span>
+  </div>
+  <textarea id="fallback" rows="2" hidden aria-label="送る文"></textarea>
+</div>
+
+<script>
+(() => {
+  // cost = 作る手間（コード＋絵）。軽＝今の仕組みの数字を足すだけ、重＝新しい絵やモデルが職業ぶん要る。
+  const IDEAS = [
+    { k: 'A', n: '昇格の鍵', what: 'Tierを上げるときに部位が要る。ボスは次のTierの門番。', ex: '武器を T3 にするには <b>花びら甲殻×2・枝角×1</b>。', path: ['戦闘', '経済'], cost: '軽', note: 'ボスに行かない人は市場で部位を買う。' },
+    { k: 'B', n: 'ボスの装備', what: 'ボスの名前の付いた武器・防具を作る。モンハン型。', ex: '<b>桜牙の大剣</b>：T3相当＋固有の効果。+0 から鍛え直し。', path: ['戦闘'], cost: '重', note: '7職×ボスごとに武器と防具の絵が要る。' },
+    { k: 'C', n: '銘を刻む', what: 'いつもの装備に部位で「銘」を1つ刻む。固有の効果が1つ付く。', ex: '<b>桜の銘</b>：部位を壊すと10秒 攻撃+20%。', path: ['戦闘'], cost: '軽', note: 'Tierを上げても残る。今のコードに足すだけ。', rec: true },
+    { k: 'D', n: '技が変わる', what: '部位で職業の技1つを「ボス版」に変える。強さより戦い方が変わる。', ex: '戦士の叩きつけが<b>花びらを散らす斬撃</b>になり、当てた所に桜紋。', path: ['戦闘'], cost: '重', note: '組み合わせの楽しさに一番近い。演出が職業ぶん要る。' },
+    { k: 'E', n: 'セット効果', what: '同じボスの部位で作った防具をそろえると効果。', ex: '桜の防具 2部位：会心+5%／4部位：<b>部位破壊のたびにHP回復</b>。', path: ['戦闘'], cost: '中', note: '4部位の防具の仕組みとよく合う。' },
+    { k: 'F', n: '魔術の珍しい相', what: '部位を蒸留すると、ふつうの物から取れない相が抜ける。上位の研究品の材料。', ex: '花びら甲殻 → <b>桜の相</b> → 星鉄の触媒より強い「桜鉄の触媒」(+35)。', path: ['魔術', '経済'], cost: '中', note: '魔術の人がボス素材を買いに来る。', rec: true },
+    { k: 'G', n: '強いボスを呼ぶ鍵', what: '部位を祭壇に捧げると、強い個体を呼べる。報酬がよい。', ex: '枝角×3 で<b>「怒れる桜牙獣」</b>を呼ぶ。最初から怒り状態。', path: ['戦闘', '魔術'], cost: '中', note: '魔術の「召喚」の枝の入口になる。' },
+    { k: 'H', n: '見た目だけ', what: '武器・防具の見た目がボスの姿になる。強さは変わらない。', ex: '大剣に<b>桜の花びらの刃</b>が重なる。', path: ['見た目'], cost: '重', note: '課金で見た目を売る方針とぶつかる。' },
+    { k: 'I', n: '壊れ止めの護符', what: '部位で作る護符。強化の失敗で壊れるのを1回防ぐ。', ex: '<b>花びらの護符</b>：+15 以上の強化で壊れない（1回で消える）。', path: ['戦闘', '鍛冶', '経済'], cost: '軽', note: '+15〜+30 の怖さを和らげる。消耗品なので需要が続く。' },
+    { k: 'J', n: '狙ったMODを付ける', what: '部位から「ボスのオーブ」を作る。決まったMODを1つ確実に付ける。', ex: '<b>桜のオーブ</b>：部位破壊ダメージ+のMODを必ず1つ。', path: ['戦闘'], cost: '軽', note: 'オーブの運任せに、狙える道を1本足す。' },
+    { k: 'K', n: '育つ武器', what: '部位を武器に食べさせると経験値が入り、段階で形と効果が変わる。', ex: '桜を食べ続けた大剣が<b>3段目で刃に花が咲く</b>。', path: ['戦闘', '見た目'], cost: '重', note: '長い目標になる。形の絵が段階ぶん要る。' },
+    { k: 'L', n: 'お供', what: '部位で小さなお供を作る。後ろを付いてきて小さく手伝う。', ex: '<b>桜の小狐</b>：落ちた素材を拾ってくる。', path: ['見た目', '採取'], cost: '中', note: '強さにしないなら、課金とも共存できる。' },
+    { k: 'M', n: '強い薬・巻物', what: '部位で作る消耗品。使うとしばらく強い。', ex: '<b>桜の巻物</b>：10分間 部位破壊のダメージ+30%。', path: ['戦闘', '魔術', '経済'], cost: '軽', note: '使うと消える＝毎回買われる。刻印術（巻物の枝）とつながる。', rec: true },
+    { k: 'N', n: '工房の家具', what: '部位で工房に置く家具。工房が少し便利になる。', ex: '<b>桜の灯籠</b>：置いた工房の蒸留が少し速い。', path: ['魔術', '見た目'], cost: '中', note: 'Minecraft らしい「自分の工房」を飾る楽しさ。' },
+    { k: 'O', n: '狩りの記念品', what: '部位で記念品を作り、家や工房に飾る。売れない。', ex: '<b>桜牙獣の枝角の飾り台</b>：倒した回数が刻まれる。', path: ['見た目'], cost: '中', note: '苦労の証。売買不可の軸にそのまま合う。' },
+    { k: 'P', n: '特別な商人と交換', what: '港の特別な商人に部位を渡すと、レシピや限定品と交換できる。', ex: '翼膜×10 → <b>黒翳の銘のレシピ</b>。', path: ['経済'], cost: '軽', note: '部位がたまっても使い道がなくならない。' },
+    { k: 'Q', n: '次の道を開く道具', what: '部位で作る道具がないと行けない場所がある。', ex: '翼膜の<b>滑空マント</b>で、柱から柱へ飛び移れる。', path: ['戦闘', '採取'], cost: '中', note: '強さではなく「行ける場所」が増える。' },
+    { k: 'R', n: '属性を付ける', what: '部位で武器に属性を付ける。属性ビルドの入口。', ex: '<b>桜＝風と生命</b>の属性。当てると相手の防御が下がる。', path: ['戦闘'], cost: '中', note: '戦闘の決定記録の「属性・追加効果」とつながる。' },
+    { k: 'S', n: '2体の部位を混ぜる', what: '別のボスの部位を混ぜると、第3の物ができる。', ex: '翼膜＋花びら甲殻 → <b>「黄昏の銘」</b>（黒と桜の両方の効果を弱めに）。', path: ['戦闘', '魔術'], cost: '軽', note: '「これとこれを混ぜたらどうなる？」の好奇心。', rec: true },
+    { k: 'T', n: '依頼で評判', what: '港の住人の依頼に部位を納めると評判が上がり、店や品が増える。', ex: '花びら×5 を納める → <b>港に桜の茶屋が開く</b>。', path: ['経済', '見た目'], cost: '中', note: '町が育つのが見える。' },
+    { k: 'U', n: '職人にしか加工できない', what: '部位は製造Lvの高い鍛冶職人だけが加工できる。ほかの人は頼む。', ex: '桜の銘は<b>武器製造Lv30以上</b>の人だけが刻める。', path: ['鍛冶', '経済'], cost: '軽', note: '「鍛冶が他人へのサービスになっていない」の穴を埋める。', rec: true },
+    { k: 'V', n: '採取道具を強くする', what: '部位で採取道具を強くする。採取の人も部位を買う。', ex: '枝角の<b>つるはし</b>：T3 鉱石が多く取れる。', path: ['採取', '経済'], cost: '軽', note: '採取の人の「お金の使い道」になる。' },
+    { k: 'W', n: '仲間全員に効く旗', what: '部位で作る旗を立てると、周りの仲間が強くなる。', ex: '<b>桜の陣旗</b>：半径10の仲間の攻撃+8%（1回きり）。', path: ['戦闘'], cost: '中', note: 'パーティで役に立つ。ソロでも自分に効く。' },
+    { k: 'X', n: '部位ごとに違う使い道', what: '同じボスでも、壊した部位で作れる物が違う。どこを狙うかが選択になる。', ex: '<b>枝角（正面）＝攻めの物</b>、<b>花びら（背後）＝守りの物</b>。', path: ['戦闘'], cost: '軽', note: 'ほかの案と組み合わせる「決まり」。戦い方が素材に出る。', rec: true },
+  ];
+  let filter = 'all';
+  let picked = new Set();
+  try { picked = new Set(JSON.parse(localStorage.getItem('bp-picked') || '[]')); } catch (e) {}
+  const save = () => { try { localStorage.setItem('bp-picked', JSON.stringify([...picked])); } catch (e) {} };
+  const grid = document.getElementById('grid');
+  function render() {
+    const list = IDEAS.filter(i => filter === 'all' || (filter === 'rec' ? i.rec : i.path.includes(filter)));
+    grid.innerHTML = list.map(i => `<article class="card ${picked.has(i.k) ? 'picked' : ''}">
+      <div class="top"><div><span class="key">${i.k}</span><span class="name">${i.n}</span></div>
+        <button class="star" data-k="${i.k}" aria-pressed="${picked.has(i.k)}">${picked.has(i.k) ? '★ 選んだ' : '☆ 選ぶ'}</button></div>
+      <p class="what">${i.what}</p>
+      <p class="ex">${i.ex}</p>
+      <div class="tags">${i.rec ? '<span class="tag recm">おすすめ</span>' : ''}${i.path.map(p => `<span class="tag path">${p}</span>`).join('')}<span class="tag cost-${i.cost}">作る手間 ${i.cost}</span></div>
+      <p class="note">${i.note}</p>
+    </article>`).join('');
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    document.getElementById('picked').innerHTML = sel.length
+      ? `選んだ案（${sel.length}）：` + sel.map(i => `<b>${i.k}</b> ${i.n}`).join('、')
+      : '<span class="muted">まだ選んでいない。気になる案の ☆ を押す。</span>';
+    document.getElementById('copy').disabled = !sel.length;
+  }
+  grid.addEventListener('click', e => {
+    const b = e.target.closest('.star'); if (!b) return;
+    const k = b.dataset.k; picked.has(k) ? picked.delete(k) : picked.add(k); save(); render();
+  });
+  document.querySelectorAll('.f').forEach(b => b.addEventListener('click', () => {
+    filter = b.dataset.f;
+    document.querySelectorAll('.f').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  }));
+  document.getElementById('copy').addEventListener('click', () => {
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    const text = 'ボス部位の使い道、気になる案：' + sel.map(i => `${i.k} ${i.n}`).join('、');
+    const done = () => { document.getElementById('copied').textContent = 'コピーした。チャットに貼って送ってください。'; };
+    const fb = () => { const t = document.getElementById('fallback'); t.hidden = false; t.value = text; t.select(); document.getElementById('copied').textContent = '下の文を選んだのでコピーしてください。'; };
+    try { navigator.clipboard.writeText(text).then(done, fb); } catch (e) { fb(); }
+  });
+  render();
+})();
+</script>
