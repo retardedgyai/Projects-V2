@@ -76,6 +76,7 @@ p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
 
   <div class="rules">
     <div class="panel rule"><h3>宣戦布告<span class="tag t-ok">決定</span></h3><p>空いた領地も、持ち主のいる領地も、戦う24時間前に布告する。守る側は24時間で準備できる。布告は地図と頭上の通知に出る。</p></div>
+    <div class="panel rule"><h3>勝ち方<span class="tag t-ok">決定</span>（秒数は仮）</h3><p>領地の奥に守護獣とコア。<b>守護獣を倒すとコアが開き、コアを長くチャネリングした側が取る</b>（60秒）。チャネリング中に攻撃を受けると止まる＝相手はそれを殴って止める（PvP）。持ち主のいる領地では、守る側が守護獣を助けて戦える。</p></div>
     <div class="panel rule"><h3>領地戦の時間<span class="tag t-tmp">仮</span></h3><p>戦いは決まった時間帯だけ（例：毎晩 21〜23時）。布告から24時間たったあとの、最初の時間帯で始まる。夜中に取られることはない。</p></div>
     <div class="panel rule"><h3>維持費<span class="tag t-ok">決定</span>（額は仮）</h3><p>毎日、ギルドの銀貨から自動で払う。施設が多いほど高い（基本 <span class="num">100</span>＋施設1つにつき <span class="num">50</span>）。払えないと「荒れる」：中身が止まる。3日続くと空き領地に戻る。銀貨の出口になる。</p></div>
     <div class="panel rule"><h3>8 そこでしか作れない物<span class="tag t-ok">決定</span></h3><p>持ち主が素材で建てた炉・祭壇で、そこでしか作れない物を作る（例：桜の炉で桜の銘）。作るのはプレイヤー。NPC は売らない。</p></div>
@@ -85,7 +86,7 @@ p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
 
   <div class="panel q">
     <h2>次に決めること（1つ）</h2>
-    <p>領地戦の勝ち方。下のボタン（藍の返事の欄）で選ぶ。</p>
+    <p>奉納をやめたので、桜牙獣の<b>枝角</b>の使い道が空いた。</p>
   </div>
 </main>
 
@@ -113,8 +114,12 @@ p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
   const ACTIONS = {
     declare: { n: '宣戦布告する', main: true, ok: () => S.st === '空き', f: () => { S.st = '24時間待つ'; S.waitUntil = S.day * 24 + S.hour + 24; log('宣戦布告した。24時間後から戦える。地図に布告が出た。'); } },
     wait: { n: '24時間すすめる', ok: () => S.st === '24時間待つ' || S.foeDeclared, f: () => { advance(24); if (S.foeDeclared) { S.foeWar = true; log('赤の旗との領地戦の時間が近い。'); } else { S.st = '領地戦'; log('戦える時間になった。次の領地戦の時間帯（21時）を待つ。'); } } },
-    win: { n: '領地戦に勝つ', main: true, ok: () => S.st === '領地戦' || S.foeWar, f: () => { if (S.foeWar) { S.foeWar = false; S.foeDeclared = false; log('赤の旗を退けた。領地は守られた。'); } else { S.owner = 'ours'; S.st = '持ち主'; log('勝った！ 根のアーチは青の旗のもの。'); } } },
-    lose: { n: '領地戦に負ける', ok: () => S.st === '領地戦' || S.foeWar, f: () => { if (S.foeWar) { S.foeWar = false; S.foeDeclared = false; S.owner = 'foe'; S.st = '持ち主'; S.works = 0; log('赤の旗に取られた。施設は壊れて残らない（仮）。'); } else { S.st = '空き'; log('負けた。領地は空きのまま。また布告できる。'); } } },
+    guard: { n: '守護獣を倒す', main: true, ok: () => (S.st === '領地戦' || S.foeWar) && !S.guardDown, f: () => { S.guardDown = true; S.ch = 0; log(S.foeWar ? '赤の旗が守護獣を倒した。奥のコアへ向かっている。' : '守護獣を倒した！ 奥のコアが開いた。'); } },
+    channel: { n: 'コアをチャネリング（+20秒）', main: true, ok: () => S.guardDown && !S.foeWar, f: () => { S.ch += 20; if (S.ch >= 60) { S.guardDown = false; S.owner = 'ours'; S.st = '持ち主'; log('60秒のチャネリングが終わった！ 根のアーチは青の旗のもの。'); } else log(`チャネリング中… ${S.ch}/60秒。攻撃を受けると止まる。`); } },
+    hit: { n: '敵に殴られて中断', ok: () => S.guardDown && !S.foeWar && S.ch > 0, f: () => { S.ch = 0; log('殴られてチャネリングが止まった。最初から（仮）。'); } },
+    defend: { n: '敵のチャネリングを止める', main: true, ok: () => S.foeWar && S.guardDown, f: () => { S.foeWar = false; S.foeDeclared = false; S.guardDown = false; log('赤の旗のチャネリングを殴って止め、時間切れまで守った。領地は守られた。'); } },
+    lose: { n: '守り切れない', ok: () => S.foeWar && S.guardDown, f: () => { S.foeWar = false; S.foeDeclared = false; S.guardDown = false; S.owner = 'foe'; S.st = '持ち主'; S.works = 0; log('赤の旗がコアを取った。施設は残らない（仮）。'); } },
+    timeout: { n: '時間切れ（23時）', ok: () => S.st === '領地戦' && !S.foeWar, f: () => { S.guardDown = false; S.ch = 0; S.st = '空き'; log('時間切れ。領地は空きのまま。また布告できる。'); } },
     build: { n: '炉を建てる（素材で）', ok: () => S.owner === 'ours' && S.st === '持ち主' && S.works < 3, f: () => { S.works++; log(`施設を建てた（${S.works}つ）。維持費が ${upkeep()} になった。`); } },
     tax: { n: 'ほかの人が炉を使う（税）', ok: () => S.owner === 'ours' && S.st === '持ち主' && S.works > 0, f: () => { S.silver += 3 * 5; log('ほかの人が炉を5回使った。税 15 が入った（35 は消えた）。'); } },
     gather: { n: '採取する', ok: () => true, f: () => { log(S.owner === 'ours' && S.st === '持ち主' ? '採取：古木の材 ×1.3（持ち主の領地）。' : '採取：古木の材 ×1。'); } },
@@ -126,7 +131,7 @@ p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
   const SAY = {
     '空き': '誰も持っていない。持つには宣戦布告して、24時間後の領地戦で勝つ。',
     '24時間待つ': '布告済み。まだ戦えない。ほかのギルドも同じ領地に布告できる（来たら三つ巴）。',
-    '領地戦': '領地戦の時間。勝てば持ち主になる。',
+    '領地戦': '領地戦の時間。まず守護獣を倒す → 奥のコアを60秒チャネリング。殴られると止まる。',
     '持ち主': '持っている。施設を建てる・税が入る・採取が多い。毎日維持費。ほかのギルドに布告されたら24時間後に守る。',
     '荒れる': '維持費が払えていない。中身が止まっている。3日続くと空きに戻る。',
   };
@@ -136,7 +141,7 @@ p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
     $('track').innerHTML = order.map((s, j) => `<span class="st ${j === i ? 'now' : ''}">${s === '24時間待つ' ? '宣戦布告 → 24時間' : s}</span>`).join('<span class="ar">→</span>');
     let say = SAY[S.st];
     if (S.foeDeclared) say = `<span class="foe">赤の旗に布告された。</span> 24時間すすめて、守りの領地戦へ。`;
-    if (S.foeWar) say = '<span class="foe">守りの領地戦の時間。</span>';
+    if (S.foeWar) say = S.guardDown ? '<span class="foe">赤の旗がコアをチャネリング中。</span> 殴って止めれば守れる。' : '<span class="foe">守りの領地戦の時間。</span> 赤の旗が守護獣を攻めている。';
     if (S.owner === 'foe') say = '<span class="foe">赤の旗の領地。</span> 取り返すなら宣戦布告（今は空きではないので、見本では「最初から」）。';
     $('say').innerHTML = say;
     $('btns').innerHTML = Object.entries(ACTIONS).map(([k, a]) => `<button class="btn ${a.main ? 'main' : ''}" data-a="${k}" ${a.ok() ? '' : 'disabled'}>${a.n}</button>`).join('');
@@ -151,6 +156,7 @@ p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
       <span class="k">維持費</span><span class="num">${S.owner === 'ours' ? upkeep() + ' / 日' : '―'}</span>
       <span class="k">採取</span><span>${S.owner === 'ours' && S.st === '持ち主' ? '<span class="green">×1.3</span>' : '×1'}</span>
       <span class="k">税</span><span>${S.owner === 'ours' && S.works ? '使用料10のうち3' : '―'}</span>
+      <span class="k">コア</span><span>${S.guardDown && !S.foeWar ? `<span class="gold num">${S.ch}/60秒</span>` : S.guardDown ? '<span class="foe">敵がチャネリング中</span>' : '守護獣の奥で閉じている'}</span>
     </div>`;
     $('log').innerHTML = S.log.map(l => `<div>${l}</div>`).join('');
   }
