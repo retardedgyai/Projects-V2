@@ -30,27 +30,34 @@ internal object CoreWarriorRefChoreography {
         val yaw = atan2(e.direction.x(), e.direction.z())
         fun local(x: Double, y: Double, z: Double) = Vec(cos(yaw) * x + sin(yaw) * z, y, -sin(yaw) * x + cos(yaw) * z)
         fun part(name: String, at: Vec, scale: Double, partYaw: Double, life: Int, pitch: Double = 0.0, delay: Int = 0,
-                 ground: Boolean = true, secondary: Boolean = false) =
-            CoreCombatMeshPart("$PREFIX$name", "steel", at, Vec(scale, scale, scale), yaw = partYaw, pitch = pitch,
-                durationTicks = life, startSize = 1.0, endSize = 1.0, delayTicks = delay, ground = ground, secondary = secondary)
+                 ground: Boolean = true, roll: Double = 0.0, billboard: Boolean = false) =
+            CoreCombatMeshPart("$PREFIX$name", "steel", at, Vec(scale, scale, scale), yaw = partYaw, pitch = pitch, roll = roll,
+                durationTicks = life, startSize = 1.0, endSize = 1.0, delayTicks = delay, ground = ground, billboard = billboard)
         val impact = 3.6  // the blow lands ahead of where the lunge ends
         val centre = local(0.0, .12, impact)
+        val chest = local(0.0, 1.1, impact)
         val out = mutableListOf<CoreCombatMeshPart>()
         out += part("crack", centre, 5.2, yaw, 34)
-        // A crown of iron fangs round the blow, leaning outward; the far ones taller so they read behind the target.
-        for (k in 0 until 7) {
-            val a = yaw + k / 7.0 * 2 * PI + .2
-            val r = 1.15 + .45 * hash(k, 1)
-            val at = Vec(centre.x() + sin(a) * r, .12, centre.z() + cos(a) * r)
-            out += part("fang$k", at, 1.5 + .8 * hash(k, 2), a, 28, pitch = .32 + .18 * hash(k, 3), delay = (k % 3))
+        // The flash, facing the camera: a star of flame rays, a white frame for one tick, then a ring of hot pixels.
+        for (k in 0 until 7) out += part("ray$k", chest, 2.2 + 1.2 * hash(k, 11), 0.0, 6, ground = false,
+            roll = k / 7.0 * 2 * PI + .5 * hash(k, 12), billboard = true)
+        out += part("frame", chest, 2.4, 0.0, 2, ground = false, delay = 1, billboard = true)
+        out += part("ring", chest, 3.6, 0.0, 8, ground = false, delay = 2, billboard = true)
+        // Dark bars thrown out in a broken ring, lying along it.
+        for (k in 0 until 10) {
+            val a = yaw + k / 10.0 * 2 * PI + .3 * hash(k, 13)
+            out += part("bar$k", chest, .5 + .3 * hash(k, 14), a + PI / 2, 12, ground = false, delay = 1)
         }
-        // The flash: flame boards standing in a ring round the blow, facing out.
+        // A crown of broad iron fangs round the blow, opening outward.
         for (k in 0 until 6) {
-            val a = yaw + k / 6.0 * 2 * PI + .3
-            val at = Vec(centre.x() + sin(a) * .8, .12, centre.z() + cos(a) * .8)
-            out += part("flame$k", at, 1.7 + .5 * hash(k, 6), a, 8, pitch = .45)
+            val a = yaw + k / 6.0 * 2 * PI + .25
+            val r = 1.1 + .35 * hash(k, 1)
+            val at = Vec(centre.x() + sin(a) * r, .12, centre.z() + cos(a) * r)
+            out += part("fang$k", at, 1.4 + .7 * hash(k, 2), a, 28, pitch = .5 + .2 * hash(k, 3), delay = 2 + k % 2)
         }
-        for (k in 0 until 6) out += part("plate$k", local(0.0, .6, impact), .42 + .2 * hash(k, 5), yaw, 18, ground = false, secondary = true)
+        // White twinkles on whatever was struck, after the flash.
+        for (k in 0 until 3) out += part("twinkle$k", chest.add(local(.7 * (k - 1), .25 * (k % 2), 0.0)), .9, 0.0, 6,
+            ground = false, delay = 4 + k, billboard = true)
         return out
     }
 
@@ -79,19 +86,23 @@ internal object CoreWarriorRefChoreography {
                 // The fang stays the same size; it slides out of the ground and back.
                 CoreMeshPose(p.offset.add(0.0, -height * (1 - up), 0.0), p.scale, p.yaw, p.pitch, 0.0, "$DIR/fang_$model", live)
             }
-            name.startsWith("flame") -> {
-                val stage = (tick / 2).coerceAtMost(3)
-                val s = flameGrow[tick.coerceAtMost(flameGrow.size - 1)]
-                CoreMeshPose(p.offset, p.scale.mul(s), p.yaw, p.pitch, 0.0, "$DIR/flame_$stage", live)
+            name.startsWith("ray") -> {
+                val stage = intArrayOf(0, 0, 1, 1, 2, 3)[tick.coerceAtMost(5)]
+                val grow = doubleArrayOf(.55, 1.0, 1.08, 1.05, .95, .8)[tick.coerceAtMost(5)]
+                CoreMeshPose(p.offset, p.scale.mul(grow), 0.0, 0.0, p.roll, "$DIR/ray_$stage", live)
             }
-            name.startsWith("plate") -> {
-                val k = name.removePrefix("plate").toInt()
-                val a = k / 6.0 * 2 * PI + hash(k, 7)
-                val speed = 3.5 + 3.0 * hash(k, 8)
+            name == "frame" -> CoreMeshPose(p.offset, p.scale, 0.0, 0.0, 0.0, "$DIR/frame", live)
+            name == "ring" -> CoreMeshPose(p.offset, p.scale.mul(1.0 + tick * .06), 0.0, 0.0, 0.0, "$DIR/ring_${(tick / 2).coerceAtMost(3)}", live)
+            name.startsWith("twinkle") -> CoreMeshPose(p.offset, p.scale.mul(if (tick % 2 == 0) 1.0 else .8), 0.0, 0.0, 0.0,
+                "$DIR/twinkle_${(tick / 2).coerceAtMost(2)}", live)
+            name.startsWith("bar") -> {
+                val k = name.removePrefix("bar").toInt()
+                val a = p.yaw - PI / 2
                 val s = t.coerceAtLeast(0.0) / 20.0
-                val y = (5.5 + 3.0 * hash(k, 9)) * s - 9.8 * s * s / 2
-                val at = p.offset.add(sin(a) * speed * s, max(y, -.45), cos(a) * speed * s)
-                CoreMeshPose(at, p.scale, p.yaw + t * .5, t * (.35 + .3 * hash(k, 4)), t * .25, "$DIR/plate", live)
+                val speed = 9.0 + 4.0 * hash(k, 15)
+                val y = (3.0 + 3.0 * hash(k, 16)) * s - 9.8 * s * s / 2
+                val at = p.offset.add(sin(a) * speed * s, y, cos(a) * speed * s)
+                CoreMeshPose(at, p.scale, p.yaw, t * .12 * (hash(k, 17) - .5), t * .3 * (hash(k, 18) - .5), "$DIR/bar", live)
             }
             else -> null
         }

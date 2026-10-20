@@ -81,6 +81,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 record.model=initial.model;record.tint=initial.tint
                 meta.setItemStack(stack(record.model,initial.tint))
                 meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
+                if(part.billboard) meta.setBillboardRenderConstraints(net.minestom.server.entity.metadata.display.AbstractDisplayMeta.BillboardConstraints.CENTER)
                 meta.setBrightness(15,15);meta.setViewRange(1.0f)
                 meta.setTransformationInterpolationDuration(interpolationTicks(part))
                 // Authored warrior contours start at their real phase, not a hidden extra
@@ -88,12 +89,14 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 // The first pose includes the guard's grip pivot and planted flag root.
                 // Delayed echoes must remain hidden even though their entity is ready.
                 meta.setScale(if(immediateContour && initial.visible) initial.scale else Vec.ZERO)
-                meta.setTranslation(if(immediateContour) initial.offset else part.offset)
+                // A camera-facing sprite turns its translation with the camera: it stands at its own spot instead.
+                meta.setTranslation(if(part.billboard) Vec.ZERO else if(immediateContour) initial.offset else part.offset)
                 meta.setLeftRotation(if(immediateContour) CoreCombatMeshArt.rotation(initial.yaw,initial.pitch,initial.roll)
                     else CoreCombatMeshArt.rotation(part.yaw,part.pitch,part.roll))
                 meta.setRightRotation(CoreCombatMeshArt.vanillaItemCorrection)
             }
-            entity.setInstance(instance,Pos(effect.origin.x(),effect.origin.y(),effect.origin.z())).whenComplete { _,failure ->
+            val spawnAt=if(part.billboard) effect.origin.add(part.offset) else effect.origin
+            entity.setInstance(instance,Pos(spawnAt.x(),spawnAt.y(),spawnAt.z())).whenComplete { _,failure ->
                 if(failure!=null || record.cancelled.get() || entity.isRemoved || owner.instance!==instance) entity.remove()
                 else if(immediateContour && CoreCombatPresentation.packed(owner) &&
                     (CoreCombatPresentation.detail(owner)!=CoreCombatPresentation.Detail.MINIMAL || boundary(part)) &&
@@ -144,7 +147,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
             val facing=if(p.followOwner) atan2(owner.position.direction().x(),owner.position.direction().z())-v.baseYaw else 0.0
             val at=pose.offset
             val offset=if(p.followOwner) Vec(cos(facing)*at.x()+sin(facing)*at.z(),at.y(),-sin(facing)*at.x()+cos(facing)*at.z())
-                .add(owner.position.sub(v.ownerStart).asVec()) else at
+                .add(owner.position.sub(v.ownerStart).asVec()) else if(p.billboard) Vec.ZERO else at
             // Let the final zero-width target finish. Restarting its interpolation
             // during drain ticks or removing at the authored endpoint cuts off the fade.
             // Planted plates are static: send only opening/warning/breakup phase changes.

@@ -48,7 +48,7 @@ def dissolve(img, amount, seed=0):
 
 # ---------------------------------------------------------------- textures
 def fang_texture():
-    """16 x 16: rows 0-4 the hot tip, 5-10 the upper iron, 11-15 the lower iron; a molten seam down the middle."""
+    """16 x 16: dark iron with a lit left panel, a molten seam, hot red edges on both sides and a glowing tip."""
     img = Image.new('RGBA', (16, 16))
     px = img.load()
     for y in range(16):
@@ -64,6 +64,8 @@ def fang_texture():
     for i, y in enumerate(range(5, 16)):
         px[seam[i], y] = (C if y < 9 else R) + (255,)
         px[seam[i] + 1, y] = (R if y < 9 else D) + (255,)
+    for y in range(16):  # hot edges: the iron glows where it was torn
+        px[0, y] = R + (255,); px[15, y] = R + (255,)
     for x in range(16):  # where it tore out of the ground: molten
         px[x, 15] = (R if x % 3 else C) + (255,)
     return img
@@ -127,6 +129,71 @@ def crack_texture(stage):
     return img
 
 
+Y = (255, 238, 170)    # pale yellow, between the white core and the red (the flash reads white, not beige)
+O = (255, 120, 40)
+
+
+def ray_texture(stage, w=24, h=48):
+    """One flame ray of the flash, base at the bottom centre: mostly white, a thin yellow band, a red edge, a dark
+    outline. stage 0 = full white, 1 = white core, 2 = red, 3 = broken."""
+    img = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    cx, base = w / 2, h - 1
+
+    def shape(k):
+        return [(cx - w * .30 * k, base), (cx - w * .46 * k, base - h * .36 * k), (cx - w * .18 * k, base - h * .44 * k),
+                (cx - w * .26 * k, base - h * .70 * k), (cx, base - h * k + 1), (cx + w * .22 * k, base - h * .66 * k),
+                (cx + w * .14 * k, base - h * .46 * k), (cx + w * .44 * k, base - h * .40 * k), (cx + w * .30 * k, base)]
+    layers = {0: [(K, 1.0), (R, .93), (Y, .86), (W, .78)], 1: [(K, 1.0), (R, .9), (Y, .76), (W, .56)],
+              2: [(K, 1.0), (R, .86), (O, .5)], 3: [(K, .8), (D, .6)]}[stage]
+    for tone, k in layers:
+        d.polygon(shape(k), fill=tone + (255,))
+    if stage == 3: img = dissolve(img, .45, 2)
+    return img
+
+
+def ring_texture(stage):
+    """The ring of hot pixels left round the blow: chunky red and orange blocks that break up and drift apart."""
+    img = Image.new('RGBA', (48, 48), (0, 0, 0, 0))
+    px = img.load()
+    c = 23.5
+    r0 = 14 + stage * 2.5
+    for y in range(0, 48, 2):
+        for x in range(0, 48, 2):
+            dd = math.hypot(x + 1 - c, y + 1 - c)
+            band = abs(dd - r0) + 2.2 * _h(x // 2, y // 2, 4)
+            if band < 3.4:
+                col = (O if _h(x, y, 1) > .55 else R) if stage < 2 else (R if _h(x, y, 1) > .5 else D)
+                if band > 2.6: col = K
+                for dy in (0, 1):
+                    for dx in (0, 1): px[x + dx, y + dy] = col + (255,)
+    return dissolve(img, (0, .2, .45, .7)[stage], 11) if stage else img
+
+
+def twinkle_texture(stage):
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    arm = (7, 6, 4)[stage]
+    d.polygon([(8, 8 - arm), (9, 7), (8 + arm, 8), (9, 9), (8, 8 + arm), (7, 9), (8 - arm, 8), (7, 7)], fill=R + (255,))
+    a2 = max(1, arm - 2)
+    d.polygon([(8, 8 - a2), (8.6, 7.4), (8 + a2, 8), (8.6, 8.6), (8, 8 + a2), (7.4, 8.6), (8 - a2, 8), (7.4, 7.4)], fill=W + (255,))
+    return img
+
+
+def frame_texture():
+    img = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle((1, 1, 30, 30), outline=W + (255,), width=2)
+    return img
+
+
+def bar_texture():
+    img = Image.new('RGBA', (16, 4), I0 + (255,))
+    d = ImageDraw.Draw(img)
+    d.line([(0, 0), (15, 0)], fill=I2 + (255,))
+    return img
+
+
 # ---------------------------------------------------------------- models (16 units = the display's scale in blocks)
 def face(uv, tex='#0'):
     return {'texture': tex, 'uv': uv}
@@ -142,10 +209,10 @@ def fang_model(tex):
     # Base sits on y=8 (the ground). Three tapered blocks; the tip block is the white-hot point.
     return {'ambientocclusion': False, 'textures': {'0': tex, 'particle': tex}, 'elements': [
         # A broad, flat blade of iron: wide across, thin front to back, tapering in four steps to a hot point.
-        box((3.5, 8, 7.0), (12.5, 13, 9.0), [0, 10, 16, 16], [2, 11, 14, 14]),
-        box((4.8, 13, 7.3), (11.2, 18, 8.7), [1, 6, 15, 11], [3, 6, 13, 9]),
-        box((6.2, 18, 7.6), (9.8, 22, 8.4), [3, 3, 13, 7], [5, 3, 11, 5]),
-        box((7.3, 22, 7.8), (8.7, 25, 8.2), [5, 0, 11, 3], [6, 0, 10, 2]),
+        box((2.0, 8, 6.8), (14.0, 14, 9.2), [0, 10, 16, 16], [2, 11, 14, 14]),
+        box((3.5, 14, 7.1), (12.5, 19, 8.9), [0, 6, 16, 11], [3, 6, 13, 9]),
+        box((5.2, 19, 7.4), (10.8, 23, 8.6), [0, 3, 16, 7], [5, 3, 11, 5]),
+        box((6.8, 23, 7.7), (9.2, 26, 8.3), [0, 0, 16, 3], [6, 0, 10, 2]),
     ]}
 
 
@@ -159,6 +226,13 @@ def board_model(tex, height=24):
 def ground_model(tex):
     return {'ambientocclusion': False, 'textures': {'0': tex, 'particle': tex}, 'elements': [
         {'from': [0, 8.02, 0], 'to': [16, 8.02, 16], 'shade': False, 'faces': {'up': face([0, 0, 16, 16])}}]}
+
+
+def centred_model(tex):
+    # A two-sided square centred on the model origin (for camera-facing sprites).
+    return {'ambientocclusion': False, 'textures': {'0': tex, 'particle': tex}, 'elements': [
+        {'from': [0, 0, 8], 'to': [16, 16, 8], 'shade': False,
+         'faces': {'north': face([0, 0, 16, 16]), 'south': face([16, 0, 0, 16])}}]}
 
 
 def plate_model(tex):
@@ -183,6 +257,14 @@ def build(assets, write):
     for s in range(4):
         model(f'flame_{s}', board_model(texture(f'flame_{s}', flame_texture(s))))
     model('plate', plate_model(texture('plate', plate_texture())))
+    for st in range(4):
+        model(f'ray_{st}', board_model(texture(f'ray_{st}', ray_texture(st)), height=16))
+        model(f'ring_{st}', centred_model(texture(f'ring_{st}', ring_texture(st))))
+    for st in range(3):
+        model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', twinkle_texture(st))))
+    model('frame', centred_model(texture('frame', frame_texture())))
+    model('bar', {'ambientocclusion': False, 'textures': {'0': texture('bar', bar_texture())}, 'elements': [
+        box((0, 7.4, 6.5), (16, 8.6, 9.5), [0, 0, 16, 16], [0, 0, 16, 16])]})
     for s in range(5):
         model(f'crack_{s}', ground_model(texture(f'crack_{s}', crack_texture(s))))
 
