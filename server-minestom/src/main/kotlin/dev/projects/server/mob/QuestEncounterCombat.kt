@@ -1754,7 +1754,8 @@ class QuestEncounterCombat(
                         shaderFx.shell(mob.entity.position, gimmickTag(mob), (event.frame.ability.telegraphMillis / 50).toInt())
                     }
                 }
-                updateName(mob, event.frame.ability.displayName)
+                // The attack's name is not shown (Creator 2026-10-20): the ground warning says what is coming.
+                updateName(mob)
                 mob.view?.ability(event.frame.ability.id)
                 if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) {
                     val t = event.frame.ability.telegraphMillis

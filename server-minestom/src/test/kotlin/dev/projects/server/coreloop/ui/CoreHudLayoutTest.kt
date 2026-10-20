@@ -111,9 +111,10 @@ class CoreHudLayoutTest {
             Triple("boss", "sakura", CoreBossBarHud.render(bossHud().copy(name = "桜牙獣", grade = MobGrade.CALAMITY,
                 dedicated = "sakura_fang"), 14900.0)),
         ) + plates.flatMap { (name, hud) -> CoreMobNameplate.lines(hud).mapIndexed { i, line -> Triple("plate", "$name-$i", line) } } + listOf(
-            Triple("damage", "normal", CoreDamageNumbers.render(482.0, false, false)),
-            Triple("damage", "critical", CoreDamageNumbers.render(1260.0, true, false)),
-            Triple("damage", "weak", CoreDamageNumbers.render(733.0, false, true)),
+            Triple("damage", "normal", CoreDamageNumbers.render(482.0, false, dev.projects.server.coreloop.CoreDamageType.PHYSICAL)),
+            Triple("damage", "critical", CoreDamageNumbers.render(1260.0, true, dev.projects.server.coreloop.CoreDamageType.PHYSICAL)),
+            Triple("damage", "magic-weak", CoreDamageNumbers.render(733.0, false, dev.projects.server.coreloop.CoreDamageType.MAGICAL, "fire")),
+            Triple("damage", "spot", CoreDamageNumbers.render(96.0, false, dev.projects.server.coreloop.CoreDamageType.PHYSICAL, spot = true)),
         )
         for ((surface, name, component) in surfaces) {
             val (glyphs, net) = layout(component)
@@ -172,7 +173,8 @@ class CoreHudLayoutTest {
             MobMod.entries.take(grade.mods), health.toDouble(), 200.0, if (grade.breaks) health / 200.0 else null, null, effects)))
             assertEquals(0, layout(line).second)
         for (amount in listOf(0.0, 7.0, 99.0, 12345.0, Double.NaN)) for (crit in listOf(true, false))
-            assertEquals(0, layout(CoreDamageNumbers.render(amount, crit, !crit)).second)
+            for (type in dev.projects.server.coreloop.CoreDamageType.entries) for (element in listOf(null, "fire", "ice", "lightning"))
+                assertEquals(0, layout(CoreDamageNumbers.render(amount, crit, type, element, spot = !crit)).second)
     }
 
     @Test fun `all seventy skill arts have every state and sit exactly on hotbar slots two to six`() {

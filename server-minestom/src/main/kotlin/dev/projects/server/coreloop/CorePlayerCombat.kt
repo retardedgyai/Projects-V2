@@ -133,7 +133,9 @@ internal class CorePlayerCombat(
     private data class DotKey(val id:UUID,val poison:Boolean = false)
     private val burns = mutableMapOf<DotKey, Burn>()
     private var visualContactsThisTick = 0
-    private val damageLabels = mutableListOf<Pair<Entity, Long>>()
+    /** [shrunk]: a newer hit on the same target has pushed this one down; its own settle steps then stop. */
+    private class DamageLabel(val entity: Entity, val expiry: Long, val target: java.util.UUID, val size: Double) { var shrunk = false }
+    private val damageLabels = mutableListOf<DamageLabel>()
 
     private data class PendingSkill(val id: Int, val definition: CoreSkillDefinition, val origin: Pos, val direction: Vec, val startup: Int,
         var elapsed: Int = 0, var gained: Boolean = false, val empowered: Double = 0.0, val counter: Boolean = false,
@@ -285,7 +287,7 @@ internal class CorePlayerCombat(
         if (classId == CoreClass.WARRIOR) rampageTick()
         previousPosition?.let { if (it.distance(player.position) > .035) classState.stationarySince = tickNumber }
         previousPosition = player.position
-        damageLabels.removeAll { (entity, expiry) -> if (tickNumber >= expiry) { entity.remove(); true } else false }
+        damageLabels.removeAll { if (tickNumber >= it.expiry) { it.entity.remove(); true } else false }
         if (defeated) return
         if(player.isRemoved) { resetActions(); return }
         if (tickNumber % 20 == 0L) {
@@ -710,7 +712,7 @@ internal class CorePlayerCombat(
             sound(if (classId == CoreClass.RANGER) SoundEvent.ENTITY_ARROW_HIT else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .4f, 1.4f)
             vfx.particles(if (classId == CoreClass.MAGE) Particle.FLAME else Particle.END_ROD, position.add(0.0, 1.0, 0.0), 6, Vec(.2, .3, .2), .03f)
         }
-        showDamage(position, applied, critical, weak || weakSpot)
+        showDamage(id, position, applied, critical, type, if (weak) enemies.weaknessOf(id) else null, weakSpot)
         if (stats.fireFlat > 0 && enemies.isAlive(id)) {
             burns[DotKey(id)] = Burn(maxOf(burns[DotKey(id)]?.damage ?: 0.0, CoreCombatMath.outgoing(stats.fireFlat * .3, type, tags, stats)), type, stats, tickNumber + 20, 3)
             vfx.particles(Particle.SMALL_FLAME, position.add(0.0, 1.0, 0.0), 7, Vec(0.2, 0.4, 0.2), 0.01f)
@@ -790,39 +792,54 @@ internal class CorePlayerCombat(
         return player.position.add(flatFacing().mul(minOf(maximum,7.0)))
     }
 
-    private fun showDamage(position: Pos, amount: Double, critical: Boolean, weak: Boolean) {
+    /**
+     * Big floating number over the hit (2026-10-20): the newest is the largest and highest; the target's older
+     * numbers shrink and sink below it, so a burst of hits reads as a stack.
+     */
+    private fun showDamage(target: java.util.UUID, position: Pos, amount: Double, critical: Boolean, type: CoreDamageType,
+                           element: String?, spot: Boolean) {
         // Bounded, short-lived combat feedback; never a client damage declaration.
-        if (damageLabels.size >= 24) damageLabels.removeAt(0).first.remove()
+        if (damageLabels.size >= 24) damageLabels.removeAt(0).entity.remove()
         val pixel = packed()
-        val size = if (critical) 0.95 else 0.7
+        if (pixel) for (old in damageLabels) if (old.target == target && !old.entity.isRemoved) {
+            old.shrunk = true
+            old.entity.editEntityMeta(TextDisplayMeta::class.java) { meta ->
+                meta.setTransformationInterpolationStartDelta(0); meta.setTransformationInterpolationDuration(4)
+                meta.setScale(Vec(old.size * .5, old.size * .5, old.size * .5)); meta.setTranslation(Vec(0.0, .1, 0.0))
+            }
+        }
+        val size = if (critical) 1.25 else 1.0
         val random = ThreadLocalRandom.current()
         val entity = Entity(EntityType.TEXT_DISPLAY).apply {
             setNoGravity(true); setHasPhysics(false)
             editEntityMeta(TextDisplayMeta::class.java) { meta ->
-                meta.setText(if (pixel) dev.projects.server.coreloop.ui.CoreDamageNumbers.render(amount, critical, weak)
-                    else Component.text("${if (critical) "✦ " else ""}${amount.roundToInt()}${if (weak) " 弱点" else ""}",
-                        if (critical) NamedTextColor.GOLD else if (weak) NamedTextColor.AQUA else NamedTextColor.WHITE))
+                meta.setText(if (pixel) dev.projects.server.coreloop.ui.CoreDamageNumbers.render(amount, critical, type, element, spot)
+                    else Component.text("${if (critical) "✦ " else ""}-${amount.roundToInt()}${if (element != null || spot) " 弱点" else ""}",
+                        if (critical) NamedTextColor.GOLD else if (type == CoreDamageType.MAGICAL) NamedTextColor.BLUE else NamedTextColor.YELLOW))
                 meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
                 // Pop in large, then settle and rise (client-side interpolation, two meta updates).
-                meta.setScale(Vec(size * 1.7, size * 1.7, size * 1.7)); meta.setShadow(!pixel); meta.setBackgroundColor(0)
+                meta.setScale(Vec(size * 1.6, size * 1.6, size * 1.6)); meta.setShadow(!pixel); meta.setBackgroundColor(0)
             }
-            setInstance(player.instance, position.add(random.nextDouble(-.35, .35), 2.2 + random.nextDouble(0.0, .25), random.nextDouble(-.35, .35)))
+            setInstance(player.instance, position.add(random.nextDouble(-.3, .3), 2.3 + random.nextDouble(0.0, .2), random.nextDouble(-.3, .3)))
         }
+        val label = DamageLabel(entity, tickNumber + 18, target, size)
         if (pixel) {
             entity.scheduler().buildTask {
+                if (label.shrunk) return@buildTask
                 entity.editEntityMeta(TextDisplayMeta::class.java) { meta ->
                     meta.setTransformationInterpolationStartDelta(0); meta.setTransformationInterpolationDuration(3)
-                    meta.setScale(Vec(size, size, size)); meta.setTranslation(Vec(0.0, .15, 0.0))
+                    meta.setScale(Vec(size, size, size)); meta.setTranslation(Vec(0.0, .2, 0.0))
                 }
             }.delay(net.minestom.server.timer.TaskSchedule.tick(1)).schedule()
             entity.scheduler().buildTask {
+                if (label.shrunk) return@buildTask
                 entity.editEntityMeta(TextDisplayMeta::class.java) { meta ->
                     meta.setTransformationInterpolationStartDelta(0); meta.setTransformationInterpolationDuration(12)
-                    meta.setScale(Vec(size * .8, size * .8, size * .8)); meta.setTranslation(Vec(0.0, .8, 0.0))
+                    meta.setScale(Vec(size * .85, size * .85, size * .85)); meta.setTranslation(Vec(0.0, .8, 0.0))
                 }
             }.delay(net.minestom.server.timer.TaskSchedule.tick(5)).schedule()
         }
-        damageLabels += entity to tickNumber + 18
+        damageLabels += label
     }
 
     private fun visibleTo(targetId: java.util.UUID, enemies: QuestEncounterCombat): Boolean {
@@ -969,7 +986,7 @@ internal class CorePlayerCombat(
         if (appliedSpeed >= 0 && appliedSpeed != baseSpeed) applySpeed(1.0)
         vfx.cancel()
         warriorMarks.clear()
-        damageLabels.forEach { it.first.remove() }; damageLabels.clear()
+        damageLabels.forEach { it.entity.remove() }; damageLabels.clear()
     }
     private fun syncVanillaHealth() {
         player.getAttribute(Attribute.MAX_HEALTH).baseValue = 20.0

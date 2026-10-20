@@ -223,6 +223,33 @@ def boss_sheet(fonts, snapshots):
     sheet.save(OUT / "boss-bars-4x.png")
 
 
+def damage_sheet(fonts, snapshots):
+    """damage-4x.png: damage numbers as the client stacks them over a target — the newest largest and on
+    top, older hits shrunk below it (text-display scale: the GUI pixel grid scaled per label)."""
+    keys = ["damage-critical", "damage-normal", "damage-magic-weak", "damage-spot"]
+    if not all(k in snapshots for k in keys):
+        return
+    import mock_combat_hud_directions as scene
+    screen = scene.world().crop((0, 0, W, 112)).resize((W * S, 112 * S), Image.NEAREST)
+
+    def label(key, scale):
+        glyphs = snapshots[key]["glyphs"]
+        layer = Image.new("RGBA", (W * S, 40 * S))
+        draw(layer, fonts, dict(snapshots[key], glyphs=glyphs), lambda ascent: 16 if ascent is None else 16 + 7 - ascent)
+        box = layer.getchannel("A").getbbox()
+        part = layer.crop(box)
+        return part.resize((max(1, round(part.width * scale)), max(1, round(part.height * scale))), Image.NEAREST)
+    stack = [("damage-critical", 1.25, 14), ("damage-magic-weak", .5, 52), ("damage-normal", .5, 64), ("damage-spot", .5, 76)]
+    for key, scale, y in stack:
+        img = label(key, scale * 1.0)
+        screen.alpha_composite(img, ((W // 2) * S - img.width // 2, y * S // 1))
+    # the three kinds side by side at full size, for reading
+    for i, key in enumerate(["damage-normal", "damage-magic-weak", "damage-spot"]):
+        img = label(key, 1.0)
+        screen.alpha_composite(img, ((60 + i * 140) * S // 1 - img.width // 2 + 0, 96 * S - img.height))
+    screen.save(OUT / "damage-4x.png")
+
+
 def main():
     global S
     snapshots = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in sorted((OUT / "snapshots").glob("*.json"))}
@@ -252,6 +279,7 @@ def main():
         image.crop(((W // 2 - 120) * S, 0, (W // 2 + 120) * S, 30 * S)).resize((240 * 8, 30 * 8), Image.NEAREST).save(OUT / "boss-8x.png")
     mob_hud(fonts, snapshots)
     boss_sheet(fonts, snapshots)
+    damage_sheet(fonts, snapshots)
     # The creator plays at GUI scale 2: the same view, 2 screen px per GUI px, then enlarged x4
     # like a zoomed in-game screenshot (compare with the client's F2 shots).
     S = 2
