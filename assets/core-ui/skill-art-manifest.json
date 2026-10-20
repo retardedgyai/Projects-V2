@@ -16,7 +16,8 @@
       ],
       "preapproved": false,
       "source": "assets/core-ui/skills/warrior-diamond/dash.png",
-      "authored_by": "scripts/build_diamond_skill_icons.py"
+      "authored_by": "scripts/build_diamond_skill_icons.py",
+      "frameless": true
     },
     "slam": {
       "source_sha256": "67adeabcb33431ae9800ad86f61d6e9396f4af911f21715000f0c4f983b98da7",
@@ -31,7 +32,8 @@
       ],
       "preapproved": false,
       "source": "assets/core-ui/skills/warrior-diamond/slam.png",
-      "authored_by": "scripts/build_diamond_skill_icons.py"
+      "authored_by": "scripts/build_diamond_skill_icons.py",
+      "frameless": true
     },
     "whirl": {
       "source_sha256": "233569745ed3cd2986be31f3bdcce314d3910156351cece31d32fbedb1c5f6a8",
@@ -46,7 +48,8 @@
       ],
       "preapproved": false,
       "source": "assets/core-ui/skills/warrior-diamond/whirl.png",
-      "authored_by": "scripts/build_diamond_skill_icons.py"
+      "authored_by": "scripts/build_diamond_skill_icons.py",
+      "frameless": true
     },
     "war_guard": {
       "source_sha256": "7a562aa3b7381e8d89a9735b686907042d7e72cbe738ae3eebe04310bca38f72",
@@ -61,7 +64,8 @@
       ],
       "preapproved": false,
       "source": "assets/core-ui/skills/warrior-diamond/war_guard.png",
-      "authored_by": "scripts/build_diamond_skill_icons.py"
+      "authored_by": "scripts/build_diamond_skill_icons.py",
+      "frameless": true
     },
     "war_wound": {
       "source_sha256": "3a03e7777ad0125ae4272dfd4ccc921df095e220c0e649e45446dd7d301157ca",
@@ -76,7 +80,8 @@
       ],
       "preapproved": false,
       "source": "assets/core-ui/skills/warrior-diamond/war_wound.png",
-      "authored_by": "scripts/build_diamond_skill_icons.py"
+      "authored_by": "scripts/build_diamond_skill_icons.py",
+      "frameless": true
     },
     "war_counter": {
       "source_sha256": "147f4a046daccf457ae0fa2bc7e51662985bfd0b0c62241826f94a16019e9b4b",
@@ -130,7 +135,8 @@
       ],
       "preapproved": false,
       "source": "assets/core-ui/skills/warrior-diamond/war_ult.png",
-      "authored_by": "scripts/build_diamond_skill_icons.py"
+      "authored_by": "scripts/build_diamond_skill_icons.py",
+      "frameless": true
     },
     "war_banner": {
       "source_sha256": "77a7010dd62df59b0fe7bfeea1f576d11804d09e031050918ee996b25da2f6fa",

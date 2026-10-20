@@ -19,6 +19,7 @@ The hotbar HUD shows skill art at 16 px (build_combat_hud reduces the 32 px mast
 shadow is dropped). It writes that to assets/core-ui/skills/warrior-diamond/ and its exact 2x copy as the 32 px
 master in assets/core-ui/skills/, so the pixels in game are these pixels. 赤熱 has no HUD slot yet, so it only
 gets its 16 px original.
+The icons are their own frame, so the manifest marks them frameless: menus show them without the square class frame.
 """
 import hashlib
 import json
@@ -216,7 +217,7 @@ def install(icons):
             'master_sha256': hashlib.sha256(master.read_bytes()).hexdigest(), 'source_size': [16, 16],
             'master_size': [32, 32], 'preapproved': False,
             'source': f'assets/core-ui/skills/warrior-diamond/{name}.png',
-            'authored_by': 'scripts/build_diamond_skill_icons.py'}
+            'authored_by': 'scripts/build_diamond_skill_icons.py', 'frameless': True}
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
 
 
