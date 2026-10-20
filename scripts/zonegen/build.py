@@ -18,8 +18,9 @@ for p in zone1.SPEC.get("pieces", []):
     if p["kind"] == "great_tree":
         c.reserve("大樹", x, zz, p["r"], allow_route=True)
         places.knoll(x, zz + 2, 24, 9)
-        places.dungeon((x, zz), c.at(x, zz))
+        TG0 = c.at(x, zz)
         greattree.build(bl, c.put, c.at, z.B, c.route, x, zz, c.mark, seed=77)
+        places.dungeon((x, zz), TG0)                                # carved after the tree, so no root plate blocks the mouth
     elif p["kind"] in ("rest", "fungal", "hollow", "wolf", "tower", "boulders"):
         fn = {"rest": places.rest_point, "fungal": places.fungal, "hollow": places.root_hollow, "wolf": places.wolf_den,
               "tower": places.tower, "boulders": places.boulders}[p["kind"]]

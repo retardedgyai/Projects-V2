@@ -20,7 +20,7 @@ SPEC = dict(
         dict(name="tree", at=(240, 118), pad=0),
         dict(name="mouth", at=(241, 140), pad=0),
         dict(name="fungal", at=(95, 235), pad=0),
-        dict(name="hollow", at=(400, 85), pad=26),
+        dict(name="hollow", at=(400, 85), pad=26, bowl=3),
         dict(name="pond_jetty", at=(128, 398)),
         dict(name="boulders", at=(282, 428)),
         dict(name="wolf", at=(440, 462)),

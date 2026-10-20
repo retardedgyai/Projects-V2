@@ -91,7 +91,7 @@ def root_hollow(BX, BZ):
             if d < 30 * (1 + .16 * math.sin(3 * math.atan2(z - BZ, x - BX) + 1) + .08 * math.sin(5 * math.atan2(z - BZ, x - BX))) and 0 <= x < B and 0 <= z < B:
                 for y in range(at(x, z) + 1, at(x, z) + 6): w.b.pop((x, y, z), None)
                 n = noise3(x, 0, z, 51, 10)
-                put(x, at(x, z), z, *(("moss_block",) if n > .6 else ("rooted_dirt",) if n < .3 else ("grass_block_top", "grass_block_side")))
+                put(x, at(x, z), z, *(("moss_block",) if n > .64 else ("grass_block_top", "grass_block_side")))
     mark(BX - 36, BZ - 36, BX + 36, BZ + 36)
     RAD = lambda a: 31 * (1 + .16 * math.sin(3 * a + 1) + .08 * math.sin(5 * a))
     a0 = 0.0
@@ -359,8 +359,8 @@ def knoll(cx, cz, r, h):
 
 
 def dungeon(TREE, TG):
-    M0 = (TREE[0] + 1, TREE[1] + 20)
-    yd = at(*M0)
+    M0 = (TREE[0] + 1, TREE[1] + 17)                                   # the mouth sits in the knoll's face, just off the road
+    yd = min(at(*M0), at(M0[0], M0[1] + 5))                           # its floor is at the road's level
     level_pad(M0[0] - 5, M0[1] - 1, M0[0] + 5, M0[1] + 3, yd)            # a small level apron before the mouth
     for x in range(M0[0] - 6, M0[0] + 7):
         for z in range(M0[1] - 19, M0[1] + 1):
@@ -397,11 +397,11 @@ def dungeon(TREE, TG):
         pts = bez((M0[0] + side * 7, yd + 9, M0[1] - 5), (M0[0] + side * 4.5, yd + 9, M0[1] + .5), (M0[0] - side * 1.5, yd + 6.5, M0[1] + .5), 10)
         pts += bez((M0[0] + side * 4.5, yd + 9, M0[1] + .5), (M0[0] + side * 4.2, yd + 3, M0[1] + 1.2), (M0[0] + side * 4.6, yd - 1, M0[1] + 1.5), 8)
         for i, (p0, p1) in enumerate(zip(pts, pts[1:])):
-            r = 1.9 if i < 10 else 1.6 - (i - 10) * .06
+            r = 1.2 if i < 10 else 1.0 - (i - 10) * .04
             tube(p0, p1, r, r, moss_top=True)
-    for x in range(M0[0] - 2, M0[0] + 3):                                 # keep the opening clear of the frame
-        for y in range(yd + 1, yd + 5):
-            for z in range(M0[1] - 1, M0[1] + 3): w.b.pop((x, y, z), None)
+    for x in range(M0[0] - 3, M0[0] + 4):                                 # keep the opening clear of the frame and of the tree's roots
+        for y in range(yd + 1, yd + 6 - (1 if abs(x - M0[0]) == 3 else 0)):
+            for z in range(M0[1] - 2, M0[1] + 8): w.b.pop((x, y, z), None)
     for k in range(9):                                                   # vines and hanging roots over the lintel
         x = M0[0] - 4 + k
         for y in range(yd + 9, yd + 3, -1):

@@ -139,7 +139,8 @@ class Zone:
             p["y"] = y
             n = (self.fbm(2, 14, .5, 900 + cx) - .5) * .3
             d = np.hypot(self.xx - cx, self.zz - cz) / r + n
-            self.set_locked(d < 1, float(y), 5)
+            bowl = p.get("bowl", 0)
+            self.set_locked(d < 1, (y - bowl * np.clip(1 - d * d, 0, 1)).astype(np.float32), 5)
 
     def obstacles(self):
         """Pillar stems and other big footprints are reserved before roads are routed, so roads go round them."""
@@ -266,20 +267,19 @@ class Zone:
         self.H = np.where(L, self.H, self.macroH + D).astype(np.float32)
         self.limit_slope_near_locks()
 
-    def limit_slope_near_locks(self, reach=6, max_step=.95):
-        """Within `reach` of a road or pad, the free ground may not rise or fall more than one block per block."""
-        near = self.dist_to(self.kind == 1) < reach
-        near |= self.dist_to(self.kind == 2) < reach
-        near |= self.dist_to(self.kind == 5) < reach
-        near |= self.dist_to((self.kind == 6) | (self.kind == 7), 8) < reach
-        near &= ~self.lock
-        H = self.H
-        for _ in range(reach * 2):
-            p = np.pad(H, 1, mode="edge")
-            mn = np.minimum.reduce([p[1:-1, 2:], p[1:-1, :-2], p[2:, 1:-1], p[:-2, 1:-1]])
-            mx = np.maximum.reduce([p[1:-1, 2:], p[1:-1, :-2], p[2:, 1:-1], p[:-2, 1:-1]])
-            H = np.where(near, np.clip(H, mx - max_step, mn + max_step), H).astype(np.float32)
-        self.H = H
+    def limit_slope_near_locks(self):
+        """Near a road the free ground rises at most half a block per block (each 1-block rise gets a tread before the next,
+        so a road never runs in a trench); near pads and shores, one block per block."""
+        for (mask, reach, step) in (((self.kind == 1) | (self.kind == 2), 9, .5),
+                                    ((self.kind == 5) | (self.kind == 6) | (self.kind == 7), 6, .95)):
+            near = (self.dist_to(mask, reach + 2) < reach) & ~self.lock
+            H = self.H
+            for _ in range(reach * 2):
+                p = np.pad(H, 1, mode="edge")
+                mn = np.minimum.reduce([p[1:-1, 2:], p[1:-1, :-2], p[2:, 1:-1], p[:-2, 1:-1]])
+                mx = np.maximum.reduce([p[1:-1, 2:], p[1:-1, :-2], p[2:, 1:-1], p[:-2, 1:-1]])
+                H = np.where(near, np.clip(H, mx - step, mn + step), H).astype(np.float32)
+            self.H = H
 
     def dist_to(self, mask, cap=40):
         d = np.where(mask, 0, cap).astype(np.float32)
