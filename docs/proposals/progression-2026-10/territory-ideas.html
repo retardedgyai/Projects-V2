@@ -1,0 +1,148 @@
+<title>オープンワールドの領地</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header + filter chips, then a grid of idea cards (pick with ☆), picked tray sticky at bottom */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --sakura: #f2a3c0; --shade: #a98be0; --green: #9fd49a; --red: #e58b80;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1320px; margin: 0 auto; padding-block: 20px 140px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filters .lbl { font-size: .8rem; color: var(--muted); margin-right: 4px; }
+.f { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px 14px; font-size: .88rem; }
+.f[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card.picked { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.card.rec { background: linear-gradient(var(--panel), var(--panel)) padding-box; }
+.top { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+.key { font-family: var(--num); color: var(--gold); margin-right: 6px; }
+.name { font-weight: 700; font-size: 1.02rem; }
+.star { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; font-size: .85rem; white-space: nowrap; }
+.card.picked .star { color: #1a1405; background: var(--gold); border-color: var(--gold); }
+.what { color: var(--fg); margin: 0; }
+.ex { font-size: .86rem; color: var(--sakura); margin: 0; }
+.ex b { font-weight: 500; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: .75rem; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; color: var(--muted); }
+.tag.path { color: var(--cyan); border-color: #2f5560; }
+.tag.cost-軽 { color: var(--green); border-color: #3d5a3a; }
+.tag.cost-中 { color: var(--gold); border-color: #5b5030; }
+.tag.cost-重 { color: var(--red); border-color: #6a3a36; }
+.tag.recm { color: #1a1405; background: var(--gold); border-color: var(--gold); }
+.note { font-size: .8rem; color: var(--muted); margin: 0; }
+.tray { position: fixed; left: 0; right: 0; bottom: 0; background: #10141f; border-top: 1px solid var(--line);
+  padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.tray .in { max-width: 1320px; margin: 0 auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tray .list { flex: 1 1 300px; min-width: 0; font-size: .9rem; }
+.tray .list .muted { color: var(--muted); }
+.copy { background: var(--gold); color: #1a1405; border: 0; border-radius: 8px; padding: 6px 16px; font-weight: 700; }
+.copy:disabled { opacity: .4; cursor: not-allowed; }
+#copied { font-size: .82rem; color: var(--green); }
+textarea { width: 100%; box-sizing: border-box; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: .85rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>オープンワールドに領地を置く ── 12案</h1>
+    <p>枝角の奉納先を「港」でも「コロニー」でもなく、フィールドの<b>領地</b>にする。どんな領地にするか、☆を付けて下の文をコピーして返してください。組み合わせてもOK。</p>
+  </header>
+  <section class="card" style="gap:6px">
+    <span class="name">もう決まっていること（開拓大陸 v3、遠征のころの決定）</span>
+    <p class="what">領地＝<b>製造と魔術をよい条件でできる場所</b>（A＋C）。コロニー（1人用）でも基本はできるが、領地では：</p>
+    <p class="what">・<b>現地でだけ効く補正</b>：砦の下の地脈で同じ属性の蒸留が増える／工房の品質上限が上がる。桜の森＝生命。</p>
+    <p class="what">・<b>地脈の結晶</b>：毎週産まれ、持ち主に配られ、市場で売れる。ギルドの外にも恩恵が回る。</p>
+    <p class="what">・<b>施設を育てる</b>：素材を納めると炉・祭壇・蒸留塔が段階的に育つ。→ <span style="color:var(--sakura)">枝角の奉納はここに入る</span>。</p>
+    <p class="note">ここで決めるのは「領地の形」（どこに・いくつ・誰が・どう取るか）。上の中身はそのまま使う。</p>
+  </section>
+  <div class="filters" role="group" aria-label="絞る">
+    <span class="lbl">絞る</span>
+    <button class="f" data-f="all" aria-pressed="true">全部</button>
+    <button class="f" data-f="少人数" aria-pressed="false">テスト（3〜5人）向き</button>
+    <button class="f" data-f="奉納" aria-pressed="false">枝角が鍵</button>
+    <button class="f" data-f="PvP" aria-pressed="false">PvPあり</button>
+    <button class="f" data-f="お金" aria-pressed="false">お金が回る</button>
+    <button class="f" data-f="rec" aria-pressed="false">おすすめだけ</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="tray">
+  <div class="in">
+    <div class="list" id="picked"><span class="muted">まだ選んでいない。気になる案の ☆ を押す。</span></div>
+    <button class="copy" id="copy" disabled>選んだ案を送る文をコピー</button>
+    <span id="copied" aria-live="polite"></span>
+  </div>
+  <textarea id="fallback" rows="2" hidden aria-label="送る文"></textarea>
+</div>
+
+<script>
+(() => {
+  // cost = 作る手間（コード＋絵）。軽＝今の仕組みの数字を足すだけ、重＝新しい絵やモデルが職業ぶん要る。
+  const IDEAS = [
+    { k: '1', n: '地域に砦が1つ', what: '根の丘に砦を1つ。週ごとに、いちばん貢献したギルドが持ち主になる。', ex: '<b>根のアーチの砦</b>。週の領地戦で、ボス討伐・納品が貢献点になる。', path: ['奉納'], cost: '中', note: '開拓大陸 v3 の案そのまま。ギルドが要るので、テストの人数だと取り合いが起きにくい。' },
+    { k: '2', n: '小さな領地をいくつも', what: '1地域に3〜5か所の小さな領地。少人数でも取れ、隣どうしで取り合いになる。', ex: '<b>根のアーチ・石塔・キノコの谷・柱のふもと</b>の4か所。', path: ['少人数'], cost: '中', note: 'Wynncraft のギルド領地に近い。地図に色の陣地が並ぶ。', rec: true },
+    { k: '3', n: '奉納で持ち主が決まる', what: '領地の社に、その週いちばん枝角を奉納したギルド（または人）が持ち主。', ex: '桜の柱のふもとの<b>花の領地</b>：今週の奉納 1位が持つ。', path: ['奉納', '少人数', 'お金'], cost: '軽', note: '枝角の値段が上がる＝角を折る人が稼げる。戦闘が苦手でも買って奉納すれば取れる。', rec: true },
+    { k: '4', n: '奉納で施設が育つ', what: '持ち主が誰でも、奉納した枝角で領地の施設が育つ。持ち主が変わっても施設は残る。', ex: '奉納30本で<b>蒸留塔</b>、60本で<b>桜の炉</b>（武器の品質上限+）。', path: ['奉納', '少人数'], cost: '中', note: '「町が咲く」をフィールドの領地に移した形。上の 2・3 と組み合わせる前提。', rec: true },
+    { k: '5', n: '空き地を建てて持つ', what: 'フィールドの決まった空き地に、旗を立てて自分たちの拠点を建てる。維持に銀貨がかかる。', ex: '空き地に旗 → <b>週に銀貨200</b>で維持。払えないと空き地に戻る。', path: ['少人数', 'お金'], cost: '重', note: '銀貨の出口（シンク）になる。建てた物の保存・表示が重い。' },
+    { k: '6', n: 'PvP の夜に取り合う', what: '領地戦の時間だけ、その領地のまわりが PvP ON になる。', ex: '土曜21時、<b>砦のまわり半径80がPvP</b>。旗を守り切ったギルドが持つ。', path: ['PvP'], cost: '中', note: 'PvP の釣り合いが要る。テストの人数では成り立ちにくい。' },
+    { k: '7', n: 'みんなの村（持ち主なし）', what: '領地は誰のものでもない。奉納でフィールドの村が育ち、全員が使える。', ex: '柱のふもとの<b>桜の野営地</b> → 茶屋・炉・社が増える。', path: ['奉納', '少人数'], cost: '軽', note: '取り合いはない。前の「港が咲く」に近い。本人への見返りの問題が戻る。' },
+    { k: '8', n: '領地に住む人が来る', what: '施設が育つと、NPC の職人や商人が住み着き、領地だけの品を売る。', ex: '桜の炉ができると<b>旅の刀鍛冶</b>が来て、桜の銘を彫る。', path: ['お金'], cost: '中', note: '領地を育てる目に見える理由。' },
+    { k: '9', n: '税が入る', what: '領地の施設をほかの人が使うと、使用料の一部が持ち主に入る。', ex: '炉の使用料<b>銀貨10</b>のうち3が持ち主、残りは消える。', path: ['お金'], cost: '軽', note: '持ち主の得がはっきり。消える分が銀貨の出口になる。', rec: true },
+    { k: '10', n: '領地の中では採取が多い', what: '持ち主の領地の中では、採取の量が増える。ほかの人も採れるが少なめ。', ex: '自分たちの<b>キノコの谷</b>では菌糸が1.3倍。', path: ['少人数'], cost: '軽', note: '採取の人にも領地を持つ理由ができる。' },
+    { k: '11', n: 'ワールドボスが領地に寄る', what: '桜牙獣が倒されたあと、いちばん奉納の多い領地の近くに次の花が咲く。', ex: '次の湧きの前に<b>領地のまわりに桜が咲き始める</b>。', path: ['奉納'], cost: '中', note: 'ワールドボスと領地がつながる。' },
+    { k: '12', n: '領地の見た目が変わる', what: '持ち主の旗の色と紋が、砦や道の飾りに出る。施設の段階で建物が育つ。', ex: '<b>旗・灯籠の色がギルドの色</b>。満開で砦に大きな桜。', path: ['少人数'], cost: '中', note: '地図にも色が出る（遠征マップの地図の決まりと合わせる）。' },
+  ];
+  let filter = 'all';
+  let picked = new Set();
+  try { picked = new Set(JSON.parse(localStorage.getItem('tr-picked') || '[]')); } catch (e) {}
+  const save = () => { try { localStorage.setItem('tr-picked', JSON.stringify([...picked])); } catch (e) {} };
+  const grid = document.getElementById('grid');
+  function render() {
+    const list = IDEAS.filter(i => filter === 'all' || (filter === 'rec' ? i.rec : i.path.includes(filter)));
+    grid.innerHTML = list.map(i => `<article class="card ${picked.has(i.k) ? 'picked' : ''}">
+      <div class="top"><div><span class="key">${i.k}</span><span class="name">${i.n}</span></div>
+        <button class="star" data-k="${i.k}" aria-pressed="${picked.has(i.k)}">${picked.has(i.k) ? '★ 選んだ' : '☆ 選ぶ'}</button></div>
+      <p class="what">${i.what}</p>
+      <p class="ex">${i.ex}</p>
+      <div class="tags">${i.rec ? '<span class="tag recm">おすすめ</span>' : ''}${i.path.map(p => `<span class="tag path">${p}</span>`).join('')}<span class="tag cost-${i.cost}">作る手間 ${i.cost}</span></div>
+      <p class="note">${i.note}</p>
+    </article>`).join('');
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    document.getElementById('picked').innerHTML = sel.length
+      ? `選んだ案（${sel.length}）：` + sel.map(i => `<b>${i.k}</b> ${i.n}`).join('、')
+      : '<span class="muted">まだ選んでいない。気になる案の ☆ を押す。</span>';
+    document.getElementById('copy').disabled = !sel.length;
+  }
+  grid.addEventListener('click', e => {
+    const b = e.target.closest('.star'); if (!b) return;
+    const k = b.dataset.k; picked.has(k) ? picked.delete(k) : picked.add(k); save(); render();
+  });
+  document.querySelectorAll('.f').forEach(b => b.addEventListener('click', () => {
+    filter = b.dataset.f;
+    document.querySelectorAll('.f').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  }));
+  document.getElementById('copy').addEventListener('click', () => {
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    const text = 'オープンワールドの領地、気になる案：' + sel.map(i => `${i.k} ${i.n}`).join('、');
+    const done = () => { document.getElementById('copied').textContent = 'コピーした。チャットに貼って送ってください。'; };
+    const fb = () => { const t = document.getElementById('fallback'); t.hidden = false; t.value = text; t.select(); document.getElementById('copied').textContent = '下の文を選んだのでコピーしてください。'; };
+    try { navigator.clipboard.writeText(text).then(done, fb); } catch (e) { fb(); }
+  });
+  render();
+})();
+</script>
