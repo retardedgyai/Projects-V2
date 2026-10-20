@@ -136,13 +136,19 @@ class Zone:
             d = np.hypot(self.xx - cx, self.zz - cz) / r + n
             self.set_locked(d < 1, float(y), 5)
 
+    def obstacles(self):
+        """Pillar stems and other big footprints are reserved before roads are routed, so roads go round them."""
+        self.obst = np.zeros((self.B, self.B), bool)
+        for p in self.spec.get("pillars", []):
+            self.obst |= np.hypot(self.xx - p[0], self.zz - p[1]) < p[3] + 5
+
     # ---------------- 4 roads ----------------
     def route(self, a, b, kind):
         """A* on the macro height: cost grows with slope; water and locked non-route cells are forbidden."""
         B = self.B; H = self.H
         gy, gx = np.gradient(self.macroH)
         slope = np.hypot(gx, gy)
-        blocked = (self.kind == 3) | (self.kind == 6)
+        blocked = (self.kind == 3) | (self.kind == 6) | getattr(self, "obst", np.zeros((B, B), bool))
         wet = self.kind == 4                                       # a stream may be crossed, at a bridge
         def snap(p):                                                # a place inside water snaps to the nearest dry cell
             x, z = p

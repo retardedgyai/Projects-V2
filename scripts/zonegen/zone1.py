@@ -24,8 +24,19 @@ SPEC = dict(
         dict(name="tower", at=(80, 75), pad=8),
         dict(name="exit_e", at=(495, 232)),
         dict(name="exit_n", at=(215, 4)),
-        dict(name="pillars", at=(300, 225)),
     ],
+    # rock pillars (x, z, rise above the plateau edge, stem radius, top radius, seed); reached by bridge from the high plateau
+    pillar_edge=(300, 166),
+    pillars=[(300, 222, 10, 15, 38, 3), (296, 322, 20, 16, 42, 5), (372, 408, 28, 17, 44, 1), (456, 318, 22, 13, 34, 7)],
+    forests=[dict(at=(55, 290), r=(70, 95), kind="dark", spacing=6, seed=5, big=.2),        # old dark-oak wood, west
+             dict(at=(95, 40), r=(110, 45), kind="oak", spacing=7, seed=6, mix=.35),          # north woods round the tower
+             dict(at=(470, 120), r=(40, 90), kind="spruce", spacing=6, seed=8, mix=.1),      # spruce on the east ridge
+             dict(at=(165, 470), r=(70, 32), kind="oak", spacing=7, seed=9, mix=.3)],        # the south wood by the gate
+    groves=[(330, 300), (395, 445), (150, 300), (430, 270)],
+    pieces=[dict(kind="great_tree", at=(240, 118), r=34),
+            dict(kind="aqueduct", at=(210, 214), r=0),
+            dict(kind="fallen_trunk", at=(30, 262), r=0),
+            dict(kind="stump", at=(330, 140), r=24)],
     roads=[
         dict(kind="road", via=["gate_w", "pond_jetty", "rest"], width=2.6, max_grade=.18),
         dict(kind="road", via=["rest", "tree", "exit_n"], width=2.6, max_grade=.18),
@@ -33,6 +44,5 @@ SPEC = dict(
         dict(kind="path", via=["rest", "fungal"], width=1.6, max_grade=.22),
         dict(kind="path", via=["rest", "boulders", "wolf"], width=1.6, max_grade=.22),
         dict(kind="path", via=["tree", "tower"], width=1.6, max_grade=.22),
-        dict(kind="path", via=["meadow", "pillars"], width=1.6, max_grade=.22),
     ],
 )

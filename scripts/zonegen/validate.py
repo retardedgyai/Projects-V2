@@ -14,7 +14,7 @@ def solid(v):
     return v is not None and v[0] in ("full", "slab", "slab_t", "water") or (v is not None and v[0].startswith("stair"))
 
 
-def run(zone, blocks, places=None):
+def run(zone, blocks, places=None, upper=None, upper_start=None, upper_goal=None):
     Z = zone; b = blocks.b; B = Z.B; hi = Z.hi; kind = Z.kind
     out = []
     route = (kind == 1) | (kind == 2)
@@ -110,6 +110,25 @@ def run(zone, blocks, places=None):
             if not seen[min(B - 1, z), min(B - 1, x)]: bad.append((x, int(hi[min(B - 1, z), min(B - 1, x)]), z))
         Z.reach = seen
     out.append(("歩いて行けない場所", "error", bad))
+
+    # V-UPPER: every pillar top and bridge deck can be walked to from the plateau edge, and the arena is among them
+    bad = []
+    if upper is not None:
+        sx, sz = upper_start
+        seen = np.zeros((B, B), bool); q = deque()
+        for dz in range(-4, 5):
+            for dx in range(-4, 5):
+                if upper[sz + dz, sx + dx] >= 0: seen[sz + dz, sx + dx] = True; q.append((sz + dz, sx + dx))
+        while q:
+            z, x = q.popleft()
+            for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                X, Zc = x + dx, z + dz
+                if 0 <= X < B and 0 <= Zc < B and not seen[Zc, X] and upper[Zc, X] >= 0 and abs(int(upper[Zc, X]) - int(upper[z, x])) <= 1:
+                    seen[Zc, X] = True; q.append((Zc, X))
+        miss = (upper >= 0) & ~seen
+        bad = [(int(x), int(upper[z, x]), int(z)) for z, x in zip(*np.nonzero(miss))]
+        if upper_goal and not seen[upper_goal[1], upper_goal[0]]: bad.insert(0, upper_goal)
+    out.append(("柱の上・橋に歩いて行けない所", "error", bad))
 
     # warnings
     spikes = []
