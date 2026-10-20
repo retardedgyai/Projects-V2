@@ -40,8 +40,9 @@ internal object CoreWarriorRefChoreography {
         val impact = 1.9
         val length = 6.0
         out += part("wind", local(.3, 1.9, 2.0), 5.0, yaw + PI / 2 - 1.15, 8, ground = false)
-        out += part("crater", local(0.0, .12, impact), 3.4, yaw, 44)
-        out += part("dcrack", local(0.0, .12, impact + 1.2 + length / 2), 1.0, yaw, 42, delay = 1).copy(scale = Vec(1.6, 1.0, length))
+        // The ground torn forward: one furrow, widest at the blow, running out ahead (texture row 0 = far end).
+        val furrow = length + 2.0
+        out += part("furrow", local(0.0, .12, impact - .6 + furrow / 2), 1.0, yaw, 44).copy(scale = Vec(furrow, 1.0, furrow))
         for (k in 0 until 16) {
             val along = impact + .4 + (k / 2) * (length + .6) / 8
             val side = if (k % 2 == 0) -1.0 else 1.0
@@ -74,6 +75,8 @@ internal object CoreWarriorRefChoreography {
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
             name == "wind" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/wind_${tick.coerceAtMost(7)}", live)
+            name == "furrow" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
+                "$DIR/furrow_${when { tick < 4 -> tick; tick < 36 -> 4; tick < 40 -> 5; else -> 6 }}", live)
             name == "crater" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
                 "$DIR/crater_${when { tick < 34 -> 0; tick < 39 -> 1; else -> 2 }}", live)
             name == "dcrack" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,

@@ -641,6 +641,43 @@ def dark_crack(stage, length=112, width=24, seed=23):
     return img
 
 
+def furrow_pixels(stage, w=32, n=128, seed=41):
+    """The ground torn forward (2026-10-20, Creator: 「丸に割れてるだけ、前に伸びていくスキルなんだから」): a gouged
+    furrow, widest and deepest where the slab lands (row n-1) and narrowing to a crack far ahead (row 0); raised broken
+    lips on both sides, chevron cracks splitting forward off them, a black crack down the middle.
+    stage 0..3 = the furrow running out a quarter at a time, 4 = whole, 5..6 = breaking up."""
+    img = Image.new('RGBA', (w, n), (0, 0, 0, 0))
+    px = img.load()
+    def put(x, y, c):
+        if 0 <= x < w and 0 <= y < n: px[x, y] = c + (255,)
+    reach = int(n * (1 - min(stage + 1, 4) / 4))
+    cx = w / 2
+    for y in range(n - 1, reach - 1, -1):
+        t = y / (n - 1)                                     # 1 at the blow, 0 far ahead
+        cx += (_h(y // 5, seed) - .5) * .5
+        cx = max(10, min(w - 11, cx))
+        hw = 1.2 + 12.5 * t ** 1.4
+        if y > n - 8: hw *= (1 - (y - (n - 8)) / 10) ** .5    # rounded near end
+        for x in range(w):
+            d = abs(x + .5 - cx) / max(hw, .1)
+            v = _h(x // 2, y // 2, seed, 1)
+            if d <= .25 and hw > 3: c = (18, 14, 12) if v > .3 else SHADOW
+            elif d <= .7: c = SHADOW if v > .55 else EARTH[3]
+            elif d <= 1.0: c = EARTH[3] if v > .5 else EARTH[1]
+            elif d <= 1.0 + 2.6 / max(hw, 1) and hw > 2: c = EARTH[2] if v > .35 else EARTH[0]   # the raised lip
+            elif d <= 1.0 + 3.6 / max(hw, 1) and hw > 2 and v > .55: c = EARTH[0]               # broken bits past it
+            else: continue
+            put(x, y, c)
+        if hw <= 3: put(int(cx), y, (18, 14, 12))
+        if y % 11 == 0 and hw > 3:                           # chevron cracks splitting forward off both lips
+            for side in (-1, 1):
+                x0 = cx + side * (hw + 1)
+                for k in range(int(3 + hw * .9)):
+                    put(int(x0 + side * k * .8), y - k, (30, 24, 20))
+    if stage >= 5: img = dissolve(img, .35 if stage == 5 else .7, 19)
+    return img
+
+
 def dust_puff(frame, seed=0):
     """A puff of dust as a lumpy pixel cloud: three tones in 2 px clusters, swelling then thinning out."""
     img = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
@@ -790,6 +827,10 @@ def build(assets, write):
     for st in range(3):
         model(f'crater_{st}', ground_model(texture(f'crater_{st}', crater_pixels(st))))
         model(f'dcrack_{st}', ground_model(texture(f'dcrack_{st}', dark_crack(st))))
+    for st in range(7):
+        # Square texture (a tall one reads as an animation strip): the furrow down the middle third.
+        sq = Image.new('RGBA', (128, 128), (0, 0, 0, 0)); sq.alpha_composite(furrow_pixels(st, w=40).transpose(Image.Transpose.FLIP_TOP_BOTTOM), (44, 0))  # up face: row 0 lies at the near end
+        model(f'furrow_{st}', ground_model(texture(f'furrow_{st}', sq)))
     for f in range(5):
         model(f'dust_{f}', centred_model(texture(f'dust_{f}', dust_puff(f))))
     for f in range(8):
