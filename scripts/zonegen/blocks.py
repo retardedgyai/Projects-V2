@@ -35,9 +35,11 @@ class Blocks:
                 lo = int(lo_nb[z, x]) - 3
                 face = slope[z, x] > 1.25 and k == 0
                 top_face = int(hi_nb[z, x])
+                drop = h - int(lo_nb[z, x]) - 3                           # how far this column's side is exposed
+                soil = 3 if drop < 2 else (1 if noise3(x, 0, z, 395, 3) > .55 else 0)   # an exposed side shows rock, at most one row of soil
                 for y in range(lo, h):
                     depth = h - y
-                    if face or depth > 3:
+                    if face or depth > soil:
                         fr = (y - lo) / max(1, top_face - lo)
                         put(x, y, z, cliffs.block(x, y, z, fr, float(expo[z, x]), float(concav[z, x])))
                     else:
@@ -68,6 +70,8 @@ class Blocks:
                 top = TM.surface(x, z, float(slope[z, x]), float(forest[z, x]), 0.0)
                 put(x, h, z, *top)
         self.cliff_stats = cliffs.finish(self, Z, slope, concav)
+        import random as _r
+        self.cliff_stats.update(cliffs.sculpt(self, Z, _r.Random(5)))
         self.falls()
         self.bridges()
         return self.b
