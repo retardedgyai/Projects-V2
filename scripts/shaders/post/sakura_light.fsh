@@ -35,6 +35,13 @@ vec3 palette(int i) {
     return vec3(1.0, .40, .70);                // sakura pink
 }
 
+vec3 viewAt(ivec2 at, ivec2 size, mat4 inv, bool zeroToOne) {
+    float depth = texelFetch(MainDepthSampler, at, 0).r;
+    vec3 ndc = vec3((vec2(at) + .5) / vec2(size) * 2.0 - 1.0, zeroToOne ? depth : depth * 2.0 - 1.0);
+    vec4 v = inv * vec4(ndc, 1.0);
+    return v.xyz / v.w;
+}
+
 void main() {
     ivec2 size = textureSize(InSampler, 0);
     ivec2 fc = ivec2(gl_FragCoord.xy);
@@ -57,11 +64,14 @@ void main() {
     mat4 inv;
     for (int i = 0; i < 16; i++) inv[i >> 2][i & 3] = readFloat(1 + i * 2, row);
 
-    float depth = texelFetch(MainDepthSampler, fc, 0).r;
-    vec3 ndc = vec3((vec2(fc) + .5) / vec2(size) * 2.0 - 1.0, zeroToOne ? depth : depth * 2.0 - 1.0);
-    vec4 v = inv * vec4(ndc, 1.0);
-    vec3 p = v.xyz / v.w;
-    vec3 n = normalize(cross(dFdx(p), dFdy(p)));
+    vec3 p = viewAt(fc, size, inv, zeroToOne);
+    // Normal from the neighbour on the nearer side of each axis: across a silhouette (a mob's fur, a leg in front of
+    // the ground) the far side would give a wrong normal that changes every frame as the model moves.
+    vec3 l = viewAt(fc - ivec2(1, 0), size, inv, zeroToOne), r = viewAt(fc + ivec2(1, 0), size, inv, zeroToOne);
+    vec3 b = viewAt(fc - ivec2(0, 1), size, inv, zeroToOne), t = viewAt(fc + ivec2(0, 1), size, inv, zeroToOne);
+    vec3 dx = abs(r.z - p.z) < abs(p.z - l.z) ? r - p : p - l;
+    vec3 dy = abs(t.z - p.z) < abs(p.z - b.z) ? t - p : p - b;
+    vec3 n = normalize(cross(dx, dy));
     if (dot(n, p) > 0.0) n = -n;
 
     vec3 light = vec3(0.0);
@@ -79,9 +89,9 @@ void main() {
         fall *= fall;
         // The light usually sits inside what carries it (a mob's chest): its own body is left alone, or every move of
         // the model flickers through the light.
-        fall *= smoothstep(1.2, 2.6, d);
+        fall *= smoothstep(1.5, 4.0, d);
         float facing = max(dot(n, to / max(d, 1e-3)), 0.0);
-        light += palette(params.b) * (float(params.g) / 255.0 * 3.0) * fall * (.3 + .7 * facing);
+        light += palette(params.b) * (float(params.g) / 255.0 * 3.0) * fall * (.45 + .55 * facing);
     }
     // Tinted by the surface (a lit surface keeps its texture), plus a little of the light itself so dark ground glows.
     fragColor = vec4(min(base.rgb * (1.0 + light) + light * .15, vec3(1.0)), base.a);
