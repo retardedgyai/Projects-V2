@@ -1,0 +1,146 @@
+<title>ワールドボスの落とし物</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header + filter chips, then a grid of idea cards (pick with ☆), picked tray sticky at bottom */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --sakura: #f2a3c0; --shade: #a98be0; --green: #9fd49a; --red: #e58b80;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1320px; margin: 0 auto; padding-block: 20px 140px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filters .lbl { font-size: .8rem; color: var(--muted); margin-right: 4px; }
+.f { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px 14px; font-size: .88rem; }
+.f[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card.picked { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.card.rec { background: linear-gradient(var(--panel), var(--panel)) padding-box; }
+.top { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+.key { font-family: var(--num); color: var(--gold); margin-right: 6px; }
+.name { font-weight: 700; font-size: 1.02rem; }
+.star { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; font-size: .85rem; white-space: nowrap; }
+.card.picked .star { color: #1a1405; background: var(--gold); border-color: var(--gold); }
+.what { color: var(--fg); margin: 0; }
+.ex { font-size: .86rem; color: var(--sakura); margin: 0; }
+.ex b { font-weight: 500; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: .75rem; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; color: var(--muted); }
+.tag.path { color: var(--cyan); border-color: #2f5560; }
+.tag.cost-軽 { color: var(--green); border-color: #3d5a3a; }
+.tag.cost-中 { color: var(--gold); border-color: #5b5030; }
+.tag.cost-重 { color: var(--red); border-color: #6a3a36; }
+.tag.recm { color: #1a1405; background: var(--gold); border-color: var(--gold); }
+.note { font-size: .8rem; color: var(--muted); margin: 0; }
+.tray { position: fixed; left: 0; right: 0; bottom: 0; background: #10141f; border-top: 1px solid var(--line);
+  padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.tray .in { max-width: 1320px; margin: 0 auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tray .list { flex: 1 1 300px; min-width: 0; font-size: .9rem; }
+.tray .list .muted { color: var(--muted); }
+.copy { background: var(--gold); color: #1a1405; border: 0; border-radius: 8px; padding: 6px 16px; font-weight: 700; }
+.copy:disabled { opacity: .4; cursor: not-allowed; }
+#copied { font-size: .82rem; color: var(--green); }
+textarea { width: 100%; box-sizing: border-box; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: .85rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>ワールドボスの落とし物 ── 桜牙獣</h1>
+    <p>ボスの種類ごとに使い道を分ける。まずはワールドボス（いちばん高い柱の上、誰でも参加、決まった時間に湧く）の分を決める。☆を付けて、下の文をコピーして返してください。いくつ選んでも、組み合わせてもOK。</p>
+  </header>
+  <section class="card" style="gap:6px">
+    <span class="name">ボスの種類で分ける（たたき台）</span>
+    <div class="tags"><span class="tag recm">いま決める</span></div>
+    <p class="what"><b style="color:var(--sakura)">ワールドボス</b>（桜牙獣）：大勢で倒す。落とし物は<b>みんなと町と市場</b>に流れる物が向く。</p>
+    <p class="what"><b style="color:var(--shade)">ダンジョンのボス</b>（黒翳竜・根の洞）：パーティで倒す。<b>自分の装備</b>を強くする物（銘・セット効果など）。あとで決める。</p>
+    <p class="what"><b>狩り場の主</b>（ネームド）：何度も倒す。<b>消耗品</b>の材料。あとで決める。</p>
+  </section>
+  <div class="filters" role="group" aria-label="道で絞る">
+    <span class="lbl">得をする道</span>
+    <button class="f" data-f="all" aria-pressed="true">全部</button>
+    <button class="f" data-f="戦闘" aria-pressed="false">戦闘</button>
+    <button class="f" data-f="魔術" aria-pressed="false">魔術</button>
+    <button class="f" data-f="鍛冶" aria-pressed="false">鍛冶</button>
+    <button class="f" data-f="経済" aria-pressed="false">お金・市場</button>
+    <button class="f" data-f="みんな" aria-pressed="false">みんな・町</button>
+    <button class="f" data-f="rec" aria-pressed="false">おすすめだけ</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="tray">
+  <div class="in">
+    <div class="list" id="picked"><span class="muted">まだ選んでいない。気になる案の ☆ を押す。</span></div>
+    <button class="copy" id="copy" disabled>選んだ案を送る文をコピー</button>
+    <span id="copied" aria-live="polite"></span>
+  </div>
+  <textarea id="fallback" rows="2" hidden aria-label="送る文"></textarea>
+</div>
+
+<script>
+(() => {
+  // cost = 作る手間（コード＋絵）。軽＝今の仕組みの数字を足すだけ、重＝新しい絵やモデルが職業ぶん要る。
+  const IDEAS = [
+    { k: '1', n: '社に奉納して町が咲く', what: '花びら甲殻を桜の社に奉納する。サーバー全体の奉納数で、港に新しい物が開く。', ex: '全員で 500 枚 → <b>港に桜の茶屋</b>（宿の回復が速い）。1000 枚 → <b>桜の街道</b>（移動が速い）。', path: ['みんな'], cost: '中', note: 'ワールドボスらしい「みんなで進める」目標。エゴイストでも、自分の得（便利な町）のために奉納する。', rec: true },
+    { k: '2', n: '奉納で次の湧きが早まる', what: '社に枝角を奉納すると、次の桜牙獣が早く湧く。強い個体を呼ぶこともできる。', ex: '枝角×20 で<b>次の湧きが30分早まる</b>。枝角×50 で<b>「満開の桜牙獣」</b>（報酬2倍）。', path: ['みんな', '戦闘'], cost: '軽', note: '倒したい人が素材を出し合う。湧き待ちの退屈を減らす。' },
+    { k: '3', n: '桜の銘', what: 'いつもの装備に部位で銘を刻む。固有の効果が1つ付く。', ex: '<b>桜の銘</b>：部位を壊すと10秒 攻撃+20%。', path: ['戦闘'], cost: '軽', note: 'ダンジョンのボス（自分の装備）と役が重なる。分けるならこっちはダンジョン側。' },
+    { k: '4', n: '魔術の「桜の相」', what: '花びら甲殻を蒸留すると、ここでしか抜けない「桜の相」が取れる。上位の研究品の材料。', ex: '桜の相 → <b>桜鉄の触媒</b>（強化+35）、<b>満開の封蝋</b>（修理と同時に耐久+）。', path: ['魔術', '経済'], cost: '中', note: '大勢が倒すので量が出る＝市場に流れる。魔術の人が買う。', rec: true },
+    { k: '5', n: '桜の巻物', what: '部位で作る消耗品。使うとしばらく強い。', ex: '<b>桜の巻物</b>：10分間 部位破壊のダメージ+30%。<b>散華の巻物</b>：周りの仲間も少し強い。', path: ['戦闘', '魔術', '経済'], cost: '軽', note: '使うと消える＝毎回買われる。刻印術（巻物の枝）の材料。', rec: true },
+    { k: '6', n: '陣旗', what: '部位で作る旗。立てると周りの仲間全員が少し強くなる。', ex: '<b>桜の陣旗</b>：半径10の仲間の攻撃+8%（ボス戦1回）。', path: ['戦闘', 'みんな'], cost: '中', note: '大人数のワールドボス戦で、旗を立てる役が生まれる。' },
+    { k: '7', n: '参加の記念品', what: '倒した回数や、壊した部位が刻まれる記念品。売れない。', ex: '<b>桜牙獣の枝角の飾り台</b>：「討伐 12 回・枝角を折った 3 回」。', path: ['みんな'], cost: '中', note: '苦労の証＝売買不可の軸そのまま。工房や家に飾る。' },
+    { k: '8', n: '空の先へ行く道具', what: '部位で作る道具で、柱の上の先へ行ける。', ex: '翼のような花びらの<b>滑空の羽衣</b>で、柱から柱へ飛び移る。', path: ['戦闘'], cost: '中', note: '強さではなく行ける場所が増える。次の地域への入口に使える。' },
+    { k: '9', n: '職人にしか加工できない', what: '部位はそのままでは使えず、製造Lvの高い職人が加工して初めて使える。', ex: '花びら甲殻 → <b>武器製造Lv30以上</b>の人が「桜の板金」に加工。', path: ['鍛冶', '経済'], cost: '軽', note: '上のどの案とも重ねられる「決まり」。鍛冶が他人へのサービスになる。', rec: true },
+    { k: '10', n: '部位で使い道が違う', what: '正面で折った枝角と、背後で斬った花びらで、行き先を分ける。', ex: '<b>枝角＝奉納・召喚</b>（1・2）、<b>花びら＝魔術・巻物</b>（4・5）。', path: ['戦闘'], cost: '軽', note: 'どこを狙うかが選択になる。上の案を2つ組み合わせる決まり。', rec: true },
+  ];
+  let filter = 'all';
+  let picked = new Set();
+  try { picked = new Set(JSON.parse(localStorage.getItem('wb-picked') || '[]')); } catch (e) {}
+  const save = () => { try { localStorage.setItem('wb-picked', JSON.stringify([...picked])); } catch (e) {} };
+  const grid = document.getElementById('grid');
+  function render() {
+    const list = IDEAS.filter(i => filter === 'all' || (filter === 'rec' ? i.rec : i.path.includes(filter)));
+    grid.innerHTML = list.map(i => `<article class="card ${picked.has(i.k) ? 'picked' : ''}">
+      <div class="top"><div><span class="key">${i.k}</span><span class="name">${i.n}</span></div>
+        <button class="star" data-k="${i.k}" aria-pressed="${picked.has(i.k)}">${picked.has(i.k) ? '★ 選んだ' : '☆ 選ぶ'}</button></div>
+      <p class="what">${i.what}</p>
+      <p class="ex">${i.ex}</p>
+      <div class="tags">${i.rec ? '<span class="tag recm">おすすめ</span>' : ''}${i.path.map(p => `<span class="tag path">${p}</span>`).join('')}<span class="tag cost-${i.cost}">作る手間 ${i.cost}</span></div>
+      <p class="note">${i.note}</p>
+    </article>`).join('');
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    document.getElementById('picked').innerHTML = sel.length
+      ? `選んだ案（${sel.length}）：` + sel.map(i => `<b>${i.k}</b> ${i.n}`).join('、')
+      : '<span class="muted">まだ選んでいない。気になる案の ☆ を押す。</span>';
+    document.getElementById('copy').disabled = !sel.length;
+  }
+  grid.addEventListener('click', e => {
+    const b = e.target.closest('.star'); if (!b) return;
+    const k = b.dataset.k; picked.has(k) ? picked.delete(k) : picked.add(k); save(); render();
+  });
+  document.querySelectorAll('.f').forEach(b => b.addEventListener('click', () => {
+    filter = b.dataset.f;
+    document.querySelectorAll('.f').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  }));
+  document.getElementById('copy').addEventListener('click', () => {
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    const text = 'ワールドボス（桜牙獣）の落とし物、気になる案：' + sel.map(i => `${i.k} ${i.n}`).join('、');
+    const done = () => { document.getElementById('copied').textContent = 'コピーした。チャットに貼って送ってください。'; };
+    const fb = () => { const t = document.getElementById('fallback'); t.hidden = false; t.value = text; t.select(); document.getElementById('copied').textContent = '下の文を選んだのでコピーしてください。'; };
+    try { navigator.clipboard.writeText(text).then(done, fb); } catch (e) { fb(); }
+  });
+  render();
+})();
+</script>
