@@ -37,27 +37,18 @@ internal object CoreWarriorRefChoreography {
         val centre = local(0.0, .12, impact)
         val chest = local(0.0, 1.1, impact)
         val out = mutableListOf<CoreCombatMeshPart>()
-        out += part("crack", centre, 5.2, yaw, 34)
-        // The flash, facing the camera: a star of flame rays, a white frame for one tick, then a ring of hot pixels.
-        for (k in 0 until 7) out += part("ray$k", chest, 2.2 + 1.2 * hash(k, 11), 0.0, 6, ground = false,
-            roll = k / 7.0 * 2 * PI + .5 * hash(k, 12), billboard = true)
-        out += part("frame", chest, 2.4, 0.0, 2, ground = false, delay = 1, billboard = true)
-        out += part("ring", chest, 3.6, 0.0, 8, ground = false, delay = 2, billboard = true)
-        // Dark bars thrown out in a broken ring, lying along it.
-        for (k in 0 until 10) {
-            val a = yaw + k / 10.0 * 2 * PI + .3 * hash(k, 13)
-            out += part("bar$k", chest, .5 + .3 * hash(k, 14), a + PI / 2, 12, ground = false, delay = 1)
-        }
+        // The greatsword's path: one thick crescent band, standing in the vertical plane of the swing (no hit flash:
+        // that is a gun's language, Creator 2026-10-20). The board's centre is 1.6 forward, 2.2 up from the wielder.
+        // Turned 65 degrees off the swing plane: a straight overhead cut seen from behind is only a line.
+        out += part("slash", local(.3, 1.9, 2.2), 6.0, yaw + PI / 2 - 1.15, 8, ground = false)
+        out += part("crack", centre, 5.2, yaw, 34, delay = 2)
         // A crown of broad iron fangs round the blow, opening outward.
         for (k in 0 until 6) {
             val a = yaw + k / 6.0 * 2 * PI + .25
             val r = 1.1 + .35 * hash(k, 1)
             val at = Vec(centre.x() + sin(a) * r, .12, centre.z() + cos(a) * r)
-            out += part("fang$k", at, 1.4 + .7 * hash(k, 2), a, 28, pitch = .5 + .2 * hash(k, 3), delay = 2 + k % 2)
+            out += part("fang$k", at, 1.4 + .7 * hash(k, 2), a, 28, pitch = .5 + .2 * hash(k, 3), delay = 3 + k % 2)
         }
-        // White twinkles on whatever was struck, after the flash.
-        for (k in 0 until 3) out += part("twinkle$k", chest.add(local(.7 * (k - 1), .25 * (k % 2), 0.0)), .9, 0.0, 6,
-            ground = false, delay = 4 + k, billboard = true)
         return out
     }
 
@@ -71,6 +62,7 @@ internal object CoreWarriorRefChoreography {
         val tick = t.toInt().coerceIn(0, p.durationTicks - 1)
         val name = p.shape.removePrefix(PREFIX)
         return when {
+            name == "slash" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/slash_${tick.coerceAtMost(7)}", live)
             name == "crack" -> {
                 val stage = when { tick < 3 -> 0; tick < 9 -> 1; tick < 22 -> 2; tick < 28 -> 3; else -> 4 }
                 CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/crack_$stage", live)

@@ -194,6 +194,45 @@ def bar_texture():
     return img
 
 
+# ---------------------------------------------------------------- the greatsword's cut (2026-10-20, Creator:
+# 「閃光を出す表現自体が間違い。リファレンスは銃、こっちは剣」). The reference's blade skills (Jawbreaker, the
+# first-person cut) draw the blade's path as one thick crescent band with streaks along its length; that is what a
+# sword borrows, not the gun's hit flash. 地割り's band: from over the shoulder down into the ground ahead.
+# Board: 64 x 64 texels = 5 blocks; the shoulder pivot is at texel (16, 34); x runs forward, y up (texel y down).
+SLASH_HEAD = [112, 64, 14, -34, -34, -34, -34, -34]       # where the blade is, degrees above the forward horizon
+SLASH_TAIL = [150, 136, 112, 80, 40, 0, -20, -30]          # where the band's tail has burnt back to
+SLASH_FADE = [0, 0, 0, 0, .25, .5, .7, .85]
+
+
+def slash_texture(frame):
+    img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
+    px = img.load()
+    cx, cy, radius = 16, 34, 33.0
+    head, tail = SLASH_HEAD[frame], SLASH_TAIL[frame]
+    for y in range(64):
+        for x in range(64):
+            dx, dy = x + .5 - cx, cy - (y + .5)
+            r = math.hypot(dx, dy)
+            a = math.degrees(math.atan2(dy, dx))
+            if not head <= a <= tail: continue
+            k = (a - head) / max(tail - head, 1)           # 0 at the blade, 1 at the burnt tail
+            width = 22.0 * (1 - k) ** .6 + 3.0               # thick behind the blade, thin at the tail
+            inset = radius - r                              # 0 at the edge, grows inward
+            if not -.5 <= inset <= width: continue
+            # Streaks along the band: each ring of radius has its own tone, broken in steps along the angle.
+            band = int(inset)
+            streak = _h(band, int(a / 7)) < .22
+            if inset < 1.5: c, al = W, 255
+            elif inset < 3.0: c, al = (C if not streak else W), 236
+            elif inset < width * .7: c, al = ((R if band % 3 else O) if not streak else C), 190
+            elif inset < width * .9: c, al = (D if not streak else R), 150
+            else: c, al = D, 96
+            al = int(al * (1 - .55 * k))                   # the tail is see-through
+            px[x, y] = c + (al,)
+    if SLASH_FADE[frame]: img = dissolve(img, SLASH_FADE[frame], 21)
+    return img
+
+
 # The reference's light is see-through (studied at full size, 2026-10-20): only the white core is opaque, the colour
 # around it lets the world show through, and a faint halo spills past the edge. The dark outline is dropped.
 # Alphas avoid the shader markers (253, 121, 65, 200..215 in scripts/shaders/item.fsh).
@@ -285,6 +324,8 @@ def build(assets, write):
         model(f'ring_{st}', centred_model(texture(f'ring_{st}', glow(ring_texture(st)))))
     for st in range(3):
         model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', glow(twinkle_texture(st)))))
+    for f in range(len(SLASH_HEAD)):
+        model(f'slash_{f}', centred_model(texture(f'slash_{f}', slash_texture(f))))
     model('frame', centred_model(texture('frame', frame_texture())))
     model('bar', {'ambientocclusion': False, 'textures': {'0': texture('bar', bar_texture())}, 'elements': [
         box((0, 7.4, 6.5), (16, 8.6, 9.5), [0, 0, 16, 16], [0, 0, 16, 16])]})
