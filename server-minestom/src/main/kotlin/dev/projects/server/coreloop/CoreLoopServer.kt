@@ -544,6 +544,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     player.sendMessage(Component.text("そのモーションはありません: ${context.get(name)}", NamedTextColor.YELLOW))
             } }, name, self)
         })
+        // Test-only: /vfx <slot 0-4> casts that skill in the skill lab with cooldown, mana and resource refilled (filming).
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("vfx").apply {
+            val slot = net.minestom.server.command.builder.arguments.ArgumentType.Integer("slot").between(0, 4)
+            addSyntax({ sender, context -> (sender as? Player)?.let { player ->
+                combatLab.actor(player)?.devCast(context.get(slot)) ?: player.sendMessage(Component.text("/skilltest の中で使ってください", NamedTextColor.GRAY))
+            } }, slot)
+        })
         MinecraftServer.getCommandManager().register(Command("effects").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let {
                 it.sendMessage(CoreLoopItems.text("戦闘演出：${CoreCombatPresentation.cycle(it).label}（/effects で切替。自分の表示だけ変更）"))

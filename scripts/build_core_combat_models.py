@@ -904,6 +904,8 @@ def build_slash_frames(assets, write_json):
     build_warrior_flourish(assets, write_json)
     from build_warrior_iron_vfx import build as build_warrior_iron_vfx
     build_warrior_iron_vfx(assets, write_json)
+    from build_warrior_ref_vfx import build as build_warrior_ref_vfx
+    build_warrior_ref_vfx(assets, write_json)
 
 
 if __name__ == "__main__":

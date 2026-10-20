@@ -169,10 +169,16 @@ internal class CorePlayerCombat(
         }
     }
 
-    fun skill(id: Int) {
+    /** Dev only (/vfx): cast a skill with cooldowns, mana and the class resource refilled, to film its visuals. */
+    fun devCast(id: Int) {
+        readyAt.fill(0L); manaValue = maxMana.toDouble(); classState.fill(classId)
+        skill(id, unlocked = true)
+    }
+
+    fun skill(id: Int, unlocked: Boolean = false) {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
         if (id !in 0..4 || defeated || encounter() == null || player.openInventory != null || staggered) return
-        if (!skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
+        if (!unlocked && !skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
         if (!crowd.canCast(tickNumber)) { notice("${crowd.cue(tickNumber) ?: "行動不能"}：技を使えません"); return }
         val definition = skillDefinitions[id]
