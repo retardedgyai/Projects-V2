@@ -495,14 +495,17 @@ def stone_tex(seed):
     return img
 
 
+FINGER = ((22, 9), (18, 8), (14, 7))      # segment length and width in model units (16 = 1 block)
+
+
 def chasm_pixels(stage, length=112, width=24, seed=23):
     """The crack as an open chasm seen from above, pixel by pixel: a jagged opening 4-10 px wide whose sides step in
     zig-zags; the lit wall on the left, the shadowed wall on the right, a black depth, and the magma at the bottom
     (stage 0 white-hot .. 2 dull, 3 cooled); a dark rim and loose light chips along the lip."""
     img = Image.new('RGBA', (width, length), (0, 0, 0, 0))
     px = img.load()
-    magma = [((255, 236, 170), (255, 170, 60)), ((255, 150, 50), (226, 70, 30)), ((170, 46, 30), (120, 30, 26)),
-             ((70, 24, 22), (50, 20, 20))][stage]
+    magma = [((236, 254, 252), (176, 240, 236)), ((176, 240, 236), (112, 206, 214)), ((88, 160, 172), (60, 120, 134)),
+             ((40, 70, 80), (30, 50, 60))][stage]
     cx, dirn, half = width / 2, 1, 4
     for y in range(length - 1, -1, -1):
         if y % 7 == 0: dirn = 1 if _h(y, seed) > .5 else -1
@@ -522,6 +525,71 @@ def chasm_pixels(stage, length=112, width=24, seed=23):
         for side, x in ((-1, left - 2), (1, right + 2)):                            # loose chips on the lip
             if 0 <= x < width and _h(y, seed, 4 + side) > .72: px[x, y] = STONE_T[2] + (255,)
     return img
+
+
+# ---------------------------------------------------------------- the Chained Colossus (2026-10-20, Creator agreed: the
+# warrior as the third Outer Gods class, an iron giant chained under the earth whose body parts break out as skills).
+# 地割り: the ground splits and the colossus's fingers rise in a row, knock up, close and drag back down.
+RUST = ((122, 98, 90), (106, 84, 78), (140, 114, 102), (156, 92, 66))   # iron base, shadow, light, rust
+BONE = ((228, 214, 188), (204, 188, 162), (244, 234, 214))
+CHAIN = ((74, 70, 78), (96, 92, 100), (52, 50, 56))
+GLOW = ((176, 240, 236), (112, 206, 214), (230, 252, 250))
+
+
+def iron_plate(seed):
+    """Rusted iron in the reference's way: one tone with 2 px clusters; rivets in the corners; rust bleeding down."""
+    img = Image.new('RGBA', (16, 16), RUST[0] + (255,))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            v = _h(x // 2, y // 2, seed)
+            if v > .82: px[x, y] = RUST[2] + (255,)
+            elif v < .14: px[x, y] = RUST[1] + (255,)
+    for k in range(3):                              # rust runs from the top
+        x = int(_h(k, seed, 5) * 14) + 1
+        for y in range(int(3 + _h(k, seed, 6) * 8)): px[x, y] = RUST[3] + (255,)
+    for x, y in ((1, 1), (13, 1), (1, 13), (13, 13)):
+        px[x, y] = RUST[2] + (255,); px[x + 1, y + 1] = RUST[1] + (255,)
+    return img
+
+
+def chain_band(seed):
+    """A band of chain wrapped round a joint: links drawn as 4 px ovals, the gaps leaking the cold glow."""
+    img = Image.new('RGBA', (16, 16), GLOW[1] + (255,))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            lx, ly = x % 6, y % 8
+            ring = (lx in (0, 4) and 1 <= ly <= 6) or (ly in (1, 6) and 1 <= lx <= 3)
+            if ring: px[x, y] = CHAIN[1] + (255,)
+            elif (x // 6 + y // 8) % 2 == 0 and 1 <= lx <= 3 and 2 <= ly <= 5: px[x, y] = CHAIN[2] + (255,)
+            elif _h(x, y, seed) > .7: px[x, y] = GLOW[0] + (255,)
+    return img
+
+
+def bone_tex(seed):
+    img = Image.new('RGBA', (16, 16), BONE[0] + (255,))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            v = _h(x // 2, y // 2, seed)
+            if v > .8: px[x, y] = BONE[2] + (255,)
+            elif v < .2: px[x, y] = BONE[1] + (255,)
+    return img
+
+
+def finger_segment(iron, chain, bone, length, width, nail):
+    """One finger segment standing on y=8 (its joint): an iron box, a chain band round its base, a bone nail on top."""
+    def f(t, uv): return {'texture': t, 'uv': uv}
+    w, c = width / 2, 8
+    def box(lo, hi, side, top):
+        return {'from': lo, 'to': hi, 'faces': {k: f(side, [0, 0, 16, 16]) for k in ('north', 'south', 'east', 'west')}
+                | {'up': f(top, [0, 0, 16, 16]), 'down': f(top, [0, 0, 16, 16])}}
+    els = [box([c - w, 8, c - w], [c + w, 8 + length, c + w], '#iron', '#iron'),
+           box([c - w - .6, 8, c - w - .6], [c + w + .6, 11, c + w + .6], '#chain', '#chain')]
+    if nail:
+        els.append(box([c - w * .8, 8 + length - 1, c - w - .4], [c + w * .8, 8 + length + 4, c - w + 2.4], '#bone', '#bone'))
+    return {'textures': {'iron': iron, 'chain': chain, 'bone': bone, 'particle': iron}, 'elements': els}
 
 
 def lump_model(top, side, under, seed):
@@ -641,6 +709,9 @@ def build(assets, write):
         model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', glow(twinkle_texture(st)))))
     for st in range(4):
         model(f'gcrack_{st}', ground_model(texture(f'gcrack_{st}', chasm_pixels(st))))
+    iron, chain, bone = texture('colossus_iron', iron_plate(3)), texture('colossus_chain', chain_band(4)), texture('colossus_bone', bone_tex(5))
+    for n, (length, width) in enumerate(FINGER):
+        model(f'finger_{n}', finger_segment(iron, chain, bone, length, width, n == 2))
     for n in range(3):
         model(f'lump_{n}', lump_model(texture(f'lump_top_{n}', stone_tex(n * 3 + 1)),
                                       texture(f'lump_side_{n}', stone_tex(n * 3 + 2)),

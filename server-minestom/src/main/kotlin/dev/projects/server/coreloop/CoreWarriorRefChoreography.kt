@@ -37,22 +37,18 @@ internal object CoreWarriorRefChoreography {
         val centre = local(0.0, .12, impact)
         val chest = local(0.0, 1.1, impact)
         val out = mutableListOf<CoreCombatMeshPart>()
-        // 地割り: the crack runs forward from the blow and the ground either side heaves up in lumps, tilted away from it,
-        // one pair a tick behind the crack's head; a few lumps burst at the blow. Minecraft ground, block resolution.
+        // 地割り, the Chained Colossus: the ground splits and the buried giant's fingers break out in a row on both sides
+        // of the crack, one after another, throw the enemy up, close over the line and drag back under.
         val start = 1.4
         val length = 7.0
-        val steps = 8
-        out += part("gcrack", local(0.0, .12, start + length / 2), 1.0, yaw, 40).copy(scale = Vec(1.5, 1.0, length))
-        for (i in 0..steps) {
-            val along = start + .3 + i * (length - .6) / steps
-            for ((n, side) in listOf(-1.0, 1.0).withIndex()) {
-                val k = i * 2 + n
-                val at = local(side * (.55 + .2 * hash(k, 51)), .12, along + (hash(k, 52) - .5) * .4)
-                val size = (.75 + .35 * hash(k, 53)) * (if (i == 0) 1.25 else 1.0 - i * .04)
-                // roll tips the lump away from the crack; a little yaw so the rows are not ruled lines.
-                out += part("lump$k", at, size, yaw + (hash(k, 54) - .5) * .7, 36 - i, delay = i,
-                    roll = -side * (.35 + .3 * hash(k, 55)), pitch = (hash(k, 56) - .5) * .3)
-            }
+        out += part("gcrack", local(0.0, .12, start + length / 2), 1.0, yaw, 46).copy(scale = Vec(1.5, 1.0, length))
+        for (f in 0 until 6) {
+            val side = if (f % 2 == 0) -1.0 else 1.0
+            val base = local(side * .85, .12, start + .8 + f * 1.05)
+            val size = 1.0 - f * .04
+            // Facing the crack: the finger curls toward the line.
+            val face = yaw - side * PI / 2
+            for (seg in 0 until 3) out += part("fing${f * 3 + seg}", base, size, face, 40, delay = f, ground = seg == 0)
         }
         return out
     }
@@ -72,6 +68,33 @@ internal object CoreWarriorRefChoreography {
                 CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/fissure_$stage", live)
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
+            name.startsWith("fing") -> {
+                val idx = name.removePrefix("fing").toInt()
+                val seg = idx % 3
+                val lengths = doubleArrayOf(22.0, 18.0, 14.0).map { it / 16 * p.scale.y() }
+                // Joint bends: spread a little backward while rising, then close (grip), then drag down.
+                val grip = when {
+                    tick < 12 -> 0.0
+                    tick < 18 -> (tick - 12) / 6.0
+                    else -> 1.0
+                }
+                val bends = doubleArrayOf(-.18 + .75 * grip, -.05 + .95 * grip, .85 * grip)
+                val total = lengths.sum()
+                val up = when {
+                    tick < 4 -> doubleArrayOf(.0, .55, 1.08, 1.02)[tick]
+                    tick < p.durationTicks - 9 -> 1.0
+                    else -> 1.0 - (tick - (p.durationTicks - 9)) / 8.0
+                }.coerceIn(0.0, 1.1)
+                // Forward kinematics from the knuckle on the ground.
+                var at = p.offset.add(0.0, -total * (1 - up.coerceAtMost(1.0)), 0.0)
+                var pitch = 0.0
+                for (s2 in 0 until seg) {
+                    pitch += bends[s2]
+                    at = at.add(sin(pitch) * sin(p.yaw) * lengths[s2], cos(pitch) * lengths[s2], sin(pitch) * cos(p.yaw) * lengths[s2])
+                }
+                pitch += bends[seg]
+                CoreMeshPose(at, p.scale, p.yaw, pitch, 0.0, "$DIR/finger_$seg", live)
+            }
             name == "gcrack" -> {
                 val stage = when { tick < 6 -> 0; tick < 16 -> 1; tick < 28 -> 2; else -> 3 }
                 CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/gcrack_$stage", live)
