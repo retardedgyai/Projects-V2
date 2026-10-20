@@ -4,6 +4,7 @@ import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.format.TextColor
 import net.minestom.server.component.DataComponents
 import net.minestom.server.coordinate.Pos
+import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.Player
@@ -26,6 +27,12 @@ import net.minestom.server.network.packet.server.common.PostEffectsPacket
  */
 internal class SakuraLight(instance: Instance, at: Pos, slot: Int, radius: Int = 8, strength: Double = 1.0,
                            palette: Int = PINK, viewable: (Player) -> Boolean = { true }) {
+    /** The entity stands [lift] blocks under the light and its model is raised back up by the same: the client culls a
+     *  display by its box (width x height from the entity's feet up), and a box the size of the light's reach keeps the
+     *  probe drawn while any lit ground is on screen. A zero box drops it whenever the light's own point leaves the
+     *  screen (the camera close to the boss), and the light blinks off for those frames. */
+    private var lift = radius.toDouble()
+
     val entity = Entity(EntityType.ITEM_DISPLAY).apply {
         setNoGravity(true)
         setHasPhysics(false)
@@ -36,14 +43,28 @@ internal class SakuraLight(instance: Instance, at: Pos, slot: Int, radius: Int =
             meta.setViewRange(4f)
             meta.setShadowRadius(0f)
             meta.setPosRotInterpolationDuration(2)
+            reach(meta, radius)
         }
-        setInstance(instance, at)
+        setInstance(instance, at.sub(0.0, lift, 0.0))
     }
 
-    fun moveTo(at: Pos) = entity.teleport(at)
+    fun moveTo(at: Pos) = entity.teleport(at.sub(0.0, lift, 0.0))
 
-    fun set(slot: Int, radius: Int, strength: Double, palette: Int = PINK) =
-        entity.editEntityMeta(ItemDisplayMeta::class.java) { it.setItemStack(stack(slot, radius, strength, palette)) }
+    fun set(slot: Int, radius: Int, strength: Double, palette: Int = PINK) {
+        val at = entity.position.add(0.0, lift, 0.0)
+        entity.editEntityMeta(ItemDisplayMeta::class.java) {
+            it.setItemStack(stack(slot, radius, strength, palette))
+            reach(it, radius)
+        }
+        lift = radius.toDouble()
+        moveTo(at)
+    }
+
+    private fun reach(meta: ItemDisplayMeta, radius: Int) {
+        meta.setTranslation(Vec(0.0, radius.toDouble(), 0.0))
+        meta.setWidth(radius * 2f)
+        meta.setHeight(radius * 2f)
+    }
 
     fun remove() = entity.remove()
 
