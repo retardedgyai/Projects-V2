@@ -1,0 +1,152 @@
+<title>奉納の見返り</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header + filter chips, then a grid of idea cards (pick with ☆), picked tray sticky at bottom */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --sakura: #f2a3c0; --shade: #a98be0; --green: #9fd49a; --red: #e58b80;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1320px; margin: 0 auto; padding-block: 20px 140px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filters .lbl { font-size: .8rem; color: var(--muted); margin-right: 4px; }
+.f { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px 14px; font-size: .88rem; }
+.f[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card.picked { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.card.rec { background: linear-gradient(var(--panel), var(--panel)) padding-box; }
+.top { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+.key { font-family: var(--num); color: var(--gold); margin-right: 6px; }
+.name { font-weight: 700; font-size: 1.02rem; }
+.star { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; font-size: .85rem; white-space: nowrap; }
+.card.picked .star { color: #1a1405; background: var(--gold); border-color: var(--gold); }
+.what { color: var(--fg); margin: 0; }
+.ex { font-size: .86rem; color: var(--sakura); margin: 0; }
+.ex b { font-weight: 500; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: .75rem; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; color: var(--muted); }
+.tag.path { color: var(--cyan); border-color: #2f5560; }
+.tag.cost-軽 { color: var(--green); border-color: #3d5a3a; }
+.tag.cost-中 { color: var(--gold); border-color: #5b5030; }
+.tag.cost-重 { color: var(--red); border-color: #6a3a36; }
+.tag.recm { color: #1a1405; background: var(--gold); border-color: var(--gold); }
+.note { font-size: .8rem; color: var(--muted); margin: 0; }
+.tray { position: fixed; left: 0; right: 0; bottom: 0; background: #10141f; border-top: 1px solid var(--line);
+  padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.tray .in { max-width: 1320px; margin: 0 auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tray .list { flex: 1 1 300px; min-width: 0; font-size: .9rem; }
+.tray .list .muted { color: var(--muted); }
+.copy { background: var(--gold); color: #1a1405; border: 0; border-radius: 8px; padding: 6px 16px; font-weight: 700; }
+.copy:disabled { opacity: .4; cursor: not-allowed; }
+#copied { font-size: .82rem; color: var(--green); }
+textarea { width: 100%; box-sizing: border-box; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: .85rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>枝角を奉納した本人への見返り ── 22案</h1>
+    <p>港が咲くのはみんなの得。だから本人にも何か返さないと「市場で売ったほうが得」になる。☆を付けて、下の文をコピーして返してください。いくつ選んでも、組み合わせてもOK。</p>
+    <p>守ること：戦闘の強さを奉納でしか取れない物にしない（押し付けない）／記録は売れない（苦労の証）。</p>
+  </header>
+  <div class="filters" role="group" aria-label="種類で絞る">
+    <span class="lbl">種類</span>
+    <button class="f" data-f="all" aria-pressed="true">全部</button>
+    <button class="f" data-f="見える" aria-pressed="false">見える・名誉</button>
+    <button class="f" data-f="便利" aria-pressed="false">便利</button>
+    <button class="f" data-f="お金" aria-pressed="false">お金・物</button>
+    <button class="f" data-f="強さ" aria-pressed="false">少し強い</button>
+    <button class="f" data-f="みんな" aria-pressed="false">町・みんな</button>
+    <button class="f" data-f="rec" aria-pressed="false">おすすめだけ</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="tray">
+  <div class="in">
+    <div class="list" id="picked"><span class="muted">まだ選んでいない。気になる案の ☆ を押す。</span></div>
+    <button class="copy" id="copy" disabled>選んだ案を送る文をコピー</button>
+    <span id="copied" aria-live="polite"></span>
+  </div>
+  <textarea id="fallback" rows="2" hidden aria-label="送る文"></textarea>
+</div>
+
+<script>
+(() => {
+  // cost = 作る手間（コード＋絵）。軽＝今の仕組みの数字を足すだけ、重＝新しい絵やモデルが職業ぶん要る。
+  const IDEAS = [
+    { k: '1', n: '石碑に名前', what: '社の石碑に、奉納した人の名前と本数が並ぶ。', ex: '石碑のいちばん上に<b>「藍　42本」</b>。', path: ['見える'], cost: '軽', note: '売れない記録。いちばん素直な見返り。' },
+    { k: '2', n: '自分の名前の桜が港に植わる', what: '10本奉納するごとに、港に自分の名前の付いた桜が1本植わる。', ex: '港の坂道に<b>「藍の桜」</b>。近づくと名前が出る。', path: ['見える', 'みんな'], cost: '中', note: '町が咲くのと本人の記録が同じ物になる。Minecraft らしく形に残る。', rec: true },
+    { k: '3', n: '称号', what: '本数で称号が上がる。頭上の名前に小さな桜紋。', ex: '10本<b>「花見客」</b> → 50本<b>「桜守」</b> → 150本<b>「花の主」</b>。', path: ['見える'], cost: '軽', note: '頭上HUD（PR #167）と合わせる。', rec: true },
+    { k: '4', n: '週の奉納1位の花冠', what: 'その週いちばん奉納した人が、1週間だけ頭に花冠をかぶる。', ex: '<b>桜の花冠</b>：光る花びらが少し舞う。', path: ['見える'], cost: '中', note: '競争が生まれる。売れない。少人数のテストだと同じ人が取り続けるかも。' },
+    { k: '5', n: '社が銀貨で買い取る', what: '社は枝角を決まった値段で受け取り、銀貨を返す（市場より少し安い）。', ex: '奉納1本で<b>銀貨40</b>。市場の相場は50〜80。', path: ['お金'], cost: '軽', note: '枝角の値段の「床」になる。安すぎて売れないことがない。銀貨は増えるので量に注意。', rec: true },
+    { k: '6', n: '奉納の札で交換所', what: '奉納すると「桜の札」（売れない）がもらえ、社の交換所で使う。', ex: '札10枚 → <b>桜の家具</b>、札30枚 → <b>桜の巻物のレシピ</b>。', path: ['お金', '見える'], cost: '中', note: '欲しい物を自分で選べる。品ぞろえを増やせば長く使える。', rec: true },
+    { k: '7', n: '社の加護', what: '奉納すると30分、小さな加護。戦闘の強さではなく便利なもの。', ex: '<b>採取量+10%</b>・<b>移動速度+5%</b>のどちらか。', path: ['便利'], cost: '軽', note: '採取の人にも得がある。' },
+    { k: '8', n: '守り札', what: '奉納すると1枚。倒れたとき1回だけ、その場で起き上がれる。', ex: '<b>桜の守り札</b>：ボス戦で倒れても、花びらに包まれて復活。', path: ['強さ'], cost: '中', note: '次の桜牙獣戦に役立つ。買えるかどうか（売れるか）は決める必要あり。' },
+    { k: '9', n: '開いた施設が安い・優先', what: '奉納した人は、町に開いた施設（茶屋・街道）を安く使える。', ex: '茶屋の団子が<b>奉納した人は半額</b>。', path: ['便利', 'みんな'], cost: '軽', note: '「自分が咲かせた町を自分が一番使える」。' },
+    { k: '10', n: '社へ飛べる', what: '奉納した人は、港から社（柱の上）へ一瞬で飛べる。', ex: '港の桜の門から<b>社へ転移</b>。', path: ['便利'], cost: '軽', note: '柱を登る手間が減る。湧きに間に合いやすい。' },
+    { k: '11', n: '湧きの知らせが早い', what: '奉納した人には、次の桜牙獣の湧きが早く届く。', ex: '<b>5分前</b>に「桜がざわめいている」。', path: ['便利'], cost: '軽', note: '小さいが、ワールドボスでは効く。' },
+    { k: '12', n: '桜の相のおすそ分け', what: '奉納のたびに、社から桜の相が少し返ってくる。', ex: '奉納1本で<b>桜の相1</b>。魔術の人に売れる。', path: ['お金'], cost: '軽', note: '魔術とつながる。花びらの流れと量がかぶらないよう少なめに。' },
+    { k: '13', n: 'くじ', what: '奉納1本でくじ1回。たまに珍しい物。', ex: '<b>大当たり：満開の花びら</b>（銘や見た目に使える珍しい素材）。', path: ['お金'], cost: '軽', note: 'わくわくはある。当たりの物を売れるかで経済への影響が変わる。' },
+    { k: '14', n: '経験値', what: '奉納1本で職業の経験値が入る。', ex: '奉納1本で<b>ボス討伐の1/4ぶん</b>の経験値。', path: ['強さ'], cost: '軽', note: '分かりやすいが、見返りとして地味。' },
+    { k: '15', n: '花びら甲殻と交換', what: '枝角1本を社に納めると、花びら甲殻が返ってくる。', ex: '<b>枝角1 → 花びら甲殻2</b>。', path: ['お金'], cost: '軽', note: '職人と魔術の流れに素材が回る。枝角と花びらの値段がつながる。' },
+    { k: '16', n: '住人の態度が変わる', what: '奉納するほど港の住人の台詞が変わり、店の品が増える。', ex: '鍛冶屋が<b>「桜の人か。いい鉄を回してやる」</b>→ 限定の品。', path: ['見える', 'みんな'], cost: '中', note: '町に覚えられている感じ。' },
+    { k: '17', n: '祭りで役がもらえる', what: '祭りの段階で、奉納の多い人が神輿や舞の役をする。', ex: '祭りの日、<b>上位5人が神輿</b>を担いで港を歩く。', path: ['見える', 'みんな'], cost: '重', note: '見せ場は大きいが、演出を作る手間がかかる。' },
+    { k: '18', n: '次の段階を選ぶ票', what: '奉納した本数ぶん、次に港に開く物の投票ができる。', ex: '「茶屋」か「鍛冶場の炉」か、<b>奉納した人が決める</b>。', path: ['みんな'], cost: '中', note: '自分の得のために奉納する理由がはっきりする（エゴイストの連合）。', rec: true },
+    { k: '19', n: '苗をもらう', what: '奉納すると桜の苗がもらえ、自分の工房や家に植えられる。', ex: '<b>桜の苗</b>：育つと工房の周りに花びらが舞う。', path: ['見える'], cost: '中', note: '自分の場所を飾る楽しさ。' },
+    { k: '20', n: '満開の桜牙獣で取り分が多い', what: '祭りの「満開の桜牙獣」で、奉納した人ほど報酬が多い。', ex: '奉納した人は<b>花びら甲殻+1</b>。', path: ['お金'], cost: '軽', note: '次の戦いにつながる。強さは変わらない。' },
+    { k: '21', n: '道の石に名前', what: '段階を越えた瞬間の1本を納めた人の名前が、その施設に刻まれる。', ex: '桜の街道の入口に<b>「この道を開いた人：藍」</b>。', path: ['見える'], cost: '軽', note: '1人しか取れない名誉。' },
+    { k: '22', n: '何も返さない', what: '見返りなし。みんなのためだけに奉納する。', ex: '奉納したい人だけがする。', path: ['みんな'], cost: '軽', note: '比べるための案。売ったほうが得なので、奉納が集まらない心配がある。' },
+  ];
+  let filter = 'all';
+  let picked = new Set();
+  try { picked = new Set(JSON.parse(localStorage.getItem('of-picked') || '[]')); } catch (e) {}
+  const save = () => { try { localStorage.setItem('of-picked', JSON.stringify([...picked])); } catch (e) {} };
+  const grid = document.getElementById('grid');
+  function render() {
+    const list = IDEAS.filter(i => filter === 'all' || (filter === 'rec' ? i.rec : i.path.includes(filter)));
+    grid.innerHTML = list.map(i => `<article class="card ${picked.has(i.k) ? 'picked' : ''}">
+      <div class="top"><div><span class="key">${i.k}</span><span class="name">${i.n}</span></div>
+        <button class="star" data-k="${i.k}" aria-pressed="${picked.has(i.k)}">${picked.has(i.k) ? '★ 選んだ' : '☆ 選ぶ'}</button></div>
+      <p class="what">${i.what}</p>
+      <p class="ex">${i.ex}</p>
+      <div class="tags">${i.rec ? '<span class="tag recm">おすすめ</span>' : ''}${i.path.map(p => `<span class="tag path">${p}</span>`).join('')}<span class="tag cost-${i.cost}">作る手間 ${i.cost}</span></div>
+      <p class="note">${i.note}</p>
+    </article>`).join('');
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    document.getElementById('picked').innerHTML = sel.length
+      ? `選んだ案（${sel.length}）：` + sel.map(i => `<b>${i.k}</b> ${i.n}`).join('、')
+      : '<span class="muted">まだ選んでいない。気になる案の ☆ を押す。</span>';
+    document.getElementById('copy').disabled = !sel.length;
+  }
+  grid.addEventListener('click', e => {
+    const b = e.target.closest('.star'); if (!b) return;
+    const k = b.dataset.k; picked.has(k) ? picked.delete(k) : picked.add(k); save(); render();
+  });
+  document.querySelectorAll('.f').forEach(b => b.addEventListener('click', () => {
+    filter = b.dataset.f;
+    document.querySelectorAll('.f').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  }));
+  document.getElementById('copy').addEventListener('click', () => {
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    const text = '奉納の見返り、気になる案：' + sel.map(i => `${i.k} ${i.n}`).join('、');
+    const done = () => { document.getElementById('copied').textContent = 'コピーした。チャットに貼って送ってください。'; };
+    const fb = () => { const t = document.getElementById('fallback'); t.hidden = false; t.value = text; t.select(); document.getElementById('copied').textContent = '下の文を選んだのでコピーしてください。'; };
+    try { navigator.clipboard.writeText(text).then(done, fb); } catch (e) { fb(); }
+  });
+  render();
+})();
+</script>
