@@ -257,8 +257,12 @@ class QuestEncounterCombat(
     /** 桜牙獣's petal storm and strike effects (only built when the encounter has one). */
     private var sakuraFx: SakuraPetalFx? = null
     private var sakuraStrike: SakuraStrikeFx? = null
-    /** Players who have the boss glow post effect on (26.3 /posteffect, assets/projects/post_effect/shade_glow.json). */
-    private val glowing = mutableSetOf<Player>()
+    /** The post effects each player has on (26.3 /posteffect): the shade glow (assets/projects/post_effect/shade_glow.json)
+     *  and the sakura light (SakuraLight). One packet sets the whole list, so both go through [tickGlow]. */
+    private val glowing = mutableMapOf<Player, List<net.kyori.adventure.key.Key>>()
+    /** 桜牙獣's own pink light, carried at its chest (SakuraLight); gone with its death. */
+    private var sakuraLight: SakuraLight? = null
+    private var sakuraLightEnraged = false
     /** 翳の巣's rage clock: started when the wyrm enrages, it turns the arena's light violet (BossArenaFactory.SHADE_RAGE). */
     private val rageClock = if (instance.dimensionType.key() == dev.projects.server.coreloop.adventure.BossArenaFactory.SHADE_NEST)
         instance.clock(dev.projects.server.coreloop.adventure.BossArenaFactory.rageClock()) else null
@@ -697,6 +701,7 @@ class QuestEncounterCombat(
             // the petals take the model's facing (a strafe or dash faces the target, not the way the carrier walks)
             fx.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, mob.enraged) { bone, px -> view?.point(bone, px) }
             (sakuraStrike ?: SakuraStrikeFx(instance).also { sakuraStrike = it }).tick()
+            tickSakuraLight(mob)
         }
         val players = instance.players.filter { canTarget(it) }
         if (actionsStoppedForReturn) {
@@ -753,8 +758,9 @@ class QuestEncounterCombat(
         gimmicks.dispose()
         lights.dispose()
         hideGimmickBars()
-        glowing.forEach { it.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList())) }
+        glowing.keys.forEach { it.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList())) }
         glowing.clear()
+        sakuraLight?.remove()
         shaderFx.dispose()
         sakuraFx?.dispose()
         sakuraStrike?.dispose()
@@ -1508,13 +1514,29 @@ class QuestEncounterCombat(
         }
     }
 
-    /** The glow post effect is on for exactly the players in an arena whose model boss is alive. */
+    /** The glow post effect is on for exactly the players in an arena whose model boss is alive; the sakura light while
+     *  桜牙獣's light stands. */
     private fun tickGlow() {
-        val boss = mobs.values.any { it.view != null && it.life.isAlive && it.definition.model == "shade_wyrm" }
-        val wanted = if (boss) instance.players.toSet() else emptySet()
-        for (p in wanted - glowing) p.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(listOf(GLOW)))
-        for (p in glowing - wanted) p.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList()))
+        val shade = mobs.values.any { it.view != null && it.life.isAlive && it.definition.model == "shade_wyrm" }
+        val effects = listOfNotNull(GLOW.takeIf { shade }, SakuraLight.POST.takeIf { sakuraLight != null })
+        val wanted = if (effects.isEmpty()) emptyMap() else instance.players.associateWith { effects }
+        for ((p, list) in wanted) if (glowing[p] != list)
+            p.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(list))
+        for (p in glowing.keys - wanted.keys) p.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList()))
         glowing.clear(); glowing += wanted
+    }
+
+    /** 桜牙獣 lights the ground round it pink, brighter and wider once enraged; it goes out with the death. The probe is
+     *  only re-sent when that changes: a new item every tick makes the light blink. */
+    private fun tickSakuraLight(mob: Mob) {
+        val at = if (mob.life.isAlive) mob.view?.point("body", SAKURA_LIGHT_AT) else null
+        if (at == null) { sakuraLight?.remove(); sakuraLight = null; return }
+        val radius = if (mob.enraged) 14 else 11
+        val strength = if (mob.enraged) 2.6 else 2.0
+        val light = sakuraLight ?: SakuraLight(instance, Pos.fromPoint(at), slot = 0, radius, strength) {
+            dev.projects.server.coreloop.CoreCombatPresentation.packed(it) }.also { sakuraLight = it; sakuraLightEnraged = mob.enraged }
+        light.moveTo(Pos.fromPoint(at))
+        if (sakuraLightEnraged != mob.enraged) { sakuraLightEnraged = mob.enraged; light.set(0, radius, strength) }
     }
 
     /** With its horns broken it aims badly for a while: its target point swings up to 3 blocks to either side. */
@@ -2202,6 +2224,8 @@ class QuestEncounterCombat(
         const val RAGE_WAVE_RADIUS = 22.0
         val RAGE_WAVE_MILLIS = dev.projects.server.coreloop.adventure.BossArenaFactory.RAGE_FADE_TICKS * 50L
         val GLOW: net.kyori.adventure.key.Key = net.kyori.adventure.key.Key.key("projects", "shade_glow")
+        /** Where 桜牙獣's light sits: the chest, under the back's petal shells (body bone, Blockbench px). */
+        private val SAKURA_LIGHT_AT = net.minestom.server.coordinate.Vec(0.0, 18.0, 10.0)
         /** Gimmicks: horn break (12 % of max health from near the head), fan tear (10 % per side). */
         const val HEAD_REACH = 6.0
         const val HEAD_ANGLE = 50.0

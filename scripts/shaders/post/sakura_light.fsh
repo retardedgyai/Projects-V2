@@ -77,9 +77,12 @@ void main() {
         if (d >= radius) continue;
         float fall = 1.0 - d / radius;
         fall *= fall;
+        // The light usually sits inside what carries it (a mob's chest): its own body is left alone, or every move of
+        // the model flickers through the light.
+        fall *= smoothstep(1.2, 2.6, d);
         float facing = max(dot(n, to / max(d, 1e-3)), 0.0);
         light += palette(params.b) * (float(params.g) / 255.0 * 3.0) * fall * (.3 + .7 * facing);
     }
     // Tinted by the surface (a lit surface keeps its texture), plus a little of the light itself so dark ground glows.
-    fragColor = vec4(min(base.rgb * (1.0 + light) + light * .06, vec3(1.0)), base.a);
+    fragColor = vec4(min(base.rgb * (1.0 + light) + light * .15, vec3(1.0)), base.a);
 }
