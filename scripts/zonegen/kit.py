@@ -191,3 +191,115 @@ def ground_cover(c):
                     c.put(x, y, z, "fern", shape="plant")
             if Z.forest[z, x] > .6 and t == "grass_block_top" and _h(x, 9, z, 47) < .15 and (x, y, z) not in c.bl.b:
                 c.put(x, y, z, "leaf_litter", shape="carpet")
+
+
+# ---------------------------------------------------------------- gathering nodes
+def gather_nodes(c, spec):
+    """Fill the empty ground with things to gather, chosen by what the place is (expert rule: objects follow context,
+    cluster in small groups, keep negative space between groups):
+      near a rock face or on steep ground -> an ore outcrop (mossy stone mound with a few ore blocks showing)
+      in or at the edge of a wood          -> a mushroom ring on moss, or a fallen branch to chop
+      on open meadow                       -> an herb patch: one kind of plant, dense in the middle
+      by water                             -> a reed bed and a clay bank
+    Groups of 2-3 nodes of one kind, groups at least 26 blocks apart, never on or beside a route, never in a reserved spot."""
+    Z = c.z; B = c.B; R = c.R
+    route_d = Z.dist_to(c.route, 8)
+    wet_d = Z.dist_to(c.wet, 14)
+    face = Z.slope > 1.2
+    face_d = Z.dist_to(face, 12)
+    used_d = Z.dist_to(c.used, 10)
+    groups = []
+    kinds_n = {}
+    for _ in range(20000):
+        x, z = R.randrange(12, B - 12), R.randrange(12, B - 12)
+        if c.wet[z, x] or route_d[z, x] < 5 or used_d[z, x] < 4 or Z.slope[z, x] > 1.0: continue
+        if any((x - a) ** 2 + (z - b) ** 2 < 26 * 26 for a, b, _ in groups): continue
+        if wet_d[z, x] < 6: kind = "reeds"
+        elif face_d[z, x] < 7: kind = "ore"
+        elif Z.forest[z, x] > .35: kind = R.choice(["mushroom", "mushroom", "branch"])
+        else: kind = R.choice(["herb", "herb", "berry"])
+        groups.append((x, z, kind))
+    for (gx, gz, kind) in groups:
+        n = R.randint(2, 3) if kind != "reeds" else 1
+        for k in range(n):
+            a = R.uniform(0, math.tau); r = 0 if k == 0 else R.uniform(5, 9)
+            x, z = int(gx + math.cos(a) * r), int(gz + math.sin(a) * r)
+            if not (4 <= x < B - 4 and 4 <= z < B - 4) or c.wet[z, x] or route_d[z, x] < 4 or c.used[z, x]: continue
+            {"ore": node_ore, "mushroom": node_mushroom, "branch": node_branch, "herb": node_herb,
+             "berry": node_berry, "reeds": node_reeds}[kind](c, x, z, R)
+            c.used[max(0, z - 2):z + 3, max(0, x - 2):x + 3] = True
+            kinds_n[kind] = kinds_n.get(kind, 0) + 1
+    c.gather = groups
+    return kinds_n
+
+
+def node_ore(c, x, z, R):
+    g = c.at(x, z); s = R.uniform(1.6, 2.4); ore = R.choice(["iron_ore", "coal_ore", "copper_ore", "coal_ore"])
+    for dx in range(-3, 4):
+        for dz in range(-3, 4):
+            for dy in range(0, 3):
+                q = (dx / s) ** 2 + (dz / (s * .85)) ** 2 + (dy / (s * .7)) ** 2
+                if q > 1 + noise3(x + dx, dy, z + dz, 811, 1.4) * .3: continue
+                top = dy >= int(s * .7) - (1 if q > .6 else 0)
+                m = "moss_block" if top and _h(x + dx, dy, z + dz, 812) < .5 else (ore if _h(x + dx, dy, z + dz, 813) < .3 else
+                    R.choice(["stone", "andesite", "stone", "tuff"]))
+                c.put(x + dx, c.at(x + dx, z + dz) + dy, z + dz, m)
+    for k in range(3):
+        a = R.uniform(0, math.tau); xx, zz = int(x + math.cos(a) * 3.5), int(z + math.sin(a) * 3.5)
+        if (xx, c.at(xx, zz) + 1, zz) not in c.bl.b: c.put(xx, c.at(xx, zz) + 1, zz, R.choice(["cobblestone", "stone"]), shape="slab")
+
+
+def node_mushroom(c, x, z, R):
+    kind = R.choice(["red_mushroom", "brown_mushroom"])
+    for k in range(R.randint(6, 10)):
+        a = k / 8 * math.tau + R.uniform(-.3, .3); r = R.uniform(1.5, 2.8)
+        xx, zz = int(round(x + math.cos(a) * r)), int(round(z + math.sin(a) * r))
+        g = c.at(xx, zz)
+        if (xx, g + 1, zz) in c.bl.b: continue
+        c.put(xx, g, zz, "moss_block")
+        c.put(xx, g + 1, zz, kind if R.random() < .75 else "fern", shape="plant")
+    c.put(x, c.at(x, z), z, "mycelium_top", "mycelium_side")
+
+
+def node_branch(c, x, z, R):
+    a = R.uniform(0, math.tau); L = R.randint(4, 6); log = R.choice(["oak_log", "birch_log", "dark_oak_log"])
+    for k in range(L):
+        xx, zz = int(round(x + math.cos(a) * k)), int(round(z + math.sin(a) * k))
+        g = c.at(xx, zz)
+        if (xx, g + 1, zz) in c.bl.b and c.bl.b[(xx, g + 1, zz)][0] == "full": break
+        c.put(xx, g + 1, zz, log, log)
+        if _h(xx, 0, zz, 821) < .35: c.put(xx, g + 2, zz, "moss_block", shape="carpet")
+    c.put(x, c.at(x, z) + 1 + 1, z, "brown_mushroom", shape="plant") if (x, c.at(x, z) + 2, z) not in c.bl.b else None
+
+
+def node_herb(c, x, z, R):
+    plant = R.choice(["allium", "azure_bluet", "oxeye_daisy", "cornflower", "lily_of_the_valley", "firefly_bush"])
+    for dx in range(-3, 4):
+        for dz in range(-3, 4):
+            d = math.hypot(dx, dz)
+            if d > 3.2 or _h(x + dx, 0, z + dz, 831) > 1.05 - d * .25: continue
+            g = c.at(x + dx, z + dz)
+            if (x + dx, g + 1, z + dz) in c.bl.b and c.bl.b[(x + dx, g + 1, z + dz)][0] != "plant": continue
+            if c.bl.b.get((x + dx, g, z + dz), ("", "", ""))[1] != "grass_block_top": continue
+            c.put(x + dx, g + 1, z + dz, plant, shape="plant")
+
+
+def node_berry(c, x, z, R):
+    for k in range(R.randint(4, 7)):
+        xx, zz = x + R.randint(-2, 2), z + R.randint(-2, 2)
+        g = c.at(xx, zz)
+        if (xx, g + 1, zz) in c.bl.b and c.bl.b[(xx, g + 1, zz)][0] != "plant": continue
+        c.put(xx, g + 1, zz, "sweet_berry_bush_stage3" if R.random() < .7 else "bush", shape="plant")
+
+
+def node_reeds(c, x, z, R):
+    for dx in range(-4, 5):
+        for dz in range(-4, 5):
+            xx, zz = x + dx, z + dz
+            if not (0 <= xx < c.B and 0 <= zz < c.B) or c.wet[zz, xx] or c.route[zz, xx]: continue
+            near = any(c.wet[zz + a, xx + b] for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)) if 0 <= zz + a < c.B and 0 <= xx + b < c.B)
+            if not near or _h(xx, 0, zz, 841) > .7: continue
+            g = c.at(xx, zz)
+            c.put(xx, g, zz, "clay" if _h(xx, 1, zz, 842) < .3 else c.bl.b.get((xx, g, zz), ("full", "grass_block_top", ""))[1],
+                  "grass_block_side" if c.bl.b.get((xx, g, zz), ("", "", ""))[1] == "grass_block_top" else None)
+            for k in range(1 + int(_h(xx, 2, zz, 843) * 3)): c.put(xx, g + 1 + k, zz, "sugar_cane", shape="plant")

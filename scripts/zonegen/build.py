@@ -45,6 +45,7 @@ ARENA = shrine.build(PIL, ex, ez)
 print("pillars", round(time.time() - t0, 1), flush=True)
 print("pieces", [(q["name"], q["clash"]) for q in c.pieces], round(time.time() - t0, 1), flush=True)
 nt = kit.forests(c, zone1.SPEC); print("trees", nt, round(time.time() - t0, 1), flush=True)
+print("gather", kit.gather_nodes(c, zone1.SPEC), flush=True)
 kit.ground_cover(c); print("cover", round(time.time() - t0, 1), flush=True)
 for zc in range(z.B):                                           # solid ground under every column, whatever the pieces dug
     for xc in range(z.B):
@@ -61,4 +62,4 @@ ok = validate.report(res)
 print("点検", "合格" if ok else "不合格")
 pickle.dump((bl.b, z.hi, []), open("field500.pkl", "wb"))
 np.save("upper.npy", UPPER)
-pickle.dump(z, open("zone.pkl", "wb"))
+pickle.dump(z, open("zone.pkl", "wb")); pickle.dump(c.gather, open("gather.pkl", "wb"))
