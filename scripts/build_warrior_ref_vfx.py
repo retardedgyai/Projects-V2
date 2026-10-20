@@ -894,6 +894,7 @@ def build(assets, write):
     TURFS = [[turf_box([2, 8, 3], [14, 12, 13])],
              [turf_box([2, 8, 3], [10, 12, 13]), turf_box([10, 8, 6], [14, 11, 13])],
              [turf_box([1, 8, 4], [9, 11, 12]), turf_box([6, 9.5, 2], [15, 13, 10])]]
+    model('gblock', {'textures': turf_tex, 'elements': [turf_box([0, 0, 0], [16, 16, 16])]})   # preview stand-in for a ground block
     for n, els in enumerate(TURFS):
         model(f'turf_{n}', {'textures': turf_tex, 'elements': els})
     model('turfclod', lump_model(grass_top, turf_side, texture('turf_under', block_tex(EARTH, 53)), 7))

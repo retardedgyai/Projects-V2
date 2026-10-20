@@ -45,7 +45,9 @@ class CoreSlashChoreographyTest {
                 if(!pose.visible) null else mapOf("model" to pose.model,"offset" to xyz(pose.offset),
                     "scale" to xyz(pose.scale),"yaw" to pose.yaw,"pitch" to pose.pitch,"roll" to pose.roll)
             } }.also {
-                val limit=if(waves.any { parts -> parts.any { p -> p.shape.startsWith("flow:") } }) 16 else 12
+                // 地割り (CoreWarriorRefChoreography, 2026-10-20) is built from many small pieces; it stays under the owner cap (48).
+                val limit=if(waves.any { parts -> parts.any { p -> CoreWarriorRefChoreography.owns(p) } }) 32
+                    else if(waves.any { parts -> parts.any { p -> p.shape.startsWith("flow:") } }) 16 else 12
                 assertTrue(it.size<=limit,"$id: overlapping display budget at tick $tick")
             } }
             assertTrue(frames.last().isEmpty())

@@ -426,7 +426,8 @@ class CoreSkillChoreographyTest {
                 if(p.shape.startsWith("flow:") || p.shape.startsWith("warrior_trace:")) assertTrue(pose.scale.x()>=0 && pose.scale.y()>0 && pose.scale.z()>=0)
                 else assertTrue(pose.scale.x()>0 && pose.scale.y()>0 && pose.scale.z()>0)
                 assertTrue(listOf(pose.offset.x(),pose.offset.y(),pose.offset.z(),pose.yaw,pose.pitch,pose.roll).all(Double::isFinite))
-                if(checked.add(pose.model)) {
+                // GROUND is the block under the piece (a vanilla item), not a pack model.
+                if(pose.model!=CoreCombatMeshes.GROUND && checked.add(pose.model)) {
                     val path="assets/projects/items/${pose.model}.json"
                     assertTrue(path in index,path)
                     val item=javaClass.getResourceAsStream("/core-ui-pack/$path")!!.bufferedReader().use { JsonParser.parseReader(it).asJsonObject }

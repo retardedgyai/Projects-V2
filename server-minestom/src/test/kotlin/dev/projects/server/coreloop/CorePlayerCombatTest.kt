@@ -373,7 +373,8 @@ class CorePlayerCombatTest {
                 "targets" to h.combat.combatTargets().map { xyz(it.position) },
                 "displays" to h.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }.mapNotNull { e ->
                     val m=e.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
-                    val model=m.itemStack.get(DataComponents.ITEM_MODEL)?.toString()?.substringAfter("projects:") ?: return@mapNotNull null
+                    val model=if(m.itemStack.material()!=net.minestom.server.item.Material.PAPER) "vanilla:"+m.itemStack.material().key().value()
+                        else m.itemStack.get(DataComponents.ITEM_MODEL)?.toString()?.substringAfter("projects:") ?: return@mapNotNull null
                     if(m.scale.x()==0.0&&m.scale.y()==0.0&&m.scale.z()==0.0) return@mapNotNull null
                     mapOf("model" to model,"offset" to xyz(e.position.add(m.translation)),"scale" to xyz(m.scale),
                         "quaternion" to m.leftRotation.map { it.toDouble() },

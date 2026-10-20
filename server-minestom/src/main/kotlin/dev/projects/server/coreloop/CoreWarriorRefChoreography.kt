@@ -122,16 +122,20 @@ internal object CoreWarriorRefChoreography {
                     else -> 1.0 - (tick - (p.durationTicks - 7)) / 6.0
                 }.coerceIn(0.0, 1.2)
                 val k = name.removePrefix("turf").toInt()
-                CoreMeshPose(p.offset.add(0.0, -p.scale.y() * .3 * (1 - up.coerceAtMost(1.0)), 0.0), p.scale, p.yaw, p.pitch * up,
-                    p.roll * up, "$DIR/turf_${(hash(k, 98) * 3).toInt().coerceAtMost(2)}", live)
+                // The ground block itself (a vanilla block item renders at half size in FIXED): a flat slab of it,
+                // each one its own proportions, tipped about its centre.
+                val sx = p.scale.x() * (1.4 + .5 * hash(k, 99)); val sy = p.scale.x() * (.45 + .3 * hash(k, 100))
+                val sz = p.scale.x() * (1.1 + .5 * hash(k, 101))
+                CoreMeshPose(p.offset.add(0.0, sy * .25 - p.scale.y() * .3 * (1 - up.coerceAtMost(1.0)), 0.0), Vec(sx, sy, sz),
+                    p.yaw, p.pitch * up, p.roll * up, CoreCombatMeshes.GROUND, live)
             }
             name.startsWith("clod") -> {
                 val k = name.removePrefix("clod").toInt()
                 val s = t.coerceAtLeast(0.0) / 20.0
                 val y = (6.5 + 3.0 * hash(k, 71)) * s - 18.0 * s * s / 2
                 val a = p.yaw
-                CoreMeshPose(p.offset.add(sin(a) * .8 * s, max(y, -.1), cos(a) * .8 * s), p.scale, p.yaw + t * .3, t * .45, t * .25,
-                    if (k % 3 == 0) "$DIR/turfclod" else "$DIR/clod", live)
+                CoreMeshPose(p.offset.add(sin(a) * .8 * s, max(y, -.1), cos(a) * .8 * s), p.scale.mul(1.6), p.yaw + t * .3, t * .45, t * .25,
+                    CoreCombatMeshes.GROUND, live)
             }
             name.startsWith("dust") -> CoreMeshPose(p.offset.add(0.0, t.coerceAtLeast(0.0) * .02, 0.0), p.scale.mul(1.0 + tick * .05),
                 0.0, 0.0, p.roll, "$DIR/dust_${(tick * 5 / p.durationTicks).coerceAtMost(4)}", live)

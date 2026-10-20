@@ -260,8 +260,11 @@ def weapon_faces(hand, pose):
 
 
 def display_faces(d, camera=None):
+    if d['model'].startswith('vanilla:'):
+        # A vanilla block item (the ground torn up): drawn as the turf cube, at the half size FIXED gives block items.
+        d = {**d, 'model': 'combat_vfx/warrior_ref/gblock', 'scale': [v * .5 for v in d['scale']]}
     model, tints = item_model(d['model'])
-    model = {**model, '_shade': 'warrior_ref/turf' in d['model'] or 'warrior_ref/clod' in d['model'] or 'warrior_ref/finger' in d['model'] or 'warrior_ref/lump' in d['model'] or 'warrior_ref/petal' in d['model'] or 'warrior_ref/gslab' in d['model'] or 'warrior_ref/chunk' in d['model']}
+    model = {**model, '_shade': 'warrior_ref/gblock' in d['model'] or 'warrior_ref/turf' in d['model'] or 'warrior_ref/clod' in d['model'] or 'warrior_ref/finger' in d['model'] or 'warrior_ref/lump' in d['model'] or 'warrior_ref/petal' in d['model'] or 'warrior_ref/gslab' in d['model'] or 'warrior_ref/chunk' in d['model']}
     rot = Rq(d['quaternion'])
     if d.get('billboard') and camera is not None:
         # Billboard CENTER: the display faces the camera; its own rotation then turns it in the screen plane.

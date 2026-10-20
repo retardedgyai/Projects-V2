@@ -31,7 +31,8 @@ internal object CoreCombatPresentation {
 internal class CoreCombatMeshes(private val owner: Player) {
     private data class Live(val entity: Entity,val instance: Instance,val part: CoreCombatMeshPart,
         val ownerStart: Pos,val baseYaw: Double,var age: Int=-2,var model: String="",val cancelled: AtomicBoolean=AtomicBoolean(),
-        var lastUpdateNanos: Long=0,var maxUpdateGapNanos: Long=0,var updateCount: Int=0,var tint: Int?=null)
+        var lastUpdateNanos: Long=0,var maxUpdateGapNanos: Long=0,var updateCount: Int=0,var tint: Int?=null,
+        var ground: Material=Material.DIRT)
     private val live=mutableListOf<Live>()
     internal val size get()=live.size
 
@@ -74,12 +75,12 @@ internal class CoreCombatMeshes(private val owner: Player) {
             val entity=Entity(EntityType.ITEM_DISPLAY)
             entity.setHasPhysics(false);entity.setNoGravity(true);entity.setAutoViewable(false)
             val record=Live(entity,instance,part,owner.position,atan2(effect.direction.x(),effect.direction.z()),
-                age=if(immediateContour) 0 else -2)
+                age=if(immediateContour) 0 else -2,ground=groundUnder(instance,effect.origin.add(part.offset)))
             live+=record
             entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
                 val initial=CoreSkillChoreography.pose(part,0.0)
                 record.model=initial.model;record.tint=initial.tint
-                meta.setItemStack(stack(record.model,initial.tint))
+                meta.setItemStack(stack(record.model,initial.tint,record.ground))
                 meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
                 if(part.billboard) meta.setBillboardRenderConstraints(net.minestom.server.entity.metadata.display.AbstractDisplayMeta.BillboardConstraints.CENTER)
                 meta.setBrightness(15,15);meta.setViewRange(1.0f)
@@ -111,7 +112,18 @@ internal class CoreCombatMeshes(private val owner: Player) {
         return true
     }
 
-    private fun stack(model: String, tint: Int?): ItemStack {
+    /** The solid block at or just under a point, as an item: torn-up ground shows the ground it was torn from. */
+    private fun groundUnder(instance: Instance,at: net.minestom.server.coordinate.Point): Material {
+        val base=floor(at.y()).toInt()
+        for(y in base+1 downTo base-3) {
+            val block=instance.getBlock(Pos(at.x(),y.toDouble(),at.z()))
+            if(block.solid()) return block.registry().material() ?: Material.DIRT
+        }
+        return Material.DIRT
+    }
+
+    private fun stack(model: String, tint: Int?, ground: Material=Material.DIRT): ItemStack {
+        if(model==GROUND) return ItemStack.of(ground)
         val item=ItemStack.of(Material.PAPER).withItemModel("projects:$model")
         return if(tint==null) item else item.with(net.minestom.server.component.DataComponents.CUSTOM_MODEL_DATA,
             net.minestom.server.item.component.CustomModelData(emptyList(),emptyList(),emptyList(),
@@ -163,7 +175,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 meta.setTranslation(offset)
                 meta.setLeftRotation(CoreCombatMeshArt.rotation(pose.yaw+facing,pose.pitch,pose.roll))
                 if(v.model!=pose.model || v.tint!=pose.tint) {
-                    meta.setItemStack(stack(pose.model,pose.tint));v.model=pose.model;v.tint=pose.tint
+                    meta.setItemStack(stack(pose.model,pose.tint,v.ground));v.model=pose.model;v.tint=pose.tint
                 }
             }
             if(v.entity.instance===v.instance) {
@@ -211,6 +223,8 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 part.shape.startsWith("flow:") && !part.shape.contains(":prepare:")) 2 else 1
         internal fun removalAge(part: CoreCombatMeshPart)=part.delayTicks+part.durationTicks+
             if(interpolationTicks(part)==2) 2 else 0
+        /** Pose model meaning "the block this piece was torn from" (CoreWarriorRefChoreography). */
+        const val GROUND="@ground"
         const val OWNER_LIMIT=48
         const val SCENE_LIMIT=384
         private val sceneCounts=WeakHashMap<Instance,Int>()
