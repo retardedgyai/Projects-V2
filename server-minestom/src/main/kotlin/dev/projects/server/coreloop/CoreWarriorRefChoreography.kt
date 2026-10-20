@@ -37,18 +37,33 @@ internal object CoreWarriorRefChoreography {
         val centre = local(0.0, .12, impact)
         val chest = local(0.0, 1.1, impact)
         val out = mutableListOf<CoreCombatMeshPart>()
-        // 地割り is the ground splitting, nothing else (Creator 2026-10-20: no slash band, no fangs). One fissure runs
-        // forward from the blow; the ground either side lifts in a wave that follows it.
-        val start = 2.0
-        val length = 6.0
-        out += part("fissure", local(0.0, .12, start + length / 2), 1.0, yaw, 30).copy(scale = Vec(1.5, 1.0, length))
-        for (k in 0 until 10) {
-            val side = if (k % 2 == 0) 1.0 else -1.0
-            val along = start + .5 + (k / 2) * 1.15 + .2 * hash(k, 3)
-            val across = side * (.85 + .2 * hash(k, 4))
-            val at = local(across, .12, along)
-            out += part("slab$k", at, 1.0 + .25 * hash(k, 5), yaw + (hash(k, 6) - .5) * .5, 26,
-                delay = (along - start).div(length).times(4).toInt(), roll = side * (.45 + .25 * hash(k, 7)))
+        // 地割り after Braum's Glacial Fissure: the ground splits along a line (no slash band, no hit flash).
+        val start = 1.6
+        val length = 7.0
+        val steps = 8
+        out += part("field", local(0.0, .12, start + length / 2), 1.0, yaw, 44, delay = 2).copy(scale = Vec(2.8, 1.0, length + .6))
+        out += part("fissure", local(0.0, .12, start + length / 2), 1.0, yaw, 40).copy(scale = Vec(1.5, 1.0, length))
+        // The burst at the blow: a tall fan of shards.
+        for (k in 0 until 7) {
+            val a = yaw + (k - 3) * .42 + PI
+            val r = .5 + .3 * hash(k, 21)
+            val at = Vec(local(0.0, 0.0, start).x() - sin(a) * r, .12, local(0.0, 0.0, start).z() - cos(a) * r)
+            out += part("shard$k", at, 1.9 + .8 * hash(k, 22), a + PI, 34, pitch = -.35 - .2 * hash(k, 23))
+        }
+        // The wave: shard clusters in two rows running forward, one step a tick, light streaks at its front.
+        for (i in 1..steps) {
+            val along = start + i * length / steps
+            for ((n, side) in listOf(-1.0, 1.0).withIndex()) {
+                val k = 10 + i * 2 + n
+                val at = local(side * (.55 + .25 * hash(k, 24)), .12, along + .2 * hash(k, 25))
+                val lean = yaw + side * (PI / 2) + (hash(k, 26) - .5) * .6
+                out += part("shard$k", at, (1.1 + .7 * hash(k, 27)) * (1 - i / (steps + 4.0)), lean, 34 - i, pitch = .25 + .2 * hash(k, 28), delay = i)
+            }
+            for (n in 0 until 2) {
+                val k = 40 + i * 2 + n
+                out += part("streak$k", local((hash(k, 29) - .5) * 1.4, .3, along), 1.0 + .5 * hash(k, 30), 0.0, 5, ground = false,
+                    delay = i, roll = -.55 + (hash(k, 31) - .5) * .5, billboard = true)
+            }
         }
         return out
     }
@@ -64,9 +79,21 @@ internal object CoreWarriorRefChoreography {
         val name = p.shape.removePrefix(PREFIX)
         return when {
             name == "fissure" -> {
-                val stage = when { tick < 1 -> 0; tick < 2 -> 1; tick < 3 -> 2; tick < 12 -> 3; tick < 22 -> 4; tick < 26 -> 5; else -> 6 }
+                val stage = when { tick < 3 -> 0; tick < 6 -> 1; tick < 9 -> 2; tick < 18 -> 3; tick < 30 -> 4; tick < 35 -> 5; else -> 6 }
                 CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/fissure_$stage", live)
             }
+            name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
+            name.startsWith("shard") -> {
+                val height = p.scale.y() * 18.0 / 16.0
+                val up = when {
+                    tick < 3 -> doubleArrayOf(.0, .8, 1.15)[tick]
+                    tick < p.durationTicks - 8 -> 1.0
+                    else -> 1.0 - (tick - (p.durationTicks - 8)) / 7.0
+                }.coerceIn(0.0, 1.2)
+                val model = when { tick < p.durationTicks - 9 -> 0; tick < p.durationTicks - 5 -> 1; else -> 2 }
+                CoreMeshPose(p.offset.add(0.0, -height * (1 - up), 0.0), p.scale, p.yaw, p.pitch, 0.0, "$DIR/shard_$model", live)
+            }
+            name.startsWith("streak") -> CoreMeshPose(p.offset, p.scale.mul(1.0 + tick * .15), 0.0, 0.0, p.roll, "$DIR/streak", live)
             name.startsWith("slab") -> {
                 // Thrown up out of the split (overshoot), held, then settling back down.
                 val lift = when {

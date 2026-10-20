@@ -377,6 +377,7 @@ class CorePlayerCombatTest {
                     if(m.scale.x()==0.0&&m.scale.y()==0.0&&m.scale.z()==0.0) return@mapNotNull null
                     mapOf("model" to model,"offset" to xyz(e.position.add(m.translation)),"scale" to xyz(m.scale),
                         "quaternion" to m.leftRotation.map { it.toDouble() },
+                        "billboard" to (m.billboardRenderConstraints!=net.minestom.server.entity.metadata.display.AbstractDisplayMeta.BillboardConstraints.FIXED),
                         "tint" to (m.itemStack.get(DataComponents.CUSTOM_MODEL_DATA)?.colors()?.firstOrNull()?.let { (it.red() shl 16) or (it.green() shl 8) or it.blue() } ?: -1))
                 }) }
             repeat(4) { record(); h.ticks(1) }

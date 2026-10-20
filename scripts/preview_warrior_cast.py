@@ -252,9 +252,15 @@ def weapon_faces(hand, pose):
     return model_faces(model, tints, m)
 
 
-def display_faces(d):
+def display_faces(d, camera=None):
     model, tints = item_model(d['model'])
-    m = T(*d['offset']) @ Rq(d['quaternion']) @ S(*d['scale']) @ T(-.5, -.5, -.5) @ S(1 / 16, 1 / 16, 1 / 16)
+    rot = Rq(d['quaternion'])
+    if d.get('billboard') and camera is not None:
+        # Billboard CENTER: the display faces the camera; its own rotation then turns it in the screen plane.
+        back = -camera.f
+        basis = np.eye(4); basis[:3, 0] = -camera.r; basis[:3, 1] = camera.u; basis[:3, 2] = -back
+        rot = basis @ rot
+    m = T(*d['offset']) @ rot @ S(*d['scale']) @ T(-.5, -.5, -.5) @ S(1 / 16, 1 / 16, 1 / 16)
     return model_faces(model, tints, m, d.get('tint') if d.get('tint', -1) >= 0 else None)
 
 
@@ -380,7 +386,7 @@ def render(scene, tick, view):
     faces += weapon_faces(hand, weapon_pose(scene, tick))
     for t in frame['targets']: faces += target_faces(np.array(t) - origin)
     for d in frame['displays']:
-        faces += display_faces({**d, 'offset': list(np.array(d['offset']) - origin)})
+        faces += display_faces({**d, 'offset': list(np.array(d['offset']) - origin)}, camera)
     draw_faces(image, camera, faces)
     draw = ImageDraw.Draw(image)
     draw.text((10, 6), f"{scene['name']}　{label}", font=FONT, fill=(236, 226, 206))

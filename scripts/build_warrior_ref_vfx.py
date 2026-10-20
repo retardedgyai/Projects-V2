@@ -293,6 +293,53 @@ def slab_model(under, stone, side_tex):
             'west': {'texture': '#side', 'uv': [0, 0, 16, 3]}}}]}
 
 
+# ---------------------------------------------------------------- 地割り after Braum's Glacial Fissure (2026-10-20,
+# Creator: 「縦に割れるノックアップ技として好き。ブラウムのR、レルムブレイカーみたいに作画を寄せて派手に」).
+# Studied frame by frame: a tall fan of shards bursts at the blow, a wave of shard clusters runs forward along the line
+# in two rows with light streaks shooting up at its front, then the rows stand with a lit outline and sink.
+def rock_shard_texture():
+    """16 x 16 rock with a molten vein: lit left, shadowed right, the vein hot near the tip (top rows)."""
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            c = STONE[int(_h(x // 2, y // 2, 9) * 4)]
+            if x <= 2: c = STONE[3]
+            if x >= 13: c = STONE[2]
+            px[x, y] = c + (255,)
+    vein = [9, 8, 8, 7, 7, 8, 9, 9, 8, 7, 6, 6, 7, 8, 8, 9]
+    for y, x in enumerate(vein):
+        px[x, y] = (Y if y < 4 else O if y < 9 else R) + (255,)
+        px[x + 1, y] = (O if y < 4 else R if y < 9 else D) + (255,)
+    for x in range(16): px[x, 0] = O + (255,)
+    return img
+
+
+def ray_streak_texture():
+    """A light streak shooting up: white at its head, thinning and going see-through toward the tail."""
+    img = Image.new('RGBA', (8, 48), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(48):
+        k = y / 47                       # 0 = head (top), 1 = tail
+        half = 3.2 * (1 - k) + .6
+        for x in range(8):
+            d = abs(x + .5 - 4)
+            if d <= half:
+                tone = W if d < half * .4 and k < .5 else Y if k < .45 else O
+                px[x, y] = tone + (int(255 * (1 - k) ** .7),)
+    return img
+
+
+def field_texture():
+    """The fissure's area: a faint red floor with a lit rim, like the reference's outline of the lingering field."""
+    img = Image.new('RGBA', (16, 64), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, 15, 63), fill=R + (26,))
+    d.rectangle((0, 0, 15, 63), outline=O + (170,), width=1)
+    d.rectangle((1, 1, 14, 62), outline=R + (90,), width=1)
+    return img
+
+
 # The reference's light is see-through (studied at full size, 2026-10-20): only the white core is opaque, the colour
 # around it lets the world show through, and a faint halo spills past the edge. The dark outline is dropped.
 # Alphas avoid the shader markers (253, 121, 65, 200..215 in scripts/shaders/item.fsh).
@@ -336,6 +383,14 @@ def fang_model(tex):
         box((5.2, 19, 7.4), (10.8, 23, 8.6), [0, 3, 16, 7], [5, 3, 11, 5]),
         box((6.8, 23, 7.7), (9.2, 26, 8.3), [0, 0, 16, 3], [6, 0, 10, 2]),
     ]}
+
+
+def shard_model(tex):
+    # A slender rock shard on y=8: 5 units across at the base, tapering in three steps to a hot point 18 units up.
+    return {'ambientocclusion': False, 'textures': {'0': tex, 'particle': tex}, 'elements': [
+        box((5.5, 8, 6.5), (10.5, 15, 9.5), [0, 9, 16, 16], [2, 10, 14, 14]),
+        box((6.4, 15, 7.0), (9.6, 21, 9.0), [2, 3, 14, 9], [4, 4, 12, 7]),
+        box((7.3, 21, 7.6), (8.7, 26, 8.4), [5, 0, 11, 3], [6, 0, 10, 2])]}
 
 
 def board_model(tex, height=24):
@@ -384,6 +439,14 @@ def build(assets, write):
         model(f'ring_{st}', centred_model(texture(f'ring_{st}', glow(ring_texture(st)))))
     for st in range(3):
         model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', glow(twinkle_texture(st)))))
+    shard = rock_shard_texture()
+    for n, amount in enumerate((0.0, .4, .75)):
+        model(f'shard_{n}', shard_model(texture(f'shard_{n}', dissolve(shard, amount, 5) if amount else shard)))
+    streak_tex = texture('streak', ray_streak_texture())
+    model('streak', {'ambientocclusion': False, 'textures': {'0': streak_tex, 'particle': streak_tex}, 'elements': [
+        {'from': [7, 8, 8], 'to': [9, 32, 8], 'shade': False,
+         'faces': {'north': face([0, 0, 16, 16]), 'south': face([16, 0, 0, 16])}}]})
+    model('field', ground_model(texture('field', field_texture())))
     for st in range(7):
         model(f'fissure_{st}', ground_model(texture(f'fissure_{st}', fissure_texture(st))))
     for st in range(3):
