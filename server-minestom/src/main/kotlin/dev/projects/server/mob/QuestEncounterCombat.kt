@@ -428,7 +428,7 @@ class QuestEncounterCombat(
         }
         when (kind) {
             CrowdControl.STUN, CrowdControl.ROOT -> stopNavigation(mob)
-            CrowdControl.AIRBORNE -> { mob.entity.navigator.reset(); mob.entity.velocity = Vec(0.0, 9.0, 0.0) }
+            CrowdControl.AIRBORNE -> { mob.entity.navigator.reset(); mob.entity.velocity = Vec(0.0, 14.0, 0.0) }  // about 3 blocks up
             CrowdControl.KNOCKBACK -> slide(mob, normalizeHorizontal(mob.entity.position.sub(source.position)), distance)
             else -> Unit
         }
