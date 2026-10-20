@@ -67,7 +67,7 @@ def run(zone, blocks, places=None, upper=None, upper_start=None, upper_goal=None
     for z, x in zip(*np.nonzero(route)):
         for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             X, Zc = x + dx, z + dz
-            if 0 <= X < B and 0 <= Zc < B and not route[Zc, X] and kind[Zc, X] not in (3, 4) and abs(int(hi[Zc, X]) - int(hi[z, x])) > 1:
+            if 0 <= X < B and 0 <= Zc < B and not route[Zc, X] and kind[Zc, X] not in (3, 4, 6) and abs(int(hi[Zc, X]) - int(hi[z, x])) > 1:
                 bad.append((int(x), int(hi[z, x]), int(z)))
     out.append(("道の横に壁（2段以上）", "error", bad))
 

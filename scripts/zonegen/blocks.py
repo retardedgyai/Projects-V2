@@ -62,7 +62,7 @@ class Blocks:
                     put(x, h, z, TM.cliff_block(x, h, z, 1.0, 0.0, float(expo[z, x])))
                     continue
                 if k == 6:                                                # shore: grass to the water, a little mud
-                    name = "mud" if _h(x, 1, z, 6) < .15 else "grass_block_top"
+                    name = "grass_block_top"
                     put(x, h, z, name, TM.SIDE.get(name, "grass_block_side" if name == "grass_block_top" else name))
                     continue
                 top = TM.surface(x, z, float(slope[z, x]), float(forest[z, x]), 0.0)

@@ -93,9 +93,8 @@ class Zone:
             self.set_locked(inside, bed.astype(np.float32), 3)
             self.water[inside] = WL
             # the rim: never below WL+1 within the first ring, a gentle shore beyond
-            shore = (d >= 1) & (d < 1.25)
-            self.H = np.where(shore & ~self.lock, np.maximum(self.H, WL + 1), self.H).astype(np.float32)
-            self.set_locked(shore, np.maximum(self.H, WL + 1).astype(np.float32), 6)
+            shore = (d >= 1) & (d < 1.18)
+            self.set_locked(shore, float(WL + 1), 6)
             lk["WL"] = WL
 
     def streams(self):
@@ -109,6 +108,7 @@ class Zone:
                 bed = np.maximum(bed, lk["WL"] - 2)
             bed_i = np.round(bed).astype(int)
             half = st.get("half", 1.4)
+            banks = []
             for i, (x, z) in enumerate(pts):
                 yb = bed_i[i]
                 for dx in range(-3, 4):
@@ -116,12 +116,17 @@ class Zone:
                         X, Z = int(round(x + dx)), int(round(z + dz))
                         if not (0 <= X < self.B and 0 <= Z < self.B): continue
                         dd = math.hypot(x - X, z - Z)
+                        if half < dd <= half + 2.2: banks.append((X, Z, yb + 1))
                         if dd <= half:
                             if self.kind[Z, X] == 3: continue
                             if not self.lock[Z, X] or self.kind[Z, X] == 4:
                                 self.H[Z, X] = min(self.H[Z, X], yb) if self.kind[Z, X] == 4 else yb
                                 self.lock[Z, X] = True; self.kind[Z, X] = 4
                                 self.water[Z, X] = int(round(self.H[Z, X])) + 1
+            for (X, Z, y) in banks:                              # banks: grass at the water's level, after every channel cell is set
+                if not self.lock[Z, X]:
+                    self.H[Z, X] = y; self.lock[Z, X] = True; self.kind[Z, X] = 6
+                elif self.kind[Z, X] == 6: self.H[Z, X] = min(self.H[Z, X], y)
             for i in range(1, len(bed_i)):
                 if bed_i[i - 1] - bed_i[i] >= 2: self.falls.append((pts[i][0], pts[i][1], bed_i[i - 1], bed_i[i]))
 
@@ -218,6 +223,7 @@ class Zone:
             core = d < w
             k = 1 if e["kind"] == "road" else 2
             m = self.set_locked(core, level.astype(np.float32), k)
+            self.set_locked((d >= w) & (d < w + 2.5), level.astype(np.float32), 7)       # shoulders: the verge is at road level
             self.road_d = np.minimum(getattr(self, "road_d", np.full((self.B, self.B), 999, np.float32)), d)
             self.routes.append((e["kind"], pts, prof, w))
 
@@ -252,6 +258,7 @@ class Zone:
         near = self.dist_to(self.kind == 1) < reach
         near |= self.dist_to(self.kind == 2) < reach
         near |= self.dist_to(self.kind == 5) < reach
+        near |= self.dist_to((self.kind == 6) | (self.kind == 7), 8) < reach
         near &= ~self.lock
         H = self.H
         for _ in range(reach * 2):
