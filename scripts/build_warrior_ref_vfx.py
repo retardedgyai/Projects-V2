@@ -425,6 +425,76 @@ def petal_model(front, back):
             'north': f('#front', [0, 0, 16, 16]), 'south': f('#back', [16, 0, 0, 16])}}]}
 
 
+# ---------------------------------------------------------------- 地割り, third pass (2026-10-20, Creator: 「亀裂の書き方も
+# 悪いし3dの岩の出てくる感じもひどい、全部直そう」). Both are now Minecraft ground: the crack is placed pixel by
+# pixel at block resolution (16 px a block) as a black gap of uneven width with chipped light edges and a thin heat
+# line deep inside; the rocks are lumps of grass-topped dirt built from 2-3 boxes, heaved up and tilted away from it.
+GRASS = ((92, 140, 52), (78, 122, 44), (108, 158, 62), (70, 108, 40))
+DIRT = ((134, 96, 66), (116, 82, 56), (150, 110, 78), (98, 70, 48))
+GAP = (22, 16, 14)
+CHIP = (176, 140, 104)
+
+
+def block_tex(tones, seed, size=16):
+    """Vanilla-like: a base tone with single pixels and 2-px clusters of three other tones."""
+    img = Image.new('RGBA', (size, size))
+    px = img.load()
+    for y in range(size):
+        for x in range(size):
+            v = _h(x, y, seed)
+            c = tones[0] if v < .45 else tones[1] if v < .7 else tones[2] if v < .88 else tones[3]
+            px[x, y] = c + (255,)
+    return img
+
+
+def grass_side(seed):
+    img = block_tex(DIRT, seed)
+    px = img.load()
+    for x in range(16):  # the grass overhang, ragged
+        for y in range(2 + int(_h(x, seed, 5) * 3)):
+            px[x, y] = GRASS[int(_h(x, y, seed) * 3)] + (255,)
+    return img
+
+
+def crack_pixels(stage, length=112, width=24, seed=17):
+    """A crack placed pixel by pixel: a centre line that wanders, a gap 1-3 px wide around it, chipped light edges on
+    both sides, and the deep heat line (stage 0 bright .. 2 dull, 3 none). Short side cracks branch off."""
+    img = Image.new('RGBA', (width, length), (0, 0, 0, 0))
+    px = img.load()
+    def put(x, y, c):
+        if 0 <= x < width and 0 <= y < length: px[x, y] = c + (255,)
+    heat = [(255, 196, 96), (236, 84, 36), (150, 40, 30), None][stage]
+    x = width // 2
+    for y in range(length - 1, -1, -1):
+        if _h(y, seed) < .3: x += 1 if _h(y, seed, 1) > .5 else -1
+        x = max(4, min(width - 5, x))
+        w = 1 + int(_h(y // 3, seed, 2) * 3) * (1 if y > 10 else 0)       # thins out at the far end
+        for dx in range(-(w // 2), w - w // 2): put(x + dx, y, GAP)
+        if _h(y, seed, 3) > .35: put(x - w // 2 - 1, y, CHIP)              # chipped edges, broken
+        if _h(y, seed, 4) > .55: put(x + w - w // 2, y, DIRT[3])
+        if heat and w >= 2 and _h(y, seed, 6) > .25: put(x, y, heat)
+        if _h(y, seed, 7) > .93:                                           # a short side crack
+            d = 1 if _h(y, seed, 8) > .5 else -1
+            for k in range(1, 4 + int(_h(y, seed, 9) * 4)): put(x + d * k, y - k // 2, GAP)
+    return img
+
+
+def lump_model(top, side, under, seed):
+    """A lump of ground: a main box and 1-2 smaller ones stuck on, base at y=8, all with grass on top."""
+    def f(t, uv): return {'texture': t, 'uv': uv}
+    def box(lo, hi):
+        u = lambda a, b: [round(a, 2), 0, round(b, 2), round(hi[1] - lo[1], 2)]
+        return {'from': lo, 'to': hi, 'faces': {
+            'up': f('#top', [lo[0], lo[2], hi[0], hi[2]]), 'down': f('#under', [0, 0, 16, 16]),
+            'north': f('#side', u(lo[0], hi[0])), 'south': f('#side', u(lo[0], hi[0])),
+            'east': f('#side', u(lo[2], hi[2])), 'west': f('#side', u(lo[2], hi[2]))}}
+    a = _h(seed, 1)
+    els = [box([3, 8, 3], [13, 16 + int(a * 4), 13]),
+           box([1 + int(a * 3), 8, 9], [7 + int(a * 3), 13, 15]),
+           box([10, 8, 1], [15, 12 + int(_h(seed, 2) * 3), 7])]
+    return {'textures': {'top': top, 'side': side, 'under': under, 'particle': side}, 'elements': els}
+
+
 # The reference's light is see-through (studied at full size, 2026-10-20): only the white core is opaque, the colour
 # around it lets the world show through, and a faint halo spills past the edge. The dark outline is dropped.
 # Alphas avoid the shader markers (253, 121, 65, 200..215 in scripts/shaders/item.fsh).
@@ -524,6 +594,12 @@ def build(assets, write):
         model(f'ring_{st}', centred_model(texture(f'ring_{st}', glow(ring_texture(st)))))
     for st in range(3):
         model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', glow(twinkle_texture(st)))))
+    for st in range(4):
+        model(f'gcrack_{st}', ground_model(texture(f'gcrack_{st}', crack_pixels(st))))
+    for n in range(3):
+        model(f'lump_{n}', lump_model(texture(f'lump_top_{n}', block_tex(GRASS, n * 3 + 1)),
+                                      texture(f'lump_side_{n}', grass_side(n * 3 + 2)),
+                                      texture(f'lump_under_{n}', block_tex(DIRT, n * 3 + 3)), n))
     for n in range(3):
         fr, bk = petal_textures(n * 5 + 1)
         model(f'petal_{n}', petal_model(texture(f'petal_front_{n}', fr), texture(f'petal_back_{n}', bk)))

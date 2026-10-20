@@ -37,20 +37,21 @@ internal object CoreWarriorRefChoreography {
         val centre = local(0.0, .12, impact)
         val chest = local(0.0, 1.1, impact)
         val out = mutableListOf<CoreCombatMeshPart>()
-        // 地割り, drawn the Outer Gods way: the fissure runs forward and three crowns of rusted-iron petals burst open
-        // along it, one after another, then close and sink.
-        val start = 1.6
+        // 地割り: the crack runs forward from the blow and the ground either side heaves up in lumps, tilted away from it,
+        // one pair a tick behind the crack's head; a few lumps burst at the blow. Minecraft ground, block resolution.
+        val start = 1.4
         val length = 7.0
-        out += part("fissure", local(0.0, .12, start + length / 2), 1.0, yaw, 40).copy(scale = Vec(1.5, 1.0, length))
-        for (c in 0 until 3) {
-            val centre = local(0.0, .12, start + .8 + c * 2.6)
-            val size = 1.25 - c * .15
-            val n = 7
-            for (k in 0 until n) {
-                val a = yaw + k * 2 * PI / n + c * .4
-                val r = .45 * size
-                out += part("petal${c * 10 + k}", Vec(centre.x() + sin(a) * r, .12, centre.z() + cos(a) * r),
-                    size * (.85 + .3 * hash(c, k, 41)), a + PI, 34 - c * 3, delay = c * 3)
+        val steps = 8
+        out += part("gcrack", local(0.0, .12, start + length / 2), 1.0, yaw, 40).copy(scale = Vec(1.5, 1.0, length))
+        for (i in 0..steps) {
+            val along = start + .3 + i * (length - .6) / steps
+            for ((n, side) in listOf(-1.0, 1.0).withIndex()) {
+                val k = i * 2 + n
+                val at = local(side * (.55 + .2 * hash(k, 51)), .12, along + (hash(k, 52) - .5) * .4)
+                val size = (.75 + .35 * hash(k, 53)) * (if (i == 0) 1.25 else 1.0 - i * .04)
+                // roll tips the lump away from the crack; a little yaw so the rows are not ruled lines.
+                out += part("lump$k", at, size, yaw + (hash(k, 54) - .5) * .7, 36 - i, delay = i,
+                    roll = -side * (.35 + .3 * hash(k, 55)), pitch = (hash(k, 56) - .5) * .3)
             }
         }
         return out
@@ -71,6 +72,21 @@ internal object CoreWarriorRefChoreography {
                 CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/fissure_$stage", live)
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
+            name == "gcrack" -> {
+                val stage = when { tick < 6 -> 0; tick < 16 -> 1; tick < 28 -> 2; else -> 3 }
+                CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/gcrack_$stage", live)
+            }
+            name.startsWith("lump") -> {
+                // Heaved up from below with an overshoot, settles, then sinks back at the end.
+                val up = when {
+                    tick < 4 -> doubleArrayOf(.0, .7, 1.15, 1.05)[tick]
+                    tick < p.durationTicks - 7 -> 1.0
+                    else -> 1.0 - (tick - (p.durationTicks - 7)) / 6.0
+                }.coerceIn(0.0, 1.2)
+                val k = name.removePrefix("lump").toInt()
+                CoreMeshPose(p.offset.add(0.0, -p.scale.y() * .6 * (1 - up.coerceAtMost(1.0)), 0.0), p.scale, p.yaw,
+                    p.pitch * up, p.roll * up, "$DIR/lump_${k % 3}", live)
+            }
             name.startsWith("petal") -> {
                 // Bursts up leaning inward (closed bud), opens outward past its rest with overshoot, holds, closes and sinks.
                 val open = when {
