@@ -377,6 +377,22 @@ VIEWS = {'behind': ('背後（F5視点）', (0.0, 3.0, -3.76), (0.0, .25, 4.0)),
          'high': ('斜め上から', (-4.0, 6.5, -1.5), (0.0, 0.0, 3.5))}
 
 
+GRASS_FLOOR = [None]
+
+
+def grass_floor():
+    """A grass floor (2-block tiles) so ground effects are judged on the ground they sit on."""
+    tile = Image.open(PACK / 'textures/combat_vfx/warrior_ref/preview_grass.png').convert('RGBA')
+    big = Image.new('RGBA', (32, 32))
+    for i in range(2):
+        for j in range(2): big.paste(tile, (16 * i, 16 * j))
+    faces = []
+    for x in range(-8, 8, 2):
+        for z in range(-6, 12, 2):
+            faces.append(([np.array((x + 2.0, 0, z + 2.0)), np.array((x + 0.0, 0, z + 2.0)), np.array((x + 0.0, 0, z + 0.0)), np.array((x + 2.0, 0, z + 0.0))], big))
+    return faces
+
+
 def render(scene, tick, view):
     frame = scene['frames'][tick]
     SHADER_TIME[0] = tick / 20
@@ -385,7 +401,10 @@ def render(scene, tick, view):
     camera = Camera(eye, target)
     camera.cam_dir_light = camera.cam(camera.eye + np.array((.3, 1.0, -.5)) / np.linalg.norm((.3, 1.0, -.5)))
     image = Image.new('RGBA', (W, H), BG + (255,))
-    grid(image, camera)
+    if GRASS_FLOOR[0] is not None:
+        draw_faces(image, camera, GRASS_FLOOR[0])
+    else:
+        grid(image, camera)
     px, py, pz, yaw = frame['player']
     pos = np.array((px, py, pz)) - origin
     cast = scene['castTick']
@@ -408,7 +427,9 @@ def main():
     parser.add_argument('--ids', default='dash,slam,whirl,war_wound,war_guard,war_ult,slam_shader,whirl_shader,war_ult_shader')
     parser.add_argument('--out', default='.tools/cast')
     parser.add_argument('--frames', default='.tools/warrior-cast-frames.json')
+    parser.add_argument('--grass', action='store_true', help='draw a grass floor instead of the grid')
     args = parser.parse_args()
+    if args.grass: GRASS_FLOOR[0] = grass_floor()
     scenes = {s['id']: s for s in json.loads((ROOT / args.frames).read_text())}
     out = ROOT / args.out; out.mkdir(parents=True, exist_ok=True)
     for sid in args.ids.split(','):

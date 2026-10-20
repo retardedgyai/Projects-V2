@@ -479,6 +479,51 @@ def crack_pixels(stage, length=112, width=24, seed=17):
     return img
 
 
+STONE_T = ((124, 124, 124), (108, 108, 110), (140, 140, 140), (92, 92, 94))
+WALL_LIT, WALL_DARK, VOID = (112, 104, 100), (54, 48, 48), (18, 14, 14)
+
+
+def stone_tex(seed):
+    """Vanilla-stone-like grey, with one darker crack streak across it."""
+    img = block_tex(STONE_T, seed)
+    px = img.load()
+    x, y = int(_h(seed, 1) * 6) + 2, 0
+    while y < 16:
+        px[x % 16, y] = STONE_T[3] + (255,)
+        if _h(seed, y, 2) > .5: x += 1
+        y += 1
+    return img
+
+
+def chasm_pixels(stage, length=112, width=24, seed=23):
+    """The crack as an open chasm seen from above, pixel by pixel: a jagged opening 4-10 px wide whose sides step in
+    zig-zags; the lit wall on the left, the shadowed wall on the right, a black depth, and the magma at the bottom
+    (stage 0 white-hot .. 2 dull, 3 cooled); a dark rim and loose light chips along the lip."""
+    img = Image.new('RGBA', (width, length), (0, 0, 0, 0))
+    px = img.load()
+    magma = [((255, 236, 170), (255, 170, 60)), ((255, 150, 50), (226, 70, 30)), ((170, 46, 30), (120, 30, 26)),
+             ((70, 24, 22), (50, 20, 20))][stage]
+    cx, dirn, half = width / 2, 1, 4
+    for y in range(length - 1, -1, -1):
+        if y % 7 == 0: dirn = 1 if _h(y, seed) > .5 else -1
+        cx = max(7, min(width - 8, cx + dirn * .6))
+        if y % 4 == 0: half = 2 + int(_h(y, seed, 1) * 3)
+        far = y / length                       # the far end (y small) narrows
+        h = max(1, round(half * (.45 + .55 * far)))
+        left, right = int(cx) - h, int(cx) + h
+        for x in range(left - 1, right + 2):
+            if not 0 <= x < width: continue
+            if x == left - 1 or x == right + 1: c = (40, 34, 34)                      # the dark lip
+            elif x - left < 2 and h > 2: c = WALL_LIT
+            elif right - x < 2 and h > 2: c = WALL_DARK
+            elif abs(x - cx) <= max(.6, h * .35): c = magma[0] if _h(x, y, seed, 3) > .3 else magma[1]
+            else: c = VOID
+            px[x, y] = c + (255,)
+        for side, x in ((-1, left - 2), (1, right + 2)):                            # loose chips on the lip
+            if 0 <= x < width and _h(y, seed, 4 + side) > .72: px[x, y] = STONE_T[2] + (255,)
+    return img
+
+
 def lump_model(top, side, under, seed):
     """A lump of ground: a main box and 1-2 smaller ones stuck on, base at y=8, all with grass on top."""
     def f(t, uv): return {'texture': t, 'uv': uv}
@@ -595,11 +640,12 @@ def build(assets, write):
     for st in range(3):
         model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', glow(twinkle_texture(st)))))
     for st in range(4):
-        model(f'gcrack_{st}', ground_model(texture(f'gcrack_{st}', crack_pixels(st))))
+        model(f'gcrack_{st}', ground_model(texture(f'gcrack_{st}', chasm_pixels(st))))
     for n in range(3):
-        model(f'lump_{n}', lump_model(texture(f'lump_top_{n}', block_tex(GRASS, n * 3 + 1)),
-                                      texture(f'lump_side_{n}', grass_side(n * 3 + 2)),
-                                      texture(f'lump_under_{n}', block_tex(DIRT, n * 3 + 3)), n))
+        model(f'lump_{n}', lump_model(texture(f'lump_top_{n}', stone_tex(n * 3 + 1)),
+                                      texture(f'lump_side_{n}', stone_tex(n * 3 + 2)),
+                                      texture(f'lump_under_{n}', block_tex((STONE_T[1], STONE_T[3], STONE_T[0], STONE_T[3]), n * 3 + 3)), n))
+    texture('preview_grass', block_tex(GRASS, 9))
     for n in range(3):
         fr, bk = petal_textures(n * 5 + 1)
         model(f'petal_{n}', petal_model(texture(f'petal_front_{n}', fr), texture(f'petal_back_{n}', bk)))
