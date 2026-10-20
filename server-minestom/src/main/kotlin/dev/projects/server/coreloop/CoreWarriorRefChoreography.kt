@@ -14,7 +14,7 @@ internal object CoreWarriorRefChoreography {
     private const val PREFIX = "war_ref:"
     private const val DIR = "combat_vfx/warrior_ref"
     @Volatile var enabled = true
-    private val sceneIds = setOf("slam", "whirl")
+    private val sceneIds = setOf("slam")
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
@@ -58,19 +58,31 @@ internal object CoreWarriorRefChoreography {
         // The ground torn forward: one furrow, widest at the blow, running out ahead (texture row 0 = far end).
         val furrow = length + 2.0
         out += part("furrow", local(0.0, .12, impact - .6 + furrow / 2), 1.0, yaw, 44).copy(scale = Vec(furrow, 1.0, furrow))
-        for (k in 0 until 16) {
-            val along = impact + .4 + (k / 2) * (length + .6) / 8
+        // The furrow's lips: turf torn up along both edges and tipped outward, biggest at the blow, coming up as the
+        // furrow runs out (4 ticks for its whole length).
+        for (jj in 0 until 9) {
+            val tt = 1.0 - jj / 9.0                                        // 1 at the blow .. 0 far ahead
+            val along = impact - .4 + (1 - tt) * (furrow - .6)
+            val hw = (1.2 + 12.5 * tt.pow(1.4)) / 16.0
+            for ((n, side) in listOf(-1.0, 1.0).withIndex()) {
+                val k = jj * 2 + n
+                out += part("turf$k", local(side * (hw + .25), .12, along + (hash(k, 91) - .5) * .3), .55 + .75 * tt,
+                    yaw + (hash(k, 92) - .5) * .5, 34 - jj, delay = ((1 - tt) * 4).toInt(), roll = -side * (.45 + .3 * hash(k, 93)))
+            }
+        }
+        // Clods thrown up at the furrow's head as it runs (the knock-up), grass-topped turf among the earth.
+        for (k in 0 until 12) {
+            val along = impact + (k / 2) * (furrow - 1.0) / 6
             val side = if (k % 2 == 0) -1.0 else 1.0
-            out += part("clod$k", local(side * (.3 + .5 * hash(k, 61)), .2, along), .45 + .35 * hash(k, 62), yaw + hash(k, 63) * 6.0,
-                22, ground = false, delay = k / 2)
+            out += part("clod$k", local(side * (.2 + .35 * hash(k, 61)), .2, along), .35 + .3 * hash(k, 62), yaw + hash(k, 63) * 6.0,
+                20, ground = false, delay = (k / 2) * 4 / 6)
         }
-        for (k in 0 until 7) {
-            val a = yaw + k / 7.0 * 2 * PI
-            out += part("dust$k", local(0.0, .7, impact).add(sin(a) * 1.3, 0.0, cos(a) * 1.3), 1.6 + .6 * hash(k, 64), 0.0, 18,
-                ground = false, delay = 1 + k % 3, billboard = true, roll = hash(k, 65) * 6.0)
+        // A little dust, low and short: it must not hide the furrow.
+        for (k in 0 until 4) {
+            val a = yaw + PI / 2 + k * PI / 3
+            out += part("dust$k", local(0.0, .4, impact).add(sin(a) * 1.0, 0.0, cos(a) * 1.0), 1.0 + .3 * hash(k, 64), 0.0, 12,
+                ground = false, delay = 1 + k % 2, billboard = true, roll = hash(k, 65) * 6.0)
         }
-        for (k in 0 until 5) out += part("dust${10 + k}", local((hash(k, 66) - .5) * 1.2, .6, impact + 1.6 + k * 1.2), 1.2, 0.0, 16,
-            ground = false, delay = 2 + k, billboard = true, roll = hash(k, 67) * 6.0)
         return out
     }
 
@@ -99,13 +111,22 @@ internal object CoreWarriorRefChoreography {
                 "$DIR/crater_${when { tick < 34 -> 0; tick < 39 -> 1; else -> 2 }}", live)
             name == "dcrack" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
                 "$DIR/dcrack_${when { tick < 32 -> 0; tick < 37 -> 1; else -> 2 }}", live)
+            name.startsWith("turf") -> {
+                val up = when {
+                    tick < 4 -> doubleArrayOf(.0, .7, 1.15, 1.05)[tick]
+                    tick < p.durationTicks - 7 -> 1.0
+                    else -> 1.0 - (tick - (p.durationTicks - 7)) / 6.0
+                }.coerceIn(0.0, 1.2)
+                CoreMeshPose(p.offset.add(0.0, -p.scale.y() * .3 * (1 - up.coerceAtMost(1.0)), 0.0), p.scale, p.yaw, 0.0,
+                    p.roll * up, "$DIR/turf", live)
+            }
             name.startsWith("clod") -> {
                 val k = name.removePrefix("clod").toInt()
                 val s = t.coerceAtLeast(0.0) / 20.0
                 val y = (6.5 + 3.0 * hash(k, 71)) * s - 18.0 * s * s / 2
                 val a = p.yaw
                 CoreMeshPose(p.offset.add(sin(a) * .8 * s, max(y, -.1), cos(a) * .8 * s), p.scale, p.yaw + t * .3, t * .45, t * .25,
-                    "$DIR/clod", live)
+                    if (k % 3 == 0) "$DIR/turfclod" else "$DIR/clod", live)
             }
             name.startsWith("dust") -> CoreMeshPose(p.offset.add(0.0, t.coerceAtLeast(0.0) * .02, 0.0), p.scale.mul(1.0 + tick * .05),
                 0.0, 0.0, p.roll, "$DIR/dust_${(tick * 5 / p.durationTicks).coerceAtMost(4)}", live)

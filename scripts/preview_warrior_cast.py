@@ -261,7 +261,7 @@ def weapon_faces(hand, pose):
 
 def display_faces(d, camera=None):
     model, tints = item_model(d['model'])
-    model = {**model, '_shade': 'warrior_ref/clod' in d['model'] or 'warrior_ref/finger' in d['model'] or 'warrior_ref/lump' in d['model'] or 'warrior_ref/petal' in d['model'] or 'warrior_ref/gslab' in d['model'] or 'warrior_ref/chunk' in d['model']}
+    model = {**model, '_shade': 'warrior_ref/turf' in d['model'] or 'warrior_ref/clod' in d['model'] or 'warrior_ref/finger' in d['model'] or 'warrior_ref/lump' in d['model'] or 'warrior_ref/petal' in d['model'] or 'warrior_ref/gslab' in d['model'] or 'warrior_ref/chunk' in d['model']}
     rot = Rq(d['quaternion'])
     if d.get('billboard') and camera is not None:
         # Billboard CENTER: the display faces the camera; its own rotation then turns it in the screen plane.

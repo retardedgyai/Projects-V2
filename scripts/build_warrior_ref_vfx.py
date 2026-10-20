@@ -882,6 +882,14 @@ def build(assets, write):
     for st in range(3):
         model(f'crater_{st}', ground_model(texture(f'crater_{st}', crater_pixels(st))))
         model(f'dcrack_{st}', ground_model(texture(f'dcrack_{st}', dark_crack(st))))
+    grass_top, turf_side = texture('turf_top', block_tex(GRASS, 51)), texture('turf_side', grass_side(52))
+    model('turf', {'textures': {'top': grass_top, 'side': turf_side, 'under': texture('turf_under', block_tex(EARTH, 53)),
+                                'particle': turf_side}, 'elements': [
+        {'from': [2, 8, 3], 'to': [14, 12, 13], 'faces': {
+            'up': {'texture': '#top', 'uv': [2, 3, 14, 13]}, 'down': {'texture': '#under', 'uv': [2, 3, 14, 13]},
+            'north': {'texture': '#side', 'uv': [2, 0, 14, 4]}, 'south': {'texture': '#side', 'uv': [2, 0, 14, 4]},
+            'east': {'texture': '#side', 'uv': [3, 0, 13, 4]}, 'west': {'texture': '#side', 'uv': [3, 0, 13, 4]}}}]})
+    model('turfclod', lump_model(grass_top, turf_side, texture('turf_under', block_tex(EARTH, 53)), 7))
     for st in range(7):
         # Square texture (a tall one reads as an animation strip): the furrow down the middle third.
         sq = Image.new('RGBA', (128, 128), (0, 0, 0, 0)); sq.alpha_composite(furrow_pixels(st, w=40).transpose(Image.Transpose.FLIP_TOP_BOTTOM), (44, 0))  # up face: row 0 lies at the near end
