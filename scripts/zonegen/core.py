@@ -88,7 +88,7 @@ class Zone:
             inside = d < 1
             rim = (d >= 1) & (d < 1.6)
             WL = int(round(float(np.percentile(self.H[rim], 20)))) - 1     # one level for the whole lake
-            depth = np.clip((1 - d) * lk.get("depth", 4) * 1.6, 1, lk.get("depth", 4))
+            depth = 1 + (lk.get("depth", 4) - 1) * np.sqrt(np.clip(1 - d, 0, 1) / 1.0)       # a bowl: 1 deep at the shore, deepest in the middle
             bed = WL - depth
             self.set_locked(inside, bed.astype(np.float32), 3)
             self.water[inside] = WL

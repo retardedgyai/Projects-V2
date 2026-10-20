@@ -514,11 +514,9 @@ def build(PILLARS, ex, ez):
     # rewards on the tops: a lookout cairn, a rare herb patch by the spring, a treasure at the far end, a high camp
     for (px, pz, ty, rb, rt, sd), what in zip(PILLARS, ("cairn", "herb", "treasure", "camp")):
         if what == "cairn":
-            for y in range(ty + 1, ty + 4): put(px + 3, y, pz, R.choice(["mossy_cobblestone", "cobblestone"]))
-            put(px + 3, ty + 4, pz, "lantern", shape="lantern")
+            pass                                                         # (a lone cairn with a lantern on top said nothing; removed)
         elif what == "herb":
-            for _ in range(10):
-                put(px + R.randint(2, 8), ty + 1, pz + R.randint(-5, 5), "firefly_bush", shape="plant")
+            pass                                                         # (scattered single bushes removed)
         elif what == "treasure":
             pass                                                         # the sakura arena, built below
         else:                                                            # the far pillar: an old watchtower, fallen in, a fire someone still keeps
@@ -594,7 +592,7 @@ def build(PILLARS, ex, ez):
         (PILLARS[2], [], 0, None),
         (PILLARS[3], [("red_mushroom_block", "upright", 7)], 3, "copper_ore"),
     ]
-    for (px, pz, ty, rb, rt, sd), spawns, herbs, ore in TOPS:
+    for (px, pz, ty, rb, rt, sd), spawns, herbs, ore in []:          # (one-block herb sprinkles and random rock blobs on the tops removed)
         for (col, shp, n) in spawns:
             top_spawn(px, pz, ty, rt * .75, n, col, shp)
         for k2 in range(herbs):

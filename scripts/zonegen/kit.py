@@ -158,11 +158,21 @@ def forests(c, spec):
                 if (a2, c.at(a2, b2) + 1, b2) not in c.bl.b and not c.route[b2, a2]:
                     c.put(a2, c.at(a2, b2) + 1, b2, R.choice(["bush", "azalea_leaves", "sweet_berry_bush_stage3", "fern"]), shape="plant")
     # groves on the meadows: one big tree with smaller ones and saplings round it
-    for (x, z) in spec.get("groves", []):
+    for gv in spec.get("groves", []):                              # copses: a big old tree in the middle, a ring of mid trees, saplings at the rim
+        x, z = gv[0], gv[1]; rad = gv[2] if len(gv) > 2 else 16
         tree(c, x, z, "oak", big=True, form="wide")
-        for k in range(R.randint(4, 7)):
-            a = R.uniform(0, math.tau); r = R.uniform(6, 12)
-            tree(c, int(x + math.cos(a) * r), int(z + math.sin(a) * r), R.choice(["oak", "oak", "birch"]), form=R.choice(["round", "tall", "lean"]))
+        for gz in range(z - rad, z + rad + 1, 5):
+            for gx in range(x - rad, x + rad + 1, 5):
+                tx, tz = gx + R.randint(-2, 2), gz + R.randint(-2, 2)
+                d = math.hypot(tx - x, tz - z) / rad + (noise3(tx, 0, tz, 621, 3) - .5) * .5
+                if d > 1 or d < .25: continue
+                if d > .82:
+                    if 0 <= tx < B and 0 <= tz < B and not c.used[tz, tx] and not c.route[tz, tx]:
+                        g = c.at(tx, tz)
+                        if (tx, g + 1, tz) not in c.bl.b: c.put(tx, g + 1, tz, R.choice(["bush", "azalea_leaves", "fern"]), shape="plant")
+                    continue
+                if tree(c, tx, tz, R.choice(["oak", "oak", "birch", "dark"]), form=R.choice(["round", "tall", "lean", "wide"]),
+                        lift=R.randint(1, 3) if d < .6 else 0): n += 1
     return n
 
 

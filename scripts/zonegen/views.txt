@@ -14,3 +14,6 @@ boulders 260 g 440 282 g+4 428
 sando 348 u 381 372 u+2 408
 arena 372 u 395 372 u+4 430
 fungal 125 g 250 95 g+6 235
+east 300 g 300 420 g+4 230
+north 250 g 70 360 g+4 40
+south 220 g 470 330 g+3 430

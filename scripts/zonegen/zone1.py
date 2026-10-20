@@ -8,7 +8,9 @@ SPEC = dict(
         dict(line=[(0, 178), (140, 168), (260, 180), (380, 166), (499, 176)], rise=HIGH - MID, seed=71, jag=12,
              cliff_width=3, ramps=[(185, 245), (40, 95)]),
     ],
-    bumps=[(240, 118, 75, 65, 10), (80, 75, 50, 42, 6), (300, 120, 30, 22, 4)],
+    bumps=[(240, 118, 75, 65, 10), (80, 75, 50, 42, 6), (300, 120, 30, 22, 4),
+           # low rises that break up the open meadows (mid-scale relief, not props)
+           (395, 235, 45, 28, 6), (175, 440, 50, 30, 5), (345, 55, 55, 32, 6), (460, 300, 26, 40, 5), (330, 460, 40, 22, 4)],
     lakes=[dict(name="pond", at=(105, 428), r=(34, 22), depth=4, seed=7)],
     streams=[dict(name="brook", line=[(262, 150), (268, 200), (250, 245), (236, 300), (205, 345), (160, 380), (128, 410)],
                   into="pond", half=1.4)],
@@ -21,7 +23,7 @@ SPEC = dict(
         dict(name="hollow", at=(400, 85), pad=26),
         dict(name="pond_jetty", at=(128, 398)),
         dict(name="boulders", at=(282, 428)),
-        dict(name="wolf", at=(415, 392)),
+        dict(name="wolf", at=(440, 462)),
         dict(name="meadow", at=(330, 258)),
         dict(name="tower", at=(80, 75), pad=8),
         dict(name="exit_e", at=(495, 232)),
@@ -35,14 +37,15 @@ SPEC = dict(
              dict(at=(95, 40), r=(110, 45), kind="oak", spacing=7, seed=6, mix=.35),          # north woods round the tower
              dict(at=(470, 120), r=(40, 90), kind="spruce", spacing=6, seed=8, mix=.1),      # spruce on the east ridge
              dict(at=(165, 470), r=(70, 32), kind="oak", spacing=7, seed=9, mix=.3)],        # the south wood by the gate
-    groves=[(330, 300), (395, 445), (150, 300), (430, 270)],
+    groves=[(330, 300, 12), (395, 445, 18), (150, 300, 10), (430, 270, 14), (360, 205, 20), (205, 445, 22), (300, 45, 24), (420, 150, 14), (90, 380, 12)],
     pieces=[dict(kind="great_tree", at=(240, 118), r=34),
             dict(kind="rest", at=(200, 265), r=0),
             dict(kind="fungal", at=(95, 235), r=0),
             dict(kind="hollow", at=(400, 85), r=0),
-            dict(kind="wolf", at=(415, 392), r=0),
+            dict(kind="wolf", at=(440, 450), r=0),
             dict(kind="tower", at=(80, 75), r=0),
             dict(kind="boulders", at=(282, 428), r=0),
+            dict(kind="boulders", at=(380, 70), r=0),
             dict(kind="aqueduct", at=(210, 214), r=0),
             dict(kind="fallen_trunk", at=(30, 262), r=0),
             dict(kind="stump", at=(330, 140), r=24)],
