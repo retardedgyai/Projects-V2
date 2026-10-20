@@ -1,0 +1,142 @@
+<title>枝角と装備</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header + filter chips, then a grid of idea cards (pick with ☆), picked tray sticky at bottom */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --sakura: #f2a3c0; --shade: #a98be0; --green: #9fd49a; --red: #e58b80;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1320px; margin: 0 auto; padding-block: 20px 140px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filters .lbl { font-size: .8rem; color: var(--muted); margin-right: 4px; }
+.f { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px 14px; font-size: .88rem; }
+.f[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card.picked { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.card.rec { background: linear-gradient(var(--panel), var(--panel)) padding-box; }
+.top { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+.key { font-family: var(--num); color: var(--gold); margin-right: 6px; }
+.name { font-weight: 700; font-size: 1.02rem; }
+.star { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; font-size: .85rem; white-space: nowrap; }
+.card.picked .star { color: #1a1405; background: var(--gold); border-color: var(--gold); }
+.what { color: var(--fg); margin: 0; }
+.ex { font-size: .86rem; color: var(--sakura); margin: 0; }
+.ex b { font-weight: 500; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: .75rem; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; color: var(--muted); }
+.tag.path { color: var(--cyan); border-color: #2f5560; }
+.tag.cost-軽 { color: var(--green); border-color: #3d5a3a; }
+.tag.cost-中 { color: var(--gold); border-color: #5b5030; }
+.tag.cost-重 { color: var(--red); border-color: #6a3a36; }
+.tag.recm { color: #1a1405; background: var(--gold); border-color: var(--gold); }
+.note { font-size: .8rem; color: var(--muted); margin: 0; }
+.tray { position: fixed; left: 0; right: 0; bottom: 0; background: #10141f; border-top: 1px solid var(--line);
+  padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.tray .in { max-width: 1320px; margin: 0 auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tray .list { flex: 1 1 300px; min-width: 0; font-size: .9rem; }
+.tray .list .muted { color: var(--muted); }
+.copy { background: var(--gold); color: #1a1405; border: 0; border-radius: 8px; padding: 6px 16px; font-weight: 700; }
+.copy:disabled { opacity: .4; cursor: not-allowed; }
+#copied { font-size: .82rem; color: var(--green); }
+textarea { width: 100%; box-sizing: border-box; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: .85rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>桜牙獣の枝角を装備で使う ── 14案</h1>
+    <p>藍：「装備まわりで使ってほしい。戦力強化の面はちゃんと持たせる」。守ること：基本の物はプレイヤーが作る（NPC は売らない）／枝角は売り買いできる（倒せない人は市場で買える）。☆を付けて、下の文をコピーして返してください。組み合わせてもOK。</p>
+  </header>
+  <div class="filters" role="group" aria-label="絞る">
+    <span class="lbl">絞る</span>
+    <button class="f" data-f="all" aria-pressed="true">全部</button>
+    <button class="f" data-f="強さ" aria-pressed="false">数字が強くなる</button>
+    <button class="f" data-f="組み合わせ" aria-pressed="false">組み合わせが増える</button>
+    <button class="f" data-f="鍛冶" aria-pressed="false">鍛冶の人が得</button>
+    <button class="f" data-f="今のコード" aria-pressed="false">今のコードに足すだけ</button>
+    <button class="f" data-f="rec" aria-pressed="false">おすすめだけ</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="tray">
+  <div class="in">
+    <div class="list" id="picked"><span class="muted">まだ選んでいない。気になる案の ☆ を押す。</span></div>
+    <button class="copy" id="copy" disabled>選んだ案を送る文をコピー</button>
+    <span id="copied" aria-live="polite"></span>
+  </div>
+  <textarea id="fallback" rows="2" hidden aria-label="送る文"></textarea>
+</div>
+
+<script>
+(() => {
+  // cost = 作る手間（コード＋絵）。軽＝今の仕組みの数字を足すだけ、重＝新しい絵やモデルが職業ぶん要る。
+  const IDEAS = [
+    { k: '1', n: '桜の銘', what: '枝角で装備に銘を1つ刻む。固有の効果が1つ付く。Tierを上げても残る。', ex: '<b>桜の銘</b>：部位を壊すと10秒 攻撃+20%。', path: ['強さ', '組み合わせ'], cost: '軽', note: '最初の見本の C 案。1装備に1つなので、ほかのボスの銘と選ぶことになる。' },
+    { k: '2', n: 'T3 への昇格の鍵', what: '装備を T2 → T3 に上げるのに枝角が要る。', ex: '武器の昇格：T2インゴット4・板材2・<b>枝角1</b>。', path: ['強さ', '今のコード'], cost: '軽', note: '今の昇格レシピの「討伐証」を枝角に置き換えるだけ。倒せない人は買う。' },
+    { k: '3', n: '新しい武器の型「桜牙」', what: '職業ごとに、枝角を使う武器の型を1つ足す。強さは同じTierで、手触りが違う。', ex: '大剣の<b>桜牙の型</b>：振りが速い代わりに一撃が軽い、当てるたびに花びら。', path: ['組み合わせ', '今のコード'], cost: '重', note: '今のコードに武器の型（開拓・連撃・重断…）がある。型ごとに絵が要る。' },
+    { k: '4', n: '装身具（新しい枠）', what: '指輪・首飾りの枠を足し、枝角で作る。数字の強さが乗る。', ex: '<b>桜角の首飾り</b>：最大HP+、会心+。MOD も付く。', path: ['強さ', '組み合わせ', '鍛冶'], cost: '中', note: '開拓大陸 v3 で「桜の森＝装身具が得意」と決めていた。領地の炉とつながる。', rec: true },
+    { k: '5', n: '製造品質の上限が上がる', what: '装備を作るときに枝角を混ぜると、品質の上限が上がる。', ex: '今は品質 0〜20% → 枝角1本混ぜると<b>上限 25%</b>。', path: ['強さ', '鍛冶', '今のコード'], cost: '軽', note: '腕のいい鍛冶職人が枝角を買う理由になる。', rec: true },
+    { k: '6', n: '強化の後半の素材', what: '+21〜+30 の強化に枝角が要る。', ex: '+21 へ：T3素材＋<b>枝角1</b>。', path: ['強さ', '今のコード'], cost: '軽', note: '後半の強化の需要がずっと続く。+30 を目指す人の長い目標。' },
+    { k: '7', n: '狙ったMODを付ける', what: '枝角から「桜のオーブ」を作る。決まったMODを1つ確実に付ける。', ex: '<b>桜のオーブ</b>：部位破壊ダメージ+のMODを必ず1つ。', path: ['強さ', '組み合わせ'], cost: '軽', note: 'オーブの運任せに、狙える道を1本足す。オーブは売れないが、枝角は売れる。', rec: true },
+    { k: '8', n: '7つ目のMOD枠', what: '枝角でレア装備に特別な枠を1つ開ける。そこには桜のMODだけが入る。', ex: '<b>桜の枠</b>：会心時に花びらが舞い、周りの敵に追加ダメージ。', path: ['強さ', '組み合わせ'], cost: '中', note: '6MOD の上に、もう1段の目標。' },
+    { k: '9', n: 'MODの数値の上限を越える', what: '枝角で1つのMODを、ふつうの範囲より少し上まで伸ばせる。', ex: '攻撃力+8%（上限）→ <b>枝角で +10%</b>。1装備に1回。', path: ['強さ'], cost: '軽', note: '理想ロールのさらに先の目標。' },
+    { k: '10', n: '属性を付ける', what: '枝角で武器に「桜」の属性を付ける。属性ビルドの入口。', ex: '<b>桜＝風と生命</b>：当てると相手の防御が下がり、自分が少し回復。', path: ['強さ', '組み合わせ'], cost: '中', note: '戦闘の決定記録の「戦い方×属性・追加効果」とつながる。' },
+    { k: '11', n: '技が変わる', what: '枝角で職業の技1つを「桜版」に変える。', ex: '戦士の叩きつけが<b>花びらを散らす斬撃</b>になる。', path: ['組み合わせ'], cost: '重', note: '一番楽しいが、7職ぶんの演出が要る。' },
+    { k: '12', n: '防具のセット効果', what: '枝角を使った防具をそろえると効果。', ex: '桜の防具 2部位：会心+5%／4部位：<b>部位破壊のたびにHP回復</b>。', path: ['強さ', '組み合わせ'], cost: '中', note: '4部位の防具の仕組みと合う。花びら甲殻の流れとは別にする必要あり。' },
+    { k: '13', n: '壊れない強化', what: '枝角を添えると、その強化は失敗しても壊れない。', ex: '+18 → +19 に<b>枝角を添える</b>：失敗しても破損しない。', path: ['強さ', '今のコード'], cost: '軽', note: '+15 以降の怖さを減らす。使うと消える＝需要が続く。' },
+    { k: '14', n: '職人しか加工できない', what: '枝角は鍛冶職人（製造 Lv 高い人）しか装備に使えない。ほかの人は頼む。', ex: '<b>武器製造 Lv30</b> から、上の 1〜13 の加工ができる。', path: ['鍛冶'], cost: '軽', note: '上のどれとも重ねられる「決まり」。花びら甲殻と同じ考え方。', rec: true },
+  ];
+  let filter = 'all';
+  let picked = new Set();
+  try { picked = new Set(JSON.parse(localStorage.getItem('hn-picked') || '[]')); } catch (e) {}
+  const save = () => { try { localStorage.setItem('hn-picked', JSON.stringify([...picked])); } catch (e) {} };
+  const grid = document.getElementById('grid');
+  function render() {
+    const list = IDEAS.filter(i => filter === 'all' || (filter === 'rec' ? i.rec : i.path.includes(filter)));
+    grid.innerHTML = list.map(i => `<article class="card ${picked.has(i.k) ? 'picked' : ''}">
+      <div class="top"><div><span class="key">${i.k}</span><span class="name">${i.n}</span></div>
+        <button class="star" data-k="${i.k}" aria-pressed="${picked.has(i.k)}">${picked.has(i.k) ? '★ 選んだ' : '☆ 選ぶ'}</button></div>
+      <p class="what">${i.what}</p>
+      <p class="ex">${i.ex}</p>
+      <div class="tags">${i.rec ? '<span class="tag recm">おすすめ</span>' : ''}${i.path.map(p => `<span class="tag path">${p}</span>`).join('')}<span class="tag cost-${i.cost}">作る手間 ${i.cost}</span></div>
+      <p class="note">${i.note}</p>
+    </article>`).join('');
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    document.getElementById('picked').innerHTML = sel.length
+      ? `選んだ案（${sel.length}）：` + sel.map(i => `<b>${i.k}</b> ${i.n}`).join('、')
+      : '<span class="muted">まだ選んでいない。気になる案の ☆ を押す。</span>';
+    document.getElementById('copy').disabled = !sel.length;
+  }
+  grid.addEventListener('click', e => {
+    const b = e.target.closest('.star'); if (!b) return;
+    const k = b.dataset.k; picked.has(k) ? picked.delete(k) : picked.add(k); save(); render();
+  });
+  document.querySelectorAll('.f').forEach(b => b.addEventListener('click', () => {
+    filter = b.dataset.f;
+    document.querySelectorAll('.f').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  }));
+  document.getElementById('copy').addEventListener('click', () => {
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    const text = '枝角の装備での使い道、気になる案：' + sel.map(i => `${i.k} ${i.n}`).join('、');
+    const done = () => { document.getElementById('copied').textContent = 'コピーした。チャットに貼って送ってください。'; };
+    const fb = () => { const t = document.getElementById('fallback'); t.hidden = false; t.value = text; t.select(); document.getElementById('copied').textContent = '下の文を選んだのでコピーしてください。'; };
+    try { navigator.clipboard.writeText(text).then(done, fb); } catch (e) { fb(); }
+  });
+  render();
+})();
+</script>
