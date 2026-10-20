@@ -89,7 +89,7 @@ th { color: var(--muted); font-weight: 500; }
 
   <div class="panel">
     <h2>港が咲く（サーバー全体の奉納）</h2>
-    <p>3〜5人のテストに合わせた数。本番は人数に合わせて上げる。押すと奉納のふり。</p>
+    <p>3〜5人のテストに合わせた数。押すと奉納のふり。<b style="color:var(--gold)">藍の変更：奉納先は港ではなく、フィールドの領地にする</b>（領地の形は別ページで選択中）。</p>
     <div class="btns"><button class="btn" id="give">枝角を1本奉納</button><button class="btn" id="give5">5本</button><span class="num" id="count"></span><button class="btn" id="reset" style="border-color:var(--line);color:var(--muted)">戻す</button></div>
     <div class="bar"><i id="bar"></i></div>
     <div class="stages" id="stages"></div>
@@ -149,7 +149,7 @@ th { color: var(--muted); font-weight: 500; }
 
   const STAGES = [
     { n: 10, t: '港に桜が植わる', d: '見た目だけ。港の広場に桜の木。「咲き始めた」が見える。' },
-    { n: 30, t: '桜の茶屋', d: '宿の回復が速い。茶屋で桜の団子（短いバフの食べ物）が買える。' },
+    { n: 30, t: '桜の茶屋', d: '宿の回復が速い。茶屋の台所で桜の団子（短いバフの食べ物）が作れる。' },
     { n: 60, t: '桜の街道', d: '港から根の丘への街道が速く歩ける。' },
     { n: 100, t: '桜の祭り', d: '週末に祭り。桜牙獣が「満開」で湧き、報酬が多い。' },
   ];
