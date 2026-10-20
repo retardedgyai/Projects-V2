@@ -1,8 +1,57 @@
 {
  "targets": {
+  "data": {
+   "width": 98,
+   "height": 1
+  },
+  "memory": {
+   "width": 98,
+   "height": 1,
+   "persistent": true
+  },
   "swap": {}
  },
  "passes": [
+  {
+   "vertex_shader": "minecraft:core/screenquad",
+   "fragment_shader": "projects:post/sakura_light_memory",
+   "inputs": [
+    {
+     "sampler_name": "In",
+     "target": "minecraft:main"
+    },
+    {
+     "sampler_name": "Memory",
+     "target": "memory"
+    }
+   ],
+   "output": "data"
+  },
+  {
+   "vertex_shader": "minecraft:core/screenquad",
+   "fragment_shader": "minecraft:post/blit",
+   "inputs": [
+    {
+     "sampler_name": "In",
+     "target": "data"
+    }
+   ],
+   "output": "memory",
+   "uniforms": {
+    "BlitConfig": [
+     {
+      "name": "ColorModulate",
+      "type": "vec4",
+      "value": [
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    ]
+   }
+  },
   {
    "vertex_shader": "minecraft:core/screenquad",
    "fragment_shader": "projects:post/sakura_light",
@@ -15,6 +64,10 @@
      "sampler_name": "MainDepth",
      "target": "minecraft:main",
      "use_depth_buffer": true
+    },
+    {
+     "sampler_name": "Data",
+     "target": "data"
     }
    ],
    "output": "swap"

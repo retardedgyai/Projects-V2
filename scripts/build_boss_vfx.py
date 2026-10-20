@@ -265,7 +265,7 @@ def build(pack=PACK):
     # The arena glow (26.3 post effect, turned on per player by the server): our own namespace, no vanilla override.
     post = pack / "assets/projects/shaders/post"
     post.mkdir(parents=True, exist_ok=True)
-    for f in ("shade_glow_extract.fsh", "shade_glow_composite.fsh", "sakura_light.fsh"):
+    for f in ("shade_glow_extract.fsh", "shade_glow_composite.fsh", "sakura_light.fsh", "sakura_light_memory.fsh"):
         shutil.copyfile(SHADERS / "post" / f, post / f)
     for name in ("shade_glow", "sakura_light"):
         effect = pack / f"assets/projects/post_effect/{name}.json"

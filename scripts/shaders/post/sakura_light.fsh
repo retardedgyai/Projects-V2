@@ -7,9 +7,12 @@
 // pixel's view position comes back from the depth buffer, its normal from the neighbouring pixels, and each light
 // in range adds its colour, fading with distance and turning away from it. No shadows. The data row is painted
 // over with the row above it.
+// The data is read from sakura_light_memory.fsh's copy, which keeps the last frame's row for a few frames when this
+// frame has none (something translucent drawn over the screen's corner): without it the light blinks off.
 
 uniform sampler2D InSampler;
 uniform sampler2D MainDepthSampler;
+uniform sampler2D DataSampler;
 
 layout(location = 0) in vec2 texCoord;
 
@@ -18,13 +21,19 @@ layout(location = 0) out vec4 fragColor;
 const int SLOTS = 8;
 const int ROW_PIXELS = 33 + SLOTS * 8;
 
+const int MAX_AGE = 8;   // frames a remembered row still lights
+
 ivec3 bytes(ivec2 p) {
     return ivec3(texelFetch(InSampler, p, 0).rgb * 255.0 + 0.5);
 }
 
-float readFloat(int x, int row) {
-    ivec3 h = bytes(ivec2(x, row));
-    ivec3 l = bytes(ivec2(x + 1, row));
+ivec3 data(int x) {
+    return ivec3(texelFetch(DataSampler, ivec2(x, 0), 0).rgb * 255.0 + 0.5);
+}
+
+float readFloat(int x) {
+    ivec3 h = data(x);
+    ivec3 l = data(x + 1);
     return uintBitsToFloat((uint(h.r) << 24) | (uint(h.g) << 16) | (uint(h.b) << 8) | uint(l.r));
 }
 
@@ -46,23 +55,23 @@ void main() {
     ivec2 size = textureSize(InSampler, 0);
     ivec2 fc = ivec2(gl_FragCoord.xy);
     vec4 base = texelFetch(InSampler, fc, 0);
-    // The probe row is the bottom row in GL; the top one in case a backend flips it.
-    int row = -1;
+    // This frame's probe row (bottom in GL, top in case a backend flips it) is hidden under the row next to it.
     ivec3 h0 = bytes(ivec2(0, 0));
     ivec3 h1 = bytes(ivec2(0, size.y - 1));
-    if (h0.r == 83 && h0.g == 76 && (h0.b == 1 || h0.b == 2)) row = 0;
-    else if (h1.r == 83 && h1.g == 76 && (h1.b == 1 || h1.b == 2)) row = size.y - 1;
-    if (row < 0) {
-        fragColor = base;
-        return;
-    }
+    int row = h0.r == 83 && h0.g == 76 && (h0.b == 1 || h0.b == 2) ? 0
+        : (h1.r == 83 && h1.g == 76 && (h1.b == 1 || h1.b == 2) ? size.y - 1 : -1);
     if (fc.y == row && fc.x < ROW_PIXELS) {
         fragColor = texelFetch(InSampler, ivec2(fc.x, row == 0 ? 1 : row - 1), 0);
         return;
     }
-    bool zeroToOne = bytes(ivec2(0, row)).b == 1;
+    ivec3 header = data(0);
+    if (header.r != 83 || header.g != 76 || (header.b != 1 && header.b != 2) || data(ROW_PIXELS).r > MAX_AGE) {
+        fragColor = base;
+        return;
+    }
+    bool zeroToOne = header.b == 1;
     mat4 inv;
-    for (int i = 0; i < 16; i++) inv[i >> 2][i & 3] = readFloat(1 + i * 2, row);
+    for (int i = 0; i < 16; i++) inv[i >> 2][i & 3] = readFloat(1 + i * 2);
 
     vec3 p = viewAt(fc, size, inv, zeroToOne);
     // Normal from the neighbour on the nearer side of each axis: across a silhouette (a mob's fur, a leg in front of
@@ -77,10 +86,10 @@ void main() {
     vec3 light = vec3(0.0);
     for (int s = 0; s < SLOTS; s++) {
         int x = 33 + s * 8;
-        ivec3 check = bytes(ivec2(x + 7, row));
+        ivec3 check = data(x + 7);
         if (check != ivec3(170, s, 85)) continue;
-        vec3 at = vec3(readFloat(x, row), readFloat(x + 2, row), readFloat(x + 4, row));
-        ivec3 params = bytes(ivec2(x + 6, row));
+        vec3 at = vec3(readFloat(x), readFloat(x + 2), readFloat(x + 4));
+        ivec3 params = data(x + 6);
         float radius = float(params.r) / 8.0;
         vec3 to = at - p;
         float d = length(to);
