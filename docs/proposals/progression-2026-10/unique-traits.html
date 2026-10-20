@@ -30,6 +30,7 @@ p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font: inherit; font-size: .88rem; color: var(--fg); cursor: pointer; }
 .chip[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.chip:disabled { opacity: .4; cursor: not-allowed; }
 .chip:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .lbl { font-size: .78rem; color: var(--muted); letter-spacing: .06em; }
 .tip { background: #0f131d; border: 2px solid #6a4a30; border-radius: 6px; padding: 12px 14px; display: grid; gap: 4px; font-size: .9rem; }
@@ -60,7 +61,7 @@ p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
       <div class="layers">
         <div class="layer"><b>Tier</b><span>土台の数字。T1〜T4。場所で決まる。</span></div>
         <div class="layer type"><b>型</b><span>手触りと個性。振りの速さ・一撃の重さ・届き方。今のコードの開拓・連撃・重断に、枝角で作る<b>桜牙</b>を足す。</span></div>
-        <div class="layer new"><b>ユニーク特性</b><span>1つの装備に1つだけ。ボスの素材でしか付かない「その装備だけの技」。同じ特性は2つの装備で重ねられない。</span></div>
+        <div class="layer new"><b>ユニーク特性</b><span>1つの装備に1つだけ。ボスが落とす素材（枝角など）に入っている「その装備だけの技」。同じ特性は2つの装備で重ねられない。</span></div>
         <div class="layer"><b>MOD</b><span>6個まで。数字の組み合わせ（今のまま）。</span></div>
         <div class="layer"><b>強化</b><span>+30 まで（今のまま）。</span></div>
       </div>
@@ -73,19 +74,23 @@ p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
       <div class="chips" id="slot"></div>
       <div class="lbl" id="typeLbl">型</div>
       <div class="chips" id="types"></div>
-      <div class="lbl">ユニーク特性（1つだけ）</div>
+      <div class="lbl">使う枝角の特性（1つだけ付く）</div>
       <div class="chips" id="traits"></div>
       <div class="tip" id="tip" aria-live="polite"></div>
     </div>
   </div>
 
   <div class="panel">
-    <h2>次に決めること：ユニーク特性はどう決まる？</h2>
+    <h2>特性は、落ちた枝角に入っている（2026-10-20 藍と決定）</h2>
     <div class="ways">
-      <div class="way"><span class="k">A 型ごとに固定</span><span class="small">桜牙の大剣なら必ず「花開く四段目」。作れば同じ物ができる。分かりやすい。</span></div>
-      <div class="way rec"><span class="k">B 候補から選ぶ<span class="rec-tag">おすすめ</span></span><span class="small">枝角で作るとき、そのボスの特性3〜4個から1つ選ぶ。ほかのボスの素材なら別の候補。「何と組み合わせるか」を自分で考えられる。</span></div>
-      <div class="way"><span class="k">C ランダム</span><span class="small">作ると候補のどれかが付く。狙いの特性まで作り直す。市場で「当たり」が売り買いされる。</span></div>
+      <div class="way rec"><span class="k">1 落ちた時に決まる</span><span class="small">桜牙獣の枝角は、落ちた時点で特性が1つ入っている（<b>枝角〈桜紋〉</b>など）。どれが入るかは運。</span></div>
+      <div class="way rec"><span class="k">2 作るとそのまま付く</span><span class="small">職人がその枝角で桜牙の型や首飾りを作ると、装備にその特性が付く。枝角は使うと消える。</span></div>
+      <div class="way rec"><span class="k">3 売り買いと救済</span><span class="small">枝角は市場で売り買いできる（特性ごとに値段が違う）。いらない特性の枝角3本は、職人が合わせて好きな特性の1本にできる。外れも消えていく（アイテムの出口）。</span></div>
     </div>
+    <div class="lbl">救済を試す</div>
+    <div class="chips" id="bag"></div>
+    <div class="chips"><button class="chip" id="drop">桜牙獣を倒す（枝角が1本落ちる）</button><button class="chip" id="merge">外れ3本を職人が合わせる → 〈桜紋〉</button></div>
+    <p class="small" id="bagMsg"></p>
   </div>
 </main>
 
@@ -140,5 +145,15 @@ p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
     render();
   });
   render();
+  let bag = ['風に舞う', '散り際', '返り咲き'];
+  function renderBag(msg) {
+    $('bag').innerHTML = bag.length ? bag.map(n => `<span class="chip" style="cursor:default;${n === '桜紋' ? 'border-color:var(--uniq);color:var(--uniq)' : ''}">枝角〈${n}〉</span>`).join('') : '<span class="small" style="color:var(--muted)">枝角なし</span>';
+    const outs = bag.filter(n => n !== '桜紋').length;
+    $('merge').disabled = outs < 3;
+    $('bagMsg').textContent = msg || '欲しいのは〈桜紋〉とする。';
+  }
+  $('drop').addEventListener('click', () => { const t = TRAITS[Math.floor(Math.random() * TRAITS.length)].n; bag.push(t); renderBag(t === '桜紋' ? '当たり！ 枝角〈桜紋〉が落ちた。' : `枝角〈${t}〉が落ちた。市場で売るか、外れとしてためる。`); });
+  $('merge').addEventListener('click', () => { let n = 0; bag = bag.filter(x => { if (x !== '桜紋' && n < 3) { n++; return false; } return true; }); bag.push('桜紋'); renderBag('職人が外れ3本を合わせて、枝角〈桜紋〉にした。3本は消えた。'); });
+  renderBag();
 })();
 </script>
