@@ -1,0 +1,6 @@
+hollow 360 g 112 400 g+4 85
+hollow_in 395 g 80 430 g+8 100
+wolf 425 g 485 440 g+4 455
+wolf2 410 g 470 440 g+3 455
+fungal 125 g 250 95 g+6 235
+fungal2 80 g 260 95 g+6 235

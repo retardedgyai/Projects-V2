@@ -105,18 +105,19 @@ def root_hollow(BX, BZ):
         if abs(math.atan2(math.sin(a0 + span / 2 - 2.6), math.cos(a0 + span / 2 - 2.6))) < .5: a0 = a1 - .05; continue
         ends = []
         for aa in (a0, a1):
-            ex, ez = BX + math.cos(aa) * RAD(aa), BZ + math.sin(aa) * RAD(aa)
+            off = R.uniform(-5, 4)                                    # feet at different radii, so neighbours' feet never stack into a post
+            ex, ez = BX + math.cos(aa) * (RAD(aa) + off), BZ + math.sin(aa) * (RAD(aa) + off)
             ends.append((ex, at(int(round(ex)), int(round(ez))) - 1, ez))
         am = (a0 + a1) / 2
         rim = max(at(int(round(BX + math.cos(am) * RAD(am))), int(round(BZ + math.sin(am) * RAD(am)))), ends[0][1], ends[1][1])
         hgt = R.uniform(15, 22) if big else R.uniform(5, 9)
         lean = R.uniform(-5, 1)                                        # the crown of each rib leans in over the hollow
         ctrl = (BX + math.cos(am) * (RAD(am) + lean), rim + hgt * 2, BZ + math.sin(am) * (RAD(am) + lean))
-        r0 = R.uniform(2.6, 3.4) if big else R.uniform(1.4, 2.0)
+        r0 = R.uniform(2.0, 2.6) if big else R.uniform(1.2, 1.7)
         pts = bez(ends[0], ctrl, ends[1], 24)
         for i, (p, q) in enumerate(zip(pts, pts[1:])):
             f = i / (len(pts) - 1)
-            rr = r0 * (1 - .45 * math.sin(math.pi * f))                # thick at the feet, thinner over the top
+            rr = r0 * (1 - .35 * math.sin(math.pi * f))                # thicker at the feet, thinner over the top
             tube(p, q, rr, rr, moss_top=True)
         for (ex, ey, ez) in ends:                                      # the feet flare into the ground
             for k in range(3):
@@ -129,18 +130,9 @@ def root_hollow(BX, BZ):
                     if p in w.b or p[1] <= at(p[0], p[2]): break
                     put(*p, "vine" if j < 4 else "hanging_roots", shape="shut_s" if j < 4 else "plant")
         a0 = a1 - R.uniform(.12, .2) + (R.uniform(.05, .3) if R.random() < .4 else 0)   # sometimes a gap between ribs
-    # the stump at the centre, glowing cracks
-    for y in range(bg + 1, bg + 6):
-        r = 6.5 - (y - bg) * .35
-        for dx in range(-8, 9):
-            for dz in range(-8, 9):
-                d = math.hypot(dx, dz)
-                if d <= r * (1 + .12 * math.cos(5 * math.atan2(dz, dx))):
-                    ring = d > r - 1.3 or y == bg + 5
-                    put(BX + dx, y, BZ + dz, *(bark(BX + dx, y, BZ + dz) if ring else ("stripped_dark_oak_log",)))
-    for dx in range(-5, 6):
-        for dz in range(-5, 6):
-            if math.hypot(dx, dz) < 5: put(BX + dx, bg + 6, BZ + dz, "stripped_dark_oak_log", "stripped_dark_oak_log", shape="slab") if math.hypot(dx, dz) > 1 else None
+    # at the centre, the stump of the tree these roots belonged to (the same ringed-stump recipe as the meadow's)
+    import setpieces as _sp
+    _sp.stump(BX, BZ, D=13, seed=91)
     for k2 in range(6):                                               # the boss itself, rising from the stump (stand-in)
         pass
     spawn(BX, BZ, 24, 12, "lime_wool", "sprite")                        # root sprites gather around the old stump
@@ -157,7 +149,7 @@ def fungal(FX, FZ):
                 if math.hypot(x - FX + 2, z - FZ - 8) < 6 + 2 * noise3(x, 1, z, 72, 3) and not used[z, x]:
                     put(x, g, z, "water_still", shape="water")               # one dark pool in the bottom of the hollow
                 elif d + (n - .5) * .35 < .72:                               # one rot floor that fades out at the rim, not blobs
-                    put(x, g, z, *(("moss_block",) if n > .66 else ("podzol_top", "podzol_side")))
+                    put(x, g, z, *(("moss_block",) if n > .5 else ("grass_block_top", "grass_block_side")))
     
     
     def G_get(p):
@@ -223,29 +215,37 @@ def fungal(FX, FZ):
     
 
 def wolf_den(WX, WZ):
+    """A low outcrop of bedded rock with a sheer south face; two dens are dug deep into the face (dark because they are deep,
+    not because a black block is painted there); a great root runs over the top. Gnawed bones only at the den mouths."""
+    import terrainmat as TM
     wg = at(WX, WZ)
-    for x in range(WX - 16, WX + 17):                                 # rocky knoll
-        for z in range(WZ - 14, WZ + 12):
-            d = math.hypot((x - WX) / 16, (z - WZ + 2) / 12) + (noise3(x, 0, z, 81, 3) - .5) * .4
-            if d < 1:
-                top = wg + int((1 - d) * 10)
-                for y in range(at(x, z) + 1, top + 1):
-                    put(x, y, z, R.choice(["stone", "andesite", "mossy_cobblestone", "stone", "tuff", "cobblestone"]))
-                if top > wg + 3 and R.random() < .6: put(x, top + 1, z, "moss_block", shape="carpet")
-    root_arch((WX - 22, wg - 1, WZ - 6), (WX - 2, wg + 16, WZ - 10), (WX + 20, wg - 1, WZ - 2), 3.0, 2.2)
-    for (cx2, cz2) in ((WX - 4, WZ + 9), (WX + 7, WZ + 7)):            # two den mouths facing south
-        for y in range(wg + 1, wg + 4):
-            for dx in (-1, 0, 1):
-                for dz in range(-6, 3):
+    for x in range(WX - 18, WX + 19):
+        for z in range(WZ - 14, WZ + 10):
+            u = (x - WX) / 18; v = (z - WZ + 2) / 12
+            d = math.hypot(u, v) + (noise3(x, 0, z, 81, 4) - .5) * .35
+            if d >= 1 or road_d[z, x] < 3: continue
+            south = max(0, (z - WZ) / 10)                               # the south side is a face, the north a slope
+            top = wg + int(round(min(1, (1 - d) * (2.5 + 4 * south)) * (7 + 2 * noise3(x, 1, z, 82, 6))))
+            g = at(x, z)
+            top = min(top, g + max(0, int(road_d[z, x] - 3)))             # eases down to the path
+            for y in range(g + 1, top + 1):
+                put(x, y, z, TM.strata(x, y, z))
+            if top > g:
+                put(x, top, z, *(("grass_block_top", "grass_block_side") if noise3(x, 2, z, 83, 3) > .4 else ("moss_block",)))
+                hi[z, x] = top
+    root_arch((WX - 24, wg - 1, WZ - 8), (WX - 2, wg + 20, WZ - 10), (WX + 22, wg - 1, WZ - 4), 3.0, 2.2)
+    for (cx2, cz2) in ((WX - 5, WZ + 6), (WX + 7, WZ + 5)):             # two dens dug deep into the face
+        for dz in range(-10, 4):
+            wdt = 1 if dz > -7 else 2
+            for dx in range(-wdt, wdt + 1):
+                for y in range(wg + 1, wg + (4 if dz > -7 else 5)):
                     w.b.pop((cx2 + dx, y, cz2 + dz), None)
-            for dx in (-1, 0, 1): put(cx2 + dx, y, cz2 - 7, "black_concrete")
-    for _ in range(14):
-        a = R.random() * math.tau; r = R.uniform(10, 20)
-        x, z = int(WX + math.cos(a) * r), int(WZ + 10 + math.sin(a) * r * .6)
-        if (x, at(x, z) + 1, z) not in w.b and not road[z, x]: put(x, at(x, z) + 1, z, "bone_block_top", shape=R.choice(["slab", "carpet"]))
-    mark(WX - 22, WZ - 16, WX + 22, WZ + 14)
+                put(cx2 + dx, wg, cz2 + dz, "coarse_dirt")
+        for k in range(4):
+            put(cx2 + R.randint(-2, 2), wg + 1, cz2 + R.randint(2, 4), "bone_block_top", "bone_block_side", shape="slab")
+    mark(WX - 24, WZ - 16, WX + 24, WZ + 14)
     spawn(WX, WZ + 22, 26, 12, "light_gray_wool", "wolf")
-    
+
 
 def tower(TX, TZ):
     tg = at(TX, TZ)
