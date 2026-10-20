@@ -21,7 +21,7 @@ ROCKY = [("stone", 65), ("andesite", 10), ("cobblestone", 5.5), ("light_gray_con
          ("dirt", 2), ("coal_ore", .5), ("iron_ore", .5), ("mossy_cobblestone", 2)]
 HILLS = [("grass_block_top", 6), ("stone", 2), ("andesite", 1)]
 MEADOW = [("grass_block_top", 1)]
-FOREST = [("podzol_top", 3), ("grass_block_top", 2), ("moss_block", 2)]
+FOREST = [("grass_block_top", 60), ("moss_block", 20), ("rooted_dirt", 12), ("coarse_dirt", 8)]
 DAMP = [("moss_block", 3), ("grass_block_top", 4), ("mud", 1)]
 BED = [("gravel", 3), ("clay", 2), ("dirt", 1), ("sand", 1)]
 SIDE = {"grass_block_top": "grass_block_side", "podzol_top": "podzol_side", "dirt_path_top": "dirt_path_side"}

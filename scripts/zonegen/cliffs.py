@@ -24,17 +24,36 @@ def fields(H):
     return slope, expo, concav
 
 
-def block(x, y, z, frac, expo, concav):
-    """frac 0 at the foot .. 1 at the rim."""
-    tilt = (y + x * .12 - z * .05 + (noise3(x, 0, z, 371, 9) - .5) * 3)
-    stra = ((int(tilt // 3) % 3) - 1) * .05                         # faint beds, a nudge only
-    t = .0 + frac * .62 + expo * .2 - max(0, concav) * .5 + min(0, concav) * -.15 + stra
-    t += (noise3(x, y * .6, z, 372, 2.2) - .5) * .2 + (noise3(x, y, z, 376, 5) - .5) * .18
-    i = int(max(0, min(len(PAL) - 1, t * len(PAL))))
-    name = PAL[i]
-    # clusters of a neighbouring value, 1-3 blocks, with gaps
-    if _h(x // 2, y // 2, z // 2, 373) < .22 and _h(x, y, z, 374) < .6:
-        name = SECOND.get(name, [name])[int(_h(x // 2, y // 2, z // 2, 375) * 2) % len(SECOND.get(name, [name]))]
+LIT = [("stone", 60), ("andesite", 25), ("diorite", 10), ("stone", 5)]
+SHADE = [("stone", 35), ("tuff", 35), ("cobbled_deepslate", 15), ("deepslate", 10), ("mossy_cobblestone", 5)]
+DEEP = [("deepslate", 50), ("cobbled_deepslate", 25), ("tuff", 20), ("blackstone", 5)]
+STEP = {"stone": "andesite", "andesite": "diorite", "diorite": "andesite", "tuff": "stone", "cobbled_deepslate": "tuff",
+        "deepslate": "cobbled_deepslate", "mossy_cobblestone": "stone", "blackstone": "deepslate"}
+
+
+def _plate(mix, x, y, z, seed):
+    """One material per plate: chosen by slow (12-24 block) noise, stretched vertically, so a plate reads as one rock."""
+    tot = sum(w for _, w in mix)
+    v = noise3(x * .9, y * .45, z * .9, seed, 16)
+    acc = 0
+    for n, w in mix:
+        acc += w / tot
+        if v <= acc: return n
+    return mix[-1][0]
+
+
+def block(x, y, z, frac, expo, concav, depth=None):
+    """frac 0 at the foot .. 1 at the rim. Value by role (research-texturing.md): lit plates ~L140, shaded ~L100,
+    creases/undersides ~L80; within a plate at most ~15% of one neighbouring step, in small clusters."""
+    s = expo * .3 + frac * .5 - .15 - max(0, concav) * 1.3 + (noise3(x, y * .5, z, 377, 10) - .5) * .3
+    if depth is not None:                                            # each step's own face: lit at its lip, in shadow below it
+        s += .35 if depth <= 1 else (-.25 if depth <= 3 else -.05)
+    if s > .32: mix, seed = LIT, 501
+    elif s > -.12: mix, seed = SHADE, 502
+    else: mix, seed = DEEP, 503
+    name = _plate(mix, x, y, z, seed)
+    if _h(x // 2, y // 2, z // 2, 373) < .15: name = STEP.get(name, name)
+    if mix is LIT and frac > .92 and _h(x, y, z, 378) < .05: name = "calcite"
     return name
 
 
@@ -56,7 +75,8 @@ def finish(bl, Z, slope, concav):
                 if kind[z, x] == 0 and hmax[z, x] - h >= 6 and slope[z, x] < 1.0:
                     r = noise3(x, 0, z, 382, 2.2)
                     if r > .45:
-                        m = ("gravel", "andesite", "cobblestone", "stone", "mossy_cobblestone")[int(_h(x, 1, z, 383) * 5) % 5]
+                        u = _h(x, 1, z, 383)
+                        m = "gravel" if u < .4 else "cobblestone" if u < .65 else "andesite" if u < .8 else "stone" if u < .95 else "mossy_cobblestone"
                         b[(x, h, z)] = ("full", m, m)
                         if r > .62 and _h(x, 2, z, 384) < .45 and (x, h + 1, z) not in b:
                             m2 = ("stone", "cobblestone", "andesite")[int(_h(x, 3, z, 385) * 3) % 3]; b[(x, h + 1, z)] = ("slab", m2, m2)

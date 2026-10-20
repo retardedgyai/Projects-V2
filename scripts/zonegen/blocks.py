@@ -41,7 +41,7 @@ class Blocks:
                     depth = h - y
                     if face or depth > soil:
                         fr = (y - lo) / max(1, top_face - lo)
-                        put(x, y, z, cliffs.block(x, y, z, fr, float(expo[z, x]), float(concav[z, x])))
+                        put(x, y, z, cliffs.block(x, y, z, fr, float(expo[z, x]), float(concav[z, x]), depth))
                     else:
                         put(x, y, z, "dirt" if depth > 1 or k in (1, 2) else ("coarse_dirt" if _h(x, y, z, 5) < .25 else "dirt"))
                 # the top block
@@ -57,11 +57,17 @@ class Blocks:
                     w = 2.6 if k == 1 else 1.6
                     e = road_d[z, x] / w
                     v = noise3(x, 0, z, 331, 3.0)
-                    name = "dirt_path_top" if e < .55 + (v - .5) * .5 else "coarse_dirt"
+                    u = _h(x, 3, z, 333)
+                    if e < .55 + (v - .5) * .5: name = "dirt_path_top" if u < .6 else ("coarse_dirt" if u < .9 else "gravel")     # tread: path 60 / coarse 30 / gravel 10
+                    else: name = "coarse_dirt" if u < .5 else ("grass_block_top" if u < .85 else "dirt_path_top")            # shoulder: coarse 50 / grass 35 / path 15
                     put(x, h, z, name, TM.SIDE.get(name, name))
                     continue
                 if face:
                     put(x, h, z, cliffs.block(x, h, z, 1.0, float(expo[z, x]), float(concav[z, x])))
+                    continue
+                if k == 7:                                                # verge beside a road: mostly grass, coarse dirt in short fingers
+                    name = "coarse_dirt" if noise3(x, 0, z, 334, 2.5) > .7 else "grass_block_top"
+                    put(x, h, z, name, "grass_block_side" if name == "grass_block_top" else name)
                     continue
                 if k == 6:                                                # shore: grass to the water, a little mud
                     name = "grass_block_top"
