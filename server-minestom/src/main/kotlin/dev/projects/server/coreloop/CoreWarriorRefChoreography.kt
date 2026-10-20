@@ -37,17 +37,18 @@ internal object CoreWarriorRefChoreography {
         val centre = local(0.0, .12, impact)
         val chest = local(0.0, 1.1, impact)
         val out = mutableListOf<CoreCombatMeshPart>()
-        // The greatsword's path: one thick crescent band, standing in the vertical plane of the swing (no hit flash:
-        // that is a gun's language, Creator 2026-10-20). The board's centre is 1.6 forward, 2.2 up from the wielder.
-        // Turned 65 degrees off the swing plane: a straight overhead cut seen from behind is only a line.
-        out += part("slash", local(.3, 1.9, 2.2), 6.0, yaw + PI / 2 - 1.15, 8, ground = false)
-        out += part("crack", centre, 5.2, yaw, 34, delay = 2)
-        // A crown of broad iron fangs round the blow, opening outward.
-        for (k in 0 until 6) {
-            val a = yaw + k / 6.0 * 2 * PI + .25
-            val r = 1.1 + .35 * hash(k, 1)
-            val at = Vec(centre.x() + sin(a) * r, .12, centre.z() + cos(a) * r)
-            out += part("fang$k", at, 1.4 + .7 * hash(k, 2), a, 28, pitch = .5 + .2 * hash(k, 3), delay = 3 + k % 2)
+        // 地割り is the ground splitting, nothing else (Creator 2026-10-20: no slash band, no fangs). One fissure runs
+        // forward from the blow; the ground either side lifts in a wave that follows it.
+        val start = 2.0
+        val length = 6.0
+        out += part("fissure", local(0.0, .12, start + length / 2), 1.0, yaw, 30).copy(scale = Vec(1.5, 1.0, length))
+        for (k in 0 until 10) {
+            val side = if (k % 2 == 0) 1.0 else -1.0
+            val along = start + .5 + (k / 2) * 1.15 + .2 * hash(k, 3)
+            val across = side * (.85 + .2 * hash(k, 4))
+            val at = local(across, .12, along)
+            out += part("slab$k", at, 1.0 + .25 * hash(k, 5), yaw + (hash(k, 6) - .5) * .5, 26,
+                delay = (along - start).div(length).times(4).toInt(), roll = side * (.45 + .25 * hash(k, 7)))
         }
         return out
     }
@@ -62,7 +63,20 @@ internal object CoreWarriorRefChoreography {
         val tick = t.toInt().coerceIn(0, p.durationTicks - 1)
         val name = p.shape.removePrefix(PREFIX)
         return when {
-            name == "slash" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/slash_${tick.coerceAtMost(7)}", live)
+            name == "fissure" -> {
+                val stage = when { tick < 1 -> 0; tick < 2 -> 1; tick < 3 -> 2; tick < 12 -> 3; tick < 22 -> 4; tick < 26 -> 5; else -> 6 }
+                CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/fissure_$stage", live)
+            }
+            name.startsWith("slab") -> {
+                // Thrown up out of the split (overshoot), held, then settling back down.
+                val lift = when {
+                    tick < 3 -> doubleArrayOf(.0, .75, 1.1)[tick]
+                    tick < p.durationTicks - 6 -> 1.0
+                    else -> 1.0 - (tick - (p.durationTicks - 6)) / 5.0
+                }.coerceIn(0.0, 1.2)
+                val heat = when { tick < 8 -> 0; tick < 16 -> 1; else -> 2 }
+                CoreMeshPose(p.offset.add(0.0, -.35 + .35 * lift, 0.0), p.scale, p.yaw, 0.0, p.roll * lift, "$DIR/slab_$heat", live)
+            }
             name == "crack" -> {
                 val stage = when { tick < 3 -> 0; tick < 9 -> 1; tick < 22 -> 2; tick < 28 -> 3; else -> 4 }
                 CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/crack_$stage", live)

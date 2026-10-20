@@ -233,6 +233,66 @@ def slash_texture(frame):
     return img
 
 
+# ---------------------------------------------------------------- 地割り, rebuilt (2026-10-20, Creator: 「地割れ部分が
+# ダサい。縁の縞模様は意味がわからない、何を描きたいかわからない」). Only what the name says: one fissure runs forward
+# from the blow and the ground on both sides lifts. Stone slabs (vanilla stone, so they belong to the world) whose
+# underside glows from the heat below; the fissure is a single jagged line, bright at its heart, cooling and breaking up.
+FISSURE = [(8, 95), (9, 90), (7, 85), (8, 80), (10, 75), (9, 70), (7, 65), (6, 60), (8, 55), (10, 50), (11, 45), (9, 40),
+           (8, 35), (6, 30), (7, 25), (9, 20), (10, 15), (9, 10), (8, 5), (8, 0)]
+BRANCHES = [[(8, 80), (4, 76), (2, 72)], [(9, 70), (13, 66)], [(10, 50), (14, 47), (15, 43)], [(6, 30), (2, 27)],
+            [(10, 15), (13, 12)]]
+
+
+def fissure_texture(stage):
+    """16 x 96 (x across, y along: y=95 at the blow, 0 far ahead). stage 0..2 = the crack running out (a third each),
+    3 = hot, 4 = cooling, 5..6 = breaking up."""
+    img = Image.new('RGBA', (16, 96), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    reach = {0: 64, 1: 32, 2: 0}.get(stage, 0)
+    path = [p for p in FISSURE if p[1] >= reach]
+    branches = [b for b in BRANCHES if b[0][1] >= reach]
+    rim, mid, core = [(R, O, Y), (R, O, Y), (R, O, Y), (R, O, Y), (D, R, O), (D, R, O), (D, D, R)][stage]
+    for tone, wd, alpha in ((rim, 5, 120), (mid, 3, 210), (core, 1, 255)):
+        d.line(path, fill=tone + (alpha,), width=wd)
+        for b in branches: d.line(b, fill=tone + (alpha,), width=max(1, wd - 2))
+    if stage >= 5: img = dissolve(img, .35 if stage == 5 else .7, 31)
+    return img
+
+
+def slab_underside(stage):
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    tones = [(O, R), (R, D), (D, (60, 20, 22))][stage]
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = tones[0 if _h(x // 2, y // 2, 5) > .45 else 1] + (255,)
+    return img
+
+
+STONE = ((112, 108, 106), (128, 124, 120), (96, 92, 92), (140, 136, 132))
+
+
+def stone_texture(seed):
+    """Plain grey stone, chunky 2-pixel speckle, a lit top edge: reads as ground rock torn up."""
+    img = Image.new('RGBA', (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = STONE[int(_h(x // 2, y // 2, seed) * 4)] + (255,)
+    return img
+
+
+def slab_model(under, stone, side_tex):
+    # 12 x 3 x 16 units of stone, centred on the model origin; the underside glows.
+    side = {'texture': '#side', 'uv': [0, 0, 16, 3]}
+    return {'ambientocclusion': False, 'textures': {'top': stone, 'side': side_tex, 'under': under,
+                                                     'particle': stone}, 'elements': [
+        {'from': [2, 6.5, 0], 'to': [14, 9.5, 16], 'faces': {
+            'up': {'texture': '#top', 'uv': [2, 0, 14, 16]}, 'down': {'texture': '#under', 'uv': [2, 0, 14, 16]},
+            'north': side, 'south': side, 'east': {'texture': '#side', 'uv': [0, 0, 16, 3]},
+            'west': {'texture': '#side', 'uv': [0, 0, 16, 3]}}}]}
+
+
 # The reference's light is see-through (studied at full size, 2026-10-20): only the white core is opaque, the colour
 # around it lets the world show through, and a faint halo spills past the edge. The dark outline is dropped.
 # Alphas avoid the shader markers (253, 121, 65, 200..215 in scripts/shaders/item.fsh).
@@ -324,6 +384,11 @@ def build(assets, write):
         model(f'ring_{st}', centred_model(texture(f'ring_{st}', glow(ring_texture(st)))))
     for st in range(3):
         model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', glow(twinkle_texture(st)))))
+    for st in range(7):
+        model(f'fissure_{st}', ground_model(texture(f'fissure_{st}', fissure_texture(st))))
+    for st in range(3):
+        model(f'slab_{st}', slab_model(texture(f'slab_under_{st}', slab_underside(st)),
+                                       texture('stone_top', stone_texture(1)), texture('stone_side', stone_texture(2))))
     for f in range(len(SLASH_HEAD)):
         model(f'slash_{f}', centred_model(texture(f'slash_{f}', slash_texture(f))))
     model('frame', centred_model(texture('frame', frame_texture())))

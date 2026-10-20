@@ -358,7 +358,9 @@ def target_faces(p):
 
 
 # F5: the camera sits 4 blocks behind the eye (1.62 m) along the look vector; here looking 20 degrees down.
-VIEWS = {'behind': ('背後（F5視点）', (0.0, 3.0, -3.76), (0.0, .25, 4.0)), 'side': ('横から', (-5.2, 1.9, 1.6), (0.0, 1.0, 1.9))}
+VIEWS = {'behind': ('背後（F5視点）', (0.0, 3.0, -3.76), (0.0, .25, 4.0)), 'side': ('横から', (-5.2, 1.9, 1.6), (0.0, 1.0, 1.9)),
+         # Ground skills (地割り etc.) are read from above: a high three-quarter view over the wielder's shoulder.
+         'high': ('斜め上から', (-4.0, 6.5, -1.5), (0.0, 0.0, 3.5))}
 
 
 def render(scene, tick, view):
@@ -401,8 +403,8 @@ def main():
         ticks = range(0, min(len(scene['frames']), last + 8))
         frames = []
         for tick in ticks:
-            sheet = Image.new('RGB', (W * 2, H))
-            sheet.paste(render(scene, tick, 'behind'), (0, 0)); sheet.paste(render(scene, tick, 'side'), (W, 0))
+            sheet = Image.new('RGB', (W * 3, H))
+            for k, view in enumerate(('behind', 'side', 'high')): sheet.paste(render(scene, tick, view), (W * k, 0))
             frames.append(sheet)
         for name, ms in (('', 50), ('-slow', 150)):
             frames[0].save(out / f'{sid}{name}.gif', save_all=True, append_images=frames[1:], duration=ms, loop=0)
