@@ -446,7 +446,11 @@ def dungeon(TREE, TG):
         for y in range(yd + 1, yd + 7):
             frame = abs(k) == 2 or y == yd + 6
             put(GX + k, y, GZ, *(("chiseled_stone_bricks",) if frame and k == 0 else ("mossy_stone_bricks",) if frame else ("black_concrete",)))
-    for k in (-3, 3): put(GX + k, yd + 1, GZ + 1, "soul_lantern", shape="lantern")
+    for k in (-3, 3):                                                # warm light: lanterns hung on chains from the passage roots
+        for j in range(1, 3): put(GX + k, yd + 6 - j + 1, GZ + 2, "iron_chain", shape="chain")
+        put(GX + k, yd + 4, GZ + 2, "lantern", shape="lantern")
+    for (dx, dz) in ((-3, 4), (3, 7), (-2, 10)):                       # candle clusters on the passage floor, by the walls
+        put(GX + dx, yd + 1, GZ + dz, "candle", shape="plant")
     LABELS_POI.append(((GX, GZ), "根の洞の門（ダンジョン）", (200, 230, 160)))
     for sgn in (1, -1):                                                  # two worn guardians on the apron
         sx, sz = M0[0] + 6 * sgn, M0[1] + 2

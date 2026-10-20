@@ -51,6 +51,7 @@ print("pillars", round(time.time() - t0, 1), flush=True)
 print("pieces", [(q["name"], q["clash"]) for q in c.pieces], round(time.time() - t0, 1), flush=True)
 nt = kit.forests(c, zone1.SPEC); print("trees", nt, round(time.time() - t0, 1), flush=True)
 c.gather = []
+print("overgrowth", kit.overgrowth(c, c.R), flush=True)
 kit.ground_cover(c); print("cover", round(time.time() - t0, 1), flush=True)
 for zc in range(z.B):                                           # solid ground under every column, whatever the pieces dug
     for xc in range(z.B):

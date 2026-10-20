@@ -313,3 +313,35 @@ def node_reeds(c, x, z, R):
             c.put(xx, g, zz, "clay" if _h(xx, 1, zz, 842) < .3 else c.bl.b.get((xx, g, zz), ("full", "grass_block_top", ""))[1],
                   "grass_block_side" if c.bl.b.get((xx, g, zz), ("", "", ""))[1] == "grass_block_top" else None)
             for k in range(1 + int(_h(xx, 2, zz, 843) * 3)): c.put(xx, g + 1 + k, zz, "sugar_cane", shape="plant")
+
+
+
+def overgrowth(c, R):
+    """Ruins swallowed by green (the Spellforged rule): dark stone and wood, with bright, dense grass and ferns bursting
+    along every wall foot and in the corners, moss carpets creeping up, and a few saturated flowers as accents.
+    Only on the ground next to built stone or wood, never on a route."""
+    Z = c.z; B = c.B; b = c.bl.b; hi = c.hi
+    BUILT = ("stone_bricks", "mossy_stone_bricks", "cracked_stone_bricks", "tuff_bricks", "polished_andesite", "chiseled_stone_bricks",
+             "dark_oak_wood", "spruce_wood", "mangrove_wood", "stripped_dark_oak_log", "mossy_cobblestone", "cobblestone", "deepslate_bricks")
+    n = 0
+    for z in range(2, B - 2):
+        for x in range(2, B - 2):
+            if c.route[z, x] or c.wet[z, x]: continue
+            h = int(hi[z, x])
+            if (x, h + 1, z) in b: continue
+            near = 0
+            for dx in (-2, -1, 0, 1, 2):
+                for dz in (-2, -1, 0, 1, 2):
+                    v = b.get((x + dx, h + 1, z + dz))
+                    if v and v[0] == "full" and v[1] in BUILT: near = max(near, 3 - max(abs(dx), abs(dz)))
+            if not near: continue
+            r = _h(x, 31, z, 931)
+            if r > .25 + near * .22: continue
+            if r < .05: m = ("blue_orchid", "cornflower", "poppy")[int(_h(x, 32, z, 932) * 3) % 3]
+            elif r < .3: m = "fern"
+            elif r < .45 and (x, h + 2, z) not in b: m = "tall_grass_top"
+            else: m = "short_grass"
+            c.put(x, h + 1, z, m, shape="plant"); n += 1
+            if b.get((x, h, z), ("", "", ""))[1] == "grass_block_top" and _h(x, 33, z, 933) < .3:
+                c.put(x, h, z, "moss_block")
+    return n
