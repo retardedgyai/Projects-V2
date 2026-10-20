@@ -94,18 +94,41 @@ def root_hollow(BX, BZ):
                 put(x, at(x, z), z, *(("moss_block",) if n > .64 else ("grass_block_top", "grass_block_side")))
     mark(BX - 36, BZ - 36, BX + 36, BZ + 36)
     RAD = lambda a: 31 * (1 + .16 * math.sin(3 * a + 1) + .08 * math.sin(5 * a))
+    # the wall: great roots of a tree long gone arch over the rim and plunge back in, each its own height and girth,
+    # overlapping like ribs; feet flare into plates; one wide gap faces the road. Bezier control is set at twice the wanted
+    # height so the root really stands that tall above the rim ground (not a low hump).
     a0 = 0.0
-    while a0 < math.tau - .2:                                          # the wall: root arcs of uneven span and height, a wide gap to the road
-        span = R.uniform(.38, .7)
+    while a0 < math.tau - .2:
+        big = R.random() < .4
+        span = R.uniform(.8, 1.1) if big else R.uniform(.35, .55)          # a few great ribs, the rest smaller, never a row of equal hoops
         a1 = a0 + span
-        if abs(math.atan2(math.sin(a0 + span / 2 - 2.6), math.cos(a0 + span / 2 - 2.6))) < .45: a0 = a1 - .05; continue
-        p0 = (BX + math.cos(a0) * RAD(a0), bg - 1, BZ + math.sin(a0) * RAD(a0))
-        p2 = (BX + math.cos(a1) * RAD(a1), bg - 1, BZ + math.sin(a1) * RAD(a1))
+        if abs(math.atan2(math.sin(a0 + span / 2 - 2.6), math.cos(a0 + span / 2 - 2.6))) < .5: a0 = a1 - .05; continue
+        ends = []
+        for aa in (a0, a1):
+            ex, ez = BX + math.cos(aa) * RAD(aa), BZ + math.sin(aa) * RAD(aa)
+            ends.append((ex, at(int(round(ex)), int(round(ez))) - 1, ez))
         am = (a0 + a1) / 2
-        hgt = R.choice([R.uniform(13, 18), R.uniform(18, 26)])           # no low croquet hoops
-        apex = (BX + math.cos(am) * (RAD(am) + R.uniform(-4, 3)), bg + hgt, BZ + math.sin(am) * (RAD(am) + R.uniform(-4, 3)))
-        root_arch(p0, apex, p2, R.uniform(1.8, 3.2), R.uniform(1.2, 2.0), follow=False)
-        a0 = a1 - R.uniform(.05, .15)
+        rim = max(at(int(round(BX + math.cos(am) * RAD(am))), int(round(BZ + math.sin(am) * RAD(am)))), ends[0][1], ends[1][1])
+        hgt = R.uniform(15, 22) if big else R.uniform(5, 9)
+        lean = R.uniform(-5, 1)                                        # the crown of each rib leans in over the hollow
+        ctrl = (BX + math.cos(am) * (RAD(am) + lean), rim + hgt * 2, BZ + math.sin(am) * (RAD(am) + lean))
+        r0 = R.uniform(2.6, 3.4) if big else R.uniform(1.4, 2.0)
+        pts = bez(ends[0], ctrl, ends[1], 24)
+        for i, (p, q) in enumerate(zip(pts, pts[1:])):
+            f = i / (len(pts) - 1)
+            rr = r0 * (1 - .45 * math.sin(math.pi * f))                # thick at the feet, thinner over the top
+            tube(p, q, rr, rr, moss_top=True)
+        for (ex, ey, ez) in ends:                                      # the feet flare into the ground
+            for k in range(3):
+                aa = R.uniform(0, math.tau)
+                tube((ex, ey + 2, ez), (ex + math.cos(aa) * 4, at(int(ex + math.cos(aa) * 4), int(ez + math.sin(aa) * 4)) - 1, ez + math.sin(aa) * 4), 1.4, .6)
+        for (px_, py_, pz_) in pts[5:-5:2]:                            # moss and vines hang from the underside
+            if R.random() < .5:
+                for j in range(1, R.randint(3, 8)):
+                    p = (int(round(px_)), int(round(py_)) - int(r0) - j, int(round(pz_)))
+                    if p in w.b or p[1] <= at(p[0], p[2]): break
+                    put(*p, "vine" if j < 4 else "hanging_roots", shape="shut_s" if j < 4 else "plant")
+        a0 = a1 - R.uniform(.12, .2) + (R.uniform(.05, .3) if R.random() < .4 else 0)   # sometimes a gap between ribs
     # the stump at the centre, glowing cracks
     for y in range(bg + 1, bg + 6):
         r = 6.5 - (y - bg) * .35

@@ -45,7 +45,7 @@ SPEC = dict(
             dict(kind="wolf", at=(440, 450), r=0),
             dict(kind="tower", at=(80, 75), r=0),
             dict(kind="boulders", at=(282, 428), r=0),
-            dict(kind="boulders", at=(380, 70), r=0),
+            dict(kind="boulders", at=(335, 48), r=0),
             dict(kind="aqueduct", at=(210, 214), r=0),
             dict(kind="fallen_trunk", at=(30, 262), r=0),
             dict(kind="stump", at=(330, 140), r=24)],
