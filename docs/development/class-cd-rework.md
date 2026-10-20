@@ -155,3 +155,14 @@ Creator の決定：戦闘は Better Combat（MOD）の系統から派生させ�
 - 2026-10-17（main合流前）：藍の了承で、バニラの item シェーダ上書きを `CoreUiPackPolicy.shaderOverrides` で許可（play/gyai/boss-gore と同じ形）。
   item シェーダは `scripts/shaders/item.{vsh,fsh}` の1本（戦士＝テクスチャαの印 253/121/65、黒翳竜＝頂点色 b=77）。boss-gore 合流時にまとめた。
   振付テストは地割り・押し薙ぎの着弾が鉄塊の板（`CoreWarriorIronChoreography`）になったのに合わせた（準備・接触は従来の刃のまま）。
+
+## 3.13 地割りの見た目（2026-10-20、決定）
+
+藍：「ベルセルクのガッツみたいな雰囲気」「地割りはこれでいい」。光と呼び出しは使わず、重さだけで見せる。
+
+- 大剣の振りに暗い風圧の帯、叩いた所から前へ細くなる「えぐれた溝」が4tickで伸びる（叩いた所が広く深い）。
+- 溝の両側で草付きの土の板が外へ傾いてめくれ上がる（大きさ・間隔・角度・形はばらばら、叩いた所ほど大きい）。土と草の塊が溝の先に合わせて跳ね上がり（打ち上げ）、低い土煙。
+- 作り：`scripts/build_warrior_ref_vfx.py`（絵とモデル）、`CoreWarriorRefChoreography`（毎tickの動き）。押し薙ぎ・鉄槌はまだ旧来の `CoreWarriorIronChoreography`。
+- 確かめ方：`CorePlayerCombatTest` の warrior casts export で記録 → `python3 scripts/preview_warrior_cast.py --ids slam --grass`（背後・横・斜め上）。ゲーム内の撮影はトークンが重いので普段はしない。開発用に `/vfx <番号>`（実験場でCD・マナ・闘気を満たして技を撃つ）を足した。
+- 共有の土台に触れた変更：演出の板にカメラを向く設定（`CoreCombatMeshPart.billboard`、`CoreCombatMeshes`）を足した。
+- 途中で試してやめたもの：閃光（銃の表現）、斬撃の帯、Outer Gods の花びら・巨神の指（気持ち悪い）、ブラウムの岩の列、石の岩。

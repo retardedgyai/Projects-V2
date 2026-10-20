@@ -18,6 +18,10 @@ import kotlin.math.abs
 import kotlin.test.*
 
 class CoreCombatMeshTest {
+    // These cover the iron strike path (still used by 押し薙ぎ and 鉄槌); 地割り's own pieces are in CoreWarriorRefChoreographyTest.
+    @org.junit.jupiter.api.BeforeEach fun ironPath() { CoreWarriorRefChoreography.enabled = false }
+    @org.junit.jupiter.api.AfterEach fun refPath() { CoreWarriorRefChoreography.enabled = true }
+
     @Test fun `skill identity bodies reach subdued owner and observer without enabling decorative accents`() = player { owner ->
         val observer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"IdentityViewer",mutableListOf())
         val meshes=CoreCombatMeshes(owner)

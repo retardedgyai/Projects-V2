@@ -61,11 +61,11 @@ internal object CoreWarriorRefChoreography {
         // The furrow's lips: turf torn up along both edges and tipped outward, biggest at the blow, coming up as the
         // furrow runs out (4 ticks for its whole length).
         // Irregular on purpose (Creator: not tiles): sizes, gaps, tilt and shape differ piece by piece, a few gaps left.
-        for (jj in 0 until 12) {
+        for (jj in 0 until 9) {
             for ((n, side) in listOf(-1.0, 1.0).withIndex()) {
                 val k = jj * 2 + n
                 if (hash(k, 94) < .2) continue                             // a gap here and there
-                val tt = (1.0 - (jj + hash(k, 95) * .8) / 12.0).coerceIn(0.0, 1.0)   // 1 at the blow .. 0 far ahead
+                val tt = (1.0 - (jj + hash(k, 95) * .8) / 9.0).coerceIn(0.0, 1.0)   // 1 at the blow .. 0 far ahead
                 val along = impact - .4 + (1 - tt) * (furrow - .6)
                 val hw = (1.2 + 12.5 * tt.pow(1.4)) / 16.0
                 val size = (.35 + .8 * tt) * (.6 + .8 * hash(k, 96))
@@ -75,11 +75,11 @@ internal object CoreWarriorRefChoreography {
             }
         }
         // Clods thrown up at the furrow's head as it runs (the knock-up), grass-topped turf among the earth.
-        for (k in 0 until 12) {
-            val along = impact + (k / 2) * (furrow - 1.0) / 6
+        for (k in 0 until 8) {
+            val along = impact + (k / 2) * (furrow - 1.0) / 4
             val side = if (k % 2 == 0) -1.0 else 1.0
             out += part("clod$k", local(side * (.2 + .35 * hash(k, 61)), .2, along), .35 + .3 * hash(k, 62), yaw + hash(k, 63) * 6.0,
-                20, ground = false, delay = (k / 2) * 4 / 6)
+                20, ground = false, delay = k / 2)
         }
         // A little dust, low and short: it must not hide the furrow.
         for (k in 0 until 4) {

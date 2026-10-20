@@ -9,6 +9,10 @@ import kotlin.math.*
 import kotlin.test.*
 
 class CoreWarriorBladeChoreographyTest {
+    // These cover the iron strike path (still used by 押し薙ぎ and 鉄槌); 地割り's own pieces are in CoreWarriorRefChoreographyTest.
+    @org.junit.jupiter.api.BeforeEach fun ironPath() { CoreWarriorRefChoreography.enabled = false }
+    @org.junit.jupiter.api.AfterEach fun refPath() { CoreWarriorRefChoreography.enabled = true }
+
     private val skills = CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon in CoreWarriorBladeChoreography.sceneIds && it.icon!="dash" }
     private fun effect(s: CoreSkillDefinition, pulse: Int=0, yaw: Double=0.0, phase: CoreSkillVisualPhase=CoreSkillVisualPhase.PULSE,
         prepareTicks: Int=s.startup) =
