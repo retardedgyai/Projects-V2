@@ -537,6 +537,11 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             addSyntax({ sender, _ -> (sender as? Player)?.let { clearLightTest(it) } },
                 net.minestom.server.command.builder.arguments.ArgumentType.Literal("off"))
         })
+        // Test-only: /night and /day set the time of the instance you stand in (its clock stays paused), to see lights.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) for ((name, time) in listOf("night" to 18_000L, "day" to 6_000L))
+            MinecraftServer.getCommandManager().register(Command(name).apply {
+                setDefaultExecutor { sender, _ -> (sender as? Player)?.instance?.let { it.time = time } }
+            })
         // Test-only: plays a player motion on the puppet (docs/development/player-motion.md). /motion stop ends it.
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("motion").apply {
             val name = net.minestom.server.command.builder.arguments.ArgumentType.Word("name")
