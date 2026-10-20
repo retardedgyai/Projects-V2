@@ -386,6 +386,45 @@ def chunk_model(tex):
                                                            for k in ('north', 'south', 'east', 'west', 'up', 'down')}}]}
 
 
+# ---------------------------------------------------------------- petals drawn the Outer Gods way (2026-10-20, Creator:
+# 「スキルはなんでもいい、作画を合わせてほしいだけ」). Read from the Maw crown at full size: thick flat petals with a
+# cut-out notched tip; the body one tone, the tip another, the change made by scattered 1-2 px clusters (no gradient);
+# a darker back; the game's face shading does the light. Warrior colours: rusted iron body, heated cream tip.
+PETAL_BODY = ((150, 62, 50), (128, 50, 42), (168, 76, 60))
+PETAL_TIP = ((238, 206, 168), (220, 180, 144), (250, 228, 196))
+PETAL_BACK = ((96, 40, 36), (82, 34, 32))
+
+
+def petal_textures(seed):
+    w, h = 16, 32
+    front = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    back = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    fp, bp = front.load(), back.load()
+    for y in range(h):
+        k = y / (h - 1)                                   # 0 = tip (top) .. 1 = base
+        half = 7.5 * min(1.0, .45 + k * 1.6)              # tapered toward the tip
+        notch = (y < 6) and int(_h(y // 2, seed) * 3) == 0  # notched, broken tip
+        for x in range(w):
+            if abs(x + .5 - 8) > half - (2 if notch else 0): continue
+            tipness = 1 - k * 3.6                         # >0 only in the top third
+            cl = _h(x // 2, y // 2, seed)                 # 2 px clusters
+            if tipness > .45 or (tipness > -.1 and cl < tipness + .35):
+                c = PETAL_TIP[0 if cl > .3 else 1 if cl > .12 else 2]
+            else:
+                c = PETAL_BODY[0 if cl > .28 else 1 if cl > .1 else 2]
+            fp[x, y] = c + (255,)
+            bp[x, y] = PETAL_BACK[0 if _h(x // 2, y // 2, seed, 3) > .25 else 1] + (255,)
+    return front, back
+
+
+def petal_model(front, back):
+    """A thick flat petal on y=8, 16 wide and 32 tall (2 blocks at scale 1), the cut-out shape on both faces."""
+    def f(t, uv): return {'texture': t, 'uv': uv}
+    return {'textures': {'front': front, 'back': back, 'particle': front}, 'elements': [
+        {'from': [0, 8, 7.5], 'to': [16, 40, 8.5], 'faces': {
+            'north': f('#front', [0, 0, 16, 16]), 'south': f('#back', [16, 0, 0, 16])}}]}
+
+
 # The reference's light is see-through (studied at full size, 2026-10-20): only the white core is opaque, the colour
 # around it lets the world show through, and a faint halo spills past the edge. The dark outline is dropped.
 # Alphas avoid the shader markers (253, 121, 65, 200..215 in scripts/shaders/item.fsh).
@@ -485,6 +524,9 @@ def build(assets, write):
         model(f'ring_{st}', centred_model(texture(f'ring_{st}', glow(ring_texture(st)))))
     for st in range(3):
         model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', glow(twinkle_texture(st)))))
+    for n in range(3):
+        fr, bk = petal_textures(n * 5 + 1)
+        model(f'petal_{n}', petal_model(texture(f'petal_front_{n}', fr), texture(f'petal_back_{n}', bk)))
     for n in range(3):
         top, side, hot = slab_textures(n * 11)
         model(f'gslab_{n}', ground_slab_model(texture(f'gslab_top_{n}', top), texture(f'gslab_side_{n}', side),

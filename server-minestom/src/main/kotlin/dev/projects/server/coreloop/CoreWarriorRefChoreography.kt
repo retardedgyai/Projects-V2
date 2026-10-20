@@ -37,31 +37,21 @@ internal object CoreWarriorRefChoreography {
         val centre = local(0.0, .12, impact)
         val chest = local(0.0, 1.1, impact)
         val out = mutableListOf<CoreCombatMeshPart>()
-        // 地割り: the ground splits along a line (Braum's Glacial Fissure), its objects drawn like the reference's: broad
-        // slabs of ground in the block-texture style, a crown of them at the blow and two rows standing up along the
-        // fissure in a wave; only the fissure and the slabs' torn edges glow; plain chunks thrown at the wave's front.
+        // 地割り, drawn the Outer Gods way: the fissure runs forward and three crowns of rusted-iron petals burst open
+        // along it, one after another, then close and sink.
         val start = 1.6
         val length = 7.0
-        val steps = 8
         out += part("fissure", local(0.0, .12, start + length / 2), 1.0, yaw, 40).copy(scale = Vec(1.5, 1.0, length))
-        val blow = local(0.0, .12, start + .8)
-        for (k in 0 until 6) {  // the crown at the blow, leaning outward with gaps, its glowing face to the centre
-            val a = yaw + k / 6.0 * 2 * PI + .3 + (hash(k, 20) - .5) * .4
-            val r = .85 + .25 * hash(k, 21)
-            out += part("gslab$k", Vec(blow.x() + sin(a) * r, .12, blow.z() + cos(a) * r), .85 + .6 * hash(k, 22), a + PI, 34,
-                pitch = -(.3 + .15 * hash(k, 23)))
-        }
-        for (i in 1..steps) {  // two rows standing up along the fissure, one step a tick
-            val along = start + i * length / steps
-            for ((n, side) in listOf(-1.0, 1.0).withIndex()) {
-                val k = 10 + i * 2 + n
-                val at = local(side * (.6 + .15 * hash(k, 24)), .12, along + .2 * hash(k, 25))
-                // Face the fissure: the slab's glowing north face looks at the line.
-                out += part("gslab$k", at, (1.0 + .4 * hash(k, 27)) * (1 - i / (steps + 6.0)), yaw - side * PI / 2 + (hash(k, 26) - .5) * .4,
-                    34 - i, pitch = -(.3 + .2 * hash(k, 28)), delay = i)
+        for (c in 0 until 3) {
+            val centre = local(0.0, .12, start + .8 + c * 2.6)
+            val size = 1.25 - c * .15
+            val n = 7
+            for (k in 0 until n) {
+                val a = yaw + k * 2 * PI / n + c * .4
+                val r = .45 * size
+                out += part("petal${c * 10 + k}", Vec(centre.x() + sin(a) * r, .12, centre.z() + cos(a) * r),
+                    size * (.85 + .3 * hash(c, k, 41)), a + PI, 34 - c * 3, delay = c * 3)
             }
-            for (n in 0 until 2) out += part("chunk${40 + i * 2 + n}", local((hash(i, n, 29) - .5) * 1.2, .4, along), .5 + .3 * hash(i, n, 30),
-                yaw, 14, ground = false, delay = i)
         }
         return out
     }
@@ -81,6 +71,19 @@ internal object CoreWarriorRefChoreography {
                 CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/fissure_$stage", live)
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
+            name.startsWith("petal") -> {
+                // Bursts up leaning inward (closed bud), opens outward past its rest with overshoot, holds, closes and sinks.
+                val open = when {
+                    tick < 2 -> -.5
+                    tick < 5 -> doubleArrayOf(-.1, .75, .62)[tick - 2]
+                    tick < p.durationTicks - 8 -> .62 + .04 * sin(tick * .7)
+                    else -> .62 - (tick - (p.durationTicks - 8)) / 7.0 * 1.0
+                }
+                val rise = when { tick < 2 -> doubleArrayOf(.3, .8)[tick]; tick < p.durationTicks - 5 -> 1.0
+                    else -> 1.0 - (tick - (p.durationTicks - 5)) / 4.0 }.coerceIn(0.0, 1.0)
+                val k = name.removePrefix("petal").toInt()
+                CoreMeshPose(p.offset.add(0.0, -p.scale.y() * 2.0 * (1 - rise), 0.0), p.scale, p.yaw, -open, 0.0, "$DIR/petal_${k % 3}", live)
+            }
             name.startsWith("gslab") -> {
                 val height = p.scale.y() * 12.0 / 16.0
                 val up = when {
