@@ -684,6 +684,7 @@ def build(PILLARS, ex, ez):
     for off in (1.55, -1.55):                                            # reflecting ponds between the pavilions
         a = ent_a + off
         qx0, qz0 = SX_ + math.cos(a) * (AR + 10), SZ_ + math.sin(a) * (AR + 10)
+        if any(math.hypot(cx_ - qx0, cz_ - qz0) < 16 for (cx_, cz_, dk_, u_) in BR3[:12] + BR2[-12:]): continue   # never on the walk to a bridge
         for dx in range(-7, 8):
             for dz in range(-7, 8):
                 x, z = int(round(qx0)) + dx, int(round(qz0)) + dz
@@ -734,4 +735,19 @@ def build(PILLARS, ex, ez):
             put(x2, SY_ + 3, z2, "white_wall_banner", shape=sh)
     stone_lantern(GX_ - 6, GZ_ + 6, SY_); stone_lantern(GX_ + 6, GZ_ + 6, SY_)
     put(SX_, FY + 1, SZ_, "pink_wool", shape="boss")                    # the sakura boss (stand-in)
+    dense = []
+    for seq_ in (BR2, BR3):                                         # every half block along the deck, so no diagonal seam survives
+        for (a_, b_) in zip(seq_, seq_[1:]):
+            for k_ in range(3): dense.append((a_[0] + (b_[0] - a_[0]) * k_ / 3, a_[1] + (b_[1] - a_[1]) * k_ / 3, a_[2], a_[3]))
+    bx_, bz_, bd_, _ = BR3[0]                                       # and the top itself is walkable from the arena out to the rope bridge
+    for k_ in range(0, 26):
+        f_ = k_ / 25
+        dense.append((bx_ + (SX_ - bx_) * f_ * .6, bz_ + (SZ_ - bz_) * f_ * .6, bd_, 0))
+    for (cx_, cz_, dk_, u_) in dense:                               # nothing built later (ponds, precinct) may cut the walkway
+        for dx in (-1, 0, 1):
+            for dz in (-1, 0, 1):
+                x_, z_ = int(round(cx_)) + dx, int(round(cz_)) + dz
+                if UPPER[z_, x_] < 0:
+                    for yy in range(dk_ - 1, dk_ + 1): w.b.pop((x_, yy, z_), None)
+                    put(x_, dk_, z_, "stone_bricks", shape="slab_t"); put(x_, dk_ - 1, z_, "stone_bricks"); UPPER[z_, x_] = dk_
     return dict(arena=(SX_, SZ_, FY), entrance=BR0)

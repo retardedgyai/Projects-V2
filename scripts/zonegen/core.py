@@ -72,7 +72,15 @@ class Zone:
                 ramp = np.clip(1 - np.abs(self.xx - (a + b) / 2) / ((b - a) / 2), 0, 1)
                 width = width + ramp * 40
             t = np.clip((line_z[None, :] + jag - self.zz) / width + .5, 0, 1)
-            H += sc["rise"] * (t * t * (3 - 2 * t))
+            S = sc["rise"] * (t * t * (3 - 2 * t))
+            # step the face back in bands of 2-4 blocks (terraformers: trace the edge, drop ~3 per section, set each section
+            # back a little): mostly ledge, then a short riser; band height and phase wander so ledges never line up
+            band = 2.5 + self.fbm(2, 5, .5, sc["seed"] + 3) * 1.8
+            ph = self.fbm(2, 9, .5, sc["seed"] + 4) * 4
+            q = (S + ph) / band; fq = q - np.floor(q)
+            Sb = (np.floor(q) + np.clip((fq - .6) / .4, 0, 1)) * band - ph
+            cliffy = np.clip((14 - width) / 6, 0, 1)                    # only on true cliffs, not on the designed ramps
+            H += (S * (1 - cliffy) + np.clip(Sb, 0, sc["rise"]) * cliffy).astype(np.float32)
         H += (self.fbm(3, 3, .5, s["seed"] + 10) - .5) * s.get("roll", 6)
         for b in s.get("bumps", []):
             H += self.bump(*b)

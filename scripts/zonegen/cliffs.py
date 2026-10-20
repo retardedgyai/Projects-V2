@@ -1,0 +1,93 @@
+"""Cliff faces done the way terraformers do them (research-terrain.md B):
+  - value follows form: darker where the face dips in, under a ledge and toward the foot; lighter on sun-facing bumps
+  - a value-ordered palette, neighbours never skip a step; one block (stone) runs through every band
+  - secondary blocks in small clusters (1-3) with gaps, not noise; faint tilted strata only as a nudge
+  - grass > dirt > stone: a dirt lip under the rim; ledges carry grass and moss; moss only in grooves and under ledges
+  - vines and drips hang from ledges; talus (gravel, cobble, fallen stone) gathers at the foot, grass growing through it
+"""
+import math
+import numpy as np
+from greattree import noise3, _h
+
+PAL = ["cobbled_deepslate", "tuff", "tuff", "cobblestone", "andesite", "stone", "stone", "andesite", "stone"]   # dark -> light
+SECOND = {"stone": ["andesite", "cobblestone"], "andesite": ["stone", "tuff"], "cobblestone": ["mossy_cobblestone", "andesite"],
+          "tuff": ["cobbled_deepslate", "cobblestone"], "cobbled_deepslate": ["tuff"]}
+
+
+def fields(H):
+    gy, gx = np.gradient(H.astype(np.float32))
+    slope = np.hypot(gx, gy)
+    expo = np.clip((-gx * .6 - gy * .8) / np.maximum(slope, 1e-3), -1, 1)
+    p = np.pad(H, 2, mode="edge"); B = H.shape[0]
+    avg = sum(p[2 + dz:2 + dz + B, 2 + dx:2 + dx + B] for dz in (-2, -1, 0, 1, 2) for dx in (-2, -1, 0, 1, 2)) / 25
+    concav = np.clip((avg - H) / 2.5, -1, 1)          # >0: the face dips in here (a groove, a bay)
+    return slope, expo, concav
+
+
+def block(x, y, z, frac, expo, concav):
+    """frac 0 at the foot .. 1 at the rim."""
+    tilt = (y + x * .12 - z * .05 + (noise3(x, 0, z, 371, 9) - .5) * 3)
+    stra = ((int(tilt // 3) % 3) - 1) * .05                         # faint beds, a nudge only
+    t = .16 + frac * .52 + expo * .22 - max(0, concav) * .45 + min(0, concav) * -.15 + stra
+    t += (noise3(x, y * .6, z, 372, 2.2) - .5) * .12
+    i = int(max(0, min(len(PAL) - 1, t * len(PAL))))
+    name = PAL[i]
+    # clusters of a neighbouring value, 1-3 blocks, with gaps
+    if _h(x // 2, y // 2, z // 2, 373) < .22 and _h(x, y, z, 374) < .6:
+        name = SECOND.get(name, [name])[int(_h(x // 2, y // 2, z // 2, 375) * 2) % len(SECOND.get(name, [name]))]
+    return name
+
+
+def finish(bl, Z, slope, concav):
+    """After the columns are filled: dirt lips, ledge turf, moss in grooves, vines and drips, talus at the foot."""
+    b = bl.b; B = Z.B; hi = Z.hi; kind = Z.kind
+    face = (slope > 1.25) & (kind == 0)
+    p = np.pad(hi, 4, mode="edge")
+    hmax = np.maximum.reduce([p[4 + dz:4 + dz + B, 4 + dx:4 + dx + B] for dz in range(-4, 5) for dx in range(-4, 5)])   # the face within 4 blocks
+    n_lip = n_ledge = n_vine = n_talus = 0
+    for z in range(1, B - 1):
+        for x in range(1, B - 1):
+            h = int(hi[z, x])
+            if not face[z, x]:
+                # rim: the first ground cell next to a face drop gets a dirt lip under its grass
+                if kind[z, x] == 0 and any(face[z + dz, x + dx] and hi[z + dz, x + dx] < h - 1 for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                    for k in (1, 2):
+                        if b.get((x, h - k, z), ("", "", ""))[1] not in ("dirt", "coarse_dirt"):
+                            b[(x, h - k, z)] = ("full", "coarse_dirt" if (k == 1 and _h(x, h, z, 381) < .4) else "dirt", "dirt")
+                    n_lip += 1
+                # talus: right below a tall face, broken stone gathers, grass and ferns grow through
+                if kind[z, x] == 0 and hmax[z, x] - h >= 6 and slope[z, x] < 1.0:
+                    r = noise3(x, 0, z, 382, 2.2)
+                    if r > .45:
+                        m = ("gravel", "andesite", "cobblestone", "stone", "mossy_cobblestone")[int(_h(x, 1, z, 383) * 5) % 5]
+                        b[(x, h, z)] = ("full", m, m)
+                        if r > .62 and _h(x, 2, z, 384) < .45 and (x, h + 1, z) not in b:
+                            m2 = ("stone", "cobblestone", "andesite")[int(_h(x, 3, z, 385) * 3) % 3]; b[(x, h + 1, z)] = ("slab", m2, m2)
+                        elif _h(x, 4, z, 386) < .25 and (x, h + 1, z) not in b:
+                            b[(x, h + 1, z)] = ("plant", "fern", "fern")
+                        n_talus += 1
+                continue
+            # a face column: is this cell a ledge (a step's tread)? Ledges hold turf and moss
+            lower = sum(1 for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)) if hi[z + dz, x + dx] < h - 1)
+            higher = sum(1 for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)) if hi[z + dz, x + dx] > h)
+            if higher and lower and noise3(x, 0, z, 386, 4) > .3:
+                # the tread keeps its rock; moss and turf sit on it as a carpet, so no strip of dirt shows on the face
+                if (x, h + 1, z) not in b:
+                    b[(x, h + 1, z)] = ("carpet", "moss_block", "moss_block")
+                if (x, h + 2, z) not in b and _h(x, 5, z, 387) < .35 and False:
+                    m2 = ("short_grass", "fern", "short_grass")[int(_h(x, 6, z, 388) * 3) % 3]; b[(x, h + 1, z)] = ("plant", m2, m2)
+                n_ledge += 1
+            # moss in grooves: a few blocks under a ledge where the face dips in
+            if concav[z, x] > .25:
+                for k in range(1, 4):
+                    if (x, h - k, z) in b and b[(x, h - k, z)][0] == "full" and _h(x, h - k, z, 389) < .5 - k * .1:
+                        b[(x, h - k, z)] = ("full", "moss_block", "moss_block")
+            # vines and drips from south-facing lips (the side the low sun and the camera see)
+            if hi[z + 1, x] < h - 2 and _h(x, 7, z, 390) < .3:
+                L = 1 + int(_h(x, 8, z, 391) * min(7, h - hi[z + 1, x] - 1))
+                for k in range(L):
+                    q = (x, h - k, z + 1)
+                    if q in b or h - k <= hi[z + 1, x]: break
+                    b[q] = ("shut_s", "vine", "vine")
+                n_vine += 1
+    return dict(lips=n_lip, ledges=n_ledge, vines=n_vine, talus=n_talus)

@@ -7,6 +7,7 @@ Blocks go into a dict {(x, y, z): (shape, top, side)} — the format iso.py, fp.
 import math
 import numpy as np
 import terrainmat as TM
+import cliffs
 from greattree import noise3, _h
 
 
@@ -20,9 +21,8 @@ class Blocks:
 
     def build(self):
         Z = self.z; B = Z.B; hi = Z.hi; kind = Z.kind; water = Z.water
-        gy, gx = np.gradient(Z.H.astype(np.float32))
-        slope = Z.slope
-        expo = np.clip((-gx * .6 - gy * .8) / np.maximum(slope, 1e-3), -1, 1)
+        slope, expo, concav = cliffs.fields(Z.hi.astype(np.float32))
+        Z.slope = slope
         p = np.pad(hi, 1, mode="edge")
         lo_nb = np.minimum.reduce([p[1:-1, 2:], p[1:-1, :-2], p[2:, 1:-1], p[:-2, 1:-1], hi])
         hi_nb = np.maximum.reduce([p[1:-1, 2:], p[1:-1, :-2], p[2:, 1:-1], p[:-2, 1:-1], hi])
@@ -39,7 +39,7 @@ class Blocks:
                     depth = h - y
                     if face or depth > 3:
                         fr = (y - lo) / max(1, top_face - lo)
-                        put(x, y, z, TM.cliff_block(x, y, z, fr, 0.0, float(expo[z, x])))
+                        put(x, y, z, cliffs.block(x, y, z, fr, float(expo[z, x]), float(concav[z, x])))
                     else:
                         put(x, y, z, "dirt" if depth > 1 or k in (1, 2) else ("coarse_dirt" if _h(x, y, z, 5) < .25 else "dirt"))
                 # the top block
@@ -59,7 +59,7 @@ class Blocks:
                     put(x, h, z, name, TM.SIDE.get(name, name))
                     continue
                 if face:
-                    put(x, h, z, TM.cliff_block(x, h, z, 1.0, 0.0, float(expo[z, x])))
+                    put(x, h, z, cliffs.block(x, h, z, 1.0, float(expo[z, x]), float(concav[z, x])))
                     continue
                 if k == 6:                                                # shore: grass to the water, a little mud
                     name = "grass_block_top"
@@ -67,6 +67,7 @@ class Blocks:
                     continue
                 top = TM.surface(x, z, float(slope[z, x]), float(forest[z, x]), 0.0)
                 put(x, h, z, *top)
+        self.cliff_stats = cliffs.finish(self, Z, slope, concav)
         self.falls()
         self.bridges()
         return self.b
