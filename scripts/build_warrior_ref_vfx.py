@@ -194,6 +194,29 @@ def bar_texture():
     return img
 
 
+# The reference's light is see-through (studied at full size, 2026-10-20): only the white core is opaque, the colour
+# around it lets the world show through, and a faint halo spills past the edge. The dark outline is dropped.
+# Alphas avoid the shader markers (253, 121, 65, 200..215 in scripts/shaders/item.fsh).
+GLOW_ALPHA = {W: 255, Y: 236, C: 228, O: 176, R: 142, D: 98, K: 70}
+
+
+def glow(img, halo=R, halo_alpha=44):
+    out = img.copy()
+    px = out.load()
+    w, h = out.size
+    solid = [[px[x, y][3] > 0 for x in range(w)] for y in range(h)]
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a: px[x, y] = (r, g, b, GLOW_ALPHA.get((r, g, b), 150))
+    for y in range(h):  # one pixel of faint halo round the shape
+        for x in range(w):
+            if not solid[y][x] and any(0 <= x + i < w and 0 <= y + j < h and solid[y + j][x + i]
+                                       for i in (-1, 0, 1) for j in (-1, 0, 1)):
+                px[x, y] = halo + (halo_alpha,)
+    return out
+
+
 # ---------------------------------------------------------------- models (16 units = the display's scale in blocks)
 def face(uv, tex='#0'):
     return {'texture': tex, 'uv': uv}
@@ -255,18 +278,18 @@ def build(assets, write):
     for n, amount in enumerate((0.0, .4, .75)):
         model(f'fang_{n}', fang_model(texture(f'fang_{n}', dissolve(fang, amount, 3) if amount else fang)))
     for s in range(4):
-        model(f'flame_{s}', board_model(texture(f'flame_{s}', flame_texture(s))))
+        model(f'flame_{s}', board_model(texture(f'flame_{s}', glow(flame_texture(s)))))
     model('plate', plate_model(texture('plate', plate_texture())))
     for st in range(4):
-        model(f'ray_{st}', board_model(texture(f'ray_{st}', ray_texture(st)), height=16))
-        model(f'ring_{st}', centred_model(texture(f'ring_{st}', ring_texture(st))))
+        model(f'ray_{st}', board_model(texture(f'ray_{st}', glow(ray_texture(st))), height=16))
+        model(f'ring_{st}', centred_model(texture(f'ring_{st}', glow(ring_texture(st)))))
     for st in range(3):
-        model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', twinkle_texture(st))))
+        model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', glow(twinkle_texture(st)))))
     model('frame', centred_model(texture('frame', frame_texture())))
     model('bar', {'ambientocclusion': False, 'textures': {'0': texture('bar', bar_texture())}, 'elements': [
         box((0, 7.4, 6.5), (16, 8.6, 9.5), [0, 0, 16, 16], [0, 0, 16, 16])]})
     for s in range(5):
-        model(f'crack_{s}', ground_model(texture(f'crack_{s}', crack_texture(s))))
+        model(f'crack_{s}', ground_model(texture(f'crack_{s}', glow(crack_texture(s)))))
 
 
 if __name__ == '__main__':
