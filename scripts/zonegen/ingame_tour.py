@@ -32,14 +32,26 @@ def mc_window():
     return None
 
 
+RESTORE = {}
+
+
 def to_dp3():
-    """The user keeps monitor DP-3 free for the game: put our window there (never leave it on their main screen)."""
+    """The user keeps monitor DP-3 for the game. The game goes onto its own workspace (9) shown on DP-3; whatever DP-3
+    was showing is put back when the tour ends (restore_dp3)."""
     try:
         mons = json.loads(subprocess.run(["hyprctl", "monitors", "-j"], capture_output=True, text=True).stdout)
-        ws = [m["activeWorkspace"]["id"] for m in mons if m["name"] == "DP-3"][0]
-        subprocess.run(["hyprctl", "dispatch", "movetoworkspacesilent", f"{ws},class:com.mojang.minecraft"], capture_output=True)
+        cur = [m["activeWorkspace"]["id"] for m in mons if m["name"] == "DP-3"][0]
+        for c in (["moveworkspacetomonitor", "9 DP-3"], ["movetoworkspacesilent", "9,class:com.mojang.minecraft"],
+                  ["focusmonitor", "DP-3"], ["workspace", "9"]):
+            subprocess.run(["hyprctl", "dispatch", *c], capture_output=True)
     except Exception:
         pass
+
+
+def restore_dp3():
+    if "ws" in RESTORE:
+        subprocess.run(["hyprctl", "dispatch", "focusmonitor", "DP-3"], capture_output=True)
+        subprocess.run(["hyprctl", "dispatch", "workspace", str(RESTORE["ws"])], capture_output=True)
 
 
 def wait_window(timeout=60):
@@ -96,6 +108,11 @@ def main():
     b, hi, _ = pickle.load(open("field500.pkl", "rb"))
     up = np.load("upper.npy")
     views = resolve(open(views_file).read().splitlines(), hi, up)
+    try:
+        mons0 = json.loads(subprocess.run(["hyprctl", "monitors", "-j"], capture_output=True, text=True).stdout)
+        RESTORE["ws"] = [m["activeWorkspace"]["id"] for m in mons0 if m["name"] == "DP-3"][0]   # what DP-3 shows now, put back at the end
+    except Exception:
+        pass
     tour_world = world + "_tour"
     shutil.rmtree(os.path.join(SAVES, tour_world), ignore_errors=True)
     shutil.copytree(os.path.join(SAVES, world), os.path.join(SAVES, tour_world))
@@ -110,7 +127,7 @@ def main():
     clicked = 0
     while time.time() < t_end:
         txt = open(os.path.join(out, "client.log")).read()
-        if "shulker_boxes.png-atlas" in txt: to_dp3()
+        if "shulker_boxes.png-atlas" in txt and "moved" not in RESTORE: time.sleep(2); to_dp3(); RESTORE["moved"] = 1
         if clicked < 2 and "shulker_boxes.png-atlas" in txt:     # the old-format world asks to upgrade: load anyway, then "yes"
             time.sleep(6)
             win = wait_window(90)
@@ -137,6 +154,7 @@ def main():
         subprocess.run(["grim", "-g", f"{win[0]},{win[1]} {win[2]}x{win[3]}", path])
         print("shot", path, flush=True)
     subprocess.run("pkill -f Xmx3G", shell=True)
+    restore_dp3()
 
 
 if __name__ == "__main__":

@@ -14,6 +14,27 @@ import time
 import zlib
 
 DATA_VERSION = 4325          # 1.21.5
+import json as _json
+# zone colour: bright yellow-green fields, teal-green in the hollows and ruins (the Spellforged look), set per chunk
+HOLLOW_CHUNKS = set()
+for (hx, hz, r) in ((95, 235, 50), (400, 85, 40), (240, 125, 30)):   # fungal hollow, root hollow, the tree's knoll and dungeon
+    for cx_ in range((hx - r) // 16, (hx + r) // 16 + 1):
+        for cz_ in range((hz - r) // 16, (hz + r) // 16 + 1): HOLLOW_CHUNKS.add((cx_, cz_))
+BIOME_AT = lambda cx, cz: "projects:root_hollow" if (cx, cz) in HOLLOW_CHUNKS else "projects:root_hills"
+
+
+def write_datapack(world_dir):
+    d = os.path.join(world_dir, "datapacks", "projects")
+    os.makedirs(os.path.join(d, "data", "projects", "worldgen", "biome"), exist_ok=True)
+    _json.dump({"pack": {"description": "Project S zone colours", "min_format": 121, "max_format": 121, "pack_format": 121}},
+               open(os.path.join(d, "pack.mcmeta"), "w"))
+    def biome(grass, foliage, water, sky):
+        return {"attributes": {"minecraft:visual/sky_color": sky}, "carvers": [], "downfall": 0.6,
+                "effects": {"water_color": water, "grass_color": grass, "foliage_color": foliage, "dry_foliage_color": "#9a7a4a"},
+                "features": [], "has_precipitation": True, "temperature": 0.8}
+    for name, b in (("root_hills", biome("#7fd64a", "#5ec43c", "#3f8fe4", "#78a7ff")),
+                    ("root_hollow", biome("#3fd39a", "#36b882", "#2f9fb0", "#7aa8e8"))):
+        _json.dump(b, open(os.path.join(d, "data", "projects", "worldgen", "biome", name + ".json"), "w"))
 VALID = set(open("valid26_3.txt").read().split())
 VALID |= {"chain"}           # 1.21.5 name, renamed iron_chain by the fixers
 
@@ -223,7 +244,7 @@ def build(blocks, spawn):
                 key = ("minecraft:" + st[0], tuple(sorted(st[1].items())))
                 if key not in pindex: pindex[key] = len(palette); palette.append(key)
                 arr[((y & 15) << 8) | (lz << 4) | lx] = pindex[key]; any_block = True
-            sec = {"Y": Byte(sy), "biomes": {"palette": List(TAG_STRING, ["minecraft:plains"])}}
+            sec = {"Y": Byte(sy), "biomes": {"palette": List(TAG_STRING, [BIOME_AT(cx, cz)])}}
             pal = List(TAG_COMPOUND)
             for name, props in palette:
                 c = {"Name": name}
@@ -276,7 +297,7 @@ def level_dat(name, spawn):
         "DifficultyLocked": Byte(0), "initialized": Byte(1), "LastPlayed": Long(now), "Time": Long(6000), "DayTime": Long(6000),
         "SpawnX": Int(spawn[0]), "SpawnY": Int(spawn[1]), "SpawnZ": Int(spawn[2]), "SpawnAngle": Float(0.0),
         "raining": Byte(0), "rainTime": Int(9999999), "thundering": Byte(0), "thunderTime": Int(9999999), "clearWeatherTime": Int(9999999),
-        "WasModded": Byte(0), "DataPacks": {"Enabled": List(TAG_STRING, ["vanilla"]), "Disabled": List(TAG_STRING)},
+        "WasModded": Byte(0), "DataPacks": {"Enabled": List(TAG_STRING, ["vanilla", "file/projects"]), "Disabled": List(TAG_STRING)},
         "GameRules": {"doDaylightCycle": "false", "doWeatherCycle": "false", "doMobSpawning": "false", "randomTickSpeed": "0",
                       "doFireTick": "false", "mobGriefing": "false", "doTileDrops": "true", "keepInventory": "true"},
         "WorldGenSettings": {"seed": Long(20261019), "generate_features": Byte(0), "bonus_chest": Byte(0), "dimensions": dims},
@@ -301,6 +322,7 @@ def main():
     spawn = (200, int(hi[265, 200]) + 2, 265)
     root = os.path.join(saves, folder)
     os.makedirs(os.path.join(root, "region"), exist_ok=True)
+    write_datapack(root)
     for (rx, rz), chunks in build(blocks, spawn).items():
         write_region(os.path.join(root, "region", f"r.{rx}.{rz}.mca"), chunks)
     with open(os.path.join(root, "level.dat"), "wb") as f:
