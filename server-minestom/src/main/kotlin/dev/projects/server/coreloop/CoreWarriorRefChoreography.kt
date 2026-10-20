@@ -14,7 +14,7 @@ internal object CoreWarriorRefChoreography {
     private const val PREFIX = "war_ref:"
     private const val DIR = "combat_vfx/warrior_ref"
     @Volatile var enabled = true
-    private val sceneIds = setOf("slam")
+    private val sceneIds = setOf("slam", "whirl")
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
@@ -34,6 +34,21 @@ internal object CoreWarriorRefChoreography {
             CoreCombatMeshPart("$PREFIX$name", "steel", at, Vec(scale, scale, scale), yaw = partYaw, pitch = pitch, roll = roll,
                 durationTicks = life, startSize = 1.0, endSize = 1.0, delayTicks = delay, ground = ground, billboard = billboard)
         val out = mutableListOf<CoreCombatMeshPart>()
+        if (e.sceneId == "whirl") {
+            // 押し薙ぎ: a flat dark crescent of wind at the waist, swept left to right; the ground scraped in an arc in front;
+            // earth thrown outward along it, dust after it. Same mood as 地割り: no light, the weight alone.
+            val span = 7.5
+            out += part("sweep", local(0.0, 1.0, 0.0), span, yaw, 8, ground = false)
+            out += part("scrape", local(0.0, .12, 0.0), span, yaw, 40)
+            for (k in 0 until 9) {
+                val a = yaw + PI / 2 - k * PI / 8          // left to right across the front
+                val at = Vec(sin(a) * 2.6, .3, cos(a) * 2.6)
+                out += part("clod${30 + k}", at, .4 + .3 * hash(k, 81), a, 20, ground = false, delay = k / 3)
+                if (k % 2 == 0) out += part("dust${30 + k}", Vec(sin(a) * 2.8, .6, cos(a) * 2.8), 1.3, 0.0, 16, ground = false,
+                    delay = 1 + k / 3, billboard = true, roll = hash(k, 82) * 6.0)
+            }
+            return out
+        }
         // 地割り in the Guts mood (Creator 2026-10-20): no light, the weight alone. The slab lands, the ground caves in a
         // crater, a dark crack runs on, clods are thrown up along it (the knock-up) and tumble back, dust rolls out,
         // and the swing leaves a dark band of wind.
@@ -75,6 +90,9 @@ internal object CoreWarriorRefChoreography {
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
             name == "wind" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/wind_${tick.coerceAtMost(7)}", live)
+            name == "sweep" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/sweep_${tick.coerceAtMost(7)}", live)
+            name == "scrape" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
+                "$DIR/scrape_${when { tick < 4 -> tick; tick < 32 -> 4; tick < 36 -> 5; else -> 6 }}", live)
             name == "furrow" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
                 "$DIR/furrow_${when { tick < 4 -> tick; tick < 36 -> 4; tick < 40 -> 5; else -> 6 }}", live)
             name == "crater" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,

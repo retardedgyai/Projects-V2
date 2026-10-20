@@ -678,6 +678,61 @@ def furrow_pixels(stage, w=32, n=128, seed=41):
     return img
 
 
+# 押し薙ぎ in the same mood: a flat dark crescent of wind swept left to right at the waist, and the ground scraped in
+# an arc in front, scraped earth heaped on its outer lip. Both seen from above, the wielder at the image centre, the
+# front (the direction faced) toward the image top; angles run from the left (180) over the top to the right (0).
+SWEEP_HEAD = [175, 120, 60, 5, 5, 5, 5, 5]
+SWEEP_TAIL = [185, 185, 175, 140, 90, 45, 20, 10]
+
+
+def sweep_wind(frame, n=96):
+    img = Image.new('RGBA', (n, n), (0, 0, 0, 0))
+    px = img.load()
+    c = n / 2
+    head, tail = SWEEP_HEAD[frame], SWEEP_TAIL[frame]
+    for y in range(n):
+        for x in range(n):
+            dx, dy = x + .5 - c, c - (y + .5)
+            a = math.degrees(math.atan2(dy, dx)) % 360
+            if a > 270: a -= 360
+            if not head <= a <= tail: continue
+            k = (tail - a) / max(tail - head, 1)          # 1 at the blade (head), 0 at the tail
+            r = math.hypot(dx, dy)
+            outer, width = 44, 4 + 16 * k ** 1.2
+            if not outer - width <= r <= outer: continue
+            depth = (outer - r) / width
+            tone = (196, 188, 180) if depth < .12 and k > .6 else (88, 82, 80) if depth < .45 else (36, 32, 32)
+            px[x, y] = tone + (int((70 + 150 * k) * (1 - depth * .5)),)
+    if frame >= 5: img = dissolve(img, (frame - 4) * .25, 29)
+    return img
+
+
+def scrape_arc(stage, n=96, seed=47):
+    """The ground scraped in an arc in front: a dark gouge with a heaped outer lip and earth thrown outward.
+    stage 0..3 = the scrape running left to right, 4 = whole, 5..6 = breaking up."""
+    img = Image.new('RGBA', (n, n), (0, 0, 0, 0))
+    px = img.load()
+    c = n / 2
+    reach = 180 - 45 * min(stage + 1, 4) - (5 if stage >= 3 else 0)
+    for y in range(n):
+        for x in range(n):
+            dx, dy = x + .5 - c, c - (y + .5)
+            a = math.degrees(math.atan2(dy, dx))
+            if not (max(reach, -5) <= a <= 185): continue
+            r = math.hypot(dx, dy) + 1.6 * (_h(x // 2, y // 2, seed) - .5)
+            mid = 30 + 2 * math.sin(math.radians(a) * 3)
+            w = 3.5 + 3.5 * math.sin(math.radians(min(max(a, 0), 180)))   # deepest straight ahead
+            v = _h(x // 2, y // 2, seed, 1)
+            if abs(r - mid) <= w * .4: c_ = (22, 18, 16) if v > .3 else SHADOW
+            elif abs(r - mid) <= w: c_ = SHADOW if v > .5 else EARTH[3]
+            elif mid + w < r <= mid + w + 3: c_ = EARTH[2] if v > .35 else EARTH[0]     # heaped outer lip
+            elif mid + w + 3 < r <= mid + w + 7 and v > .72: c_ = EARTH[1]              # earth thrown outward
+            else: continue
+            px[x, y] = c_ + (255,)
+    if stage >= 5: img = dissolve(img, .35 if stage == 5 else .7, 23)
+    return img
+
+
 def dust_puff(frame, seed=0):
     """A puff of dust as a lumpy pixel cloud: three tones in 2 px clusters, swelling then thinning out."""
     img = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
@@ -831,6 +886,10 @@ def build(assets, write):
         # Square texture (a tall one reads as an animation strip): the furrow down the middle third.
         sq = Image.new('RGBA', (128, 128), (0, 0, 0, 0)); sq.alpha_composite(furrow_pixels(st, w=40).transpose(Image.Transpose.FLIP_TOP_BOTTOM), (44, 0))  # up face: row 0 lies at the near end
         model(f'furrow_{st}', ground_model(texture(f'furrow_{st}', sq)))
+    for f in range(8):
+        model(f'sweep_{f}', ground_model(texture(f'sweep_{f}', sweep_wind(f).transpose(Image.Transpose.ROTATE_180))))
+    for st in range(7):
+        model(f'scrape_{st}', ground_model(texture(f'scrape_{st}', scrape_arc(st).transpose(Image.Transpose.ROTATE_180))))
     for f in range(5):
         model(f'dust_{f}', centred_model(texture(f'dust_{f}', dust_puff(f))))
     for f in range(8):
