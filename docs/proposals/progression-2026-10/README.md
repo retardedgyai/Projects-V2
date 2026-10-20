@@ -7,3 +7,4 @@
 - `sakura-drops-flow.html` — 決まった5案をつなげた桜牙獣の素材の流れ。公開版 https://claude.ai/artifact/JAnJDvbPi75yH244C17jGu
 - `offering-rewards.html` — 枝角を奉納した本人への見返り22案（☆で選ぶ）。
 - `territory-ideas.html` — オープンワールドの領地の形12案（☆で選ぶ）。
+- `territory-life.html` — Albion 型の領地の一生（宣戦布告・領地戦・維持費・荒れる）を動かす見本。

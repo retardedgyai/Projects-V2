@@ -1,0 +1,160 @@
+<title>領地の一生</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header, state track (空き→宣戦布告→待ち24時間→領地戦→持ち主→維持費→荒れる), control panel + territory card, rules, open question */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --red: #e58b80; --green: #9fd49a; --banner: #6fa3e8; --foe: #e07a6a;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1200px; margin: 0 auto; padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.02rem; margin: 0; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.track { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.st { padding: 3px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: .88rem; }
+.st.now { border-color: var(--gold); color: var(--gold); }
+.st.done { border-color: #3d5a3a; color: var(--green); }
+.ar { color: #3c4770; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { background: var(--panel2); border: 1px solid #34405f; color: var(--fg); border-radius: 8px; padding: 5px 14px; font: inherit; cursor: pointer; }
+.btn:hover:not(:disabled) { border-color: var(--cyan); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.btn.main { border-color: var(--gold); color: var(--gold); }
+.say { background: #17202c; border: 1px solid #2f5560; border-radius: 10px; padding: 10px 12px; color: var(--fg); }
+.terr { border-radius: 12px; border: 2px solid var(--line); padding: 12px; display: grid; gap: 6px; background: var(--panel2); }
+.terr.ours { border-color: var(--banner); }
+.terr.wild { border-style: dashed; }
+.terr.ruin { border-color: #6a3a36; }
+.kv { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 2px 10px; font-size: .9rem; }
+.kv .k { color: var(--muted); }
+.num { font-family: var(--num); font-variant-numeric: tabular-nums; }
+.log { font-size: .84rem; max-height: 180px; overflow-y: auto; display: grid; gap: 2px; color: var(--muted); }
+.log div:first-child { color: var(--fg); }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+.rule h3 { font-size: .95rem; margin: 0; }
+.rule .tag { font-size: .72rem; border-radius: 6px; padding: 0 6px; border: 1px solid; margin-left: 6px; }
+.t-ok { color: var(--green); border-color: #3d5a3a; }
+.t-tmp { color: var(--gold); border-color: #5b5030; }
+.q { border-color: #5b4a2a; }
+.gold { color: var(--gold); } .red { color: var(--red); } .green { color: var(--green); } .blue { color: var(--banner); } .foe { color: var(--foe); }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>領地の一生 ── Albion 型</h1>
+    <p>藍が決めたこと：Albion と同じ感じ／空いた領地も持ち主のいる領地も、<b>24時間前の宣戦布告</b>がないと戦えない／<b>維持費</b>を払う／奉納はなし。中身は <b>8 そこでしか作れない物・9 税・10 採取が多い</b>。ボタンを押して、領地が取られて、持たれて、荒れて、また空くまでを動かしてみる。</p>
+  </header>
+
+  <div class="panel">
+    <div class="track" id="track"></div>
+  </div>
+
+  <div class="two">
+    <div class="panel">
+      <h2>あなたのギルド「<span class="blue">青の旗</span>」</h2>
+      <div class="say" id="say" aria-live="polite"></div>
+      <div class="btns" id="btns"></div>
+      <div class="kv"><span class="k">ギルドの銀貨</span><span class="num gold" id="silver"></span><span class="k">時刻</span><span class="num" id="clock"></span></div>
+      <div class="log" id="log"></div>
+    </div>
+    <div class="panel">
+      <h2>根のアーチの領地</h2>
+      <div class="terr" id="terr"></div>
+    </div>
+  </div>
+
+  <div class="rules">
+    <div class="panel rule"><h3>宣戦布告<span class="tag t-ok">決定</span></h3><p>空いた領地も、持ち主のいる領地も、戦う24時間前に布告する。守る側は24時間で準備できる。布告は地図と頭上の通知に出る。</p></div>
+    <div class="panel rule"><h3>領地戦の時間<span class="tag t-tmp">仮</span></h3><p>戦いは決まった時間帯だけ（例：毎晩 21〜23時）。布告から24時間たったあとの、最初の時間帯で始まる。夜中に取られることはない。</p></div>
+    <div class="panel rule"><h3>維持費<span class="tag t-ok">決定</span>（額は仮）</h3><p>毎日、ギルドの銀貨から自動で払う。施設が多いほど高い（基本 <span class="num">100</span>＋施設1つにつき <span class="num">50</span>）。払えないと「荒れる」：中身が止まる。3日続くと空き領地に戻る。銀貨の出口になる。</p></div>
+    <div class="panel rule"><h3>8 そこでしか作れない物<span class="tag t-ok">決定</span></h3><p>持ち主が素材で建てた炉・祭壇で、そこでしか作れない物を作る（例：桜の炉で桜の銘）。作るのはプレイヤー。NPC は売らない。</p></div>
+    <div class="panel rule"><h3>9 税<span class="tag t-ok">決定</span></h3><p>ほかの人も施設を使える。使用料の一部が持ち主へ、残りは消える（例：銀貨10のうち3が持ち主）。持ち主が使用料を決める。</p></div>
+    <div class="panel rule"><h3>10 採取が多い<span class="tag t-ok">決定</span></h3><p>持ち主の領地の中では採取の量が増える（例：1.3倍）。ほかの人も採れる。領地は採取地の上に置く。</p></div>
+  </div>
+
+  <div class="panel q">
+    <h2>次に決めること（1つ）</h2>
+    <p>領地戦の勝ち方。下のボタン（藍の返事の欄）で選ぶ。</p>
+  </div>
+</main>
+
+<script>
+(() => {
+  const STATES = ['空き', '宣戦布告', '24時間待つ', '領地戦', '持ち主', '荒れる'];
+  let S;
+  const fresh = () => ({ st: '空き', owner: null, silver: 900, hour: 18, day: 1, unpaid: 0, works: 0, foeDeclared: false, log: ['根のアーチの領地は誰のものでもない。'] });
+  S = fresh();
+  const $ = id => document.getElementById(id);
+  const log = m => { S.log.unshift(`${S.day}日目 ${String(S.hour).padStart(2, '0')}:00　${m}`); S.log = S.log.slice(0, 40); };
+  const upkeep = () => 100 + 50 * S.works;
+  function advance(h) {
+    for (let i = 0; i < h; i++) {
+      S.hour++;
+      if (S.hour === 24) {
+        S.hour = 0; S.day++;
+        if (S.owner === 'ours') {
+          if (S.silver >= upkeep()) { S.silver -= upkeep(); S.unpaid = 0; log(`維持費 ${upkeep()} を払った。`); if (S.st === '荒れる') S.st = '持ち主'; }
+          else { S.unpaid++; S.st = '荒れる'; log(`維持費が足りない（${S.unpaid}日目）。領地が荒れた。`); if (S.unpaid >= 3) { S.owner = null; S.st = '空き'; S.works = 0; S.unpaid = 0; log('3日払えなかった。空き領地に戻った。'); } }
+        }
+      }
+    }
+  }
+  const ACTIONS = {
+    declare: { n: '宣戦布告する', main: true, ok: () => S.st === '空き', f: () => { S.st = '24時間待つ'; S.waitUntil = S.day * 24 + S.hour + 24; log('宣戦布告した。24時間後から戦える。地図に布告が出た。'); } },
+    wait: { n: '24時間すすめる', ok: () => S.st === '24時間待つ' || S.foeDeclared, f: () => { advance(24); if (S.foeDeclared) { S.foeWar = true; log('赤の旗との領地戦の時間が近い。'); } else { S.st = '領地戦'; log('戦える時間になった。次の領地戦の時間帯（21時）を待つ。'); } } },
+    win: { n: '領地戦に勝つ', main: true, ok: () => S.st === '領地戦' || S.foeWar, f: () => { if (S.foeWar) { S.foeWar = false; S.foeDeclared = false; log('赤の旗を退けた。領地は守られた。'); } else { S.owner = 'ours'; S.st = '持ち主'; log('勝った！ 根のアーチは青の旗のもの。'); } } },
+    lose: { n: '領地戦に負ける', ok: () => S.st === '領地戦' || S.foeWar, f: () => { if (S.foeWar) { S.foeWar = false; S.foeDeclared = false; S.owner = 'foe'; S.st = '持ち主'; S.works = 0; log('赤の旗に取られた。施設は壊れて残らない（仮）。'); } else { S.st = '空き'; log('負けた。領地は空きのまま。また布告できる。'); } } },
+    build: { n: '炉を建てる（素材で）', ok: () => S.owner === 'ours' && S.st === '持ち主' && S.works < 3, f: () => { S.works++; log(`施設を建てた（${S.works}つ）。維持費が ${upkeep()} になった。`); } },
+    tax: { n: 'ほかの人が炉を使う（税）', ok: () => S.owner === 'ours' && S.st === '持ち主' && S.works > 0, f: () => { S.silver += 3 * 5; log('ほかの人が炉を5回使った。税 15 が入った（35 は消えた）。'); } },
+    gather: { n: '採取する', ok: () => true, f: () => { log(S.owner === 'ours' && S.st === '持ち主' ? '採取：古木の材 ×1.3（持ち主の領地）。' : '採取：古木の材 ×1。'); } },
+    day: { n: '1日すすめる', ok: () => S.st !== '24時間待つ' && !S.foeDeclared, f: () => { advance(24); } },
+    foe: { n: '赤の旗が布告してくる', ok: () => S.owner === 'ours' && !S.foeDeclared, f: () => { S.foeDeclared = true; log('赤の旗が根のアーチに宣戦布告した。24時間後に戦い。'); } },
+    spend: { n: '銀貨を使い込む', ok: () => S.silver > 0, f: () => { S.silver = 0; log('ギルドの銀貨を装備に使った。'); } },
+    reset: { n: '最初から', ok: () => true, f: () => { S = fresh(); } },
+  };
+  const SAY = {
+    '空き': '誰も持っていない。持つには宣戦布告して、24時間後の領地戦で勝つ。',
+    '24時間待つ': '布告済み。まだ戦えない。ほかのギルドも同じ領地に布告できる（来たら三つ巴）。',
+    '領地戦': '領地戦の時間。勝てば持ち主になる。',
+    '持ち主': '持っている。施設を建てる・税が入る・採取が多い。毎日維持費。ほかのギルドに布告されたら24時間後に守る。',
+    '荒れる': '維持費が払えていない。中身が止まっている。3日続くと空きに戻る。',
+  };
+  function render() {
+    const order = ['空き', '24時間待つ', '領地戦', '持ち主', '荒れる'];
+    const i = order.indexOf(S.st);
+    $('track').innerHTML = order.map((s, j) => `<span class="st ${j === i ? 'now' : ''}">${s === '24時間待つ' ? '宣戦布告 → 24時間' : s}</span>`).join('<span class="ar">→</span>');
+    let say = SAY[S.st];
+    if (S.foeDeclared) say = `<span class="foe">赤の旗に布告された。</span> 24時間すすめて、守りの領地戦へ。`;
+    if (S.foeWar) say = '<span class="foe">守りの領地戦の時間。</span>';
+    if (S.owner === 'foe') say = '<span class="foe">赤の旗の領地。</span> 取り返すなら宣戦布告（今は空きではないので、見本では「最初から」）。';
+    $('say').innerHTML = say;
+    $('btns').innerHTML = Object.entries(ACTIONS).map(([k, a]) => `<button class="btn ${a.main ? 'main' : ''}" data-a="${k}" ${a.ok() ? '' : 'disabled'}>${a.n}</button>`).join('');
+    $('silver').textContent = S.silver;
+    $('clock').textContent = `${S.day}日目 ${String(S.hour).padStart(2, '0')}:00`;
+    const cls = S.owner === 'ours' ? (S.st === '荒れる' ? 'ruin' : 'ours') : S.owner ? '' : 'wild';
+    $('terr').className = 'terr ' + cls;
+    $('terr').innerHTML = `<div class="kv">
+      <span class="k">持ち主</span><span>${S.owner === 'ours' ? '<span class="blue">青の旗</span>' : S.owner === 'foe' ? '<span class="foe">赤の旗</span>' : 'なし'}</span>
+      <span class="k">状態</span><span>${S.st === '荒れる' ? '<span class="red">荒れている（中身が止まる）</span>' : S.st}</span>
+      <span class="k">施設</span><span>${S.works ? '炉・祭壇など ' + S.works + 'つ' : 'なし'}</span>
+      <span class="k">維持費</span><span class="num">${S.owner === 'ours' ? upkeep() + ' / 日' : '―'}</span>
+      <span class="k">採取</span><span>${S.owner === 'ours' && S.st === '持ち主' ? '<span class="green">×1.3</span>' : '×1'}</span>
+      <span class="k">税</span><span>${S.owner === 'ours' && S.works ? '使用料10のうち3' : '―'}</span>
+    </div>`;
+    $('log').innerHTML = S.log.map(l => `<div>${l}</div>`).join('');
+  }
+  $('btns').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.disabled) return; ACTIONS[b.dataset.a].f(); render(); });
+  render();
+})();
+</script>
