@@ -31,7 +31,7 @@ svg g, svg path { transition: opacity .2s; }
 
 <main>
   <h1>桜牙獣の全体図</h1>
-  <p>文字を読まずに見る用。橙＝枝角の道、桃＝花びらの道。ボタンで片方だけ光らせられる。点線はまだ決めていないところ。</p>
+  <p>文字を読まずに見る用。橙＝枝角の道、桃＝花びらの道。ボタンで片方だけ光らせられる。全部決まった（2026-10-20）。</p>
   <div class="route" role="group" aria-label="道を光らせる">
     <button class="rbtn a" data-r="all" aria-pressed="true">両方</button>
     <button class="rbtn h" data-r="horn" aria-pressed="false">枝角の道</button>
@@ -59,9 +59,9 @@ svg g, svg path { transition: opacity .2s; }
         <g data-r="horn">
           <rect x="230" y="30" width="150" height="46" rx="10" fill="#2a1f14" stroke="#f0a35e"/><text x="305" y="52" fill="#f0a35e">枝角〈特性〉</text><text x="305" y="68" fill="#959bb0" font-size="11">特性は運で1つ</text>
           <rect x="440" y="180" width="160" height="56" rx="10" fill="#1b2233" stroke="#f0a35e"/><text x="520" y="204" fill="#ebe7dc">器を作る</text><text x="520" y="222" fill="#959bb0" font-size="11">桜牙の型・首飾り（特性は空）</text>
-          <rect x="660" y="320" width="160" height="56" rx="10" fill="#1b2233" stroke="#f0a35e" stroke-dasharray="6 5"/><text x="740" y="344" fill="#ebe7dc">注入で特性を入れる</text><text x="740" y="362" fill="#959bb0" font-size="11">枝角 → 器（未決）</text>
+          <rect x="660" y="320" width="160" height="56" rx="10" fill="#1b2233" stroke="#f0a35e"/><text x="740" y="344" fill="#ebe7dc">注入で特性を入れる</text><text x="740" y="362" fill="#959bb0" font-size="11">祭壇で 枝角 → 器</text>
           <rect x="880" y="30" width="190" height="56" rx="10" fill="#2a1f14" stroke="#f0a35e" stroke-width="2"/><text x="975" y="54" fill="#f0a35e" font-weight="700">特性つきの装備</text><text x="975" y="72" fill="#959bb0" font-size="11">1つの装備に1つ</text>
-          <rect x="440" y="320" width="160" height="56" rx="10" fill="#1b2233" stroke="#f0a35e" stroke-dasharray="6 5"/><text x="520" y="344" fill="#ebe7dc">外れ3本 → 好きな1本</text><text x="520" y="362" fill="#959bb0" font-size="11">混ぜる（未決：鍛冶か魔術か）</text>
+          <rect x="440" y="320" width="160" height="56" rx="10" fill="#1b2233" stroke="#f0a35e"/><text x="520" y="344" fill="#ebe7dc">外れ3本 → 好きな1本</text><text x="520" y="362" fill="#959bb0" font-size="11">注入で合わせる</text>
           <rect x="230" y="470" width="150" height="46" rx="10" fill="#1b2233" stroke="#f0a35e"/><text x="305" y="498" fill="#ebe7dc">枝角を売り買い</text>
         </g>
         <g data-r="horn" fill="none" stroke="#f0a35e" stroke-width="2.5" marker-end="url(#mh)">
@@ -71,7 +71,7 @@ svg g, svg path { transition: opacity .2s; }
           <path d="M820 345 C870 345 870 70 878 62"/>
           <path d="M305 76 L305 468"/>
           <path d="M380 490 C420 490 430 360 438 352"/>
-          <path d="M600 352 L658 352" stroke-dasharray="6 5"/>
+          <path d="M600 352 L658 352"/>
         </g>
 
         <!-- petal route -->
@@ -94,7 +94,7 @@ svg g, svg path { transition: opacity .2s; }
       </g>
     </svg>
   </div>
-  <p>決まっていること：特性は落ちた枝角に入る／器は鍛冶の職人が作る／1つの装備に特性1つ／枝角も巻物も売り買いできる／NPC は売らない。<br>未決（点線）：特性を入れるのは魔術の注入か／外れ3本を合わせるのは誰か。</p>
+  <p>決まっていること：特性は落ちた枝角に入る／器は鍛冶の職人が作る／1つの装備に特性1つ／枝角も巻物も売り買いできる／特性を入れるのも外れ3本を合わせるのも魔術の注入／NPC は売らない。</p>
 </main>
 
 <script>
