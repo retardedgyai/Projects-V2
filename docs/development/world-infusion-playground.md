@@ -151,3 +151,9 @@ TC6静止画の弧状・太さが変わる流れを参考にしたProjectS独自
 中央台・材料台・Jarはv3を直接使用し、旧v3全17ファイルと6材質PNGをSHA-256／byte比較で保護。前後全景と核／支柱拡大は同カメラ・同照明・同縮尺。変更後単独全景も出力。Nativeモデル2種・30cuboids、共通の支柱傾斜、実亀裂、同縮尺を `scripts/verify-infusion-stone-revision.py` で確認した。
 
 今回の改訂ではruntime／研究／Jar／霧／経済／保存のソースを変更していない。直前の60件・buildの検証結果は維持し、変更のないKotlin buildを繰り返さない。改訂モデルもまだゲームへ接続する前の比較案で、ゲームクライアントは起動していない。旧モデルと旧画像は保護。詳細はv4 README。
+
+## 26.2 バニラ・クライアントでの表示ずれ（2026-10-18）
+
+オフラインrenderer（`render-world-models.py`）はUVが0〜16を外れると材質を繰り返すが、26.2は繰り返さず周りの透明なatlasを読む。支柱と核の側面が消え、薄い板が浮いて見えていた。`scripts/fix-infusion-uv-wrap.py` で、範囲外の面だけを3×3繰り返しの48px材質（`*_tiled.png`）へ付け替えた。形・大きさ・色は変えず、承認プレビューと画素一致。`verify_core_ui_assets.py` が `infusion*` モデルのUV範囲外を拒否する。
+
+26.2のitem displayは `-yaw` の後にさらに180°回す。プレビューのyawをそのまま渡すと支柱が横を向き、核の傾きも逆になる。`WorldInfusionServer.modelAt` が実体yawを `180 - プレビューyaw` にする。

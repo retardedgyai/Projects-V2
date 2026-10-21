@@ -144,12 +144,19 @@ data class MobAbility(
     val anchor: MobAbilityAnchor = MobAbilityAnchor.CASTER,
     val maximumHealthRatio: Double = 1.0,
     val damageType: dev.projects.server.coreloop.CoreDamageType = dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
+    /** Crowd control put on each player the hit lands on (QuestEncounterCombat crowdPlayer). */
+    val crowd: CrowdControl? = null, val crowdMillis: Long = 0,
+    /** Never picked at random; the encounter starts it by id when its situation comes up (a combo, a turn). */
+    val scripted: Boolean = false,
+    /** Earlier hits (ms from the start) before the main one at [telegraphMillis], e.g. the first two of three bites. */
+    val earlyHitsMillis: List<Long> = emptyList(),
 ) {
     init {
         require(id.isNotBlank() && maximumStartRange > 0.0 && damage > 0.0)
         require(telegraphMillis > 0L && trackingMillis in 0 until telegraphMillis)
         require(recoveryMillis >= 0L && cooldownMillis >= 0L && weight > 0)
         require(minimumStartRange in 0.0..maximumStartRange && maximumHealthRatio in 0.0..1.0)
+        require(earlyHitsMillis.all { it in 1 until telegraphMillis } && earlyHitsMillis == earlyHitsMillis.sorted())
     }
 }
 
@@ -163,6 +170,8 @@ data class MobAbilityFrame(
     val phase: MobAbilityPhase,
     val startedAt: Long,
     val casterOrigin: Pos = origin,
+    /** How many of [MobAbility.earlyHitsMillis] have struck. */
+    val earlyHits: Int = 0,
 )
 
 sealed interface MobAbilityEvent {
@@ -188,30 +197,45 @@ class MobAbilityManager(
     private var nextSelectionAt = Long.MIN_VALUE
     private var previousAbilityId: String? = null
     private val readyAt = mutableMapOf<String, Long>()
+    private val disabled = mutableSetOf<String>()
+
+    /** Never offer [id] again (a broken part took the ability away). */
+    fun disable(id: String) { disabled += id }
     val isActive: Boolean get() = current != null
 
-    fun tryStart(nowMillis: Long, origin: Pos, target: Point, healthRatio: Double = 1.0): MobAbilityEvent.Started? {
+    /**
+     * [plainOnly] (silence) offers only the first, plainest ability. [only] starts that one ability if it is allowed at
+     * this health, cooldown and range ignored (the encounter chose the moment: a combo always follows through).
+     */
+    fun tryStart(nowMillis: Long, origin: Pos, target: Point, healthRatio: Double = 1.0, plainOnly: Boolean = false,
+                 only: String? = null, facing: Vec? = null, weigh: ((MobAbility) -> Double)? = null,
+                 allowed: Set<String>? = null): MobAbilityEvent.Started? {
         if (current != null || nowMillis < nextSelectionAt) return null
         if (abs(origin.y() - target.y()) > 2.2) return null
         val distance = horizontalLength(target.sub(origin))
-        val available = abilities.filter {
-            distance in it.minimumStartRange..it.maximumStartRange && healthRatio <= it.maximumHealthRatio &&
-                nowMillis >= readyAt.getOrDefault(it.id, Long.MIN_VALUE)
+        val available = (if (plainOnly) abilities.take(1) else abilities).filter {
+            it.id !in disabled && if (only != null) it.id == only && healthRatio <= it.maximumHealthRatio
+            else !it.scripted && (allowed == null || it.id in allowed) && distance in it.minimumStartRange..it.maximumStartRange &&
+                healthRatio <= it.maximumHealthRatio && nowMillis >= readyAt.getOrDefault(it.id, Long.MIN_VALUE)
         }
         if (available.isEmpty()) return null
         val choices = available.filter { it.id != previousAbilityId }.ifEmpty { available }
-        var roll = random.nextInt(choices.sumOf { it.weight })
-        val selected = choices.first { roll -= it.weight; roll < 0 }
+        // [weigh]: the encounter's read of the situation multiplies each move's weight (a move that would reach where
+        // the player is going counts more); without it, the plain weights.
+        val weights = choices.map { it.weight * (weigh?.invoke(it) ?: 1.0).coerceAtLeast(0.0) }
+        var roll = random.nextDouble() * weights.sum().coerceAtLeast(1e-9)
+        val selected = choices.indices.firstOrNull { roll -= weights[it]; roll < 0 }?.let { choices[it] } ?: choices.last()
         val frame = MobAbilityFrame(
             selected, if (selected.anchor == MobAbilityAnchor.TARGET) Pos(target) else origin,
-            normalizeHorizontal(target.sub(origin)), MobAbilityPhase.TRACKING, nowMillis, origin,
+            facing?.let(::normalizeHorizontal) ?: normalizeHorizontal(target.sub(origin)), MobAbilityPhase.TRACKING, nowMillis, origin,
         )
         current = frame
         previousAbilityId = selected.id
         return MobAbilityEvent.Started(frame)
     }
 
-    fun tick(nowMillis: Long, target: Point?): List<MobAbilityEvent> {
+    /** [maxTurn]: the most (radians) the aim may turn toward the target this tick; null = it snaps to the target. */
+    fun tick(nowMillis: Long, target: Point?, maxTurn: Double? = null): List<MobAbilityEvent> {
         var frame = current ?: return emptyList()
         val events = mutableListOf<MobAbilityEvent>()
         val elapsed = nowMillis - frame.startedAt
@@ -221,11 +245,17 @@ class MobAbilityManager(
                 frame = frame.copy(phase = MobAbilityPhase.LOCKED)
                 events += MobAbilityEvent.Locked(frame)
             } else if (target != null) {
+                val want = normalizeHorizontal(target.sub(frame.casterOrigin))
                 frame = frame.copy(
                     origin = if (frame.ability.anchor == MobAbilityAnchor.TARGET) Pos(target) else frame.origin,
-                    facing = normalizeHorizontal(target.sub(frame.casterOrigin)),
+                    facing = if (maxTurn == null) want else turnToward(frame.facing, want, maxTurn),
                 )
             }
+        }
+        while (frame.phase != MobAbilityPhase.RECOVERY && frame.earlyHits < frame.ability.earlyHitsMillis.size &&
+            elapsed >= frame.ability.earlyHitsMillis[frame.earlyHits]) {
+            events += MobAbilityEvent.Hit(frame)
+            frame = frame.copy(earlyHits = frame.earlyHits + 1)
         }
         if (frame.phase == MobAbilityPhase.LOCKED && elapsed >= frame.ability.telegraphMillis) {
             events += MobAbilityEvent.Hit(frame)
@@ -255,6 +285,16 @@ class MobAbilityManager(
 }
 
 internal fun horizontal(point: Point): Vec = Vec(point.x(), 0.0, point.z())
+
+/** [from] turned toward [to] (both horizontal) by at most [maxRadians]. */
+internal fun turnToward(from: Vec, to: Vec, maxRadians: Double): Vec {
+    val a = kotlin.math.atan2(from.z(), from.x()); val b = kotlin.math.atan2(to.z(), to.x())
+    var d = b - a
+    while (d > Math.PI) d -= 2 * Math.PI
+    while (d < -Math.PI) d += 2 * Math.PI
+    val r = a + d.coerceIn(-maxRadians, maxRadians)
+    return Vec(kotlin.math.cos(r), 0.0, kotlin.math.sin(r))
+}
 internal fun horizontalLength(point: Point): Double = sqrt(point.x() * point.x() + point.z() * point.z())
 internal fun normalizeHorizontal(point: Point): Vec {
     val length = horizontalLength(point)

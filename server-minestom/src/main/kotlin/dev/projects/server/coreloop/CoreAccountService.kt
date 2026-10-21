@@ -98,6 +98,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         is CoreAction.SelectSkill -> {
             requireHub(account)
             require(action.slot in 0..4 && CoreJourneyRules.skillUnlocked(account, action.slot)) { "このスキル枠は未解放です" }
+            require(CoreSkillCatalog.selectable(account.journey.job, action.slot, action.choice)) { "この技は選べません" }
             account.copy(journey = account.journey.copy(build = account.journey.build.equip(action.slot, action.choice))) to "スキル構成を保存しました"
         }
         is CoreAction.ToggleTalent -> {
@@ -238,12 +239,14 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         }
         is CoreAction.Gather -> {
             val run = requireRun(account, action.runId)
-            require(action.resource.raw && action.quantity in 1..1024) { "採取内容が不正です" }
+            val sample = ResearchGoods.sample(action.resource) != null
+            require((action.resource.raw || sample) && action.quantity in 1..1024) { "採取内容が不正です" }
             val source = source("gather", run.id, action.nodeId)
             val updated = addSource(account, source).copy(surveyPoints = (account.surveyPoints + run.map.tier).coerceAtMost(1_000_000_000),
                 journey = account.journey.gain(20L * run.map.tier))
+            // Anomalous samples are one tier-1 market good regardless of the map.
             recipe(updated, CoreRecipe("${action.resource.displayName}を${action.quantity}個保管しました", emptyMap(),
-                mapOf(CoreMaterial(action.resource, run.map.tier) to action.quantity.toLong())))
+                mapOf(CoreMaterial(action.resource, if (sample) 1 else run.map.tier) to action.quantity.toLong())))
         }
         is CoreAction.CombatReward -> {
             val run = requireRun(account, action.runId)
@@ -311,7 +314,9 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             require(!run.bossDefeated) { "この討伐報酬は受取済みです" }
             if (run.trialId == null) require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
             val nextTier = if (account.journey.legacy || run.map.level >= CoreJourneyRules.ceiling(run.map.tier)) (run.map.tier + 1).coerceAtMost(4) else run.map.tier
-            val message = if (run.trialId == null) "討伐完了！ T$nextTier の地図・討伐証・試練の欠片を獲得しました"
+            val zone = CoreFrontierZones.expedition(run.map.zone ?: -1)?.takeIf { run.trialId == null }
+            val firstClear = zone != null && zone.id !in account.zoneRecords
+            val message = if (run.trialId == null) (if (firstClear) "${zone?.name}を初踏破！ " else "") + "討伐完了！ T$nextTier の地図・討伐証・試練の欠片を獲得しました"
                 else "専用ボス討伐！ 専用オーブ2個・高揚1個・討伐証を獲得しました"
             val outputs = if (run.trialId == null)
                 mapOf(CoreMaterial(CoreResource.BOSS_SIGIL, run.map.tier) to 2L,
@@ -320,7 +325,9 @@ class CoreAccountService(private val repository: CoreAccountRepository,
                     CoreMaterial(CoreResource.POTION) to 2L)
                 else mapOf(CoreMaterial(CoreResource.BOSS_SIGIL, run.map.tier) to 2L, CoreMaterial(CoreResource.COMBAT_TOKEN, run.map.tier) to 12L)
             val rewarded = recipe(addSource(account, source("boss", run.id, "defeat")), CoreRecipe(message, emptyMap(), outputs)).first
-                .copy(journey = account.journey.gain(CoreJourneyRules.reward(run.map.tier, true)))
+                .copy(journey = account.journey.gain(CoreJourneyRules.reward(run.map.tier, true)),
+                    zoneRecords = if (zone == null) account.zoneRecords else account.zoneRecords +
+                        (zone.id to (account.zoneRecords[zone.id]?.cleared(run.map.level) ?: CoreZoneRecord(1, run.map.level))))
             if (run.trialId == null) {
                 val rewardMap = CoreOwnedMap(derived(requestId, "boss-map"), run.map.seed xor requestId.leastSignificantBits, nextTier,
                     level = if (nextTier != run.map.tier) CoreJourneyRules.floor(nextTier) else (run.map.level + 2).coerceAtMost(CoreJourneyRules.ceiling(nextTier)))
@@ -366,11 +373,12 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             requireHub(account)
             require(action.tier in 1..account.unlockedMapTier) { "そのTierはまだ解放されていません" }
             require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
+            if (action.zone != null) require(CoreFrontierZones.expedition(action.zone)?.tier == action.tier) { "その地域へは出発できません" }
             val cost = if (action.tier == 1) emptyMap() else mapOf(CoreMaterial(CoreResource.COMBAT_TOKEN, action.tier - 1) to 1L)
             val claimed = recipe(account, CoreRecipe("T${action.tier} の遠征地図を受け取りました", cost, emptyMap()))
             val level = action.level ?: account.journey.level.coerceIn(CoreJourneyRules.floor(action.tier), CoreJourneyRules.ceiling(action.tier))
             require(account.journey.legacy || level <= maxOf(CoreJourneyRules.floor(action.tier), account.journey.level + 2)) { "その地図レベルはまだ高すぎます" }
-            claimed.first.copy(maps = account.maps + CoreOwnedMap(derived(requestId, "map"), action.seed, action.tier, level = level)) to claimed.second
+            claimed.first.copy(maps = account.maps + CoreOwnedMap(derived(requestId, "map"), action.seed, action.tier, level = level, zone = action.zone)) to claimed.second
         }
         is CoreAction.ApplyTablet -> {
             requireHub(account)
@@ -416,6 +424,44 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             requireRun(account, action.runId)
             account.copy(activeRun = null, journey = if (account.journey.knows(2)) account.journey.learn(3) else account.journey,
                 claimedSources = recentRuns(account).claimedSources.filterTo(linkedSetOf()) { it.startsWith("run/") }) to "拠点へ帰還しました。獲得品は保管済みです"
+        }
+        is CoreAction.ResearchDistill -> {
+            requireHub(account)
+            val sample = ResearchGoods.sample(action.material) ?: error("蒸留できない素材です")
+            val fee = CoreMmoTuning.balance.researchDistillSilver.toLong()
+            val paid = recipe(account, CoreRecipe("${sample.label}を蒸留", mapOf(ResearchGoods.material(sample) to 1L), emptyMap())).first
+            burnSilver(paid, fee) to "${sample.label}を蒸留器へ投入（燃料 銀貨${fee}枚）"
+        }
+        is CoreAction.ResearchInk -> {
+            requireHub(account)
+            val sample = ResearchGoods.sample(action.material) ?: error("インクにできない素材です")
+            val fee = CoreMmoTuning.balance.researchInkSilver.toLong()
+            val paid = recipe(account, CoreRecipe("${sample.label}でインクを調合", mapOf(ResearchGoods.material(sample) to 1L), emptyMap())).first
+            burnSilver(paid, fee) to "${sample.label}で研究インクを調合（溶剤 銀貨${fee}枚）"
+        }
+        is CoreAction.ResearchCraft -> {
+            requireHub(account)
+            val unit = ResearchRecipes.byResearch[action.researchId] ?: error("この研究から作れる品はありません")
+            val fee = CoreMmoTuning.balance.researchCraftSilver.toLong()
+            val crafted = recipe(account, unit.ledgerRecipe())
+            burnSilver(crafted.first, fee) to "${unit.product.displayName}を${unit.output}個調合しました（調合料 銀貨${fee}枚）。市場で売れます"
+        }
+        is CoreAction.SealRepair -> {
+            requireHub(account)
+            val slot = CoreGearSlot.equipped(action.slot)
+            require(CoreEconomy.broken(account, slot)) { "この装備は破損していません" }
+            val seals = CoreAffixCatalog.gearTier(account, slot).toLong() * CoreMmoTuning.balance.researchSealsPerTier
+            recipe(account, CoreRecipe("修復の封蝋で修理", mapOf(CoreMaterial(CoreResource.MENDING_SEAL) to seals), emptyMap())).first
+                .copy(weaponBroken = if (slot == CoreGearSlot.WEAPON) false else account.weaponBroken)
+                .let { if (slot == CoreGearSlot.WEAPON) it else it.withArmor(slot, it.armor(slot).copy(broken = false)) } to
+                "修復の封蝋${seals}個で修理しました。MOD・強化値・成功保証は維持しています"
+        }
+        is CoreAction.GrantResearchMaterials -> {
+            require(action.materials.all { (resource, amount) -> resource.research && amount in 1..999 }) { "研究素材の内容が不正です" }
+            require(action.silverFloor in 0..10_000) { "銀貨の指定が不正です" }
+            val granted = recipe(account, CoreRecipe("研究素材を保管しました", emptyMap(),
+                action.materials.mapKeys { CoreMaterial(it.key) })).first
+            granted.copy(silver = maxOf(granted.silver, action.silverFloor)) to "研究素材を保管しました"
         }
         is CoreAction.Consume -> {
             require(action.resource in setOf(CoreResource.POTION, CoreResource.WHETSTONE)) { "使用できないアイテムです" }
@@ -540,6 +586,12 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         val next = Math.addExact(account.amount(kind), amount)
         require(next in 0..CoreLoopCatalog.MAX_BALANCE) { "入場の欠片の保管上限です" }
         return account.copy(fragments = account.fragments + (kind to next))
+    }
+
+    /** A sink: the fee leaves the economy instead of moving to another player. */
+    private fun burnSilver(account: CoreAccount, fee: Long): CoreAccount {
+        require(account.silver >= fee) { "銀貨が${fee - account.silver}枚不足しています" }
+        return account.copy(silver = account.silver - fee)
     }
 
     private fun recipe(account: CoreAccount, recipe: CoreRecipe): Pair<CoreAccount, String> {

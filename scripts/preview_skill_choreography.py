@@ -14,9 +14,11 @@ import numpy as np
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 from preview_core_combat_models import COLORS
 def _font(path,size):
-    # Windows-only system fonts; fall back so headless/Linux builds still run.
-    try: return ImageFont.truetype(path,size)
-    except OSError: return ImageFont.load_default(size)
+    # Windows system font first, then the Linux Noto CJK font, then Pillow's default (no Japanese glyphs).
+    for candidate,index in ((path,0),('/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',0)):
+        try: return ImageFont.truetype(candidate,size,index=index)
+        except OSError: continue
+    return ImageFont.load_default(size)
 
 
 ROOT = Path(__file__).resolve().parents[1]

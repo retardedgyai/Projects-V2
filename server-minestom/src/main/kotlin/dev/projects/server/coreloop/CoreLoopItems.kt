@@ -49,6 +49,14 @@ internal object CoreLoopItems {
         CoreResource.GATHERING_TABLET -> Material.AMETHYST_SHARD
         CoreResource.WHETSTONE -> Material.FLINT
         CoreResource.AFFIX_DUST -> Material.GLOWSTONE_DUST
+        CoreResource.MOONBELL -> Material.BLUE_ORCHID
+        CoreResource.EMBER_MOSS -> Material.RED_MUSHROOM
+        CoreResource.HOLLOW_CRYSTAL -> Material.AMETHYST_SHARD
+        CoreResource.WARM_ORE -> Material.RAW_COPPER
+        CoreResource.TIDEWING_FEATHER -> Material.FEATHER
+        CoreResource.WITHERED_CORE -> Material.ECHO_SHARD
+        CoreResource.ARCANE_CATALYST -> Material.BLAZE_POWDER
+        CoreResource.MENDING_SEAL -> Material.HONEYCOMB
     }
 
     /** Pack item model for the forge-material icons, or null for resources without one. */
@@ -59,18 +67,20 @@ internal object CoreLoopItems {
         CoreResource.STONE_BLOCK -> "cut_stone"; CoreResource.LEATHER -> "leather"
         CoreResource.CLOTH -> "cloth"; CoreResource.AFFIX_DUST -> "affix_dust"
         else -> null
-    }?.let { "projects:forge_materials/$it" }
+    }?.let { "projects:forge_materials/$it" } ?: ResearchGoods.sample(resource)?.let { "projects:first_magic/icon_${it.name.lowercase()}" }
 
     private fun ItemStack.forgeMaterialSkin(resource: CoreResource, packed: Boolean): ItemStack =
         forgeMaterialModel(resource)?.takeIf { packed }?.let { withItemModel(it) } ?: this
 
     fun resource(material: CoreMaterial, count: Long, packed: Boolean = false): ItemStack = icon(resourceMaterial(material.resource), material.displayName,
-        "所持：$count 個", if (material.resource.raw) "採取、または市場で購入して入手" else if (material.resource in CoreLoopCatalog.refined.values) "採取素材を精製、または市場で購入" else "遠征や工房で入手", color = colors[material.tier - 1])
+        "所持：$count 個", if (material.resource.raw) "採取、または市場で購入して入手" else if (material.resource in CoreLoopCatalog.refined.values) "採取素材を精製、または市場で購入"
+            else if (material.resource.research) ResearchGoods.effect(material.resource) else "遠征や工房で入手", color = colors[material.tier - 1])
         .withAmount(count.coerceIn(1, 64).toInt()).forgeMaterialSkin(material.resource, packed)
 
     fun carriedResource(material: CoreMaterial, count: Long, packed: Boolean = false): ItemStack = icon(resourceMaterial(material.resource), material.displayName,
-        if (count <= 64) "インベントリ所持 $count 個" else "素材束：$count 個分",
-        "探索・製造で得た実物の素材", color = colors[material.tier - 1])
+        *listOfNotNull(if (count <= 64) "インベントリ所持 $count 個" else "素材束：$count 個分",
+            if (material.resource.research) ResearchGoods.effect(material.resource) else "探索・製造で得た実物の素材",
+            "港の市場で売買できる".takeIf { material.resource.research }).toTypedArray(), color = colors[material.tier - 1])
         .withTag(resourceTag, "${material.resource.name}:${material.tier}")
         .withTag(resourceQuantityTag, count)
         .withAmount(count.coerceIn(1, 64).toInt()).forgeMaterialSkin(material.resource, packed)
@@ -97,7 +107,7 @@ internal object CoreLoopItems {
 
     fun weapon(tier: Int): ItemStack = icon(listOf(Material.STONE_SWORD, Material.IRON_SWORD, Material.DIAMOND_SWORD, Material.NETHERITE_SWORD)[tier - 1],
         "T$tier 開拓者の大剣", "攻撃力 ${(12 * CoreLoopCatalog.weaponDamage(tier)).roundToInt()}",
-        "左クリック：前方を斬る", "右クリック：踏み込み斬り", "F：移動方向へ回避", color = colors[tier - 1])
+        "左クリック：前方を斬る", "右クリック：轟進", "F：移動方向へ回避", color = colors[tier - 1])
         .withTag(actionTag, "weapon").withTag(gearTag, CoreGearSlot.WEAPON.name)
 
     fun menuSkin(item: ItemStack, packed: Boolean): ItemStack = if (packed)

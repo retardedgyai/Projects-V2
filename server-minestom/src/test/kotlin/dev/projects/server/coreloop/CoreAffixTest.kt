@@ -34,7 +34,7 @@ class CoreAffixTest {
     }
 
     @Test fun `catalog deterministic source rolls span all live stats and four ranks`() {
-        assertEquals(47, CoreAffixCatalog.definitions.size)
+        assertEquals(49, CoreAffixCatalog.definitions.size)
         assertEquals(CoreAffixStat.entries.toSet(), CoreAffixCatalog.definitions.map { it.stat }.toSet())
         val seen = mutableSetOf<String>()
         for (tier in 1..4) {
@@ -187,7 +187,7 @@ class CoreAffixTest {
         assertTrue(read.affixStones.isEmpty() && read.equippedAffixes.isEmpty())
         assertEquals(CoreTransactionStatus.COMMITTED, service.transact(player, CoreOperation(UUID.randomUUID(), 1, CoreAction.ClaimMap(1, 222))).status)
         assertEquals(v1, Files.readString(backup))
-        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t11\t"))
+        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t12\t"))
         service.forget(player)
         val after = assertIs<CoreAccountLoadResult.Ready>(service.open(player)).account
         assertEquals(77, after.amount(CoreResource.ORE, 4))

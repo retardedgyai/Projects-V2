@@ -77,7 +77,7 @@ object CoreUiComponents {
         if (!packed) {
             val cooldowns = state.skills.take(5).joinToString(" / ") {
                 val visual = CoreHudLayout.skillVisual(it, state.mana)
-                val status = when (visual.frame) {
+                val status = when (visual.state) {
                     CoreHudLayout.READY -> "可"
                     CoreHudLayout.NO_MANA -> if(it.resourceAvailable) "マナ不足" else "資源不足"
                     CoreHudLayout.LOCKED -> "未解放"
@@ -88,6 +88,9 @@ object CoreUiComponents {
             return text("HP ${number(state.health)}/${number(state.maxHealth)}  マナ ${number(state.mana)}/${number(state.maxMana)}", GOLD)
                 .append(text("  $cooldowns" + (state.resource?.let { "  資源 ${number(it)}/${number(state.resourceMaximum)}" } ?: "") + if(state.shield > 0) "  障壁 ${number(state.shield)}" else "", IVORY))
                 .append(if(state.combatCue.isBlank()) Component.empty() else text("  ${state.combatCue}", IVORY))
+                .append(if(state.buffs.isEmpty()) Component.empty() else text("  " + state.buffs.joinToString(" ") {
+                    "${it.kind.label}${if (it.cooldown) "待ち" else ""} ${kotlin.math.ceil(it.remainingSeconds.coerceAtLeast(0.0)).toInt()}秒" }, MUTED))
+                .append(if(state.notice.isBlank()) Component.empty() else text("  ${state.notice}", NamedTextColor.YELLOW))
                 .append(if (state.hint.isBlank()) Component.empty() else text("  ${state.hint}", MUTED))
         }
         return CoreHudLayout.render(state)

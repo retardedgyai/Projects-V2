@@ -203,7 +203,7 @@ def build():
     build_arrow_art()
     manifest = json.loads((SOURCE/'manifest.json').read_text())
     write_json(PACK/'pack.mcmeta',{'pack':{'description':'ProjectS articulated specialists / review',
-        'min_format':[88,0],'max_format':[88,0]}})
+        'min_format':[97, 1],'max_format':[97, 1]}})
     loaded = {}; report = {}
     for key,entry in manifest['weapons'].items():
         base,parts,textures,anchors = geometry(key,entry)

@@ -5,8 +5,9 @@ import kotlin.math.*
 
 /** An effect's readable phrase is longer than its damage beat. Never feeds back into hit timing. */
 internal enum class CoreMeshMotion { LINEAR, SNAP, SWEEP, REVOLVE, THRUST, FALL, RADIATE, ORBIT, GATHER, FLOAT, EMERGE }
+/** [tint]: a shader-coloured part's per-tick marker colour (scripts/shaders/item.fsh), sent as custom model data. */
 internal data class CoreMeshPose(val offset: Vec, val scale: Vec, val yaw: Double, val pitch: Double,
-    val roll: Double, val model: String, val visible: Boolean)
+    val roll: Double, val model: String, val visible: Boolean, val tint: Int? = null)
 
 internal object CoreSkillChoreography {
     // Explicit durations in server ticks. Assassin is not allowed to disappear in three frames.
@@ -36,6 +37,7 @@ internal object CoreSkillChoreography {
         CoreWarriorFlourish.pose(p,age)?.let { return it }
         CoreApprovedNormalV3.pose(p,age)?.let { return it }
         CoreApprovedDashV3.pose(p,age)?.let { return it }
+        CoreWarriorIronChoreography.pose(p,age)?.let { return it }
         CoreWarriorBladeChoreography.pose(p,age)?.let { return it }
         CoreFlowSlashChoreography.pose(p,age)?.let { return it }
         CoreExpandedSlashChoreography.pose(p,age)?.let { return it }
@@ -120,6 +122,7 @@ internal object CoreSkillChoreography {
         if(raw.isEmpty()) return raw
         CoreApprovedNormalV3.parts(e)?.let { return it }
         CoreApprovedDashV3.parts(e)?.let { return it }
+        CoreWarriorIronChoreography.parts(e)?.let { return it }
         CoreWarriorBladeChoreography.parts(e)?.let { return it }
         CoreExpandedSlashChoreography.parts(e)?.let { return it }
         CoreGreatswordSweepChoreography.parts(e)?.let { return it }

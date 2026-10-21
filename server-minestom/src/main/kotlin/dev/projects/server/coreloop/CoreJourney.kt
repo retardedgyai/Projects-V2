@@ -2,7 +2,7 @@ package dev.projects.server.coreloop
 
 /** Concrete character progression; separate from tradable gear and temporary run boons. */
 enum class CoreClass(val displayName: String, val description: String) {
-    WARRIOR("戦士", "集団を薙ぎ、攻撃を受け流して大剣を叩き込む"),
+    WARRIOR("戦士", "鉄塊の大剣で地を割り、敵を押し出す"),
     RANGER("レンジャー", "射線を通し、距離を保って狙い撃つ"),
     MAGE("メイジ", "炎と氷の術式。マナを使って集団を制する"),
     ASSASSIN("アサシン", "印を仕込み、接近と離脱を使い分ける"),
@@ -12,8 +12,14 @@ enum class CoreClass(val displayName: String, val description: String) {
     val melee get() = this == WARRIOR || this == ASSASSIN || this == TEMPLAR
     val resourceName get() = when (this) { WARRIOR -> "闘気"; RANGER -> "集中"; MAGE -> "術式"; ASSASSIN -> "機会"; TEMPLAR -> "決意"; HEALER -> "信仰" }
     val healthFactor get() = when (this) { WARRIOR -> 1.0; RANGER -> .72; MAGE -> .8; ASSASSIN -> .75; TEMPLAR -> 1.4; HEALER -> .9 }
+    /**
+     * Class base AR / MR added before gear (2026-10-19, Creator: toughness comes from each class's default stats, not
+     * a damage-reduction perk). The warrior is fairly tough, the templar the toughest, the assassin and ranger the softest.
+     */
+    val baseArmor get() = when (this) { WARRIOR -> 40.0; TEMPLAR -> 70.0; HEALER -> 20.0; ASSASSIN -> 10.0; RANGER -> 10.0; MAGE -> 5.0 }
+    val baseResist get() = when (this) { WARRIOR -> 25.0; TEMPLAR -> 50.0; HEALER -> 40.0; ASSASSIN -> 10.0; RANGER -> 15.0; MAGE -> 35.0 }
     val passive get() = when(this) {
-        WARRIOR -> "薙ぎ払いは集団、叩きつけは正面の隙へ。受け流し成功で叩きつけが再使用でき、素早い反撃に変わる。闘気は奥義や選択技へ。"
+        WARRIOR -> "殴って、殴られて闘気を溜める。地割りは闘気を全部注いで重くなり、闘気100で赤熱する。3段目の直後の地割りは速い。"
         RANGER -> "同じ獲物への通常攻撃で集中が育ち、威力が最大20%増す。獲物変更で集中半減。"
         MAGE -> "属性を変えて生成技を当てると術式を追加15獲得。集めた術式を大技に使う。"
         ASSASSIN -> "通常攻撃で機会を得る。印を付けた敵への消費技は最初の命中が35%強化。"
@@ -33,7 +39,7 @@ enum class CoreWeaponBase(val displayName: String, val detail: String, val power
     LONGBOW("潮風の長弓", "狙った射線へ矢を放つ", .95),
     STAFF("灯火の杖", "遠距離の魔弾と属性術式", .92),
     DAGGERS("影縫い短剣", "素早く印を仕込む。接近戦用の短い間合い", .78, 1.35),
-    MACE("誓いの戦槌", "重い槌と守護の術。集団を制する", .95, .85),
+    MACE("誓いの騎槍", "長い騎槍と守護の術。集団を制する", .95, .85),
     TOME("灯守の聖典", "裁きと救護。攻撃で得た信仰を振り分ける", .9);
     val family get() = when (this) { LONGBOW -> "bow"; STAFF -> "staff"; DAGGERS -> "dagger"; MACE -> "mace"; TOME -> "tome"; else -> "greatsword" }
     fun usable(job: CoreClass) = when (job) {

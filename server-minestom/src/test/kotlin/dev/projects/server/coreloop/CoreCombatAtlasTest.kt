@@ -15,11 +15,13 @@ class CoreCombatAtlasTest {
         val atlas = "assets/minecraft/atlases/items.json"
         assertTrue(atlas in index, "A PNG outside textures/item is invisible without an atlas source")
         val sources = json(atlas).getAsJsonArray("sources")
-        assertEquals(1, sources.size(), "Only add the combat directory; do not filter or replace Vanilla sprites")
-        val source = sources.single().asJsonObject
-        assertEquals("minecraft:directory", source["type"].asString)
-        assertEquals("combat_vfx", source["source"].asString)
-        assertEquals("combat_vfx/", source["prefix"].asString)
+        // Combat VFX plus the world-infusion altar folders; only directory sources, never filters or replacements.
+        val directories = listOf("combat_vfx", "infusion", "infusion-energy", "infusion-radiance", "infusion-v3", "infusion-v5", "infusion-v6", "infusion-v7")
+        assertEquals(directories, sources.map { it.asJsonObject["source"].asString })
+        for (source in sources.map { it.asJsonObject }) {
+            assertEquals("minecraft:directory", source["type"].asString)
+            assertEquals(source["source"].asString + "/", source["prefix"].asString)
+        }
         val models = index.filter { it.startsWith("assets/projects/models/combat_vfx/") }
         assertTrue(models.size > 3000)
         val checked = mutableSetOf<String>()

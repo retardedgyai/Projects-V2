@@ -8,6 +8,8 @@ internal object CoreWarriorCompanions {
     fun owns(p:CoreCombatMeshPart)=p.shape.startsWith("war_mote_") || CoreWarriorFlourish.owns(p)
     fun boundary(p:CoreCombatMeshPart)=p.shape=="war_mote_boundary"
     fun parts(e:CoreSkillEffect):List<CoreCombatMeshPart> {
+        // The iron strikes carry their own shards, rift and ring.
+        if(CoreWarriorIronChoreography.handles(e)) return emptyList()
         return fineParts(e)+CoreWarriorFlourish.parts(e)
     }
     private fun fineParts(e:CoreSkillEffect):List<CoreCombatMeshPart> {

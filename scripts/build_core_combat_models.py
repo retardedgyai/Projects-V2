@@ -120,12 +120,16 @@ def scene_models():
     return sorted({(shape, row[3]) for row in scene_rows() for shape in row[4:8]})
 
 
+ITEM_ATLAS_DIRECTORIES = ["combat_vfx", "infusion", "infusion-energy", "infusion-radiance", "infusion-v3", "infusion-v5", "infusion-v6", "infusion-v7"]
+
+
 def build_combat_models(assets, write_json):
-    # 26.2 only discovers item/ sprites by default. These flipbooks live in
-    # combat_vfx/: packaging a PNG without an atlas source produces missingno.
+    # 26.2 only discovers item/ sprites by default. The combat flipbooks and the
+    # world-infusion altar models keep their PNGs in their own folders: packaging
+    # a PNG without an atlas source produces missingno.
     # Atlas sources append to Vanilla's list; no vanilla sprite is replaced.
     write_json(assets.parent / "minecraft/atlases/items.json", {"sources": [
-        {"type": "minecraft:directory", "source": "combat_vfx", "prefix": "combat_vfx/"}]})
+        {"type": "minecraft:directory", "source": d, "prefix": f"{d}/"} for d in ITEM_ATLAS_DIRECTORIES]})
     for shape, palette in scene_models():
         assert shape in AUTHORED_SHAPES, shape
         name = f"{shape}_{palette}"
@@ -830,6 +834,8 @@ def build_slash_frames(assets, write_json):
     build_warrior_companions(assets, write_json)
     from build_warrior_flourish import build as build_warrior_flourish
     build_warrior_flourish(assets, write_json)
+    from build_warrior_iron_vfx import build as build_warrior_iron_vfx
+    build_warrior_iron_vfx(assets, write_json)
 
 
 if __name__ == "__main__":

@@ -27,8 +27,20 @@ class CoreCombatMeshTest {
                 assertEquals(CoreCombatPresentation.Detail.SUBDUED,CoreCombatPresentation.cycle(it))
             }
             for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR)) {
-                meshes.play(CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0)))
+                val effect=CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0))
+                meshes.play(effect)
                 repeat(3) { meshes.tick() }
+                if(CoreWarriorIronChoreography.handles(effect)) {
+                    // The iron strikes carry their identity in their own plates; only the body plates show when subdued.
+                    val iron=owner.instance.entities.filter { entity ->
+                        (entity.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta)
+                            ?.itemStack?.get(net.minestom.server.component.DataComponents.ITEM_MODEL)?.contains("warrior_iron/")==true
+                    }
+                    val bodies=CoreWarriorIronChoreography.parts(effect)!!.count { !it.secondary }
+                    assertEquals(bodies,iron.count { owner in it.viewers && observer in it.viewers },skill.icon)
+                    meshes.cancel()
+                    continue
+                }
                 val identity=owner.instance.entities.filter { entity ->
                     val model=(entity.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta)
                         ?.itemStack?.get(net.minestom.server.component.DataComponents.ITEM_MODEL)
@@ -193,12 +205,16 @@ class CoreCombatMeshTest {
                     val fresh=owner.instance.entities.filter { it !in before }
                     val parts=CoreSkillChoreography.parts(e)
                     assertEquals(parts.size+CoreWarriorCompanions.parts(e).size,fresh.size,"${skill.icon} $phase/$pulse")
+                    val claimed=mutableSetOf<net.minestom.server.entity.Entity>()
                     parts.filterNot(CoreWarriorCompanions::owns).forEach { p ->
-                        val model="projects:"+CoreSkillChoreography.pose(p,0.0).model
-                        val entity=fresh.single { display ->
-                            (display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
-                                .get(net.minestom.server.component.DataComponents.ITEM_MODEL)==model
+                        val pose=CoreSkillChoreography.pose(p,0.0)
+                        // Crossed copies (地割り's fire) share a model; each part still gets its own display.
+                        val entity=fresh.filterNot { it in claimed }.first { display ->
+                            val meta=display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
+                            meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL)=="projects:"+pose.model &&
+                                meta.scale==pose.scale && meta.leftRotation.contentEquals(CoreCombatMeshArt.rotation(pose.yaw,pose.pitch,pose.roll))
                         }
+                        claimed+=entity
                         assertTrue(owner in entity.viewers,"The first phase must not wait for a hidden spawn lead-in")
                         tracks+=Track(p,entity,tick)
                     }

@@ -13,7 +13,8 @@ class CoreEnhancementTest {
     private val armor = CoreGearSlot.ARMOR
     private fun rich(tier: Int = 1, weaponLevel: Int = 0, armorLevel: Int = 0, failures: Int = 0, xp: Long = 0) =
         CoreAccount(UUID.randomUUID(), revision = 1, weaponTier = tier, armorTier = tier,
-            balances = CoreResource.entries.flatMap { resource -> (1..4).map { CoreMaterial(resource, it) to 50_000L } }.toMap(),
+            // Research products change the focused catalyst; ResearchEconomyTest covers that path.
+            balances = CoreResource.entries.filterNot { it.research }.flatMap { resource -> (1..4).map { CoreMaterial(resource, it) to 50_000L } }.toMap(),
             weaponEnhancement = CoreEnhancementState(weaponLevel, failures), armorEnhancement = CoreEnhancementState(armorLevel), smithingXp = xp,
             craftingSeed = 9123456L, currencies = CoreCraftingCurrency.entries.associateWith { 10L })
 
@@ -259,7 +260,7 @@ class CoreEnhancementTest {
         assertEquals(CoreEnhancementState(1), after.weaponEnhancement)
         assertEquals(1, after.smithingXp)
         assertEquals(encoded, Files.readString(backup))
-        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t11\t"))
+        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t12\t"))
         assertEquals(CoreTransactionStatus.REPLAYED, service.transact(old.playerId, operation).status)
     }
 

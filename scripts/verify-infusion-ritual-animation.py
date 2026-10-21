@@ -10,8 +10,13 @@ for version,files in art['protected'].items():
 old=json.loads((lab/'infusion-v5/assets/projects/models/infusion-v5/core_active.json').read_text())
 new=json.loads((pack/'assets/projects/models/infusion-v7/core_ritual.json').read_text())
 for a,b in zip(old['elements'],new['elements']):
-    clean={**b,'faces':{n:{k:v for k,v in f.items() if k!='tintindex'} for n,f in b['faces'].items()}}
-    assert a==clean
+    # fix-infusion-uv-wrap.py moved out-of-range UVs onto 3x3 tiled copies; undo that to compare.
+    def unwrap(f):
+        if not f['texture'].endswith('_tiled'):return f
+        return {**f,'texture':f['texture'][:-6],'uv':[v*3-16 for v in f['uv']]}
+    def rounded(e):return {**e,'faces':{n:{**f,'uv':[round(v,3) for v in f['uv']]} for n,f in e['faces'].items()}}
+    clean={**b,'faces':{n:{k:v for k,v in unwrap(f).items() if k!='tintindex'} for n,f in b['faces'].items()}}
+    assert rounded(a)==rounded(clean)
     assert all(('tintindex' in f)==(b.get('light_emission',0)==15) for f in b['faces'].values())
 for tex in new['textures'].values():
     name=tex['sprite'] if isinstance(tex,dict) else tex

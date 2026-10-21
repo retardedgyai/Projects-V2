@@ -46,13 +46,15 @@ internal object CoreArmamentPresentation {
 
     fun skill(player: Player, effect: CoreSkillEffect) {
         // Contacts and delayed field pulses do not mean the player cast again.
-        if (!effect.valid || effect.pulse != 0 || effect.phase == CoreSkillVisualPhase.CONTACT) return
+        // 鉄槌 falls three times (2026-10-19): every pulse is its own swing, short enough to finish before the next.
+        val threefold = effect.job == CoreClass.WARRIOR && effect.sceneId == "war_ult" && effect.phase == CoreSkillVisualPhase.PULSE
+        if (!effect.valid || (effect.pulse != 0 && !threefold) || effect.phase == CoreSkillVisualPhase.CONTACT) return
         // A shout or planting a standard is not a sword release.
         if(effect.job==CoreClass.WARRIOR && effect.sceneId in CoreWarriorSupportChoreography.sceneIds) return
         if (!usesWeapon(player.itemInMainHand, effect.motif)) return
         if (effect.phase == CoreSkillVisualPhase.PREPARE)
             begin(player, Stage.PREPARE, effect.prepareDuration + 1)
-        else begin(player, Stage.RELEASE, 12)
+        else begin(player, Stage.RELEASE, if (threefold) 8 else 12)
     }
 
     internal fun usesWeapon(item: ItemStack, motif: CoreSkillMotif): Boolean {

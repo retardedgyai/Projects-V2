@@ -74,6 +74,37 @@ def turning_page(angle):
                'pages',angle-quarter,'y',origin=list(pivot))
 
 
+# Greatsword swing (2026-10-19, Creator: the player must visibly swing). A Minecraft player cannot move its body, so
+# the held model itself moves in the hand: the windup lifts the blade over the right shoulder, the release slams it
+# forward and down, then it settles back. Values are item display transforms (degrees / pixels), checked in
+# scripts/preview_warrior_cast.py with the vanilla hand transform.
+SWING_POSES = {
+    'thirdperson': {'idle': ([0, -90, 55], [0, 2, 1], .75), 'raised': ([-10, -90, -140], [2, -1, 14], .75),
+                    'struck': ([0, -90, 100], [0, 12, 0], .9)},
+    'firstperson': {'idle': ([0, -90, 25], [1.13, 3.2, -1.5], .72), 'raised': ([0, -90, -35], [1.13, 6.2, -1.5], .72),
+                    'struck': ([0, -90, 75], [1.13, 1.2, -2.5], .8)},
+}
+
+
+def _mix(a, b, t):
+    return [round(x + (y - x) * t, 3) for x, y in zip(a, b)]
+
+
+def swing_display(model, stage, u):
+    if stage == 'prepare':
+        a, b, t = 'idle', 'raised', 1 - (1 - u) ** 2          # eases into the top of the lift
+    else:
+        a, b, t = 'struck', 'idle', u ** .7                   # lands at once, settles back slower
+    display = dict(model['display'])
+    for view, poses in SWING_POSES.items():
+        (ra, ta, sa), (rb, tb, sb) = poses[a], poses[b]
+        rotation, translation, scale = _mix(ra, rb, t), _mix(ta, tb, t), round(sa + (sb - sa) * t, 3)
+        for side, sign in (('righthand', 1), ('lefthand', -1)):
+            display[f'{view}_{side}'] = {'rotation': [rotation[0], rotation[1] * sign, rotation[2] * sign],
+                'translation': translation, 'scale': [scale] * 3}
+    model['display'] = display
+
+
 def action_model(kind, tier, stage, frame):
     assert stage in ('prepare','release') and 0 <= frame < ACTION_FRAMES
     model=authored_model(kind,tier,0)
@@ -125,6 +156,7 @@ def action_model(kind, tier, stage, frame):
                 for i in range(3):
                     e.append(box('charged cutting reflection',[6.55+i*.2,10+i*3,6.75],
                         [6.9+i*.2,10+i*3+2*amount,6.95],'steel'))
+    if kind=='greatsword': swing_display(model,stage,u)
     # End pose returns exactly to the authored idle pose, no lingering nocked arrow.
     if stage=='release' and frame==ACTION_FRAMES-1: return authored_model(kind,tier,0)
     return model

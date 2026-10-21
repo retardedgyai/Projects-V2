@@ -74,11 +74,11 @@ UIのデザインコンセプトは「Minecraftの素材 × 2026年のMMOのUI�
 
 ## 技術方向
 
-- Minecraft Java Edition 26.2。
+- Minecraft Java Edition 26.3。
 - Java 25。
 - Kotlin-first。
 - Gradle Kotlin DSL。
-- Minestom 26.2系Server。
+- Minestom 26.3系Server（2026-10時点は未公開版、docs/mc-26-3.md）。
 - Fabric 26.2 Client。
 - Server authoritative。
 - ClientはProjectS UI/VFX/Camera/Audio/Presentationを担当。

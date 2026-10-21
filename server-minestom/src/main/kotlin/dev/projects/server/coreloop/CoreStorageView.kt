@@ -13,7 +13,7 @@ internal object CoreStorageView {
         require(tier in 1..4)
         return buildList {
             CoreResource.entries.forEach { resource ->
-                val key = CoreMaterial(resource, if (resource in globalResources) 1 else tier)
+                val key = CoreMaterial(resource, if (resource in globalResources || resource.research) 1 else tier)
                 account.amount(key).takeIf { it > 0 }?.let { add(Entry.Material(key, it)) }
             }
             CoreCraftingCurrency.available.forEach { currency ->

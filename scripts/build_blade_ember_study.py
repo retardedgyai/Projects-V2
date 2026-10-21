@@ -163,7 +163,7 @@ def build(redraw=False):
         'hand_animation_on_swap': False,
         'model': {'type': 'minecraft:model', 'model': f'projects:item/weapons/{KEY}'}})
     write_json(pack / 'pack.mcmeta', {'pack': {'description': 'ProjectS blade ember study (unapproved)',
-                                            'min_format': [88, 0], 'max_format': [88, 0]}})
+                                            'min_format': [97, 1], 'max_format': [97, 1]}})
     # Render from SAVED model, sprite sheet, and metadata, not synthetic VFX.
     saved = json.loads((assets / f'models/item/weapons/{KEY}.json').read_text())
     sheet = np.array(Image.open(texdir / f'{KEY}_embers.png'))

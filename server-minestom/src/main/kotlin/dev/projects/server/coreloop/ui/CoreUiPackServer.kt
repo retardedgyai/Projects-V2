@@ -165,6 +165,8 @@ class CoreUiPackServer private constructor(
             }.use { it.readBytes() }
             // The 開拓大陸 map sprites ship as a second private-namespace archive.
             val atlasBytes = loader.getResourceAsStream("polish05/atlas.zip")?.use { it.readBytes() }
+            // 魔術書 (grimoire) sprites: the v7 magic-window art.
+            val grimoireBytes = loader.getResourceAsStream("polish05/grimoire.zip")?.use { it.readBytes() }
             // Dialog look: ProjectS widget frames plus the private dialog fonts.
             val dialogBytes = loader.getResourceAsStream("polish05/dialog.zip")?.use { it.readBytes() }
             val output = ByteArrayOutputStream()
@@ -177,7 +179,7 @@ class CoreUiPackServer private constructor(
                 // Vanilla client reload twice and could leave the forge unavailable until rejoin.
                 val seen = paths.toMutableSet()
                 var privateAssets = 0
-                listOfNotNull(polishBytes, atlasBytes, dialogBytes).forEach { archive -> ZipInputStream(archive.inputStream()).use { source ->
+                listOfNotNull(polishBytes, atlasBytes, grimoireBytes, dialogBytes).forEach { archive -> ZipInputStream(archive.inputStream()).use { source ->
                     while (true) {
                         val entry = source.nextEntry ?: break
                         val path = entry.name

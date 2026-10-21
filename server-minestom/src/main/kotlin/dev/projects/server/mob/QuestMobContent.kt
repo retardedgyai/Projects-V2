@@ -23,6 +23,8 @@ enum class QuestMobArchetype(val displayName: String, val rarity: QuestMobRarity
     FORGE_SENTINEL("熔星の番人", QuestMobRarity.BOSS, "ice"),
     TIDE_ARCHIVIST("蒼潮の記録者", QuestMobRarity.BOSS, "fire"),
     ECLIPSE_REGENT("星蝕の王", QuestMobRarity.BOSS, "lightning"),
+    SHADE_WYRM("黒翳竜", QuestMobRarity.BOSS, "fire"),
+    SAKURA_FANG("桜牙獣", QuestMobRarity.BOSS, "fire"),
 }
 
 data class QuestMobInfo(
@@ -62,6 +64,18 @@ internal data class QuestMobDefinition(
     val chestplate: Material = Material.AIR,
     val frontalDamageMultiplier: Double = 1.0,
     val abilities: List<MobAbility>,
+    /** Blockbench model id under assets/bosses/ (null = vanilla body or WardenModel). */
+    val model: String? = null,
+    /** At or below this ratio a model boss takes its second form once (a held roar, the glowing texture). 0 = never. */
+    val awakenHealthRatio: Double = 0.0,
+    val awakenSpeedMultiplier: Double = 1.0,
+    /** At or below this health ratio the mob enrages once: a held roar, then [enragedSpeedMultiplier]. 0 = never. */
+    val enrageHealthRatio: Double = 0.0,
+    val enragedSpeedMultiplier: Double = 1.0,
+    /** Model bones shown only after enraging (e.g. horns). */
+    val enragedBones: Set<String> = emptySet(),
+    /** Model bones (with the bones under them) hidden once enraged, e.g. folded wings replaced by opened ones. */
+    val foldedBones: Set<String> = emptySet(),
 ) {
     val name: String get() = archetype.displayName
     val boss: Boolean get() = archetype.rarity == QuestMobRarity.BOSS
@@ -70,6 +84,7 @@ internal data class QuestMobDefinition(
         QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE, QuestMobArchetype.TEMPEST_HIEROPHANT, QuestMobArchetype.TIDE_ARCHIVIST -> "evoker"
         QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.CINDER_REGENT, QuestMobArchetype.FORGE_SENTINEL -> "piglin_brute"
         QuestMobArchetype.ECLIPSE_REGENT -> "wither_skeleton"
+        QuestMobArchetype.SHADE_WYRM, QuestMobArchetype.SAKURA_FANG -> "ravager"
         else -> "vindicator"
     }
     val dropKind: QuestMobDropKind get() = when (archetype) {
@@ -83,6 +98,10 @@ internal data class QuestMobDefinition(
 
 /** Concrete content recipes; every archetype combines actual attack and movement behavior. */
 internal object QuestMobContent {
+    /** 黒翳竜's three phases (2026-10-19, 藍): the second form (glowing) at 70 %, the angry form (fans, horns) at 35 %. */
+    const val AWAKEN = .7
+    const val RAGE = .35
+
     fun boss(seed: Long): QuestMobArchetype = listOf(
         QuestMobArchetype.EXECUTIONER, QuestMobArchetype.IRON_WARDEN, QuestMobArchetype.RIFT_ORACLE,
     )[Math.floorMod(seed xor (seed ushr 32), 3).toInt()]
@@ -104,20 +123,28 @@ internal object QuestMobContent {
         val boss = archetype.rarity == QuestMobRarity.BOSS
         fun attack(id: String, label: String, shape: MobAttackShape, range: Double, damage: Double,
             warning: Long = 1000, tracking: Long = 400, recovery: Long = 850, cooldown: Long = 1900,
-            minimumRange: Double = 0.0, target: Boolean = false, health: Double = 1.0, weight: Int = 1) = MobAbility(
+            minimumRange: Double = 0.0, target: Boolean = false, health: Double = 1.0, weight: Int = 1,
+            cc: CrowdControl? = null, ccMillis: Long = 0, scripted: Boolean = false,
+            earlyHits: List<Long> = emptyList()) = MobAbility(
             id, label, shape, range, damage * factor, warning, tracking, recovery, cooldown, weight,
             minimumRange, if (target) MobAbilityAnchor.TARGET else MobAbilityAnchor.CASTER, health,
             if (id in setOf("rift-bolt", "rift-pulse", "oracle-mark", "oracle-ray", "oracle-pulse",
                     "forge-cross", "forge-mark", "tide-ray", "tide-ring", "tide-center", "eclipse-mark", "eclipse-cross",
-                    "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross"))
-                dev.projects.server.coreloop.CoreDamageType.MAGICAL else dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
+                    "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross",
+                    "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "shade-orb", "shade-channel", "shade-shell",
+                    "sakura-scatter", "sakura-bloom", "sakura-howl", "sakura-rain"))
+                dev.projects.server.coreloop.CoreDamageType.MAGICAL
+            else if (id in setOf("shade-channel", "shade-shell")) dev.projects.server.coreloop.CoreDamageType.TRUE   // a failed gimmick
+            else dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
+            cc, ccMillis, scripted,
+            earlyHits,
         )
         fun sweep(radius: Double = 3.4, damage: Double = 10.0) = attack(
             "sweep", "横薙ぎ", MobAttackShape.Sweep(radius), radius - 0.4, damage, weight = 3,
         )
         fun slam(length: Double = 5.8, width: Double = 1.25, damage: Double = 14.0) = attack(
             "slam", "前方叩きつけ", MobAttackShape.Slam(length, width), length - 0.4, damage,
-            1450, 550, 1400, 3000, weight = 2,
+            1450, 550, 1400, 3000, weight = 2, cc = CrowdControl.KNOCKBACK, ccMillis = 400,
         )
         fun definition(type: EntityType, hp: Double, speed: Double, distance: Double, scale: Double,
             weapon: Material, offhand: Material = Material.AIR, helmet: Material = Material.AIR,
@@ -126,24 +153,110 @@ internal object QuestMobContent {
             distance, scale, weapon, offhand, helmet, chest, guard, attacks,
         )
         return when (archetype) {
+            // Blind wyrm on wing-arms (docs/development/shade-wyrm-boss.md). Animation lengths in
+            // assets/bosses/shade_wyrm.bbmodel equal telegraph+recovery of each ability below.
+            // HP 2800 (2026-10-19, 藍「1人で約5分」): a Tier-1 player deals ~8-15 damage a second while dodging.
+            QuestMobArchetype.SHADE_WYRM -> definition(EntityType.RAVAGER, 2800.0, .13, 3.0, 1.0,
+                Material.AIR, attacks = listOf(
+                    attack("shade-sweep", "翼脚薙ぎ", MobAttackShape.Sweep(7.0, 90.0), 4.8, 22.0,
+                        1100, 850, 900, 2200, weight = 3),
+                    attack("shade-pounce", "飛びかかり", MobAttackShape.Slam(5.5, 3.0), 9.5, 27.0,
+                        1400, 1150, 1200, 3400, minimumRange = 3.0, weight = 2),
+                    attack("shade-dust", "鱗粉炸裂", MobAttackShape.Ring(8.5, 2.5), 7.5, 23.0,
+                        1700, 500, 900, 2800, weight = 2),
+                    attack("shade-pulse", "触角の共鳴", MobAttackShape.Ring(4.6), 4.5, 20.0,
+                        1200, 0, 1100, 3600, weight = 3),
+                    attack("shade-breath", "翳の吐息", MobAttackShape.Slam(18.0, 2.4), 17.0, 30.0,
+                        1600, 1300, 1000, 3600, health = RAGE, weight = 3),
+                    attack("shade-storm", "鱗粉嵐", MobAttackShape.Ring(15.0, 4.0), 15.0, 32.0,
+                        2200, 0, 1300, 6000, health = RAGE, weight = 2),
+                    // 2026-10-19 (藍が選んだ行動): three bites (the first two are early hits), from phase one.
+                    attack("shade-bite", "噛みつき", MobAttackShape.Slam(5.5, 1.6), 5.0, 14.0,
+                        1600, 1450, 800, 4200, weight = 3, earlyHits = listOf(700L, 1150L)),
+                    // Phase two (第2形態) on: the tail spin, the horn upthrust and the thrown dust clot.
+                    attack("shade-tailspin", "しっぽ回転", MobAttackShape.Ring(6.0), 5.5, 24.0,
+                        1250, 0, 1150, 5200, health = AWAKEN, weight = 2),
+                    attack("shade-horn", "角の突き上げ", MobAttackShape.Slam(4.5, 1.8), 4.2, 26.0,
+                        1000, 800, 1000, 4000, health = AWAKEN, weight = 2),
+                    attack("shade-orb", "鱗粉弾", MobAttackShape.Ring(2.8), 18.0, 20.0,
+                        1800, 1550, 400, 5000, minimumRange = 5.0, target = true, health = AWAKEN, weight = 2),
+                    // 突進 (2026-10-19, A: attacks move the body): bounds ~14 blocks across the arena along its band.
+                    attack("shade-charge", "突進", MobAttackShape.Slam(14.0, 1.8), 16.0, 26.0,
+                        1400, 700, 1600, 7000, minimumRange = 6.0, weight = 2),
+                    // MMO gimmicks (2026-10-19), started on a timer by QuestEncounterCombat: the cast to interrupt (second form
+                    // on: damage it enough while it hangs in the air, or the whole arena blasts) and the shell to break
+                    // (enraged: break it in time, or it bursts round the wyrm).
+                    attack("shade-channel", "翳の大詠唱・殴って止めろ", MobAttackShape.Ring(22.0), 40.0, 85.0,
+                        6000, 0, 1200, 40_000, health = AWAKEN, scripted = true),
+                    attack("shade-shell", "鱗粉の殻・殻を割れ", MobAttackShape.Ring(22.0), 40.0, 80.0,
+                        9000, 0, 1200, 45_000, health = RAGE, scripted = true),
+                    // Someone behind it: the quick tail slap first, the turning sweep if they stay (QuestEncounterCombat).
+                    attack("shade-tailslap", "尾打ち", MobAttackShape.Sweep(6.0, 70.0), 7.0, 18.0,
+                        700, 500, 800, 4000, scripted = true),
+                    // Only when the player got behind it during an attack and stays there (QuestEncounterCombat).
+                    attack("shade-turnsweep", "振り向き薙ぎ", MobAttackShape.Sweep(6.5, 90.0), 7.0, 22.0,
+                        900, 650, 900, 5000, scripted = true),
+                    attack("shade-dive", "急降下", MobAttackShape.Ring(4.5), 30.0, 28.0,
+                        2400, 2150, 1400, 9000, minimumRange = 12.0, target = true, weight = 2),
+                )).copy(model = "shade_wyrm", awakenHealthRatio = AWAKEN, awakenSpeedMultiplier = 1.1, enrageHealthRatio = RAGE, enragedSpeedMultiplier = 1.2,
+                    enragedBones = setOf("horn_l", "horn_r", "cloak_l", "cloak_r", "horn_l_tip", "horn_r_tip", "cloak_l_tatters", "cloak_r_tatters"), foldedBones = setOf("wing_l", "wing_r"))
+            // Fanged beast with sakura petal shells (scripts/build_boss_sakura_fang.py). Animation lengths in
+            // assets/bosses/sakura_fang.bbmodel equal telegraph+recovery of each ability below. Cooldowns are long on
+            // purpose: between attack chains it rests and moves round its prey (QuestEncounterCombat.SAKURA_REST).
+            QuestMobArchetype.SAKURA_FANG -> definition(EntityType.RAVAGER, 560.0, .14, 3.0, 1.0,
+                Material.AIR, attacks = listOf(
+                    attack("sakura-claw", "桜爪の叩きつけ・横へ", MobAttackShape.Slam(6.0, 2.4), 5.0, 22.0,
+                        1200, 450, 1000, 6500, weight = 3),
+                    attack("sakura-tail", "花尾の振り下ろし・横へ", MobAttackShape.Slam(9.0, 1.8), 8.5, 27.0,
+                        1500, 500, 1100, 8000, minimumRange = 2.5, weight = 2),
+                    attack("sakura-scatter", "散華・扇の外へ", MobAttackShape.Sweep(12.0, 40.0), 11.0, 20.0,
+                        1700, 600, 900, 8000, weight = 2),
+                    attack("sakura-bloom", "花嵐・獣から離れろ", MobAttackShape.Ring(8.0), 6.0, 30.0,
+                        2000, 0, 1200, 10000, health = .5, weight = 2),
+                    attack("sakura-horn", "枝角の突き上げ・横へ", MobAttackShape.Slam(4.8, 1.5), 4.2, 18.0,
+                        800, 350, 700, 6000, weight = 3),
+                    attack("sakura-spin", "花尾の旋回・離れろ", MobAttackShape.Ring(5.6), 4.5, 20.0,
+                        1000, 0, 900, 7500, weight = 2),
+                    attack("sakura-howl", "散り際の遠吠え・離れろ", MobAttackShape.Ring(6.5), 5.5, 26.0,
+                        1600, 0, 1000, 14000, health = .5, weight = 1),
+                    attack("sakura-pounce", "花冠の飛びかかり・着地点から離れろ", MobAttackShape.Ring(3.6), 14.0, 26.0,
+                        1100, 550, 900, 9000, minimumRange = 5.0, target = true, weight = 2),
+                    attack("sakura-rain", "花冠落とし・印から出ろ", MobAttackShape.Ring(3.2), 16.0, 22.0,
+                        1800, 1300, 800, 11000, minimumRange = 4.0, target = true, weight = 2),
+                    attack("sakura-charge", "花吹雪の突進・横へ", MobAttackShape.Slam(13.0, 2.0), 12.0, 28.0,
+                        1000, 450, 1200, 10000, minimumRange = 3.0, health = .5, weight = 2),
+                    // Small, quick blows thrown on the move (QuestEncounterCombat.SAKURA_LIGHT): the only attacks it uses while
+                    // it rests between its big ones; the server carries the body through each.
+                    attack("sakura-lunge", "踏み込み爪・横へ", MobAttackShape.Slam(6.0, 1.7), 5.0, 12.0,
+                        550, 250, 550, 3000, weight = 2),
+                    attack("sakura-barge", "花肩の体当たり・横へ", MobAttackShape.Slam(6.0, 2.2), 5.5, 14.0,
+                        650, 300, 650, 3600, minimumRange = 1.5, weight = 2),
+                    attack("sakura-hopswipe", "跳ね尾払い・離れろ", MobAttackShape.Sweep(5.5, 75.0), 4.5, 12.0,
+                        600, 250, 600, 3200, weight = 2),
+                    // 三連桜爪: the paw slam chains into a second blow, and once enraged into a third (QuestEncounterCombat).
+                    attack("sakura-claw2", "桜爪・二の手", MobAttackShape.Slam(6.0, 2.4), 5.0, 20.0,
+                        600, 250, 700, 0, scripted = true),
+                    attack("sakura-claw3", "桜爪・止め", MobAttackShape.Slam(7.0, 3.0), 6.0, 28.0,
+                        900, 300, 1300, 0, health = .5, scripted = true),
+                )).copy(model = "sakura_fang", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2)
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,
                 Material.IRON_AXE, attacks = listOf(sweep(), slam()))
             QuestMobArchetype.SHIELD_GUARD -> definition(EntityType.HUSK, 66.0, 0.105, 2.0, 1.0,
                 Material.IRON_SWORD, Material.SHIELD, Material.CHAINMAIL_HELMET, Material.CHAINMAIL_CHESTPLATE, 0.45,
                 listOf(attack("shield-bash", "盾の強打", MobAttackShape.Slam(3.4, 1.25), 3.0, 12.0,
-                    1150, 350, 1250, 2400), sweep(3.0, 9.0)))
+                    1150, 350, 1250, 2400, cc = CrowdControl.STUN, ccMillis = 600), sweep(3.0, 9.0)))
             QuestMobArchetype.RIFT_CASTER -> definition(EntityType.EVOKER, 36.0, 0.13, 8.0, 1.0,
                 Material.BLAZE_ROD, attacks = listOf(
                     attack("rift-bolt", "裂け目の槍", MobAttackShape.Slam(13.0, 0.75), 12.5, 12.0,
-                        1250, 450, 1100, 2300, minimumRange = 3.0),
+                        1250, 450, 1100, 2300, minimumRange = 3.0, cc = CrowdControl.ROOT, ccMillis = 800),
                     attack("rift-pulse", "拒絶の波", MobAttackShape.Ring(3.0), 3.5, 8.0,
-                        1050, 0, 1400, 2800),
+                        1050, 0, 1400, 2800, cc = CrowdControl.KNOCKBACK, ccMillis = 300),
                 ))
             QuestMobArchetype.ELITE_BRUTE -> definition(EntityType.PIGLIN_BRUTE, 105.0, 0.15, 2.0, 1.15,
                 Material.NETHERITE_AXE, chest = Material.GOLDEN_CHESTPLATE, attacks = listOf(
                     sweep(4.0, 15.0), slam(6.0, 1.6, 20.0),
                     attack("rage-pulse", "憤怒の震撃", MobAttackShape.Ring(4.3), 4.0, 16.0,
-                        1400, 0, 1500, 4500, health = 0.6),
+                        1400, 0, 1500, 4500, health = 0.6, cc = CrowdControl.AIRBORNE, ccMillis = 600),
                 ))
             QuestMobArchetype.EXECUTIONER -> definition(EntityType.VINDICATOR, 300.0, 0.12, 2.0, 1.35,
                 Material.NETHERITE_AXE, attacks = listOf(sweep(4.2, 16.0), slam(7.0, 1.6, 24.0),
@@ -155,7 +268,7 @@ internal object QuestMobContent {
                     attack("warden-ring", "城壁の震動", MobAttackShape.Ring(6.0, 2.3), 6.0, 26.0,
                         1700, 0, 1600, 4000),
                     attack("warden-crush", "鉄槌", MobAttackShape.Ring(3.4), 3.5, 20.0,
-                        1300, 0, 1500, 3200)))
+                        1300, 0, 1500, 3200, cc = CrowdControl.STUN, ccMillis = 800)))
             QuestMobArchetype.RIFT_ORACLE -> definition(EntityType.EVOKER, 280.0, 0.125, 8.0, 1.25,
                 Material.BLAZE_ROD, Material.ENCHANTED_BOOK, attacks = listOf(
                     attack("oracle-mark", "崩壊の刻印", MobAttackShape.Ring(2.8), 14.0, 22.0,

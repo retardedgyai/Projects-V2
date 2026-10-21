@@ -45,7 +45,7 @@ internal class CoreWorldLoot(
         if (disposed || !seenSources.add(source)) return
         val currencies = CoreCraftingCatalog.rollLoot(run, source, kind)
         val surface = (0..7).map { deathPosition.sub(0.0, it.toDouble(), 0.0) }
-            .firstOrNull { instance.getBlock(it.sub(0.0, 0.2, 0.0)).isSolid } ?: deathPosition
+            .firstOrNull { instance.getBlock(it.sub(0.0, 0.2, 0.0)).solid() } ?: deathPosition
         val position = Pos(surface.x(), surface.blockY() + 0.35, surface.z())
         val item = Entity(EntityType.ITEM_DISPLAY).apply {
             setNoGravity(true); setHasPhysics(false)

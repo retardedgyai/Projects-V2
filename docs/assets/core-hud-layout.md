@@ -1,62 +1,74 @@
-# 戦闘 HUD — Vanilla 26.2
+# 戦闘 HUD — Vanilla 26.2（2026-10-16 版「近代MMO × マイクラ」）
 
-サーバーから送る既存 `CoreHudState` / `CoreHudSkill` と、任意適用のリソースパックだけで表示する。
-クライアント MOD・protocol・Minecraft の標準フォントを変更しない。
+サーバーから送る `CoreHudState` と、任意適用のリソースパックだけで表示する。クライアント MOD・protocol・
+Minecraft の標準フォントは変更しない。パック非適用時は従来どおり日本語テキスト HUD（action bar）に戻る。
+方向と参考の記録は `assets/core-ui/proposals/2026-10-16-combat-hud/README.md`。
 
-## 表示
+## 規則
 
-- 左の心臓欄を HP、右の満腹度欄をマナの細いバーに置き換える。数値はバー内部に表示する。
-- 上には 32×32 GUI px の技能を3つ表示する。既存画像の透明余白を除き、絵を26px以内に拡大する。
-- 使用可能: 明るい絵と金枠。クールダウン: 時計回りに解除される暗い覆いと中央の残り秒数。
-- マナ不足: 青く暗い絵・青枠・中央 `MP`。クールダウンが残っている場合は秒数の方を優先する。
-- 右下の小さい数字は従来のホットバーキー。能力・マナ消費・入力方法そのものは変更しない。
-- 防具、経験値、酸素、乗り物の心臓、ホットバー、選択アイテム名は残す。
-- パック拒否・適用失敗・破棄時は、通常の日本語テキスト HUD へ戻る。
+- マイクラの GUI の 1px にドットを揃える（例外なし）。技能原画 32px は面積平均で 16px に縮めてスロットに重ねる
+  （2026-10-16 の実機確認で、32px のまま 16px に描くと半分の大きさのドットが浮いて「ずれ」に見えた）。
+  `verify_core_ui_assets.py` が「セル高＝provider の height」と、サーバーの advance 表＝クライアントの advance を検査する。
+- HP/MP の値とバフの秒数は 3×5 の小さい数字（影を絵に焼き込み、「132/240」と詰める）。実機でマイクラフォントの
+  「100 / 100」がゲージを端まで埋めて大きすぎたため。
+- Lv・CD 秒数・ボスの％はマイクラ標準フォントそのもの：`minecraft:font/ascii.png` を `projects:hud_num_*` から参照し、
+  U+E600+n（n は ascii のマス番号）で描く。白＋バニラの影。パックに Mojang の画像は入れない。
+- 通知とボス名はバニラのフォント（unifont）。幅は `CoreUiComponents.width`（漢字・かな 9px）で見積もる。
+- 絵は `scripts/combat_hud_art.py`、グリフ化は `scripts/build_combat_hud.py`。
 
-## GUI 座標の根拠
+## 配置（GUI 座標。x は画面中央から、top は画面下端から）
 
-インストール済み Vanilla 26.2 の `Hud.extractOverlayMessage` / `extractPlayerHealth` /
-`extractArmor` / `extractSelectedItemName` と `GuiGraphicsExtractor.textWithBackdrop` を確認した。
-GUI 高さを H、整数の中央 X を C とする。
-
-| 部分 | X | 上端 Y | 大きさ |
+| 部品 | x | top | 大きさ |
 |---|---|---|---|
-| HP | C − 91 | H − 39 | 81×9 |
-| マナ | C + 10 | H − 39 | 81×9 |
-| 技能1・2・3 | C − 52 / C − 16 / C + 20 | H − 94 | 各32×32 |
-| 既存選択アイテム名 | 中央寄せ | H − 59 | バニラのまま |
-| 既存防具 | C − 91 | 通常 H − 49 | バニラのまま |
+| ホットバー（バニラのスプライトを差し替え） | -91 | 22 | 182×22（選択枠 24×23） |
+| 技能原画（キー2〜6 = スロット1〜5） | -88+20i | 19 | 16×16（32px 原画を縮小） |
+| 職業資源の20マス | -89 から 9px 間隔 | 25 | 8×2 |
+| HP / MP の板（console） | -92 | 40 | 184×19（資源の帯を含む） |
+| HP ゲージ / MP ゲージ | -78 / +24 | 38 | 54 / 55 × 9 |
+| Lvの菱形（翼・冠・銘板込み、職業別） | -28 | 57 | 56×38、菱形の中心は下から 34 |
+| バフの札 | -92 から右へ | 55 | 高さ 13 |
+| 通知・戦闘の合図 | 中央寄せ | action bar の文字行 | バニラのフォント |
 
-action bar は `(C, H−68)` に移動して文字を Y=−4 に描くため、基準 Y は H−72。
-bitmap glyph の上端は `H−65−ascent` になる。HP/マナの ascent は −26、技能は29。
-各 layer は負の space glyph で X=0 に戻り、コンポーネント全体の advance は常に0。
-数値の桁・残り秒数・ウィンドウ幅が変わっても中心が動かず、GUI scale に追従する。
-幅0でも文字を描画することは実クライアントの `textWithBackdrop` で確認済み。
+- HP ゲージ：体力 → 吸収（バニラの金）→ 直前の被ダメージの淡い帯（0.45 秒止まってから減る）。最大値の 1/6 ごとに目盛り。
+- Lvの菱形：縁の 2px の帯が経験値（24 段、上から時計回り）。Lv は銘板の中央に金の数字。
+- 技能：使用可＝原画そのまま、CD＝暗転＋中央に秒数、マナ/資源不足＝青み、未解放＝暗転＋錠。
+- 通知（「マナが足りません」等）は action bar を上書きせず HUD の文字行に 1.6 秒。戦闘の合図より優先。
 
-標準心臓・満腹度の透明化は `CoreUiPackPolicy.vanillaOverrides` の50ファイルだけを許す。
-心臓の点滅・状態異常・hardcoreの差分も含むが、乗り物の心臓3種は含まない。
-すべて9×9の完全透明PNG。標準フォント、GUI全体、アイテム用アトラスには上書きを加えない。
+action bar は `(C, H−68)` に描かれ文字の y は H−72。ビットマップ glyph の上端は `H−65−ascent`。
+各 glyph の縦位置は provider の ascent に焼き込み、サーバーは x だけを決める（`CoreHudLine`）。
+全体の advance は常に 0 なので、桁数や GUI scale が変わっても中央がずれない。
 
-## 資産の作り直し
+## ボスバー
 
-`python scripts/build_core_ui_assets.py` で生成し、`python scripts/verify_core_ui_assets.py` で検証する。
-Python 3 + Pillow を使う。各 bitmap cell は256px以下、advanceはPNGの実際の不透明範囲から検査する。
-技能は ready / CD20段階 / MP不足の22状態。秒数は別の輪郭付き数字glyphで中央に重ねる。
+pink のボスバーのスプライトを透明にし、名前コンポーネントで描く。板 x=-115（幅 230、上から 2）、
+赤い宝石、名前（バニラのフォント、x=-99、ボスバーの文字行）、右端に残り％、ゲージ x=-110 幅 220（上から 17、5 行）
+と 4 分割の目盛り、削れた分の淡い帯。非適用時は赤の標準バー。
 
-新しい技能原画は `assets/core-ui/skills/dash.png`、`slam.png`、`whirl.png` へ置けば同じ処理で採用できる。
-元画像は無加工で GUI / item atlas 用にもコピーし、HUD用だけ余白調整・最近傍拡大・状態合成を行う。
-採用時は [出典](core-ui-pack.md) と配布パックの `CREDITS.txt` を更新すること。
-現時点では既存 Monumenta 出典の3原画を再利用しており、新しい PixelLab 原画を生成済みとは扱わない。
+## 消した・差し替えたバニラ部品
 
-`assets/core-ui/hud-layout-preview.png` は生成時の配置確認図。実ゲームのスクリーンショットではない。
-最終的な GUI scale / 解像度 / CD推移 / パック拒否時の確認と遊び心地の判断は Creator が行う。
+`CoreUiPackPolicy.vanillaOverrides`（= `build_combat_hud.vanilla_overrides()` + `vanilla_reskins()`）だけ。
 
-## 連携と注意
+- 透明：心臓・満腹度・防具ポイントの列・経験値バー（パック適用中はサーバーが Lv を 0 にして数字も消す）・pink のボスバー。
+- 差し替え：`hud/hotbar.png`（炭色の板とスロット）と `hud/hotbar_selection.png`（鉄の枠）。同じ大きさ。
 
-呼出 API は `CoreUiComponents.hud(state, packed)` のまま。`packed` はパックの
-`SUCCESSFULLY_LOADED` 確認後だけ true にする。数値・CDはサーバーの最新状態を送る。
-action bar を別メッセージで上書きするとHUDはその間消えるため、採取進行や説明は従来どおり
-オブジェクト表示、チャット、ボスバーなど別の表示先を使う。通常のHUD送信は継続する。
-rootのゲーム状態やメニュー・アイテム操作はこの実装から変更しない。
+残すもの：選択アイテム名、酸素、乗り物の心臓、オフハンド枠。
 
-構造・状態テストは実行可能だが、実画面での適用完了や手動テスト成功をこの資料では主張しない。
+## ほかの表示面（今回は変更なし）
+
+- 雑魚の名札（`CoreMobNameplate`）とダメージ数字（`CoreDamageNumbers`）は従来どおり（MaruMinya と 5×7 数字）。
+
+## 作り直しと確認
+
+- 生成：`python scripts/gen_resource_pack.py`（Gradle の `generateResourcePack` も同じ）。
+- 検査：`python scripts/verify_core_ui_assets.py`（Windows では `PYTHONUTF8=1`）。
+- 見た目：`CoreHudLayoutTest` が実際のコンポーネントの配置を `build/hud-preview/snapshots/` に書き出し、
+  `python scripts/render_combat_hud_preview.py` が画面の 2倍・4倍、HUD の 8倍、6職の菱形、ボスバーの PNG を作る。
+  ローカルの 26.2 クライアント jar から数字とホットバーのアイテムを文脈として読む（リポジトリには入れない）。
+  これは配置確認図で、実ゲームのスクリーンショットではない。GUI scale ごとの見え方と手触りの判断は Creator が行う。
+
+## 再開メモ（2026-10-17、PC入れ替え前）
+
+- 状態：藍が承認した新HUDを実装・実機確認済み（play/gyai/combat-hud、643e38e1 以降）。PR は未作成、main へのマージは藍の判断待ち。
+- 絵の正本は `scripts/combat_hud_art.py`、承認モックと判定一覧は `assets/core-ui/proposals/2026-10-16-combat-hud/`（README.md・ok-ng.md・承認画像）。
+- 次の一手：藍が実機で気になった点を F2 で撮ってもらい直す → PR。CD管理のクラスリワーク（別ブランチ）が入ったら HUD との接続（CoreHudSkill の CD/資源）を確認する。
+- 注意：play/gyai/remove-starweaver と 7職リワークは「星織りを消す側」で合流。クライアントは「画面のあるデスクトップに出す起動スクリプト」経由でないとすぐ落ちる。

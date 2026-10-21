@@ -156,7 +156,7 @@ def build():
     manifest=json.loads((SOURCE/'manifest.json').read_text())
     # Same format as the existing Vanilla 26.2 pack, but no accepted UI/font assets.
     write_json(PACK/'pack.mcmeta',{'pack':{'description':'ProjectS pixel weapons / isolated review',
-                                         'min_format':[88,0],'max_format':[88,0]}})
+                                         'min_format':[97, 1],'max_format':[97, 1]}})
     sheet=Image.new('RGB',(320*4,380*3),'#1b1e23'); report={}; action_frames=[]
     loaded={}
     for row,(key,entry) in enumerate(manifest['weapons'].items()):

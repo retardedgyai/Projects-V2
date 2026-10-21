@@ -220,7 +220,7 @@ class UiSessions(
             // 26.2 spectator rendering sends this for LEFT click, including clicks on empty space.
             is ClientSpectatorActionPacket -> { event.isCancelled=true;enqueue(s,action="click",clickAt=s.clickAt.remove(packet)) }
             is ClientPlayerBlockPlacementPacket, is ClientInteractEntityPacket -> { event.isCancelled=true; enqueue(s,action="click",clickAt=s.clickAt.remove(packet)) }
-            is ClientAnimationPacket, is ClientAttackPacket -> { event.isCancelled=true;enqueue(s,action="click",clickAt=s.clickAt.remove(packet)) }
+            is ClientPunchPacket, is ClientAttackPacket -> { event.isCancelled=true;enqueue(s,action="click",clickAt=s.clickAt.remove(packet)) }
             is ClientHeldItemChangePacket -> {
                 event.isCancelled=true
                 val slot=packet.slot().toInt()
@@ -262,7 +262,7 @@ class UiSessions(
                     return false
                 }
                 is ClientSpectatorActionPacket, is ClientPlayerBlockPlacementPacket,
-                is ClientInteractEntityPacket, is ClientAnimationPacket, is ClientAttackPacket -> {
+                is ClientInteractEntityPacket, is ClientPunchPacket, is ClientAttackPacket -> {
                     s.clickAt[packet]=s.pointer.x to s.pointer.y
                     return false
                 }

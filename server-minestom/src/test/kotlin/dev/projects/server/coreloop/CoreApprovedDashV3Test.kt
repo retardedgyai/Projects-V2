@@ -100,7 +100,7 @@ class CoreApprovedDashV3Test {
                     "scale" to xyz(pose.scale),"yaw" to pose.yaw,"pitch" to pose.pitch,"roll" to pose.roll)
             } } }
             assertTrue(frames.last().isEmpty())
-            mapOf("id" to if(hit) "dash_hit" else "dash_miss","name" to if(hit) "踏み込み斬り・命中例" else "踏み込み斬り・空振り","frames" to frames)
+            mapOf("id" to if(hit) "dash_hit" else "dash_miss","name" to if(hit) "轟進・命中例" else "轟進・空振り","frames" to frames)
         }
         val cwd=Path.of(System.getProperty("user.dir"))
         val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd

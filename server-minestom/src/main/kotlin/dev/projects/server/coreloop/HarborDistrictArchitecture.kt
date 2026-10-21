@@ -228,7 +228,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
                 frame && half%2==1 -> Block.DARK_OAK_PLANKS
                 else -> material.withProperty("type",if(half%2==0) "bottom" else "top")
             })
-            if(frame && half%2==0 && instance.getBlock(x,y-1,z).isAir)
+            if(frame && half%2==0 && instance.getBlock(x,y-1,z).air())
                 put(x,y-1,z,Block.DARK_OAK_SLAB.withProperty("type","top"))
         }
         box(-40,-28,52,52,-2,-2,logX())
@@ -1193,7 +1193,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
         // Side elevations gain continuous floor belts and a shallow outer frame around inset glazing.
         // Frames are at upper-floor level only; lower side-alley entrances keep their full width.
         fun exposedDetail(x: Int, y: Int, z: Int, block: Block) {
-            if(instance.getBlock(x,y,z).isAir) put(x,y,z,block)
+            if(instance.getBlock(x,y,z).air()) put(x,y,z,block)
         }
         for((x1,x2,z1,z2,floor) in listOf(
             listOf(-24,-10,5,14,40),listOf(10,24,5,14,40),
@@ -1301,7 +1301,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
             fun leaf(lx: Int,ly: Int,lz: Int) {
                 // Finish trees after architecture, without replacing a roof, window or structural member.
                 val existing=instance.getBlock(lx,ly,lz)
-                if(existing.isAir || existing.name().endsWith("_leaves")) put(lx,ly,lz,leaves)
+                if(existing.air() || existing.name().endsWith("_leaves")) put(lx,ly,lz,leaves)
             }
             for((dx,dz) in listOf(-1 to 0,1 to 0,0 to -1,0 to 1,-1 to -1,-1 to 1,1 to -1,1 to 1)) {
                 // Longer seaward fronds, short inward growth beside the workshop / hall roofline.
@@ -1406,7 +1406,7 @@ internal class HarborDistrictArchitecture(private val instance: InstanceContaine
             if (!wall && !b.name().endsWith("_fence") && !b.name().endsWith("_pane") && b.name() != "minecraft:iron_bars") continue
             for ((name,dx,dz) in directions) {
                 val adjacent = instance.getBlock(x+dx,y,z+dz)
-                val connected = adjacent.isSolid && !adjacent.name().contains("leaves")
+                val connected = adjacent.solid() && !adjacent.name().contains("leaves")
                 b = b.withProperty(name,if(wall) { if(connected) "low" else "none" } else connected.toString())
             }
             put(x,y,z,b)

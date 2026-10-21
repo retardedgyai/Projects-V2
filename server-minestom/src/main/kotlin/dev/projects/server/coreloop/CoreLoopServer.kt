@@ -47,11 +47,15 @@ import java.util.UUID
 import java.util.concurrent.*
 import kotlin.math.roundToInt
 
+/** Recovery potion reuse delay; also the length of its HUD cooldown icon. */
+private const val POTION_COOLDOWN_MILLIS = 10_000L
+
 /** Entry point for the playable solo loop. The original combat laboratory remains opt-in. */
 object CoreLoopServer {
     fun start() {
         CoreMmoTuning.balance = CoreMmoBalance.load(Path.of("config", "projects", "mmo-balance.properties"))
         val server = MinecraftServer.init(Auth.Offline())
+        dev.projects.server.coreloop.adventure.BossArenaFactory.registerDimensions()   // before anyone joins
         val hub = MinecraftServer.getInstanceManager().createInstanceContainer()
         val harbor = HarborScene.build(hub)
         val game = CoreLoopGame(hub, harbor)
@@ -68,12 +72,14 @@ object CoreLoopServer {
 
 internal class CoreLoopGame(private val hub: InstanceContainer, private val harbor: HarborScene.Result) : CoreMenuHost {
     internal fun consumeImmediateUiPacket(player: Player, packet: ClientPacket): Boolean =
-        polishSessions?.consumeImmediateUiPacket(player,packet) == true || atlasSessions?.consumeImmediateUiPacket(player,packet) == true
+        polishSessions?.consumeImmediateUiPacket(player,packet) == true || atlasSessions?.consumeImmediateUiPacket(player,packet) == true ||
+            grimoireSessions?.consumeImmediateUiPacket(player,packet) == true
     private val io = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "projects-core-ledger").apply { isDaemon = true } }
     private val mapBuilder = Executors.newSingleThreadExecutor { r -> Thread(r, "projects-core-map-builder").apply { isDaemon = true } }
     private val preparedMaps = CoreMapPreparation(mapBuilder)
     private val ledger = CoreAccountService(CoreAccountRepository(Path.of("config", "projects", "core-loop")))
-    private val firstMagic = FirstMagicService(Path.of("config", "projects", "first-magic"), io)
+    private val firstMagic = FirstMagicService(Path.of("config", "projects", "first-magic"))
+    private val researchDesk = ResearchDesk(ledger, firstMagic)
     private val colonyLayouts = FirstMagicColonyLayoutRepository(Path.of("config", "projects", "first-magic"))
     private val colonies = ConcurrentHashMap<UUID, FirstMagicColony>()
     private val magicBusy = ConcurrentHashMap.newKeySet<UUID>()
@@ -89,12 +95,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     // Own arenas during asynchronous transfer too; a disconnect can precede a late spawn callback.
     private val pendingTrialArenas = ConcurrentHashMap<UUID, BossArena>()
     private val potionReady = ConcurrentHashMap<UUID, Long>()
+    private val hudTrails = ConcurrentHashMap<UUID, CoreHudTrail>()
     private val lastUseAt = ConcurrentHashMap<UUID, Long>()
     private val menus = CoreLoopMenus(this)
     private val partyDialogs = CorePartyDialogs({ connections[it] }, { name -> connections.values.firstOrNull { it.username.equals(name, ignoreCase = true) } })
     private val magicMenus = FirstMagicWorkshop(
-        state = { player -> firstMagic.snapshot(player.uuid)?.copy(materialCounts = AnomalousMaterial.entries
-            .associateWith { FirstMagicInventory.count(player, it) }.filterValues { it > 0 }) },
+        state = { player -> firstMagic.snapshot(player.uuid)?.copy(materialCounts = ResearchGoods.counts(account(player))) },
+        silver = { player -> account(player)?.silver ?: 0L },
         change = ::changeMagic,
         inColony = { player -> colonies[player.uuid]?.instance === player.instance },
         exit = ::leaveColony,
@@ -127,9 +134,20 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }.onFailure { System.err.println("ATLAS_MAP_DISABLED: ${it.message}") }.getOrNull()
     private val atlasSessions: UiSessions? = if(uiPack != null && atlasMap != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
         { player -> uiPack.enabled(player) }, null,
-        { player -> AtlasMapFlow(atlasMap,
-            depart = { tier, style -> player.scheduler().scheduleNextTick { departFromAtlas(player, tier, style) } },
+        { player -> AtlasMapFlow(atlasMap, { account(player) },
+            depart = { zone -> player.scheduler().scheduleNextTick { departFromAtlas(player, zone) } },
             leave = { player.scheduler().scheduleNextTick { atlasSessions?.close(player) } }) },
+        { Pos(0.0,100.0,0.0,0f,0f) })
+    else null
+    private val grimoireArt = runCatching {
+        GrimoireFlow.Art(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/grimoire.json")).use { it.readBytes() },
+            requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
+    }.onFailure { System.err.println("GRIMOIRE_DISABLED: ${it.message}") }.getOrNull()
+    /** 魔術書 progress per player, in memory until quests are saved; closing the book keeps it. */
+    private val grimoireProgress = java.util.concurrent.ConcurrentHashMap<java.util.UUID, GrimoireProgress>()
+    private val grimoireSessions: UiSessions? = if(uiPack != null && grimoireArt != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
+        { player -> uiPack.enabled(player) }, null,
+        { player -> GrimoireFlow(grimoireArt, grimoireProgress.computeIfAbsent(player.uuid) { GrimoireSample.midway() }, leave = { player.scheduler().scheduleNextTick { grimoireSessions?.close(player) } }) },
         { Pos(0.0,100.0,0.0,0f,0f) })
     else null
     private val questMaps = VerdantRoadQuestService(hub, harbor.spawn,
@@ -170,6 +188,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         var caches: CoreMapCaches? = null
         var adventures: AdventureRuntime? = null
         var anomalies: FirstMagicField? = null
+        val bossTrail = CoreHudTrail()
     }
 
     override fun account(player: Player): CoreAccount? = accounts[player.uuid]
@@ -213,13 +232,21 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                             if (!starter.successful) return@supplyAsync CoreAccountLoadResult.Invalid(starter.message)
                             a = requireNotNull(starter.account)
                         }
+                        // Samples saved in the old first-magic sidecar become ledger (market) goods once.
+                        val migrated = runCatching { researchDesk.migrateLegacyMaterials(a.playerId) }.getOrElse { failure ->
+                            return@supplyAsync CoreAccountLoadResult.Invalid("魔術素材を移行できません: ${failure.message}")
+                        }
+                        if (migrated != null) {
+                            if (!migrated.successful) return@supplyAsync CoreAccountLoadResult.Invalid(migrated.message)
+                            a = requireNotNull(migrated.account)
+                        }
                         accounts[a.playerId] = a
                         CoreAccountLoadResult.Ready(a, opened.newlyCreated)
                     }
                 }
             }, io).join()
             if (loaded is CoreAccountLoadResult.Invalid) {
-                firstMagic.forget(event.player.uuid)
+                io.execute { firstMagic.forget(event.player.uuid) }
                 event.player.kick(CoreLoopItems.text("保存データを読み込めません。既存データは保持されています。${loaded.reason}", NamedTextColor.RED))
                 return@addListener
             }
@@ -252,15 +279,15 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     armorLevelPower = { accounts[player.uuid]?.let { CoreJourneyRules.power(it.armorIdentity, it.armorTier) } ?: 1.0 },
                     allies = { actors.values.toList() },
                     gearSource = { accounts[player.uuid]?.let(CoreCombatGear::from) },
+                    packed = { packed(player) },
                     onLesson = { bit -> if (accounts[player.uuid]?.journey?.knows(bit) == false) transact(player.uuid, CoreAction.LearnCombat(bit)) }) {
                     player.showTitle(Title.title(CoreLoopItems.text("力尽きた…", NamedTextColor.RED), CoreLoopItems.text("獲得素材を持って港へ戻ります")))
                     returnToHarbor(player)
                 }
                 CoreLoopItems.refresh(player, a, initial = true, packed = packed(player), combatSheet = combatSheet(player) ?: CoreCombatSheet.from(a))
-                // Prioritize the colony's unique equipment and saved anomalies before filling
-                // the remaining backpack slots with the older core economy's item balances.
+                // Prioritize the colony's unique equipment before filling the remaining
+                // backpack slots with the core economy's item balances (samples included).
                 for (slot in 16..35) player.inventory.setItemStack(slot, ItemStack.AIR)
-                firstMagic.snapshot(player.uuid)?.let { FirstMagicInventory.restore(player, it, packed(player)) }
                 runCatching { colonyLayouts.load(player.uuid) }.onSuccess { saved ->
                     FirstMagicColonyItems.issueMissing(player, ColonyPlaceable.entries.filter { kind ->
                         saved.none { it.kind == kind }
@@ -326,7 +353,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
         }
         events.addListener(ItemDropEvent::class.java) { event ->
-            if (combatLab.contains(event.player) || FirstMagicColonyItems.kind(event.itemStack) != null || FirstMagicInventory.kind(event.itemStack) != null || CoreLoopItems.resourceId(event.itemStack) != null || CoreLoopItems.fragmentId(event.itemStack) != null || CoreLoopItems.isSilver(event.itemStack) || event.itemStack.getTag(CoreLoopItems.actionTag) != null || event.itemStack.getTag(QUEST_GATHERING_TOOL_TAG) != null || CoreLoopItems.mapId(event.itemStack) != null) event.isCancelled = true
+            if (combatLab.contains(event.player) || FirstMagicColonyItems.kind(event.itemStack) != null || CoreLoopItems.resourceId(event.itemStack) != null || CoreLoopItems.fragmentId(event.itemStack) != null || CoreLoopItems.isSilver(event.itemStack) || event.itemStack.getTag(CoreLoopItems.actionTag) != null || event.itemStack.getTag(QUEST_GATHERING_TOOL_TAG) != null || CoreLoopItems.mapId(event.itemStack) != null) event.isCancelled = true
         }
         events.addListener(PlayerBlockInteractEvent::class.java) { event ->
             if (event.hand != PlayerHand.MAIN) return@addListener
@@ -431,7 +458,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             combatLab.beforeTick(player)
             actor(player)?.tick()
             CoreArmamentPresentation.tick(player, packed(player))
-            if (player.aliveTicks % 5 == 0L) updateHud(player)
+            // A notice refreshes the HUD at once; otherwise every 5 ticks.
+            val hudDirty = actor(player)?.consumeHudDirty() == true
+            if (hudDirty || player.aliveTicks % 5 == 0L) updateHud(player)
             if (player.instance === hub && player.position.y() < 38) { player.teleport(harbor.spawn); actors[player.uuid]?.reset() }
             colonies[player.uuid]?.let { colony -> if (player.instance === colony.instance && player.position.y() < 37) player.teleport(colony.spawn) }
             if (player.instance !== hub && player.position.y() < 15 && !isDeparting(player)) returnToHarbor(player)
@@ -454,6 +483,22 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         MinecraftServer.getCommandManager().register(Command("hub").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { returnToHarbor(it) } }
         })
+        MinecraftServer.getCommandManager().register(Command("grimoire").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
+                when {
+                    grimoireSessions == null || uiPack?.enabled(player) != true ->
+                        player.sendMessage(CoreLoopItems.text("魔術書を開くには ProjectS のリソースパックが必要です", NamedTextColor.YELLOW))
+                    !requireHub(player) -> Unit
+                    else -> grimoireSessions.open(player)
+                }
+            } }
+            // Development: start the book from the very beginning (progress is in memory only).
+            addSyntax({ sender, _ -> (sender as? Player)?.let { player ->
+                grimoireSessions?.close(player)
+                grimoireProgress[player.uuid] = GrimoireSample.start()
+                player.sendMessage(CoreLoopItems.text("魔術書を最初からにしました", NamedTextColor.YELLOW))
+            } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("reset"))
+        })
         MinecraftServer.getCommandManager().register(Command("colony").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { enterColony(it) } }
         })
@@ -467,6 +512,37 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     else -> player.sendMessage(CoreLoopItems.text("先に /hub で港へ戻ってから /researchtest を使ってください", NamedTextColor.YELLOW))
                 }
             } }
+        })
+        // Test-only: the Blockbench boss in its own arena via the skill lab (no reward, no save).
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("bosstest").apply {
+            // /bosstest [tier]: without a tier, the tier of the player's level (review 2026-10-19: always tier 1 before).
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR, "shade",
+                ((account(it)?.journey?.level ?: 1) - 1) / 10 + 1) } }
+            val tierArg = net.minestom.server.command.builder.arguments.ArgumentType.Integer("tier").between(1, 4)
+            addSyntax({ sender, context -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR, "shade", context.get(tierArg)) } }, tierArg)
+            // /bosstest rage: drops the boss just under its enrage ratio, to watch the enrage without the fight.
+            addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
+                player.sendMessage(Component.text(if (combatLab.enrageBoss(player)) "ボスを怒らせた（体力を怒りの境目の少し下へ）。" else "/bosstest のボス戦の中で使ってください。", NamedTextColor.GRAY))
+            } } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("rage"))
+            // /bosstest sakura: 桜牙獣 in 散り桜の庭 instead of the shade wyrm.
+            addSyntax({ sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR, "sakura") } },
+                net.minestom.server.command.builder.arguments.ArgumentType.Literal("sakura"))
+        })
+        // Test-only: plays a player motion on the puppet (docs/development/player-motion.md). /motion stop ends it.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("motion").apply {
+            val name = net.minestom.server.command.builder.arguments.ArgumentType.Word("name")
+            val self = net.minestom.server.command.builder.arguments.ArgumentType.Literal("self")
+            setDefaultExecutor { sender, _ -> sender.sendMessage(Component.text("/motion greatsword_charge | dual_blades_dance [self] | stop（self：自分にも人形を見せる。F5で確認用）", NamedTextColor.GRAY)) }
+            addSyntax({ sender, context -> (sender as? Player)?.let { player ->
+                val motion = context.get(name)
+                if (motion == "stop") dev.projects.server.puppet.PlayerPuppet.stop(player)
+                else if (!dev.projects.server.puppet.PlayerPuppet.play(player, motion))
+                    player.sendMessage(Component.text("そのモーションはありません: $motion", NamedTextColor.YELLOW))
+            } }, name)
+            addSyntax({ sender, context -> (sender as? Player)?.let { player ->
+                if (!dev.projects.server.puppet.PlayerPuppet.play(player, context.get(name), showOwner = true))
+                    player.sendMessage(Component.text("そのモーションはありません: ${context.get(name)}", NamedTextColor.YELLOW))
+            } }, name, self)
         })
         MinecraftServer.getCommandManager().register(Command("effects").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let {
@@ -483,7 +559,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (previous != null && player.aliveTicks - previous < 2) return true
         if (combatLab.contains(player)) {
             if (action == "journal") { combatLab.menu(player); return true }
-            if (action == "potion") { combatLab.actor(player)?.refillTraining(); return true }
+            if (action == "potion") { combatLab.potion(player); return true }
             if (action != "weapon" && action?.startsWith("skill:") != true) return true
         }
         when {
@@ -625,46 +701,37 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 FirstMagicColonyItems.issue(player, colony, packed(player))
                 player.showTitle(Title.title(CoreLoopItems.text("自分のコロニー", NamedTextColor.GOLD),
                     CoreLoopItems.text("古い観測工房が庭の奥に眠っている", NamedTextColor.AQUA)))
-                if (state.hasMaterial && !state.reacted) changeMagic(player, FirstMagicAction.React) {
+                val hasSamples = ResearchGoods.counts(account(player)).isNotEmpty()
+                if (hasSamples && !state.reacted) changeMagic(player, FirstMagicAction.React) {
                     player.sendMessage(CoreLoopItems.text("持ち帰った素材に古い区画が反応した。研究机を手に持って、庭へ置こう", NamedTextColor.AQUA))
                 }
-                else player.sendMessage(CoreLoopItems.text(if (state.hasMaterial) "手持ちの設備を庭へ置き、研究机から未知を調べよう" else "設備を手に持って右クリックで配置。遠征で異質素材を拾い、この庭へ持ち帰ろう", NamedTextColor.AQUA))
+                else player.sendMessage(CoreLoopItems.text(if (hasSamples) "手持ちの設備を庭へ置き、研究机から未知を調べよう" else "設備を手に持って右クリックで配置。遠征で異質素材を拾い、この庭へ持ち帰ろう", NamedTextColor.AQUA))
             }
         }
     }
 
     private fun prepareResearchTest(player: Player, colony: FirstMagicColony) {
         if (!magicBusy.add(player.uuid)) return
-        val missing = AnomalousMaterial.entries.filter { FirstMagicInventory.count(player, it) == 0 }
-        val freeSlots = (0 until 36).count { player.inventory.getItemStack(it).isAir }
-        if (missing.size > freeSlots) {
-            magicBusy.remove(player.uuid)
-            player.sendMessage(CoreLoopItems.text("素材用にインベントリを${missing.size - freeSlots}枠空けて、/researchtest をもう一度使ってください", NamedTextColor.YELLOW))
-            return
-        }
-        firstMagic.change(player.uuid, FirstMagicAction.PrepareResearchTest).whenComplete { result, failure ->
+        CompletableFuture.supplyAsync({ researchDesk.perform(player.uuid, FirstMagicAction.PrepareResearchTest) }, io).whenComplete { result, failure ->
             player.scheduler().scheduleNextTick {
                 magicBusy.remove(player.uuid)
                 if (connections[player.uuid] !== player || colonies[player.uuid] !== colony || player.instance !== colony.instance) return@scheduleNextTick
-                if (failure != null || result == null) {
-                    player.sendMessage(CoreLoopItems.text("研究テストの準備を保存できませんでした", NamedTextColor.RED))
+                if (failure != null || result == null || !result.committed) {
+                    player.sendMessage(CoreLoopItems.text(result?.message ?: "研究テストの準備を保存できませんでした", NamedTextColor.RED))
                     System.err.println("RESEARCH_TEST_PREPARE_FAILURE player=${player.uuid}: $failure")
                     return@scheduleNextTick
                 }
-                val notIssued = missing.filterNot { FirstMagicInventory.add(player, it, packed(player)) }
-                if (notIssued.isNotEmpty()) {
-                    player.sendMessage(CoreLoopItems.text("素材を収納できませんでした。空きを作って /researchtest を再実行してください", NamedTextColor.YELLOW))
-                    return@scheduleNextTick
-                }
+                result.ledger?.account?.let { accounts[player.uuid] = it }
+                refresh(player)
                 val deskWasPlaced = colony.has(ColonyPlaceable.DESK)
                 val deskSpots = listOf(BlockVec(8, 41, 4), BlockVec(2, 41, 2), BlockVec(-2, 41, 2)) +
                     (-4..6).flatMap { z -> (-7..9).map { x -> BlockVec(x, 41, z) } }
                 val deskReady = deskWasPlaced || runCatching { deskSpots.any { colony.place(ColonyPlaceable.DESK, it, BlockFace.SOUTH) } }
                     .onFailure { System.err.println("RESEARCH_TEST_DESK_FAILURE player=${player.uuid}: $it") }.getOrDefault(false)
                 if (deskReady && !deskWasPlaced) FirstMagicColonyItems.removeOne(player, ColonyPlaceable.DESK)
-                colony.update(result.state)
+                colony.update(result.change.state)
                 FirstMagicColonyItems.issue(player, colony, packed(player))
-                player.sendMessage(CoreLoopItems.text("/researchtest：6素材を用意し、研究を始められます。インクは再実行で補充できます", NamedTextColor.AQUA))
+                player.sendMessage(CoreLoopItems.text("/researchtest：${result.message}。再実行で補充できます", NamedTextColor.AQUA))
                 if (deskReady) magicMenus.desk(player)
                 else player.sendMessage(CoreLoopItems.text("研究机の自動設置場所がありません。手持ちの研究机を庭に置いてください", NamedTextColor.YELLOW))
             }
@@ -706,24 +773,20 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     private fun changeMagic(player: Player, action: FirstMagicAction, after: () -> Unit) {
         if (colonies[player.uuid]?.instance !== player.instance || !magicBusy.add(player.uuid)) return
-        if (action is FirstMagicAction.Analyze && FirstMagicInventory.count(player, action.material) == 0 ||
-            action is FirstMagicAction.Distill && FirstMagicInventory.count(player, action.material) == 0) {
-            magicBusy.remove(player.uuid)
-            player.sendMessage(CoreLoopItems.text("素材をインベントリに持っていません", NamedTextColor.YELLOW))
-            return
-        }
-        firstMagic.change(player.uuid, action).whenComplete { result, failure ->
+        CompletableFuture.supplyAsync({ researchDesk.perform(player.uuid, action) }, io).whenComplete { step, failure ->
             player.scheduler().scheduleNextTick {
                 magicBusy.remove(player.uuid)
                 if (connections[player.uuid] !== player || colonies[player.uuid]?.instance !== player.instance) return@scheduleNextTick
-                if (failure != null || result == null) {
-                    player.sendMessage(CoreLoopItems.text("魔術記録を保存できませんでした。素材は消費されていません", NamedTextColor.RED))
-                    System.err.println("FIRST_MAGIC_SAVE_FAILURE player=${player.uuid}: $failure")
+                if (failure != null || step == null) {
+                    player.sendMessage(CoreLoopItems.text("魔術記録を保存できませんでした", NamedTextColor.RED))
+                    System.err.println("FIRST_MAGIC_SAVE_FAILURE player=${player.uuid} action=$action: $failure")
                     return@scheduleNextTick
                 }
-                colonies[player.uuid]?.update(result.state)
-                if (result.changed && action is FirstMagicAction.Distill)
-                    FirstMagicInventory.remove(player, action.material)
+                step.ledger?.account?.let { accounts[player.uuid] = it }
+                if (step.ledger != null) refresh(player)
+                // Only a fully committed step (ledger and sidecar) counts as changed.
+                val result = step.change.copy(changed = step.committed, message = step.message)
+                if (step.committed) colonies[player.uuid]?.update(result.state)
                 player.sendMessage(CoreLoopItems.text(result.message, if (result.changed) NamedTextColor.AQUA else NamedTextColor.YELLOW))
                 if (result.changed) player.playSound(Sound.sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, Sound.Source.PLAYER, 0.65f, 1.0f))
                 if (result.changed && action == FirstMagicAction.React) {
@@ -822,16 +885,22 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     override fun warmMap(player: Player, map: CoreOwnedMap): Boolean = preparedMaps.warm(player.uuid, map)
 
-    /** 開拓大陸 departure: a fresh map of the zone's terrain at the player's level, then the usual departure. */
-    private fun departFromAtlas(player: Player, tier: Int, style: QuestTerrainStyle) {
-        atlasSessions?.close(player)
+    /**
+     * 開拓大陸 departure: a fresh map of the zone's terrain and tier at the player's level, tagged with the zone
+     * (specialty gathering, the zone's boss, its clear record), then the usual departure.
+     */
+    private fun departFromAtlas(player: Player, zoneId: Int) {
+        val zone = CoreFrontierZones.expedition(zoneId) ?: return
         val a = account(player) ?: return
+        CoreFrontierZones.departure(a, zone).blocked?.let {
+            player.sendMessage(CoreLoopItems.text(it, NamedTextColor.YELLOW)); return
+        }
+        atlasSessions?.close(player)
         if (!requireHub(player)) return
         val base = java.util.concurrent.ThreadLocalRandom.current().nextLong() ushr 4
         // Quest terrain style is chosen by seed mod 6; the candidate search keeps it.
-        val seed = base - Math.floorMod(base, QuestTerrainStyle.entries.size.toLong()) + style.ordinal
-        val playable = tier.coerceIn(1, a.unlockedMapTier)
-        mutate(player, CoreAction.ClaimMap(playable, seed), a.revision, { menus.expeditions(player) }) {
+        val seed = base - Math.floorMod(base, QuestTerrainStyle.entries.size.toLong()) + zone.terrain.ordinal
+        mutate(player, CoreAction.ClaimMap(zone.tier, seed, zone = zone.id), a.revision, { menus.expeditions(player) }) {
             val map = account(player)?.maps?.firstOrNull { it.seed == seed } ?: return@mutate
             account(player)?.let { depart(player, map.id, it.revision) }
         }
@@ -887,7 +956,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                                         try {
                                             attachSession(player, runtime, runId, map.tier)
                                             refresh(player); actors[player.uuid]?.reset()
-                                            player.sendMessage(CoreLoopItems.text("T${map.tier} 遠征開始。道の先にボス。裂け目・儀式の寄り道には専用オーブと欠片があります。", NamedTextColor.GOLD))
+                                            val zone = CoreFrontierZones.zone(map.zone)
+                                            player.sendMessage(CoreLoopItems.text(if (zone != null) "T${map.tier} ${zone.name}へ遠征開始。道の先に${zone.boss?.displayName}。特産は${zone.specialty?.displayName}。"
+                                                else "T${map.tier} 遠征開始。道の先にボス。裂け目・儀式の寄り道には専用オーブと欠片があります。", NamedTextColor.GOLD))
                                         } catch (failure: Exception) {
                                             System.err.println("CORE_ENCOUNTER_SETUP_FAILURE run=$runId: $failure")
                                             questMaps.returnToHub(player).whenComplete { _, _ -> abortDeparture(player, runId) }
@@ -983,15 +1054,18 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     private fun attachTrial(player: Player, arena: BossArena, runId: UUID, tier: Int) {
         val run = requireNotNull(account(player)?.activeRun).also { check(it.id == runId && it.trialId == arena.bossId) }
-        val bar = BossBar.bossBar(CoreLoopItems.text(arena.displayName, NamedTextColor.RED), 1f, BossBar.Color.RED, BossBar.Overlay.PROGRESS)
+        val bar = BossBar.bossBar(CoreLoopItems.text(arena.displayName, NamedTextColor.RED), 1f, bossBarColor(player), BossBar.Overlay.PROGRESS)
         val combat = QuestEncounterCombat(arena.instance, tier, emptyList(), arena.bossSpawn,
             onMobDefeated = { _, boss -> onMobDefeated(player, boss) },
             damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
             canTarget = { target -> target === player && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
             contentSeed = run.map.seed, explicitBossArchetype = arena.archetype,
-            typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) })
+            typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) },
+            crowdPlayer = { target, kind, millis, from -> actors[target.uuid]?.receiveCrowdControl(kind, millis, from) },
+            evading = { actors[it.uuid]?.evading == true })
         try {
             val loot = CoreWorldLoot(player, arena.instance, run, { rewards.submit(player.uuid, it) }, { refresh(player) })
+            combat.pixelNameplates = packed(player)
             sessions[player.uuid] = Session(player, runId, null, combat, bar, loot, arena)
         } catch (failure: Exception) { combat.dispose(); throw failure }
     }
@@ -1023,20 +1097,28 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
             QuestCombatEncounter(positions)
         }
-        val bar = BossBar.bossBar(CoreLoopItems.text("裂け目の執行官", NamedTextColor.RED), 1f, BossBar.Color.RED, BossBar.Overlay.PROGRESS)
+        val zone = CoreFrontierZones.zone(account(player)?.activeRun?.map?.zone)
+        // The packed HUD draws the name each tick from combat.bossName(), which follows the zone's boss.
+        val bar = BossBar.bossBar(Component.empty(), 1f, bossBarColor(player), BossBar.Overlay.PROGRESS)
         val combat = QuestEncounterCombat(runtime.instance, tier, groups, QuestCombatPlacement.resolve(runtime.instance, pos(plan.boss)),
+            explicitBossArchetype = zone?.boss,
             onMobDefeated = { _, boss -> onMobDefeated(player, boss) }, damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
             canTarget = { target -> target.uuid == player.uuid && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
             contentSeed = plan.seed, encounterLevel = account(player)?.activeRun?.map?.level ?: CoreJourneyRules.floor(tier),
-            typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) })
+            typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) },
+            crowdPlayer = { target, kind, millis, from -> actors[target.uuid]?.receiveCrowdControl(kind, millis, from) },
+            evading = { actors[it.uuid]?.evading == true }, rollGrades = true)
         val run = requireNotNull(account(player)?.activeRun)
         val loot = CoreWorldLoot(player, runtime.instance, run,
             reward = { rewards.submit(player.uuid, it) },
             inventoryChanged = { refresh(player) })
+        combat.pixelNameplates = packed(player)
+        updateBossBar(player, combat, bar, null)
         val session = Session(player, runId, runtime, combat, bar, loot)
         try {
             session.anomalies = FirstMagicField(player, runtime,
-                { material -> firstMagic.change(player.uuid, FirstMagicAction.Collect(material)) }, ::packed)
+                { material -> rewards.submit(player.uuid, CoreAction.Gather(run.id, "anomaly-${material.name.lowercase()}", material.resource, 1)) },
+                ::packed) { if (connections[player.uuid] === player && player.isOnline) refresh(player) }
             session.caches = CoreMapCaches(player, runtime.instance,
             plan.contents.filter { it.kind == QuestMapContentKind.DISCOVERY }.map { pos(it.position) },
             guarded = { at -> combat.combatTargets().any { it.position.distance(at) < 12.0 } },
@@ -1117,6 +1199,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         session.loot.tick()
         session.ticks++
         if (session.combat.bossDefeated && session.ticks % 100 == 0L) awardBoss(session)
+        if (session.ticks % 5 == 0L && !session.combat.bossDefeated) updateBossBar(session.owner, session.combat, session.bossBar, session)
         if (session.ticks % 20 != 0L) return
         if (actors[session.owner.uuid]?.defeated == true && !session.rewardPending) {
             returnToHarbor(session.owner)
@@ -1125,10 +1208,27 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val p = session.owner
         if (session.combat.bossDefeated) p.hideBossBar(session.bossBar)
         else if (session.arena != null || p.position.distanceSquared(requireNotNull(session.runtime).plan.boss.let { Pos(it.x.toDouble(), p.position.y(), it.z.toDouble()) }) < 45 * 45) {
-            session.bossBar.name(CoreLoopItems.text("${session.combat.bossName()}  ${session.combat.bossHealth().roundToInt()} / ${session.combat.bossMaxHealth().roundToInt()}", NamedTextColor.RED))
-            session.bossBar.progress((session.combat.bossHealth() / session.combat.bossMaxHealth()).toFloat().coerceIn(0f, 1f))
             p.showBossBar(session.bossBar)
         } else p.hideBossBar(session.bossBar)
+    }
+
+    private fun bossBarColor(player: Player) = if (packed(player)) BossBar.Color.PINK else BossBar.Color.RED
+
+    /** The pack blanks the pink vanilla bar; its name component then draws the pixel boss bar. */
+    private fun updateBossBar(player: Player, combat: QuestEncounterCombat, bar: BossBar, session: Session?) {
+        val name = combat.bossName()
+        val health = combat.bossHealth()
+        val maximum = combat.bossMaxHealth()
+        bar.progress((health / maximum).toFloat().takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f)
+        if (packed(player)) {
+            val trail = session?.bossTrail?.update(health, maximum, System.currentTimeMillis()) ?: health
+            bar.color(BossBar.Color.PINK)
+            val hud = combat.bossHud()
+            bar.name(if (hud != null) CoreBossBarHud.render(hud, trail, combat.erosionShare(player.uuid)) else Component.empty())
+        } else {
+            bar.color(BossBar.Color.RED)
+            bar.name(CoreLoopItems.text("$name  ${health.roundToInt()} / ${maximum.roundToInt()}", NamedTextColor.RED))
+        }
     }
 
     override fun returnToHarbor(player: Player) {
@@ -1185,7 +1285,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (actor.defeated || sessions[player.uuid]?.returning != false || !busy.add(player.uuid)) return
         if (resource == CoreResource.POTION && (actor.health >= actor.maxHealth || System.currentTimeMillis() < (potionReady[player.uuid] ?: 0L))) {
             busy.remove(player.uuid)
-            player.sendActionBar(CoreLoopItems.text("HPが満タン、または回復薬の再使用待ちです。", NamedTextColor.YELLOW))
+            actor.notice("HPが満タン、または回復薬の再使用待ちです")
             return
         }
         transact(player.uuid, CoreAction.Consume(resource)).whenComplete { result, _ ->
@@ -1193,7 +1293,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 if (connections[player.uuid] !== player) return@scheduleNextTick
                 busy.remove(player.uuid)
                 if (result?.status == CoreTransactionStatus.COMMITTED) {
-                    if (resource == CoreResource.POTION) { actor.healPotion(); potionReady[player.uuid] = System.currentTimeMillis() + 10_000 }
+                    if (resource == CoreResource.POTION) { actor.healPotion(); potionReady[player.uuid] = System.currentTimeMillis() + POTION_COOLDOWN_MILLIS }
                     else actor.sharpen()
                     refresh(player)
                 } else player.sendMessage(CoreLoopItems.text(result?.message ?: "使用できませんでした。", NamedTextColor.RED))
@@ -1203,15 +1303,20 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     private fun updateHud(player: Player) {
         // The smith's forge covers the whole view; the action-bar HUD would sit on top of it.
-        if (polishSessions?.isOpen(player) == true || atlasSessions?.isOpen(player) == true) { player.sendActionBar(Component.empty()); return }
+        if (polishSessions?.isOpen(player) == true || atlasSessions?.isOpen(player) == true || grimoireSessions?.isOpen(player) == true) {
+            player.sendActionBar(Component.empty()); return
+        }
         val a = combatLab.account(player) ?: account(player) ?: return
         val actor = actor(player) ?: return
         player.food = 20
         player.foodSaturation = 20f
-        player.level = a.journey.level
         val currentXp = CoreJourneyRules.threshold(a.journey.level)
         val nextXp = CoreJourneyRules.threshold((a.journey.level + 1).coerceAtMost(40))
-        player.exp = if (nextXp == currentXp) 1f else ((a.journey.xp - currentXp).toFloat() / (nextXp - currentXp)).coerceIn(0f, 1f)
+        val progress = if (nextXp == currentXp) 1f else ((a.journey.xp - currentXp).toFloat() / (nextXp - currentXp)).coerceIn(0f, 1f)
+        val packed = packed(player)
+        // With the pack, level and progress live in the HUD plate; level 0 hides the vanilla number.
+        player.level = if (packed) 0 else a.journey.level
+        player.exp = if (packed) 0f else progress
         val session = sessions[player.uuid]
         val message = combatLab.summary(player) ?: if (isDeparting(player)) "遠征先を準備中…"
         else if (session == null) "開拓港  武器T${a.weaponTier} / 防具T${CoreGearSlot.armorSlots.minOf { a.armor(it).tier }}  手帳 [9]"
@@ -1219,10 +1324,17 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         else if (session.arena != null) "${session.arena.displayName} — ${session.combat.bossName()}"
         else "道の先のボスへ  戦利品 ${session.loot.remainingCount()}"
         val icons = listOf(CoreUiIcon.DASH, CoreUiIcon.SLAM, CoreUiIcon.WHIRL, CoreUiIcon.DEFENSE, CoreUiIcon.MAGIC)
+        val now = System.currentTimeMillis()
+        val potion = ((potionReady[player.uuid] ?: 0L) - now).coerceAtLeast(0L)
+        val buffs = actor.hudBuffs() + listOfNotNull(potion.takeIf { it > 0 }?.let {
+            CoreHudBuff(CoreHudBuffKind.POTION, it / 1000.0, POTION_COOLDOWN_MILLIS / 1000.0, cooldown = true) })
+        val trail = hudTrails.getOrPut(player.uuid) { CoreHudTrail() }.update(actor.health, actor.maxHealth.toDouble(), now)
         player.sendActionBar(CoreUiComponents.hud(CoreHudState(actor.health, actor.maxHealth.toDouble(), actor.mana.toDouble(), actor.maxMana.toDouble(),
             icons.mapIndexed { i, icon -> CoreHudSkill(icon, (i + 2).toString(), actor.cooldownRemaining(i) / 20.0, actor.cooldownTicks(i) / 20.0,
                 actor.skillDefinitions[i].mana, CoreSkillCatalog.artIndex(actor.skillDefinitions[i]), actor.skillAvailable(i), actor.resourceAvailable(i)) },
-            message + " / ${actor.weaponHint}", actor.resource, actor.resourceMax, actor.shield,actor.combatCue), packed(player)))
+            message + " / ${actor.weaponHint}", actor.resource, actor.resourceMax, actor.shield, actor.combatCue,
+            notice = actor.activeNotice, level = a.journey.level, experience = progress.toDouble(), healthTrail = trail, buffs = buffs,
+            classKey = actor.classId.name), packed))
     }
 
     override fun sessionSummary(player: Player): String = sessions[player.uuid]?.let {
@@ -1248,13 +1360,14 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             if (player.instance === colony.instance) player.remove()
             if (colony.instance.players.isEmpty()) colony.dispose()
         } }
-        firstMagic.forget(player.uuid)
+        io.execute { firstMagic.forget(player.uuid) }
         CoreCombatPresentation.forget(player)
         combatLab.disconnect(player)
         preparedMaps.forget(player.uuid)
         uiPack?.forget(player)
         polishSessions?.close(player,false)
         atlasSessions?.close(player,false)
+        grimoireSessions?.close(player,false)
         departing.remove(player.uuid)
         sessions.remove(player.uuid)?.let { session ->
             if (session.combat.bossDefeated && accounts[player.uuid]?.activeRun?.bossDefeated != true) {
@@ -1272,7 +1385,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
         questMaps.disconnect(player.uuid)
         actors.remove(player.uuid)?.resetActions()
-        busy.remove(player.uuid); potionReady.remove(player.uuid); lastUseAt.remove(player.uuid); menus.forget(player.uuid)
+        busy.remove(player.uuid); potionReady.remove(player.uuid); hudTrails.remove(player.uuid); lastUseAt.remove(player.uuid); menus.forget(player.uuid)
         rewards.drain(player.uuid).thenRunAsync({
             if (connections.containsKey(player.uuid)) return@thenRunAsync
             ledger.snapshot(player.uuid)?.activeRun?.let { run ->
@@ -1320,6 +1433,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
         polishSessions?.close()
         atlasSessions?.close()
+        grimoireSessions?.close()
     }
 
     private fun disciplineResource(discipline: QuestGatheringDiscipline): CoreResource = when (discipline) {

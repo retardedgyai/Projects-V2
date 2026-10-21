@@ -4,69 +4,79 @@
   "prompts": "assets/core-ui/skill-art-prompts.json",
   "skills": {
     "dash": {
-      "source_sha256": "a84a5d20beec7e22b491659acddce172bfd2e7a68eda5e925134b22c01bcbdf6",
-      "master_sha256": "d2506ca33765fe6e6e55d762cd269ffbf3454cf9c61e1c07ff86c846cf9d47d7",
+      "source_sha256": "7195b6974a31098617d63cef2dd8d6421ebc06ce9506d0d8007ad683b387c9d1",
+      "master_sha256": "4772aaf97b85e64ac564322a1b69f32eaef2cd0f160d71922c4db68456e9c428",
       "source_size": [
-        1254,
-        1254
+        16,
+        16
       ],
       "master_size": [
         32,
         32
       ],
-      "preapproved": true
+      "preapproved": false,
+      "source": "assets/core-ui/skills/warrior-16/dash.png",
+      "authored_by": "scripts/build_warrior_iron_icons.py"
     },
     "slam": {
-      "source_sha256": "2dc4973f3817d83524f0f5d1a4c12cbbeff77f269c3b8d1b7e91b5e7d7898324",
-      "master_sha256": "897850d9469d9f0b7916e5a78a60d34ceb00365892a223748ac24e0ecb3ba849",
+      "source_sha256": "6b039a85598c6c5dbf274ae6db9eff0035405f57fab1e6318ba8ee0444ea6fd0",
+      "master_sha256": "f5b12c7ca8c1f1b30b5dd9a8cf671dfd82d8ca49f855c237d9a4d6dcf5704ef8",
       "source_size": [
-        1254,
-        1254
+        16,
+        16
       ],
       "master_size": [
         32,
         32
       ],
-      "preapproved": false
+      "preapproved": false,
+      "source": "assets/core-ui/skills/warrior-16/slam.png",
+      "authored_by": "scripts/build_warrior_iron_icons.py"
     },
     "whirl": {
-      "source_sha256": "adb90c15409652c817950f112a63126ab745244f0db1a6b67ea199859e37e492",
-      "master_sha256": "402383d676a87f3917579e05bf98bae3017c9eb024190c6b747ad1d2d8822a5f",
+      "source_sha256": "e284e983060d4d752f51e0b0c7425a5cad88883c43bd8cb084167c30ce989c01",
+      "master_sha256": "addb3caef14da69f27af39492062c786257d867f5761b433c13535a015bc3ad4",
       "source_size": [
-        1254,
-        1254
+        16,
+        16
       ],
       "master_size": [
         32,
         32
       ],
-      "preapproved": false
+      "preapproved": false,
+      "source": "assets/core-ui/skills/warrior-16/whirl.png",
+      "authored_by": "scripts/build_warrior_iron_icons.py"
     },
     "war_guard": {
-      "source_sha256": "dba883976b205945638c95d35e2fd66d58e60786cf8c78e3fa50e4c78d00f157",
-      "master_sha256": "892c9409c22038b0d0fb2ff2e4b4a5349d7f44c78e405a871ad72c789c3f0418",
+      "source_sha256": "e07f08a6b83afa746c52ead29b54ea85eb28e4fdb0a769f3f0964d66cf8beffc",
+      "master_sha256": "1380cb73421c64b19115fd07599076840ac5bdfc4dae4b10e58529a60943b057",
       "source_size": [
-        1254,
-        1254
+        16,
+        16
       ],
       "master_size": [
         32,
         32
       ],
-      "preapproved": false
+      "preapproved": false,
+      "source": "assets/core-ui/skills/warrior-16/war_guard.png",
+      "authored_by": "scripts/build_warrior_iron_icons.py"
     },
     "war_wound": {
-      "source_sha256": "29f83ca03ad09861fa72e46959c1a0e099ce6fd5be48f92f70234ef2a7003994",
-      "master_sha256": "ea170c69951ba3714fcca601990fef749ec427e2e3733563d74a80bb149e06a2",
+      "source_sha256": "b031de6698a7863ef612352738a7e6663bec7dd04cf1a7aab7fd9d9f87ef734a",
+      "master_sha256": "ea19b75ce5087552a25571d4dea82b53f9df82b60d0e0cb4ed6acb9d8c3bdda6",
       "source_size": [
-        1254,
-        1254
+        16,
+        16
       ],
       "master_size": [
         32,
         32
       ],
-      "preapproved": false
+      "preapproved": false,
+      "source": "assets/core-ui/skills/warrior-16/war_wound.png",
+      "authored_by": "scripts/build_warrior_iron_icons.py"
     },
     "war_counter": {
       "source_sha256": "147f4a046daccf457ae0fa2bc7e51662985bfd0b0c62241826f94a16019e9b4b",
@@ -108,17 +118,19 @@
       "preapproved": false
     },
     "war_ult": {
-      "source_sha256": "8b8fd2ce3eef0ced1710823f5749baa447760c294e00782373fcf0f870beb973",
-      "master_sha256": "a5509a1d81a39ee2d31090eeb0c34efcb350f5d3a730ec4980f4d80927dafe8a",
+      "source_sha256": "7ad9b97f83a771c3f96d226b9cc67ec4c1b0cc16fcbf71751ad137ba6710ca38",
+      "master_sha256": "492516abcf6aa7c14c5f07cefffe1ee00f4fcaed87668f8cce53efa3ef47e4db",
       "source_size": [
-        1254,
-        1254
+        16,
+        16
       ],
       "master_size": [
         32,
         32
       ],
-      "preapproved": false
+      "preapproved": false,
+      "source": "assets/core-ui/skills/warrior-16/war_ult.png",
+      "authored_by": "scripts/build_warrior_iron_icons.py"
     },
     "war_banner": {
       "source_sha256": "77a7010dd62df59b0fe7bfeea1f576d11804d09e031050918ee996b25da2f6fa",

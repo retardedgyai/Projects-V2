@@ -63,7 +63,7 @@ fun main(args:Array<String>) {
         check(sessions.entityCount in 80..400)
         check(instance.entities.filter { it!==owner && it!==other }.all { other !in it.viewers })
         val sync=packets.filterIsInstance<PlayerPositionAndLookPacket>().last()
-        events.call(PlayerPacketEvent(owner,ClientTeleportConfirmPacket(sync.teleportId())))
+        events.call(PlayerPacketEvent(owner,ClientTeleportConfirmPacket(sync.teleportId(),net.minestom.server.coordinate.Pos.ZERO)))
         fun rotate(x:Double,y:Double) {
             val p=Pos(0.0,1.0,0.0,((x-400)/8).toFloat(),((y-240)/8).toFloat())
             events.call(PlayerPacketEvent(owner,ClientPlayerPositionAndRotationPacket(p,false,false)))

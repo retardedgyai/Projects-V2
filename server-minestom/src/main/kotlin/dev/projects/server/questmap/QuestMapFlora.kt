@@ -63,7 +63,7 @@ internal object QuestMapFlora {
                     if (plan.groundCoverAt(x, z) != cover) continue
                     val ground = plan.heightAt(x, z)
                     if (instance.getBlock(x, ground, z) !in SOIL) continue
-                    if (!instance.getBlock(x, ground + 1, z).isAir) continue
+                    if (!instance.getBlock(x, ground + 1, z).air()) continue
                     // A few grass tufts inside every flower patch keep it from looking planted.
                     val block = if (plant in MEADOW_FLOWERS && random.nextInt(5) == 0) Block.SHORT_GRASS else plant
                     instance.setBlock(x, ground + 1, z, block)

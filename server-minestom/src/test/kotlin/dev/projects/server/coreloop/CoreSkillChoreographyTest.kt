@@ -365,6 +365,8 @@ class CoreSkillChoreographyTest {
             val parts=CoreSkillChoreography.parts(e)
             if(job==CoreClass.WARRIOR && phase==CoreSkillVisualPhase.CONTACT && s.icon in setOf("war_cry","war_banner"))
                 assertTrue(parts.isEmpty(),"Support grants must not imply an enemy hit")
+            else if(job==CoreClass.WARRIOR && phase==CoreSkillVisualPhase.PREPARE && s.icon=="war_ult")
+                assertTrue(parts.isEmpty(),"The greatsword rising in hand is the windup")
             else assertTrue(parts.size in 1..if(s.icon=="mage_garden")21 else 16,"${s.icon}: ${parts.size}")
             for(p in parts) for(tick in 0..p.delayTicks+p.durationTicks) {
                 val pose=CoreSkillChoreography.pose(p,tick.toDouble())

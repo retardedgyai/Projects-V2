@@ -142,7 +142,7 @@ internal class MobGroundTelegraph(private val instance: InstanceContainer) {
         if (instance.getChunkAt(x.toDouble(), z.toDouble()) == null) return null
         val baseY = floor(point.y()).toInt()
         for (y in baseY + 1 downTo baseY - 3) {
-            if (instance.getBlock(x, y, z).isSolid && !instance.getBlock(x, y + 1, z).isSolid) {
+            if (instance.getBlock(x, y, z).solid() && !instance.getBlock(x, y + 1, z).solid()) {
                 val top = y + 1.0
                 // Do not paint a surface on an elevation which this attack cannot hit.
                 if (abs(top - point.y()) <= 2.2) return top

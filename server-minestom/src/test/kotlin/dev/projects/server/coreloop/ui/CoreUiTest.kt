@@ -21,7 +21,7 @@ class CoreUiTest {
         val text=plain(CoreUiComponents.hud(state,false))
         assertTrue(text.contains("2:未解放"))
         assertFalse(text.any { it.code in 0xE000..0xF8FF })
-        assertEquals(CoreHudLayout.LOCKED,CoreHudLayout.skillVisual(state.skills.single(),100.0).frame)
+        assertEquals(CoreHudLayout.LOCKED,CoreHudLayout.skillVisual(state.skills.single(),100.0).state)
     }
     private val model = CoreTooltipModel("開拓者の大剣", CoreUiRarity.EPIC, 4, 28, "大剣", listOf(
         CoreTooltipStat("攻撃力", "+42", CoreUiIcon.ATTACK)), listOf(CoreTooltipAffix("鋭刃", "攻撃力 +12%", "8〜15%", 57, "IV")), 4)
@@ -57,9 +57,12 @@ class CoreUiTest {
         val fallback = plain(CoreUiComponents.hud(state, false))
         assertTrue(fallback.contains("HP 70/100")); assertTrue(fallback.contains("3:4秒"))
         assertFalse(fallback.any { it.code in 0xE000..0xF8FF })
-        val packed = plain(CoreUiComponents.hud(state, true))
-        assertTrue(packed.any { it.code in 0xE400..0xE415 }); assertTrue(packed.any { it.code in 0xE420..0xE435 })
-        assertTrue(packed.any { it.code in 0xE440..0xE455 })
+        val packed = CoreUiComponents.hud(state, true)
+        val skillGlyphs = children(packed).filterIsInstance<TextComponent>()
+            .filter { it.style().font()?.asString() == "projects:hud_skills" }
+            .flatMap { run -> run.content().filter { it.code !in CoreHudLine.SPACE_POSITIVE..CoreHudLine.SPACE_NEGATIVE + 11 }.map(Char::toString) }
+        assertEquals(listOf(CoreHudGlyphs["skill_0_ready"].char.toString(), CoreHudGlyphs["skill_1_${CoreHudLayout.skillVisual(state.skills[1], 50.0).state}"].char.toString(),
+            CoreHudGlyphs["skill_2_${CoreHudLayout.skillVisual(state.skills[2], 50.0).state}"].char.toString()), skillGlyphs)
     }
 
     @Test fun `inventory titles fit their frame using bold Japanese pixel width`() {
@@ -95,7 +98,8 @@ class CoreUiTest {
         assertTrue("assets/projects/font/core_icons.json" in paths)
         assertTrue("assets/projects_ui_polish05/font/plates.json" in paths)
         assertTrue("assets/projects_ui_polish05/textures/forge_materials/ingot.png" in paths)
-        assertEquals(CoreUiPackPolicy.vanillaOverrides + CoreUiPackPolicy.vanillaAdditions + CoreUiPackPolicy.dialogWidgets,
+        assertEquals(CoreUiPackPolicy.vanillaOverrides + CoreUiPackPolicy.vanillaAdditions + CoreUiPackPolicy.dialogWidgets +
+            CoreUiPackPolicy.shaderOverrides,
             paths.filter { it.startsWith("assets/minecraft/") }.toSet())
         assertFalse(paths.any { it.startsWith("assets/minecraft/font/") })
         assertEquals(paths.size, paths.distinct().size)

@@ -16,7 +16,6 @@ import net.minestom.server.entity.metadata.display.TextDisplayMeta
 import net.minestom.server.instance.Instance
 import net.minestom.server.item.ItemStack
 import net.minestom.server.network.packet.server.play.ParticlePacket
-import net.minestom.server.network.packet.server.play.EntityAnimationPacket
 import net.minestom.server.particle.Particle
 import net.minestom.server.sound.SoundEvent
 import java.nio.file.Path
@@ -159,9 +158,7 @@ internal class VerdantRoadQuestService(
         }
         active.elapsedTicks++
         if (active.elapsedTicks == 1 || active.elapsedTicks % GATHERING_SWING_INTERVAL_TICKS == 0) {
-            player.sendPacketToViewersAndSelf(
-                EntityAnimationPacket(player.entityId, EntityAnimationPacket.Animation.SWING_MAIN_ARM),
-            )
+            player.swingMainHand()
             playGatheringSound(player, active.node.discipline, active.targetPosition, completion = false)
         }
         updateGatheringProgressDisplay(active)

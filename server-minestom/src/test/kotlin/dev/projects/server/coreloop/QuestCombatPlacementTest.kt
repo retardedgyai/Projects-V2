@@ -115,11 +115,11 @@ class QuestCombatPlacementTest {
     }
 
     private fun assertSupportedAndClear(arena: InstanceContainer, point: Pos) {
-        assertTrue(arena.getBlock(point.sub(0.0, 0.1, 0.0)).isSolid, "Unsupported combat spawn: $point")
+        assertTrue(arena.getBlock(point.sub(0.0, 0.1, 0.0)).solid(), "Unsupported combat spawn: $point")
         // Independently inspect the full enlarged boss height, not the production helper's sample list.
         for (sample in 0..26) {
             val block = arena.getBlock(point.add(0.0, 0.05 + sample * 0.1, 0.0))
-            assertFalse(block.isSolid || block.isLiquid, "Combat body intersects ${block.name()} at $point (sample $sample)")
+            assertFalse(block.solid() || block.liquid(), "Combat body intersects ${block.name()} at $point (sample $sample)")
         }
     }
 

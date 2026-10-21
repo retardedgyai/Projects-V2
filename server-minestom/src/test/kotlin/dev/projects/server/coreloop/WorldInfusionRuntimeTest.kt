@@ -79,6 +79,10 @@ class WorldInfusionRuntimeTest {
             assertTrue(coreMeta.leftRotation[1]!=0f,"Committed ritual must rotate the actual whole-core ItemDisplay")
             assertTrue(coreMeta.itemStack.get(DataComponents.CUSTOM_MODEL_DATA)!!.colors().isNotEmpty(),"Core light must receive the shared event tint")
             assertEquals(4,map.entities.count { (it.entityMeta as? ItemDisplayMeta)?.itemStack?.get(DataComponents.ITEM_MODEL)=="projects:infusion-v4/support" })
+            // 26.2 turns item displays by -yaw then 180 degrees: the (-1,-1) blade needs yaw 45 to lean at the core.
+            val blade=map.entities.single { (it.entityMeta as? ItemDisplayMeta)?.itemStack?.get(DataComponents.ITEM_MODEL)=="projects:infusion-v4/support" && it.position.x()<0 && it.position.z()<0 }
+            assertEquals(45f,blade.position.yaw())
+            assertEquals(180f,core.position.yaw())
             assertEquals(Block.BARRIER,map.getBlock(-1,43,-1),"Packed supports use dedicated models with invisible hitboxes")
             assertTrue(map.entities.any { (it.entityMeta as? ItemDisplayMeta)?.itemStack?.get(DataComponents.CUSTOM_MODEL_DATA)?.colors()?.isNotEmpty()==true },"Packed smoke must use real tinted billboard entities")
             repeat(280) { game.tick() } // Includes the bounded flight-arrival wait before offering absorption.

@@ -132,4 +132,15 @@ class MobAbilityManagerTest {
         id, id, MobAttackShape.Sweep(), 4.0, 10.0,
         telegraphMillis = 1000, trackingMillis = 400, recoveryMillis = 500, cooldownMillis = cooldown,
     )
+
+    @Test
+    fun `silence offers only the first plain ability`() {
+        val plain = MobAbility("plain", "殴り", MobAttackShape.Sweep(3.0, 90.0), 4.0, 5.0, 600, 300, 200, 0)
+        val strong = MobAbility("strong", "大技", MobAttackShape.Sweep(3.0, 90.0), 4.0, 20.0, 600, 300, 200, 0, weight = 50)
+        val manager = MobAbilityManager(listOf(plain, strong), Random(1), globalCooldownMillis = 0)
+        repeat(10) { i ->
+            assertEquals("plain", manager.tryStart(i * 2000L, origin, target, plainOnly = true)!!.frame.ability.id)
+            manager.cancel()
+        }
+    }
 }

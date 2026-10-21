@@ -21,7 +21,7 @@ status: "現行。2026-08-19の決定事項を置き換える（戦闘・ビル�
 | `assets/` | 元画像・参照資料。 |
 | `scripts/` | アセット生成と検証のスクリプト。 |
 
-Client は Vanilla Minecraft 26.2。見た目は Server が配布するリソースパックで出す。
+Client は Vanilla Minecraft 26.3。見た目は Server が配布するリソースパックで出す。
 
 ### 2026-10-14に削除したもの
 

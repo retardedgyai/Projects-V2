@@ -62,4 +62,21 @@ data class CoreHudState(
     val resourceMaximum: Double = 100.0,
     val shield: Double = 0.0,
     val combatCue: String = "",
+    /** Short feedback ("あと3秒" etc.) shown in the HUD caption slot instead of replacing the action bar. */
+    val notice: String = "",
+    val level: Int = 0,
+    /** Progress to the next level, 0..1. */
+    val experience: Double = 0.0,
+    /** Recently lost health still shown as a pale trail; equal to [health] when nothing is draining. */
+    val healthTrail: Double = health,
+    val buffs: List<CoreHudBuff> = emptyList(),
+    /** Class whose wings and crown decorate the level diamond (CoreClass.name, any case). */
+    val classKey: String = "warrior",
 )
+
+enum class CoreHudBuffKind(val glyph: String, val label: String) {
+    WHETSTONE("whetstone", "砥石"), POTION("potion", "回復薬"), DODGE("dodge", "回避"),
+}
+
+/** [cooldown] buffs darken while recovering; others are active effects counting down. */
+data class CoreHudBuff(val kind: CoreHudBuffKind, val remainingSeconds: Double, val totalSeconds: Double, val cooldown: Boolean)

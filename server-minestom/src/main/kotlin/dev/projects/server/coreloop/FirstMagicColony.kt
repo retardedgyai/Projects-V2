@@ -153,9 +153,9 @@ internal class FirstMagicColony private constructor(
         if (cells.any { it.blockX() !in -21..21 || it.blockZ() !in -20..23 || it.blockY() !in 41..47 ||
                 instance.getBlock(it) != Block.AIR || placementAt(it) != null }) return false
         if (kind == ColonyPlaceable.STAR_CHART) {
-            if (cells.any { !instance.getBlock(backing(placement, it)).isSolid }) return false
+            if (cells.any { !instance.getBlock(backing(placement, it)).solid() }) return false
         } else {
-            if (cells.filter { it.blockY() == y }.any { !instance.getBlock(it.blockX(), y - 1, it.blockZ()).isSolid }) return false
+            if (cells.filter { it.blockY() == y }.any { !instance.getBlock(it.blockX(), y - 1, it.blockZ()).solid() }) return false
         }
         if (save) persist(placements.values + placement)
         placements[kind] = placement
