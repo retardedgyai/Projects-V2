@@ -11,3 +11,4 @@
 - `horn-gear-ideas.html` — 枝角を装備で使う14案（☆で選ぶ）。
 - `unique-traits.html` — 装備の層と、桜牙の型・桜角の首飾りのユニーク特性を組む見本。
 - `sakura-map.html` — 桜牙獣の素材の流れを1枚で見る全体図（いちばん新しい）。公開版 https://claude.ai/artifact/M1QDTSnWbrUuTmh6ZTbT2Q
+- `shade-drops.html` — 黒翳竜（ダンジョンのボス）の素材の使い道4案を流れの絵で比べる。公開版 https://claude.ai/artifact/KUnemAXtSD9FLwPFNqVwm8

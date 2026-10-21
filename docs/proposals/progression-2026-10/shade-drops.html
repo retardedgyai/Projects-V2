@@ -1,0 +1,118 @@
+<title>黒翳竜の素材</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header with the three drops, then 4 direction cards; each card = a small flow picture + the equipment layer it touches (highlighted) + pick button */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --shade: #b49ae8; --horn: #e07ad0; --dust: #9a86c8; --gold: #e6c477; --sakura: #f2a3c0;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1280px; margin: 0 auto; padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.4rem; margin: 0; }
+p { margin: 0; color: var(--muted); max-width: 80ch; }
+.drops { display: flex; flex-wrap: wrap; gap: 10px; }
+.drop { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; display: grid; gap: 0; min-width: 0; }
+.drop b { color: var(--shade); }
+.drop span { font-size: .8rem; color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.card.picked { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.name { font-weight: 700; font-size: 1.05rem; }
+.k { color: var(--gold); margin-right: 6px; }
+.rec { font-size: .72rem; color: #1a1405; background: var(--gold); border-radius: 6px; padding: 0 6px; margin-left: 6px; }
+.pic { background: #0f1420; border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+.pic svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.layers { display: flex; gap: 4px; flex-wrap: wrap; }
+.ly { font-size: .78rem; border: 1px solid var(--line); border-radius: 6px; padding: 1px 8px; color: #59607a; }
+.ly.on { color: #1a1405; background: var(--shade); border-color: var(--shade); }
+.note { font-size: .86rem; color: var(--muted); }
+.pick { justify-self: start; font: inherit; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 4px 16px; cursor: pointer; }
+.card.picked .pick { background: var(--gold); color: #1a1405; border-color: var(--gold); }
+.pick:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.tray { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.copy { font: inherit; background: var(--gold); color: #1a1405; border: 0; border-radius: 8px; padding: 5px 14px; font-weight: 700; cursor: pointer; }
+.copy:disabled { opacity: .4; cursor: not-allowed; }
+</style>
+
+<main>
+  <header style="display:grid;gap:8px">
+    <h1>黒翳竜の素材 ── 何に使う？</h1>
+    <p>桜牙獣（ワールドボス）は<span style="color:var(--sakura)">武器と首飾り</span>に使うと決めた。黒翳竜（根の洞の奥のダンジョンボス、パーティで倒す）はどこに効かせるか。絵の中の紫が黒翳竜の素材。いいと思った案を選んで、下の文を送ってください（組み合わせてもOK）。</p>
+    <div class="drops">
+      <div class="drop"><b>怒りの角</b><span>正面で折る（怒った後だけ）</span></div>
+      <div class="drop"><b>扇の翼膜</b><span>横から裂く（左右2枚）</span></div>
+      <div class="drop"><b>翳鱗粉</b><span>倒すと参加者みんな</span></div>
+    </div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <div class="tray"><span id="picked" style="flex:1 1 260px;min-width:0">まだ選んでいない。</span><button class="copy" id="copy" disabled>送る文をコピー</button><span id="copied" style="font-size:.82rem;color:#9fd49a"></span></div>
+</main>
+
+<script>
+(() => {
+  const LAYERS = ['Tier', '型', '特性', 'MOD', '強化', '防具'];
+  // each flow: list of boxes [label, sub, colorVar] left→right
+  const IDEAS = [
+    { k: 'A', n: '防具の器＋特性', rec: false, on: ['防具', '特性'],
+      flow: [['扇の翼膜', '材料', 'shade'], ['鍛冶', '翳の外套（胴）を作る', 'fg'], ['角〈特性〉', '注入', 'horn'], ['特性つきの胴', '1つだけ', 'gold']],
+      note: '桜牙獣と同じ形を、防具でやる。分かりやすいが、2体が同じ遊びになる。' },
+    { k: 'B', n: '防具4部位のセット効果', rec: true, on: ['防具'],
+      flow: [['扇の翼膜', '頭・脚・足', 'shade'], ['怒りの角', '胴の核', 'horn'], ['鍛冶', '翳の防具を作る', 'fg'], ['2部位 / 4部位', 'そろえると効果', 'gold']],
+      note: '桜＝武器と首飾り、黒翳＝防具、で役が分かれる。そろえる目標がはっきり。4部位の仕組みは今のコードにある。' },
+    { k: 'C', n: 'MOD を操る', rec: false, on: ['MOD'],
+      flow: [['翳鱗粉', 'みんな落とす', 'dust'], ['魔術', '翳のオーブにする', 'fg'], ['MOD 1つを固定', '残りを引き直す', 'gold']],
+      note: '理想の6MODへ近づく道。オーブの運を和らげる。鱗粉はみんな落とすので量が出て、使うと消える（出口になる）。' },
+    { k: 'D', n: '強化を守る', rec: false, on: ['強化'],
+      flow: [['翳鱗粉', 'みんな落とす', 'dust'], ['魔術', '翳の膜にする', 'fg'], ['+15 以降', '失敗しても壊れない', 'gold']],
+      note: '+15〜+30 の怖さを減らす消耗品。使うと消える。星鉄の触媒（成功率）とは別の役。' },
+  ];
+  const COLORS = { shade: '#b49ae8', horn: '#e07ad0', dust: '#9a86c8', gold: '#e6c477', fg: '#ebe7dc' };
+  function flowSvg(flow) {
+    const w = 140, gap = 40, h = 70, W = flow.length * w + (flow.length - 1) * gap + 20;
+    let s = `<svg viewBox="0 0 ${W} ${h + 20}" role="img" aria-label="${flow.map(f => f[0]).join('から')}への流れ">`;
+    flow.forEach((f, i) => {
+      const x = 10 + i * (w + gap), c = COLORS[f[2]];
+      s += `<rect x="${x}" y="10" width="${w}" height="${h}" rx="10" fill="#1b2233" stroke="${c}" stroke-width="${i === flow.length - 1 ? 2.5 : 1.5}"/>`;
+      s += `<text x="${x + w / 2}" y="40" fill="${c}" font-family="M PLUS 2, sans-serif" font-size="14" font-weight="700" text-anchor="middle">${f[0]}</text>`;
+      s += `<text x="${x + w / 2}" y="60" fill="#959bb0" font-family="M PLUS 2, sans-serif" font-size="11" text-anchor="middle">${f[1]}</text>`;
+      if (i < flow.length - 1) s += `<path d="M${x + w + 4} 45 L${x + w + gap - 6} 45" stroke="#5b6a90" stroke-width="2.5" marker-end="url(#a${i})"/><defs><marker id="a${i}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#5b6a90"/></marker></defs>`;
+    });
+    return s + '</svg>';
+  }
+  let picked = new Set();
+  try { picked = new Set(JSON.parse(localStorage.getItem('sh-picked') || '[]')); } catch (e) {}
+  function render() {
+    document.getElementById('grid').innerHTML = IDEAS.map(i => `<article class="card ${picked.has(i.k) ? 'picked' : ''}">
+      <div class="top"><span class="name"><span class="k">${i.k}</span>${i.n}${i.rec ? '<span class="rec">おすすめ</span>' : ''}</span></div>
+      <div class="pic">${flowSvg(i.flow)}</div>
+      <div class="layers">${LAYERS.map(l => `<span class="ly ${i.on.includes(l) ? 'on' : ''}">${l}</span>`).join('')}</div>
+      <p class="note">${i.note}</p>
+      <button class="pick" data-k="${i.k}" aria-pressed="${picked.has(i.k)}">${picked.has(i.k) ? '★ 選んだ' : '☆ 選ぶ'}</button>
+    </article>`).join('');
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    document.getElementById('picked').innerHTML = sel.length ? '選んだ：' + sel.map(i => `<b>${i.k}</b> ${i.n}`).join('、') : 'まだ選んでいない。';
+    document.getElementById('copy').disabled = !sel.length;
+  }
+  document.getElementById('grid').addEventListener('click', e => {
+    const b = e.target.closest('.pick'); if (!b) return;
+    picked.has(b.dataset.k) ? picked.delete(b.dataset.k) : picked.add(b.dataset.k);
+    try { localStorage.setItem('sh-picked', JSON.stringify([...picked])); } catch (e) {}
+    render();
+  });
+  document.getElementById('copy').addEventListener('click', () => {
+    const text = '黒翳竜の素材、気になる案：' + IDEAS.filter(i => picked.has(i.k)).map(i => `${i.k} ${i.n}`).join('、');
+    const ok = () => { document.getElementById('copied').textContent = 'コピーした。チャットに貼って送ってください。'; };
+    const ng = () => { document.getElementById('copied').textContent = text; };
+    try { navigator.clipboard.writeText(text).then(ok, ng); } catch (e) { ng(); }
+  });
+  render();
+})();
+</script>
