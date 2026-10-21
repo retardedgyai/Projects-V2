@@ -1,0 +1,82 @@
+<title>ボス素材と装備</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: one picture with two rows (桜牙獣 / 黒翳竜) sharing the same 5-step pattern, then the trait lists side by side */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --sakura: #f2a3c0; --horn: #f0a35e; --shade: #b49ae8; --shorn: #e07ad0; --gold: #e6c477;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1280px; margin: 0 auto; padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 14px; }
+h1 { font-size: 1.4rem; margin: 0; }
+h2 { font-size: 1rem; margin: 0; }
+p { margin: 0; color: var(--muted); max-width: 80ch; }
+.pic { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: #0f1420; }
+.pic svg { display: block; width: 100%; min-width: 900px; height: auto; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 800px) { .two { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 6px; min-width: 0; }
+.tr { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 2px 10px; font-size: .9rem; }
+.tr b { font-weight: 500; }
+.tr span { color: var(--muted); }
+</style>
+
+<main>
+  <h1>ボス素材と装備 ── 2体とも同じ形</h1>
+  <p>藍が A「防具の器＋特性」を選んだので、2体とも同じ流れになった。違うのは <b style="color:var(--sakura)">桜牙獣＝武器と首飾り</b>、<b style="color:var(--shade)">黒翳竜＝防具（胴）</b>。点線は未決。</p>
+  <div class="pic">
+    <svg viewBox="0 0 1120 420" role="img" aria-label="桜牙獣と黒翳竜の素材が、鍛冶で器になり、魔術の注入で特性が入り、装備になる流れ">
+      <defs>
+        <marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#5b6a90"/></marker>
+      </defs>
+      <g font-family="M PLUS 2, sans-serif" font-size="13" fill="#959bb0" text-anchor="middle">
+        <text x="105" y="26">ボス</text><text x="300" y="26">器の素材</text><text x="490" y="26">鍛冶の職人</text><text x="690" y="26">特性の素材</text><text x="880" y="26">魔術の注入</text><text x="1045" y="26">できる物</text>
+      </g>
+      <g font-family="M PLUS 2, sans-serif" text-anchor="middle">
+        <!-- sakura row -->
+        <rect x="30" y="50" width="150" height="120" rx="14" fill="#2a1822" stroke="#f2a3c0" stroke-width="2"/>
+        <text x="105" y="102" fill="#f2a3c0" font-size="18" font-weight="700">桜牙獣</text><text x="105" y="126" fill="#959bb0" font-size="12">ワールドボス</text>
+        <rect x="230" y="70" width="140" height="80" rx="10" fill="#1b2233" stroke="#f2a3c0"/><text x="300" y="104" fill="#ebe7dc" font-size="14">T3の素材</text><text x="300" y="124" fill="#959bb0" font-size="11">花びらは巻物の道へ</text>
+        <rect x="420" y="70" width="140" height="80" rx="10" fill="#1b2233" stroke="#ebe7dc"/><text x="490" y="104" fill="#ebe7dc" font-size="14">器を作る</text><text x="490" y="124" fill="#959bb0" font-size="11">桜牙の型・首飾り</text>
+        <rect x="620" y="70" width="140" height="80" rx="10" fill="#2a1f14" stroke="#f0a35e"/><text x="690" y="104" fill="#f0a35e" font-size="14">枝角〈特性〉</text><text x="690" y="124" fill="#959bb0" font-size="11">正面で折る・運で1つ</text>
+        <rect x="810" y="70" width="140" height="80" rx="10" fill="#1b2233" stroke="#ebe7dc"/><text x="880" y="104" fill="#ebe7dc" font-size="14">特性を入れる</text><text x="880" y="124" fill="#959bb0" font-size="11">外れ3本→好きな1本</text>
+        <rect x="985" y="60" width="120" height="100" rx="12" fill="#2a1f14" stroke="#e6c477" stroke-width="2.5"/><text x="1045" y="100" fill="#e6c477" font-size="14" font-weight="700">特性つき</text><text x="1045" y="120" fill="#e6c477" font-size="14" font-weight="700">武器・首飾り</text>
+
+        <!-- shade row -->
+        <rect x="30" y="240" width="150" height="120" rx="14" fill="#1e1a2e" stroke="#b49ae8" stroke-width="2"/>
+        <text x="105" y="292" fill="#b49ae8" font-size="18" font-weight="700">黒翳竜</text><text x="105" y="316" fill="#959bb0" font-size="12">根の洞のボス</text>
+        <rect x="230" y="260" width="140" height="80" rx="10" fill="#1b2233" stroke="#b49ae8"/><text x="300" y="294" fill="#b49ae8" font-size="14">扇の翼膜</text><text x="300" y="314" fill="#959bb0" font-size="11">横から裂く・左右</text>
+        <rect x="420" y="260" width="140" height="80" rx="10" fill="#1b2233" stroke="#ebe7dc"/><text x="490" y="294" fill="#ebe7dc" font-size="14">器を作る</text><text x="490" y="314" fill="#959bb0" font-size="11">翳の外套（胴）</text>
+        <rect x="620" y="260" width="140" height="80" rx="10" fill="#2a1630" stroke="#e07ad0"/><text x="690" y="294" fill="#e07ad0" font-size="14">怒りの角〈特性〉</text><text x="690" y="314" fill="#959bb0" font-size="11">正面で折る・運で1つ</text>
+        <rect x="810" y="260" width="140" height="80" rx="10" fill="#1b2233" stroke="#ebe7dc"/><text x="880" y="294" fill="#ebe7dc" font-size="14">特性を入れる</text><text x="880" y="314" fill="#959bb0" font-size="11">外れ3本→好きな1本</text>
+        <rect x="985" y="250" width="120" height="100" rx="12" fill="#1e1a2e" stroke="#e6c477" stroke-width="2.5"/><text x="1045" y="290" fill="#e6c477" font-size="14" font-weight="700">特性つき</text><text x="1045" y="310" fill="#e6c477" font-size="14" font-weight="700">胴の防具</text>
+
+        <!-- dust (open) -->
+        <rect x="230" y="372" width="140" height="38" rx="10" fill="#1b2233" stroke="#9a86c8" stroke-dasharray="6 5"/><text x="300" y="396" fill="#9a86c8" font-size="13">翳鱗粉 → 未決</text>
+      </g>
+      <g fill="none" stroke="#5b6a90" stroke-width="2.5" marker-end="url(#m)">
+        <path d="M180 110 L228 110"/><path d="M370 110 L418 110"/><path d="M560 110 L618 110"/><path d="M760 110 L808 110"/><path d="M950 110 L983 110"/>
+        <path d="M180 300 L228 300"/><path d="M370 300 L418 300"/><path d="M560 300 L618 300"/><path d="M760 300 L808 300"/><path d="M950 300 L983 300"/>
+        <path d="M180 340 C205 360 205 390 228 391" stroke-dasharray="6 5"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="two">
+    <div class="panel">
+      <h2 style="color:var(--sakura)">桜牙獣の特性（仮）</h2>
+      <div class="tr"><b>散り際</b><span>HP30%以下で攻撃+25%</span><b>花吹雪の残り香</b><span>部位を壊すと仲間も攻撃+10%</span><b>返り咲き</b><span>1回だけ倒れても起き上がる</span><b>風に舞う</b><span>回避のあと必ず会心</span><b>桜紋</b><span>3つ重ねると弾ける</span></div>
+    </div>
+    <div class="panel">
+      <h2 style="color:var(--shade)">黒翳竜の特性（仮・新しく）</h2>
+      <div class="tr"><b>触角の予感</b><span>背後からの攻撃の0.5秒前に体が光って知らせる</span><b>翳の外套</b><span>受けたダメージの一部が鱗粉になって周りの敵に返る</span><b>鱗粉の殻</b><span>HP25%を切ると1回だけ殻を張り、5秒ダメージを吸う</span><b>翼脚</b><span>回避の距離が長くなる</span><b>侵食</b><span>当てた敵に鱗粉がたまり、満ちると鈍くなる</span></div>
+    </div>
+  </div>
+  <p>守るものは同じ：1つの装備に特性1つ／同じ特性は重ねられない／角は売り買いできる／外れは注入で合わせて消える（出口）。翳鱗粉（参加者みんなが落とす）の使い道はまだ空いている。</p>
+</main>
