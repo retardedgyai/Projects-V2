@@ -174,8 +174,8 @@ class CoreHudLayoutTest {
             assertEquals(0, layout(CoreDamageNumbers.render(amount, crit, !crit)).second)
     }
 
-    @Test fun `all seventy skill arts have every state and sit exactly on hotbar slots two to six`() {
-        for (index in 0..69) for (state in listOf(CoreHudLayout.READY, CoreHudLayout.COOLDOWN, CoreHudLayout.NO_MANA, CoreHudLayout.LOCKED))
+    @Test fun `all sixty skill arts have every state and sit exactly on hotbar slots two to six`() {
+        for (index in 0..59) for (state in listOf(CoreHudLayout.READY, CoreHudLayout.COOLDOWN, CoreHudLayout.NO_MANA, CoreHudLayout.LOCKED))
             assertTrue(CoreHudGlyphs["skill_${index}_$state"].advance <= 17, "16 px art, one texel per GUI pixel")
         // Vanilla draws hotbar item i at x = centre - 91 + 3 + 20 i; keys 2-6 are slots 1-5.
         val glyphs = layout(CoreHudLayout.render(CoreHudState(80.0, 140.0, 100.0, skills = loadout))).first

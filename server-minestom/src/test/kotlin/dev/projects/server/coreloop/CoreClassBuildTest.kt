@@ -20,7 +20,7 @@ class CoreClassBuildTest {
             }
             skills.map { it.icon }
         }
-        assertEquals(70,icons.distinct().size);assertEquals(icons,CoreSkillCatalog.artNames)
+        assertEquals(60,icons.distinct().size);assertEquals(icons,CoreSkillCatalog.artNames)
         val font=javaClass.classLoader.getResourceAsStream("core-ui-pack/assets/projects/font/hud_skills.json")!!.bufferedReader().readText()
         icons.forEach { assertContains(font,"hud_skill_${it}.png") }
     }

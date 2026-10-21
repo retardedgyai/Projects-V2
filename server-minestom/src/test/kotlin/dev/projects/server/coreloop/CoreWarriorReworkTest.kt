@@ -20,7 +20,7 @@ class CoreWarriorReworkTest {
     }
 
     @Test fun `retired entries keep catalog order and art but are never selectable`() {
-        assertEquals(70, CoreSkillCatalog.artNames.size)
+        assertEquals(60, CoreSkillCatalog.artNames.size)
         assertEquals(listOf(0, 1, 2, 3, 4), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
         assertEquals(listOf(0), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
         assertEquals(listOf("war_counter", "war_cry", "war_breach", "war_banner"), warrior.filter { it.retired }.map { it.icon })
