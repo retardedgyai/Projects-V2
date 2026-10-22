@@ -83,16 +83,6 @@ class CoreHudLayoutTest {
                 MobHudEffect(MobHudEffectKind.DEBUFF, "slow"))),
     )
 
-    @Test fun `the warrior shows the beast as open eyes and xp on the strip`() {
-        fun glyphs(n: Double) = layout(CoreHudLayout.render(CoreHudState(1.0, 1.0, 1.0, resource = n, resourceMaximum = 3.0,
-            experience = .5, classKey = "warrior"))).first
-        assertEquals(0, CoreHudLayout.beastEyes(CoreHudState(1.0, 1.0, 1.0, resource = .9, classKey = "warrior")))
-        assertEquals(2, CoreHudLayout.beastEyes(CoreHudState(1.0, 1.0, 1.0, resource = 2.7, classKey = "warrior")))
-        assertEquals(10, CoreHudLayout.xpCells(.5)); assertEquals(0, CoreHudLayout.xpCells(Double.NaN))
-        for (k in 1..3) CoreHudGlyphs["beast_eye_$k"]; CoreHudGlyphs["beast_awake"]; CoreHudGlyphs["xp_cell"]
-        assertTrue(glyphs(3.0).size > glyphs(0.0).size)
-    }
-
     @Test fun `export HUD surfaces from the actual components for the preview`() {
         val root = generateSequence(java.nio.file.Path.of("").toAbsolutePath()) { it.parent }
             .first { java.nio.file.Files.isRegularFile(it.resolve("settings.gradle.kts")) }
@@ -108,9 +98,7 @@ class CoreHudLayoutTest {
             Triple("actionbar", "unavailable", CoreUiComponents.hud(CoreHudState(18.0, 240.0, 4.0, skills = loadout.mapIndexed { i, s ->
                 s.copy(remainingSeconds = if (i == 0) 8.0 else 0.0, resourceAvailable = i != 2, unlocked = i != 4) }, resource = 0.0,
                 level = 3, experience = .05, notice = "マナが足りません（必要 15）", classKey = "assassin"), true)),
-        ) + CoreHudLayout.classes.map { Triple("actionbar", "class-$it", CoreUiComponents.hud(combat(it), true)) } +
-            (0..3).map { n -> Triple("actionbar", "beast-$n", CoreUiComponents.hud(CoreHudState(180.0, 240.0, 80.0, skills = loadout,
-                resource = n + .4, resourceMaximum = 3.0, level = 12, experience = .42, classKey = "warrior"), true)) } + listOf(
+        ) + CoreHudLayout.classes.map { Triple("actionbar", "class-$it", CoreUiComponents.hud(combat(it), true)) } + listOf(
             Triple("boss", "boss", CoreBossBarHud.render(bossHud(), 14900.0)),
             Triple("boss", "broken", CoreBossBarHud.render(bossHud().copy(health = 8200.0, broken = .55,
                 effects = listOf(MobHudEffect(MobHudEffectKind.CC, "broken")) + bossHud().effects), 9000.0)),

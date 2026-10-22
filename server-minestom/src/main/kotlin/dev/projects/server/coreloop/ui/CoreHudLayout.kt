@@ -82,11 +82,6 @@ internal object CoreHudLayout {
         if (!value.isFinite() || !maximum.isFinite() || maximum <= 0.0 || value <= 0.0) 0
         else floor((value / maximum).coerceIn(0.0, 1.0) * CELL_COUNT).toInt().coerceIn(1, CELL_COUNT)
 
-    /** XP as lit strip cells out of [CELL_COUNT] (warrior). */
-    fun xpCells(experience: Double): Int =
-        if (!experience.isFinite() || experience <= 0.0) 0 else floor(experience.coerceIn(0.0, 1.0) * CELL_COUNT).toInt().coerceIn(1, CELL_COUNT)
-    /** Whole beast stacks shown as open eyes, 0..3. */
-    fun beastEyes(state: CoreHudState): Int = (state.resource?.takeIf { it.isFinite() } ?: 0.0).toInt().coerceIn(0, 3)
     fun xpStep(experience: Double): Int =
         if (!experience.isFinite() || experience <= 0.0) 0 else floor(experience.coerceIn(0.0, 1.0) * XP_STEPS).toInt().coerceIn(1, XP_STEPS)
 
@@ -116,21 +111,12 @@ internal object CoreHudLayout {
         gaugeValue(line, HP_X, HP_W, "${number(state.health)}/${number(state.maxHealth)}")
         line.fill("mp_fill", MP_X, fillWidth(state.mana, state.maxMana, MP_W))
         gaugeValue(line, MP_X, MP_W, "${number(state.mana)}/${number(state.maxMana)}")
+        for (i in 0 until litCells(state)) line.put(CELL_X + i * CELL_PITCH, "rage_cell")
+        // Level diamond: class wings and crown, XP filling the class-colour band clockwise.
         val job = job(state)
-        if (job == "warrior") {
-            // Warrior (Creator 2026-10-22, mock 1-A): the strip is the XP bar, the beast is the eyes on the diamond.
-            for (i in 0 until xpCells(state.experience)) line.put(CELL_X + i * CELL_PITCH, "xp_cell")
-            line.put(EMBLEM_X, "emblem_$job")
-            val eyes = beastEyes(state)
-            for (k in 1..eyes) line.put(EMBLEM_X, "beast_eye_$k")
-            if (eyes >= 3) line.put(EMBLEM_X, "beast_awake")
-        } else {
-            for (i in 0 until litCells(state)) line.put(CELL_X + i * CELL_PITCH, "rage_cell")
-            // Level diamond: class wings and crown, XP filling the class-colour band clockwise.
-            line.put(EMBLEM_X, "emblem_$job")
-            val step = xpStep(state.experience)
-            if (step > 0) line.put(EMBLEM_X, "xp_${job}_$step")
-        }
+        line.put(EMBLEM_X, "emblem_$job")
+        val step = xpStep(state.experience)
+        if (step > 0) line.put(EMBLEM_X, "xp_${job}_$step")
         if (state.level > 0) line.numberCentred(0.0, state.level.coerceIn(1, 999).toString(), CoreHudGlyphs.NUM_GAUGE, LEVEL)
         // Skills sit over hotbar slots 2-6 (the keys that cast them).
         state.skills.take(5).forEachIndexed { index, skill ->
