@@ -678,39 +678,6 @@ def furrow_pixels(stage, w=32, n=128, seed=41):
     return img
 
 
-def rift_pixels(stage, w=24, n=128, seed=57):
-    """地走り (2026-10-22): one thin crack racing forward along the ground, the same width all the way (unlike the
-    地割り furrow that is torn widest at the blow); a black zigzag gap, dark earth lips, short splinters off it.
-    Row n-1 is at the wielder, row 0 far ahead. stage 0..3 = running out a quarter at a time, 4 = whole,
-    5..6 = closing up."""
-    img = Image.new('RGBA', (w, n), (0, 0, 0, 0))
-    px = img.load()
-    def put(x, y, c):
-        if 0 <= x < w and 0 <= y < n: px[x, y] = c + (255,)
-    reach = int(n * (1 - min(stage + 1, 4) / 4))
-    cx = w / 2
-    for y in range(n - 1, reach - 1, -1):
-        cx += (1 if _h(y // 3, seed) > .5 else -1) * .6     # zigzag, not a ruled line
-        cx = max(7, min(w - 8, cx))
-        hw = 1.6 + .9 * _h(y // 4, seed, 2)
-        for x in range(w):
-            d = abs(x + .5 - cx)
-            v = _h(x, y // 2, seed, 1)
-            if d <= hw * .45: c = (18, 14, 12)
-            elif d <= hw: c = SHADOW if v > .4 else EARTH[3]
-            elif d <= hw + 1.4: c = EARTH[2] if v > .45 else EARTH[1]
-            elif d <= hw + 2.4 and v > .7: c = EARTH[0]
-            else: continue
-            put(x, y, c)
-        if y % 9 == 4:                                       # a splinter off one side, slanting forward
-            side = 1 if _h(y, seed, 3) > .5 else -1
-            x0 = cx + side * (hw + 1)
-            for k in range(3 + int(4 * _h(y, seed, 4))):
-                put(int(x0 + side * k * .9), y - k, (30, 24, 20))
-    if stage >= 5: img = dissolve(img, .4 if stage == 5 else .75, 21)
-    return img
-
-
 # 押し薙ぎ in the same mood: a flat dark crescent of wind swept left to right at the waist, and the ground scraped in
 # an arc in front, scraped earth heaped on its outer lip. Both seen from above, the wielder at the image centre, the
 # front (the direction faced) toward the image top; angles run from the left (180) over the top to the right (0).
@@ -935,9 +902,6 @@ def build(assets, write):
         # Square texture (a tall one reads as an animation strip): the furrow down the middle third.
         sq = Image.new('RGBA', (128, 128), (0, 0, 0, 0)); sq.alpha_composite(furrow_pixels(st, w=40).transpose(Image.Transpose.FLIP_TOP_BOTTOM), (44, 0))  # up face: row 0 lies at the near end
         model(f'furrow_{st}', ground_model(texture(f'furrow_{st}', sq)))
-    for st in range(7):
-        sq = Image.new('RGBA', (128, 128), (0, 0, 0, 0)); sq.alpha_composite(rift_pixels(st).transpose(Image.Transpose.FLIP_TOP_BOTTOM), (52, 0))
-        model(f'rift_{st}', ground_model(texture(f'rift_{st}', sq)))
     for f in range(8):
         model(f'sweep_{f}', ground_model(texture(f'sweep_{f}', sweep_wind(f).transpose(Image.Transpose.ROTATE_180))))
     for st in range(7):
