@@ -374,7 +374,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 addAll(lines("",if(a.activeRun!=null) "遠征中は変更不可" else if(!available) "この枠は未解放" else "港で無料変更"))
             })
             v.canvas.right(preview.name, listOf(emphasis(identity.role)) + paragraph(identity.use) +
-                lines("", "マナ ${preview.mana}", "闘気 ${if(preview.spend>0) "消費 ${preview.spend}" else "獲得 ${preview.gain}"}",
+                lines("", "マナ ${preview.mana}", "獣 ${if(preview.icon in CoreWarriorRules.spenders) "全部使う" else "溜める"}",
                     "再使用 ${CoreCombatMath.number(preview.cooldownTicks(sheet.mods)/20.0)}秒") +
                 paragraph(preview.formula.label()) + lines("", "詳しくは絵に重ねる"))
             equipped.forEachIndexed { i,s ->

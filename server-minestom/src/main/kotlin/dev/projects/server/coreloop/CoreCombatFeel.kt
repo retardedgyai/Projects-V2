@@ -45,30 +45,32 @@ internal object CoreCombatFeel {
 }
 
 /**
- * Warrior rules that are not timing. Rage is built by hitting and being hit, poured whole into the slam,
- * and at the cap it boils over into a short rampage (2026-10-17: Creator chose "charge and smash" + "rage release").
+ * Warrior rules that are not timing: the beast (獣, 2026-10-22, Creator: Lost Ark Destroyer's cores in Guts's mood).
+ * Up to three stacks are built by crowd control on regular enemies and by wearing down a boss's break gauge with
+ * the skills that build; a spender (地割り) takes every stack and hits harder per stack. Strong crowd control sits
+ * on the spenders, so stacking crowd-control skills never chains it (Creator). No rage, no rampage, no self-heal.
  */
 internal object CoreWarriorRules {
-    val heavy = setOf("slam", "whirl")
-    /** Least rage the heavy skills take; the sweep takes exactly this for [RAGE_BONUS_PERCENT]. */
-    const val RAGE_COST = 30.0
-    const val RAGE_BONUS_PERCENT = 30
-    /** The slam pours in all rage (at least [RAGE_COST]): +1% damage per point, up to +100%. */
-    const val SLAM_PERCENT_PER_RAGE = 1.0
-    /** Reaching the rage cap starts a rampage; rage stays full until it ends, then empties. */
-    const val RAMPAGE_TICKS = 120L
-    const val RAMPAGE_DAMAGE_PERCENT = 25
-    /** Normal swings during a rampage are this much faster. */
-    const val RAMPAGE_HASTE = 1.3
-    /** Rage from an unguarded hit taken, at most once per [HURT_RAGE_GAP] ticks. */
-    const val HURT_RAGE = 8.0
-    const val HURT_RAGE_GAP = 10L
-    /** Flinch from the third normal hit and from every hit during a rampage. */
+    /** Skills that take every stack; everything else builds. */
+    val spenders = setOf("slam")
+    const val BEAST_MAX = 3.0
+    /** Each regular enemy put under crowd control by a building action. */
+    const val BEAST_PER_CC = 1.0 / 3.0
+    /** Break dealt to a boss by building actions that makes one stack. */
+    const val BEAST_BREAK_PER_STACK = 12.0
+    /** One action (a swing, one skill hit or pulse) never builds more than this. */
+    const val BEAST_PER_ACTION = 1.0
+    const val BEAST_DAMAGE_PERCENT_PER_STACK = 25
+    /** Extra break a spender deals per stack it took. */
+    const val BEAST_BREAK_PER_STACK_SPENT = 4.0
+    /** Extra damage per stack when the spender lands on a broken (downed) enemy. */
+    const val BEAST_DOWN_PERCENT_PER_STACK = 15
+    /** Flinch from the third normal hit. */
     const val FLINCH_MILLIS = 300L
     /** Ticks after a connected third normal hit in which the slam comes out fast and heavy. */
     const val FINISHER_TICKS = 12L
     const val FINISHER_STARTUP = 3
     const val FINISHER_BONUS_PERCENT = 30
-    /** 剣聖: each connected third normal hit takes this much off the heavy skills' remaining cooldown. */
+    /** 剣聖: each connected third normal hit takes this much off the spenders' remaining cooldown. */
     const val SAINT_REFUND_TICKS = 30L
 }

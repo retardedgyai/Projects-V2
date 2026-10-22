@@ -8,15 +8,14 @@ import kotlin.test.*
 class CoreWarriorReworkTest {
     private val warrior get() = CoreSkillCatalog.skills(CoreClass.WARRIOR)
 
-    @Test fun `warrior skills sit in cooldown tiers and rage gates only the ultimate`() {
+    @Test fun `warrior skills sit in cooldown tiers and the beast gates nothing`() {
         val byIcon = warrior.filterNot { it.retired }.associateBy { it.icon }
         assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_ult"), byIcon.keys)
         assertEquals(100, byIcon.getValue("dash").cooldown)
         assertTrue(byIcon.getValue("slam").cooldown in 200..320 && byIcon.getValue("whirl").cooldown in 200..320)
         assertTrue(byIcon.getValue("war_guard").cooldown in 320..600 && byIcon.getValue("war_wound").cooldown in 320..600)
         assertTrue(byIcon.getValue("war_ult").cooldown >= 1200)
-        assertTrue(byIcon.values.filterNot { it.ultimate }.all { it.spend == 0 }, "no normal skill needs rage")
-        assertEquals(80, byIcon.getValue("war_ult").spend)
+        assertTrue(byIcon.values.all { it.spend == 0 }, "no warrior skill needs the beast to be cast")
     }
 
     @Test fun `retired entries keep catalog order and art but are never selectable`() {
@@ -82,16 +81,16 @@ class CoreWarriorReworkTest {
         }
     }
 
-    @Test fun `heavy skill tooltips state the rage and finisher rules in whole numbers`() {
+    @Test fun `spender tooltips state the beast and finisher rules in whole numbers`() {
         val j = CoreJourney.legacy()
         val sheet = CoreCombatSheet.from(CoreAccount(UUID.randomUUID(), journey = j))
         val slam = warrior.first { it.icon == "slam" }.tooltip(sheet, j).joinToString("\n")
-        assertContains(slam, "闘気30以上なら全部注ぎ込み、闘気1につき威力+1%")
-        assertContains(slam, "赤熱中に撃つと")
+        assertContains(slam, "獣：全部使う（0でも撃てる）")
+        assertContains(slam, "獣1つごとに威力+25%")
+        assertContains(slam, "振っている間は怯まない")
         assertContains(slam, "通常3段目の命中から0.6秒以内")
-        assertContains(slam, "ボスの崩し 12＋注いだ闘気10ごとに+1")
+        assertContains(slam, "ボスの崩し 12＋獣1つごとに+4")
         assertFalse("30.0" in slam)
-        assertContains(warrior.first { it.icon == "whirl" }.tooltip(sheet, j).joinToString("\n"), "闘気30以上なら自動で30使い、威力+30%")
-        assertFalse("闘気30" in warrior.first { it.icon == "dash" }.tooltip(sheet, j).joinToString("\n"))
+        assertContains(warrior.first { it.icon == "dash" }.tooltip(sheet, j).joinToString("\n"), "獣：雑魚へのCC・ボスの崩しで溜まる")
     }
 }

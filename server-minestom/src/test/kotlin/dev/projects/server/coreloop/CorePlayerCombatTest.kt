@@ -94,9 +94,9 @@ class CorePlayerCombatTest {
         repeat(3) { h.actor.refillTraining(); h.ticks(1) }
         assertEquals(300.0, h.combat.bossHealth())
         h.actor.refillTraining(); h.ticks(1)
-        assertEquals(300.0 - 34.0 * 1.25, h.combat.bossHealth(), .00001) // full rage in the lab means a rampage
+        assertEquals(300.0 - 34.0, h.combat.bossHealth(), .00001)
         repeat(16) { h.actor.refillTraining(); h.ticks(1) }
-        assertEquals(300.0 - 34.0 * 1.25, h.combat.bossHealth(), .00001)
+        assertEquals(300.0 - 34.0, h.combat.bossHealth(), .00001)
         assertEquals(0, h.actor.cooldownRemaining(2))
         assertEquals(h.actor.maxMana, h.actor.mana)
     }
@@ -219,10 +219,10 @@ class CorePlayerCombatTest {
         h.ticks(11)
         assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
-        assertEquals(300.0 - 58.4 * 2.0, h.combat.bossHealth(), 0.00001) // all 100 rage poured in for +100%
+        assertEquals(300.0 - 58.4 * 1.75, h.combat.bossHealth(), 0.00001) // all three stacks taken for +75%
         assertEquals(0.0, h.actor.resource)
         h.ticks(20)
-        assertEquals(300.0 - 58.4 * 2.0, h.combat.bossHealth(), 0.00001)
+        assertEquals(300.0 - 58.4 * 1.75, h.combat.bossHealth(), 0.00001)
         val mana = h.actor.mana
         h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(mana, h.actor.mana)
@@ -246,7 +246,7 @@ class CorePlayerCombatTest {
     @Test
     fun `skill links after six AA ticks instead of waiting the entire AA recovery`() = arena { h ->
         h.actor.attack()
-        h.actor.classState.gain(30.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(1.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(100, h.actor.mana)
         h.ticks(5)
         assertEquals(100, h.actor.mana)
@@ -254,7 +254,7 @@ class CorePlayerCombatTest {
         assertEquals(88, h.actor.mana)
         assertEquals(288.0, h.combat.bossHealth())
         h.ticks(12)
-        assertEquals(288.0 - 58.4 * 1.42, h.combat.bossHealth(), 0.00001) // 12 from the AA + 30 poured in
+        assertEquals(288.0 - 58.4 * 1.25, h.combat.bossHealth(), 0.00001) // one whole stack taken
     }
 
     @Test
@@ -432,9 +432,9 @@ class CorePlayerCombatTest {
     }
 
     private fun arena(bossDistance: Double = 4.0, armorTier: Int = 1, stats: CoreAffixStats = CoreAffixStats(), roll: Double = 1.0,
-        weaponEnhancement: Int = 0, armorEnhancement: Int = 0, test: (Harness) -> Unit) {
+        weaponEnhancement: Int = 0, armorEnhancement: Int = 0, mobs: List<Pos> = emptyList(), test: (Harness) -> Unit) {
         MinecraftServer.init(Auth.Offline())
-        Harness(bossDistance, armorTier, stats, roll, weaponEnhancement, armorEnhancement).use(test)
+        Harness(bossDistance, armorTier, stats, roll, weaponEnhancement, armorEnhancement, mobs).use(test)
     }
 
     @Test
@@ -461,12 +461,12 @@ class CorePlayerCombatTest {
     @Test
     fun `physical skill startup uses attack speed and cooldown uses recovery speed`() = arena(
         stats = CoreAffixStats(skillDamagePercent = 50.0, attackSpeedPercent = 50.0, cooldownReductionPercent = 25.0)) { h ->
-        h.actor.classState.gain(30.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(1.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(192, h.actor.cooldownTicks(1))
         h.ticks(7)
         assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
-        assertEquals(300.0 - (20.0 + 12.0 * 3.2) * 1.5 * 1.3, h.combat.bossHealth(), 0.00001)
+        assertEquals(300.0 - (20.0 + 12.0 * 3.2) * 1.5 * 1.25, h.combat.bossHealth(), 0.00001)
         assertEquals(184, h.actor.cooldownRemaining(1))
     }
 
@@ -725,11 +725,6 @@ class CorePlayerCombatTest {
         h.journey = CoreJourney.legacy(build=CoreClassBuild(second=5));h.actor.reset()
         h.actor.skill(1);h.ticks(30)
         assertEquals(100,h.actor.mana);assertEquals(0,h.actor.cooldownRemaining(1));assertEquals(300.0,h.combat.bossHealth())
-        repeat(3) { h.actor.attack();h.ticks(24) }
-        h.ticks(20)
-        assertTrue(h.actor.resource>=30)
-        val before=h.actor.resource;h.actor.skill(1)
-        assertEquals(before-30,h.actor.resource);assertEquals(88,h.actor.mana)
     }
     @Test fun `warrior feint no longer places a mark or requires detonation`() = arena(bossDistance=2.0) { h ->
         h.journey=CoreJourney.legacy(build=CoreClassBuild(first=4,second=1,third=2,fourth=0));h.actor.reset()
@@ -743,14 +738,14 @@ class CorePlayerCombatTest {
         h.ticks(1);assertEquals(1,h.actor.activeMarkLabels)
         h.actor.resetActions();assertEquals(0,h.actor.activeMarkLabels)
     }
-    @Test fun `warrior hold guard reduces real incoming damage and turns it into rage without a counter`() = arena { h ->
+    @Test fun `warrior hold guard reduces real incoming damage without a counter or beast`() = arena { h ->
         h.actor.skill(3); h.ticks(1)
         assertTrue(h.actor.combatCue.startsWith("根張り "))
         h.actor.hurt(50.0); assertEquals(100.0 - 10.0 * 300 / 340, h.actor.health, .00001)
-        assertEquals(30.0, h.actor.resource)
+        assertEquals(0.0, h.actor.resource)
         assertEquals(-1L, h.actor.classState.counterUntil)
         h.actor.skill(1); h.ticks(12)
-        assertEquals(300.0 - 58.4 * 1.3, h.combat.bossHealth(), .00001)
+        assertEquals(300.0 - 58.4, h.combat.bossHealth(), .00001)
         assertEquals(0.0, h.actor.resource)
     }
 
@@ -818,7 +813,7 @@ class CorePlayerCombatTest {
     @Test fun `fourth normal skill and ultimate have real runtime cooldowns and separate input slots`() = arena { h ->
         h.actor.skill(3);h.ticks(15);assertTrue(h.actor.cooldownRemaining(3)>0)
         h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
-        h.actor.skill(4);assertTrue(h.actor.cooldownRemaining(4)>0);assertEquals(20.0,h.actor.resource)
+        h.actor.skill(4);assertTrue(h.actor.cooldownRemaining(4)>0);assertEquals(3.0,h.actor.resource) // the ultimate takes no beast
         h.ticks(40);assertTrue(h.combat.bossHealth()<300)
     }
     @Test fun `new melee classes have shorter dagger impact and full height mace contact`() {
@@ -938,50 +933,60 @@ class CorePlayerCombatTest {
     @Test fun `third normal hit opens one fast heavier slam`() = arena { h ->
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
         val before=h.combat.bossHealth();assertEquals(300.0-12.0*(1.0+1.15+1.85),before,.00001)
-        assertEquals(36.0,h.actor.resource)
+        assertEquals(.75,h.actor.resource,1e-9) // break 9 of the 12 that make a stack
         h.ticks(6);h.actor.skill(1);h.ticks(2);assertEquals(before,h.combat.bossHealth())
-        h.ticks(1);assertEquals(before-58.4*1.36*1.3,h.combat.bossHealth(),.00001) // 36 rage poured in, then the finisher
-        assertEquals(0.0,h.actor.resource)
+        h.ticks(1);assertEquals(before-58.4*1.3,h.combat.bossHealth(),.00001) // no whole stack yet; the finisher alone
+        assertEquals(.75,h.actor.resource,1e-9)
     }
 
     @Test fun `a slam long after the third hit is neither fast nor finisher boosted`() = arena { h ->
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(30)
         val before=h.combat.bossHealth()
         h.actor.skill(1);h.ticks(11);assertEquals(before,h.combat.bossHealth())
-        h.ticks(1);assertEquals(before-58.4*1.36,h.combat.bossHealth(),.00001)
+        h.ticks(1);assertEquals(before-58.4,h.combat.bossHealth(),.00001)
     }
 
-    @Test fun `rage at the cap starts a rampage that hits harder and keeps rage full`() = arena { h ->
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.ticks(1)
-        assertTrue(h.actor.raging); assertTrue(h.actor.combatCue.startsWith("赤熱 ")); assertTrue(h.actor.weaponHint.endsWith("赤熱"))
-        h.actor.attack(); assertEquals(300.0 - 12.0 * 1.25, h.combat.bossHealth(), .00001)
-        h.actor.skill(2); h.ticks(4) // the sweep takes 30 and the rampage refills it
-        assertEquals(100.0, h.actor.resource)
-        h.ticks(CoreWarriorRules.RAMPAGE_TICKS.toInt())
-        assertFalse(h.actor.raging); assertEquals(0.0, h.actor.resource) // an unfinished rampage burns out
-        assertEquals("", h.actor.combatCue)
-    }
-
-    @Test fun `a slam during a rampage pours in full rage and closes it`() = arena { h ->
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.ticks(1)
+    @Test fun `the beast builds from break on a boss and the slam takes every whole stack`() = arena { h ->
+        // Three normal swings: break 2 + 2 + 5 = 9 of the 12 that make a stack.
+        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(30)
+        assertEquals(9.0 / CoreWarriorRules.BEAST_BREAK_PER_STACK, h.actor.resource, 1e-9)
+        h.actor.classState.gain(5.0, h.journey.job, h.journey.build)
+        assertEquals(CoreWarriorRules.BEAST_MAX, h.actor.resource) // capped at three
+        assertEquals("獣 3/3", h.actor.weaponHint)
+        val before = h.combat.bossHealth()
         h.actor.skill(1); h.ticks(12)
-        assertEquals(300.0 - 58.4 * 2.0 * 1.25, h.combat.bossHealth(), .00001)
-        assertFalse(h.actor.raging); assertEquals(0.0, h.actor.resource)
-        h.ticks(5); assertFalse(h.actor.raging)
+        assertEquals(before - 58.4 * (1 + 3 * CoreWarriorRules.BEAST_DAMAGE_PERCENT_PER_STACK / 100.0), h.combat.bossHealth(), .00001)
+        assertEquals(0.0, h.actor.resource) // the slam's own break never feeds the beast
     }
 
-    @Test fun `the ultimate costs no rage during a rampage and does not end it`() = arena { h ->
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.ticks(1)
-        h.actor.skill(4); h.ticks(1)
-        assertTrue(h.actor.cooldownRemaining(4) > 0)
-        assertTrue(h.actor.raging); assertEquals(100.0, h.actor.resource)
+    @Test fun `crowd control on regular enemies feeds the beast, one stack at most per action`() =
+        arena(bossDistance = 30.0, mobs = listOf(Pos(8.5, 40.0, 10.0), Pos(9.3, 40.0, 10.0), Pos(7.7, 40.0, 10.0))) { h ->
+        h.combat.tick(1000L)
+        h.actor.attack();h.ticks(8)
+        assertEquals(0.0, h.actor.resource) // a swing that puts no crowd control on anyone builds nothing
+        h.ticks(20);h.actor.skill(0);h.ticks(10) // 轟進 flinches every one it reaches
+        val flinched = h.combat.combatTargets().count { CrowdControl.FLINCH in h.combat.crowdControl(it.id) || h.combat.isBroken(it.id) }
+        assertTrue(flinched >= 1, "flinched $flinched")
+        assertEquals(minOf(CoreWarriorRules.BEAST_PER_ACTION, flinched * CoreWarriorRules.BEAST_PER_CC), h.actor.resource, 1e-9)
     }
 
-    @Test fun `unguarded hits taken build warrior rage at most twice a second`() = arena { h ->
-        h.actor.hurt(10.0); h.actor.hurt(10.0)
-        assertEquals(CoreWarriorRules.HURT_RAGE, h.actor.resource)
-        h.ticks(CoreWarriorRules.HURT_RAGE_GAP.toInt()); h.actor.hurt(10.0)
-        assertEquals(CoreWarriorRules.HURT_RAGE * 2, h.actor.resource)
+    @Test fun `the slam is never gated by the beast and keeps a part-built stack`() = arena { h ->
+        h.actor.classState.gain(1.5, h.journey.job, h.journey.build)
+        h.actor.skill(1); h.ticks(12)
+        assertEquals(.5, h.actor.resource, 1e-9)
+        assertTrue(h.combat.bossHealth() < 300.0)
+    }
+
+    @Test fun `a warrior spender is not staggered by a heavy blow`() = arena { h ->
+        h.actor.skill(1); h.ticks(2)
+        h.actor.hurt(h.actor.maxHealth * .5)
+        assertFalse(h.actor.staggered)
+        h.ticks(10); assertTrue(h.combat.bossHealth() < 300.0)
+    }
+
+    @Test fun `taking hits no longer builds the warrior resource`() = arena { h ->
+        h.actor.hurt(10.0); h.ticks(20); h.actor.hurt(10.0)
+        assertEquals(0.0, h.actor.resource)
     }
 
     @Test fun `boss takes no crowd control but its break gauge empties into a four second break`() = arena { h ->
@@ -1088,10 +1093,10 @@ class CorePlayerCombatTest {
         } finally { h.actor.resetActions(); encounter.dispose() }
     }
 
-    @Test fun `the warrior's slam breaks the boss by the rage poured in and takes no crowd control`() = arena { h ->
+    @Test fun `the warrior's slam breaks the boss by the beast it takes and takes no crowd control`() = arena { h ->
         val id = h.combat.combatTargets().single().id
-        h.actor.classState.gain(30.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(12)
-        assertEquals(100.0 - (12.0 + 3.0), h.combat.breakGauge(id)!!, .0001)
+        h.actor.classState.gain(3.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(12)
+        assertEquals(100.0 - (12.0 + 3 * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT), h.combat.breakGauge(id)!!, .0001)
         assertTrue(h.combat.crowdControl(id).isEmpty())
     }
 
@@ -1100,14 +1105,14 @@ class CorePlayerCombatTest {
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
         assertEquals(100.0 - (2.0 + 2.0 + 5.0), h.combat.breakGauge(id)!!, .0001)
         h.ticks(6);h.actor.skill(1);h.ticks(3)
-        assertEquals(100.0 - 9.0 - (12.0 + 3.0) * CoreBreak.FINISHER, h.combat.breakGauge(id)!!, .0001)
+        assertEquals(100.0 - 9.0 - 12.0 * CoreBreak.FINISHER, h.combat.breakGauge(id)!!, .0001)
     }
 
     @Test fun `a slam right after the hold guard catches a blow is the return strike`() = arena { h ->
         val id = h.combat.combatTargets().single().id
-        h.actor.skill(3); h.ticks(1); h.actor.hurt(20.0) // perfect catch: +30 rage
+        h.actor.skill(3); h.ticks(1); h.actor.hurt(20.0) // perfect catch
         h.ticks(5); h.actor.skill(1); h.ticks(12)
-        assertEquals(100.0 - (12.0 + 3.0) * CoreBreak.RIPOSTE, h.combat.breakGauge(id)!!, .0001)
+        assertEquals(100.0 - 12.0 * CoreBreak.RIPOSTE, h.combat.breakGauge(id)!!, .0001)
     }
 
     @Test fun `other classes break a little with every hit`() = arena(bossDistance = 2.0) { h ->
@@ -1117,11 +1122,11 @@ class CorePlayerCombatTest {
         assertEquals(100.0 - CoreBreak.NORMAL, h.combat.breakGauge(id)!!, .0001)
     }
 
-    @Test fun `sword saint third hits take time off the heavy cooldowns`() = arena { h ->
+    @Test fun `sword saint third hits take time off the spender cooldowns`() = arena { h ->
         h.journey=CoreJourney.legacy(build=CoreClassBuild(nodes=8248));h.actor.reset()
-        h.actor.skill(2);h.ticks(10)
+        h.actor.skill(1);h.ticks(40)
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
-        assertEquals(200-10-50-30,h.actor.cooldownRemaining(2))
+        assertEquals(240-40-50-30,h.actor.cooldownRemaining(1))
     }
 
     
@@ -1428,7 +1433,7 @@ class CorePlayerCombatTest {
     }
 
     private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double,
-        weaponEnhancement: Int, armorEnhancement: Int) : AutoCloseable {
+        weaponEnhancement: Int, armorEnhancement: Int, mobs: List<Pos> = emptyList()) : AutoCloseable {
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
         val player: Player
         val combat: QuestEncounterCombat
@@ -1469,7 +1474,7 @@ class CorePlayerCombatTest {
             actor = CorePlayerCombat(player, { 1 }, { armorTier }, { activeEncounter }, statSource = { stats }, criticalRoll = { roll },
                 weaponEnhancement = { weaponEnhancement }, armorEnhancement = { armorEnhancement },
                 weaponBroken = { weaponBroken }, armorBroken = { armorBroken }, journey = { journey }, weaponBase = { base }, allies = {otherActors}) { deaths++ }
-            combat = QuestEncounterCombat(instance, 1, emptyList(), Pos(8.5, 40.0, 8.5 + bossDistance),
+            combat = QuestEncounterCombat(instance, 1, if (mobs.isEmpty()) emptyList() else listOf(QuestCombatEncounter(mobs)), Pos(8.5, 40.0, 8.5 + bossDistance),
                 onMobDefeated = { _, _ -> afterKill() },
                 damagePlayer = { _, amount -> incomingHits += amount; actor.hurt(amount) },
                 canTarget = { (it === player && !actor.defeated) || otherActors.any { a -> a.player===it && !a.defeated } })

@@ -53,7 +53,7 @@ class CoreClassBuildTest {
         assertFailsWith<IllegalArgumentException> { CoreJourney.fresh().copy(build=CoreClassBuild(nodes=7)) }
     }
     @Test fun `resource cost reduction is applied once and star resources never become fractional`() {
-        val j=CoreJourney.legacy(build=CoreClassBuild(second=5,nodes=3))
+        val j=CoreJourney.legacy(job=CoreClass.ASSASSIN,build=CoreClassBuild(second=1,nodes=3))
         val s=CoreSkillCatalog.equipped(j)[1]
         assertEquals(26,s.spend)
         val state=CoreClassState();state.gain(26.0,j.job,j.build)
@@ -62,7 +62,7 @@ class CoreClassBuildTest {
         state.normalHit(star.job,UUID.randomUUID(),1,star.build);assertEquals(1.0,state.resource)
     }
     @Test fun `resource gains are per normal impact not per cleaved target and capped`() {
-        val s=CoreClassState();val j=CoreJourney.legacy()
+        val s=CoreClassState();val j=CoreJourney.legacy(job=CoreClass.ASSASSIN)
         repeat(20) { s.normalHit(j.job,UUID.randomUUID(),1,j.build) }
         assertEquals(12.0,s.resource)
         repeat(20) { s.normalHit(j.job,UUID.randomUUID(),it+2L,j.build) }
