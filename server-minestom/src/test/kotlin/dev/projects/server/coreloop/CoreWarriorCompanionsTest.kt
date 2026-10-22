@@ -77,12 +77,6 @@ class CoreWarriorCompanionsTest {
                 assertTrue(body.shape.endsWith(":body"))
             }
         }
-        val guard=CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon=="war_guard" }
-        for(phase in CoreSkillVisualPhase.entries) {
-            val e=CoreSkillEffect(CoreClass.WARRIOR,guard,Vec.ZERO,Vec(0.0,0.0,1.0),phase)
-            val collision=CoreSkillChoreography.parts(e).filter { it.shape.contains("parry_metal") }
-            assertEquals(if(phase==CoreSkillVisualPhase.CONTACT)2 else 0,collision.size)
-        }
     }
     @Test fun `mark row is screen separated from names for close tall and low targets`() {
         for(height in listOf(.9,1.8,3.6)) for(distance in listOf(.3,1.0,8.0)) {

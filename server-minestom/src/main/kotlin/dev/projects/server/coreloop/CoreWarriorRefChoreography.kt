@@ -15,10 +15,12 @@ internal object CoreWarriorRefChoreography {
     private const val DIR = "combat_vfx/warrior_ref"
     @Volatile var enabled = true
     private val sceneIds = setOf("slam", "war_wound")
+    /** 狂乱 / 天落とし / 大地崩し: every phase is drawn here (their ids still carry older choreographies elsewhere). */
+    private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER)
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
-        e.phase == CoreSkillVisualPhase.PULSE && e.sceneId in sceneIds
+        (e.phase == CoreSkillVisualPhase.PULSE && e.sceneId in sceneIds || e.sceneId in ownedIds)
 
     private fun hash(vararg v: Int): Double {
         val x = sin(v.foldIndexed(0.0) { i, a, n -> a + n * doubleArrayOf(127.1, 311.7, 74.7, 19.3)[i % 4] }) * 43758.5453
@@ -52,18 +54,104 @@ internal object CoreWarriorRefChoreography {
             }
             return out
         }
-        if (e.sceneId == "whirl") {
-            // 押し薙ぎ: a flat dark crescent of wind at the waist, swept left to right; the ground scraped in an arc in front;
-            // earth thrown outward along it, dust after it. Same mood as 地割り: no light, the weight alone.
-            val span = 7.5
-            out += part("sweep", local(0.0, 1.0, 0.0), span, yaw, 8, ground = false)
-            out += part("scrape", local(0.0, .12, 0.0), span, yaw, 40)
-            for (k in 0 until 9) {
-                val a = yaw + PI / 2 - k * PI / 8          // left to right across the front
-                val at = Vec(sin(a) * 2.6, .3, cos(a) * 2.6)
-                out += part("clod${30 + k}", at, .4 + .3 * hash(k, 81), a, 20, ground = false, delay = k / 3)
-                if (k % 2 == 0) out += part("dust${30 + k}", Vec(sin(a) * 2.8, .6, cos(a) * 2.8), 1.3, 0.0, 16, ground = false,
-                    delay = 1 + k / 3, billboard = true, roll = hash(k, 82) * 6.0)
+        if (e.sceneId in ownedIds && e.phase == CoreSkillVisualPhase.PREPARE) {
+            // The wind-up: the weight settles, a little dust off the feet.
+            out += part("dust${20}", Vec(0.0, .3, 0.0), .8, 0.0, e.prepareDuration.coerceIn(1, 12), ground = false, billboard = true)
+            return out
+        }
+        if (e.sceneId in ownedIds && e.phase != CoreSkillVisualPhase.PULSE) {
+            // A hit landing on an enemy: a clod or two knocked off at its feet.
+            for (k in 0 until 2) out += part("clod${90 + k}", Vec((k - .5) * .5, .2, 0.0), .3, yaw + k * 2.0, 14, ground = false).copy(startSize = .6)
+            return out
+        }
+        if (e.sceneId == CoreWarriorRules.FRENZY) {
+            // 狂乱: each swing leaves a dark band of wind, left and right in turn, and kicks earth off the tip; the
+            // last swing is the overhead blow and tears a short furrow forward like a small 地割り.
+            val last = e.pulse >= e.skill.pulses - 1
+            if (!last) {
+                // Each swing bites into the ground on a diagonal, left then right (no wind drawing: 薙ぎ was dropped):
+                // a short gash torn forward, turf flipped off its lip, clods off the tip.
+                val side = if (e.pulse % 2 == 0) 1.0 else -1.0
+                val turn = -side * .55
+                val at = local(side * .55, .12, 1.9)
+                out += part("furrow", at, 1.0, yaw + turn, 30).copy(scale = Vec(2.7 + .2 * e.pulse, 1.0, 2.7 + .2 * e.pulse))
+                for (k in 0 until 2) out += part("turf${100 + e.pulse * 2 + k}", at.add(sin(yaw + turn + PI / 2 * side) * .45, 0.0,
+                    cos(yaw + turn + PI / 2 * side) * .45).add(sin(yaw + turn) * (k - .5) * 1.0, 0.0, cos(yaw + turn) * (k - .5) * 1.0),
+                    .55 + .25 * hash(e.pulse, k, 157), yaw + turn, 24, delay = k, roll = side * (.5 + .4 * hash(e.pulse, k, 158)))
+                for (k in 0 until 3) out += part("clod${40 + k}", at.add(sin(yaw + turn) * (.6 + .5 * k), .1, cos(yaw + turn) * (.6 + .5 * k)),
+                    .3 + .15 * hash(e.pulse, k, 151), yaw + hash(e.pulse, k, 152) * 6.0, 16, ground = false, delay = k).copy(startSize = .6)
+                return out
+            }
+            out += part("wind", local(.3, 1.9, 2.0), 5.0, yaw + PI / 2 - 1.15, 8, ground = false)
+            out += part("furrow", local(0.0, .12, 2.4), 1.0, yaw, 34).copy(scale = Vec(4.0, 1.0, 4.0))
+            for (k in 0 until 6) {
+                val side = if (k % 2 == 0) -1.0 else 1.0
+                val tt = 1.0 - (k / 2) / 3.0
+                out += part("turf${80 + k}", local(side * (.45 + .2 * hash(k, 153)), .12, 1.0 + (1 - tt) * 2.6), (.6 + .5 * tt) * (.8 + .4 * hash(k, 154)),
+                    yaw + (hash(k, 155) - .5) * 1.0, 28, delay = ((1 - tt) * 3).toInt(), roll = -side * (.4 + .5 * hash(k, 156)))
+            }
+            return out
+        }
+        if (e.sceneId == CoreWarriorRules.SKYFALL) {
+            // 天落とし: the landing caves the ground in and each ring heaves a circle of turf up, tipped outward, a
+            // moment after the one inside it. Ring 0 also throws the biggest slabs right round the blow.
+            val r = e.skill.radius
+            // Each ring heaves up and drops back quickly, so the eye follows a wave going out, not a bullseye.
+            val count = (6 + 2.2 * r).roundToInt().coerceAtMost(18)
+            for (k in 0 until count) {
+                if (hash(e.pulse, k, 160) < .18) continue
+                val a = yaw + k * 2 * PI / count + hash(e.pulse, k, 161) * .3
+                val d = r - .5 - .4 * hash(e.pulse, k, 162)
+                out += part("turf${90 + k}", Vec(sin(a) * d, .12, cos(a) * d), (.6 + .35 * hash(e.pulse, k, 163)) * (1.15 - .1 * e.pulse),
+                    a + PI / 2, 14, delay = k % 2, roll = -(.9 + .4 * hash(e.pulse, k, 164)), pitch = (hash(e.pulse, k, 165) - .5) * .4)
+            }
+            for (k in 0 until 4) {
+                val a = yaw + k * PI / 2 + hash(e.pulse, k, 169) * 1.2
+                out += part("clod${70 + k}", Vec(sin(a) * (r - .4), .25, cos(a) * (r - .4)), .35 + .2 * hash(e.pulse, k, 170), a, 16,
+                    ground = false, delay = k % 2).copy(startSize = .8)
+            }
+            if (e.pulse == 0) {
+                // The ground caves in under the blow (the round crater fits a landing; 地割り runs forward instead).
+                out += part("crater", Vec(0.0, .11, 0.0), 4.2, yaw + hash(e.pulse, 175) * 6.0, 44)
+                // The blow itself: five uneven slabs thrown up round the blade (not a flower: angles and sizes vary).
+                for (k in 0 until 5) {
+                    val a = yaw + k * 2 * PI / 5 + (hash(k, 166) - .5) * .9
+                    val d = .9 + .5 * hash(k, 171)
+                    out += part("turf${130 + k}", Vec(sin(a) * d, .12, cos(a) * d), .9 + .6 * hash(k, 172), a + PI / 2 + (hash(k, 173) - .5) * .6, 32,
+                        roll = -(.8 + .5 * hash(k, 167)), pitch = (hash(k, 174) - .5) * .5)
+                }
+                for (k in 0 until 6) {
+                    val a = yaw + k * PI / 3
+                    out += part("clod${50 + k}", Vec(sin(a) * .6, .3, cos(a) * .6), .4 + .3 * hash(k, 168), a, 22, ground = false,
+                        delay = k / 3).copy(startSize = 1.2)
+                }
+            }
+            return out
+        }
+        if (e.sceneId == CoreWarriorRules.SHATTER) {
+            // 大地崩し: the blade is driven in and the ground round it breaks up everywhere at once: cracks run out from
+            // the blade, the turf between them is flung up in slabs, the wave reaching the edge last.
+            val r = e.skill.radius
+            // Five cracks, uneven in angle and length (not a star), each widest at the blade.
+            val angles = (0 until 5).map { k -> yaw + k * 2 * PI / 5 + (hash(k, 171) - .5) * .9 }
+            for ((k, a) in angles.withIndex()) {
+                val len = r * (.6 + .4 * hash(k, 170))
+                out += part("furrow", Vec(sin(a) * len / 2, .12, cos(a) * len / 2), 1.0, a, 40).copy(scale = Vec(len, 1.0, len))
+            }
+            // The ground between the cracks comes up in big slabs, tipped away from the blade, inner ones first.
+            for (k in 0 until 5) for (j in 0 until 3) {
+                val n = k * 3 + j
+                if (hash(n, 181) < .25) continue
+                val a = angles[k] + PI / 5 + (hash(n, 172) - .5) * .5
+                val d = 1.2 + j * (r - 1.8) / 2.6 + .4 * hash(n, 173)
+                out += part("turf${140 + n}", Vec(sin(a) * d, .12, cos(a) * d), (.95 + .45 * hash(n, 174)) * (1.0 - .12 * j), a + PI / 2, 30,
+                    delay = j * 2, roll = -(.6 + .5 * hash(n, 176)), pitch = (hash(n, 177) - .5) * .4)
+            }
+            for (k in 0 until 10) {
+                val a = hash(k, 178) * 2 * PI
+                val d = 1.0 + (r - 1.5) * hash(k, 179)
+                out += part("clod${60 + k}", Vec(sin(a) * d, .25, cos(a) * d), .35 + .3 * hash(k, 180), a, 22, ground = false,
+                    delay = (d / r * 5).toInt()).copy(startSize = .8 + .1 * r / 2)
             }
             return out
         }
@@ -152,7 +240,7 @@ internal object CoreWarriorRefChoreography {
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
             name == "wind" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/wind_${tick.coerceAtMost(7)}", live)
-            name == "sweep" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/sweep_${tick.coerceAtMost(7)}", live)
+            name == "sweep" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, p.roll, "$DIR/sweep_${tick.coerceAtMost(7)}", live)
             name == "scrape" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
                 "$DIR/scrape_${when { tick < 4 -> tick; tick < 32 -> 4; tick < 36 -> 5; else -> 6 }}", live)
             name == "furrow" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,

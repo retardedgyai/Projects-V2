@@ -29,17 +29,20 @@ internal object CoreCombatFeel {
     }
     fun recovery(job: CoreClass, s: CoreSkillDefinition) = when {
         s.icon == "dash" || s.icon == "war_wound" -> 3
-        s.icon in setOf("whirl", "war_counter", "war_breach", "war_cry", "war_banner") -> 4
+        s.icon in setOf("war_breach", "war_cry", "war_banner") -> 4
+        s.icon == CoreWarriorRules.FRENZY -> 6
+        s.icon == CoreWarriorRules.SHATTER -> 7
         s.motion == CoreSkillMotion.GUARD -> 0
         s.motion == CoreSkillMotion.EVADE -> 2
         else -> profile(job).recovery
     }
-    fun lastImpact(s: CoreSkillDefinition, startup: Int) = startup + (s.pulses - 1) * 8
+    /** Ticks between a skill's pulses: 狂乱 swings faster than the usual 8. */
+    fun pulseTicks(s: CoreSkillDefinition) = if (s.icon == CoreWarriorRules.FRENZY) 6 else 8
+    fun lastImpact(s: CoreSkillDefinition, startup: Int) = startup + (s.pulses - 1) * pulseTicks(s)
     fun finish(job: CoreClass, s: CoreSkillDefinition, startup: Int) = lastImpact(s, startup) + recovery(job, s)
     /** A guard may cut a skill after its last impact and any normal follow-through. */
     fun cancelsIntoGuard(s: CoreSkillDefinition) = s.motion == CoreSkillMotion.GUARD
     fun minDot(icon: String) = when (icon) {
-        "whirl" -> 0.0 // A broad frontal sweep, not damage behind the wielder.
         "slam", "war_breach" -> .8 // Commit the heavy blade along the aimed lane.
         else -> .35
     }
@@ -53,7 +56,13 @@ internal object CoreCombatFeel {
  */
 internal object CoreWarriorRules {
     /** Skills that take every stack; everything else builds. */
-    val spenders = setOf("slam")
+    val spenders = setOf("slam", FRENZY, SKYFALL, SHATTER)
+    const val FRENZY = "whirl"        // 狂乱
+    const val SKYFALL = "war_guard"   // 天落とし
+    const val SHATTER = "war_counter" // 大地崩し
+    /** 天落とし: the rings the landing sends out, inside to outside. */
+    val SKYFALL_RINGS = listOf(3.5, 6.0, 8.0)
+    const val SKYFALL_RING_TICKS = 4
     const val BEAST_MAX = 3.0
     /** Each regular enemy put under crowd control by a building action. */
     const val BEAST_PER_CC = 1.0 / 3.0
@@ -82,6 +91,17 @@ internal object CoreWarriorRules {
         1 -> definition.copy(radius = 6.0, stunAfterMillis = 0).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 450)
         2 -> definition.copy(radius = 8.0, stunAfterMillis = 1500).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 700)
         else -> definition.copy(radius = 8.0, stunAfterMillis = 2000, pulses = 2).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 1000)
+    }
+    /** Every spender by the stacks it took: 地割り reaches further, 狂乱 swings more, 天落とし sends more rings, 大地崩し breaks wider. */
+    fun shape(definition: CoreSkillDefinition, stacks: Int): CoreSkillDefinition {
+        val n = stacks.coerceIn(0, 3)
+        return when (definition.icon) {
+            "slam" -> slam(definition, n)
+            FRENZY -> definition.copy(pulses = 2 + n)
+            SKYFALL -> definition.copy(pulses = maxOf(1, n))
+            SHATTER -> definition.copy(radius = 4.0 + n, crowdMillis = 450L + 150L * n, stunAfterMillis = if (n == 3) 1600L else 0L)
+            else -> definition
+        }
     }
     /** 剣聖: each connected third normal hit takes this much off the spenders' remaining cooldown. */
     const val SAINT_REFUND_TICKS = 30L

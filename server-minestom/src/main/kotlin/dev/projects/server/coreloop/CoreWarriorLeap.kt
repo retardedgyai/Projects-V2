@@ -26,6 +26,8 @@ internal object CoreWarriorLeap {
     private const val VERTICAL_DRAG = .98
     private const val AIR_FRICTION = .91
 
+    /** 天落とし jumps high whatever the reach. */
+    const val SKYFALL_APEX = 5.0
     /** Arc height for a leap of [reach] blocks: about 2.7 blocks over 6. */
     fun apex(reach: Double) = 1.2 + .25 * reach
 
@@ -53,11 +55,11 @@ internal object CoreWarriorLeap {
     }
 
     /** Launch velocity in blocks per tick from [from] (feet) to land on [to] (feet). */
-    fun launch(from: Pos, to: Vec): Vec {
+    fun launch(from: Pos, to: Vec, apexOverride: Double? = null): Vec {
         val dx = to.x() - from.x(); val dz = to.z() - from.z()
         val reach = sqrt(dx * dx + dz * dz)
         val rise = to.y() - from.y()
-        val peak = max(apex(reach), rise + 1.0)
+        val peak = max(apexOverride ?: apex(reach), rise + 1.0)
         var lo = 0.0; var hi = 2.0
         repeat(40) { val mid = (lo + hi) / 2; if (peakOf(mid) < peak) lo = mid else hi = mid }
         val vy = hi

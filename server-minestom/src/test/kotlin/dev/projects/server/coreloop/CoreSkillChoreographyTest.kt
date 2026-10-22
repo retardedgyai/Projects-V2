@@ -419,8 +419,9 @@ class CoreSkillChoreographyTest {
                 assertTrue(parts.isEmpty(),"Support grants must not imply an enemy hit")
             else if(job==CoreClass.WARRIOR && phase==CoreSkillVisualPhase.PREPARE && s.icon=="war_ult")
                 assertTrue(parts.isEmpty(),"The greatsword rising in hand is the windup")
-            // 地割り (CoreWarriorRefChoreography) is built from many small pieces: furrow, torn turf, clods, dust.
-            else assertTrue(parts.size in 1..if(s.icon=="mage_garden")21 else if(job==CoreClass.WARRIOR && s.icon=="slam" && phase==CoreSkillVisualPhase.PULSE) 32 else 16,"${s.icon}: ${parts.size}")
+            // 地割り and the other ground strikes (CoreWarriorRefChoreography) are built from many small pieces: furrows, torn turf, clods.
+            else assertTrue(parts.size in 1..if(s.icon=="mage_garden")21 else if(job==CoreClass.WARRIOR && phase==CoreSkillVisualPhase.PULSE &&
+                s.icon in setOf("slam","war_wound","whirl","war_guard","war_counter")) 34 else 16,"${s.icon}: ${parts.size}")
             for(p in parts) for(tick in 0..p.delayTicks+p.durationTicks) {
                 val pose=CoreSkillChoreography.pose(p,tick.toDouble())
                 if(p.shape.startsWith("flow:") || p.shape.startsWith("warrior_trace:")) assertTrue(pose.scale.x()>=0 && pose.scale.y()>0 && pose.scale.z()>=0)
@@ -487,12 +488,8 @@ class CoreSkillChoreographyTest {
         }
     }
     @Test fun `return cuts have dedicated contours and full circles no longer duplicate fixed sectors`() {
-        val first=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"dash")).first()
-        val reverse=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,"war_counter")).first()
-        assertTrue(CoreWarriorBladeChoreography.owns(reverse))
-        assertNotEquals(CoreSkillChoreography.pose(first,0.0).model,CoreSkillChoreography.pose(reverse,0.0).model)
-        assertEquals(0.0,first.spin);assertEquals(0.0,reverse.spin)
-        for((job,id) in listOf(CoreClass.ASSASSIN to "ass_fan",CoreClass.WARRIOR to "whirl")) {
+        // The warrior's return cut (返し刃) and sweep (押し薙ぎ) were replaced (2026-10-23); the assassin's fan stays.
+        for((job,id) in listOf(CoreClass.ASSASSIN to "ass_fan")) {
             val sectors=CoreSkillChoreography.parts(effect(job,id))
             assertEquals(if(job==CoreClass.WARRIOR) 1 else 8,sectors.count { !it.secondary })
             assertEquals(if(job==CoreClass.WARRIOR) 1 else 4,sectors.count { it.secondary })

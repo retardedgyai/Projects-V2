@@ -5,7 +5,7 @@ import kotlin.math.*
 
 /** Guard / shout / standard have no cosmetic sword hits or extra damage pulses. */
 internal object CoreWarriorSupportChoreography {
-    val sceneIds=setOf("war_guard","war_cry","war_banner")
+    val sceneIds=setOf("war_cry","war_banner")  // 根張り (war_guard) became 天落とし (2026-10-23)
     fun parts(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
         val yaw=atan2(e.direction.x(),e.direction.z())
         fun local(x: Double,y: Double,z: Double)=Vec(cos(yaw)*x+sin(yaw)*z,y,-sin(yaw)*x+cos(yaw)*z)

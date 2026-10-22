@@ -10,18 +10,6 @@ import kotlin.math.*
 import kotlin.test.*
 
 class CoreWarriorSupportChoreographyTest {
-    @Test fun `accepted parry uses one short native impact and grants have no fake contact stars`() {
-        val contacts=CoreSkillChoreography.parts(effect("war_guard",CoreSkillVisualPhase.CONTACT))
-        assertEquals(2,contacts.size)
-        val contact=contacts.single { !it.secondary }
-        assertEquals("war_flourish:parry_metal:body",contact.shape)
-        assertEquals(9,contact.durationTicks)
-        assertEquals(0,contact.delayTicks)
-        assertEquals(0,CoreCombatMeshes.interpolationTicks(contact))
-        assertFalse(CoreSkillChoreography.pose(contact,9.0).visible)
-        for(id in listOf("war_banner","war_cry"))
-            assertTrue(CoreSkillChoreography.parts(effect(id,CoreSkillVisualPhase.CONTACT)).isEmpty())
-    }
     private fun effect(id: String,phase: CoreSkillVisualPhase=CoreSkillVisualPhase.PULSE,prepare: Int=5,yaw: Double=0.0)=
         CoreSkillEffect(CoreClass.WARRIOR,CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon==id },
             Vec.ZERO,Vec(sin(yaw),0.0,cos(yaw)),phase,prepareTicks=prepare)
@@ -33,29 +21,6 @@ class CoreWarriorSupportChoreographyTest {
     private fun axis(p: CoreMeshPose): Vec {
         val y=-sin(p.pitch);val z=cos(p.pitch);val x=-y*sin(p.roll)
         return Vec(cos(p.yaw)*x+sin(p.yaw)*z,y*cos(p.roll),-sin(p.yaw)*x+cos(p.yaw)*z)
-    }
-    @Test fun `parry raises one greatsword around its grip and keeps it for the actual guard interval`() {
-        repeat(8) { heading ->
-            val e=effect("war_guard",yaw=heading*PI/4);val parts=CoreSkillChoreography.parts(e)
-            assertEquals(2,parts.size);val blade=parts.first();val glint=parts.last()
-            assertEquals("war_parry_blade",blade.shape);assertEquals(e.skill.duration,blade.durationTicks)
-            assertEquals(40,blade.durationTicks);assertEquals(12,glint.durationTicks)
-            assertTrue(parts.all { it.followOwner && !it.sprite && !it.secondary })
-            for(tick in 0 until blade.durationTicks) {
-                val p=CoreSkillChoreography.pose(blade,tick.toDouble())
-                assertTrue(p.offset.sub(axis(p).mul(p.scale.z()*.5)).distance(blade.offset)<.00001)
-                if(tick>=3) assertEquals(.7,p.roll,.00001)
-                assertTrue(p.visible)
-                if(tick<12) {
-                    val g=CoreSkillChoreography.pose(glint,tick.toDouble())
-                    val delta=g.offset.sub(blade.offset)
-                    assertTrue(delta.dot(axis(p)) in 0.0..p.scale.z())
-                    assertTrue(delta.cross(axis(p)).length()<.00001)
-                }
-            }
-            assertFalse(CoreSkillChoreography.pose(blade,40.0).visible)
-            assertFalse(CoreSkillChoreography.pose(glint,12.0).visible)
-        }
     }
     @Test fun `standard planting ends exactly at the fixed pulse root including one tick windups`() {
         for(life in listOf(1,2,5,17)) repeat(4) { heading ->

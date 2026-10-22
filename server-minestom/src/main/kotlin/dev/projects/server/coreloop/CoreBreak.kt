@@ -13,12 +13,10 @@ internal object CoreBreak {
     const val NORMAL_WARRIOR_THIRD = 5.0
     /** Any other class's skill, per hit. */
     const val SKILL = 4.0
-    private val WARRIOR = mapOf("dash" to 4.0, "slam" to 12.0, "whirl" to 4.0, "war_wound" to 6.0, "war_ult" to 15.0)
+    private val WARRIOR = mapOf("dash" to 4.0, "slam" to 12.0, "whirl" to 4.0, "war_wound" to 6.0, "war_ult" to 15.0,
+        "war_guard" to 8.0, "war_counter" to 12.0)
     /** 地割り right after the third normal hit. */
     const val FINISHER = 1.5
-    /** 地割り within [RIPOSTE_TICKS] of 根張り catching a blow: the return strike. */
-    const val RIPOSTE = 2.0
-    const val RIPOSTE_TICKS = 60L
 
     fun skill(job: CoreClass, icon: String): Double =
         if (job == CoreClass.WARRIOR) WARRIOR[icon] ?: 0.0 else SKILL

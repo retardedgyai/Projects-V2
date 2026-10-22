@@ -101,8 +101,6 @@ internal class CorePlayerCombat(
     /** Crowd control this player is under (enemy attacks now, other players in PvP fields). */
     internal val crowd = CorePlayerCrowdControl()
     private var movementHeld = false
-    /** Warrior: 根張り caught a blow; a 地割り before this tick is the return strike (CoreBreak.RIPOSTE). */
-    private var riposteUntil = -1L
     val classId get() = journey().job
     val skillDefinitions get() = CoreSkillCatalog.equipped(journey(), statSource())
     val skillNames get() = skillDefinitions.map { it.name }
@@ -139,8 +137,10 @@ internal class CorePlayerCombat(
         val boost: Double = 1.0, val gardenCells: List<Pos>? = null,
         /** Break gauge damage each hit on a boss does (CoreBreak), fixed at the cast. */
         val breakAmount: Double = 0.0,
-        /** 跳び叩き: the tick the body was launched; the action lasts until it lands. */
-        var leapTick: Long = -1L)
+        /** 跳び叩き / 天落とし: the tick the body was launched; the action lasts until it lands. */
+        var leapTick: Long = -1L,
+        /** 天落とし: where it landed and when; the rings go out from there (CoreWarriorRules.SKYFALL_RINGS). */
+        var landAt: Pos? = null, var landTick: Long = -1L)
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
@@ -225,13 +225,12 @@ internal class CorePlayerCombat(
             beastSpent = classState.takeStacks()
             skillBoost *= 1 + beastSpent * CoreWarriorRules.BEAST_DAMAGE_PERCENT_PER_STACK / 100.0
             breakAmount += beastSpent * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT
-            if (tickNumber <= riposteUntil) { breakAmount *= CoreBreak.RIPOSTE; riposteUntil = -1; notice("返しの一撃") }
             if (definition.icon == "slam" && tickNumber <= finisherUntil) {
                 skillBoost *= 1 + CoreWarriorRules.FINISHER_BONUS_PERCENT / 100.0; finisherUntil = -1
                 breakAmount *= CoreBreak.FINISHER
                 castDefinition = definition.copy(startup = minOf(CoreWarriorRules.FINISHER_STARTUP, definition.startup))
             }
-            if (definition.icon == "slam") castDefinition = CoreWarriorRules.slam(castDefinition, beastSpent)
+            castDefinition = CoreWarriorRules.shape(castDefinition, beastSpent)
         }
         if (classId == CoreClass.STARWEAVER && spentFrom == 3.0 && definition.motion !in setOf(CoreSkillMotion.EVADE, CoreSkillMotion.HEAL, CoreSkillMotion.SHIELD)) {
             var extra = if (definition.motion == CoreSkillMotion.FIELD) 1 else 0
@@ -350,6 +349,13 @@ internal class CorePlayerCombat(
                 val air = tickNumber - action.leapTick
                 if (air >= CoreWarriorLeap.MIN_AIR_TICKS && grounded() || air >= CoreWarriorLeap.MAX_AIR_TICKS) {
                     action.leapTick = -1
+                    if (action.definition.icon == CoreWarriorRules.SKYFALL) {
+                        action.landAt = player.position; action.landTick = tickNumber
+                        skyfallRing(enemies, action, 0)
+                        if (!actionsValid(enemies, epoch)) return
+                        if (action.definition.pulses <= 1) pending = null
+                        return@let
+                    }
                     emitSkillPulse(player.position, CoreWarriorLeap.LANDING_RADIUS)
                     strike(enemies, player.position, action.direction, CoreWarriorLeap.LANDING_RADIUS, -1.0, 1.0)
                     if (!actionsValid(enemies, epoch)) return
@@ -357,8 +363,20 @@ internal class CorePlayerCombat(
                 }
                 return@let
             }
+            if (action.landTick >= 0) {
+                // 天落とし: each ring goes out a little later than the one inside it.
+                val since = tickNumber - action.landTick
+                val ring = (since / CoreWarriorRules.SKYFALL_RING_TICKS).toInt()
+                if (since % CoreWarriorRules.SKYFALL_RING_TICKS == 0L && ring in 1 until action.definition.pulses) {
+                    skyfallRing(enemies, action, ring)
+                    if (!actionsValid(enemies, epoch)) return
+                }
+                if (ring >= action.definition.pulses - 1) pending = null
+                return@let
+            }
             val pulse = action.elapsed - action.startup
-            if (pulse >= 0 && pulse % 8 == 0 && pulse / 8 < action.definition.pulses) {
+            val every = CoreCombatFeel.pulseTicks(action.definition)
+            if (pulse >= 0 && pulse % every == 0 && pulse / every < action.definition.pulses) {
                 executeSkill(enemies, action)
                 if (!actionsValid(enemies, epoch)) return
                 if (action.leapTick >= 0) return@let
@@ -500,6 +518,19 @@ internal class CorePlayerCombat(
             strike(enemies, at, action.direction, radius, -1.0, 1.0)
         }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorLeap.ICON) { leap(action); return }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.SKYFALL) { leap(action, high = true); return }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.FRENZY) {
+            // 狂乱: each swing steps in (a push the client moves, not a carried move) and reaches a little further;
+            // the last is the overhead blow.
+            val swing = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(s)
+            val last = swing == s.pulses - 1
+            val push = flatFacing().mul(if (last) 7.0 else 5.0)
+            player.velocity = Vec(push.x(), player.velocity.y(), push.z())
+            val reach = s.radius + .3 * swing + if (last) .6 else 0.0
+            emitSkillPulse(player.position, reach)
+            strike(enemies, player.position, action.direction, reach, if (last) .6 else .35, if (last) 2.0 else 1.0)
+            return
+        }
         when (s.motion) {
             CoreSkillMotion.RAY -> rangedStrike(enemies, action.direction, s.range, .65,
                 if ((classId == CoreClass.STARWEAVER && action.empowered >= 3) || s.icon == "hunt_pierce") 3 else 1, 1.0, true)
@@ -787,14 +818,30 @@ internal class CorePlayerCombat(
     }
 
     /** 跳び叩き: launch toward the aimed point with vanilla physics (CoreWarriorLeap); never a teleport. */
-    private fun leap(action: PendingSkill) {
+    private fun leap(action: PendingSkill, high: Boolean = false) {
         val instance = player.instance ?: return
         val eye = player.position.add(0.0, player.eyeHeight, 0.0)
         val target = CoreWarriorLeap.aim(eye, player.position.direction()) { instance.getBlock(it).solid() }
-        val velocity = CoreWarriorLeap.launch(player.position, target)
+        val velocity = CoreWarriorLeap.launch(player.position, target, if (high) CoreWarriorLeap.SKYFALL_APEX else null)
         player.velocity = velocity.mul(20.0)  // Minestom velocity is blocks per second
         action.leapTick = tickNumber
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, .6f)
+    }
+    /** 天落とし: ring [k] hits what stands between the ring inside it and its own radius, from the landing point. */
+    private fun skyfallRing(enemies: QuestEncounterCombat, action: PendingSkill, k: Int) {
+        val centre = action.landAt ?: return
+        val outer = CoreWarriorRules.SKYFALL_RINGS[k]
+        val inner = if (k == 0) -1.0 else CoreWarriorRules.SKYFALL_RINGS[k - 1]
+        vfx.playSkill(CoreSkillEffect(classId, action.definition.copy(radius = outer), centre, action.direction, pulse = k))
+        val epoch = actionEpoch
+        for (target in enemies.combatTargets()) {
+            val p = enemies.positionOf(target.id) ?: continue
+            val d = kotlin.math.hypot(p.x() - centre.x(), p.z() - centre.z())
+            if (d > inner && d <= outer && abs(p.y() - centre.y()) < 3.0 && visibleTo(target.id, enemies)) {
+                hit(enemies, target.id, if (k == 0) 1.0 else .7, skill = true, skillAction = action)
+                if (!actionsValid(enemies, epoch)) return
+            }
+        }
     }
     private fun grounded(): Boolean = player.isOnGround ||
         player.instance?.getBlock(player.position.sub(0.0, .05, 0.0))?.solid() == true
@@ -802,7 +849,7 @@ internal class CorePlayerCombat(
     private fun emitSkillPulse(centre: Pos, radius: Double, endpoint: CoreSkillEndpoint = CoreSkillEndpoint.NONE) {
         val action = pending ?: return
         vfx.playSkill(CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction,
-            pulse = (action.elapsed - action.startup) / 8, endpoint = endpoint))
+            pulse = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(action.definition), endpoint = endpoint))
     }
 
     /** Lock a ground cast to the visible aimed enemy/block, not a fixed point seven blocks ahead. */
@@ -940,7 +987,6 @@ internal class CorePlayerCombat(
             val perfect = tickNumber <= classState.perfectUntil
             adjusted *= if (perfect) .2 else .45
             classState.guarded(classId, tickNumber, journey().build)
-            if (classId == CoreClass.WARRIOR) riposteUntil = tickNumber + CoreBreak.RIPOSTE_TICKS
             if (classId == CoreClass.WARRIOR && perfect) {
                 // One read per stance; it shows the catch but refreshes nothing (the parry/slam reset was removed, D06).
                 classState.perfectUntil = -1
@@ -996,7 +1042,7 @@ internal class CorePlayerCombat(
         garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; riposteUntil = -1
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         crowd.clear()
         evadeUntil = -1; dodgeQueuedUntil = -1; slide = null; staggerUntil = -1

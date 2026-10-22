@@ -13,7 +13,8 @@ class CoreClassBuildTest {
             assertEquals(10,skills.size)
             assertTrue(skills.take(8).none { it.ultimate });assertTrue(skills.drop(8).all { it.ultimate })
             assertTrue(skills.any { it.gain>0 });assertTrue(skills.any { it.spend>0 })
-            assertTrue(skills.any { it.motion in setOf(CoreSkillMotion.GUARD,CoreSkillMotion.EVADE) })
+            // Every class has a way out; the warrior's is the leap (跳び叩き), not a dodge skill.
+            assertTrue(skills.any { it.motion in setOf(CoreSkillMotion.GUARD,CoreSkillMotion.EVADE) } || job==CoreClass.WARRIOR && skills.any { it.icon==CoreWarriorLeap.ICON })
             skills.forEach { s ->
                 assertTrue(s.cooldown>0 && s.mana>=0 && s.startup>0 && s.pulses in 1..8)
                 assertEquals(0.0,if(job.magic) s.formula.ad else s.formula.ap)

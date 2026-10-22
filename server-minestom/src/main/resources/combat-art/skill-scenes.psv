@@ -4,10 +4,10 @@ normal_reverse|通常攻撃二段目|CUT|steel|slash_reverse|speed_streak|edge_g
 normal_finish|通常攻撃三段目|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|2.7|1.0|1.0|大剣の三段目。前方へ縦に下ろす
 dash|轟進|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.1|1.0|1.0|移動後の胸元前方を短く横断する刃。突進距離を刃の長さにしない
 slam|地割り|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|2.7|1.0|1.0|正面の縦斬りと前方地割れ。背後へ振らない。通常3段目の直後は予備動作だけ短縮
-whirl|押し薙ぎ|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0|一回の判定に一度の前方横薙ぎ。承認済みの刃と扇状の余波を水平に出す
-war_guard|根張り|GUARD|steel|parry_blade|edge_glint|edge_glint|cut_spark|0.9|1.0|1.0|一振りの大剣を握り位置から胸前へ起こす。実防御時間保持し最初の12tickだけ刃の光が走る
-war_wound|地走り|CUT|steel|slash_short|blood_notch|edge_glint|cut_spark|1.8|1.0|1.0|仮：旧牽制斬りの短い斜め斬りを流用。7mの細い直線はBlockbench移行で作る
-war_counter|返し刃|CUT|gold|slash_reverse|speed_streak|edge_glint|cut_spark|2.3|1.0|1.0|横斬りと逆向きの返し。全身を囲う輪にしない
+whirl|狂乱|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0|獣を使う連撃。踏み込みながら振り続け、最後は真上から振り下ろす（見た目はCoreWarriorRefChoreography）
+war_guard|天落とし|GUARD|steel|parry_blade|edge_glint|edge_glint|cut_spark|0.9|1.0|1.0|獣を使う跳躍。高く跳んで叩き落とし、着地から衝撃の輪が外へ広がる（見た目はCoreWarriorRefChoreography）
+war_wound|跳び叩き|CUT|steel|slash_short|blood_notch|edge_glint|cut_spark|1.8|1.0|1.0|狙った地点へ弧を描いて跳び、着地の前方に短い溝と扇形に跳ねる土（見た目はCoreWarriorRefChoreography）
+war_counter|大地崩し|CUT|gold|slash_reverse|speed_streak|edge_glint|cut_spark|2.3|1.0|1.0|獣を使う範囲技。大剣を突き立てて周り一面の地面を砕き、まとめて打ち上げる（見た目はCoreWarriorRefChoreography）
 war_cry|雄叫び|SHIELD|gold|roar_wave|shield_arch|cast_spark|light_spark|1.2|1.0|1.0|口元から前後へ三度ずつ抜ける開いた声の波。一回の障壁付与に対応し斬撃や追撃は出さない
 war_breach|破城突き|THRUST|steel|thrust_tip|speed_streak|edge_glint|armor_break|2.6|0.8|0.8|移動後の正面への細い刺突。横の刀身や回転は禁止
 war_ult|鉄槌|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|3.4|1.2|1.0|三回の垂直叩きつけ。広い当たり判定は薄い地上表示で補足

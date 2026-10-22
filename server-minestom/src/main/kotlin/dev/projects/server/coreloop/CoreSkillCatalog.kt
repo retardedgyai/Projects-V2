@@ -56,7 +56,7 @@ data class CoreSkillDefinition(
         if (journey != null && !retired) {
             val breakPower = CoreBreak.skill(journey.job, icon)
             if (breakPower > 0) add(if (journey.job == CoreClass.WARRIOR && icon == "slam")
-                "ボスの崩し ${CoreCombatMath.number(breakPower)}＋獣1つごとに+${CoreCombatMath.number(CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT)}・3段目の直後${CoreCombatMath.number(CoreBreak.FINISHER)}倍・根張りの直後${CoreCombatMath.number(CoreBreak.RIPOSTE)}倍"
+                "ボスの崩し ${CoreCombatMath.number(breakPower)}＋獣1つごとに+${CoreCombatMath.number(CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT)}・3段目の直後${CoreCombatMath.number(CoreBreak.FINISHER)}倍"
                 else "ボスの崩し ${CoreCombatMath.number(breakPower)}${if (pulses > 1) "（1回ごと）" else ""}")
         }
         if(motion == CoreSkillMotion.GUARD) add("最初の0.6秒：被害80%軽減 / 以降55%軽減 / ${duration/20.0}秒")
@@ -180,11 +180,13 @@ object CoreSkillCatalog {
             CoreClass.WARRIOR -> listOf(
                 s("轟進", "dash", "鉄塊の刃を突き出して突っ込み、敵を怯ませる。獣を溜める", CoreSkillMotion.LUNGE, 6.0, 1.2, mana=8, cd=100, startup=5).cc(CrowdControl.FLINCH, 300),
                 s("地割り", "slam", "溜めた獣を全部叩き込んで地を割る。獣が多いほど亀裂が長く、敵は高く打ち上がり長くスタン。獣3つなら亀裂の先でもう一度割れる。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE).cc(CrowdControl.AIRBORNE, 700).copy(stunAfterMillis = 1500),
-                s("押し薙ぎ", "whirl", "前方180度を一度で薙ぎ、正面の敵をまとめて押し出す", CoreSkillMotion.CONE, 10.0, 2.0, mana=10, cd=200, startup=4, gain=0, radius=4.2).cc(CrowdControl.KNOCKBACK, 400),
-                s("根張り", "war_guard", "2秒踏みとどまって被害を減らす。反撃は付かない", CoreSkillMotion.GUARD, 0.0, 0.0, mana=8, cd=400, startup=1, gain=0, duration=40),
+                // 狂乱 / 天落とし / 大地崩し (Creator 2026-10-23) take the dropped 押し薙ぎ / 根張り and the retired 返し刃's
+                // slots and ids, so their HUD art slots stay; their icons are still to be drawn.
+                s("狂乱", "whirl", "踏み込みながら続けて振り、最後は真上から振り下ろす。獣の数だけ振りが増える。振っている間は怯まない", CoreSkillMotion.CONE, 6.0, 1.1, mana=12, cd=200, startup=4, gain=0, radius=3.6).cc(CrowdControl.FLINCH, 300),
+                s("天落とし", "war_guard", "高く跳び上がって叩き落とす。着地の衝撃が輪になって外へ広がる。獣の数だけ輪が増える（最大3重）。空中で少し曲げられる", CoreSkillMotion.CONE, 14.0, 2.4, mana=15, cd=280, startup=6, gain=0, range=CoreWarriorLeap.MAX_REACH, radius=8.0).cc(CrowdControl.AIRBORNE, 600),
                 // 跳び叩き (Creator 2026-10-22) takes the retired 地走り's slot and id (CoreWarriorLeap).
                 s("跳び叩き", "war_wound", "狙った地点へ弧を描いて跳び、着地の周りを叩いて短くスタン。空中で少し曲げられる。獣を溜める", CoreSkillMotion.CONE, 6.0, 1.4, mana=10, cd=180, startup=4, range=CoreWarriorLeap.MAX_REACH, radius=CoreWarriorLeap.LANDING_RADIUS).cc(CrowdControl.STUN, 600),
-                s("返し刃", "war_counter", "（廃止）受け流し専用の反撃", CoreSkillMotion.CONE, 10.0, 2.8, cd=130, startup=4, gain=0, spend=30, retired=true),
+                s("大地崩し", "war_counter", "大剣を地面に突き立て、周り一面の地面を砕いて敵をまとめて打ち上げる。獣が多いほど広く高い", CoreSkillMotion.NOVA, 12.0, 2.0, mana=15, cd=320, startup=14, gain=0, radius=5.0).cc(CrowdControl.AIRBORNE, 600),
                 s("雄叫び", "war_cry", "（廃止）仲間に短い障壁", CoreSkillMotion.SHIELD, 12.0, .5, mana=18, cd=240, gain=0, radius=7.0, duration=100, retired=true),
                 s("破城突き", "war_breach", "（廃止）轟進へ統合", CoreSkillMotion.LUNGE, 8.0, 1.5, mana=18, cd=160, startup=8, status=CoreSkillStatus.EXPOSE, range=4.0, retired=true),
                 s("鉄槌", "war_ult", "大剣を三度振り下ろして敵を打ち上げる。途中の回避で中断可", CoreSkillMotion.CONE, 20.0, 2.4, mana=20, cd=1200, startup=18, pulses=3, gain=0, spend=0, radius=7.0, ult=true).cc(CrowdControl.AIRBORNE, 1000),

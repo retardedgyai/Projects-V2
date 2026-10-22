@@ -47,7 +47,7 @@ class CoreWarriorRefChoreographyTest {
     }
 
     @Test fun `only 地割り is taken over`() {
-        val other = CoreSkillEffect(CoreClass.WARRIOR, CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "whirl" },
+        val other = CoreSkillEffect(CoreClass.WARRIOR, CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "dash" },
             Vec.ZERO, Vec(0.0, 0.0, 1.0), CoreSkillVisualPhase.PULSE)
         assertEquals(null, CoreWarriorRefChoreography.parts(other))
     }
