@@ -54,6 +54,20 @@ internal object CoreWarriorRefChoreography {
             }
             return out
         }
+        if (e.sceneId == CoreWarriorRules.SHATTER && e.phase == CoreSkillVisualPhase.PREPARE) {
+            // The warning (Earth Eater): before the blow, thin cracks creep out under the feet and stones lift.
+            val life = e.prepareDuration.coerceIn(2, 20)
+            for (k in 0 until 3) {
+                val a = yaw + .7 + k * 2.2 + (hash(k, 191) - .5) * .8
+                val len = 1.4 + .9 * hash(k, 195)
+                out += part("furrow", Vec(sin(a) * len / 2, .12, cos(a) * len / 2), 1.0, a, life).copy(scale = Vec(len, 1.0, len))
+            }
+            for (k in 0 until 6) {
+                val a = hash(k, 192) * 2 * PI; val d = .9 + 1.6 * hash(k, 193)
+                out += part("pebble$k", Vec(sin(a) * d, .1, cos(a) * d), .65 + .3 * hash(k, 194), a, life, ground = false, delay = k % 3)
+            }
+            return out
+        }
         if (e.sceneId in ownedIds && e.phase == CoreSkillVisualPhase.PREPARE) {
             // The wind-up: the weight settles, a little dust off the feet.
             out += part("dust${20}", Vec(0.0, .3, 0.0), .8, 0.0, e.prepareDuration.coerceIn(1, 12), ground = false, billboard = true)
@@ -69,17 +83,17 @@ internal object CoreWarriorRefChoreography {
             // last swing is the overhead blow and tears a short furrow forward like a small 地割り.
             val last = e.pulse >= e.skill.pulses - 1
             if (!last) {
-                // Each swing bites into the ground on a diagonal, left then right (no wind drawing: 薙ぎ was dropped):
-                // a short gash torn forward, turf flipped off its lip, clods off the tip.
-                val side = if (e.pulse % 2 == 0) 1.0 else -1.0
-                val turn = -side * .55
-                val at = local(side * .55, .12, 1.9)
-                out += part("furrow", at, 1.0, yaw + turn, 30).copy(scale = Vec(2.7 + .2 * e.pulse, 1.0, 2.7 + .2 * e.pulse))
-                for (k in 0 until 2) out += part("turf${100 + e.pulse * 2 + k}", at.add(sin(yaw + turn + PI / 2 * side) * .45, 0.0,
-                    cos(yaw + turn + PI / 2 * side) * .45).add(sin(yaw + turn) * (k - .5) * 1.0, 0.0, cos(yaw + turn) * (k - .5) * 1.0),
-                    .55 + .25 * hash(e.pulse, k, 157), yaw + turn, 24, delay = k, roll = side * (.5 + .4 * hash(e.pulse, k, 158)))
-                for (k in 0 until 3) out += part("clod${40 + k}", at.add(sin(yaw + turn) * (.6 + .5 * k), .1, cos(yaw + turn) * (.6 + .5 * k)),
-                    .3 + .15 * hash(e.pulse, k, 151), yaw + hash(e.pulse, k, 152) * 6.0, 16, ground = false, delay = k).copy(startSize = .6)
+                // The cause first: the blade's dark trail, a different cut each swing (down-left, down-right, flat...).
+                val rolls = doubleArrayOf(-.85, .85, 1.45, -.5, .5)
+                val roll = rolls[e.pulse % rolls.size]
+                out += part("wind", local(0.0, 1.3, 1.4), 4.6, yaw + PI / 2 - 1.15, 7, ground = false, roll = roll)
+                // Where the edge comes down: one burst of dust and earth, nothing before it.
+                val side = if (roll < 0) -1.0 else if (roll > 1.2) 0.0 else 1.0   // the side the trail comes down on
+                val at = local(side * .9, .25, 2.3)
+                for (k in 0 until 4) out += part("clod${40 + k}", at.add((hash(e.pulse, k, 150) - .5) * .5, 0.0, (hash(e.pulse, k, 149) - .5) * .5),
+                    .3 + .15 * hash(e.pulse, k, 151), yaw + hash(e.pulse, k, 152) * 6.0, 16, ground = false, delay = 2 + k / 2).copy(startSize = .7)
+                for (k in 0 until 2) out += part("dust${70 + k}", at.add(0.0, .2 + .3 * k, 0.0), 1.2 - .2 * k, 0.0, 10, ground = false,
+                    delay = 2, billboard = true, roll = hash(e.pulse, k, 148) * 6.0)
                 return out
             }
             out += part("wind", local(.3, 1.9, 2.0), 5.0, yaw + PI / 2 - 1.15, 8, ground = false)
@@ -97,7 +111,13 @@ internal object CoreWarriorRefChoreography {
             // moment after the one inside it. Ring 0 also throws the biggest slabs right round the blow.
             val r = e.skill.radius
             // Each ring heaves up and drops back quickly, so the eye follows a wave going out, not a bullseye.
-            val count = (6 + 2.2 * r).roundToInt().coerceAtMost(18)
+            if (e.pulse == 0) {
+                // The cause: the blade brought straight down with the fall, then a column of dust off the impact point.
+                out += part("wind", local(.2, 1.6, .9), 5.0, yaw + PI / 2 - 1.15, 6, ground = false)
+                for (k in 0 until 3) out += part("dust${74 + k}", Vec(0.0, .4 + .8 * k, 0.0), 2.4 - .4 * k, 0.0, 12 + 2 * k, ground = false,
+                    billboard = true, roll = hash(k, 159) * 6.0)
+            }
+            val count = (5 + 1.5 * r).roundToInt().coerceAtMost(14)
             for (k in 0 until count) {
                 if (hash(e.pulse, k, 160) < .18) continue
                 val a = yaw + k * 2 * PI / count + hash(e.pulse, k, 161) * .3
@@ -132,6 +152,10 @@ internal object CoreWarriorRefChoreography {
             // 大地崩し: the blade is driven in and the ground round it breaks up everywhere at once: cracks run out from
             // the blade, the turf between them is flung up in slabs, the wave reaching the edge last.
             val r = e.skill.radius
+            // The cause: the blade driven straight down, then a burst at the point it went in.
+            out += part("wind", local(.1, 1.3, .8), 3.4, yaw + PI / 2 - 1.15, 6, ground = false)
+            for (k in 0 until 2) out += part("dust${78 + k}", Vec(0.0, .4 + .6 * k, 0.0), 1.6 - .3 * k, 0.0, 12, ground = false,
+                delay = 1, billboard = true, roll = hash(k, 189) * 6.0)
             // Five cracks, uneven in angle and length (not a star), each widest at the blade.
             val angles = (0 until 5).map { k -> yaw + k * 2 * PI / 5 + (hash(k, 171) - .5) * .9 }
             for ((k, a) in angles.withIndex()) {
@@ -239,7 +263,12 @@ internal object CoreWarriorRefChoreography {
                 CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/fissure_$stage", live)
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
-            name == "wind" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/wind_${tick.coerceAtMost(7)}", live)
+            name == "wind" -> CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll, "$DIR/wind_${tick.coerceAtMost(7)}", live)
+            name.startsWith("pebble") -> {
+                // 大地崩し's warning: a stone lifts off the ground and trembles there until the blow.
+                val lift = (t.coerceAtLeast(0.0) / 10.0).coerceAtMost(1.0) * .45
+                CoreMeshPose(p.offset.add(0.0, lift + sin(t * 1.9) * .04, 0.0), p.scale, p.yaw + t * .05, .3, .2, CoreCombatMeshes.GROUND, live)
+            }
             name == "sweep" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, p.roll, "$DIR/sweep_${tick.coerceAtMost(7)}", live)
             name == "scrape" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
                 "$DIR/scrape_${when { tick < 4 -> tick; tick < 32 -> 4; tick < 36 -> 5; else -> 6 }}", live)
