@@ -138,7 +138,9 @@ internal class CorePlayerCombat(
         var elapsed: Int = 0, var gained: Boolean = false, val empowered: Double = 0.0, val counter: Boolean = false,
         val boost: Double = 1.0, val gardenCells: List<Pos>? = null,
         /** Break gauge damage each hit on a boss does (CoreBreak), fixed at the cast. */
-        val breakAmount: Double = 0.0)
+        val breakAmount: Double = 0.0,
+        /** 跳び叩き: the tick the body was launched; the action lasts until it lands. */
+        var leapTick: Long = -1L)
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
@@ -343,10 +345,23 @@ internal class CorePlayerCombat(
                 }
                 return@let
             }
+            if (action.leapTick >= 0) {
+                // In the air: the client flies the arc; the slam comes down when the body is back on the ground.
+                val air = tickNumber - action.leapTick
+                if (air >= CoreWarriorLeap.MIN_AIR_TICKS && grounded() || air >= CoreWarriorLeap.MAX_AIR_TICKS) {
+                    action.leapTick = -1
+                    emitSkillPulse(player.position, CoreWarriorLeap.LANDING_RADIUS)
+                    strike(enemies, player.position, action.direction, CoreWarriorLeap.LANDING_RADIUS, -1.0, 1.0)
+                    if (!actionsValid(enemies, epoch)) return
+                    pending = null
+                }
+                return@let
+            }
             val pulse = action.elapsed - action.startup
             if (pulse >= 0 && pulse % 8 == 0 && pulse / 8 < action.definition.pulses) {
                 executeSkill(enemies, action)
                 if (!actionsValid(enemies, epoch)) return
+                if (action.leapTick >= 0) return@let
             }
             if (pulse >= 0 && pulse % 8 == 4 && pulse / 8 + 1 < action.definition.pulses && action.definition.motion == CoreSkillMotion.FIELD) {
                 vfx.playSkill(CoreSkillEffect(classId, action.definition, action.origin, action.direction,
@@ -484,6 +499,7 @@ internal class CorePlayerCombat(
             emitSkillPulse(at, radius)
             strike(enemies, at, action.direction, radius, -1.0, 1.0)
         }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorLeap.ICON) { leap(action); return }
         when (s.motion) {
             CoreSkillMotion.RAY -> rangedStrike(enemies, action.direction, s.range, .65,
                 if ((classId == CoreClass.STARWEAVER && action.empowered >= 3) || s.icon == "hunt_pierce") 3 else 1, 1.0, true)
@@ -769,6 +785,19 @@ internal class CorePlayerCombat(
             if (!actionsValid(enemies, epoch)) return
         }
     }
+
+    /** 跳び叩き: launch toward the aimed point with vanilla physics (CoreWarriorLeap); never a teleport. */
+    private fun leap(action: PendingSkill) {
+        val instance = player.instance ?: return
+        val eye = player.position.add(0.0, player.eyeHeight, 0.0)
+        val target = CoreWarriorLeap.aim(eye, player.position.direction()) { instance.getBlock(it).solid() }
+        val velocity = CoreWarriorLeap.launch(player.position, target)
+        player.velocity = velocity.mul(20.0)  // Minestom velocity is blocks per second
+        action.leapTick = tickNumber
+        sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, .6f)
+    }
+    private fun grounded(): Boolean = player.isOnGround ||
+        player.instance?.getBlock(player.position.sub(0.0, .05, 0.0))?.solid() == true
 
     private fun emitSkillPulse(centre: Pos, radius: Double, endpoint: CoreSkillEndpoint = CoreSkillEndpoint.NONE) {
         val action = pending ?: return

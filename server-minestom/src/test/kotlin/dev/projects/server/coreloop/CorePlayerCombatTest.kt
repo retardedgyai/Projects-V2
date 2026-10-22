@@ -368,7 +368,8 @@ class CorePlayerCombatTest {
         val scenes=(runs+beastRuns).map { (run,slot,shader) -> var scene=emptyMap<String,Any>(); val icon=run.substringBefore("_b")
             CoreWarriorIronChoreography.shaderCut=shader; try { arena { h ->
             CoreCombatPresentation.pack(h.player,true)
-            if(icon=="war_wound") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=4)); h.actor.reset() }
+            if(icon=="war_wound") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=4)); h.actor.reset()
+                h.player.teleport(h.player.position.withView(0f, 30f)) } // 跳び叩き aims at the ground short of the target
             assertEquals(icon,h.actor.skillDefinitions[slot].icon)
             h.actor.classState.gain(if(run.startsWith("slam_b")) run.last().digitToInt().toDouble() else 100.0,h.journey.job,h.journey.build)
             val frames=mutableListOf<Map<String,Any>>()
@@ -386,7 +387,12 @@ class CorePlayerCombatTest {
                 }) }
             repeat(4) { record(); h.ticks(1) }
             h.actor.skill(slot)
-            repeat(76) { record(); h.ticks(1) }
+            // 跳び叩き: replay the arc the client flies (CoreWarriorLeap.path) so the preview shows the body in the air.
+            var arc: Iterator<net.minestom.server.coordinate.Pos>? = null
+            repeat(76) { record(); h.ticks(1)
+                if (icon == CoreWarriorLeap.ICON && arc == null && h.player.velocity.y() > 0)
+                    arc = CoreWarriorLeap.path(h.player.position, h.player.velocity.div(20.0)).iterator()
+                arc?.let { if (it.hasNext()) h.player.teleport(it.next()) } }
             scene=mapOf("id" to if(shader) "${icon}_shader" else run,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
             CoreCombatPresentation.forget(h.player)
         } } finally { CoreWarriorIronChoreography.shaderCut=false }; scene }
@@ -988,6 +994,23 @@ class CorePlayerCombatTest {
         val id = h.combat.combatTargets().single().id
         h.actor.classState.gain(3.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(21)
         assertEquals(100.0 - 2 * (12.0 + 3 * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT), h.combat.breakGauge(id)!!, .0001)
+    }
+
+    @Test fun `the leap launches the body without moving it and slams down where it lands`() = arena { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 4)); h.actor.reset()
+        assertEquals(CoreWarriorLeap.ICON, h.actor.skillDefinitions[3].icon)
+        val id = h.combat.combatTargets().single().id
+        h.player.teleport(h.player.position.withView(0f, 20f)) // looking at the ground about four blocks ahead, by the boss
+        val from = h.player.position
+        h.actor.skill(3); h.ticks(5)
+        assertEquals(from, h.player.position) // never a teleport: the client flies the arc
+        assertTrue(h.player.velocity.y() > 0.0 && h.player.velocity.z() > 0.0, "${h.player.velocity}")
+        assertEquals(100.0, h.combat.breakGauge(id)!!, 1e-9) // nothing lands until the body is down
+        // Replay the arc the client would fly, then touch down next to the boss.
+        for (p in CoreWarriorLeap.path(from, h.player.velocity.div(20.0), ground = from.y())) { h.player.teleport(p); h.ticks(1) }
+        h.ticks(2)
+        assertTrue(h.combat.breakGauge(id)!! < 100.0, "the landing hit the boss")
+        assertTrue(h.actor.resource > 0.0, "the landing feeds the beast")
     }
 
     @Test fun `the slam is never gated by the beast and keeps a part-built stack`() = arena { h ->

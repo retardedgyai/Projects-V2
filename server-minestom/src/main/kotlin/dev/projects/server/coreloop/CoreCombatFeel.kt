@@ -41,7 +41,6 @@ internal object CoreCombatFeel {
     fun minDot(icon: String) = when (icon) {
         "whirl" -> 0.0 // A broad frontal sweep, not damage behind the wielder.
         "slam", "war_breach" -> .8 // Commit the heavy blade along the aimed lane.
-        "war_wound" -> .9 // The blade wind is a thin line, not a cone.
         else -> .35
     }
 }

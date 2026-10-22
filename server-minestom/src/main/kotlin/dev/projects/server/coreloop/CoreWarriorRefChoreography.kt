@@ -14,7 +14,7 @@ internal object CoreWarriorRefChoreography {
     private const val PREFIX = "war_ref:"
     private const val DIR = "combat_vfx/warrior_ref"
     @Volatile var enabled = true
-    private val sceneIds = setOf("slam")
+    private val sceneIds = setOf("slam", "war_wound")
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
@@ -34,6 +34,24 @@ internal object CoreWarriorRefChoreography {
             CoreCombatMeshPart("$PREFIX$name", "steel", at, Vec(scale, scale, scale), yaw = partYaw, pitch = pitch, roll = roll,
                 durationTicks = life, startSize = 1.0, endSize = 1.0, delayTicks = delay, ground = ground, billboard = billboard)
         val out = mutableListOf<CoreCombatMeshPart>()
+        if (e.sceneId == "war_wound") {
+            // 跳び叩き landing (Creator 2026-10-22): the blade comes down in front as the body lands. Same family as
+            // 地割り and no round crater: a short furrow torn forward, turf kicked up in a fan to the front (biggest
+            // straight ahead), a few clods. No dust: the puffs read as stars at this size.
+            out += part("furrow", local(0.0, .12, 2.3), 1.0, yaw, 34).copy(scale = Vec(3.8, 1.0, 3.8))
+            for (k in 0 until 7) {
+                val a = yaw + (k - 3) * .42 + (hash(k, 141) - .5) * .15     // a fan to the front, not a ring
+                val d = 1.2 + .4 * hash(k, 142) + .25 * (3 - abs(k - 3))
+                out += part("turf${70 + k}", Vec(sin(a) * d, .12, cos(a) * d), (.7 + .35 * hash(k, 143)) * (1.0 + .12 * (3 - abs(k - 3))), a + PI / 2, 30,
+                    delay = abs(k - 3) / 2, roll = -(.75 + .35 * hash(k, 144)), pitch = (hash(k, 145) - .5) * .3)
+            }
+            for (k in 0 until 6) {
+                val a = yaw + (k - 2.5) * .5
+                out += part("clod${30 + k}", Vec(sin(a) * 1.0, .25, cos(a) * 1.0), .35 + .25 * hash(k, 146), a, 20,
+                    ground = false, delay = k / 3).copy(startSize = .95)
+            }
+            return out
+        }
         if (e.sceneId == "whirl") {
             // 押し薙ぎ: a flat dark crescent of wind at the waist, swept left to right; the ground scraped in an arc in front;
             // earth thrown outward along it, dust after it. Same mood as 地割り: no light, the weight alone.
