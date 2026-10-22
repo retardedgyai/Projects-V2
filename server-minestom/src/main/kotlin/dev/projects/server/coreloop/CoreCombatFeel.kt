@@ -37,7 +37,7 @@ internal object CoreCombatFeel {
         else -> profile(job).recovery
     }
     /** Ticks between a skill's pulses: 狂乱 swings faster than the usual 8. */
-    fun pulseTicks(s: CoreSkillDefinition) = if (s.icon == CoreWarriorRules.FRENZY) 6 else 8
+    fun pulseTicks(s: CoreSkillDefinition) = if (s.icon == CoreWarriorRules.FRENZY) 5 else 8
     fun lastImpact(s: CoreSkillDefinition, startup: Int) = startup + (s.pulses - 1) * pulseTicks(s)
     fun finish(job: CoreClass, s: CoreSkillDefinition, startup: Int) = lastImpact(s, startup) + recovery(job, s)
     /** A guard may cut a skill after its last impact and any normal follow-through. */

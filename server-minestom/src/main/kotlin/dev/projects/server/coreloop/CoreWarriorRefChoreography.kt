@@ -83,21 +83,34 @@ internal object CoreWarriorRefChoreography {
             // last swing is the overhead blow and tears a short furrow forward like a small 地割り.
             val last = e.pulse >= e.skill.pulses - 1
             if (!last) {
-                // The cause first: the blade's dark trail, a different cut each swing (down-left, down-right, flat...).
-                val rolls = doubleArrayOf(-.85, .85, 1.45, -.5, .5)
-                val roll = rolls[e.pulse % rolls.size]
-                out += part("wind", local(0.0, 1.3, 1.4), 4.6, yaw + PI / 2 - 1.15, 7, ground = false, roll = roll)
-                // Where the edge comes down: one burst of dust and earth, nothing before it.
-                val side = if (roll < 0) -1.0 else if (roll > 1.2) 0.0 else 1.0   // the side the trail comes down on
-                val at = local(side * .9, .25, 2.3)
-                for (k in 0 until 4) out += part("clod${40 + k}", at.add((hash(e.pulse, k, 150) - .5) * .5, 0.0, (hash(e.pulse, k, 149) - .5) * .5),
-                    .3 + .15 * hash(e.pulse, k, 151), yaw + hash(e.pulse, k, 152) * 6.0, 16, ground = false, delay = 2 + k / 2).copy(startSize = .7)
-                for (k in 0 until 2) out += part("dust${70 + k}", at.add(0.0, .2 + .3 * k, 0.0), 1.2 - .2 * k, 0.0, 10, ground = false,
-                    delay = 2, billboard = true, roll = hash(e.pulse, k, 148) * 6.0)
+                // The cause first: the blade's dark trail, each swing in its own plane (Creator 2026-10-23: the angles
+                // must read, and it should look like thrashing about). The trail's plane is tilted with pitch: 0 is the
+                // upright overhead plane, ±0.8 the diagonals, 1.45 nearly flat; roll only turns it within its plane.
+                // Swings come fast, each trail outlives the gap so two overlap, and each is bigger than the one before.
+                val tilts = doubleArrayOf(.8, -.8, 1.45, -.45, .45)
+                val tilt = tilts[e.pulse % tilts.size]
+                val grow = 1.0 + .14 * e.pulse
+                out += part("wind", local(0.0, 1.15, .9), 5.4 * grow, yaw + PI / 2 - 1.15, 9, ground = false, pitch = -tilt,
+                    roll = if (e.pulse % 2 == 0) 0.0 else .35)
+                // A second trail a tick behind and a little wider: the weight of the blade, not a thin line.
+                out += part("wind", local(0.0, 1.1, .85), 6.1 * grow, yaw + PI / 2 - 1.15, 8, ground = false, pitch = -tilt * .92,
+                    roll = (if (e.pulse % 2 == 0) 0.0 else .35) + .12, delay = 1)
+                // Where the edge comes down: earth bursts out, more each swing, a slab torn up with it.
+                val side = when { tilt > 1.2 -> 0.0; tilt > 0 -> -1.0; else -> 1.0 }   // the side the trail comes down on
+                val at = local(side * 1.0, .25, 2.2 + .15 * e.pulse)
+                for (k in 0 until 5 + e.pulse) out += part("clod${40 + k}", at.add((hash(e.pulse, k, 150) - .5) * .7, 0.0, (hash(e.pulse, k, 149) - .5) * .7),
+                    .3 + .2 * hash(e.pulse, k, 151), yaw + hash(e.pulse, k, 152) * 6.0, 18, ground = false, delay = 1 + k / 3).copy(startSize = .8 + .1 * e.pulse)
+                out += part("turf${110 + e.pulse}", at, (.6 + .3 * hash(e.pulse, 153)) * grow, yaw + side * .8, 20, delay = 1,
+                    roll = -(if (side == 0.0) .8 else side) * (.7 + .3 * hash(e.pulse, 154)))
+                for (k in 0 until 2) out += part("dust${70 + k}", at.add(0.0, .2 + .4 * k, 0.0), (1.3 - .25 * k) * grow, 0.0, 10, ground = false,
+                    delay = 1, billboard = true, roll = hash(e.pulse, k, 148) * 6.0)
                 return out
             }
-            out += part("wind", local(.3, 1.9, 2.0), 5.0, yaw + PI / 2 - 1.15, 8, ground = false)
-            out += part("furrow", local(0.0, .12, 2.4), 1.0, yaw, 34).copy(scale = Vec(4.0, 1.0, 4.0))
+            // The last swing is the biggest: straight down from overhead, and the ground splits under it.
+            out += part("wind", local(.3, 1.9, 2.0), 6.2, yaw + PI / 2 - 1.15, 9, ground = false)
+            out += part("furrow", local(0.0, .12, 2.8), 1.0, yaw, 34).copy(scale = Vec(4.8, 1.0, 4.8))
+            for (k in 0 until 8) out += part("clod${20 + k}", local((hash(k, 159) - .5) * 1.2, .25, 2.2 + .5 * k), .35 + .25 * hash(k, 160),
+                yaw + hash(k, 161) * 6.0, 20, ground = false, delay = k / 2).copy(startSize = 1.2)
             for (k in 0 until 6) {
                 val side = if (k % 2 == 0) -1.0 else 1.0
                 val tt = 1.0 - (k / 2) / 3.0
