@@ -68,6 +68,7 @@ data class CoreSkillDefinition(
         }
         if (journey?.job == CoreClass.WARRIOR && icon in CoreWarriorRules.spenders) {
             add("獣1つごとに威力+${CoreWarriorRules.BEAST_DAMAGE_PERCENT_PER_STACK}%・ダウン中の敵にはさらに+${CoreWarriorRules.BEAST_DOWN_PERCENT_PER_STACK}%")
+            if (icon == "slam") add("獣0：約4m・怯み / 1：約6m・低く打ち上げ / 2：約8m・打ち上げ→スタン / 3：約8m・高く打ち上げ→長いスタン＋2度目の割れ")
             add("振っている間は怯まない")
             if (icon == "slam") add("通常3段目の命中から${CoreCombatMath.number(CoreWarriorRules.FINISHER_TICKS/20.0)}秒以内：発生${CoreCombatMath.number(copy(startup = CoreWarriorRules.FINISHER_STARTUP).startupTicks(sheet)/20.0)}秒・威力+${CoreWarriorRules.FINISHER_BONUS_PERCENT}%")
         }
@@ -178,7 +179,7 @@ object CoreSkillCatalog {
             // The beast (CoreWarriorRules) never gates a skill: building skills feed it, the slam takes every stack.
             CoreClass.WARRIOR -> listOf(
                 s("轟進", "dash", "鉄塊の刃を突き出して突っ込み、敵を怯ませる。獣を溜める", CoreSkillMotion.LUNGE, 6.0, 1.2, mana=8, cd=100, startup=5).cc(CrowdControl.FLINCH, 300),
-                s("地割り", "slam", "溜めた獣を全部叩き込んで地を割る。正面の敵を打ち上げ、落ちた後もスタン。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE).cc(CrowdControl.AIRBORNE, 700).copy(stunAfterMillis = 1500),
+                s("地割り", "slam", "溜めた獣を全部叩き込んで地を割る。獣が多いほど亀裂が長く、敵は高く打ち上がり長くスタン。獣3つなら亀裂の先でもう一度割れる。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE).cc(CrowdControl.AIRBORNE, 700).copy(stunAfterMillis = 1500),
                 s("押し薙ぎ", "whirl", "前方180度を一度で薙ぎ、正面の敵をまとめて押し出す", CoreSkillMotion.CONE, 10.0, 2.0, mana=10, cd=200, startup=4, gain=0, radius=4.2).cc(CrowdControl.KNOCKBACK, 400),
                 s("根張り", "war_guard", "2秒踏みとどまって被害を減らす。反撃は付かない", CoreSkillMotion.GUARD, 0.0, 0.0, mana=8, cd=400, startup=1, gain=0, duration=40),
                 s("地走り", "war_wound", "前方7mの地面に亀裂を走らせ、線上の敵の足を止める。獣を溜める", CoreSkillMotion.CONE, 5.0, 1.3, mana=8, cd=320, startup=3, radius=7.0).cc(CrowdControl.ROOT, 1500),

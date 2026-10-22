@@ -229,6 +229,7 @@ internal class CorePlayerCombat(
                 breakAmount *= CoreBreak.FINISHER
                 castDefinition = definition.copy(startup = minOf(CoreWarriorRules.FINISHER_STARTUP, definition.startup))
             }
+            if (definition.icon == "slam") castDefinition = CoreWarriorRules.slam(castDefinition, beastSpent)
         }
         if (classId == CoreClass.STARWEAVER && spentFrom == 3.0 && definition.motion !in setOf(CoreSkillMotion.EVADE, CoreSkillMotion.HEAL, CoreSkillMotion.SHIELD)) {
             var extra = if (definition.motion == CoreSkillMotion.FIELD) 1 else 0

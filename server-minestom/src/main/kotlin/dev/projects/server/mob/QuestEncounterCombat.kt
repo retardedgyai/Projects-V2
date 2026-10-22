@@ -428,7 +428,9 @@ class QuestEncounterCombat(
         }
         when (kind) {
             CrowdControl.STUN, CrowdControl.ROOT -> stopNavigation(mob)
-            CrowdControl.AIRBORNE -> { mob.entity.navigator.reset(); mob.entity.velocity = Vec(0.0, 14.0, 0.0) }  // about 3 blocks up
+            // About 3 blocks up for 0.7 s in the air; a shorter launch is lower, a longer one higher (地割り by its beast).
+            CrowdControl.AIRBORNE -> { mob.entity.navigator.reset()
+                mob.entity.velocity = Vec(0.0, 14.0 * kotlin.math.sqrt(durationMillis.coerceIn(200L, 1500L) / 700.0), 0.0) }
             CrowdControl.KNOCKBACK -> slide(mob, normalizeHorizontal(mob.entity.position.sub(source.position)), distance)
             else -> Unit
         }

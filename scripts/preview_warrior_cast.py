@@ -430,9 +430,12 @@ def main():
     parser.add_argument('--ids', default='dash,slam,whirl,war_wound,war_guard,war_ult,slam_shader,whirl_shader,war_ult_shader')
     parser.add_argument('--out', default='.tools/cast')
     parser.add_argument('--frames', default='.tools/warrior-cast-frames.json')
+    parser.add_argument('--wide', action='store_true', help='pull the high view back to see a long reach (about 10 m)')
     parser.add_argument('--grass', action='store_true', help='draw a grass floor instead of the grid')
     args = parser.parse_args()
     if args.grass: GRASS_FLOOR[0] = grass_floor()
+    if args.wide:
+        VIEWS['high'] = ('斜め上から（広く）', (-6.5, 10.0, 0.5), (0.0, 0.0, 5.8))
     scenes = {s['id']: s for s in json.loads((ROOT / args.frames).read_text())}
     out = ROOT / args.out; out.mkdir(parents=True, exist_ok=True)
     for sid in args.ids.split(','):

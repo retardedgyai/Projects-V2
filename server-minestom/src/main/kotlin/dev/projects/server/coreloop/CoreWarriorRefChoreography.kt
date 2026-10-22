@@ -49,37 +49,65 @@ internal object CoreWarriorRefChoreography {
             }
             return out
         }
-        // 地割り in the Guts mood (Creator 2026-10-20): no light, the weight alone. The slab lands, the ground caves in a
-        // crater, a dark crack runs on, clods are thrown up along it (the knock-up) and tumble back, dust rolls out,
-        // and the swing leaves a dark band of wind.
+        // 地割り in the Guts mood (Creator 2026-10-20): no light, the weight alone. The slab lands, the ground is torn
+        // forward in a furrow, turf is torn up along its lips, clods are thrown up along it (the knock-up) and tumble
+        // back, dust rolls out, and the swing leaves a dark band of wind.
+        // The beast it took sets the reach (CoreWarriorRules.slam puts it in the radius, Creator 2026-10-23): the furrow
+        // ends just past it, and the more beast, the bigger the torn turf and the higher the clods.
         val impact = 1.9
-        val length = 6.0
+        val reach = e.skill.radius.coerceIn(3.0, 9.0)
+        val weight = ((reach - 4.0) / 4.0).coerceIn(0.0, 1.0)      // 0 at ≈4 m (no beast) .. 1 at ≈8 m
+        val furrow = reach - .8
+        val head = impact - .6 + furrow
+        if (e.pulse >= 1) {
+            // The second split at the head (three stacks): the ground bursts open where the furrow ended and forks.
+            for ((n, turn) in listOf(-.55, .55).withIndex())
+                out += part("furrow", local(0.0, .12, head - .3).add(sin(yaw + turn) * 1.6, 0.0, cos(yaw + turn) * 1.6), 1.0, yaw + turn, 36,
+                    delay = n).copy(scale = Vec(3.2, 1.0, 3.2))
+            // Not a ring (Creator: no round crater, no petals): the ground at the head heaves forward in a fan,
+            // slabs tipped forward over the forks, the far ones biggest.
+            for (k in 0 until 5) {
+                val a = yaw + (k - 2) * .42 + (hash(k, 131) - .5) * .12
+                val d = .9 + .5 * hash(k, 132) + .3 * (2 - abs(k - 2))
+                out += part("turf${60 + k}", local(0.0, .12, head).add(sin(a) * d, 0.0, cos(a) * d),
+                    1.1 + .4 * hash(k, 133), a, 34, delay = 1 + abs(k - 2) / 2, roll = (hash(k, 134) - .5) * .3, pitch = -(.9 + .3 * hash(k, 135)))
+            }
+            for (k in 0 until 6) {
+                val a = yaw + (k - 2.5) * .3
+                out += part("clod${20 + k}", local(0.0, .3, head).add(sin(a) * .8, 0.0, cos(a) * .8), .45 + .3 * hash(k, 136), a, 22,
+                    ground = false, delay = k / 4).copy(startSize = 1.2)
+            }
+            return out
+        }
         out += part("wind", local(.3, 1.9, 2.0), 5.0, yaw + PI / 2 - 1.15, 8, ground = false)
         // The ground torn forward: one furrow, widest at the blow, running out ahead (texture row 0 = far end).
-        val furrow = length + 2.0
         out += part("furrow", local(0.0, .12, impact - .6 + furrow / 2), 1.0, yaw, 44).copy(scale = Vec(furrow, 1.0, furrow))
         // The furrow's lips: turf torn up along both edges and tipped outward, biggest at the blow, coming up as the
         // furrow runs out (4 ticks for its whole length).
         // Irregular on purpose (Creator: not tiles): sizes, gaps, tilt and shape differ piece by piece, a few gaps left.
-        for (jj in 0 until 9) {
+        val rows = (9 * furrow / 7.2).roundToInt().coerceIn(4, 9)
+        val bulk = .75 + .2 * weight
+        for (jj in 0 until rows) {
             for ((n, side) in listOf(-1.0, 1.0).withIndex()) {
                 val k = jj * 2 + n
                 if (hash(k, 94) < .2) continue                             // a gap here and there
-                val tt = (1.0 - (jj + hash(k, 95) * .8) / 9.0).coerceIn(0.0, 1.0)   // 1 at the blow .. 0 far ahead
+                val tt = (1.0 - (jj + hash(k, 95) * .8) / rows).coerceIn(0.0, 1.0)   // 1 at the blow .. 0 far ahead
                 val along = impact - .4 + (1 - tt) * (furrow - .6)
-                val hw = (1.2 + 12.5 * tt.pow(1.4)) / 16.0
-                val size = (.35 + .8 * tt) * (.6 + .8 * hash(k, 96))
+                val hw = (1.2 + 12.5 * tt.pow(1.4)) / 16.0 * furrow / 8.0
+                val size = (.35 + .8 * tt) * (.6 + .8 * hash(k, 96)) * bulk
                 out += part("turf$k", local(side * (hw + .15 + .2 * hash(k, 91)), .12, along), size,
                     yaw + (hash(k, 92) - .5) * 1.4, 34 - jj, delay = ((1 - tt) * 4).toInt(),
-                    roll = -side * (.15 + .8 * hash(k, 93)), pitch = (hash(k, 97) - .5) * .5)
+                    roll = -side * (.15 + .8 * hash(k, 93)) * (.7 + .5 * weight), pitch = (hash(k, 97) - .5) * .5)
             }
         }
-        // Clods thrown up at the furrow's head as it runs (the knock-up), grass-topped turf among the earth.
-        for (k in 0 until 8) {
-            val along = impact + (k / 2) * (furrow - 1.0) / 4
+        // Clods thrown up at the furrow's head as it runs (the knock-up), grass-topped turf among the earth;
+        // more and higher with more beast.
+        val clods = 4 + (4 * weight).roundToInt()
+        for (k in 0 until clods) {
+            val along = impact + (k / 2) * (furrow - 1.0) / ((clods + 1) / 2)
             val side = if (k % 2 == 0) -1.0 else 1.0
-            out += part("clod$k", local(side * (.2 + .35 * hash(k, 61)), .2, along), .35 + .3 * hash(k, 62), yaw + hash(k, 63) * 6.0,
-                20, ground = false, delay = k / 2)
+            out += part("clod$k", local(side * (.2 + .35 * hash(k, 61)), .2, along), (.3 + .3 * hash(k, 62)) * bulk, yaw + hash(k, 63) * 6.0,
+                20, ground = false, delay = k / 2).copy(startSize = .7 + .6 * weight)
         }
         // A little dust, low and short: it must not hide the furrow.
         for (k in 0 until 4) {
@@ -132,7 +160,7 @@ internal object CoreWarriorRefChoreography {
             name.startsWith("clod") -> {
                 val k = name.removePrefix("clod").toInt()
                 val s = t.coerceAtLeast(0.0) / 20.0
-                val y = (6.5 + 3.0 * hash(k, 71)) * s - 18.0 * s * s / 2
+                val y = (6.5 + 3.0 * hash(k, 71)) * p.startSize * s - 18.0 * s * s / 2   // startSize carries the beast's lift
                 val a = p.yaw
                 CoreMeshPose(p.offset.add(sin(a) * .8 * s, max(y, -.1), cos(a) * .8 * s), p.scale.mul(1.6), p.yaw + t * .3, t * .45, t * .25,
                     CoreCombatMeshes.GROUND, live)

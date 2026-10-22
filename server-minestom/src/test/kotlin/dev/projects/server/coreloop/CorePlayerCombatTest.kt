@@ -222,7 +222,7 @@ class CorePlayerCombatTest {
         assertEquals(300.0 - 58.4 * 1.75, h.combat.bossHealth(), 0.00001) // all three stacks taken for +75%
         assertEquals(0.0, h.actor.resource)
         h.ticks(20)
-        assertEquals(300.0 - 58.4 * 1.75, h.combat.bossHealth(), 0.00001)
+        assertEquals(300.0 - 2 * 58.4 * 1.75, h.combat.bossHealth(), 0.00001) // three stacks split the ground a second time
         val mana = h.actor.mana
         h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(mana, h.actor.mana)
@@ -363,11 +363,14 @@ class CorePlayerCombatTest {
         val casts=listOf("dash" to 0,"slam" to 1,"whirl" to 2,"war_guard" to 3,"war_wound" to 3,"war_ult" to 4)
         // The shader-cut trial is recorded as extra scenes "<id>_shader" next to the drawn plates.
         val runs=casts.map { Triple(it.first,it.second,false) }+casts.filter { it.first in CoreWarriorIronChoreography.sceneIds }.map { Triple(it.first,it.second,true) }
-        val scenes=runs.map { (icon,slot,shader) -> var scene=emptyMap<String,Any>(); CoreWarriorIronChoreography.shaderCut=shader; try { arena { h ->
+        // 地割り by the beast it takes (0..3) as extra scenes "slam_b<n>".
+        val beastRuns=(0..3).map { n -> Triple("slam_b$n",1,false) }
+        val scenes=(runs+beastRuns).map { (run,slot,shader) -> var scene=emptyMap<String,Any>(); val icon=run.substringBefore("_b")
+            CoreWarriorIronChoreography.shaderCut=shader; try { arena { h ->
             CoreCombatPresentation.pack(h.player,true)
             if(icon=="war_wound") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=4)); h.actor.reset() }
             assertEquals(icon,h.actor.skillDefinitions[slot].icon)
-            h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
+            h.actor.classState.gain(if(run.startsWith("slam_b")) run.last().digitToInt().toDouble() else 100.0,h.journey.job,h.journey.build)
             val frames=mutableListOf<Map<String,Any>>()
             fun record() { frames+=mapOf("player" to xyz(h.player.position)+h.player.position.yaw().toDouble(),
                 "targets" to h.combat.combatTargets().map { xyz(it.position) },
@@ -384,7 +387,7 @@ class CorePlayerCombatTest {
             repeat(4) { record(); h.ticks(1) }
             h.actor.skill(slot)
             repeat(76) { record(); h.ticks(1) }
-            scene=mapOf("id" to if(shader) "${icon}_shader" else icon,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
+            scene=mapOf("id" to if(shader) "${icon}_shader" else run,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
             CoreCombatPresentation.forget(h.player)
         } } finally { CoreWarriorIronChoreography.shaderCut=false }; scene }
         val cwd=java.nio.file.Path.of(System.getProperty("user.dir"))
@@ -970,6 +973,23 @@ class CorePlayerCombatTest {
         assertEquals(minOf(CoreWarriorRules.BEAST_PER_ACTION, flinched * CoreWarriorRules.BEAST_PER_CC), h.actor.resource, 1e-9)
     }
 
+    @Test fun `the slam reaches further, lifts higher and splits twice with more beast`() {
+        val base = CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "slam" }
+        val shapes = (0..3).map { CoreWarriorRules.slam(base, it) }
+        assertEquals(listOf(4.0, 6.0, 8.0, 8.0), shapes.map { it.radius })
+        assertEquals(CrowdControl.FLINCH, shapes[0].crowd)
+        assertTrue(shapes.drop(1).all { it.crowd == CrowdControl.AIRBORNE })
+        assertTrue(shapes[1].crowdMillis < shapes[2].crowdMillis && shapes[2].crowdMillis < shapes[3].crowdMillis)
+        assertEquals(listOf(0L, 0L, 1500L, 2000L), shapes.map { it.stunAfterMillis })
+        assertEquals(listOf(1, 1, 1, 2), shapes.map { it.pulses })
+    }
+
+    @Test fun `three stacks break the boss twice, once per split`() = arena { h ->
+        val id = h.combat.combatTargets().single().id
+        h.actor.classState.gain(3.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(21)
+        assertEquals(100.0 - 2 * (12.0 + 3 * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT), h.combat.breakGauge(id)!!, .0001)
+    }
+
     @Test fun `the slam is never gated by the beast and keeps a part-built stack`() = arena { h ->
         h.actor.classState.gain(1.5, h.journey.job, h.journey.build)
         h.actor.skill(1); h.ticks(12)
@@ -1038,8 +1058,12 @@ class CorePlayerCombatTest {
 
     @Test fun `warrior slam stuns the enemy it hits and the third normal hit makes it flinch`() = arena { h ->
         soldierArena(h) { e, id ->
-            h.actor.skill(1); h.ticks(12)
-            assertTrue(CrowdControl.STUN in e.crowdControl(id))
+            h.actor.classState.gain(2.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(12)
+            assertTrue(CrowdControl.STUN in e.crowdControl(id)) // two stacks: launched, then stunned
+        }
+        soldierArena(h) { e, id ->
+            h.actor.reset(); h.actor.skill(1); h.ticks(12)
+            assertTrue(CrowdControl.FLINCH in e.crowdControl(id) && CrowdControl.STUN !in e.crowdControl(id)) // no beast: a flinch
         }
         soldierArena(h) { e, id ->
             h.actor.attack(); h.ticks(25); h.actor.attack(); h.ticks(25)

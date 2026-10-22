@@ -1,5 +1,7 @@
 package dev.projects.server.coreloop
 
+import dev.projects.server.mob.CrowdControl
+
 /**
  * Shared timing contract for every class: input buffer, normal->skill link, recovery, cancels and cone width.
  * Per-class values live in [profile].
@@ -71,6 +73,17 @@ internal object CoreWarriorRules {
     const val FINISHER_TICKS = 12L
     const val FINISHER_STARTUP = 3
     const val FINISHER_BONUS_PERCENT = 30
+    /**
+     * 地割り by the stacks it took (Creator 2026-10-23): the more beast, the longer and deeper the crack.
+     * 0 ≈4 m, regulars flinch / 1 ≈6 m, a low launch / 2 ≈8 m, launch then stun / 3 ≈8 m, a high launch and a longer
+     * stun, and the crack splits a second time at its head (a second pulse).
+     */
+    fun slam(definition: CoreSkillDefinition, stacks: Int): CoreSkillDefinition = when (stacks.coerceIn(0, 3)) {
+        0 -> definition.copy(radius = 4.0, stunAfterMillis = 0).copy(crowd = CrowdControl.FLINCH, crowdMillis = FLINCH_MILLIS)
+        1 -> definition.copy(radius = 6.0, stunAfterMillis = 0).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 450)
+        2 -> definition.copy(radius = 8.0, stunAfterMillis = 1500).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 700)
+        else -> definition.copy(radius = 8.0, stunAfterMillis = 2000, pulses = 2).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 1000)
+    }
     /** 剣聖: each connected third normal hit takes this much off the spenders' remaining cooldown. */
     const val SAINT_REFUND_TICKS = 30L
 }
