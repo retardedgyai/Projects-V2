@@ -240,16 +240,8 @@ def crown_pixels(job, C, cy):
         f[(2 * C - x, y)] = (m, t)
 
     gem = None
-    if job == "warrior":                           # three sword points on an iron band, gem at the middle root
-        for k in range(3):
-            put(C - 5, tip - 1 - k, "steel", 0 if k == 2 else 1)
-        for k in range(6):
-            put(C, tip - 1 - k, "steel", 0 if k >= 4 else 1)
-            if k < 4:
-                put(C - 1, tip - 1 - k, "steel", 2)
-        for x in range(C - 6, C + 1):
-            put(x, tip, "steel", 1)
-        gem = (C, tip - 1)
+    if job == "warrior":                           # no crown: the beast's three eyes sit there (beast_plate)
+        pass
     elif job == "ranger":                          # a forked twig with buds
         for k in range(5):
             put(C, tip - k, "wood", 1)
@@ -328,8 +320,19 @@ def xp_band(cx, cy, r=DIAMOND_R):
     return sorted(cells)
 
 
-EMBLEM_W, EMBLEM_H = 56, 38          # canvas; the centre column is EMBLEM_W // 2
+EMBLEM_W, EMBLEM_H = 56, 38          # drawing canvas; the centre column is EMBLEM_W // 2
 EMBLEM_CENTRE_ROW = 23               # canvas row of the diamond centre
+
+
+def even(img):
+    """The emblem is drawn mirrored about one centre column (odd width), but the hotbar and the plates are
+    mirrored about the line between two columns (even width): doubling the centre column puts the emblem's
+    axis on the screen centre line instead of half a GUI pixel right of it (Creator 2026-10-23)."""
+    C = img.width // 2
+    out = new(2 * (C + 1), img.height)
+    out.paste(img.crop((0, 0, C + 1, img.height)), (0, 0))
+    out.paste(img.crop((C, 0, img.width, img.height)), (C + 1, 0))
+    return out
 
 
 def emblem(job):
@@ -344,6 +347,8 @@ def emblem(job):
         px(img, x, y, (rgb[0] // 3, rgb[1] // 3, rgb[2] // 3, 255))
     crown, crown_gem = crown_pixels(job, C, cy)
     paint(img, crown)
+    if job == "warrior":
+        beast_plate(img, C, cy - 14)
     if crown_gem:
         gem(img, *crown_gem, accent)
     gem(img, C, cy + 10, accent)
@@ -351,7 +356,58 @@ def emblem(job):
     rect(img, C - 9, cy - 3, C + 10, cy + 4, (12, 12, 16, 255))
     for x in (C - 10, C + 10):
         px(img, x, cy, METAL[0])
-    return img, -C, EMBLEM_CY + EMBLEM_CENTRE_ROW
+    return even(img), -(C + 1), EMBLEM_CY + EMBLEM_CENTRE_ROW
+
+
+# ---- warrior: the beast's eyes in place of the crown (2026-10-22, Creator chose mock 1-A) ----------
+BEAST_RED, BEAST_DARK, BEAST_LID = hexc("ff3a2a"), hexc("6a1010"), hexc("3d3940")
+BEAST_EYE_W = 5
+
+
+def beast_eye_x(C, k):
+    return C - 9 + k * 7                       # three 5 px eyes, 2 px apart, centred on the column C
+
+
+def beast_plate(img, C, tip):
+    """A dark iron plate on the diamond's top point, three closed eyes (slits) on it."""
+    x0, x1, y0, y1 = C - 11, C + 12, tip - 6, tip + 1
+    rect(img, x0, y0, x1, y1, OUT)
+    rect(img, x0 + 1, y0 + 1, x1 - 1, y1 - 1, PLATE_LO)
+    rect(img, x0 + 1, y0 + 1, x1 - 1, y0 + 2, PLATE)
+    rect(img, C - 1, y1, C + 2, y1 + 2, OUT)        # the stem down to the diamond's point
+    for k in range(3):
+        ex = beast_eye_x(C, k)
+        rect(img, ex, tip - 3, ex + BEAST_EYE_W, tip - 2, BEAST_LID)
+
+
+def beast_eye(k):
+    """Eye k (0..2) opened: a red almond with a black slit pupil (same canvas/origin as emblem())."""
+    img = new(EMBLEM_W, EMBLEM_H)
+    C, cy = EMBLEM_W // 2, EMBLEM_CENTRE_ROW
+    tip, ex = cy - 14, beast_eye_x(C, k)
+    rect(img, ex + 1, tip - 4, ex + BEAST_EYE_W - 1, tip - 3, BEAST_DARK)
+    rect(img, ex, tip - 3, ex + BEAST_EYE_W, tip - 2, BEAST_RED)
+    rect(img, ex + 1, tip - 2, ex + BEAST_EYE_W - 1, tip - 1, BEAST_DARK)
+    px(img, ex + 2, tip - 4, BEAST_RED); px(img, ex + 2, tip - 3, OUT); px(img, ex + 2, tip - 2, BEAST_RED)
+    return even(img)
+
+
+def beast_awake():
+    """All three open: the diamond's rim burns red (same canvas/origin as emblem())."""
+    img = new(EMBLEM_W, EMBLEM_H)
+    C, cy, r = EMBLEM_W // 2, EMBLEM_CENTRE_ROW, DIAMOND_R
+    for j in range(-r - 1, r + 2):
+        w = r + 1 - abs(j)
+        px(img, C - w, cy + j, BEAST_RED); px(img, C + w, cy + j, BEAST_RED)
+    return even(img)
+
+
+def xp_cell():
+    """The strip under the gauges as an XP bar (warrior first; Creator 2026-10-22)."""
+    img = new(CELL_PITCH - 1, 2)
+    rect(img, 0, 0, img.width, 2, BREAK[1])
+    rect(img, 0, 0, img.width, 1, BREAK[2])
+    return img
 
 
 def xp_overlay(job, step):
@@ -364,7 +420,7 @@ def xp_overlay(job, step):
             px(img, x, y, hexc(ACCENT[job]))
     if img.getchannel("A").getbbox() is None:
         px(img, C, cy - DIAMOND_R + 2, hexc(ACCENT[job]))  # step 0 never used; keep the glyph drawable
-    return img
+    return even(img)
 
 
 # ---- hotbar (vanilla sprite overrides) -----------------------------------------------------------

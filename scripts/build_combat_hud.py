@@ -319,7 +319,7 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     gauge += [(f"hp_barrier_{w}", art.flat(w, rows, art.BARRIER[0], art.BARRIER[1])) for w in BINARY[:6]]
     gauge += [("hp_tick", art.hp_tick())]
     hud.group("hud_gauge", gauge, hud_ascent(art.GAUGE_TOP))
-    hud.group("hud_cells", [("rage_cell", art.rage_cell())], hud_ascent(art.CELL_TOP))
+    hud.group("hud_cells", [("rage_cell", art.rage_cell()), ("xp_cell", art.xp_cell())], hud_ascent(art.CELL_TOP))
     hud.group("hud_gauge_digits", [(f"gd_{c}", art.gauge_digit(c)) for c in art.DIGITS], hud_ascent(art.GAUGE_TOP - 2))
     hud.group("hud_buff_digits", [(f"bd_{c}", art.gauge_digit(c)) for c in art.DIGITS], hud_ascent(art.BUFF_TOP - 4))
     emblem_rows, emblem_x = [], None
@@ -327,6 +327,7 @@ def build_combat_hud(assets, pack, source, write_json, chars):
         image, emblem_x, emblem_top = art.emblem(job)
         emblem_rows.append((f"emblem_{job}", image))
         emblem_rows += [(f"xp_{job}_{step}", art.xp_overlay(job, step)) for step in range(1, art.XP_STEPS + 1)]
+    emblem_rows += [(f"beast_eye_{k + 1}", art.beast_eye(k)) for k in range(3)] + [("beast_awake", art.beast_awake())]
     hud.group("hud_emblem", emblem_rows, hud_ascent(emblem_top), columns=25)
     tiles = [("buff_left", art.buff_left()), ("buff_right", art.buff_right())]
     tiles += [(f"buff_mid_{w}", art.buff_mid(w)) for w in BINARY[:5]]
