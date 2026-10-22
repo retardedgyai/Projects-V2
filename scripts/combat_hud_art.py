@@ -361,6 +361,7 @@ def emblem(job):
 
 # ---- warrior: the beast's eyes in place of the crown (2026-10-22, Creator chose mock 1-A) ----------
 BEAST_RED, BEAST_DARK, BEAST_LID = hexc("ff3a2a"), hexc("6a1010"), hexc("3d3940")
+BEAST_GLOW_LOW = hexc("c8201c")             # the lower half of the lit band, a step darker
 BEAST_EYE_W = 5
 
 
@@ -393,12 +394,12 @@ def beast_eye(k):
 
 
 def beast_awake():
-    """All three open: the diamond's rim burns red (same canvas/origin as emblem())."""
+    """All three open: the diamond's own 2 px band (the XP band of the other classes) burns red, lit from
+    the top (same canvas/origin as emblem()). No outline is added: it is part of the emblem lighting up."""
     img = new(EMBLEM_W, EMBLEM_H)
-    C, cy, r = EMBLEM_W // 2, EMBLEM_CENTRE_ROW, DIAMOND_R
-    for j in range(-r - 1, r + 2):
-        w = r + 1 - abs(j)
-        px(img, C - w, cy + j, BEAST_RED); px(img, C + w, cy + j, BEAST_RED)
+    C, cy = EMBLEM_W // 2, EMBLEM_CENTRE_ROW
+    for ang, x, y in xp_band(C, cy):
+        px(img, x, y, BEAST_RED if y < cy else BEAST_GLOW_LOW)
     return even(img)
 
 
