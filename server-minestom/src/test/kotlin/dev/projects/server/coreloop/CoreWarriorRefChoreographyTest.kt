@@ -6,8 +6,9 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class CoreWarriorRefChoreographyTest {
-    private fun slam(yaw: Vec = Vec(0.0, 0.0, 1.0)) = CoreSkillEffect(CoreClass.WARRIOR,
-        CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "slam" }, Vec.ZERO, yaw, CoreSkillVisualPhase.PULSE)
+    private fun cast(icon: String, yaw: Vec = Vec(0.0, 0.0, 1.0)) = CoreSkillEffect(CoreClass.WARRIOR,
+        CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == icon }, Vec.ZERO, yaw, CoreSkillVisualPhase.PULSE)
+    private fun slam(yaw: Vec = Vec(0.0, 0.0, 1.0)) = cast("slam", yaw)
 
     @Test fun `地割り is drawn by its own pieces, every frame resolves and stays finite`() {
         val index = javaClass.getResourceAsStream("/core-ui-pack/index.txt")!!.bufferedReader().use { it.readLines().toSet() }
@@ -29,7 +30,23 @@ class CoreWarriorRefChoreographyTest {
         }
     }
 
-    @Test fun `only 地割り is taken over`() {
+    @Test fun `地走り runs one thin crack ahead and its jaws hold for the root`() {
+        val index = javaClass.getResourceAsStream("/core-ui-pack/index.txt")!!.bufferedReader().use { it.readLines().toSet() }
+        for (dir in listOf(Vec(0.0, 0.0, 1.0), Vec(-.6, 0.0, -.8))) {
+            val parts = CoreWarriorRefChoreography.parts(cast("war_wound", dir))!!
+            val rift = parts.first { it.shape.endsWith("rift") }
+            assertTrue(rift.offset.dot(dir) > 3.0, "$dir")
+            val jaws = parts.filter { it.shape.contains("turf") }
+            assertTrue(jaws.size == 8 && jaws.all { it.delayTicks + it.durationTicks >= 30 }, "the jaws outlast the 1.5 s root")
+            for (p in parts) for (tick in 0..p.delayTicks + p.durationTicks) {
+                val pose = CoreWarriorRefChoreography.pose(p, tick.toDouble())!!
+                assertTrue(listOf(pose.offset.x(), pose.offset.y(), pose.offset.z(), pose.yaw, pose.pitch, pose.roll).all(Double::isFinite))
+                assertTrue(pose.model == CoreCombatMeshes.GROUND || "assets/projects/items/${pose.model}.json" in index, pose.model)
+            }
+        }
+    }
+
+    @Test fun `only 地割り and 地走り are taken over`() {
         val other = CoreSkillEffect(CoreClass.WARRIOR, CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "whirl" },
             Vec.ZERO, Vec(0.0, 0.0, 1.0), CoreSkillVisualPhase.PULSE)
         assertEquals(null, CoreWarriorRefChoreography.parts(other))

@@ -14,7 +14,7 @@ internal object CoreWarriorRefChoreography {
     private const val PREFIX = "war_ref:"
     private const val DIR = "combat_vfx/warrior_ref"
     @Volatile var enabled = true
-    private val sceneIds = setOf("slam")
+    private val sceneIds = setOf("slam", "war_wound")
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
@@ -34,6 +34,34 @@ internal object CoreWarriorRefChoreography {
             CoreCombatMeshPart("$PREFIX$name", "steel", at, Vec(scale, scale, scale), yaw = partYaw, pitch = pitch, roll = roll,
                 durationTicks = life, startSize = 1.0, endSize = 1.0, delayTicks = delay, ground = ground, billboard = billboard)
         val out = mutableListOf<CoreCombatMeshPart>()
+        if (e.sceneId == "war_wound") {
+            // 地走り (2026-10-22): the blade dragged up off the ground sends one thin crack racing ahead (4 ticks for the
+            // whole line); chips of the ground hop up just behind its head, and pairs of ground slabs snap up on both
+            // sides and lean in over it like jaws: that is the root. They hold while it lasts, then sink back.
+            val start = 1.2
+            val length = e.radius.coerceIn(4.0, 9.0)
+            out += part("wind", local(.2, 1.1, 1.4), 3.4, yaw + PI / 2 - 1.15, 7, ground = false)
+            out += part("rift", local(0.0, .12, start + length / 2), 1.0, yaw, 42).copy(scale = Vec(length, 1.0, length))
+            for (k in 0 until 10) {
+                val tt = (k + .5) / 10
+                out += part("chip$k", local((hash(k, 111) - .5) * .5, .15, start + tt * length), .2 + .15 * hash(k, 112),
+                    yaw + hash(k, 113) * 6.0, 14, ground = false, delay = (tt * 4).toInt())
+            }
+            for (j in 0 until 4) {
+                val tt = .3 + .7 * (j + hash(j, 114) * .5) / 4
+                for ((n, side) in listOf(-1.0, 1.0).withIndex()) {
+                    val k = 50 + j * 2 + n
+                    out += part("turf$k", local(side * (.55 + .12 * hash(k, 115)), .12, start + tt * length),
+                        .7 + .25 * hash(k, 116), yaw + (hash(k, 117) - .5) * .5, 38, delay = (tt * 4).toInt() + 1,
+                        roll = side * (.75 + .25 * hash(k, 118)), pitch = (hash(k, 119) - .5) * .3)
+                }
+            }
+            for (k in 0 until 3) {
+                out += part("dust${40 + k}", local(0.0, .35, start + (k + 1) * length / 4), .8 + .3 * hash(k, 120), 0.0, 10,
+                    ground = false, delay = 1 + k, billboard = true, roll = hash(k, 121) * 6.0)
+            }
+            return out
+        }
         if (e.sceneId == "whirl") {
             // 押し薙ぎ: a flat dark crescent of wind at the waist, swept left to right; the ground scraped in an arc in front;
             // earth thrown outward along it, dust after it. Same mood as 地割り: no light, the weight alone.
@@ -111,6 +139,16 @@ internal object CoreWarriorRefChoreography {
                 "$DIR/scrape_${when { tick < 4 -> tick; tick < 32 -> 4; tick < 36 -> 5; else -> 6 }}", live)
             name == "furrow" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
                 "$DIR/furrow_${when { tick < 4 -> tick; tick < 36 -> 4; tick < 40 -> 5; else -> 6 }}", live)
+            name == "rift" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
+                "$DIR/rift_${when { tick < 4 -> tick; tick < 34 -> 4; tick < 38 -> 5; else -> 6 }}", live)
+            name.startsWith("chip") -> {
+                // A small hop, not the 地割り throw: up about half a block and straight back down.
+                val k = name.removePrefix("chip").toInt()
+                val s = t.coerceAtLeast(0.0) / 20.0
+                val y = (3.6 + 1.0 * hash(k, 122)) * s - 18.0 * s * s / 2
+                CoreMeshPose(p.offset.add(0.0, max(y, -.1), 0.0), p.scale.mul(1.6), p.yaw + t * .25, t * .4, t * .2,
+                    CoreCombatMeshes.GROUND, live)
+            }
             name == "crater" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
                 "$DIR/crater_${when { tick < 34 -> 0; tick < 39 -> 1; else -> 2 }}", live)
             name == "dcrack" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
