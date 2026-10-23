@@ -23,8 +23,17 @@ FONT=_font('C:/Windows/Fonts/meiryob.ttc',13)
 LABELS=('戦士 / 大剣','メイジ / 杖','レンジャー / 長弓','アサシン / 短剣','テンプラー / 戦槌','ヒーラー / 聖典','星織り師 / 星環杖')
 
 
+def _axis_matrix(axis,a):
+    if axis==0: return np.array([[1,0,0],[0,math.cos(a),-math.sin(a)],[0,math.sin(a),math.cos(a)]])
+    if axis==1: return np.array([[math.cos(a),0,math.sin(a)],[0,1,0],[-math.sin(a),0,math.cos(a)]])
+    return np.array([[math.cos(a),-math.sin(a),0],[math.sin(a),math.cos(a),0],[0,0,1]])
+
+
 def rotated(v, r):
     if not r: return v
+    if 'axis' not in r:  # 26.3: {"x","y","z"} on all three axes, applied Z·Y·X
+        matrix=_axis_matrix(2,math.radians(r.get('z',0)))@_axis_matrix(1,math.radians(r.get('y',0)))@_axis_matrix(0,math.radians(r.get('x',0)))
+        o=np.array(r['origin']); return (v-o)@matrix.T+o
     axis='xyz'.index(r['axis']); a=math.radians(r['angle']); o=np.array(r['origin']); p=v-o
     if axis==0: matrix=np.array([[1,0,0],[0,math.cos(a),-math.sin(a)],[0,math.sin(a),math.cos(a)]])
     elif axis==1: matrix=np.array([[math.cos(a),0,math.sin(a)],[0,1,0],[-math.sin(a),0,math.cos(a)]])
