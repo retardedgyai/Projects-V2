@@ -71,6 +71,18 @@ internal object CoreHudLayout {
         return ceil((remaining / total).coerceIn(0.0, 1.0) * BUFF_STEPS).toInt().coerceIn(1, BUFF_STEPS)
     }
 
+    const val BEAST_PITCH = 14
+    const val BEAST_X = -BEAST_PITCH - 6       // left edge of the first socket (13 px wide), so the middle one is centred on 0
+    private const val BEAST_FILL_STEPS = 4
+    private fun beast(state: CoreHudState) = job(state) == "warrior" && state.resource != null && state.resourceMaximum == 3.0
+
+    /** The three beast sockets' glyphs for [value] stacks (0..3, a part-built one between). */
+    fun beastSockets(value: Double): List<String> {
+        val v = if (value.isFinite()) value.coerceIn(0.0, 3.0) else 0.0
+        if (v >= 3.0) return List(3) { "beast_burn" }
+        return (0 until 3).map { i -> "beast_${floor((v - i).coerceIn(0.0, 1.0) * BEAST_FILL_STEPS).toInt()}" }
+    }
+
     /** Lit class-resource cells out of [CELL_COUNT]. */
     fun litCells(state: CoreHudState): Int {
         state.resource?.let { return fillCells(it, state.resourceMaximum) }
@@ -109,13 +121,19 @@ internal object CoreHudLayout {
         gaugeValue(line, HP_X, HP_W, "${number(state.health)}/${number(state.maxHealth)}")
         line.fill("mp_fill", MP_X, fillWidth(state.mana, state.maxMana, MP_W))
         gaugeValue(line, MP_X, MP_W, "${number(state.mana)}/${number(state.maxMana)}")
-        for (i in 0 until litCells(state)) line.put(CELL_X + i * CELL_PITCH, "rage_cell")
+        if (beast(state)) {
+            // The warrior's beast (Creator 2026-10-24, 案A): three sockets over the crest, each filling from the
+            // bottom as it builds, all three burning when full; the strip under the plates is the XP bar.
+            for (i in 0 until fillCells(state.experience, 1.0)) line.put(CELL_X + i * CELL_PITCH, "xp_cell")
+        } else for (i in 0 until litCells(state)) line.put(CELL_X + i * CELL_PITCH, "rage_cell")
         // Level diamond: class wings and crown, XP filling the class-colour band clockwise.
         val job = job(state)
         line.put(EMBLEM_X, "emblem_$job")
         val step = xpStep(state.experience)
         if (step > 0) line.put(EMBLEM_X, "xp_${job}_$step")
         if (state.level > 0) line.numberCentred(0.0, state.level.coerceIn(1, 999).toString(), CoreHudGlyphs.NUM_GAUGE, LEVEL)
+        // Over the emblem (the middle one is set in the crest, so it must draw on top of it).
+        if (beast(state)) beastSockets(state.resource ?: 0.0).forEachIndexed { i, glyph -> line.put(BEAST_X + i * BEAST_PITCH, glyph) }
         // Skills sit over hotbar slots 2-6 (the keys that cast them).
         state.skills.take(5).forEachIndexed { index, skill ->
             val art = skill.artIndex?.coerceIn(0, dev.projects.server.coreloop.CoreSkillCatalog.artNames.size - 1) ?: when (skill.icon) {

@@ -98,7 +98,9 @@ class CoreHudLayoutTest {
             Triple("actionbar", "unavailable", CoreUiComponents.hud(CoreHudState(18.0, 240.0, 4.0, skills = loadout.mapIndexed { i, s ->
                 s.copy(remainingSeconds = if (i == 0) 8.0 else 0.0, resourceAvailable = i != 2, unlocked = i != 4) }, resource = 0.0,
                 level = 3, experience = .05, notice = "マナが足りません（必要 15）", classKey = "assassin"), true)),
-        ) + CoreHudLayout.classes.map { Triple("actionbar", "class-$it", CoreUiComponents.hud(combat(it), true)) } + listOf(
+        ) + CoreHudLayout.classes.map { Triple("actionbar", "class-$it", CoreUiComponents.hud(combat(it), true)) } +
+            // The warrior's beast (0..3, a part-built one between) as the HUD shows it.
+            listOf(0.0, 1.3, 2.0, 3.0).map { b -> Triple("actionbar", "beast-$b", CoreUiComponents.hud(combat().copy(resource = b, resourceMaximum = 3.0), true)) } + listOf(
             Triple("boss", "boss", CoreBossBarHud.render(bossHud(), 14900.0)),
             Triple("boss", "broken", CoreBossBarHud.render(bossHud().copy(health = 8200.0, broken = .55,
                 effects = listOf(MobHudEffect(MobHudEffectKind.CC, "broken")) + bossHud().effects), 9000.0)),

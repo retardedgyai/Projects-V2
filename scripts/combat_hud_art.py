@@ -162,6 +162,51 @@ def rage_cell():
     return img
 
 
+# ---- the warrior's beast (Creator 2026-10-24, 案A): three diamond sockets over the emblem's crest ---------
+BEAST_R = 4                        # diamond radius; a socket is 2R+3 px square with its rim
+BEAST_PITCH = 14                   # centre to centre
+BEAST_TOP = 62                     # top of the socket row, GUI px from the bottom: the middle one is set in the crest
+BEAST_FILL_STEPS = 4               # a part-built stack fills from the bottom in this many steps
+BEAST_RED = [hexc("460810"), hexc("800e14"), hexc("c41c20"), hexc("f04638"), hexc("ffaa8c")]
+BEAST_RIM, BEAST_EMPTY = (14, 10, 12, 255), ((44, 30, 34, 255), (30, 20, 24, 255))
+
+
+def beast_socket(step, burning=False):
+    """One socket filled `step` of BEAST_FILL_STEPS from the bottom (0 empty); `burning`: all three full,
+    a dark red halo round it. Hand-shaded: lit top-left, dark bottom-right, a glint on a full one."""
+    r = BEAST_R
+    size = 2 * r + 5
+    img = new(size, size)
+    c = size // 2
+    fill = step / BEAST_FILL_STEPS
+    for dy in range(-r - 2, r + 3):
+        for dx in range(-r - 2, r + 3):
+            k = abs(dx) + abs(dy)
+            x, y = c + dx, c + dy
+            if k == r + 2:
+                if burning: px(img, x, y, (110, 16, 18, 255))
+            elif k == r + 1:
+                px(img, x, y, BEAST_RIM)
+            elif k <= r:
+                level = (r - dy) / (2 * r)
+                if level <= fill + 1e-9 and step > 0:
+                    t = 2 + (1 if dx < 0 and dy < 0 else 0) - (1 if dx > 0 and dy > 0 else 0)
+                    if k == r: t = max(1, t - 1)
+                    if step == BEAST_FILL_STEPS and dx == -1 and dy == -2: t = 4
+                    px(img, x, y, BEAST_RED[t])
+                else:
+                    px(img, x, y, BEAST_EMPTY[(dx + dy) % 2])
+    return img
+
+
+def xp_cell():
+    """The resource strip as the XP bar (the warrior's beast moved to its sockets): the level emblem's gold."""
+    img = new(CELL_PITCH - 1, 2)
+    rect(img, 0, 0, img.width, 2, hexc("a8781c"))
+    rect(img, 0, 0, img.width, 1, hexc("f0c040"))
+    return img
+
+
 def hp_tick():
     return flat(1, GAUGE_ROWS, (0, 0, 0, 150))
 
