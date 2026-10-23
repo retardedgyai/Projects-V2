@@ -371,7 +371,7 @@ class CoreLoopMenusTest {
             assertEquals("キー2 に装備",f.snapshot().buttons.single { it.firstSlot==49 }.label)
             f.click(49);assertEquals(CoreAction.SelectSkill(0,4),f.host.requests.single().action)
             // Retired catalog entries are never offered or confirmable.
-            f.host.requests.clear();f.menus.skillBuild(f.player,0,7)
+            f.host.requests.clear();f.menus.skillBuild(f.player,0,6)
             assertEquals("候補を選ぶ",f.snapshot().buttons.single { it.firstSlot==49 }.label)
             f.click(49);assertTrue(f.host.requests.isEmpty())
         }

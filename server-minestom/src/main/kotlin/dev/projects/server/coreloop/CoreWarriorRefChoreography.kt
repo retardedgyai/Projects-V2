@@ -16,7 +16,7 @@ internal object CoreWarriorRefChoreography {
     @Volatile var enabled = true
     private val sceneIds = setOf("slam", "war_wound")
     /** 狂乱 / 天落とし / 大地崩し: every phase is drawn here (their ids still carry older choreographies elsewhere). */
-    private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER)
+    private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER, CoreWarriorRules.LAUNCHER)
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
@@ -68,6 +68,13 @@ internal object CoreWarriorRefChoreography {
             }
             return out
         }
+        if (e.sceneId == CoreWarriorRules.LAUNCHER && e.phase == CoreSkillVisualPhase.PREPARE) {
+            // The blade is dragged along the ground behind the warrior before it comes up: a scrape opening forward.
+            out += part("furrow", local(0.0, .12, .2), 1.0, yaw, e.prepareDuration.coerceIn(2, 20) + 20).copy(scale = Vec(2.6, 1.0, 2.6))
+            for (k in 0 until 3) out += part("clod${95 + k}", local((k - 1) * .3, .2, .9), .25, yaw + k * 2.0, 12, ground = false,
+                delay = e.prepareDuration.coerceIn(2, 20) - 2).copy(startSize = .5)
+            return out
+        }
         if (e.sceneId in ownedIds && e.phase == CoreSkillVisualPhase.PREPARE) {
             // The wind-up: the weight settles, a little dust off the feet.
             out += part("dust${20}", Vec(0.0, .3, 0.0), .8, 0.0, e.prepareDuration.coerceIn(1, 12), ground = false, billboard = true)
@@ -76,6 +83,19 @@ internal object CoreWarriorRefChoreography {
         if (e.sceneId in ownedIds && e.phase != CoreSkillVisualPhase.PULSE) {
             // A hit landing on an enemy: a clod or two knocked off at its feet.
             for (k in 0 until 2) out += part("clod${90 + k}", Vec((k - .5) * .5, .2, 0.0), .3, yaw + k * 2.0, 14, ground = false).copy(startSize = .6)
+            return out
+        }
+        if (e.sceneId == CoreWarriorRules.LAUNCHER) {
+            // 斬り上げ: the cause is the blade's trail going UP (the overhead trail turned round in its plane), then earth
+            // erupts under the one it throws, thrown high, with a slab torn up.
+            out += part("wind", local(-.2, 2.1, 1.2), 4.4, yaw + PI / 2 - 1.15, 8, ground = false, roll = PI)
+            out += part("wind", local(-.25, 2.05, 1.15), 5.0, yaw + PI / 2 - 1.15, 7, ground = false, roll = PI + .12, delay = 1)
+            val at = local(0.0, .25, 2.3)
+            for (k in 0 until 7) out += part("clod${24 + k}", at.add((hash(k, 196) - .5) * .8, 0.0, (hash(k, 197) - .5) * .8),
+                .3 + .25 * hash(k, 198), yaw + hash(k, 199) * 6.0, 24, ground = false, delay = 1 + k / 3).copy(startSize = 1.7)
+            for (k in 0 until 2) out += part("turf${120 + k}", at.add((k - .5) * .9, 0.0, 0.0), .8, yaw + (k - .5), 22, delay = 1,
+                roll = (k - .5) * 2.0 * .9)
+            out += part("dust${80}", at.add(0.0, .4, 0.0), 1.5, 0.0, 10, ground = false, delay = 1, billboard = true)
             return out
         }
         if (e.sceneId == CoreWarriorRules.FRENZY) {

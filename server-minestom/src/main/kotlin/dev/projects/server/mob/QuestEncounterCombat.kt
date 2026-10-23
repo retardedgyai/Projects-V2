@@ -495,6 +495,13 @@ class QuestEncounterCombat(
         return true
     }
 
+    /** 叩き落とし (warrior): a mob up in the air is driven straight down. Bosses never leave the ground, so nothing. */
+    fun slamDown(targetId: UUID): Boolean {
+        val mob = mobs[targetId] ?: return false
+        if (mob.boss || !mob.life.isAlive) return false
+        mob.entity.velocity = Vec(0.0, -30.0, 0.0)
+        return true
+    }
     fun crowdControl(targetId: UUID): Set<CrowdControl> {
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         return mobs[targetId]?.crowd?.filterValues { it > now }?.keys ?: emptySet()

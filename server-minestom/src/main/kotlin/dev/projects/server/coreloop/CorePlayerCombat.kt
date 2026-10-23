@@ -93,6 +93,8 @@ internal class CorePlayerCombat(
     private var beastTick = -1L
     private var beastThisTick = 0.0
     private var lastNormalBeast = -1L
+    /** 斬り上げ: enemies it threw up and until when they count as in the air (叩き落とし). */
+    private val launched = mutableMapOf<UUID, Long>()
     private var whetstoneUntil = 0L
     private var shot: Pair<Long, Vec>? = null
     private var skillBoost = 1.0
@@ -520,6 +522,39 @@ internal class CorePlayerCombat(
         }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorLeap.ICON) { leap(action); return }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.SKYFALL) { leap(action, high = true); return }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.LAUNCHER) {
+            // 斬り上げ: the blade comes up from the ground; who it throws up is marked for 叩き落とし. Holding jump sends
+            // the warrior up after them (a push the client flies, as with the leaps).
+            emitSkillPulse(player.position, s.radius)
+            val before = enemies.combatTargets().map { it.id }.toSet()
+            strike(enemies, player.position, action.direction, s.radius, CoreCombatFeel.minDot(s.icon), 1.0)
+            for (id in before) if (enemies.isAlive(id) && CrowdControl.AIRBORNE in enemies.crowdControl(id)) launched[id] = tickNumber + CoreWarriorRules.LAUNCHED_TICKS
+            if (player.inputs().jump()) player.velocity = CoreWarriorLeap.launch(player.position,
+                player.position.add(flatFacing().mul(1.2)).asVec(), 4.2).mul(20.0)
+            return
+        }
+        if (classId == CoreClass.WARRIOR && s.icon == "slam") {
+            // 地割り, plus 叩き落とし on anything 斬り上げ threw up that is still above the crack (out of the usual height).
+            launched.entries.removeIf { (id, until) -> until < tickNumber || !enemies.isAlive(id) }
+            smashTargets = launched.keys.filter { id ->
+                val p = enemies.positionOf(id) ?: return@filter false
+                val dx = p.x() - player.position.x(); val dz = p.z() - player.position.z()
+                val d = kotlin.math.hypot(dx, dz)
+                d <= s.radius && (dx * action.direction.x() + dz * action.direction.z()) >= .5 * d
+            }.toSet()
+            emitSkillPulse(player.position, s.radius)
+            val hitBefore = hitThisStrike.also { it.clear() }
+            strike(enemies, player.position, action.direction, s.radius, CoreCombatFeel.minDot(s.icon), 1.0)
+            if (!actionsValid(enemies, epoch)) { smashTargets = emptySet(); return }
+            for (id in smashTargets) {
+                launched.remove(id)
+                if (id !in hitBefore) hit(enemies, id, 1.0, skill = true)  // too high for the usual height check
+                if (!actionsValid(enemies, epoch)) { smashTargets = emptySet(); return }
+                smashDown(enemies, id)
+            }
+            smashTargets = emptySet()
+            return
+        }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.FRENZY) {
             // 狂乱: each swing steps in (a push the client moves, not a carried move) and reaches a little further;
             // the last is the overhead blow.
@@ -676,6 +711,8 @@ internal class CorePlayerCombat(
         }
         if (classId == CoreClass.WARRIOR && build.keystone == 0 && resource >= 2) classMultiplier *= 1.2
         val beastSpender = skill && classId == CoreClass.WARRIOR && definition!!.icon in CoreWarriorRules.spenders
+        if (skill) hitThisStrike += id
+        if (skill && id in smashTargets) classMultiplier *= 1 + CoreWarriorRules.SMASH_DOWN_PERCENT / 100.0
         // The beast let loose on a downed enemy: the window the warrior builds toward.
         if (beastSpender && enemies.isBroken(id)) classMultiplier *= 1 + skillAction!!.empowered * CoreWarriorRules.BEAST_DOWN_PERCENT_PER_STACK / 100.0
         if (classId == CoreClass.HEALER && build.keystone == 0) classMultiplier *= 1.25
@@ -848,6 +885,16 @@ internal class CorePlayerCombat(
             }
         }
     }
+    /** 叩き落とし: the launched enemy is driven into the ground and stunned longer (the damage bonus is in hit()). */
+    private fun smashDown(enemies: QuestEncounterCombat, id: UUID) {
+        enemies.slamDown(id)
+        enemies.applyCrowdControl(id, CrowdControl.STUN, CoreWarriorRules.SMASH_DOWN_STUN_MILLIS, player)
+        notice("叩き落とし")
+        sound(SoundEvent.ENTITY_GENERIC_EXPLODE, .6f, .6f)
+    }
+    /** 地割り's current 叩き落とし targets, and who its strike already hit. */
+    private var smashTargets: Set<UUID> = emptySet()
+    private val hitThisStrike = mutableSetOf<UUID>()
     private fun grounded(): Boolean = player.isOnGround ||
         player.instance?.getBlock(player.position.sub(0.0, .05, 0.0))?.solid() == true
 
@@ -1047,7 +1094,7 @@ internal class CorePlayerCombat(
         garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet()
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         crowd.clear()
         evadeUntil = -1; dodgeQueuedUntil = -1; slide = null; staggerUntil = -1

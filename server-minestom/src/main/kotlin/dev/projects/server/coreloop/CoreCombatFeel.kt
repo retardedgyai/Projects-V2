@@ -60,6 +60,12 @@ internal object CoreWarriorRules {
     const val FRENZY = "whirl"        // 狂乱
     const val SKYFALL = "war_guard"   // 天落とし
     const val SHATTER = "war_counter" // 大地崩し
+    const val LAUNCHER = "war_breach" // 斬り上げ (builds)
+    /** How long an enemy 斬り上げ threw up counts as in the air for 叩き落とし. */
+    const val LAUNCHED_TICKS = 36L
+    /** 叩き落とし: 地割り on an enemy 斬り上げ threw up. */
+    const val SMASH_DOWN_PERCENT = 50
+    const val SMASH_DOWN_STUN_MILLIS = 2000L
     /** 天落とし: the rings the landing sends out, inside to outside. */
     val SKYFALL_RINGS = listOf(3.5, 6.0, 8.0)
     const val SKYFALL_RING_TICKS = 4

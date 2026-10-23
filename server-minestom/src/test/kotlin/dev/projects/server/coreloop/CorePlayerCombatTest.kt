@@ -350,16 +350,18 @@ class CorePlayerCombatTest {
         val runs=casts.map { Triple(it.first,it.second,false) }+casts.filter { it.first in CoreWarriorIronChoreography.sceneIds }.map { Triple(it.first,it.second,true) }
         // 地割り by the beast it takes (0..3) as extra scenes "slam_b<n>".
         val beastRuns=(0..3).map { n -> Triple("slam_b$n",1,false) } +
-            listOf("whirl" to 2, "war_guard" to 3, "war_counter" to 3).flatMap { (icon, slot) -> listOf(0, 3).map { n -> Triple("${icon}_b$n", slot, false) } }
-        val scenes=(runs+beastRuns).map { (run,slot,shader) -> var scene=emptyMap<String,Any>(); val icon=run.substringBefore("_b")
+            listOf("whirl" to 2, "war_guard" to 3, "war_counter" to 3).flatMap { (icon, slot) -> listOf(0, 3).map { n -> Triple("${icon}_b$n", slot, false) } } +
+            listOf(Triple("war_breach_b0", 3, false))
+        val scenes=(runs+beastRuns).map { (run,slot,shader) -> var scene=emptyMap<String,Any>(); val icon=if(Regex("_b[0-3]$").containsMatchIn(run)) run.dropLast(3) else run
             CoreWarriorIronChoreography.shaderCut=shader; try { arena { h ->
             CoreCombatPresentation.pack(h.player,true)
             if(icon=="war_wound") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=4)); h.actor.reset()
                 h.player.teleport(h.player.position.withView(0f, 30f)) } // 跳び叩き aims at the ground short of the target
             if(icon=="war_counter") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=5)); h.actor.reset() }
+            if(icon=="war_breach") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=7)); h.actor.reset() }
             if(icon=="war_guard") h.player.teleport(h.player.position.withView(0f, 30f))
             assertEquals(icon,h.actor.skillDefinitions[slot].icon)
-            h.actor.classState.gain(if(run.contains("_b")) run.last().digitToInt().toDouble() else 100.0,h.journey.job,h.journey.build)
+            h.actor.classState.gain(if(Regex("_b[0-3]$").containsMatchIn(run)) run.last().digitToInt().toDouble() else 100.0,h.journey.job,h.journey.build)
             val frames=mutableListOf<Map<String,Any>>()
             fun record() { frames+=mapOf("player" to xyz(h.player.position)+h.player.position.yaw().toDouble(),
                 "targets" to h.combat.combatTargets().map { xyz(it.position) },
@@ -995,6 +997,21 @@ class CorePlayerCombatTest {
         h.player.teleport(h.player.position.withView(180f, 0f)) // facing away: it is all round, not a cone
         h.actor.skill(3); h.ticks(16)
         assertTrue(h.combat.breakGauge(id)!! < 100.0)
+    }
+
+    @Test fun `the launcher throws up the one in front and a slam on it is the smash down`() =
+        arena(bossDistance = 30.0, mobs = listOf(Pos(8.5, 40.0, 10.5))) { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 7)); h.actor.reset()
+        assertEquals(CoreWarriorRules.LAUNCHER, h.actor.skillDefinitions[3].icon)
+        h.combat.tick(1000L)
+        val id = h.combat.combatTargets().first { !h.combat.isBoss(it.id) }.id
+        h.actor.skill(3); h.ticks(10)
+        assertTrue(CrowdControl.AIRBORNE in h.combat.crowdControl(id), "thrown up")
+        assertEquals(CoreWarriorRules.BEAST_PER_SKILL, h.actor.resource, 1e-9) // it builds
+        h.actor.skill(1); h.ticks(24) // a slam with one stack would only launch low; on a thrown enemy it is the smash down
+        // The smash lands on it up in the air: stunned, or (a tier-1 soldier) dead from the boosted hit.
+        assertTrue(!h.combat.isAlive(id) || CrowdControl.STUN in h.combat.crowdControl(id), "smashed down: ${h.combat.crowdControl(id)}")
+        assertTrue(h.actor.cooldownRemaining(1) > 0)
     }
 
     @Test fun `the slam is never gated by the beast and keeps a part-built stack`() = arena { h ->

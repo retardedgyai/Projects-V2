@@ -11,12 +11,12 @@ internal object CoreWarriorSkillPresentation {
         "war_wound" to Identity("跳び叩き", "移動・着地", "狙った地点へ跳び、着地の周りを叩いて止める"),
         "war_counter" to Identity("大地崩し", "獣を使う・範囲", "突き立てて周り一面を砕き、まとめて打ち上げる"),
         "war_cry" to Identity("雄叫び", "仲間・障壁", "交戦前に仲間を守る"),
-        "war_breach" to Identity("破城突き", "接近・崩し", "踏み込んで敵の防御を崩す"),
+        "war_breach" to Identity("斬り上げ", "獣を溜める・打ち上げ", "真上へ振り上げて打ち上げ、地割りで叩き落とす"),
         "war_ult" to Identity("鉄槌", "奥義・三連", "大剣を三度振り下ろし、敵を打ち上げる"),
         "war_banner" to Identity("不屈の旗", "奥義・守護", "仲間への大きな障壁と自分の防御")
     )
     // Rows: enter or heavy / crowd or reach / hold. Retired catalog entries (5, 6, 7) are not offered.
-    val candidateOrder = listOf(0, 1, 4, 2, 3, 5)
+    val candidateOrder = listOf(0, 1, 4, 7, 2, 3, 5)
     val candidateSlots = listOf(9, 14, 18, 23, 27, 32, 36, 41)
     val loadoutSlots = listOf(0, 2, 4, 6, 8)
 
