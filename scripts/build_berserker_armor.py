@@ -1,16 +1,18 @@
 """狂戦士の甲冑 (warrior ultimate, Creator 2026-10-23): the armor the warrior turns into for ten seconds.
 
-Built on its own, not a recolour of another set. The rules, read from the Creator's references (@AnzSamaEr's
-Blockbench pieces) and the Berserk armor as a character idea (nothing traced):
-- one hero: the helm is a beast's skull, a muzzle pushed forward with teeth and slanted red eyes under a heavy
-  brow, fins swept back. Body and legs stay quieter so the head reads first.
-- big colour masses, few materials: near-black iron (a cool violet-grey ramp), bone teeth, rust-red straps, red eyes.
-- every face is painted for itself: a smooth light-to-dark ramp down the face, a bright bevel on the top and left
-  edges, a dark one on the bottom and right. No random speckle.
-- parts overlap in depth (brow over eyes, muzzle over jaw, lames over lames) so it changes as it turns.
+Built on its own. The Creator pointed at the Knight Artorias boss of a Minecraft mod (~/ProjectS/refs/artorias) and
+asked for black and red. What was read off it (rules, nothing traced):
+- the helm is tall and faceted: a pointed brow-visor jutting forward and down over a dark eye slit, the face
+  narrowing to a V, blades standing on the crown.
+- shading is the planes, not paint: every face is one flat value (lit tops, mid fronts, dark sides) with a single
+  lighter top edge. No speckle, no long gradients.
+- one strong cloth colour over the metal (theirs blue, ours crimson): a hood round the neck, a cape, torn strips
+  that trail. Big chunky plates on the shoulders, stacked.
+- the body under the plates is near-black, so the plates and cloth read against it.
 
-Writes the body/leg equipment layers (64x32, painted per face), the equipment asset, and the helm model + item
-on its own painted atlas.
+Vanilla armor can only paint the body boxes; only the helm can be a real model. The shoulders and the mantle are
+built here as their own model ("berserker_mantle", in body space) for a display that follows the body; the
+helm, the body/leg layers and the equipment asset are what the armor swap uses today.
 
 Run: python3 scripts/build_berserker_armor.py
 """
@@ -31,17 +33,14 @@ def ramp(*hexes):
 
 # Six steps, darkest first.
 MATERIALS = {
-    "iron": ramp("#1a1820", "#2b2833", "#403b4b", "#585266", "#7b748a", "#aaa3b8"),
-    "dark": ramp("#060508", "#0c0a0e", "#141117", "#1c1820", "#26212b", "#322c38"),
-    "bone": ramp("#57503f", "#7d735f", "#a3977e", "#c4b89d", "#ddd2b8", "#f0e9d6"),
-    "rust": ramp("#2a0a09", "#43100d", "#631812", "#86221a", "#a83122", "#c9452f"),
+    "iron": ramp("#100e12", "#211e26", "#36323d", "#524d5c", "#7f798b", "#b9b3c4"),
+    "dark": ramp("#050406", "#0b0a0d", "#121015", "#1a171e", "#242029", "#2f2a35"),
+    "cloth": ramp("#240506", "#430a0b", "#6e1011", "#981a17", "#c22a21", "#e0503a"),
     "eye": ramp("#6e0e07", "#a8180c", "#e8261a", "#ff4a2c", "#ff8a52", "#ffd6a8"),
 }
-# How lit each face is before its own ramp (0..5).
-FACE_LIGHT = {"up": 4, "north": 3, "west": 2, "east": 2, "south": 2, "down": 0}
+# How lit each face is (0..5): tops catch the light, fronts are mid, sides dark.
+FACE_LIGHT = {"up": 4, "north": 3, "west": 2, "east": 2, "south": 1, "down": 0}
 
-
-# ----------------------------------------------------------------------------------------------- the helm
 
 def el(name, lo, hi, mat, rot=None, light=0):
     """One box; rot = (axis, angle, origin). light nudges the whole box brighter or darker."""
@@ -51,55 +50,74 @@ def el(name, lo, hi, mat, rot=None, light=0):
     return e
 
 
+# ----------------------------------------------------------------------------------------------- the helm
+
 def helm():
-    """Front is north (low z). The head is x,y,z 4..12; the shell sits from 3.4 to 12.6."""
+    """Front is north (low z). The head is x,y,z 4..12. Points are built as narrowing steps (each step's top or
+    front catches the light) rather than turned plates: the facets read as planes at any angle."""
     e = []
-    # The skull: a domed cap, sides, and a neck guard of two overlapping lames.
-    e += [el("skull cap", (3.4, 8.6, 3.6), (12.6, 12.0, 12.6), "iron"),
-          el("dome", (4.0, 11.8, 4.2), (12.0, 12.9, 12.4), "iron", light=1),
-          el("crown ridge", (7.1, 12.7, 3.6), (8.9, 13.7, 12.8), "iron", light=1),
-          el("crown ridge back", (7.3, 12.9, 12.4), (8.7, 13.5, 14.2), "iron", ("x", 22.5, (8.0, 13.2, 12.4)), light=1),
-          el("left side", (3.2, 3.6, 4.4), (4.2, 8.8, 12.6), "iron", light=-1),
-          el("right side", (11.8, 3.6, 4.4), (12.8, 8.8, 12.6), "iron", light=-1),
-          el("neck lame upper", (3.6, 4.2, 12.0), (12.4, 8.8, 13.0), "iron"),
-          el("neck lame lower", (3.9, 2.4, 12.4), (12.1, 4.6, 13.6), "iron", light=-1)]
-    # The face behind the muzzle is dark: what shows between the parts is shadow, not skin.
-    e += [el("face shadow", (4.2, 3.4, 3.5), (11.8, 8.6, 4.4), "dark")]
-    # Heavy brow in a V, angled down to the middle: the scowl.
+    e += [el("skull", (3.6, 4.2, 3.6), (12.4, 11.2, 12.4), "iron", light=-1)]
+    # A stepped dome: each layer narrower, its top lit.
+    for i, (inset, y0, y1) in enumerate(((0.0, 11.0, 12.4), (0.9, 12.4, 13.4), (2.0, 13.4, 14.2))):
+        e += [el("dome", (3.6 + inset, y0, 3.8 + inset * .6), (12.4 - inset, y1, 12.4 - inset * .3), "iron", light=-i % 2)]
+    # The fin along the crown, stepping back as it rises.
+    for i, (y0, z0, z1) in enumerate(((14.2, 4.0, 11.6), (15.2, 6.0, 12.4), (16.2, 8.2, 13.0))):
+        e += [el("crest", (7.5 + .1 * i, y0, z0), (8.5 - .1 * i, y0 + 1.0, z1), "iron", light=1)]
+    # Sides as overlapping bands, each lower one standing out further.
     for s in (-1, 1):
-        x0, x1 = (3.0, 8.3) if s < 0 else (7.7, 13.0)
-        e += [el("brow plate", (x0, 8.2, 2.4), (x1, 9.8, 3.8), "iron", ("z", s * 22.5, (8 + s * 2.6, 9.0, 3.1)), light=1)]
-    # Slanted eyes under the brow, set into the dark.
+        for i, (out, y0, y1, z0) in enumerate(((0.4, 9.6, 11.2, 4.0), (0.8, 7.4, 9.6, 4.4), (0.5, 4.8, 7.4, 5.0))):
+            x0, x1 = (3.6 - out, 4.2) if s < 0 else (11.8, 12.4 + out)
+            e += [el("side band", (x0, y0, z0), (x1, y1, 12.6), "iron", light=1 - i)]
+    # The brow-visor jutting forward to a point in steps over the slit.
+    for i, (x0, z0) in enumerate(((3.6, 2.6), (4.8, 1.6), (6.2, 0.6), (7.3, -0.4))):
+        e += [el("brow", (x0, 9.0 + .15 * i, z0), (16 - x0, 10.8, z0 + 1.2), "iron", light=1)]
+    # The slit under it, dark, the red eyes back in it.
+    e += [el("eye slit", (4.4, 7.2, 3.0), (11.6, 9.0, 3.8), "dark")]
     for s in (-1, 1):
-        x0 = 4.7 if s < 0 else 8.9
-        e += [el("eye", (x0, 7.0, 3.1), (x0 + 2.4, 7.8, 3.6), "eye", ("z", s * 22.5, (x0 + 1.2, 7.4, 3.3)))]
-    # The muzzle, the hero: three steps narrowing forward to a blunt nose, a ridge along the top.
-    e += [el("snout base", (5.8, 4.8, 0.0), (10.2, 8.0, 3.8), "iron", light=1),
-          el("snout", (6.4, 5.0, -2.0), (9.6, 7.4, 0.2), "iron", light=1),
-          el("nose", (6.9, 5.2, -3.6), (9.1, 6.8, -1.8), "iron"),
-          el("snout ridge", (7.4, 7.8, -1.6), (8.6, 8.7, 3.9), "iron", light=2),
-          el("nose ridge", (7.5, 6.6, -3.4), (8.5, 7.5, -1.4), "iron", light=2)]
-    # The open maw under it: dark inside, bone fangs at the front, smaller teeth down the sides.
-    e += [el("maw", (6.2, 3.6, -1.6), (9.8, 5.0, 3.6), "dark"),
-          el("jaw", (6.0, 2.6, -1.2), (10.0, 3.8, 3.8), "iron"),
-          el("jaw hinge", (4.2, 2.8, 2.6), (11.8, 4.6, 4.4), "iron", light=-1)]
-    for s in (-1, 1):
-        x = 8 + s * 1.15
-        e += [el("upper fang", (x - .35, 3.6, -2.0), (x + .35, 5.1, -1.3), "bone", light=1),
-              el("lower fang", (x - .3 - s * .4, 3.7, -1.0), (x + .3 - s * .4, 4.6, -0.4), "bone")]
-        for z in (-0.4, 1.0, 2.2):
-            xs = 8 + s * 1.95
-            e += [el("side tooth", (xs - .3, 4.1, z), (xs + .3, 5.0, z + .6), "bone")]
-    # Cheek guards flaring out beside the jaw, and two fins swept back from the temples like laid-back ears.
-    for s in (-1, 1):
-        x = 8 + s * 4.6
-        e += [el("cheek guard", (x - .7, 3.0, 3.4), (x + .7, 7.4, 8.2), "iron", ("z", -s * 22.5, (x, 5.2, 5.8)))]
-        # The swept horn: a staircase of plates from the temple back and up, each shorter, the way an ear lies flat.
-        for i in range(4):
-            lo, hi = (x - .55 + s * .15 * i, 9.0 + .9 * i, 6.0 + 1.5 * i), (x + .55 + s * .15 * i, 10.6 + .9 * i, 11.8 + 1.1 * i)
-            e += [el("swept horn", lo, hi, "iron", ("z", -s * 22.5, (x, 10.5 + .9 * i, 9.0)), light=min(2, i))]
-    # A strap of rust round the back of the skull, holding it shut.
-    e += [el("strap", (3.3, 8.6, 9.2), (12.7, 9.4, 10.2), "rust")]
+        x = 8 + s * 2.0
+        e += [el("eye", (x - .8, 7.6, 2.9), (x + .8, 8.2, 3.1), "eye")]
+    # The face narrows down to a point at the chin, in steps.
+    for i, (x0, y0, y1) in enumerate(((4.2, 4.0, 7.2), (5.4, 3.2, 4.0), (6.8, 2.6, 3.2))):
+        e += [el("face", (x0, y0, 2.4 + .1 * i), (16 - x0, y1, 3.6), "iron", light=0 if i == 0 else 1)]
+    e += [el("face ridge", (7.4, 4.0, 2.0), (8.6, 7.2, 2.6), "iron", light=1)]
+    # Torn crimson strips hanging from the back of the crown, flaring out.
+    for i, (x, length) in enumerate(((5.8, 7.0), (7.4, 9.0), (9.0, 6.0))):
+        e += [el("helm strip", (x, 12.0 - length, 12.8), (x + 1.3, 12.0, 13.5), "cloth", ("x", -22.5, (8.0, 12.0, 13.0)),
+                 light=i % 2)]
+    return e
+
+
+# --------------------------------------------------------------- shoulders and mantle (body space, for a display)
+
+def mantle():
+    """Body space of the preview: body x4..12, y12..24, z6..10, arms x0..4 / x12..16, front is low z."""
+    e = []
+    # Stacked pauldrons, three plates each, wider at the top; the left one (+x) bigger, Guts's iron arm side.
+    for s, big in ((-1, 0.0), (1, 0.6)):
+        cx = 8 + s * 6.0
+        for i in range(3):
+            w = 3.6 + big - .5 * i
+            y1 = 25.4 + big * .5 - 2.2 * i
+            e += [el("pauldron", (cx - w, y1 - 2.6, 5.0 - .2 * i), (cx + w, y1, 11.0 + .2 * i), "iron",
+                     ("z", -s * 22.5, (cx, y1 - 1.3, 8.0)), light=1 - i)]
+        e += [el("pauldron spike", (cx - .4, 25.4 + big * .5, 6.6), (cx + .4, 27.8 + big, 9.4), "iron",
+                 ("z", -s * 22.5, (cx, 25.6, 8.0)), light=1)]
+    # The hood: crimson cloth piled round the neck, heavier at the back.
+    e += [el("hood front", (4.6, 22.6, 4.8), (11.4, 24.8, 6.4), "cloth", ("x", -22.5, (8.0, 23.6, 5.6)), light=1),
+          el("hood back", (3.8, 21.4, 9.6), (12.2, 26.0, 12.0), "cloth"),
+          el("hood side", (3.4, 22.4, 5.6), (4.8, 25.0, 10.4), "cloth", light=-1),
+          el("hood side", (11.2, 22.4, 5.6), (12.6, 25.0, 10.4), "cloth", light=-1)]
+    # A sash over the left shoulder, one band crossing the chest to the right hip (and the back).
+    e += [el("sash", (-0.2, 17.4, 4.5), (16.2, 19.8, 5.3), "cloth", ("z", 45, (8.0, 18.6, 4.9)), light=1),
+          el("sash back", (-0.2, 17.4, 10.3), (16.2, 19.8, 11.1), "cloth", ("z", 45, (8.0, 18.6, 10.7)), light=-1)]
+    # The cape to the knee, its hem torn into strips of different lengths.
+    e += [el("cape", (3.4, 9.0, 10.6), (12.6, 22.0, 11.4), "cloth")]
+    for i, (x, bottom) in enumerate(((3.4, 4.0), (5.2, 6.4), (7.0, 2.8), (8.8, 5.6), (10.6, 3.6))):
+        e += [el("cape strip", (x, bottom, 10.7), (x + 2.0, 9.2, 11.3), "cloth", light=-(i % 2))]
+    # A torn scarf trailing back from the right shoulder.
+    for i in range(3):
+        e += [el("scarf", (2.4 + .6 * i, 23.0 - .8 * i, 11.0), (3.4 + .6 * i, 24.0 - .8 * i, 17.0 - 1.4 * i), "cloth",
+                 ("x", 22.5, (3.0, 23.5, 11.0)), light=1 - i % 2)]
     return e
 
 
@@ -109,32 +127,29 @@ def face_size(e, face):
 
 
 def paint_face(img, x0, y0, w, h, mat, level):
-    """A smooth ramp down the face with a bevel: light on top/left, dark on bottom/right."""
+    """One flat value per face, a lighter top edge, a darker bottom edge: the planes do the shading."""
     tones = MATERIALS[mat]
     px = img.load()
     for y in range(h):
         for x in range(w):
-            t = (y + .5) / h
-            v = level + .8 - 1.6 * t                      # lighter at the top, darker at the bottom
-            if y == 0 or x == 0: v += 1.2
-            if y == h - 1 or x == w - 1: v -= 1.2
-            if mat == "eye":                              # a hot core
-                v = 3 + 2 * (1 - abs(2 * (x + .5) / w - 1)) - (y == h - 1)
+            v = level + (2 if y == 0 and level >= 3 else 1 if y == 0 else -1 if y == h - 1 else 0)
+            if mat == "eye":
+                v = 3 + 2 * (1 - abs(2 * (x + .5) / w - 1))
             px[x0 + x, y0 + y] = tones[max(0, min(5, round(v)))] + (255,)
 
 
-def helm_model(size=256, density=3):
+def model(elements, size=256, density=3):
     """Pack every face into its own painted rectangle on one atlas (3 px per model unit)."""
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     cx, cy, row = 0, 0, 0
     out = []
-    for e in helm():
+    for e in elements:
         faces = {}
         for face in ("north", "south", "east", "west", "up", "down"):
             fw, fh = face_size(e, face)
             w, h = max(2, math.ceil(fw * density)), max(2, math.ceil(fh * density))
             if cx + w > size: cx, cy, row = 0, cy + row, 0
-            assert cy + h <= size, "berserker helm atlas is full"
+            assert cy + h <= size, "berserker atlas is full"
             paint_face(img, cx, cy, w, h, e["mat"], FACE_LIGHT[face] + e["light"])
             faces[face] = {"uv": [cx * 16 / size, cy * 16 / size, (cx + w) * 16 / size, (cy + h) * 16 / size], "texture": "#atlas"}
             cx += w; row = max(row, h)
@@ -146,25 +161,24 @@ def helm_model(size=256, density=3):
 
 # ------------------------------------------------------------------------------------- body and leg layers
 
-# A letter is a material and a step: K D P M L H iron 0..5, k dark, R r rust 2/3, B b bone 3/1, '.' empty.
+# A letter is a material and a step: K D P M L H iron 0..5, k dark, C c X cloth 2/1/4, '.' empty.
 KEY = {"K": ("iron", 0), "D": ("iron", 1), "P": ("iron", 2), "M": ("iron", 3), "L": ("iron", 4), "H": ("iron", 5),
-       "k": ("dark", 1), "R": ("rust", 2), "r": ("rust", 4), "B": ("bone", 4), "b": ("bone", 2)}
+       "k": ("dark", 2), "C": ("cloth", 2), "c": ("cloth", 1), "X": ("cloth", 4)}
 
-# Two big breast plates split down the middle, one fauld plate, a belt with a bone buckle.
-CHEST = ("MLLLLLLM", "DPMMMMPD", "LHHMMHHL", "MLLPPLLM", "MMLkkLMM", "PMMkkMMP",
-         "DPPkkPPD", "kDDDDDDk", "MLLLLLLM", "PMMMMMMP", "DPPPPPPD", "RrRBbRrR")
-BACK = ("MLLLLLLM", "DPMMMMPD", "PMLLLLMP", "PMLMMLMP", "PMMMMMMP", "DPPMMPPD",
-        "DPPPPPPD", "kDDDDDDk", "MLLLLLLM", "PMMMMMMP", "DPPPPPPD", "RrRRRRrR")
-TORSO_SIDE = ("MLLM", "DMMD", "PMMP", "PMMP", "PMMP", "PPPP", "DPPD", "kDDk", "MLLM", "PMMP", "DPPD", "RrrR")
-# Arms: a pauldron over the shoulder, a lame, a strap, and a clawed gauntlet.
-ARM = ("HHHH", "LLLL", "MMMM", "DLLD", "kkkk", "MLLM", "PMMP", "DDDD", "LHHL", "MLLM", "PMMP", "LkLk")
-ARM_BACK = ("LLLL", "MMMM", "PMMP", "DLLD", "kkkk", "MLLM", "PMMP", "DDDD", "MLLM", "PMMP", "DPPD", "DkDk")
-BOOT = ("....",) * 6 + ("LHHL", "MLLM", "PMMP", "DPPD", "LLLL", "kDDk")
-BOOT_BACK = ("....",) * 6 + ("MLLM", "PMMP", "DPPD", "DPPD", "PMMP", "kDDk")
-# Leggings: tassets over the thigh, a knee cop, the shin under the boots.
-LEG = ("MLLM", "PMMP", "PMMP", "DPPD", "kDDk", "LHHL", "MLLM", "kDDk", "PMMP", "PMMP", "DPPD", "kDDk")
-LEG_BACK = ("PMMP", "PMMP", "PMMP", "DPPD", "DPPD", "PMMP", "PMMP", "DPPD", "PMMP", "PMMP", "DPPD", "kDDk")
-WAIST = ("kkkkkkkk",) * 9 + ("RrRbBRrR", "DPPPPPPD", "kDDDDDDk")
+# A near-black body; a gorget and a breastplate on top, a crimson tabard down the middle under a plated belt.
+CHEST = ("DLHHHHLD", "kMLLLLMk", "kPMMMMPk", "kDPCXPDk", "kkDCCDkk", "kKkCCkKk",
+         "kKkCCkKk", "DLDCCDLD", "kkcCXckk", "kkcCCckk", "kkcCCckk", "kkkcckkk")
+BACK = ("DLLLLLLD", "kMMMMMMk", "kPPPPPPk", "kDDDDDDk", "kkkkkkkk", "kKkkkkKk",
+        "kKkkkkKk", "DLDDDDLD", "kkkkkkkk", "kkkkkkkk", "kkkkkkkk", "kkkkkkkk")
+TORSO_SIDE = ("DLLD", "kMMk", "kPPk", "kDDk", "kkkk", "kKKk", "kKKk", "DLLD", "kkkk", "kkkk", "kkkk", "kkkk")
+# Arms: dark mail to the elbow (the pauldron covers the top), a heavy gauntlet below.
+ARM = ("kkkk", "kKKk", "kkkk", "kKKk", "DLLD", "kPPk", "kkkk", "MLLM", "LHHL", "MLLM", "PMMP", "DkDk")
+ARM_BACK = ("kkkk", "kKKk", "kkkk", "kKKk", "DMMD", "kPPk", "kkkk", "PMMP", "MLLM", "PMMP", "DPPD", "DkDk")
+BOOT = ("....",) * 6 + ("MLLM", "PMMP", "DPPD", "kDDk", "PMMP", "kDDk")
+BOOT_BACK = ("....",) * 6 + ("PMMP", "DPPD", "DPPD", "kDDk", "DPPD", "kDDk")
+LEG = ("kkkk", "kKKk", "kkkk", "kKKk", "DMMD", "MLLM", "PMMP", "kPPk", "kkkk", "kkkk", "kkkk", "kkkk")
+LEG_BACK = ("kkkk", "kKKk", "kkkk", "kKKk", "kkkk", "DPPD", "kDDk", "kkkk", "kkkk", "kkkk", "kkkk", "kkkk")
+WAIST = ("kkkkkkkk",) * 9 + ("DLDCCDLD", "kkcCCckk", "kkkcckkk")
 
 
 def top(w, d, row):
@@ -190,12 +204,12 @@ def unwrap(img, origin, w, h, d, front, back, side, up, down):
 
 def body_layers():
     outer = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
-    unwrap(outer, (16, 16), 8, 12, 4, CHEST, BACK, TORSO_SIDE, ("DMMMMMMD", "MLLLLLLM", "MLLLLLLM", "DMMMMMMD"), top(8, 4, "k"))
-    unwrap(outer, (40, 16), 4, 12, 4, ARM, ARM_BACK, ARM, ("LHHL", "HHHH", "LHHL", "MLLM"), top(4, 4, "k"))
+    unwrap(outer, (16, 16), 8, 12, 4, CHEST, BACK, TORSO_SIDE, ("DLLLLLLD", "LHHHHHHL", "LHHHHHHL", "DLLLLLLD"), top(8, 4, "k"))
+    unwrap(outer, (40, 16), 4, 12, 4, ARM, ARM_BACK, ARM_BACK, ("kKKk",) * 4, ("DkkD",) * 4)
     unwrap(outer, (0, 16), 4, 12, 4, BOOT, BOOT_BACK, BOOT_BACK, top(4, 4, "."), ("kkkk",) * 4)
     inner = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
     unwrap(inner, (16, 16), 8, 12, 4, WAIST, WAIST, tuple(r[:4] for r in WAIST), top(8, 4, "k"), top(8, 4, "k"))
-    unwrap(inner, (0, 16), 4, 12, 4, LEG, LEG_BACK, LEG_BACK, ("DPPD",) * 4, ("kkkk",) * 4)
+    unwrap(inner, (0, 16), 4, 12, 4, LEG, LEG_BACK, LEG_BACK, ("kkkk",) * 4, ("kkkk",) * 4)
     return outer, inner
 
 
@@ -211,6 +225,12 @@ def save(img, path: Path):
     img.save(path)
 
 
+DISPLAY = {"head": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1.6, 1.6, 1.6]},
+           "gui": {"rotation": [15, -25, 0], "translation": [0, -1, 0], "scale": [0.65, 0.65, 0.65]},
+           "ground": {"rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [0.5, 0.5, 0.5]},
+           "fixed": {"rotation": [0, 180, 0], "translation": [0, 0, 0], "scale": [0.65, 0.65, 0.65]}}
+
+
 def main():
     eq = ASSETS / "textures/entity/equipment"
     outer, inner = body_layers()
@@ -218,19 +238,16 @@ def main():
     save(inner, eq / f"humanoid_leggings/armor/{NAME}.png")
     write(ASSETS / f"equipment/armor/{NAME}.json",
           {"layers": {"humanoid": [{"texture": f"projects:armor/{NAME}"}], "humanoid_leggings": [{"texture": f"projects:armor/{NAME}"}]}})
-    atlas, elements = helm_model()
-    save(atlas, ASSETS / f"textures/item/armor/{NAME}_materials.png")
-    write(ASSETS / f"models/item/armor/{NAME}_helmet.json", {
-        "credit": "Project S: berserker helm (scripts/build_berserker_armor.py)",
-        "gui_light": "front", "ambientocclusion": False,
-        "textures": {"atlas": f"projects:item/armor/{NAME}_materials", "particle": f"projects:item/armor/{NAME}_materials"},
-        "elements": elements,
-        # At head transform scale 1.6 cancels the vanilla 0.625 head-layer scale (as the class helmets do).
-        "display": {"head": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1.6, 1.6, 1.6]},
-                    "gui": {"rotation": [15, -25, 0], "translation": [0, -1, 0], "scale": [0.65, 0.65, 0.65]},
-                    "ground": {"rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [0.5, 0.5, 0.5]},
-                    "fixed": {"rotation": [0, 180, 0], "translation": [0, 0, 0], "scale": [0.65, 0.65, 0.65]}}})
-    write(ASSETS / f"items/armor/{NAME}_helmet.json", {"model": {"type": "minecraft:model", "model": f"projects:item/armor/{NAME}_helmet"}})
+    for part, elements, display in (("helmet", helm(), DISPLAY), ("mantle", mantle(), {})):
+        atlas, boxes = model(elements)
+        save(atlas, ASSETS / f"textures/item/armor/{NAME}_{part}.png")
+        write(ASSETS / f"models/item/armor/{NAME}_{part}.json", {
+            "credit": f"Project S: berserker {part} (scripts/build_berserker_armor.py)",
+            "gui_light": "front", "ambientocclusion": False,
+            "textures": {"atlas": f"projects:item/armor/{NAME}_{part}", "particle": f"projects:item/armor/{NAME}_{part}"},
+            "elements": boxes, **({"display": display} if display else {})})
+        write(ASSETS / f"items/armor/{NAME}_{part}.json", {"model": {"type": "minecraft:model", "model": f"projects:item/armor/{NAME}_{part}"}})
+    (ASSETS / f"textures/item/armor/{NAME}_materials.png").unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
