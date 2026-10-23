@@ -733,8 +733,12 @@ def scrape_arc(stage, n=96, seed=47):
     return img
 
 
-def dust_puff(frame, seed=0):
+SMOKE = ((30, 26, 28), (14, 12, 13), (58, 46, 48))
+
+
+def dust_puff(frame, seed=0, tones=None):
     """A puff of dust as a lumpy pixel cloud: three tones in 2 px clusters, swelling then thinning out."""
+    tones = tones or DUST
     img = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
     px = img.load()
     r = (7, 10, 12, 13, 14)[frame]
@@ -743,7 +747,7 @@ def dust_puff(frame, seed=0):
             lump = 2.5 * math.sin(math.atan2(y - 16, x - 16) * 5 + seed) + 1.5 * _h(x // 3, y // 3, seed)
             if math.hypot(x - 16, y - 16) > r + lump: continue
             v = _h(x // 2, y // 2, seed, 4)
-            col = DUST[2] if v > .7 and y < 16 else DUST[1] if v < .3 or y > 20 else DUST[0]
+            col = tones[2] if v > .7 and y < 16 else tones[1] if v < .3 or y > 20 else tones[0]
             px[x, y] = col + ((215, 200, 170, 120, 70)[frame],)
     return dissolve(img, (0, 0, .15, .4, .65)[frame], seed + 9) if frame > 1 else img
 
@@ -910,6 +914,8 @@ def build(assets, write):
     model('empty', {'textures': {}, 'elements': []})
     for f in range(5):
         model(f'dust_{f}', centred_model(texture(f'dust_{f}', dust_puff(f))))
+        # 狂戦士の甲冑: the black that climbs the body as the armor closes over it.
+        model(f'smoke_{f}', centred_model(texture(f'smoke_{f}', dust_puff(f, 5, SMOKE))))
     for f in range(8):
         model(f'wind_{f}', centred_model(texture(f'wind_{f}', wind_band(f))))
     model('clod', lump_model(texture('clod_top', block_tex(EARTH, 31)), texture('clod_side', block_tex(EARTH, 32)),

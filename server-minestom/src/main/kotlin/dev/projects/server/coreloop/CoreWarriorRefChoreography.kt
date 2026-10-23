@@ -85,21 +85,39 @@ internal object CoreWarriorRefChoreography {
             }
             return out
         }
-        if ((e.sceneId == CoreWarriorRules.ARMOR || e.sceneId == CoreWarriorRules.AWAKEN) && e.phase == CoreSkillVisualPhase.PULSE) {
-            // The beast let out: the ground round the feet breaks open and earth is thrown up off it.
-            val armor = e.sceneId == CoreWarriorRules.ARMOR
-            for (k in 0 until if (armor) 6 else 4) {
-                val a = yaw + k * 2 * PI / (if (armor) 6 else 4) + (hash(k, 221) - .5) * .7
-                val len = (if (armor) 2.6 else 1.8) * (.7 + .3 * hash(k, 222))
+        if (e.sceneId == CoreWarriorRules.ARMOR && e.phase == CoreSkillVisualPhase.PULSE) {
+            // 狂戦士の甲冑: a stomp that splits the ground round the feet, and black smoke climbing the body from the
+            // feet to the head as the armor closes over it (the swap to the black armor lands with it).
+            for (k in 0 until 6) {
+                val a = yaw + k * PI / 3 + (hash(k, 221) - .5) * .7
+                val len = 2.6 * (.7 + .3 * hash(k, 222))
                 out += part("furrow", Vec(sin(a) * len / 2, .12, cos(a) * len / 2), 1.0, a, 30).copy(scale = Vec(len, 1.0, len))
             }
-            for (k in 0 until if (armor) 8 else 5) {
-                val a = yaw + k * 2 * PI / 8 + hash(k, 223)
+            for (k in 0 until 6) {
+                val a = yaw + k * PI / 3 + hash(k, 223)
                 out += part("clod${120 + k}", Vec(sin(a) * .7, .2, cos(a) * .7), .3 + .2 * hash(k, 224), a, 20, ground = false,
                     delay = k / 3).copy(startSize = 1.1)
             }
-            for (k in 0 until 3) out += part("dust${84 + k}", Vec(0.0, .4 + .7 * k, 0.0), 1.8 - .3 * k, 0.0, 14, ground = false, delay = k,
-                billboard = true, roll = hash(k, 225) * 6.0)
+            for (k in 0 until 8) {
+                val a = yaw + k * 2.4; val r = .6 + .15 * hash(k, 226)
+                out += part("smoke", Vec(sin(a) * r, .1 + .26 * k, cos(a) * r), 1.5 - .06 * k, 0.0, 16, ground = false,
+                    delay = k, billboard = true, roll = hash(k, 225) * 6.0)
+            }
+            return out
+        }
+        if (e.sceneId == CoreWarriorRules.AWAKEN && e.phase == CoreSkillVisualPhase.PULSE) {
+            // 獣の目覚め: the beast roars. No stomp: the breath throws dust out flat along the ground all round and
+            // shakes loose earth up off it; nothing climbs the body (that is the armor's).
+            for (k in 0 until 10) {
+                val a = yaw + k * 2 * PI / 10 + (hash(k, 231) - .5) * .4
+                for (ring in 0 until 2) out += part("dust${84 + (k + ring) % 3}", Vec(sin(a) * (.9 + 1.3 * ring), .25, cos(a) * (.9 + 1.3 * ring)),
+                    1.0 + .4 * ring, 0.0, 14, ground = false, delay = ring * 3, billboard = true, roll = hash(k, ring, 232) * 6.0)
+            }
+            for (k in 0 until 5) {
+                val a = yaw + k * 2 * PI / 5 + hash(k, 233)
+                out += part("clod${120 + k}", Vec(sin(a) * 1.4, .2, cos(a) * 1.4), .25 + .15 * hash(k, 234), a, 18, ground = false,
+                    delay = 2 + k % 2).copy(startSize = .9)
+            }
             return out
         }
         if (e.sceneId == CoreWarriorRules.SHATTER && e.phase == CoreSkillVisualPhase.PREPARE) {
@@ -410,6 +428,8 @@ internal object CoreWarriorRefChoreography {
                 CoreMeshPose(p.offset.add(sin(a) * .8 * s, max(y, -.1), cos(a) * .8 * s), p.scale.mul(1.6), p.yaw + t * .3, t * .45, t * .25,
                     CoreCombatMeshes.GROUND, live)
             }
+            name == "smoke" -> CoreMeshPose(p.offset.add(0.0, t.coerceAtLeast(0.0) * .05, 0.0), p.scale.mul(1.0 + tick * .04),
+                0.0, 0.0, p.roll, "$DIR/smoke_${(tick * 5 / p.durationTicks).coerceAtMost(4)}", live)
             name.startsWith("dust") -> CoreMeshPose(p.offset.add(0.0, t.coerceAtLeast(0.0) * .02, 0.0), p.scale.mul(1.0 + tick * .05),
                 0.0, 0.0, p.roll, "$DIR/dust_${(tick * 5 / p.durationTicks).coerceAtMost(4)}", live)
             name.startsWith("fing") -> {

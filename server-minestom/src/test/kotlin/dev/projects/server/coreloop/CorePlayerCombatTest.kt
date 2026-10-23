@@ -351,7 +351,9 @@ class CorePlayerCombatTest {
         // 地割り by the beast it takes (0..3) as extra scenes "slam_b<n>".
         val beastRuns=(0..3).map { n -> Triple("slam_b$n",1,false) } +
             listOf("whirl" to 2, "war_guard" to 3, "war_counter" to 3).flatMap { (icon, slot) -> listOf(0, 3).map { n -> Triple("${icon}_b$n", slot, false) } } +
-            listOf(Triple("war_breach_b0", 3, false), Triple("war_cry_b0", 3, false))
+            listOf(Triple("war_breach_b0", 3, false), Triple("war_cry_b0", 3, false)) +
+            // The three ultimates (slot 4): 全力の一振り with a full beast, 狂戦士の甲冑, 獣の目覚め (needs three).
+            listOf(Triple("war_ult_b3", 4, false), Triple("war_banner_b0", 4, false), Triple("war_awaken_b3", 4, false))
         val scenes=(runs+beastRuns).map { (run,slot,shader) -> var scene=emptyMap<String,Any>(); val icon=if(Regex("_b[0-3]$").containsMatchIn(run)) run.dropLast(3) else run
             CoreWarriorIronChoreography.shaderCut=shader; try { arena(mobs = if (icon == CoreWarriorRules.DRAG) listOf(Pos(7.7, 40.0, 10.6), Pos(7.5, 40.0, 12.2)) else emptyList()) { h ->
             CoreCombatPresentation.pack(h.player,true)
@@ -360,6 +362,8 @@ class CorePlayerCombatTest {
             if(icon=="war_counter") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=5)); h.actor.reset() }
             if(icon=="war_breach") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=7)); h.actor.reset() }
             if(icon==CoreWarriorRules.DRAG) { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=6)); h.actor.reset(); h.combat.tick(1000L) }
+            if(icon=="war_banner") { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=1)); h.actor.reset() }
+            if(icon==CoreWarriorRules.AWAKEN) { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=2)); h.actor.reset() }
             if(icon=="war_guard") h.player.teleport(h.player.position.withView(0f, 30f))
             assertEquals(icon,h.actor.skillDefinitions[slot].icon)
             h.actor.classState.gain(if(Regex("_b[0-3]$").containsMatchIn(run)) run.last().digitToInt().toDouble() else 100.0,h.journey.job,h.journey.build)
