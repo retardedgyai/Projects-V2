@@ -87,11 +87,29 @@ def chain(name, points, width, thick, outs, mat="iron", light=0, bevel=True):
     return out
 
 
+# Creator 2026-10-23: next to Artorias the head read too big. Everything outside the shell is drawn toward the
+# head's middle (more in height and depth than in width, where the shell must still cover the head) and thinned.
+PULL = np.array((.94, .88, .88))
+PULL_CENTRE = np.array((8.0, 8.0, 8.0))
+TIGHT = ("shell", "neck guard", "face dark", "side")
+
+
+def pulled_in(elements):
+    for e in elements:
+        if e["name"] in TIGHT:
+            continue
+        c = e["origin"]; size = e["to"] - e["from"]; mid = (e["from"] + e["to"]) / 2
+        moved = PULL_CENTRE + (c - PULL_CENTRE) * PULL
+        half = size * .9 / 2
+        mid = mid + (moved - c)
+        e["from"], e["to"], e["origin"] = mid - half, mid + half, moved
+    return elements
+
+
 def helm():
     e = []
     # The shell round the head, its lower sides dark: the face and the opening under the hooks.
-    e += [box("shell", (3.7, 6.8, 4.6), (12.3, 12.7, 12.5), "iron", -1),
-          box("shell", (4.4, 6.8, 4.0), (11.6, 12.9, 13.0), "iron", -1),
+    e += [box("shell", (3.8, 6.8, 3.9), (12.2, 12.5, 12.4), "iron", -1),
           box("neck guard", (3.9, 3.2, 8.4), (12.1, 7.0, 12.9), "iron", -1),
           box("face dark", (3.75, 3.4, 2.4), (12.25, 9.6, 8.6), "dark")]
     # The crown, bent over the top from the back to the brow.
@@ -118,7 +136,7 @@ def helm():
         top = np.array((8 + dx, 13.9 - .2 * i, 9.0))
         e += chain("plume", [top, top + (dx * .15, -drop * .3, length * .5), top + (dx * .3, -drop, length)], w, 1.2, (0, 1, .4),
                    "cloth", 1 - i % 2, bevel=False)
-    return e
+    return pulled_in(e)
 
 
 def mantle():
