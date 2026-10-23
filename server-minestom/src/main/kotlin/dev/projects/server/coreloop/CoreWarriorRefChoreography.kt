@@ -25,7 +25,8 @@ internal object CoreWarriorRefChoreography {
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     /** Camera-facing pieces whose pose moves them (the meshes carry these by moving the entity). */
-    fun drifts(p: CoreCombatMeshPart) = owns(p) && p.shape.removePrefix(PREFIX).let { it == "bdrop" || it == "bfling" || it.startsWith("scale") }
+    fun drifts(p: CoreCombatMeshPart) = owns(p) && p.shape.removePrefix(PREFIX).let {
+        it == "bdrop" || it == "bfling" || it == "bsmoke" || it.startsWith("scale") }
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
         (e.phase == CoreSkillVisualPhase.PULSE && e.sceneId in sceneIds || e.sceneId in ownedIds)
 
@@ -135,6 +136,33 @@ internal object CoreWarriorRefChoreography {
                 out += part("rhalo", Vec(0.0, y, 0.0), size, 0.0, e.skill.duration, ground = false, billboard = true).copy(followOwner = true)
             return out
         }
+        if (e.sceneId == CoreWarriorRules.AWAKEN && e.phase == CoreSkillVisualPhase.PULSE && e.pulse >= CoreWarriorRules.AWAKEN_CLING_PULSE) {
+            // While it lasts the beast is worn (Creator 2026-10-24: 「自分に纏う感じ」): smoke wells up from the surface of
+            // the body (shoulders, back and arms most), streams up and a little back off it, and is left behind as the warrior
+            // moves; red scale-dust rises off the body now and then.
+            val n = e.pulse
+            for (k in 0 until 5) {
+                val h = { m: Int -> hash(n, k, m) }
+                val pick = h(401)
+                // the body's boxes in blocks: (centre x, y, z), (half x, y, z), front is +z
+                val (c, half) = when {
+                    pick < .16 -> Vec(if (h(402) < .5) -.12 else .12, .37, 0.0) to Vec(.12, .37, .12)
+                    pick < .5 -> Vec(0.0, 1.1, 0.0) to Vec(.24, .36, .13)
+                    pick < .66 -> Vec(-.36, 1.1, .05) to Vec(.11, .36, .11)
+                    pick < .82 -> Vec(.36, 1.1, .05) to Vec(.11, .36, .11)
+                    else -> Vec(0.0, 1.62, 0.0) to Vec(.24, .24, .24)
+                }
+                val side = (h(403) * 4).toInt()
+                val x = c.x() + when (side) { 0 -> half.x(); 1 -> -half.x(); else -> (h(404) * 2 - 1) * half.x() }
+                val z = c.z() + when (side) { 2 -> half.z(); 3 -> -half.z(); else -> (h(405) * 2 - 1) * half.z() }
+                val y = c.y() + (h(406) * 2 - 1) * half.y()
+                out += part("bsmoke", local(x, y, z), .4, 0.0, 10 + (h(407) * 8).toInt(), ground = false, billboard = true,
+                    roll = h(408) * 6.0).copy(travel = local(x * .5, .8, -.35))
+            }
+            if (n % 2 == 0) out += part("scale${(hash(n, 409) * 100).toInt()}", local((hash(n, 410) - .5) * .6, .9 + .9 * hash(n, 411),
+                (hash(n, 412) - .5) * .3), .09, 0.0, 26, ground = false, billboard = true)
+            return out
+        }
         if (e.sceneId == CoreWarriorRules.AWAKEN && e.phase == CoreSkillVisualPhase.PULSE) {
             // 獣の目覚め: the beast roars. No stomp: the breath throws dust out flat along the ground all round and
             // shakes loose earth up off it; nothing climbs the body (that is the armor's).
@@ -148,6 +176,9 @@ internal object CoreWarriorRefChoreography {
                 out += part("clod${120 + k}", Vec(sin(a) * 1.4, .2, cos(a) * 1.4), .25 + .15 * hash(k, 234), a, 18, ground = false,
                     delay = 2 + k % 2).copy(startSize = .9)
             }
+            // The warrior's eyes burn red for the whole of it, on the face whichever way it turns.
+            for (s in listOf(-1, 1))
+                out += part("beye", local(s * .09, 1.62, .27), .12, 0.0, e.skill.duration, ground = false, billboard = true).copy(followOwner = true)
             return out
         }
         if (e.sceneId == CoreWarriorRules.SHATTER && e.phase == CoreSkillVisualPhase.PREPARE) {
@@ -471,6 +502,12 @@ internal object CoreWarriorRefChoreography {
             name == "bsplat" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/bsplat_${(tick * 5 / p.durationTicks).coerceAtMost(4)}", live)
             name == "bmist" -> CoreMeshPose(p.offset, p.scale.mul(1.0 + tick * .08), 0.0, 0.0, p.roll,
                 "$DIR/bmist_${(tick * 5 / p.durationTicks).coerceAtMost(4)}", live)
+            name == "bsmoke" -> {
+                val u = t.coerceAtLeast(0.0) / p.durationTicks
+                CoreMeshPose(p.offset.add(p.travel.mul(u)), p.scale.mul(1.0 + 1.4 * u), 0.0, 0.0, p.roll,
+                    "$DIR/bsmoke_${(u * 5).toInt().coerceAtMost(4)}", live)
+            }
+            name == "beye" -> CoreMeshPose(p.offset, p.scale.mul(if ((t.toInt() / 3) % 7 == 0) .7 else 1.0), 0.0, 0.0, 0.0, "$DIR/ember_0", live)
             name == "rhalo" -> {
                 val ph = (t.coerceAtLeast(0.0) % 20) / 20
                 val beat = max(exp(-ph * 12), if (ph > .17) .55 * exp(-(ph - .17) * 12) else 0.0)

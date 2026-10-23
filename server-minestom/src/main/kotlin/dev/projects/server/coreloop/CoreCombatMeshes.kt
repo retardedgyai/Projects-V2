@@ -165,8 +165,12 @@ internal class CoreCombatMeshes(private val owner: Player) {
             // A camera-facing sprite turns its translation with the camera, so one that travels (or follows its
             // owner) is carried by moving the entity itself.
             if(moves(p) && v.age>=0) {
-                val follow=if(p.followOwner) owner.position.sub(v.ownerStart).asVec() else Vec.ZERO
-                val to=v.anchor.add(at.sub(p.offset)).add(follow)
+                val to=if(p.followOwner) {
+                    // Carried round with its owner: the pose offset is from the owner's feet, turned as the owner turns.
+                    val start=v.anchor.sub(p.offset)
+                    val turned=Vec(cos(facing)*at.x()+sin(facing)*at.z(),at.y(),-sin(facing)*at.x()+cos(facing)*at.z())
+                    start.add(owner.position.sub(v.ownerStart)).add(turned)
+                } else v.anchor.add(at.sub(p.offset))
                 if(to.distanceSquared(v.entity.position)>1e-6) v.entity.teleport(Pos(to.x(),to.y(),to.z()))
             }
             // Let the final zero-width target finish. Restarting its interpolation

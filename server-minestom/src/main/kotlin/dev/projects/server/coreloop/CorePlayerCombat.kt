@@ -318,6 +318,12 @@ internal class CorePlayerCombat(
                     pulse = CoreWarriorRules.ARMOR_BEAT_PULSE + (tickNumber / 20 % 97).toInt()))
             }
         }
+        if (awakened && tickNumber % 2 == 0L) {
+            // 獣の目覚め: the beast is worn: smoke clings to the body and streams off it the whole time.
+            skillDefinitions.firstOrNull { it.icon == CoreWarriorRules.AWAKEN }?.let { d ->
+                vfx.playSkill(CoreSkillEffect(classId, d, player.position, flatFacing(), pulse = CoreWarriorRules.AWAKEN_CLING_PULSE + (tickNumber / 2 % 97).toInt()))
+            }
+        }
         visualContactsThisTick = 0
         classState.tick(tickNumber)
         previousPosition?.let { if (it.distance(player.position) > .035) classState.stationarySince = tickNumber }

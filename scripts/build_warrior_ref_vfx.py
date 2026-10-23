@@ -248,6 +248,60 @@ def scale_dust_texture(stage):
     return img
 
 
+# 獣の目覚め: the beast's afterimage, the warrior's own shape left behind in black smoke with a red edge, the eyes
+# burning; it breaks up in steps (stage 0 whole .. 4 nearly gone).
+def ghost_texture(stage):
+    img = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(32):
+        for x in range(24):
+            edge = min(x, 23 - x, y, 31 - y)
+            n = _h(x // 3, y // 3, 61, 3) * .55 + _h(x // 2, y // 2, 62) * .3 + _h(x, y, 64) * .15
+            # Smoke: near-black with dark red folds, lighter where it billows; the edge only catches red in places.
+            tone = n - .2 * (y / 31)
+            c = (int(18 + 40 * tone), int(8 + 10 * tone), int(12 + 12 * tone))
+            if tone > .62: c = (int(70 + 60 * (tone - .62)), 10, 14)
+            if edge == 0 and _h(x // 2, y // 3, 65) > .45: c = (190, 28, 24) if n > .5 else (130, 16, 16)
+            # The outline frays: near the edge, pixels drop out so the box shape breaks up like smoke.
+            if edge <= 3 and _h(x, y // 2, 66) < (.75, .55, .35, .18)[edge]: continue
+            px[x, y] = c + (255,)
+    for y in range(4):            # the eye: a hot slit
+        for x in range(26, 32):
+            px[x, y] = ((255, 190, 150) if y == 1 and 27 <= x <= 30 else (250, 50, 36)) + (255,)
+    # It is coming apart even when whole: holes stretched upward, as if the smoke were rising out of it.
+    body = img.crop((0, 0, 24, 32))
+    bpx = body.load()
+    gone = (.22, .38, .55, .7, .85)[stage]
+    for y in range(32):
+        for x in range(24):
+            if _h(x // 2, (y + x % 3) // 5, 67) * .7 + _h(x, y, 68) * .3 < gone: bpx[x, y] = (0, 0, 0, 0)
+    img.paste(Image.new('RGBA', (24, 32), (0, 0, 0, 0)), (0, 0)); img.paste(body, (0, 0))
+    if stage >= 3:
+        for y in range(4):
+            for x in range(26, 32): px[x, y] = (0, 0, 0, 0) if stage == 4 else (120, 14, 16, 255)
+    return img
+
+
+def beast_smoke_texture(stage):
+    """The smoke off the beast: dark crimson-grey, lit at the top edge so it reads against the dark."""
+    return dust_puff(stage, 23, ((62, 34, 40), (34, 18, 24), (118, 66, 70)))
+
+
+def ghost_model(tex):
+    """The warrior's standing shape (a player at .9 scale: 16 units = 1 block), every face the smoke texture."""
+    k = .9
+    def part(lo, hi):
+        lo = [8 + (lo[0] - 8) * k, lo[1] * k, 8 + (lo[2] - 8) * k]; hi = [8 + (hi[0] - 8) * k, hi[1] * k, 8 + (hi[2] - 8) * k]
+        side = [0, 0, 12, 16]
+        return {'from': lo, 'to': hi, 'shade': False, 'faces': {f: face(side) for f in ('north', 'south', 'east', 'west', 'up', 'down')}}
+    els = [part((4, 0, 6), (8, 12, 10)), part((8, 0, 6), (12, 12, 10)), part((4, 12, 6), (12, 24, 10)),
+           part((0, 12, 6), (4, 24, 10)), part((12, 12, 6), (16, 24, 10)), part((4, 24, 4), (12, 32, 12))]
+    for x0 in (5.0, 9.0):   # the eyes, just proud of the face (front is +z here: the display faces the way it is turned)
+        els.append({'from': [8 + (x0 - 8) * k, 28.2 * k, 8 + 4.05 * k], 'to': [8 + (x0 + 2 - 8) * k, 29.0 * k, 8 + 4.1 * k], 'shade': False,
+                    'faces': {'south': face([13, 0, 16, 2]), 'north': face([13, 0, 16, 2])}})
+    return {'ambientocclusion': False, 'textures': {'0': tex, 'particle': tex}, 'elements': els}
+
+
 def crack_texture(stage):
     img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -1018,6 +1072,9 @@ def build(assets, write):
         model(f'bsplat_{s}', ground_model(texture(f'bsplat_{s}', blood_splat_texture(s))))
         model(f'bmist_{s}', centred_model(texture(f'bmist_{s}', blood_mist_texture(s))))
     model('rhalo', centred_model(texture('rhalo', red_halo_texture())))
+    for st in range(5):
+        model(f'ghost_{st}', ghost_model(texture(f'ghost_{st}', ghost_texture(st))))
+        model(f'bsmoke_{st}', centred_model(texture(f'bsmoke_{st}', beast_smoke_texture(st))))
     for s in range(4):
         model(f'scale_{s}', centred_model(texture(f'scale_{s}', scale_dust_texture(s))))
     model('plate', plate_model(texture('plate', plate_texture())))

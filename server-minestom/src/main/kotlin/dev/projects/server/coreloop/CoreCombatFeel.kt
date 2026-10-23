@@ -71,6 +71,8 @@ internal object CoreWarriorRules {
     /** 狂戦士の甲冑's look while it lasts: blood running off the body every few ticks, a spray on each heartbeat. */
     const val ARMOR_BLEED_PULSE = 100
     const val ARMOR_BEAT_PULSE = 300
+    /** 獣の目覚め's look while it lasts: smoke clinging to the body, pulse numbers from here (one every 2 ticks). */
+    const val AWAKEN_CLING_PULSE = 100
     /** 引き摺り: how long the blade is dragged, how fast the warrior walks meanwhile, how far the hook reaches. */
     const val DRAG_TICKS = 40
     const val DRAG_SPEED = .8
