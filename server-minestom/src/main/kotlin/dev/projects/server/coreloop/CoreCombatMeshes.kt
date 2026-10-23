@@ -32,7 +32,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
     private data class Live(val entity: Entity,val instance: Instance,val part: CoreCombatMeshPart,
         val ownerStart: Pos,val baseYaw: Double,var age: Int=-2,var model: String="",val cancelled: AtomicBoolean=AtomicBoolean(),
         var lastUpdateNanos: Long=0,var maxUpdateGapNanos: Long=0,var updateCount: Int=0,var tint: Int?=null,
-        var ground: Material=Material.DIRT)
+        var ground: Material=Material.DIRT,var anchor: Pos=Pos.ZERO)
     private val live=mutableListOf<Live>()
     internal val size get()=live.size
 
@@ -83,6 +83,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 meta.setItemStack(stack(record.model,initial.tint,record.ground))
                 meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
                 if(part.billboard) meta.setBillboardRenderConstraints(net.minestom.server.entity.metadata.display.AbstractDisplayMeta.BillboardConstraints.CENTER)
+                if(moves(part)) meta.setPosRotInterpolationDuration(1)
                 meta.setBrightness(15,15);meta.setViewRange(1.0f)
                 meta.setTransformationInterpolationDuration(interpolationTicks(part))
                 // Authored warrior contours start at their real phase, not a hidden extra
@@ -97,6 +98,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 meta.setRightRotation(CoreCombatMeshArt.vanillaItemCorrection)
             }
             val spawnAt=if(part.billboard) effect.origin.add(part.offset) else effect.origin
+            record.anchor=Pos(spawnAt.x(),spawnAt.y(),spawnAt.z())
             entity.setInstance(instance,Pos(spawnAt.x(),spawnAt.y(),spawnAt.z())).whenComplete { _,failure ->
                 if(failure!=null || record.cancelled.get() || entity.isRemoved || owner.instance!==instance) entity.remove()
                 else if(immediateContour && CoreCombatPresentation.packed(owner) &&
@@ -158,8 +160,15 @@ internal class CoreCombatMeshes(private val owner: Player) {
             val pose=CoreSkillChoreography.pose(p,v.age.toDouble())
             val facing=if(p.followOwner) atan2(owner.position.direction().x(),owner.position.direction().z())-v.baseYaw else 0.0
             val at=pose.offset
-            val offset=if(p.followOwner) Vec(cos(facing)*at.x()+sin(facing)*at.z(),at.y(),-sin(facing)*at.x()+cos(facing)*at.z())
-                .add(owner.position.sub(v.ownerStart).asVec()) else if(p.billboard) Vec.ZERO else at
+            val offset=if(p.billboard) Vec.ZERO else if(p.followOwner) Vec(cos(facing)*at.x()+sin(facing)*at.z(),at.y(),-sin(facing)*at.x()+cos(facing)*at.z())
+                .add(owner.position.sub(v.ownerStart).asVec()) else at
+            // A camera-facing sprite turns its translation with the camera, so one that travels (or follows its
+            // owner) is carried by moving the entity itself.
+            if(moves(p) && v.age>=0) {
+                val follow=if(p.followOwner) owner.position.sub(v.ownerStart).asVec() else Vec.ZERO
+                val to=v.anchor.add(at.sub(p.offset)).add(follow)
+                if(to.distanceSquared(v.entity.position)>1e-6) v.entity.teleport(Pos(to.x(),to.y(),to.z()))
+            }
             // Let the final zero-width target finish. Restarting its interpolation
             // during drain ticks or removing at the authored endpoint cuts off the fade.
             // Planted plates are static: send only opening/warning/breakup phase changes.
@@ -192,6 +201,8 @@ internal class CoreCombatMeshes(private val owner: Player) {
             v.age++
         }
     }
+
+    private fun moves(p: CoreCombatMeshPart)=p.billboard && (p.followOwner || CoreWarriorRefChoreography.drifts(p))
 
     // Dodge cancels the current cast, while an already planted garden remains.
     fun cancel(preserveGarden: Boolean = false) {

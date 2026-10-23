@@ -14,6 +14,7 @@ Flat tones only, no gradients: dark rim, red, cream, white core; four irons.
 """
 import json
 import math
+import random
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -111,6 +112,140 @@ CRACKS = [[(32, 32), (40, 26), (44, 17), (51, 13), (55, 4)], [(32, 32), (41, 35)
           [(32, 32), (25, 25), (27, 16), (20, 11), (17, 1)], [(32, 32), (21, 29), (11, 27), (2, 19)]]
 FORKS = [[(44, 17), (48, 23)], [(49, 32), (52, 25)], [(33, 49), (28, 53)], [(18, 36), (16, 29)], [(27, 16), (33, 12)],
          [(11, 27), (8, 33)], [(57, 37), (59, 44)], [(12, 44), (13, 51)]]
+
+
+# 狂戦士の甲冑 (warrior ultimate): what burns off the body while it lasts. Black flame with a red rim and a red
+# heart, the same tongue as flame_texture; and red embers drifting up off it.
+BLACK_FLAME = {K: (70, 10, 10), R: (24, 16, 18), C: (40, 22, 24), W: (170, 28, 22), D: (52, 12, 12)}
+
+
+def black_flame_texture(stage):
+    img = flame_texture(stage)
+    px = img.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            if a: px[x, y] = BLACK_FLAME.get((r, g, b), (24, 16, 18)) + (a,)
+    return img
+
+
+def ember_texture(stage):
+    """A red ember: a hot two-pixel core, a dim halo that thins out as it cools."""
+    img = Image.new('RGBA', (8, 8), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    core = [(255, 120, 60), (230, 50, 30), (150, 24, 20)][stage]
+    d.rectangle((2, 2, 5, 5), fill=(120, 16, 14, (150, 100, 60)[stage]))
+    d.rectangle((3, 3, 4, 4), fill=core + (255,))
+    return img
+
+
+# Blood, in the hand-drawn pixel style of the other skill sprites, but never a flat fill: every shape is shaded
+# by height (a lit top-left, a deep bottom-right), wet highlights, a darker rim, and texture inside.
+BLOOD = [(26, 2, 6), (58, 4, 10), (96, 8, 14), (140, 14, 20), (184, 26, 30), (222, 56, 50), (250, 140, 120)]
+
+
+def _blood_at(level):
+    return BLOOD[max(0, min(len(BLOOD) - 1, int(level)))]
+
+
+def _shade_blob(img, mask, cx, cy, r, seed, wet=True):
+    """Fill a mask as a domed wet blob: tone from a light over the top-left, a noisy inside, a dark rim."""
+    px = img.load()
+    rng = random.Random(seed)
+    jitter = {(x, y): rng.random() for x in range(img.width) for y in range(img.height)}
+    for (x, y) in mask:
+        dx, dy = (x - cx) / max(r, 1), (y - cy) / max(r, 1)
+        d = math.hypot(dx, dy)
+        lit = .5 - .45 * (dx + dy) / 1.4                      # light from the top-left
+        edge = min(1.0, d)
+        level = 1.9 + 3.6 * lit * (1 - .4 * edge) + (jitter[x, y] - .5) * 1.1
+        rim = not all((x + ox, y + oy) in mask for ox, oy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+        if rim: level = min(level, 1.2) - .5
+        px[x, y] = _blood_at(level) + (255,)
+    if wet:   # a couple of hard wet glints top-left of centre
+        for gx, gy in ((cx - r * .35, cy - r * .4), (cx - r * .15, cy - r * .5)):
+            gx, gy = int(round(gx)), int(round(gy))
+            if (gx, gy) in mask: px[gx, gy] = BLOOD[6] + (255,)
+
+
+def blood_drop_texture(stage):
+    """A falling drop, stretched while it falls (0, 1) and round as it lands (2)."""
+    img = Image.new('RGBA', (10, 14), (0, 0, 0, 0))
+    if stage < 2:
+        mask = {(x, y) for x in range(10) for y in range(14)
+                if (y >= 6 and math.hypot(x - 4.5, y - 9.5) <= 3.4) or (y < 7 and abs(x - 4.5) <= (y + 1) * .42)}
+        _shade_blob(img, mask, 4.5, 9.0, 4, 3 + stage)
+    else:
+        mask = {(x, y) for x in range(10) for y in range(14) if math.hypot((x - 4.5) / 1.2, y - 9) <= 3.2}
+        _shade_blob(img, mask, 4.5, 9, 4, 5)
+    return img
+
+
+def blood_splat_texture(stage):
+    """A splash on the ground seen from above: spreads (0..2), then darkens and soaks away (3, 4)."""
+    img = Image.new('RGBA', (40, 40), (0, 0, 0, 0))
+    rng = random.Random(41)
+    r = (6, 10, 12, 12, 12)[stage]
+    blobs = [(20, 20, r)] + [(20 + math.cos(a) * r * rng.uniform(1.05, 1.5), 20 + math.sin(a) * r * rng.uniform(1.05, 1.5),
+                             rng.uniform(1.2, 3.2) * r / 12) for a in (rng.uniform(0, 6.28) for _ in range(11))]
+    mask = {(x, y) for x in range(40) for y in range(40)
+            if any(math.hypot(x - bx, y - by) <= br + (1 if (bx, by) == (20, 20) else 0) * math.sin(math.atan2(y - by, x - bx) * 5) * .9
+                   for bx, by, br in blobs)}
+    _shade_blob(img, mask, 20, 20, r, 9, wet=stage < 3)
+    if stage >= 3:   # drying: darker, and soaking away into specks
+        px = img.load()
+        for (x, y) in mask:
+            c = px[x, y]
+            px[x, y] = (c[0] * 6 // 10, c[1] * 6 // 10, c[2] * 6 // 10, c[3])
+        img = dissolve(img, .3 if stage == 3 else .65, 13)
+    return img
+
+
+def blood_mist_texture(stage):
+    """A puff of blood spray: a lumpy cloud, five tones, thinning out."""
+    img = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+    px = img.load()
+    rad = (7, 10, 12, 13, 14)[stage]
+    for y in range(32):
+        for x in range(32):
+            lump = 2.5 * math.sin(math.atan2(y - 16, x - 16) * 5 + 11) + 1.5 * _h(x // 3, y // 3, 11)
+            d = math.hypot(x - 16, y - 16)
+            if d > rad + lump: continue
+            v = _h(x // 2, y // 2, 11, 4)
+            lit = .5 - ((x - 16) + (y - 16)) / (rad * 2.8)
+            level = 1.5 + 3.0 * lit + (v - .5) * 1.6 - 1.5 * d / (rad + 3)
+            px[x, y] = _blood_at(level) + ((200, 180, 150, 110, 70)[stage],)
+    return dissolve(img, (0, 0, .15, .4, .65)[stage], 20) if stage > 1 else img
+
+
+def red_halo_texture():
+    """The faint light round the body: soft and dithered (no flat rings), see-through."""
+    img = Image.new('RGBA', (48, 48), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(48):
+        for x in range(48):
+            r = math.hypot(x - 23.5, y - 23.5) / 24
+            if r >= 1: continue
+            a = (1 - r) ** 1.6 * 64 + (_h(x, y, 31) - .5) * 14
+            if a > 4: px[x, y] = (230, 36, 28, int(max(0, min(70, a))))
+    return img
+
+
+def scale_dust_texture(stage):
+    """A mote of red scale-dust: a tiny diamond flake that turns as it rises, so it glints and goes dark.
+    0 = flat to the eye, brightest; 1 = edge-on, a thin line; 2 = turned away, dark; 3 = turning back."""
+    img = Image.new('RGBA', (8, 8), (0, 0, 0, 0))
+    px = img.load()
+    w = (3, 1, 2, 2)[stage]
+    for y in range(8):
+        for x in range(8):
+            d = abs(x - 3.5) / max(w, .6) + abs(y - 3.5) / 3.4
+            if d > 1: continue
+            level = (6.4, 5.6, 3.4, 4.8)[stage] - 1.6 * d + (.5 if x < 4 and y < 4 else -.3)
+            px[x, y] = _blood_at(level) + (255,)
+    if stage == 0:
+        px[3, 2] = (255, 220, 200, 255)
+    return img
 
 
 def crack_texture(stage):
@@ -875,6 +1010,16 @@ def build(assets, write):
         model(f'fang_{n}', fang_model(texture(f'fang_{n}', dissolve(fang, amount, 3) if amount else fang)))
     for s in range(4):
         model(f'flame_{s}', board_model(texture(f'flame_{s}', glow(flame_texture(s)))))
+        model(f'bflame_{s}', centred_model(texture(f'bflame_{s}', black_flame_texture(s))))
+    for s in range(3):
+        model(f'ember_{s}', centred_model(texture(f'ember_{s}', ember_texture(s))))
+        model(f'bdrop_{s}', centred_model(texture(f'bdrop_{s}', blood_drop_texture(s))))
+    for s in range(5):
+        model(f'bsplat_{s}', ground_model(texture(f'bsplat_{s}', blood_splat_texture(s))))
+        model(f'bmist_{s}', centred_model(texture(f'bmist_{s}', blood_mist_texture(s))))
+    model('rhalo', centred_model(texture('rhalo', red_halo_texture())))
+    for s in range(4):
+        model(f'scale_{s}', centred_model(texture(f'scale_{s}', scale_dust_texture(s))))
     model('plate', plate_model(texture('plate', plate_texture())))
     for st in range(4):
         model(f'ray_{st}', board_model(texture(f'ray_{st}', glow(ray_texture(st))), height=16))

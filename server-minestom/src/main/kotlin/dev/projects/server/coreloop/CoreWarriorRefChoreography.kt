@@ -24,6 +24,8 @@ internal object CoreWarriorRefChoreography {
         CoreWarriorRules.DRAG, CoreWarriorRules.FULL_SWING, CoreWarriorRules.ARMOR, CoreWarriorRules.AWAKEN)
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
+    /** Camera-facing pieces whose pose moves them (the meshes carry these by moving the entity). */
+    fun drifts(p: CoreCombatMeshPart) = owns(p) && p.shape.removePrefix(PREFIX).let { it == "bdrop" || it == "bfling" || it.startsWith("scale") }
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
         (e.phase == CoreSkillVisualPhase.PULSE && e.sceneId in sceneIds || e.sceneId in ownedIds)
 
@@ -85,24 +87,52 @@ internal object CoreWarriorRefChoreography {
             }
             return out
         }
+        if (e.sceneId == CoreWarriorRules.ARMOR && e.phase == CoreSkillVisualPhase.PULSE && e.pulse >= CoreWarriorRules.ARMOR_BEAT_PULSE) {
+            // The heartbeat: blood sprays out of the body all round, drops flung out land in a ring of splats.
+            val n = e.pulse
+            for (k in 0 until 6) {
+                val a = 2 * PI * k / 6 + hash(n, k, 301) * .6
+                out += part("bmist", Vec(sin(a) * .4, .9 + .5 * hash(n, k, 302), cos(a) * .3), .5 + .2 * hash(n, k, 303), 0.0, 8,
+                    ground = false, billboard = true, roll = hash(n, k, 304) * 6.0)
+            }
+            for (k in 0 until 8) {
+                val a = 2 * PI * k / 8 + hash(n, k, 305) * .5
+                val y0 = .9 + .6 * hash(n, k, 306); val speed = 2.2 + hash(n, k, 307)
+                val flight = ((1.2 + sqrt(1.44 + 2 * 9.8 * y0)) / 9.8 * 20).toInt()     // ticks until it lands
+                out += part("bfling", Vec(sin(a) * .25, y0, cos(a) * .25), .16, a, flight, ground = false, billboard = true)
+                    .copy(travel = Vec(sin(a) * speed, 0.0, cos(a) * speed))
+                val reach = .25 + speed * flight / 20.0
+                out += part("bsplat", Vec(sin(a) * reach, .03, cos(a) * reach), .4 + .2 * hash(n, k, 308), a, 60, delay = flight)
+            }
+            return out
+        }
+        if (e.sceneId == CoreWarriorRules.ARMOR && e.phase == CoreSkillVisualPhase.PULSE && e.pulse >= CoreWarriorRules.ARMOR_BLEED_PULSE) {
+            // While it lasts: a drop of blood lets go of the body and falls to a splat that spreads, darkens and soaks
+            // away; red scale-dust rises off the body, turning as it goes so it glints.
+            val n = e.pulse
+            val a = hash(n, 311) * 2 * PI; val y0 = .5 + hash(n, 312)
+            val r = if (y0 > .75) .32 else .18
+            val at = Vec(cos(a) * r, y0, sin(a) * r * .6)
+            val fall = (sqrt(2 * y0 / 9.8) * 20).toInt().coerceAtLeast(2)
+            out += part("bdrop", at, .24, 0.0, fall, ground = false, billboard = true)
+            out += part("bsplat", Vec(at.x() * 1.3, .03, at.z() * 1.3), .45 + .25 * hash(n, 313), a, 40, delay = fall)
+            for (k in 0 until 2) {
+                val b = hash(n, k, 314) * 2 * PI
+                out += part("scale${(hash(n, k, 315) * 100).toInt()}", Vec(cos(b) * (.15 + .3 * hash(n, k, 316)), .5 + .3 * hash(n, k, 317),
+                    sin(b) * (.1 + .2 * hash(n, k, 318))), .1, 0.0, 34 + (hash(n, k, 319) * 16).toInt(), ground = false, billboard = true)
+            }
+            return out
+        }
         if (e.sceneId == CoreWarriorRules.ARMOR && e.phase == CoreSkillVisualPhase.PULSE) {
-            // 狂戦士の甲冑: a stomp that splits the ground round the feet, and black smoke climbing the body from the
-            // feet to the head as the armor closes over it (the swap to the black armor lands with it).
-            for (k in 0 until 6) {
-                val a = yaw + k * PI / 3 + (hash(k, 221) - .5) * .7
-                val len = 2.6 * (.7 + .3 * hash(k, 222))
-                out += part("furrow", Vec(sin(a) * len / 2, .12, cos(a) * len / 2), 1.0, a, 30).copy(scale = Vec(len, 1.0, len))
-            }
-            for (k in 0 until 6) {
-                val a = yaw + k * PI / 3 + hash(k, 223)
-                out += part("clod${120 + k}", Vec(sin(a) * .7, .2, cos(a) * .7), .3 + .2 * hash(k, 224), a, 20, ground = false,
-                    delay = k / 3).copy(startSize = 1.1)
-            }
+            // 狂戦士の甲冑: black smoke climbing the body from the feet to the head (no cracks in the ground: Creator
+            // 2026-10-24); a faint red light round the body stays with it for the whole ten seconds.
             for (k in 0 until 8) {
                 val a = yaw + k * 2.4; val r = .6 + .15 * hash(k, 226)
                 out += part("smoke", Vec(sin(a) * r, .1 + .26 * k, cos(a) * r), 1.5 - .06 * k, 0.0, 16, ground = false,
                     delay = k, billboard = true, roll = hash(k, 225) * 6.0)
             }
+            for ((y, size) in listOf(1.0 to 2.1, 1.25 to 1.35))
+                out += part("rhalo", Vec(0.0, y, 0.0), size, 0.0, e.skill.duration, ground = false, billboard = true).copy(followOwner = true)
             return out
         }
         if (e.sceneId == CoreWarriorRules.AWAKEN && e.phase == CoreSkillVisualPhase.PULSE) {
@@ -430,6 +460,30 @@ internal object CoreWarriorRefChoreography {
             }
             name == "smoke" -> CoreMeshPose(p.offset.add(0.0, t.coerceAtLeast(0.0) * .05, 0.0), p.scale.mul(1.0 + tick * .04),
                 0.0, 0.0, p.roll, "$DIR/smoke_${(tick * 5 / p.durationTicks).coerceAtMost(4)}", live)
+            // 狂戦士の甲冑's blood. The drop falls under gravity; the flung drop flies out along its travel and falls;
+            // the splat spreads, darkens, soaks away; the mist puffs; the light round the body beats once a second.
+            name == "bdrop" -> CoreMeshPose(p.offset.add(0.0, -.5 * 9.8 * (t.coerceAtLeast(0.0) / 20).pow(2), 0.0), p.scale, 0.0, 0.0, 0.0,
+                "$DIR/bdrop_${if (tick < p.durationTicks * .6) 0 else 1}", live)
+            name == "bfling" -> {
+                val s = t.coerceAtLeast(0.0) / 20
+                CoreMeshPose(p.offset.add(p.travel.mul(s)).add(0.0, 1.2 * s - .5 * 9.8 * s * s, 0.0), p.scale, 0.0, 0.0, p.yaw, "$DIR/bdrop_0", live)
+            }
+            name == "bsplat" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/bsplat_${(tick * 5 / p.durationTicks).coerceAtMost(4)}", live)
+            name == "bmist" -> CoreMeshPose(p.offset, p.scale.mul(1.0 + tick * .08), 0.0, 0.0, p.roll,
+                "$DIR/bmist_${(tick * 5 / p.durationTicks).coerceAtMost(4)}", live)
+            name == "rhalo" -> {
+                val ph = (t.coerceAtLeast(0.0) % 20) / 20
+                val beat = max(exp(-ph * 12), if (ph > .17) .55 * exp(-(ph - .17) * 12) else 0.0)
+                CoreMeshPose(p.offset, p.scale.mul(.9 + .3 * beat), 0.0, 0.0, 0.0, "$DIR/rhalo", live)
+            }
+            name.startsWith("scale") -> {
+                // Red scale-dust: rises and sways, turning (four stages) so it glints and goes dark in turn.
+                val k = name.removePrefix("scale").toInt()
+                val u = t.coerceAtLeast(0.0) / p.durationTicks
+                val sway = sin(t * .18 + k) * .16 * (.4 + u)
+                CoreMeshPose(p.offset.add(sway, u * 2.1, cos(t * .15 + k * .5) * .1), p.scale.mul(1 - u * .5), 0.0, 0.0, 0.0,
+                    "$DIR/scale_${((t * .5).toInt() + k) % 4}", live)
+            }
             name.startsWith("dust") -> CoreMeshPose(p.offset.add(0.0, t.coerceAtLeast(0.0) * .02, 0.0), p.scale.mul(1.0 + tick * .05),
                 0.0, 0.0, p.roll, "$DIR/dust_${(tick * 5 / p.durationTicks).coerceAtMost(4)}", live)
             name.startsWith("fing") -> {

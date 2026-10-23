@@ -309,6 +309,14 @@ internal class CorePlayerCombat(
             if (tickNumber % 10 == 0L && health > 1.0) {
                 health = (health - maxHealth * CoreWarriorRules.ARMOR_BURN_PERCENT_PER_SECOND / 200.0).coerceAtLeast(1.0); syncVanillaHealth()
             }
+            // The look: blood runs off the body and red scale-dust rises (every 4 ticks), and on each heartbeat
+            // (once a second, with the burn) blood sprays out of the body.
+            skillDefinitions.firstOrNull { it.icon == CoreWarriorRules.ARMOR }?.let { d ->
+                if (tickNumber % 4 == 0L) vfx.playSkill(CoreSkillEffect(classId, d, player.position, flatFacing(),
+                    pulse = CoreWarriorRules.ARMOR_BLEED_PULSE + (tickNumber / 4 % 97).toInt()))
+                if ((armorUntil - tickNumber) % 20 == 0L) vfx.playSkill(CoreSkillEffect(classId, d, player.position, flatFacing(),
+                    pulse = CoreWarriorRules.ARMOR_BEAT_PULSE + (tickNumber / 20 % 97).toInt()))
+            }
         }
         visualContactsThisTick = 0
         classState.tick(tickNumber)

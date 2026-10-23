@@ -193,7 +193,7 @@ object CoreSkillCatalog {
                 s("斬り上げ", "war_breach", "大剣を引きずって真上へ振り上げ、正面の敵を高く打ち上げる。ジャンプを押していれば自分も追って跳ぶ。打ち上げた敵に地割りを当てると叩き落とし。獣を溜める", CoreSkillMotion.CONE, 9.0, 1.8, mana=10, cd=180, startup=8, radius=3.4).cc(CrowdControl.AIRBORNE, 1200),
                 // Ultimates (Creator 2026-10-23): 全力の一振り, 狂戦士の甲冑 and 獣の目覚め. The warrior alone has three.
                 s("全力の一振り", "war_ult", "大剣を担いで溜め（押している間、最大2秒）、離すと真上から渾身の一振り。地面が前へ大きく割れ、線上を打ち上げる。溜め中は怯まない。獣を全部使う", CoreSkillMotion.CONE, 30.0, 4.0, mana=20, cd=1200, startup=10, gain=0, radius=12.0, ult=true).cc(CrowdControl.AIRBORNE, 1000),
-                s("狂戦士の甲冑", "war_banner", "10秒間、黒い甲冑が体を覆う。CCも怯みも効かず、動きと振りが速くなり、獣が満ちたまま減らない。代わりに体力が毎秒2%ずつ減る（1で止まる）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=20, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
+                s("狂戦士の甲冑", "war_banner", "10秒間、体から血が流れ、鼓動のたびに血しぶきが散る。CCも怯みも効かず、動きと振りが速くなり、獣が満ちたまま減らない。代わりに体力が毎秒2%ずつ減る（1で止まる）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=20, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
                 s("獣の目覚め", "war_awaken", "獣3つの時だけ使える。8秒間、獣が減らず、獣を使う技の再使用が半分になる", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=15, cd=1200, startup=2, gain=0, radius=0.0, duration=160, ult=true))
             CoreClass.MAGE -> listOf(
                 s("火炎弾", "firebolt", "火の術式を刻む。直前と違う属性なら獲得量増加", CoreSkillMotion.RAY, 8.0, 1.4, cd=60, startup=5, element=1),
