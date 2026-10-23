@@ -10,7 +10,7 @@ class CoreWarriorReworkTest {
 
     @Test fun `warrior skills sit in cooldown tiers and the beast gates nothing`() {
         val byIcon = warrior.filterNot { it.retired }.associateBy { it.icon }
-        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_breach", "war_ult"), byIcon.keys)
+        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult"), byIcon.keys)
         assertEquals(100, byIcon.getValue("dash").cooldown)
         assertTrue(listOf("slam", "whirl", "war_guard", "war_counter").all { byIcon.getValue(it).cooldown in 200..320 }, "spenders")
         assertTrue(byIcon.getValue("war_wound").cooldown in 160..240, "the leap moves")
@@ -20,9 +20,9 @@ class CoreWarriorReworkTest {
 
     @Test fun `retired entries keep catalog order and art but are never selectable`() {
         assertEquals(70, CoreSkillCatalog.artNames.size)
-        assertEquals(listOf(0, 1, 2, 3, 4, 5, 7), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
+        assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
         assertEquals(listOf(0), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
-        assertEquals(listOf("war_cry", "war_banner"), warrior.filter { it.retired }.map { it.icon })
+        assertEquals(listOf("war_banner"), warrior.filter { it.retired }.map { it.icon })
         for (job in CoreClass.entries) {
             assertEquals(CoreClassBuild(), CoreSkillCatalog.migrate(job, CoreClassBuild()), "$job default build stays valid")
             assertFalse(CoreSkillCatalog.selectable(job, 0, 8))
@@ -31,7 +31,7 @@ class CoreWarriorReworkTest {
     }
 
     @Test fun `migration replaces only retired picks and keeps slot order tree and ultimate when valid`() {
-        val old = CoreClassBuild(first = 6, second = 1, third = 2, fourth = 3, ultimate = 1, nodes = 1031)
+        val old = CoreClassBuild(first = 0, second = 1, third = 2, fourth = 3, ultimate = 1, nodes = 1031)
         val migrated = CoreSkillCatalog.migrate(CoreClass.WARRIOR, old)
         assertEquals(listOf(0, 1, 2, 3), migrated.skills); assertEquals(0, migrated.ultimate); assertEquals(1031, migrated.nodes)
         assertEquals(migrated, CoreSkillCatalog.migrate(CoreClass.WARRIOR, migrated))
@@ -39,7 +39,7 @@ class CoreWarriorReworkTest {
     }
 
     @Test fun `saved builds with retired skills load migrated through the codec and rewrite stably`() {
-        val legacyWarrior = CoreClassBuild(first = 6, second = 1, third = 2, fourth = 3, ultimate = 1)
+        val legacyWarrior = CoreClassBuild(first = 0, second = 1, third = 2, fourth = 3, ultimate = 1)
         val j = CoreJourney.legacy(build = legacyWarrior).changeClass(CoreClass.HEALER)
         val a = CoreAccount(UUID.randomUUID(), journey = j)
         val loaded = CoreAccountCodec.decode(CoreAccountCodec.encode(a), a.playerId)
@@ -57,7 +57,6 @@ class CoreWarriorReworkTest {
         val repo = CoreAccountRepository(dir)
         assertEquals(CoreRepositorySave.Saved, repo.commit(0, CoreAccount(id, revision = 1, journey = CoreJourney.legacy())))
         val service = CoreAccountService(repo); service.open(id)
-        assertEquals(CoreTransactionStatus.REJECTED, service.transact(id, CoreOperation(UUID.randomUUID(), 1, CoreAction.SelectSkill(0, 6))).status)
         assertEquals(CoreTransactionStatus.REJECTED, service.transact(id, CoreOperation(UUID.randomUUID(), 1, CoreAction.SelectSkill(4, 1))).status)
         val accepted = service.transact(id, CoreOperation(UUID.randomUUID(), 1, CoreAction.SelectSkill(0, 4)))
         assertEquals(CoreTransactionStatus.COMMITTED, accepted.status, accepted.message)

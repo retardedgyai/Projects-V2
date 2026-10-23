@@ -75,6 +75,8 @@ internal class CoreSkillEffect(
     internal val sceneId: String = skill.icon,
     internal val endpoint: CoreSkillEndpoint = CoreSkillEndpoint.NONE,
     internal val gardenCells: List<net.minestom.server.coordinate.Pos>? = null,
+    /** 引き摺り: the held weapon's item model, drawn dragged at the side while the real one is hidden. */
+    internal val weaponModel: String? = null,
 ) : ParticleEffect {
     internal var solidCompanion: Boolean = false
     internal val valid = listOf(origin.x(), origin.y(), origin.z(), direction.x(), direction.y(), direction.z(), skill.radius, rayLength).all(Double::isFinite)

@@ -143,7 +143,9 @@ internal class CorePlayerCombat(
         /** 跳び叩き / 天落とし: the tick the body was launched; the action lasts until it lands. */
         var leapTick: Long = -1L,
         /** 天落とし: where it landed and when; the rings go out from there (CoreWarriorRules.SKYFALL_RINGS). */
-        var landAt: Pos? = null, var landTick: Long = -1L)
+        var landAt: Pos? = null, var landTick: Long = -1L,
+        /** 引き摺り: when the drag began, and the regular enemies hooked on the blade so far. */
+        var dragTick: Long = -1L, val hooked: MutableSet<UUID> = mutableSetOf())
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
@@ -366,6 +368,35 @@ internal class CorePlayerCombat(
                 }
                 return@let
             }
+            if (action.dragTick >= 0) {
+                // 引き摺り: the blade drags at the warrior's side; what it touches is hooked and comes along.
+                val t = tickNumber - action.dragTick
+                val tip = dragTip()
+                for (target in enemies.combatTargets()) {
+                    if (target.id in action.hooked || enemies.isBoss(target.id)) continue
+                    val p = enemies.positionOf(target.id) ?: continue
+                    if (kotlin.math.hypot(p.x() - tip.x(), p.z() - tip.z()) <= CoreWarriorRules.DRAG_HOOK && abs(p.y() - tip.y()) < 2.0)
+                        action.hooked += target.id
+                }
+                action.hooked.removeIf { !enemies.isAlive(it) }
+                for (id in action.hooked) enemies.dragTo(id, tip)
+                if (t % 3 == 0L) vfx.playSkill(CoreSkillEffect(classId, action.definition, tip, flatFacing(), pulse = 1 + (t / 3).toInt()))
+                if (t >= CoreWarriorRules.DRAG_TICKS) {
+                    // The blade comes round and down in front: everything in front, and everything it dragged, is hit.
+                    action.dragTick = -1
+                    CoreArmamentPresentation.show(player)
+                    vfx.playSkill(CoreSkillEffect(classId, action.definition, player.position, flatFacing(), pulse = CoreWarriorRules.DRAG_FINISH_PULSE))
+                    hitThisStrike.clear()
+                    strike(enemies, player.position, flatFacing(), action.definition.radius, CoreCombatFeel.minDot(action.definition.icon), 1.0)
+                    if (!actionsValid(enemies, epoch)) return
+                    for (id in action.hooked.toList()) if (id !in hitThisStrike && enemies.isAlive(id)) {
+                        hit(enemies, id, 1.0, skill = true)
+                        if (!actionsValid(enemies, epoch)) return
+                    }
+                    pending = null
+                }
+                return@let
+            }
             if (action.landTick >= 0) {
                 // 天落とし: each ring goes out a little later than the one inside it.
                 val since = tickNumber - action.landTick
@@ -412,6 +443,7 @@ internal class CorePlayerCombat(
     private fun speedFactor(): Double {
         if (defeated || staggered || !crowd.canMove(tickNumber)) return 0.0
         val action = pending
+        if (action != null && action.dragTick >= 0) return CoreWarriorRules.DRAG_SPEED
         if (action != null && action.elapsed < action.startup)
             return if (action.startup >= HEAVY_STARTUP || action.definition.ultimate) 0.0 else CAST_SPEED
         // Swinging: the weapon's own slowdown (Better Combat manner, CoreWeaponCombat), else the general one.
@@ -522,6 +554,15 @@ internal class CorePlayerCombat(
         }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorLeap.ICON) { leap(action); return }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.SKYFALL) { leap(action, high = true); return }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.DRAG) {
+            // 引き摺り: the held sword is hidden and a dragged one drawn at the side for the whole walk.
+            val model = player.itemInMainHand.get(net.minestom.server.component.DataComponents.ITEM_MODEL)
+                ?.takeIf { it.startsWith("projects:weapons/") }?.removePrefix("projects:") ?: "weapons/greatsword_t1"
+            CoreArmamentPresentation.hide(player, CoreWarriorRules.DRAG_TICKS + 4)
+            action.dragTick = tickNumber
+            vfx.playSkill(CoreSkillEffect(classId, s, player.position, flatFacing(), pulse = 0, weaponModel = model))
+            return
+        }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.LAUNCHER) {
             // 斬り上げ: the blade comes up from the ground; who it throws up is marked for 叩き落とし. Holding jump sends
             // the warrior up after them (a push the client flies, as with the leaps).
@@ -869,6 +910,11 @@ internal class CorePlayerCombat(
         action.leapTick = tickNumber
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, .6f)
     }
+    /** 引き摺り: where the dragged blade's tip touches the ground, behind and to the right of the warrior. */
+    private fun dragTip(): Pos {
+        val f = flatFacing(); val right = Vec(-f.z(), 0.0, f.x())
+        return player.position.add(right.mul(.7)).sub(f.mul(1.5))
+    }
     /** 天落とし: ring [k] hits what stands between the ring inside it and its own radius, from the landing point. */
     private fun skyfallRing(enemies: QuestEncounterCombat, action: PendingSkill, k: Int) {
         val centre = action.landAt ?: return
@@ -1095,6 +1141,7 @@ internal class CorePlayerCombat(
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
         queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet()
+        CoreArmamentPresentation.show(player)
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         crowd.clear()
         evadeUntil = -1; dodgeQueuedUntil = -1; slide = null; staggerUntil = -1

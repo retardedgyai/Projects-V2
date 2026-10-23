@@ -15,8 +15,13 @@ internal object CoreWarriorRefChoreography {
     private const val DIR = "combat_vfx/warrior_ref"
     @Volatile var enabled = true
     private val sceneIds = setOf("slam", "war_wound")
+    /** 引き摺り: how the dragged greatsword is held (found against the preview: blade down and back, tip on the ground). */
+    private const val DRAG_SWORD_YAW = PI / 2
+    private const val DRAG_SWORD_PITCH = 0.0
+    private const val DRAG_SWORD_ROLL = -2.3
     /** 狂乱 / 天落とし / 大地崩し: every phase is drawn here (their ids still carry older choreographies elsewhere). */
-    private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER, CoreWarriorRules.LAUNCHER)
+    private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER, CoreWarriorRules.LAUNCHER,
+        CoreWarriorRules.DRAG)
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
@@ -95,6 +100,31 @@ internal object CoreWarriorRefChoreography {
         if (e.sceneId in ownedIds && e.phase != CoreSkillVisualPhase.PULSE) {
             // A hit landing on an enemy: a clod or two knocked off at its feet.
             for (k in 0 until 2) out += part("clod${90 + k}", Vec((k - .5) * .5, .2, 0.0), .3, yaw + k * 2.0, 14, ground = false).copy(startSize = .6)
+            return out
+        }
+        if (e.sceneId == CoreWarriorRules.DRAG) {
+            // 引き摺り (Creator 2026-10-23): the cause is the greatsword itself, held low at the right side with its tip
+            // on the ground behind (the held one is hidden meanwhile); behind the tip the ground is scored in a line
+            // that follows the walk; the drag ends with a cut coming down in front.
+            when {
+                e.pulse == 0 -> (e.weaponModel ?: "weapons/greatsword_t1").let { model ->
+                    out += part("dragsword:$model", local(-.6, .45, -.85), 1.7, yaw + DRAG_SWORD_YAW, CoreWarriorRules.DRAG_TICKS + 2, ground = false,
+                        pitch = DRAG_SWORD_PITCH, roll = DRAG_SWORD_ROLL).copy(followOwner = true)
+                }
+                e.pulse < CoreWarriorRules.DRAG_FINISH_PULSE -> {
+                    out += part("furrow", Vec(0.0, .12, 0.0), 1.0, yaw, 40).copy(scale = Vec(1.5, 1.0, 1.5))
+                    if (e.pulse % 2 == 0) out += part("clod${100 + e.pulse % 6}", Vec(0.0, .2, 0.0), .22 + .1 * hash(e.pulse, 201), yaw + hash(e.pulse, 202) * 6.0,
+                        12, ground = false).copy(startSize = .45)
+                }
+                else -> {
+                    out += trail(5.2, 8)
+                    out += trail(5.8, 7, delay = 1, shoulder = 1.55)
+                    val at = local(0.0, .25, 2.4)
+                    for (k in 0 until 6) out += part("clod${110 + k}", at.add((hash(k, 203) - .5) * .8, 0.0, (hash(k, 204) - .5) * .8), .3 + .2 * hash(k, 205),
+                        yaw + hash(k, 206) * 6.0, 20, ground = false, delay = 1 + k / 3).copy(startSize = 1.0)
+                    out += part("furrow", local(0.0, .12, 2.6), 1.0, yaw, 34).copy(scale = Vec(3.4, 1.0, 3.4))
+                }
+            }
             return out
         }
         if (e.sceneId == CoreWarriorRules.LAUNCHER) {
@@ -310,6 +340,7 @@ internal object CoreWarriorRefChoreography {
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
             name == "wind" -> CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll, "$DIR/wind_${tick.coerceAtMost(7)}", live)
+            name.startsWith("dragsword:") -> CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll, name.substringAfter("dragsword:"), live)
             name.startsWith("pebble") -> {
                 // 大地崩し's warning: a stone lifts off the ground and trembles there until the blow.
                 val lift = (t.coerceAtLeast(0.0) / 10.0).coerceAtMost(1.0) * .45

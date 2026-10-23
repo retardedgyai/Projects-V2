@@ -61,6 +61,13 @@ internal object CoreWarriorRules {
     const val SKYFALL = "war_guard"   // 天落とし
     const val SHATTER = "war_counter" // 大地崩し
     const val LAUNCHER = "war_breach" // 斬り上げ (builds)
+    const val DRAG = "war_cry"        // 引き摺り (builds)
+    /** 引き摺り: how long the blade is dragged, how fast the warrior walks meanwhile, how far the hook reaches. */
+    const val DRAG_TICKS = 40
+    const val DRAG_SPEED = .8
+    const val DRAG_HOOK = 1.5
+    /** The effect pulse that marks 引き摺り's final swing (the drag's own pulses count up from 1). */
+    const val DRAG_FINISH_PULSE = 99
     /** How long an enemy 斬り上げ threw up counts as in the air for 叩き落とし. */
     const val LAUNCHED_TICKS = 36L
     /** 叩き落とし: 地割り on an enemy 斬り上げ threw up. */

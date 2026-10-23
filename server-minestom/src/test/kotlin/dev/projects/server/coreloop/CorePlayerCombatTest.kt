@@ -351,14 +351,15 @@ class CorePlayerCombatTest {
         // 地割り by the beast it takes (0..3) as extra scenes "slam_b<n>".
         val beastRuns=(0..3).map { n -> Triple("slam_b$n",1,false) } +
             listOf("whirl" to 2, "war_guard" to 3, "war_counter" to 3).flatMap { (icon, slot) -> listOf(0, 3).map { n -> Triple("${icon}_b$n", slot, false) } } +
-            listOf(Triple("war_breach_b0", 3, false))
+            listOf(Triple("war_breach_b0", 3, false), Triple("war_cry_b0", 3, false))
         val scenes=(runs+beastRuns).map { (run,slot,shader) -> var scene=emptyMap<String,Any>(); val icon=if(Regex("_b[0-3]$").containsMatchIn(run)) run.dropLast(3) else run
-            CoreWarriorIronChoreography.shaderCut=shader; try { arena { h ->
+            CoreWarriorIronChoreography.shaderCut=shader; try { arena(mobs = if (icon == CoreWarriorRules.DRAG) listOf(Pos(7.7, 40.0, 10.6), Pos(7.5, 40.0, 12.2)) else emptyList()) { h ->
             CoreCombatPresentation.pack(h.player,true)
             if(icon=="war_wound") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=4)); h.actor.reset()
                 h.player.teleport(h.player.position.withView(0f, 30f)) } // 跳び叩き aims at the ground short of the target
             if(icon=="war_counter") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=5)); h.actor.reset() }
             if(icon=="war_breach") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=7)); h.actor.reset() }
+            if(icon==CoreWarriorRules.DRAG) { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=6)); h.actor.reset(); h.combat.tick(1000L) }
             if(icon=="war_guard") h.player.teleport(h.player.position.withView(0f, 30f))
             assertEquals(icon,h.actor.skillDefinitions[slot].icon)
             h.actor.classState.gain(if(Regex("_b[0-3]$").containsMatchIn(run)) run.last().digitToInt().toDouble() else 100.0,h.journey.job,h.journey.build)
@@ -382,7 +383,9 @@ class CorePlayerCombatTest {
             repeat(76) { record(); h.ticks(1)
                 if ((icon == CoreWarriorLeap.ICON || icon == CoreWarriorRules.SKYFALL) && arc == null && h.player.velocity.y() > 0)
                     arc = CoreWarriorLeap.path(h.player.position, h.player.velocity.div(20.0)).iterator()
-                arc?.let { if (it.hasNext()) h.player.teleport(it.next()) } }
+                arc?.let { if (it.hasNext()) h.player.teleport(it.next()) }
+                // 引き摺り: the client walks the warrior forward while the blade drags (about the slowed walk speed).
+                if (icon == CoreWarriorRules.DRAG && it in 8..48) h.player.teleport(h.player.position.add(0.0, 0.0, .17)) }
             scene=mapOf("id" to if(shader) "${icon}_shader" else run,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
             CoreCombatPresentation.forget(h.player)
         } } finally { CoreWarriorIronChoreography.shaderCut=false }; scene }
@@ -1012,6 +1015,22 @@ class CorePlayerCombatTest {
         // The smash lands on it up in the air: stunned, or (a tier-1 soldier) dead from the boosted hit.
         assertTrue(!h.combat.isAlive(id) || CrowdControl.STUN in h.combat.crowdControl(id), "smashed down: ${h.combat.crowdControl(id)}")
         assertTrue(h.actor.cooldownRemaining(1) > 0)
+    }
+
+    @Test fun `the drag hooks a regular enemy at the blade, brings it along and hits it at the end`() =
+        arena(bossDistance = 30.0, mobs = listOf(Pos(7.8, 40.0, 7.0))) { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 6)); h.actor.reset()
+        assertEquals(CoreWarriorRules.DRAG, h.actor.skillDefinitions[3].icon)
+        h.combat.tick(1000L)
+        val id = h.combat.combatTargets().first { !h.combat.isBoss(it.id) }.id
+        h.actor.skill(3); h.ticks(4)
+        // Walk forward as the client would; the hooked enemy is dragged along behind the blade.
+        repeat(20) { h.player.teleport(h.player.position.add(0.0, 0.0, .17)); h.ticks(1) }
+        val p = h.combat.positionOf(id)!!
+        assertTrue(p.z() > 7.5, "dragged along: $p")
+        h.ticks(CoreWarriorRules.DRAG_TICKS)
+        assertTrue(!h.combat.isAlive(id) || CrowdControl.STUN in h.combat.crowdControl(id), "hit at the end")
+        assertTrue(h.actor.cooldownRemaining(3) > 0)
     }
 
     @Test fun `the slam is never gated by the beast and keeps a part-built stack`() = arena { h ->

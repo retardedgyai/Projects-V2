@@ -906,6 +906,8 @@ def build(assets, write):
         model(f'sweep_{f}', ground_model(texture(f'sweep_{f}', sweep_wind(f).transpose(Image.Transpose.ROTATE_180))))
     for st in range(7):
         model(f'scrape_{st}', ground_model(texture(f'scrape_{st}', scrape_arc(st).transpose(Image.Transpose.ROTATE_180))))
+    # 引き摺り: the held greatsword is swapped to this while a dragged one is drawn at the side.
+    model('empty', {'textures': {}, 'elements': []})
     for f in range(5):
         model(f'dust_{f}', centred_model(texture(f'dust_{f}', dust_puff(f))))
     for f in range(8):

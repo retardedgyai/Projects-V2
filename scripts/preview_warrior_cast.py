@@ -59,6 +59,10 @@ def model_json(path):
     if 'parent' in m and 'elements' not in m and m['parent'].startswith('projects:'):
         parent = model_json(m['parent'].split(':')[1])
         m = {**parent, **{k: v for k, v in m.items() if k != 'parent'}, 'textures': {**parent.get('textures', {}), **m.get('textures', {})}}
+    if m.get('parent') == 'minecraft:item/generated' and 'elements' not in m:
+        # A flat sprite item (the plain weapons): drawn as vanilla extrudes it, a 1 px thick slab of the sprite.
+        m = {**m, 'elements': [{'from': [0, 0, 7.5], 'to': [16, 16, 8.5], 'faces': {
+            'south': {'texture': '#layer0', 'uv': [0, 0, 16, 16]}, 'north': {'texture': '#layer0', 'uv': [16, 0, 0, 16]}}}]}
     return m
 
 
@@ -413,7 +417,9 @@ def render(scene, tick, view):
     cast = scene['castTick']
     swing = (tick - cast) / 6 if 0 <= tick - cast < 6 else None
     faces, hand = player_faces(pos, yaw, swing)
-    faces += weapon_faces(hand, weapon_pose(scene, tick))
+    # 引き摺り: the held sword is hidden while the dragged one is drawn (CoreArmamentPresentation.hide).
+    dragging = scene['id'].startswith('war_cry') and scene['castTick'] + scene['startup'] <= tick < scene['castTick'] + scene['startup'] + 42
+    if not dragging: faces += weapon_faces(hand, weapon_pose(scene, tick))
     for t in frame['targets']: faces += target_faces(np.array(t) - origin)
     for d in frame['displays']:
         faces += display_faces({**d, 'offset': list(np.array(d['offset']) - origin)}, camera)

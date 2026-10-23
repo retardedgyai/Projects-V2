@@ -495,6 +495,15 @@ class QuestEncounterCombat(
         return true
     }
 
+    /** 引き摺り (warrior): a hooked mob is dragged along toward [point], as far as the ground allows. Bosses stay put. */
+    fun dragTo(targetId: UUID, point: Pos, step: Double = .7): Boolean {
+        val mob = mobs[targetId] ?: return false
+        if (mob.boss || !mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING) return false
+        val delta = Vec(point.x() - mob.entity.position.x(), 0.0, point.z() - mob.entity.position.z())
+        if (delta.length() < .3) return true
+        slide(mob, delta.normalize(), minOf(step, delta.length()))
+        return true
+    }
     /** 叩き落とし (warrior): a mob up in the air is driven straight down. Bosses never leave the ground, so nothing. */
     fun slamDown(targetId: UUID): Boolean {
         val mob = mobs[targetId] ?: return false

@@ -73,33 +73,6 @@ class CoreWarriorSupportChoreographyTest {
             e.getAsJsonArray("to")[1].asDouble-e.getAsJsonArray("from")[1].asDouble<=.5
         })
         assertEquals(0,model("combat_vfx/war_parry_blade_steel_fade7").getAsJsonArray("elements").size())
-        for(p in CoreSkillChoreography.parts(effect("war_cry"))) {
-            val hashes=(0 until p.durationTicks).map {
-                model(CoreSkillChoreography.pose(p,(it+p.delayTicks).toDouble()).model).toString().hashCode()
-            }.toSet()
-            assertTrue(hashes.size>=14,"Voice should deform and tear, not scale one static hoop")
-            assertEquals(0,model(CoreSkillChoreography.pose(p,27.0).model).getAsJsonArray("elements").size())
-        }
-    }
-    @Test fun `roar has three independently moving open voice fronts in each direction not slashes`() {
-        val e=effect("war_cry");val parts=CoreSkillChoreography.parts(e)
-        assertEquals(6,parts.size);assertTrue(parts.all { it.shape=="war_voice_band" && !it.sprite && !it.followOwner })
-        assertEquals(mapOf(0 to 2,4 to 2,8 to 2),parts.groupingBy { it.delayTicks }.eachCount())
-        for(p in parts) {
-            assertEquals(28,p.delayTicks+p.durationTicks)
-            val start=CoreSkillChoreography.pose(p,p.delayTicks.toDouble())
-            val peak=CoreSkillChoreography.pose(p,p.delayTicks+5.0)
-            assertEquals(.8,hypot(peak.offset.x()-start.offset.x(),peak.offset.z()-start.offset.z()),.00001)
-            assertTrue(peak.scale.x()>start.scale.x()*3)
-            val later=CoreSkillChoreography.pose(p,p.delayTicks+15.0)
-            assertTrue(later.offset.distance(peak.offset)>1.5,"Voice wave must not freeze after its first five ticks")
-            val elements=model(start.model).getAsJsonArray("elements")
-            // No cube occupies the centre of the voice aperture.
-            assertTrue(elements.none {
-                val e=it.asJsonObject;val lo=e.getAsJsonArray("from");val hi=e.getAsJsonArray("to")
-                lo[0].asDouble<=8 && hi[0].asDouble>=8 && lo[2].asDouble<=8 && hi[2].asDouble>=8
-            })
-        }
     }
     @Test fun `rally has one planted standard and a single four direction shield grant phrase`() {
         val parts=CoreSkillChoreography.parts(effect("war_banner"))

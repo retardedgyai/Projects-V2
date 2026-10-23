@@ -8,7 +8,7 @@ whirl|狂乱|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0
 war_guard|天落とし|GUARD|steel|parry_blade|edge_glint|edge_glint|cut_spark|0.9|1.0|1.0|獣を使う跳躍。高く跳んで叩き落とし、着地から衝撃の輪が外へ広がる（見た目はCoreWarriorRefChoreography）
 war_wound|跳び叩き|CUT|steel|slash_short|blood_notch|edge_glint|cut_spark|1.8|1.0|1.0|狙った地点へ弧を描いて跳び、着地の前方に短い溝と扇形に跳ねる土（見た目はCoreWarriorRefChoreography）
 war_counter|大地崩し|CUT|gold|slash_reverse|speed_streak|edge_glint|cut_spark|2.3|1.0|1.0|獣を使う範囲技。大剣を突き立てて周り一面の地面を砕き、まとめて打ち上げる（見た目はCoreWarriorRefChoreography）
-war_cry|雄叫び|SHIELD|gold|roar_wave|shield_arch|cast_spark|light_spark|1.2|1.0|1.0|口元から前後へ三度ずつ抜ける開いた声の波。一回の障壁付与に対応し斬撃や追撃は出さない
+war_cry|引き摺り|SHIELD|gold|roar_wave|shield_arch|cast_spark|light_spark|1.2|1.0|1.0|獣を溜める巻き込み。大剣を体の横で引きずって歩き、刃先の後ろに溝、最後に前へ振り下ろす（見た目はCoreWarriorRefChoreography）
 war_breach|斬り上げ|THRUST|steel|thrust_tip|speed_streak|edge_glint|armor_break|2.6|0.8|0.8|獣を溜める打ち上げ。引きずった跡から真上への軌跡、敵の足元から土が噴き上がる（見た目はCoreWarriorRefChoreography）
 war_ult|鉄槌|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|3.4|1.2|1.0|三回の垂直叩きつけ。広い当たり判定は薄い地上表示で補足
 war_banner|不屈の旗|BANNER|gold|battle_banner|shield_arch|cast_spark|light_spark|1.5|1.0|1.0|金縁の赤い旗を打ち立て布を展開。発動地点で3秒揺れ四方へ金色の吹き流しが一度散る
