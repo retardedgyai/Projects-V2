@@ -24,9 +24,7 @@ internal object CoreSkillChoreography {
         "temp_mace" to 26,"temp_pull" to 30,"temp_ward" to 32,"temp_guard" to 30,"temp_rebuke" to 28,
         "temp_field" to 32,"temp_break" to 28,"temp_dash" to 24,"temp_ult" to 34,"temp_sanctuary" to 40,
         "heal_light" to 22,"heal_ring" to 30,"heal_pillar" to 28,"heal_step" to 24,"heal_lamp" to 36,
-        "heal_shield" to 32,"heal_mark" to 24,"heal_wind" to 28,"heal_ult" to 40,"heal_judgment" to 32,
-        "star_thread" to 22,"star_ring" to 32,"starfall" to 32,"star_step" to 26,"star_needle" to 24,
-        "star_cloud" to 36,"star_shield" to 32,"star_break" to 28,"star_ult" to 38,"star_constellation" to 40)
+        "heal_shield" to 32,"heal_mark" to 24,"heal_wind" to 28,"heal_ult" to 40,"heal_judgment" to 32)
     val sceneIds get() = duration.keys
     fun duration(e: CoreSkillEffect) = when(e.phase) {
         CoreSkillVisualPhase.PREPARE -> e.prepareDuration
@@ -47,7 +45,6 @@ internal object CoreSkillChoreography {
         CoreSlashChoreography.pose(p,age)?.let { return it }
         CoreFrostChoreography.pose(p,age)?.let { return it }
         CoreWarriorSupportChoreography.pose(p,age)?.let { return it }
-        CoreStarweaverChoreography.pose(p,age)?.let { return it }
         CoreTemplarChoreography.pose(p,age)?.let { return it }
         val localAge=(age-p.delayTicks).coerceAtLeast(0.0)
         val t=((age-p.delayTicks)/(p.durationTicks-1).coerceAtLeast(1)).coerceIn(0.0,1.0)
@@ -83,14 +80,8 @@ internal object CoreSkillChoreography {
         }
         // Stroke peaks in 0.20s regardless of the longer aftermath. Extending readability
         // must not postpone the visually strongest beat until half a second after damage.
-        val stage=if(p.shape in setOf("star_crest","star_fold","star_mantle_stream")) {
-            CoreStarweaverChoreography.frame(p,age)
-        } else if(p.atlas in setOf(CoreMeshAtlas.NEBULA_STREAM,CoreMeshAtlas.SHADOW_SMOKE)) {
+        val stage=if(p.atlas==CoreMeshAtlas.SHADOW_SMOKE) {
             floor(t*15).toInt()
-        } else if(p.stellarBurst) {
-            // Ignition peaks at frame 3 in 0.10s; the hollow broken wake then unravels.
-            if(localAge<=2.0) floor(localAge/2*3).toInt() else
-                4+floor(((localAge-3)/(p.durationTicks-4).coerceAtLeast(1)).coerceIn(0.0,1.0)*11).toInt()
         } else if(p.sprite) {
             if(localAge<=4.0) floor(localAge/4.0*7).toInt() else
                 8+floor(((localAge-5)/(p.durationTicks-6).coerceAtLeast(1)).coerceIn(0.0,1.0)*7).toInt()
@@ -99,11 +90,6 @@ internal object CoreSkillChoreography {
             "combat_vfx/precision/bolt_${ceil(p.scale.z()/1.5).toInt().coerceIn(1,16)}_${CorePrecisionChoreography.lightningFrame(p,age)}"
         } else if(p.shape=="needle_rift") {
             "combat_vfx/precision/needle_${ceil(p.scale.z()/2).toInt().coerceIn(1,12)}_${CorePrecisionChoreography.needleFrame(p,age)}"
-        } else if(p.shape=="star_crest") {
-            "combat_vfx/weave/crest_${p.palette}_$stage"
-        } else if(p.shape=="weave_ray") {
-            val segments=ceil(p.scale.z()/1.5).toInt().coerceIn(1,16)
-            "combat_vfx/weave/ray_${segments}_${CoreStarweaverChoreography.frame(p,age)}"
         } else if(p.shape=="purifying_column" || p.shape=="prayer_flame") {
             "combat_vfx/prayer/column_${p.palette}_${CoreHealerChoreography.frame(p,age)}"
         } else if(p.shape=="prayer_ray") {
@@ -123,9 +109,7 @@ internal object CoreSkillChoreography {
             val frame=if(t<.42) (localAge.toInt()/2)%4 else
                 4+floor(((t-.42)/.58).coerceIn(0.0,1.0)*3).toInt()
             "combat_vfx/storm_branch_lightning_$frame"
-        } else if(p.atlas==CoreMeshAtlas.NEBULA_STREAM) "combat_vfx/nebula/stream_${p.palette}_$stage" else
-            if(p.stellarBurst) "combat_vfx/stellar/burst_${p.palette}_$stage" else
-            if(p.sprite) "combat_vfx/ribbon/slash_${if(p.spriteMirror) "reverse_" else ""}${p.palette}_$stage" else
+        } else if(p.sprite) "combat_vfx/ribbon/slash_${if(p.spriteMirror) "reverse_" else ""}${p.palette}_$stage" else
             "combat_vfx/${p.shape}_${p.palette}" + if(p.erode && stage>0) "_fade$stage" else ""
         val scale=if(p.shape=="piercing_wake") Vec(p.scale.x(),p.scale.y(),p.scale.z()*grow) else p.scale.mul(grow)
         return CoreMeshPose(at,scale,p.yaw+angle,p.pitch+p.pitchTravel*u,p.roll+p.rollTravel*u,
@@ -150,27 +134,16 @@ internal object CoreSkillChoreography {
         if(e.sceneId in CoreHealerChoreography.sceneIds) return CoreHealerChoreography.parts(e,raw,life)
         if(e.sceneId in CoreWarriorSupportChoreography.sceneIds)
             return CoreWarriorSupportChoreography.parts(e,life)
-        // CONTACT keeps the accepted-hit-only stellar bursts below.
-        if(e.sceneId in CoreStarweaverChoreography.sceneIds && e.phase!=CoreSkillVisualPhase.CONTACT)
-            return CoreStarweaverChoreography.parts(e,raw,life)
         if(e.phase==CoreSkillVisualPhase.PREPARE) return raw.map { it.copy(
             motion=if(s.kind==CoreSceneKind.RAIN) CoreMeshMotion.FALL else CoreMeshMotion.GATHER,
             durationTicks=life,erode=false) }
         if(e.phase==CoreSkillVisualPhase.CONTACT) {
             val p=raw.first()
             if(e.sceneId=="ass_poison") return venomDrops(p.offset,atan2(e.direction.x(),e.direction.z()),18)
-            // Only accepted hits reach CONTACT. Never attach this explosion to an empty ray.
-            if(e.sceneId in setOf("star_thread","star_needle","star_break")) {
-                val burst=stellarBurst(p.offset,atan2(e.direction.x(),e.direction.z()),
-                    if(e.sceneId=="star_break") 3.6 else 1.7,if(e.sceneId=="star_break") 24 else 16)
-                // Star Needle's gameplay mark retains its own identity and location.
-                return if(e.sceneId=="star_needle") burst+ p.copy(durationTicks=14,secondary=true) else burst
-            }
             return listOf(p.copy(durationTicks=14,motion=CoreMeshMotion.SNAP,erode=true,startSize=.35,endSize=1.35),
                 p.copy(offset=p.offset.add(.25,.15,.02),scale=p.scale.mul(.5),delayTicks=3,durationTicks=16,
                     motion=CoreMeshMotion.RADIATE,travel=Vec(.5,.55,.1),spin=.7,secondary=true,erode=true))
         }
-        if(e.sceneId=="star_cloud") return nebulaField(e,life)
         if(s.kind==CoreSceneKind.PULL) return chainPull(e,life)
         if(e.sceneId=="mage_ward") return arcaneWard(e,life)
         if(e.sceneId in setOf("heal_ring","heal_wind","heal_ult","heal_shield")) return healingPhrase(e,life)
@@ -222,59 +195,7 @@ internal object CoreSkillChoreography {
                     motion=if(inward) CoreMeshMotion.GATHER else CoreMeshMotion.RADIATE,erode=true)
             }
         }
-        if(e.sceneId in setOf("starfall","star_ult")) {
-            // The core was already seen descending in PREPARE. PULSE is its breakup,
-            // not a second stationary core and two unrelated orbit diagrams.
-            val landed=base.removeAt(0)
-            val floorIndex=base.indexOfFirst { it.ground }
-            if(floorIndex>=0) {
-                val floor=base[floorIndex]
-                val size=min(e.radius,3.6)*2
-                base[floorIndex]=floor.copy(shape="star_spark",atlas=CoreMeshAtlas.STELLAR_BURST,erode=false,
-                    scale=Vec(size,1.0,size),startSize=.6,endSize=1.0,spin=.35,
-                    delayTicks=2,durationTicks=life-2,motion=CoreMeshMotion.RADIATE)
-            }
-            base.addAll(0,stellarBurst(landed.offset,atan2(e.direction.x(),e.direction.z()),
-                if(e.skill.ultimate) 6.0 else 4.3,life))
-        }
         return base
-    }
-
-    private fun stellarBurst(at: Vec,yaw: Double,size: Double,life: Int): List<CoreCombatMeshPart> {
-        val main=CoreCombatMeshPart("star_spark","astral",at,Vec(size,1.0,size),
-            yaw=yaw-PI/4,pitch=-PI/2,roll=.18,startSize=.8,endSize=1.0,
-            durationTicks=life,motion=CoreMeshMotion.SNAP,atlas=CoreMeshAtlas.STELLAR_BURST,rollTravel=.45)
-        // Crossing planes provide depth and side visibility, rather than viewer-facing cards.
-        // The cool secondary wake has a different clock, angle and upward drift.
-        return listOf(main,main.copy(palette="ice",yaw=yaw+PI/4,roll=-.3,
-            scale=Vec(size*.82,1.0,size*.82),delayTicks=2,durationTicks=life-2,
-            travel=Vec(0.0,.2,0.0),secondary=true,rollTravel=-.5))
-    }
-
-    private fun nebulaField(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {
-        val r=min(e.radius,CoreSkillScenes.get(e.sceneId).reach)
-        // Six low cloud currents, three heights and two crossing directions. No falling
-        // core, giant ground diagram or camera-facing card. Each damage wave refreshes a
-        // bounded visual phrase; it does not create a second gameplay field or timer.
-        val clouds=(0 until 6).map { i ->
-            val a=i*PI/3+e.pulse*.45
-            val tangent=Vec(cos(a),0.0,-sin(a))
-            val delay=(i%3)*3
-            CoreCombatMeshPart("nebula_wisp",if(i%3==1) "ice" else "astral",
-                Vec(sin(a)*r*.22,.45+(i%3)*.24,cos(a)*r*.22).sub(tangent.mul(r*.13)),
-                Vec(r*1.35,1.0,r*.85),yaw=a,pitch=if(i%2==0) -.6 else .45,roll=if(i%2==0) .08 else -.08,
-                travel=tangent.mul(r*.26),bend=Vec(0.0,.16,0.0),spin=if(i%2==0) .25 else -.2,
-                startSize=.85,endSize=1.0,durationTicks=life-delay,delayTicks=delay,
-                motion=CoreMeshMotion.FLOAT,atlas=CoreMeshAtlas.NEBULA_STREAM,secondary=i>=3)
-        }
-        // Small stellar knots move with the cloud volume rather than outlining another logo.
-        return clouds+(0 until 3).map { i ->
-            val a=i*PI*2/3+e.pulse*.45
-            CoreCombatMeshPart("star_seed","astral",Vec(sin(a)*r*.5,.65,cos(a)*r*.5),
-                Vec(.25,.25,.25),pitch=-PI/2,spin=.7,travel=Vec(0.0,.4,0.0),
-                delayTicks=4+i*2,durationTicks=life-4-i*2,startSize=.5,endSize=.2,
-                motion=CoreMeshMotion.ORBIT,secondary=true,erode=true)
-        }
     }
 
     private fun chainPull(e: CoreSkillEffect,life: Int): List<CoreCombatMeshPart> {

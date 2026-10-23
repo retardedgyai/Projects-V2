@@ -46,7 +46,7 @@ class CoreCombatLabLifecycleTest {
             assertTrue(actor.activeVisualEffects > 0)
             lab.menu(p)
             assertNotNull(p.openInventory)
-            assertEquals(70, CoreSkillCatalog.artNames.size)
+            assertEquals(60, CoreSkillCatalog.artNames.size)
             assertTrue(lab.leave(p))
             pumpUntil { !lab.contains(p) }
             assertSame(hub, p.instance)

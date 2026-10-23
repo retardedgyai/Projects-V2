@@ -70,7 +70,7 @@ class CoreArmamentPresentationTest {
             assertFalse(CoreLoopItems.gear(a,CoreGearSlot.WEAPON,false).get(DataComponents.ITEM_MODEL).toString().startsWith("projects:"))
             seen+=key
         }
-        assertEquals(28,seen.size)
+        assertEquals(24,seen.size)
     }
 
     @Test fun `animation changes only reserved model float and preserves identity tooltip and other channels`() {

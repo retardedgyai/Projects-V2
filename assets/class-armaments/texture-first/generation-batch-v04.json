@@ -24,13 +24,6 @@
       "source": "sources/tome-v01.png",
       "generatedFile": "exec-978ce957-ef01-47c9-b55b-ead1c06c1f6d.png",
       "status": "selected-for-pixel-texture-review"
-    },
-    {
-      "key": "astrolabe",
-      "prompt": "Use case: stylized-concept. Create one Minecraft weapon texture artwork. Image 1 is a STYLE reference ONLY: the red dark sword inside the video, ignore all website UI and words. Match its coarse deliberate square pixel clusters, restrained charcoal/plum body, broad clean painted highlight bands, hard stepped sharp silhouette and nearly flat thin fins. Texture defines shape, not stacked boxes. Flat orthographic view, no perspective, no lighting render, no glossy/PBR metal, no blur, bloom, gradients, antialiasing, tiny noise, or voxel cubes. Intended native artwork about 32x80 pixels enlarged with nearest-neighbor. One fully visible weapon with generous margin. Actual RGBA transparent background if possible; no painted checkerboard, shadow or extra props. No text/logos. An upright starweaver's astral staff with a large OPEN broken circular star ring in the upper third and a long restrained dark navy wrapped shaft below. Ring is made of thin sharply tapered dark violet flat fins with a broad muted gold edge ribbon and isolated lilac accents. Its circle has deliberate open breaks at upper-right and lower-left, NOT a continuous solid disk. A single small pale lilac four-point star floats independently at the center of the large transparent hole, separated from every ring segment. Do not draw other stars or particles. Two small thin dark brackets connect the lower ring to the shaft. Distinct from a forked crystal staff: the open ring and center star are the silhouette focal point. Same coarse pixel density, hard painted bands and thin ornament feel as the reference.",
-      "source": "sources/astrolabe-v01.png",
-      "generatedFile": "exec-911b4a82-0466-46f8-a98b-5e7f17f715f4.png",
-      "status": "selected-for-pixel-texture-review"
     }
   ],
   "edit": {
@@ -41,7 +34,7 @@
     "source": "sources/mace-v02.png",
     "status": "selected for review; shorter crown improves blunt silhouette, not final quality approval"
   },
-  "actualSourceMode": "All four selected sources are RGB and contain painted checkerboard, not real alpha.",
+  "actualSourceMode": "All selected sources are RGB and contain painted checkerboard, not real alpha.",
   "processing": "User-authorized Python: source-specific extraction, foreground-only median pooling, 16-color palette and part separation. Originals retained byte-for-byte; hashes and sizes in processed-specialists-v01/manifest.json.",
   "runtime_applied": false
 }

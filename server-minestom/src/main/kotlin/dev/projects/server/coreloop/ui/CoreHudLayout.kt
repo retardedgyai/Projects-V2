@@ -71,10 +71,9 @@ internal object CoreHudLayout {
         return ceil((remaining / total).coerceIn(0.0, 1.0) * BUFF_STEPS).toInt().coerceIn(1, BUFF_STEPS)
     }
 
-    /** Lit class-resource cells out of [CELL_COUNT]; charge-based classes light thirds. */
+    /** Lit class-resource cells out of [CELL_COUNT]. */
     fun litCells(state: CoreHudState): Int {
         state.resource?.let { return fillCells(it, state.resourceMaximum) }
-        state.charges?.let { return fillCells(it.toDouble(), 3.0) }
         return 0
     }
 
@@ -88,7 +87,6 @@ internal object CoreHudLayout {
     /** Decoration set for the level diamond; unknown classes fall back to the warrior's. */
     fun job(state: CoreHudState): String = when (val key = state.classKey.lowercase()) {
         in classes -> key
-        "starweaver" -> "mage"
         else -> "warrior"
     }
 

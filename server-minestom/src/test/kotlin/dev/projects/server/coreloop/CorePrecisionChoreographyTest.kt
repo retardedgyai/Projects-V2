@@ -95,7 +95,7 @@ class CorePrecisionChoreographyTest {
         for(id in listOf("mage_mark","ass_needle")) {
             val mark=CoreSkillScenes.get(id).impact
             val shot=CoreSkillChoreography.parts(effect(id))
-            assertTrue(shot.none { it.shape==mark || it.stellarBurst })
+            assertTrue(shot.none { it.shape==mark })
             val hit=CoreSkillChoreography.parts(effect(id,CoreSkillVisualPhase.CONTACT))
             assertEquals(1,hit.count { it.shape==mark })
             assertTrue(hit.all { it.durationTicks>=18 && !it.followOwner })

@@ -114,16 +114,8 @@ class CorePlayerCombatTest {
         }
     }
 
-    @Test fun `Starweaver weaves three normal hits then consumes them in four enhanced starfall pulses`() = arena(bossDistance = 7.0) { h ->
-        h.journey = CoreJourney.legacy(job=CoreClass.STARWEAVER); h.base=CoreWeaponBase.STAFF
-        repeat(3) { h.actor.attack(); h.ticks(20) }
-        assertEquals(3,h.actor.chargeCount)
-        val before=h.combat.bossHealth(); h.actor.skill(2); assertEquals(0,h.actor.chargeCount)
-        h.ticks(40)
-        assertEquals(before - (4 + 12 * .92 * 1.1) * 1.45 * 4,h.combat.bossHealth(),.00001)
-    }
     @Test fun `bow and mage projectile hit at twelve blocks but not through a wall`() {
-        for (job in listOf(CoreClass.RANGER, CoreClass.MAGE, CoreClass.STARWEAVER)) arena(bossDistance = 12.0) { h ->
+        for (job in listOf(CoreClass.RANGER, CoreClass.MAGE)) arena(bossDistance = 12.0) { h ->
             h.journey = CoreJourney.legacy(job = job); h.base = if (job == CoreClass.RANGER) CoreWeaponBase.LONGBOW else CoreWeaponBase.STAFF
             h.actor.attack(); h.ticks(3); assertEquals(300.0, h.combat.bossHealth())
             h.ticks(1); assertTrue(h.combat.bossHealth() < 300.0, "$job cannot hit at range")
@@ -798,13 +790,6 @@ class CorePlayerCombatTest {
         h.actor.skill(2);h.ticks(h.actor.skillDefinitions[2].startupTicks(h.actor.sheet))
         assertEquals(value,h.actor.shield,.00001);assertEquals(value*1.4,ally.shield,.00001);assertEquals(0.0,blocked.shield)
         h.actor.resetActions();assertEquals(0.0,h.actor.shield)
-    }
-    @Test fun `star shield releases its charge and the added protection expires`() = arena { h ->
-        h.journey=CoreJourney.legacy(job=CoreClass.STARWEAVER,build=CoreClassBuild(first=6,second=1,third=2,fourth=3));h.base=CoreWeaponBase.STAFF;h.actor.reset()
-        h.actor.classState.gain(3.0,h.journey.job,h.journey.build)
-        val value=h.actor.skillDefinitions[0].preview(h.actor.sheet)
-        h.actor.skill(0);assertEquals(0.0,h.actor.resource);h.ticks(6)
-        assertEquals(value*1.45,h.actor.shield,.00001);h.ticks(120);assertEquals(0.0,h.actor.shield)
     }
     @Test fun `dodging a channeled field cancels remaining pulses but never refunds its cost`() = arena(bossDistance=7.0) { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()

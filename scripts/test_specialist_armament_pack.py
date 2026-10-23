@@ -21,7 +21,7 @@ class SpecialistPackTest(unittest.TestCase):
         suffix = '' if stage=='rest' else f'_{stage}{frame:02d}'
         return json.loads((ASSETS/f'models/item/weapons/pixel_{key}{suffix}.json').read_text())
 
-    def test_all_100_exported_models_match_authored_poses_without_mutating_inputs(self):
+    def test_all_75_exported_models_match_authored_poses_without_mutating_inputs(self):
         for key,(base,parts,textures,anchors) in self.built.items():
             before = deepcopy((base,parts,anchors))
             rest = self.model(key)
@@ -90,17 +90,6 @@ class SpecialistPackTest(unittest.TestCase):
             self.assertEqual([e for e in prepared['elements'] if e['name'].startswith(name+':')],parts[name])
         backing = textures['page_backing']
         self.assertTrue((backing[backing[:,:,3]>0,:3]<100).all())
-
-    def test_astral_ring_and_star_counter_rotate_while_shaft_stays_fixed(self):
-        base,parts,textures,anchors = self.built['astrolabe']
-        prepared = self.model('astrolabe','prepare',5)
-        self.assertEqual([e for e in prepared['elements'] if e['name'].startswith('shaft:')],parts['shaft'])
-        ring = next(e for e in prepared['elements'] if e['name'].startswith('ring:'))
-        star = next(e for e in prepared['elements'] if e['name'].startswith('star:'))
-        self.assertEqual(ring['rotation']['angle'],32)
-        self.assertEqual(star['rotation']['angle'],-40)
-        self.assertAlmostEqual(star['rotation']['origin'][2],anchors['star'][2]-.7)
-        self.assertEqual(ring['rotation']['origin'],anchors['star'])
 
     def test_pack_graph_and_byte_exact_textures_are_complete_without_live_registration(self):
         for key in JOBS:

@@ -392,7 +392,7 @@ class CoreCombatMeshTest {
     private fun effect(job: CoreClass, id: String, phase: CoreSkillVisualPhase = CoreSkillVisualPhase.PULSE, pulse: Int = 0, length: Double = 0.0) =
         CoreSkillEffect(job, CoreSkillCatalog.skills(job).first { it.icon == id }, Vec(8.0, 41.0, 8.0), Vec(0.0, 0.0, 1.0), phase, pulse, rayLength = length,clippedRay=length>0)
 
-    @Test fun `all seventy skills have bounded pack-backed solid silhouettes`() {
+    @Test fun `all sixty skills have bounded pack-backed solid silhouettes`() {
         val index = javaClass.getResourceAsStream("/core-ui-pack/index.txt")!!.bufferedReader().use { it.readLines().toSet() }
         for (job in CoreClass.entries) for (skill in CoreSkillCatalog.skills(job)) for (phase in CoreSkillVisualPhase.entries) {
             val parts = CoreCombatMeshArt.parts(effect(job, skill.icon, phase, length = if (CoreSkillScenes.get(skill.icon).kind == CoreSceneKind.RAY) 18.0 else 0.0))
@@ -412,27 +412,14 @@ class CoreCombatMeshTest {
         }
     }
 
-    @Test fun `starfall falls while cloud ring shield and teleport have distinct bodies`() {
-        val prepare = CoreCombatMeshArt.parts(effect(CoreClass.STARWEAVER, "starfall", CoreSkillVisualPhase.PREPARE))
-        assertTrue(prepare.any { it.shape == "star_core" && it.offset.y() >= 4 && it.travel.y() < -3 })
-        val impact = CoreCombatMeshArt.parts(effect(CoreClass.STARWEAVER, "starfall"))
-        assertTrue(impact.any { it.shape == "star_core" })
-        assertTrue(impact.any { it.shape == "astral_crack" })
-        assertTrue(impact.all { it.palette == "astral" })
-        assertEquals("nebula_wisp",CoreCombatMeshArt.parts(effect(CoreClass.STARWEAVER,"star_cloud")).first().shape)
-        assertEquals("star_orbit",CoreCombatMeshArt.parts(effect(CoreClass.STARWEAVER,"star_ring")).first().shape)
-        assertEquals("star_mantle",CoreCombatMeshArt.parts(effect(CoreClass.STARWEAVER,"star_shield")).first().shape)
-        assertEquals("star_gate",CoreCombatMeshArt.parts(effect(CoreClass.STARWEAVER,"star_step")).first().shape)
-    }
-
     @Test fun `blade pulses alternate and clipped ray never becomes a twenty four block beam`() {
         val a = CoreCombatMeshArt.parts(effect(CoreClass.ASSASSIN, "ass_ult", pulse = 0)).first()
         val b = CoreCombatMeshArt.parts(effect(CoreClass.ASSASSIN, "ass_ult", pulse = 1)).first()
         assertTrue(a.spin * b.spin < 0)
-        val beam = CoreCombatMeshArt.parts(effect(CoreClass.STARWEAVER, "star_needle", length = 3.25)).last()
+        val beam = CoreCombatMeshArt.parts(effect(CoreClass.HEALER, "heal_mark", length = 3.25)).last()
         assertEquals(3.25, beam.scale.z())
         assertEquals(1.625, beam.offset.z())
-        assertTrue(CoreCombatMeshArt.parts(effect(CoreClass.STARWEAVER, "star_needle", length = 0.0)).isEmpty())
+        assertTrue(CoreCombatMeshArt.parts(effect(CoreClass.HEALER, "heal_mark", length = 0.0)).isEmpty())
         val invalid = CoreSkillEffect(CoreClass.WARRIOR, CoreSkillCatalog.skills(CoreClass.WARRIOR).first(), Vec.ZERO, Vec(Double.NaN, 0.0, 0.0))
         assertTrue(CoreCombatMeshArt.parts(invalid).isEmpty())
     }
@@ -441,7 +428,7 @@ class CoreCombatMeshTest {
         val meshes = CoreCombatMeshes(p)
         val scene = p.instance
         val original = scene.entities.size
-        val effect = effect(CoreClass.STARWEAVER, "starfall")
+        val effect = effect(CoreClass.MAGE, "meteor")
         try {
             meshes.play(effect)
             assertEquals(0, meshes.size, "No PAPER items may appear for a missing pack")
@@ -456,7 +443,7 @@ class CoreCombatMeshTest {
             assertEquals(expected, scene.entities.count { it !== p && p in it.viewers })
             assertEquals(CoreCombatPresentation.Detail.SUBDUED, CoreCombatPresentation.cycle(p))
             meshes.tick()
-            assertEquals(1, scene.entities.count { it !== p && p in it.viewers })
+            assertEquals(CoreSkillChoreography.parts(effect).count { !it.secondary }, scene.entities.count { it !== p && p in it.viewers })
             assertEquals(CoreCombatPresentation.Detail.MINIMAL, CoreCombatPresentation.cycle(p))
             meshes.tick()
             assertEquals(0, scene.entities.count { it !== p && p in it.viewers })

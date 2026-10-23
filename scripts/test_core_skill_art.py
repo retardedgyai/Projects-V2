@@ -30,7 +30,7 @@ class SkillArtworkTest(unittest.TestCase):
             self.assertEqual(len(hashes), len(set(hashes)))
 
     def test_class_assignment_and_clear_icon_wells(self):
-        for job, first in zip(CLASSES, ("dash", "pierce", "firebolt", "star_thread", "ass_stab", "temp_mace", "heal_light")):
+        for job, first in zip(CLASSES, ("dash", "pierce", "firebolt", "ass_stab", "temp_mace", "heal_light")):
             self.assertEqual(job, class_for_skill(first))
             ornament = class_ornament(first)
             self.assertIsNone(ornament.crop((4, 4, 28, 28)).getchannel("A").getbbox())

@@ -167,7 +167,7 @@ def render(parts, name, tick, view='iso', world_scale=34, fps=20):
 
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument('--ids',default='dash,slam,ass_execute,ass_fan,ass_poison,starfall,star_cloud,temp_pull')
+    parser.add_argument('--ids',default='dash,slam,ass_execute,ass_fan,ass_poison,temp_pull')
     parser.add_argument('--prefix',default='choreography-review')
     parser.add_argument('--view',choices=('iso','eye','side'),default='iso')
     parser.add_argument('--timeline',default='.tools/skill-choreography-frames.json')

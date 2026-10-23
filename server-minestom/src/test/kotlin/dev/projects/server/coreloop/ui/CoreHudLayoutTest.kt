@@ -150,7 +150,6 @@ class CoreHudLayoutTest {
         assertEquals(0, CoreHudLayout.xpStep(0.0)); assertEquals(1, CoreHudLayout.xpStep(.001)); assertEquals(24, CoreHudLayout.xpStep(1.0))
         assertEquals(0, CoreHudLayout.xpStep(Double.NaN))
         assertEquals(7, CoreHudLayout.litCells(CoreHudState(1.0, 1.0, 1.0, resource = 35.0)))
-        assertEquals(13, CoreHudLayout.litCells(CoreHudState(1.0, 1.0, 1.0, charges = 2)))
         assertEquals(0, CoreHudLayout.litCells(CoreHudState(1.0, 1.0, 1.0)))
         assertEquals(1, CoreHudLayout.buffFrame(CoreHudBuff(CoreHudBuffKind.POTION, .1, 10.0, true)))
         assertEquals(CoreHudLayout.BUFF_STEPS, CoreHudLayout.buffFrame(CoreHudBuff(CoreHudBuffKind.POTION, 10.0, 10.0, true)))
@@ -175,8 +174,8 @@ class CoreHudLayoutTest {
             assertEquals(0, layout(CoreDamageNumbers.render(amount, crit, !crit)).second)
     }
 
-    @Test fun `all seventy skill arts have every state and sit exactly on hotbar slots two to six`() {
-        for (index in 0..69) for (state in listOf(CoreHudLayout.READY, CoreHudLayout.COOLDOWN, CoreHudLayout.NO_MANA, CoreHudLayout.LOCKED))
+    @Test fun `all sixty skill arts have every state and sit exactly on hotbar slots two to six`() {
+        for (index in 0..59) for (state in listOf(CoreHudLayout.READY, CoreHudLayout.COOLDOWN, CoreHudLayout.NO_MANA, CoreHudLayout.LOCKED))
             assertTrue(CoreHudGlyphs["skill_${index}_$state"].advance <= 17, "16 px art, one texel per GUI pixel")
         // Vanilla draws hotbar item i at x = centre - 91 + 3 + 20 i; keys 2-6 are slots 1-5.
         val glyphs = layout(CoreHudLayout.render(CoreHudState(80.0, 140.0, 100.0, skills = loadout))).first
@@ -190,7 +189,6 @@ class CoreHudLayoutTest {
             for (step in 1..CoreHudLayout.XP_STEPS) CoreHudGlyphs["xp_${job}_$step"]
         }
         assertEquals("warrior", CoreHudLayout.job(CoreHudState(1.0, 1.0, 1.0, classKey = "UNKNOWN")))
-        assertEquals("mage", CoreHudLayout.job(CoreHudState(1.0, 1.0, 1.0, classKey = "STARWEAVER")))
         assertEquals("healer", CoreHudLayout.job(CoreHudState(1.0, 1.0, 1.0, classKey = "HEALER")))
     }
 

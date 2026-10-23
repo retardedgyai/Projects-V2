@@ -23,9 +23,9 @@ internal class CoreClassState {
     private var lastGuardGain = -100L
     private var lastNormalGain = -1L
     private val marks = mutableMapOf<UUID, Long>()
-    fun cap(job: CoreClass) = if (job == CoreClass.STARWEAVER) 3.0 else 100.0
+    fun cap(job: CoreClass) = 100.0
     fun gain(value: Double, job: CoreClass, build: CoreClassBuild) {
-        val multiplier = if (build.has(3) && job != CoreClass.STARWEAVER) 1.2 else 1.0
+        val multiplier = if (build.has(3)) 1.2 else 1.0
         resource = (resource + value * multiplier).coerceIn(0.0, cap(job))
     }
     /** Takes everything when at least [least] is there; returns what was taken (0 when short). */
@@ -40,8 +40,7 @@ internal class CoreClassState {
     fun spend(skill: CoreSkillDefinition, job: CoreClass, build: CoreClassBuild): Double {
         check(canCast(skill, build))
         val before = resource
-        if (job == CoreClass.STARWEAVER && skill.gain == 0 && skill.motion !in setOf(CoreSkillMotion.EVADE, CoreSkillMotion.GUARD)) resource = 0.0
-        else resource -= cost(skill, build)
+        resource -= cost(skill, build)
         return before
     }
     fun normalHit(job: CoreClass, target: UUID, tick: Long, build: CoreClassBuild) {
@@ -52,7 +51,7 @@ internal class CoreClassState {
             focusHits = if (focus == target) (focusHits + 1).coerceAtMost(5) else 1
             focus = target
         }
-        gain(when (job) { CoreClass.STARWEAVER -> 1.0; CoreClass.WARRIOR -> 12.0; CoreClass.RANGER -> 10.0 + focusHits;
+        gain(when (job) { CoreClass.WARRIOR -> 12.0; CoreClass.RANGER -> 10.0 + focusHits;
             CoreClass.ASSASSIN -> 12.0; CoreClass.TEMPLAR -> 8.0; CoreClass.HEALER -> 8.0; CoreClass.MAGE -> 5.0 }, job, build)
     }
     fun skillHit(job: CoreClass, skill: CoreSkillDefinition, build: CoreClassBuild) {

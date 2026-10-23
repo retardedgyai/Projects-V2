@@ -23,7 +23,7 @@ internal object CoreCombatFeel {
         CoreClass.ASSASSIN -> Profile(6, 2, immediateNormal = false, recovery = 3, attackBreaksGuard = true)
         CoreClass.TEMPLAR -> Profile(6, 5, immediateNormal = false, recovery = 6, attackBreaksGuard = false)
         CoreClass.RANGER -> Profile(6, 0, immediateNormal = false, recovery = 4, attackBreaksGuard = true)
-        CoreClass.MAGE, CoreClass.HEALER, CoreClass.STARWEAVER -> Profile(6, 0, immediateNormal = false, recovery = 5, attackBreaksGuard = true)
+        CoreClass.MAGE, CoreClass.HEALER -> Profile(6, 0, immediateNormal = false, recovery = 5, attackBreaksGuard = true)
     }
     fun recovery(job: CoreClass, s: CoreSkillDefinition) = when {
         s.icon == "dash" || s.icon == "war_wound" -> 3

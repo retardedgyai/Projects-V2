@@ -6,8 +6,8 @@ import java.util.UUID
 import kotlin.test.*
 
 class CoreClassBuildTest {
-    @Test fun `all seven professions have eight choices two ultimates and unique authored identities`() {
-        assertEquals(7,CoreClass.entries.size)
+    @Test fun `all six professions have eight choices two ultimates and unique authored identities`() {
+        assertEquals(6,CoreClass.entries.size)
         val icons=CoreClass.entries.flatMap { job ->
             val skills=CoreSkillCatalog.skills(job)
             assertEquals(10,skills.size)
@@ -20,7 +20,7 @@ class CoreClassBuildTest {
             }
             skills.map { it.icon }
         }
-        assertEquals(70,icons.distinct().size);assertEquals(icons,CoreSkillCatalog.artNames)
+        assertEquals(60,icons.distinct().size);assertEquals(icons,CoreSkillCatalog.artNames)
         val font=javaClass.classLoader.getResourceAsStream("core-ui-pack/assets/projects/font/hud_skills.json")!!.bufferedReader().readText()
         icons.forEach { assertContains(font,"hud_skill_${it}.png") }
     }
@@ -52,14 +52,12 @@ class CoreClassBuildTest {
         assertEquals(12,CoreClassTrees.budget(CoreJourney.fresh().copy(xp=CoreJourneyRules.threshold(40))))
         assertFailsWith<IllegalArgumentException> { CoreJourney.fresh().copy(build=CoreClassBuild(nodes=7)) }
     }
-    @Test fun `resource cost reduction is applied once and star resources never become fractional`() {
+    @Test fun `resource cost reduction is applied once`() {
         val j=CoreJourney.legacy(build=CoreClassBuild(second=5,nodes=3))
         val s=CoreSkillCatalog.equipped(j)[1]
         assertEquals(26,s.spend)
         val state=CoreClassState();state.gain(26.0,j.job,j.build)
         state.spend(s,j.job,j.build);assertEquals(0.0,state.resource)
-        val star=CoreJourney.legacy(job=CoreClass.STARWEAVER,build=CoreClassBuild(nodes=8))
-        state.normalHit(star.job,UUID.randomUUID(),1,star.build);assertEquals(1.0,state.resource)
     }
     @Test fun `resource gains are per normal impact not per cleaved target and capped`() {
         val s=CoreClassState();val j=CoreJourney.legacy()
@@ -86,16 +84,6 @@ class CoreClassBuildTest {
         val id=UUID.randomUUID();val a=CoreClassState();val b=CoreClassState()
         a.mark(id,10);assertFalse(b.marked(id,10));assertTrue(a.consumeMark(id,10));assertFalse(a.consumeMark(id,10))
         a.mark(id,10);a.tick(131);assertFalse(a.marked(id,131))
-    }
-    @Test fun `star shield and attack releases both consume all three stars but movement does not`() {
-        for(index in listOf(0,1,2,6,7,8,9)) {
-            val state=CoreClassState();val j=CoreJourney.legacy(job=CoreClass.STARWEAVER)
-            state.gain(3.0,j.job,j.build)
-            assertEquals(3.0,state.spend(CoreSkillCatalog.skills(j.job)[index],j.job,j.build))
-            assertEquals(0.0,state.resource,"skill=$index")
-        }
-        val state=CoreClassState();val j=CoreJourney.legacy(job=CoreClass.STARWEAVER)
-        state.gain(3.0,j.job,j.build);state.spend(CoreSkillCatalog.skills(j.job)[3],j.job,j.build);assertEquals(3.0,state.resource)
     }
     @Test fun `guard resource cannot multiply from simultaneous hits`() {
         val s=CoreClassState();s.perfectUntil=12

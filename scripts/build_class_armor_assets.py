@@ -7,9 +7,9 @@ No skin replacement, global armor override, following display entity or client m
 import json
 from pathlib import Path
 from PIL import Image
-from class_armament_geometry import ASSETS, MATERIALS, box, beam, gem
+from class_armament_geometry import ASSETS, MATERIALS, box, gem
 
-JOBS=('warrior','mage','ranger','assassin','templar','healer','starweaver')
+JOBS=('warrior','mage','ranger','assassin','templar','healer')
 SLOTS=('helmet','chestplate','leggings','boots')
 # Base / secondary surface / trim / light. Four levels per shared material.
 KITS={
@@ -19,7 +19,6 @@ KITS={
     'assassin':('violet','cloth','steel','venom'),
     'templar':('steel','ivory','bronze','ice'),
     'healer':('ivory','cloth','bronze','light'),
-    'starweaver':('navy','cloth','bronze','ice'),
 }
 FRONTS={
     'warrior':('TTBBBBTT','TBBSSBBT','BBSSSSBB','BSSDDSSB','SSDDDDSS','SSDDGDSS','BSSDDSSB','BBSSSSBB','LLLLLLLL','LTTLLTTL','DDLLLLDD','DDLLLLDD'),
@@ -28,7 +27,6 @@ FRONTS={
     'assassin':('BBSDDSBB','BSLDDLSB','BSLDDLSB','BBSLLSBB','BBSSSSBB','BBGGSSBB','BBGGSSBB','SSSSSSSS','TTLLTTLL','LLLLLLLL','DBSSSSBD','DBSSSSBD'),
     'templar':('TTSSSSTT','TSSBB SST'.replace(' ',''),'SSBBBBSS','SBBT TBBS'.replace(' ',''),'BBTTTTBB','BBTGG TBB'.replace(' ',''),'BBTGG TBB'.replace(' ',''),'BBTTTTBB','TTTTTTTT','BBTTTTBB','BBTBBTBB','BBTBBTBB'),
     'healer':('TTSSSSTT','TBBSSBBT','BTBSSBTB','BTBSSBTB','BTBGGBT B'.replace(' ',''),'BTBGGBT B'.replace(' ',''),'BTBSSBTB','BTBSSBTB','TTTTTTTT','BTSSSSTB','BTSSSSTB','BTSSSSTB'),
-    'starweaver':('TTBBB BTT'.replace(' ',''),'BTBBBBTB','BBTBBTBB','BBBGGBBB','BBTBBTBB','BTBBBBTB','BBBBGGBB','BBGTBBBB','TTTTTTTT','BTBBBBTB','BBTBBTBB','BBBT TBBB'.replace(' ','')),
 }
 
 
@@ -71,11 +69,11 @@ def armor_texture(job,tier,inner=False):
         unwrap(image,(0,16),4,12,4,leg,colors,side_char='B')
         return image
     back=tuple('TBBBBBBT' if y<8 else 'LLLLLLLL' if y==8 else 'BSSSSSSB' for y in range(12))
-    if job in ('mage','healer','starweaver'): back=('TTTTTTTT',)+tuple('TBBBBBBT' for _ in range(10))+('TTTTTTTT',)
+    if job in ('mage','healer'): back=('TTTTTTTT',)+tuple('TBBBBBBT' for _ in range(10))+('TTTTTTTT',)
     unwrap(image,(16,16),8,12,4,tuple(front),colors,side_char='B',back=back)
     arm=('TTTT','HSSH','BSSB','BSSB','BBBB','BBBB','BBBB','BBBB','LLLL','TLLT','SSSS','DDDD')
     if job in ('ranger','assassin'): arm=('TTTT','BSSB','BSSB','BBBB','....','....','....','....','LLLL','TLLT','BSSB','DDDD')
-    if job in ('mage','healer','starweaver'): arm=('TTTT','BBBB','BSSB','BSSB','BSSB','BSSB','BSSB','BSSB','TTTT','BT TB'.replace(' ',''),'BBBB','TTTT')
+    if job in ('mage','healer'): arm=('TTTT','BBBB','BSSB','BSSB','BSSB','BSSB','BSSB','BSSB','TTTT','BT TB'.replace(' ',''),'BBBB','TTTT')
     unwrap(image,(40,16),4,12,4,arm,colors,side_char='B')
     # Feet render on the outer layer; the upper leg stays transparent so the
     # independently animated leggings are visible, rather than painted over.
@@ -143,16 +141,7 @@ def helmet(job,tier):
             e.append(box('mitre golden stitch',[6.3,12.2+i*.8,4.5],[9.7,12.5+i*.8,5],trim))
         gem(e,'prayer focus',8,11,3,1,glow)
     else:
-        # A low open coronet and a broken halo leave the skin's face visible.
-        for s in (-1,1):
-            e.append(box('astral temple point',[8+s*4.3-.4,10,4],[8+s*4.3+.4,14,5.2],trim,-s*22.5))
-        ring=[(8+x,16+y,9) for x,y in ((-4,-2),(-2,-4),(2,-4),(4,-2),(4,2),(2,4),(-2,4),(-4,2))]
-        for i,p in enumerate(ring):
-            if i==4: continue
-            beam(e,'broken coronet halo',p,ring[(i+1)%8],.55,.55,trim)
-        for i in range(tier):
-            x=5+i*2; e.append(box('fixed coronet star',[x-.25,14.5,3],[x+.25,15.5,3.5],glow))
-        gem(e,'star forehead',8,11,3,1.1,glow)
+        raise ValueError('Unknown armor job: '+job)
     return e
 
 
@@ -194,7 +183,7 @@ def build():
     pack=ASSETS.parents[1]
     paths=sorted(str(p.relative_to(pack)).replace('\\','/') for p in pack.rglob('*') if p.is_file() and p.name!='index.txt')
     (pack/'index.txt').write_text('\n'.join(paths)+'\n',encoding='utf-8')
-    print('Built 28 class armor sets: 56 native equipment textures, 28 equipment definitions, 112 item models/items.')
+    print('Built 24 class armor sets: 48 native equipment textures, 24 equipment definitions, 96 item models/items.')
 
 
 if __name__=='__main__': build()

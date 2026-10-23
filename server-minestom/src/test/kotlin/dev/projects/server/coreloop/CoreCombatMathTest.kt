@@ -30,7 +30,7 @@ class CoreCombatMathTest {
         assertEquals(plain.ad, ap.ad)
         assertEquals(plain.ap, ad.ap)
         assertEquals(CoreSkillCatalog.basicFormula.evaluate(plain), CoreSkillCatalog.basicFormula.evaluate(ap))
-        for (job in listOf(CoreClass.MAGE, CoreClass.STARWEAVER)) for (skill in CoreSkillCatalog.skills(job)) {
+        for (job in listOf(CoreClass.MAGE)) for (skill in CoreSkillCatalog.skills(job)) {
             assertEquals(skill.preview(plain), skill.preview(ad))
             if (skill.formula.ap > 0) assertTrue(skill.preview(ap) > skill.preview(plain))
             else assertEquals(skill.preview(plain), skill.preview(ap))

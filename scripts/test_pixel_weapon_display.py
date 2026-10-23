@@ -61,7 +61,7 @@ class PixelWeaponDisplayTest(unittest.TestCase):
             for path in directory.glob(f'pixel_{key}*.json'):
                 self.assertEqual(json.loads(path.read_text())['display'],rest['display'],path.name)
                 count += 1
-        self.assertEqual(count,175)
+        self.assertEqual(count,150)
 
     def test_grips_are_in_authored_handle_regions_not_the_whole_canvas_center(self):
         points = {}
@@ -69,7 +69,7 @@ class PixelWeaponDisplayTest(unittest.TestCase):
             px,py = grip_pixels(key,entry,textures)
             points[key] = grip_point(key,entry,textures)[1]
             if key=='tome': continue  # Book is supported below the binding, not a rod.
-            layer = textures['grip'] if key=='bow' else textures['shaft'] if key=='astrolabe' else textures['body']
+            layer = textures['grip'] if key=='bow' else textures['body']
             self.assertGreater(layer[int(py),int(px),3],0,key)
         self.assertGreater(points['staff'],points['greatsword']+5)
         self.assertGreater(points['bow'],points['greatsword']+5)
