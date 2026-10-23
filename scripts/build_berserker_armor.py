@@ -69,39 +69,46 @@ def helm():
     # 22.5 degrees as the plates on it) and narrowing to the tip under the chin.
     def front(y):
         return 4.0 - .414 * (13 - y)
-    widths = {-1: .9, 0: 1.4, 1: 2.0, 2: 2.6, 3: 3.2, 4: 4.4, 5: 4.5, 6: 4.6, 7: 4.6, 8: 4.6, 9: 4.6, 10: 4.6, 11: 4.5, 12: 4.3, 13: 3.6}
+    widths = {0: 1.8, 1: 2.4, 2: 3.0, 3: 3.6, 4: 4.4, 5: 4.5, 6: 4.6, 7: 4.6, 8: 4.6, 9: 4.6, 10: 4.6, 11: 4.5, 12: 4.3, 13: 3.6}
     for y, w in widths.items():
         f = front(y + .5)
         back = 12.7 if 4 <= y <= 12 else (11.6 if y == 13 else f + 3.4)
         cut = min(.9, w * .3)
-        e += [el("slice", (8 - w + cut, y, f), (8 + w - cut, y + 1, back), "iron", light=-1, flat=True),
-              el("slice", (8 - w, y, f + cut), (8 + w, y + 1, back), "iron", light=-1, flat=True)]
+        e += [el("slice", (8 - w + cut, y, f), (8 + w - cut, y + 1, back), "iron", flat=True),
+              el("slice", (8 - w, y, f + cut), (8 + w, y + 1, back), "iron", flat=True)]
         # Low on the sides the face shows: darkness in place of plate behind the front, the hooks over it.
         if 4 <= y <= 6:
             e += [el("face dark", (8 - w - .05, y, f + 2.2), (8 + w + .05, y + 1, 8.4), "dark")]
-    # The three front plates on the wedge, leaning with it: the middle one broad down to the tip, the side ones
-    # shorter, dark grooves between. Drawn upright and turned about (y 13, z 4): an upright plate at z 3.9 lands
-    # on the wedge's front, and its foot at y -1.6 lands at the tip.
-    e += [el("middle plate", (6.3, -1.6, 2.9), (9.7, 13.6, 3.9), "iron", lean, light=1),
-          el("middle plate top", (6.4, 13.2, 3.8), (9.6, 14.2, 6.6), "iron", light=2),
-          el("middle ridge", (7.6, -1.6, 2.5), (8.4, 13.4, 2.95), "iron", lean, light=2)]
+    # The front, read off the reference at the same angle: a broad middle plate down to a blunt tip, and each side
+    # a band spread wide at the top that runs down and in toward the tip (the front reads as a V), the eye sockets
+    # dark between band and middle plate, the hook below the band at the cheek.
+    # Plates drawn upright and turned about (y 13, z 4) land on the wedge's front when drawn at z 3.1..3.9.
+    e += [el("middle plate", (6.2, .6, 2.9), (9.8, 13.6, 3.9), "iron", lean, light=1),
+          el("middle ridge", (7.5, .8, 2.5), (8.5, 13.4, 2.95), "iron", lean, light=2),
+          el("middle plate top", (6.3, 13.2, 3.8), (9.7, 14.2, 6.6), "iron", light=2)]
+    def at(y):  # the wedge front at height y, for parts drawn upright in place
+        return front(y)
     for s in (-1, 1):
-        x0, x1 = (3.4, 5.8) if s < 0 else (10.2, 12.6)
-        lx0, lx1 = (4.6, 5.9) if s < 0 else (10.1, 11.4)
-        e += [el("side plate", (x0, 5.6, 3.1), (x1, 13.6, 3.9), "iron", lean, light=0),
-              el("side plate low", (lx0, 1.0, 3.15), (lx1, 5.8, 3.9), "iron", lean, light=0),
-              el("side plate top", (x0 + .2, 13.0, 4.0), (x1 - .2, 13.8, 7.6), "iron", light=1),
-              el("groove", ((5.8 if s < 0 else 9.7), 0.0, 3.2), ((6.3 if s < 0 else 10.2), 13.6, 3.85), "dark", lean)]
+        # Upper band beside the middle plate, leaning with it.
+        x0, x1 = (3.4, 5.6) if s < 0 else (10.4, 12.6)
+        e += [el("arc top", (x0, 9.4, 3.1), (x1, 13.6, 3.9), "iron", lean),
+              el("arc top cap", (x0 - .3, 13.0, 4.0), (x1, 13.8, 7.6), "iron", light=1)]
+        # The arc going out and down: a band tipped so its top leans in to the middle.
+        cx, cy = 8 + s * 3.0, 6.6
+        e += [el("arc", (cx - 1.0, cy - 3.2, at(cy) - .7), (cx + 1.0, cy + 3.2, at(cy) + .5), "iron", ("z", -s * 22.5, (cx, cy, at(cy))))]
+        # The socket: dark under the band, toward the outside of the middle plate.
+        sx0, sx1 = (3.6, 6.2) if s < 0 else (9.8, 12.4)
+        e += [el("socket", (sx0, 3.4, 3.86), (sx1, 8.0, 3.98), "dark", lean)]
         # The hook: the side plate's lower end curls back along the cheek and turns up.
         hx0, hx1 = (2.6, 3.8) if s < 0 else (12.2, 13.4)
         e += [el("hook", (hx0, 3.2, 2.0), (hx1, 4.8, 7.4), "iron", light=1),
               el("hook tip", (hx0, 4.6, 6.0), (hx1, 7.4, 7.4), "iron", light=1),
               el("hook curl", (hx0, 6.8, 4.8), (hx1, 7.8, 7.4), "iron", light=2)]
-    # Three tall tabs standing on the crown, the middle one highest, the side ones flaring out a little.
-    e += [el("crown tab", (6.9, 12.0, 4.6), (9.1, 17.0, 6.8), "iron", light=1)]
+    # Three tall broad tabs standing on the crown: the middle one highest, the side ones at the top corners.
+    e += [el("crown tab", (6.6, 12.6, 4.4), (9.4, 17.0, 6.8), "iron", light=1)]
     for s in (-1, 1):
-        x = 8 + s * 3.2
-        e += [el("crown tab", (x - .9, 11.8, 5.2), (x + .9, 15.6, 7.2), "iron", ("z", -s * 11.25, (x, 12.0, 6.2)), light=0)]
+        x0, x1 = (3.6, 5.6) if s < 0 else (10.4, 12.4)
+        e += [el("crown tab", (x0, 12.4, 5.0), (x1, 16.0, 7.0), "iron", light=0)]
     # The plume: crimson streaming back off the crown and falling, thick strips lying on each other.
     for i, (x0, x1, y0, length) in enumerate(((6.0, 8.4, 12.2, 11.0), (7.6, 10.0, 12.0, 13.5), (6.8, 9.2, 13.2, 9.0), (7.4, 8.8, 11.4, 15.5))):
         e += [el("plume", (x0, y0, 9.4), (x1, y0 + 2.0, 9.4 + length), "cloth", ("x", 33.75, (8.0, 13.2, 9.4)), light=1 - i % 2)]
