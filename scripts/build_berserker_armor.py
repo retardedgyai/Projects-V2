@@ -54,35 +54,54 @@ def el(name, lo, hi, mat, rot=None, light=0):
 
 def helm():
     """Front is north (low z). The head is x,y,z 4..12. Points are built as narrowing steps (each step's top or
-    front catches the light) rather than turned plates: the facets read as planes at any angle."""
+    front catches the light) rather than turned plates. Model rotations: -x tips a part's back end up.
+
+    Creator 2026-10-23: the clean, symmetric helm with a horizontal eye band and a centre antenna read as a Kamen
+    Rider. So: nothing stands up at the front; a scowling brow pulled down to the middle, horns from it swept
+    back; small slanted eyes deep in the dark; a maw of fangs below; a ragged mane of spikes at the back, one broken."""
     e = []
     e += [el("skull", (3.6, 4.2, 3.6), (12.4, 11.2, 12.4), "iron", light=-1)]
-    # A stepped dome: each layer narrower, its top lit.
-    for i, (inset, y0, y1) in enumerate(((0.0, 11.0, 12.4), (0.9, 12.4, 13.4), (2.0, 13.4, 14.2))):
+    for i, (inset, y0, y1) in enumerate(((0.0, 11.0, 12.2), (1.0, 12.2, 13.0))):
         e += [el("dome", (3.6 + inset, y0, 3.8 + inset * .6), (12.4 - inset, y1, 12.4 - inset * .3), "iron", light=-i % 2)]
-    # The fin along the crown, stepping back as it rises.
-    for i, (y0, z0, z1) in enumerate(((14.2, 4.0, 11.6), (15.2, 6.0, 12.4), (16.2, 8.2, 13.0))):
-        e += [el("crest", (7.5 + .1 * i, y0, z0), (8.5 - .1 * i, y0 + 1.0, z1), "iron", light=1)]
-    # Sides as overlapping bands, each lower one standing out further.
+    # The scowl: each half of the brow steps down toward the middle, and juts forward.
     for s in (-1, 1):
-        for i, (out, y0, y1, z0) in enumerate(((0.4, 9.6, 11.2, 4.0), (0.8, 7.4, 9.6, 4.4), (0.5, 4.8, 7.4, 5.0))):
-            x0, x1 = (3.6 - out, 4.2) if s < 0 else (11.8, 12.4 + out)
-            e += [el("side band", (x0, y0, z0), (x1, y1, 12.6), "iron", light=1 - i)]
-    # The brow-visor jutting forward to a point in steps over the slit.
-    for i, (x0, z0) in enumerate(((3.6, 2.6), (4.8, 1.6), (6.2, 0.6), (7.3, -0.4))):
-        e += [el("brow", (x0, 9.0 + .15 * i, z0), (16 - x0, 10.8, z0 + 1.2), "iron", light=1)]
-    # The slit under it, dark, the red eyes back in it.
-    e += [el("eye slit", (4.4, 7.2, 3.0), (11.6, 9.0, 3.8), "dark")]
+        for i in range(3):
+            x0, x1 = (3.4 + 1.6 * i, 5.2 + 1.6 * i) if s < 0 else (10.8 - 1.6 * i, 12.6 - 1.6 * i)
+            e += [el("brow", (x0, 10.0 - .9 * i, 2.4 - .5 * i), (x1, 11.2 - .8 * i, 3.8), "iron", light=1)]
+    # Horns from the outer ends of the brow, swept back and up past the crown; the right one broken short.
+    for s, length in ((-1, 1.0), (1, .55)):
+        x = 8 + s * 4.6
+        for i in range(3):
+            xi = x + s * .5 * i
+            z1 = 5.4 + (5.0 + 3.0 * i) * length + 2.0
+            e += [el("horn", (xi - .45 + .12 * i, 9.2 + .5 * i, 5.4 + 2.6 * i * length), (xi + .45 - .12 * i, 10.4 + .5 * i - .2 * i, z1), "iron",
+                     ("x", -11.25, (xi, 10.0, 5.4)), light=1 if i < 2 else 2)]
+    # A ragged mane of spikes off the back of the crown, uneven, one snapped off.
+    for i, (x, length, lift) in enumerate(((5.0, 5.0, -.6), (6.5, 7.5, -.2), (8.0, 3.0, .0), (9.5, 8.5, -.2), (11.0, 5.5, -.6))):
+        e += [el("mane", (x - .45, 11.4 + lift, 10.4), (x + .45, 12.4 + lift, 10.4 + length), "iron", ("x", -11.25, (x, 11.9, 10.4)),
+                 light=1 if i % 2 else 0)]
+    # The dark under the brow, the eyes small, slanted and set far back in it.
+    e += [el("eye shadow", (4.2, 5.8, 3.2), (11.8, 9.4, 4.0), "dark")]
     for s in (-1, 1):
-        x = 8 + s * 2.0
-        e += [el("eye", (x - .8, 7.6, 2.9), (x + .8, 8.2, 3.1), "eye")]
-    # The face narrows down to a point at the chin, in steps.
-    for i, (x0, y0, y1) in enumerate(((4.2, 4.0, 7.2), (5.4, 3.2, 4.0), (6.8, 2.6, 3.2))):
-        e += [el("face", (x0, y0, 2.4 + .1 * i), (16 - x0, y1, 3.6), "iron", light=0 if i == 0 else 1)]
-    e += [el("face ridge", (7.4, 4.0, 2.0), (8.6, 7.2, 2.6), "iron", light=1)]
-    # Torn crimson strips hanging from the back of the crown, flaring out.
-    for i, (x, length) in enumerate(((5.8, 7.0), (7.4, 9.0), (9.0, 6.0))):
-        e += [el("helm strip", (x, 12.0 - length, 12.8), (x + 1.3, 12.0, 13.5), "cloth", ("x", -22.5, (8.0, 12.0, 13.0)),
+        x = 8 + s * 1.9
+        e += [el("eye", (x - .7, 7.4, 3.0), (x + .7, 7.9, 3.2), "eye"),
+              el("eye", (x + s * .2 - .5, 7.9, 3.0), (x + s * .2 + .5, 8.3, 3.2), "eye")]
+    # The maw: a dark mouth with fangs hanging into it and rising from the jaw, the jaw stepping down to a point.
+    e += [el("muzzle plate", (4.4, 5.6, 2.4), (11.6, 6.4, 3.4), "iron"),
+          el("maw", (5.0, 4.0, 2.6), (11.0, 5.6, 3.4), "dark")]
+    for i, (x, top_len) in enumerate(((5.6, .9), (7.0, 1.3), (9.0, 1.3), (10.4, .9))):
+        e += [el("fang", (x - .25, 5.6 - top_len, 2.4), (x + .25, 5.7, 2.8), "iron", light=2)]
+    for x in (6.3, 8.0, 9.7):
+        e += [el("lower fang", (x - .2, 4.0, 2.5), (x + .2, 4.7, 2.9), "iron", light=2)]
+    for i, (x0, y0, y1) in enumerate(((4.4, 3.2, 4.2), (5.6, 2.6, 3.2), (6.8, 2.0, 2.6))):
+        e += [el("jaw", (x0, y0, 2.2 + .1 * i), (16 - x0, y1, 3.6), "iron", light=0 if i == 0 else 1)]
+    # Spurs off the jaw corners, pointing back.
+    for s in (-1, 1):
+        x = 8 + s * 4.3
+        e += [el("jaw spur", (x - .35, 3.4, 3.0), (x + .35, 4.2, 7.0), "iron", ("x", -22.5, (x, 3.8, 3.0)), light=1)]
+    # Torn crimson strips hanging from the back of the crown.
+    for i, (x, length) in enumerate(((5.6, 7.0), (7.0, 10.0), (8.6, 5.0), (10.0, 8.0))):
+        e += [el("helm strip", (x, 12.0 - length, 12.6), (x + 1.1, 12.0, 13.3), "cloth", ("x", -22.5, (8.0, 12.0, 13.0)),
                  light=i % 2)]
     return e
 
@@ -100,20 +119,19 @@ def mantle():
             y1 = 25.4 + big * .5 - 2.2 * i
             e += [el("pauldron", (cx - w, y1 - 2.6, 5.0 - .2 * i), (cx + w, y1, 11.0 + .2 * i), "iron",
                      ("z", -s * 22.5, (cx, y1 - 1.3, 8.0)), light=1 - i)]
-        e += [el("pauldron spike", (cx - .4, 25.4 + big * .5, 6.6), (cx + .4, 27.8 + big, 9.4), "iron",
-                 ("z", -s * 22.5, (cx, 25.6, 8.0)), light=1)]
+        # Spikes of different lengths jutting up and out of the top plate.
+        for k, (dz, length) in enumerate(((5.8, 3.4 + big * 2), (8.0, 2.0), (10.2, 2.8 + big))):
+            e += [el("pauldron spike", (cx - .45, 25.0 + big * .5, dz - .45), (cx + .45, 25.0 + big * .5 + length, dz + .45), "iron",
+                     ("z", -s * 45.0, (cx, 25.4 + big * .5, dz)), light=1 + (k == 0))]
     # The hood: crimson cloth piled round the neck, heavier at the back.
     e += [el("hood front", (4.6, 22.6, 4.8), (11.4, 24.8, 6.4), "cloth", ("x", -22.5, (8.0, 23.6, 5.6)), light=1),
           el("hood back", (3.8, 21.4, 9.6), (12.2, 26.0, 12.0), "cloth"),
           el("hood side", (3.4, 22.4, 5.6), (4.8, 25.0, 10.4), "cloth", light=-1),
           el("hood side", (11.2, 22.4, 5.6), (12.6, 25.0, 10.4), "cloth", light=-1)]
-    # A sash over the left shoulder, one band crossing the chest to the right hip (and the back).
-    e += [el("sash", (-0.2, 17.4, 4.5), (16.2, 19.8, 5.3), "cloth", ("z", 45, (8.0, 18.6, 4.9)), light=1),
-          el("sash back", (-0.2, 17.4, 10.3), (16.2, 19.8, 11.1), "cloth", ("z", 45, (8.0, 18.6, 10.7)), light=-1)]
     # The cape to the knee, its hem torn into strips of different lengths.
     e += [el("cape", (3.4, 9.0, 10.6), (12.6, 22.0, 11.4), "cloth")]
-    for i, (x, bottom) in enumerate(((3.4, 4.0), (5.2, 6.4), (7.0, 2.8), (8.8, 5.6), (10.6, 3.6))):
-        e += [el("cape strip", (x, bottom, 10.7), (x + 2.0, 9.2, 11.3), "cloth", light=-(i % 2))]
+    for i, (x, bottom) in enumerate(((3.4, 3.0), (4.6, 6.8), (5.6, 1.2), (6.8, 5.0), (7.8, 7.6), (8.8, 2.2), (10.0, 6.0), (11.2, 4.0))):
+        e += [el("cape strip", (x, bottom, 10.7 + .1 * (i % 2)), (x + 1.3, 9.2, 11.3 + .1 * (i % 2)), "cloth", light=-(i % 2))]
     # A torn scarf trailing back from the right shoulder.
     for i in range(3):
         e += [el("scarf", (2.4 + .6 * i, 23.0 - .8 * i, 11.0), (3.4 + .6 * i, 24.0 - .8 * i, 17.0 - 1.4 * i), "cloth",
