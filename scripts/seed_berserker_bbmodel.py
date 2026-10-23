@@ -67,7 +67,7 @@ def frame(top, bottom, out):
     return up, n, np.cross(up, -n), length
 
 
-def chain(name, points, width, thick, outs, mat="iron", light=0, bevel=True):
+def chain(name, points, width, thick, outs, mat="iron", light=0, bevel=(-1, 1)):
     """A plate bent along a polyline (top first): one segment per span, each a little longer so the joints close,
     with narrow bevels along both long edges turned 40 degrees off the face (the reference's cut edges)."""
     pts = [np.array(p, float) for p in points]
@@ -80,7 +80,7 @@ def chain(name, points, width, thick, outs, mat="iron", light=0, bevel=True):
         ext = up * .15
         out.append(plate(name, top + ext, bottom - ext, w, thick, n, mat, light))
         if bevel:
-            for sgn in (-1, 1):
+            for sgn in bevel:
                 edge = side * sgn * (w / 2) + n * (thick / 2 - .15)
                 o2 = n * math.cos(math.radians(40)) + side * sgn * math.sin(math.radians(40))
                 out.append(plate(name + " bevel", top + ext + edge, bottom - ext + edge, .8, .5, o2, mat, light))
@@ -88,34 +88,40 @@ def chain(name, points, width, thick, outs, mat="iron", light=0, bevel=True):
 
 
 def helm():
+    """Read off three close frames of the reference (fr/h_47.5, h_48, h_49): the side bands start beside the middle
+    plate at the crown and open outward as they go down round the sides (the front reads as a Λ over the middle
+    plate), so the eyes are the big dark between band and middle plate; each band's lower end turns in toward the
+    face as a hook that closes the dark from below; the side tabs stand over the bands' tops."""
     e = []
-    # The shell round the head, its lower sides dark: the face and the opening under the hooks.
-    e += [box("shell", (3.7, 6.8, 4.6), (12.3, 12.7, 12.5), "iron", -1),
-          box("shell", (4.4, 6.8, 4.0), (11.6, 12.9, 13.0), "iron", -1),
-          box("neck guard", (3.9, 3.2, 8.4), (12.1, 7.0, 12.9), "iron", -1),
-          box("face dark", (3.75, 3.4, 2.4), (12.25, 9.6, 8.6), "dark")]
-    # The crown, bent over the top from the back to the brow.
-    e += chain("crown", [(8, 12.6, 12.9), (8, 13.6, 10.0), (8, 13.8, 6.6), (8, 13.4, 4.4)], 8.8, .9, (0, 1, 0), bevel=False)
-    # The middle plate bent from the crown down the brow to a blunt tip leaning forward, narrowing.
-    e += chain("middle", [(8, 14.1, 6.4), (8, 13.4, 3.8), (8, 9.6, 2.2), (8, 5.2, 1.2), (8, 1.0, .6)],
-               [3.4, 3.8, 3.6, 2.8], 1.1, [(0, 1, -.4), (0, .45, -1), (0, .25, -1), (0, .15, -1)])
-    e += chain("middle ridge", [(8, 14.3, 5.4), (8, 13.6, 3.2), (8, 9.6, 1.6), (8, 5.2, .6), (8, 1.4, 0)], .7, .5,
-               [(0, 1, -.4), (0, .45, -1), (0, .25, -1), (0, .15, -1)], bevel=False)
+    # Inside, all dark: what shows between the plates is shadow.
+    e += [box("inside", (3.8, 3.0, 2.6), (12.2, 12.8, 12.4), "dark")]
+    # The back and sides of the skull, plated: a plate bent over the back from the crown to the neck, one each side.
+    e += chain("back", [(8, 13.8, 9.6), (8, 13.0, 12.6), (8, 9.0, 13.2), (8, 3.2, 12.8)], 8.8, .9,
+               [(0, 1, .4), (0, .2, 1), (0, -.1, 1)], bevel=False)
     for s in (-1, 1):
-        # The side band, bent: from the top corner, round the brow, down and in toward the tip, facing out.
-        e += chain("band", [(8 + s * 4.2, 13.8, 6.6), (8 + s * 4.7, 11.2, 3.8), (8 + s * 4.1, 7.4, 2.4), (8 + s * 2.8, 2.6, 1.5)],
-                   [3.2, 3.2, 2.8], 1.0, [(s * .6, .7, -.6), (s * .9, .2, -.8), (s * .8, .05, -.9)])
-        e += [plate("side", (8 + s * 4.9, 13.4, 10.0), (8 + s * 4.6, 6.6, 8.8), 5.6, .9, (s * 1, .1, 0), light=-1)]
-        # The hook: the band's end curls back along the cheek and turns up.
-        e += chain("hook", [(8 + s * 3.0, 2.6, 1.4), (8 + s * 4.6, 2.9, 3.2), (8 + s * 5.0, 4.0, 5.4), (8 + s * 4.8, 6.6, 6.4)],
-                   [1.6, 1.6, 1.4], .9, [(s * .4, -.6, -.7), (s * 1, -.3, -.2), (s * 1, 0, .3)], bevel=False)
-    # Three tall tabs on the crown: the middle one highest, the side ones leaning out.
-    e += chain("crown tab", [(8, 17.8, 7.8), (8, 13.2, 6.6)], 2.8, 1.8, (0, .1, -1))
+        e += chain("side", [(8 + s * 4.6, 13.4, 8.8), (8 + s * 4.9, 8.6, 9.0), (8 + s * 4.6, 3.6, 9.4)], [7.6, 6.4], .9,
+                   [(s * 1, .3, 0), (s * 1, -.1, 0)], light=-.5, bevel=False)
+    e += chain("crown", [(8, 13.8, 10.4), (8, 14.0, 7.0), (8, 13.6, 4.8)], 8.4, .9, (0, 1, 0), bevel=False)
+    # The middle plate down the brow to a blunt tip leaning forward, narrowing.
+    e += chain("middle", [(8, 14.2, 6.6), (8, 13.5, 3.8), (8, 9.6, 2.2), (8, 5.2, 1.2), (8, 1.4, .6)],
+               [4.4, 4.6, 3.6, 2.4], 1.1, [(0, 1, -.4), (0, .45, -1), (0, .25, -1), (0, .15, -1)], bevel=False)
+    # Cut edges only down the face, where the plate is steep.
+    e += [p for p in chain("middle", [(8, 9.6, 2.2), (8, 5.2, 1.2), (8, 1.4, .6)], [3.6, 2.4], 1.1,
+                           [(0, .25, -1), (0, .15, -1)]) if "bevel" in p["name"]]
     for s in (-1, 1):
-        e += chain("crown tab", [(8 + s * 4.4, 16.6, 8.4), (8 + s * 3.6, 13.0, 7.2)], 2.0, 1.4, (s * .3, .1, -1))
+        # The band: from beside the middle plate at the crown, over the brow and opening outward down the side.
+        e += chain("band", [(8 + s * 3.2, 14.1, 6.0), (8 + s * 3.8, 12.6, 3.4), (8 + s * 4.6, 9.0, 2.8), (8 + s * 5.1, 4.6, 3.4)],
+                   [2.6, 2.8, 2.6], 1.0, [(s * .3, .8, -.6), (s * .5, .3, -.9), (s * .95, .05, -.5)], bevel=(s,))
+        # The hook: the band's lower end turns in toward the face under the dark, its tip lifting.
+        e += chain("hook", [(8 + s * 5.1, 4.8, 3.4), (8 + s * 4.7, 3.0, 2.6), (8 + s * 2.9, 2.9, 1.7), (8 + s * 2.2, 3.8, 1.4)],
+                   [1.8, 1.8, 1.4], 1.0, [(s * .9, -.3, -.5), (0, -.4, -1), (-s * .3, .3, -1)], light=.5, bevel=False)
+    # Three tall tabs on the crown: the middle one over the middle plate, the side ones over the bands' tops.
+    e += chain("crown tab", [(8, 17.9, 7.8), (8, 13.4, 6.6)], 2.8, 1.8, (0, .1, -1))
+    for s in (-1, 1):
+        e += chain("crown tab", [(8 + s * 3.6, 16.9, 8.0), (8 + s * 3.1, 13.2, 6.8)], 1.9, 1.4, (s * .3, .1, -1))
     # The plume: crimson streaming back off the crown and falling.
     for i, (dx, length, drop, w) in enumerate(((-1.0, 11, 6.5, 2.4), (1.1, 13, 8.0, 2.4), (0, 9, 4.5, 2.6), (.2, 15, 10.0, 1.8))):
-        top = np.array((8 + dx, 13.9 - .2 * i, 9.0))
+        top = np.array((8 + dx, 13.9 - .2 * i, 9.6))
         e += chain("plume", [top, top + (dx * .15, -drop * .3, length * .5), top + (dx * .3, -drop, length)], w, 1.2, (0, 1, .4),
                    "cloth", 1 - i % 2, bevel=False)
     return e
@@ -217,7 +223,7 @@ def face_level(e, face):
     """How lit a face is (0..5) from where it really faces after its rotation: the plates' angles do the shading,
     so the game's own face shading is turned off for these cubes (shade: false)."""
     n = rotation_matrix(*e["rotation"]) @ np.array(NORMALS[face], float)
-    return .1 + 5.4 * max(0.0, float(n @ LIGHT)) ** 2 + e["light"]
+    return .9 + 4.3 * max(0.0, float(n @ LIGHT)) ** 1.5 + e["light"]
 
 
 def bbmodel(name, elements, size=1024):
