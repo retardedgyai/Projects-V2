@@ -36,6 +36,16 @@ internal object CoreWarriorRefChoreography {
             CoreCombatMeshPart("$PREFIX$name", "steel", at, Vec(scale, scale, scale), yaw = partYaw, pitch = pitch, roll = roll,
                 durationTicks = life, startSize = 1.0, endSize = 1.0, delayTicks = delay, ground = ground, billboard = billboard)
         val out = mutableListOf<CoreCombatMeshPart>()
+        /**
+         * The blade's dark trail in the plane the greatsword actually swings in: upright through the body, along the
+         * facing (Creator 2026-10-23: a vertical swing must not leave a trail off to one side). The drawing (wind_band)
+         * is an arc round a pivot at a quarter of its width from one edge, the blade going from up-behind down to the
+         * ground ahead; the quad is placed so that pivot sits at the shoulder. [rising] turns it upside down: from low
+         * behind, through the front, up (斬り上げ). Arc radius is about half of [size].
+         */
+        fun trail(size: Double, life: Int, delay: Int = 0, rising: Boolean = false, shoulder: Double = 1.5, ahead: Double = .2) =
+            if (!rising) part("wind", local(0.0, shoulder + .031 * size, ahead + .25 * size), size, yaw + PI / 2, life, delay = delay, ground = false)
+            else part("wind", local(0.0, shoulder - .031 * size, ahead + .25 * size), size, yaw - PI / 2, life, delay = delay, ground = false, roll = PI)
         if (e.sceneId == "war_wound") {
             // 跳び叩き landing (Creator 2026-10-22): the blade comes down in front as the body lands. Same family as
             // 地割り and no round crater: a short furrow torn forward, turf kicked up in a fan to the front (biggest
@@ -88,8 +98,8 @@ internal object CoreWarriorRefChoreography {
         if (e.sceneId == CoreWarriorRules.LAUNCHER) {
             // 斬り上げ: the cause is the blade's trail going UP (the overhead trail turned round in its plane), then earth
             // erupts under the one it throws, thrown high, with a slab torn up.
-            out += part("wind", local(-.2, 2.1, 1.2), 4.4, yaw + PI / 2 - 1.15, 8, ground = false, roll = PI)
-            out += part("wind", local(-.25, 2.05, 1.15), 5.0, yaw + PI / 2 - 1.15, 7, ground = false, roll = PI + .12, delay = 1)
+            out += trail(4.6, 8, rising = true)
+            out += trail(5.2, 7, delay = 1, rising = true, shoulder = 1.45)
             val at = local(0.0, .25, 2.3)
             for (k in 0 until 7) out += part("clod${24 + k}", at.add((hash(k, 196) - .5) * .8, 0.0, (hash(k, 197) - .5) * .8),
                 .3 + .25 * hash(k, 198), yaw + hash(k, 199) * 6.0, 24, ground = false, delay = 1 + k / 3).copy(startSize = 1.7)
@@ -127,7 +137,8 @@ internal object CoreWarriorRefChoreography {
                 return out
             }
             // The last swing is the biggest: straight down from overhead, and the ground splits under it.
-            out += part("wind", local(.3, 1.9, 2.0), 6.2, yaw + PI / 2 - 1.15, 9, ground = false)
+            out += trail(5.6, 9)
+            out += trail(6.2, 8, delay = 1, shoulder = 1.55)
             out += part("furrow", local(0.0, .12, 2.8), 1.0, yaw, 34).copy(scale = Vec(4.8, 1.0, 4.8))
             for (k in 0 until 8) out += part("clod${20 + k}", local((hash(k, 159) - .5) * 1.2, .25, 2.2 + .5 * k), .35 + .25 * hash(k, 160),
                 yaw + hash(k, 161) * 6.0, 20, ground = false, delay = k / 2).copy(startSize = 1.2)
@@ -146,7 +157,7 @@ internal object CoreWarriorRefChoreography {
             // Each ring heaves up and drops back quickly, so the eye follows a wave going out, not a bullseye.
             if (e.pulse == 0) {
                 // The cause: the blade brought straight down with the fall, then a column of dust off the impact point.
-                out += part("wind", local(.2, 1.6, .9), 5.0, yaw + PI / 2 - 1.15, 6, ground = false)
+                out += trail(5.2, 6)
                 for (k in 0 until 3) out += part("dust${74 + k}", Vec(0.0, .4 + .8 * k, 0.0), 2.4 - .4 * k, 0.0, 12 + 2 * k, ground = false,
                     billboard = true, roll = hash(k, 159) * 6.0)
             }
@@ -186,7 +197,7 @@ internal object CoreWarriorRefChoreography {
             // the blade, the turf between them is flung up in slabs, the wave reaching the edge last.
             val r = e.skill.radius
             // The cause: the blade driven straight down, then a burst at the point it went in.
-            out += part("wind", local(.1, 1.3, .8), 3.4, yaw + PI / 2 - 1.15, 6, ground = false)
+            out += trail(3.6, 6, shoulder = 1.6)
             for (k in 0 until 2) out += part("dust${78 + k}", Vec(0.0, .4 + .6 * k, 0.0), 1.6 - .3 * k, 0.0, 12, ground = false,
                 delay = 1, billboard = true, roll = hash(k, 189) * 6.0)
             // Five cracks, uneven in angle and length (not a star), each widest at the blade.
@@ -242,7 +253,7 @@ internal object CoreWarriorRefChoreography {
             }
             return out
         }
-        out += part("wind", local(.3, 1.9, 2.0), 5.0, yaw + PI / 2 - 1.15, 8, ground = false)
+        out += trail(5.4, 8)
         // The ground torn forward: one furrow, widest at the blow, running out ahead (texture row 0 = far end).
         out += part("furrow", local(0.0, .12, impact - .6 + furrow / 2), 1.0, yaw, 44).copy(scale = Vec(furrow, 1.0, furrow))
         // The furrow's lips: turf torn up along both edges and tipped outward, biggest at the blow, coming up as the
