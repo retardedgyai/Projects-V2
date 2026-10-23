@@ -17,7 +17,6 @@ internal class CoreClassEffect(private val job: CoreClass, private val motion: C
         CoreClass.ASSASSIN -> 0xec9cbf
         CoreClass.TEMPLAR -> 0xffe4a0
         CoreClass.HEALER -> 0xa6f1d3
-        CoreClass.STARWEAVER -> 0xbfb0ff
         CoreClass.MAGE -> when(element) { 1 -> 0xffa76e; 2 -> 0xa4e7ff; else -> 0xc3abff }
     }
     override val durationTicks = if(ultimate) 12 else 8

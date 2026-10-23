@@ -39,8 +39,8 @@ def verify():
                     assert model['display']['head']['scale']==[1.6]*3
                     assert model['display']['head']['translation']==[0,0,0]
                 count+=1
-    assert len(surfaces)==28,'Every class/tier must have its own painted surface'
-    print(f'PASS: 28 worn sets, 56 exact native 64x32 textures, {count} item models, head transform, finite geometry, index and class variation.')
+    assert len(surfaces)==24,'Every class/tier must have its own painted surface'
+    print(f'PASS: 24 worn sets, 48 exact native 64x32 textures, {count} item models, head transform, finite geometry, index and class variation.')
 
 
 if __name__=='__main__': verify()

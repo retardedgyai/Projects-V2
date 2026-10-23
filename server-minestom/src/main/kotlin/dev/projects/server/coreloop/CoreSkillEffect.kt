@@ -9,7 +9,7 @@ import kotlin.math.*
 /** Authored combat art, not hit logic. One PULSE is created by one server damage pulse. */
 internal enum class CoreSkillMotif {
     SLASH, THRUST, CLEAVE, WHIRL, VENOM, FROST_FAN, ARROW, NEEDLE, FIRE, LIGHTNING,
-    STAR_BEAM, RAIN, METEOR, FROST, STARS, TRAP, PULL, WARD, HEAL, PILLAR, BLINK, GUARD, SHOCK,
+    STAR_BEAM, RAIN, METEOR, FROST, TRAP, PULL, WARD, HEAL, PILLAR, BLINK, GUARD, SHOCK,
 }
 
 internal enum class CoreSkillVisualPhase { PREPARE, PULSE, CONTACT }
@@ -28,18 +28,17 @@ internal object CoreSkillArt {
         put(CoreSkillMotif.NEEDLE, "ass_needle")
         put(CoreSkillMotif.FIRE, "firebolt")
         put(CoreSkillMotif.LIGHTNING, "mage_mark", "mage_burst")
-        put(CoreSkillMotif.STAR_BEAM, "star_thread", "star_needle", "star_break", "heal_light", "heal_mark")
+        put(CoreSkillMotif.STAR_BEAM, "heal_light", "heal_mark")
         put(CoreSkillMotif.RAIN, "arrow_rain", "hunt_storm")
         put(CoreSkillMotif.METEOR, "meteor", "mage_ult")
         put(CoreSkillMotif.FROST, "frost_nova", "mage_garden", "mage_zero")
-        put(CoreSkillMotif.STARS, "star_ring", "starfall", "star_cloud", "star_ult")
         put(CoreSkillMotif.TRAP, "hunt_trap")
         put(CoreSkillMotif.PULL, "temp_pull", "temp_ult")
         put(CoreSkillMotif.WARD, "war_cry", "war_banner", "war_awaken", "mage_ward", "temp_ward", "temp_sanctuary",
-            "heal_shield", "star_shield", "star_constellation")
+            "heal_shield")
         put(CoreSkillMotif.HEAL, "heal_ring", "heal_wind", "heal_ult")
         put(CoreSkillMotif.PILLAR, "heal_pillar", "heal_lamp", "heal_judgment", "temp_field")
-        put(CoreSkillMotif.BLINK, "ass_escape", "mage_blink", "heal_step", "star_step")
+        put(CoreSkillMotif.BLINK, "ass_escape", "mage_blink", "heal_step")
         put(CoreSkillMotif.GUARD, "war_guard", "ass_guard", "temp_guard")
         put(CoreSkillMotif.SHOCK, "temp_rebuke")
     }
@@ -55,7 +54,6 @@ internal object CoreSkillArt {
             CoreClass.RANGER -> 0xc8da96
             CoreClass.TEMPLAR -> 0xf1d57f
             CoreClass.HEALER -> 0x85edc5
-            CoreClass.STARWEAVER -> 0xca58ff
             CoreClass.MAGE -> 0xabbbff
         }
     }
@@ -138,7 +136,7 @@ internal class CoreSkillEffect(
             val progress = (tick + 1.0) / durationTicks
             if (skill.motion == CoreSkillMotion.FIELD) {
                 if (tick % 3 == 0) ring(radius, count = 20)
-                if (motif in setOf(CoreSkillMotif.METEOR, CoreSkillMotif.RAIN, CoreSkillMotif.STARS, CoreSkillMotif.PILLAR)) {
+                if (motif in setOf(CoreSkillMotif.METEOR, CoreSkillMotif.RAIN, CoreSkillMotif.PILLAR)) {
                     repeat(3) { i ->
                         val a = i * PI * 2 / 3 + pulse * 1.4
                         val r = radius * .45
@@ -166,7 +164,7 @@ internal class CoreSkillEffect(
                 CoreSkillMotif.FIRE, CoreSkillMotif.METEOR -> Particle.SMALL_FLAME
                 CoreSkillMotif.FROST, CoreSkillMotif.FROST_FAN -> Particle.SNOWFLAKE
                 CoreSkillMotif.LIGHTNING -> Particle.ELECTRIC_SPARK
-                CoreSkillMotif.STARS, CoreSkillMotif.STAR_BEAM, CoreSkillMotif.HEAL -> Particle.END_ROD
+                CoreSkillMotif.STAR_BEAM, CoreSkillMotif.HEAL -> Particle.END_ROD
                 CoreSkillMotif.CLEAVE, CoreSkillMotif.THRUST -> Particle.CRIT
                 else -> null
             }
@@ -269,17 +267,6 @@ internal class CoreSkillEffect(
                     line(Vec(x, .1, z), Vec(x * .9, if (skill.ultimate) 2.1 else 1.35, z * .9), if (tail) 4 else 7,
                         if (tick == 0) bright else color, key = tick == 0)
                     if (!tail) line(Vec(x, .8, z), Vec(x + cos(a + 1) * .4, 1.15, z + sin(a + 1) * .4), 3)
-                }
-            }
-            CoreSkillMotif.STARS -> {
-                if (tick == 0) ring(radius, key = true)
-                repeat(5) { i ->
-                    val a = i * PI * 2 / 5 + pulse * .6
-                    val b = a + PI * 4 / 5
-                    line(Vec(cos(a) * radius * .65, .25, sin(a) * radius * .65),
-                        Vec(cos(b) * radius * .65, .25, sin(b) * radius * .65), if (tail) 5 else 9, key = tick == 0)
-                    if (!tail) line(Vec(cos(a) * radius * .65, .3, sin(a) * radius * .65),
-                        Vec(cos(a) * radius * .65, 1.5 - t, sin(a) * radius * .65), 4, bright, .8)
                 }
             }
             CoreSkillMotif.TRAP -> {

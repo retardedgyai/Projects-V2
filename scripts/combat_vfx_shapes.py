@@ -33,8 +33,6 @@ POLYGONS = {
     "contract_blade": [[(0,.98),(.35,.05),(.12,-.15),(.2,-.35),(.08,-.85),(-.08,-.85),(-.2,-.35),(-.12,-.15),(-.35,.05)]],
     "thrust_tip": [[(0,.98),(.2,.35),(.07,.42),(.07,-.9),(-.07,-.9),(-.07,.42),(-.2,.35)]],
     "shadow_needle": [[(0,.99),(.13,-.55),(0,-.96),(-.13,-.55)]],
-    "star_needle": [[(0,.99),(.14,.08),(.33,-.15),(.10,-.3),(0,-.99),(-.10,-.3),(-.33,-.15),(-.14,.08)]],
-    "star_shard": [[(0,.98),(.45,.1),(.14,-.82),(-.34,-.3)]],
     "ice_spike": [[(-.18,-.9),(-.36,-.2),(-.18,.53),(0,.98),(.28,.26),(.19,-.9)]],
     "feather": [[(-.04,-.94),(-.55,-.4),(-.60,.2),(-.29,.65),(.12,.93),(.45,.63),(.54,.22),(.18,-.15),(.36,-.13),(.07,-.45)]],
     "healing_petal": [[(0,-.9),(-.42,-.13),(-.57,.52),(-.27,.91),(0,.56),(.27,.91),(.57,.52),(.42,-.13)]],
@@ -57,30 +55,27 @@ PATHS = {
     "cut_spark": [[(-.7,-.35),(.7,.35)],[(-.18,-.7),(.18,.7)],[(-.45,.4),(.45,-.4)]],
     "blood_notch": [[(-.4,-.6),(-.1,.75)],[(.1,-.75),(.4,.6)]],
     "ground_crack": [[(0,-.85),(-.12,-.3),(.15,.1),(0,.8)],[(-.1,-.2),(-.6,.3),(-.7,.75)],[(.12,.1),(.58,.4),(.75,.85)]],
-    "astral_crack": [[(0,0),(-.68,.2),(-.9,.6)],[(0,0),(.6,.25),(.78,.72)],[(0,0),(.3,-.6),(.14,-.9)],[(0,0),(-.6,-.65)]],
     "lightning_fork": [[(0,-.96),(-.16,-.3),(.13,-.03),(-.13,.48),(0,.95)],[(.1,-.1),(.65,.4),(.42,.85)]],
     "lightning_seal": [[(-.4,.85),(.4,.85),(-.1,.2),(.35,.2),(-.35,-.8),(-.12,-.2),(-.5,-.2),(-.4,.85)]],
     "holy_ray": [[(0,-.96),(0,.96)],[(-.3,.5),(.3,.5)]],
-    "star_thread": [[(-.13,-.97),(.13,-.3),(-.13,.3),(.13,.97)],[(.13,-.97),(-.13,-.3),(.13,.3),(-.13,.97)]],
-    "constellation": [[(-.8,-.3),(-.3,.7),(.2,.25),(.8,.6),(.6,-.7),(-.15,-.4),(-.8,-.3)]],
-    "constellation_crown": [[(-.85,-.1),(-.7,.75),(-.25,.35),(0,.95),(.25,.35),(.7,.75),(.85,-.1),(-.85,-.1)]],
     "afterimage": [[(-.14,.5),(-.28,.77),(0,.98),(.28,.77),(.14,.5),(.43,.25),(.24,-.05),(.4,-.85),(.08,-.85),(0,-.25),(-.08,-.85),(-.4,-.85),(-.24,-.05),(-.43,.25),(-.14,.5)]],
     "lantern": [[(-.4,-.35),(-.5,.4),(0,.7),(.5,.4),(.4,-.35),(-.4,-.35)],[(0,.7),(0,.96)],[(-.45,.28),(.45,.28)],[(-.3,-.48),(.3,-.48)]],
     "light_column": [[(-.3,-.9),(-.2,.65),(0,.97),(.2,.65),(.3,-.9)],[(-.12,-.9),(0,.75),(.12,-.9)]],
     "aim_bracket": [[(-.5,.7),(-.85,.7),(-.85,-.7),(-.5,-.7)],[(.5,.7),(.85,.7),(.85,-.7),(.5,-.7)]],
     "armor_break": [[(-.65,.6),(-.7,-.25),(-.23,-.75),(-.1,-.1),(-.3,.65)],[(.2,.7),(.7,.45),(.6,-.3),(.2,-.65),(.33,-.15)]],
-    "star_mantle": [[(-.14,.8),(-.55,.5),(-.85,-.65),(-.4,-.55),(-.2,-.85)],[(.14,.8),(.55,.5),(.85,-.65),(.4,-.55),(.2,-.85)]],
 }
 
 ARROWS = {"arrow_head": 0, "barbed_arrow": 1, "rain_arrow": 2, "frost_arrow": 3, "mark_arrow": 4, "great_arrow": 5}
 SLASHES = {"slash_short": (.95,.18), "slash_heavy": (1.05,.29), "slash_reverse": (.9,.23), "spin_blade": (1.7,.16), "shadow_claw": (.88,.16)}
-GATES = {"shadow_gate", "lightning_gate", "feather_gate", "star_gate", "sanctum_gate", "shield_arch"}
-RINGS = {"orbit", "roar_wave", "healing_wave", "ice_wave", "star_orbit", "fire_crater", "gravity_funnel", "target_reticle", "holy_seal", "guidance_seal", "hunter_mark", "star_mark", "fire_seal", "snowflake", "shield_wave"}
-SPARKS = {"cast_spark", "stone_impact", "arrow_hit", "fire_burst", "ice_shatter", "electric_spark", "light_spark", "star_spark", "shadow_spark", "poison_splash", "star_fracture", "electric_shard", "lightning_burst"}
-CORES = {"fire_orb", "meteor_rock", "meteor_crown", "star_core", "celestial_core", "star_seed"}
-EXTRA = {"flame_tail", "shadow_wisp", "nebula_wisp", "dagger_fan", "trap_jaws"}
-AUTHORED_SHAPES = set(POLYGONS) | set(PATHS) | set(ARROWS) | set(SLASHES) | GATES | RINGS | SPARKS | CORES | EXTRA
-CROSSED = set(ARROWS) | CORES | {"thrust_tip", "dagger_tip", "contract_blade", "shadow_needle", "star_needle", "star_shard", "ice_spike", "holy_ray", "light_column", "star_thread", "lightning_fork", "flame_tail"}
+GATES = {"shadow_gate", "lightning_gate", "feather_gate", "sanctum_gate", "shield_arch"}
+RINGS = {"orbit", "roar_wave", "healing_wave", "ice_wave", "fire_crater", "gravity_funnel", "target_reticle", "holy_seal", "guidance_seal", "hunter_mark", "fire_seal", "snowflake", "shield_wave"}
+# Fixed indices keep each spark's arm count/rotation stable when shapes are retired.
+SPARKS = {"arrow_hit": 0, "cast_spark": 1, "electric_shard": 2, "electric_spark": 3, "fire_burst": 4, "ice_shatter": 5,
+          "light_spark": 6, "lightning_burst": 7, "poison_splash": 8, "shadow_spark": 9, "stone_impact": 12}
+CORES = {"fire_orb", "meteor_rock", "meteor_crown"}
+EXTRA = {"flame_tail", "shadow_wisp", "dagger_fan", "trap_jaws"}
+AUTHORED_SHAPES = set(POLYGONS) | set(PATHS) | set(ARROWS) | set(SLASHES) | GATES | RINGS | set(SPARKS) | CORES | EXTRA
+CROSSED = set(ARROWS) | CORES | {"thrust_tip", "dagger_tip", "contract_blade", "shadow_needle", "ice_spike", "holy_ray", "light_column", "lightning_fork", "flame_tail"}
 
 
 def authored_cell(shape, x, z):
@@ -97,7 +92,7 @@ def authored_cell(shape, x, z):
                 return 0 if edge < .04 else 1 if x < .05 else 2
         return None
     if shape in PATHS:
-        return stroke(PATHS[shape], .045 if shape in {"arrow_trail","light_thread","electric_thread","star_thread"} else .075)
+        return stroke(PATHS[shape], .045 if shape in {"arrow_trail","light_thread","electric_thread"} else .075)
     if shape in ARROWS:
         variant = ARROWS[shape]
         width = .27 + variant * .025
@@ -126,7 +121,6 @@ def authored_cell(shape, x, z):
         d = abs(abs(x)-edge)
         if abs(z) < .92 and d < .075:
             return 0 if d < .025 else 1 if d < .05 else 2
-        if shape == "star_gate" and abs(abs(z)-.75)<.05 and abs(x)<.18: return 0
         if shape == "feather_gate" and abs(z)<.7 and abs(abs(x)-edge-.12)<.04 and int((z+1)*10)%2==0: return 1
         return None
     if shape in RINGS:
@@ -149,21 +143,19 @@ def authored_cell(shape, x, z):
         if shape == "fire_crater": band += .06*math.sin(9*a+1)
         if shape == "roar_wave":
             return 1 if min(abs(r-v) for v in (.45,.68,.9))<.045 and abs(math.sin(a))<.85 else None
-        if shape in {"target_reticle","hunter_mark","star_mark","guidance_seal"}:
+        if shape in {"target_reticle","hunter_mark","guidance_seal"}:
             if .62<r<.7 and abs(math.sin(2*a))>.25: return 1
             if (abs(x)<.035 or abs(z)<.035) and .35<r<.95: return 0
             if shape == "hunter_mark" and abs(x)<.05 and r<.2: return 2
-            if shape == "star_mark" and abs(x)+abs(z)<.23: return 0
             if shape == "guidance_seal" and (abs(x)<.03 or abs(z-.12)<.03) and r<.3: return 0
             return None
         if abs(r-band)<.045: return 0 if r>band else 1
-        if shape == "star_orbit" and abs(math.sin(3*a))<.055 and .65<r<.98: return 0
         if shape in {"holy_seal","fire_seal"} and .35<r<.42: return 1
         if shape == "holy_seal" and (abs(x)<.035 or abs(z)<.035) and r<.65: return 0
         if shape == "fire_seal" and .15<r<.65 and abs(math.sin(3*a))<.09: return 2
         return None
     if shape in SPARKS:
-        index=sorted(SPARKS).index(shape)
+        index=SPARKS[shape]
         arms = 3 + index%5
         if shape == "poison_splash":
             return 1 if any(math.hypot(x-math.sin(i*2)*.6,z-math.cos(i*2)*.6)<.13 for i in range(5)) else None
@@ -173,19 +165,14 @@ def authored_cell(shape, x, z):
             paths.append([(math.sin(b)*.14,math.cos(b)*.14),(math.sin(b)*(.7+(i%2)*.22),math.cos(b)*(.7+(i%2)*.22))])
         return stroke(paths,.06 if shape in {"cast_spark","arrow_hit","electric_spark"} else .105)
     if shape in CORES:
-        if shape in {"star_core","celestial_core","star_seed"}:
-            limit=.28+.62*abs(math.cos((3 if shape=="celestial_core" else 2)*a))**8
-            if shape=="star_seed": limit=.30+.30*abs(math.cos(2*a))**5
-        else:
-            limit=(.59 if shape=="fire_orb" else .66)+.09*math.cos((7 if shape=="meteor_rock" else 5)*a)
-            if shape=="meteor_crown": limit+=.15*abs(math.cos(4*a))**8
+        limit=(.59 if shape=="fire_orb" else .66)+.09*math.cos((7 if shape=="meteor_rock" else 5)*a)
+        if shape=="meteor_crown": limit+=.15*abs(math.cos(4*a))**8
         if r<limit: return 0 if r<limit*.30 else 1 if x<.15 else 2
         return None
-    if shape in {"flame_tail","shadow_wisp","nebula_wisp"}:
+    if shape in {"flame_tail","shadow_wisp"}:
         curve = .17*math.sin(z*6)
-        width = (.22 if shape=="nebula_wisp" else .15)*(1-z)*.5
+        width = .15*(1-z)*.5
         if abs(z)<.95 and abs(x-curve)<width: return 0 if abs(x-curve)<width*.25 else 1
-        if shape=="nebula_wisp" and abs(z)<.7 and abs(x+curve+.25)<.05: return 2
         return None
     if shape=="dagger_fan":
         paths=[]

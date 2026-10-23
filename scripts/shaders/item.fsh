@@ -15,11 +15,16 @@
 //   that cools to pink, trailing a glowing ribbon.
 // - 桜牙獣 (scripts/build_boss_sakura_fang.py): texels with alpha 200..215 and R/G/B low bits 1/2/3 glow, and a
 //   light runs along them: alpha - 200 is the texel's place on the flow (0 shoulders .. 15 tail tip).
+// - Point lights (SakuraLight.kt): items tinted blue 80..83 with the probe texture (83, 76, 49). item.vsh moved the
+//   quad to the bottom pixel row; here it writes, as raw float bits, what post/sakura_light.fsh needs to light the
+//   scene: x 0 a header (B = depth convention), x 1..32 the inverse projection, then 8 pixels per light slot
+//   (tint green >> 4): its view-space position, radius / strength / colour, and a slot check.
 // The VFX colours are self-lit (no overlay, lightmap or glint) but go through the same OIT phases and fog as vanilla.
 
 #include <minecraft:globals.glsl>
 #include <minecraft:fog.glsl>
 #include <minecraft:dynamictransforms.glsl>
+#include <minecraft:projection.glsl>
 #include <minecraft:oit.glsl>
 
 uniform sampler2D Sampler0;
@@ -204,10 +209,51 @@ void finishUnlit(vec4 color) {
     #endif
 }
 
+vec3 floatHigh(float f) {
+    uint u = floatBitsToUint(f);
+    return vec3(float((u >> 24) & 255u), float((u >> 16) & 255u), float((u >> 8) & 255u));
+}
+
+// One pixel of the light probe row (see the header), as 0..255 values; negative = not this probe's pixel.
+vec3 lightProbePixel(int x, int slot, int code, int palette) {
+    if (x == 0) {
+        // Which depth convention the client uses: compare this fragment's depth with the probe's NDC z (item.vsh).
+        vec4 near = ProjMat * vec4(0.0, 0.0, -0.2, 1.0);
+        float z = near.z / near.w;
+        return vec3(83.0, 76.0, abs(gl_FragCoord.z - z) < abs(gl_FragCoord.z - (z * .5 + .5)) ? 1.0 : 2.0);
+    }
+    if (x <= 32) {
+        mat4 inv = inverse(ProjMat);
+        int i = (x - 1) >> 1;
+        float f = inv[i >> 2][i & 3];
+        return (x & 1) == 1 ? floatHigh(f) : vec3(float(floatBitsToUint(f) & 255u), 0.0, 0.0);
+    }
+    int local = x - 33 - slot * 8;
+    if (local < 0 || local > 7) return vec3(-1.0);
+    if (local == 7) return vec3(170.0, float(slot), 85.0);
+    if (local == 6) return vec3(float(2 + (code & 15)) * 8.0, rawColor.r * 255.0, float(palette));
+    vec3 view = (ModelViewMat * vec4(vfxPosition, 1.0)).xyz;
+    float f = view[local >> 1];
+    return (local & 1) == 0 ? floatHigh(f) : vec3(float(floatBitsToUint(f) & 255u), 0.0, 0.0);
+}
+
 void main() {
     vec4 color = texture(Sampler0, texCoord0);
     int markerB = int(rawColor.b * 255.0 + .5);
     int kind = int(rawColor.g * 255.0 + .5);
+    if (markerB >= 80 && markerB <= 83) {
+        ivec3 t = ivec3(color.rgb * 255.0 + .5);
+        vec3 px = lightProbePixel(int(gl_FragCoord.x), kind >> 4, kind, markerB - 80);
+        if (t != ivec3(83, 76, 49) || px.r < 0.0) {
+            discard;
+        }
+        #ifdef OIT_ALPHA_ONLY
+        discard;
+        #else
+        fragColor = vec4(px / 255.0, 1.0);
+        #endif
+        return;
+    }
     if ((markerB == 77 || markerB == 79) && kind >= 1 && kind <= (markerB == 77 ? 9 : 6)) {
         vec4 fx = markerB == 77 && kind >= 7 ? heatCut(color, float(kind), rawColor.r)
             : shadeVfx(color, float(kind), rawColor.r, markerB == 79);

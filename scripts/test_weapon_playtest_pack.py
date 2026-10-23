@@ -12,16 +12,16 @@ class WeaponPlaytestPackTest(unittest.TestCase):
         cls.base = installed_pack()
         cls.files,cls.additions,cls.replacements = assemble(cls.base)
 
-    def test_only_28_weapon_definitions_change_and_every_ui_and_armor_asset_is_preserved(self):
+    def test_only_24_weapon_definitions_change_and_every_ui_and_armor_asset_is_preserved(self):
         changed = {p for p,data in self.base.items() if data!=self.files[p]}
         self.assertEqual(changed,set(self.replacements))
-        self.assertEqual(len(changed),28)
+        self.assertEqual(len(changed),24)
         self.assertTrue(all('/items/weapons/' in p for p in changed))
         self.assertEqual(self.report['armor_changes'],0)
         for p,data in self.base.items():
             if p not in self.replacements:
                 self.assertEqual(data,(PACK/p).read_bytes(),p)
-        self.assertEqual(self.report['unchanged_installed_files'],len(self.base)-28)
+        self.assertEqual(self.report['unchanged_installed_files'],len(self.base)-24)
 
     def test_all_existing_tier_weapon_ids_use_the_new_native_pose_graph(self):
         for family in FAMILIES:

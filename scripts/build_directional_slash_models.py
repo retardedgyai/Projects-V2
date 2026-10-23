@@ -14,7 +14,7 @@ PACK=ROOT/'server-minestom/src/main/resources/core-ui-pack'
 # (tail, head) along the authored stroke, left to right. Peak at frame 4.
 WINDOWS=((0,.14),(0,.32),(0,.55),(0,.8),(0,1),(.12,1),(.3,1),
          (.52,1),(.72,1),(.87,1),(.96,1),(1,1))
-COLORS=dict(steel=0xeaf4ff,gold=0xffd87b,astral=0xdca6ff,ice=0x85e2ff,
+COLORS=dict(steel=0xeaf4ff,gold=0xffd87b,ice=0x85e2ff,
             fire=0xffab52,venom=0xb5ff5a,life=0xadffcb,shadow=0xe1b5ff,
             hunter=0xe8ffa3,holy=0xffedb0,lightning=0xb9dfff)
 

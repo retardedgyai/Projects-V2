@@ -5,7 +5,7 @@ import kotlin.math.*
 
 internal enum class CoreSceneKind { CUT, CLEAVE, SPIN, GUARD, SHIELD, THRUST, BANNER, RAY, NOVA, RAIN, TELEPORT, FIELD, FAN, AFTERIMAGE, HAMMER, PULL, HEAL, PILLAR }
 internal enum class CoreSkillEndpoint { NONE, DEPARTURE, ARRIVAL }
-internal enum class CoreMeshAtlas { NONE, SLASH, STELLAR_BURST, NEBULA_STREAM, SHADOW_SMOKE }
+internal enum class CoreMeshAtlas { NONE, SLASH, SHADOW_SMOKE }
 
 /** Concrete authored contract for every existing skill. Shared with the mesh builder and art sheet. */
 internal data class CoreSkillScene(val id: String, val name: String, val kind: CoreSceneKind, val palette: String,
@@ -36,7 +36,6 @@ internal data class CoreCombatMeshPart(
     val billboard: Boolean = false,
 ) {
     val sprite get() = atlas==CoreMeshAtlas.SLASH
-    val stellarBurst get() = atlas==CoreMeshAtlas.STELLAR_BURST
     fun sizeAt(t: Double) = startSize + (endSize-startSize) * t.coerceIn(0.0,1.0)
 }
 
@@ -75,7 +74,7 @@ internal object CoreCombatMeshArt {
                 val falling = (0 until count).map { i -> part(offset=rainPoint(i,count).add(0.0,4.3,0.0),
                     scale=Vec(s.reach,s.reach,s.reach*1.6),tilt=if(s.palette=="hunter") PI/2 else 0.0,
                     travel=Vec(0.0,s.reach*.6+.15-4.3,0.0),start=.75,end=1.0) }
-                return falling + floor(s.windup,min(e.radius,if(s.windup in setOf("fire_seal","constellation","aim_bracket")) 2.5 else .8),.7,1.0)
+                return falling + floor(s.windup,min(e.radius,if(s.windup in setOf("fire_seal","aim_bracket")) 2.5 else .8),.7,1.0)
             }
             val field = s.kind in setOf(CoreSceneKind.FIELD,CoreSceneKind.PILLAR)
             return listOf(part(s.windup, if(field) Vec(0.0,.15,0.0) else local(.38,1.2,.55),
@@ -133,16 +132,8 @@ internal object CoreCombatMeshArt {
             CoreSceneKind.AFTERIMAGE -> listOf(part(offset=local(.35,1.0,-.35),scale=Vec(1.0,1.0,2.0),tilt=-PI/2,
                 travel=local(.15,0.0,-.3),start=1.0,end=.5,ticks=e.skill.duration.coerceIn(1,60)),
                 part(s.accent,local(-.25,.8,-.5),Vec(.6,.6,1.0),tilt=-PI/2,travel=local(0.0,.2,-.25),secondary=true))
-            CoreSceneKind.SHIELD -> {
-                val star=s.palette=="astral"
-                val body=part(offset=local(0.0,if(s.body=="constellation_crown") 1.95 else 1.05,.65),
-                    scale=Vec(min(r*1.6,2.4),1.0,if(s.body=="constellation_crown") 1.0 else 2.0),tilt=-PI/2,
-                    start=.65,end=1.0,ticks=9,follow=true)
-                if(star) listOf(body) + listOf(-1,1).map { side ->
-                    part(s.accent,local(side*.65,1.2,.1),Vec(1.0,1.0,1.25),face=yaw+side*.6,tilt=-PI/2,
-                        secondary=true,start=.7,end=1.0,ticks=9,follow=true)
-                } else listOf(body,floor(s.accent,min(e.radius,3.2),.45,1.0))
-            }
+            CoreSceneKind.SHIELD -> listOf(part(offset=local(0.0,1.05,.65),scale=Vec(min(r*1.6,2.4),1.0,2.0),tilt=-PI/2,
+                start=.65,end=1.0,ticks=9,follow=true),floor(s.accent,min(e.radius,3.2),.45,1.0))
             CoreSceneKind.BANNER -> listOf(part(offset=local(-.6,1.1,.45),scale=Vec(1.7,1.0,2.3),tilt=-PI/2,
                 start=1.0,end=1.0,ticks=40),floor(s.accent,min(e.radius,3.2),.5,1.0))
             CoreSceneKind.PULL -> (0..3).map { i ->
@@ -161,7 +152,7 @@ internal object CoreCombatMeshArt {
                 listOf(body) + (0..3).map { i ->
                     val a=i*PI/2+.5
                     part(s.accent,Vec(sin(a)*r*.65,.45,cos(a)*r*.65),Vec(.65,.65,.85),face=a,
-                        tilt=if(s.body=="nebula_wisp") 0.0 else -PI/2,secondary=true,start=.6,end=1.0)
+                        tilt=-PI/2,secondary=true,start=.6,end=1.0)
                 }
             }
             CoreSceneKind.FAN -> (-2..2).flatMap { i ->

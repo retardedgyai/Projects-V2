@@ -24,16 +24,12 @@ Japanese fonts are untouched.
 レンジャー6射撃と霜矢の扇専用の16コマ。細い立体線を置換し、短い交差面を
 重ねて手元から崩す。[原画、生成・修正プロンプト、使用範囲](shot-wake-pixel-v1.md)。
 
-## Active: nebula-stream-pixel-v1.png / ice_growth_ice
+## Active: ice_growth_ice
 
-星雲専用の流れるピクセル連番と、氷の庭の底支点・立体氷晶モデル。
-[用途、生成プロンプト、処理と確認箇所](nebula-stream-pixel-v1.md)。
-
-## Active: stellar-burst-pixel-v1.png
-
-星術の着弾・確定命中専用の16枚ピクセル連番。
-[用途、生成と修正の完全なプロンプト、再生成手順](stellar-burst-pixel-v1.md)。
-星雲・防護・転移には流用しない。
+氷の庭の8か所の氷晶群。原画ではなく `build_core_combat_models.py` の `build_ice_growth` が
+作る24個の段状の立体要素で、交差した画像ではない。底を支点として成長し、最後に低くなる。
+4段階の遅延で発生し、その場から回転移動しない。氷が浮く場合は `build_ice_growth` の底支点と
+`CoreCombatMeshes` の地面高さ補正を確認する。
 
 ## Active: slash-pixel-atlas-v1.png
 

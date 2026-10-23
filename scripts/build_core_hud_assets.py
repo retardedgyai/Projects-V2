@@ -8,13 +8,12 @@ import math
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
-CLASSES = ("warrior", "ranger", "mage", "starweaver", "assassin", "templar", "healer")
+CLASSES = ("warrior", "ranger", "mage", "assassin", "templar", "healer")
 # Same stable order as CoreClass.entries and its eight skills + two ultimates.
 SKILLS = (
     "dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner", "war_awaken",
     "pierce", "frost_fan", "arrow_rain", "hunt_retreat", "hunt_pierce", "hunt_trap", "hunt_mark", "hunt_volley", "hunt_ult", "hunt_storm",
     "firebolt", "frost_nova", "meteor", "mage_blink", "mage_mark", "mage_garden", "mage_burst", "mage_ward", "mage_ult", "mage_zero",
-    "star_thread", "star_ring", "starfall", "star_step", "star_needle", "star_cloud", "star_shield", "star_break", "star_ult", "star_constellation",
     "ass_stab", "ass_execute", "ass_fan", "ass_escape", "ass_poison", "ass_chase", "ass_needle", "ass_guard", "ass_ult", "ass_contract",
     "temp_mace", "temp_pull", "temp_ward", "temp_guard", "temp_rebuke", "temp_field", "temp_break", "temp_dash", "temp_ult", "temp_sanctuary",
     "heal_light", "heal_ring", "heal_pillar", "heal_step", "heal_lamp", "heal_shield", "heal_mark", "heal_wind", "heal_ult", "heal_judgment",

@@ -1,9 +1,9 @@
 """Opt-in playable resource snapshot; never edits the installed or running server.
 
 Keep the installed server's complete pack, including approved UI and frozen armor,
-byte-for-byte except the 28 weapon item definitions. Existing equipment IDs and
-pose channels then select the seven pixel weapons without touching gameplay code.
-Greatswords/daggers/staves/maces/bows have four Tier appearances; tome/astrolabe share art.
+byte-for-byte except the 24 weapon item definitions. Existing equipment IDs and
+pose channels then select the six pixel weapons without touching gameplay code.
+Greatswords/daggers/staves/maces/bows have four Tier appearances; tome shares art.
 """
 import hashlib
 import json
@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SERVER_JAR = ROOT/'server-minestom/build/install/server-minestom/lib/server-minestom-0.1.0-SNAPSHOT.jar'
 OUT = ROOT/'.tools/weapon-playtest-resources'
 PACK = OUT/'core-ui-pack'
-FAMILIES = ('greatsword','staff','bow','dagger','mace','tome','astrolabe')
+FAMILIES = ('greatsword','staff','bow','dagger','mace','tome')
 
 
 def digest(data): return hashlib.sha256(data).hexdigest()
@@ -98,7 +98,7 @@ def build():
         'unchanged_installed_files':len(base)-len(replacements),
         'indexed_files':len(files),'files_sha256':{p:digest(data) for p,data in sorted(files.items())}}
     (OUT/'report.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
-    print(f'Playtest resources: {len(files)} files; 28 weapon definitions replaced; armor/UI unchanged; NOT running.')
+    print(f'Playtest resources: {len(files)} files; 24 weapon definitions replaced; armor/UI unchanged; NOT running.')
 
 
 if __name__=='__main__': build()

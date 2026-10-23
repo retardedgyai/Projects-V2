@@ -20,7 +20,7 @@ ROOT=ASSETS.parents[6]
 OUT=Path(__file__).resolve().parents[1]/'.tools/armament-review'
 W,H=224,368
 FONT=_font('C:/Windows/Fonts/meiryob.ttc',13)
-LABELS=('戦士 / 大剣','メイジ / 杖','レンジャー / 長弓','アサシン / 短剣','テンプラー / 戦槌','ヒーラー / 聖典','星織り師 / 星環杖')
+LABELS=('戦士 / 大剣','メイジ / 杖','レンジャー / 長弓','アサシン / 短剣','テンプラー / 戦槌','ヒーラー / 聖典')
 
 
 def _axis_matrix(axis,a):
@@ -93,12 +93,12 @@ def render(kind,tier,frame,yaw=-25,stage='frame'):
 def main():
     parser=argparse.ArgumentParser(); parser.add_argument('--animate',action='store_true'); args=parser.parse_args()
     OUT.mkdir(parents=True,exist_ok=True)
-    sheet=Image.new('RGB',(W*7,H*4+30),'#171b20')
+    sheet=Image.new('RGB',(W*6,H*4+30),'#171b20')
     ImageDraw.Draw(sheet).text((10,5),'実装モデル・実テクスチャの正投影確認（Minecraft画面ではありません）',font=FONT,fill='#d5cec0')
     for tier in range(1,5):
         for i,kind in enumerate(KINDS): sheet.paste(render(kind,tier,0),(i*W,(tier-1)*H+30))
     sheet.save(OUT/'all-tiers.png')
-    views=Image.new('RGB',(W*7,H*3+30),'#171b20')
+    views=Image.new('RGB',(W*6,H*3+30),'#171b20')
     ImageDraw.Draw(views).text((10,5),'T4 正面 / 側面 / 背面（実装JSONの正投影・ゲーム画面ではありません）',font=FONT,fill='#d5cec0')
     for row,yaw in enumerate((0,90,180)):
         for i,kind in enumerate(KINDS): views.paste(render(kind,4,0,yaw=yaw),(i*W,row*H+30))
@@ -106,7 +106,7 @@ def main():
     if args.animate:
         frames=[]
         for frame in range(FRAMES):
-            strip=Image.new('RGB',(W*7,H+30),'#171b20')
+            strip=Image.new('RGB',(W*6,H+30),'#171b20')
             ImageDraw.Draw(strip).text((10,5),'実装の12コマ / 10fps（パケット・ゲーム内表示は別途検証）',font=FONT,fill='#d5cec0')
             for i,kind in enumerate(KINDS): strip.paste(render(kind,4,frame),(i*W,30))
             frames.append(strip)
@@ -114,13 +114,13 @@ def main():
         actions=[]
         for stage in ('prepare','release'):
             for frame in range(6):
-                strip=Image.new('RGB',(W*7,H+30),'#171b20')
+                strip=Image.new('RGB',(W*6,H+30),'#171b20')
                 ImageDraw.Draw(strip).text((10,5),'構え→放出→復帰のモデル確認（実機では構え時間をスキルに合わせる）',font=FONT,fill='#d5cec0')
                 for i,kind in enumerate(KINDS): strip.paste(render(kind,4,frame,stage=stage),(i*W,30))
                 actions.append(strip)
         actions[0].save(OUT/'actions.gif',save_all=True,append_images=actions[1:],duration=100,loop=0)
         actions[5].save(OUT/'prepared.png')
-        action_sheet=Image.new('RGB',(W*7,(H+30)*6),'#171b20')
+        action_sheet=Image.new('RGB',(W*6,(H+30)*6),'#171b20')
         for row,index in enumerate((0,2,5,6,8,11)): action_sheet.paste(actions[index],(0,row*(H+30)))
         action_sheet.save(OUT/'action-poses.png')
     print(OUT)

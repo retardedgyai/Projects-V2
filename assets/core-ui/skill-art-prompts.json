@@ -171,66 +171,6 @@
       "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: mage. Subject: A large pale blue ice crown of five spikes with a dark frozen orb below, icy white highlights and deep blue shade; frozen domain ultimate."
     },
     {
-      "id": "star_thread",
-      "job": "starweaver",
-      "type": "skill",
-      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A silver needle drawing a luminous blue-white thread from a four-pointed star, purple shadow and one long curved strand, clear sewing metaphor."
-    },
-    {
-      "id": "star_ring",
-      "job": "starweaver",
-      "type": "skill",
-      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A pale silver four-pointed star surrounded by a tilted blue orbital ring, dark indigo body, two small bright satellite stars."
-    },
-    {
-      "id": "starfall",
-      "job": "starweaver",
-      "type": "skill",
-      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: Three white-blue shooting stars falling toward lower right, one large leading star with an indigo violet tail and two small companions."
-    },
-    {
-      "id": "star_step",
-      "job": "starweaver",
-      "type": "skill",
-      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A small silver slipper stepping across two blue-white star-shaped stepping stones, violet comet trail behind the heel."
-    },
-    {
-      "id": "star_needle",
-      "job": "starweaver",
-      "type": "skill",
-      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A long narrow silver sewing needle piercing a small violet star crystal, a single teal light thread through its eye."
-    },
-    {
-      "id": "star_cloud",
-      "job": "starweaver",
-      "type": "skill",
-      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A rounded violet nebula cloud cradling three pale blue stars of different sizes; large connected cloud clusters, not noisy smoke."
-    },
-    {
-      "id": "star_shield",
-      "job": "starweaver",
-      "type": "skill",
-      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A folded deep indigo cloak with silver trim and a bright star clasp, a small protective cyan rim glint. Cloth garment is dominant."
-    },
-    {
-      "id": "star_break",
-      "job": "starweaver",
-      "type": "skill",
-      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A cracked silver-blue star gemstone split into two large halves by a sharp white ray, a violet bright core between the halves."
-    },
-    {
-      "id": "star_ult",
-      "job": "starweaver",
-      "type": "skill",
-      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A dark celestial globe with a silver orbital hoop breaking into large blue-white star fragments, purple deep shadow, controlled bright core."
-    },
-    {
-      "id": "star_constellation",
-      "job": "starweaver",
-      "type": "skill",
-      "prompt": "Use case: stylized-concept. ONE original ProjectS Minecraft RPG skill sprite. Reference images show the APPROVED pixel art style: coherent recognizable objects, chunky facets, restrained local highlights, bold silhouette. Match that style exactly, not a glossy mobile-game illustration, not thin line or polygon symbols. Square image, artwork occupies 80% of canvas, actual 32x32 logical pixel art enlarged with nearest-neighbor hard square pixels. Simple dark charcoal background, no border, no letters, no text, no watermark. Must remain recognizable at 16x16. 3-4 shading tones per material. No subpixel details. Class: starweaver. Subject: A silver crescent sheltering three connected blue stars like a protective crown, two elegant indigo ribbon ends. Simple large pixel clusters."
-    },
-    {
       "id": "ass_stab",
       "job": "assassin",
       "type": "skill",
@@ -421,12 +361,6 @@
       "job": "mage",
       "type": "frame",
       "prompt": "Use case: stylized-concept. ONE original Minecraft RPG skill-icon FRAME only. The first reference is Monumenta's actual framed skill HUD and guides the compact in-game look; the second is our accepted pixel-art style. Create a square 32x32 logical pixel-art frame enlarged with hard nearest-neighbor pixel squares. Ornament belongs only to the OUTERMOST THREE logical pixels on every edge, thin rails and distinctive corners, large completely EMPTY central square 26x26 logical pixels. Transparent background and transparent empty center. No icon or object inside, no text, no numbers, no grid, no gradient, no blur. Must read at tiny size. Class-specific design: antique dark bronze square rails, angular blue-violet crystal corner caps, tiny violet crystal at top middle. Original design, not direct copy. Ornament stays INSIDE square bounds, no projections beyond canvas. Avoid chunky thick borders that shrink the skill. Three-tone pixel shading with restrained highlights."
-    },
-    {
-      "id": "starweaver",
-      "job": "starweaver",
-      "type": "frame",
-      "prompt": "Use case: stylized-concept. ONE original Minecraft RPG skill-icon FRAME only. The first reference is Monumenta's actual framed skill HUD and guides the compact in-game look; the second is our accepted pixel-art style. Create a square 32x32 logical pixel-art frame enlarged with hard nearest-neighbor pixel squares. Ornament belongs only to the OUTERMOST THREE logical pixels on every edge, thin rails and distinctive corners, large completely EMPTY central square 26x26 logical pixels. Transparent background and transparent empty center. No icon or object inside, no text, no numbers, no grid, no gradient, no blur. Must read at tiny size. Class-specific design: slender tarnished silver rails, pale blue pointed star corner caps and indigo inlays, a tiny star jewel at top middle. Original design, not direct copy. Ornament stays INSIDE square bounds, no projections beyond canvas. Avoid chunky thick borders that shrink the skill. Three-tone pixel shading with restrained highlights."
     },
     {
       "id": "assassin",

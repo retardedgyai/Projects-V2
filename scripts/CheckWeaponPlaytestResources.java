@@ -29,7 +29,7 @@ class CheckWeaponPlaytestResources {
                 if (files.put(entry.getName(),zip.readAllBytes())!=null) throw new IllegalStateException("Duplicate entry");
             }
         }
-        for (String family : new String[]{"greatsword","staff","bow","dagger","mace","tome","astrolabe"}) {
+        for (String family : new String[]{"greatsword","staff","bow","dagger","mace","tome"}) {
             for (int tier=1;tier<=4;tier++) {
                 String key=(family.equals("greatsword") || family.equals("dagger") || family.equals("staff") || family.equals("mace") || family.equals("bow")) && tier>1 ? family+"_t"+tier : family;
                 byte[] reference = files.get("assets/projects/items/weapons/pixel_"+key+".json");

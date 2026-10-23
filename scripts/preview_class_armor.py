@@ -12,7 +12,7 @@ from build_class_armor_assets import ASSETS,JOBS
 from preview_class_armaments import render_model,FONT
 
 OUT=Path(__file__).resolve().parents[1]/'.tools/armor-review'
-LABELS=('戦士','メイジ','レンジャー','アサシン','テンプラー','ヒーラー','星織り師')
+LABELS=('戦士','メイジ','レンジャー','アサシン','テンプラー','ヒーラー')
 
 
 def cube(name,lo,hi,tex,uv,size,inflate=0):
@@ -51,7 +51,7 @@ def worn(job,tier):
 def main():
     OUT.mkdir(parents=True,exist_ok=True)
     width,height=224,438
-    sheet=Image.new('RGB',(width*7,height*4+30),'#171b20')
+    sheet=Image.new('RGB',(width*6,height*4+30),'#171b20')
     ImageDraw.Draw(sheet).text((10,5),'防具の実データ＋標準人型の装着配置確認（Minecraft画面ではありません）',font=FONT,fill='#d5cec0')
     for tier in range(1,5):
         for i,job in enumerate(JOBS):

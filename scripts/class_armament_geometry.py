@@ -9,7 +9,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / 'server-minestom/src/main/resources/core-ui-pack/assets/projects'
-KINDS = ('greatsword', 'staff', 'bow', 'dagger', 'mace', 'tome', 'astrolabe')
+KINDS = ('greatsword', 'staff', 'bow', 'dagger', 'mace', 'tome')
 FRAMES = 12
 METAL = (
     '2222222233333222', '2222222333322222', '2222223333222222', '2222233332222222',
@@ -241,27 +241,6 @@ def tome(tier, phase):
         a=i*math.tau/(2+tier)+phase/FRAMES*math.tau
         x,y=8+2.6*math.cos(a),21+bob+2.6*math.sin(a)
         e.append(box('prayer seal ray',[x-.3,y-.3,7.7],[x+.3,y+.3,8.3],'bronze',45))
-    return e
-
-
-def astrolabe(tier, phase):
-    e=[]; grip(e,8,14)
-    e.append(box('midnight observatory shaft',[7.4,0,7.4],[8.6,22,8.6],'navy'))
-    for y in (1,7,15,19): e.append(box('shaft zodiac band',[7,y,7],[9,y+.55,9],'bronze'))
-    ring=[(8+x,25+y,8) for x,y in ((-4,-2),(-2,-4),(2,-4),(4,-2),(4,2),(2,4),(-2,4),(-4,2))]
-    for i,p in enumerate(ring):
-        if i==4: continue
-        q=ring[(i+1)%8]
-        beam(e,'connected broken orbital brass arc',p,q,.95,1.4,'bronze')
-        beam(e,'orbital midnight inset',(p[0],p[1],7.1),(q[0],q[1],7.1),.45,.35,'navy')
-    bob=math.sin(phase/FRAMES*math.tau)*.4
-    e.append(box('floating star vertical',[7.55,22+bob,7.55],[8.45,28+bob,8.45],'ice'))
-    e.append(box('floating star horizontal',[5,24.55+bob,7.55],[11,25.45+bob,8.45],'ice'))
-    e.append(box('star diamond core',[7,24+bob,7],[9,26+bob,9],'ivory',45))
-    for i in range(2+tier):
-        a=(phase/FRAMES+i/(2+tier))*math.tau; x,z=8+5.4*math.cos(a),8+2*math.sin(a); y=25+2.8*math.sin(a)
-        e.append(box('orbiting star fragment',[x-.4,y-.4,z-.4],[x+.4,y+.4,z+.4],'ice',45))
-    gem(e,'astral pommel',8,1,7.5,1.3,'ice')
     return e
 
 

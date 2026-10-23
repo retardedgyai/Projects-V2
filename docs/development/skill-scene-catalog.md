@@ -6,10 +6,10 @@
 
 ## 変更の要点
 
-- 7形状の共用から、現行で使う **99形状・128モデル／配色組**へ拡張。70スキルと通常大剣3段を個別定義した。互換用の旧モデルは残っているが、この表の現行シーンには割り当てない。
+- 7形状の共用から、現行で使う **99形状・128モデル／配色組**へ拡張。60スキルと通常大剣3段を個別定義した。互換用の旧モデルは残っているが、この表の現行シーンには割り当てない。
 - Vanilla 26.2 の ItemDisplayRenderer はアイテムに追加のY軸180度回転を掛ける。これを表示エンティティの右回転で相殺し、制作側の +Z を前方として扱う。クライアントを改造する修正ではない。
 - 斬撃本体の寸法とサーバーの攻撃範囲を分離。近接の本体が移動距離／広域判定に引きずられて巨大化しないようにした。攻撃範囲は低い疎な地上目印で補足する。
-- Starweaver の糸／針／環／雨／雲／衣／転移門を別の形と構図にした。槌・盾・弓矢・毒・回復にも専用の形を割り当てた。
+- 槌・盾・弓矢・毒・回復にも専用の形を割り当てた。
 - 本体を使う場合、従来の巨大な粒子輪郭を重ねず、小さな色片・余韻を添える。パック未適用時の粒子フォールバックは残す。
 - UIアイコン、日本語フォント、スキル選択UIは変更しない。新規画像の外部取得、クライアントMOD、独自パケット、Particle Framework coreの変更はない。
 
@@ -29,7 +29,7 @@ Vanillaの内部回転 → 相殺する右回転 → モデル倍率 → 制作�
 | FAN | 正面に5本の矢尻と短い軌跡 | 全周の氷柱で扇形射撃を表す |
 | TELEPORT | 出発点では門が閉じ、到着点では開く。門は約1.6幅×2.15高、8tick | 転移に攻撃刃を出す、出発と到着で同じ拡大をする |
 | GUARD / AFTERIMAGE | 構えは本人の胸と向きに追従。残像は発動時の背後に人型を残す | 残像を盾面にする |
-| SHIELD / BANNER | 胸前の防護、星衣は胴の横、星座は頭の外周。旗は発動地点に40tick残る | 星の防護を攻撃の爆発や床模様にする |
+| SHIELD / BANNER | 胸前の防護。旗は発動地点に40tick残る | 防護を攻撃の爆発や床模様にする |
 | PULL | 外周の鉤が中心へ移動し、環も収縮 | 吸引なのに外へ爆発させる |
 | PILLAR | 灯火は浮遊灯＋下の縦光柱。審判の剣は切先を下へ | 柱を地面に寝かせる、裁きの剣を上に突き上げる |
 | HEAL | 地上の回復波から花弁・羽根・翼が上昇 | 斬撃や攻撃爆発を回復に流用する |
@@ -138,7 +138,7 @@ Vanillaの内部回転 → 相殺する右回転 → モデル倍率 → 制作�
 
 | 技／ID | 構成・配色・寸法 | 本体＋補助 | 予備動作 → 確定命中 | 用途・区別 |
 | --- | --- | --- | --- | --- |
-| 裁きの光 `heal_light` | RAY / holy / 1.1 | `holy_ray` + `light_thread` | `cast_spark` → `light_spark` | 細い聖光と命中点の光片。星の針とは形も色も別 |
+| 裁きの光 `heal_light` | RAY / holy / 1.1 | `holy_ray` + `light_thread` | `cast_spark` → `light_spark` | 細い聖光と命中点の光片 |
 | 救いの輪 `heal_ring` | HEAL / life / 2.4 | `healing_petal` + `healing_wave` | `holy_seal` → `light_spark` | 地面から本人と周辺へ立ち上がる花弁の回復波 |
 | 断罪の柱 `heal_pillar` | PILLAR / holy / 1.0 | `light_column` + `holy_seal` | `cast_spark` → `light_spark` | 指定地点に立ち上がる聖光の柱。落下矢にしない |
 | 光の歩み `heal_step` | TELEPORT / life / 0.9 | `feather_gate` + `feather` | `cast_spark` → `light_spark` | 出発点の羽根と到着点の開く光門。足元から保護を示す |
@@ -148,21 +148,6 @@ Vanillaの内部回転 → 相殺する右回転 → モデル倍率 → 制作�
 | 清めの風 `heal_wind` | HEAL / life / 2.0 | `feather` + `healing_wave` | `holy_seal` → `light_spark` | 低い風の輪から羽根が上昇。回復を外向き爆発に見せない |
 | 救済 `heal_ult` | HEAL / life / 3.2 | `prayer_wing` + `healing_wave` | `holy_seal` → `light_spark` | 大きな回復波と上向きの翼。画面中央を埋める板にしない |
 | 最後の審判 `heal_judgment` | PILLAR / holy / 1.8 | `judgment_sword` + `holy_seal` | `holy_seal` → `light_spark` | 四判定ごとに天からの裁きの剣。地面の印と同期 |
-
-### Starweaver
-
-| 技／ID | 構成・配色・寸法 | 本体＋補助 | 予備動作 → 確定命中 | 用途・区別 |
-| --- | --- | --- | --- | --- |
-| 星糸 `star_thread` | RAY / astral / 0.7 | `star_thread` + `light_thread` | `star_seed` → `star_spark` | 二本の細い星糸と小さな星節。巨大な光槍を使わない |
-| 星環 `star_ring` | NOVA / astral / 3.1 | `star_orbit` + `star_shard` | `star_seed` → `star_spark` | 足元中心の水平星環が一度広がる。流星落下とは区別 |
-| 星降る夜 `starfall` | RAIN / astral / 0.9 | `star_core` + `astral_crack` | `star_seed` → `star_spark` | 指定地点上空の星が落ちて星片へ。各判定で着弾点を小さくずらす |
-| 星渡り `star_step` | TELEPORT / astral / 1.0 | `star_gate` + `star_shard` | `star_seed` → `star_spark` | 星形の門が二地点で閉じ開く。転移に星環攻撃を出さない |
-| 星の針 `star_needle` | RAY / astral / 1.0 | `star_needle` + `light_thread` | `star_seed` → `star_mark` | 細長い星針。印は確定命中した敵のみに付ける |
-| 星雲 `star_cloud` | FIELD / astral / 2.8 | `nebula_wisp` + `constellation` | `star_seed` → `star_spark` | 指定地点の低い雲筋と星座。毎回核が落ちる演出は禁止 |
-| 星衣 `star_shield` | SHIELD / astral / 1.1 | `star_mantle` + `constellation` | `star_seed` → `star_spark` | 胴の外側に星の衣と短い星座弧。星雨の流用は禁止 |
-| 星砕き `star_break` | RAY / astral / 1.2 | `star_shard` + `light_thread` | `star_seed` → `star_fracture` | 圧縮した星片を撃ち込み確定命中点で分裂。空振りに崩壊を出さない |
-| 天球崩壊 `star_ult` | RAIN / astral / 1.5 | `celestial_core` + `astral_crack` | `constellation` → `star_fracture` | 大きな天球の落下と放射星片。五回以上の実判定に同期 |
-| 星座の守り `star_constellation` | SHIELD / astral / 1.5 | `constellation_crown` + `star_mantle` | `constellation` → `star_spark` | 頭の外周と胴を結ぶ星座の守り。攻撃の破裂を出さない |
 
 ## 実装を追う場所
 
@@ -182,7 +167,7 @@ Vanillaの内部回転 → 相殺する右回転 → モデル倍率 → 制作�
 
 最終結果：`:server-minestom:test :server-minestom:distZip --offline --no-daemon --max-workers=1 -Pkotlin.compiler.execution.strategy=in-process` 成功。全673テスト、失敗・エラー・スキップ0。128モデル／配色組、99形状のJSON検証も成功。
 
-- `CoreSkillSceneGeometryTest`：73契約、全技の宣言形状の消費、実JSON頂点にVanillaと同じ変換を適用。近接8方向の前後・床下・最大寸法、上下を含む壁切り光線、転移開閉、吸引方向、落下と着弾の一致、星衣・灯火・審判の向き、粒子上限。
+- `CoreSkillSceneGeometryTest`：73契約、全技の宣言形状の消費、実JSON頂点にVanillaと同じ変換を適用。近接8方向の前後・床下・最大寸法、上下を含む壁切り光線、転移開閉、吸引方向、落下と着弾の一致、灯火・審判の向き、粒子上限。
 - `CoreCombatMeshTest`：全70技のモデル参照、実MinestomのテストPlayerでパック有無・viewer・寿命・キャンセル・個人／共有上限。ユーザーのゲームは操作しない。
 - 生成JSONの全モデル検証と、実Kotlin配置を投影した全70技×3時点の7枚の描画シート。灯火の光柱、星の防護、盾の衝撃波、裁きの剣の誤用をここでも修正した。
 - 描画シートはテストが `.tools/skill-scene-poses.json` を出力した後、`scripts/preview_core_combat_models.py` で作る。`.tools/skill-scenes-1.png` ～ `7.png` は**ゲーム画面ではなく幾何のQA**。ゲーム内の光、遮蔽、音、FPSの証明には使わない。

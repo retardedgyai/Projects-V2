@@ -6,7 +6,7 @@ import kotlin.math.*
 
 /** Packed scenes use small secondary motes, not the old competing giant particle silhouettes. */
 internal object CoreSceneParticles {
-    private val colors=mapOf("steel" to 0xdde7ed,"gold" to 0xffcd59,"astral" to 0xb677ef,"ice" to 0x75d8f5,
+    private val colors=mapOf("steel" to 0xdde7ed,"gold" to 0xffcd59,"ice" to 0x75d8f5,
         "fire" to 0xff701d,"venom" to 0x88c92b,"life" to 0x95edc5,"shadow" to 0x8752b0,
         "hunter" to 0xc9db8b,"holy" to 0xffe5a0,"lightning" to 0x91bcff)
     fun emit(e: CoreSkillEffect,tick: Int,sink: ParticleSink) {
