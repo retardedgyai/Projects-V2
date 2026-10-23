@@ -135,6 +135,8 @@ def from_bbmodel(path: Path):
              "faces": {f: {"uv": [v["uv"][0] * 16 / uw, v["uv"][1] * 16 / uh, v["uv"][2] * 16 / uw, v["uv"][3] * 16 / uh],
                            "texture": "#atlas", **({"rotation": v["rotation"]} if v.get("rotation") else {})}
                        for f, v in c["faces"].items() if v.get("texture") is not None}}
+        if c.get("shade") is False:
+            e["shade"] = False
         r = c.get("rotation", [0, 0, 0])
         if any(r):
             e["rotation"] = {"origin": c["origin"], "x": r[0], "y": r[1], "z": r[2]}
