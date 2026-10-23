@@ -5,8 +5,12 @@
 // by lighting (the 黒翳竜 VFX parameters, scripts/build_boss_vfx.py); vfxPosition is the camera-relative position
 // for the warrior heat shimmer (scripts/build_warrior_iron_vfx.py). Rendering is otherwise the vanilla vertex stage.
 // 26.3 needs an explicit location on every in/out; 7 and 8 follow vanilla's last (6, texCoordGlint).
+// Point lights (SakuraLight.kt, scripts/shaders/post/sakura_light.fsh): an item tinted blue 80..83 is a light probe. It is
+// not drawn where it stands: its quad moves onto the screen's bottom pixel row, where item.fsh writes the light's data
+// for the post effect, which lights the scene and hides the row again.
 
 #include <minecraft:light.glsl>
+#include <minecraft:globals.glsl>
 #include <minecraft:fog.glsl>
 #include <minecraft:dynamictransforms.glsl>
 #include <minecraft:projection.glsl>
@@ -42,6 +46,8 @@ layout(location = 6) out vec2 texCoordGlint;
 layout(location = 7) out vec4 rawColor;
 layout(location = 8) out vec3 vfxPosition;
 
+const float LIGHT_PROBE_PIXELS = 97.0;   // item.fsh: header 33 + 8 lights x 8
+
 void main() {
     gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
 
@@ -65,4 +71,17 @@ void main() {
     texCoordGlint = (TextureMat * vec4(UV0, 0.0, 1.0)).xy;
     #endif
     #endif
+
+    int probe = int(Color.b * 255.0 + 0.5);
+    if (probe >= 80 && probe <= 83) {
+        // Corners in quad order; every second quad (the model's back face) winds the other way, so one of the two
+        // survives back-face culling whichever way the item faces. Just in front of the near plane, so nothing hides it.
+        int corner = gl_VertexIndex & 3;
+        vec2 c = vec2(corner == 1 || corner == 2 ? 1.0 : 0.0, corner >= 2 ? 1.0 : 0.0);
+        if (((gl_VertexIndex >> 2) & 1) == 1) c = c.yx;
+        vec4 near = ProjMat * vec4(0.0, 0.0, -0.2, 1.0);
+        if (!(near.w > 0.0)) near = vec4(0.0, 0.0, 0.0, 1.0);   // not a perspective projection: stay on screen
+        vec2 ndc = -1.0 + 2.0 * c * vec2(LIGHT_PROBE_PIXELS, 1.0) / ScreenSize;
+        gl_Position = vec4(ndc * near.w, near.z, near.w);
+    }
 }

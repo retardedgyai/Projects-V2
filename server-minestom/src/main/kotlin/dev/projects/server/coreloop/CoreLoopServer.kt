@@ -528,6 +528,20 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             addSyntax({ sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR, "sakura") } },
                 net.minestom.server.command.builder.arguments.ArgumentType.Literal("sakura"))
         })
+        // Test-only: the coloured point-light prototype (SakuraLight). /lighttest puts a glowing blossom with a pink light
+        // at your feet, /lighttest orbit sends one round you, /lighttest off clears yours.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("lighttest").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { lightTest(it, orbit = false) } }
+            addSyntax({ sender, _ -> (sender as? Player)?.let { lightTest(it, orbit = true) } },
+                net.minestom.server.command.builder.arguments.ArgumentType.Literal("orbit"))
+            addSyntax({ sender, _ -> (sender as? Player)?.let { clearLightTest(it) } },
+                net.minestom.server.command.builder.arguments.ArgumentType.Literal("off"))
+        })
+        // Test-only: /night and /day set the time of the instance you stand in (its clock stays paused), to see lights.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) for ((name, time) in listOf("night" to 18_000L, "day" to 6_000L))
+            MinecraftServer.getCommandManager().register(Command(name).apply {
+                setDefaultExecutor { sender, _ -> (sender as? Player)?.instance?.let { it.time = time } }
+            })
         // Test-only: plays a player motion on the puppet (docs/development/player-motion.md). /motion stop ends it.
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("motion").apply {
             val name = net.minestom.server.command.builder.arguments.ArgumentType.Word("name")
@@ -549,6 +563,46 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 it.sendMessage(CoreLoopItems.text("戦闘演出：${CoreCombatPresentation.cycle(it).label}（/effects で切替。自分の表示だけ変更）"))
             } }
         })
+    }
+
+    private class LightTest(val light: dev.projects.server.mob.SakuraLight, val lamp: net.minestom.server.entity.Entity,
+                            var task: net.minestom.server.timer.Task? = null)
+    private val lightTests = HashMap<java.util.UUID, MutableList<LightTest>>()
+
+    private fun lightTest(player: Player, orbit: Boolean) {
+        val tests = lightTests.getOrPut(player.uuid) { mutableListOf() }
+        if (tests.size >= 8) { player.sendMessage(Component.text("光は8つまで。/lighttest off で消す。", NamedTextColor.GRAY)); return }
+        val instance = player.instance ?: return
+        val centre = player.position.withView(0f, 0f)
+        val at = { t: Double -> if (orbit) centre.add(kotlin.math.cos(t) * 4.0, 1.2, kotlin.math.sin(t) * 4.0) else centre.add(0.0, 1.2, 0.0) }
+        val light = dev.projects.server.mob.SakuraLight(instance, at(0.0), slot = tests.size, radius = 9, strength = 1.6) { packed(it) }
+        val lamp = net.minestom.server.entity.Entity(net.minestom.server.entity.EntityType.BLOCK_DISPLAY).apply {
+            setNoGravity(true)
+            editEntityMeta(net.minestom.server.entity.metadata.display.BlockDisplayMeta::class.java) { meta ->
+                meta.setBlockState(net.minestom.server.instance.block.Block.CHERRY_LEAVES)
+                meta.setScale(net.minestom.server.coordinate.Vec(.5, .5, .5))
+                meta.setTranslation(net.minestom.server.coordinate.Vec(-.25, -.25, -.25))
+                meta.setBrightness(15, 15)
+                meta.setPosRotInterpolationDuration(2)
+            }
+            setInstance(instance, at(0.0))
+        }
+        val test = LightTest(light, lamp)
+        if (orbit) {
+            var t = 0.0
+            test.task = player.scheduler().buildTask {
+                t += .06
+                light.moveTo(at(t)); lamp.teleport(at(t))
+            }.repeat(net.minestom.server.timer.TaskSchedule.tick(1)).schedule()
+        }
+        tests += test
+        dev.projects.server.mob.SakuraLight.enable(player)
+        player.sendMessage(Component.text("桜の光 ${tests.size}/8（/lighttest orbit で回る光、/lighttest off で消す）", NamedTextColor.LIGHT_PURPLE))
+    }
+
+    private fun clearLightTest(player: Player) {
+        lightTests.remove(player.uuid)?.forEach { it.task?.cancel(); it.light.remove(); it.lamp.remove() }
+        dev.projects.server.mob.SakuraLight.disable(player)
     }
 
     private fun useAction(player: Player, item: ItemStack): Boolean {
