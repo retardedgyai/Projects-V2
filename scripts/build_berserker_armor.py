@@ -42,9 +42,10 @@ MATERIALS = {
 FACE_LIGHT = {"up": 4, "north": 3, "west": 2, "east": 2, "south": 1, "down": 0}
 
 
-def el(name, lo, hi, mat, rot=None, light=0):
-    """One box; rot = (axis, angle, origin). light nudges the whole box brighter or darker."""
-    e = {"name": name, "from": list(lo), "to": list(hi), "mat": mat, "light": light}
+def el(name, lo, hi, mat, rot=None, light=0, flat=False):
+    """One box; rot = (axis, angle, origin). light nudges the whole box brighter or darker; flat leaves out the
+    lit top edge (for parts stacked into one surface, where the edges would read as stripes)."""
+    e = {"name": name, "from": list(lo), "to": list(hi), "mat": mat, "light": light, "flat": flat}
     if rot:
         e["rotation"] = {"origin": list(rot[2]), "axis": rot[0], "angle": rot[1], "rescale": False}
     return e
@@ -53,54 +54,57 @@ def el(name, lo, hi, mat, rot=None, light=0):
 # ----------------------------------------------------------------------------------------------- the helm
 
 def helm():
-    """Front is north (low z). The head is x,y,z 4..12. Points are built as narrowing steps (each step's top or
-    front catches the light) rather than turned plates. Model rotations: -x tips a part's back end up.
+    """Front is north (low z). The head is x,y,z 4..12. Model rotations: +x swings a part's lower end forward.
 
-    Creator 2026-10-23: it must read as armor (甲冑), not a monster mask, so the menace is in the forged shape:
-    a visor that comes forward as a prow of upright plates to a keel, one sight slit across it, pivots and rivets, a bevor and gorget lames, a low comb, horns swept back (the right one broken) and torn crimson
-    hanging behind. The red behind the slit is only a glint."""
+    Creator 2026-10-23: built on the shape of the Knight Artorias helm in the reference (~/ProjectS/refs/artorias,
+    fr/h_48.png), in black steel and red: a long wedge leaning forward to a narrow tip below the chin; three long
+    plates down the front (a broad one in the middle, a curved one each side) with dark grooves between; the side
+    plates ending low in hooks curling back, the face only darkness under them; three tall tabs standing on the
+    crown; a plume streaming back."""
     e = []
-    # The skull: a stepped dome, a low comb along the top, a rivet band round it.
-    # Rounded in plan: each layer is two crossed boxes, so its corners are cut.
-    def round_box(name, lo, hi, cut, light):
-        return [el(name, (lo[0] + cut, lo[1], lo[2]), (hi[0] - cut, hi[1], hi[2]), "iron", light=light),
-                el(name, (lo[0], lo[1], lo[2] + cut), (hi[0], hi[1], hi[2] - cut), "iron", light=light)]
-    e += round_box("skull", (3.2, 4.2, 3.4), (12.8, 11.2, 12.8), .6, -1)
-    for i, (inset, y0, y1) in enumerate(((0.0, 11.0, 12.3), (1.1, 12.3, 13.3), (2.2, 13.3, 14.1))):
-        e += round_box("dome", (3.2 + inset, y0, 3.4 + inset), (12.8 - inset, y1, 12.8 - inset), .8, -i % 2)
-    e += [el("comb", (7.5, 13.6, 4.6), (8.5, 14.8, 11.6), "iron", light=1),
-          el("brim band", (3.4, 10.2, 3.6), (12.6, 11.0, 12.6), "iron")]
-    for z in (5.4, 7.6, 9.8, 12.0):
-        for x0 in (3.2, 12.6):
-            e += [el("rivet", (x0, 10.4, z - .2), (x0 + .2, 10.8, z + .2), "iron", light=2)]
-    # The visor: a prow. Each step keeps the full height and only narrows as it comes forward, so from the front
-    # it reads as nested upright plates meeting at a keel, not as a face. One sight slit runs straight across.
-    for i, (x0, z0) in enumerate(((3.6, 2.4), (4.9, 1.3), (6.1, 0.2), (7.1, -0.9))):
-        y0, y1 = 4.0 + .3 * i, 10.4 - .2 * i
-        e += [el("visor", (x0, y0, z0), (16 - x0, y1, z0 + 1.2), "iron", light=1 if i % 2 == 0 else 0),
-              el("sight", (x0 + .25, 8.1, z0 - .06), (16 - x0 - .25, 8.6, z0 + .1), "dark")]
-    e += [el("keel", (7.6, 4.6, -1.3), (8.4, 10.4, 2.6), "iron", light=2),
-          el("visor rim", (3.4, 4.0, 2.2), (12.6, 4.6, 3.8), "iron", light=1)]
+    lean = ("x", 22.5, (8.0, 13.0, 4.0))
+
+    # The body of the helm is stacked in slices one unit high: each slice's half width and front come from the
+    # profile, so the whole is a wedge leaning forward (the front comes 0.41 forward for each unit down, the same
+    # 22.5 degrees as the plates on it) and narrowing to the tip under the chin.
+    def front(y):
+        return 4.0 - .414 * (13 - y)
+    widths = {-1: .9, 0: 1.4, 1: 2.0, 2: 2.6, 3: 3.2, 4: 4.4, 5: 4.5, 6: 4.6, 7: 4.6, 8: 4.6, 9: 4.6, 10: 4.6, 11: 4.5, 12: 4.3, 13: 3.6}
+    for y, w in widths.items():
+        f = front(y + .5)
+        back = 12.7 if 4 <= y <= 12 else (11.6 if y == 13 else f + 3.4)
+        cut = min(.9, w * .3)
+        e += [el("slice", (8 - w + cut, y, f), (8 + w - cut, y + 1, back), "iron", light=-1, flat=True),
+              el("slice", (8 - w, y, f + cut), (8 + w, y + 1, back), "iron", light=-1, flat=True)]
+        # Low on the sides the face shows: darkness in place of plate behind the front, the hooks over it.
+        if 4 <= y <= 6:
+            e += [el("face dark", (8 - w - .05, y, f + 2.2), (8 + w + .05, y + 1, 8.4), "dark")]
+    # The three front plates on the wedge, leaning with it: the middle one broad down to the tip, the side ones
+    # shorter, dark grooves between. Drawn upright and turned about (y 13, z 4): an upright plate at z 3.9 lands
+    # on the wedge's front, and its foot at y -1.6 lands at the tip.
+    e += [el("middle plate", (6.3, -1.6, 2.9), (9.7, 13.6, 3.9), "iron", lean, light=1),
+          el("middle plate top", (6.4, 13.2, 3.8), (9.6, 14.2, 6.6), "iron", light=2),
+          el("middle ridge", (7.6, -1.6, 2.5), (8.4, 13.4, 2.95), "iron", lean, light=2)]
     for s in (-1, 1):
-        x = 8 + s * 2.2
-        e += [el("glint", (x - .5, 8.2, 1.18), (x + .5, 8.5, 1.26), "eye")]
-    # The pivots the visor hangs on, one each side.
+        x0, x1 = (3.4, 5.8) if s < 0 else (10.2, 12.6)
+        lx0, lx1 = (4.6, 5.9) if s < 0 else (10.1, 11.4)
+        e += [el("side plate", (x0, 5.6, 3.1), (x1, 13.6, 3.9), "iron", lean, light=0),
+              el("side plate low", (lx0, 1.0, 3.15), (lx1, 5.8, 3.9), "iron", lean, light=0),
+              el("side plate top", (x0 + .2, 13.0, 4.0), (x1 - .2, 13.8, 7.6), "iron", light=1),
+              el("groove", ((5.8 if s < 0 else 9.7), 0.0, 3.2), ((6.3 if s < 0 else 10.2), 13.6, 3.85), "dark", lean)]
+        # The hook: the side plate's lower end curls back along the cheek and turns up.
+        hx0, hx1 = (2.6, 3.8) if s < 0 else (12.2, 13.4)
+        e += [el("hook", (hx0, 3.2, 2.0), (hx1, 4.8, 7.4), "iron", light=1),
+              el("hook tip", (hx0, 4.6, 6.0), (hx1, 7.4, 7.4), "iron", light=1),
+              el("hook curl", (hx0, 6.8, 4.8), (hx1, 7.8, 7.4), "iron", light=2)]
+    # Three tall tabs standing on the crown, the middle one highest, the side ones flaring out a little.
+    e += [el("crown tab", (6.9, 12.0, 4.6), (9.1, 17.0, 6.8), "iron", light=1)]
     for s in (-1, 1):
-        x0, x1 = (3.0, 3.8) if s < 0 else (12.2, 13.0)
-        e += [el("pivot", (x0 - .2 * (s < 0) + .0, 7.6, 6.0), (x1, 9.4, 7.8), "iron", light=1),
-              el("pivot rivet", (x0 - .2 * (s < 0), 8.2, 6.6), (x1 + .2 * (s > 0), 8.8, 7.2), "iron", light=2)]
-    # The bevor under the visor and the gorget lames stepping out round the neck.
-    e += [el("bevor", (4.2, 3.0, 2.8), (11.8, 4.8, 9.0), "iron")]
-    for i, (out, y0, y1) in enumerate(((0.0, 2.4, 3.4), (.4, 1.6, 2.6))):
-        e += [el("gorget", (3.8 - out, y0, 4.2 - out), (12.2 + out, y1, 12.4 + out), "iron", light=1 - i)]
-    # The plume: one mass of crimson streaming back off the crown and falling, thick strips lying on each other,
-    # their torn ends at different lengths.
-    for i, (x0, x1, y0, length) in enumerate(((6.0, 8.4, 12.6, 11.0), (7.6, 10.0, 12.4, 13.5), (6.8, 9.2, 13.6, 9.0), (7.4, 8.8, 11.8, 15.5))):
-        e += [el("plume", (x0, y0, 9.4), (x1, y0 + 2.0, 9.4 + length), "cloth", ("x", 33.75, (8.0, 13.6, 9.4)), light=1 - i % 2)]
-    # Torn crimson hanging from the back of the crown.
-    for i, (x, length) in enumerate(((5.6, 7.0), (7.0, 10.0), (8.6, 5.0), (10.0, 8.0))):
-        e += [el("helm strip", (x, 12.0 - length, 12.6), (x + 1.1, 12.0, 13.3), "cloth", ("x", -22.5, (8.0, 12.0, 13.0)),
-                 light=i % 2)]
+        x = 8 + s * 3.2
+        e += [el("crown tab", (x - .9, 11.8, 5.2), (x + .9, 15.6, 7.2), "iron", ("z", -s * 11.25, (x, 12.0, 6.2)), light=0)]
+    # The plume: crimson streaming back off the crown and falling, thick strips lying on each other.
+    for i, (x0, x1, y0, length) in enumerate(((6.0, 8.4, 12.2, 11.0), (7.6, 10.0, 12.0, 13.5), (6.8, 9.2, 13.2, 9.0), (7.4, 8.8, 11.4, 15.5))):
+        e += [el("plume", (x0, y0, 9.4), (x1, y0 + 2.0, 9.4 + length), "cloth", ("x", 33.75, (8.0, 13.2, 9.4)), light=1 - i % 2)]
     return e
 
 
@@ -161,13 +165,13 @@ def face_size(e, face):
     return {"north": (dx, dy), "south": (dx, dy), "east": (dz, dy), "west": (dz, dy), "up": (dx, dz), "down": (dx, dz)}[face]
 
 
-def paint_face(img, x0, y0, w, h, mat, level):
+def paint_face(img, x0, y0, w, h, mat, level, flat=False):
     """One flat value per face, a lighter top edge, a darker bottom edge: the planes do the shading."""
     tones = MATERIALS[mat]
     px = img.load()
     for y in range(h):
         for x in range(w):
-            v = level + (2 if y == 0 and level >= 3 else 1 if y == 0 else -1 if y == h - 1 else 0)
+            v = level if flat else level + (2 if y == 0 and level >= 3 else 1 if y == 0 else -1 if y == h - 1 else 0)
             if mat == "eye":
                 v = 3 + 2 * (1 - abs(2 * (x + .5) / w - 1))
             px[x0 + x, y0 + y] = tones[max(0, min(5, round(v)))] + (255,)
@@ -185,10 +189,10 @@ def model(elements, size=512, density=3):
             w, h = max(2, math.ceil(fw * density)), max(2, math.ceil(fh * density))
             if cx + w > size: cx, cy, row = 0, cy + row, 0
             assert cy + h <= size, "berserker atlas is full"
-            paint_face(img, cx, cy, w, h, e["mat"], FACE_LIGHT[face] + e["light"])
+            paint_face(img, cx, cy, w, h, e["mat"], FACE_LIGHT[face] + e["light"], e["flat"])
             faces[face] = {"uv": [cx * 16 / size, cy * 16 / size, (cx + w) * 16 / size, (cy + h) * 16 / size], "texture": "#atlas"}
             cx += w; row = max(row, h)
-        box = {k: v for k, v in e.items() if k not in ("mat", "light")}
+        box = {k: v for k, v in e.items() if k not in ("mat", "light", "flat")}
         box["faces"] = faces
         out.append(box)
     return img, out
