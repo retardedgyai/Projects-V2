@@ -122,37 +122,107 @@ def pulled_in(elements):
     return elements
 
 
+class Mesh:
+    """A Blockbench mesh being built: vertices, and faces wound so they look away from a point inside."""
+
+    def __init__(self, name):
+        self.name, self.verts, self.faces = name, [], []
+
+    def v(self, p):
+        self.verts.append(np.array(p, float)); return len(self.verts) - 1
+
+    def face(self, ids, mat, inside):
+        pts = [self.verts[i] for i in ids]
+        n = np.cross(pts[1] - pts[0], pts[2] - pts[0])
+        if n @ (sum(pts) / len(pts) - np.array(inside, float)) < 0:
+            ids = ids[::-1]
+        self.faces.append((list(ids), mat))
+
+    def loft(self, rings, mat, top=None, bottom=None):
+        """Closed rings stacked bottom to top, joined by quads, capped with a fan to a point at each end."""
+        ids = [[self.v(p) for p in ring] for ring in rings]
+        centre = [np.mean(np.array(r, float), axis=0) for r in rings]
+        for k in range(len(rings) - 1):
+            mid = (centre[k] + centre[k + 1]) / 2
+            for i in range(len(rings[k])):
+                j = (i + 1) % len(rings[k])
+                self.face([ids[k][i], ids[k][j], ids[k + 1][j], ids[k + 1][i]], mat, mid)
+        for cap, ring, c in ((top, ids[-1], centre[-1]), (bottom, ids[0], centre[0])):
+            if cap is not None:
+                tip = self.v(cap)
+                for i in range(len(ring)):
+                    self.face([ring[i], ring[(i + 1) % len(ring)], tip], mat, c + (c - np.array(cap)) * .5)
+
+    def ribbon(self, points, widths, thick, mat, away):
+        """A plate with thickness along a curve: one cross-section per point, the joints shared (no seams). Its face
+        looks away from the point `away`; widths and thickness may change along it."""
+        pts = [np.array(p, float) for p in points]
+        widths = widths if isinstance(widths, (list, tuple)) else [widths] * len(pts)
+        secs = []
+        for i, p in enumerate(pts):
+            t = pts[min(i + 1, len(pts) - 1)] - pts[max(i - 1, 0)]; t /= np.linalg.norm(t)
+            g = p - np.array(away, float); g -= t * (g @ t); g /= np.linalg.norm(g)
+            side = np.cross(g, t); side /= np.linalg.norm(side)
+            w = widths[i] / 2
+            secs.append([self.v(p - side * w), self.v(p + side * w), self.v(p + side * w + g * thick), self.v(p - side * w + g * thick)],
+                        )
+            secs[-1].append(p + g * thick / 2)
+        for k in range(len(secs) - 1):
+            a, b = secs[k], secs[k + 1]
+            inside = (a[4] + b[4]) / 2
+            for i in range(4):
+                j = (i + 1) % 4
+                self.face([a[i], a[j], b[j], b[i]], mat, inside)
+        for sec in (secs[0], secs[-1]):
+            self.face(sec[:4], mat, sec[4] + (sec[4] - secs[len(secs) // 2][4]) * -.01)
+
+
+def squircle(y, hw, zc, front, back, n=16, power=.3):
+    """A ring round the head at height y: nearly square in plan with rounded corners, so it covers the corners of
+    the game's head (a square) without growing much past its sides."""
+    out = []
+    for k in range(n):
+        a = 2 * math.pi * k / n
+        sx, cz = math.sin(a), math.cos(a)
+        x = 8 + hw * math.copysign(abs(sx) ** power, sx)
+        z = zc - (front if cz > 0 else back) * math.copysign(abs(cz) ** power, cz)
+        out.append((x, y, z))
+    return out
+
+
+MATS = {"iron": (112, 106, 124), "shell": (64, 59, 72), "dark": (42, 37, 48), "cloth": (196, 42, 34), "eye": (255, 74, 44)}
+
+
 def helm():
-    e = []
-    # The shell round the head, its lower sides dark: the face and the opening under the hooks.
-    e += [box("shell", (3.8, 6.8, 3.9), (12.2, 12.5, 12.4), "iron", -1),
-          box("neck guard", (3.9, 3.2, 8.4), (12.1, 7.0, 12.9), "iron", -1),
-          box("face dark", (3.85, 3.4, 3.85), (12.15, 9.6, 8.6), "dark")]
-    # The crown, bent over the top from the back to the brow.
-    e += chain("crown", [(8, 12.6, 12.9), (8, 13.6, 10.0), (8, 13.8, 6.6), (8, 13.4, 4.4)], 8.8, .9, (0, 1, 0), bevel=False)
-    # The middle plate bent from the crown down the brow to a blunt tip leaning forward, narrowing.
-    e += chain("middle", [(8, 14.1, 6.4), (8, 13.4, 3.8), (8, 9.6, 2.2), (8, 5.2, 1.2), (8, 1.0, .6)],
-               [3.4, 3.8, 3.6, 2.8], 1.1, [(0, 1, -.4), (0, .45, -1), (0, .25, -1), (0, .15, -1)])
-    e += chain("middle ridge", [(8, 14.3, 5.4), (8, 13.6, 3.2), (8, 9.6, 1.6), (8, 5.2, .6), (8, 1.4, 0)], .7, .5,
-               [(0, 1, -.4), (0, .45, -1), (0, .25, -1), (0, .15, -1)], bevel=False)
+    """Creator 2026-10-23: a real shape, not boxes. A mesh: the skull lofted from rings, the plates as ribbons
+    lying on it whose cross-sections share their corners (no seams), lit by their real facing when packed."""
+    m = Mesh("helm")
+    rings = [squircle(2.8, 2.4, 6.6, 3.0, 2.2), squircle(4.0, 4.45, 8.1, 4.45, 4.5), squircle(7.0, 4.45, 8.1, 4.45, 4.5),
+             squircle(10.0, 4.45, 8.1, 4.45, 4.5), squircle(12.5, 4.45, 8.1, 4.4, 4.5), squircle(13.3, 3.5, 8.3, 3.3, 3.6)]
+    m.loft(rings, "shell", top=(8, 13.8, 8.4), bottom=(8, 2.6, 6.8))
+    centre = (8, 8, 9)
+    P = lambda pts: [press(np.array(p, float)) for p in pts]
+    # The middle plate from the back of the crown over the brow and down to a blunt tip, narrowing.
+    m.ribbon(P([(8, 13.95, 9.0), (8, 14.0, 6.2), (8, 13.2, 3.6), (8, 9.8, 2.4), (8, 6.0, 1.5), (8, 2.6, 1.0), (8, 1.2, 1.0)]),
+             [3.0, 3.6, 4.2, 4.0, 3.4, 2.6, 2.0], 1.0, "iron", centre)
     for s in (-1, 1):
-        # The side band, bent: from the top corner, round the brow, down and in toward the tip, facing out.
-        e += chain("band", [(8 + s * 4.2, 13.8, 6.6), (8 + s * 4.7, 11.2, 3.8), (8 + s * 4.1, 7.4, 2.4), (8 + s * 2.8, 2.6, 1.5)],
-                   [3.8, 3.8, 3.4], 1.0, [(s * .6, .7, -.6), (s * .9, .2, -.8), (s * .8, .05, -.9)])
-        e += [plate("side", (8 + s * 4.9, 13.4, 10.0), (8 + s * 4.6, 6.6, 8.8), 5.6, .9, (s * 1, .1, 0), light=-1)]
+        # The side band from the top corner round the brow, down and in toward the tip.
+        m.ribbon(P([(8 + s * 3.4, 13.7, 7.4), (8 + s * 4.4, 12.6, 4.6), (8 + s * 4.7, 10.6, 3.4), (8 + s * 4.3, 7.0, 2.6), (8 + s * 3.0, 3.2, 1.8)]),
+                 [2.4, 3.2, 3.4, 3.2, 2.4], .9, "iron", centre)
         # The hook: the band's end curls back along the cheek and turns up.
-        e += chain("hook", [(8 + s * 3.0, 2.6, 1.4), (8 + s * 4.6, 2.9, 3.2), (8 + s * 5.0, 4.0, 5.4), (8 + s * 4.8, 6.6, 6.4)],
-                   [1.6, 1.6, 1.4], .9, [(s * .4, -.6, -.7), (s * 1, -.3, -.2), (s * 1, 0, .3)], bevel=False)
-    # Three tall tabs on the crown: the middle one highest, the side ones leaning out.
-    e += chain("crown tab", [(8, 17.8, 7.8), (8, 13.2, 6.6)], 2.8, 1.8, (0, .1, -1))
-    for s in (-1, 1):
-        e += chain("crown tab", [(8 + s * 4.4, 16.6, 8.4), (8 + s * 3.6, 13.0, 7.2)], 2.0, 1.4, (s * .3, .1, -1))
+        m.ribbon(P([(8 + s * 3.0, 3.0, 1.8), (8 + s * 4.4, 2.6, 2.8), (8 + s * 5.1, 3.4, 4.6), (8 + s * 5.0, 5.6, 6.0)]),
+                 [1.6, 1.7, 1.6, 1.3], .9, "iron", (8, 6, 7))
+        # The side tabs on the crown, leaning out.
+        m.ribbon(P([(8 + s * 3.3, 13.0, 7.0), (8 + s * 3.8, 15.0, 7.5), (8 + s * 4.2, 16.4, 8.0)]), [1.9, 1.7, 1.4], 1.4, "iron",
+                 (8 + s * 3.0, 14.5, 12))
+    # The middle tab, highest.
+    m.ribbon(P([(8, 13.2, 6.4), (8, 15.6, 6.9), (8, 17.6, 7.6)]), [2.8, 2.6, 2.2], 1.8, "iron", (8, 15, 12))
     # The plume: crimson streaming back off the crown and falling.
     for i, (dx, length, drop, w) in enumerate(((-1.0, 11, 6.5, 2.4), (1.1, 13, 8.0, 2.4), (0, 9, 4.5, 2.6), (.2, 15, 10.0, 1.8))):
-        top = np.array((8 + dx, 13.9 - .2 * i, 9.0))
-        e += chain("plume", [top, top + (dx * .15, -drop * .3, length * .5), top + (dx * .3, -drop, length)], w, 1.2, (0, 1, .4),
-                   "cloth", 1 - i % 2, bevel=False)
-    return pulled_in(e)
+        top = np.array((8 + dx, 13.7 - .2 * i, 10.0))
+        m.ribbon(P([top, top + (dx * .1, .2, length * .3), top + (dx * .2, -drop * .4, length * .65), top + (dx * .3, -drop, length)]),
+                 [w, w, w * .9, w * .7], .7, "cloth", top + (0, -4, 4))
+    return [{"mesh": m}]
 
 
 def mantle():
@@ -258,6 +328,8 @@ def bbmodel(name, elements, size=1024):
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     cx = cy = row = 0
     cubes = []
+    meshes = [e["mesh"] for e in elements if "mesh" in e]
+    elements = [e for e in elements if "mesh" not in e]
     for e in elements:
         faces = {}
         for face in ("north", "east", "south", "west", "up", "down"):
@@ -273,7 +345,24 @@ def bbmodel(name, elements, size=1024):
                       "autouv": 0, "color": 0, "origin": [round(float(v), 4) for v in e["origin"]],
                       "rotation": list(e["rotation"]), "shade": False, "faces": faces, "type": "cube",
                       "uuid": str(uuid.uuid5(uuid.NAMESPACE_URL, f"projects/{name}/{len(cubes)}"))})
+    mats = list(MATS)
+    for m in meshes:
+        keys = [f"v{i}" for i in range(len(m.verts))]
+        cubes.append({"name": m.name, "color": 0, "origin": [0, 0, 0], "rotation": [0, 0, 0], "export": True, "visibility": True,
+                      "locked": False, "render_order": "default", "allow_mirror_modeling": True, "type": "mesh",
+                      "vertices": {k: [round(float(c), 4) for c in m.verts[i]] for i, k in enumerate(keys)},
+                      "faces": {f"f{n}": {"uv": {keys[i]: [0, 0] for i in ids}, "vertices": [keys[i] for i in ids],
+                                          "texture": 1 + mats.index(mat)} for n, (ids, mat) in enumerate(m.faces)},
+                      "uuid": str(uuid.uuid5(uuid.NAMESPACE_URL, f"projects/{name}/mesh/{m.name}"))})
     png = io.BytesIO(); img.save(png, "PNG")
+
+    def swatch(i, mat):
+        b = io.BytesIO(); Image.new("RGBA", (16, 16), MATS[mat] + (255,)).save(b, "PNG")
+        return {"path": "", "name": f"{mat}.png", "folder": "", "namespace": "", "id": str(i), "particle": False,
+                "render_mode": "default", "render_sides": "auto", "visible": True, "internal": True, "saved": False,
+                "uuid": str(uuid.uuid5(uuid.NAMESPACE_URL, f"projects/{name}/swatch/{mat}")),
+                "width": 16, "height": 16, "uv_width": 16, "uv_height": 16,
+                "source": "data:image/png;base64," + base64.b64encode(b.getvalue()).decode()}
     return {"meta": {"format_version": "4.10", "model_format": "free", "box_uv": False},
             "name": name, "model_identifier": "", "visible_box": [1, 1, 0], "resolution": {"width": size, "height": size},
             "elements": cubes, "outliner": [c["uuid"] for c in cubes],
@@ -281,7 +370,8 @@ def bbmodel(name, elements, size=1024):
                           "render_mode": "default", "render_sides": "auto", "visible": True, "internal": True, "saved": False,
                           "uuid": str(uuid.uuid5(uuid.NAMESPACE_URL, f"projects/{name}/texture")),
                           "width": size, "height": size, "uv_width": size, "uv_height": size,
-                          "source": "data:image/png;base64," + base64.b64encode(png.getvalue()).decode()}]}
+                          "source": "data:image/png;base64," + base64.b64encode(png.getvalue()).decode()}]
+            + [swatch(i + 1, mat) for i, mat in enumerate(mats)]}
 
 
 def main():

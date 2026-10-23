@@ -12,6 +12,7 @@ from pathlib import Path
 import base64
 import io
 import json
+import math
 
 from PIL import Image
 
@@ -121,18 +122,149 @@ DISPLAY = {"head": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1
            "fixed": {"rotation": [0, 180, 0], "translation": [0, 0, 0], "scale": [0.65, 0.65, 0.65]}}
 
 
-def from_bbmodel(path: Path):
-    """The cubes of a Blockbench model as item model elements, and its texture."""
-    bb = json.loads(path.read_text(encoding="utf-8"))
-    tex = bb["textures"][0]
-    img = Image.open(io.BytesIO(base64.b64decode(tex["source"].split(",", 1)[1]))).convert("RGBA")
-    uw, uh = tex.get("uv_width", img.width), tex.get("uv_height", img.height)
-    elements = []
-    for c in bb["elements"]:
-        if c.get("type", "cube") != "cube" or c.get("visibility") is False:
+LIGHT = (-.4, .75, -.55)     # baked light: from above, front and left (the game's own face shading is off)
+DENSITY = 6                  # texture pixels per model unit for mesh triangles
+
+
+def _norm(v):
+    length = math.sqrt(sum(c * c for c in v))
+    return [c / length for c in v]
+
+
+def _sub(a, b): return [a[i] - b[i] for i in range(3)]
+def _add(a, b): return [a[i] + b[i] for i in range(3)]
+def _mul(a, k): return [c * k for c in a]
+def _dot(a, b): return sum(a[i] * b[i] for i in range(3))
+def _cross(a, b): return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+
+
+def _rotation(x, y, z):
+    """Rz·Ry·Rx (degrees), right-handed, as the game and Blockbench apply them."""
+    x, y, z = (math.radians(a) for a in (x, y, z))
+    cx, sx, cy, sy, cz, sz = math.cos(x), math.sin(x), math.cos(y), math.sin(y), math.cos(z), math.sin(z)
+    return [[cz * cy, cz * sy * sx - sz * cx, cz * sy * cx + sz * sx],
+            [sz * cy, sz * sy * sx + cz * cx, sz * sy * cx - cz * sx],
+            [-sy, cy * sx, cy * cx]]
+
+
+def _euler(m):
+    """Angles (x, y, z) in degrees with m = Rz·Ry·Rx."""
+    y = math.asin(max(-1.0, min(1.0, -m[2][0])))
+    if abs(math.cos(y)) > 1e-6:
+        x, z = math.atan2(m[2][1], m[2][2]), math.atan2(m[1][0], m[0][0])
+    else:
+        x, z = math.atan2(-m[1][2], m[1][1]), 0.0
+    return [round(math.degrees(a), 4) for a in (x, y, z)]
+
+
+def _swatch(tex_img):
+    """A material's colour: the mean of the opaque pixels of its Blockbench texture."""
+    px = [p for p in tex_img.getdata() if p[3] > 0] or [(128, 128, 128, 255)]
+    return [sum(p[i] for p in px) / len(px) for i in range(3)]
+
+
+def mesh_triangles(c, swatches):
+    """A Blockbench mesh as world-space triangles (A, B, C, colour), wound so (B-A)x(C-A) faces out."""
+    rot, origin = _rotation(*c.get("rotation", [0, 0, 0])), c.get("origin", [0, 0, 0])
+    world = {k: _add([sum(rot[i][j] * v[j] for j in range(3)) for i in range(3)], origin) for k, v in c["vertices"].items()}
+    tris = []
+    for f in c["faces"].values():
+        if f.get("texture") is None:
             continue
+        pts = [world[k] for k in f["vertices"]]
+        colour = swatches[int(f["texture"])]
+        if len(pts) == 4:
+            # Blockbench keeps a quad's corners unordered after the first three: order them round the centroid.
+            n = _cross(_sub(pts[1], pts[0]), _sub(pts[2], pts[0]))
+            mid = _mul(_add(_add(pts[0], pts[1]), _add(pts[2], pts[3])), .25)
+            ref = _sub(pts[0], mid)
+            side = _cross(n, ref)
+            pts.sort(key=lambda p: math.atan2(_dot(_sub(p, mid), side), _dot(_sub(p, mid), ref)))
+            tris += [(pts[0], pts[1], pts[2], colour), (pts[0], pts[2], pts[3], colour)]
+        elif len(pts) == 3:
+            tris.append((pts[0], pts[1], pts[2], colour))
+    return tris
+
+
+def triangle_element(a, b, c, colour, atlas, alloc):
+    """One triangle as a flat element: a rectangle lying in the triangle's plane (its one face looking out), and
+    the triangle painted on its texture with the outside transparent, so the game draws only the triangle."""
+    u = _norm(_sub(b, a)); n = _norm(_cross(_sub(b, a), _sub(c, a))); v = _cross(u, n)
+    st = [(_dot(_sub(p, a), u), _dot(_sub(p, a), v)) for p in (a, b, c)]
+    pad = 1.5 / DENSITY
+    s0, s1 = min(p[0] for p in st) - pad, max(p[0] for p in st) + pad
+    t0, t1 = min(p[1] for p in st) - pad, max(p[1] for p in st) + pad
+    w, h = s1 - s0, t1 - t0
+    centre = _add(a, _add(_mul(u, (s0 + s1) / 2), _mul(v, (t0 + t1) / 2)))
+    pw, ph = max(1, math.ceil(w * DENSITY)), max(1, math.ceil(h * DENSITY))
+    x0, y0 = alloc(pw, ph)
+    lit = .25 + .95 * max(0.0, _dot(n, _norm(LIGHT))) ** 1.3
+    rgb = tuple(max(0, min(255, round(ch * lit))) for ch in colour) + (255,)
+    px = atlas.load()
+    (sa, ta), (sb, tb), (sc, tc) = st
+    det = (tb - tc) * (sa - sc) + (sc - sb) * (ta - tc)
+    grow = 1.3 / DENSITY  # a little past the edges so neighbouring triangles leave no crack
+    for j in range(ph):
+        for i in range(pw):
+            # The north face runs its texture from +x (left) to -x and from +y (top) down.
+            s = (s0 + s1) / 2 + w / 2 - (i + .5) * w / pw
+            t = (t0 + t1) / 2 + h / 2 - (j + .5) * h / ph
+            l1 = ((tb - tc) * (s - sc) + (sc - sb) * (t - tc)) / det
+            l2 = ((tc - ta) * (s - sc) + (sa - sc) * (t - tc)) / det
+            l3 = 1 - l1 - l2
+            edge = min(l1, l2, l3)
+            if edge >= 0 or _edge_distance((s, t), st) <= grow:
+                px[x0 + i, y0 + j] = rgb
+    m = [[u[i], v[i], -n[i]] for i in range(3)]
+    return {"from": [centre[0] - w / 2, centre[1] - h / 2, centre[2]], "to": [centre[0] + w / 2, centre[1] + h / 2, centre[2]],
+            "rotation": dict(zip(("x", "y", "z"), _euler(m)), origin=[round(x, 4) for x in centre]),
+            "shade": False, "faces": {"north": {"uv": [x0, y0, x0 + pw, y0 + ph], "texture": "#atlas"}}}
+
+
+def _edge_distance(p, tri):
+    best = 1e9
+    for k in range(3):
+        (ax, ay), (bx, by) = tri[k], tri[(k + 1) % 3]
+        dx, dy = bx - ax, by - ay
+        f = max(0.0, min(1.0, ((p[0] - ax) * dx + (p[1] - ay) * dy) / (dx * dx + dy * dy or 1)))
+        best = min(best, math.hypot(p[0] - ax - f * dx, p[1] - ay - f * dy))
+    return best
+
+
+def from_bbmodel(path: Path):
+    """A Blockbench model as item model elements and one texture. Cubes keep their own UVs on texture 0; mesh
+    faces become flat triangles (triangle_element) packed below it, lit by their real facing."""
+    bb = json.loads(path.read_text(encoding="utf-8"))
+    images = [Image.open(io.BytesIO(base64.b64decode(t["source"].split(",", 1)[1])))
+              .convert("RGBA") for t in bb["textures"]]
+    tex = bb["textures"][0]; base = images[0]
+    uw, uh = tex.get("uv_width", base.width), tex.get("uv_height", base.height)
+    swatches = [_swatch(im) for im in images]
+    visible = [c for c in bb["elements"] if c.get("visibility") is not False]
+    tris = [t for c in visible if c.get("type") == "mesh" for t in mesh_triangles(c, swatches)]
+    cubes = [c for c in visible if c.get("type", "cube") == "cube"]
+    width = max(512, base.width if cubes else 0)
+    top = base.height if cubes else 0
+    shelf = {"x": 0, "y": top, "row": 0, "rects": []}
+
+    def alloc(w, h):
+        if shelf["x"] + w > width:
+            shelf["x"], shelf["y"], shelf["row"] = 0, shelf["y"] + shelf["row"], 0
+        at = (shelf["x"], shelf["y"]); shelf["x"] += w; shelf["row"] = max(shelf["row"], h)
+        return at
+    scratch = Image.new("RGBA", (width, top + 8192), (0, 0, 0, 0))
+    if cubes:
+        scratch.paste(base, (0, 0))
+    meshes = [triangle_element(a, b, c, col, scratch, alloc) for a, b, c, col in tris]
+    height = shelf["y"] + shelf["row"]
+    height = max(16, -(-height // 16) * 16)
+    atlas = scratch.crop((0, 0, width, height))
+    sx, sy = 16 / width, 16 / height
+    elements = []
+    for c in cubes:
         e = {"name": c["name"], "from": c["from"], "to": c["to"],
-             "faces": {f: {"uv": [v["uv"][0] * 16 / uw, v["uv"][1] * 16 / uh, v["uv"][2] * 16 / uw, v["uv"][3] * 16 / uh],
+             "faces": {f: {"uv": [v["uv"][0] * base.width / uw * sx, v["uv"][1] * base.height / uh * sy,
+                                  v["uv"][2] * base.width / uw * sx, v["uv"][3] * base.height / uh * sy],
                            "texture": "#atlas", **({"rotation": v["rotation"]} if v.get("rotation") else {})}
                        for f, v in c["faces"].items() if v.get("texture") is not None}}
         if c.get("shade") is False:
@@ -141,7 +273,11 @@ def from_bbmodel(path: Path):
         if any(r):
             e["rotation"] = {"origin": c["origin"], "x": r[0], "y": r[1], "z": r[2]}
         elements.append(e)
-    return elements, img
+    for e in meshes:
+        e["faces"]["north"]["uv"] = [round(q * (sx if k % 2 == 0 else sy), 5) for k, q in enumerate(e["faces"]["north"]["uv"])]
+        e["from"] = [round(x, 4) for x in e["from"]]; e["to"] = [round(x, 4) for x in e["to"]]
+        elements.append(e)
+    return elements, atlas
 
 
 def main():
