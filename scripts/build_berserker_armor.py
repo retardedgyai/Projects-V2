@@ -56,50 +56,52 @@ def helm():
     """Front is north (low z). The head is x,y,z 4..12. Points are built as narrowing steps (each step's top or
     front catches the light) rather than turned plates. Model rotations: -x tips a part's back end up.
 
-    Creator 2026-10-23: the clean, symmetric helm with a horizontal eye band and a centre antenna read as a Kamen
-    Rider. So: nothing stands up at the front; a scowling brow pulled down to the middle, horns from it swept
-    back; small slanted eyes deep in the dark; a maw of fangs below; a ragged mane of spikes at the back, one broken."""
+    Creator 2026-10-23: it must read as armor (甲冑), not a monster mask, so the menace is in the forged shape:
+    a visor that comes forward as a prow of upright plates to a keel, one sight slit across it, pivots and rivets, a bevor and gorget lames, a low comb, horns swept back (the right one broken) and torn crimson
+    hanging behind. The red behind the slit is only a glint."""
     e = []
-    e += [el("skull", (3.6, 4.2, 3.6), (12.4, 11.2, 12.4), "iron", light=-1)]
-    for i, (inset, y0, y1) in enumerate(((0.0, 11.0, 12.2), (1.0, 12.2, 13.0))):
-        e += [el("dome", (3.6 + inset, y0, 3.8 + inset * .6), (12.4 - inset, y1, 12.4 - inset * .3), "iron", light=-i % 2)]
-    # The scowl: each half of the brow steps down toward the middle, and juts forward.
+    # The skull: a stepped dome, a low comb along the top, a rivet band round it.
+    # Rounded in plan: each layer is two crossed boxes, so its corners are cut.
+    def round_box(name, lo, hi, cut, light):
+        return [el(name, (lo[0] + cut, lo[1], lo[2]), (hi[0] - cut, hi[1], hi[2]), "iron", light=light),
+                el(name, (lo[0], lo[1], lo[2] + cut), (hi[0], hi[1], hi[2] - cut), "iron", light=light)]
+    e += round_box("skull", (3.2, 4.2, 3.4), (12.8, 11.2, 12.8), .6, -1)
+    for i, (inset, y0, y1) in enumerate(((0.0, 11.0, 12.3), (1.1, 12.3, 13.1))):
+        e += round_box("dome", (3.2 + inset, y0, 3.4 + inset), (12.8 - inset, y1, 12.8 - inset), .8, -i % 2)
+    e += [el("comb", (7.5, 12.8, 4.6), (8.5, 13.8, 11.8), "iron", light=1),
+          el("brim band", (3.4, 10.2, 3.6), (12.6, 11.0, 12.6), "iron")]
+    for z in (5.4, 7.6, 9.8, 12.0):
+        for x0 in (3.2, 12.6):
+            e += [el("rivet", (x0, 10.4, z - .2), (x0 + .2, 10.8, z + .2), "iron", light=2)]
+    # The visor: a prow. Each step keeps the full height and only narrows as it comes forward, so from the front
+    # it reads as nested upright plates meeting at a keel, not as a face. One sight slit runs straight across.
+    for i, (x0, z0) in enumerate(((3.6, 2.4), (4.9, 1.3), (6.1, 0.2), (7.1, -0.9))):
+        y0, y1 = 4.0 + .3 * i, 10.4 - .2 * i
+        e += [el("visor", (x0, y0, z0), (16 - x0, y1, z0 + 1.2), "iron", light=1 if i % 2 == 0 else 0),
+              el("sight", (x0 + .25, 8.1, z0 - .06), (16 - x0 - .25, 8.6, z0 + .1), "dark")]
+    e += [el("keel", (7.6, 4.6, -1.3), (8.4, 10.4, 2.6), "iron", light=2),
+          el("visor rim", (3.4, 4.0, 2.2), (12.6, 4.6, 3.8), "iron", light=1)]
     for s in (-1, 1):
-        for i in range(3):
-            x0, x1 = (3.4 + 1.6 * i, 5.2 + 1.6 * i) if s < 0 else (10.8 - 1.6 * i, 12.6 - 1.6 * i)
-            e += [el("brow", (x0, 10.0 - .9 * i, 2.4 - .5 * i), (x1, 11.2 - .8 * i, 3.8), "iron", light=1)]
-    # Horns from the outer ends of the brow, swept back and up past the crown; the right one broken short.
+        x = 8 + s * 2.2
+        e += [el("glint", (x - .5, 8.2, 1.18), (x + .5, 8.5, 1.26), "eye")]
+    # The pivots the visor hangs on, one each side.
+    for s in (-1, 1):
+        x0, x1 = (3.0, 3.8) if s < 0 else (12.2, 13.0)
+        e += [el("pivot", (x0 - .2 * (s < 0) + .0, 7.6, 6.0), (x1, 9.4, 7.8), "iron", light=1),
+              el("pivot rivet", (x0 - .2 * (s < 0), 8.2, 6.6), (x1 + .2 * (s > 0), 8.8, 7.2), "iron", light=2)]
+    # The bevor under the visor and the gorget lames stepping out round the neck.
+    e += [el("bevor", (4.2, 3.0, 2.8), (11.8, 4.8, 9.0), "iron")]
+    for i, (out, y0, y1) in enumerate(((0.0, 2.4, 3.4), (.4, 1.6, 2.6))):
+        e += [el("gorget", (3.8 - out, y0, 4.2 - out), (12.2 + out, y1, 12.4 + out), "iron", light=1 - i)]
+    # Horns from the temples, swept back past the crown; the right one broken short.
     for s, length in ((-1, 1.0), (1, .55)):
         x = 8 + s * 4.6
         for i in range(3):
             xi = x + s * .5 * i
             z1 = 5.4 + (5.0 + 3.0 * i) * length + 2.0
-            e += [el("horn", (xi - .45 + .12 * i, 9.2 + .5 * i, 5.4 + 2.6 * i * length), (xi + .45 - .12 * i, 10.4 + .5 * i - .2 * i, z1), "iron",
-                     ("x", -11.25, (xi, 10.0, 5.4)), light=1 if i < 2 else 2)]
-    # A ragged mane of spikes off the back of the crown, uneven, one snapped off.
-    for i, (x, length, lift) in enumerate(((5.0, 5.0, -.6), (6.5, 7.5, -.2), (8.0, 3.0, .0), (9.5, 8.5, -.2), (11.0, 5.5, -.6))):
-        e += [el("mane", (x - .45, 11.4 + lift, 10.4), (x + .45, 12.4 + lift, 10.4 + length), "iron", ("x", -11.25, (x, 11.9, 10.4)),
-                 light=1 if i % 2 else 0)]
-    # The dark under the brow, the eyes small, slanted and set far back in it.
-    e += [el("eye shadow", (4.2, 5.8, 3.2), (11.8, 9.4, 4.0), "dark")]
-    for s in (-1, 1):
-        x = 8 + s * 1.9
-        e += [el("eye", (x - .7, 7.4, 3.0), (x + .7, 7.9, 3.2), "eye"),
-              el("eye", (x + s * .2 - .5, 7.9, 3.0), (x + s * .2 + .5, 8.3, 3.2), "eye")]
-    # The maw: a dark mouth with fangs hanging into it and rising from the jaw, the jaw stepping down to a point.
-    e += [el("muzzle plate", (4.4, 5.6, 2.4), (11.6, 6.4, 3.4), "iron"),
-          el("maw", (5.0, 4.0, 2.6), (11.0, 5.6, 3.4), "dark")]
-    for i, (x, top_len) in enumerate(((5.6, .9), (7.0, 1.3), (9.0, 1.3), (10.4, .9))):
-        e += [el("fang", (x - .25, 5.6 - top_len, 2.4), (x + .25, 5.7, 2.8), "iron", light=2)]
-    for x in (6.3, 8.0, 9.7):
-        e += [el("lower fang", (x - .2, 4.0, 2.5), (x + .2, 4.7, 2.9), "iron", light=2)]
-    for i, (x0, y0, y1) in enumerate(((4.4, 3.2, 4.2), (5.6, 2.6, 3.2), (6.8, 2.0, 2.6))):
-        e += [el("jaw", (x0, y0, 2.2 + .1 * i), (16 - x0, y1, 3.6), "iron", light=0 if i == 0 else 1)]
-    # Spurs off the jaw corners, pointing back.
-    for s in (-1, 1):
-        x = 8 + s * 4.3
-        e += [el("jaw spur", (x - .35, 3.4, 3.0), (x + .35, 4.2, 7.0), "iron", ("x", -22.5, (x, 3.8, 3.0)), light=1)]
-    # Torn crimson strips hanging from the back of the crown.
+            e += [el("horn", (xi - .45 + .12 * i, 9.6 + .3 * i, 5.4 + 2.6 * i * length), (xi + .45 - .12 * i, 10.8 + .3 * i, z1), "iron",
+                     ("x", -11.25, (xi, 10.2, 5.4)), light=1 if i < 2 else 2)]
+    # Torn crimson hanging from the back of the crown.
     for i, (x, length) in enumerate(((5.6, 7.0), (7.0, 10.0), (8.6, 5.0), (10.0, 8.0))):
         e += [el("helm strip", (x, 12.0 - length, 12.6), (x + 1.1, 12.0, 13.3), "cloth", ("x", -22.5, (8.0, 12.0, 13.0)),
                  light=i % 2)]
@@ -156,7 +158,7 @@ def paint_face(img, x0, y0, w, h, mat, level):
             px[x0 + x, y0 + y] = tones[max(0, min(5, round(v)))] + (255,)
 
 
-def model(elements, size=256, density=3):
+def model(elements, size=512, density=3):
     """Pack every face into its own painted rectangle on one atlas (3 px per model unit)."""
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     cx, cy, row = 0, 0, 0
