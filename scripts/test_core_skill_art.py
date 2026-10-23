@@ -36,7 +36,14 @@ class SkillArtworkTest(unittest.TestCase):
             self.assertIsNone(ornament.crop((4, 4, 28, 28)).getchannel("A").getbbox())
 
     def test_every_shipped_menu_and_hud_uses_its_class_frame(self):
+        manifest = json.loads((SOURCE / "skill-art-manifest.json").read_text())
         for name in SKILLS:
+            if manifest["skills"][name].get("frameless"):
+                # Diamond icons are their own frame: the menu ships the master unchanged.
+                with self.subTest(skill=name), Image.open(SOURCE / f"skills/{name}.png") as source, \
+                        Image.open(PACK / f"textures/gui/skills/{name}.png") as shipped:
+                    self.assertEqual(source.convert("RGBA").tobytes(), shipped.convert("RGBA").tobytes())
+                continue
             with self.subTest(skill=name), Image.open(SOURCE / f"skills/{name}.png") as source:
                 fitted = fit_skill(source)
                 ornament = class_ornament(name)

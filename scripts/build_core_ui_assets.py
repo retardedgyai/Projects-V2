@@ -67,8 +67,14 @@ def item_model(name, source):
 
 def build():
     (ASSETS / "textures/gui/skills").mkdir(parents=True, exist_ok=True)
+    frameless = {name for name, entry in json.loads((SOURCE / "skill-art-manifest.json").read_text())["skills"].items()
+                 if entry.get("frameless")}
     for name in SKILLS:
         master = SOURCE / f"skills/{name}.png"
+        if name in frameless:
+            # The diamond icons carry their own frame: shipped as drawn, no square class frame around them.
+            shutil.copyfile(master, ASSETS / f"textures/gui/skills/{name}.png")
+            continue
         with Image.open(master) as original:
             # Frame is part of the menu icon, but never baked back into the authored master.
             skill_frame(fit_skill(original), 0, class_ornament(name, SOURCE), key_badge=False).save(ASSETS / f"textures/gui/skills/{name}.png")
