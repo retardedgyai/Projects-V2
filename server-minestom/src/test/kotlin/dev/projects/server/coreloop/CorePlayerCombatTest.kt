@@ -1064,17 +1064,6 @@ class CorePlayerCombatTest {
         h.ticks(200); assertFalse(h.actor.armored)
     }
 
-    @Test fun `the berserker armor shows over the worn armor and gives the real pieces back`() = arena { h ->
-        h.journey = CoreJourney.legacy(build = CoreClassBuild(ultimate = 1)); h.actor.reset()
-        val chest = net.minestom.server.item.ItemStack.of(net.minestom.server.item.Material.IRON_CHESTPLATE)
-        h.player.setEquipment(net.minestom.server.entity.EquipmentSlot.CHESTPLATE, chest)
-        h.actor.skill(4); h.ticks(5)
-        val worn = h.player.getEquipment(net.minestom.server.entity.EquipmentSlot.CHESTPLATE)
-        assertEquals("projects:armor/berserker", worn.get(net.minestom.server.component.DataComponents.EQUIPPABLE)?.assetId())
-        h.ticks(220)
-        assertEquals(chest, h.player.getEquipment(net.minestom.server.entity.EquipmentSlot.CHESTPLATE))
-    }
-
     @Test fun `the slam is never gated by the beast and keeps a part-built stack`() = arena { h ->
         h.actor.classState.gain(1.5, h.journey.job, h.journey.build)
         h.actor.skill(1); h.ticks(12)

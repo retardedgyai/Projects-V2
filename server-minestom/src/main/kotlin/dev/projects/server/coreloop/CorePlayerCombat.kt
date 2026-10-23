@@ -256,7 +256,6 @@ internal class CorePlayerCombat(
         readyAt[id] = tickNumber + if (awakened && definition.icon in CoreWarriorRules.spenders && !definition.ultimate) cooldownTicks(id) / 2 else cooldownTicks(id)
         if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.ARMOR) {
             armorUntil = tickNumber + definition.duration; classState.fill(classId); crowd.clear(); staggerUntil = -1
-            CoreArmorPresentation.berserk(player)
             notice("狂戦士の甲冑"); sound(SoundEvent.ENTITY_WITHER_SPAWN, .5f, .6f)
         }
         if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN) {
@@ -303,7 +302,7 @@ internal class CorePlayerCombat(
 
     fun tick() {
         tickNumber++
-        if (armorUntil >= 0 && !armored) { armorUntil = -1; CoreArmorPresentation.show(player) }
+        if (armorUntil >= 0 && !armored) armorUntil = -1
         if (armored) {
             // 狂戦士の甲冑: the beast held full; the body burns for it, never below 1.
             classState.fill(classId)
@@ -1172,7 +1171,6 @@ internal class CorePlayerCombat(
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
         queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1
-        CoreArmorPresentation.show(player)
         CoreArmamentPresentation.show(player)
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         crowd.clear()
