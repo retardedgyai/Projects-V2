@@ -26,7 +26,7 @@ internal object CoreWarriorRefChoreography {
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     /** Camera-facing pieces whose pose moves them (the meshes carry these by moving the entity). */
     fun drifts(p: CoreCombatMeshPart) = owns(p) && p.shape.removePrefix(PREFIX).let {
-        it == "bdrop" || it == "bfling" || it == "bsmoke" || it.startsWith("scale") }
+        it == "bdrop" || it == "bfling" || it == "bsmoke" || it == "bmistup" || it == "bgush" || it.startsWith("scale") || it.startsWith("sgather") }
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
         (e.phase == CoreSkillVisualPhase.PULSE && e.sceneId in sceneIds || e.sceneId in ownedIds)
 
@@ -77,14 +77,22 @@ internal object CoreWarriorRefChoreography {
         if (e.sceneId == CoreWarriorRules.FULL_SWING && e.phase == CoreSkillVisualPhase.PREPARE) {
             // 全力の一振り's charge: the ground round the shouldered blade cracks and stones lift, wider as it charges.
             val life = e.prepareDuration.coerceIn(2, 40)
-            for (k in 0 until 5) {
-                val a = yaw + k * 2 * PI / 5 + (hash(k, 211) - .5) * .8
+            for (k in 0 until 3) {
+                val a = yaw + k * 2 * PI / 3 + (hash(k, 211) - .5) * .8
                 val len = 1.8 + 1.4 * hash(k, 212)
                 out += part("furrow", Vec(sin(a) * len / 2, .12, cos(a) * len / 2), 1.0, a, life, delay = k).copy(scale = Vec(len, 1.0, len))
             }
-            for (k in 0 until 9) {
+            for (k in 0 until 5) {
                 val a = hash(k, 213) * 2 * PI; val d = 1.0 + 2.2 * hash(k, 214)
                 out += part("pebble${10 + k}", Vec(sin(a) * d, .1, cos(a) * d), .6 + .35 * hash(k, 215), a, life, ground = false, delay = k % 4)
+            }
+            // Red scale-dust is drawn in from all round to the warrior while it charges (the same dust as the other
+            // two ultimates), wave after wave.
+            for (k in 0 until 8) {
+                val a = hash(k, 216) * 2 * PI; val r = 2.0 + .8 * hash(k, 217)
+                val from = Vec(sin(a) * r, .4 + 1.4 * hash(k, 218), cos(a) * r * .8)
+                out += part("sgather$k", from, .26, 0.0, 10, ground = false, billboard = true, delay = (k * life / 8).coerceAtMost(life - 1))
+                    .copy(travel = Vec(0.0, 1.2, 0.0).sub(from))
             }
             return out
         }
@@ -376,6 +384,28 @@ internal object CoreWarriorRefChoreography {
         val weight = ((reach - 4.0) / 4.0).coerceIn(0.0, 1.0)      // 0 at ≈4 m (no beast) .. 1 at ≈8 m
         val furrow = reach - .8
         val head = impact - .6 + furrow
+        if (full && e.pulse >= CoreWarriorRules.FULL_SWING_GEYSER_PULSE) {
+            // 全力の一振り (Creator 2026-10-24, 案B 血の噴き上げ): blood bursts up out of the rift, from the near end to the
+            // far, in a wall; it falls back as drops and leaves the line soaked. Played a step a tick (two places each)
+            // after the blow, so no one effect carries more than the piece budget.
+            val count = 2 * CoreWarriorRules.FULL_SWING_GEYSER_STEPS
+            val step = e.pulse - CoreWarriorRules.FULL_SWING_GEYSER_PULSE
+            for (i in 2 * step until 2 * step + 2) {
+                val z = impact + (head - impact) * i / (count - 1)
+                val delay = i % 2
+                for (j in 0 until 2)
+                    out += part("bmistup", local((hash(i, j, 501) - .5) * .5, .4 + j * .5, z), 1.6 * (1 - .02 * i), 0.0, 10, ground = false,
+                        billboard = true, delay = delay, roll = hash(i, j, 502) * 6.0)
+                for (j in 0 until 3) {
+                    val vy = 5.5 + 2.5 * hash(i, j, 503); val vx = (hash(i, j, 504) - .5) * 2.4
+                    val flight = (2 * vy / 9.8 * 20).toInt()
+                    out += part("bgush", local((hash(i, j, 505) - .5) * .4, .2, z + (hash(i, j, 506) - .5) * .6), .32, 0.0, flight,
+                        ground = false, billboard = true, delay = delay + 2).copy(travel = local(vx, vy, 0.0))
+                }
+                out += part("bsplat", local((hash(i, 507) - .5) * .8, .03, z), .8, yaw + hash(i, 508) * 6.0, 54, delay = delay + 6)
+            }
+            return out
+        }
         if (e.pulse >= 1) {
             // The second split at the head (three stacks): the ground bursts open where the furrow ended and forks.
             for ((n, turn) in listOf(-.55, .55).withIndex())
@@ -506,6 +536,17 @@ internal object CoreWarriorRefChoreography {
                 val u = t.coerceAtLeast(0.0) / p.durationTicks
                 CoreMeshPose(p.offset.add(p.travel.mul(u)), p.scale.mul(1.0 + 1.4 * u), 0.0, 0.0, p.roll,
                     "$DIR/bsmoke_${(u * 5).toInt().coerceAtMost(4)}", live)
+            }
+            name.startsWith("sgather") -> {
+                val u = (t.coerceAtLeast(0.0) / p.durationTicks).coerceAtMost(1.0)
+                val k = name.removePrefix("sgather").toInt()
+                CoreMeshPose(p.offset.add(p.travel.mul(u * u)), p.scale.mul(1 - .5 * u), 0.0, 0.0, 0.0, "$DIR/scale_${(t.toInt() + k) % 4}", live)
+            }
+            name == "bmistup" -> CoreMeshPose(p.offset.add(0.0, t.coerceAtLeast(0.0) * .16, 0.0), p.scale.mul(1.0 + t.coerceAtLeast(0.0) * .09),
+                0.0, 0.0, p.roll, "$DIR/bmist_${(tick / 2).coerceAtMost(4)}", live)
+            name == "bgush" -> {
+                val s = t.coerceAtLeast(0.0) / 20
+                CoreMeshPose(p.offset.add(p.travel.x() * s, p.travel.y() * s - 4.9 * s * s, p.travel.z() * s), p.scale, 0.0, 0.0, 0.0, "$DIR/bdrop_0", live)
             }
             name == "beye" -> CoreMeshPose(p.offset, p.scale.mul(if ((t.toInt() / 3) % 7 == 0) .7 else 1.0), 0.0, 0.0, 0.0, "$DIR/ember_0", live)
             name == "rhalo" -> {

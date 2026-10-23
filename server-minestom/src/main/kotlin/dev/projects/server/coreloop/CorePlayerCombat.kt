@@ -324,6 +324,10 @@ internal class CorePlayerCombat(
                 vfx.playSkill(CoreSkillEffect(classId, d, player.position, flatFacing(), pulse = CoreWarriorRules.AWAKEN_CLING_PULSE + (tickNumber / 2 % 97).toInt()))
             }
         }
+        geyser?.let { g ->
+            vfx.playSkill(CoreSkillEffect(g.job, g.skill, g.origin, g.direction, pulse = CoreWarriorRules.FULL_SWING_GEYSER_PULSE + geyserStep))
+            if (++geyserStep >= CoreWarriorRules.FULL_SWING_GEYSER_STEPS) { geyser = null; geyserStep = 0 }
+        }
         visualContactsThisTick = 0
         classState.tick(tickNumber)
         previousPosition?.let { if (it.distance(player.position) > .035) classState.stationarySince = tickNumber }
@@ -990,9 +994,15 @@ internal class CorePlayerCombat(
 
     private fun emitSkillPulse(centre: Pos, radius: Double, endpoint: CoreSkillEndpoint = CoreSkillEndpoint.NONE) {
         val action = pending ?: return
+        val pulse = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(action.definition)
         vfx.playSkill(CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction,
-            pulse = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(action.definition), endpoint = endpoint))
+            pulse = pulse, endpoint = endpoint))
+        if (classId == CoreClass.WARRIOR && action.definition.icon == CoreWarriorRules.FULL_SWING && pulse == 0)
+            geyser = CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction)
     }
+    /** 全力の一振り's blood burst, played out along the rift a step a tick after the blow (see tick()). */
+    private var geyser: CoreSkillEffect? = null
+    private var geyserStep = 0
 
     /** Lock a ground cast to the visible aimed enemy/block, not a fixed point seven blocks ahead. */
     private fun aimedGround(s: CoreSkillDefinition, enemies: QuestEncounterCombat): Pos {
@@ -1184,7 +1194,7 @@ internal class CorePlayerCombat(
         garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0
         CoreArmamentPresentation.show(player)
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         crowd.clear()

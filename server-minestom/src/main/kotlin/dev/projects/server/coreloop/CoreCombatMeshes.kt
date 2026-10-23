@@ -54,8 +54,10 @@ internal class CoreCombatMeshes(private val owner: Player) {
             }
             if(!reserve(instance,parts.size)) return false
         }
+        // An ultimate is the one moment worth more pieces (once a minute): it may run past the usual per-owner cap.
+        val limit=if(effect.skill.ultimate) OWNER_LIMIT+ULTIMATE_EXTRA else OWNER_LIMIT
         for(authored in parts.sortedBy { it.secondary }) {
-            if(!gardenBody && live.size>=OWNER_LIMIT) {
+            if(!gardenBody && live.size>=limit) {
                 // A new strike must not silently vanish behind old secondary afterglow.
                 val tail=live.firstOrNull { !gardenBoundary(it.part) && (it.part.secondary || it.age>it.part.durationTicks*.65) }
                 if(tail!=null && !authored.secondary) {
@@ -241,6 +243,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
         /** Pose model meaning "the block this piece was torn from" (CoreWarriorRefChoreography). */
         const val GROUND="@ground"
         const val OWNER_LIMIT=48
+        const val ULTIMATE_EXTRA=40
         const val SCENE_LIMIT=384
         private val sceneCounts=WeakHashMap<Instance,Int>()
         private fun reserve(instance: Instance,count: Int=1): Boolean=synchronized(sceneCounts) {

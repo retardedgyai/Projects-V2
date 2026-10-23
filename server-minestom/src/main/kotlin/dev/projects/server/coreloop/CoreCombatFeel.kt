@@ -73,6 +73,9 @@ internal object CoreWarriorRules {
     const val ARMOR_BEAT_PULSE = 300
     /** 獣の目覚め's look while it lasts: smoke clinging to the body, pulse numbers from here (one every 2 ticks). */
     const val AWAKEN_CLING_PULSE = 100
+    /** 全力の一振り's blood burst runs out along the rift over [FULL_SWING_GEYSER_STEPS] ticks, two places a tick. */
+    const val FULL_SWING_GEYSER_PULSE = 200
+    const val FULL_SWING_GEYSER_STEPS = 8
     /** 引き摺り: how long the blade is dragged, how fast the warrior walks meanwhile, how far the hook reaches. */
     const val DRAG_TICKS = 40
     const val DRAG_SPEED = .8
