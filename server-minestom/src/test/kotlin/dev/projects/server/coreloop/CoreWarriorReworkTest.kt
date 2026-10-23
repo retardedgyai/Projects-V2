@@ -91,6 +91,6 @@ class CoreWarriorReworkTest {
         assertContains(slam, "通常3段目の命中から0.6秒以内")
         assertContains(slam, "ボスの崩し 12＋獣1つごとに+4")
         assertFalse("30.0" in slam)
-        assertContains(warrior.first { it.icon == "dash" }.tooltip(sheet, j).joinToString("\n"), "獣：雑魚へのCC・ボスの崩しで溜まる")
+        assertContains(warrior.first { it.icon == "dash" }.tooltip(sheet, j).joinToString("\n"), "獣：当たると1つ溜まる")
     }
 }

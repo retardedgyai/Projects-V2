@@ -47,7 +47,7 @@ data class CoreSkillDefinition(
             add("現在 回復 ${CoreCombatMath.number(preview(sheet)*(1-conversion))} / 障壁 ${CoreCombatMath.number(preview(sheet)*conversion*sheet.shieldMultiplier)}")
         } else add("現在 ${CoreCombatMath.number(preview(sheet))}${if (pulses > 1) " / 全命中 ${CoreCombatMath.number(preview(sheet) * pulses)}" else ""}（装備・技能補正込み）")
         add(if(motion in setOf(CoreSkillMotion.HEAL,CoreSkillMotion.SHIELD)) "対象の被回復・星・守護聖人は別 / 障壁は最大HPの75%まで" else "敵防御・会心・弱点・固有効果・砥石は別計算")
-        add(if (journey?.job == CoreClass.WARRIOR) (if (icon in CoreWarriorRules.spenders) "獣：全部使う（0でも撃てる）" else "獣：雑魚へのCC・ボスの崩しで溜まる")
+        add(if (journey?.job == CoreClass.WARRIOR) (if (icon in CoreWarriorRules.spenders) "獣：全部使う（0でも撃てる）" else "獣：当たると1つ溜まる")
             else "${journey?.job?.resourceName ?: "固有資源"}：必要 $spend / 命中で +$gain")
         add("マナ $mana / 再使用 ${CoreCombatMath.number(cooldownTicks(sheet.mods) / 20.0)}秒")
         add("発生 ${CoreCombatMath.number(startupTicks(sheet) / 20.0)}秒 / ${if (type == CoreDamageType.MAGICAL) "詠唱速度" else "攻撃速度"}で短縮")

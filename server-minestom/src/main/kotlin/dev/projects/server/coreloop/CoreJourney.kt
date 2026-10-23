@@ -20,7 +20,7 @@ enum class CoreClass(val displayName: String, val description: String) {
     val baseArmor get() = when (this) { WARRIOR -> 40.0; TEMPLAR -> 70.0; HEALER -> 20.0; ASSASSIN -> 10.0; RANGER -> 10.0; MAGE -> 5.0; STARWEAVER -> 10.0 }
     val baseResist get() = when (this) { WARRIOR -> 25.0; TEMPLAR -> 50.0; HEALER -> 40.0; ASSASSIN -> 10.0; RANGER -> 15.0; MAGE -> 35.0; STARWEAVER -> 25.0 }
     val passive get() = when(this) {
-        WARRIOR -> "雑魚にCCを入れる・ボスの崩しを削ると獣が溜まる（最大3）。地割りは獣を全部使い、1つごとに重くなる。使う技は振っている間怯まない。"
+        WARRIOR -> "溜める技が当たると獣が1つ、通常攻撃でも少し溜まる（最大3）。地割りは獣を全部使い、1つごとに重くなる。使う技は振っている間怯まない。"
         RANGER -> "同じ獲物への通常攻撃で集中が育ち、威力が最大20%増す。獲物変更で集中半減。"
         MAGE -> "属性を変えて生成技を当てると術式を追加15獲得。集めた術式を大技に使う。"
         STARWEAVER -> "通常命中で星を編む。最大3。解放技は全て使い、星ごとに威力15%増加。"

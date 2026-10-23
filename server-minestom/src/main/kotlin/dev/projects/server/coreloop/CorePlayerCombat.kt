@@ -92,6 +92,7 @@ internal class CorePlayerCombat(
     /** Warrior: beast built in [beastTick]; one action never builds more than [CoreWarriorRules.BEAST_PER_ACTION]. */
     private var beastTick = -1L
     private var beastThisTick = 0.0
+    private var lastNormalBeast = -1L
     private var whetstoneUntil = 0L
     private var shot: Pair<Long, Vec>? = null
     private var skillBoost = 1.0
@@ -700,12 +701,18 @@ internal class CorePlayerCombat(
         if (!actionsValid(enemies, epoch)) return
         if (!skill) {
             classState.normalHit(classId, id, tickNumber, build)
+            // Once per swing, however many it cleaves.
+            if (classId == CoreClass.WARRIOR && lastNormalBeast != tickNumber) {
+                lastNormalBeast = tickNumber; feedBeast(CoreWarriorRules.BEAST_PER_NORMAL * if (heavy) 2 else 1)
+            }
             if(weaponBase() == CoreWeaponBase.CONDUIT && lastConduitGain != tickNumber) {
-                classState.gain(4.0, classId, build); lastConduitGain = tickNumber
+                if (classId == CoreClass.WARRIOR) feedBeast(CoreWarriorRules.BEAST_PER_NORMAL) else classState.gain(4.0, classId, build)
+                lastConduitGain = tickNumber
             }
         }
         else skillAction?.takeUnless { it.gained }?.let { action ->
             action.gained = true; classState.skillHit(classId, action.definition, build)
+            if (classId == CoreClass.WARRIOR && action.definition.icon !in CoreWarriorRules.spenders) feedBeast(CoreWarriorRules.BEAST_PER_SKILL)
             if (classId == CoreClass.STARWEAVER && action.empowered >= 3 && action.definition.icon == "star_ring") manaValue = min(maxMana.toDouble(), manaValue + 12)
         }
         if (consumeMark) { classState.consumeMark(id, tickNumber); if (classId == CoreClass.ASSASSIN && build.keystone == 1) nextDodge = 0 }
@@ -733,16 +740,14 @@ internal class CorePlayerCombat(
         // Warrior weight: the third normal hit makes the target flinch.
         val crowd = definition?.crowd?.let { it to definition.crowdMillis }
             ?: if (classId == CoreClass.WARRIOR && !skill && heavy) CrowdControl.FLINCH to CoreWarriorRules.FLINCH_MILLIS else null
-        // Only the building actions feed the beast: crowd control on regular enemies, break on bosses.
-        val builds = classId == CoreClass.WARRIOR && !beastSpender
         if (enemies.isBoss(id)) {
             // Bosses take break, not crowd control: the warrior breaks the most, every class a little (CoreBreak).
             val amount = if (skill) skillAction?.breakAmount ?: 0.0 else CoreBreak.normal(classId, heavy)
-            if (enemies.applyBreak(id, amount, player) && builds) feedBeast(amount / CoreWarriorRules.BEAST_BREAK_PER_STACK)
+            enemies.applyBreak(id, amount, player)
         } else if (crowd != null) {
             // 地割り: the stun is put on first so it outlasts the launch; the launch then throws the target up.
             if ((definition?.stunAfterMillis ?: 0) > 0) enemies.applyCrowdControl(id, CrowdControl.STUN, definition!!.stunAfterMillis, player)
-            if (enemies.applyCrowdControl(id, crowd.first, crowd.second, player) && builds) feedBeast(CoreWarriorRules.BEAST_PER_CC)
+            enemies.applyCrowdControl(id, crowd.first, crowd.second, player)
         }
         val venom = stats.bonus(CoreAffixStat.ASS_VENOM)
         if (classId == CoreClass.ASSASSIN && ((venom > 0 && definition?.status == CoreSkillStatus.MARK) ||

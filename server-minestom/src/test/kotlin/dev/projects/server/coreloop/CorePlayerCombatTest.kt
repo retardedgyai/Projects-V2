@@ -887,10 +887,10 @@ class CorePlayerCombatTest {
     @Test fun `third normal hit opens one fast heavier slam`() = arena { h ->
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
         val before=h.combat.bossHealth();assertEquals(300.0-12.0*(1.0+1.15+1.85),before,.00001)
-        assertEquals(.75,h.actor.resource,1e-9) // break 9 of the 12 that make a stack
+        assertEquals(.4,h.actor.resource,1e-9) // 0.1 + 0.1 + 0.2 from the three swings
         h.ticks(6);h.actor.skill(1);h.ticks(2);assertEquals(before,h.combat.bossHealth())
         h.ticks(1);assertEquals(before-58.4*1.3,h.combat.bossHealth(),.00001) // no whole stack yet; the finisher alone
-        assertEquals(.75,h.actor.resource,1e-9)
+        assertEquals(.4,h.actor.resource,1e-9)
     }
 
     @Test fun `a slam long after the third hit is neither fast nor finisher boosted`() = arena { h ->
@@ -900,10 +900,10 @@ class CorePlayerCombatTest {
         h.ticks(1);assertEquals(before-58.4,h.combat.bossHealth(),.00001)
     }
 
-    @Test fun `the beast builds from break on a boss and the slam takes every whole stack`() = arena { h ->
-        // Three normal swings: break 2 + 2 + 5 = 9 of the 12 that make a stack.
+    @Test fun `normal hits build a little of the beast and the slam takes every whole stack`() = arena { h ->
+        // Three normal swings: 0.1 + 0.1 + 0.2 (the heavy third).
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(30)
-        assertEquals(9.0 / CoreWarriorRules.BEAST_BREAK_PER_STACK, h.actor.resource, 1e-9)
+        assertEquals(4 * CoreWarriorRules.BEAST_PER_NORMAL, h.actor.resource, 1e-9)
         h.actor.classState.gain(5.0, h.journey.job, h.journey.build)
         assertEquals(CoreWarriorRules.BEAST_MAX, h.actor.resource) // capped at three
         assertEquals("獣 3/3", h.actor.weaponHint)
@@ -913,15 +913,14 @@ class CorePlayerCombatTest {
         assertEquals(0.0, h.actor.resource) // the slam's own break never feeds the beast
     }
 
-    @Test fun `crowd control on regular enemies feeds the beast, one stack at most per action`() =
+    @Test fun `a building skill that lands adds one stack whatever and however many it hits`() =
         arena(bossDistance = 30.0, mobs = listOf(Pos(8.5, 40.0, 10.0), Pos(9.3, 40.0, 10.0), Pos(7.7, 40.0, 10.0))) { h ->
         h.combat.tick(1000L)
         h.actor.attack();h.ticks(8)
-        assertEquals(0.0, h.actor.resource) // a swing that puts no crowd control on anyone builds nothing
-        h.ticks(20);h.actor.skill(0);h.ticks(10) // 轟進 flinches every one it reaches
-        val flinched = h.combat.combatTargets().count { CrowdControl.FLINCH in h.combat.crowdControl(it.id) || h.combat.isBroken(it.id) }
-        assertTrue(flinched >= 1, "flinched $flinched")
-        assertEquals(minOf(CoreWarriorRules.BEAST_PER_ACTION, flinched * CoreWarriorRules.BEAST_PER_CC), h.actor.resource, 1e-9)
+        val afterSwing = h.actor.resource
+        assertEquals(CoreWarriorRules.BEAST_PER_NORMAL, afterSwing, 1e-9) // one swing, however many it cleaves
+        h.ticks(20);h.actor.skill(0);h.ticks(10) // 轟進 lands
+        assertEquals(afterSwing + CoreWarriorRules.BEAST_PER_SKILL, h.actor.resource, 1e-9)
     }
 
     @Test fun `the slam reaches further, lifts higher and splits twice with more beast`() {

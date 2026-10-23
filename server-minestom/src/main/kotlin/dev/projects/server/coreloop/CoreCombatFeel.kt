@@ -50,8 +50,8 @@ internal object CoreCombatFeel {
 
 /**
  * Warrior rules that are not timing: the beast (獣, 2026-10-22, Creator: Lost Ark Destroyer's cores in Guts's mood).
- * Up to three stacks are built by crowd control on regular enemies and by wearing down a boss's break gauge with
- * the skills that build; a spender (地割り) takes every stack and hits harder per stack. Strong crowd control sits
+ * Up to three stacks are built like Lost Ark's cores (Creator 2026-10-23): a building skill that lands adds one,
+ * whatever it hits, and normal hits add a little; a spender (地割り) takes every stack and hits harder per stack. Strong crowd control sits
  * on the spenders, so stacking crowd-control skills never chains it (Creator). No rage, no rampage, no self-heal.
  */
 internal object CoreWarriorRules {
@@ -64,10 +64,10 @@ internal object CoreWarriorRules {
     val SKYFALL_RINGS = listOf(3.5, 6.0, 8.0)
     const val SKYFALL_RING_TICKS = 4
     const val BEAST_MAX = 3.0
-    /** Each regular enemy put under crowd control by a building action. */
-    const val BEAST_PER_CC = 1.0 / 3.0
-    /** Break dealt to a boss by building actions that makes one stack. */
-    const val BEAST_BREAK_PER_STACK = 12.0
+    /** A building skill that lands, once per cast, whatever it hits (Lost Ark's cores, Creator 2026-10-23). */
+    const val BEAST_PER_SKILL = 1.0
+    /** A normal swing that connects; the heavy third swing builds twice as much. */
+    const val BEAST_PER_NORMAL = .1
     /** One action (a swing, one skill hit or pulse) never builds more than this. */
     const val BEAST_PER_ACTION = 1.0
     const val BEAST_DAMAGE_PERCENT_PER_STACK = 25
