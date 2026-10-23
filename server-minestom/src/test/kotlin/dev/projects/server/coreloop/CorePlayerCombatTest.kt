@@ -799,7 +799,7 @@ class CorePlayerCombatTest {
     @Test fun `fourth normal skill and ultimate have real runtime cooldowns and separate input slots`() = arena { h ->
         h.actor.skill(3);h.ticks(15);assertTrue(h.actor.cooldownRemaining(3)>0)
         h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
-        h.actor.skill(4);assertTrue(h.actor.cooldownRemaining(4)>0);assertEquals(3.0,h.actor.resource) // the ultimate takes no beast
+        h.actor.skill(4);assertTrue(h.actor.cooldownRemaining(4)>0);assertEquals(0.0,h.actor.resource) // 全力の一振り takes the beast
         h.ticks(40);assertTrue(h.combat.bossHealth()<300)
     }
     @Test fun `new melee classes have shorter dagger impact and full height mace contact`() {
@@ -1031,6 +1031,44 @@ class CorePlayerCombatTest {
         h.ticks(CoreWarriorRules.DRAG_TICKS)
         assertTrue(!h.combat.isAlive(id) || CrowdControl.STUN in h.combat.crowdControl(id), "hit at the end")
         assertTrue(h.actor.cooldownRemaining(3) > 0)
+    }
+
+    @Test fun `the awakening needs three stacks and then keeps them while spenders cool twice as fast`() = arena { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(ultimate = 2)); h.actor.reset()
+        assertEquals(CoreWarriorRules.AWAKEN, h.actor.skillDefinitions[4].icon)
+        h.actor.skill(4); h.ticks(1)
+        assertEquals(0, h.actor.cooldownRemaining(4)) // not with less than three
+        h.actor.classState.gain(3.0, h.journey.job, h.journey.build)
+        h.actor.skill(4); h.ticks(4)
+        assertTrue(h.actor.awakened)
+        h.actor.skill(1); h.ticks(12)
+        assertEquals(3.0, h.actor.resource) // the slam took all three and kept them
+        assertTrue(h.actor.cooldownRemaining(1) <= h.actor.cooldownTicks(1) / 2)
+    }
+
+    @Test fun `the berserker armor shrugs off crowd control and staggers and burns health down to one`() = arena { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(ultimate = 1)); h.actor.reset()
+        assertEquals(CoreWarriorRules.ARMOR, h.actor.skillDefinitions[4].icon)
+        h.actor.skill(4); h.ticks(5)
+        assertTrue(h.actor.armored)
+        assertEquals(0, h.actor.receiveCrowdControl(CrowdControl.STUN, 2000, null))
+        h.actor.hurt(h.actor.maxHealth * .5); assertFalse(h.actor.staggered)
+        assertEquals(CoreWarriorRules.BEAST_MAX, h.actor.resource)
+        val before = h.actor.health
+        h.ticks(20); assertTrue(h.actor.health < before, "it burns")
+        h.actor.hurt(h.actor.health - 1.5, CoreDamageType.TRUE); h.ticks(40); assertEquals(1.0, h.actor.health, 1e-9) // never below one
+        h.ticks(200); assertFalse(h.actor.armored)
+    }
+
+    @Test fun `the berserker armor shows over the worn armor and gives the real pieces back`() = arena { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(ultimate = 1)); h.actor.reset()
+        val chest = net.minestom.server.item.ItemStack.of(net.minestom.server.item.Material.IRON_CHESTPLATE)
+        h.player.setEquipment(net.minestom.server.entity.EquipmentSlot.CHESTPLATE, chest)
+        h.actor.skill(4); h.ticks(5)
+        val worn = h.player.getEquipment(net.minestom.server.entity.EquipmentSlot.CHESTPLATE)
+        assertEquals("projects:armor/berserker", worn.get(net.minestom.server.component.DataComponents.EQUIPPABLE)?.assetId())
+        h.ticks(220)
+        assertEquals(chest, h.player.getEquipment(net.minestom.server.entity.EquipmentSlot.CHESTPLATE))
     }
 
     @Test fun `the slam is never gated by the beast and keeps a part-built stack`() = arena { h ->

@@ -35,7 +35,7 @@ internal object CoreSkillArt {
         put(CoreSkillMotif.STARS, "star_ring", "starfall", "star_cloud", "star_ult")
         put(CoreSkillMotif.TRAP, "hunt_trap")
         put(CoreSkillMotif.PULL, "temp_pull", "temp_ult")
-        put(CoreSkillMotif.WARD, "war_cry", "war_banner", "mage_ward", "temp_ward", "temp_sanctuary",
+        put(CoreSkillMotif.WARD, "war_cry", "war_banner", "war_awaken", "mage_ward", "temp_ward", "temp_sanctuary",
             "heal_shield", "star_shield", "star_constellation")
         put(CoreSkillMotif.HEAL, "heal_ring", "heal_wind", "heal_ult")
         put(CoreSkillMotif.PILLAR, "heal_pillar", "heal_lamp", "heal_judgment", "temp_field")

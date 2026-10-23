@@ -120,7 +120,7 @@ internal object CoreHudLayout {
         if (state.level > 0) line.numberCentred(0.0, state.level.coerceIn(1, 999).toString(), CoreHudGlyphs.NUM_GAUGE, LEVEL)
         // Skills sit over hotbar slots 2-6 (the keys that cast them).
         state.skills.take(5).forEachIndexed { index, skill ->
-            val art = skill.artIndex?.coerceIn(0, 69) ?: when (skill.icon) {
+            val art = skill.artIndex?.coerceIn(0, dev.projects.server.coreloop.CoreSkillCatalog.artNames.size - 1) ?: when (skill.icon) {
                 CoreUiIcon.DASH -> 0
                 CoreUiIcon.SLAM -> 1
                 CoreUiIcon.WHIRL -> 2

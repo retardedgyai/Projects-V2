@@ -145,6 +145,21 @@
       ],
       "preapproved": false
     },
+    "war_awaken": {
+      "source_sha256": "7ad9b97f83a771c3f96d226b9cc67ec4c1b0cc16fcbf71751ad137ba6710ca38",
+      "master_sha256": "492516abcf6aa7c14c5f07cefffe1ee00f4fcaed87668f8cce53efa3ef47e4db",
+      "source_size": [
+        16,
+        16
+      ],
+      "master_size": [
+        32,
+        32
+      ],
+      "preapproved": false,
+      "source": "assets/core-ui/skills/warrior-16/war_ult.png",
+      "authored_by": "scripts/build_warrior_iron_icons.py"
+    },
     "pierce": {
       "source_sha256": "f5b608a89352f8c8e15ce0b2985ae14a3ba4663cc57f33478f7a305e0578eddc",
       "master_sha256": "a8cb5cbe5005cb65d3c6f4965422de6b5266672d0de01eea03ed31fcc382742a",

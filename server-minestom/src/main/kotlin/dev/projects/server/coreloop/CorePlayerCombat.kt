@@ -93,6 +93,11 @@ internal class CorePlayerCombat(
     private var beastTick = -1L
     private var beastThisTick = 0.0
     private var lastNormalBeast = -1L
+    /** Warrior ultimates: 狂戦士の甲冑 and 獣の目覚め last until these ticks. */
+    private var armorUntil = -1L
+    private var awakenUntil = -1L
+    val armored get() = classId == CoreClass.WARRIOR && tickNumber < armorUntil
+    val awakened get() = classId == CoreClass.WARRIOR && tickNumber < awakenUntil
     /** 斬り上げ: enemies it threw up and until when they count as in the air (叩き落とし). */
     private val launched = mutableMapOf<UUID, Long>()
     private var whetstoneUntil = 0L
@@ -163,7 +168,7 @@ internal class CorePlayerCombat(
             return
         }
         val weapon = CoreWeaponCombat.of(weaponBase())
-        normal.press(attackSpeed, quick = classId == CoreClass.ASSASSIN, immediate = feel.immediateNormal,
+        normal.press(attackSpeed * if (armored) CoreWarriorRules.ARMOR_HASTE else 1.0, quick = classId == CoreClass.ASSASSIN, immediate = feel.immediateNormal,
             attacks = weapon?.attacks ?: GreatswordCombo.DEFAULT)?.let { swing ->
             nextNormalAt = tickNumber + swing.totalTicks
             normalEmpowerment = if(classId == CoreClass.TEMPLAR && classState.counterUntil >= tickNumber) 1.35 else 1.0
@@ -188,6 +193,9 @@ internal class CorePlayerCombat(
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
         if (!crowd.canCast(tickNumber)) { notice("${crowd.cue(tickNumber) ?: "行動不能"}：技を使えません"); return }
         val definition = skillDefinitions[id]
+        if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN && classState.resource < CoreWarriorRules.BEAST_MAX) {
+            notice("獣が3つ必要です"); return
+        }
         if (!classState.canCast(definition, journey().build)) { notice("${classId.resourceName}が足りません（必要 ${definition.spend} / 現在 ${resource.toInt()}）"); return }
         val cost = definition.mana
         if (mana < cost) { notice("マナが足りません（必要 $cost）"); return }
@@ -227,7 +235,8 @@ internal class CorePlayerCombat(
         var beastSpent = 0
         if (classId == CoreClass.WARRIOR && definition.icon in CoreWarriorRules.spenders) {
             // The beast never gates a spender; whatever whole stacks are there, it takes them all for a heavier hit.
-            beastSpent = classState.takeStacks()
+            // 獣の目覚め / 狂戦士の甲冑: the beast stays full, every spender takes all three and keeps them.
+            beastSpent = if (awakened || armored) CoreWarriorRules.BEAST_MAX.toInt() else classState.takeStacks()
             skillBoost *= 1 + beastSpent * CoreWarriorRules.BEAST_DAMAGE_PERCENT_PER_STACK / 100.0
             breakAmount += beastSpent * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT
             if (definition.icon == "slam" && tickNumber <= finisherUntil) {
@@ -244,7 +253,15 @@ internal class CorePlayerCombat(
             if (orbit > 0) { extra++; skillBoost *= .65 + orbit.coerceAtMost(20.0) / 100 }
             castDefinition = definition.copy(pulses = (definition.pulses + extra).coerceAtMost(8))
         }
-        readyAt[id] = tickNumber + cooldownTicks(id)
+        readyAt[id] = tickNumber + if (awakened && definition.icon in CoreWarriorRules.spenders && !definition.ultimate) cooldownTicks(id) / 2 else cooldownTicks(id)
+        if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.ARMOR) {
+            armorUntil = tickNumber + definition.duration; classState.fill(classId); crowd.clear(); staggerUntil = -1
+            CoreArmorPresentation.berserk(player)
+            notice("狂戦士の甲冑"); sound(SoundEvent.ENTITY_WITHER_SPAWN, .5f, .6f)
+        }
+        if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN) {
+            awakenUntil = tickNumber + definition.duration; notice("獣の目覚め"); sound(SoundEvent.ENTITY_WARDEN_ROAR, .6f, .8f)
+        }
         val startup = castDefinition.startupTicks(sheet)
         pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
             if (definition.motion == CoreSkillMotion.RAY) player.position.direction() else flatFacing(), startup,
@@ -286,6 +303,14 @@ internal class CorePlayerCombat(
 
     fun tick() {
         tickNumber++
+        if (armorUntil >= 0 && !armored) { armorUntil = -1; CoreArmorPresentation.show(player) }
+        if (armored) {
+            // 狂戦士の甲冑: the beast held full; the body burns for it, never below 1.
+            classState.fill(classId)
+            if (tickNumber % 10 == 0L && health > 1.0) {
+                health = (health - maxHealth * CoreWarriorRules.ARMOR_BURN_PERCENT_PER_SECOND / 200.0).coerceAtLeast(1.0); syncVanillaHealth()
+            }
+        }
         visualContactsThisTick = 0
         classState.tick(tickNumber)
         previousPosition?.let { if (it.distance(player.position) > .035) classState.stationarySince = tickNumber }
@@ -443,6 +468,7 @@ internal class CorePlayerCombat(
     private fun speedFactor(): Double {
         if (defeated || staggered || !crowd.canMove(tickNumber)) return 0.0
         val action = pending
+        if (armored && (action == null || action.elapsed >= action.startup)) return CoreWarriorRules.ARMOR_HASTE
         if (action != null && action.dragTick >= 0) return CoreWarriorRules.DRAG_SPEED
         if (action != null && action.elapsed < action.startup)
             return if (action.startup >= HEAVY_STARTUP || action.definition.ultimate) 0.0 else CAST_SPEED
@@ -467,7 +493,7 @@ internal class CorePlayerCombat(
 
     /** A heavy unguarded hit staggers (≥20% of max HP) or knocks down (≥45%): the action is lost, the body is thrown. */
     private fun react(share: Double) {
-        if (share < STAGGER_SHARE || staggered) return
+        if (share < STAGGER_SHARE || staggered || armored) return
         // A warrior spender does not stop for a blow (Destroyer super armor); the damage still lands.
         if (classId == CoreClass.WARRIOR && pending?.definition?.icon?.let { it in CoreWarriorRules.spenders } == true) return
         val down = share >= KNOCKDOWN_SHARE
@@ -594,6 +620,11 @@ internal class CorePlayerCombat(
                 smashDown(enemies, id)
             }
             smashTargets = emptySet()
+            return
+        }
+        if (classId == CoreClass.WARRIOR && (s.icon == CoreWarriorRules.ARMOR || s.icon == CoreWarriorRules.AWAKEN)) {
+            // The two ultimates that change the warrior (set at the cast); here only the beast breaking loose shows.
+            emitSkillPulse(player.position, 2.0)
             return
         }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.FRENZY) {
@@ -1023,7 +1054,7 @@ internal class CorePlayerCombat(
      * Diminishing returns and the dodge escape live in [CorePlayerCrowdControl]. Returns the ticks applied.
      */
     fun receiveCrowdControl(kind: CrowdControl, millis: Long, from: Pos?, pvp: Boolean = false): Int {
-        if (defeated) return 0
+        if (defeated || armored) return 0  // 狂戦士の甲冑: no crowd control takes hold
         if (kind == CrowdControl.FLINCH || CorePlayerCrowdControl.INCAPACITATING.contains(kind)) {
             // A flinch or anything incapacitating cancels the windup in progress.
             queued = null
@@ -1140,7 +1171,8 @@ internal class CorePlayerCombat(
         garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; castCharges = 0; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet()
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1
+        CoreArmorPresentation.show(player)
         CoreArmamentPresentation.show(player)
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         crowd.clear()

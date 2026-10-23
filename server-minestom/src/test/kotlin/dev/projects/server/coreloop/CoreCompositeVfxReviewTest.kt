@@ -44,7 +44,7 @@ class CoreCompositeVfxReviewTest {
                 "events" to events.map { (at,e,_) -> mapOf("tick" to at,"phase" to e.phase.name,"pulse" to e.pulse) },
                 "peakParts" to frames.maxOf { it.size })
         } }
-        assertEquals(70,scenes.size)
+        assertEquals(71,scenes.size)
         val path=Path.of("../.tools/composite-skill-frames.json")
         Files.createDirectories(path.parent);Files.writeString(path,Gson().toJson(scenes))
     }

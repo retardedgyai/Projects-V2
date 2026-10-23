@@ -29,7 +29,7 @@ internal object CoreCombatFeel {
     }
     fun recovery(job: CoreClass, s: CoreSkillDefinition) = when {
         s.icon == "dash" || s.icon == "war_wound" -> 3
-        s.icon in setOf("war_breach", "war_cry", "war_banner") -> 4
+        s.icon in setOf("war_breach", "war_cry", "war_banner", "war_awaken") -> 4
         s.icon == CoreWarriorRules.FRENZY -> 6
         s.icon == CoreWarriorRules.SHATTER -> 7
         s.motion == CoreSkillMotion.GUARD -> 0
@@ -43,7 +43,7 @@ internal object CoreCombatFeel {
     /** A guard may cut a skill after its last impact and any normal follow-through. */
     fun cancelsIntoGuard(s: CoreSkillDefinition) = s.motion == CoreSkillMotion.GUARD
     fun minDot(icon: String) = when (icon) {
-        "slam", "war_breach" -> .8 // Commit the heavy blade along the aimed lane.
+        "slam", "war_breach", "war_ult" -> .8 // Commit the heavy blade along the aimed lane.
         else -> .35
     }
 }
@@ -56,12 +56,18 @@ internal object CoreCombatFeel {
  */
 internal object CoreWarriorRules {
     /** Skills that take every stack; everything else builds. */
-    val spenders = setOf("slam", FRENZY, SKYFALL, SHATTER)
+    val spenders = setOf("slam", FRENZY, SKYFALL, SHATTER, FULL_SWING)
     const val FRENZY = "whirl"        // 狂乱
     const val SKYFALL = "war_guard"   // 天落とし
     const val SHATTER = "war_counter" // 大地崩し
     const val LAUNCHER = "war_breach" // 斬り上げ (builds)
     const val DRAG = "war_cry"        // 引き摺り (builds)
+    const val FULL_SWING = "war_ult"  // 全力の一振り (ultimate, spends)
+    const val ARMOR = "war_banner"    // 狂戦士の甲冑 (ultimate)
+    const val AWAKEN = "war_awaken"   // 獣の目覚め (ultimate)
+    /** 狂戦士の甲冑: faster moves and swings, and the health it burns each second (never below 1). */
+    const val ARMOR_HASTE = 1.3
+    const val ARMOR_BURN_PERCENT_PER_SECOND = 2.0
     /** 引き摺り: how long the blade is dragged, how fast the warrior walks meanwhile, how far the hook reaches. */
     const val DRAG_TICKS = 40
     const val DRAG_SPEED = .8

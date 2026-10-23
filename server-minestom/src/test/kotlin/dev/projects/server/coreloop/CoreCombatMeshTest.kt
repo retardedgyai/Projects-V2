@@ -30,7 +30,8 @@ class CoreCombatMeshTest {
                 CoreCombatPresentation.pack(it,true)
                 assertEquals(CoreCombatPresentation.Detail.SUBDUED,CoreCombatPresentation.cycle(it))
             }
-            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR)) {
+            // 獣の目覚め has no flourish body: it is drawn only by CoreWarriorRefChoreography (the ground breaking open).
+            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon!=CoreWarriorRules.AWAKEN }) {
                 val effect=CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0))
                 meshes.play(effect)
                 repeat(3) { meshes.tick() }
@@ -122,39 +123,6 @@ class CoreCombatMeshTest {
             java.nio.file.Files.createDirectories(root.resolve(".tools"))
             java.nio.file.Files.writeString(root.resolve(".tools/warrior-force-timeline.json"),com.google.gson.Gson().toJson(scenes))
         } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
-    }
-
-    @Test fun `banner companion reaches owner and observer packets at every detail and stops on cancel`() {
-        val packets=mutableListOf<SendablePacket>()
-        player(packets) { owner ->
-            val observerPackets=mutableListOf<SendablePacket>()
-            val observer=connect(owner.instance,owner.position.add(1.0,0.0,0.0),"ParticleObserver",observerPackets)
-            val vfx=GreatswordVfx(owner)
-            fun count(items:List<SendablePacket>)=items.count { it.javaClass.simpleName=="ParticlePacket" }
-            try {
-                CoreCombatPresentation.pack(owner,true)
-                CoreCombatPresentation.pack(observer,true)
-                repeat(3) {
-                    val skill=CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon=="war_banner" }
-                    vfx.playSkill(CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0)))
-                    packets.clear();observerPackets.clear()
-                    vfx.tick()
-                    assertEquals(0,count(packets));assertEquals(0,count(observerPackets))
-                    val boundary=owner.instance.entities.single { entity ->
-                        (entity.entityMeta as? net.minestom.server.entity.metadata.display.ItemDisplayMeta)?.itemStack
-                            ?.get(net.minestom.server.component.DataComponents.ITEM_MODEL)=="projects:combat_vfx/war_mote_boundary_steel"
-                    }
-                    assertTrue(owner in boundary.viewers);assertTrue(observer in boundary.viewers)
-                    vfx.cancel();packets.clear();observerPackets.clear()
-                    repeat(20) { vfx.tick() }
-                    assertEquals(0,count(packets));assertEquals(0,count(observerPackets))
-                    assertEquals(0,vfx.activeEffects);assertFalse(vfx.retainsInstance)
-                    CoreCombatPresentation.cycle(owner);CoreCombatPresentation.cycle(observer)
-                }
-            } finally {
-                vfx.cancel();CoreCombatPresentation.forget(owner);CoreCombatPresentation.forget(observer);observer.remove()
-            }
-        }
     }
 
     @Test fun `warrior marks follow actual target height stay private and clear when targets or marks disappear`() = player { owner ->

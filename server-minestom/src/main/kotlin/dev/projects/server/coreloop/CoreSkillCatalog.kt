@@ -96,9 +96,9 @@ object CoreSkillCatalog {
             motion == CoreSkillMotion.RAY, motion != CoreSkillMotion.RAY, motion, range, radius, gain, spend, status, element, duration, ultimate)
     private val byClass: Map<CoreClass, List<CoreSkillDefinition>> = CoreClass.entries.associateWith(::buildSkills)
     fun skills(job: CoreClass): List<CoreSkillDefinition> = byClass.getValue(job)
-    /** Selectable catalog indices: normal 0..7 and ultimate 0..1, without retired entries. */
+    /** Selectable catalog indices: normal 0..7 and the ultimates after them (two, the warrior three), without retired entries. */
     fun normalChoices(job: CoreClass) = (0..7).filterNot { skills(job)[it].retired }
-    fun ultimateChoices(job: CoreClass) = (0..1).filterNot { skills(job)[8 + it].retired }
+    fun ultimateChoices(job: CoreClass) = (0 until skills(job).size - 8).filterNot { skills(job)[8 + it].retired }
     fun selectable(job: CoreClass, slot: Int, choice: Int) =
         if (slot == 4) choice in ultimateChoices(job) else slot in 0..3 && choice in normalChoices(job)
     /**
@@ -191,8 +191,10 @@ object CoreSkillCatalog {
                 s("引き摺り", "war_cry", "大剣を片手で引きずって2秒歩く（自分で動ける）。刃に触れた雑魚は引っかかってついて来て、最後の振り抜きでまとめて叩きつける。獣を溜める", CoreSkillMotion.CONE, 10.0, 1.8, mana=12, cd=240, startup=3, radius=3.6).cc(CrowdControl.STUN, 700),
                 // 斬り上げ (Creator 2026-10-23) takes the retired 破城突き's slot and id.
                 s("斬り上げ", "war_breach", "大剣を引きずって真上へ振り上げ、正面の敵を高く打ち上げる。ジャンプを押していれば自分も追って跳ぶ。打ち上げた敵に地割りを当てると叩き落とし。獣を溜める", CoreSkillMotion.CONE, 9.0, 1.8, mana=10, cd=180, startup=8, radius=3.4).cc(CrowdControl.AIRBORNE, 1200),
-                s("鉄槌", "war_ult", "大剣を三度振り下ろして敵を打ち上げる。途中の回避で中断可", CoreSkillMotion.CONE, 20.0, 2.4, mana=20, cd=1200, startup=18, pulses=3, gain=0, spend=0, radius=7.0, ult=true).cc(CrowdControl.AIRBORNE, 1000),
-                s("不屈の旗", "war_banner", "（廃止）仲間全員に大きな障壁", CoreSkillMotion.SHIELD, 50.0, 1.5, mana=25, cd=700, gain=0, spend=70, radius=10.0, duration=160, ult=true, retired=true))
+                // Ultimates (Creator 2026-10-23): 全力の一振り, 狂戦士の甲冑 and 獣の目覚め. The warrior alone has three.
+                s("全力の一振り", "war_ult", "大剣を担いで溜め（押している間、最大2秒）、離すと真上から渾身の一振り。地面が前へ大きく割れ、線上を打ち上げる。溜め中は怯まない。獣を全部使う", CoreSkillMotion.CONE, 30.0, 4.0, mana=20, cd=1200, startup=10, gain=0, radius=12.0, ult=true).cc(CrowdControl.AIRBORNE, 1000),
+                s("狂戦士の甲冑", "war_banner", "10秒間、黒い甲冑が体を覆う。CCも怯みも効かず、動きと振りが速くなり、獣が満ちたまま減らない。代わりに体力が毎秒2%ずつ減る（1で止まる）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=20, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
+                s("獣の目覚め", "war_awaken", "獣3つの時だけ使える。8秒間、獣が減らず、獣を使う技の再使用が半分になる", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=15, cd=1200, startup=2, gain=0, radius=0.0, duration=160, ult=true))
             CoreClass.MAGE -> listOf(
                 s("火炎弾", "firebolt", "火の術式を刻む。直前と違う属性なら獲得量増加", CoreSkillMotion.RAY, 8.0, 1.4, cd=60, startup=5, element=1),
                 s("霜の波紋", "frost_nova", "周囲を凍てつかせる。火や雷からつなぐと術式が育つ", CoreSkillMotion.NOVA, 10.0, 1.0, cd=110, startup=10, status=CoreSkillStatus.SLOW, element=2).cc(CrowdControl.ROOT, 1200),

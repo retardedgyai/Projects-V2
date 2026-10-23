@@ -5,7 +5,7 @@ data class CoreClassBuild(val first: Int = 0, val second: Int = 1, val third: In
     val ultimate: Int = 0, val nodes: Int = 0) {
     val skills get() = listOf(first, second, third, fourth)
     init {
-        require(skills.all { it in 0..7 } && skills.distinct().size == 4 && ultimate in 0..1)
+        require(skills.all { it in 0..7 } && skills.distinct().size == 4 && ultimate in 0..2)  // the warrior has three ultimates
         require(nodes in 0 until (1 shl 18))
         for (i in 0..17) if (has(i)) require(CoreClassTrees.parents(i).isEmpty() || CoreClassTrees.parents(i).any(::has)) { "接続する前の技能が必要です" }
         require(listOf(2, 5, 8).count(::has) <= 1) { "大成技能は一つだけ選べます" }

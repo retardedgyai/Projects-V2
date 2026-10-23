@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CLASSES = ("warrior", "ranger", "mage", "starweaver", "assassin", "templar", "healer")
 # Same stable order as CoreClass.entries and its eight skills + two ultimates.
 SKILLS = (
-    "dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner",
+    "dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner", "war_awaken",
     "pierce", "frost_fan", "arrow_rain", "hunt_retreat", "hunt_pierce", "hunt_trap", "hunt_mark", "hunt_volley", "hunt_ult", "hunt_storm",
     "firebolt", "frost_nova", "meteor", "mage_blink", "mage_mark", "mage_garden", "mage_burst", "mage_ward", "mage_ult", "mage_zero",
     "star_thread", "star_ring", "starfall", "star_step", "star_needle", "star_cloud", "star_shield", "star_break", "star_ult", "star_constellation",
@@ -30,7 +30,9 @@ SKILLS = (
 
 
 def class_for_skill(name):
-    return CLASSES[SKILLS.index(name) // 10]
+    # Ten per class, but the warrior has an eleventh (a third ultimate, 2026-10-23).
+    index = SKILLS.index(name)
+    return CLASSES[0] if index < 11 else CLASSES[1 + (index - 11) // 10]
 
 
 def class_ornament(name, source=None):

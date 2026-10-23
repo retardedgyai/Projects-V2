@@ -21,7 +21,7 @@ internal object CoreWarriorRefChoreography {
     private const val DRAG_SWORD_ROLL = -2.3
     /** 狂乱 / 天落とし / 大地崩し: every phase is drawn here (their ids still carry older choreographies elsewhere). */
     private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER, CoreWarriorRules.LAUNCHER,
-        CoreWarriorRules.DRAG)
+        CoreWarriorRules.DRAG, CoreWarriorRules.FULL_SWING, CoreWarriorRules.ARMOR, CoreWarriorRules.AWAKEN)
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
@@ -69,6 +69,37 @@ internal object CoreWarriorRefChoreography {
                 out += part("clod${30 + k}", Vec(sin(a) * 1.0, .25, cos(a) * 1.0), .35 + .25 * hash(k, 146), a, 20,
                     ground = false, delay = k / 3).copy(startSize = .95)
             }
+            return out
+        }
+        if (e.sceneId == CoreWarriorRules.FULL_SWING && e.phase == CoreSkillVisualPhase.PREPARE) {
+            // 全力の一振り's charge: the ground round the shouldered blade cracks and stones lift, wider as it charges.
+            val life = e.prepareDuration.coerceIn(2, 40)
+            for (k in 0 until 5) {
+                val a = yaw + k * 2 * PI / 5 + (hash(k, 211) - .5) * .8
+                val len = 1.8 + 1.4 * hash(k, 212)
+                out += part("furrow", Vec(sin(a) * len / 2, .12, cos(a) * len / 2), 1.0, a, life, delay = k).copy(scale = Vec(len, 1.0, len))
+            }
+            for (k in 0 until 9) {
+                val a = hash(k, 213) * 2 * PI; val d = 1.0 + 2.2 * hash(k, 214)
+                out += part("pebble${10 + k}", Vec(sin(a) * d, .1, cos(a) * d), .6 + .35 * hash(k, 215), a, life, ground = false, delay = k % 4)
+            }
+            return out
+        }
+        if ((e.sceneId == CoreWarriorRules.ARMOR || e.sceneId == CoreWarriorRules.AWAKEN) && e.phase == CoreSkillVisualPhase.PULSE) {
+            // The beast let out: the ground round the feet breaks open and earth is thrown up off it.
+            val armor = e.sceneId == CoreWarriorRules.ARMOR
+            for (k in 0 until if (armor) 6 else 4) {
+                val a = yaw + k * 2 * PI / (if (armor) 6 else 4) + (hash(k, 221) - .5) * .7
+                val len = (if (armor) 2.6 else 1.8) * (.7 + .3 * hash(k, 222))
+                out += part("furrow", Vec(sin(a) * len / 2, .12, cos(a) * len / 2), 1.0, a, 30).copy(scale = Vec(len, 1.0, len))
+            }
+            for (k in 0 until if (armor) 8 else 5) {
+                val a = yaw + k * 2 * PI / 8 + hash(k, 223)
+                out += part("clod${120 + k}", Vec(sin(a) * .7, .2, cos(a) * .7), .3 + .2 * hash(k, 224), a, 20, ground = false,
+                    delay = k / 3).copy(startSize = 1.1)
+            }
+            for (k in 0 until 3) out += part("dust${84 + k}", Vec(0.0, .4 + .7 * k, 0.0), 1.8 - .3 * k, 0.0, 14, ground = false, delay = k,
+                billboard = true, roll = hash(k, 225) * 6.0)
             return out
         }
         if (e.sceneId == CoreWarriorRules.SHATTER && e.phase == CoreSkillVisualPhase.PREPARE) {
@@ -261,7 +292,8 @@ internal object CoreWarriorRefChoreography {
         // The beast it took sets the reach (CoreWarriorRules.slam puts it in the radius, Creator 2026-10-23): the furrow
         // ends just past it, and the more beast, the bigger the torn turf and the higher the clods.
         val impact = 1.9
-        val reach = e.skill.radius.coerceIn(3.0, 9.0)
+        val full = e.sceneId == CoreWarriorRules.FULL_SWING   // 全力の一振り: 地割り at its largest
+        val reach = e.skill.radius.coerceIn(3.0, if (full) 14.0 else 9.0)
         val weight = ((reach - 4.0) / 4.0).coerceIn(0.0, 1.0)      // 0 at ≈4 m (no beast) .. 1 at ≈8 m
         val furrow = reach - .8
         val head = impact - .6 + furrow
@@ -285,7 +317,8 @@ internal object CoreWarriorRefChoreography {
             }
             return out
         }
-        out += trail(5.4, 8)
+        out += trail(if (full) 7.4 else 5.4, if (full) 10 else 8)
+        if (full) out += trail(8.2, 9, delay = 1, shoulder = 1.6)
         // The ground torn forward: one furrow, widest at the blow, running out ahead (texture row 0 = far end).
         out += part("furrow", local(0.0, .12, impact - .6 + furrow / 2), 1.0, yaw, 44).copy(scale = Vec(furrow, 1.0, furrow))
         // The furrow's lips: turf torn up along both edges and tipped outward, biggest at the blow, coming up as the
