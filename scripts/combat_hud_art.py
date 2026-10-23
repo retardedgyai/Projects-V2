@@ -328,8 +328,19 @@ def xp_band(cx, cy, r=DIAMOND_R):
     return sorted(cells)
 
 
-EMBLEM_W, EMBLEM_H = 56, 38          # canvas; the centre column is EMBLEM_W // 2
+EMBLEM_W, EMBLEM_H = 56, 38          # drawing canvas; the centre column is EMBLEM_W // 2
 EMBLEM_CENTRE_ROW = 23               # canvas row of the diamond centre
+
+
+def even(img):
+    """The emblem is drawn mirrored about one centre column (odd width), but the hotbar and the plates are
+    mirrored about the line between two columns (even width): doubling the centre column puts the emblem's
+    axis on the screen centre line instead of half a GUI pixel right of it (Creator 2026-10-23)."""
+    C = img.width // 2
+    out = new(2 * (C + 1), img.height)
+    out.paste(img.crop((0, 0, C + 1, img.height)), (0, 0))
+    out.paste(img.crop((C, 0, img.width, img.height)), (C + 1, 0))
+    return out
 
 
 def emblem(job):
@@ -351,7 +362,7 @@ def emblem(job):
     rect(img, C - 9, cy - 3, C + 10, cy + 4, (12, 12, 16, 255))
     for x in (C - 10, C + 10):
         px(img, x, cy, METAL[0])
-    return img, -C, EMBLEM_CY + EMBLEM_CENTRE_ROW
+    return even(img), -(C + 1), EMBLEM_CY + EMBLEM_CENTRE_ROW
 
 
 def xp_overlay(job, step):
@@ -364,7 +375,7 @@ def xp_overlay(job, step):
             px(img, x, y, hexc(ACCENT[job]))
     if img.getchannel("A").getbbox() is None:
         px(img, C, cy - DIAMOND_R + 2, hexc(ACCENT[job]))  # step 0 never used; keep the glyph drawable
-    return img
+    return even(img)
 
 
 # ---- hotbar (vanilla sprite overrides) -----------------------------------------------------------

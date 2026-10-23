@@ -10,7 +10,7 @@ enum class CoreClass(val displayName: String, val description: String) {
     HEALER("ヒーラー", "攻撃で信仰を得て、救護か裁きに使う");
     val magic get() = this == MAGE || this == HEALER
     val melee get() = this == WARRIOR || this == ASSASSIN || this == TEMPLAR
-    val resourceName get() = when (this) { WARRIOR -> "闘気"; RANGER -> "集中"; MAGE -> "術式"; ASSASSIN -> "機会"; TEMPLAR -> "決意"; HEALER -> "信仰" }
+    val resourceName get() = when (this) { WARRIOR -> "獣"; RANGER -> "集中"; MAGE -> "術式"; ASSASSIN -> "機会"; TEMPLAR -> "決意"; HEALER -> "信仰" }
     val healthFactor get() = when (this) { WARRIOR -> 1.0; RANGER -> .72; MAGE -> .8; ASSASSIN -> .75; TEMPLAR -> 1.4; HEALER -> .9 }
     /**
      * Class base AR / MR added before gear (2026-10-19, Creator: toughness comes from each class's default stats, not
@@ -19,7 +19,7 @@ enum class CoreClass(val displayName: String, val description: String) {
     val baseArmor get() = when (this) { WARRIOR -> 40.0; TEMPLAR -> 70.0; HEALER -> 20.0; ASSASSIN -> 10.0; RANGER -> 10.0; MAGE -> 5.0 }
     val baseResist get() = when (this) { WARRIOR -> 25.0; TEMPLAR -> 50.0; HEALER -> 40.0; ASSASSIN -> 10.0; RANGER -> 15.0; MAGE -> 35.0 }
     val passive get() = when(this) {
-        WARRIOR -> "殴って、殴られて闘気を溜める。地割りは闘気を全部注いで重くなり、闘気100で赤熱する。3段目の直後の地割りは速い。"
+        WARRIOR -> "溜める技が当たると獣が1つ、通常攻撃でも少し溜まる（最大3）。地割りは獣を全部使い、1つごとに重くなる。使う技は振っている間怯まない。"
         RANGER -> "同じ獲物への通常攻撃で集中が育ち、威力が最大20%増す。獲物変更で集中半減。"
         MAGE -> "属性を変えて生成技を当てると術式を追加15獲得。集めた術式を大技に使う。"
         ASSASSIN -> "通常攻撃で機会を得る。印を付けた敵への消費技は最初の命中が35%強化。"
@@ -35,7 +35,7 @@ enum class CoreWeaponBase(val displayName: String, val detail: String, val power
     STANDARD("開拓の大剣", "癖のない基準型。三連撃で戦う"),
     FLOW("連撃大剣", "回避後も連撃を保持。三段目でマナ回復", .88, 1.18),
     CLEAVER("重断大剣", "三段目は狭い縦斬り。締めの一撃が強い", 1.12, .88),
-    CONDUIT("導脈大剣", "通常命中で闘気を追加4獲得。闘気消費技の威力+12%", .94),
+    CONDUIT("導脈大剣", "通常命中で固有資源を追加4獲得。資源消費技の威力+12%", .94),
     LONGBOW("潮風の長弓", "狙った射線へ矢を放つ", .95),
     STAFF("灯火の杖", "遠距離の魔弾と属性術式", .92),
     DAGGERS("影縫い短剣", "素早く印を仕込む。接近戦用の短い間合い", .78, 1.35),

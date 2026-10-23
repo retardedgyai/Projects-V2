@@ -13,7 +13,7 @@ class CoreSkillEffectTest {
 
     @Test fun `all sixty skills have explicit visual motifs and bounded finite frames`() {
         assertEquals(CoreSkillCatalog.artNames.toSet(), CoreSkillArt.motifs.keys)
-        assertEquals(60, CoreSkillArt.motifs.size)
+        assertEquals(61, CoreSkillArt.motifs.size)
         for (job in CoreClass.entries) for (s in CoreSkillCatalog.skills(job)) {
             for (phase in CoreSkillVisualPhase.entries) for (pulse in 0..7) {
                 val effect = CoreSkillEffect(job, s.copy(radius = 10.5), Vec.ZERO, forward, phase, pulse, rayLength = 24.0)

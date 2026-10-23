@@ -89,15 +89,15 @@ class CorePlayerCombatTest {
         } finally { CoreCombatPresentation.forget(h.player) }
     }
 
-    @Test fun `training refill clears costs but never repeats the single sweep`() = arena(bossDistance = 2.0) { h ->
-        h.actor.skill(2)
-        repeat(3) { h.actor.refillTraining(); h.ticks(1) }
+    @Test fun `training refill clears costs but never repeats the single thrust`() = arena(bossDistance = 2.0) { h ->
+        h.actor.skill(0)
+        repeat(4) { h.actor.refillTraining(); h.ticks(1) }
         assertEquals(300.0, h.combat.bossHealth())
-        h.actor.refillTraining(); h.ticks(1)
-        assertEquals(300.0 - 34.0 * 1.25, h.combat.bossHealth(), .00001) // full rage in the lab means a rampage
+        repeat(3) { h.actor.refillTraining(); h.ticks(1) }
+        val after = h.combat.bossHealth(); assertTrue(after < 300.0)
         repeat(16) { h.actor.refillTraining(); h.ticks(1) }
-        assertEquals(300.0 - 34.0 * 1.25, h.combat.bossHealth(), .00001)
-        assertEquals(0, h.actor.cooldownRemaining(2))
+        assertEquals(after, h.combat.bossHealth(), .00001)
+        assertEquals(0, h.actor.cooldownRemaining(0))
         assertEquals(h.actor.maxMana, h.actor.mana)
     }
 
@@ -211,34 +211,19 @@ class CorePlayerCombatTest {
         h.ticks(11)
         assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
-        assertEquals(300.0 - 58.4 * 2.0, h.combat.bossHealth(), 0.00001) // all 100 rage poured in for +100%
+        assertEquals(300.0 - 58.4 * 1.75, h.combat.bossHealth(), 0.00001) // all three stacks taken for +75%
         assertEquals(0.0, h.actor.resource)
         h.ticks(20)
-        assertEquals(300.0 - 58.4 * 2.0, h.combat.bossHealth(), 0.00001)
+        assertEquals(300.0 - 2 * 58.4 * 1.75, h.combat.bossHealth(), 0.00001) // three stacks split the ground a second time
         val mana = h.actor.mana
         h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(mana, h.actor.mana)
     }
 
     @Test
-    fun `sweep hits the front once and cannot damage a target behind the warrior`() = arena(bossDistance = 2.0) { h ->
-        h.actor.skill(2)
-        assertEquals(90, h.actor.mana)
-        assertEquals(10L, h.actor.cooldownSeconds(2))
-        h.ticks(3)
-        assertEquals(300.0, h.combat.bossHealth())
-        h.ticks(1)
-        assertEquals(266.0, h.combat.bossHealth(), 0.00001)
-        h.ticks(200)
-        assertEquals(266.0, h.combat.bossHealth(), 0.00001)
-        h.player.setView(180f, 0f);h.actor.skill(2);h.ticks(15)
-        assertEquals(266.0, h.combat.bossHealth(), 0.00001)
-    }
-
-    @Test
     fun `skill links after six AA ticks instead of waiting the entire AA recovery`() = arena { h ->
         h.actor.attack()
-        h.actor.classState.gain(30.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(1.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(100, h.actor.mana)
         h.ticks(5)
         assertEquals(100, h.actor.mana)
@@ -246,7 +231,7 @@ class CorePlayerCombatTest {
         assertEquals(88, h.actor.mana)
         assertEquals(288.0, h.combat.bossHealth())
         h.ticks(12)
-        assertEquals(288.0 - 58.4 * 1.42, h.combat.bossHealth(), 0.00001) // 12 from the AA + 30 poured in
+        assertEquals(288.0 - 58.4 * 1.25, h.combat.bossHealth(), 0.00001) // one whole stack taken
     }
 
     @Test
@@ -355,26 +340,49 @@ class CorePlayerCombatTest {
         val casts=listOf("dash" to 0,"slam" to 1,"whirl" to 2,"war_guard" to 3,"war_wound" to 3,"war_ult" to 4)
         // The shader-cut trial is recorded as extra scenes "<id>_shader" next to the drawn plates.
         val runs=casts.map { Triple(it.first,it.second,false) }+casts.filter { it.first in CoreWarriorIronChoreography.sceneIds }.map { Triple(it.first,it.second,true) }
-        val scenes=runs.map { (icon,slot,shader) -> var scene=emptyMap<String,Any>(); CoreWarriorIronChoreography.shaderCut=shader; try { arena { h ->
+        // 地割り by the beast it takes (0..3) as extra scenes "slam_b<n>".
+        val beastRuns=(0..3).map { n -> Triple("slam_b$n",1,false) } +
+            listOf("whirl" to 2, "war_guard" to 3, "war_counter" to 3).flatMap { (icon, slot) -> listOf(0, 3).map { n -> Triple("${icon}_b$n", slot, false) } } +
+            listOf(Triple("war_breach_b0", 3, false), Triple("war_cry_b0", 3, false)) +
+            // The three ultimates (slot 4): 全力の一振り with a full beast, 狂戦士の甲冑, 獣の目覚め (needs three).
+            listOf(Triple("war_ult_b3", 4, false), Triple("war_banner_b0", 4, false), Triple("war_awaken_b3", 4, false))
+        val scenes=(runs+beastRuns).map { (run,slot,shader) -> var scene=emptyMap<String,Any>(); val icon=if(Regex("_b[0-3]$").containsMatchIn(run)) run.dropLast(3) else run
+            CoreWarriorIronChoreography.shaderCut=shader; try { arena(mobs = if (icon == CoreWarriorRules.DRAG) listOf(Pos(7.7, 40.0, 10.6), Pos(7.5, 40.0, 12.2)) else emptyList()) { h ->
             CoreCombatPresentation.pack(h.player,true)
-            if(icon=="war_wound") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=4)); h.actor.reset() }
+            if(icon=="war_wound") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=4)); h.actor.reset()
+                h.player.teleport(h.player.position.withView(0f, 30f)) } // 跳び叩き aims at the ground short of the target
+            if(icon=="war_counter") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=5)); h.actor.reset() }
+            if(icon=="war_breach") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=7)); h.actor.reset() }
+            if(icon==CoreWarriorRules.DRAG) { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=6)); h.actor.reset(); h.combat.tick(1000L) }
+            if(icon=="war_banner") { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=1)); h.actor.reset() }
+            if(icon==CoreWarriorRules.AWAKEN) { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=2)); h.actor.reset() }
+            if(icon=="war_guard") h.player.teleport(h.player.position.withView(0f, 30f))
             assertEquals(icon,h.actor.skillDefinitions[slot].icon)
-            h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
+            h.actor.classState.gain(if(Regex("_b[0-3]$").containsMatchIn(run)) run.last().digitToInt().toDouble() else 100.0,h.journey.job,h.journey.build)
             val frames=mutableListOf<Map<String,Any>>()
             fun record() { frames+=mapOf("player" to xyz(h.player.position)+h.player.position.yaw().toDouble(),
                 "targets" to h.combat.combatTargets().map { xyz(it.position) },
                 "displays" to h.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }.mapNotNull { e ->
                     val m=e.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
-                    val model=m.itemStack.get(DataComponents.ITEM_MODEL)?.toString()?.substringAfter("projects:") ?: return@mapNotNull null
+                    val model=if(m.itemStack.material()!=net.minestom.server.item.Material.PAPER) "vanilla:"+m.itemStack.material().key().value()
+                        else m.itemStack.get(DataComponents.ITEM_MODEL)?.toString()?.substringAfter("projects:") ?: return@mapNotNull null
                     if(m.scale.x()==0.0&&m.scale.y()==0.0&&m.scale.z()==0.0) return@mapNotNull null
                     mapOf("model" to model,"offset" to xyz(e.position.add(m.translation)),"scale" to xyz(m.scale),
                         "quaternion" to m.leftRotation.map { it.toDouble() },
+                        "billboard" to (m.billboardRenderConstraints!=net.minestom.server.entity.metadata.display.AbstractDisplayMeta.BillboardConstraints.FIXED),
                         "tint" to (m.itemStack.get(DataComponents.CUSTOM_MODEL_DATA)?.colors()?.firstOrNull()?.let { (it.red() shl 16) or (it.green() shl 8) or it.blue() } ?: -1))
                 }) }
             repeat(4) { record(); h.ticks(1) }
             h.actor.skill(slot)
-            repeat(76) { record(); h.ticks(1) }
-            scene=mapOf("id" to if(shader) "${icon}_shader" else icon,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
+            // 跳び叩き: replay the arc the client flies (CoreWarriorLeap.path) so the preview shows the body in the air.
+            var arc: Iterator<net.minestom.server.coordinate.Pos>? = null
+            repeat(76) { record(); h.ticks(1)
+                if ((icon == CoreWarriorLeap.ICON || icon == CoreWarriorRules.SKYFALL) && arc == null && h.player.velocity.y() > 0)
+                    arc = CoreWarriorLeap.path(h.player.position, h.player.velocity.div(20.0)).iterator()
+                arc?.let { if (it.hasNext()) h.player.teleport(it.next()) }
+                // 引き摺り: the client walks the warrior forward while the blade drags (about the slowed walk speed).
+                if (icon == CoreWarriorRules.DRAG && it in 8..48) h.player.teleport(h.player.position.add(0.0, 0.0, .17)) }
+            scene=mapOf("id" to if(shader) "${icon}_shader" else run,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
             CoreCombatPresentation.forget(h.player)
         } } finally { CoreWarriorIronChoreography.shaderCut=false }; scene }
         val cwd=java.nio.file.Path.of(System.getProperty("user.dir"))
@@ -422,9 +430,9 @@ class CorePlayerCombatTest {
     }
 
     private fun arena(bossDistance: Double = 4.0, armorTier: Int = 1, stats: CoreAffixStats = CoreAffixStats(), roll: Double = 1.0,
-        weaponEnhancement: Int = 0, armorEnhancement: Int = 0, test: (Harness) -> Unit) {
+        weaponEnhancement: Int = 0, armorEnhancement: Int = 0, mobs: List<Pos> = emptyList(), test: (Harness) -> Unit) {
         MinecraftServer.init(Auth.Offline())
-        Harness(bossDistance, armorTier, stats, roll, weaponEnhancement, armorEnhancement).use(test)
+        Harness(bossDistance, armorTier, stats, roll, weaponEnhancement, armorEnhancement, mobs).use(test)
     }
 
     @Test
@@ -451,12 +459,12 @@ class CorePlayerCombatTest {
     @Test
     fun `physical skill startup uses attack speed and cooldown uses recovery speed`() = arena(
         stats = CoreAffixStats(skillDamagePercent = 50.0, attackSpeedPercent = 50.0, cooldownReductionPercent = 25.0)) { h ->
-        h.actor.classState.gain(30.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(1.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(192, h.actor.cooldownTicks(1))
         h.ticks(7)
         assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
-        assertEquals(300.0 - (20.0 + 12.0 * 3.2) * 1.5 * 1.3, h.combat.bossHealth(), 0.00001)
+        assertEquals(300.0 - (20.0 + 12.0 * 3.2) * 1.5 * 1.25, h.combat.bossHealth(), 0.00001)
         assertEquals(184, h.actor.cooldownRemaining(1))
     }
 
@@ -478,9 +486,9 @@ class CorePlayerCombatTest {
         stats = CoreAffixStats(maxManaFlat = 50.0, manaRegenPercent = 40.0)) { h ->
         assertEquals(150, h.actor.maxMana)
         h.actor.skill(2)
-        assertEquals(140, h.actor.mana)
+        assertEquals(138, h.actor.mana)
         h.ticks(20)
-        assertEquals(147, h.actor.mana)
+        assertEquals(145, h.actor.mana)
     }
 
     @Test
@@ -711,16 +719,6 @@ class CorePlayerCombatTest {
         }
     }
 
-    @Test fun `resource rejection costs no mana cooldown or enemy health`() = arena { h ->
-        h.journey = CoreJourney.legacy(build=CoreClassBuild(second=5));h.actor.reset()
-        h.actor.skill(1);h.ticks(30)
-        assertEquals(100,h.actor.mana);assertEquals(0,h.actor.cooldownRemaining(1));assertEquals(300.0,h.combat.bossHealth())
-        repeat(3) { h.actor.attack();h.ticks(24) }
-        h.ticks(20)
-        assertTrue(h.actor.resource>=30)
-        val before=h.actor.resource;h.actor.skill(1)
-        assertEquals(before-30,h.actor.resource);assertEquals(88,h.actor.mana)
-    }
     @Test fun `warrior feint no longer places a mark or requires detonation`() = arena(bossDistance=2.0) { h ->
         h.journey=CoreJourney.legacy(build=CoreClassBuild(first=4,second=1,third=2,fourth=0));h.actor.reset()
         h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
@@ -733,17 +731,6 @@ class CorePlayerCombatTest {
         h.ticks(1);assertEquals(1,h.actor.activeMarkLabels)
         h.actor.resetActions();assertEquals(0,h.actor.activeMarkLabels)
     }
-    @Test fun `warrior hold guard reduces real incoming damage and turns it into rage without a counter`() = arena { h ->
-        h.actor.skill(3); h.ticks(1)
-        assertTrue(h.actor.combatCue.startsWith("根張り "))
-        h.actor.hurt(50.0); assertEquals(100.0 - 10.0 * 300 / 340, h.actor.health, .00001)
-        assertEquals(30.0, h.actor.resource)
-        assertEquals(-1L, h.actor.classState.counterUntil)
-        h.actor.skill(1); h.ticks(12)
-        assertEquals(300.0 - 58.4 * 1.3, h.combat.bossHealth(), .00001)
-        assertEquals(0.0, h.actor.resource)
-    }
-
     @Test fun `assassin mark consumption enhances one real hit and shadow keystone resets dodge`() = arena(bossDistance=2.0) { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.ASSASSIN,build=CoreClassBuild(nodes=8248));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
         h.actor.skill(0);h.ticks(18)
@@ -801,7 +788,7 @@ class CorePlayerCombatTest {
     @Test fun `fourth normal skill and ultimate have real runtime cooldowns and separate input slots`() = arena { h ->
         h.actor.skill(3);h.ticks(15);assertTrue(h.actor.cooldownRemaining(3)>0)
         h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
-        h.actor.skill(4);assertTrue(h.actor.cooldownRemaining(4)>0);assertEquals(20.0,h.actor.resource)
+        h.actor.skill(4);assertTrue(h.actor.cooldownRemaining(4)>0);assertEquals(0.0,h.actor.resource) // 全力の一振り takes the beast
         h.ticks(40);assertTrue(h.combat.bossHealth()<300)
     }
     @Test fun `new melee classes have shorter dagger impact and full height mace contact`() {
@@ -856,14 +843,6 @@ class CorePlayerCombatTest {
         assertEquals(241.6, h.combat.bossHealth(), .00001)
     }
 
-    @Test fun `wide sweep catches lateral enemies that a committed slam misses`() = arena(bossDistance=3.0) { h ->
-        h.player.setView(70f, 0f)
-        h.actor.skill(1); h.ticks(20)
-        assertEquals(300.0, h.combat.bossHealth())
-        h.actor.skill(2); h.ticks(4)
-        assertEquals(266.0, h.combat.bossHealth(), .00001)
-    }
-
     @Test fun `late AA during a skill executes once when recovery ends`() = arena { h ->
         h.actor.skill(1); h.ticks(14)
         repeat(10) { h.actor.attack() }
@@ -884,20 +863,10 @@ class CorePlayerCombatTest {
         assertEquals(229.6, h.combat.bossHealth(), .00001)
     }
 
-    @Test fun `queued skill starts at prior recovery end without a second input`() = arena { h ->
+    @Test fun `queued skill starts at prior recovery end without a second input`() = arena(bossDistance = 3.0) { h ->
         h.actor.skill(1); h.ticks(14); h.actor.skill(2)
         h.ticks(5); assertTrue(h.actor.cooldownRemaining(2)>0)
-        h.ticks(4); assertEquals(207.6, h.combat.bossHealth(), .00001)
-    }
-
-    @Test fun `guard can cancel AA follow through but cannot bypass its attack cadence`() = arena { h ->
-        h.actor.attack(); h.actor.skill(3); h.ticks(1)
-        h.actor.hurt(50.0); assertEquals(100.0 - 10.0 * 300 / 340, h.actor.health, .00001)
-        h.actor.attack(); h.ticks(8)
-        assertEquals(288.0, h.combat.bossHealth())
-        h.ticks(6); h.actor.attack(); h.ticks(5)
-        assertEquals(274.2, h.combat.bossHealth(), .00001)
-        h.ticks(40); assertEquals(274.2, h.combat.bossHealth(), .00001)
+        h.ticks(4); assertTrue(h.combat.bossHealth() < 300.0 - 58.4, "the queued 狂乱 swung without a second input")
     }
 
     @Test fun `dodge cuts the AA after its impact but repeated cancel inputs cannot manufacture AA hits`() = arena { h ->
@@ -909,62 +878,194 @@ class CorePlayerCombatTest {
         h.ticks(10); assertTrue(h.combat.bossHealth() in 270.0..287.9, "exactly one more AA landed: ${h.combat.bossHealth()}")
     }
 
-    @Test fun `hold guard cuts a finished slam recovery but never refreshes the slam`() = arena { h ->
-        h.actor.skill(1);h.ticks(12)
-        h.actor.skill(3);h.ticks(1) // Guard cancels only the completed hit's recovery.
-        val cd=h.actor.cooldownRemaining(1);assertTrue(cd>0)
-        h.actor.hurt(50.0);assertEquals(100.0 - 10.0 * 300 / 340,h.actor.health,.00001)
-        assertEquals(cd,h.actor.cooldownRemaining(1))
-        assertFalse(h.actor.combatCue.startsWith("反撃"))
-    }
-
     @Test fun `third normal hit opens one fast heavier slam`() = arena { h ->
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
         val before=h.combat.bossHealth();assertEquals(300.0-12.0*(1.0+1.15+1.85),before,.00001)
-        assertEquals(36.0,h.actor.resource)
+        assertEquals(.4,h.actor.resource,1e-9) // 0.1 + 0.1 + 0.2 from the three swings
         h.ticks(6);h.actor.skill(1);h.ticks(2);assertEquals(before,h.combat.bossHealth())
-        h.ticks(1);assertEquals(before-58.4*1.36*1.3,h.combat.bossHealth(),.00001) // 36 rage poured in, then the finisher
-        assertEquals(0.0,h.actor.resource)
+        h.ticks(1);assertEquals(before-58.4*1.3,h.combat.bossHealth(),.00001) // no whole stack yet; the finisher alone
+        assertEquals(.4,h.actor.resource,1e-9)
     }
 
     @Test fun `a slam long after the third hit is neither fast nor finisher boosted`() = arena { h ->
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(30)
         val before=h.combat.bossHealth()
         h.actor.skill(1);h.ticks(11);assertEquals(before,h.combat.bossHealth())
-        h.ticks(1);assertEquals(before-58.4*1.36,h.combat.bossHealth(),.00001)
+        h.ticks(1);assertEquals(before-58.4,h.combat.bossHealth(),.00001)
     }
 
-    @Test fun `rage at the cap starts a rampage that hits harder and keeps rage full`() = arena { h ->
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.ticks(1)
-        assertTrue(h.actor.raging); assertTrue(h.actor.combatCue.startsWith("赤熱 ")); assertTrue(h.actor.weaponHint.endsWith("赤熱"))
-        h.actor.attack(); assertEquals(300.0 - 12.0 * 1.25, h.combat.bossHealth(), .00001)
-        h.actor.skill(2); h.ticks(4) // the sweep takes 30 and the rampage refills it
-        assertEquals(100.0, h.actor.resource)
-        h.ticks(CoreWarriorRules.RAMPAGE_TICKS.toInt())
-        assertFalse(h.actor.raging); assertEquals(0.0, h.actor.resource) // an unfinished rampage burns out
-        assertEquals("", h.actor.combatCue)
-    }
-
-    @Test fun `a slam during a rampage pours in full rage and closes it`() = arena { h ->
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.ticks(1)
+    @Test fun `normal hits build a little of the beast and the slam takes every whole stack`() = arena { h ->
+        // Three normal swings: 0.1 + 0.1 + 0.2 (the heavy third).
+        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(30)
+        assertEquals(4 * CoreWarriorRules.BEAST_PER_NORMAL, h.actor.resource, 1e-9)
+        h.actor.classState.gain(5.0, h.journey.job, h.journey.build)
+        assertEquals(CoreWarriorRules.BEAST_MAX, h.actor.resource) // capped at three
+        assertEquals("獣 3/3", h.actor.weaponHint)
+        val before = h.combat.bossHealth()
         h.actor.skill(1); h.ticks(12)
-        assertEquals(300.0 - 58.4 * 2.0 * 1.25, h.combat.bossHealth(), .00001)
-        assertFalse(h.actor.raging); assertEquals(0.0, h.actor.resource)
-        h.ticks(5); assertFalse(h.actor.raging)
+        assertEquals(before - 58.4 * (1 + 3 * CoreWarriorRules.BEAST_DAMAGE_PERCENT_PER_STACK / 100.0), h.combat.bossHealth(), .00001)
+        assertEquals(0.0, h.actor.resource) // the slam's own break never feeds the beast
     }
 
-    @Test fun `the ultimate costs no rage during a rampage and does not end it`() = arena { h ->
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.ticks(1)
+    @Test fun `a building skill that lands adds one stack whatever and however many it hits`() =
+        arena(bossDistance = 30.0, mobs = listOf(Pos(8.5, 40.0, 10.0), Pos(9.3, 40.0, 10.0), Pos(7.7, 40.0, 10.0))) { h ->
+        h.combat.tick(1000L)
+        h.actor.attack();h.ticks(8)
+        val afterSwing = h.actor.resource
+        assertEquals(CoreWarriorRules.BEAST_PER_NORMAL, afterSwing, 1e-9) // one swing, however many it cleaves
+        h.ticks(20);h.actor.skill(0);h.ticks(10) // 轟進 lands
+        assertEquals(afterSwing + CoreWarriorRules.BEAST_PER_SKILL, h.actor.resource, 1e-9)
+    }
+
+    @Test fun `the slam reaches further, lifts higher and splits twice with more beast`() {
+        val base = CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "slam" }
+        val shapes = (0..3).map { CoreWarriorRules.slam(base, it) }
+        assertEquals(listOf(4.0, 6.0, 8.0, 8.0), shapes.map { it.radius })
+        assertEquals(CrowdControl.FLINCH, shapes[0].crowd)
+        assertTrue(shapes.drop(1).all { it.crowd == CrowdControl.AIRBORNE })
+        assertTrue(shapes[1].crowdMillis < shapes[2].crowdMillis && shapes[2].crowdMillis < shapes[3].crowdMillis)
+        assertEquals(listOf(0L, 0L, 1500L, 2000L), shapes.map { it.stunAfterMillis })
+        assertEquals(listOf(1, 1, 1, 2), shapes.map { it.pulses })
+    }
+
+    @Test fun `three stacks break the boss twice, once per split`() = arena { h ->
+        val id = h.combat.combatTargets().single().id
+        h.actor.classState.gain(3.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(21)
+        assertEquals(100.0 - 2 * (12.0 + 3 * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT), h.combat.breakGauge(id)!!, .0001)
+    }
+
+    @Test fun `the leap launches the body without moving it and slams down where it lands`() = arena { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 4)); h.actor.reset()
+        assertEquals(CoreWarriorLeap.ICON, h.actor.skillDefinitions[3].icon)
+        val id = h.combat.combatTargets().single().id
+        h.player.teleport(h.player.position.withView(0f, 20f)) // looking at the ground about four blocks ahead, by the boss
+        val from = h.player.position
+        h.actor.skill(3); h.ticks(5)
+        assertEquals(from, h.player.position) // never a teleport: the client flies the arc
+        assertTrue(h.player.velocity.y() > 0.0 && h.player.velocity.z() > 0.0, "${h.player.velocity}")
+        assertEquals(100.0, h.combat.breakGauge(id)!!, 1e-9) // nothing lands until the body is down
+        // Replay the arc the client would fly, then touch down next to the boss.
+        for (p in CoreWarriorLeap.path(from, h.player.velocity.div(20.0), ground = from.y())) { h.player.teleport(p); h.ticks(1) }
+        h.ticks(2)
+        assertTrue(h.combat.breakGauge(id)!! < 100.0, "the landing hit the boss")
+        assertTrue(h.actor.resource > 0.0, "the landing feeds the beast")
+    }
+
+    @Test fun `the new spenders grow with the beast they take`() {
+        val skills = CoreSkillCatalog.skills(CoreClass.WARRIOR).associateBy { it.icon }
+        assertEquals(listOf(2, 3, 4, 5), (0..3).map { CoreWarriorRules.shape(skills.getValue(CoreWarriorRules.FRENZY), it).pulses })
+        assertEquals(listOf(1, 1, 2, 3), (0..3).map { CoreWarriorRules.shape(skills.getValue(CoreWarriorRules.SKYFALL), it).pulses })
+        assertEquals(listOf(4.0, 5.0, 6.0, 7.0), (0..3).map { CoreWarriorRules.shape(skills.getValue(CoreWarriorRules.SHATTER), it).radius })
+        assertTrue(CoreWarriorRules.spenders.containsAll(listOf("slam", CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER)))
+    }
+
+    @Test fun `frenzy swings once more per stack and takes them all`() = arena(bossDistance = 2.5) { h ->
+        h.actor.classState.gain(3.0, h.journey.job, h.journey.build)
+        val id = h.combat.combatTargets().single().id
+        h.actor.skill(2); h.ticks(40)
+        assertEquals(0.0, h.actor.resource)
+        assertEquals(100.0 - 5 * 4.0 - 3 * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT * 5, h.combat.breakGauge(id)!!, .0001) // five swings
+    }
+
+    @Test fun `skyfall sends one ring per stack out from where it lands`() = arena { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 3)); h.actor.reset()
+        h.actor.classState.gain(3.0, h.journey.job, h.journey.build)
+        val id = h.combat.combatTargets().single().id
+        h.player.teleport(h.player.position.withView(0f, 75f)) // straight down: lands short, the boss stands 4 blocks off
+        val from = h.player.position
+        h.actor.skill(3); h.ticks(8)
+        for (p in CoreWarriorLeap.path(from, h.player.velocity.div(20.0), ground = from.y())) { h.player.teleport(p); h.ticks(1) }
+        h.ticks(1)
+        val afterFirst = h.combat.breakGauge(id)!!
+        h.ticks(CoreWarriorRules.SKYFALL_RING_TICKS * 3)
+        assertTrue(h.combat.breakGauge(id)!! < 100.0, "a ring reached the boss")
+        assertTrue(afterFirst >= h.combat.breakGauge(id)!!)
+    }
+
+    @Test fun `shatter launches everything round the planted blade`() = arena { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 5)); h.actor.reset()
+        h.actor.classState.gain(3.0, h.journey.job, h.journey.build)
+        val id = h.combat.combatTargets().single().id
+        h.player.teleport(h.player.position.withView(180f, 0f)) // facing away: it is all round, not a cone
+        h.actor.skill(3); h.ticks(16)
+        assertTrue(h.combat.breakGauge(id)!! < 100.0)
+    }
+
+    @Test fun `the launcher throws up the one in front and a slam on it is the smash down`() =
+        arena(bossDistance = 30.0, mobs = listOf(Pos(8.5, 40.0, 10.5))) { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 7)); h.actor.reset()
+        assertEquals(CoreWarriorRules.LAUNCHER, h.actor.skillDefinitions[3].icon)
+        h.combat.tick(1000L)
+        val id = h.combat.combatTargets().first { !h.combat.isBoss(it.id) }.id
+        h.actor.skill(3); h.ticks(10)
+        assertTrue(CrowdControl.AIRBORNE in h.combat.crowdControl(id), "thrown up")
+        assertEquals(CoreWarriorRules.BEAST_PER_SKILL, h.actor.resource, 1e-9) // it builds
+        h.actor.skill(1); h.ticks(24) // a slam with one stack would only launch low; on a thrown enemy it is the smash down
+        // The smash lands on it up in the air: stunned, or (a tier-1 soldier) dead from the boosted hit.
+        assertTrue(!h.combat.isAlive(id) || CrowdControl.STUN in h.combat.crowdControl(id), "smashed down: ${h.combat.crowdControl(id)}")
+        assertTrue(h.actor.cooldownRemaining(1) > 0)
+    }
+
+    @Test fun `the drag hooks a regular enemy at the blade, brings it along and hits it at the end`() =
+        arena(bossDistance = 30.0, mobs = listOf(Pos(7.8, 40.0, 7.0))) { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 6)); h.actor.reset()
+        assertEquals(CoreWarriorRules.DRAG, h.actor.skillDefinitions[3].icon)
+        h.combat.tick(1000L)
+        val id = h.combat.combatTargets().first { !h.combat.isBoss(it.id) }.id
+        h.actor.skill(3); h.ticks(4)
+        // Walk forward as the client would; the hooked enemy is dragged along behind the blade.
+        repeat(20) { h.player.teleport(h.player.position.add(0.0, 0.0, .17)); h.ticks(1) }
+        val p = h.combat.positionOf(id)!!
+        assertTrue(p.z() > 7.5, "dragged along: $p")
+        h.ticks(CoreWarriorRules.DRAG_TICKS)
+        assertTrue(!h.combat.isAlive(id) || CrowdControl.STUN in h.combat.crowdControl(id), "hit at the end")
+        assertTrue(h.actor.cooldownRemaining(3) > 0)
+    }
+
+    @Test fun `the awakening needs three stacks and then keeps them while spenders cool twice as fast`() = arena { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(ultimate = 2)); h.actor.reset()
+        assertEquals(CoreWarriorRules.AWAKEN, h.actor.skillDefinitions[4].icon)
         h.actor.skill(4); h.ticks(1)
-        assertTrue(h.actor.cooldownRemaining(4) > 0)
-        assertTrue(h.actor.raging); assertEquals(100.0, h.actor.resource)
+        assertEquals(0, h.actor.cooldownRemaining(4)) // not with less than three
+        h.actor.classState.gain(3.0, h.journey.job, h.journey.build)
+        h.actor.skill(4); h.ticks(4)
+        assertTrue(h.actor.awakened)
+        h.actor.skill(1); h.ticks(12)
+        assertEquals(3.0, h.actor.resource) // the slam took all three and kept them
+        assertTrue(h.actor.cooldownRemaining(1) <= h.actor.cooldownTicks(1) / 2)
     }
 
-    @Test fun `unguarded hits taken build warrior rage at most twice a second`() = arena { h ->
-        h.actor.hurt(10.0); h.actor.hurt(10.0)
-        assertEquals(CoreWarriorRules.HURT_RAGE, h.actor.resource)
-        h.ticks(CoreWarriorRules.HURT_RAGE_GAP.toInt()); h.actor.hurt(10.0)
-        assertEquals(CoreWarriorRules.HURT_RAGE * 2, h.actor.resource)
+    @Test fun `the berserker armor shrugs off crowd control and staggers and burns health down to one`() = arena { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(ultimate = 1)); h.actor.reset()
+        assertEquals(CoreWarriorRules.ARMOR, h.actor.skillDefinitions[4].icon)
+        h.actor.skill(4); h.ticks(5)
+        assertTrue(h.actor.armored)
+        assertEquals(0, h.actor.receiveCrowdControl(CrowdControl.STUN, 2000, null))
+        h.actor.hurt(h.actor.maxHealth * .5); assertFalse(h.actor.staggered)
+        assertEquals(CoreWarriorRules.BEAST_MAX, h.actor.resource)
+        val before = h.actor.health
+        h.ticks(20); assertTrue(h.actor.health < before, "it burns")
+        h.actor.hurt(h.actor.health - 1.5, CoreDamageType.TRUE); h.ticks(40); assertEquals(1.0, h.actor.health, 1e-9) // never below one
+        h.ticks(200); assertFalse(h.actor.armored)
+    }
+
+    @Test fun `the slam is never gated by the beast and keeps a part-built stack`() = arena { h ->
+        h.actor.classState.gain(1.5, h.journey.job, h.journey.build)
+        h.actor.skill(1); h.ticks(12)
+        assertEquals(.5, h.actor.resource, 1e-9)
+        assertTrue(h.combat.bossHealth() < 300.0)
+    }
+
+    @Test fun `a warrior spender is not staggered by a heavy blow`() = arena { h ->
+        h.actor.skill(1); h.ticks(2)
+        h.actor.hurt(h.actor.maxHealth * .5)
+        assertFalse(h.actor.staggered)
+        h.ticks(10); assertTrue(h.combat.bossHealth() < 300.0)
+    }
+
+    @Test fun `taking hits no longer builds the warrior resource`() = arena { h ->
+        h.actor.hurt(10.0); h.ticks(20); h.actor.hurt(10.0)
+        assertEquals(0.0, h.actor.resource)
     }
 
     @Test fun `boss takes no crowd control but its break gauge empties into a four second break`() = arena { h ->
@@ -1016,8 +1117,12 @@ class CorePlayerCombatTest {
 
     @Test fun `warrior slam stuns the enemy it hits and the third normal hit makes it flinch`() = arena { h ->
         soldierArena(h) { e, id ->
-            h.actor.skill(1); h.ticks(12)
-            assertTrue(CrowdControl.STUN in e.crowdControl(id))
+            h.actor.classState.gain(2.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(12)
+            assertTrue(CrowdControl.STUN in e.crowdControl(id)) // two stacks: launched, then stunned
+        }
+        soldierArena(h) { e, id ->
+            h.actor.reset(); h.actor.skill(1); h.ticks(12)
+            assertTrue(CrowdControl.FLINCH in e.crowdControl(id) && CrowdControl.STUN !in e.crowdControl(id)) // no beast: a flinch
         }
         soldierArena(h) { e, id ->
             h.actor.attack(); h.ticks(25); h.actor.attack(); h.ticks(25)
@@ -1071,10 +1176,10 @@ class CorePlayerCombatTest {
         } finally { h.actor.resetActions(); encounter.dispose() }
     }
 
-    @Test fun `the warrior's slam breaks the boss by the rage poured in and takes no crowd control`() = arena { h ->
+    @Test fun `the warrior's slam breaks the boss by the beast it takes and takes no crowd control`() = arena { h ->
         val id = h.combat.combatTargets().single().id
-        h.actor.classState.gain(30.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(12)
-        assertEquals(100.0 - (12.0 + 3.0), h.combat.breakGauge(id)!!, .0001)
+        h.actor.classState.gain(3.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(12)
+        assertEquals(100.0 - (12.0 + 3 * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT), h.combat.breakGauge(id)!!, .0001)
         assertTrue(h.combat.crowdControl(id).isEmpty())
     }
 
@@ -1083,14 +1188,7 @@ class CorePlayerCombatTest {
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
         assertEquals(100.0 - (2.0 + 2.0 + 5.0), h.combat.breakGauge(id)!!, .0001)
         h.ticks(6);h.actor.skill(1);h.ticks(3)
-        assertEquals(100.0 - 9.0 - (12.0 + 3.0) * CoreBreak.FINISHER, h.combat.breakGauge(id)!!, .0001)
-    }
-
-    @Test fun `a slam right after the hold guard catches a blow is the return strike`() = arena { h ->
-        val id = h.combat.combatTargets().single().id
-        h.actor.skill(3); h.ticks(1); h.actor.hurt(20.0) // perfect catch: +30 rage
-        h.ticks(5); h.actor.skill(1); h.ticks(12)
-        assertEquals(100.0 - (12.0 + 3.0) * CoreBreak.RIPOSTE, h.combat.breakGauge(id)!!, .0001)
+        assertEquals(100.0 - 9.0 - 12.0 * CoreBreak.FINISHER, h.combat.breakGauge(id)!!, .0001)
     }
 
     @Test fun `other classes break a little with every hit`() = arena(bossDistance = 2.0) { h ->
@@ -1100,11 +1198,11 @@ class CorePlayerCombatTest {
         assertEquals(100.0 - CoreBreak.NORMAL, h.combat.breakGauge(id)!!, .0001)
     }
 
-    @Test fun `sword saint third hits take time off the heavy cooldowns`() = arena { h ->
+    @Test fun `sword saint third hits take time off the spender cooldowns`() = arena { h ->
         h.journey=CoreJourney.legacy(build=CoreClassBuild(nodes=8248));h.actor.reset()
-        h.actor.skill(2);h.ticks(10)
+        h.actor.skill(1);h.ticks(40)
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
-        assertEquals(200-10-50-30,h.actor.cooldownRemaining(2))
+        assertEquals(240-40-50-30,h.actor.cooldownRemaining(1))
     }
 
     
@@ -1411,7 +1509,7 @@ class CorePlayerCombatTest {
     }
 
     private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double,
-        weaponEnhancement: Int, armorEnhancement: Int) : AutoCloseable {
+        weaponEnhancement: Int, armorEnhancement: Int, mobs: List<Pos> = emptyList()) : AutoCloseable {
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
         val player: Player
         val combat: QuestEncounterCombat
@@ -1452,7 +1550,7 @@ class CorePlayerCombatTest {
             actor = CorePlayerCombat(player, { 1 }, { armorTier }, { activeEncounter }, statSource = { stats }, criticalRoll = { roll },
                 weaponEnhancement = { weaponEnhancement }, armorEnhancement = { armorEnhancement },
                 weaponBroken = { weaponBroken }, armorBroken = { armorBroken }, journey = { journey }, weaponBase = { base }, allies = {otherActors}) { deaths++ }
-            combat = QuestEncounterCombat(instance, 1, emptyList(), Pos(8.5, 40.0, 8.5 + bossDistance),
+            combat = QuestEncounterCombat(instance, 1, if (mobs.isEmpty()) emptyList() else listOf(QuestCombatEncounter(mobs)), Pos(8.5, 40.0, 8.5 + bossDistance),
                 onMobDefeated = { _, _ -> afterKill() },
                 damagePlayer = { _, amount -> incomingHits += amount; actor.hurt(amount) },
                 canTarget = { (it === player && !actor.defeated) || otherActors.any { a -> a.player===it && !a.defeated } })

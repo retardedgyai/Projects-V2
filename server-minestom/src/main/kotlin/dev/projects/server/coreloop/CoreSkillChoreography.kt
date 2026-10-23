@@ -14,7 +14,7 @@ internal object CoreSkillChoreography {
     private val duration = mapOf(
         "normal_sweep" to 16,"normal_reverse" to 16,"normal_finish" to 24,
         "dash" to 20,"slam" to 28,"whirl" to 20,"war_guard" to 30,"war_wound" to 18,
-        "war_counter" to 22,"war_cry" to 28,"war_breach" to 22,"war_ult" to 30,"war_banner" to 60,
+        "war_counter" to 22,"war_cry" to 28,"war_breach" to 22,"war_ult" to 30,"war_banner" to 30,"war_awaken" to 24,
         "firebolt" to 22,"frost_nova" to 30,"meteor" to 30,"mage_blink" to 24,"mage_mark" to 22,
         "mage_garden" to 32,"mage_burst" to 28,"mage_ward" to 30,"mage_ult" to 34,"mage_zero" to 32,
         "pierce" to 18,"frost_fan" to 24,"arrow_rain" to 24,"hunt_retreat" to 20,"hunt_pierce" to 22,
@@ -37,6 +37,7 @@ internal object CoreSkillChoreography {
         CoreWarriorFlourish.pose(p,age)?.let { return it }
         CoreApprovedNormalV3.pose(p,age)?.let { return it }
         CoreApprovedDashV3.pose(p,age)?.let { return it }
+        CoreWarriorRefChoreography.pose(p,age)?.let { return it }
         CoreWarriorIronChoreography.pose(p,age)?.let { return it }
         CoreWarriorBladeChoreography.pose(p,age)?.let { return it }
         CoreFlowSlashChoreography.pose(p,age)?.let { return it }
@@ -122,6 +123,7 @@ internal object CoreSkillChoreography {
         if(raw.isEmpty()) return raw
         CoreApprovedNormalV3.parts(e)?.let { return it }
         CoreApprovedDashV3.parts(e)?.let { return it }
+        CoreWarriorRefChoreography.parts(e)?.let { return it }
         CoreWarriorIronChoreography.parts(e)?.let { return it }
         CoreWarriorBladeChoreography.parts(e)?.let { return it }
         CoreExpandedSlashChoreography.parts(e)?.let { return it }

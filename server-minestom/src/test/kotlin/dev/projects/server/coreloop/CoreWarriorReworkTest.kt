@@ -8,22 +8,21 @@ import kotlin.test.*
 class CoreWarriorReworkTest {
     private val warrior get() = CoreSkillCatalog.skills(CoreClass.WARRIOR)
 
-    @Test fun `warrior skills sit in cooldown tiers and rage gates only the ultimate`() {
+    @Test fun `warrior skills sit in cooldown tiers and the beast gates nothing`() {
         val byIcon = warrior.filterNot { it.retired }.associateBy { it.icon }
-        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_ult"), byIcon.keys)
+        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner", "war_awaken"), byIcon.keys)
         assertEquals(100, byIcon.getValue("dash").cooldown)
-        assertTrue(byIcon.getValue("slam").cooldown in 200..320 && byIcon.getValue("whirl").cooldown in 200..320)
-        assertTrue(byIcon.getValue("war_guard").cooldown in 320..600 && byIcon.getValue("war_wound").cooldown in 320..600)
+        assertTrue(listOf("slam", "whirl", "war_guard", "war_counter").all { byIcon.getValue(it).cooldown in 200..320 }, "spenders")
+        assertTrue(byIcon.getValue("war_wound").cooldown in 160..240, "the leap moves")
         assertTrue(byIcon.getValue("war_ult").cooldown >= 1200)
-        assertTrue(byIcon.values.filterNot { it.ultimate }.all { it.spend == 0 }, "no normal skill needs rage")
-        assertEquals(80, byIcon.getValue("war_ult").spend)
+        assertTrue(byIcon.values.all { it.spend == 0 }, "no warrior skill needs the beast to be cast")
     }
 
     @Test fun `retired entries keep catalog order and art but are never selectable`() {
-        assertEquals(60, CoreSkillCatalog.artNames.size)
-        assertEquals(listOf(0, 1, 2, 3, 4), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
-        assertEquals(listOf(0), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
-        assertEquals(listOf("war_counter", "war_cry", "war_breach", "war_banner"), warrior.filter { it.retired }.map { it.icon })
+        assertEquals(61, CoreSkillCatalog.artNames.size)
+        assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
+        assertEquals(listOf(0, 1, 2), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
+        assertEquals(emptyList<String>(), warrior.filter { it.retired }.map { it.icon })
         for (job in CoreClass.entries) {
             assertEquals(CoreClassBuild(), CoreSkillCatalog.migrate(job, CoreClassBuild()), "$job default build stays valid")
             assertFalse(CoreSkillCatalog.selectable(job, 0, 8))
@@ -32,20 +31,20 @@ class CoreWarriorReworkTest {
     }
 
     @Test fun `migration replaces only retired picks and keeps slot order tree and ultimate when valid`() {
-        val old = CoreClassBuild(first = 5, second = 1, third = 7, fourth = 3, ultimate = 1, nodes = 1031)
+        val old = CoreClassBuild(first = 0, second = 1, third = 2, fourth = 3, ultimate = 1, nodes = 1031)
         val migrated = CoreSkillCatalog.migrate(CoreClass.WARRIOR, old)
-        assertEquals(listOf(0, 1, 2, 3), migrated.skills); assertEquals(0, migrated.ultimate); assertEquals(1031, migrated.nodes)
+        assertEquals(listOf(0, 1, 2, 3), migrated.skills); assertEquals(1, migrated.ultimate); assertEquals(1031, migrated.nodes)
         assertEquals(migrated, CoreSkillCatalog.migrate(CoreClass.WARRIOR, migrated))
         assertEquals(old, CoreSkillCatalog.migrate(CoreClass.MAGE, old), "classes without retired skills are untouched")
     }
 
     @Test fun `saved builds with retired skills load migrated through the codec and rewrite stably`() {
-        val legacyWarrior = CoreClassBuild(first = 6, second = 1, third = 2, fourth = 7, ultimate = 1)
+        val legacyWarrior = CoreClassBuild(first = 0, second = 1, third = 2, fourth = 3, ultimate = 1)
         val j = CoreJourney.legacy(build = legacyWarrior).changeClass(CoreClass.HEALER)
         val a = CoreAccount(UUID.randomUUID(), journey = j)
         val loaded = CoreAccountCodec.decode(CoreAccountCodec.encode(a), a.playerId)
         val saved = loaded.journey.savedBuilds.getValue(CoreClass.WARRIOR)
-        assertEquals(listOf(0, 1, 2, 3), saved.skills); assertEquals(0, saved.ultimate)
+        assertEquals(listOf(0, 1, 2, 3), saved.skills); assertEquals(1, saved.ultimate)
         assertEquals(CoreAccountCodec.encode(loaded), CoreAccountCodec.encode(CoreAccountCodec.decode(CoreAccountCodec.encode(loaded), a.playerId)))
         assertTrue(CoreAccountCodec.encode(loaded).startsWith("PROJECTS_CORE_LOOP\t12\t"))
         val current = CoreAccount(UUID.randomUUID(), journey = CoreJourney.legacy(build = legacyWarrior))
@@ -58,8 +57,7 @@ class CoreWarriorReworkTest {
         val repo = CoreAccountRepository(dir)
         assertEquals(CoreRepositorySave.Saved, repo.commit(0, CoreAccount(id, revision = 1, journey = CoreJourney.legacy())))
         val service = CoreAccountService(repo); service.open(id)
-        assertEquals(CoreTransactionStatus.REJECTED, service.transact(id, CoreOperation(UUID.randomUUID(), 1, CoreAction.SelectSkill(0, 5))).status)
-        assertEquals(CoreTransactionStatus.REJECTED, service.transact(id, CoreOperation(UUID.randomUUID(), 1, CoreAction.SelectSkill(4, 1))).status)
+        assertEquals(CoreTransactionStatus.REJECTED, service.transact(id, CoreOperation(UUID.randomUUID(), 1, CoreAction.SelectSkill(4, 3))).status)
         val accepted = service.transact(id, CoreOperation(UUID.randomUUID(), 1, CoreAction.SelectSkill(0, 4)))
         assertEquals(CoreTransactionStatus.COMMITTED, accepted.status, accepted.message)
         assertEquals(listOf(4, 1, 2, 3), accepted.account!!.journey.build.skills)
@@ -82,16 +80,16 @@ class CoreWarriorReworkTest {
         }
     }
 
-    @Test fun `heavy skill tooltips state the rage and finisher rules in whole numbers`() {
+    @Test fun `spender tooltips state the beast and finisher rules in whole numbers`() {
         val j = CoreJourney.legacy()
         val sheet = CoreCombatSheet.from(CoreAccount(UUID.randomUUID(), journey = j))
         val slam = warrior.first { it.icon == "slam" }.tooltip(sheet, j).joinToString("\n")
-        assertContains(slam, "闘気30以上なら全部注ぎ込み、闘気1につき威力+1%")
-        assertContains(slam, "赤熱中に撃つと")
+        assertContains(slam, "獣：全部使う（0でも撃てる）")
+        assertContains(slam, "獣1つごとに威力+25%")
+        assertContains(slam, "振っている間は怯まない")
         assertContains(slam, "通常3段目の命中から0.6秒以内")
-        assertContains(slam, "ボスの崩し 12＋注いだ闘気10ごとに+1")
+        assertContains(slam, "ボスの崩し 12＋獣1つごとに+4")
         assertFalse("30.0" in slam)
-        assertContains(warrior.first { it.icon == "whirl" }.tooltip(sheet, j).joinToString("\n"), "闘気30以上なら自動で30使い、威力+30%")
-        assertFalse("闘気30" in warrior.first { it.icon == "dash" }.tooltip(sheet, j).joinToString("\n"))
+        assertContains(warrior.first { it.icon == "dash" }.tooltip(sheet, j).joinToString("\n"), "獣：当たると1つ溜まる")
     }
 }

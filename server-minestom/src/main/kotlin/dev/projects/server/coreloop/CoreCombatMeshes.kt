@@ -31,7 +31,8 @@ internal object CoreCombatPresentation {
 internal class CoreCombatMeshes(private val owner: Player) {
     private data class Live(val entity: Entity,val instance: Instance,val part: CoreCombatMeshPart,
         val ownerStart: Pos,val baseYaw: Double,var age: Int=-2,var model: String="",val cancelled: AtomicBoolean=AtomicBoolean(),
-        var lastUpdateNanos: Long=0,var maxUpdateGapNanos: Long=0,var updateCount: Int=0,var tint: Int?=null)
+        var lastUpdateNanos: Long=0,var maxUpdateGapNanos: Long=0,var updateCount: Int=0,var tint: Int?=null,
+        var ground: Material=Material.DIRT,var anchor: Pos=Pos.ZERO)
     private val live=mutableListOf<Live>()
     internal val size get()=live.size
 
@@ -53,8 +54,10 @@ internal class CoreCombatMeshes(private val owner: Player) {
             }
             if(!reserve(instance,parts.size)) return false
         }
+        // An ultimate is the one moment worth more pieces (once a minute): it may run past the usual per-owner cap.
+        val limit=if(effect.skill.ultimate) OWNER_LIMIT+ULTIMATE_EXTRA else OWNER_LIMIT
         for(authored in parts.sortedBy { it.secondary }) {
-            if(!gardenBody && live.size>=OWNER_LIMIT) {
+            if(!gardenBody && live.size>=limit) {
                 // A new strike must not silently vanish behind old secondary afterglow.
                 val tail=live.firstOrNull { !gardenBoundary(it.part) && (it.part.secondary || it.age>it.part.durationTicks*.65) }
                 if(tail!=null && !authored.secondary) {
@@ -74,13 +77,15 @@ internal class CoreCombatMeshes(private val owner: Player) {
             val entity=Entity(EntityType.ITEM_DISPLAY)
             entity.setHasPhysics(false);entity.setNoGravity(true);entity.setAutoViewable(false)
             val record=Live(entity,instance,part,owner.position,atan2(effect.direction.x(),effect.direction.z()),
-                age=if(immediateContour) 0 else -2)
+                age=if(immediateContour) 0 else -2,ground=groundUnder(instance,effect.origin.add(part.offset)))
             live+=record
             entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
                 val initial=CoreSkillChoreography.pose(part,0.0)
                 record.model=initial.model;record.tint=initial.tint
-                meta.setItemStack(stack(record.model,initial.tint))
+                meta.setItemStack(stack(record.model,initial.tint,record.ground))
                 meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
+                if(part.billboard) meta.setBillboardRenderConstraints(net.minestom.server.entity.metadata.display.AbstractDisplayMeta.BillboardConstraints.CENTER)
+                if(moves(part)) meta.setPosRotInterpolationDuration(1)
                 meta.setBrightness(15,15);meta.setViewRange(1.0f)
                 meta.setTransformationInterpolationDuration(interpolationTicks(part))
                 // Authored warrior contours start at their real phase, not a hidden extra
@@ -88,12 +93,15 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 // The first pose includes the guard's grip pivot and planted flag root.
                 // Delayed echoes must remain hidden even though their entity is ready.
                 meta.setScale(if(immediateContour && initial.visible) initial.scale else Vec.ZERO)
-                meta.setTranslation(if(immediateContour) initial.offset else part.offset)
+                // A camera-facing sprite turns its translation with the camera: it stands at its own spot instead.
+                meta.setTranslation(if(part.billboard) Vec.ZERO else if(immediateContour) initial.offset else part.offset)
                 meta.setLeftRotation(if(immediateContour) CoreCombatMeshArt.rotation(initial.yaw,initial.pitch,initial.roll)
                     else CoreCombatMeshArt.rotation(part.yaw,part.pitch,part.roll))
                 meta.setRightRotation(CoreCombatMeshArt.vanillaItemCorrection)
             }
-            entity.setInstance(instance,Pos(effect.origin.x(),effect.origin.y(),effect.origin.z())).whenComplete { _,failure ->
+            val spawnAt=if(part.billboard) effect.origin.add(part.offset) else effect.origin
+            record.anchor=Pos(spawnAt.x(),spawnAt.y(),spawnAt.z())
+            entity.setInstance(instance,Pos(spawnAt.x(),spawnAt.y(),spawnAt.z())).whenComplete { _,failure ->
                 if(failure!=null || record.cancelled.get() || entity.isRemoved || owner.instance!==instance) entity.remove()
                 else if(immediateContour && CoreCombatPresentation.packed(owner) &&
                     (CoreCombatPresentation.detail(owner)!=CoreCombatPresentation.Detail.MINIMAL || boundary(part)) &&
@@ -108,7 +116,18 @@ internal class CoreCombatMeshes(private val owner: Player) {
         return true
     }
 
-    private fun stack(model: String, tint: Int?): ItemStack {
+    /** The solid block at or just under a point, as an item: torn-up ground shows the ground it was torn from. */
+    private fun groundUnder(instance: Instance,at: net.minestom.server.coordinate.Point): Material {
+        val base=floor(at.y()).toInt()
+        for(y in base+1 downTo base-3) {
+            val block=instance.getBlock(Pos(at.x(),y.toDouble(),at.z()))
+            if(block.solid()) return block.registry().material() ?: Material.DIRT
+        }
+        return Material.DIRT
+    }
+
+    private fun stack(model: String, tint: Int?, ground: Material=Material.DIRT): ItemStack {
+        if(model==GROUND) return ItemStack.of(ground)
         val item=ItemStack.of(Material.PAPER).withItemModel("projects:$model")
         return if(tint==null) item else item.with(net.minestom.server.component.DataComponents.CUSTOM_MODEL_DATA,
             net.minestom.server.item.component.CustomModelData(emptyList(),emptyList(),emptyList(),
@@ -143,8 +162,19 @@ internal class CoreCombatMeshes(private val owner: Player) {
             val pose=CoreSkillChoreography.pose(p,v.age.toDouble())
             val facing=if(p.followOwner) atan2(owner.position.direction().x(),owner.position.direction().z())-v.baseYaw else 0.0
             val at=pose.offset
-            val offset=if(p.followOwner) Vec(cos(facing)*at.x()+sin(facing)*at.z(),at.y(),-sin(facing)*at.x()+cos(facing)*at.z())
+            val offset=if(p.billboard) Vec.ZERO else if(p.followOwner) Vec(cos(facing)*at.x()+sin(facing)*at.z(),at.y(),-sin(facing)*at.x()+cos(facing)*at.z())
                 .add(owner.position.sub(v.ownerStart).asVec()) else at
+            // A camera-facing sprite turns its translation with the camera, so one that travels (or follows its
+            // owner) is carried by moving the entity itself.
+            if(moves(p) && v.age>=0) {
+                val to=if(p.followOwner) {
+                    // Carried round with its owner: the pose offset is from the owner's feet, turned as the owner turns.
+                    val start=v.anchor.sub(p.offset)
+                    val turned=Vec(cos(facing)*at.x()+sin(facing)*at.z(),at.y(),-sin(facing)*at.x()+cos(facing)*at.z())
+                    start.add(owner.position.sub(v.ownerStart)).add(turned)
+                } else v.anchor.add(at.sub(p.offset))
+                if(to.distanceSquared(v.entity.position)>1e-6) v.entity.teleport(Pos(to.x(),to.y(),to.z()))
+            }
             // Let the final zero-width target finish. Restarting its interpolation
             // during drain ticks or removing at the authored endpoint cuts off the fade.
             // Planted plates are static: send only opening/warning/breakup phase changes.
@@ -160,7 +190,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 meta.setTranslation(offset)
                 meta.setLeftRotation(CoreCombatMeshArt.rotation(pose.yaw+facing,pose.pitch,pose.roll))
                 if(v.model!=pose.model || v.tint!=pose.tint) {
-                    meta.setItemStack(stack(pose.model,pose.tint));v.model=pose.model;v.tint=pose.tint
+                    meta.setItemStack(stack(pose.model,pose.tint,v.ground));v.model=pose.model;v.tint=pose.tint
                 }
             }
             if(v.entity.instance===v.instance) {
@@ -177,6 +207,8 @@ internal class CoreCombatMeshes(private val owner: Player) {
             v.age++
         }
     }
+
+    private fun moves(p: CoreCombatMeshPart)=p.billboard && (p.followOwner || CoreWarriorRefChoreography.drifts(p))
 
     // Dodge cancels the current cast, while an already planted garden remains.
     fun cancel(preserveGarden: Boolean = false) {
@@ -208,7 +240,10 @@ internal class CoreCombatMeshes(private val owner: Player) {
                 part.shape.startsWith("flow:") && !part.shape.contains(":prepare:")) 2 else 1
         internal fun removalAge(part: CoreCombatMeshPart)=part.delayTicks+part.durationTicks+
             if(interpolationTicks(part)==2) 2 else 0
+        /** Pose model meaning "the block this piece was torn from" (CoreWarriorRefChoreography). */
+        const val GROUND="@ground"
         const val OWNER_LIMIT=48
+        const val ULTIMATE_EXTRA=40
         const val SCENE_LIMIT=384
         private val sceneCounts=WeakHashMap<Instance,Int>()
         private fun reserve(instance: Instance,count: Int=1): Boolean=synchronized(sceneCounts) {

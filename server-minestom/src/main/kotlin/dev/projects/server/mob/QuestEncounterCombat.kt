@@ -432,7 +432,9 @@ class QuestEncounterCombat(
         }
         when (kind) {
             CrowdControl.STUN, CrowdControl.ROOT -> stopNavigation(mob)
-            CrowdControl.AIRBORNE -> { mob.entity.navigator.reset(); mob.entity.velocity = Vec(0.0, 9.0, 0.0) }
+            // About 3 blocks up for 0.7 s in the air; a shorter launch is lower, a longer one higher (地割り by its beast).
+            CrowdControl.AIRBORNE -> { mob.entity.navigator.reset()
+                mob.entity.velocity = Vec(0.0, 14.0 * kotlin.math.sqrt(durationMillis.coerceIn(200L, 1500L) / 700.0), 0.0) }
             CrowdControl.KNOCKBACK -> slide(mob, normalizeHorizontal(mob.entity.position.sub(source.position)), distance)
             else -> Unit
         }
@@ -497,6 +499,22 @@ class QuestEncounterCombat(
         return true
     }
 
+    /** 引き摺り (warrior): a hooked mob is dragged along toward [point], as far as the ground allows. Bosses stay put. */
+    fun dragTo(targetId: UUID, point: Pos, step: Double = .7): Boolean {
+        val mob = mobs[targetId] ?: return false
+        if (mob.boss || !mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING) return false
+        val delta = Vec(point.x() - mob.entity.position.x(), 0.0, point.z() - mob.entity.position.z())
+        if (delta.length() < .3) return true
+        slide(mob, delta.normalize(), minOf(step, delta.length()))
+        return true
+    }
+    /** 叩き落とし (warrior): a mob up in the air is driven straight down. Bosses never leave the ground, so nothing. */
+    fun slamDown(targetId: UUID): Boolean {
+        val mob = mobs[targetId] ?: return false
+        if (mob.boss || !mob.life.isAlive) return false
+        mob.entity.velocity = Vec(0.0, -30.0, 0.0)
+        return true
+    }
     fun crowdControl(targetId: UUID): Set<CrowdControl> {
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         return mobs[targetId]?.crowd?.filterValues { it > now }?.keys ?: emptySet()

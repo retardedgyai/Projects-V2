@@ -59,6 +59,10 @@ def model_json(path):
     if 'parent' in m and 'elements' not in m and m['parent'].startswith('projects:'):
         parent = model_json(m['parent'].split(':')[1])
         m = {**parent, **{k: v for k, v in m.items() if k != 'parent'}, 'textures': {**parent.get('textures', {}), **m.get('textures', {})}}
+    if m.get('parent') == 'minecraft:item/generated' and 'elements' not in m:
+        # A flat sprite item (the plain weapons): drawn as vanilla extrudes it, a 1 px thick slab of the sprite.
+        m = {**m, 'elements': [{'from': [0, 0, 7.5], 'to': [16, 16, 8.5], 'faces': {
+            'south': {'texture': '#layer0', 'uv': [0, 0, 16, 16]}, 'north': {'texture': '#layer0', 'uv': [16, 0, 0, 16]}}}]}
     return m
 
 
@@ -179,6 +183,13 @@ def model_faces(model, tints, matrix, tint=None):
             if uv[1] > uv[3]: crop = crop.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
             if uv[0] > uv[2]: crop = crop.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
             if face.get('rotation'): crop = crop.rotate(-face['rotation'], expand=True, resample=Image.Resampling.NEAREST)
+            if e.get('shade', True) and model.get('_shade'):
+                # Minecraft's face shade (up 1, down .5, z sides .8, x sides .6), on the face's world normal.
+                c0, c1, c2 = (corners[i] for i in ids[:3])
+                n = np.cross(c1 - c0, c2 - c0); n = n / (np.linalg.norm(n) + 1e-9)
+                k = n[1] ** 2 * (1.0 if n[1] > 0 else .5) + n[0] ** 2 * .6 + n[2] ** 2 * .8
+                arr = np.array(crop.convert('RGBA')).astype(float); arr[..., :3] *= k
+                crop = Image.fromarray(arr.astype('uint8'))
             if crop.size == (1, 1):
                 ink = crop.getpixel((0, 0))
                 if ink[3] == 0: continue
@@ -252,9 +263,19 @@ def weapon_faces(hand, pose):
     return model_faces(model, tints, m)
 
 
-def display_faces(d):
+def display_faces(d, camera=None):
+    if d['model'].startswith('vanilla:'):
+        # A vanilla block item (the ground torn up): drawn as the turf cube, at the half size FIXED gives block items.
+        d = {**d, 'model': 'combat_vfx/warrior_ref/gblock', 'scale': [v * .5 for v in d['scale']]}
     model, tints = item_model(d['model'])
-    m = T(*d['offset']) @ Rq(d['quaternion']) @ S(*d['scale']) @ T(-.5, -.5, -.5) @ S(1 / 16, 1 / 16, 1 / 16)
+    model = {**model, '_shade': 'warrior_ref/gblock' in d['model'] or 'warrior_ref/turf' in d['model'] or 'warrior_ref/clod' in d['model'] or 'warrior_ref/finger' in d['model'] or 'warrior_ref/lump' in d['model'] or 'warrior_ref/petal' in d['model'] or 'warrior_ref/gslab' in d['model'] or 'warrior_ref/chunk' in d['model']}
+    rot = Rq(d['quaternion'])
+    if d.get('billboard') and camera is not None:
+        # Billboard CENTER: the display faces the camera; its own rotation then turns it in the screen plane.
+        back = -camera.f
+        basis = np.eye(4); basis[:3, 0] = -camera.r; basis[:3, 1] = camera.u; basis[:3, 2] = -back
+        rot = basis @ rot
+    m = T(*d['offset']) @ rot @ S(*d['scale']) @ T(-.5, -.5, -.5) @ S(1 / 16, 1 / 16, 1 / 16)
     return model_faces(model, tints, m, d.get('tint') if d.get('tint', -1) >= 0 else None)
 
 
@@ -358,7 +379,25 @@ def target_faces(p):
 
 
 # F5: the camera sits 4 blocks behind the eye (1.62 m) along the look vector; here looking 20 degrees down.
-VIEWS = {'behind': ('背後（F5視点）', (0.0, 3.0, -3.76), (0.0, .25, 4.0)), 'side': ('横から', (-5.2, 1.9, 1.6), (0.0, 1.0, 1.9))}
+VIEWS = {'behind': ('背後（F5視点）', (0.0, 3.0, -3.76), (0.0, .25, 4.0)), 'side': ('横から', (-5.2, 1.9, 1.6), (0.0, 1.0, 1.9)),
+         # Ground skills (地割り etc.) are read from above: a high three-quarter view over the wielder's shoulder.
+         'high': ('斜め上から', (-4.0, 6.5, -1.5), (0.0, 0.0, 3.5))}
+
+
+GRASS_FLOOR = [None]
+
+
+def grass_floor():
+    """A grass floor (2-block tiles) so ground effects are judged on the ground they sit on."""
+    tile = Image.open(PACK / 'textures/combat_vfx/warrior_ref/preview_grass.png').convert('RGBA')
+    big = Image.new('RGBA', (32, 32))
+    for i in range(2):
+        for j in range(2): big.paste(tile, (16 * i, 16 * j))
+    faces = []
+    for x in range(-8, 8, 2):
+        for z in range(-6, 12, 2):
+            faces.append(([np.array((x + 2.0, 0, z + 2.0)), np.array((x + 0.0, 0, z + 2.0)), np.array((x + 0.0, 0, z + 0.0)), np.array((x + 2.0, 0, z + 0.0))], big))
+    return faces
 
 
 def render(scene, tick, view):
@@ -369,16 +408,21 @@ def render(scene, tick, view):
     camera = Camera(eye, target)
     camera.cam_dir_light = camera.cam(camera.eye + np.array((.3, 1.0, -.5)) / np.linalg.norm((.3, 1.0, -.5)))
     image = Image.new('RGBA', (W, H), BG + (255,))
-    grid(image, camera)
+    if GRASS_FLOOR[0] is not None:
+        draw_faces(image, camera, GRASS_FLOOR[0])
+    else:
+        grid(image, camera)
     px, py, pz, yaw = frame['player']
     pos = np.array((px, py, pz)) - origin
     cast = scene['castTick']
     swing = (tick - cast) / 6 if 0 <= tick - cast < 6 else None
     faces, hand = player_faces(pos, yaw, swing)
-    faces += weapon_faces(hand, weapon_pose(scene, tick))
+    # 引き摺り: the held sword is hidden while the dragged one is drawn (CoreArmamentPresentation.hide).
+    dragging = scene['id'].startswith('war_cry') and scene['castTick'] + scene['startup'] <= tick < scene['castTick'] + scene['startup'] + 42
+    if not dragging: faces += weapon_faces(hand, weapon_pose(scene, tick))
     for t in frame['targets']: faces += target_faces(np.array(t) - origin)
     for d in frame['displays']:
-        faces += display_faces({**d, 'offset': list(np.array(d['offset']) - origin)})
+        faces += display_faces({**d, 'offset': list(np.array(d['offset']) - origin)}, camera)
     draw_faces(image, camera, faces)
     draw = ImageDraw.Draw(image)
     draw.text((10, 6), f"{scene['name']}　{label}", font=FONT, fill=(236, 226, 206))
@@ -392,7 +436,12 @@ def main():
     parser.add_argument('--ids', default='dash,slam,whirl,war_wound,war_guard,war_ult,slam_shader,whirl_shader,war_ult_shader')
     parser.add_argument('--out', default='.tools/cast')
     parser.add_argument('--frames', default='.tools/warrior-cast-frames.json')
+    parser.add_argument('--wide', action='store_true', help='pull the high view back to see a long reach (about 10 m)')
+    parser.add_argument('--grass', action='store_true', help='draw a grass floor instead of the grid')
     args = parser.parse_args()
+    if args.grass: GRASS_FLOOR[0] = grass_floor()
+    if args.wide:
+        VIEWS['high'] = ('斜め上から（広く）', (-6.5, 10.0, 0.5), (0.0, 0.0, 5.8))
     scenes = {s['id']: s for s in json.loads((ROOT / args.frames).read_text())}
     out = ROOT / args.out; out.mkdir(parents=True, exist_ok=True)
     for sid in args.ids.split(','):
@@ -401,8 +450,8 @@ def main():
         ticks = range(0, min(len(scene['frames']), last + 8))
         frames = []
         for tick in ticks:
-            sheet = Image.new('RGB', (W * 2, H))
-            sheet.paste(render(scene, tick, 'behind'), (0, 0)); sheet.paste(render(scene, tick, 'side'), (W, 0))
+            sheet = Image.new('RGB', (W * 3, H))
+            for k, view in enumerate(('behind', 'side', 'high')): sheet.paste(render(scene, tick, view), (W * k, 0))
             frames.append(sheet)
         for name, ms in (('', 50), ('-slow', 150)):
             frames[0].save(out / f'{sid}{name}.gif', save_all=True, append_images=frames[1:], duration=ms, loop=0)

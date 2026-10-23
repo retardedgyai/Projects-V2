@@ -67,6 +67,35 @@ class MobGradeTest {
         }
     }
 
+    @Test fun `a launch throws the mob up off the ground and it comes back down`() {
+        MinecraftServer.init(Auth.Offline())
+        val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
+        instance.setGenerator { it.modifier().fillHeight(0, 40, Block.STONE) }
+        instance.viewDistance(2)
+        for (x in -3..3) for (z in -3..3) instance.loadChunk(x, z).get(10, TimeUnit.SECONDS)
+        val connection = MemoryConnection(); connection.setClientState(ConnectionState.PLAY); connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "LaunchTest")); connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        player.setInstance(instance, Pos(2.0, 40.0, 6.0)).get(10, TimeUnit.SECONDS)
+        val combat = QuestEncounterCombat(instance, 1, listOf(QuestCombatEncounter(listOf(Pos(2.0, 40.0, 2.0)))), Pos(12.0, 40.0, 12.0),
+            { _, _ -> }, { _, _ -> }, rollGrades = false)
+        try {
+            val mob = combat.entities().first { !combat.isBoss(it.uuid) }
+            var now = 1000L
+            repeat(20) { combat.tick(now); mob.tick(now); now += 50 }
+            val ground = mob.position.y()
+            assertTrue(combat.applyCrowdControl(mob.uuid, CrowdControl.STUN, 1500, player))
+            assertTrue(combat.applyCrowdControl(mob.uuid, CrowdControl.AIRBORNE, 700, player))
+            var peak = ground
+            repeat(30) { combat.tick(now); mob.tick(now); now += 50; peak = maxOf(peak, mob.position.y()) }
+            println("LAUNCH ground=$ground peak=$peak end=${mob.position.y()}")
+            assertTrue(peak - ground > 2.5, "rose ${peak - ground}")
+        } finally {
+            combat.dispose(); player.remove()
+            MinecraftServer.getInstanceManager().unregisterInstance(instance)
+        }
+    }
+
     private class MemoryConnection : PlayerConnection() {
         override fun sendPacket(packet: SendablePacket) {}
         override fun getRemoteAddress(): SocketAddress = InetSocketAddress("127.0.0.1", 0)

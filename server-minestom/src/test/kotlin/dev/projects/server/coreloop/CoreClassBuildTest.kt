@@ -10,17 +10,19 @@ class CoreClassBuildTest {
         assertEquals(6,CoreClass.entries.size)
         val icons=CoreClass.entries.flatMap { job ->
             val skills=CoreSkillCatalog.skills(job)
-            assertEquals(10,skills.size)
+            assertEquals(if(job==CoreClass.WARRIOR) 11 else 10,skills.size)  // the warrior has a third ultimate
             assertTrue(skills.take(8).none { it.ultimate });assertTrue(skills.drop(8).all { it.ultimate })
-            assertTrue(skills.any { it.gain>0 });assertTrue(skills.any { it.spend>0 })
-            assertTrue(skills.any { it.motion in setOf(CoreSkillMotion.GUARD,CoreSkillMotion.EVADE) })
+            // The warrior's beast is spent by the spender skills themselves (CoreWarriorRules), not by a cost.
+            assertTrue(skills.any { it.gain>0 });assertTrue(skills.any { it.spend>0 } || job==CoreClass.WARRIOR)
+            // Every class has a way out; the warrior's is the leap (跳び叩き), not a dodge skill.
+            assertTrue(skills.any { it.motion in setOf(CoreSkillMotion.GUARD,CoreSkillMotion.EVADE) } || job==CoreClass.WARRIOR && skills.any { it.icon==CoreWarriorLeap.ICON })
             skills.forEach { s ->
                 assertTrue(s.cooldown>0 && s.mana>=0 && s.startup>0 && s.pulses in 1..8)
                 assertEquals(0.0,if(job.magic) s.formula.ad else s.formula.ap)
             }
             skills.map { it.icon }
         }
-        assertEquals(60,icons.distinct().size);assertEquals(icons,CoreSkillCatalog.artNames)
+        assertEquals(61,icons.distinct().size);assertEquals(icons,CoreSkillCatalog.artNames)
         val font=javaClass.classLoader.getResourceAsStream("core-ui-pack/assets/projects/font/hud_skills.json")!!.bufferedReader().readText()
         icons.forEach { assertContains(font,"hud_skill_${it}.png") }
     }
@@ -29,7 +31,7 @@ class CoreClassBuildTest {
         assertEquals(listOf(7,1,2,3),CoreClassBuild().equip(0,7).skills)
         assertEquals(1,CoreClassBuild().equip(4,1).ultimate)
         assertFailsWith<IllegalArgumentException> { CoreClassBuild().equip(0,8) }
-        assertFailsWith<IllegalArgumentException> { CoreClassBuild().equip(4,2) }
+        assertFailsWith<IllegalArgumentException> { CoreClassBuild().equip(4,3) }  // the warrior's third ultimate is index 2
         assertFailsWith<IllegalArgumentException> { CoreClassBuild(first=1) }
     }
     @Test fun `tree requires parents excludes simultaneous keystones and refunds descendants`() {
@@ -53,14 +55,14 @@ class CoreClassBuildTest {
         assertFailsWith<IllegalArgumentException> { CoreJourney.fresh().copy(build=CoreClassBuild(nodes=7)) }
     }
     @Test fun `resource cost reduction is applied once`() {
-        val j=CoreJourney.legacy(build=CoreClassBuild(second=5,nodes=3))
+        val j=CoreJourney.legacy(job=CoreClass.ASSASSIN,build=CoreClassBuild(second=1,nodes=3))
         val s=CoreSkillCatalog.equipped(j)[1]
         assertEquals(26,s.spend)
         val state=CoreClassState();state.gain(26.0,j.job,j.build)
         state.spend(s,j.job,j.build);assertEquals(0.0,state.resource)
     }
     @Test fun `resource gains are per normal impact not per cleaved target and capped`() {
-        val s=CoreClassState();val j=CoreJourney.legacy()
+        val s=CoreClassState();val j=CoreJourney.legacy(job=CoreClass.ASSASSIN)
         repeat(20) { s.normalHit(j.job,UUID.randomUUID(),1,j.build) }
         assertEquals(12.0,s.resource)
         repeat(20) { s.normalHit(j.job,UUID.randomUUID(),it+2L,j.build) }

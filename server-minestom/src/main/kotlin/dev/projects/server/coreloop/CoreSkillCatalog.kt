@@ -18,6 +18,8 @@ data class CoreSkillDefinition(
     val retired: Boolean = false,
     /** Put on every enemy a hit lands on; bosses take it as break gauge damage instead. */
     val crowd: CrowdControl? = null, val crowdMillis: Long = 0,
+    /** A second crowd control put on with the first, lasting this long from the hit (地割り: thrown up, then stunned). */
+    val stunAfterMillis: Long = 0,
 ) {
     val tags get() = buildSet {
         add(CoreAttackTag.SKILL)
@@ -45,14 +47,16 @@ data class CoreSkillDefinition(
             add("現在 回復 ${CoreCombatMath.number(preview(sheet)*(1-conversion))} / 障壁 ${CoreCombatMath.number(preview(sheet)*conversion*sheet.shieldMultiplier)}")
         } else add("現在 ${CoreCombatMath.number(preview(sheet))}${if (pulses > 1) " / 全命中 ${CoreCombatMath.number(preview(sheet) * pulses)}" else ""}（装備・技能補正込み）")
         add(if(motion in setOf(CoreSkillMotion.HEAL,CoreSkillMotion.SHIELD)) "対象の被回復・星・守護聖人は別 / 障壁は最大HPの75%まで" else "敵防御・会心・弱点・固有効果・砥石は別計算")
-        add("${journey?.job?.resourceName ?: "固有資源"}：必要 $spend / 命中で +$gain")
+        add(if (journey?.job == CoreClass.WARRIOR) (if (icon in CoreWarriorRules.spenders) "獣：全部使う（0でも撃てる）" else "獣：当たると1つ溜まる")
+            else "${journey?.job?.resourceName ?: "固有資源"}：必要 $spend / 命中で +$gain")
         add("マナ $mana / 再使用 ${CoreCombatMath.number(cooldownTicks(sheet.mods) / 20.0)}秒")
         add("発生 ${CoreCombatMath.number(startupTicks(sheet) / 20.0)}秒 / ${if (type == CoreDamageType.MAGICAL) "詠唱速度" else "攻撃速度"}で短縮")
-        if(crowd != null) add("${crowd.label} ${CoreCombatMath.number(crowdMillis / 1000.0)}秒（ボスには効かない）")
+        if(crowd != null) add("${crowd.label} ${CoreCombatMath.number(crowdMillis / 1000.0)}秒" +
+            (if (stunAfterMillis > 0) "→スタン ${CoreCombatMath.number((stunAfterMillis - crowdMillis) / 1000.0)}秒" else "") + "（ボスには効かない）")
         if (journey != null && !retired) {
             val breakPower = CoreBreak.skill(journey.job, icon)
             if (breakPower > 0) add(if (journey.job == CoreClass.WARRIOR && icon == "slam")
-                "ボスの崩し ${CoreCombatMath.number(breakPower)}＋注いだ闘気10ごとに+1（最大+${CoreCombatMath.number(CoreBreak.SLAM_RAGE_MAX)}）・3段目の直後${CoreCombatMath.number(CoreBreak.FINISHER)}倍・根張りの直後${CoreCombatMath.number(CoreBreak.RIPOSTE)}倍"
+                "ボスの崩し ${CoreCombatMath.number(breakPower)}＋獣1つごとに+${CoreCombatMath.number(CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT)}・3段目の直後${CoreCombatMath.number(CoreBreak.FINISHER)}倍"
                 else "ボスの崩し ${CoreCombatMath.number(breakPower)}${if (pulses > 1) "（1回ごと）" else ""}")
         }
         if(motion == CoreSkillMotion.GUARD) add("最初の0.6秒：被害80%軽減 / 以降55%軽減 / ${duration/20.0}秒")
@@ -62,11 +66,10 @@ data class CoreSkillDefinition(
             add("1体へ1秒間隔・最大4打 / 術式獲得は最初の命中だけ")
             add("在域中40%減速（氷大成50%） / ボス10% / 退出後最大0.35秒")
         }
-        if (journey?.job == CoreClass.WARRIOR && icon in CoreWarriorRules.heavy) {
-            if (icon == "slam") {
-                add("闘気${CoreWarriorRules.RAGE_COST.toInt()}以上なら全部注ぎ込み、闘気1につき威力+${CoreCombatMath.number(CoreWarriorRules.SLAM_PERCENT_PER_RAGE)}%")
-                add("赤熱中に撃つと最大の威力で赤熱を締める")
-            } else add("闘気${CoreWarriorRules.RAGE_COST.toInt()}以上なら自動で${CoreWarriorRules.RAGE_COST.toInt()}使い、威力+${CoreWarriorRules.RAGE_BONUS_PERCENT}%")
+        if (journey?.job == CoreClass.WARRIOR && icon in CoreWarriorRules.spenders) {
+            add("獣1つごとに威力+${CoreWarriorRules.BEAST_DAMAGE_PERCENT_PER_STACK}%・ダウン中の敵にはさらに+${CoreWarriorRules.BEAST_DOWN_PERCENT_PER_STACK}%")
+            if (icon == "slam") add("獣0：約4m・怯み / 1：約6m・低く打ち上げ / 2：約8m・打ち上げ→スタン / 3：約8m・高く打ち上げ→長いスタン＋2度目の割れ")
+            add("振っている間は怯まない")
             if (icon == "slam") add("通常3段目の命中から${CoreCombatMath.number(CoreWarriorRules.FINISHER_TICKS/20.0)}秒以内：発生${CoreCombatMath.number(copy(startup = CoreWarriorRules.FINISHER_STARTUP).startupTicks(sheet)/20.0)}秒・威力+${CoreWarriorRules.FINISHER_BONUS_PERCENT}%")
         }
         if (journey != null) add("後隙 ${CoreCombatFeel.recovery(journey.job, this@CoreSkillDefinition)/20.0}秒 / 次の入力は0.3秒先行受付")
@@ -93,9 +96,9 @@ object CoreSkillCatalog {
             motion == CoreSkillMotion.RAY, motion != CoreSkillMotion.RAY, motion, range, radius, gain, spend, status, element, duration, ultimate)
     private val byClass: Map<CoreClass, List<CoreSkillDefinition>> = CoreClass.entries.associateWith(::buildSkills)
     fun skills(job: CoreClass): List<CoreSkillDefinition> = byClass.getValue(job)
-    /** Selectable catalog indices: normal 0..7 and ultimate 0..1, without retired entries. */
+    /** Selectable catalog indices: normal 0..7 and the ultimates after them (two, the warrior three), without retired entries. */
     fun normalChoices(job: CoreClass) = (0..7).filterNot { skills(job)[it].retired }
-    fun ultimateChoices(job: CoreClass) = (0..1).filterNot { skills(job)[8 + it].retired }
+    fun ultimateChoices(job: CoreClass) = (0 until skills(job).size - 8).filterNot { skills(job)[8 + it].retired }
     fun selectable(job: CoreClass, slot: Int, choice: Int) =
         if (slot == 4) choice in ultimateChoices(job) else slot in 0..3 && choice in normalChoices(job)
     /**
@@ -172,19 +175,26 @@ object CoreSkillCatalog {
                 .let { if (job == CoreClass.RANGER && coefficient > 0) it.copy(projectile = true) else it }
                 .let { if (retired) it.copy(retired = true) else it }
         return when (job) {
-            // 2026-10 rework (cooldown first): link 5s / heavy 10-12s / situational 16-20s / ultimate 60s + rage.
-            // Rage never gates a normal skill: the slam pours all of it in, the sweep takes 30, the cap starts a rampage (CoreWarriorRules).
+            // 2026-10 rework (cooldown first): link 5s / heavy 10-12s / situational 16-20s / ultimate 60s.
+            // The beast (CoreWarriorRules) never gates a skill: building skills feed it, the slam takes every stack.
             CoreClass.WARRIOR -> listOf(
-                s("轟進", "dash", "鉄塊の刃を突き出して突っ込み、敵を怯ませる。闘気を得る", CoreSkillMotion.LUNGE, 6.0, 1.2, mana=8, cd=100, startup=5).cc(CrowdControl.FLINCH, 300),
-                s("地割り", "slam", "溜めた闘気を全部叩き込んで地を割る。正面の敵はスタン。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE).cc(CrowdControl.STUN, 1000),
-                s("押し薙ぎ", "whirl", "前方180度を一度で薙ぎ、正面の敵をまとめて押し出す", CoreSkillMotion.CONE, 10.0, 2.0, mana=10, cd=200, startup=4, gain=0, radius=4.2).cc(CrowdControl.KNOCKBACK, 400),
-                s("根張り", "war_guard", "2秒踏みとどまって被害を減らし、受けた攻撃を闘気に変える。反撃は付かない", CoreSkillMotion.GUARD, 0.0, 0.0, mana=8, cd=400, startup=1, gain=0, duration=40),
-                s("地走り", "war_wound", "前方7mの地面に亀裂を走らせ、線上の敵の足を止める。闘気を得る", CoreSkillMotion.CONE, 5.0, 1.3, mana=8, cd=320, startup=3, radius=7.0).cc(CrowdControl.ROOT, 1500),
-                s("返し刃", "war_counter", "（廃止）受け流し専用の反撃", CoreSkillMotion.CONE, 10.0, 2.8, cd=130, startup=4, gain=0, spend=30, retired=true),
-                s("雄叫び", "war_cry", "（廃止）仲間に短い障壁", CoreSkillMotion.SHIELD, 12.0, .5, mana=18, cd=240, gain=0, radius=7.0, duration=100, retired=true),
-                s("破城突き", "war_breach", "（廃止）轟進へ統合", CoreSkillMotion.LUNGE, 8.0, 1.5, mana=18, cd=160, startup=8, status=CoreSkillStatus.EXPOSE, range=4.0, retired=true),
-                s("鉄槌", "war_ult", "闘気80を解放し、赤熱の大剣を三度振り下ろして敵を打ち上げる。赤熱中は闘気を使わない。途中の回避で中断可", CoreSkillMotion.CONE, 20.0, 2.4, mana=20, cd=1200, startup=18, pulses=3, gain=0, spend=80, radius=7.0, ult=true).cc(CrowdControl.AIRBORNE, 1000),
-                s("不屈の旗", "war_banner", "（廃止）仲間全員に大きな障壁", CoreSkillMotion.SHIELD, 50.0, 1.5, mana=25, cd=700, gain=0, spend=70, radius=10.0, duration=160, ult=true, retired=true))
+                s("轟進", "dash", "鉄塊の刃を突き出して突っ込み、敵を怯ませる。獣を溜める", CoreSkillMotion.LUNGE, 6.0, 1.2, mana=8, cd=100, startup=5).cc(CrowdControl.FLINCH, 300),
+                s("地割り", "slam", "溜めた獣を全部叩き込んで地を割る。獣が多いほど亀裂が長く、敵は高く打ち上がり長くスタン。獣3つなら亀裂の先でもう一度割れる。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE).cc(CrowdControl.AIRBORNE, 700).copy(stunAfterMillis = 1500),
+                // 狂乱 / 天落とし / 大地崩し (Creator 2026-10-23) take the dropped 押し薙ぎ / 根張り and the retired 返し刃's
+                // slots and ids, so their HUD art slots stay; their icons are still to be drawn.
+                s("狂乱", "whirl", "踏み込みながら続けて振り、最後は真上から振り下ろす。獣の数だけ振りが増える。振っている間は怯まない", CoreSkillMotion.CONE, 6.0, 1.1, mana=12, cd=200, startup=4, gain=0, radius=3.6).cc(CrowdControl.FLINCH, 300),
+                s("天落とし", "war_guard", "高く跳び上がって叩き落とす。着地の衝撃が輪になって外へ広がる。獣の数だけ輪が増える（最大3重）。空中で少し曲げられる", CoreSkillMotion.CONE, 14.0, 2.4, mana=15, cd=280, startup=6, gain=0, range=CoreWarriorLeap.MAX_REACH, radius=8.0).cc(CrowdControl.AIRBORNE, 600),
+                // 跳び叩き (Creator 2026-10-22) takes the retired 地走り's slot and id (CoreWarriorLeap).
+                s("跳び叩き", "war_wound", "狙った地点へ弧を描いて跳び、着地の周りを叩いて短くスタン。空中で少し曲げられる。獣を溜める", CoreSkillMotion.CONE, 6.0, 1.4, mana=10, cd=180, startup=4, range=CoreWarriorLeap.MAX_REACH, radius=CoreWarriorLeap.LANDING_RADIUS).cc(CrowdControl.STUN, 600),
+                s("大地崩し", "war_counter", "大剣を地面に突き立て、周り一面の地面を砕いて敵をまとめて打ち上げる。獣が多いほど広く高い", CoreSkillMotion.NOVA, 12.0, 2.0, mana=15, cd=320, startup=14, gain=0, radius=5.0).cc(CrowdControl.AIRBORNE, 600),
+                // 引き摺り (Creator 2026-10-23) takes the retired 雄叫び's slot and id.
+                s("引き摺り", "war_cry", "大剣を片手で引きずって2秒歩く（自分で動ける）。刃に触れた雑魚は引っかかってついて来て、最後の振り抜きでまとめて叩きつける。獣を溜める", CoreSkillMotion.CONE, 10.0, 1.8, mana=12, cd=240, startup=3, radius=3.6).cc(CrowdControl.STUN, 700),
+                // 斬り上げ (Creator 2026-10-23) takes the retired 破城突き's slot and id.
+                s("斬り上げ", "war_breach", "大剣を引きずって真上へ振り上げ、正面の敵を高く打ち上げる。ジャンプを押していれば自分も追って跳ぶ。打ち上げた敵に地割りを当てると叩き落とし。獣を溜める", CoreSkillMotion.CONE, 9.0, 1.8, mana=10, cd=180, startup=8, radius=3.4).cc(CrowdControl.AIRBORNE, 1200),
+                // Ultimates (Creator 2026-10-23): 全力の一振り, 狂戦士の甲冑 and 獣の目覚め. The warrior alone has three.
+                s("全力の一振り", "war_ult", "大剣を担いで溜め（押している間、最大2秒）、離すと真上から渾身の一振り。地面が前へ大きく割れ、線上を打ち上げる。溜め中は怯まない。獣を全部使う", CoreSkillMotion.CONE, 30.0, 4.0, mana=20, cd=1200, startup=10, gain=0, radius=12.0, ult=true).cc(CrowdControl.AIRBORNE, 1000),
+                s("狂戦士の甲冑", "war_banner", "10秒間、体から血が流れ、鼓動のたびに血しぶきが散る。CCも怯みも効かず、動きと振りが速くなり、獣が満ちたまま減らない。代わりに体力が毎秒2%ずつ減る（1で止まる）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=20, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
+                s("獣の目覚め", "war_awaken", "獣3つの時だけ使える。8秒間、獣が減らず、獣を使う技の再使用が半分になる", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=15, cd=1200, startup=2, gain=0, radius=0.0, duration=160, ult=true))
             CoreClass.MAGE -> listOf(
                 s("火炎弾", "firebolt", "火の術式を刻む。直前と違う属性なら獲得量増加", CoreSkillMotion.RAY, 8.0, 1.4, cd=60, startup=5, element=1),
                 s("霜の波紋", "frost_nova", "周囲を凍てつかせる。火や雷からつなぐと術式が育つ", CoreSkillMotion.NOVA, 10.0, 1.0, cd=110, startup=10, status=CoreSkillStatus.SLOW, element=2).cc(CrowdControl.ROOT, 1200),

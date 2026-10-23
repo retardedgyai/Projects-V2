@@ -83,10 +83,31 @@ internal object CoreArmamentPresentation {
 
     fun cancel(player: Player) { player.removeTag(clipTag) }
 
+    /** 引き摺り: the held weapon's model is swapped out until [until] (a dragged one is drawn instead), then restored. */
+    private data class Hidden(val model: String, val until: Long)
+    private val hiddenTag = Tag.Transient<Hidden>("projects_armament_hidden")
+    const val HIDDEN_MODEL = "projects:combat_vfx/warrior_ref/empty"
+    fun hide(player: Player, ticks: Int) {
+        val item = player.itemInMainHand
+        val model = item.get(DataComponents.ITEM_MODEL) ?: return
+        if (model !in models && player.getTag(hiddenTag) == null) return
+        val original = player.getTag(hiddenTag)?.model ?: model
+        cancel(player)
+        player.setTag(hiddenTag, Hidden(original, player.aliveTicks + ticks))
+        player.setItemInMainHand(item.with(DataComponents.ITEM_MODEL, HIDDEN_MODEL))
+    }
+    fun show(player: Player) {
+        val hidden = player.getTag(hiddenTag) ?: return
+        player.removeTag(hiddenTag)
+        val item = player.itemInMainHand
+        if (item.get(DataComponents.ITEM_MODEL) == HIDDEN_MODEL) player.setItemInMainHand(item.with(DataComponents.ITEM_MODEL, hidden.model))
+    }
+
     fun tick(player: Player, packed: Boolean) {
         // Hand-held equipment only, 10 fps. No background timers or entities.
         // Do not churn container/cursor projections while a menu is open.
-        if (!packed || player.instance == null || player.openInventory != null || player.isRemoved) { cancel(player); return }
+        if (!packed || player.instance == null || player.openInventory != null || player.isRemoved) { cancel(player); show(player); return }
+        player.getTag(hiddenTag)?.let { if (player.aliveTicks >= it.until) show(player) else return }
         val old = player.itemInMainHand
         val clip = player.getTag(clipTag)
         val actionPose = clip?.takeIf { it.instanceId == player.instance.uuid && it.weapon == frame(old, 0) }

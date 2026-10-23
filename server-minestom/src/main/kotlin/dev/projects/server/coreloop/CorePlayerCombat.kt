@@ -89,10 +89,17 @@ internal class CorePlayerCombat(
     private val feel get() = CoreCombatFeel.profile(classId)
     /** Warrior: a connected third normal hit opens a short window for a fast, heavy slam. */
     private var finisherUntil = -1L
-    /** Warrior: rage hit the cap; full rage, harder hits and faster swings until this tick (CoreWarriorRules). */
-    private var rampageUntil = -1L
-    private var lastHurtRage = -100L
-    val raging get() = classId == CoreClass.WARRIOR && tickNumber < rampageUntil
+    /** Warrior: beast built in [beastTick]; one action never builds more than [CoreWarriorRules.BEAST_PER_ACTION]. */
+    private var beastTick = -1L
+    private var beastThisTick = 0.0
+    private var lastNormalBeast = -1L
+    /** Warrior ultimates: 狂戦士の甲冑 and 獣の目覚め last until these ticks. */
+    private var armorUntil = -1L
+    private var awakenUntil = -1L
+    val armored get() = classId == CoreClass.WARRIOR && tickNumber < armorUntil
+    val awakened get() = classId == CoreClass.WARRIOR && tickNumber < awakenUntil
+    /** 斬り上げ: enemies it threw up and until when they count as in the air (叩き落とし). */
+    private val launched = mutableMapOf<UUID, Long>()
     private var whetstoneUntil = 0L
     private var shot: Pair<Long, Vec>? = null
     private var skillBoost = 1.0
@@ -101,15 +108,13 @@ internal class CorePlayerCombat(
     /** Crowd control this player is under (enemy attacks now, other players in PvP fields). */
     internal val crowd = CorePlayerCrowdControl()
     private var movementHeld = false
-    /** Warrior: 根張り caught a blow; a 地割り before this tick is the return strike (CoreBreak.RIPOSTE). */
-    private var riposteUntil = -1L
     val classId get() = journey().job
     val skillDefinitions get() = CoreSkillCatalog.equipped(journey(), statSource())
     val skillNames get() = skillDefinitions.map { it.name }
     fun skillAvailable(index: Int) = index in 0..4 && (journey().legacy || journey().level >= CoreSkillCatalog.unlockLevels[index])
     fun resourceAvailable(index: Int) = classState.canCast(skillDefinitions[index], journey().build)
-    val weaponHint get() = "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}${if (raging) " 赤熱" else ""}"
-    val combatCue get() = crowd.cue(tickNumber) ?: CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil,rampageUntil)
+    val weaponHint get() = "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}"
+    val combatCue get() = crowd.cue(tickNumber) ?: CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil)
     val resource get() = classState.resource
     val resourceMax get() = classState.cap(classId)
     val shield get() = classState.shield
@@ -135,9 +140,17 @@ internal class CorePlayerCombat(
 
     private data class PendingSkill(val id: Int, val definition: CoreSkillDefinition, val origin: Pos, val direction: Vec, val startup: Int,
         var elapsed: Int = 0, var gained: Boolean = false, val counter: Boolean = false,
+        /** Warrior: how many beast stacks the spender took at the cast. */
+        val empowered: Double = 0.0,
         val boost: Double = 1.0, val gardenCells: List<Pos>? = null,
         /** Break gauge damage each hit on a boss does (CoreBreak), fixed at the cast. */
-        val breakAmount: Double = 0.0)
+        val breakAmount: Double = 0.0,
+        /** 跳び叩き / 天落とし: the tick the body was launched; the action lasts until it lands. */
+        var leapTick: Long = -1L,
+        /** 天落とし: where it landed and when; the rings go out from there (CoreWarriorRules.SKYFALL_RINGS). */
+        var landAt: Pos? = null, var landTick: Long = -1L,
+        /** 引き摺り: when the drag began, and the regular enemies hooked on the blade so far. */
+        var dragTick: Long = -1L, val hooked: MutableSet<UUID> = mutableSetOf())
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
@@ -155,7 +168,7 @@ internal class CorePlayerCombat(
             return
         }
         val weapon = CoreWeaponCombat.of(weaponBase())
-        normal.press(attackSpeed * if (raging) CoreWarriorRules.RAMPAGE_HASTE else 1.0, quick = classId == CoreClass.ASSASSIN, immediate = feel.immediateNormal,
+        normal.press(attackSpeed * if (armored) CoreWarriorRules.ARMOR_HASTE else 1.0, quick = classId == CoreClass.ASSASSIN, immediate = feel.immediateNormal,
             attacks = weapon?.attacks ?: GreatswordCombo.DEFAULT)?.let { swing ->
             nextNormalAt = tickNumber + swing.totalTicks
             normalEmpowerment = if(classId == CoreClass.TEMPLAR && classState.counterUntil >= tickNumber) 1.35 else 1.0
@@ -167,14 +180,22 @@ internal class CorePlayerCombat(
         }
     }
 
-    fun skill(id: Int) {
+    /** Dev only (/vfx): cast a skill with cooldowns, mana and the class resource refilled, to film its visuals. */
+    fun devCast(id: Int) {
+        readyAt.fill(0L); manaValue = maxMana.toDouble(); classState.fill(classId)
+        skill(id, unlocked = true)
+    }
+
+    fun skill(id: Int, unlocked: Boolean = false) {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
         if (id !in 0..4 || defeated || encounter() == null || player.openInventory != null || staggered) return
-        if (!skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
+        if (!unlocked && !skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
         if (!crowd.canCast(tickNumber)) { notice("${crowd.cue(tickNumber) ?: "行動不能"}：技を使えません"); return }
         val definition = skillDefinitions[id]
-        if (raging) classState.fill(classId) // The ultimate is free while raging: rage refills before and after the spend.
+        if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN && classState.resource < CoreWarriorRules.BEAST_MAX) {
+            notice("獣が3つ必要です"); return
+        }
         if (!classState.canCast(definition, journey().build)) { notice("${classId.resourceName}が足りません（必要 ${definition.spend} / 現在 ${resource.toInt()}）"); return }
         val cost = definition.mana
         if (mana < cost) { notice("マナが足りません（必要 $cost）"); return }
@@ -209,31 +230,34 @@ internal class CorePlayerCombat(
             definition.motion !in setOf(CoreSkillMotion.SHIELD,CoreSkillMotion.HEAL,CoreSkillMotion.GUARD)
         if (counter) { skillBoost *= 1.35; classState.counterUntil = -1 }
         var castDefinition = definition
-        // Break is fixed at the cast: a rampage that the slam closes still counts for that slam.
-        val rampageAtCast = raging
         var breakAmount = CoreBreak.skill(classId, definition.icon)
-        if (classId == CoreClass.WARRIOR && definition.icon in CoreWarriorRules.heavy) {
-            // Rage never gates the heavy skills; when it is there they take it for a heavier hit.
-            if (definition.icon == "slam") {
-                // The slam pours in everything; during a rampage it is the closing blow.
-                val poured = classState.consumeAll(CoreWarriorRules.RAGE_COST)
-                skillBoost *= 1 + poured * CoreWarriorRules.SLAM_PERCENT_PER_RAGE / 100.0
-                breakAmount = CoreBreak.slam(poured)
-                if (tickNumber <= riposteUntil) { breakAmount *= CoreBreak.RIPOSTE; riposteUntil = -1; notice("返しの一撃") }
-                if (raging) { skillBoost *= 1 + CoreWarriorRules.RAMPAGE_DAMAGE_PERCENT / 100.0; rampageUntil = -1; classState.drain() }
-            } else if (classState.consume(CoreWarriorRules.RAGE_COST)) skillBoost *= 1 + CoreWarriorRules.RAGE_BONUS_PERCENT / 100.0
+        var beastSpent = 0
+        if (classId == CoreClass.WARRIOR && definition.icon in CoreWarriorRules.spenders) {
+            // The beast never gates a spender; whatever whole stacks are there, it takes them all for a heavier hit.
+            // 獣の目覚め / 狂戦士の甲冑: the beast stays full, every spender takes all three and keeps them.
+            beastSpent = if (awakened || armored) CoreWarriorRules.BEAST_MAX.toInt() else classState.takeStacks()
+            skillBoost *= 1 + beastSpent * CoreWarriorRules.BEAST_DAMAGE_PERCENT_PER_STACK / 100.0
+            breakAmount += beastSpent * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT
             if (definition.icon == "slam" && tickNumber <= finisherUntil) {
                 skillBoost *= 1 + CoreWarriorRules.FINISHER_BONUS_PERCENT / 100.0; finisherUntil = -1
                 breakAmount *= CoreBreak.FINISHER
                 castDefinition = definition.copy(startup = minOf(CoreWarriorRules.FINISHER_STARTUP, definition.startup))
             }
+            castDefinition = CoreWarriorRules.shape(castDefinition, beastSpent)
         }
-        readyAt[id] = tickNumber + cooldownTicks(id)
+        readyAt[id] = tickNumber + if (awakened && definition.icon in CoreWarriorRules.spenders && !definition.ultimate) cooldownTicks(id) / 2 else cooldownTicks(id)
+        if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.ARMOR) {
+            armorUntil = tickNumber + definition.duration; classState.fill(classId); crowd.clear(); staggerUntil = -1
+            notice("狂戦士の甲冑"); sound(SoundEvent.ENTITY_WITHER_SPAWN, .5f, .6f)
+        }
+        if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN) {
+            awakenUntil = tickNumber + definition.duration; notice("獣の目覚め"); sound(SoundEvent.ENTITY_WARDEN_ROAR, .6f, .8f)
+        }
         val startup = castDefinition.startupTicks(sheet)
         pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
             if (definition.motion == CoreSkillMotion.RAY) player.position.direction() else flatFacing(), startup,
-            counter = counter, boost = skillBoost, gardenCells = gardenCells,
-            breakAmount = breakAmount * if (rampageAtCast) CoreBreak.RAMPAGE else 1.0)
+            empowered = beastSpent.toDouble(), counter = counter, boost = skillBoost,
+            gardenCells = gardenCells, breakAmount = breakAmount)
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
@@ -270,9 +294,34 @@ internal class CorePlayerCombat(
 
     fun tick() {
         tickNumber++
+        if (armorUntil >= 0 && !armored) armorUntil = -1
+        if (armored) {
+            // 狂戦士の甲冑: the beast held full; the body burns for it, never below 1.
+            classState.fill(classId)
+            if (tickNumber % 10 == 0L && health > 1.0) {
+                health = (health - maxHealth * CoreWarriorRules.ARMOR_BURN_PERCENT_PER_SECOND / 200.0).coerceAtLeast(1.0); syncVanillaHealth()
+            }
+            // The look: blood runs off the body and red scale-dust rises (every 4 ticks), and on each heartbeat
+            // (once a second, with the burn) blood sprays out of the body.
+            skillDefinitions.firstOrNull { it.icon == CoreWarriorRules.ARMOR }?.let { d ->
+                if (tickNumber % 4 == 0L) vfx.playSkill(CoreSkillEffect(classId, d, player.position, flatFacing(),
+                    pulse = CoreWarriorRules.ARMOR_BLEED_PULSE + (tickNumber / 4 % 97).toInt()))
+                if ((armorUntil - tickNumber) % 20 == 0L) vfx.playSkill(CoreSkillEffect(classId, d, player.position, flatFacing(),
+                    pulse = CoreWarriorRules.ARMOR_BEAT_PULSE + (tickNumber / 20 % 97).toInt()))
+            }
+        }
+        if (awakened && tickNumber % 2 == 0L) {
+            // 獣の目覚め: the beast is worn: smoke clings to the body and streams off it the whole time.
+            skillDefinitions.firstOrNull { it.icon == CoreWarriorRules.AWAKEN }?.let { d ->
+                vfx.playSkill(CoreSkillEffect(classId, d, player.position, flatFacing(), pulse = CoreWarriorRules.AWAKEN_CLING_PULSE + (tickNumber / 2 % 97).toInt()))
+            }
+        }
+        geyser?.let { g ->
+            vfx.playSkill(CoreSkillEffect(g.job, g.skill, g.origin, g.direction, pulse = CoreWarriorRules.FULL_SWING_GEYSER_PULSE + geyserStep))
+            if (++geyserStep >= CoreWarriorRules.FULL_SWING_GEYSER_STEPS) { geyser = null; geyserStep = 0 }
+        }
         visualContactsThisTick = 0
         classState.tick(tickNumber)
-        if (classId == CoreClass.WARRIOR) rampageTick()
         previousPosition?.let { if (it.distance(player.position) > .035) classState.stationarySince = tickNumber }
         previousPosition = player.position
         damageLabels.removeAll { (entity, expiry) -> if (tickNumber >= expiry) { entity.remove(); true } else false }
@@ -334,10 +383,71 @@ internal class CorePlayerCombat(
                 }
                 return@let
             }
+            if (action.leapTick >= 0) {
+                // In the air: the client flies the arc; the slam comes down when the body is back on the ground.
+                val air = tickNumber - action.leapTick
+                if (air >= CoreWarriorLeap.MIN_AIR_TICKS && grounded() || air >= CoreWarriorLeap.MAX_AIR_TICKS) {
+                    action.leapTick = -1
+                    if (action.definition.icon == CoreWarriorRules.SKYFALL) {
+                        action.landAt = player.position; action.landTick = tickNumber
+                        skyfallRing(enemies, action, 0)
+                        if (!actionsValid(enemies, epoch)) return
+                        if (action.definition.pulses <= 1) pending = null
+                        return@let
+                    }
+                    emitSkillPulse(player.position, CoreWarriorLeap.LANDING_RADIUS)
+                    strike(enemies, player.position, action.direction, CoreWarriorLeap.LANDING_RADIUS, -1.0, 1.0)
+                    if (!actionsValid(enemies, epoch)) return
+                    pending = null
+                }
+                return@let
+            }
+            if (action.dragTick >= 0) {
+                // 引き摺り: the blade drags at the warrior's side; what it touches is hooked and comes along.
+                val t = tickNumber - action.dragTick
+                val tip = dragTip()
+                for (target in enemies.combatTargets()) {
+                    if (target.id in action.hooked || enemies.isBoss(target.id)) continue
+                    val p = enemies.positionOf(target.id) ?: continue
+                    if (kotlin.math.hypot(p.x() - tip.x(), p.z() - tip.z()) <= CoreWarriorRules.DRAG_HOOK && abs(p.y() - tip.y()) < 2.0)
+                        action.hooked += target.id
+                }
+                action.hooked.removeIf { !enemies.isAlive(it) }
+                for (id in action.hooked) enemies.dragTo(id, tip)
+                if (t % 3 == 0L) vfx.playSkill(CoreSkillEffect(classId, action.definition, tip, flatFacing(), pulse = 1 + (t / 3).toInt()))
+                if (t >= CoreWarriorRules.DRAG_TICKS) {
+                    // The blade comes round and down in front: everything in front, and everything it dragged, is hit.
+                    action.dragTick = -1
+                    CoreArmamentPresentation.show(player)
+                    vfx.playSkill(CoreSkillEffect(classId, action.definition, player.position, flatFacing(), pulse = CoreWarriorRules.DRAG_FINISH_PULSE))
+                    hitThisStrike.clear()
+                    strike(enemies, player.position, flatFacing(), action.definition.radius, CoreCombatFeel.minDot(action.definition.icon), 1.0)
+                    if (!actionsValid(enemies, epoch)) return
+                    for (id in action.hooked.toList()) if (id !in hitThisStrike && enemies.isAlive(id)) {
+                        hit(enemies, id, 1.0, skill = true)
+                        if (!actionsValid(enemies, epoch)) return
+                    }
+                    pending = null
+                }
+                return@let
+            }
+            if (action.landTick >= 0) {
+                // 天落とし: each ring goes out a little later than the one inside it.
+                val since = tickNumber - action.landTick
+                val ring = (since / CoreWarriorRules.SKYFALL_RING_TICKS).toInt()
+                if (since % CoreWarriorRules.SKYFALL_RING_TICKS == 0L && ring in 1 until action.definition.pulses) {
+                    skyfallRing(enemies, action, ring)
+                    if (!actionsValid(enemies, epoch)) return
+                }
+                if (ring >= action.definition.pulses - 1) pending = null
+                return@let
+            }
             val pulse = action.elapsed - action.startup
-            if (pulse >= 0 && pulse % 8 == 0 && pulse / 8 < action.definition.pulses) {
+            val every = CoreCombatFeel.pulseTicks(action.definition)
+            if (pulse >= 0 && pulse % every == 0 && pulse / every < action.definition.pulses) {
                 executeSkill(enemies, action)
                 if (!actionsValid(enemies, epoch)) return
+                if (action.leapTick >= 0) return@let
             }
             if (pulse >= 0 && pulse % 8 == 4 && pulse / 8 + 1 < action.definition.pulses && action.definition.motion == CoreSkillMotion.FIELD) {
                 vfx.playSkill(CoreSkillEffect(classId, action.definition, action.origin, action.direction,
@@ -367,6 +477,8 @@ internal class CorePlayerCombat(
     private fun speedFactor(): Double {
         if (defeated || staggered || !crowd.canMove(tickNumber)) return 0.0
         val action = pending
+        if (armored && (action == null || action.elapsed >= action.startup)) return CoreWarriorRules.ARMOR_HASTE
+        if (action != null && action.dragTick >= 0) return CoreWarriorRules.DRAG_SPEED
         if (action != null && action.elapsed < action.startup)
             return if (action.startup >= HEAVY_STARTUP || action.definition.ultimate) 0.0 else CAST_SPEED
         // Swinging: the weapon's own slowdown (Better Combat manner, CoreWeaponCombat), else the general one.
@@ -390,7 +502,9 @@ internal class CorePlayerCombat(
 
     /** A heavy unguarded hit staggers (≥20% of max HP) or knocks down (≥45%): the action is lost, the body is thrown. */
     private fun react(share: Double) {
-        if (share < STAGGER_SHARE || staggered) return
+        if (share < STAGGER_SHARE || staggered || armored) return
+        // A warrior spender does not stop for a blow (Destroyer super armor); the damage still lands.
+        if (classId == CoreClass.WARRIOR && pending?.definition?.icon?.let { it in CoreWarriorRules.spenders } == true) return
         val down = share >= KNOCKDOWN_SHARE
         queued = null; dodgeQueuedUntil = -1; shot = null
         if (normal.isAttacking) normal.endRecovery()
@@ -459,7 +573,7 @@ internal class CorePlayerCombat(
         if (connected && swing.finisher && classId == CoreClass.WARRIOR) {
             finisherUntil = tickNumber + CoreWarriorRules.FINISHER_TICKS
             if (journey().build.keystone == 1) skillDefinitions.forEachIndexed { i, s ->
-                if (s.icon in CoreWarriorRules.heavy) readyAt[i] = maxOf(tickNumber, readyAt[i] - CoreWarriorRules.SAINT_REFUND_TICKS)
+                if (s.icon in CoreWarriorRules.spenders) readyAt[i] = maxOf(tickNumber, readyAt[i] - CoreWarriorRules.SAINT_REFUND_TICKS)
             }
         }
         return actionsValid(enemies, epoch)
@@ -472,6 +586,67 @@ internal class CorePlayerCombat(
         fun pulse(at: Pos, radius: Double = s.radius) {
             emitSkillPulse(at, radius)
             strike(enemies, at, action.direction, radius, -1.0, 1.0)
+        }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorLeap.ICON) { leap(action); return }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.SKYFALL) { leap(action, high = true); return }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.DRAG) {
+            // 引き摺り: the held sword is hidden and a dragged one drawn at the side for the whole walk.
+            val model = player.itemInMainHand.get(net.minestom.server.component.DataComponents.ITEM_MODEL)
+                ?.takeIf { it.startsWith("projects:weapons/") }?.removePrefix("projects:") ?: "weapons/greatsword_t1"
+            CoreArmamentPresentation.hide(player, CoreWarriorRules.DRAG_TICKS + 4)
+            action.dragTick = tickNumber
+            vfx.playSkill(CoreSkillEffect(classId, s, player.position, flatFacing(), pulse = 0, weaponModel = model))
+            return
+        }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.LAUNCHER) {
+            // 斬り上げ: the blade comes up from the ground; who it throws up is marked for 叩き落とし. Holding jump sends
+            // the warrior up after them (a push the client flies, as with the leaps).
+            emitSkillPulse(player.position, s.radius)
+            val before = enemies.combatTargets().map { it.id }.toSet()
+            strike(enemies, player.position, action.direction, s.radius, CoreCombatFeel.minDot(s.icon), 1.0)
+            for (id in before) if (enemies.isAlive(id) && CrowdControl.AIRBORNE in enemies.crowdControl(id)) launched[id] = tickNumber + CoreWarriorRules.LAUNCHED_TICKS
+            if (player.inputs().jump()) player.velocity = CoreWarriorLeap.launch(player.position,
+                player.position.add(flatFacing().mul(1.2)).asVec(), 4.2).mul(20.0)
+            return
+        }
+        if (classId == CoreClass.WARRIOR && s.icon == "slam") {
+            // 地割り, plus 叩き落とし on anything 斬り上げ threw up that is still above the crack (out of the usual height).
+            launched.entries.removeIf { (id, until) -> until < tickNumber || !enemies.isAlive(id) }
+            smashTargets = launched.keys.filter { id ->
+                val p = enemies.positionOf(id) ?: return@filter false
+                val dx = p.x() - player.position.x(); val dz = p.z() - player.position.z()
+                val d = kotlin.math.hypot(dx, dz)
+                d <= s.radius && (dx * action.direction.x() + dz * action.direction.z()) >= .5 * d
+            }.toSet()
+            emitSkillPulse(player.position, s.radius)
+            val hitBefore = hitThisStrike.also { it.clear() }
+            strike(enemies, player.position, action.direction, s.radius, CoreCombatFeel.minDot(s.icon), 1.0)
+            if (!actionsValid(enemies, epoch)) { smashTargets = emptySet(); return }
+            for (id in smashTargets) {
+                launched.remove(id)
+                if (id !in hitBefore) hit(enemies, id, 1.0, skill = true)  // too high for the usual height check
+                if (!actionsValid(enemies, epoch)) { smashTargets = emptySet(); return }
+                smashDown(enemies, id)
+            }
+            smashTargets = emptySet()
+            return
+        }
+        if (classId == CoreClass.WARRIOR && (s.icon == CoreWarriorRules.ARMOR || s.icon == CoreWarriorRules.AWAKEN)) {
+            // The two ultimates that change the warrior (set at the cast); here only the beast breaking loose shows.
+            emitSkillPulse(player.position, 2.0)
+            return
+        }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.FRENZY) {
+            // 狂乱: each swing steps in (a push the client moves, not a carried move) and reaches a little further;
+            // the last is the overhead blow.
+            val swing = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(s)
+            val last = swing == s.pulses - 1
+            val push = flatFacing().mul(if (last) 7.0 else 5.0)
+            player.velocity = Vec(push.x(), player.velocity.y(), push.z())
+            val reach = s.radius + .3 * swing + if (last) .6 else 0.0
+            emitSkillPulse(player.position, reach)
+            strike(enemies, player.position, action.direction, reach, if (last) .6 else .35, if (last) 2.0 else 1.0)
+            return
         }
         when (s.motion) {
             CoreSkillMotion.RAY -> rangedStrike(enemies, action.direction, s.range, .65,
@@ -611,8 +786,12 @@ internal class CorePlayerCombat(
             if (classState.focus == id) classMultiplier *= 1 + classState.focusHits * .04
             if (build.keystone == 0 && tickNumber - classState.stationarySince >= 40) classMultiplier *= 1.25
         }
-        if (classId == CoreClass.WARRIOR && build.keystone == 0 && resource >= 60) classMultiplier *= 1.2
-        if (raging) classMultiplier *= 1 + CoreWarriorRules.RAMPAGE_DAMAGE_PERCENT / 100.0
+        if (classId == CoreClass.WARRIOR && build.keystone == 0 && resource >= 2) classMultiplier *= 1.2
+        val beastSpender = skill && classId == CoreClass.WARRIOR && definition!!.icon in CoreWarriorRules.spenders
+        if (skill) hitThisStrike += id
+        if (skill && id in smashTargets) classMultiplier *= 1 + CoreWarriorRules.SMASH_DOWN_PERCENT / 100.0
+        // The beast let loose on a downed enemy: the window the warrior builds toward.
+        if (beastSpender && enemies.isBroken(id)) classMultiplier *= 1 + skillAction!!.empowered * CoreWarriorRules.BEAST_DOWN_PERCENT_PER_STACK / 100.0
         if (classId == CoreClass.HEALER && build.keystone == 0) classMultiplier *= 1.25
         if (classId == CoreClass.TEMPLAR && build.keystone == 2) classMultiplier *= .9
         val consumeMark = skill && classId != CoreClass.WARRIOR && classState.marked(id, tickNumber) && definition!!.spend > 0
@@ -636,12 +815,18 @@ internal class CorePlayerCombat(
         if (!actionsValid(enemies, epoch)) return
         if (!skill) {
             classState.normalHit(classId, id, tickNumber, build)
+            // Once per swing, however many it cleaves.
+            if (classId == CoreClass.WARRIOR && lastNormalBeast != tickNumber) {
+                lastNormalBeast = tickNumber; feedBeast(CoreWarriorRules.BEAST_PER_NORMAL * if (heavy) 2 else 1)
+            }
             if(weaponBase() == CoreWeaponBase.CONDUIT && lastConduitGain != tickNumber) {
-                classState.gain(4.0, classId, build); lastConduitGain = tickNumber
+                if (classId == CoreClass.WARRIOR) feedBeast(CoreWarriorRules.BEAST_PER_NORMAL) else classState.gain(4.0, classId, build)
+                lastConduitGain = tickNumber
             }
         }
         else skillAction?.takeUnless { it.gained }?.let { action ->
             action.gained = true; classState.skillHit(classId, action.definition, build)
+            if (classId == CoreClass.WARRIOR && action.definition.icon !in CoreWarriorRules.spenders) feedBeast(CoreWarriorRules.BEAST_PER_SKILL)
         }
         if (consumeMark) { classState.consumeMark(id, tickNumber); if (classId == CoreClass.ASSASSIN && build.keystone == 1) nextDodge = 0 }
         if (classId == CoreClass.TEMPLAR) enemies.taunt(id, player)
@@ -665,15 +850,18 @@ internal class CorePlayerCombat(
             }
             CoreSkillStatus.NONE -> Unit
         }
-        // Warrior weight: the third normal hit and every hit while raging make the target flinch.
+        // Warrior weight: the third normal hit makes the target flinch.
         val crowd = definition?.crowd?.let { it to definition.crowdMillis }
-            ?: if (classId == CoreClass.WARRIOR && (raging || (!skill && heavy))) CrowdControl.FLINCH to CoreWarriorRules.FLINCH_MILLIS else null
+            ?: if (classId == CoreClass.WARRIOR && !skill && heavy) CrowdControl.FLINCH to CoreWarriorRules.FLINCH_MILLIS else null
         if (enemies.isBoss(id)) {
             // Bosses take break, not crowd control: the warrior breaks the most, every class a little (CoreBreak).
-            val amount = if (skill) skillAction?.breakAmount ?: 0.0
-                else CoreBreak.normal(classId, heavy) * if (raging) CoreBreak.RAMPAGE else 1.0
+            val amount = if (skill) skillAction?.breakAmount ?: 0.0 else CoreBreak.normal(classId, heavy)
             enemies.applyBreak(id, amount, player)
-        } else if (crowd != null) enemies.applyCrowdControl(id, crowd.first, crowd.second, player)
+        } else if (crowd != null) {
+            // 地割り: the stun is put on first so it outlasts the launch; the launch then throws the target up.
+            if ((definition?.stunAfterMillis ?: 0) > 0) enemies.applyCrowdControl(id, CrowdControl.STUN, definition!!.stunAfterMillis, player)
+            enemies.applyCrowdControl(id, crowd.first, crowd.second, player)
+        }
         val venom = stats.bonus(CoreAffixStat.ASS_VENOM)
         if (classId == CoreClass.ASSASSIN && ((venom > 0 && definition?.status == CoreSkillStatus.MARK) ||
                 (!skill && build.keystone == 2 && classState.marked(id, tickNumber)))) {
@@ -747,11 +935,61 @@ internal class CorePlayerCombat(
         }
     }
 
+    /** 跳び叩き: launch toward the aimed point with vanilla physics (CoreWarriorLeap); never a teleport. */
+    private fun leap(action: PendingSkill, high: Boolean = false) {
+        val instance = player.instance ?: return
+        val eye = player.position.add(0.0, player.eyeHeight, 0.0)
+        val target = CoreWarriorLeap.aim(eye, player.position.direction()) { instance.getBlock(it).solid() }
+        val velocity = CoreWarriorLeap.launch(player.position, target, if (high) CoreWarriorLeap.SKYFALL_APEX else null)
+        player.velocity = velocity.mul(20.0)  // Minestom velocity is blocks per second
+        action.leapTick = tickNumber
+        sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, .6f)
+    }
+    /** 引き摺り: where the dragged blade's tip touches the ground, behind and to the right of the warrior. */
+    private fun dragTip(): Pos {
+        val f = flatFacing(); val right = Vec(-f.z(), 0.0, f.x())
+        return player.position.add(right.mul(.7)).sub(f.mul(1.5))
+    }
+    /** 天落とし: ring [k] hits what stands between the ring inside it and its own radius, from the landing point. */
+    private fun skyfallRing(enemies: QuestEncounterCombat, action: PendingSkill, k: Int) {
+        val centre = action.landAt ?: return
+        val outer = CoreWarriorRules.SKYFALL_RINGS[k]
+        val inner = if (k == 0) -1.0 else CoreWarriorRules.SKYFALL_RINGS[k - 1]
+        vfx.playSkill(CoreSkillEffect(classId, action.definition.copy(radius = outer), centre, action.direction, pulse = k))
+        val epoch = actionEpoch
+        for (target in enemies.combatTargets()) {
+            val p = enemies.positionOf(target.id) ?: continue
+            val d = kotlin.math.hypot(p.x() - centre.x(), p.z() - centre.z())
+            if (d > inner && d <= outer && abs(p.y() - centre.y()) < 3.0 && visibleTo(target.id, enemies)) {
+                hit(enemies, target.id, if (k == 0) 1.0 else .7, skill = true, skillAction = action)
+                if (!actionsValid(enemies, epoch)) return
+            }
+        }
+    }
+    /** 叩き落とし: the launched enemy is driven into the ground and stunned longer (the damage bonus is in hit()). */
+    private fun smashDown(enemies: QuestEncounterCombat, id: UUID) {
+        enemies.slamDown(id)
+        enemies.applyCrowdControl(id, CrowdControl.STUN, CoreWarriorRules.SMASH_DOWN_STUN_MILLIS, player)
+        notice("叩き落とし")
+        sound(SoundEvent.ENTITY_GENERIC_EXPLODE, .6f, .6f)
+    }
+    /** 地割り's current 叩き落とし targets, and who its strike already hit. */
+    private var smashTargets: Set<UUID> = emptySet()
+    private val hitThisStrike = mutableSetOf<UUID>()
+    private fun grounded(): Boolean = player.isOnGround ||
+        player.instance?.getBlock(player.position.sub(0.0, .05, 0.0))?.solid() == true
+
     private fun emitSkillPulse(centre: Pos, radius: Double, endpoint: CoreSkillEndpoint = CoreSkillEndpoint.NONE) {
         val action = pending ?: return
+        val pulse = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(action.definition)
         vfx.playSkill(CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction,
-            pulse = (action.elapsed - action.startup) / 8, endpoint = endpoint))
+            pulse = pulse, endpoint = endpoint))
+        if (classId == CoreClass.WARRIOR && action.definition.icon == CoreWarriorRules.FULL_SWING && pulse == 0)
+            geyser = CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction)
     }
+    /** 全力の一振り's blood burst, played out along the rift a step a tick after the blow (see tick()). */
+    private var geyser: CoreSkillEffect? = null
+    private var geyserStep = 0
 
     /** Lock a ground cast to the visible aimed enemy/block, not a fixed point seven blocks ahead. */
     private fun aimedGround(s: CoreSkillDefinition, enemies: QuestEncounterCombat): Pos {
@@ -826,7 +1064,7 @@ internal class CorePlayerCombat(
      * Diminishing returns and the dodge escape live in [CorePlayerCrowdControl]. Returns the ticks applied.
      */
     fun receiveCrowdControl(kind: CrowdControl, millis: Long, from: Pos?, pvp: Boolean = false): Int {
-        if (defeated) return 0
+        if (defeated || armored) return 0  // 狂戦士の甲冑: no crowd control takes hold
         if (kind == CrowdControl.FLINCH || CorePlayerCrowdControl.INCAPACITATING.contains(kind)) {
             // A flinch or anything incapacitating cancels the windup in progress.
             queued = null
@@ -882,13 +1120,12 @@ internal class CorePlayerCombat(
         }
         val snapshot = sheet
         var adjusted = CoreCombatMath.mitigate(amount, type, snapshot.ar, snapshot.mr, damageReduction = snapshot.mods.mitigationPercent)
-        if (classId == CoreClass.WARRIOR && journey().build.keystone == 0 && resource >= 60) adjusted *= 1.1
+        if (classId == CoreClass.WARRIOR && journey().build.keystone == 0 && resource >= 2) adjusted *= 1.1
         val guarded = tickNumber < classState.guardUntil
         if (guarded) {
             val perfect = tickNumber <= classState.perfectUntil
             adjusted *= if (perfect) .2 else .45
             classState.guarded(classId, tickNumber, journey().build)
-            if (classId == CoreClass.WARRIOR) riposteUntil = tickNumber + CoreBreak.RIPOSTE_TICKS
             if (classId == CoreClass.WARRIOR && perfect) {
                 // One read per stance; it shows the catch but refreshes nothing (the parry/slam reset was removed, D06).
                 classState.perfectUntil = -1
@@ -896,8 +1133,6 @@ internal class CorePlayerCombat(
                 vfx.playSkill(CoreSkillEffect(classId, guard, player.position, flatFacing(), CoreSkillVisualPhase.CONTACT))
             }
             sound(SoundEvent.ITEM_SHIELD_BLOCK, .8f, if (perfect) 1.4f else .8f)
-        } else if (classId == CoreClass.WARRIOR && tickNumber - lastHurtRage >= CoreWarriorRules.HURT_RAGE_GAP) {
-            lastHurtRage = tickNumber; classState.gain(CoreWarriorRules.HURT_RAGE, classId, journey().build)
         }
         val absorbed = min(adjusted, classState.shield)
         classState.shield -= absorbed; adjusted -= absorbed
@@ -946,7 +1181,8 @@ internal class CorePlayerCombat(
         garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; rampageUntil = -1; lastHurtRage = -100; riposteUntil = -1
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0
+        CoreArmamentPresentation.show(player)
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         crowd.clear()
         evadeUntil = -1; dodgeQueuedUntil = -1; slide = null; staggerUntil = -1
@@ -1024,16 +1260,15 @@ internal class CorePlayerCombat(
     }
     private fun actionsValid(enemies: QuestEncounterCombat, epoch: Long): Boolean =
         epoch == actionEpoch && !defeated && encounter() === enemies && player.instance != null
-    /** Rage at the cap boils over; an unfinished rampage burns the rage out. */
-    private fun rampageTick() {
-        when {
-            rampageUntil >= 0 && tickNumber >= rampageUntil -> { rampageUntil = -1; classState.drain() }
-            rampageUntil < 0 && classState.resource >= classState.cap(classId) -> {
-                rampageUntil = tickNumber + CoreWarriorRules.RAMPAGE_TICKS
-                sound(SoundEvent.ENTITY_RAVAGER_ROAR, .7f, 1.1f)
-            }
-        }
-        if (raging) classState.fill(classId)
+    /** Feeds the beast, at most [CoreWarriorRules.BEAST_PER_ACTION] per tick (one action's hits land together). */
+    private fun feedBeast(amount: Double) {
+        if (beastTick != tickNumber) { beastTick = tickNumber; beastThisTick = 0.0 }
+        val add = amount.coerceAtMost(CoreWarriorRules.BEAST_PER_ACTION - beastThisTick)
+        if (add <= 0.0) return
+        beastThisTick += add
+        val before = classState.resource.toInt()
+        classState.gain(add, classId, journey().build)
+        if (classState.resource.toInt() > before) sound(SoundEvent.ENTITY_WARDEN_HEARTBEAT, .8f, .7f + .15f * classState.resource.toInt())
     }
     /** Feedback goes into the HUD caption slot; a separate action-bar message would blank the HUD. */
     fun notice(message: String) {

@@ -38,7 +38,7 @@ class CoreSkillAudioTest {
             if(id!="war_guard") assertTrue(CoreSkillAudio.warriorCues(effect(id,phase=CoreSkillVisualPhase.CONTACT)).isEmpty())
             release
         }
-        assertEquals(3,signatures.distinct().size)
+        assertEquals(CoreWarriorSupportChoreography.sceneIds.size,signatures.distinct().size)
     }
     @Test fun `thrust has no sweep sound and only ground finishers add fracture audio`() {
         assertTrue(CoreSkillAudio.warriorCues(effect("war_breach")).none { it.event==SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP })

@@ -5,7 +5,7 @@ data class CoreClassBuild(val first: Int = 0, val second: Int = 1, val third: In
     val ultimate: Int = 0, val nodes: Int = 0) {
     val skills get() = listOf(first, second, third, fourth)
     init {
-        require(skills.all { it in 0..7 } && skills.distinct().size == 4 && ultimate in 0..1)
+        require(skills.all { it in 0..7 } && skills.distinct().size == 4 && ultimate in 0..2)  // the warrior has three ultimates
         require(nodes in 0 until (1 shl 18))
         for (i in 0..17) if (has(i)) require(CoreClassTrees.parents(i).isEmpty() || CoreClassTrees.parents(i).any(::has)) { "接続する前の技能が必要です" }
         require(listOf(2, 5, 8).count(::has) <= 1) { "大成技能は一つだけ選べます" }
@@ -73,7 +73,7 @@ object CoreClassTrees {
     }
     fun nodes(job: CoreClass): List<CoreTalentNode> {
         val keys = when (job) {
-            CoreClass.WARRIOR -> listOf("狂戦士" to "闘気60以上：威力+20%、被ダメージ+10%", "剣聖" to "通常3段目が当たるたび、地割り・押し薙ぎの再使用が1.5秒縮む", "旗手" to "防御技で周囲の仲間にも小さな障壁")
+            CoreClass.WARRIOR -> listOf("狂戦士" to "獣2以上：威力+20%、被ダメージ+10%", "剣聖" to "通常3段目が当たるたび、獣を使う技の再使用が1.5秒縮む", "旗手" to "防御技で周囲の仲間にも小さな障壁")
             CoreClass.MAGE -> listOf("連鎖術式" to "起爆技が1回増えるが、1回の威力-15%", "対位法" to "違う属性の技を当てると術式をさらに15獲得", "氷の賢者" to "氷術の減速を強化し、命中時に自分へ障壁")
             CoreClass.RANGER -> listOf("狙撃手" to "2秒静止すると威力+25%。動くと解除", "遊撃手" to "回避後3秒、通常射撃が二連射（各65%）", "罠師" to "罠と設置技が1回増え、減速時間も延長")
             CoreClass.ASSASSIN -> listOf("処刑人" to "印を消費する技はHP35%以下の敵へ威力+40%", "影渡り" to "印を消費すると回避が再使用可能", "毒刃" to "印のある敵への通常攻撃が3秒の毒を付与")
