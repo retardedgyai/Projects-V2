@@ -37,15 +37,17 @@ internal object CoreWarriorRefChoreography {
                 durationTicks = life, startSize = 1.0, endSize = 1.0, delayTicks = delay, ground = ground, billboard = billboard)
         val out = mutableListOf<CoreCombatMeshPart>()
         /**
-         * The blade's dark trail in the plane the greatsword actually swings in: upright through the body, along the
-         * facing (Creator 2026-10-23: a vertical swing must not leave a trail off to one side). The drawing (wind_band)
-         * is an arc round a pivot at a quarter of its width from one edge, the blade going from up-behind down to the
-         * ground ahead; the quad is placed so that pivot sits at the shoulder. [rising] turns it upside down: from low
-         * behind, through the front, up (斬り上げ). Arc radius is about half of [size].
+         * A vertical cut's dark trail: in the upright plane along the facing, the way the blade travels, but drawn ahead
+         * of the body so it does not run through or beside it (Creator 2026-10-23: "前に切り上げてほしい、横じゃなくて"),
+         * turned [SKEW] off the facing so it still reads as an arc from behind. The drawing (wind_band) is an arc round
+         * a pivot a quarter of its width from one edge, the blade going from up-behind down to the ground ahead; the
+         * pivot sits [ahead] in front at [shoulder] height. [rising] turns it upside down: from low, forward and up.
          */
-        fun trail(size: Double, life: Int, delay: Int = 0, rising: Boolean = false, shoulder: Double = 1.5, ahead: Double = .2) =
-            if (!rising) part("wind", local(0.0, shoulder + .031 * size, ahead + .25 * size), size, yaw + PI / 2, life, delay = delay, ground = false)
-            else part("wind", local(0.0, shoulder - .031 * size, ahead + .25 * size), size, yaw - PI / 2, life, delay = delay, ground = false, roll = PI)
+        fun trail(size: Double, life: Int, delay: Int = 0, rising: Boolean = false, shoulder: Double = 1.5, ahead: Double = 1.2): CoreCombatMeshPart {
+            val skew = .26
+            return if (!rising) part("wind", local(0.0, shoulder + .031 * size, ahead + .25 * size), size, yaw + PI / 2 - skew, life, delay = delay, ground = false)
+            else part("wind", local(0.0, shoulder - .031 * size, ahead + .25 * size), size, yaw - PI / 2 + skew, life, delay = delay, ground = false, roll = PI)
+        }
         if (e.sceneId == "war_wound") {
             // 跳び叩き landing (Creator 2026-10-22): the blade comes down in front as the body lands. Same family as
             // 地割り and no round crater: a short furrow torn forward, turf kicked up in a fan to the front (biggest
@@ -98,8 +100,8 @@ internal object CoreWarriorRefChoreography {
         if (e.sceneId == CoreWarriorRules.LAUNCHER) {
             // 斬り上げ: the cause is the blade's trail going UP (the overhead trail turned round in its plane), then earth
             // erupts under the one it throws, thrown high, with a slab torn up.
-            out += trail(4.6, 8, rising = true)
-            out += trail(5.2, 7, delay = 1, rising = true, shoulder = 1.45)
+            out += trail(4.4, 8, rising = true, shoulder = 1.3, ahead = .6)
+            out += trail(5.0, 7, delay = 1, rising = true, shoulder = 1.25, ahead = .6)
             val at = local(0.0, .25, 2.3)
             for (k in 0 until 7) out += part("clod${24 + k}", at.add((hash(k, 196) - .5) * .8, 0.0, (hash(k, 197) - .5) * .8),
                 .3 + .25 * hash(k, 198), yaw + hash(k, 199) * 6.0, 24, ground = false, delay = 1 + k / 3).copy(startSize = 1.7)
