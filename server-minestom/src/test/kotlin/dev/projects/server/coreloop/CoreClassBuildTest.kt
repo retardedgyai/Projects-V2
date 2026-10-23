@@ -55,7 +55,7 @@ class CoreClassBuildTest {
         assertFailsWith<IllegalArgumentException> { CoreJourney.fresh().copy(build=CoreClassBuild(nodes=7)) }
     }
     @Test fun `resource cost reduction is applied once`() {
-        val j=CoreJourney.legacy(build=CoreClassBuild(second=5,nodes=3))
+        val j=CoreJourney.legacy(job=CoreClass.ASSASSIN,build=CoreClassBuild(second=1,nodes=3))
         val s=CoreSkillCatalog.equipped(j)[1]
         assertEquals(26,s.spend)
         val state=CoreClassState();state.gain(26.0,j.job,j.build)
