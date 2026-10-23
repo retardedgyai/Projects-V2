@@ -164,7 +164,8 @@ def _swatch(tex_img):
 
 
 def mesh_triangles(c, swatches):
-    """A Blockbench mesh as world-space triangles (A, B, C, colour), wound so (B-A)x(C-A) faces out."""
+    """A Blockbench mesh as world-space triangles (A, B, C, colour, glows), wound so (B-A)x(C-A) faces out. A
+    swatch is (colour, glows)."""
     rot, origin = _rotation(*c.get("rotation", [0, 0, 0])), c.get("origin", [0, 0, 0])
     world = {k: _add([sum(rot[i][j] * v[j] for j in range(3)) for i in range(3)], origin) for k, v in c["vertices"].items()}
     tris = []
@@ -172,7 +173,7 @@ def mesh_triangles(c, swatches):
         if f.get("texture") is None:
             continue
         pts = [world[k] for k in f["vertices"]]
-        colour = swatches[int(f["texture"])]
+        colour, glows = swatches[int(f["texture"])]
         if len(pts) == 4:
             # Blockbench keeps a quad's corners unordered after the first three: order them round the centroid.
             n = _cross(_sub(pts[1], pts[0]), _sub(pts[2], pts[0]))
@@ -180,13 +181,13 @@ def mesh_triangles(c, swatches):
             ref = _sub(pts[0], mid)
             side = _cross(n, ref)
             pts.sort(key=lambda p: math.atan2(_dot(_sub(p, mid), side), _dot(_sub(p, mid), ref)))
-            tris += [(pts[0], pts[1], pts[2], colour), (pts[0], pts[2], pts[3], colour)]
+            tris += [(pts[0], pts[1], pts[2], colour, glows), (pts[0], pts[2], pts[3], colour, glows)]
         elif len(pts) == 3:
-            tris.append((pts[0], pts[1], pts[2], colour))
+            tris.append((pts[0], pts[1], pts[2], colour, glows))
     return tris
 
 
-def triangle_element(a, b, c, colour, atlas, alloc):
+def triangle_element(a, b, c, colour, atlas, alloc, glows=False):
     """One triangle as a flat element: a rectangle lying in the triangle's plane (its one face looking out), and
     the triangle painted on its texture with the outside transparent, so the game draws only the triangle."""
     u = _norm(_sub(b, a)); n = _norm(_cross(_sub(b, a), _sub(c, a))); v = _cross(u, n)
@@ -198,7 +199,7 @@ def triangle_element(a, b, c, colour, atlas, alloc):
     centre = _add(a, _add(_mul(u, (s0 + s1) / 2), _mul(v, (t0 + t1) / 2)))
     pw, ph = max(1, math.ceil(w * DENSITY)), max(1, math.ceil(h * DENSITY))
     x0, y0 = alloc(pw, ph)
-    lit = .25 + .95 * max(0.0, _dot(n, _norm(LIGHT))) ** 1.3
+    lit = 1.0 if glows else .32 + 1.0 * max(0.0, _dot(n, _norm(LIGHT))) ** .8
     rgb = tuple(max(0, min(255, round(ch * lit))) for ch in colour) + (255,)
     px = atlas.load()
     (sa, ta), (sb, tb), (sc, tc) = st
@@ -216,9 +217,12 @@ def triangle_element(a, b, c, colour, atlas, alloc):
             if edge >= 0 or _edge_distance((s, t), st) <= grow:
                 px[x0 + i, y0 + j] = rgb
     m = [[u[i], v[i], -n[i]] for i in range(3)]
-    return {"from": [centre[0] - w / 2, centre[1] - h / 2, centre[2]], "to": [centre[0] + w / 2, centre[1] + h / 2, centre[2]],
-            "rotation": dict(zip(("x", "y", "z"), _euler(m)), origin=[round(x, 4) for x in centre]),
-            "shade": False, "faces": {"north": {"uv": [x0, y0, x0 + pw, y0 + ph], "texture": "#atlas"}}}
+    e = {"from": [centre[0] - w / 2, centre[1] - h / 2, centre[2]], "to": [centre[0] + w / 2, centre[1] + h / 2, centre[2]],
+         "rotation": dict(zip(("x", "y", "z"), _euler(m)), origin=[round(x, 4) for x in centre]),
+         "shade": False, "faces": {"north": {"uv": [x0, y0, x0 + pw, y0 + ph], "texture": "#atlas"}}}
+    if glows:
+        e["light_emission"] = 15   # the eyes burn in the dark
+    return e
 
 
 def _edge_distance(p, tri):
@@ -239,7 +243,7 @@ def from_bbmodel(path: Path):
               .convert("RGBA") for t in bb["textures"]]
     tex = bb["textures"][0]; base = images[0]
     uw, uh = tex.get("uv_width", base.width), tex.get("uv_height", base.height)
-    swatches = [_swatch(im) for im in images]
+    swatches = [(_swatch(im), t.get("name", "").startswith("eye")) for im, t in zip(images, bb["textures"])]
     visible = [c for c in bb["elements"] if c.get("visibility") is not False]
     tris = [t for c in visible if c.get("type") == "mesh" for t in mesh_triangles(c, swatches)]
     cubes = [c for c in visible if c.get("type", "cube") == "cube"]
@@ -255,7 +259,7 @@ def from_bbmodel(path: Path):
     scratch = Image.new("RGBA", (width, top + 8192), (0, 0, 0, 0))
     if cubes:
         scratch.paste(base, (0, 0))
-    meshes = [triangle_element(a, b, c, col, scratch, alloc) for a, b, c, col in tris]
+    meshes = [triangle_element(a, b, c, col, scratch, alloc, glows) for a, b, c, col, glows in tris]
     height = shelf["y"] + shelf["row"]
     height = max(16, -(-height // 16) * 16)
     atlas = scratch.crop((0, 0, width, height))

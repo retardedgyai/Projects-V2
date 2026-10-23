@@ -146,16 +146,19 @@ class Mesh:
             mid = (centre[k] + centre[k + 1]) / 2
             for i in range(len(rings[k])):
                 j = (i + 1) % len(rings[k])
-                self.face([ids[k][i], ids[k][j], ids[k + 1][j], ids[k + 1][i]], mat, mid)
+                quad = [ids[k][i], ids[k][j], ids[k + 1][j], ids[k + 1][i]]
+                at = sum(self.verts[q] for q in quad) / 4
+                self.face(quad, mat(at) if callable(mat) else mat, mid)
         for cap, ring, c in ((top, ids[-1], centre[-1]), (bottom, ids[0], centre[0])):
             if cap is not None:
                 tip = self.v(cap)
                 for i in range(len(ring)):
-                    self.face([ring[i], ring[(i + 1) % len(ring)], tip], mat, c + (c - np.array(cap)) * .5)
+                    self.face([ring[i], ring[(i + 1) % len(ring)], tip], mat(c) if callable(mat) else mat, c + (c - np.array(cap)) * .5)
 
     def ribbon(self, points, widths, thick, mat, away):
-        """A plate with thickness along a curve: one cross-section per point, the joints shared (no seams). Its face
-        looks away from the point `away`; widths and thickness may change along it."""
+        """A bar along a curve, its cross-section flat on top with both shoulders cut at a slant (the reference's
+        three lit faces: top, outer slope, inner slope); one section per point, the joints shared (no seams). Its
+        face looks away from the point `away`; widths may change along it."""
         pts = [np.array(p, float) for p in points]
         widths = widths if isinstance(widths, (list, tuple)) else [widths] * len(pts)
         secs = []
@@ -164,17 +167,35 @@ class Mesh:
             g = p - np.array(away, float); g -= t * (g @ t); g /= np.linalg.norm(g)
             side = np.cross(g, t); side /= np.linalg.norm(side)
             w = widths[i] / 2
-            secs.append([self.v(p - side * w), self.v(p + side * w), self.v(p + side * w + g * thick), self.v(p - side * w + g * thick)],
-                        )
-            secs[-1].append(p + g * thick / 2)
+            ring = [p - side * w, p + side * w, p + side * w + g * thick * .35, p + side * w * .7 + g * thick,
+                    p - side * w * .7 + g * thick, p - side * w + g * thick * .35]
+            secs.append(([self.v(q) for q in ring], p + g * thick / 2))
         for k in range(len(secs) - 1):
-            a, b = secs[k], secs[k + 1]
-            inside = (a[4] + b[4]) / 2
-            for i in range(4):
-                j = (i + 1) % 4
-                self.face([a[i], a[j], b[j], b[i]], mat, inside)
-        for sec in (secs[0], secs[-1]):
-            self.face(sec[:4], mat, sec[4] + (sec[4] - secs[len(secs) // 2][4]) * -.01)
+            (a, ca), (b, cb) = secs[k], secs[k + 1]
+            for i in range(6):
+                j = (i + 1) % 6
+                self.face([a[i], a[j], b[j], b[i]], mat, (ca + cb) / 2)
+        for ids, c in (secs[0], secs[-1]):
+            other = secs[1][1] if ids is secs[0][0] else secs[-2][1]
+            for i in range(1, 5):
+                self.face([ids[0], ids[i], ids[i + 1]], mat, c + (other - c) * .5)
+
+
+def _spike(self, base, tip, width, mat):
+    """A four-sided spike from a square base to a point."""
+    base, tip = np.array(base, float), np.array(tip, float)
+    d = tip - base; d /= np.linalg.norm(d)
+    a = np.cross(d, (0, 1, 0) if abs(d[1]) < .9 else (1, 0, 0)); a /= np.linalg.norm(a)
+    b = np.cross(d, a)
+    corners = [self.v(base + (a * sx + b * sy) * width / 2) for sx, sy in ((1, 1), (-1, 1), (-1, -1), (1, -1))]
+    t = self.v(tip)
+    inside = base + (tip - base) * .25
+    for i in range(4):
+        self.face([corners[i], corners[(i + 1) % 4], t], mat, inside)
+    self.face(corners, mat, inside + (tip - base) * .5)
+
+
+Mesh.spike = _spike
 
 
 def squircle(y, hw, zc, front, back, n=16, power=.3):
@@ -190,38 +211,70 @@ def squircle(y, hw, zc, front, back, n=16, power=.3):
     return out
 
 
-MATS = {"iron": (112, 106, 124), "shell": (64, 59, 72), "dark": (42, 37, 48), "cloth": (196, 42, 34), "eye": (255, 74, 44)}
+MATS = {"iron": (132, 126, 140), "shell": (62, 57, 66), "dark": (18, 15, 20), "cloth": (190, 36, 30), "eye": (255, 70, 40)}
+
+
+def crescent(y, hw, zc, front, back, a0, a1, thick, n=12):
+    """An open ring round the back of the head at height y (from angle a0 to a1, 0 = front), given a thickness so
+    it closes as a thin crescent: the hood's cross-section."""
+    outer = []
+    for k in range(n + 1):
+        a = math.radians(a0 + (a1 - a0) * k / n)
+        sx, cz = math.sin(a), math.cos(a)
+        outer.append(np.array((8 + hw * sx, y, zc - (front if cz > 0 else back) * cz)))
+    centre = np.array((8, y, zc))
+    inner = [centre + (p - centre) * (1 - thick / np.linalg.norm(p - centre)) for p in outer]
+    return outer + inner[::-1]
 
 
 def helm():
-    """Creator 2026-10-23: a real shape, not boxes. A mesh: the skull lofted from rings, the plates as ribbons
-    lying on it whose cross-sections share their corners (no seams), lit by their real facing when packed."""
+    """Creator 2026-10-23: Guts's berserker armor direction. Read off photos of made helmets (side, front, three
+    quarters behind): a long low dome; thin plates laid like roof tiles from the brow back over the skull to the
+    nape, ending there in spikes; a heavy brow in a V pulled down to the middle over slanted red eyes; a muzzle
+    pushed forward and down, a ridge down the middle and plates either side, its lower edge a row of fangs; two
+    thin horns standing at the back and bending back; the rim round the neck a ring of spikes flaring out."""
     m = Mesh("helm")
-    rings = [squircle(2.8, 2.4, 6.6, 3.0, 2.2), squircle(4.0, 4.45, 8.1, 4.45, 4.5), squircle(7.0, 4.45, 8.1, 4.45, 4.5),
-             squircle(10.0, 4.45, 8.1, 4.45, 4.5), squircle(12.5, 4.45, 8.1, 4.4, 4.5), squircle(13.3, 3.5, 8.3, 3.3, 3.6)]
-    m.loft(rings, "shell", top=(8, 13.8, 8.4), bottom=(8, 2.6, 6.8))
-    centre = (8, 8, 9)
-    P = lambda pts: [press(np.array(p, float)) for p in pts]
-    # The middle plate from the back of the crown over the brow and down to a blunt tip, narrowing.
-    m.ribbon(P([(8, 13.95, 9.0), (8, 14.0, 6.2), (8, 13.2, 3.6), (8, 9.8, 2.4), (8, 6.0, 1.5), (8, 2.6, 1.0), (8, 1.2, 1.0)]),
-             [3.0, 3.6, 4.2, 4.0, 3.4, 2.6, 2.0], 1.0, "iron", centre)
+    rings = [squircle(3.0, 4.5, 8.4, 4.6, 5.0), squircle(5.0, 4.6, 8.4, 4.9, 5.2), squircle(8.0, 4.6, 8.4, 4.9, 5.3),
+             squircle(11.0, 4.55, 8.5, 4.75, 5.3), squircle(12.5, 4.5, 8.6, 4.6, 5.2), squircle(13.4, 3.6, 8.8, 3.4, 4.4)]
+    m.loft(rings, lambda c: "dark" if c[2] < 4.6 and 4.0 < c[1] < 9.6 else "shell", top=(8, 13.8, 9.0), bottom=(8, 3.0, 8.4))
+    # The plates: long strips from the brow back over the skull to the nape, laid from the top down the sides so
+    # each overlaps the one below, every one running out behind into a spike pointing back and down.
+    for k, phi in enumerate((0, -24, 24, -48, 48, -72, 72, -96, 96)):
+        a = math.radians(phi)
+        lift = .55 - .05 * k
+        pts = []
+        for z, scale in ((3.6, .78), (5.8, .96), (8.4, 1.0), (11.0, .98), (13.0, .9)):
+            pts.append((8 + math.sin(a) * (4.7 + lift) * scale, 8.3 + math.cos(a) * (5.25 + lift) * scale, z))
+        tail = np.array(pts[-1]) + (math.sin(a) * .8, -1.6 - .6 * abs(math.sin(a)), 3.4 - .8 * abs(math.sin(a)))
+        pts.append(tuple(tail))
+        m.ribbon(pts, [1.2, 2.3, 2.5, 2.4, 2.0, .3], .5, "iron", (8, 8.3, 8.4))
+    # The brow: two thick plates from the temples down to a point between the eyes.
     for s in (-1, 1):
-        # The side band from the top corner round the brow, down and in toward the tip.
-        m.ribbon(P([(8 + s * 3.4, 13.7, 7.4), (8 + s * 4.4, 12.6, 4.6), (8 + s * 4.7, 10.6, 3.4), (8 + s * 4.3, 7.0, 2.6), (8 + s * 3.0, 3.2, 1.8)]),
-                 [2.4, 3.2, 3.4, 3.2, 2.4], .9, "iron", centre)
-        # The hook: the band's end curls back along the cheek and turns up.
-        m.ribbon(P([(8 + s * 3.0, 3.0, 1.8), (8 + s * 4.4, 2.6, 2.8), (8 + s * 5.1, 3.4, 4.6), (8 + s * 5.0, 5.6, 6.0)]),
-                 [1.6, 1.7, 1.6, 1.3], .9, "iron", (8, 6, 7))
-        # The side tabs on the crown, leaning out.
-        m.ribbon(P([(8 + s * 3.3, 13.0, 7.0), (8 + s * 3.8, 15.0, 7.5), (8 + s * 4.2, 16.4, 8.0)]), [1.9, 1.7, 1.4], 1.4, "iron",
-                 (8 + s * 3.0, 14.5, 12))
-    # The middle tab, highest.
-    m.ribbon(P([(8, 13.2, 6.4), (8, 15.6, 6.9), (8, 17.6, 7.6)]), [2.8, 2.6, 2.2], 1.8, "iron", (8, 15, 12))
-    # The plume: crimson streaming back off the crown and falling.
-    for i, (dx, length, drop, w) in enumerate(((-1.0, 11, 6.5, 2.4), (1.1, 13, 8.0, 2.4), (0, 9, 4.5, 2.6), (.2, 15, 10.0, 1.8))):
-        top = np.array((8 + dx, 13.7 - .2 * i, 10.0))
-        m.ribbon(P([top, top + (dx * .1, .2, length * .3), top + (dx * .2, -drop * .4, length * .65), top + (dx * .3, -drop, length)]),
-                 [w, w, w * .9, w * .7], .7, "cloth", top + (0, -4, 4))
+        m.ribbon([(8 + s * 4.7, 11.2, 4.6), (8 + s * 2.6, 10.2, 3.0), (8 + s * .2, 8.6, 2.0)], [1.4, 1.8, 1.6], 1.0, "iron", (8, 6, 7))
+    # The eyes: slanted slits under the brow, burning red.
+    for s in (-1, 1):
+        m.ribbon([(8 + s * 4.0, 9.6, 3.6), (8 + s * 1.2, 8.0, 2.4)], .7, .3, "eye", (8, 8, 8))
+    # The muzzle: a ridge down the middle, forward and down, and a plate either side converging on it.
+    m.ribbon([(8, 8.4, 2.0), (8, 6.8, .2), (8, 5.0, -1.8), (8, 3.8, -2.8)], [2.0, 2.2, 1.8, 1.0], 1.1, "iron", (8, 7, 6))
+    for s in (-1, 1):
+        m.ribbon([(8 + s * 4.6, 8.4, 4.4), (8 + s * 3.4, 6.8, 1.8), (8 + s * 1.5, 4.8, -1.6)], [2.6, 2.6, 1.6], .8, "iron", (8, 7, 7))
+        # Fangs hanging along the muzzle's lower edge, longer toward the front.
+        for k in range(5):
+            t = k / 4
+            base = (8 + s * (4.6 - 3.1 * t), 4.6 - .5 * t, 4.0 - 5.6 * t)
+            m.spike(base, (base[0], base[1] - (1.0 + .8 * t), base[2] - .2), .7, "iron")
+    # Two thin horns at the back of the crown, standing and bending back.
+    for s in (-1, 1):
+        m.ribbon([(8 + s * 3.4, 12.6, 9.4), (8 + s * 4.1, 15.2, 10.6), (8 + s * 4.5, 17.4, 12.6), (8 + s * 4.6, 18.6, 15.0)],
+                 [1.6, 1.3, .9, .3], 1.0, "iron", (8, 14, 6))
+    # The rim round the neck: spikes flaring out and down.
+    for k in range(14):
+        a = 2 * math.pi * (k + .5) / 14
+        if math.cos(a) > .55:
+            continue                     # none under the muzzle
+        base = (8 + math.sin(a) * 4.7, 3.4, 8.4 - math.cos(a) * 5.0)
+        tip = (8 + math.sin(a) * 6.6, 1.2, 8.4 - math.cos(a) * 6.8)
+        m.spike(base, tip, 1.5, "iron")
     return [{"mesh": m}]
 
 
