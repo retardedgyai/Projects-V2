@@ -67,31 +67,47 @@ def frame(top, bottom, out):
     return up, n, np.cross(up, -n), length
 
 
-def chain(name, points, width, thick, outs, mat="iron", light=0, bevel=True):
+def chain(name, points, width, thick, outs, mat="iron", light=0, bevel=False):
     """A plate bent along a polyline (top first): one segment per span, each a little longer so the joints close,
     with narrow bevels along both long edges turned 40 degrees off the face (the reference's cut edges)."""
     pts = [np.array(p, float) for p in points]
     widths = width if isinstance(width, (list, tuple)) else [width] * (len(pts) - 1)
     outs = outs if isinstance(outs[0], (list, tuple)) else [outs] * (len(pts) - 1)
     out = []
+    dirs = [(pts[i] - pts[i + 1]) / np.linalg.norm(pts[i] - pts[i + 1]) for i in range(len(pts) - 1)]
+
+    def reach(a, b):
+        # How far a segment must run past a joint so the outside of the bend stays closed (no seam).
+        bend = math.acos(max(-1.0, min(1.0, float(a @ b))))
+        return .25 + min(1.2, thick * math.tan(bend / 2) + w * .5 * math.sin(bend))
     for i in range(len(pts) - 1):
         top, bottom, o, w = pts[i], pts[i + 1], np.array(outs[i], float), widths[i]
         up, n, side, length = frame(top, bottom, o)
-        ext = up * .15
-        out.append(plate(name, top + ext, bottom - ext, w, thick, n, mat, light))
+        t_ext = up * (reach(dirs[i - 1], dirs[i]) if i > 0 else .15)
+        b_ext = up * (reach(dirs[i], dirs[i + 1]) if i < len(dirs) - 1 else .15)
+        out.append(plate(name, top + t_ext, bottom - b_ext, w, thick, n, mat, light))
         if bevel:
             for sgn in (-1, 1):
                 edge = side * sgn * (w / 2) + n * (thick / 2 - .15)
                 o2 = n * math.cos(math.radians(40)) + side * sgn * math.sin(math.radians(40))
-                out.append(plate(name + " bevel", top + ext + edge, bottom - ext + edge, .8, .5, o2, mat, light))
+                out.append(plate(name + " bevel", top + t_ext + edge, bottom - b_ext + edge, .8, .5, o2, mat, light))
     return out
 
 
 # Creator 2026-10-23: next to Artorias the head read too big. Everything outside the shell is drawn toward the
 # head's middle (more in height and depth than in width, where the shell must still cover the head) and thinned.
-PULL = np.array((.94, .88, .88))
-PULL_CENTRE = np.array((8.0, 8.0, 8.0))
+# Creator 2026-10-23: next to Artorias the head read too big, and could be smaller still. The shell cannot shrink
+# (it covers the game's head), so what sticks out past it is pressed back toward it: in each axis the part beyond
+# the shell's box keeps only SQUASH of its reach, and the parts are thinned to THIN. The shell's own parts stay.
+SHELL_LO, SHELL_HI = np.array((3.8, 3.0, 3.9)), np.array((12.2, 12.5, 12.4))
+SQUASH = np.array((.7, .6, .6))
+THIN = .85
 TIGHT = ("shell", "neck guard", "face dark", "side")
+
+
+def press(c):
+    below, above = np.minimum(c - SHELL_LO, 0), np.maximum(c - SHELL_HI, 0)
+    return c - (below + above) * (1 - SQUASH)
 
 
 def pulled_in(elements):
@@ -99,9 +115,9 @@ def pulled_in(elements):
         if e["name"] in TIGHT:
             continue
         c = e["origin"]; size = e["to"] - e["from"]; mid = (e["from"] + e["to"]) / 2
-        moved = PULL_CENTRE + (c - PULL_CENTRE) * PULL
-        half = size * .9 / 2
+        moved = press(c)
         mid = mid + (moved - c)
+        half = size * THIN / 2
         e["from"], e["to"], e["origin"] = mid - half, mid + half, moved
     return elements
 
@@ -111,7 +127,7 @@ def helm():
     # The shell round the head, its lower sides dark: the face and the opening under the hooks.
     e += [box("shell", (3.8, 6.8, 3.9), (12.2, 12.5, 12.4), "iron", -1),
           box("neck guard", (3.9, 3.2, 8.4), (12.1, 7.0, 12.9), "iron", -1),
-          box("face dark", (3.75, 3.4, 2.4), (12.25, 9.6, 8.6), "dark")]
+          box("face dark", (3.85, 3.4, 3.85), (12.15, 9.6, 8.6), "dark")]
     # The crown, bent over the top from the back to the brow.
     e += chain("crown", [(8, 12.6, 12.9), (8, 13.6, 10.0), (8, 13.8, 6.6), (8, 13.4, 4.4)], 8.8, .9, (0, 1, 0), bevel=False)
     # The middle plate bent from the crown down the brow to a blunt tip leaning forward, narrowing.
@@ -122,7 +138,7 @@ def helm():
     for s in (-1, 1):
         # The side band, bent: from the top corner, round the brow, down and in toward the tip, facing out.
         e += chain("band", [(8 + s * 4.2, 13.8, 6.6), (8 + s * 4.7, 11.2, 3.8), (8 + s * 4.1, 7.4, 2.4), (8 + s * 2.8, 2.6, 1.5)],
-                   [3.2, 3.2, 2.8], 1.0, [(s * .6, .7, -.6), (s * .9, .2, -.8), (s * .8, .05, -.9)])
+                   [3.8, 3.8, 3.4], 1.0, [(s * .6, .7, -.6), (s * .9, .2, -.8), (s * .8, .05, -.9)])
         e += [plate("side", (8 + s * 4.9, 13.4, 10.0), (8 + s * 4.6, 6.6, 8.8), 5.6, .9, (s * 1, .1, 0), light=-1)]
         # The hook: the band's end curls back along the cheek and turns up.
         e += chain("hook", [(8 + s * 3.0, 2.6, 1.4), (8 + s * 4.6, 2.9, 3.2), (8 + s * 5.0, 4.0, 5.4), (8 + s * 4.8, 6.6, 6.4)],
