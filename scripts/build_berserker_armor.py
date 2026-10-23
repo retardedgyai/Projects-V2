@@ -66,9 +66,9 @@ def helm():
         return [el(name, (lo[0] + cut, lo[1], lo[2]), (hi[0] - cut, hi[1], hi[2]), "iron", light=light),
                 el(name, (lo[0], lo[1], lo[2] + cut), (hi[0], hi[1], hi[2] - cut), "iron", light=light)]
     e += round_box("skull", (3.2, 4.2, 3.4), (12.8, 11.2, 12.8), .6, -1)
-    for i, (inset, y0, y1) in enumerate(((0.0, 11.0, 12.3), (1.1, 12.3, 13.1))):
+    for i, (inset, y0, y1) in enumerate(((0.0, 11.0, 12.3), (1.1, 12.3, 13.3), (2.2, 13.3, 14.1))):
         e += round_box("dome", (3.2 + inset, y0, 3.4 + inset), (12.8 - inset, y1, 12.8 - inset), .8, -i % 2)
-    e += [el("comb", (7.5, 12.8, 4.6), (8.5, 13.8, 11.8), "iron", light=1),
+    e += [el("comb", (7.5, 13.6, 4.6), (8.5, 14.8, 11.6), "iron", light=1),
           el("brim band", (3.4, 10.2, 3.6), (12.6, 11.0, 12.6), "iron")]
     for z in (5.4, 7.6, 9.8, 12.0):
         for x0 in (3.2, 12.6):
@@ -93,14 +93,10 @@ def helm():
     e += [el("bevor", (4.2, 3.0, 2.8), (11.8, 4.8, 9.0), "iron")]
     for i, (out, y0, y1) in enumerate(((0.0, 2.4, 3.4), (.4, 1.6, 2.6))):
         e += [el("gorget", (3.8 - out, y0, 4.2 - out), (12.2 + out, y1, 12.4 + out), "iron", light=1 - i)]
-    # Horns from the temples, swept back past the crown; the right one broken short.
-    for s, length in ((-1, 1.0), (1, .55)):
-        x = 8 + s * 4.6
-        for i in range(3):
-            xi = x + s * .5 * i
-            z1 = 5.4 + (5.0 + 3.0 * i) * length + 2.0
-            e += [el("horn", (xi - .45 + .12 * i, 9.6 + .3 * i, 5.4 + 2.6 * i * length), (xi + .45 - .12 * i, 10.8 + .3 * i, z1), "iron",
-                     ("x", -11.25, (xi, 10.2, 5.4)), light=1 if i < 2 else 2)]
+    # The plume: one mass of crimson streaming back off the crown and falling, thick strips lying on each other,
+    # their torn ends at different lengths.
+    for i, (x0, x1, y0, length) in enumerate(((6.0, 8.4, 12.6, 11.0), (7.6, 10.0, 12.4, 13.5), (6.8, 9.2, 13.6, 9.0), (7.4, 8.8, 11.8, 15.5))):
+        e += [el("plume", (x0, y0, 9.4), (x1, y0 + 2.0, 9.4 + length), "cloth", ("x", 33.75, (8.0, 13.6, 9.4)), light=1 - i % 2)]
     # Torn crimson hanging from the back of the crown.
     for i, (x, length) in enumerate(((5.6, 7.0), (7.0, 10.0), (8.6, 5.0), (10.0, 8.0))):
         e += [el("helm strip", (x, 12.0 - length, 12.6), (x + 1.1, 12.0, 13.3), "cloth", ("x", -22.5, (8.0, 12.0, 13.0)),
@@ -111,29 +107,48 @@ def helm():
 # --------------------------------------------------------------- shoulders and mantle (body space, for a display)
 
 def mantle():
-    """Body space of the preview: body x4..12, y12..24, z6..10, arms x0..4 / x12..16, front is low z."""
+    """Body space of the preview: body x4..12, y12..24, z6..10, arms x0..4 / x12..16, front is low z. Model
+    rotations: +x swings a part's lower end forward, -z swings its lower end out to -x.
+
+    Creator 2026-10-23: the silhouette was too far from Artorias. His reads as an inverted triangle (pauldrons
+    stacked and falling away outward, narrow waist), a skirt of cloth flaring from the belt to the knee (half his
+    outline), cloth over the shoulders, a small tall helm with a plume streaming back."""
     e = []
-    # Stacked pauldrons, three plates each, wider at the top; the left one (+x) bigger, Guts's iron arm side.
-    for s, big in ((-1, 0.0), (1, 0.6)):
-        cx = 8 + s * 6.0
+    # Pauldrons: a round cop over the shoulder and three lames below it, each further out, the whole falling away
+    # from the neck. The left one (+x) bigger, Guts's iron arm side.
+    for s, big in ((-1, 0.0), (1, 0.5)):
+        cx = 8 + s * 6.2
+        fall = ("z", -s * 22.5, (cx, 24.6, 8.0))
+        e += [el("pauldron cop", (cx - 3.0 - big, 23.4, 4.2 - big * .4), (cx + 3.0 + big, 25.8 + big * .4, 11.8 + big * .4), "iron", fall, light=1),
+              el("pauldron cop", (cx - 2.2 - big, 25.6 + big * .4, 5.0), (cx + 2.2 + big, 26.6 + big * .6, 11.0), "iron", fall, light=1),
+              el("pauldron ridge", (cx - .4, 26.4 + big * .6, 5.4), (cx + .4, 27.4 + big * .8, 10.6), "iron", fall, light=2)]
         for i in range(3):
-            w = 3.6 + big - .5 * i
-            y1 = 25.4 + big * .5 - 2.2 * i
-            e += [el("pauldron", (cx - w, y1 - 2.6, 5.0 - .2 * i), (cx + w, y1, 11.0 + .2 * i), "iron",
-                     ("z", -s * 22.5, (cx, y1 - 1.3, 8.0)), light=1 - i)]
-        # Spikes of different lengths jutting up and out of the top plate.
-        for k, (dz, length) in enumerate(((5.8, 3.4 + big * 2), (8.0, 2.0), (10.2, 2.8 + big))):
-            e += [el("pauldron spike", (cx - .45, 25.0 + big * .5, dz - .45), (cx + .45, 25.0 + big * .5 + length, dz + .45), "iron",
-                     ("z", -s * 45.0, (cx, 25.4 + big * .5, dz)), light=1 + (k == 0))]
-    # The hood: crimson cloth piled round the neck, heavier at the back.
+            y1 = 23.6 - 1.3 * i
+            out = s * .45 * (i + 1)
+            e += [el("pauldron lame", (cx - 2.8 - big + out, y1 - 1.6, 4.4 + .2 * i), (cx + 2.8 + big + out, y1, 11.6 - .2 * i), "iron", fall,
+                     light=0 if i % 2 else -1)]
+    # The belt and the skirt: crimson flaps flaring from the belt to the knee, metal tassets over the front, torn hem.
+    e += [el("belt", (3.0, 11.8, 4.6), (13.0, 13.0, 11.4), "iron", light=1)]
+    front, back = ("x", 11.25, (8.0, 12.6, 4.7)), ("x", -11.25, (8.0, 12.6, 11.3))
+    e += [el("skirt front", (2.8, 4.2, 4.4), (13.2, 12.6, 5.0), "cloth", front, light=1),
+          el("skirt back", (2.8, 3.8, 11.0), (13.2, 12.6, 11.6), "cloth", back)]
+    for s in (-1, 1):
+        x0, x1 = (2.2, 3.0) if s < 0 else (13.0, 13.8)
+        side = ("z", s * 22.5, ((x0 + x1) / 2, 12.6, 8.0))
+        e += [el("skirt side", (x0, 4.6, 4.8), (x1, 12.6, 11.2), "cloth", side, light=-1)]
+        for k, bottom in enumerate((2.6, 3.8, 2.0)):
+            e += [el("hem", (x0, bottom, 5.0 + 2.0 * k), (x1, 4.8, 6.9 + 2.0 * k), "cloth", side, light=-1 - k % 2)]
+        e += [el("tasset", (8 + s * 3.0 - 2.0, 9.4, 4.0), (8 + s * 3.0 + 2.0, 12.6, 4.5), "iron", front, light=1)]
+    for i, (x, bottom) in enumerate(((2.8, 2.0), (4.6, 3.4), (6.2, 1.2), (7.8, 2.8), (9.4, 1.6), (11.2, 3.0))):
+        e += [el("hem", (x, bottom, 4.45), (x + 1.8, 4.4, 4.95), "cloth", front, light=i % 2)]
+        e += [el("hem", (x, bottom - .6, 11.05), (x + 1.8, 4.0, 11.55), "cloth", back, light=-(i % 2))]
+    # Cloth over the shoulders and down the back, under the pauldrons.
     e += [el("hood front", (4.6, 22.6, 4.8), (11.4, 24.8, 6.4), "cloth", ("x", -22.5, (8.0, 23.6, 5.6)), light=1),
-          el("hood back", (3.8, 21.4, 9.6), (12.2, 26.0, 12.0), "cloth"),
-          el("hood side", (3.4, 22.4, 5.6), (4.8, 25.0, 10.4), "cloth", light=-1),
-          el("hood side", (11.2, 22.4, 5.6), (12.6, 25.0, 10.4), "cloth", light=-1)]
-    # The cape to the knee, its hem torn into strips of different lengths.
-    e += [el("cape", (3.4, 9.0, 10.6), (12.6, 22.0, 11.4), "cloth")]
-    for i, (x, bottom) in enumerate(((3.4, 3.0), (4.6, 6.8), (5.6, 1.2), (6.8, 5.0), (7.8, 7.6), (8.8, 2.2), (10.0, 6.0), (11.2, 4.0))):
-        e += [el("cape strip", (x, bottom, 10.7 + .1 * (i % 2)), (x + 1.3, 9.2, 11.3 + .1 * (i % 2)), "cloth", light=-(i % 2))]
+          el("hood back", (3.4, 20.6, 9.6), (12.6, 25.4, 12.0), "cloth"),
+          el("shoulder drape", (11.6, 18.0, 4.8), (14.0, 24.6, 11.6), "cloth", ("z", -22.5, (12.8, 24.0, 8.0)), light=-1)]
+    e += [el("cape", (3.6, 9.0, 11.6), (12.4, 21.0, 12.4), "cloth")]
+    for i, (x, bottom) in enumerate(((3.6, 3.0), (4.8, 6.8), (5.8, 1.2), (7.0, 5.0), (8.0, 7.6), (9.0, 2.2), (10.2, 6.0), (11.2, 4.0))):
+        e += [el("cape strip", (x, bottom, 11.7 + .1 * (i % 2)), (x + 1.2, 9.2, 12.3 + .1 * (i % 2)), "cloth", light=-(i % 2))]
     # A torn scarf trailing back from the right shoulder.
     for i in range(3):
         e += [el("scarf", (2.4 + .6 * i, 23.0 - .8 * i, 11.0), (3.4 + .6 * i, 24.0 - .8 * i, 17.0 - 1.4 * i), "cloth",
