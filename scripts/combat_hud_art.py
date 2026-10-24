@@ -163,7 +163,7 @@ def rage_cell():
 
 
 # ---- the warrior's beast (Creator 2026-10-24, 案A): three diamond sockets over the emblem's crest ---------
-BEAST_R = 4                        # diamond radius; a socket is 2R+3 px square with its rim
+BEAST_R = 4                        # diamond radius; a socket is 2R+5 px tall, one wider (even width)
 BEAST_PITCH = 14                   # centre to centre
 BEAST_TOP = 62                     # top of the socket row, GUI px from the bottom: the middle one is set in the crest
 BEAST_FILL_STEPS = 4               # a part-built stack fills from the bottom in this many steps
@@ -173,7 +173,7 @@ BEAST_RIM, BEAST_EMPTY = (14, 10, 12, 255), ((44, 30, 34, 255), (30, 20, 24, 255
 
 def beast_socket(step, burning=False):
     """One socket filled `step` of BEAST_FILL_STEPS from the bottom (0 empty); `burning`: all three full,
-    a dark red halo round it. Hand-shaded: lit top-left, dark bottom-right, a glint on a full one."""
+    a dark red halo round it. Hand-shaded: lit from above, dark below, a glint at the top of a full one."""
     r = BEAST_R
     size = 2 * r + 5
     img = new(size, size)
@@ -190,13 +190,15 @@ def beast_socket(step, burning=False):
             elif k <= r:
                 level = (r - dy) / (2 * r)
                 if level <= fill + 1e-9 and step > 0:
-                    t = 2 + (1 if dx < 0 and dy < 0 else 0) - (1 if dx > 0 and dy > 0 else 0)
+                    # Lit from straight above so the socket mirrors left to right like the rest of the HUD.
+                    t = 3 if dy < -1 else 2 if dy <= 1 else 1
                     if k == r: t = max(1, t - 1)
-                    if step == BEAST_FILL_STEPS and dx == -1 and dy == -2: t = 4
+                    if step == BEAST_FILL_STEPS and dx == 0 and dy == -2: t = 4
                     px(img, x, y, BEAST_RED[t])
                 else:
                     px(img, x, y, BEAST_EMPTY[(dx + dy) % 2])
-    return img
+    # Even width, like the emblem: its axis then lies on the screen centre line, not half a pixel right of it.
+    return even(img)
 
 
 def xp_cell():

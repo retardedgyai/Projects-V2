@@ -72,7 +72,7 @@ internal object CoreHudLayout {
     }
 
     const val BEAST_PITCH = 14
-    const val BEAST_X = -BEAST_PITCH - 6       // left edge of the first socket (13 px wide), so the middle one is centred on 0
+    const val BEAST_X = -BEAST_PITCH - 7       // left edge of the first socket (14 px wide): each mirrors about its own centre line
     private const val BEAST_FILL_STEPS = 4
     private fun beast(state: CoreHudState) = job(state) == "warrior" && state.resource != null && state.resourceMaximum == 3.0
 
