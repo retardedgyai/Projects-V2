@@ -7,7 +7,7 @@
 # 2. テスト用クライアント（オフライン名 ClaudeTest、~/.local/bin/projects-testclient）がつながっていなければ起動して待つ。
 # 3. サーバーの作業フォルダに claude-demo.txt を置く。サーバーが試験場で案山子の前に立たせ、通常攻撃を押す。
 # 4. :5 を録画し、.tools/film/<名前>.mp4 と、1/20秒ごとのコマを並べた <名前>_N.png を作る。
-# サーバー（./gradlew :server-minestom:run、devCommands 有効）は先に起動しておく。振りのデータ
+# サーバーは先に scripts/dev_server.sh で起動しておく（gradle を常駐させない軽い起動）。振りのデータ
 # （player-motions/greatsword_viewmodel.json）は書き換えるとサーバーが読み直すので、再起動はいらない。
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -29,6 +29,10 @@ fi
 
 if ! ss -ltn | grep -q ':25565 '; then echo "サーバーが起動していません" >&2; exit 1; fi
 if ! pgrep -f "mc-dir $HOME/ProjectS/[c]laude-testclient" >/dev/null; then
+  # Memory guard (2026-10-25: the PC froze twice when the client pushed it into swap).
+  AVAIL=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo)
+  if [ "$AVAIL" -lt 3500 ]; then echo "空きメモリが ${AVAIL}MB しかないので、テスト用クライアントを起動しません" >&2; exit 1; fi
+  if pgrep -f "GradleDaemon|KotlinCompileDaemon" >/dev/null; then echo "gradle が動いているので、終わってから撮ります" >&2; exit 1; fi
   setsid ~/.local/bin/projects-testclient 25565 >"$LOG" 2>&1 &
   for i in $(seq 1 90); do grep -q "Loaded .* advancements\|CHAT\]" "$LOG" 2>/dev/null && break; sleep 1; done
   sleep 8   # リソースパックの読み込み
