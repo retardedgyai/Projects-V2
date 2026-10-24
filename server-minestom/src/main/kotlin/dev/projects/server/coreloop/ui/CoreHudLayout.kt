@@ -72,6 +72,7 @@ internal object CoreHudLayout {
     }
 
     const val BEAST_PITCH = 20
+    const val BEAST_CAP = 7
     const val BEAST_X = -BEAST_PITCH - 10      // left edge of the first socket (20 px wide): each mirrors about its own centre line
     private const val BEAST_FILL_STEPS = 4
     private fun beast(state: CoreHudState) = job(state) == "warrior" && state.resource != null && state.resourceMaximum == 3.0
@@ -133,7 +134,12 @@ internal object CoreHudLayout {
         if (step > 0) line.put(EMBLEM_X, "xp_${job}_$step")
         if (state.level > 0) line.numberCentred(0.0, state.level.coerceIn(1, 999).toString(), CoreHudGlyphs.NUM_GAUGE, LEVEL)
         // Over the emblem (the middle one is set in the crest, so it must draw on top of it).
-        if (beast(state)) beastSockets(state.resource ?: 0.0).forEachIndexed { i, glyph -> line.put(BEAST_X + i * BEAST_PITCH, glyph) }
+        if (beast(state)) {
+            beastSockets(state.resource ?: 0.0).forEachIndexed { i, glyph -> line.put(BEAST_X + i * BEAST_PITCH, glyph) }
+            // Finials close the ironwork at both ends (it would otherwise stop as a cut-off bar).
+            line.put(BEAST_X - BEAST_CAP, "beast_cap_l")
+            line.put(BEAST_X + 3 * BEAST_PITCH, "beast_cap_r")
+        }
         // Skills sit over hotbar slots 2-6 (the keys that cast them).
         state.skills.take(5).forEachIndexed { index, skill ->
             val art = skill.artIndex?.coerceIn(0, dev.projects.server.coreloop.CoreSkillCatalog.artNames.size - 1) ?: when (skill.icon) {

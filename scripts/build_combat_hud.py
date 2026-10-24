@@ -322,6 +322,7 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     hud.group("hud_cells", [("rage_cell", art.rage_cell()), ("xp_cell", art.xp_cell())], hud_ascent(art.CELL_TOP))
     sockets = [(f"beast_{k}", art.beast_socket(k)) for k in range(art.BEAST_FILL_STEPS + 1)]
     sockets.append(("beast_burn", art.beast_socket(art.BEAST_FILL_STEPS, burning=True)))
+    sockets += [("beast_cap_l", art.beast_cap()), ("beast_cap_r", art.beast_cap(right=True))]
     hud.group("hud_beast", sockets, hud_ascent(art.BEAST_TOP))
     hud.group("hud_gauge_digits", [(f"gd_{c}", art.gauge_digit(c)) for c in art.DIGITS], hud_ascent(art.GAUGE_TOP - 2))
     hud.group("hud_buff_digits", [(f"bd_{c}", art.gauge_digit(c)) for c in art.DIGITS], hud_ascent(art.BUFF_TOP - 4))

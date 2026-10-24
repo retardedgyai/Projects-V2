@@ -225,6 +225,31 @@ def beast_socket(step, burning=False):
     return even(img)
 
 
+BEAST_CAP = 7                      # width of the finial that closes each end of the row
+
+
+def beast_cap(right=False):
+    """The end of the sockets' ironwork: the prong runs on past the last barb and tapers to a point, lit along
+    its top, so the row ends in a finished tip rather than a cut-off bar. Drawn for the left end; mirrored right."""
+    img = new(BEAST_CAP, BEAST_FLAME + 2 * (BEAST_R + 3) + 1)
+    cy = BEAST_FLAME + BEAST_R + 3
+    w = BEAST_CAP
+    # columns from the socket outwards (x = w-1 .. 0): the bar is 4 rows (outline, lit, dark, outline), narrowing
+    for i in range(w):
+        x = w - 1 - i
+        if i < 3:
+            px(img, x, cy - 1, OUT); px(img, x, cy, METAL[0] if i == 0 else METAL[1]); px(img, x, cy + 1, METAL[3]); px(img, x, cy + 2, OUT)
+        elif i < 5:
+            px(img, x, cy - 1, OUT); px(img, x, cy, METAL[1]); px(img, x, cy + 1, OUT)
+        elif i < 6:
+            px(img, x, cy - 1, OUT); px(img, x, cy, METAL[2]); px(img, x, cy + 1, OUT)
+        else:
+            px(img, x, cy, OUT)
+    # a small barb turned back along the top, like the crown's spikes
+    px(img, w - 4, cy - 2, OUT); px(img, w - 5, cy - 3, OUT); px(img, w - 4, cy - 3, METAL[0])
+    return img.transpose(Image.Transpose.FLIP_LEFT_RIGHT) if right else img
+
+
 def xp_cell():
     """The resource strip as the XP bar (the warrior's beast moved to its sockets): the level emblem's gold."""
     img = new(CELL_PITCH - 1, 2)
