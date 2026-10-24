@@ -268,10 +268,15 @@ CHEST = (0.0, -0.72, 0.1)
 REACH = .5
 _S = [_unit(v) for v in ((1.0, 0.3, 0.1), (0.75, 0.62, 0.45), (0.0, 0.78, 0.63), (-0.75, 0.35, 0.56), (-1.0, -0.05, 0.25))]
 _SF = tuple(_unit(np.cross(_S[1], _S[3])))
-_T = _unit((-0.02, 0.3, 0.95))
+# The thrust is driven from beside the right hip at the crosshair, so the blade lies across the screen and reads.
+_T = _unit((-0.33, 0.42, 2.5))
+_T_FROM = (0.36, -0.42, 0.42)
+# Between swings the sword drops out of sight under the screen and comes back up into the guard, instead of sweeping
+# back across the screen (which read as a second, backwards swing).
+_LOW = dict(grip=(0.32, -1.45, 0.35), blade=tuple(_unit((0.45, 0.0, 0.9))))
 _V = [_unit(v) for v in ((0.3, 0.95, 0.05), (0.12, 0.92, 0.38), (0.02, 0.62, 0.78), (-0.03, 0.32, 0.95))]
 # The slam turns about a point further out, so the raised hilt never comes up into the camera.
-SLAM_CHEST = (0.12, -0.78, 0.35)
+SLAM_CHEST = (0.14, -0.95, 0.6)
 
 
 def _at(d, reach=REACH, pivot=None):
@@ -299,22 +304,25 @@ BC_BEATS = {
         *_path(_S, .19, .34, _SF, 1.45),
         (.46, 'out', dict(grip=_at(_unit((-0.95, -0.25, 0.1))), blade=tuple(_unit((-0.95, -0.25, 0.1))), flat=_SF, size=1.45)),
         (.62, None, 'hold'),
-        (1.0, 'inout', 'rest')],
+        (.8, 'inout', _LOW),
+        (1.0, 'out', 'rest')],
     # thrust: drawn in to the chest, then driven straight out at the crosshair
     2: [(0.0, None, 'rest'),
-        (.17, 'out', dict(grip=_at(_T, .35), blade=tuple(_T), flat=(1, 0, 0), size=1.35)),
-        (.21, 'in', dict(grip=_at(_T, .25), blade=tuple(_T), size=1.35)),
-        (.27, 'linear', dict(grip=_at(_T, .7), blade=tuple(_T), size=1.35)),
-        (.36, 'out', dict(grip=_at(_T, .8), blade=tuple(_T), size=1.35)),
+        (.17, 'out', dict(grip=_at(_T, .05, _T_FROM), blade=tuple(_T), flat=tuple(_unit((1, 0, .13))), size=1.35)),
+        (.21, 'in', dict(grip=_at(_T, -.08, _T_FROM), blade=tuple(_T), size=1.35)),
+        (.26, 'linear', dict(grip=_at(_T, .5, _T_FROM), blade=tuple(_T), size=1.35)),
+        (.36, 'out', dict(grip=_at(_T, .62, _T_FROM), blade=tuple(_T), size=1.35)),
         (.58, None, 'hold'),
-        (1.0, 'inout', 'rest')],
+        (.8, 'inout', _LOW),
+        (1.0, 'out', 'rest')],
     # slam: lifted back over the head, then over the top and down in front
     3: [(0.0, None, 'rest'),
-        (.19, 'out', dict(grip=_at(_V[0], pivot=SLAM_CHEST), blade=tuple(_V[0]), flat=(1, 0, 0), size=1.45)),
-        *_path(_V, .19, .32, (1, 0, 0), 1.45, pivot=SLAM_CHEST),
-        (.44, 'out', dict(grip=_at(_unit((-0.04, 0.2, 0.98)), pivot=SLAM_CHEST), blade=tuple(_unit((-0.04, 0.2, 0.98))), size=1.45)),
+        (.19, 'out', dict(grip=_at(_V[0], pivot=SLAM_CHEST), blade=tuple(_V[0]), flat=(1, 0, 0), size=1.3)),
+        *_path(_V, .19, .32, (1, 0, 0), 1.3, pivot=SLAM_CHEST),
+        (.44, 'out', dict(grip=_at(_unit((-0.22, 0.12, 0.97)), pivot=SLAM_CHEST), blade=tuple(_unit((-0.22, 0.12, 0.97))), size=1.3)),
         (.66, None, 'hold'),
-        (1.0, 'inout', 'rest')],
+        (.84, 'inout', _LOW),
+        (1.0, 'out', 'rest')],
 }
 
 
