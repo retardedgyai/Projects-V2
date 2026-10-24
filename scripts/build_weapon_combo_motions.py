@@ -22,28 +22,81 @@ TICK = .05
 # name: (weapon config, immediate strike, poses per attack)
 # pose = dict(start=(grip, blade), end=(grip, blade), torso=(start yaw, end yaw, pitch), dip=root drop at the hit)
 # For dual weapons each pose is per hand: {'r': (grip, blade), 'l': (...)}; the idle hand keeps its guard.
-# Greatsword, redone after Better Combat's two-handed sword (2026-10-24, Creator: 「Better Combatみたいな体の動き」).
-# Read off its claymore moves for their rules, no values taken: the guard holds the blade up across the body with
-# both hands in front of the chest; each cut is cocked well behind, crosses in front at full reach in two or three
-# ticks and is held in its follow-through; the hips turn about a quarter turn through a sweep and the chest leans
-# into it; the second sweep comes back high, at shoulder height; the closing slam lifts the blade right over the head
-# and folds the body forward over the blow.
-GS_GUARD = ((-0.14, 0.5, 0.26), (-0.42, 0.78, 0.46))
+# Greatsword, redone as Guts swings the Dragonslayer (2026-10-25, Creator: 「重くてガッツっぽいあらあらしい大剣」; the
+# Better Combat claymore read as too neat, and the blade's roll spun between keys). Read frame by frame off Berserk
+# Musou's Guts moveset (.tools/ppage/gs2): the blade rests on the right shoulder at idle and drags low behind on the
+# right before a sweep; each cut is a fast unwinding of the whole body (hips and chest a half turn) with dirt kicked
+# up, and its momentum carries the blade on past the target, up over the far shoulder or down to the ground, where
+# it hangs a beat before it is hauled into the next cut; the closer goes straight up overhead, the back arched, and
+# down into the ground in front, the body folded over it; the blade stays in the ground a moment, then is heaved
+# back onto the shoulder. The warrior strikes on the press, so the drag (the coil) is the pose each cut starts from.
+#
+# Keys: (t, ease, pose). A pose sets grip/blade (root space, as above), 'flat' (the blade's flat faces this way, so
+# the roll is keyed instead of guessed from the motion), torso/head (pitch, yaw, roll), root (pos, yaw), feet.
+def _plane(a, b):
+    """The flat of a blade swung from direction a to b: the normal of the swing plane."""
+    n = (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+    m = sum(v * v for v in n) ** .5
+    return tuple(round(v / m, 3) for v in n)
+
+
+GS_STAND = dict(grip=(-0.2, 0.55, 0.18), blade=(-0.15, 0.75, -0.65), flat=(0.0, 0.65, 0.76), torso=(4, 0, 0),
+                head=(0, 0, 0), root=((0, 0, 0), 0), fr=(-0.12, 0, 0), fl=(0.12, 0, 0))
+GS_DRAG = dict(grip=(-0.3, 0.12, 0.02), blade=(-0.4, -0.42, -0.81), flat=(0, 1, 0), torso=(18, -45, 0),
+               head=(-6, 55, 0), root=((0, -0.12, 0), -20), fr=(-0.24, 0, -0.22), fl=(0.22, 0, 0.24))
+S1_END_B, S1_FT_B = (0.9, -0.12, 0.4), (0.42, 0.6, -0.68)
+S2_END_B, S2_FT_B = (-0.92, -0.06, 0.38), (-0.58, -0.62, -0.53)
+GS_KEYS = [
+    (0.0, None, GS_DRAG),
+    (0.25, None, GS_DRAG),
+    # 1: the drag unwinds into a low sweep, right to left, and is carried up over the left shoulder. Three ticks, a
+    # key each, so no tick turns the blade much past a quarter turn (the display interpolates the shortest way).
+    (0.30, 'linear', dict(grip=(-0.28, 0.1, 0.36), blade=(-0.78, -0.3, 0.55), flat=(0, 1, 0), torso=(22, -30, 0),
+                          head=(-4, 32, 0), root=((0, -0.15, 0.04), -14))),
+    (0.35, 'linear', dict(grip=(-0.02, 0.06, 0.6), blade=(0.05, -0.22, 0.97), flat=(0, 1, 0), torso=(26, 2, 0),
+                          head=(0, 0, 0), root=((0, -0.19, 0.1), -2), fl=(0.24, 0, 0.34))),
+    (0.40, 'in', dict(grip=(0.38, 0.12, 0.34), blade=S1_END_B, flat=(0, 1, 0), torso=(28, 52, 0), head=(0, -55, 0),
+                      root=((0, -0.24, 0.18), 16), fr=(-0.24, 0, -0.18), fl=(0.26, 0, 0.44))),
+    (0.62, 'out', dict(grip=(0.28, 0.72, 0.02), blade=S1_FT_B, flat=_plane(S1_END_B, S1_FT_B), torso=(14, 78, 0),
+                       head=(0, -82, 0), root=((0, -0.17, 0.18), 24))),
+    (0.76, None, 'hold'),
+    # hauled round to the left of the head, flat level, for the return
+    (1.15, 'inout', dict(grip=(0.32, 0.86, -0.02), blade=(0.8, 0.22, -0.56), flat=(0, 1, 0), torso=(8, 70, 0),
+                         head=(0, -75, 0), root=((0, -0.12, 0.08), 22), fr=(-0.24, 0, -0.2), fl=(0.24, 0, 0.3))),
+    (1.25, None, 'hold'),
+    # 2: back across at shoulder height, and the weight drags it down to the ground on the right
+    (1.30, 'linear', dict(grip=(0.3, 0.7, 0.4), blade=(0.72, 0.12, 0.68), flat=(0, 1, 0), torso=(12, 38, 0),
+                          head=(0, -38, 0), root=((0, -0.13, 0.11), 12))),
+    (1.35, 'linear', dict(grip=(0.0, 0.62, 0.62), blade=(0, 0.04, 1), flat=(0, 1, 0), torso=(18, 0, 0), head=(0, 0, 0),
+                          root=((0, -0.16, 0.16), 0))),
+    (1.40, 'in', dict(grip=(-0.38, 0.48, 0.34), blade=S2_END_B, flat=(0, 1, 0), torso=(24, -58, 0), head=(0, 62, 0),
+                      root=((0, -0.22, 0.24), -18), fr=(-0.26, 0, 0.32), fl=(0.24, 0, 0.0))),
+    (1.64, 'out', dict(grip=(-0.34, 0.06, 0.12), blade=S2_FT_B, flat=_plane(S2_END_B, S2_FT_B), torso=(34, -62, 0),
+                       head=(-12, 64, 0), root=((0, -0.27, 0.24), -21))),
+    (1.78, None, 'hold'),
+    # straight up overhead, the back arched
+    (2.25, 'inout', dict(grip=(0.0, 1.24, -0.06), blade=(0, 0.8, -0.6), flat=(1, 0, 0), torso=(-16, 0, 0),
+                         head=(16, 0, 0), root=((0, -0.02, 0.1), 0), fr=(-0.2, 0, -0.16), fl=(0.2, 0, 0.16))),
+    (2.35, None, 'hold'),
+    # 3: down into the ground in front, the body folded over it; it stays in a moment, then is heaved to the shoulder
+    (2.40, 'linear', dict(grip=(0, 1.28, 0.24), blade=(0, 0.96, 0.28), flat=(1, 0, 0), torso=(4, 0, 0), head=(0, 0, 0),
+                          root=((0, -0.06, 0.14), 0))),
+    (2.45, 'linear', dict(grip=(0, 0.96, 0.52), blade=(0, 0.3, 0.95), flat=(1, 0, 0), torso=(24, 0, 0), head=(-14, 0, 0),
+                          root=((0, -0.14, 0.2), 0))),
+    (2.50, 'in', dict(grip=(0, 0.14, 0.62), blade=(0, -0.62, 0.78), flat=(1, 0, 0), torso=(52, 0, 0), head=(-36, 0, 0),
+                      root=((0, -0.34, 0.28), 0), fr=(-0.22, 0, -0.3), fl=(0.22, 0, 0.5))),
+    (2.66, 'out', dict(grip=(0, 0.1, 0.64), blade=(0, -0.68, 0.73), flat=(1, 0, 0), torso=(56, 0, 0), head=(-40, 0, 0),
+                       root=((0, -0.37, 0.28), 0))),
+    (2.9, None, 'hold'),
+    (3.28, 'inout', dict(grip=(-0.2, 0.62, 0.3), blade=(-0.25, 0.9, 0.35), flat=(0.95, 0.1, 0.3), torso=(10, -8, 0),
+                         head=(-4, 8, 0), root=((0, -0.08, 0.1), -6), fr=(-0.16, 0, -0.08), fl=(0.16, 0, 0.12))),
+    (3.6, 'out', GS_STAND),
+    (3.85, None, GS_STAND),
+]
 GREATSWORD = {
     'weapon': {'model': 'weapons/greatsword_t3', 'scale': 0.95, 'grip': 4, 'hands': 'two', 'second': 3.2},
-    'blockbench': 'greatsword#greatsword_combo',
-    'immediate': True, 'guard': GS_GUARD, 'swing_ticks': 2,
-    'attacks': [
-        # right to left, waist high
-        dict(start=((-0.38, 0.5, -0.02), (-0.86, 0.14, -0.48)), end=((0.34, 0.44, 0.36), (0.9, -0.04, 0.42)),
-             torso=(-30, 62, 14), dip=.06),
-        # left to right, shoulder high
-        dict(start=((0.3, 0.74, 0.04), (0.84, 0.3, -0.44)), end=((-0.32, 0.62, 0.38), (-0.92, 0.02, 0.38)),
-             torso=(40, -62, 12), dip=.06),
-        # the slam: over the head, then down in front, the body folding over it
-        dict(start=((-0.04, 1.16, -0.06), (0.0, 0.42, -0.9)), end=((0.0, 0.16, 0.56), (0.0, -0.56, 0.83)),
-             torso=(-4, 2, 48), dip=.18),
-    ],
+    'blockbench': 'greatsword#greatsword_combo', 'keys': GS_KEYS, 'hits': [0.25, 1.25, 2.35],
+    'phases': ['1撃目：引きずりから低い薙ぎ', '2撃目：肩の高さで返す', '3撃目（締め）：頭上から地面へ'],
 }
 DAGGER_GUARD = {'r': ((-0.2, 0.35, 0.3), (0.0, 0.25, 1.0)), 'l': ((0.2, 0.35, 0.3), (0.0, 0.25, 1.0))}
 DAGGERS = {
@@ -170,10 +223,41 @@ def build(name, label, spec, table):
     return motion
 
 
+def build_keyed(name, label, spec):
+    """A motion keyed pose by pose (the greatsword): each key holds every track at its pose; 'hold' repeats the last."""
+    tracks = {n: [] for n in ('grip', 'blade', 'root', 'torso', 'head', 'foot_r', 'foot_l')}
+    last, flat = {}, None
+    for t, ease, pose in spec['keys']:
+        pose = last if pose == 'hold' else last | pose
+        last = pose
+        f = pose['flat']
+        if flat is not None and sum(a * b for a, b in zip(f, flat)) < 0: f = tuple(-v for v in f)  # a line: keep its sign
+        flat = f
+        tracks['grip'].append(key(t, 'pos', pose['grip'], ease))
+        tracks['blade'].append(key(t, 'dir', pose['blade'], ease) | {'flat': [round(v, 3) for v in f]})
+        pos, yaw = pose['root']
+        tracks['root'].append(key(t, 'pos', pos, ease) | {'rot': [0, yaw, 0]})
+        tracks['torso'].append(key(t, 'rot', pose['torso'], ease))
+        tracks['head'].append(key(t, 'rot', pose['head'], ease))
+        tracks['foot_r'].append(key(t, 'pos', pose['fr'], ease))
+        tracks['foot_l'].append(key(t, 'pos', pose['fl'], ease))
+    length = spec['keys'][-1][0]
+    motion = {
+        'comment': f'{label}の連撃: generated by scripts/build_weapon_combo_motions.py (keyed poses, see GS_KEYS).',
+        'blockbench': spec['blockbench'], 'weapon': spec['weapon'], 'reach': label,
+        'phases': [{'t': 0, 'name': '構え（引きずり）'}] + [{'t': h, 'name': n} for h, n in zip(spec['hits'], spec['phases'])],
+        'stills': [], 'length': length,
+        'events': [{'t': h, 'type': 'hit', 'attack': i} for i, h in enumerate(spec['hits'])] + [{'t': length, 'type': 'end'}],
+        'shake': [{'t': 0, 'amp': 0.0}], 'tracks': tracks,
+    }
+    (OUT / f'{name}.json').write_text(json.dumps(motion, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+    return motion
+
+
 def main():
     tables = {w['name']: w for w in json.loads((ROOT / '.tools/weapon-reach.json').read_text())}
     for name, (label, spec) in WEAPONS.items():
-        m = build(name, label, spec, tables[label])
+        m = build_keyed(name, label, spec) if 'keys' in spec else build(name, label, spec, tables[label])
         print(name, m['length'], 's', len(m['events']) - 1, 'hits')
 
 

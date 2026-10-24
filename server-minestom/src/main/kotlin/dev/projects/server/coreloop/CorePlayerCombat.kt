@@ -562,11 +562,7 @@ internal class CorePlayerCombat(
         vfx.swingSound(swing.beat)
         // Better Combat manner: the off hand swings the off-hand attacks of a dual weapon.
         if (swing.attack.hand == CoreAttackHand.OFF) player.swingOffHand() else player.swingMainHand()
-        if (classId == CoreClass.WARRIOR) {
-            vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.beat - 1], player.position, normalDirection)
-            // Better Combat manner: the others see the body swing this beat (scripts/build_weapon_combo_motions.py).
-            GREATSWORD_BEATS.getOrNull(swing.beat - 1)?.let { (from, until) -> PlayerPuppet.play(player, "greatsword_combo", player.uuid in PlayerPuppet.watching, from, until) }
-        }
+        if (classId == CoreClass.WARRIOR) vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.beat - 1], player.position, normalDirection)
         else vfx.play(CoreClassEffect(classId, CoreSkillMotion.CONE, player.position, normalDirection,
             reach(), swing.finisher, reverse = swing.beat == 2))
         var connected = false
@@ -1315,8 +1311,6 @@ internal class CorePlayerCombat(
         const val HEAVY_STARTUP = 12
         const val CAST_SPEED = .35
         const val SWING_SPEED = .6
-        /** greatsword_combo.json seconds each greatsword beat plays: the swing, its recovery and the cock into the next. */
-        private val GREATSWORD_BEATS = listOf(.25 to 1.25, 1.25 to 2.35, 2.35 to 4.3)
         const val STAGGER_SHARE = .2
         const val KNOCKDOWN_SHARE = .45
         const val STAGGER_TICKS = 10L
