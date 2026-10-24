@@ -41,9 +41,11 @@ internal object CoreUiPackPolicy {
     /**
      * Combat VFX shader, one core/item for both experiments: texels carrying the warrior heat/glow alpha markers
      * (scripts/build_warrior_iron_vfx.py) and items tinted with the 黒翳竜 VFX marker (scripts/build_boss_vfx.py).
-     * Every other item renders as vanilla.
+     * Every other item renders as vanilla. The include holds the greatsword swing's keys (scripts/class_armament_swing.py),
+     * which item.vsh plays on the first-person held sword.
      */
-    val shaderOverrides: Set<String> = setOf("assets/minecraft/shaders/core/item.vsh", "assets/minecraft/shaders/core/item.fsh")
+    val shaderOverrides: Set<String> = setOf("assets/minecraft/shaders/core/item.vsh", "assets/minecraft/shaders/core/item.fsh",
+        "assets/minecraft/shaders/include/greatsword_swing.glsl")
 
     fun allowedPath(path: String): Boolean = !path.startsWith('/') && ".." !in path && '\\' !in path &&
         (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions || path in dialogWidgets ||

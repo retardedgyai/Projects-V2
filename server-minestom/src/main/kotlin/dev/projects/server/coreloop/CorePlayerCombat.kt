@@ -179,7 +179,7 @@ internal class CorePlayerCombat(
             if(normalEmpowerment > 1) classState.counterUntil = -1
             normalDirection = flatFacing()
             lastCombat = tickNumber
-            if (greatsword) GreatswordViewmodel.swing(player, swing.beat, swing.totalTicks)
+            if (greatsword) CoreArmamentPresentation.shaderSwing(player, swing.beat, swing.totalTicks)
             if (swing.impactTick == 0) releaseNormal(enemies, swing)
             else vfx.startSound(swing.beat)
         }

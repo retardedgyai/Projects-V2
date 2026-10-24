@@ -36,7 +36,7 @@ internal object CoreArmamentPresentation {
     internal fun pose(item: ItemStack, pose: Int): ItemStack {
         if (item.get(DataComponents.ITEM_MODEL) !in models ||
             CoreLoopItems.gearSlot(item) != CoreGearSlot.WEAPON) return item
-        require(pose in 0..GreatswordViewmodel.HIDDEN_POSE)
+        require(pose in 0..ANIM_POSE)
         val old = item.get(DataComponents.CUSTOM_MODEL_DATA) ?: CustomModelData(emptyList(), emptyList(), emptyList(), emptyList())
         val value = pose.toFloat()
         if (old.floats().firstOrNull() == value) return item
@@ -65,7 +65,36 @@ internal object CoreArmamentPresentation {
             motif in setOf(CoreSkillMotif.ARROW, CoreSkillMotif.RAIN))
     }
 
-    fun meleeRelease(player: Player) { if (!GreatswordViewmodel.playing(player)) begin(player, Stage.RELEASE, 12) }
+    /**
+     * The greatsword swing moved by the item shader (2026-10-25; scripts/shaders/item.vsh, scripts/class_armament_swing.py).
+     * The held sword becomes its tinted model and the tint says which beat, how long and since which world tick; the
+     * shader plays it in the first-person hand at the screen's frame rate. When the swing is over it is the plain held
+     * sword again (the tick only has 8 bits and would come round again).
+     */
+    const val ANIM_POSE = 120
+    private data class ShaderSwing(val until: Long, val weapon: ItemStack)
+    private val shaderTag = Tag.Transient<ShaderSwing>("projects_armament_shader_swing")
+
+    fun shaderSwing(player: Player, beat: Int, ticks: Int): Boolean {
+        val instance = player.instance ?: return false
+        if (!CoreCombatPresentation.packed(player) || player.openInventory != null || player.isRemoved) return false
+        val item = player.itemInMainHand
+        val model = item.get(DataComponents.ITEM_MODEL) ?: return false
+        if (model !in greatswords || CoreLoopItems.gearSlot(item) != CoreGearSlot.WEAPON) return false
+        cancel(player); player.removeTag(swingTag)
+        val marker = 84 + (beat - 1).coerceIn(0, 2) + if (model.endsWith("_t1")) 3 else 0
+        val tint = net.kyori.adventure.text.format.TextColor.color(ticks.coerceIn(1, 255), (instance.worldAge and 255L).toInt(), marker)
+        val posed = pose(item, ANIM_POSE)
+        val old = posed.get(DataComponents.CUSTOM_MODEL_DATA)!!
+        player.setTag(shaderTag, ShaderSwing(player.aliveTicks + ticks, frame(item, 0)))
+        player.setItemInMainHand(posed.with(DataComponents.CUSTOM_MODEL_DATA,
+            CustomModelData(old.floats(), old.flags(), old.strings(), listOf(tint) + old.colors().drop(1))))
+        return true
+    }
+
+    fun meleeRelease(player: Player) {
+        if (!GreatswordViewmodel.playing(player) && player.getTag(shaderTag) == null) begin(player, Stage.RELEASE, 12)
+    }
 
     /**
      * First-person greatsword swings (2026-10-25, scripts/class_armament_swing.py): one model per tick moves the held
@@ -146,6 +175,14 @@ internal object CoreArmamentPresentation {
             cancel(player); player.removeTag(swingTag); GreatswordViewmodel.stop(player); show(player); return
         }
         if (GreatswordViewmodel.playing(player)) { GreatswordViewmodel.tick(player); return }
+        player.getTag(shaderTag)?.let { swing ->
+            val held = player.itemInMainHand
+            if (frame(held, 0).without(DataComponents.CUSTOM_MODEL_DATA) == swing.weapon.without(DataComponents.CUSTOM_MODEL_DATA) &&
+                player.aliveTicks < swing.until) return
+            player.removeTag(shaderTag)
+            if (frame(held, 0).without(DataComponents.CUSTOM_MODEL_DATA) == swing.weapon.without(DataComponents.CUSTOM_MODEL_DATA))
+                player.setItemInMainHand(swing.weapon)
+        }
         player.getTag(hiddenTag)?.let { if (player.aliveTicks >= it.until) show(player) else return }
         val old = player.itemInMainHand
         // A swing moves every tick (the 10 fps idle frames would stutter it); a beat left unfollowed settles back.

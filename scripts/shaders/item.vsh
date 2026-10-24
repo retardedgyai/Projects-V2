@@ -8,6 +8,10 @@
 // Point lights (SakuraLight.kt, scripts/shaders/post/sakura_light.fsh): an item tinted blue 80..83 is a light probe. It is
 // not drawn where it stands: its quad moves onto the screen's bottom pixel row, where item.fsh writes the light's data
 // for the post effect, which lights the scene and hides the row again.
+// The greatsword swing (CoreArmamentPresentation.shaderSwing, scripts/class_armament_swing.py): a held sword tinted blue
+// 84..89 is moved here, in the first-person hand only: back to the sword's own space through its held resting pose,
+// then placed by the beat's keys at this frame's time, so the swing runs at the screen's frame rate. Elsewhere (other
+// players, F5, the hotbar) it is drawn as the plain held sword, its tint dropped.
 
 #include <minecraft:light.glsl>
 #include <minecraft:globals.glsl>
@@ -15,6 +19,7 @@
 #include <minecraft:dynamictransforms.glsl>
 #include <minecraft:projection.glsl>
 #include <minecraft:sample_lightmap.glsl>
+#include <minecraft:greatsword_swing.glsl>
 
 layout(location = 0) in vec3 Position;
 layout(location = 1) in vec4 Color;
@@ -48,16 +53,97 @@ layout(location = 8) out vec3 vfxPosition;
 
 const float LIGHT_PROBE_PIXELS = 97.0;   // item.fsh: header 33 + 8 lights x 8
 
+float swingKey(int beat, bool plain, int k, int i) {
+    int at = k * 10 + i;
+    if (plain) return beat == 1 ? SWING_PLAIN_1[at] : beat == 2 ? SWING_PLAIN_2[at] : SWING_PLAIN_3[at];
+    return beat == 1 ? SWING_BIG_1[at] : beat == 2 ? SWING_BIG_2[at] : SWING_BIG_3[at];
+}
+
+float swingEase(int kind, float w) {
+    if (kind == 1) return w * w;                                   // in: gathering speed
+    if (kind == 2) return 1.0 - (1.0 - w) * (1.0 - w);             // out: coming to rest
+    if (kind == 3) return w * w * (3.0 - 2.0 * w);
+    return w;
+}
+
+vec4 swingSlerp(vec4 a, vec4 b, float w) {
+    if (dot(a, b) < 0.0) b = -b;
+    float c = clamp(dot(a, b), -1.0, 1.0);
+    if (c > .9995) return normalize(mix(a, b, w));
+    float ang = acos(c);
+    return (sin((1.0 - w) * ang) * a + sin(w * ang) * b) / sin(ang);
+}
+
+vec3 swingRotate(vec4 q, vec3 v) {
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+
+// The swing pose at this frame: hand position, rotation of the sword's axes, scale.
+void swingPose(int beat, bool plain, float u, out vec3 hand, out vec4 rot, out float scale) {
+    int k = 0;
+    for (int i = 0; i < SWING_KEYS - 1; i++) if (swingKey(beat, plain, i + 1, 0) <= u) k = i + 1;
+    int n = min(k + 1, SWING_KEYS - 1);
+    float u0 = swingKey(beat, plain, k, 0), u1 = swingKey(beat, plain, n, 0);
+    float w = n == k || u1 <= u0 ? 1.0 : swingEase(int(swingKey(beat, plain, n, 1) + .5), clamp((u - u0) / (u1 - u0), 0.0, 1.0));
+    vec3 h0 = vec3(swingKey(beat, plain, k, 2), swingKey(beat, plain, k, 3), swingKey(beat, plain, k, 4));
+    vec3 h1 = vec3(swingKey(beat, plain, n, 2), swingKey(beat, plain, n, 3), swingKey(beat, plain, n, 4));
+    vec4 q0 = vec4(swingKey(beat, plain, k, 5), swingKey(beat, plain, k, 6), swingKey(beat, plain, k, 7), swingKey(beat, plain, k, 8));
+    vec4 q1 = vec4(swingKey(beat, plain, n, 5), swingKey(beat, plain, n, 6), swingKey(beat, plain, n, 7), swingKey(beat, plain, n, 8));
+    hand = mix(h0, h1, w);
+    rot = swingSlerp(q0, q1, w);
+    scale = mix(swingKey(beat, plain, k, 9), swingKey(beat, plain, n, 9), w);
+}
+
 void main() {
-    gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
+    vec3 position = Position;
+    vec3 normal = Normal;
+    vec4 tint = Color;
+    bool swung = false;
+    int swingMarker = int(Color.b * 255.0 + .5);
+    if (swingMarker >= 84 && swingMarker <= 89) {
+        tint = vec4(1.0, 1.0, 1.0, Color.a);
+        // The first-person hand: a perspective projection and the vertex within reach of the eye (26.3 draws the hand
+        // with a model-view matrix of its own, so everything here is worked in view space and carried back).
+        mat4 mv = ModelViewMat;
+        vec3 view = (mv * vec4(Position, 1.0)).xyz;
+        bool hand = ProjMat[2][3] < -.5 && length(view) < 2.0;
+        if (hand) {
+            bool plain = swingMarker >= 87;
+            int beat = swingMarker - (plain ? 86 : 83);
+            float swingLength = max(Color.r * 255.0, 1.0);
+            float elapsed = mod(GameTime * 24000.0 - Color.g * 255.0 + 512.0, 256.0);
+            float u = clamp(elapsed / swingLength, 0.0, 1.0);
+            vec3 restT = plain ? SWING_PLAIN_T : SWING_BIG_T;
+            mat3 restR = plain ? SWING_PLAIN_R : SWING_BIG_R;
+            float restS = plain ? SWING_PLAIN_S : SWING_BIG_S;
+            vec3 grip = plain ? SWING_PLAIN_GRIP : SWING_BIG_GRIP;
+            // Back to the sword's own space, relative to the hand on the handle (blocks).
+            vec3 local = transpose(restR) * (view - SWING_ARM - restT) / restS + vec3(.5) - grip;
+            vec3 h; vec4 q; float s;
+            swingPose(beat, plain, u, h, q, s);
+            vec3 moved = h + swingRotate(q, local * s);
+            position = (inverse(mv) * vec4(moved, 1.0)).xyz;
+            normal = swingRotate(q, transpose(restR) * normalize(mat3(mv) * Normal));
+            // Light the face the camera sees (a face turned by the swing would otherwise keep its old shading side).
+            if (dot(normal, -moved) < 0.0) normal = -normal;
+            swung = true;
+        }
+    }
+    gl_Position = ProjMat * ModelViewMat * vec4(position, 1.0);
 
     #ifndef OIT_ALPHA_ONLY
-    sphericalVertexDistance = fog_spherical_distance(Position);
-    cylindricalVertexDistance = fog_cylindrical_distance(Position);
+    sphericalVertexDistance = fog_spherical_distance(position);
+    cylindricalVertexDistance = fog_cylindrical_distance(position);
     #endif
-    vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, Normal, Color);
+    vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, normal, tint);
+    if (swung) {
+        // The swung sword's normal is in view space, not the lights' space: shade it simply, lit from above-front.
+        // Close to vanilla's hand lighting (faces toward the camera near full bright, edges a little darker).
+        float lit = .82 + .18 * abs(dot(normalize(normal), normalize(vec3(.25, .45, .85))));
+        vertexColor = vec4(vec3(lit), tint.a);
+    }
     rawColor = Color;
-    vfxPosition = Position;
+    vfxPosition = position;
     #ifndef OIT_ALPHA_ONLY
     lightMapColor = sample_lightmap(Sampler2, UV2);
     overlayColor = texelFetch(Sampler1, UV1, 0);

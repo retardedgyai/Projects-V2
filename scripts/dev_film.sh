@@ -3,7 +3,7 @@
 #
 #   scripts/dev_film.sh <名前> [押す回数] [間隔tick] [距離] [秒]
 #
-# 1. 見えない画面（Hyprland の HEADLESS 出力に、全画面の Xwayland :5）がなければ作る。
+# 1. 見えない画面（1920x1080 の Xwayland :5 の窓を、表示しない特別なワークスペースへ移す）がなければ作る。
 # 2. テスト用クライアント（オフライン名 ClaudeTest、~/.local/bin/projects-testclient）がつながっていなければ起動して待つ。
 # 3. サーバーの作業フォルダに claude-demo.txt を置く。サーバーが試験場で案山子の前に立たせ、通常攻撃を押す。
 # 4. :5 を録画し、.tools/film/<名前>.mp4 と、1/20秒ごとのコマを並べた <名前>_N.png を作る。
@@ -15,13 +15,16 @@ NAME="${1:?名前}"; PRESSES="${2:-4}"; GAP="${3:-18}"; DIST="${4:-2.6}"; SECS="
 RUN="$ROOT/server-minestom/run"; OUT="$ROOT/.tools/film"; mkdir -p "$OUT"
 LOG="$OUT/testclient.log"
 
-if ! xdpyinfo -display :5 >/dev/null 2>&1 && ! [ -S /tmp/.X11-unix/X5 ]; then
-  HEADLESS=$(hyprctl monitors -j | python3 -c "import json,sys; print(next((m['name'] for m in json.load(sys.stdin) if m['name'].startswith('HEADLESS')), ''))")
-  if [ -z "$HEADLESS" ]; then hyprctl output create headless >/dev/null; sleep 1
-    HEADLESS=$(hyprctl monitors -j | python3 -c "import json,sys; print(next(m['name'] for m in json.load(sys.stdin) if m['name'].startswith('HEADLESS')))"); fi
-  FOCUSED=$(hyprctl monitors -j | python3 -c "import json,sys; print(next(m['name'] for m in json.load(sys.stdin) if m['focused']))")
-  setsid Xwayland :5 -fullscreen -output "$HEADLESS" -geometry 1920x1080 >/dev/null 2>&1 &
-  sleep 2; hyprctl dispatch "hl.dsp.focus({monitor=\"$FOCUSED\"})" >/dev/null   # 藍のフォーカスを戻す
+# The hidden screen: a rootful Xwayland window of 1920x1080, moved at once onto a special workspace nobody shows.
+# (2026-10-25: a HEADLESS output with a fullscreen Xwayland on it froze the PC with the NVIDIA driver; this uses no
+# extra output.)
+if ! xdpyinfo -display :5 >/dev/null 2>&1; then
+  setsid Xwayland :5 -geometry 1920x1080 >/dev/null 2>&1 &
+  for i in $(seq 1 40); do
+    A=$(hyprctl clients -j | python3 -c "import json,sys; print(next((c['address'] for c in json.load(sys.stdin) if c['title'].endswith(':5')), ''))")
+    [ -n "$A" ] && break; sleep .1
+  done
+  hyprctl dispatch "hl.dsp.window.move({workspace=\"special:claude\", window=\"address:$A\", follow=false})" >/dev/null
 fi
 
 if ! ss -ltn | grep -q ':25565 '; then echo "サーバーが起動していません" >&2; exit 1; fi
@@ -34,7 +37,8 @@ fi
 rm -f "$RUN/claude-demo.done"
 echo "$PRESSES $GAP $DIST" > "$RUN/claude-demo.txt"
 for i in $(seq 1 60); do [ -f "$RUN/claude-demo.txt" ] || break; sleep .5; done
-ffmpeg -v error -y -f x11grab -framerate 60 -video_size 1920x1080 -i :5 -t "$SECS" -c:v libx264 -preset ultrafast "$OUT/$NAME.mp4"
+SIZE=$(xdpyinfo -display :5 | awk '/dimensions/ {print $2}')
+ffmpeg -v error -y -f x11grab -framerate 60 -video_size "$SIZE" -i :5 -t "$SECS" -c:v libx264 -preset ultrafast "$OUT/$NAME.mp4"
 python3 - "$OUT/$NAME" <<'P'
 import sys, glob, subprocess, os
 from PIL import Image, ImageDraw
