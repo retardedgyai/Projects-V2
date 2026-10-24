@@ -28,7 +28,7 @@ if ! xdpyinfo -display :5 >/dev/null 2>&1; then
 fi
 
 if ! ss -ltn | grep -q ':25565 '; then echo "サーバーが起動していません" >&2; exit 1; fi
-if ! pgrep -f "mc-dir $HOME/ProjectS/[c]laude-testclient" >/dev/null; then
+if ! pgrep -f "[c]laude-testclient" >/dev/null; then
   # Memory guard (2026-10-25: the PC froze twice when the client pushed it into swap).
   AVAIL=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo)
   if [ "$AVAIL" -lt 3500 ]; then echo "空きメモリが ${AVAIL}MB しかないので、テスト用クライアントを起動しません" >&2; exit 1; fi

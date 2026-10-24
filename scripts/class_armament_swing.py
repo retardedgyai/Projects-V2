@@ -709,6 +709,73 @@ def shader_keys(name, beat):
     return out
 
 
+
+# ---- Edge-on (2026-10-25, Creator: 「剣をふるときに剣がちゃんと平面に見えてしまうのがおかしい」). Mordhau's zweihander
+# in first person, frame by frame side by side with ours: the blade is always seen on its edge, a thin line from the
+# hands (low, a little right of centre) up to the top edge; through a cut it barely moves on the screen, it turns in
+# depth, because the cut's plane passes through the eye (the camera turns with the body and the world smears past).
+# Ours swept a flat blade across the screen like a clock hand, its broad face to the camera. Now each cut turns the
+# blade in a plane through the eye and the hands, tilted only a little so the tip still travels: the flat is the plane's
+# normal (the edge leads) and the eye sees the blade on its edge. The slash effect carries the sweep across the screen.
+# (hands at the guard, hands at the strike, screen direction of the cut's line, tilt degrees, blade angles: cocked,
+# strike, end; 0 = along the line, 90 = straight ahead into the scene)
+EDGE_SWINGS = {
+    # 袈裟: the line runs from upper right to lower left; the sword slides down it, turning from up-back to down-ahead
+    1: ((0.14, -0.5, 0.8), (-0.22, -0.7, 0.82), (0.62, 1.0), 16.0, 22.0, 55.0, 98.0),
+    # 逆袈裟: from lower left up to upper right
+    2: ((-0.2, -0.7, 0.82), (0.16, -0.48, 0.8), (-0.75, -1.0), 16.0, 28.0, 58.0, 100.0),
+    # 叩きつけ: from high in the middle straight down
+    3: ((0.06, -0.24, 0.78), (0.02, -0.66, 0.84), (0.1, 1.0), 10.0, 18.0, 55.0, 92.0),
+}
+EDGE_SIZE = 1.6
+
+
+def edge_poses(beat):
+    g0, g1, line, tilt, cock, strike, end = EDGE_SWINGS[beat]
+    g0, g1 = np.array(g0), np.array(g1)
+    sdir = _unit((line[0], line[1], 0.0))
+    t = PLANE_TIMING
+    def at(theta, w):
+        hand = g0 * (1 - w) + g1 * w
+        # the plane through the eye and the hands holding the screen line: its in-depth axis
+        ahead = _unit(hand - sdir * (hand @ sdir))
+        ahead = _rot(sdir, tilt, ahead)
+        d = _unit(math.cos(math.radians(theta)) * sdir + math.sin(math.radians(theta)) * ahead)
+        flat = _unit(np.cross(sdir, ahead))
+        return (tuple(hand), tuple(d), tuple(flat))
+    out = [(.12, 'out', at(cock * .8, 0.0), EDGE_SIZE), (t['coil'], 'inout', at(cock, 0.0), EDGE_SIZE)]
+    steps = 10
+    for i in range(1, steps + 1):
+        w = i / steps
+        if w <= .55:
+            th = cock + (strike - cock) * (w / .55) ** 2
+            u = t['coil'] + (t['strike'] - t['coil']) * (w / .55)
+        else:
+            gg = (w - .55) / .45
+            th = strike + (end - strike) * (1 - (1 - gg) ** 2)
+            u = t['strike'] + (t['through'] - t['strike']) * gg
+        out.append((round(u, 4), 'linear', at(th, min(1.0, w / .55)), EDGE_SIZE))
+    return out
+
+
+def shader_keys(name, beat):
+    """[u, ease, hand (view space), rotation quaternion of the sword's axes, scale] for one beat of one of MODELS."""
+    rest = vm_rest(name)
+    cut = edge_poses(beat)
+    t = PLANE_TIMING
+    poses = [(0.0, None, rest, 1.0)] + cut
+    poses.append((t['hold'], 'linear', poses[-1][2], poses[-1][3]))
+    poses.append((t['low'], 'inout', ((0.32, -1.45, 0.35), _unit((0.45, 0.0, 0.9)), cut[-1][2][2]), SHADER_SIZE))
+    poses.append((1.0, 'out', rest, 1.0))
+    out = []
+    for u, e, (grip, blade, fl), size in poses:
+        y = _unit(_view(blade)); z = _view(fl); z = _unit(z - y * (z @ y)); x = np.cross(y, z)
+        q = _quaternion(np.column_stack((x, y, z)))
+        grow = size if name != 'greatsword_t1' else 1.0
+        out.append([u, SHADER_EASE[e or 'linear'], *_view(grip), *q, MODELS[name][2] * grow])
+    return out
+
+
 if __name__ == '__main__':
     import json
     from pathlib import Path
