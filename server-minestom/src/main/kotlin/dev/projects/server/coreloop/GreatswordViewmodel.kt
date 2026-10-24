@@ -84,13 +84,8 @@ internal object GreatswordViewmodel {
         val state = active[player.uuid] ?: return
         if (state.display.isRemoved || player.instance == null || state.display.instance !== player.instance ||
             CoreArmamentPresentation.frame(player.itemInMainHand, 0) != state.weapon) { stop(player); return }
-        val elapsed = player.aliveTicks - state.started
-        if (elapsed >= state.duration) {
-            val back = state.clip.replace("swing", "return")
-            if (state.clip.startsWith("swing") && back in frames.getValue(state.model)) {
-                state.clip = back; state.started = player.aliveTicks; state.duration = frames.getValue(state.model).getValue(back).size
-            } else { stop(player); return }
-        }
+        // Each clip ends on the held pose, so the held sword takes over without a jump.
+        if (player.aliveTicks - state.started >= state.duration) { stop(player); return }
         update(player, state, first = false)
     }
 

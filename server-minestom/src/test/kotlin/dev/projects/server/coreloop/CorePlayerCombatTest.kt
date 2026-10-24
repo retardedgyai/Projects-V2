@@ -139,13 +139,16 @@ class CorePlayerCombatTest {
         }
     }
     @Test
-    fun `warrior hits on accepted click before any tick and duplicate swing signals never repeat damage`() = arena { h ->
+    fun `warrior greatsword lands a quarter into the swing and duplicate swing signals never repeat damage`() = arena { h ->
         h.actor.attack()
-        assertEquals(288.0, h.combat.bossHealth(), "No startup timer before damage")
+        assertEquals(300.0, h.combat.bossHealth())
         h.actor.attack()
-        h.ticks(7)
-        assertEquals(288.0, h.combat.bossHealth())
+        h.ticks(4)
+        assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
+        assertEquals(288.0, h.combat.bossHealth())
+        h.actor.attack()
+        h.ticks(3)
         assertEquals(288.0, h.combat.bossHealth())
         h.ticks(20)
         assertEquals(288.0, h.combat.bossHealth())
@@ -221,11 +224,11 @@ class CorePlayerCombatTest {
     }
 
     @Test
-    fun `skill links after six AA ticks instead of waiting the entire AA recovery`() = arena { h ->
+    fun `skill links six ticks after the AA impact instead of waiting the entire AA recovery`() = arena { h ->
         h.actor.attack()
         h.actor.classState.gain(1.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(100, h.actor.mana)
-        h.ticks(5)
+        h.ticks(10)
         assertEquals(100, h.actor.mana)
         h.ticks(1)
         assertEquals(88, h.actor.mana)
@@ -494,6 +497,9 @@ class CorePlayerCombatTest {
     @Test
     fun `fire mod adds direct damage and three nonrecursive burn ticks`() = arena(stats = CoreAffixStats(fireFlat = 10.0)) { h ->
         h.actor.attack()
+        h.ticks(4)
+        assertEquals(300.0, h.combat.bossHealth())
+        h.ticks(1)
         assertEquals(281.5, h.combat.bossHealth(), 0.00001)
         h.ticks(59)
         assertEquals(275.5, h.combat.bossHealth(), 0.00001)
@@ -580,17 +586,19 @@ class CorePlayerCombatTest {
     fun `kill callback can return actor during direct hit without late VFX or burn`() = arena(stats = CoreAffixStats(fireFlat = 10.0)) { h ->
         h.combat.applyEffectDamage(h.combat.combatTargets().single().id, h.player, 290.0)
         h.afterKill = { h.actor.resetActions(); h.activeEncounter = null }
-        h.actor.attack()
+        h.actor.attack(); h.ticks(4)
+        assertFalse(h.combat.bossDefeated)
+        h.ticks(1)
         assertTrue(h.combat.bossDefeated)
         assertEquals(0, h.actor.activeVisualEffects)
         h.ticks(60)
         assertEquals(0, h.actor.activeVisualEffects)
     }
 
-    @Test fun `accepted warrior input sends blade wake and hit with damage before actor tick`() = arena { h ->
+    @Test fun `warrior swing sends blade wake and hit with damage on its impact tick`() = arena { h ->
         CoreCombatPresentation.pack(h.player,true)
         try {
-            h.actor.attack()
+            h.actor.attack(); h.ticks(5)
             assertEquals(288.0,h.combat.bossHealth())
             val displays=h.instance.entities.filter {
                 it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY
@@ -846,7 +854,7 @@ class CorePlayerCombatTest {
     @Test fun `late AA during a skill executes once when recovery ends`() = arena { h ->
         h.actor.skill(1); h.ticks(14)
         repeat(10) { h.actor.attack() }
-        h.ticks(4); assertEquals(241.6, h.combat.bossHealth(), .00001)
+        h.ticks(9); assertEquals(241.6, h.combat.bossHealth(), .00001)
         h.ticks(1); assertEquals(229.6, h.combat.bossHealth(), .00001)
         h.ticks(60); assertEquals(229.6, h.combat.bossHealth(), .00001)
     }
@@ -859,6 +867,8 @@ class CorePlayerCombatTest {
     @Test fun `pending skill accepts only the latest intent and rechecks costs`() = arena { h ->
         h.actor.skill(1); h.ticks(14)
         h.actor.skill(2); h.actor.attack(); h.ticks(9)
+        assertEquals(241.6, h.combat.bossHealth(), .00001)
+        h.ticks(1)
         assertEquals(0, h.actor.cooldownRemaining(2))
         assertEquals(229.6, h.combat.bossHealth(), .00001)
     }
@@ -870,8 +880,8 @@ class CorePlayerCombatTest {
     }
 
     @Test fun `dodge cuts the AA after its impact but repeated cancel inputs cannot manufacture AA hits`() = arena { h ->
-        // The warrior AA lands on the press, so F right after it only cuts the follow-through.
-        h.actor.attack(); val origin=h.player.position
+        // F right after the AA impact only cuts the follow-through.
+        h.actor.attack(); h.ticks(5); val origin=h.player.position
         h.actor.dodge(); h.ticks(3); assertTrue(h.player.position.distance(origin)>2.0); assertEquals(288.0, h.combat.bossHealth())
         h.player.teleport(origin).join(); h.ticks(30)
         repeat(10) { h.actor.attack();h.actor.dodge() }
@@ -879,7 +889,7 @@ class CorePlayerCombatTest {
     }
 
     @Test fun `third normal hit opens one fast heavier slam`() = arena { h ->
-        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
+        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(8)
         val before=h.combat.bossHealth();assertEquals(300.0-12.0*(1.0+1.15+1.85),before,.00001)
         assertEquals(.4,h.actor.resource,1e-9) // 0.1 + 0.1 + 0.2 from the three swings
         h.ticks(6);h.actor.skill(1);h.ticks(2);assertEquals(before,h.combat.bossHealth())
@@ -1079,7 +1089,7 @@ class CorePlayerCombatTest {
         // A broken boss starts no attack even at slam range, and takes 30% more damage.
         for (t in listOf(1100L, 1650L, 2550L, 4100L)) h.combat.tick(t)
         assertTrue(h.incomingHits.isEmpty())
-        h.actor.attack(); assertEquals(300.0 - 12.0 * QuestEncounterCombat.BROKEN_DAMAGE, h.combat.bossHealth(), .00001)
+        h.actor.attack(); h.ticks(5); assertEquals(300.0 - 12.0 * QuestEncounterCombat.BROKEN_DAMAGE, h.combat.bossHealth(), .00001)
         h.combat.tick(5000L); assertFalse(h.combat.isBroken(id))
     }
 
@@ -1127,7 +1137,9 @@ class CorePlayerCombatTest {
         soldierArena(h) { e, id ->
             h.actor.attack(); h.ticks(25); h.actor.attack(); h.ticks(25)
             assertFalse(CrowdControl.FLINCH in e.crowdControl(id))
-            h.actor.attack()
+            h.actor.attack(); h.ticks(7)
+            assertFalse(CrowdControl.FLINCH in e.crowdControl(id))
+            h.ticks(1)
             assertTrue(CrowdControl.FLINCH in e.crowdControl(id))
         }
     }
@@ -1157,7 +1169,7 @@ class CorePlayerCombatTest {
         assertEquals(300.0, h.combat.bossHealth(), "no attack or skill while stunned")
         h.actor.dodge(); h.ticks(1)
         assertTrue(h.player.getAttribute(net.minestom.server.entity.attribute.Attribute.MOVEMENT_SPEED).baseValue > 0)
-        h.ticks(30); h.actor.attack()
+        h.ticks(30); h.actor.attack(); h.ticks(5)
         assertTrue(h.combat.bossHealth() < 300.0, "free again after the dodge")
     }
 
@@ -1185,7 +1197,7 @@ class CorePlayerCombatTest {
 
     @Test fun `normal hits break a little and the third-hit slam breaks half again as much`() = arena { h ->
         val id = h.combat.combatTargets().single().id
-        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
+        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(8)
         assertEquals(100.0 - (2.0 + 2.0 + 5.0), h.combat.breakGauge(id)!!, .0001)
         h.ticks(6);h.actor.skill(1);h.ticks(3)
         assertEquals(100.0 - 9.0 - 12.0 * CoreBreak.FINISHER, h.combat.breakGauge(id)!!, .0001)
@@ -1201,8 +1213,8 @@ class CorePlayerCombatTest {
     @Test fun `sword saint third hits take time off the spender cooldowns`() = arena { h ->
         h.journey=CoreJourney.legacy(build=CoreClassBuild(nodes=8248));h.actor.reset()
         h.actor.skill(1);h.ticks(40)
-        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack()
-        assertEquals(240-40-50-30,h.actor.cooldownRemaining(1))
+        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(8)
+        assertEquals(240-40-50-8-30,h.actor.cooldownRemaining(1))
     }
 
     

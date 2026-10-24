@@ -244,9 +244,71 @@ def viewmodel():
     idle = {'rotation': [0, -90, 25], 'translation': [1.13, 3.2, -1.5], 'scale': [SCALE] * 3}
     out = {}
     for name, (_, grip_px, scale) in MODELS.items():
-        clip_frames = {clip: [viewmodel_frame(d) for d in ds] for clip, ds in clips(name).items()}
+        clip_frames = bc_clips(name)
         clip_frames['idle'] = [viewmodel_frame(RESTS[name])]
         out[f'projects:weapons/{name}'] = clip_frames
+    return out
+
+
+# ---- Better Combat cadence (2026-10-25, Creator: 「手触りが全くBetter combatと一緒になるまで」). Read off Better
+# Combat's claymore in first person (its own client, recorded at 60 fps; rules only, none of its data): the weapon alone
+# moves, from the ordinary held pose on the right; the blade lands a quarter of the way into the swing, crosses the
+# screen in two or three frames, is held past the target (off screen for the sweep), then comes back to rest. The three
+# attacks are a sweep from the right, a thrust, an overhead slam. Keys are (u, ease, pose) over the whole swing (u = 1
+# is the cooldown's end, impact at u = .25); 'size' scales the sword up while it is in front of the camera.
+BC_STEPS = 48
+BC_BEATS = {
+    # sweep: tip forward and up in front of the right hand, then flat across the screen and out to the lower left;
+    # the blade is crossing the middle when the server's hit lands (u = .25)
+    1: [(0.0, None, 'rest'),
+        (.12, 'out', dict(grip=on_screen(.3, -.5, .62), blade=(0.12, 0.5, 0.86), flat=(0, 1, 0), size=1.25)),
+        (.18, 'inout', dict(grip=on_screen(.34, -.48, .64), blade=(0.25, 0.42, 0.87), size=1.3)),
+        (.23, 'in', dict(grip=on_screen(.05, -.55, .66), blade=(-0.9, 0.1, 0.42), size=1.3)),
+        (.29, 'out', dict(grip=on_screen(-.8, -.9, .6), blade=(-0.88, -0.1, -0.46), size=1.3)),
+        (.62, None, 'hold'),
+        (1.0, 'inout', 'rest')],
+    # thrust: drawn back close to the face, upright, then driven straight at the crosshair and held there
+    2: [(0.0, None, 'rest'),
+        (.13, 'out', dict(grip=on_screen(.15, -.9, .55), blade=(0.05, 0.98, 0.18), flat=(0, 0, 1), size=1.2)),
+        (.19, 'inout', dict(grip=on_screen(.18, -.95, .5), blade=(0.05, 0.9, -0.42), size=1.2)),
+        (.23, 'in', dict(grip=on_screen(.1, -.8, .62), blade=(-0.05, 0.5, 0.86), flat=(1, 0, 0), size=1.25)),
+        (.3, 'out', dict(grip=on_screen(.06, -.65, .9), blade=(-0.05, 0.42, 0.9), size=1.25)),
+        (.6, None, 'hold'),
+        (1.0, 'inout', 'rest')],
+    # slam: up in front of the face and over the head, then straight down in front, stopped at waist height (the
+    # viewmodel is in the world: lower, the ground would swallow the blade)
+    3: [(0.0, None, 'rest'),
+        (.1, 'out', dict(grip=on_screen(.35, -.8, .6), blade=(0.08, 0.98, 0.18), flat=(1, 0, 0), size=1.2)),
+        (.18, 'inout', dict(grip=on_screen(.2, .55, .6), blade=(0.05, 0.55, -0.83), size=1.25)),
+        (.23, 'in', dict(grip=on_screen(.3, .15, .7), blade=(-0.35, -0.4, 0.85), size=1.25)),
+        (.29, 'out', dict(grip=on_screen(.28, -.05, .7), blade=(-0.4, -0.6, 0.69), size=1.25)),
+        (.68, None, 'hold'),
+        (1.0, 'inout', 'rest')],
+}
+
+
+def bc_clips(name='greatsword_t3'):
+    """beat -> BC_STEPS frames (viewmodel_frame lists) spread over the whole swing, for one of MODELS."""
+    _, grip_px, scale = MODELS[name]
+    g, b, f = place(RESTS[name], grip_px)
+    rest = {'grip': tuple(g), 'blade': tuple(b), 'flat': tuple(f), 'size': 1.0}
+    out = {}
+    for beat, keys in BC_BEATS.items():
+        ticks = [(round(u * (BC_STEPS - 1)), e, rest if p == 'rest' else p) for u, e, p in keys]
+        sizes = [(t, (rest if p == 'hold' else ({**rest, **p} if isinstance(p, dict) else rest)).get('size', 1.0)) for t, _, p in ticks]
+        # 'hold' keeps the last size; resolve sizes in order
+        resolved, last = [], 1.0
+        for (t, _, p), (_, s) in zip(ticks, sizes):
+            last = last if p == 'hold' else (p.get('size', last) if isinstance(p, dict) and p is not rest else s)
+            resolved.append((t, last))
+        poses = [(t, e, p if p == 'hold' else {k: v for k, v in p.items() if k != 'size'}) for t, e, p in ticks]
+        clip = []
+        for i, (grip, blade, flat) in enumerate(frames(poses)):
+            for (ta, sa), (tb, sb) in zip(resolved, resolved[1:]):
+                if ta <= i <= tb: break
+            size = sa if tb == ta else sa + (sb - sa) * (i - ta) / (tb - ta)
+            clip.append(viewmodel_frame(solve(grip, blade, flat, scale=round(scale * size, 4), grip_px=grip_px)))
+        out[f'swing{beat}'] = clip
     return out
 
 

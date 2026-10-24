@@ -72,3 +72,40 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+def viewmodel_faces(f):
+    """A viewmodel frame [tx, ty, tz, qx, qy, qz, qw, scale] as the item display draws it (with its half turn)."""
+    x, y, z, w = f[3:7]
+    r = np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                  [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                  [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
+    m = np.eye(4); m[:3, :3] = r @ np.diag([-1.0, 1.0, -1.0])
+    return R.model_faces(MODEL, (0xffffff,), R.T(*f[:3]) @ m @ R.S(f[7], f[7], f[7]) @ R.T(-.5, -.5, -.5)
+                         @ R.S(1 / 16, 1 / 16, 1 / 16))
+
+
+def render_vm(f, label=''):
+    image = Image.new('RGBA', (R.W, R.H), R.BG + (255,))
+    d = ImageDraw.Draw(image)
+    for z in np.arange(1.0, 12, 1.0):
+        y = R.H / 2 + 1.62 / z * R.FOCAL
+        d.line([(0, y), (R.W, y)], fill=(40, 46, 56))
+    CAMERA.cam_dir_light = np.array((.3, .8, .5)) / np.linalg.norm((.3, .8, .5))
+    R.draw_faces(image, CAMERA, scene_faces() + viewmodel_faces(f))
+    if label: d.text((8, 6), label, fill=(255, 220, 80), font=R.FONT)
+    return image.convert('RGB')
+
+
+def bc_sheet(out, ticks=20):
+    """The three Better Combat swings as the server plays them at [ticks] a swing: one cell per tick."""
+    clips = S.bc_clips('greatsword_t3')
+    cells = []
+    for beat in (1, 2, 3):
+        c = clips[f'swing{beat}']
+        for t in range(ticks):
+            cells.append(render_vm(c[int(t * (len(c) - 1) / (ticks - 1))], f'{beat}撃目 {t}'))
+    cols = 10; w, h = R.W // 2, R.H // 2
+    sheet = Image.new('RGB', (w * cols, h * ((len(cells) + cols - 1) // cols)))
+    for j, c in enumerate(cells): sheet.paste(c.resize((w, h)), ((j % cols) * w, (j // cols) * h))
+    sheet.save(out)

@@ -65,7 +65,7 @@ internal object CoreArmamentPresentation {
             motif in setOf(CoreSkillMotif.ARROW, CoreSkillMotif.RAIN))
     }
 
-    fun meleeRelease(player: Player) = begin(player, Stage.RELEASE, 12)
+    fun meleeRelease(player: Player) { if (!GreatswordViewmodel.playing(player)) begin(player, Stage.RELEASE, 12) }
 
     /**
      * First-person greatsword swings (2026-10-25, scripts/class_armament_swing.py): one model per tick moves the held
