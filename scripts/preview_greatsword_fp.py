@@ -165,7 +165,7 @@ def shader_pose(keys, u):
 ARM_MODEL = {'textures': {'sleeve': S.SLEEVE_TEXTURE}, 'elements': S.arm_elements()}
 
 
-def render_shader(keys, u, name='greatsword_t3', label='', beat=None):
+def render_shader(keys, u, name='greatsword_t3', label='', beat=None, extra=()):
     h, q, s = shader_pose(keys, u)
     grip = np.array(S.MODELS[name][1]) / 16
     m = np.eye(4); m[:3, :3] = _qmat(q)
@@ -177,6 +177,7 @@ def render_shader(keys, u, name='greatsword_t3', label='', beat=None):
             am = np.eye(4); am[:3, :3] = _qmat(aq)
             model = {**ARM_MODEL, 'elements': [ARM_MODEL['elements'][i - 1]]}
             faces += R.model_faces(model, (0xffffff,) * 3, R.T(*ah) @ am @ R.S(a_s, a_s, a_s) @ R.T(*(-origin)) @ R.S(1 / 16, 1 / 16, 1 / 16))
+    faces = list(faces) + list(extra)
     image = Image.new('RGBA', (R.W, R.H), R.BG + (255,))
     d = ImageDraw.Draw(image)
     for z in np.arange(1.0, 12, 1.0):

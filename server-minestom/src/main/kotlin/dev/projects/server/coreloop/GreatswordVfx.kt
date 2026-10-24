@@ -196,6 +196,7 @@ internal class GreatswordVfx(private val player: Player) {
             val effect = CoreSkillEffect(CoreClass.WARRIOR, definition.copy(radius = 3.9), origin, direction,
                 sceneId = if(heavy) "normal_finish" else if(visual==GreatswordVisual.REVERSE) "normal_reverse" else "normal_sweep")
             effect.solidCompanion=CoreCombatPresentation.packed(player)
+            effect.lookPitch=Math.toRadians(player.position.pitch().toDouble())
             play(if(effect.solidCompanion) effect else GreatswordEffect(visual,origin,direction))
             meshes.play(effect)
             CoreSkillAudio.play(player, effect)

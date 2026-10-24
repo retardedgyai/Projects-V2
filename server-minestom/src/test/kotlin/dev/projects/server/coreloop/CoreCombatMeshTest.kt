@@ -299,9 +299,8 @@ class CoreCombatMeshTest {
         }.filterNot { it?.contains("war_mote_")==true }
         try {
             for((index,visual) in listOf(GreatswordVisual.SWEEP,GreatswordVisual.REVERSE,GreatswordVisual.FINISHER).withIndex()) {
-                val prefix=if(index==1) "approved_aa_reverse_v3" else "approved_dash_v3"
                 vfx.play(visual,owner.position,Vec(0.0,0.0,1.0))
-                assertEquals(setOf("projects:combat_vfx/$prefix/blade_3","projects:combat_vfx/$prefix/wake_3"),models().toSet())
+                assertEquals(setOf("projects:combat_vfx/normal_slash_v4/b${index+1}_blade_0","projects:combat_vfx/normal_slash_v4/b${index+1}_wake_0"),models().toSet())
                 for(entity in owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }) {
                     assertTrue(owner in entity.viewers, "No hidden spawn wait for AA")
                     val meta=entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta

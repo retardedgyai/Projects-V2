@@ -77,6 +77,8 @@ internal class CoreSkillEffect(
     internal val weaponModel: String? = null,
 ) : ParticleEffect {
     internal var solidCompanion: Boolean = false
+    /** The owner's look pitch at the cut (radians, down positive): the greatsword's slash turns with it (CoreApprovedNormalV3). */
+    internal var lookPitch: Double = Math.toRadians(12.0)
     internal val valid = listOf(origin.x(), origin.y(), origin.z(), direction.x(), direction.y(), direction.z(), skill.radius, rayLength).all(Double::isFinite)
     private val frame = ParticleTransform.fromDirection(if (valid) origin else Vec.ZERO, direction)
     internal val motif = CoreSkillArt.motifs.getValue(skill.icon)

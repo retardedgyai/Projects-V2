@@ -179,6 +179,17 @@ def u_of(tick, end=20.0, upswing=UPSWING, multiplier=.5):
     return tick / up * upswing if tick <= up else upswing + (tick - up) / (end * (1 - upswing))
 
 
+# The fast part of each cut (the blade coming round in front) is drawn to end on the hit, so the hit and its slash
+# land as the blade arrives: the cause first. The first cut comes round a tick after Better Combat's hit, so it is
+# drawn a tick early; the slam lands most of a tick before its hit, so it is drawn that much late.
+LEAD_TICKS = {1: 1.0, 2: 0.0, 3: -0.8}
+LENGTHS = {1: 20, 2: 22, 3: 30}   # the beats' swing lengths at attack speed 1 (CoreWeaponAttacks)
+
+
+def shader_u(beat, tick):
+    return max(0.0, u_of(tick) - LEAD_TICKS[beat] / LENGTHS[beat])
+
+
 SAMPLES = [t / 2 for t in range(2, 41)]   # animation ticks the shader keys are taken at (it slerps between them)
 BACK = .82                                # from here the sword goes back to the held pose, there at the swing's end
 
@@ -186,13 +197,13 @@ BACK = .82                                # from here the sword goes back to the
 def swing(beat, grip_px):
     """[(u, hand, rotation, scale)] of one beat, from Better Combat's animation, timed as Better Combat plays it."""
     anim, pose = Animation(BEATS[beat]), Animation(POSE)
-    return [(round(u_of(t), 4), *sword_pose(anim, t, grip_px, pose)) for t in SAMPLES if u_of(t) < BACK]
+    return [(round(shader_u(beat, t), 4), *sword_pose(anim, t, grip_px, pose)) for t in SAMPLES if 0 < shader_u(beat, t) < BACK]
 
 
 def arm_swing(beat, side):
     """[(u, shoulder, rotation, scale)] of one arm through one beat, sampled as swing() is."""
     anim, pose = Animation(BEATS[beat]), Animation(POSE)
-    return [(round(u_of(t), 4), *arm_pose(anim, t, side, pose)) for t in SAMPLES if u_of(t) < BACK]
+    return [(round(shader_u(beat, t), 4), *arm_pose(anim, t, side, pose)) for t in SAMPLES if 0 < shader_u(beat, t) < BACK]
 
 
 if __name__ == '__main__':

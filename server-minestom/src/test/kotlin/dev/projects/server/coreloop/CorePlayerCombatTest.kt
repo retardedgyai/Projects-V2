@@ -604,7 +604,7 @@ class CorePlayerCombatTest {
                 it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY
             }.filter {
                 (it.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
-                    .get(DataComponents.ITEM_MODEL)?.startsWith("projects:combat_vfx/approved_")==true
+                    .get(DataComponents.ITEM_MODEL)?.let { it.startsWith("projects:combat_vfx/approved_") || it.startsWith("projects:combat_vfx/normal_slash_v4/") }==true
             }
             assertEquals(3,displays.size)
             for(display in displays) {
