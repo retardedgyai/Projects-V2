@@ -71,6 +71,43 @@ internal object CoreHudLayout {
         return ceil((remaining / total).coerceIn(0.0, 1.0) * BUFF_STEPS).toInt().coerceIn(1, BUFF_STEPS)
     }
 
+    const val BEAST_PITCH = 20
+    const val BEAST_CAP = 7
+    const val BEAST_X = -BEAST_PITCH - 10      // left edge of the first socket (20 px wide): each mirrors about its own centre line
+    private const val BEAST_FILL_STEPS = 4
+    private fun beast(state: CoreHudState) = job(state) == "warrior" && state.resource != null && state.resourceMaximum == 3.0
+
+    /** The three beast sockets' glyphs for [value] stacks (0..3, a part-built one between); when full, [tick]
+     *  moves the glint across them. */
+    fun beastSockets(value: Double, tick: Long = 0): List<String> {
+        val v = if (value.isFinite()) value.coerceIn(0.0, 3.0) else 0.0
+        if (v >= 3.0) return (0 until 3).map { i -> glint(tick, i)?.let { "beast_glint_$it" } ?: "beast_$BEAST_FILL_STEPS" }
+        return (0 until 3).map { i -> "beast_${floor((v - i).coerceIn(0.0, 1.0) * BEAST_FILL_STEPS).toInt()}" }
+    }
+
+    /**
+     * All three full (Creator 2026-10-24): once a second a glint sweeps the gems left to right, a red-hot bead runs on
+     * through the prong to the next gem, and the glint knocks three sparks off each gem that climb and go out.
+     */
+    private const val BEAST_BEAT = 20
+    private const val GEM_COLUMNS = 9          // glint positions across a gem
+    private fun phase(tick: Long) = Math.floorMod(tick, BEAST_BEAT.toLong()).toInt()
+    /** Glint column (0..8) over gem [i], or null when it is elsewhere. */
+    private fun glint(tick: Long, i: Int) = (phase(tick) - 6 * i - 2).takeIf { it in 0 until GEM_COLUMNS }
+    private fun beastSweep(line: CoreHudLine, tick: Long) {
+        val p = phase(tick)
+        for (i in 0 until 2) {
+            val q = p - 6 * i - 9
+            if (q in 0..3) line.put(BEAST_X + i * BEAST_PITCH + 14 + q * 2, "beast_bead")
+        }
+        for (i in 0 until 3) for (k in 0 until 3) {
+            val age = Math.floorMod(p - 6 * i - 6 - k, BEAST_BEAT)
+            if (age >= 10) continue
+            val drift = if (age > 5 && k != 1) k - 1 else 0
+            line.put(BEAST_X + i * BEAST_PITCH + 10 + (k - 1) * 2 + drift, "beast_spark_$age")
+        }
+    }
+
     /** Lit class-resource cells out of [CELL_COUNT]. */
     fun litCells(state: CoreHudState): Int {
         state.resource?.let { return fillCells(it, state.resourceMaximum) }
@@ -109,13 +146,25 @@ internal object CoreHudLayout {
         gaugeValue(line, HP_X, HP_W, "${number(state.health)}/${number(state.maxHealth)}")
         line.fill("mp_fill", MP_X, fillWidth(state.mana, state.maxMana, MP_W))
         gaugeValue(line, MP_X, MP_W, "${number(state.mana)}/${number(state.maxMana)}")
-        for (i in 0 until litCells(state)) line.put(CELL_X + i * CELL_PITCH, "rage_cell")
+        if (beast(state)) {
+            // The warrior's beast (Creator 2026-10-24, 案A): three sockets over the crest, each filling from the
+            // bottom as it builds, all three burning when full; the strip under the plates is the XP bar.
+            for (i in 0 until fillCells(state.experience, 1.0)) line.put(CELL_X + i * CELL_PITCH, "xp_cell")
+        } else for (i in 0 until litCells(state)) line.put(CELL_X + i * CELL_PITCH, "rage_cell")
         // Level diamond: class wings and crown, XP filling the class-colour band clockwise.
         val job = job(state)
         line.put(EMBLEM_X, "emblem_$job")
         val step = xpStep(state.experience)
         if (step > 0) line.put(EMBLEM_X, "xp_${job}_$step")
         if (state.level > 0) line.numberCentred(0.0, state.level.coerceIn(1, 999).toString(), CoreHudGlyphs.NUM_GAUGE, LEVEL)
+        // Over the emblem (the middle one is set in the crest, so it must draw on top of it).
+        if (beast(state)) {
+            beastSockets(state.resource ?: 0.0, state.tick).forEachIndexed { i, glyph -> line.put(BEAST_X + i * BEAST_PITCH, glyph) }
+            if ((state.resource ?: 0.0) >= 3.0) beastSweep(line, state.tick)
+            // Finials close the ironwork at both ends (it would otherwise stop as a cut-off bar).
+            line.put(BEAST_X - BEAST_CAP, "beast_cap_l")
+            line.put(BEAST_X + 3 * BEAST_PITCH, "beast_cap_r")
+        }
         // Skills sit over hotbar slots 2-6 (the keys that cast them).
         state.skills.take(5).forEachIndexed { index, skill ->
             val art = skill.artIndex?.coerceIn(0, dev.projects.server.coreloop.CoreSkillCatalog.artNames.size - 1) ?: when (skill.icon) {

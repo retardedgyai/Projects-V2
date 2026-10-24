@@ -162,6 +162,117 @@ def rage_cell():
     return img
 
 
+# ---- the warrior's beast (Creator 2026-10-24, 案A): three gems set in iron over the emblem's crest ------
+# Each socket is a red gem in a stepped iron bezel, prongs reaching out left and right so the three read as one
+# piece of the crown's ironwork; a part-built stack fills the gem from the bottom. All three full (Creator
+# 2026-10-24): once a second a glint sweeps across the gems left to right, runs on through the iron prongs from
+# gem to gem as a red-hot bead, and knocks a few sparks off each gem that rise and go out (beast_fx_* glyphs).
+BEAST_R = 4                        # gem radius
+BEAST_HALF = 9                     # half width of a socket's art before the centre column is doubled
+BEAST_PITCH = 2 * BEAST_HALF + 2   # sockets touch prong to prong
+BEAST_FLAME = 2                    # spare rows above the bezel
+BEAST_TOP = 64                     # top of the socket row, GUI px from the bottom
+BEAST_FILL_STEPS = 4
+BEAST_RED = [hexc("3a0610"), hexc("6e0c14"), hexc("a8161c"), hexc("dc2a26"), hexc("ff6a4c"), hexc("ffd0b8")]
+BEAST_EMPTY = (hexc("1e1418"), hexc("2a1c20"), hexc("38262a"))
+
+
+def beast_socket(step, glint=None):
+    """glint: when all three are full, the gem column (-r..r) the sweep of light is passing over."""
+    r, H = BEAST_R, BEAST_HALF
+    size = 2 * (r + 3) + 1
+    img = new(2 * H + 1, BEAST_FLAME + size)
+    c, cy = H, BEAST_FLAME + size // 2
+    fill = step / BEAST_FILL_STEPS
+    # prongs: an iron bar out to each side at the gem's waist, ending in a little barb
+    for x in range(0, 2 * H + 1):
+        if abs(x - c) <= r + 2: continue
+        px(img, x, cy - 1, OUT); px(img, x, cy, METAL[1]); px(img, x, cy + 1, METAL[3]); px(img, x, cy + 2, OUT)
+    for side in (-1, 1):
+        x = c + side * H
+        px(img, x, cy - 2, OUT); px(img, x, cy - 1, METAL[0]); px(img, x, cy + 2, METAL[3]); px(img, x, cy + 3, OUT)
+    for dy in range(-r - 3, r + 4):
+        for dx in range(-r - 3, r + 4):
+            k = abs(dx) + abs(dy)
+            x, y = c + dx, cy + dy
+            if k == r + 3:
+                px(img, x, y, OUT)
+            elif k == r + 2:                      # the bezel: lit along its upper edges, dark below
+                px(img, x, y, METAL[0] if dy < 0 else METAL[2] if dy > 0 else METAL[1])
+            elif k == r + 1:                      # the seat the gem sits in
+                px(img, x, y, METAL[3] if dy >= 0 else METAL[2])
+            elif k <= r:
+                level = (r - dy) / (2 * r)
+                if step > 0 and level <= fill + 1e-9:
+                    # a cut gem: bright crown facets, a dark pavilion, a glint
+                    t = 4 if dy <= -2 else 3 if dy <= 0 else 2 if dy <= 2 else 1
+                    if k == r and dy > 0: t -= 1
+                    if step == BEAST_FILL_STEPS and dy == -2 and dx == 0: t = 5
+                    if step == BEAST_FILL_STEPS and abs(dx) == 1 and dy == -1: t = max(t, 4)
+                    if glint is not None and step == BEAST_FILL_STEPS and abs(dx - glint) + (1 if dy > 1 else 0) <= 0: t = 5
+                    if glint is not None and step == BEAST_FILL_STEPS and abs(dx - glint) == 1 and dy <= 0: t = max(t, 4)
+                    px(img, x, y, BEAST_RED[t])
+                else:
+                    shade = 2 if dy <= -2 else 1 if dy <= 1 else 0
+                    px(img, x, y, BEAST_EMPTY[shade])
+                    if dy == r - 1 and dx == 0 and step == 0: px(img, x, y, BEAST_RED[1])  # an ember left at the bottom
+    return even(img)
+
+
+BEAST_CAP = 7                      # width of the finial that closes each end of the row
+
+
+def beast_cap(right=False):
+    """The end of the sockets' ironwork: the prong runs on past the last barb and tapers to a point, lit along
+    its top, so the row ends in a finished tip rather than a cut-off bar. Drawn for the left end; mirrored right."""
+    img = new(BEAST_CAP, BEAST_FLAME + 2 * (BEAST_R + 3) + 1)
+    cy = BEAST_FLAME + BEAST_R + 3
+    w = BEAST_CAP
+    # columns from the socket outwards (x = w-1 .. 0): the bar is 4 rows (outline, lit, dark, outline), narrowing
+    for i in range(w):
+        x = w - 1 - i
+        if i < 3:
+            px(img, x, cy - 1, OUT); px(img, x, cy, METAL[0] if i == 0 else METAL[1]); px(img, x, cy + 1, METAL[3]); px(img, x, cy + 2, OUT)
+        elif i < 5:
+            px(img, x, cy - 1, OUT); px(img, x, cy, METAL[1]); px(img, x, cy + 1, OUT)
+        elif i < 6:
+            px(img, x, cy - 1, OUT); px(img, x, cy, METAL[2]); px(img, x, cy + 1, OUT)
+        else:
+            px(img, x, cy, OUT)
+    # a small barb turned back along the top, like the crown's spikes
+    px(img, w - 4, cy - 2, OUT); px(img, w - 5, cy - 3, OUT); px(img, w - 4, cy - 3, METAL[0])
+    return img.transpose(Image.Transpose.FLIP_LEFT_RIGHT) if right else img
+
+
+BEAST_SPARK_RISE = 10              # rows a spark climbs above the gem before it goes out
+BEAST_GEM_ROW = BEAST_FLAME + BEAST_R + 3   # the gem's centre row in a socket glyph
+
+
+def beast_bead():
+    """The red-hot bead running along a prong: a bright head (right), a cooling tail; on the socket canvas."""
+    img = new(3, BEAST_FLAME + 2 * (BEAST_R + 3) + 1)
+    for x, t in ((0, 2), (1, 4), (2, 5)):
+        px(img, x, BEAST_GEM_ROW, BEAST_RED[t])
+    return img
+
+
+def beast_spark(age):
+    """A spark `age` ticks after it leaves the gem: a pixel that climbs and cools; on a canvas reaching
+    BEAST_SPARK_RISE rows above the socket's top."""
+    img = new(1, BEAST_SPARK_RISE + BEAST_FLAME + 2 * (BEAST_R + 3) + 1)
+    t = 5 if age < 2 else 4 if age < 5 else 3 if age < 8 else 2
+    px(img, 0, BEAST_SPARK_RISE + BEAST_GEM_ROW - 6 - age * 2 // 3, BEAST_RED[t])  # slow climb: stays under the caption line
+    return img
+
+
+def xp_cell():
+    """The resource strip as the XP bar (the warrior's beast moved to its sockets): the level emblem's gold."""
+    img = new(CELL_PITCH - 1, 2)
+    rect(img, 0, 0, img.width, 2, hexc("a8781c"))
+    rect(img, 0, 0, img.width, 1, hexc("f0c040"))
+    return img
+
+
 def hp_tick():
     return flat(1, GAUGE_ROWS, (0, 0, 0, 150))
 

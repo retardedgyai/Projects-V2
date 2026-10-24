@@ -72,6 +72,8 @@ data class CoreHudState(
     val buffs: List<CoreHudBuff> = emptyList(),
     /** Class whose wings and crown decorate the level diamond (CoreClass.name, any case). */
     val classKey: String = "warrior",
+    /** Server tick, for HUD art that moves (the warrior's full beast). */
+    val tick: Long = 0,
 )
 
 enum class CoreHudBuffKind(val glyph: String, val label: String) {
