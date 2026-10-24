@@ -52,20 +52,22 @@ internal data class CoreWeaponCombat(val range: Double, val attacks: List<CoreWe
             "greatsword" -> CoreWeaponCombat(4.5, if (base == CoreWeaponBase.CLEAVER)
                 // 重断大剣: the closing slice is narrow and far stronger.
                 greatsword.dropLast(1) + CoreWeaponAttack(CoreHitbox.VERTICAL, 1.85 * 1.65, 10, 19, width = .7)
-                else greatsword, attackSlow = .45)
+                // Walking slows only a little while swinging (Creator 2026-10-24: the old .45 made normal attacks
+                // feel stuck in place); Better Combat's default halves the speed, which suits a mouse, not this.
+                else greatsword, attackSlow = .2)
             // Dual daggers: the hands alternate (right thrust, left cut, right cut), then both cross.
             "dagger" -> CoreWeaponCombat(3.0, listOf(
                 CoreWeaponAttack(CoreHitbox.FORWARD, .8, 3, 7, width = 1.2),
                 CoreWeaponAttack(CoreHitbox.HORIZONTAL, 1.0, 3, 7, angle = 100.0, hand = CoreAttackHand.OFF),
                 CoreWeaponAttack(CoreHitbox.HORIZONTAL, 1.0, 3, 7, angle = 100.0),
                 CoreWeaponAttack(CoreHitbox.HORIZONTAL, 1.4, 4, 11, angle = 120.0, hand = CoreAttackHand.BOTH),
-            ), attackSlow = .2, dual = true)
+            ), attackSlow = .1, dual = true)
             // 騎槍 (lance): two long thrusts, then a sweep.
             "mace" -> CoreWeaponCombat(5.0, listOf(
                 CoreWeaponAttack(CoreHitbox.FORWARD, 1.0, 7, 12, width = 1.0, hand = CoreAttackHand.BOTH),
                 CoreWeaponAttack(CoreHitbox.FORWARD, 1.1, 7, 13, width = 1.0, hand = CoreAttackHand.BOTH),
                 CoreWeaponAttack(CoreHitbox.HORIZONTAL, 1.5, 10, 18, angle = 120.0, hand = CoreAttackHand.BOTH),
-            ), attackSlow = .4)
+            ), attackSlow = .2)
             else -> null
         }
     }
