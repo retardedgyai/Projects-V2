@@ -162,11 +162,21 @@ def shader_pose(keys, u):
     return a[2:5] + (b[2:5] - a[2:5]) * w, q / np.linalg.norm(q), a[9] + (b[9] - a[9]) * w
 
 
-def render_shader(keys, u, name='greatsword_t3', label=''):
+ARM_MODEL = {'textures': {'sleeve': S.SLEEVE_TEXTURE}, 'elements': S.arm_elements()}
+
+
+def render_shader(keys, u, name='greatsword_t3', label='', beat=None):
     h, q, s = shader_pose(keys, u)
     grip = np.array(S.MODELS[name][1]) / 16
     m = np.eye(4); m[:3, :3] = _qmat(q)
     faces = R.model_faces(MODEL, (0xffffff,), R.T(*h) @ m @ R.S(s, s, s) @ R.T(*(-grip)) @ R.S(1 / 16, 1 / 16, 1 / 16))
+    if beat is not None:   # the arms, each by its own keys (scripts/shaders/item.vsh does the same)
+        origin = np.array(S.ARM_ORIGIN) / 16
+        for i, side in enumerate(S.ARM_BOXES, 1):
+            ah, aq, a_s = shader_pose(S.arm_keys(side, beat), u)
+            am = np.eye(4); am[:3, :3] = _qmat(aq)
+            model = {**ARM_MODEL, 'elements': [ARM_MODEL['elements'][i - 1]]}
+            faces += R.model_faces(model, (0xffffff,) * 3, R.T(*ah) @ am @ R.S(a_s, a_s, a_s) @ R.T(*(-origin)) @ R.S(1 / 16, 1 / 16, 1 / 16))
     image = Image.new('RGBA', (R.W, R.H), R.BG + (255,))
     d = ImageDraw.Draw(image)
     for z in np.arange(1.0, 12, 1.0):
@@ -200,7 +210,7 @@ def cut_sheet(out, u0=.1, u1=.4, ticks=20, fps=60):
         n = int((u1 - u0) * ticks / 20 * fps) + 1
         for i in range(n):
             u = u0 + i / (ticks / 20 * fps)
-            cells.append(render_shader(keys, u, label=f'{beat} u{u:.3f}'))
+            cells.append(render_shader(keys, u, label=f'{beat} u{u:.3f}', beat=beat))
     cols = 10; w, h = R.W // 2, R.H // 2
     sheet = Image.new('RGB', (w * cols, h * ((len(cells) + cols - 1) // cols)))
     for j, c in enumerate(cells): sheet.paste(c.resize((w, h)), ((j % cols) * w, (j // cols) * h))

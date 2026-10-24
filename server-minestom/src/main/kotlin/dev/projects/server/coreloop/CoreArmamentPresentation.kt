@@ -86,12 +86,13 @@ internal object CoreArmamentPresentation {
         // The shader's clock is GameTime, the client's game time modulo one day (24000): the start must be on that
         // clock, or the swing starts part-way through (or already over) and the sword jumps.
         val start = ((instance.worldAge % 24000L) and 255L).toInt()
-        val tint = net.kyori.adventure.text.format.TextColor.color(ticks.coerceIn(1, 255), start, marker)
+        fun tint(mark: Int) = net.kyori.adventure.text.format.TextColor.color(ticks.coerceIn(1, 255), start, mark)
+        // Colours 1 and 2 tint the arms that come with the swing (the shader places them by their own keys).
         val posed = pose(item, ANIM_POSE)
         val old = posed.get(DataComponents.CUSTOM_MODEL_DATA)!!
         player.setTag(shaderTag, ShaderSwing(player.aliveTicks + ticks, frame(item, 0)))
         player.setItemInMainHand(posed.with(DataComponents.CUSTOM_MODEL_DATA,
-            CustomModelData(old.floats(), old.flags(), old.strings(), listOf(tint) + old.colors().drop(1))))
+            CustomModelData(old.floats(), old.flags(), old.strings(), listOf(tint(marker), tint(marker + 16), tint(marker + 32)) + old.colors().drop(3))))
         return true
     }
 

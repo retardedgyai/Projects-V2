@@ -11,7 +11,9 @@
 // The greatsword swing (CoreArmamentPresentation.shaderSwing, scripts/class_armament_swing.py): a held sword tinted blue
 // 84..89 is moved here, in the first-person hand only: back to the sword's own space through its held resting pose,
 // then placed by the beat's keys at this frame's time, so the swing runs at the screen's frame rate. Elsewhere (other
-// players, F5, the hotbar) it is drawn as the plain held sword, its tint dropped.
+// players, F5, the hotbar) it is drawn as the plain held sword, its tint dropped. The two arms that come with the
+// swing (Better Combat's first person shows them) are tinted the same, marked 100..105 (right) and 116..121 (left), and
+// each is placed by its own keys.
 
 #include <minecraft:light.glsl>
 #include <minecraft:globals.glsl>
@@ -53,8 +55,11 @@ layout(location = 8) out vec3 vfxPosition;
 
 const float LIGHT_PROBE_PIXELS = 97.0;   // item.fsh: header 33 + 8 lights x 8
 
-float swingKey(int beat, bool plain, int k, int i) {
+// part: 0 the sword, 1 the right arm, 2 the left arm
+float swingKey(int beat, bool plain, int part, int k, int i) {
     int at = k * 10 + i;
+    if (part == 1) return beat == 1 ? SWING_RARM_1[at] : beat == 2 ? SWING_RARM_2[at] : SWING_RARM_3[at];
+    if (part == 2) return beat == 1 ? SWING_LARM_1[at] : beat == 2 ? SWING_LARM_2[at] : SWING_LARM_3[at];
     if (plain) return beat == 1 ? SWING_PLAIN_1[at] : beat == 2 ? SWING_PLAIN_2[at] : SWING_PLAIN_3[at];
     return beat == 1 ? SWING_BIG_1[at] : beat == 2 ? SWING_BIG_2[at] : SWING_BIG_3[at];
 }
@@ -79,19 +84,19 @@ vec3 swingRotate(vec4 q, vec3 v) {
 }
 
 // The swing pose at this frame: hand position, rotation of the sword's axes, scale.
-void swingPose(int beat, bool plain, float u, out vec3 hand, out vec4 rot, out float scale) {
+void swingPose(int beat, bool plain, int part, float u, out vec3 hand, out vec4 rot, out float scale) {
     int k = 0;
-    for (int i = 0; i < SWING_KEYS - 1; i++) if (swingKey(beat, plain, i + 1, 0) <= u) k = i + 1;
+    for (int i = 0; i < SWING_KEYS - 1; i++) if (swingKey(beat, plain, part, i + 1, 0) <= u) k = i + 1;
     int n = min(k + 1, SWING_KEYS - 1);
-    float u0 = swingKey(beat, plain, k, 0), u1 = swingKey(beat, plain, n, 0);
-    float w = n == k || u1 <= u0 ? 1.0 : swingEase(int(swingKey(beat, plain, n, 1) + .5), clamp((u - u0) / (u1 - u0), 0.0, 1.0));
-    vec3 h0 = vec3(swingKey(beat, plain, k, 2), swingKey(beat, plain, k, 3), swingKey(beat, plain, k, 4));
-    vec3 h1 = vec3(swingKey(beat, plain, n, 2), swingKey(beat, plain, n, 3), swingKey(beat, plain, n, 4));
-    vec4 q0 = vec4(swingKey(beat, plain, k, 5), swingKey(beat, plain, k, 6), swingKey(beat, plain, k, 7), swingKey(beat, plain, k, 8));
-    vec4 q1 = vec4(swingKey(beat, plain, n, 5), swingKey(beat, plain, n, 6), swingKey(beat, plain, n, 7), swingKey(beat, plain, n, 8));
+    float u0 = swingKey(beat, plain, part, k, 0), u1 = swingKey(beat, plain, part, n, 0);
+    float w = n == k || u1 <= u0 ? 1.0 : swingEase(int(swingKey(beat, plain, part, n, 1) + .5), clamp((u - u0) / (u1 - u0), 0.0, 1.0));
+    vec3 h0 = vec3(swingKey(beat, plain, part, k, 2), swingKey(beat, plain, part, k, 3), swingKey(beat, plain, part, k, 4));
+    vec3 h1 = vec3(swingKey(beat, plain, part, n, 2), swingKey(beat, plain, part, n, 3), swingKey(beat, plain, part, n, 4));
+    vec4 q0 = vec4(swingKey(beat, plain, part, k, 5), swingKey(beat, plain, part, k, 6), swingKey(beat, plain, part, k, 7), swingKey(beat, plain, part, k, 8));
+    vec4 q1 = vec4(swingKey(beat, plain, part, n, 5), swingKey(beat, plain, part, n, 6), swingKey(beat, plain, part, n, 7), swingKey(beat, plain, part, n, 8));
     hand = mix(h0, h1, w);
     rot = swingSlerp(q0, q1, w);
-    scale = mix(swingKey(beat, plain, k, 9), swingKey(beat, plain, n, 9), w);
+    scale = mix(swingKey(beat, plain, part, k, 9), swingKey(beat, plain, part, n, 9), w);
 }
 
 void main() {
@@ -99,7 +104,10 @@ void main() {
     vec3 normal = Normal;
     vec4 tint = Color;
     bool swung = false;
+    bool hidden = false;
     int swingMarker = int(Color.b * 255.0 + .5);
+    int swingPart = swingMarker >= 116 && swingMarker <= 121 ? 2 : swingMarker >= 100 && swingMarker <= 105 ? 1 : 0;
+    swingMarker -= swingPart * 16;
     if (swingMarker >= 84 && swingMarker <= 89) {
         tint = vec4(1.0, 1.0, 1.0, Color.a);
         // The first-person hand: a perspective projection and the vertex within reach of the eye (26.3 draws the hand
@@ -116,20 +124,23 @@ void main() {
             vec3 restT = plain ? SWING_PLAIN_T : SWING_BIG_T;
             mat3 restR = plain ? SWING_PLAIN_R : SWING_BIG_R;
             float restS = plain ? SWING_PLAIN_S : SWING_BIG_S;
-            vec3 grip = plain ? SWING_PLAIN_GRIP : SWING_BIG_GRIP;
+            vec3 grip = swingPart > 0 ? SWING_ARM_ORIGIN : plain ? SWING_PLAIN_GRIP : SWING_BIG_GRIP;
             // Back to the sword's own space, relative to the hand on the handle (blocks).
             vec3 local = transpose(restR) * (view - SWING_ARM - restT) / restS + vec3(.5) - grip;
             vec3 h; vec4 q; float s;
-            swingPose(beat, plain, u, h, q, s);
+            swingPose(beat, plain, swingPart, u, h, q, s);
             vec3 moved = h + swingRotate(q, local * s);
             position = (inverse(mv) * vec4(moved, 1.0)).xyz;
             normal = swingRotate(q, transpose(restR) * normalize(mat3(mv) * Normal));
             // Light the face the camera sees (a face turned by the swing would otherwise keep its old shading side).
             if (dot(normal, -moved) < 0.0) normal = -normal;
             swung = true;
+        } else if (swingPart > 0) {
+            hidden = true;   // the arms are only for the first-person hand: elsewhere the held sword is drawn alone
         }
     }
     gl_Position = ProjMat * ModelViewMat * vec4(position, 1.0);
+    if (hidden) gl_Position = vec4(0.0, 0.0, 2.0, 1.0);   // beyond the far plane: the triangle is clipped away
 
     #ifndef OIT_ALPHA_ONLY
     sphericalVertexDistance = fog_spherical_distance(position);
