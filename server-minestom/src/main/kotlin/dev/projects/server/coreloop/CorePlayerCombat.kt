@@ -1,6 +1,7 @@
 package dev.projects.server.coreloop
 
 import dev.projects.server.mob.rayHit
+import dev.projects.server.puppet.PlayerPuppet
 import dev.projects.server.mob.distanceTo
 
 import dev.projects.server.mob.CrowdControl
@@ -217,6 +218,7 @@ internal class CorePlayerCombat(
         if (!canLeaveSkill || !(guard || normalLinked()) || shot != null) { queueAction(id); return }
         queued = null
         if (normal.isAttacking) normal.endRecovery()
+        PlayerPuppet.stop(player)
         if (action != null) { pending = null; vfx.cancel(preserveGarden = garden != null) }
         if (feel.attackBreaksGuard && definition.motion !in setOf(CoreSkillMotion.GUARD, CoreSkillMotion.SHIELD)) {
             classState.guardUntil = -1; classState.perfectUntil = -1
@@ -275,6 +277,7 @@ internal class CorePlayerCombat(
         if (crowd.escape(tickNumber)) { refreshMovement(); sound(SoundEvent.ITEM_ARMOR_EQUIP_CHAIN, .7f, 1.4f) }
         queued = null
         if (normal.isAttacking) normal.endRecovery()
+        PlayerPuppet.stop(player)
         classState.guardUntil = -1; classState.perfectUntil = -1
         if (pending != null) { pending = null; vfx.cancel(preserveGarden = garden != null) }
         val input = player.inputs()
@@ -508,6 +511,7 @@ internal class CorePlayerCombat(
         val down = share >= KNOCKDOWN_SHARE
         queued = null; dodgeQueuedUntil = -1; shot = null
         if (normal.isAttacking) normal.endRecovery()
+        PlayerPuppet.stop(player)
         if (pending != null) { pending = null; vfx.cancel(preserveGarden = garden != null) }
         staggerUntil = tickNumber + if (down) KNOCKDOWN_TICKS else STAGGER_TICKS
         // Getting up is protected, as in MH: no juggling a downed hunter.
@@ -558,7 +562,11 @@ internal class CorePlayerCombat(
         vfx.swingSound(swing.beat)
         // Better Combat manner: the off hand swings the off-hand attacks of a dual weapon.
         if (swing.attack.hand == CoreAttackHand.OFF) player.swingOffHand() else player.swingMainHand()
-        if (classId == CoreClass.WARRIOR) vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.beat - 1], player.position, normalDirection)
+        if (classId == CoreClass.WARRIOR) {
+            vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.beat - 1], player.position, normalDirection)
+            // Better Combat manner: the others see the body swing this beat (scripts/build_weapon_combo_motions.py).
+            GREATSWORD_BEATS.getOrNull(swing.beat - 1)?.let { (from, until) -> PlayerPuppet.play(player, "greatsword_combo", from = from, until = until) }
+        }
         else vfx.play(CoreClassEffect(classId, CoreSkillMotion.CONE, player.position, normalDirection,
             reach(), swing.finisher, reverse = swing.beat == 2))
         var connected = false
@@ -1307,6 +1315,8 @@ internal class CorePlayerCombat(
         const val HEAVY_STARTUP = 12
         const val CAST_SPEED = .35
         const val SWING_SPEED = .6
+        /** greatsword_combo.json seconds each greatsword beat plays: the swing, its recovery and the cock into the next. */
+        private val GREATSWORD_BEATS = listOf(.25 to 1.25, 1.25 to 2.35, 2.35 to 4.3)
         const val STAGGER_SHARE = .2
         const val KNOCKDOWN_SHARE = .45
         const val STAGGER_TICKS = 10L

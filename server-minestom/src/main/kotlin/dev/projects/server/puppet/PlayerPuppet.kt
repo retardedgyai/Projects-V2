@@ -30,8 +30,9 @@ import kotlin.math.PI
  */
 internal class PlayerPuppet(private val owner: Player, private val motion: PlayerMotion, private val showOwner: Boolean = false) {
     private val displays = LinkedHashMap<String, Entity>()
-    private val yaw = -owner.position.yaw() * PI / 180
+    private var yaw = -owner.position.yaw() * PI / 180
     private var age = 0
+    private var until = motion.length
     var finished = false; private set
 
     fun start() {
@@ -59,9 +60,17 @@ internal class PlayerPuppet(private val owner: Player, private val motion: Playe
         if (finished) return
         if (owner.isRemoved || owner.instance == null || displays.values.any { it.instance !== owner.instance }) { stop(); return }
         age++
-        if (age / 20.0 > motion.length) { stop(); return }
+        if (age / 20.0 > until) { stop(); return }
         update()
         hideEquipment()  // the held weapon's pose clip re-sends equipment; keep it hidden from the others
+    }
+
+    /** Plays [from]..[until] seconds next, from the way the owner faces now (one swing of a combo). */
+    fun seek(from: Double, until: Double) {
+        age = (from * 20).toInt()
+        this.until = until
+        yaw = -owner.position.yaw() * PI / 180
+        update()
     }
 
     fun stop() {
@@ -134,12 +143,23 @@ internal class PlayerPuppet(private val owner: Player, private val motion: Playe
     companion object {
         private val active = HashMap<UUID, PlayerPuppet>()
 
-        /** Plays [name] on [player], replacing any motion already playing. False if the motion does not exist. */
-        fun play(player: Player, name: String, showOwner: Boolean = false): Boolean {
+        /**
+         * Plays [name] on [player] from [from] to [until] seconds (the whole motion by default), replacing any motion
+         * already playing. The same motion already playing jumps there instead, so a combo's swings reuse one puppet.
+         * False if the motion does not exist.
+         */
+        fun play(player: Player, name: String, showOwner: Boolean = false, from: Double = 0.0, until: Double? = null): Boolean {
             val motion = PlayerMotion.load(name) ?: return false
+            val playing = active[player.uuid]
+            if (playing != null && !playing.finished && playing.motion === motion && playing.showOwner == showOwner) {
+                playing.seek(from, until ?: motion.length)
+                return true
+            }
             active.remove(player.uuid)?.stop()
             val puppet = PlayerPuppet(player, motion, showOwner)
             active[player.uuid] = puppet
+            puppet.age = (from * 20).toInt()
+            puppet.until = until ?: motion.length
             puppet.start()
             player.scheduler().submitTask {
                 puppet.tick()
