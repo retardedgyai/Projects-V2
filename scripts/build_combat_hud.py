@@ -421,7 +421,19 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     star = outlined(["...#...", "...#...", ".#####.", "#######", ".#####.", "...#...", "...#..."],
                     shade=lambda y, h: (255, 255, 255))
     weak = outlined(["#####", ".###.", "..#.."], shade=lambda y, h: (255, 255, 255))
-    damage.group("hud_damage", [(f"dmg_{c}", i) for c, i in big] + [("dmg_crit", star), ("dmg_weak", weak)], 8)
+    white = lambda y, h: (255, 255, 255)
+    marks = {  # 7x7, white; the component tints each (type colour, element colour)
+        "minus": ["....", "....", "....", "####", "####", "....", "...."],
+        "physical": ["....##.", "...###.", "..###..", "#.##...", ".##....", "#.#....", "......."],   # a blade
+        "magical": ["..###..", ".##....", "##.....", "##.....", "##.....", ".##....", "..###.."],    # a crescent moon
+        "true": ["...#...", "..###..", ".##.##.", "##...##", ".##.##.", "..###..", "...#..."],      # a hollow diamond
+        "el_fire": ["...#...", "..##...", "..###..", ".####..", "######.", "######.", ".####.."],
+        "el_ice": ["#..#..#", ".#.#.#.", "..###..", "###.###", "..###..", ".#.#.#.", "#..#..#"],
+        "el_lightning": ["....##.", "...##..", "..##...", ".#####.", "...##..", "..##...", ".##...."],
+        "spot": ["..###..", ".#...#.", "#..#..#", "#.###.#", "#..#..#", ".#...#.", "..###.."],    # weak spot: a target
+    }
+    damage.group("hud_damage", [(f"dmg_{c}", i) for c, i in big] + [("dmg_crit", star), ("dmg_weak", weak)] +
+                 [(f"dmg_{k}", outlined(v, shade=white)) for k, v in marks.items()], 8)
     fonts.append(damage)
 
     # -- write ------------------------------------------------------------
