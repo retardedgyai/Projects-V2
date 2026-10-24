@@ -156,6 +156,11 @@ def pose(motion, t, base_yaw=0.0):
         w = blade_frame(tr['blade'], root, t, g)
         weapons['sword'] = w
         targets = {'r': g, 'l': g - w[:3, 2] * weapon.get('second', 3.2) * K}
+        if any('one' in k for k in tr['blade']):
+            # One-handed: the left hand lets go and swings out to 'free' (root space) as 'one' goes to 1.
+            one = float(sample(tr['blade'], t, 'one')[0])
+            free = (root @ np.append(sample(tr['blade'], t, 'free'), 1))[:3]
+            targets['l'] = targets['l'] * (1 - one) + free * one
     for name, sx in (('r', -5), ('l', 5)):
         sh = (torso @ np.array([sx * K, 10 * K, 0, 1]))[:3]
         pole = (torso @ np.array([np.sign(sx), -1, -.6, 0]))[:3]
