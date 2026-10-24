@@ -18,11 +18,13 @@ import kotlin.math.sin
 /**
  * The greatsword's first-person swing drawn by an item display (2026-10-25, Creator: the held-item frames snap once a
  * tick and the puppet's displays were smooth). The display rides the player and is billboarded to the camera, so its
- * local space is the view space and the client interpolates its transformation between ticks. Only the owner sees it;
- * while it swings the held sword is hidden in first person only (others and F5 still see that one).
+ * local space is the view space. Only the owner sees it; while it swings the held sword is hidden in first person only
+ * (others and F5 still see that one).
  *
- * Frames come from scripts/class_armament_swing.py (player-motions/greatsword_viewmodel.json): per tick a translation
- * from the eye, a rotation and a scale. Cosmetic only: never touches combat.
+ * The swing is a few key poses (scripts/class_armament_swing.py, player-motions/greatsword_viewmodel.json): each is
+ * sent once, with how many ticks the client is to take reaching it, so the client draws the move smoothly whatever the
+ * tick timing (a pose a tick stalled and jumped). The item is the weapon's _vm model, which turns about the hand on
+ * the handle, so a key is where the hand is and which way the blade points. Cosmetic only: never touches combat.
  */
 internal object GreatswordViewmodel {
     /** The held weapon's custom_model_data[0] that hides it in first person (class_armament_swing.HIDDEN). */
@@ -50,8 +52,8 @@ internal object GreatswordViewmodel {
         }
     }
 
-    private class Active(val display: Entity, val model: String, val weapon: ItemStack, var clip: String,
-        var started: Long, var duration: Int)
+    private class Active(val display: Entity, val model: String, val weapon: ItemStack, var keys: List<FloatArray>,
+        var started: Long, var duration: Int, var next: Int = 1)
     private val active = HashMap<UUID, Active>()
 
     fun playing(player: Player): Boolean = active.containsKey(player.uuid)
@@ -62,44 +64,45 @@ internal object GreatswordViewmodel {
         val item = player.itemInMainHand
         val model = item.get(DataComponents.ITEM_MODEL) ?: return false
         val clips = frames[model] ?: return false
-        if (CoreLoopItems.gearSlot(item) != CoreGearSlot.WEAPON || "swing$beat" !in clips) return false
-        val current = active[player.uuid]
-        val state = if (current != null && current.model == model && !current.display.isRemoved) current else {
+        val keys = clips["swing$beat"] ?: return false
+        if (CoreLoopItems.gearSlot(item) != CoreGearSlot.WEAPON) return false
+        val current = active[player.uuid]?.takeIf { it.model == model && !it.display.isRemoved }
+        val state = current ?: run {
             stop(player)
             val display = Entity(EntityType.ITEM_DISPLAY).apply {
                 setNoGravity(true)
                 setHasPhysics(false)
                 updateViewableRule { it === player }
                 editEntityMeta(ItemDisplayMeta::class.java) { meta ->
-                    meta.setItemStack(ItemStack.of(Material.PAPER).withItemModel(model))
-                    meta.setDisplayContext(ItemDisplayMeta.DisplayContext.NONE)
+                    meta.setItemStack(ItemStack.of(Material.PAPER).withItemModel("${model}_vm"))
+                    meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
                     meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
                     meta.setBrightnessOverride(15 shl 4 or (15 shl 20))
                     meta.setShadowRadius(0f)
                     meta.setViewRange(4f)
                 }
             }
-            Active(display, model, CoreArmamentPresentation.frame(item, 0), "swing$beat", player.aliveTicks, ticks.coerceIn(2, 400))
+            Active(display, model, CoreArmamentPresentation.frame(item, 0), keys, player.aliveTicks, ticks)
         }
-        state.clip = "swing$beat"; state.started = player.aliveTicks; state.duration = ticks.coerceIn(2, 400)
-        update(player, state, first = state !== current)
-        if (state !== current) {
-            // Spawned with its first pose already set: a display that arrives untransformed fills the screen for a frame.
+        state.keys = keys; state.started = player.aliveTicks; state.duration = ticks.coerceIn(2, 400); state.next = 1
+        if (current == null) {
+            // Spawned already in the held sword's resting pose, then moved on from there.
+            send(player, state, keys[0], 0)
             state.display.setInstance(instance, player.position)
             player.addPassenger(state.display)
             active[player.uuid] = state
         }
+        advance(player, state)
         return true
     }
 
-    /** Once a tick: the next frame; an unfollowed beat settles back to rest, then the held sword shows again. */
+    /** Once a tick: sends the keys that are due; at the end the held sword shows again (the last key is its pose). */
     fun tick(player: Player) {
         val state = active[player.uuid] ?: return
         if (state.display.isRemoved || player.instance == null || state.display.instance !== player.instance ||
             CoreArmamentPresentation.frame(player.itemInMainHand, 0) != state.weapon) { stop(player); return }
-        // Each clip ends on the held pose, so the held sword takes over without a jump.
         if (player.aliveTicks - state.started >= state.duration) { stop(player); return }
-        update(player, state, first = false)
+        advance(player, state)
     }
 
     fun stop(player: Player) {
@@ -109,27 +112,29 @@ internal object GreatswordViewmodel {
         if (CoreArmamentPresentation.frame(item, 0) == state.weapon) player.setItemInMainHand(CoreArmamentPresentation.frame(item, 0))
     }
 
-    private fun index(player: Player, state: Active): Int {
-        val size = frames.getValue(state.model).getValue(state.clip).size
-        val elapsed = (player.aliveTicks - state.started).coerceAtLeast(0)
-        return (elapsed * (size - 1) / (state.duration - 1).coerceAtLeast(1)).toInt().coerceIn(0, size - 1)
+    /** Key k is sent when key k-1's time comes, to be reached by key k's time. */
+    private fun advance(player: Player, state: Active) {
+        val elapsed = player.aliveTicks - state.started
+        val at = { k: Int -> Math.round(state.keys[k][0] * state.duration).toLong() }
+        while (state.next < state.keys.size && at(state.next - 1) <= elapsed) {
+            send(player, state, state.keys[state.next], (at(state.next) - at(state.next - 1)).toInt().coerceAtLeast(1))
+            state.next++
+        }
+        val hidden = CoreArmamentPresentation.pose(player.itemInMainHand, HIDDEN_POSE)
+        if (hidden != player.itemInMainHand) player.setItemInMainHand(hidden)
     }
 
-    private fun update(player: Player, state: Active, first: Boolean) {
-        val clip = frames.getValue(state.model).getValue(state.clip)
-        val f = clip[index(player, state)]
+    private fun send(player: Player, state: Active, k: FloatArray, ticks: Int) {
         // The display sits on the passenger point above the eye; in view space that offset tilts with the pitch.
         val sneaking = player.pose == EntityPose.SNEAKING
         val above = (if (sneaking) 1.5 else 1.8) - player.eyeHeight
         val pitch = Math.toRadians(player.position.pitch().toDouble())
         state.display.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
             meta.setTransformationInterpolationStartDelta(0)
-            meta.setTransformationInterpolationDuration(if (first) 0 else 1)
-            meta.setTranslation(Vec(f[0].toDouble(), f[1] - above * cos(pitch), f[2] - above * sin(pitch)))
-            meta.setLeftRotation(floatArrayOf(f[3], f[4], f[5], f[6]))
-            meta.setScale(Vec(f[7].toDouble(), f[7].toDouble(), f[7].toDouble()))
+            meta.setTransformationInterpolationDuration(ticks)
+            meta.setTranslation(Vec(k[1].toDouble(), k[2] - above * cos(pitch), k[3] - above * sin(pitch)))
+            meta.setLeftRotation(floatArrayOf(k[4], k[5], k[6], k[7]))
+            meta.setScale(Vec(k[8].toDouble(), k[8].toDouble(), k[8].toDouble()))
         }
-        val hidden = CoreArmamentPresentation.pose(player.itemInMainHand, HIDDEN_POSE)
-        if (hidden != player.itemInMainHand) player.setItemInMainHand(hidden)
     }
 }

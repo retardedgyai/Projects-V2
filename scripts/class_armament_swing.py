@@ -212,6 +212,13 @@ def files(name):
     # While the viewmodel swings, the held sword is hidden in first person only (others and F5 still see it).
     out[f'models/item/weapons/{name}_fphidden.json'] = {'parent': MODELS[name][0], 'display': {
         'firstperson_righthand': {'scale': [0, 0, 0]}, 'firstperson_lefthand': {'scale': [0, 0, 0]}}}
+    # The viewmodel's item: drawn in the fixed context with the hand on the handle at the display's origin, so the
+    # display turns the sword about the hands (a swing), not about the middle of the blade.
+    g = MODELS[name][1]
+    out[f'models/item/weapons/{name}_vm.json'] = {'parent': MODELS[name][0], 'display': {
+        'fixed': {'rotation': [0, 0, 0], 'translation': [round(8 - g[0], 3), round(8 - g[1], 3), round(8 - g[2], 3)], 'scale': [1, 1, 1]}}}
+    out[f'items/weapons/{name}_vm.json'] = {'model': {'type': 'minecraft:model', 'model': f'projects:item/weapons/{name}_vm'},
+                                            'hand_animation_on_swap': False}
     return out
 
 
@@ -240,13 +247,10 @@ def viewmodel_frame(display):
 
 
 def viewmodel():
-    """model -> clip -> per-tick [tx, ty, tz, qx, qy, qz, qw, scale], plus 'idle' (one frame)."""
-    idle = {'rotation': [0, -90, 25], 'translation': [1.13, 3.2, -1.5], 'scale': [SCALE] * 3}
+    """model -> clip -> keys [u, tx, ty, tz, qx, qy, qz, qw, scale] (see VM_BEATS); 'idle' is the resting key."""
     out = {}
-    for name, (_, grip_px, scale) in MODELS.items():
-        clip_frames = bc_clips(name)
-        clip_frames['idle'] = [viewmodel_frame(RESTS[name])]
-        out[f'projects:weapons/{name}'] = clip_frames
+    for name in MODELS:
+        out[f'projects:weapons/{name}'] = {f'swing{b}': vm_keys(name, b) for b in VM_BEATS} | {'idle': [vm_key(0.0, vm_rest(name), name)]}
     return out
 
 
@@ -360,6 +364,77 @@ def bc_clips(name='greatsword_t3'):
             size = sa if tb == ta else sa + (sb - sa) * (i - ta) / (tb - ta)
             clip.append(viewmodel_frame(solve(grip, blade, flat, scale=round(scale * size, 4), grip_px=grip_px)))
         out[f'swing{beat}'] = clip
+    return out
+
+
+
+
+
+# ---- Fifth pass (2026-10-25, Creator: 「本当にこれでいいと思ってるのか」). Side by side with Better Combat at 30 fps:
+# its sweep is the hilt travelling right across the bottom of the screen while the blade turns from pointing ahead to
+# lying flat out to the left, all in about 200 ms, the hand on the handle in sight throughout. The earlier passes sent a
+# pose every tick: the frames arriving unevenly made the sword stall and jump, and the white slash showed before the
+# blade had moved. Now the server sends only the key poses, each with how many ticks the client is to take getting
+# there, so the client draws the whole move smoothly; and the item turns about the hand (its _vm model puts the handle
+# at the display's origin), so a key is just where the hand is and which way the blade points.
+#
+# Keys: (u of the whole swing, hand on screen (sx, sy in -1..1, z ahead), blade direction, size). u = .25 is when the
+# server's hit lands: the blade must be crossing the middle by then. Each beat turns the blade in one plane.
+VM_BEATS = {
+    # sweep: hilt from bottom right to off the left, the blade from ahead-and-up to flat out to the left
+    1: [(.1, (.62, -.72, .72), (0.62, 0.55, 0.56), 1.0),
+        (.16, (.68, -.76, .7), (0.78, 0.5, 0.38), 1.0),
+        (.21, (.18, -.8, .78), (0.05, 0.52, 0.85), 1.0),
+        (.26, (-.42, -.84, .75), (-0.78, 0.28, 0.56), 1.0),
+        (.31, (-1.05, -.95, .62), (-0.97, 0.0, 0.24), 1.0),
+        (.4, (-1.5, -1.25, .5), (-0.9, -0.2, -0.35), 1.0)],
+    # rising cut: hilt from bottom left up to off the right, the blade from low-left to high-right
+    2: [(.1, (-.62, -.92, .72), (-0.82, -0.08, 0.56), 1.0),
+        (.16, (-.7, -.98, .7), (-0.9, -0.15, 0.4), 1.0),
+        (.21, (-.2, -.88, .78), (-0.35, 0.45, 0.82), 1.0),
+        (.26, (.32, -.72, .78), (0.42, 0.75, 0.51), 1.0),
+        (.31, (.85, -.5, .68), (0.62, 0.78, 0.05), 1.0),
+        (.4, (1.35, -.3, .55), (0.55, 0.65, -0.5), 1.0)],
+    # slam: hilt up in front of the face with the blade back over the head, then straight down through the middle
+    3: [(.1, (.22, -.42, .7), (0.12, 0.9, -0.42), 1.0),
+        (.17, (.18, -.32, .68), (0.1, 0.78, -0.62), 1.0),
+        (.21, (.1, -.45, .78), (0.04, 0.92, 0.38), 1.0),
+        (.25, (.04, -.78, .85), (0.0, 0.28, 0.96), 1.0),
+        (.29, (.0, -1.0, .82), (-0.02, -0.3, 0.95), 1.0),
+        (.4, (-.02, -1.12, .8), (-0.03, -0.42, 0.91), 1.0)],
+}
+VM_SIZE = 1.3          # times the model's held scale: in front of the camera the held size reads too small
+VM_HOLD = {1: .62, 2: .62, 3: .66}   # held there until u, then dropped under the screen and back up into the guard
+
+
+def vm_rest(name):
+    """The held sword's resting first-person pose, as (hand, blade, flat)."""
+    return place(RESTS[name], MODELS[name][1])
+
+
+def vm_key(u, pose, name, size=None):
+    """[u, translation (the hand, view space, from the eye), rotation quaternion, scale] for the display."""
+    grip, blade, flat = pose
+    y = _unit(_view(blade)); z = _view(flat); z = _unit(z - y * (z @ y)); x = np.cross(y, z)
+    # ItemDisplayRenderer turns the item half a turn about y before drawing it: undo that inside the rotation.
+    r = np.column_stack((x, y, z)) @ np.diag([-1.0, 1.0, -1.0])
+    scale = MODELS[name][2] * (size if size is not None else 1.0)
+    return [round(float(v), 4) for v in (u, *_view(grip), *_quaternion(r), scale)]
+
+
+def vm_keys(name, beat):
+    keys = VM_BEATS[beat]
+    first, last = _unit(keys[0][2]), _unit(keys[-2][2])
+    flat = tuple(_unit(np.cross(first, last)))
+    rest = vm_rest(name)
+    out = [vm_key(0.0, rest, name)]
+    for u, hand, blade, size in keys:
+        out.append(vm_key(u, (on_screen(*hand), _unit(blade), flat), name, size * VM_SIZE))
+    hold = VM_HOLD[beat]
+    out.append([hold] + out[-1][1:])
+    low = (np.array((0.32, -1.45, 0.35)), _unit((0.45, 0.0, 0.9)), flat)
+    out.append(vm_key(round(hold + (1 - hold) * .5, 3), low, name, VM_SIZE))
+    out.append(vm_key(1.0, rest, name))
     return out
 
 
