@@ -190,3 +190,18 @@ def shader_sheet(out, ticks=20, fps=20, until=.5):
     sheet = Image.new('RGB', (w * cols, h * ((len(cells) + cols - 1) // cols)))
     for j, c in enumerate(cells): sheet.paste(c.resize((w, h)), ((j % cols) * w, (j // cols) * h))
     sheet.save(out)
+
+
+def cut_sheet(out, u0=.1, u1=.4, ticks=20, fps=60):
+    """The cut itself of each beat, at fps frames a second of a [ticks]-tick swing."""
+    cells = []
+    for beat in (1, 2, 3):
+        keys = S.shader_keys('greatsword_t3', beat)
+        n = int((u1 - u0) * ticks / 20 * fps) + 1
+        for i in range(n):
+            u = u0 + i / (ticks / 20 * fps)
+            cells.append(render_shader(keys, u, label=f'{beat} u{u:.3f}'))
+    cols = 10; w, h = R.W // 2, R.H // 2
+    sheet = Image.new('RGB', (w * cols, h * ((len(cells) + cols - 1) // cols)))
+    for j, c in enumerate(cells): sheet.paste(c.resize((w, h)), ((j % cols) * w, (j // cols) * h))
+    sheet.save(out)

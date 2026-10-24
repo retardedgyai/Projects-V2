@@ -779,6 +779,154 @@ def shader_keys(name, beat):
     return out
 
 
+
+# ---- The arm (2026-10-25, Creator: 「まだ傾くだけ」「2撃目もおかしい」). Read off a first-person greatsword animation set
+# with a still camera (Skyrim "Sigma" greatsword, 60 fps, ~/ProjectS/refs/greatsword/fp_EugEYz_hJrc.mp4): a cut is
+# the arms swinging from the shoulders, so the hands come up close to the camera and cross the screen in a wide arc,
+# and the blade, a little ahead of the hands, sweeps right across it, long; turning the sword about the hand (every
+# pass before) can only lean it. Each beat turns the arm in one plane through the shoulder: from cocked (the hands
+# off to one side, the blade back over the shoulder) through straight ahead to the far side; the blade leads the arm
+# by a wrist angle, and its flat is the plane's normal (the edge leads).
+# (shoulder pivot, direction the hands travel across the screen, cocked arm angle, end arm angle, wrist lead)
+ARM_LEN = .5   # shoulder to hands (blocks)
+ARM_SWINGS = {
+    # 袈裟: from up over the right shoulder, down across to the lower left. The arms are raised: the cut crosses the
+    # upper half of the screen, as in the reference, not under it.
+    1: ((0.14, -0.3, 0.18), (-0.75, -0.66, 0.0), -70.0, 60.0, 80.0),
+    # 逆袈裟: from low on the left, up across to over the right shoulder
+    2: ((-0.04, -0.36, 0.18), (0.78, 0.62, 0.0), -68.0, 60.0, 80.0),
+    # 叩きつけ: from up over the head straight down through the middle
+    3: ((0.05, -0.22, 0.16), (0.0, -1.0, 0.0), -72.0, 55.0, 70.0),
+}
+
+
+def arm_poses(beat):
+    pivot, travel, cock, end, lead = ARM_SWINGS[beat]
+    pivot = np.array(pivot); s_ = _unit(travel); f = np.array((0.0, 0.0, 1.0))
+    f = _unit(f - s_ * (f @ s_))
+    n = tuple(_unit(np.cross(f, s_)))
+    def at(phi, wrist):
+        r = math.radians(phi)
+        arm = math.cos(r) * f + math.sin(r) * s_
+        b = math.radians(phi + wrist)
+        blade = _unit(math.cos(b) * f + math.sin(b) * s_)
+        return (tuple(pivot + arm * ARM_LEN), tuple(blade), n)
+    t = PLANE_TIMING
+    # The sword is held across the forearms (about a right angle); cocked, the blade lies back over the shoulder.
+    out = [(.12, 'out', at(cock * .8, lead * .3), 1.0), (t['coil'], 'inout', at(cock, lead * .2), 1.0)]
+    steps = 12
+    for i in range(1, steps + 1):
+        w = i / steps
+        if w <= .55:   # accelerating: the hands lead, the blade whips through to ahead of them
+            phi = cock + (0.0 - cock) * (w / .55) ** 2
+            wrist = lead * (.2 + .8 * (w / .55))
+            u = t['coil'] + (t['strike'] - t['coil']) * (w / .55)
+        else:          # decelerating past the target
+            g = (w - .55) / .45
+            phi = end * (1 - (1 - g) ** 2)
+            wrist = lead
+            u = t['strike'] + (t['through'] - t['strike']) * g
+        out.append((round(u, 4), 'linear', at(phi, wrist), 1.0))
+    return out
+
+
+def shader_keys(name, beat):
+    """[u, ease, hand (view space), rotation quaternion of the sword's axes, scale] for one beat of one of MODELS."""
+    rest = vm_rest(name)
+    cut = arm_poses(beat)
+    t = PLANE_TIMING
+    poses = [(0.0, None, rest, 1.0)] + cut
+    poses.append((t['hold'], 'linear', poses[-1][2], poses[-1][3]))
+    poses.append((t['low'], 'inout', ((0.32, -1.45, 0.35), _unit((0.45, 0.0, 0.9)), cut[-1][2][2]), 1.0))
+    poses.append((1.0, 'out', rest, 1.0))
+    out = []
+    for u, e, (grip, blade, fl), size in poses:
+        y = _unit(_view(blade)); z = _view(fl); z = _unit(z - y * (z @ y)); x = np.cross(y, z)
+        q = _quaternion(np.column_stack((x, y, z)))
+        out.append([u, SHADER_EASE[e or 'linear'], *_view(grip), *q, MODELS[name][2] * ARM_SIZE])
+    return out
+
+
+ARM_SIZE = 1.35
+
+
+
+# ---- Traced (2026-10-25). Hand-tuned parameters kept missing (「まだ傾くだけ」), so the cuts are now traced off a
+# reference frame by frame: a first-person greatsword set with a still camera (Skyrim "Sigma" greatsword, 60 fps,
+# ~/ProjectS/refs/greatsword/fp_EugEYz_hJrc.mp4 at 25.40-25.97 s, a cut from up on the right over to the left). Each
+# key is where the hands and the blade's tip are on the screen (x 0..1 left to right, y 0..1 top to bottom, as read
+# off the frame) and the hands' depth; the blade's direction in depth is solved from its length, so the sword is
+# where the reference has it, foreshortened where it goes into the screen. The flat follows the edge-leads rule.
+TRACE_HAND_Z = 1.0
+TRACED = {
+    # 袈裟 (25.47-25.83): up on the right, over through upright and into the screen, down flat to the left
+    1: [(.10, (.66, .95), (.92, .06)), (.17, (.64, .98), (.86, .02)), (.19, (.62, 1.0), (.74, .0)),
+        (.21, (.6, 1.04), (.62, .0)), (.23, (.6, 1.08), (.58, .38)), (.25, (.55, 1.08), (.5, .55)),
+        (.27, (.55, 1.0), (.33, .5)), (.29, (.55, .95), (.2, .45)), (.32, (.6, .9), (.03, .68)),
+        (.40, (.62, .86), (.05, .84))],
+    # 逆袈裟: the same cut run backwards: from flat on the left, up through upright, over to the upper right
+    2: [(.10, (.62, .86), (.05, .84)), (.17, (.6, .9), (.03, .7)), (.19, (.55, .95), (.2, .45)),
+        (.21, (.55, 1.0), (.33, .5)), (.23, (.55, 1.08), (.5, .5)), (.25, (.6, 1.06), (.58, .3)),
+        (.27, (.6, 1.02), (.62, .0)), (.29, (.62, 1.0), (.76, .0)), (.32, (.66, .95), (.94, .08)),
+        (.40, (.7, .92), (1.02, .25))],
+    # 叩きつけ: raised straight up, then down through the middle into the screen and on down below the crosshair
+    3: [(.10, (.6, .78), (.64, -.12)), (.17, (.6, .74), (.63, -.16)), (.19, (.58, .72), (.6, .0)),
+        (.21, (.57, .7), (.56, .3)), (.23, (.56, .7), (.5, .62)), (.25, (.56, .7), (.45, .88)),
+        (.28, (.56, .72), (.42, 1.02)), (.32, (.56, .74), (.4, 1.1)), (.40, (.56, .75), (.4, 1.12))],
+}
+
+
+def _ray(x, y):
+    """The view-space direction (authoring space: z ahead) through screen point x, y (0..1)."""
+    return _unit((( 2 * x - 1) * 1.244, (1 - 2 * y) * .7, 1.0))
+
+
+def traced_poses(name, beat):
+    grip_px = np.array(MODELS[name][1]); scale = MODELS[name][2] * ARM_SIZE
+    length = (29.9 - grip_px[1]) / 16 * scale if name != 'greatsword_t1' else (75 - 59) / 80 * 16 / 16 * scale
+    keys = TRACED[beat]
+    out, prev_tip, prev_flat = [], None, None
+    for k, (u, hand_xy, tip_xy) in enumerate(keys):
+        h = _ray(*hand_xy) / _ray(*hand_xy)[2] * TRACE_HAND_Z
+        r = _ray(*tip_xy)
+        # |t r - h| = length: t = r.h +- sqrt((r.h)^2 - |h|^2 + L^2)
+        b = r @ h; disc = b * b - h @ h + length * length
+        if disc < 0: tip = r * b
+        else:
+            roots = [b + math.sqrt(disc), b - math.sqrt(disc)]
+            roots = [t for t in roots if t > .05] or [b + math.sqrt(disc)]
+            tip = min((r * t for t in roots), key=lambda p: 0 if prev_tip is None else np.linalg.norm(p - prev_tip)) \
+                if prev_tip is not None else min((r * t for t in roots), key=lambda p: abs(p[2] - h[2]))
+        d = _unit(tip - h)
+        # edge leads: the flat is across the way the tip travels
+        nxt = keys[min(k + 1, len(keys) - 1)]; prv = keys[max(k - 1, 0)]
+        motion = _ray(*nxt[2]) - _ray(*prv[2])
+        f = np.cross(d, motion) if np.linalg.norm(motion) > 1e-4 else (prev_flat if prev_flat is not None else np.array((1.0, 0, 0)))
+        f = _unit(f - d * (f @ d))
+        if prev_flat is not None and f @ prev_flat < 0: f = -f
+        out.append((u, 'linear', (tuple(h), tuple(d), tuple(f))))
+        prev_tip, prev_flat = tip, f
+    return out
+
+
+def shader_keys(name, beat):
+    """[u, ease, hand (view space), rotation quaternion of the sword's axes, scale] for one beat of one of MODELS."""
+    rest = vm_rest(name)
+    cut = traced_poses(name, beat)
+    t = PLANE_TIMING
+    poses = [(0.0, None, rest)] + [(u, 'out' if i == 0 else e, p) for i, (u, e, p) in enumerate(cut)]
+    poses.append((t['hold'], 'linear', poses[-1][2]))
+    poses.append((t['low'], 'inout', ((0.32, -1.45, 0.35), _unit((0.45, 0.0, 0.9)), cut[-1][2][2])))
+    poses.append((1.0, 'out', rest))
+    out = []
+    for u, e, (grip, blade, fl) in poses:
+        y = _unit(_view(blade)); z = _view(fl); z = _unit(z - y * (z @ y)); x = np.cross(y, z)
+        q = _quaternion(np.column_stack((x, y, z)))
+        size = 1.0 if (grip, blade, fl) is rest else ARM_SIZE
+        out.append([u, SHADER_EASE[e or 'linear'], *_view(grip), *q, MODELS[name][2] * size])
+    return out
+
+
 if __name__ == '__main__':
     import json
     from pathlib import Path
