@@ -321,9 +321,12 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     hud.group("hud_gauge", gauge, hud_ascent(art.GAUGE_TOP))
     hud.group("hud_cells", [("rage_cell", art.rage_cell()), ("xp_cell", art.xp_cell())], hud_ascent(art.CELL_TOP))
     sockets = [(f"beast_{k}", art.beast_socket(k)) for k in range(art.BEAST_FILL_STEPS + 1)]
-    sockets.append(("beast_burn", art.beast_socket(art.BEAST_FILL_STEPS, burning=True)))
+    sockets += [(f"beast_glint_{g}", art.beast_socket(art.BEAST_FILL_STEPS, glint=g - art.BEAST_R)) for g in range(2 * art.BEAST_R + 1)]
+    sockets.append(("beast_bead", art.beast_bead()))
     sockets += [("beast_cap_l", art.beast_cap()), ("beast_cap_r", art.beast_cap(right=True))]
     hud.group("hud_beast", sockets, hud_ascent(art.BEAST_TOP))
+    hud.group("hud_beast_spark", [(f"beast_spark_{a}", art.beast_spark(a)) for a in range(10)],
+              hud_ascent(art.BEAST_TOP + art.BEAST_SPARK_RISE))
     hud.group("hud_gauge_digits", [(f"gd_{c}", art.gauge_digit(c)) for c in art.DIGITS], hud_ascent(art.GAUGE_TOP - 2))
     hud.group("hud_buff_digits", [(f"bd_{c}", art.gauge_digit(c)) for c in art.DIGITS], hud_ascent(art.BUFF_TOP - 4))
     emblem_rows, emblem_x = [], None

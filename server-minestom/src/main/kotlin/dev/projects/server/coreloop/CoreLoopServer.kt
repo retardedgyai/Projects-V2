@@ -1395,7 +1395,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 actor.skillDefinitions[i].mana, CoreSkillCatalog.artIndex(actor.skillDefinitions[i]), actor.skillAvailable(i), actor.resourceAvailable(i)) },
             message + " / ${actor.weaponHint}", actor.resource, actor.resourceMax, actor.shield, actor.combatCue,
             notice = actor.activeNotice, level = a.journey.level, experience = progress.toDouble(), healthTrail = trail, buffs = buffs,
-            classKey = actor.classId.name), packed))
+            classKey = actor.classId.name, tick = player.aliveTicks), packed))
     }
 
     override fun sessionSummary(player: Player): String = sessions[player.uuid]?.let {
