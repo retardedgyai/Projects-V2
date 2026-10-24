@@ -12,7 +12,7 @@ import kotlin.math.*
 import java.util.UUID
 import java.util.WeakHashMap
 
-internal enum class GreatswordVisual { WINDUP, SWEEP, REVERSE, FINISHER, SLAM_BLADE, LUNGE, THRUST, SLAM, WHIRL, HIT }
+internal enum class GreatswordVisual { WINDUP, SWEEP, REVERSE, FINISHER, SLAM_BLADE, LUNGE, SLAM, WHIRL, HIT }
 
 /** Authored consumer, not a second particle framework. All geometry is local and bounded. */
 internal class GreatswordEffect(
@@ -26,7 +26,6 @@ internal class GreatswordEffect(
         GreatswordVisual.WINDUP -> 4
         GreatswordVisual.HIT -> 4
         GreatswordVisual.SLAM -> 10
-        GreatswordVisual.THRUST -> 4
         else -> 7
     }
 
@@ -98,16 +97,6 @@ internal class GreatswordEffect(
                     point(Vec(cos(twist) * .4, 1.0 + sin(twist) * .3, z), 0xfff3cb, (1.2 * decay).toFloat())
                     if (tick < 3) point(Vec(-.45, .16, z), 0xcfa66a, .7f, true)
                 }
-            }
-            GreatswordVisual.THRUST -> {
-                // The normal thrust (Better Combat manner): one thin bright streak straight ahead at chest height,
-                // gone in four ticks, and a spark where its point stops.
-                val reach = min(4.2, 1.6 + tick * 1.3)
-                repeat(14) { n ->
-                    val z = .9 + n / 13.0 * (reach - .9)
-                    point(Vec(0.0, 1.25, z), if (n > 10) 0xffffff else 0xfff1d6, ((.5 + .5 * n / 13.0) * decay).toFloat(), tick > 1)
-                }
-                if (tick == 1) burst(Vec(0.0, 1.25, 4.2), Particle.CRIT, 8, Vec(.15, .15, .15), .25f)
             }
             GreatswordVisual.SLAM -> {
                 // Three branching fissures fan through the same five-metre forward sector.

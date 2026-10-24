@@ -266,17 +266,6 @@ BC_STEPS = 48
 # through the blade pointing up and out, never straight into the screen, where it would shrink to a stub.
 CHEST = (0.0, -0.72, 0.1)
 REACH = .5
-_S = [_unit(v) for v in ((1.0, 0.3, 0.1), (0.75, 0.62, 0.45), (0.0, 0.78, 0.63), (-0.75, 0.35, 0.56), (-1.0, -0.05, 0.25))]
-_SF = tuple(_unit(np.cross(_S[1], _S[3])))
-# The thrust is driven from beside the right hip at the crosshair, so the blade lies across the screen and reads.
-_T = _unit((-0.33, 0.42, 2.5))
-_T_FROM = (0.36, -0.42, 0.42)
-# Between swings the sword drops out of sight under the screen and comes back up into the guard, instead of sweeping
-# back across the screen (which read as a second, backwards swing).
-_LOW = dict(grip=(0.32, -1.45, 0.35), blade=tuple(_unit((0.45, 0.0, 0.9))))
-_V = [_unit(v) for v in ((0.3, 0.95, 0.05), (0.12, 0.92, 0.38), (0.02, 0.62, 0.78), (-0.03, 0.32, 0.95))]
-# The slam turns about a point further out, so the raised hilt never comes up into the camera.
-SLAM_CHEST = (0.14, -0.95, 0.6)
 
 
 def _at(d, reach=REACH, pivot=None):
@@ -297,32 +286,55 @@ def _path(points, t0, t1, flat, size, first_ease='in', per=2, pivot=None):
     return keys
 
 
+# Fourth pass (2026-10-25, Creator: 「ただゆっくり動いてるだけ」「突きはよくわからない」): the sword snaps into its
+# cocked pose in two ticks and stays coiled there, then the whole cut crosses the screen in two ticks, decelerating
+# through the follow-through; the time is spent holding still, not drifting. The second attack is a rising cut back.
+# Keys are in u of the whole swing (20 ticks at normal speed: .05 a tick); the hit lands at u = .25, mid-cut.
+def _cut(points, t0, t1, flat, size, pivot=None, per=3):
+    return _path(points, t0, t1, flat, size, first_ease='linear', per=per, pivot=pivot)
+
+
+def _pose(d, flat, size, pivot=None):
+    return dict(grip=_at(d, pivot=pivot), blade=tuple(d), flat=flat, size=size)
+
+
+# The cocked pose is on screen (the cut must start from something the eye already holds), and the cut spends its two
+# and a half ticks where the blade shows, leaving the screen only in the follow-through.
+_S = [_unit(v) for v in ((0.62, 0.62, 0.48), (0.25, 0.72, 0.65), (-0.2, 0.62, 0.76), (-0.62, 0.38, 0.69))]
+_S_COCK, _S_OUT = _unit((0.72, 0.62, 0.32)), _unit((-1.0, 0.05, -0.1))
+_SF = tuple(_unit(np.cross(_S[0], _S[3])))
+_R = [_unit(v) for v in ((-0.62, 0.22, 0.75), (-0.22, 0.48, 0.85), (0.22, 0.66, 0.72), (0.55, 0.74, 0.39))]
+_R_COCK, _R_OUT = _unit((-0.75, 0.12, 0.65)), _unit((0.62, 0.72, -0.3))
+_RF = tuple(_unit(np.cross(_R[0], _R[3])))
+_V = [_unit(v) for v in ((0.1, 0.97, 0.2), (0.05, 0.8, 0.6), (0.0, 0.48, 0.88), (-0.03, 0.15, 0.99))]
+_V_COCK, _V_OUT = _unit((0.12, 0.95, -0.05)), _unit((-0.05, -0.35, 0.94))
+SLAM_CHEST = (0.12, -0.92, 0.5)
+_LOW = dict(grip=(0.32, -1.45, 0.35), blade=tuple(_unit((0.45, 0.0, 0.9))))
+_RETURN = [(.62, None, 'hold'), (.8, 'inout', _LOW), (1.0, 'out', 'rest')]
 BC_BEATS = {
-    # sweep: cocked out to the right, then up and over to the left across the whole screen, slowing at the end
+    # sweep: up past the right shoulder in two ticks, coiled there, then right to left across the screen
     1: [(0.0, None, 'rest'),
-        (.19, 'out', dict(grip=_at(_S[0]), blade=tuple(_S[0]), flat=_SF, size=1.45)),
-        *_path(_S, .19, .34, _SF, 1.45),
-        (.46, 'out', dict(grip=_at(_unit((-0.95, -0.25, 0.1))), blade=tuple(_unit((-0.95, -0.25, 0.1))), flat=_SF, size=1.45)),
-        (.62, None, 'hold'),
-        (.8, 'inout', _LOW),
-        (1.0, 'out', 'rest')],
-    # thrust: drawn in to the chest, then driven straight out at the crosshair
+        (.1, 'out', _pose(_S[0], _SF, 1.45)),
+        (.2, 'inout', _pose(_S_COCK, _SF, 1.45)),
+        *_cut([_S_COCK] + _S, .2, .32, _SF, 1.45),
+        (.4, 'out', _pose(_S_OUT, _SF, 1.45)),
+        *_RETURN],
+    # rising cut: dropped to the left, then up and across to the upper right
     2: [(0.0, None, 'rest'),
-        (.17, 'out', dict(grip=_at(_T, .05, _T_FROM), blade=tuple(_T), flat=tuple(_unit((1, 0, .13))), size=1.35)),
-        (.21, 'in', dict(grip=_at(_T, -.08, _T_FROM), blade=tuple(_T), size=1.35)),
-        (.26, 'linear', dict(grip=_at(_T, .5, _T_FROM), blade=tuple(_T), size=1.35)),
-        (.36, 'out', dict(grip=_at(_T, .62, _T_FROM), blade=tuple(_T), size=1.35)),
-        (.58, None, 'hold'),
-        (.8, 'inout', _LOW),
-        (1.0, 'out', 'rest')],
-    # slam: lifted back over the head, then over the top and down in front
+        # dropped under the screen and brought up on the left, not slid across it (that read as slow drifting)
+        (.06, 'in', dict(grip=(-0.1, -1.5, 0.35), blade=tuple(_unit((-0.4, -0.1, 0.9))), flat=_RF, size=1.45)),
+        (.12, 'out', _pose(_R[0], _RF, 1.45)),
+        (.2, 'inout', _pose(_R_COCK, _RF, 1.45)),
+        *_cut([_R_COCK] + _R, .2, .32, _RF, 1.45),
+        (.4, 'out', _pose(_R_OUT, _RF, 1.45)),
+        *_RETURN],
+    # slam: raised straight up, then over and down in front
     3: [(0.0, None, 'rest'),
-        (.19, 'out', dict(grip=_at(_V[0], pivot=SLAM_CHEST), blade=tuple(_V[0]), flat=(1, 0, 0), size=1.3)),
-        *_path(_V, .19, .32, (1, 0, 0), 1.3, pivot=SLAM_CHEST),
-        (.44, 'out', dict(grip=_at(_unit((-0.22, 0.12, 0.97)), pivot=SLAM_CHEST), blade=tuple(_unit((-0.22, 0.12, 0.97))), size=1.3)),
-        (.66, None, 'hold'),
-        (.84, 'inout', _LOW),
-        (1.0, 'out', 'rest')],
+        (.1, 'out', _pose(_V[0], (1, 0, 0), 1.3, SLAM_CHEST)),
+        (.2, 'inout', _pose(_V_COCK, (1, 0, 0), 1.3, SLAM_CHEST)),
+        *_cut([_V_COCK] + _V, .2, .31, (1, 0, 0), 1.3, SLAM_CHEST),
+        (.42, 'out', _pose(_V_OUT, (1, 0, 0), 1.3, SLAM_CHEST)),
+        (.66, None, 'hold'), (.84, 'inout', _LOW), (1.0, 'out', 'rest')],
 }
 
 

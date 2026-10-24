@@ -41,10 +41,13 @@ internal data class CoreWeaponAttack(
 
 internal data class CoreWeaponCombat(val range: Double, val attacks: List<CoreWeaponAttack>, val attackSlow: Double, val dual: Boolean = false) {
     companion object {
-        /** Greatsword (claymore): a sweep from the right, a thrust, then an overhead slam with a longer swing. */
+        /**
+         * Greatsword: a sweep from the right, a rising cut back from the lower left, then an overhead slam with a longer
+         * swing (2026-10-25, Creator: a thrust did not read as a greatsword, so the second attack is a cut again).
+         */
         private val greatsword = listOf(
             CoreWeaponAttack(CoreHitbox.HORIZONTAL, 1.0, 7, 12, angle = 150.0),
-            CoreWeaponAttack(CoreHitbox.FORWARD, 1.15, 7, 14, width = 1.6),
+            CoreWeaponAttack(CoreHitbox.HORIZONTAL, 1.15, 7, 14, angle = 150.0),
             CoreWeaponAttack(CoreHitbox.VERTICAL, 1.85, 10, 19, width = 1.4),
         )
 
