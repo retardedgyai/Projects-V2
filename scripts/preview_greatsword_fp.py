@@ -109,3 +109,29 @@ def bc_sheet(out, ticks=20):
     sheet = Image.new('RGB', (w * cols, h * ((len(cells) + cols - 1) // cols)))
     for j, c in enumerate(cells): sheet.paste(c.resize((w, h)), ((j % cols) * w, (j // cols) * h))
     sheet.save(out)
+
+
+def _interp(a, b, w):
+    """What the client draws between two ticks: translation and scale lerp, rotation slerp."""
+    qa, qb = np.array(a[3:7]), np.array(b[3:7])
+    if qa @ qb < 0: qb = -qb
+    ang = math.acos(min(1.0, abs(float(qa @ qb))))
+    q = qa if ang < 1e-5 else (math.sin((1 - w) * ang) * qa + math.sin(w * ang) * qb) / math.sin(ang)
+    return [a[i] + (b[i] - a[i]) * w for i in range(3)] + list(q / np.linalg.norm(q)) + [a[7] + (b[7] - a[7]) * w]
+
+
+def bc_gif(out, ticks=(20, 22, 30), fps=30, scale=.5):
+    """The three swings back to back, as the client interpolates the server's per-tick frames."""
+    clips = S.bc_clips('greatsword_t3')
+    frames = []
+    for beat, n in zip((1, 2, 3), ticks):
+        c = clips[f'swing{beat}']
+        per_tick = [c[int(t * (len(c) - 1) / (n - 1))] for t in range(n)]
+        steps = int(n / 20 * fps)
+        for k in range(steps):
+            t = k * 20 / fps
+            i = min(int(t), n - 2)
+            img = render_vm(_interp(per_tick[i], per_tick[i + 1], t - i), f'{beat}撃目')
+            frames.append(img.resize((int(R.W * scale), int(R.H * scale))))
+    frames[0].save(out, save_all=True, append_images=frames[1:], duration=round(1000 / fps), loop=0)
+    return frames

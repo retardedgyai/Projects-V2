@@ -18,6 +18,7 @@ import net.kyori.adventure.title.Title
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
+import net.minestom.server.timer.TaskSchedule
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.coordinate.BlockVec
@@ -562,6 +563,29 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     player.sendMessage(Component.text("そのモーションはありません: ${context.get(name)}", NamedTextColor.YELLOW))
             } }, name, self)
         })
+        // Test-only (2026-10-25): claude-demo.txt in the working directory ("<presses> <gap ticks> [distance]") makes the
+        // test client's player (ClaudeTest, else the first online) enter the skill lab, stand [distance] before the middle
+        // dummy and press the normal attack [presses] times, [gap] ticks apart. Lets the motion be filmed without input.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getSchedulerManager().buildTask {
+            val trigger = java.io.File("claude-demo.txt")
+            if (!trigger.exists()) return@buildTask
+            val player = MinecraftServer.getConnectionManager().onlinePlayers.let { all -> all.firstOrNull { it.username == "ClaudeTest" } ?: all.firstOrNull() }
+                ?: return@buildTask
+            if (!combatLab.contains(player)) { combatLab.enter(player, CoreClass.WARRIOR); return@buildTask }
+            val target = combatLab.combat(player)?.combatTargets()?.minByOrNull { it.position.distanceSquared(player.position) }
+            if (!combatLab.ready(player) || target == null) return@buildTask
+            val args = trigger.readText().trim().split(Regex("\\s+")).mapNotNull { it.toDoubleOrNull() }
+            trigger.delete()
+            val presses = args.getOrNull(0)?.toInt() ?: 4; val gap = args.getOrNull(1)?.toInt() ?: 18; val distance = args.getOrNull(2) ?: 2.6
+            val t = target.position
+            val away = player.position.sub(t).withY(0.0).let { if (it.lengthSquared() < .01) Vec(0.0, 0.0, -1.0) else it.normalize() }
+            val stand = Pos(t.x() + away.x() * distance, t.y(), t.z() + away.z() * distance)
+            val yaw = Math.toDegrees(kotlin.math.atan2(-(t.x() - stand.x()), t.z() - stand.z())).toFloat()
+            player.teleport(stand.withView(yaw, 8f))
+            repeat(presses) { i -> player.scheduler().buildTask { actor(player)?.attack() }.delay(TaskSchedule.tick(20 + i * gap)).schedule() }
+            player.scheduler().buildTask { java.io.File("claude-demo.done").writeText("${System.currentTimeMillis()}") }
+                .delay(TaskSchedule.tick(20 + presses * gap + 30)).schedule()
+        }.repeat(TaskSchedule.tick(5)).schedule()
         // Test-only: /vm <beat 1-3> <ticks> plays the greatsword viewmodel swing slowly, to look at it frame by frame.
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("vm").apply {
             val beat = net.minestom.server.command.builder.arguments.ArgumentType.Integer("beat").between(1, 3)

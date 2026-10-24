@@ -257,32 +257,63 @@ def viewmodel():
 # attacks are a sweep from the right, a thrust, an overhead slam. Keys are (u, ease, pose) over the whole swing (u = 1
 # is the cooldown's end, impact at u = .25); 'size' scales the sword up while it is in front of the camera.
 BC_STEPS = 48
+# Third pass (2026-10-25, Creator: 「もっさり」「剣を振ってるというよりただ傾いてるだけ」). A swing is an arc: the blade
+# points out from the chest and the whole sword goes round it, so the tip crosses the whole screen; with the hands
+# pinned to the screen edge it only leaned. The pivot sits under the eye (the chest) and the hands ride the arc a
+# forearm out from it, below the screen, so only the blade shows. Timing: the wind-up eases in, the cut is a few
+# ticks of constant, fast turning, the follow-through slows to a stop past the target, then the sword comes back.
+# The hands ride low (the pivot is the chest, well under the eye) so they stay under the screen; the cut passes
+# through the blade pointing up and out, never straight into the screen, where it would shrink to a stub.
+CHEST = (0.0, -0.72, 0.1)
+REACH = .5
+_S = [_unit(v) for v in ((1.0, 0.3, 0.1), (0.75, 0.62, 0.45), (0.0, 0.78, 0.63), (-0.75, 0.35, 0.56), (-1.0, -0.05, 0.25))]
+_SF = tuple(_unit(np.cross(_S[1], _S[3])))
+_T = _unit((-0.02, 0.3, 0.95))
+_V = [_unit(v) for v in ((0.3, 0.95, 0.05), (0.12, 0.92, 0.38), (0.02, 0.62, 0.78), (-0.03, 0.32, 0.95))]
+# The slam turns about a point further out, so the raised hilt never comes up into the camera.
+SLAM_CHEST = (0.12, -0.78, 0.35)
+
+
+def _at(d, reach=REACH, pivot=None):
+    pivot = CHEST if pivot is None else pivot
+    return tuple(np.array(pivot) + np.asarray(d) * reach)
+
+
+def _path(points, t0, t1, flat, size, first_ease='in', per=2, pivot=None):
+    """Keys along a chain of directions, [per] keys a leg, evenly in time between t0 and t1."""
+    legs = len(points) - 1
+    keys = []
+    for leg in range(legs):
+        for i in range(1, per + 1):
+            w = (leg + i / per) / legs
+            d = _slerp(points[leg], points[leg + 1], i / per)
+            keys.append((round(t0 + (t1 - t0) * w, 4), first_ease if not keys else 'linear',
+                         dict(grip=_at(d, pivot=pivot), blade=tuple(d), flat=flat, size=size)))
+    return keys
+
+
 BC_BEATS = {
-    # sweep: tip forward and up in front of the right hand, then flat across the screen and out to the lower left;
-    # the blade is crossing the middle when the server's hit lands (u = .25)
+    # sweep: cocked out to the right, then up and over to the left across the whole screen, slowing at the end
     1: [(0.0, None, 'rest'),
-        (.12, 'out', dict(grip=on_screen(.3, -.5, .62), blade=(0.12, 0.5, 0.86), flat=(0, 1, 0), size=1.25)),
-        (.18, 'inout', dict(grip=on_screen(.34, -.48, .64), blade=(0.25, 0.42, 0.87), size=1.3)),
-        (.23, 'in', dict(grip=on_screen(.05, -.55, .66), blade=(-0.9, 0.1, 0.42), size=1.3)),
-        (.29, 'out', dict(grip=on_screen(-.8, -.9, .6), blade=(-0.88, -0.1, -0.46), size=1.3)),
+        (.19, 'out', dict(grip=_at(_S[0]), blade=tuple(_S[0]), flat=_SF, size=1.45)),
+        *_path(_S, .19, .34, _SF, 1.45),
+        (.46, 'out', dict(grip=_at(_unit((-0.95, -0.25, 0.1))), blade=tuple(_unit((-0.95, -0.25, 0.1))), flat=_SF, size=1.45)),
         (.62, None, 'hold'),
         (1.0, 'inout', 'rest')],
-    # thrust: drawn back close to the face, upright, then driven straight at the crosshair and held there
+    # thrust: drawn in to the chest, then driven straight out at the crosshair
     2: [(0.0, None, 'rest'),
-        (.13, 'out', dict(grip=on_screen(.15, -.9, .55), blade=(0.05, 0.98, 0.18), flat=(0, 0, 1), size=1.2)),
-        (.19, 'inout', dict(grip=on_screen(.18, -.95, .5), blade=(0.05, 0.9, -0.42), size=1.2)),
-        (.23, 'in', dict(grip=on_screen(.1, -.8, .62), blade=(-0.05, 0.5, 0.86), flat=(1, 0, 0), size=1.25)),
-        (.3, 'out', dict(grip=on_screen(.06, -.65, .9), blade=(-0.05, 0.42, 0.9), size=1.25)),
-        (.6, None, 'hold'),
+        (.17, 'out', dict(grip=_at(_T, .35), blade=tuple(_T), flat=(1, 0, 0), size=1.35)),
+        (.21, 'in', dict(grip=_at(_T, .25), blade=tuple(_T), size=1.35)),
+        (.27, 'linear', dict(grip=_at(_T, .7), blade=tuple(_T), size=1.35)),
+        (.36, 'out', dict(grip=_at(_T, .8), blade=tuple(_T), size=1.35)),
+        (.58, None, 'hold'),
         (1.0, 'inout', 'rest')],
-    # slam: up in front of the face and over the head, then straight down in front, stopped at waist height (the
-    # viewmodel is in the world: lower, the ground would swallow the blade)
+    # slam: lifted back over the head, then over the top and down in front
     3: [(0.0, None, 'rest'),
-        (.1, 'out', dict(grip=on_screen(.35, -.8, .6), blade=(0.08, 0.98, 0.18), flat=(1, 0, 0), size=1.2)),
-        (.18, 'inout', dict(grip=on_screen(.2, .55, .6), blade=(0.05, 0.55, -0.83), size=1.25)),
-        (.23, 'in', dict(grip=on_screen(.3, .15, .7), blade=(-0.35, -0.4, 0.85), size=1.25)),
-        (.29, 'out', dict(grip=on_screen(.28, -.05, .7), blade=(-0.4, -0.6, 0.69), size=1.25)),
-        (.68, None, 'hold'),
+        (.19, 'out', dict(grip=_at(_V[0], pivot=SLAM_CHEST), blade=tuple(_V[0]), flat=(1, 0, 0), size=1.45)),
+        *_path(_V, .19, .32, (1, 0, 0), 1.45, pivot=SLAM_CHEST),
+        (.44, 'out', dict(grip=_at(_unit((-0.04, 0.2, 0.98)), pivot=SLAM_CHEST), blade=tuple(_unit((-0.04, 0.2, 0.98))), size=1.45)),
+        (.66, None, 'hold'),
         (1.0, 'inout', 'rest')],
 }
 

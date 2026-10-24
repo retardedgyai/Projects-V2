@@ -344,12 +344,16 @@ internal class GreatswordVfx(private val player: Player) {
         if (player.instance !== instance) cancel()
         instance = player.instance
         CoreArmamentPresentation.meleeRelease(player)
+        // A heavy blade cutting air: a low whoosh under the sweep (2026-10-25, the swing felt weightless).
         sound(SoundEvent.ITEM_TRIDENT_THROW, .7f, floatArrayOf(.78f, .9f, .55f)[step - 1])
-        sound(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, .55f, if (step == 3) .65f else .8f)
+        sound(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, .75f, floatArrayOf(.7f, 1.1f, .55f)[step - 1])
+        sound(SoundEvent.ENTITY_BREEZE_WIND_BURST, .35f, floatArrayOf(.75f, 1.0f, .6f)[step - 1])
     }
     fun impactSound(heavy: Boolean) {
-        sound(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG, .65f, if (heavy) .55f else .85f)
+        sound(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG, .8f, if (heavy) .55f else .85f)
+        sound(SoundEvent.ENTITY_PLAYER_ATTACK_CRIT, .6f, if (heavy) .7f else 1.0f)
         sound(SoundEvent.ITEM_TRIDENT_HIT, .45f, if (heavy) .65f else 1.0f)
+        if (heavy) sound(SoundEvent.ITEM_MACE_SMASH_GROUND_HEAVY, .6f, .8f)
     }
     fun clearGarden() { meshes.clearGarden();gardenBoundaryFrame.clear();gardenPreparation=null;gardenBoundaryForPacked=false
         gardenFieldCue=null;gardenContacts.clear();gardenCueFrame.clear() }

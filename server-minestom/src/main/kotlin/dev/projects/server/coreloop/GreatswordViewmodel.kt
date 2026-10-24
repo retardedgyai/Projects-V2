@@ -27,13 +27,26 @@ import kotlin.math.sin
 internal object GreatswordViewmodel {
     /** The held weapon's custom_model_data[0] that hides it in first person (class_armament_swing.HIDDEN). */
     const val HIDDEN_POSE = 112
-    private val frames: Map<String, Map<String, List<FloatArray>>> by lazy {
-        val text = GreatswordViewmodel::class.java.classLoader.getResourceAsStream("player-motions/greatsword_viewmodel.json")
-            ?.use { String(it.readAllBytes(), Charsets.UTF_8) } ?: return@lazy emptyMap()
-        JsonParser.parseString(text).asJsonObject.entrySet().associate { (model, clips) ->
-            model to clips.asJsonObject.entrySet().associate { (clip, list) ->
-                clip to list.asJsonArray.map { f -> f.asJsonArray.map { it.asFloat }.toFloatArray() }
-            }
+    // Test-only: with dev commands on, the frames are read from the source tree whenever that file changes, so a new
+    // motion from scripts/class_armament_swing.py shows on the next swing without a restart.
+    private val devFile = java.io.File("../src/main/resources/player-motions/greatsword_viewmodel.json")
+        .takeIf { java.lang.Boolean.getBoolean("projects.devCommands") && it.exists() }
+    private var loadedAt = -1L
+    private var cached: Map<String, Map<String, List<FloatArray>>> = emptyMap()
+    private val frames: Map<String, Map<String, List<FloatArray>>> get() {
+        val stamp = devFile?.lastModified() ?: 0L
+        if (stamp != loadedAt) {
+            loadedAt = stamp
+            val text = devFile?.readText() ?: GreatswordViewmodel::class.java.classLoader
+                .getResourceAsStream("player-motions/greatsword_viewmodel.json")?.use { String(it.readAllBytes(), Charsets.UTF_8) }
+            cached = if (text == null) emptyMap() else parse(text)
+        }
+        return cached
+    }
+
+    private fun parse(text: String) = JsonParser.parseString(text).asJsonObject.entrySet().associate { (model, clips) ->
+        model to clips.asJsonObject.entrySet().associate { (clip, list) ->
+            clip to list.asJsonArray.map { f -> f.asJsonArray.map { it.asFloat }.toFloatArray() }
         }
     }
 
@@ -96,11 +109,15 @@ internal object GreatswordViewmodel {
         if (CoreArmamentPresentation.frame(item, 0) == state.weapon) player.setItemInMainHand(CoreArmamentPresentation.frame(item, 0))
     }
 
+    private fun index(player: Player, state: Active): Int {
+        val size = frames.getValue(state.model).getValue(state.clip).size
+        val elapsed = (player.aliveTicks - state.started).coerceAtLeast(0)
+        return (elapsed * (size - 1) / (state.duration - 1).coerceAtLeast(1)).toInt().coerceIn(0, size - 1)
+    }
+
     private fun update(player: Player, state: Active, first: Boolean) {
         val clip = frames.getValue(state.model).getValue(state.clip)
-        val elapsed = (player.aliveTicks - state.started).coerceAtLeast(0)
-        val index = (elapsed * (clip.size - 1) / (state.duration - 1).coerceAtLeast(1)).toInt().coerceIn(0, clip.size - 1)
-        val f = clip[index]
+        val f = clip[index(player, state)]
         // The display sits on the passenger point above the eye; in view space that offset tilts with the pitch.
         val sneaking = player.pose == EntityPose.SNEAKING
         val above = (if (sneaking) 1.5 else 1.8) - player.eyeHeight
