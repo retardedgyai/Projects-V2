@@ -453,6 +453,8 @@ ANIM_POSE = 120         # custom_model_data[0] of the tinted, shader-moved held 
 SWING_MARKER = 84
 
 
+SHADER_LIFT = .22    # screen heights the swing is raised in the hand (shader only)
+SHADER_SIZE = 1.25   # times the held scale while swinging (shader only)
 SHADER_LEAD = .05   # the blade crosses the middle a tick before the server's hit (and its slash) lands: cause first
 
 
@@ -465,7 +467,9 @@ def shader_keys(name, beat):
     eases = ['out', 'inout', 'in', 'linear', 'out', 'out']
     for i, ((u, hand, blade, size), e) in enumerate(zip(keys, eases)):
         lead = SHADER_LEAD if 1 <= i <= 4 else 0.0
-        poses.append((round(u - lead, 3), e, (on_screen(*hand), _unit(blade), flat), size * VM_SIZE))
+        # In the hand the sword read small and low on the right: brought up and nearer, and drawn larger.
+        sx, sy, z = hand
+        poses.append((round(u - lead, 3), e, (on_screen(sx * .9, sy + SHADER_LIFT, z * .88), _unit(blade), flat), size * SHADER_SIZE))
     hold = VM_HOLD[beat]
     poses.append((hold, 'linear', poses[-1][2], poses[-1][3]))
     poses.append((round(hold + (1 - hold) * .5, 3), 'inout', ((0.32, -1.45, 0.35), _unit((0.45, 0.0, 0.9)), flat), VM_SIZE))
@@ -518,6 +522,191 @@ def anim_model(name):
     for e in model.get('elements', []):
         for f in e['faces'].values(): f['tintindex'] = 0
     return model
+
+
+
+# ---- Swing planes (2026-10-25, Creator: 「刃の角度とか動き方が剣を振ってる感じではない」). Keyed hand positions and
+# blade directions made the blade lean on the spot, mostly pointing into the screen. A real two-handed cut turns the
+# whole sword in one plane about the shoulders: from cocked behind the head, through the front where it strikes, on
+# past it; the hands ride the same arc a forearm out, so the tip sweeps across the screen far more than the hilt; the
+# edge leads, so the flat faces along the plane's normal. Each beat is that: cock (eased), a held coil, the cut
+# accelerating into the strike and decelerating past it, a held follow-through, then back to rest.
+# (pivot, cocked direction, strike direction, degrees on past the strike, hand reach) in authoring view space.
+SWING_PLANES = {
+    # 袈裟: down from over the right shoulder, across, to the lower left
+    1: ((0.14, -0.62, 0.1), (0.42, 0.8, -0.42), (-0.12, 0.12, 1.0), 75.0, .5),
+    # 逆袈裟: up from low behind the left hip, across, to over the right shoulder
+    2: ((-0.04, -0.72, 0.1), (-0.72, -0.5, -0.3), (0.16, 0.14, 1.0), 75.0, .5),
+    # 叩きつけ: over the head from behind and straight down in front
+    3: ((0.1, -0.58, 0.12), (0.06, 0.62, -0.78), (0.0, 0.08, 1.0), 42.0, .5),
+}
+PLANE_TIMING = dict(cock=.13, coil=.17, strike=.21, through=.33, hold=.6, low=.8)
+
+
+def _rot(axis, deg, v):
+    a = math.radians(deg); k = _unit(axis); v = np.asarray(v, float)
+    return v * math.cos(a) + np.cross(k, v) * math.sin(a) + k * (k @ v) * (1 - math.cos(a))
+
+
+def plane_poses(beat):
+    """[(u, ease, (hand, blade, flat), size)] for one beat, densely keyed through the cut."""
+    pivot, cock, strike, past, reach = SWING_PLANES[beat]
+    cock, strike = _unit(cock), _unit(strike)
+    n = _unit(np.cross(cock, strike))
+    to_strike = math.degrees(math.acos(max(-1.0, min(1.0, float(cock @ strike)))))
+    total = to_strike + past
+    pivot = np.array(pivot)
+    def at(theta):
+        d = _rot(n, theta, cock)
+        return (tuple(pivot + d * reach), tuple(d), tuple(n))
+    t = PLANE_TIMING
+    out = [(t['cock'], 'out', at(-8.0), SHADER_SIZE), (t['coil'], 'linear', at(0.0), SHADER_SIZE)]
+    # The cut: speed rises to its peak at the strike, then falls away through the follow-through (keys every ~12°).
+    steps = 12
+    for i in range(1, steps + 1):
+        w = i / steps
+        if w <= .6:   # accelerating to the strike
+            f = (w / .6) ** 2 * to_strike
+            u = t['coil'] + (t['strike'] - t['coil']) * (w / .6)
+        else:         # decelerating past it
+            g = (w - .6) / .4
+            f = to_strike + past * (1 - (1 - g) ** 2)
+            u = t['strike'] + (t['through'] - t['strike']) * g
+        out.append((round(u, 4), 'linear', at(f), SHADER_SIZE))
+    return out, n
+
+
+def shader_keys(name, beat):
+    """[u, ease, hand (view space), rotation quaternion of the sword's axes, scale] for one beat of one of MODELS."""
+    rest = vm_rest(name)
+    cut, n = plane_poses(beat)
+    t = PLANE_TIMING
+    poses = [(0.0, None, rest, 1.0)] + cut
+    poses.append((t['hold'], 'linear', poses[-1][2], poses[-1][3]))
+    poses.append((t['low'], 'inout', ((0.32, -1.45, 0.35), _unit((0.45, 0.0, 0.9)), tuple(n)), SHADER_SIZE))
+    poses.append((1.0, 'out', rest, 1.0))
+    out = []
+    for u, e, (grip, blade, fl), size in poses:
+        y = _unit(_view(blade)); z = _view(fl); z = _unit(z - y * (z @ y)); x = np.cross(y, z)
+        q = _quaternion(np.column_stack((x, y, z)))
+        grow = size if name != 'greatsword_t1' else 1.0
+        out.append([u, SHADER_EASE[e or 'linear'], *_view(grip), *q, MODELS[name][2] * grow])
+    return out
+
+
+
+# ---- From the body (2026-10-25): the planes above, seen from the eye, still pointed the blade into the screen. The
+# third-person combo (build_weapon_combo_motions.GS_KEYS, read off Guts / Dragon's Dogma 2 / Monster Hunter) already
+# has where the hands and blade are for a heavy 袈裟, 逆袈裟 and 叩きつけ; first person is that seen from the player's
+# eye: the character's root-space grip and blade, mirrored to screen right, the eye 1.62 above the feet and the root
+# 0.70. Each beat takes the combo from its strike's coiled pose for 0.6 s, so the swing is the body's own.
+EYE_ABOVE_ROOT = 1.62 - 12 * (.9375 / 16)
+
+
+def combo_poses(beat):
+    import build_weapon_combo_motions as B
+    hit = B.GREATSWORD['hits'][beat - 1]
+    full, last = [], {}
+    for t, e, p in B.GS_KEYS:
+        last = dict(last) if p == 'hold' else {**last, **p}
+        full.append((t, e, last))
+    out = []
+    for t, e, p in full:
+        if t < hit - 1e-6 or t > hit + .6: continue
+        g, b, f = p['grip'], p['blade'], p['flat']
+        hand = (-g[0], g[1] - EYE_ABOVE_ROOT, g[2])
+        out.append((round(.17 + (t - hit), 4), 'linear' if e in (None, 'linear') else e,
+                    (hand, tuple(_unit((-b[0], b[1], b[2]))), tuple(_unit((-f[0], f[1], f[2])))), SHADER_SIZE))
+    return out
+
+
+def shader_keys(name, beat):
+    """[u, ease, hand (view space), rotation quaternion of the sword's axes, scale] for one beat of one of MODELS."""
+    rest = vm_rest(name)
+    cut = combo_poses(beat)
+    t = PLANE_TIMING
+    poses = [(0.0, None, rest, 1.0), (.13, 'out', cut[0][2], cut[0][3])] + cut
+    if poses[-1][0] < t['hold']: poses.append((t['hold'], 'linear', poses[-1][2], poses[-1][3]))
+    poses.append((t['low'], 'inout', ((0.32, -1.45, 0.35), _unit((0.45, 0.0, 0.9)), cut[-1][2][2]), SHADER_SIZE))
+    poses.append((1.0, 'out', rest, 1.0))
+    out = []
+    for u, e, (grip, blade, fl), size in poses:
+        y = _unit(_view(blade)); z = _view(fl); z = _unit(z - y * (z @ y)); x = np.cross(y, z)
+        q = _quaternion(np.column_stack((x, y, z)))
+        grow = size if name != 'greatsword_t1' else 1.0
+        out.append([u, SHADER_EASE[e or 'linear'], *_view(grip), *q, MODELS[name][2] * grow])
+    return out
+
+
+
+# ---- Staged for the screen (2026-10-25). The body's own swing, seen from the eye, sends the sword off screen or into
+# the camera. First-person melee games stage it (read off Mordhau's zweihander in first person): the hands stay low in
+# the middle of the screen, the long blade stands up through the middle to the top edge in the guard, and a cut is
+# the whole blade sweeping across the screen like a clock hand about the hands, in a plane leaning a little away
+# from the eye, the hands sliding the other way under it. (pivot, plane's second axis, degrees: guard, coil, strike,
+# end, hand reach) per beat; 0 degrees points to screen right, 90 straight up.
+SCREEN_SWINGS = {
+    # 袈裟: from up over the right shoulder, down across the middle to the lower left
+    1: ((0.06, -0.62, 0.62), (0.0, 1.0, 0.45), 72.0, 40.0, 150.0, 215.0, .16),
+    # 逆袈裟: from down at the lower left, up across the middle to the upper right
+    2: ((-0.04, -0.66, 0.62), (0.0, 1.0, 0.45), 200.0, 228.0, 110.0, 20.0, .16),
+    # 叩きつけ: raised high (the hands up at the top of the screen, the blade standing up behind them), then the hands
+    # driven down through the middle to the bottom while the blade falls forward: it sweeps down the whole screen
+    3: ((0.1, -0.6, 0.66), (-0.5, 0.0, 1.0), -18.0, -30.0, 62.0, 104.0, .16),
+}
+
+
+def screen_poses(beat):
+    pivot, second, guard, coil, strike, end, reach = SCREEN_SWINGS[beat]
+    pivot = np.array(pivot)
+    if beat == 3:   # the slam turns in the vertical plane through the eye: up (0,1,0) .. ahead (0,0,1)
+        a, b = np.array((0.0, 1.0, 0.0)), _unit(second)   # up .. ahead, leaning to the left so the fall reads
+        dir_of = lambda deg: _unit(math.cos(math.radians(deg)) * a + math.sin(math.radians(deg)) * b)
+        flat = tuple(_unit(np.cross(a, b)))
+    else:
+        x = np.array((1.0, 0.0, 0.0)); y = _unit(second)
+        dir_of = lambda deg: _unit(math.cos(math.radians(deg)) * x + math.sin(math.radians(deg)) * y)
+        flat = tuple(_unit(np.cross(x, y)))
+    def at(deg):
+        d = dir_of(deg)
+        if beat == 3:   # the hands come down from the top of the screen as the blade falls
+            w = min(1.0, max(0.0, (deg - coil) / (end - coil)))
+            hands = np.array((0.05, 0.02, 0.5)) * (1 - w) + pivot * w
+            return (tuple(hands), tuple(d), flat)
+        # the hands slide opposite the tip, under the blade
+        return (tuple(pivot - d * reach * .35 + d * reach), tuple(d), flat)
+    t = PLANE_TIMING
+    out = [(.12, 'out', at(guard), SHADER_SIZE), (t['coil'], 'inout', at(coil), SHADER_SIZE)]
+    steps = 10
+    for i in range(1, steps + 1):
+        w = i / steps
+        if w <= .55:
+            deg = coil + (strike - coil) * (w / .55) ** 2
+            u = t['coil'] + (t['strike'] - t['coil']) * (w / .55)
+        else:
+            g = (w - .55) / .45
+            deg = strike + (end - strike) * (1 - (1 - g) ** 2)
+            u = t['strike'] + (t['through'] - t['strike']) * g
+        out.append((round(u, 4), 'linear', at(deg), SHADER_SIZE))
+    return out
+
+
+def shader_keys(name, beat):
+    """[u, ease, hand (view space), rotation quaternion of the sword's axes, scale] for one beat of one of MODELS."""
+    rest = vm_rest(name)
+    cut = screen_poses(beat)
+    t = PLANE_TIMING
+    poses = [(0.0, None, rest, 1.0)] + cut
+    poses.append((t['hold'], 'linear', poses[-1][2], poses[-1][3]))
+    poses.append((t['low'], 'inout', ((0.32, -1.45, 0.35), _unit((0.45, 0.0, 0.9)), cut[-1][2][2]), SHADER_SIZE))
+    poses.append((1.0, 'out', rest, 1.0))
+    out = []
+    for u, e, (grip, blade, fl), size in poses:
+        y = _unit(_view(blade)); z = _view(fl); z = _unit(z - y * (z @ y)); x = np.cross(y, z)
+        q = _quaternion(np.column_stack((x, y, z)))
+        grow = size if name != 'greatsword_t1' else 1.0
+        out.append([u, SHADER_EASE[e or 'linear'], *_view(grip), *q, MODELS[name][2] * grow])
+    return out
 
 
 if __name__ == '__main__':

@@ -135,3 +135,58 @@ def bc_gif(out, ticks=(20, 22, 30), fps=30, scale=.5):
             frames.append(img.resize((int(R.W * scale), int(R.H * scale))))
     frames[0].save(out, save_all=True, append_images=frames[1:], duration=round(1000 / fps), loop=0)
     return frames
+
+
+def _qmat(q):
+    x, y, z, w = q
+    return np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                     [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                     [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
+
+
+def shader_pose(keys, u):
+    """What scripts/shaders/item.vsh computes at swing progress u (same key search, easing and slerp)."""
+    k = 0
+    for i in range(len(keys) - 1):
+        if keys[i + 1][0] <= u: k = i + 1
+    n = min(k + 1, len(keys) - 1)
+    u0, u1 = keys[k][0], keys[n][0]
+    w = 1.0 if n == k or u1 <= u0 else min(1.0, max(0.0, (u - u0) / (u1 - u0)))
+    e = int(keys[n][1])
+    w = w * w if e == 1 else 1 - (1 - w) ** 2 if e == 2 else w * w * (3 - 2 * w) if e == 3 else w
+    a, b = np.array(keys[k], float), np.array(keys[n], float)
+    q0, q1 = a[5:9], b[5:9]
+    if q0 @ q1 < 0: q1 = -q1
+    c = min(1.0, float(q0 @ q1))
+    q = q0 + (q1 - q0) * w if c > .9995 else (math.sin((1 - w) * math.acos(c)) * q0 + math.sin(w * math.acos(c)) * q1) / math.sin(math.acos(c))
+    return a[2:5] + (b[2:5] - a[2:5]) * w, q / np.linalg.norm(q), a[9] + (b[9] - a[9]) * w
+
+
+def render_shader(keys, u, name='greatsword_t3', label=''):
+    h, q, s = shader_pose(keys, u)
+    grip = np.array(S.MODELS[name][1]) / 16
+    m = np.eye(4); m[:3, :3] = _qmat(q)
+    faces = R.model_faces(MODEL, (0xffffff,), R.T(*h) @ m @ R.S(s, s, s) @ R.T(*(-grip)) @ R.S(1 / 16, 1 / 16, 1 / 16))
+    image = Image.new('RGBA', (R.W, R.H), R.BG + (255,))
+    d = ImageDraw.Draw(image)
+    for z in np.arange(1.0, 12, 1.0):
+        y = R.H / 2 + 1.62 / z * R.FOCAL
+        d.line([(0, y), (R.W, y)], fill=(40, 46, 56))
+    CAMERA.cam_dir_light = np.array((.3, .8, .5)) / np.linalg.norm((.3, .8, .5))
+    R.draw_faces(image, CAMERA, scene_faces() + faces)
+    if label: d.text((8, 6), label, fill=(255, 220, 80), font=R.FONT)
+    return image.convert('RGB')
+
+
+def shader_sheet(out, ticks=20, fps=20, until=.5):
+    cells = []
+    for beat in (1, 2, 3):
+        keys = S.shader_keys('greatsword_t3', beat)
+        n = int(ticks / 20 * fps * until) + 1
+        for i in range(n):
+            u = i / (ticks / 20 * fps)
+            cells.append(render_shader(keys, u, label=f'{beat} u{u:.2f}'))
+    cols = 10; w, h = R.W // 2, R.H // 2
+    sheet = Image.new('RGB', (w * cols, h * ((len(cells) + cols - 1) // cols)))
+    for j, c in enumerate(cells): sheet.paste(c.resize((w, h)), ((j % cols) * w, (j // cols) * h))
+    sheet.save(out)

@@ -32,7 +32,7 @@ if ! pgrep -f "mc-dir $HOME/ProjectS/[c]laude-testclient" >/dev/null; then
   # Memory guard (2026-10-25: the PC froze twice when the client pushed it into swap).
   AVAIL=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo)
   if [ "$AVAIL" -lt 3500 ]; then echo "空きメモリが ${AVAIL}MB しかないので、テスト用クライアントを起動しません" >&2; exit 1; fi
-  if pgrep -f "GradleDaemon|KotlinCompileDaemon" >/dev/null; then echo "gradle が動いているので、終わってから撮ります" >&2; exit 1; fi
+  if pgrep -f "[o]rg.gradle.launcher.daemon|[K]otlinCompileDaemon" >/dev/null; then echo "gradle が動いているので、終わってから撮ります" >&2; exit 1; fi
   setsid ~/.local/bin/projects-testclient 25565 >"$LOG" 2>&1 &
   for i in $(seq 1 90); do grep -q "Loaded .* advancements\|CHAT\]" "$LOG" 2>/dev/null && break; sleep 1; done
   sleep 8   # リソースパックの読み込み
