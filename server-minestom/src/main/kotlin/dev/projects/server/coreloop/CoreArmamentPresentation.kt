@@ -36,7 +36,7 @@ internal object CoreArmamentPresentation {
     internal fun pose(item: ItemStack, pose: Int): ItemStack {
         if (item.get(DataComponents.ITEM_MODEL) !in models ||
             CoreLoopItems.gearSlot(item) != CoreGearSlot.WEAPON) return item
-        require(pose in 0 until FRAMES + ACTION_FRAMES * 2)
+        require(pose in 0 until SwingClip.RETURN2.offset + SwingClip.RETURN2.frames)
         val old = item.get(DataComponents.CUSTOM_MODEL_DATA) ?: CustomModelData(emptyList(), emptyList(), emptyList(), emptyList())
         val value = pose.toFloat()
         if (old.floats().firstOrNull() == value) return item
@@ -67,6 +67,37 @@ internal object CoreArmamentPresentation {
 
     fun meleeRelease(player: Player) = begin(player, Stage.RELEASE, 12)
 
+    /**
+     * First-person greatsword swings (2026-10-25, scripts/class_armament_swing.py): one model per tick moves the held
+     * sword through the beat, Better Combat manner (no arm; the item's own attack animation is off). A beat's frames
+     * are spread over the swing's real length; a beat the next press does not follow settles back to rest.
+     */
+    internal enum class SwingClip(val offset: Int, val frames: Int) {
+        SWING1(24, 20), SWING2(44, 22), SWING3(66, 30), RETURN1(96, 8), RETURN2(104, 8)
+    }
+    internal data class Swing(val clip: SwingClip, val started: Long, val duration: Int, val weapon: ItemStack, val instanceId: UUID) {
+        fun poseAt(tick: Long): Int? {
+            val elapsed = tick - started
+            if (elapsed !in 0 until duration.toLong()) return null
+            return clip.offset + (elapsed * (clip.frames - 1) / (duration - 1).coerceAtLeast(1)).toInt()
+        }
+    }
+    private val swingTag = Tag.Transient<Swing>("projects_armament_swing")
+    private val greatswords = (1..4).map { "projects:weapons/greatsword_t$it" }.toSet()
+
+    /** Plays [beat] (1, 2 or 3: the combo's swing art) over [ticks]; false if the held item is not a greatsword. */
+    fun swing(player: Player, beat: Int, ticks: Int): Boolean {
+        val instance = player.instance ?: return false
+        if (!CoreCombatPresentation.packed(player) || player.openInventory != null || player.isRemoved) return false
+        val item = player.itemInMainHand
+        if (item.get(DataComponents.ITEM_MODEL) !in greatswords || CoreLoopItems.gearSlot(item) != CoreGearSlot.WEAPON) return false
+        cancel(player)
+        val clip = SwingClip.entries[(beat - 1).coerceIn(0, 2)]
+        player.setTag(swingTag, Swing(clip, player.aliveTicks, ticks.coerceIn(2, 80), frame(item, 0), instance.uuid))
+        player.setItemInMainHand(pose(item, clip.offset))
+        return true
+    }
+
     private fun begin(player: Player, stage: Stage, duration: Int) {
         val instance = player.instance ?: return
         if (!CoreCombatPresentation.packed(player) || player.openInventory != null || player.isRemoved) return
@@ -76,6 +107,7 @@ internal object CoreArmamentPresentation {
         val weapon = frame(item, 0)
         if (previous?.stage == stage && previous.started == player.aliveTicks &&
             previous.weapon == weapon && previous.instanceId == instance.uuid) return
+        player.removeTag(swingTag)
         player.setTag(clipTag, Clip(stage, player.aliveTicks, duration.coerceIn(2, 61), weapon, instance.uuid))
         // Deliver the accepted release pose immediately, including on odd ticks.
         player.setItemInMainHand(pose(item, stage.offset))
@@ -93,6 +125,7 @@ internal object CoreArmamentPresentation {
         if (model !in models && player.getTag(hiddenTag) == null) return
         val original = player.getTag(hiddenTag)?.model ?: model
         cancel(player)
+        player.removeTag(swingTag)
         player.setTag(hiddenTag, Hidden(original, player.aliveTicks + ticks))
         player.setItemInMainHand(item.with(DataComponents.ITEM_MODEL, HIDDEN_MODEL))
     }
@@ -106,9 +139,23 @@ internal object CoreArmamentPresentation {
     fun tick(player: Player, packed: Boolean) {
         // Hand-held equipment only, 10 fps. No background timers or entities.
         // Do not churn container/cursor projections while a menu is open.
-        if (!packed || player.instance == null || player.openInventory != null || player.isRemoved) { cancel(player); show(player); return }
+        if (!packed || player.instance == null || player.openInventory != null || player.isRemoved) {
+            cancel(player); player.removeTag(swingTag); show(player); return
+        }
         player.getTag(hiddenTag)?.let { if (player.aliveTicks >= it.until) show(player) else return }
         val old = player.itemInMainHand
+        // A swing moves every tick (the 10 fps idle frames would stutter it); a beat left unfollowed settles back.
+        player.getTag(swingTag)?.let { swing ->
+            val held = swing.instanceId == player.instance.uuid && swing.weapon == frame(old, 0)
+            val pose = if (held) swing.poseAt(player.aliveTicks) else null
+            if (pose != null) { pose(old, pose).let { if (it !== old) player.setItemInMainHand(it) }; return }
+            player.removeTag(swingTag)
+            val back = when (swing.clip) { SwingClip.SWING1 -> SwingClip.RETURN1; SwingClip.SWING2 -> SwingClip.RETURN2; else -> null }
+            if (held && back != null) {
+                player.setTag(swingTag, Swing(back, player.aliveTicks, back.frames, swing.weapon, swing.instanceId))
+                player.setItemInMainHand(pose(old, back.offset)); return
+            }
+        }
         val clip = player.getTag(clipTag)
         val actionPose = clip?.takeIf { it.instanceId == player.instance.uuid && it.weapon == frame(old, 0) }
             ?.poseAt(player.aliveTicks)

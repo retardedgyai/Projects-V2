@@ -562,7 +562,10 @@ internal class CorePlayerCombat(
         vfx.swingSound(swing.beat)
         // Better Combat manner: the off hand swings the off-hand attacks of a dual weapon.
         if (swing.attack.hand == CoreAttackHand.OFF) player.swingOffHand() else player.swingMainHand()
-        if (classId == CoreClass.WARRIOR) vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.beat - 1], player.position, normalDirection)
+        if (classId == CoreClass.WARRIOR) {
+            vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.beat - 1], player.position, normalDirection)
+            CoreArmamentPresentation.swing(player, swing.beat, swing.totalTicks)
+        }
         else vfx.play(CoreClassEffect(classId, CoreSkillMotion.CONE, player.position, normalDirection,
             reach(), swing.finisher, reverse = swing.beat == 2))
         var connected = false

@@ -55,6 +55,40 @@ class CoreArmamentPresentationTest {
         }
     }
 
+    @Test fun `greatsword swing frames exist for every tier and the pack dispatches each to its own frame`() {
+        MinecraftServer.init(Auth.Offline())
+        for (tier in 1..4) {
+            val json = javaClass.classLoader.getResource("core-ui-pack/assets/projects/items/weapons/greatsword_t$tier.json")!!.readText()
+            for (clip in CoreArmamentPresentation.SwingClip.entries) for (frame in 0 until clip.frames) {
+                val model = "greatsword_t${tier}_${clip.name.lowercase()}_%02d".format(frame)
+                assertNotNull(javaClass.classLoader.getResource("core-ui-pack/assets/projects/models/item/weapons/$model.json"), model)
+                assertTrue("{\"threshold\":${clip.offset + frame},\"model\":{\"type\":\"minecraft:model\",\"model\":\"projects:item/weapons/$model\"}}" in json.replace(" ", ""), model)
+            }
+        }
+    }
+
+    @Test fun `a greatsword swing spans its frames over the swing and never runs past them`() {
+        MinecraftServer.init(Auth.Offline())
+        for (clip in CoreArmamentPresentation.SwingClip.entries) for (duration in 2..80) {
+            val swing = CoreArmamentPresentation.Swing(clip, 100, duration, ItemStack.AIR, UUID.randomUUID())
+            assertNull(swing.poseAt(99)); assertNull(swing.poseAt(100L + duration))
+            assertEquals(clip.offset, swing.poseAt(100)); assertEquals(clip.offset + clip.frames - 1, swing.poseAt(99L + duration))
+            val poses = (0 until duration).map { swing.poseAt(100L + it)!! }
+            assertEquals(poses.sorted(), poses)
+        }
+    }
+
+    @Test fun `the greatsword has no vanilla attack swing and other weapons keep theirs`() {
+        MinecraftServer.init(Auth.Offline())
+        for (base in CoreWeaponBase.entries) {
+            val id = UUID.randomUUID(); val job = CoreClass.entries.first { base.usable(it) }
+            val item = CoreLoopItems.gear(CoreAccount(id, journey = CoreJourney.legacy(job = job),
+                weaponIdentity = CoreGearIdentity(UUID.randomUUID(), id, base = base)), CoreGearSlot.WEAPON, true)
+            assertEquals(base.family == "greatsword", item.get(DataComponents.ATTACK_ANIMATION)?.type() ==
+                net.minestom.server.item.component.SwingAnimation.Type.NONE, base.name)
+        }
+    }
+
     @Test fun `every class and tier selects an exported dedicated model only with pack`() {
         MinecraftServer.init(Auth.Offline())
         val seen = mutableSetOf<String>()

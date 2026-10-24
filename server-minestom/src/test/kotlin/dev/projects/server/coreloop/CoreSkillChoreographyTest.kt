@@ -375,7 +375,9 @@ class CoreSkillChoreographyTest {
                     val path="assets/projects/items/${pose.model}.json"
                     assertTrue(path in index,path)
                     val item=javaClass.getResourceAsStream("/core-ui-pack/$path")!!.bufferedReader().use { JsonParser.parseReader(it).asJsonObject }
-                    val model=item.getAsJsonObject("model").get("model").asString.removePrefix("projects:")
+                    // A held weapon may dispatch on custom_model_data (its swing frames); the part shows its fallback.
+                    val root=item.getAsJsonObject("model").let { if(it.has("fallback")) it.getAsJsonObject("fallback") else it }
+                    val model=root.get("model").asString.removePrefix("projects:")
                     assertTrue("assets/projects/models/$model.json" in index,model)
                 }
             }

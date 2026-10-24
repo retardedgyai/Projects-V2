@@ -65,6 +65,11 @@ def build():
         files[f'models/item/weapons/plain/plain_{name}.json'] = model(name)
     for family, name in T1.items():
         files[f'items/weapons/{family}_t1.json'] = static(name)
+    # The greatsword swings in first person (class_armament_swing): its frames dispatch on custom_model_data.
+    import class_armament_swing as swing
+    files['items/weapons/greatsword_t1.json'] = {'model': {'type': 'minecraft:range_dispatch', 'property': 'minecraft:custom_model_data',
+        'index': 0, 'fallback': static('greatsword')['model'], 'entries': swing.entries('greatsword_t1')}, 'hand_animation_on_swap': False}
+    files.update(swing.files('greatsword_t1'))
     for name in EXTRAS:
         files[f'items/weapons/plain_{name}.json'] = static(name)
     for relative, data in files.items():

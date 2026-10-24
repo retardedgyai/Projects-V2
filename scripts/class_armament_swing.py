@@ -1,0 +1,203 @@
+"""First-person greatsword swings (2026-10-25, Creator: 「一人称で遊ぶから実際に剣を一人称で触れさえすればいい」).
+
+Better Combat in first person moves only the held weapon, no arm, and that reads best. A server cannot move the
+camera-space item freely, but it can swap the held model every tick: each frame is a child of the weapon model that
+only overrides its first-person display transform. The item's own attack animation is off (attack_animation none), so
+vanilla does not shake it on top.
+
+Poses are authored the way the hand would hold the sword, in view space (x right, y up, z forward, blocks, from the
+eye): the grip point, the blade's direction and the way its flat faces. solve() turns one into the display transform
+that ItemInHandRenderer applies: arm offset (0.56, -0.52, -0.72), then translation / rotationXYZ / scale, then the
+model recentred by -0.5 and drawn in 1/16 block pixels.
+"""
+import math
+import numpy as np
+
+ARM = np.array([0.56, -0.52, -0.72])          # applyItemArmTransform, right hand, no equip offset (view space, -z ahead)
+GRIP = np.array([8.0, 4.5, 8.0])              # the hand on the leather handle, model pixels
+SCALE = .72                                   # as the authored idle display
+# Every model the greatsword is drawn with: model, the hand on its handle (pixels), the first-person scale it has.
+# T1 is the plain sprite (build_plain_weapons.py: 80 px over 16, handle rows 59..72, the blade on column 40).
+MODELS = {f'greatsword_t{t}': (f'projects:item/weapons/greatsword_t{t}', (8.0, 4.5, 8.0), .72) for t in (2, 3, 4)}
+MODELS['greatsword_t1'] = ('projects:item/weapons/plain/plain_greatsword', (8.1, 3.0, 8.0), 1.133)
+
+
+def _view(v):
+    """Authoring space (z ahead) to Minecraft view space (-z ahead)."""
+    return np.array([v[0], v[1], -v[2]], float)
+
+
+def _unit(v):
+    v = np.asarray(v, float)
+    return v / np.linalg.norm(v)
+
+
+def rotation_xyz(r):
+    """JOML rotationXYZ: Rx(a) Ry(b) Rz(c), degrees."""
+    a, b, c = (math.radians(x) for x in r)
+    rx = np.array(((1, 0, 0), (0, math.cos(a), -math.sin(a)), (0, math.sin(a), math.cos(a))))
+    ry = np.array(((math.cos(b), 0, math.sin(b)), (0, 1, 0), (-math.sin(b), 0, math.cos(b))))
+    rz = np.array(((math.cos(c), -math.sin(c), 0), (math.sin(c), math.cos(c), 0), (0, 0, 1)))
+    return rx @ ry @ rz
+
+
+def euler_xyz(m):
+    b = math.asin(max(-1.0, min(1.0, m[0, 2])))
+    if abs(m[0, 2]) < .9999:
+        a = math.atan2(-m[1, 2], m[2, 2]); c = math.atan2(-m[0, 1], m[0, 0])
+    else:
+        a = math.atan2(m[2, 1], m[1, 1]); c = 0.0
+    return [math.degrees(a), math.degrees(b), math.degrees(c)]
+
+
+def place(display, grip_px=GRIP):
+    """Display transform -> (grip point, blade direction, flat normal) in authoring space. For checking the solver."""
+    t = np.array(display['translation'], float) / 16
+    r = rotation_xyz(display['rotation']); s = display['scale'][0]
+    grip = ARM + t + r @ (s * (np.asarray(grip_px) / 16 - .5))
+    flip = np.array([1, 1, -1])
+    return grip * flip, (r @ [0, 1, 0]) * flip, (r @ [0, 0, 1]) * flip
+
+
+def solve(grip, blade, flat, scale=SCALE, grip_px=GRIP):
+    """The firstperson_righthand display for a grip point, blade direction and flat normal (authoring space)."""
+    y = _unit(_view(blade))
+    z = _view(flat); z = _unit(z - y * (z @ y))
+    x = np.cross(y, z)
+    r = np.column_stack((x, y, z))
+    rot = euler_xyz(r)
+    t = _view(grip) - ARM - r @ (scale * (np.asarray(grip_px) / 16 - .5))
+    tr = [round(float(v) * 16, 3) for v in t]
+    assert all(-80 <= v <= 80 for v in tr), tr
+    return {'rotation': [round(v, 2) for v in rot], 'translation': tr, 'scale': [scale] * 3}
+
+
+def _plane(a, b):
+    return _unit(np.cross(_unit(a), _unit(b)))
+
+
+IDLE = place({'rotation': [0, -90, 25], 'translation': [1.13, 3.2, -1.5], 'scale': [SCALE] * 3})
+IDLE = {'grip': tuple(IDLE[0]), 'blade': tuple(IDLE[1]), 'flat': tuple(IDLE[2])}
+
+# The heavy greatsword, read off Guts / Dragon's Dogma 2 / Monster Hunter (~/ProjectS/refs/greatsword): diagonal cuts,
+# the hands lead and the blade whips after them, a dead stop on contact (hitstop), the ground stops the blade, then the
+# weight is hauled into the next cut. The warrior hits on the press, so each beat starts from the pose the last one
+# was hauled into. Keys: (tick, ease, pose); a pose names grip / blade / flat, missing ones carry over.
+def on_screen(sx, sy, z):
+    """A grip point from where it shows: sx, sy in -1..1 across the 16:9 screen at the hand FOV, z ahead (blocks)."""
+    return (round(sx * 1.24 * z, 3), round(sy * .7 * z, 3), z)
+
+
+B1_FROM, B1_TO = (-0.3, 0.75, -0.6), (-0.85, -0.35, 0.4)
+B2_FROM, B2_TO = (-0.85, -0.4, 0.35), (0.75, 0.5, 0.42)
+B3_FROM, B3_TO = (0.05, 0.7, -0.7), (0.03, -0.86, 0.5)
+LOAD1 = dict(grip=on_screen(.75, -.3, .7), blade=B1_FROM, flat=tuple(_plane(B1_FROM, B1_TO)))
+LOAD2 = dict(grip=on_screen(-.45, -.8, .65), blade=B2_FROM, flat=tuple(_plane(B2_FROM, B2_TO)))
+LOAD3 = dict(grip=on_screen(.1, .6, .6), blade=B3_FROM, flat=tuple(_plane(B3_FROM, B3_TO)))
+BEATS = {
+    # 1: 袈裟, from over the right shoulder down across to the ground on the left
+    1: [(0, None, LOAD1),
+        (1, 'linear', dict(grip=on_screen(.35, -.5, .75), blade=(0.05, 0.97, 0.2))),
+        (2, 'linear', dict(grip=on_screen(.1, -.6, .8), blade=(-0.72, 0.45, 0.52))),
+        (3, 'linear', dict(grip=on_screen(-.05, -.7, .8), blade=B1_TO)),
+        (5, None, 'hold'),
+        (8, 'out', dict(grip=on_screen(-.25, -.85, .7), blade=(-0.7, -0.6, 0.38))),
+        (11, None, 'hold'),
+        (19, 'inout', LOAD2)],
+    # 2: 逆袈裟, from the ground on the left up across to the right, carried on over the head
+    2: [(0, None, LOAD2),
+        (1, 'linear', dict(grip=on_screen(-.2, -.8, .75), blade=(-0.85, -0.45, 0.28))),
+        (2, 'linear', dict(grip=on_screen(0, -.65, .8), blade=(0.0, 0.0, 1.0))),
+        (3, 'linear', dict(grip=on_screen(.2, -.5, .8), blade=B2_TO)),
+        (5, None, 'hold'),
+        (9, 'out', dict(grip=on_screen(.5, -.2, .7), blade=(0.5, 0.82, -0.1))),
+        (12, None, 'hold'),
+        (21, 'inout', LOAD3)],
+    # 3: 叩き込み, from over the head straight down into the ground ahead; it stays, then is heaved back to rest
+    3: [(0, None, LOAD3),
+        (1, 'linear', dict(grip=on_screen(.08, .45, .7), blade=(0.03, 0.97, 0.2))),
+        (2, 'linear', dict(grip=on_screen(.05, 0, .85), blade=(0.02, 0.45, 0.89))),
+        (3, 'linear', dict(grip=on_screen(.03, -.1, .92), blade=(0.02, -0.3, 0.95))),
+        (4, 'linear', dict(grip=on_screen(.03, -.25, .95), blade=B3_TO)),
+        (7, None, 'hold'),
+        (14, 'out', dict(grip=on_screen(.03, -.35, .92), blade=(0.03, -0.9, 0.43))),
+        (20, 'inout', dict(grip=on_screen(.5, -.4, .7), blade=(-0.1, 0.85, 0.5), flat=(-1, 0, 0))),
+        (29, 'out', IDLE)],
+}
+# When no next press comes, the hauled pose settles back to rest.
+RETURN_TICKS = 8
+RETURNS = {b: [(0, None, BEATS[b][-1][2]), (RETURN_TICKS - 1, 'inout', IDLE)] for b in (1, 2)}
+
+
+def _ease(kind, u):
+    if kind == 'in': return u ** 3
+    if kind == 'out': return 1 - (1 - u) ** 3
+    if kind == 'inout': return u * u * (3 - 2 * u)
+    return u
+
+
+def _slerp(a, b, w):
+    a, b = _unit(a), _unit(b)
+    ang = math.acos(max(-1.0, min(1.0, float(a @ b))))
+    if ang < 1e-5: return a
+    return (math.sin((1 - w) * ang) * a + math.sin(w * ang) * b) / math.sin(ang)
+
+
+def frames(keys):
+    """Per-tick (grip, blade, flat) from keys; the flat keeps one sign so it never flips through the blade."""
+    full, last = [], {}
+    for t, ease, pose in keys:
+        last = dict(last) if pose == 'hold' else {**last, **pose}
+        full.append((t, ease, last))
+    out = []
+    for tick in range(full[-1][0] + 1):
+        for (ta, _, pa), (tb, eb, pb) in zip(full, full[1:]):
+            if ta <= tick <= tb: break
+        u = 0.0 if tb == ta else _ease(eb, (tick - ta) / (tb - ta))
+        fa, fb = np.array(pa['flat'], float), np.array(pb['flat'], float)
+        if fa @ fb < 0: fb = -fb
+        out.append((np.array(pa['grip']) * (1 - u) + np.array(pb['grip']) * u, _slerp(pa['blade'], pb['blade'], u),
+                    _slerp(fa, fb, u)))
+    return out
+
+
+def clips(name='greatsword_t3'):
+    """name -> list of firstperson_righthand displays, one per tick, for one of MODELS."""
+    _, grip_px, scale = MODELS[name]
+    keys = {f'swing{b}': k for b, k in BEATS.items()} | {f'return{b}': k for b, k in RETURNS.items()}
+    return {clip: [solve(*f, scale=scale, grip_px=grip_px) for f in frames(k)] for clip, k in keys.items()}
+
+
+def frame_model(name, display):
+    """A frame: the weapon model with only its first-person transforms replaced (left hand mirrored)."""
+    r, t = display['rotation'], display['translation']
+    return {'parent': MODELS[name][0], 'display': {
+        'firstperson_righthand': display,
+        'firstperson_lefthand': {'rotation': [r[0], -r[1], -r[2]], 'translation': [-t[0], t[1], t[2]], 'scale': display['scale']}}}
+
+
+# custom_model_data[0] values: idle frames 0..11, prepare 12..17, release 18..23 (class_armament_geometry), then these.
+# CoreArmamentPresentation mirrors CLIP_ORDER / the lengths; CoreArmamentPresentationTest checks them against the pack.
+CLIP_ORDER = ('swing1', 'swing2', 'swing3', 'return1', 'return2')
+FIRST_OFFSET = 24
+
+
+def offsets():
+    out, at, lengths = {}, FIRST_OFFSET, {k: len(v) for k, v in clips().items()}
+    for name in CLIP_ORDER:
+        out[name] = at
+        at += lengths[name]
+    return out
+
+
+def entries(name):
+    """The custom_model_data dispatch entries for the swing frames of one of MODELS."""
+    frames_of = clips(name)
+    return [{'threshold': offset + i, 'model': {'type': 'minecraft:model', 'model': f'projects:item/weapons/{name}_{clip}_{i:02d}'}}
+            for clip, offset in offsets().items() for i in range(len(frames_of[clip]))]
+
+
+def files(name):
+    """relative path -> json of every swing frame model of one of MODELS."""
+    return {f'models/item/weapons/{name}_{clip}_{i:02d}.json': frame_model(name, d)
+            for clip, displays in clips(name).items() for i, d in enumerate(displays)}
