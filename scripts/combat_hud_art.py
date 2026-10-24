@@ -162,42 +162,66 @@ def rage_cell():
     return img
 
 
-# ---- the warrior's beast (Creator 2026-10-24, 案A): three diamond sockets over the emblem's crest ---------
-BEAST_R = 4                        # diamond radius; a socket is 2R+5 px tall, one wider (even width)
-BEAST_PITCH = 14                   # centre to centre
-BEAST_TOP = 62                     # top of the socket row, GUI px from the bottom: the middle one is set in the crest
-BEAST_FILL_STEPS = 4               # a part-built stack fills from the bottom in this many steps
-BEAST_RED = [hexc("460810"), hexc("800e14"), hexc("c41c20"), hexc("f04638"), hexc("ffaa8c")]
-BEAST_RIM, BEAST_EMPTY = (14, 10, 12, 255), ((44, 30, 34, 255), (30, 20, 24, 255))
+# ---- the warrior's beast (Creator 2026-10-24, 案A): three gems set in iron over the emblem's crest ------
+# Each socket is a red gem in a stepped iron bezel, prongs reaching out left and right so the three read as one
+# piece of the crown's ironwork; a part-built stack fills the gem from the bottom; all three full, the gems
+# burn: a lick of red flame stands up off each.
+BEAST_R = 4                        # gem radius
+BEAST_HALF = 9                     # half width of a socket's art before the centre column is doubled
+BEAST_PITCH = 2 * BEAST_HALF + 2   # sockets touch prong to prong
+BEAST_FLAME = 2                    # rows above the bezel kept for the burning flame (it also covers the bezel tip)
+BEAST_TOP = 64                     # top of the socket row, GUI px from the bottom
+BEAST_FILL_STEPS = 4
+BEAST_RED = [hexc("3a0610"), hexc("6e0c14"), hexc("a8161c"), hexc("dc2a26"), hexc("ff6a4c"), hexc("ffd0b8")]
+BEAST_EMPTY = (hexc("1e1418"), hexc("2a1c20"), hexc("38262a"))
 
 
 def beast_socket(step, burning=False):
-    """One socket filled `step` of BEAST_FILL_STEPS from the bottom (0 empty); `burning`: all three full,
-    a dark red halo round it. Hand-shaded: lit from above, dark below, a glint at the top of a full one."""
-    r = BEAST_R
-    size = 2 * r + 5
-    img = new(size, size)
-    c = size // 2
+    r, H = BEAST_R, BEAST_HALF
+    size = 2 * (r + 3) + 1
+    img = new(2 * H + 1, BEAST_FLAME + size)
+    c, cy = H, BEAST_FLAME + size // 2
     fill = step / BEAST_FILL_STEPS
-    for dy in range(-r - 2, r + 3):
-        for dx in range(-r - 2, r + 3):
+    # prongs: an iron bar out to each side at the gem's waist, ending in a little barb
+    for x in range(0, 2 * H + 1):
+        if abs(x - c) <= r + 2: continue
+        px(img, x, cy - 1, OUT); px(img, x, cy, METAL[1]); px(img, x, cy + 1, METAL[3]); px(img, x, cy + 2, OUT)
+    for side in (-1, 1):
+        x = c + side * H
+        px(img, x, cy - 2, OUT); px(img, x, cy - 1, METAL[0]); px(img, x, cy + 2, METAL[3]); px(img, x, cy + 3, OUT)
+    for dy in range(-r - 3, r + 4):
+        for dx in range(-r - 3, r + 4):
             k = abs(dx) + abs(dy)
-            x, y = c + dx, c + dy
-            if k == r + 2:
-                if burning: px(img, x, y, (110, 16, 18, 255))
-            elif k == r + 1:
-                px(img, x, y, BEAST_RIM)
+            x, y = c + dx, cy + dy
+            if k == r + 3:
+                px(img, x, y, OUT)
+            elif k == r + 2:                      # the bezel: lit along its upper edges, dark below
+                px(img, x, y, METAL[0] if dy < 0 else METAL[2] if dy > 0 else METAL[1])
+            elif k == r + 1:                      # the seat the gem sits in
+                px(img, x, y, METAL[3] if dy >= 0 else METAL[2])
             elif k <= r:
                 level = (r - dy) / (2 * r)
-                if level <= fill + 1e-9 and step > 0:
-                    # Lit from straight above so the socket mirrors left to right like the rest of the HUD.
-                    t = 3 if dy < -1 else 2 if dy <= 1 else 1
-                    if k == r: t = max(1, t - 1)
-                    if step == BEAST_FILL_STEPS and dx == 0 and dy == -2: t = 4
+                if step > 0 and level <= fill + 1e-9:
+                    # a cut gem: bright crown facets, a dark pavilion, a glint
+                    t = 4 if dy <= -2 else 3 if dy <= 0 else 2 if dy <= 2 else 1
+                    if k == r and dy > 0: t -= 1
+                    if step == BEAST_FILL_STEPS and dy == -2 and dx == 0: t = 5
+                    if step == BEAST_FILL_STEPS and abs(dx) == 1 and dy == -1: t = max(t, 4)
                     px(img, x, y, BEAST_RED[t])
                 else:
-                    px(img, x, y, BEAST_EMPTY[(dx + dy) % 2])
-    # Even width, like the emblem: its axis then lies on the screen centre line, not half a pixel right of it.
+                    shade = 2 if dy <= -2 else 1 if dy <= 1 else 0
+                    px(img, x, y, BEAST_EMPTY[shade])
+                    if dy == r - 1 and dx == 0 and step == 0: px(img, x, y, BEAST_RED[1])  # an ember left at the bottom
+    if burning:
+        # Burning: the bezel runs red-hot along its upper edges, and a ragged crown of flame licks off its tip.
+        for dy in range(-r - 2, 1):
+            for dx in range(-r - 2, r + 3):
+                if abs(dx) + abs(dy) == r + 2: px(img, c + dx, cy + dy, BEAST_RED[3] if dy < -1 else BEAST_RED[2])
+        tip = cy - r - 3
+        flame = [((-2, 0, 2), 4), ((-2, -1, 0, 1, 2), 3), ((-3, -2, -1, 0, 1, 2, 3), 2)]
+        for j, (cols, tone) in enumerate(flame):
+            for dx in cols:
+                px(img, c + dx, tip - 2 + j, BEAST_RED[tone + (1 if dx == 0 and j == 1 else 0)])
     return even(img)
 
 

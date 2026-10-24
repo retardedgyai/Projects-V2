@@ -71,8 +71,8 @@ internal object CoreHudLayout {
         return ceil((remaining / total).coerceIn(0.0, 1.0) * BUFF_STEPS).toInt().coerceIn(1, BUFF_STEPS)
     }
 
-    const val BEAST_PITCH = 14
-    const val BEAST_X = -BEAST_PITCH - 7       // left edge of the first socket (14 px wide): each mirrors about its own centre line
+    const val BEAST_PITCH = 20
+    const val BEAST_X = -BEAST_PITCH - 10      // left edge of the first socket (20 px wide): each mirrors about its own centre line
     private const val BEAST_FILL_STEPS = 4
     private fun beast(state: CoreHudState) = job(state) == "warrior" && state.resource != null && state.resourceMaximum == 3.0
 
