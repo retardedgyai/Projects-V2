@@ -719,13 +719,16 @@ def shader_keys(name, beat):
 # normal (the edge leads) and the eye sees the blade on its edge. The slash effect carries the sweep across the screen.
 # (hands at the guard, hands at the strike, screen direction of the cut's line, tilt degrees, blade angles: cocked,
 # strike, end; 0 = along the line, 90 = straight ahead into the scene)
+# Both ends of every cut show the blade long on the screen (cocked along one end of the line, finished along the
+# other), so the cut reads as a sweep from one side to the other; it passes the in-depth middle in a tick.
 EDGE_SWINGS = {
-    # 袈裟: the line runs from upper right to lower left; the sword slides down it, turning from up-back to down-ahead
-    1: ((0.14, -0.5, 0.8), (-0.22, -0.7, 0.82), (0.62, 1.0), 16.0, 22.0, 55.0, 98.0),
-    # 逆袈裟: from lower left up to upper right
-    2: ((-0.2, -0.7, 0.82), (0.16, -0.48, 0.8), (-0.75, -1.0), 16.0, 28.0, 58.0, 100.0),
-    # 叩きつけ: from high in the middle straight down
-    3: ((0.06, -0.24, 0.78), (0.02, -0.66, 0.84), (0.1, 1.0), 10.0, 18.0, 55.0, 92.0),
+    # 袈裟: cocked up to the upper right, finished down to the lower left (the hands carried from low right to the
+    # middle, so the finished blade still lies across the lower left of the screen)
+    1: ((0.16, -0.56, 0.84), (-0.02, -0.3, 0.86), (0.85, 1.0), 14.0, 18.0, 90.0, 150.0),
+    # 逆袈裟: cocked low to the left (the hands in the middle), finished up to the upper right (the hands low right)
+    2: ((-0.04, -0.3, 0.86), (0.14, -0.56, 0.84), (-0.9, -1.0), 14.0, 25.0, 90.0, 158.0),
+    # 叩きつけ: the hands high with the blade up over them, then down; the blade finishes pointing down ahead
+    3: ((0.06, -0.12, 0.8), (0.02, -0.2, 0.9), (0.12, 1.0), 10.0, 14.0, 90.0, 140.0),
 }
 EDGE_SIZE = 1.6
 

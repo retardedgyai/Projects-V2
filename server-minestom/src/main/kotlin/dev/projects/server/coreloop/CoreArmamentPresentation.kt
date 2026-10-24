@@ -83,7 +83,10 @@ internal object CoreArmamentPresentation {
         if (model !in greatswords || CoreLoopItems.gearSlot(item) != CoreGearSlot.WEAPON) return false
         cancel(player); player.removeTag(swingTag)
         val marker = 84 + (beat - 1).coerceIn(0, 2) + if (model.endsWith("_t1")) 3 else 0
-        val tint = net.kyori.adventure.text.format.TextColor.color(ticks.coerceIn(1, 255), (instance.worldAge and 255L).toInt(), marker)
+        // The shader's clock is GameTime, the client's game time modulo one day (24000): the start must be on that
+        // clock, or the swing starts part-way through (or already over) and the sword jumps.
+        val start = ((instance.worldAge % 24000L) and 255L).toInt()
+        val tint = net.kyori.adventure.text.format.TextColor.color(ticks.coerceIn(1, 255), start, marker)
         val posed = pose(item, ANIM_POSE)
         val old = posed.get(DataComponents.CUSTOM_MODEL_DATA)!!
         player.setTag(shaderTag, ShaderSwing(player.aliveTicks + ticks, frame(item, 0)))
