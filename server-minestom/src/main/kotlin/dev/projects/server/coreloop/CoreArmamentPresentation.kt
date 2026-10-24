@@ -36,7 +36,7 @@ internal object CoreArmamentPresentation {
     internal fun pose(item: ItemStack, pose: Int): ItemStack {
         if (item.get(DataComponents.ITEM_MODEL) !in models ||
             CoreLoopItems.gearSlot(item) != CoreGearSlot.WEAPON) return item
-        require(pose in 0 until SwingClip.RETURN2.offset + SwingClip.RETURN2.frames)
+        require(pose in 0..GreatswordViewmodel.HIDDEN_POSE)
         val old = item.get(DataComponents.CUSTOM_MODEL_DATA) ?: CustomModelData(emptyList(), emptyList(), emptyList(), emptyList())
         val value = pose.toFloat()
         if (old.floats().firstOrNull() == value) return item
@@ -91,6 +91,7 @@ internal object CoreArmamentPresentation {
         if (!CoreCombatPresentation.packed(player) || player.openInventory != null || player.isRemoved) return false
         val item = player.itemInMainHand
         if (item.get(DataComponents.ITEM_MODEL) !in greatswords || CoreLoopItems.gearSlot(item) != CoreGearSlot.WEAPON) return false
+        GreatswordViewmodel.stop(player)
         cancel(player)
         val clip = SwingClip.entries[(beat - 1).coerceIn(0, 2)]
         player.setTag(swingTag, Swing(clip, player.aliveTicks, ticks.coerceIn(2, 80), frame(item, 0), instance.uuid))
@@ -108,6 +109,7 @@ internal object CoreArmamentPresentation {
         if (previous?.stage == stage && previous.started == player.aliveTicks &&
             previous.weapon == weapon && previous.instanceId == instance.uuid) return
         player.removeTag(swingTag)
+        GreatswordViewmodel.stop(player)
         player.setTag(clipTag, Clip(stage, player.aliveTicks, duration.coerceIn(2, 61), weapon, instance.uuid))
         // Deliver the accepted release pose immediately, including on odd ticks.
         player.setItemInMainHand(pose(item, stage.offset))
@@ -126,6 +128,7 @@ internal object CoreArmamentPresentation {
         val original = player.getTag(hiddenTag)?.model ?: model
         cancel(player)
         player.removeTag(swingTag)
+        GreatswordViewmodel.stop(player)
         player.setTag(hiddenTag, Hidden(original, player.aliveTicks + ticks))
         player.setItemInMainHand(item.with(DataComponents.ITEM_MODEL, HIDDEN_MODEL))
     }
@@ -140,8 +143,9 @@ internal object CoreArmamentPresentation {
         // Hand-held equipment only, 10 fps. No background timers or entities.
         // Do not churn container/cursor projections while a menu is open.
         if (!packed || player.instance == null || player.openInventory != null || player.isRemoved) {
-            cancel(player); player.removeTag(swingTag); show(player); return
+            cancel(player); player.removeTag(swingTag); GreatswordViewmodel.stop(player); show(player); return
         }
+        if (GreatswordViewmodel.playing(player)) { GreatswordViewmodel.tick(player); return }
         player.getTag(hiddenTag)?.let { if (player.aliveTicks >= it.until) show(player) else return }
         val old = player.itemInMainHand
         // A swing moves every tick (the 10 fps idle frames would stutter it); a beat left unfollowed settles back.

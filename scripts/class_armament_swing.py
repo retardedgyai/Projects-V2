@@ -20,6 +20,9 @@ SCALE = .72                                   # as the authored idle display
 # T1 is the plain sprite (build_plain_weapons.py: 80 px over 16, handle rows 59..72, the blade on column 40).
 MODELS = {f'greatsword_t{t}': (f'projects:item/weapons/greatsword_t{t}', (8.0, 4.5, 8.0), .72) for t in (2, 3, 4)}
 MODELS['greatsword_t1'] = ('projects:item/weapons/plain/plain_greatsword', (8.1, 3.0, 8.0), 1.133)
+# Each model's own resting first-person display (the swing ends there, so the held item takes over without a jump).
+RESTS = {name: {'rotation': [0, -90, 25], 'translation': [1.13, 3.2, -1.5], 'scale': [.72] * 3} for name in MODELS}
+RESTS['greatsword_t1'] = {'rotation': [0, -90, -20], 'translation': [1.13, 3.2, 1.13], 'scale': [1.133] * 3}
 
 
 def _view(v):
@@ -164,7 +167,10 @@ def frames(keys):
 def clips(name='greatsword_t3'):
     """name -> list of firstperson_righthand displays, one per tick, for one of MODELS."""
     _, grip_px, scale = MODELS[name]
+    g, b, f = place(RESTS[name], grip_px)
+    rest = {'grip': tuple(g), 'blade': tuple(b), 'flat': tuple(f)}
     keys = {f'swing{b}': k for b, k in BEATS.items()} | {f'return{b}': k for b, k in RETURNS.items()}
+    keys = {clip: [(t, e, rest if p is IDLE else p) for t, e, p in k] for clip, k in keys.items()}
     return {clip: [solve(*f, scale=scale, grip_px=grip_px) for f in frames(k)] for clip, k in keys.items()}
 
 
@@ -180,6 +186,7 @@ def frame_model(name, display):
 # CoreArmamentPresentation mirrors CLIP_ORDER / the lengths; CoreArmamentPresentationTest checks them against the pack.
 CLIP_ORDER = ('swing1', 'swing2', 'swing3', 'return1', 'return2')
 FIRST_OFFSET = 24
+HIDDEN = 112  # after the last clip (return2 ends at 111)
 
 
 def offsets():
@@ -194,10 +201,58 @@ def entries(name):
     """The custom_model_data dispatch entries for the swing frames of one of MODELS."""
     frames_of = clips(name)
     return [{'threshold': offset + i, 'model': {'type': 'minecraft:model', 'model': f'projects:item/weapons/{name}_{clip}_{i:02d}'}}
-            for clip, offset in offsets().items() for i in range(len(frames_of[clip]))]
+            for clip, offset in offsets().items() for i in range(len(frames_of[clip]))] + \
+        [{'threshold': HIDDEN, 'model': {'type': 'minecraft:model', 'model': f'projects:item/weapons/{name}_fphidden'}}]
 
 
 def files(name):
     """relative path -> json of every swing frame model of one of MODELS."""
-    return {f'models/item/weapons/{name}_{clip}_{i:02d}.json': frame_model(name, d)
-            for clip, displays in clips(name).items() for i, d in enumerate(displays)}
+    out = {f'models/item/weapons/{name}_{clip}_{i:02d}.json': frame_model(name, d)
+           for clip, displays in clips(name).items() for i, d in enumerate(displays)}
+    # While the viewmodel swings, the held sword is hidden in first person only (others and F5 still see it).
+    out[f'models/item/weapons/{name}_fphidden.json'] = {'parent': MODELS[name][0], 'display': {
+        'firstperson_righthand': {'scale': [0, 0, 0]}, 'firstperson_lefthand': {'scale': [0, 0, 0]}}}
+    return out
+
+
+# ---- the viewmodel (2026-10-25): the same poses drawn by an item display that rides the player, billboarded to the
+# camera, so the client interpolates between ticks (a held item can only snap once a tick). Its local space is the
+# view space above (x right, y up, z towards the eye), so a frame is translation (blocks, from the eye) + rotation +
+# scale; the server subtracts where the display sits relative to the eye.
+def _quaternion(m):
+    t = m[0, 0] + m[1, 1] + m[2, 2]
+    if t > 0:
+        s = math.sqrt(t + 1) * 2; q = ((m[2, 1] - m[1, 2]) / s, (m[0, 2] - m[2, 0]) / s, (m[1, 0] - m[0, 1]) / s, s / 4)
+    elif m[0, 0] > m[1, 1] and m[0, 0] > m[2, 2]:
+        s = math.sqrt(1 + m[0, 0] - m[1, 1] - m[2, 2]) * 2; q = (s / 4, (m[0, 1] + m[1, 0]) / s, (m[0, 2] + m[2, 0]) / s, (m[2, 1] - m[1, 2]) / s)
+    elif m[1, 1] > m[2, 2]:
+        s = math.sqrt(1 + m[1, 1] - m[0, 0] - m[2, 2]) * 2; q = ((m[0, 1] + m[1, 0]) / s, s / 4, (m[1, 2] + m[2, 1]) / s, (m[0, 2] - m[2, 0]) / s)
+    else:
+        s = math.sqrt(1 + m[2, 2] - m[0, 0] - m[1, 1]) * 2; q = ((m[0, 2] + m[2, 0]) / s, (m[1, 2] + m[2, 1]) / s, s / 4, (m[1, 0] - m[0, 1]) / s)
+    return q
+
+
+def viewmodel_frame(display):
+    # ItemDisplayRenderer turns the item half a turn about y before drawing it: undo that inside the rotation.
+    r = rotation_xyz(display['rotation']) @ np.diag([-1.0, 1.0, -1.0])
+    t = ARM + np.array(display['translation']) / 16
+    return [round(float(v), 4) for v in (*t, *_quaternion(r))] + [display['scale'][0]]
+
+
+def viewmodel():
+    """model -> clip -> per-tick [tx, ty, tz, qx, qy, qz, qw, scale], plus 'idle' (one frame)."""
+    idle = {'rotation': [0, -90, 25], 'translation': [1.13, 3.2, -1.5], 'scale': [SCALE] * 3}
+    out = {}
+    for name, (_, grip_px, scale) in MODELS.items():
+        clip_frames = {clip: [viewmodel_frame(d) for d in ds] for clip, ds in clips(name).items()}
+        clip_frames['idle'] = [viewmodel_frame(RESTS[name])]
+        out[f'projects:weapons/{name}'] = clip_frames
+    return out
+
+
+if __name__ == '__main__':
+    import json
+    from pathlib import Path
+    path = Path(__file__).resolve().parents[1] / 'server-minestom/src/main/resources/player-motions/greatsword_viewmodel.json'
+    path.write_text(json.dumps(viewmodel(), separators=(',', ':')) + '\n', encoding='utf-8')
+    print('wrote', path)

@@ -562,6 +562,15 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     player.sendMessage(Component.text("そのモーションはありません: ${context.get(name)}", NamedTextColor.YELLOW))
             } }, name, self)
         })
+        // Test-only: /vm <beat 1-3> <ticks> plays the greatsword viewmodel swing slowly, to look at it frame by frame.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("vm").apply {
+            val beat = net.minestom.server.command.builder.arguments.ArgumentType.Integer("beat").between(1, 3)
+            val ticks = net.minestom.server.command.builder.arguments.ArgumentType.Integer("ticks").between(2, 400)
+            addSyntax({ sender, context -> (sender as? Player)?.let { player ->
+                if (!GreatswordViewmodel.swing(player, context.get(beat), context.get(ticks)))
+                    player.sendMessage(Component.text("大剣を持っていません", NamedTextColor.GRAY))
+            } }, beat, ticks)
+        })
         // Test-only: /vfx <slot 0-4> casts that skill in the skill lab with cooldown, mana and resource refilled (filming).
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("vfx").apply {
             val slot = net.minestom.server.command.builder.arguments.ArgumentType.Integer("slot").between(0, 4)
