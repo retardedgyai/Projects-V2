@@ -143,6 +143,9 @@ internal class PlayerPuppet(private val owner: Player, private val motion: Playe
     companion object {
         private val active = HashMap<UUID, PlayerPuppet>()
 
+        /** Dev only (/motion watch): players who also see their own normal-attack puppet, to check it in F5. */
+        val watching = HashSet<UUID>()
+
         /**
          * Plays [name] on [player] from [from] to [until] seconds (the whole motion by default), replacing any motion
          * already playing. The same motion already playing jumps there instead, so a combo's swings reuse one puppet.

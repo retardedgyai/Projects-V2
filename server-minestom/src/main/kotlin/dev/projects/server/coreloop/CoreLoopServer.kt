@@ -546,10 +546,14 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("motion").apply {
             val name = net.minestom.server.command.builder.arguments.ArgumentType.Word("name")
             val self = net.minestom.server.command.builder.arguments.ArgumentType.Literal("self")
-            setDefaultExecutor { sender, _ -> sender.sendMessage(Component.text("/motion greatsword_charge | dual_blades_dance [self] | stop（self：自分にも人形を見せる。F5で確認用）", NamedTextColor.GRAY)) }
+            setDefaultExecutor { sender, _ -> sender.sendMessage(Component.text("/motion greatsword_charge | dual_blades_dance [self] | stop | watch（self：自分にも人形を見せる。watch：通常攻撃の人形も自分に見せるのを切り替え。F5で確認用）", NamedTextColor.GRAY)) }
             addSyntax({ sender, context -> (sender as? Player)?.let { player ->
                 val motion = context.get(name)
                 if (motion == "stop") dev.projects.server.puppet.PlayerPuppet.stop(player)
+                else if (motion == "watch") with(dev.projects.server.puppet.PlayerPuppet.watching) {
+                    val on = add(player.uuid) || !remove(player.uuid)
+                    player.sendMessage(Component.text("通常攻撃の人形を自分にも見せる：${if (on) "オン（F5で見てください）" else "オフ"}", NamedTextColor.GRAY))
+                }
                 else if (!dev.projects.server.puppet.PlayerPuppet.play(player, motion))
                     player.sendMessage(Component.text("そのモーションはありません: $motion", NamedTextColor.YELLOW))
             } }, name)

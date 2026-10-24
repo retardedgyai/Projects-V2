@@ -565,7 +565,7 @@ internal class CorePlayerCombat(
         if (classId == CoreClass.WARRIOR) {
             vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.beat - 1], player.position, normalDirection)
             // Better Combat manner: the others see the body swing this beat (scripts/build_weapon_combo_motions.py).
-            GREATSWORD_BEATS.getOrNull(swing.beat - 1)?.let { (from, until) -> PlayerPuppet.play(player, "greatsword_combo", from = from, until = until) }
+            GREATSWORD_BEATS.getOrNull(swing.beat - 1)?.let { (from, until) -> PlayerPuppet.play(player, "greatsword_combo", player.uuid in PlayerPuppet.watching, from, until) }
         }
         else vfx.play(CoreClassEffect(classId, CoreSkillMotion.CONE, player.position, normalDirection,
             reach(), swing.finisher, reverse = swing.beat == 2))
