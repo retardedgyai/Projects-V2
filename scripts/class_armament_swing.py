@@ -1002,6 +1002,48 @@ def sleeve_png(path):
     img.save(path)
 
 
+# The shader holds every key as constants; NVIDIA could not bind the arrays once the arms came in (2026-10-25: the pack
+# failed to load, "Possibly large array"). Keys are thinned until dropping one more would move a probe point of the
+# part (the hands and the tip, or the shoulder and the hand) more than THIN_TOLERANCE blocks anywhere along the swing.
+THIN_TOLERANCE = .02
+
+
+def _pose(keys, u):
+    import preview_greatsword_fp as P
+    h, q, s = P.shader_pose(keys, u)
+    return h, P._qmat(q), s
+
+
+def thin(keys, probes):
+    """The fewest keys (greedily) that keep the probes within THIN_TOLERANCE of the full keys' path."""
+    us = np.linspace(0, 1, 241)
+    want = [[h + m @ p * s / 16 for p in probes] for h, m, s in (_pose(keys, u) for u in us)]
+    kept = list(keys)
+    changed = True
+    while changed:
+        changed = False
+        for j in range(1, len(kept) - 1):
+            if kept[j][1] != SHADER_EASE['linear'] or kept[j + 1][1] != SHADER_EASE['linear']: continue
+            trial = kept[:j] + kept[j + 1:]
+            if all(np.linalg.norm(h + m @ p * s / 16 - w) < THIN_TOLERANCE
+                   for (h, m, s), ws in zip((_pose(trial, u) for u in us), want) for p, w in zip(probes, ws)):
+                kept = trial; changed = True
+                break
+    return kept
+
+
+_shader_keys_full = shader_keys
+_arm_keys_full = arm_keys
+
+
+def shader_keys(name, beat):
+    return thin(_shader_keys_full(name, beat), [np.zeros(3), np.array((0.0, 25.4, 0.0))])
+
+
+def arm_keys(side, beat):
+    return thin(_arm_keys_full(side, beat), [np.zeros(3), np.array((0.0, 10.0, 0.0))])
+
+
 def shader_glsl():
     """The include item.vsh reads: the held resting pose of each sword kind and the keys of the three beats."""
     def vec(v): return 'vec3(' + ', '.join(f'{float(x):.5f}' for x in v) + ')'
@@ -1015,15 +1057,28 @@ def shader_glsl():
                   f'const mat3 SWING_{tag}_R = mat3({vec(r[:, 0])}, {vec(r[:, 1])}, {vec(r[:, 2])});',
                   f'const float SWING_{tag}_S = {d["scale"][0]:.5f};',
                   f'const vec3 SWING_{tag}_GRIP = {vec(np.array(MODELS[name][1]) / 16)};']
-    lines += [f'const vec3 SWING_ARM = {vec(ARM)};', f'const vec3 SWING_ARM_ORIGIN = {vec(np.array(ARM_ORIGIN) / 16)};', '']
-    arrays = {f'SWING_{tag}_{b}': shader_keys(name, b) for name, tag in kinds for b in VM_BEATS}
-    arrays.update({f'SWING_{"R" if side == "rightArm" else "L"}ARM_{b}': arm_keys(side, b) for side in ARM_BOXES for b in VM_BEATS})
-    n = max(len(k) for k in arrays.values())
-    lines.append(f'const int SWING_KEYS = {n};')
-    for label, keys in arrays.items():
-        keys = keys + [keys[-1]] * (n - len(keys))
+    lines += [f'const vec3 SWING_ARM = {vec(ARM)};', f'const vec3 SWING_ARM_ORIGIN = {vec(np.array(ARM_ORIGIN) / 16)};', '',
+              '// The two keys round the swing progress u: their u, the later key\'s ease, hand, rotation, scale.',
+              'struct SwingSegment { float u0; float u1; int ease; vec3 h0; vec3 h1; vec4 q0; vec4 q1; float s0; float s1; };', '']
+    # No arrays: the game hands the shader to the driver through SPIR-V, which copies a constant array into a
+    # temporary wherever it is indexed by a variable; with the arms' keys NVIDIA ran out of room for those copies
+    # (2026-10-25, the pack failed to load). Each track is a chain of ifs over its segments with the two keys of the
+    # segment written in, so nothing is indexed.
+    tracks = {f'{tag}_{b}': shader_keys(name, b) for name, tag in kinds for b in VM_BEATS}
+    tracks.update({f'{"RARM" if side == "rightArm" else "LARM"}_{b}': arm_keys(side, b) for side in ARM_BOXES for b in VM_BEATS})
+    def f(v): return f'{float(v):.5f}'
+    for label, keys in tracks.items():
         assert all(len(k) == 10 for k in keys)
-        lines.append(f'const float {label}[{n * 10}] = float[{n * 10}](' + ', '.join(f'{float(v):.5f}' for k in keys for v in k) + ');')
+        lines.append(f'void swingTrack_{label}(float u, out SwingSegment g) {{')
+        for j, (a, b) in enumerate(zip(keys, keys[1:])):
+            cond = 'if' if j == 0 else 'else if'
+            last = j == len(keys) - 2
+            head = '    else {' if last and j else (f'    {cond} (u < {f(b[0])}) {{' if not last else '    {')
+            lines.append(head + f' g.u0 = {f(a[0])}; g.u1 = {f(b[0])}; g.ease = {int(b[1])};'
+                         f' g.h0 = vec3({f(a[2])}, {f(a[3])}, {f(a[4])}); g.h1 = vec3({f(b[2])}, {f(b[3])}, {f(b[4])});'
+                         f' g.q0 = vec4({f(a[5])}, {f(a[6])}, {f(a[7])}, {f(a[8])}); g.q1 = vec4({f(b[5])}, {f(b[6])}, {f(b[7])}, {f(b[8])});'
+                         f' g.s0 = {f(a[9])}; g.s1 = {f(b[9])}; }}')
+        lines.append('}')
     lines += ['', '#endif', '']
     return '\n'.join(lines)
 

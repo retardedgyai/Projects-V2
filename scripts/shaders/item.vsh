@@ -55,13 +55,12 @@ layout(location = 8) out vec3 vfxPosition;
 
 const float LIGHT_PROBE_PIXELS = 97.0;   // item.fsh: header 33 + 8 lights x 8
 
-// part: 0 the sword, 1 the right arm, 2 the left arm
-float swingKey(int beat, bool plain, int part, int k, int i) {
-    int at = k * 10 + i;
-    if (part == 1) return beat == 1 ? SWING_RARM_1[at] : beat == 2 ? SWING_RARM_2[at] : SWING_RARM_3[at];
-    if (part == 2) return beat == 1 ? SWING_LARM_1[at] : beat == 2 ? SWING_LARM_2[at] : SWING_LARM_3[at];
-    if (plain) return beat == 1 ? SWING_PLAIN_1[at] : beat == 2 ? SWING_PLAIN_2[at] : SWING_PLAIN_3[at];
-    return beat == 1 ? SWING_BIG_1[at] : beat == 2 ? SWING_BIG_2[at] : SWING_BIG_3[at];
+// part: 0 the sword, 1 the right arm, 2 the left arm (the tracks are generated into greatsword_swing.glsl)
+void swingSegment(int beat, bool plain, int part, float u, out SwingSegment g) {
+    if (part == 1) { if (beat == 1) swingTrack_RARM_1(u, g); else if (beat == 2) swingTrack_RARM_2(u, g); else swingTrack_RARM_3(u, g); }
+    else if (part == 2) { if (beat == 1) swingTrack_LARM_1(u, g); else if (beat == 2) swingTrack_LARM_2(u, g); else swingTrack_LARM_3(u, g); }
+    else if (plain) { if (beat == 1) swingTrack_PLAIN_1(u, g); else if (beat == 2) swingTrack_PLAIN_2(u, g); else swingTrack_PLAIN_3(u, g); }
+    else { if (beat == 1) swingTrack_BIG_1(u, g); else if (beat == 2) swingTrack_BIG_2(u, g); else swingTrack_BIG_3(u, g); }
 }
 
 float swingEase(int kind, float w) {
@@ -85,18 +84,12 @@ vec3 swingRotate(vec4 q, vec3 v) {
 
 // The swing pose at this frame: hand position, rotation of the sword's axes, scale.
 void swingPose(int beat, bool plain, int part, float u, out vec3 hand, out vec4 rot, out float scale) {
-    int k = 0;
-    for (int i = 0; i < SWING_KEYS - 1; i++) if (swingKey(beat, plain, part, i + 1, 0) <= u) k = i + 1;
-    int n = min(k + 1, SWING_KEYS - 1);
-    float u0 = swingKey(beat, plain, part, k, 0), u1 = swingKey(beat, plain, part, n, 0);
-    float w = n == k || u1 <= u0 ? 1.0 : swingEase(int(swingKey(beat, plain, part, n, 1) + .5), clamp((u - u0) / (u1 - u0), 0.0, 1.0));
-    vec3 h0 = vec3(swingKey(beat, plain, part, k, 2), swingKey(beat, plain, part, k, 3), swingKey(beat, plain, part, k, 4));
-    vec3 h1 = vec3(swingKey(beat, plain, part, n, 2), swingKey(beat, plain, part, n, 3), swingKey(beat, plain, part, n, 4));
-    vec4 q0 = vec4(swingKey(beat, plain, part, k, 5), swingKey(beat, plain, part, k, 6), swingKey(beat, plain, part, k, 7), swingKey(beat, plain, part, k, 8));
-    vec4 q1 = vec4(swingKey(beat, plain, part, n, 5), swingKey(beat, plain, part, n, 6), swingKey(beat, plain, part, n, 7), swingKey(beat, plain, part, n, 8));
-    hand = mix(h0, h1, w);
-    rot = swingSlerp(q0, q1, w);
-    scale = mix(swingKey(beat, plain, part, k, 9), swingKey(beat, plain, part, n, 9), w);
+    SwingSegment g;
+    swingSegment(beat, plain, part, u, g);
+    float w = g.u1 <= g.u0 ? 1.0 : swingEase(g.ease, clamp((u - g.u0) / (g.u1 - g.u0), 0.0, 1.0));
+    hand = mix(g.h0, g.h1, w);
+    rot = swingSlerp(g.q0, g.q1, w);
+    scale = mix(g.s0, g.s1, w);
 }
 
 void main() {
