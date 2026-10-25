@@ -3,7 +3,7 @@
 全体の地図（いちばん新しい）：`docs/proposals/progression-2026-10/progression-map.html`（https://claude.ai/artifact/EpYJyuU2uMjm39xuHTDPWe ）。
 最初の触れる見本：`progression-loop.html`（https://claude.ai/artifact/TRswEkSEBxbrbECaP4RtrJ ）。
 
-**次に決めること（2026-10-26）**：T1→T2 に上がるとき、今の装備は A 昇格（+値・MOD・特性が残る、おすすめ）／B 作り直し（Albion 型）／C 半分ひきつぐ。
+**次に決めること（2026-10-26）**：Tierの上がり方。藍「強化値も品質も Tier ごとに価値が違うのに丸ごと引き継げるのはよくない。強いシンクがほしい」→ 丸ごと引き継ぐ案（昇格）はやめた。4案 `tier-up-sinks.html`（1 作り直し＋分解／2 価値で換算して引き継ぐ／3 作り直し＋古い装備は売る／4 耐久で消える）、おすすめは 2＋4。
 テスト（11月中旬、3〜5人、港町＋巨樹の根の丘、ボス2体）向け。コードはまだ変えていない。
 
 ## 決まったこと・決まっていないこと

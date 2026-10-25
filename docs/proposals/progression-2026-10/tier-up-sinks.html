@@ -1,0 +1,110 @@
+<title>Tierの上がり方とシンク</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header with the concern; 4 option cards, each = before→after card pair + sink meter + good/worry; pick (multi) + copy tray */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --green: #9fd49a; --red: #e58b80; --sink: #e07a6a;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1200px; margin: 0 auto; padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.4rem; margin: 0; }
+p { margin: 0; color: var(--muted); max-width: 80ch; }
+.concern { background: #1f1616; border: 1px solid #5a3030; border-radius: 12px; padding: 10px 14px; color: var(--fg); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.card.picked { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.name { font-weight: 700; font-size: 1.05rem; }
+.name .k { color: var(--gold); margin-right: 6px; }
+.rec { font-size: .72rem; color: #1a1405; background: var(--gold); border-radius: 6px; padding: 0 6px; margin-left: 6px; }
+.demo { display: grid; grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr); gap: 8px; align-items: center; }
+@media (max-width: 700px) { .demo { grid-template-columns: 1fr; } .arrow { transform: rotate(90deg); justify-self: center; } }
+.item { background: #0f131d; border: 2px solid #3a3550; border-radius: 6px; padding: 8px 10px; display: grid; gap: 2px; font-size: .86rem; min-width: 0; }
+.item b { font-size: .95rem; }
+.item .num { font-family: var(--num); color: var(--gold); }
+.item .mod { color: #8fb6ff; }
+.item .q { color: var(--cyan); }
+.item .lost { color: var(--red); text-decoration: line-through; opacity: .75; }
+.item .back { color: var(--green); }
+.arrow { font-size: 1.4rem; color: var(--gold); text-align: center; }
+.meter { display: grid; grid-template-columns: 7em minmax(0, 1fr) 3em; gap: 8px; align-items: center; font-size: .85rem; color: var(--muted); }
+.bar { height: 10px; background: #222b40; border-radius: 5px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--sink); }
+.pros { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; font-size: .86rem; }
+@media (max-width: 700px) { .pros { grid-template-columns: 1fr; } }
+.pros div b { display: block; font-size: .78rem; letter-spacing: .06em; }
+.good b { color: var(--green); } .worry b { color: var(--red); }
+.pick { justify-self: start; font: inherit; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 4px 16px; cursor: pointer; }
+.card.picked .pick { background: var(--gold); color: #1a1405; border-color: var(--gold); }
+.pick:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.tray { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.copy { font: inherit; background: var(--gold); color: #1a1405; border: 0; border-radius: 8px; padding: 5px 14px; font-weight: 700; cursor: pointer; }
+.copy:disabled { opacity: .4; cursor: not-allowed; }
+</style>
+
+<main>
+  <header style="display:grid;gap:8px">
+    <h1>Tierの上がり方とシンク</h1>
+    <div class="concern">藍の心配：<b>T1 の +12 と T2 の +12 は価値がまったく違う。品質も同じ。それを丸ごと引き継げるのはよくない。</b> あと、強いシンク（物とお金が消える出口）がほしい。</div>
+    <p>どの案も「丸ごと引き継ぐ」はやめた。T1 大剣 +12（品質 15%・MOD 4つ）が T2 になるとどうなるか。組み合わせてもOK。おすすめは <b>2＋4</b>（Tierを上がるときは価値で換算して一部を失う、ふだんは耐久で少しずつ消える）。</p>
+  </header>
+  <div id="list" style="display:grid;gap:14px"></div>
+  <div class="tray"><span id="picked" style="flex:1 1 260px;min-width:0">まだ選んでいない。</span><button class="copy" id="copy" disabled>送る文をコピー</button><span id="copied" style="font-size:.82rem;color:#9fd49a"></span></div>
+</main>
+
+<script>
+(() => {
+  const BEFORE = `<b>T1 大剣 <span class="num">+12</span></b><span class="q">品質 15%</span><span class="mod">攻撃力+7%・会心+4%・CD-5%・HP+6%</span>`;
+  const IDEAS = [
+    { k: '1', n: '作り直し＋分解', rec: false, sink: 90,
+      after: `<b>T2 大剣 <span class="num">+0</span></b><span class="q">品質は作った職人の腕で新しく</span><span class="lost">MOD 4つ</span><span class="back">古い剣を分解 → 強化に使った素材の2割が戻る</span>`,
+      good: ['装備ごと消える＝いちばん強いシンク', '+値・品質・MOD はその Tier の中だけの価値になる', '鍛冶がずっと忙しい'],
+      worry: ['上がった直後は T1 +12 より弱いことがある', '+12 まで積んだ手間がほぼ消える'] },
+    { k: '2', n: '価値で換算して引き継ぐ', rec: true, sink: 55,
+      after: `<b>T2 大剣 <span class="num">+6</span></b><span class="q">品質 15% → 7%（半分）</span><span class="mod">攻撃力+7%</span><span class="lost">会心+4%・CD-5%・HP+6%</span>`,
+      good: ['T1 で使った素材の価値を、T2 の値段で数え直す（T1 +12 ≒ T2 +6）', '積み上げが少しは残る', '換算で消える分がシンク'],
+      worry: ['換算の決まりが見えにくい', '換算の画面が要る'] },
+    { k: '3', n: '作り直し＋古い装備は売る', rec: false, sink: 20,
+      after: `<b>T2 大剣 <span class="num">+0</span></b><span class="q">品質は新しく</span><span class="lost">MOD 4つ</span><span class="back">古い剣は市場で T1 の人に売れる（手数料5%が消える）</span>`,
+      good: ['Albion と同じ。T1 の人が中古を安く買える', '市場がよく回る'],
+      worry: ['装備が消えないのでシンクは弱い（手数料だけ）', '中古があふれて T1 の鍛冶が売れにくい'] },
+    { k: '4', n: '耐久：使うと減って、壊れたら消える', rec: true, sink: 80,
+      after: `<b>T2 大剣 <span class="num">+0</span></b><span class="q">耐久 100 / 100</span><span>戦うと減る → 修理で素材と銀貨を使う</span><span class="lost">耐久 0 で壊れて消える</span>`,
+      good: ['Tier に関係なく、ずっと効く強いシンク', '修理が鍛冶と魔術（封蝋）の仕事になる', '上の 1〜3 のどれとも組める'],
+      worry: ['今の「壊れる（強化の失敗）」と別の決まりが増える', '消えるのが怖い人は強化しなくなるかも'] },
+  ];
+  let picked = new Set();
+  try { picked = new Set(JSON.parse(localStorage.getItem('ts-picked') || '[]')); } catch (e) {}
+  function render() {
+    document.getElementById('list').innerHTML = IDEAS.map(i => `<article class="card ${picked.has(i.k) ? 'picked' : ''}">
+      <div class="top"><span class="name"><span class="k">${i.k}</span>${i.n}${i.rec ? '<span class="rec">おすすめ</span>' : ''}</span></div>
+      <div class="demo"><div class="item">${BEFORE}</div><div class="arrow" aria-hidden="true">→</div><div class="item">${i.after}</div></div>
+      <div class="meter"><span>シンクの強さ</span><div class="bar"><i style="width:${i.sink}%"></i></div><span>${i.sink >= 75 ? '強い' : i.sink >= 40 ? '中' : '弱い'}</span></div>
+      <div class="pros"><div class="good"><b>いい所</b>${i.good.map(g => '・' + g).join('<br>')}</div><div class="worry"><b>気になる所</b>${i.worry.map(g => '・' + g).join('<br>')}</div></div>
+      <button class="pick" data-k="${i.k}" aria-pressed="${picked.has(i.k)}">${picked.has(i.k) ? '★ 選んだ' : '☆ 選ぶ'}</button>
+    </article>`).join('');
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    document.getElementById('picked').innerHTML = sel.length ? '選んだ：' + sel.map(i => `<b>${i.k}</b> ${i.n}`).join('、') : 'まだ選んでいない。';
+    document.getElementById('copy').disabled = !sel.length;
+  }
+  document.getElementById('list').addEventListener('click', e => {
+    const b = e.target.closest('.pick'); if (!b) return;
+    picked.has(b.dataset.k) ? picked.delete(b.dataset.k) : picked.add(b.dataset.k);
+    try { localStorage.setItem('ts-picked', JSON.stringify([...picked])); } catch (e) {}
+    render();
+  });
+  document.getElementById('copy').addEventListener('click', () => {
+    const text = 'Tierの上がり方、気になる案：' + IDEAS.filter(i => picked.has(i.k)).map(i => `${i.k} ${i.n}`).join('、');
+    const ok = () => { document.getElementById('copied').textContent = 'コピーした。チャットに貼って送ってください。'; };
+    const ng = () => { document.getElementById('copied').textContent = text; };
+    try { navigator.clipboard.writeText(text).then(ok, ng); } catch (e) { ng(); }
+  });
+  render();
+})();
+</script>
