@@ -1,0 +1,138 @@
+<title>修理とシンクの案</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header + filter chips, then a grid of idea cards (pick with ☆), picked tray sticky at bottom */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --sakura: #f2a3c0; --shade: #a98be0; --green: #9fd49a; --red: #e58b80;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1320px; margin: 0 auto; padding-block: 20px 140px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filters .lbl { font-size: .8rem; color: var(--muted); margin-right: 4px; }
+.f { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px 14px; font-size: .88rem; }
+.f[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card.picked { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.card.rec { background: linear-gradient(var(--panel), var(--panel)) padding-box; }
+.top { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+.key { font-family: var(--num); color: var(--gold); margin-right: 6px; }
+.name { font-weight: 700; font-size: 1.02rem; }
+.star { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; font-size: .85rem; white-space: nowrap; }
+.card.picked .star { color: #1a1405; background: var(--gold); border-color: var(--gold); }
+.what { color: var(--fg); margin: 0; }
+.ex { font-size: .86rem; color: var(--sakura); margin: 0; }
+.ex b { font-weight: 500; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: .75rem; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; color: var(--muted); }
+.tag.path { color: var(--cyan); border-color: #2f5560; }
+.tag.cost-軽 { color: var(--green); border-color: #3d5a3a; }
+.tag.cost-中 { color: var(--gold); border-color: #5b5030; }
+.tag.cost-重 { color: var(--red); border-color: #6a3a36; }
+.tag.recm { color: #1a1405; background: var(--gold); border-color: var(--gold); }
+.note { font-size: .8rem; color: var(--muted); margin: 0; }
+.tray { position: fixed; left: 0; right: 0; bottom: 0; background: #10141f; border-top: 1px solid var(--line);
+  padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.tray .in { max-width: 1320px; margin: 0 auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tray .list { flex: 1 1 300px; min-width: 0; font-size: .9rem; }
+.tray .list .muted { color: var(--muted); }
+.copy { background: var(--gold); color: #1a1405; border: 0; border-radius: 8px; padding: 6px 16px; font-weight: 700; }
+.copy:disabled { opacity: .4; cursor: not-allowed; }
+#copied { font-size: .82rem; color: var(--green); }
+textarea { width: 100%; box-sizing: border-box; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: .85rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>修理・強化のシンク ── 他のゲームから10案</h1>
+    <p>Black Desert・Lost Ark・MapleStory・Path of Exile 2・New World・Tarkov・OSRS・Hypixel SkyBlock などの実際の仕組みを調べて、Project S（全部プレイヤーが作る・NPC は売らない・Tier ごとに別物）に合わせ直した。☆を付けて、下の文をコピーして返してください。組み合わせてもOK。</p>
+    <p>調べて分かった大事な注意：<b>修理や保険のお返しを「銀貨」で払うと、お金が増えてしまう</b>（EVE Online の失敗）。お返しはいつも「物を消費する」形にする。</p>
+  </header>
+  <div class="filters" role="group" aria-label="絞る">
+    <span class="lbl">絞る</span>
+    <button class="f" data-f="all" aria-pressed="true">全部</button>
+    <button class="f" data-f="シンク強" aria-pressed="false">シンクが強い</button>
+    <button class="f" data-f="選んだ人だけ" aria-pressed="false">苦しむのは選んだ人だけ</button>
+    <button class="f" data-f="職人" aria-pressed="false">職人の仕事になる</button>
+    <button class="f" data-f="rec" aria-pressed="false">おすすめだけ</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="tray">
+  <div class="in">
+    <div class="list" id="picked"><span class="muted">まだ選んでいない。気になる案の ☆ を押す。</span></div>
+    <button class="copy" id="copy" disabled>選んだ案を送る文をコピー</button>
+    <span id="copied" aria-live="polite"></span>
+  </div>
+  <textarea id="fallback" rows="2" hidden aria-label="送る文"></textarea>
+</div>
+
+<script>
+(() => {
+  // cost = 作る手間（コード＋絵）。軽＝今の仕組みの数字を足すだけ、重＝新しい絵やモデルが職業ぶん要る。
+  const IDEAS = [
+    { k: '1', n: '壊れたら「残骸」になる', what: '+15 以上で壊れると、装備は消えずに「残骸」になる（MOD と特性はそのまま、装備はできない）。同じ Tier の装備を食わせて戻す。戻すと +値が少し下がる（例：−3）。', ex: '元：MapleStory の Star Force（壊れると Trace が残る）', path: ['シンク強'], cost: '中', note: '全部失う痛みはなく、消費だけ確実に起きる。必要な数は +値で増やす（+15〜19 で1本、+25 以上で3本など）。<a href="https://maplestorywiki.net/w/Star_Force_Enhancement" style="color:var(--cyan)">出典</a>', rec: true },
+    { k: '2', n: '失敗の積み上げを「石」にする', what: '失敗するたびに装備ごとのゲージがたまり、満タンで次は必ず成功。ゲージは同じ Tier の安い装備を叩いて「積み上げ石」にでき、売り買いできる。', ex: '元：Black Desert の失敗スタック＋Lost Ark の天井ゲージ', path: ['シンク強', '職人'], cost: '中', note: '安い装備が「失敗を買う材料」として消えていく。T1 の石は T1 にだけ使える（Tier をまたがない）。今のコードの天井とつなげられる。<a href="https://maxroll.gg/lost-ark/resources/gear-honing-system" style="color:var(--cyan)">出典</a>', rec: true },
+    { k: '3', n: '保護符（使うと費用3倍で壊れない）', what: '職人が作る保護符を使うと、その強化は失敗しても壊れない。代わりに強化の費用が約3倍。材料は同じ Tier の装備を分解した物とボス素材。', ex: '元：MapleStory の Safeguard・Black Desert の Cron Stone', path: ['選んだ人だけ', '職人', 'シンク強'], cost: '軽', note: '苦しむか払うかを本人が選ぶ。NPC の店がなくても市場が回る。<a href="https://maplestorywiki.net/w/Guide:Star_Force" style="color:var(--cyan)">出典</a>', rec: true },
+    { k: '4', n: '直すたびに上限が減る', what: '直すたびに、その装備の「直せる回数」が1つ減る（例：3回）。0 になったら作り直し。腕のいい鍛冶に直してもらうと減りにくい。', ex: '元：Escape from Tarkov（修理で最大耐久が減る）', path: ['シンク強', '職人'], cost: '軽', note: '何度も直しているうちに、いつか必ず買い替える。修理の上手な職人にお客がつく。<a href="https://escapefromtarkov.fandom.com/wiki/Heavy_Vests" style="color:var(--cyan)">出典</a>' },
+    { k: '5', n: '分解して修理ポイント＋前払い', what: '同じ Tier の装備を分解すると、その Tier だけの修理ポイントになる（売れない）。前もってためておくと、壊れたとき自動で使われる。', ex: '元：New World（修理パーツは分解からだけ）＋OSRS の Death\'s Coffer', path: ['シンク強'], cost: '中', note: 'いらない装備を出す理由になる。Tier ごとに分かれるので持ち越しの問題もない。<a href="https://newworld.wiki.fextralife.com/Durability" style="color:var(--cyan)">出典</a>' },
+    { k: '6', n: 'Tier の中だけの合成', what: '同じ Tier の装備を2〜4個まとめて1個に合成。残す MOD を1つ選べる。失敗すると全部消える。', ex: '元：Path of Exile 2 の Recombinator・Guild Wars 2 の Mystic Forge', path: ['選んだ人だけ', 'シンク強'], cost: '中', note: '上級者だけが挑む。市場の中くらいの装備がまとめて消える出口。T4 ではボスの特性を移せてもいい。<a href="https://www.poe-vault.com/poe2/news/recombination-crafting-is-here-risky-item-creation-returns" style="color:var(--cyan)">出典</a>' },
+    { k: '7', n: '修理の腕に値段がつく', what: '修理には成功率があり、職人の製造 Lv で上がる。失敗すると「直せる回数」が減る。上手な職人ほど高い。', ex: '元：Mabinogi（腕のいい修理屋ほど成功率が高く高い）', path: ['職人'], cost: '軽', note: 'プレイヤー鍛冶屋の「評判の市場」ができる。<a href="https://wiki.mabinogiworld.com/view/Repair" style="color:var(--cyan)">出典</a>' },
+    { k: '8', n: '一回限りの格上げ', what: '1つの装備に1回だけ、品質やレア度を一段上げられる。とても高い（素材＋ボス素材）。', ex: '元：Hypixel SkyBlock の Recombobulator 3000', path: ['選んだ人だけ', 'シンク強'], cost: '軽', note: 'Minecraft 系の遊び手になじみがある。「昇格をシンクに使うなら」の形にも使える。<a href="https://hypixel-skyblock.fandom.com/wiki/Recombobulator_3000" style="color:var(--cyan)">出典</a>' },
+    { k: '9', n: '壊れる代わりに「残量」', what: '壊れる仕組みをやめ、装備ごとに強化できる残量を持たせる。残量が尽きたら、それ以上は強化できない（最後の1回は必ず成功）。', ex: '元：Last Epoch の Forging Potential', path: ['シンク強'], cost: '中', note: '壊れる怖さはなくなるが、打ち止めになるので新しい装備が要る。今の「壊れる」を置き換える案。<a href="https://forum.lastepoch.com/t/crafting-changes-coming-to-eternal-legends-update-0-8-4/45597" style="color:var(--cyan)">出典</a>' },
+    { k: '10', n: '強化のやり直し', what: '強化の段階を全部 +0 に戻して、やり直せる。使った素材は返らない。', ex: '元：Diablo 4 の Masterwork のリセット', path: ['選んだ人だけ'], cost: '軽', note: 'やり直したい人だけが払う。シンクは中くらい。<a href="https://www.exitlag.com/blog/diablo-4-masterworking/" style="color:var(--cyan)">出典</a>' },
+  ];
+  let filter = 'all';
+  let picked = new Set();
+  try { picked = new Set(JSON.parse(localStorage.getItem('rp-picked') || '[]')); } catch (e) {}
+  const save = () => { try { localStorage.setItem('rp-picked', JSON.stringify([...picked])); } catch (e) {} };
+  const grid = document.getElementById('grid');
+  function render() {
+    const list = IDEAS.filter(i => filter === 'all' || (filter === 'rec' ? i.rec : i.path.includes(filter)));
+    grid.innerHTML = list.map(i => `<article class="card ${picked.has(i.k) ? 'picked' : ''}">
+      <div class="top"><div><span class="key">${i.k}</span><span class="name">${i.n}</span></div>
+        <button class="star" data-k="${i.k}" aria-pressed="${picked.has(i.k)}">${picked.has(i.k) ? '★ 選んだ' : '☆ 選ぶ'}</button></div>
+      <p class="what">${i.what}</p>
+      <p class="ex">${i.ex}</p>
+      <div class="tags">${i.rec ? '<span class="tag recm">おすすめ</span>' : ''}${i.path.map(p => `<span class="tag path">${p}</span>`).join('')}<span class="tag cost-${i.cost}">作る手間 ${i.cost}</span></div>
+      <p class="note">${i.note}</p>
+    </article>`).join('');
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    document.getElementById('picked').innerHTML = sel.length
+      ? `選んだ案（${sel.length}）：` + sel.map(i => `<b>${i.k}</b> ${i.n}`).join('、')
+      : '<span class="muted">まだ選んでいない。気になる案の ☆ を押す。</span>';
+    document.getElementById('copy').disabled = !sel.length;
+  }
+  grid.addEventListener('click', e => {
+    const b = e.target.closest('.star'); if (!b) return;
+    const k = b.dataset.k; picked.has(k) ? picked.delete(k) : picked.add(k); save(); render();
+  });
+  document.querySelectorAll('.f').forEach(b => b.addEventListener('click', () => {
+    filter = b.dataset.f;
+    document.querySelectorAll('.f').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  }));
+  document.getElementById('copy').addEventListener('click', () => {
+    const sel = IDEAS.filter(i => picked.has(i.k));
+    const text = '修理とシンク、気になる案：' + sel.map(i => `${i.k} ${i.n}`).join('、');
+    const done = () => { document.getElementById('copied').textContent = 'コピーした。チャットに貼って送ってください。'; };
+    const fb = () => { const t = document.getElementById('fallback'); t.hidden = false; t.value = text; t.select(); document.getElementById('copied').textContent = '下の文を選んだのでコピーしてください。'; };
+    try { navigator.clipboard.writeText(text).then(done, fb); } catch (e) { fb(); }
+  });
+  render();
+})();
+</script>
