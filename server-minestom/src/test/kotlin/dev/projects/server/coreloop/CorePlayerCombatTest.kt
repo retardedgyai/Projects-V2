@@ -609,7 +609,9 @@ class CorePlayerCombatTest {
             // the slash (the skills' band of wind) and the hit
             assertEquals(2,displays.size)
             for(display in displays) {
-                assertTrue(h.player in display.viewers)
+                // the owner sees the slash drawn with the sword in the hand; the band in the world is for the others
+                val band=(display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack.get(DataComponents.ITEM_MODEL)!!.contains("warrior_ref/wind_")
+                assertEquals(!band, h.player in display.viewers)
                 val meta=display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
                 assertTrue(meta.scale.x()>0)
                 if(meta.itemStack.get(DataComponents.ITEM_MODEL)!!.contains("approved_")) assertEquals(0,meta.transformationInterpolationDuration)

@@ -13,7 +13,9 @@
 // then placed by the beat's keys at this frame's time, so the swing runs at the screen's frame rate. Elsewhere (other
 // players, F5, the hotbar) it is drawn as the plain held sword, its tint dropped. The two arms that come with the
 // swing (Better Combat's first person shows them) are tinted the same, marked 100..105 (right) and 116..121 (left), and
-// each is placed by its own keys.
+// each is placed by its own keys. The slash comes with it: a strip marked 132..137, each quad of which is laid where
+// the blade was a moment before (class_armament_swing.trail_elements), so it trails the sword exactly, drawn where the
+// sword is drawn.
 
 #include <minecraft:light.glsl>
 #include <minecraft:globals.glsl>
@@ -98,8 +100,10 @@ void main() {
     vec4 tint = Color;
     bool swung = false;
     bool hidden = false;
+    bool trail = false;
     int swingMarker = int(Color.b * 255.0 + .5);
-    int swingPart = swingMarker >= 116 && swingMarker <= 121 ? 2 : swingMarker >= 100 && swingMarker <= 105 ? 1 : 0;
+    int swingPart = swingMarker >= 132 && swingMarker <= 137 ? 3 : swingMarker >= 116 && swingMarker <= 121 ? 2
+        : swingMarker >= 100 && swingMarker <= 105 ? 1 : 0;
     swingMarker -= swingPart * 16;
     if (swingMarker >= 84 && swingMarker <= 89) {
         tint = vec4(1.0, 1.0, 1.0, Color.a);
@@ -117,12 +121,33 @@ void main() {
             vec3 restT = plain ? SWING_PLAIN_T : SWING_BIG_T;
             mat3 restR = plain ? SWING_PLAIN_R : SWING_BIG_R;
             float restS = plain ? SWING_PLAIN_S : SWING_BIG_S;
-            vec3 grip = swingPart > 0 ? SWING_ARM_ORIGIN : plain ? SWING_PLAIN_GRIP : SWING_BIG_GRIP;
+            vec3 grip = swingPart == 3 ? vec3(0.0) : swingPart > 0 ? SWING_ARM_ORIGIN : plain ? SWING_PLAIN_GRIP : SWING_BIG_GRIP;
             // Back to the sword's own space, relative to the hand on the handle (blocks).
             vec3 local = transpose(restR) * (view - SWING_ARM - restT) / restS + vec3(.5) - grip;
             vec3 h; vec4 q; float s;
-            swingPose(beat, plain, swingPart, u, h, q, s);
-            vec3 moved = h + swingRotate(q, local * s);
+            vec3 moved;
+            if (swingPart == 3) {
+                // Which quad, which end of it (the earlier or the later moment), which edge (the tip's or the inner).
+                float along = (local.x - SWING_TRAIL_X0) * 16.0;
+                float end = floor(along + .5);
+                float side = clamp(floor(local.y * 16.0 - 8.0 + .5), 0.0, 1.0);
+                float uv = min(end / float(SWING_TRAIL_SEGMENTS) * SWING_TRAIL_U, u);
+                float age = (u - uv) * swingLength;
+                swingPose(beat, plain, 0, uv, h, q, s);
+                vec3 tip = h + swingRotate(q, (SWING_TRAIL_TIP - SWING_BIG_GRIP) * s);
+                vec3 inner = h + swingRotate(q, (SWING_TRAIL_INNER - SWING_BIG_GRIP) * s);
+                swingPose(beat, plain, 0, min(uv + .01, 1.0), h, q, s);
+                float speed = length(h + swingRotate(q, (SWING_TRAIL_TIP - SWING_BIG_GRIP) * s) - tip) / (.01 * swingLength);
+                float life = clamp(1.0 - age / SWING_TRAIL_LIFE, 0.0, 1.0);
+                // The band the blade swept, narrowing toward the tip as it ages; where the blade moves slowly, none.
+                float width = sqrt(life) * smoothstep(.4, 1.2, speed);
+                moved = mix(tip, inner, side * width);
+                tint.a = Color.a * life;
+                trail = true;
+            } else {
+                swingPose(beat, plain, swingPart, u, h, q, s);
+                moved = h + swingRotate(q, local * s);
+            }
             position = (inverse(mv) * vec4(moved, 1.0)).xyz;
             normal = swingRotate(q, transpose(restR) * normalize(mat3(mv) * Normal));
             // Light the face the camera sees (a face turned by the swing would otherwise keep its old shading side).
@@ -145,6 +170,7 @@ void main() {
         // Close to vanilla's hand lighting (faces toward the camera near full bright, edges a little darker).
         float lit = .82 + .18 * abs(dot(normalize(normal), normalize(vec3(.25, .45, .85))));
         vertexColor = vec4(vec3(lit), tint.a);
+        if (trail) vertexColor = vec4(1.0, 1.0, 1.0, tint.a);   // the band carries its own shading
     }
     rawColor = Color;
     vfxPosition = position;

@@ -34,6 +34,8 @@ internal data class CoreCombatMeshPart(
     val chainAnchor: Vec? = null,
     /** Faces the camera (display billboard CENTER); roll then turns it in the screen plane. */
     val billboard: Boolean = false,
+    /** Sent to everyone but its owner (who sees it some other way). */
+    val notOwner: Boolean = false,
 ) {
     val sprite get() = atlas==CoreMeshAtlas.SLASH
     fun sizeAt(t: Double) = startSize + (endSize-startSize) * t.coerceIn(0.0,1.0)

@@ -19,6 +19,7 @@ class CoreApprovedNormalV3Test {
             val parts = CoreSkillChoreography.parts(effect(id)).filterNot(CoreWarriorCompanions::owns)
             val band = parts.single()
             assertEquals("war_ref:wind", band.shape)
+            assertTrue(band.notOwner, "the owner sees the slash drawn with the sword in the hand")
             assertTrue(band.scale.x() < skillBand.scale.x())
             assertTrue(band.durationTicks < skillBand.durationTicks)
             for (age in 0 until band.durationTicks) {

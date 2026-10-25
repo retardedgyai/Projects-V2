@@ -204,7 +204,7 @@ def entries(name):
             for clip, offset in offsets().items() for i in range(len(frames_of[clip]))] + \
         [{'threshold': HIDDEN, 'model': {'type': 'minecraft:model', 'model': f'projects:item/weapons/{name}_fphidden'}},
          {'threshold': ANIM_POSE, 'model': {'type': 'minecraft:model', 'model': f'projects:item/weapons/{name}_anim',
-          'tints': [{'type': 'minecraft:custom_model_data', 'index': i, 'default': 16777215} for i in range(3)]}}]
+          'tints': [{'type': 'minecraft:custom_model_data', 'index': i, 'default': 16777215} for i in range(4)]}}]
 
 
 def files(name):
@@ -1099,6 +1099,78 @@ def anim_model(name):
     return model
 
 
+# ---- The slash, drawn with the sword (2026-10-26, Creator: 「刃の軌道に対して出てほしい」). A slash placed in the world
+# never sat on the blade: the hand is drawn at its own field of view, apart from the world, and the blade's path runs
+# close round the eye. So the trail is part of the shader-moved model, a strip of TRAIL_SEGMENTS quads (tintindex 3,
+# marked +48), and item.vsh lays each quad where the blade was a moment earlier, from the same keys that move the
+# sword: from the tip down the blade to TRAIL_INNER, so it is the band the blade itself swept. Painted as the warrior's
+# skills paint their swings (a pale edge, grey then near-black, streaked, see-through), fading over TRAIL_LIFE ticks,
+# and only where the blade moves fast.
+TRAIL_SEGMENTS = 32
+TRAIL_U = .6            # the strip covers the swing's progress 0 .. TRAIL_U
+TRAIL_LIFE = 6.0        # ticks a piece of the trail lasts
+TRAIL_INNER = .1        # the strip's inner edge, this far along the blade from the hands (the tip is 1)
+TRAIL_X0 = -8.0         # the quads stand side by side from here (item pixels); the shader reads their place
+TRAIL_TEXTURE = 'projects:item/weapons/fp_trail'
+TIP_PX = (8.0, 29.9, 8.0)
+
+
+def trail_elements():
+    out = []
+    for j in range(TRAIL_SEGMENTS):
+        u0 = (j * 2) % 64 / 4
+        face = {'texture': '#trail', 'uv': [u0, 0, u0 + .5, 16], 'tintindex': 3}
+        out.append({'from': [TRAIL_X0 + j, 8, 8], 'to': [TRAIL_X0 + j + 1, 9, 8], 'shade': False,
+                    'faces': {'north': face, 'south': dict(face, uv=[u0 + .5, 0, u0, 16])}})
+    return out
+
+
+def trail_png(path):
+    """64 x 16, the skills' band (build_warrior_ref_vfx.wind_band): the edge on the last row, inward the first."""
+    from PIL import Image
+    from build_warrior_ref_vfx import _h
+    edge, mid, dark = (196, 188, 180), (88, 82, 80), (36, 32, 32)
+    img = Image.new('RGBA', (64, 16), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(16):
+        inset = 15 - y + .5
+        band = int(inset)
+        for x in range(64):
+            streak = _h(band, x // 2) < .22
+            if inset < 1.5: tone, alpha = edge, 255
+            elif inset < 3.0: tone, alpha = (edge if streak else mid), 236
+            elif inset < 16 * .7: tone, alpha = (mid if streak else dark), 190
+            elif inset < 16 * .9: tone, alpha = dark, 150
+            else: tone, alpha = dark, 96
+            px[x, y] = tone + (int(alpha * .8),)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(path)
+
+
+_anim_model_arms = anim_model
+
+
+def anim_model(name):
+    model = _anim_model_arms(name)
+    if 'elements' not in model: return model
+    model['textures'] = {**model['textures'], 'trail': TRAIL_TEXTURE}
+    model['elements'] = model['elements'] + trail_elements()
+    return model
+
+
+_shader_glsl_tracks = shader_glsl
+
+
+def shader_glsl():
+    def vec(v): return 'vec3(' + ', '.join(f'{float(x):.5f}' for x in v) + ')'
+    tip = np.array(TIP_PX) / 16
+    grip = np.array(MODELS['greatsword_t3'][1]) / 16
+    extra = [f'const int SWING_TRAIL_SEGMENTS = {TRAIL_SEGMENTS};', f'const float SWING_TRAIL_U = {TRAIL_U:.5f};',
+             f'const float SWING_TRAIL_LIFE = {TRAIL_LIFE:.5f};', f'const float SWING_TRAIL_X0 = {TRAIL_X0 / 16:.5f};',
+             f'const vec3 SWING_TRAIL_TIP = {vec(tip)};', f'const vec3 SWING_TRAIL_INNER = {vec(grip + (tip - grip) * TRAIL_INNER)};', '']
+    return _shader_glsl_tracks().replace('\n#endif\n', '\n' + '\n'.join(extra) + '#endif\n')
+
+
 if __name__ == '__main__':
     import json
     from pathlib import Path
@@ -1107,4 +1179,5 @@ if __name__ == '__main__':
     glsl = Path(__file__).resolve().parent / 'shaders/greatsword_swing.glsl'
     glsl.write_text(shader_glsl(), encoding='utf-8')
     sleeve_png(Path(__file__).resolve().parents[1] / 'server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/item/weapons/fp_sleeve.png')
+    trail_png(Path(__file__).resolve().parents[1] / 'server-minestom/src/main/resources/core-ui-pack/assets/projects/textures/item/weapons/fp_trail.png')
     print('wrote', path, glsl)

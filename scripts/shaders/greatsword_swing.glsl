@@ -251,4 +251,10 @@ void swingTrack_LARM_3(float u, out SwingSegment g) {
     else { g.u0 = 0.81000; g.u1 = 1.00000; g.ease = 1; g.h0 = vec3(-0.27308, -0.67321, -1.02951); g.h1 = vec3(-0.27308, -1.87321, -1.02951); g.q0 = vec4(-0.15826, -0.27766, 0.91496, -0.24637); g.q1 = vec4(-0.15826, -0.27766, 0.91496, -0.24637); g.s0 = 0.93750; g.s1 = 0.93750; }
 }
 
+const int SWING_TRAIL_SEGMENTS = 32;
+const float SWING_TRAIL_U = 0.60000;
+const float SWING_TRAIL_LIFE = 6.00000;
+const float SWING_TRAIL_X0 = -0.50000;
+const vec3 SWING_TRAIL_TIP = vec3(0.50000, 1.86875, 0.50000);
+const vec3 SWING_TRAIL_INNER = vec3(0.50000, 0.44000, 0.50000);
 #endif

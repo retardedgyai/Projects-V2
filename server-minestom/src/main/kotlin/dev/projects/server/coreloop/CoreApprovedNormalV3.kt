@@ -51,6 +51,8 @@ internal object CoreApprovedNormalV3 {
         val at = Vec(pivot[0] - x[0] * local[0] - y[0] * local[1], pivot[1] - x[1] * local[0] - y[1] * local[1],
             pivot[2] - x[2] * local[0] - y[2] * local[1])
         return listOf(CoreCombatMeshPart("war_ref:wind", "steel", at, Vec(arc.size, arc.size, arc.size), yaw = yaw,
-            pitch = pitch, roll = roll, durationTicks = LIFE, startSize = 1.0, endSize = 1.0))
+            pitch = pitch, roll = roll, durationTicks = LIFE, startSize = 1.0, endSize = 1.0,
+            // the owner sees the slash drawn with the sword itself, along the blade (class_armament_swing.trail_elements)
+            notOwner = true))
     }
 }

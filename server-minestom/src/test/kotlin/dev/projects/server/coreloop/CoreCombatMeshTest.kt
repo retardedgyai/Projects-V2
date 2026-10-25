@@ -305,6 +305,11 @@ class CoreCombatMeshTest {
                 vfx.play(visual,owner.position,Vec(0.0,0.0,1.0))
                 assertEquals(setOf("projects:combat_vfx/warrior_ref/wind_0"),models().toSet())
                 for(entity in owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }) {
+                    // the band in the world is for the others; the owner sees the slash drawn with the sword in the hand
+                    if((entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
+                            .get(net.minestom.server.component.DataComponents.ITEM_MODEL)?.contains("warrior_ref/wind_")==true) {
+                        assertFalse(owner in entity.viewers);continue
+                    }
                     assertTrue(owner in entity.viewers, "No hidden spawn wait for AA")
                     val meta=entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
                     if(meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL)?.contains("war_mote_")!=true)
@@ -330,7 +335,7 @@ class CoreCombatMeshTest {
             assertEquals(0,displayed())
             CoreCombatPresentation.pack(owner,true)
             // the normal slash is the skills' one band of wind: shown at full and subdued detail, not at minimal
-            for(expected in listOf(1,1,0)) {
+            for(expected in listOf(0,0,0)) {   // its owner sees the slash in the hand instead
                 meshes.play(normal)
                 assertEquals(expected,displayed())
                 meshes.cancel()
