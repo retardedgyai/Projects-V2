@@ -20,7 +20,7 @@ internal object CoreApprovedNormalV3 {
     private const val EYE = 1.62
     private val DRAWN_PITCH = Math.toRadians(12.0)
     const val BLADE_TICKS = 7
-    const val WAKE_TICKS = 13
+    const val WAKE_TICKS = 9
 
     private fun beat(sceneId: String) = when (sceneId) { "normal_reverse" -> 2; "normal_finish" -> 3; else -> 1 }
 

@@ -1,12 +1,11 @@
 """The greatsword's normal-attack slashes, drawn along the swing itself (2026-10-25, Creator: 「エフェクトもクラスの
 斬撃とアニメーションに合わせるような感じで完成させる」).
 
-The approved slash (scripts/build_approved_dash_v3.py) is a ribbon built from the path of a blade's tip: short
-sections, each born where the tip was, widest while the tip moves fastest, a bright rim on the cutting side over a
-mid-grey body and a dark inside, which then detach into a wake that drifts outward, splits along seams and erodes.
-Its tip followed an invented arc. Here the same recipe follows the real one: the tip of the greatsword as the first
-person swing draws it (Better Combat's chain, scripts/bc_firstperson.py), tick by tick after the hit, so the trail is
-always behind the blade. The ribbon is the band the blade itself sweeps, from the tip in toward the hands, in 3D:
+A ribbon built from the path of the blade's tip (the approved slash's recipe, scripts/build_approved_dash_v3.py):
+short sections, each born where the tip was, widest while the tip moves fastest, then thinning and breaking up. The
+path is the real one: the tip of the greatsword as the first-person swing draws it (Better Combat's chain,
+scripts/bc_firstperson.py), tick by tick after the hit, so the trail is always behind the blade. It is painted as the
+warrior's skills paint their swings (see strip_texture). The ribbon is the band the blade itself sweeps, from the tip in toward the hands, in 3D:
 26.3 turns model elements freely on all three axes, so each section is a flat piece lying where the blade passed.
 
 One model per beat, layer (blade, wake) and tick after the hit. The models are in the player's own frame (feet at the
@@ -23,7 +22,7 @@ from pathlib import Path
 import numpy as np
 
 import bc_firstperson as B   # numbers only (LENGTHS, UPSWING, LEAD_TICKS); the swing is read only with --paths
-from build_approved_dash_v3 import PACK, ink_uvs
+from build_approved_dash_v3 import PACK
 
 ASSETS = PACK / 'assets/projects'
 FOLDER = 'combat_vfx/normal_slash_v4'
@@ -32,12 +31,11 @@ TIP = np.array((8.0, 29.9, 8.0))
 EYE = np.array((0.0, 1.62, 0.0))
 INNER = .45            # the ribbon's inner edge: this far along the blade from the hands (the tip is 1)
 SCALE = 4.0            # display scale: model pixels are a quarter block
-BLADE_TICKS = 7        # as the approved blade and wake
-WAKE_TICKS = 13
+BLADE_TICKS = 7        # the live band: as long as the blade's part of the approved slash
+WAKE_TICKS = 9         # then breaking up (the skills' bands last 8-9 ticks)
 STEP = 1 / 8           # section length, ticks
 CUTTING = 1.2         # blocks a tick: slower, the blade is winding up or settling, not cutting (no trail)
 BEFORE = 2.4           # the cut can be under way this long before the hit (the slam lands early): drawn at once
-COLORS = {'blade': 0xeaf4ff, 'wake': 0x9dc4e3}   # the approved steel-white edge and blue-grey wake
 
 
 def impact(beat):
@@ -114,8 +112,44 @@ def to_model(p):
     return np.array((-p[0], p[1], -p[2])) * 16 / SCALE + 8
 
 
-def piece(a0, a1, b0, b1, ink, inks):
-    """A flat element covering the quad a0 a1 (outer edge) b1 b0 (inner edge), given in the player's frame."""
+# The warrior's skills leave a dark, see-through band of wind behind the blade (build_warrior_ref_vfx.wind_band): a
+# thin pale edge, grey then near-black inward, streaked ring by ring and broken in steps along its length, burning
+# away into pixels from the tail. The normal slash is drawn the same (Creator 2026-10-25: 「斬撃エフェクトをスキルと
+# 同じにしてほしい作画を」), a little narrower and shorter-lived so the skills keep their moment.
+EDGE, MID, DARK = (196, 188, 180), (88, 82, 80), (36, 32, 32)
+STAGES = (1.0, .72, .5, .34, .22, .14)    # youth of each texture stage: the band's alpha follows it
+BREAKUP = (0, 0, 0, .25, .5, .75)         # share of pixels broken away (the skills' dissolve)
+STRIP = (64, 16)                          # texels: along the path, across (the edge on the last row)
+NARROW = .8                               # of the skills' width: the normal attack stays below the skills
+
+
+def strip_texture(stage):
+    """One stage of the band, as wind_band paints the skills' (slash_texture, then its tones mapped to the dark three):
+    by the depth in from the edge, a 1.5 texel pale edge, a lighter rim to 3, then the near-black body streaked grey
+    ring by ring, fading inward; the whole see-through, more so as it ages, and broken into pixels at the end."""
+    from PIL import Image
+    from build_warrior_ref_vfx import _h, dissolve
+    k = STAGES[stage]
+    w, h = STRIP
+    img = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(h):
+        inset = h - 1 - y + .5                # texels in from the edge (the last row)
+        band = int(inset)
+        for x in range(w):
+            streak = _h(band, x // 2) < .22
+            if inset < 1.5: tone, alpha = EDGE, 255
+            elif inset < 3.0: tone, alpha = (EDGE if streak else MID), 236
+            elif inset < h * .7: tone, alpha = (MID if streak else DARK), 190
+            elif inset < h * .9: tone, alpha = DARK, 150
+            else: tone, alpha = DARK, 96
+            px[x, y] = tone + (int(alpha * (1 - .55 * (1 - k)) * .8),)
+    return dissolve(img, BREAKUP[stage], 31) if BREAKUP[stage] else img
+
+
+def piece(a0, a1, b0, b1, stage, slot):
+    """A flat element covering the quad a0 a1 (outer edge) b1 b0 (inner edge), given in the player's frame, painted
+    with a slice [slot] of the band texture at [stage]."""
     a0, a1, b0, b1 = (to_model(p) for p in (a0, a1, b0, b1))
     u = (a1 + b1 - a0 - b0) / 2
     length = np.linalg.norm(u)
@@ -129,77 +163,72 @@ def piece(a0, a1, b0, b1, ink, inks):
     n = np.cross(u, v)
     centre = (a0 + a1 + b0 + b1) / 4
     m = np.column_stack((u, v, -n))
-    uv0, vv0, uv1, vv1 = inks[ink]
-    face = {'texture': '#0', 'uv': [uv0, vv0, uv1, vv1], 'tintindex': 0}
+    x0 = (slot * 4) % STRIP[0] / 4
+    face = {'texture': f'#{stage}', 'uv': [x0, 16, x0 + 1, 0], 'tintindex': 0}   # the edge row on the outer side
     return {'from': [round(c, 4) for c in centre - (length / 2 + .02, height / 2, 0)],
             'to': [round(c, 4) for c in centre + (length / 2 + .02, height / 2, 0)],
             'shade': False, 'faces': {'north': face, 'south': face},
             'rotation': {'origin': [round(c, 4) for c in centre], **dict(zip('xyz', rotation_euler(m)))}}
 
 
-def blade(path, now, inks):
-    """The live cutting edge at [now] ticks after the hit: sections born up to a tick before, while young."""
+def blade(path, now):
+    """The band right behind the blade at [now] ticks after the hit: sections born up to a tick before, while young."""
     out = []
     for i in range(int(-BEFORE / STEP), int(now / STEP) + 1):
         t0, t1 = i * STEP, (i + 1) * STEP
         age = now - t0
         if not 0 <= age < 2.4 or t1 > now + 1e-6: continue
-        # Fastest is widest (the approved recipe's speed term), swelling in and thinning out with age; where the
-        # blade rests there is no cut.
+        # Where the blade rests there is no cut; the fastest part is the widest (the skills: 4 + 16 k of 20).
         if path.speed(t0) < CUTTING: continue
         fast = min(1.0, path.speed(t0) / 3)
-        width = fast * math.sin(math.pi * (age + .12) / 2.65) ** .6
-        width *= .78 + .22 * math.sin(i * STEP * 8 * 2.1 / 8) ** 2
+        youth = 1 - age / 2.4
+        width = NARROW * (.35 + .65 * fast) * (.25 + .75 * youth ** 1.2)
         (p0, d0), (p1, d1) = path.band(t0), path.band(t1)
-        # A bright rim on the cutting side, a mid body, a dark inside.
-        for lo, hi, ink in ((0, .28, 3), (.28, .66, 2), (.66, 1.0, 1)):
-            e = piece(p0 + d0 * width * lo, p1 + d1 * width * lo, p0 + d0 * width * hi, p1 + d1 * width * hi, ink, inks)
-            if e: out.append(e)
-    # The leading head: a short bright sliver at the tip, where the blade is now.
-    if 0 <= now <= 4:
-        p, d = path.band(now); pb, db = path.band(now - .15)
-        e = piece(pb, p, pb + db * .12, p + d * .12, 3, inks)
+        e = piece(p0, p1, p0 + d0 * width, p1 + d1 * width, min(2, int(age / .8)), i)
         if e: out.append(e)
     return out
 
 
-def wake(path, now, inks):
-    """Sections past their edge: drifting outward, splitting along seams, eroding to nothing."""
+def wake(path, now):
+    """The band past the blade: thinning, drifting a little outward and breaking into pixels from the tail."""
     out = []
     for i in range(int(-BEFORE / STEP), int(4 / STEP)):
         t0, t1 = i * STEP, (i + 1) * STEP
         age = now - t0
-        if not 1.5 < age < 8.0 or path.speed(t0) < CUTTING: continue
-        life = (age - 1.5) / 6.5
-        if life > .4 and i % 8 in (0, 1, 7): continue
-        if life > .72 and i % 8 not in (3, 4): continue
-        width = .55 * (1 - life) ** .7
-        drift = .12 * life + .28 * life * life
-        ink = 2 if life < .5 else 1
+        if not 2.4 <= age < 6.0 or path.speed(t0) < CUTTING: continue
+        life = (age - 2.4) / 3.6
+        fast = min(1.0, path.speed(t0) / 3)
+        width = NARROW * (.35 + .65 * fast) * .25 * (1 - life * .5)
+        drift = .1 * life
         (p0, d0), (p1, d1) = path.band(t0), path.band(t1)
         o0 = -d0 / max(1e-6, np.linalg.norm(d0)) * drift
         o1 = -d1 / max(1e-6, np.linalg.norm(d1)) * drift
-        e = piece(p0 + o0, p1 + o1, p0 + o0 + d0 * width, p1 + o1 + d1 * width, ink, inks)
+        e = piece(p0 + o0, p1 + o1, p0 + o0 + d0 * width, p1 + o1 + d1 * width, 3 + min(2, int(life * 3)), i)
         if e: out.append(e)
     return out
 
 
-def models(beat, inks):
+def models(beat):
     path = Path3(beat)
     out = {}
-    for k in range(BLADE_TICKS): out[f'b{beat}_blade_{k}'] = ('blade', blade(path, float(k), inks))
-    for k in range(WAKE_TICKS): out[f'b{beat}_wake_{k}'] = ('wake', wake(path, float(k), inks))
+    for k in range(BLADE_TICKS): out[f'b{beat}_blade_{k}'] = blade(path, float(k))
+    for k in range(WAKE_TICKS): out[f'b{beat}_wake_{k}'] = wake(path, float(k))
     return out
 
 
 def build(write):
-    inks = ink_uvs(ASSETS)
+    import shutil
+    for kind in ('models', 'items', 'textures'): shutil.rmtree(ASSETS / kind / FOLDER, ignore_errors=True)
+    for stage in range(len(STAGES)):
+        path = ASSETS / f'textures/{FOLDER}/band_{stage}.png'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        strip_texture(stage).save(path)
+    textures = {str(stage): f'projects:{FOLDER}/band_{stage}' for stage in range(len(STAGES))}
     for beat in (1, 2, 3):
-        for name, (layer, elements) in models(beat, inks).items():
-            write(ASSETS / f'models/{FOLDER}/{name}.json', {'ambientocclusion': False,
-                'textures': {'0': 'projects:combat_vfx/ribbon/slash_5'}, 'elements': elements})
+        for name, elements in models(beat).items():
+            write(ASSETS / f'models/{FOLDER}/{name}.json', {'ambientocclusion': False, 'textures': textures, 'elements': elements})
             write(ASSETS / f'items/{FOLDER}/{name}.json', {'model': {'type': 'minecraft:model',
-                'model': f'projects:{FOLDER}/{name}', 'tints': [{'type': 'minecraft:constant', 'value': COLORS[layer]}]}})
+                'model': f'projects:{FOLDER}/{name}', 'tints': [{'type': 'minecraft:constant', 'value': 0xffffff}]}})
 
 
 def slash_faces(beat, age):
@@ -220,6 +249,7 @@ def sheet(path, beats=(1, 2, 3), before=2, after=10, scale=2):
     import class_armament_swing as S
     import preview_greatsword_fp as P
     from PIL import Image
+    P.R.BG = (96, 118, 88)   # grass-coloured, as the skills are previewed: the dark band must read against the world
     cells = []
     for beat in beats:
         keys = S.shader_keys('greatsword_t3', beat); hit = impact(beat)
