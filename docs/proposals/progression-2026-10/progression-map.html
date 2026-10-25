@@ -1,0 +1,134 @@
+<title>強くなる道筋の地図</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header; the ladder picture (T1→T2→T3, bosses between, and the equipment layers growing at each step; solid = decided, dashed = open); then the one open question with a sword card that changes per option */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --sakura: #f2a3c0; --shade: #b49ae8; --green: #9fd49a; --red: #e58b80; --uniq: #f0a35e;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1280px; margin: 0 auto; padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.4rem; margin: 0; }
+h2 { font-size: 1.02rem; margin: 0; }
+p { margin: 0; color: var(--muted); max-width: 80ch; }
+.pic { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: #0f1420; }
+.pic svg { display: block; width: 100%; min-width: 960px; height: auto; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .85rem; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--green); vertical-align: middle; margin-right: 6px; }
+.legend span.open::before { border-top: 2px dashed var(--gold); }
+.panel { background: var(--panel); border: 1px solid #5b4a2a; border-radius: 14px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.opts { display: flex; gap: 8px; flex-wrap: wrap; }
+.opt { font: inherit; text-align: left; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; cursor: pointer; display: grid; gap: 2px; flex: 1 1 240px; }
+.opt[aria-pressed="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.opt .k { color: var(--gold); font-weight: 700; }
+.opt .s { font-size: .82rem; color: var(--muted); }
+.opt:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.rec { font-size: .72rem; color: #1a1405; background: var(--gold); border-radius: 6px; padding: 0 6px; margin-left: 6px; }
+.demo { display: grid; grid-template-columns: minmax(0, 1fr) 60px minmax(0, 1fr); gap: 10px; align-items: center; }
+@media (max-width: 700px) { .demo { grid-template-columns: 1fr; } .arrow { transform: rotate(90deg); justify-self: center; } }
+.card { background: #0f131d; border: 2px solid #3a3550; border-radius: 6px; padding: 10px 12px; display: grid; gap: 3px; font-size: .88rem; min-width: 0; }
+.card .nm { font-weight: 700; font-size: 1rem; }
+.card .num { font-family: var(--num); }
+.card .mod { color: #8fb6ff; }
+.card .un { color: var(--uniq); }
+.card .lost { color: var(--red); text-decoration: line-through; opacity: .7; }
+.arrow { font-size: 1.6rem; color: var(--gold); text-align: center; }
+.why { font-size: .88rem; color: var(--fg); }
+.why li { margin: 2px 0; }
+.why .m { color: var(--muted); }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>強くなる道筋の地図</h1>
+    <p>ここまで決めたことを1枚に。左から右へ強くなる。実線は決まった所、点線はまだの所。いちばん下に、次に決める1つ。</p>
+    <div class="legend"><span>決まった</span><span class="open">まだ</span></div>
+  </header>
+
+  <div class="pic">
+    <svg viewBox="0 0 1180 470" role="img" aria-label="T1からT3へ、ボスを越えて強くなる道と、装備の層が増えていく様子">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#5b6a90"/></marker></defs>
+      <g font-family="M PLUS 2, sans-serif" text-anchor="middle">
+        <!-- places row -->
+        <text x="20" y="34" fill="#959bb0" font-size="13" text-anchor="start">場所</text>
+        <rect x="90" y="14" width="250" height="50" rx="10" fill="#1b2233" stroke="#9fd49a"/><text x="215" y="36" fill="#e6c477" font-family="DotGothic16, monospace" font-size="16">T1</text><text x="215" y="56" fill="#ebe7dc" font-size="12">港・根の丘・狩り場</text>
+        <circle cx="390" cy="39" r="30" fill="#1e1a2e" stroke="#b49ae8" stroke-width="2"/><text x="390" y="44" fill="#b49ae8" font-size="13">黒翳竜</text>
+        <rect x="440" y="14" width="250" height="50" rx="10" fill="#1b2233" stroke="#9fd49a"/><text x="565" y="36" fill="#e6c477" font-family="DotGothic16, monospace" font-size="16">T2</text><text x="565" y="56" fill="#ebe7dc" font-size="12">根の洞</text>
+        <circle cx="740" cy="39" r="30" fill="#2a1822" stroke="#f2a3c0" stroke-width="2"/><text x="740" y="44" fill="#f2a3c0" font-size="13">桜牙獣</text>
+        <rect x="790" y="14" width="250" height="50" rx="10" fill="#1b2233" stroke="#9fd49a"/><text x="915" y="36" fill="#e6c477" font-family="DotGothic16, monospace" font-size="16">T3</text><text x="915" y="56" fill="#ebe7dc" font-size="12">柱の上の空のフィールド</text>
+        <rect x="1060" y="14" width="110" height="50" rx="10" fill="#141a27" stroke="#2a3450" stroke-dasharray="5 5"/><text x="1115" y="36" fill="#959bb0" font-family="DotGothic16, monospace" font-size="16">T4</text><text x="1115" y="56" fill="#959bb0" font-size="11">次の地域</text>
+
+        <!-- layer rows -->
+        <g font-size="13" fill="#959bb0" text-anchor="start">
+          <text x="20" y="112">Tier</text><text x="20" y="172">型</text><text x="20" y="232">特性</text><text x="20" y="292">MOD</text><text x="20" y="352">強化</text><text x="20" y="412">職業Lv</text>
+        </g>
+        <!-- Tier: open (how to go up) -->
+        <rect x="90" y="90" width="250" height="36" rx="8" fill="#1b2233" stroke="#9fd49a"/><text x="215" y="113" fill="#ebe7dc" font-size="12">T1の装備を作る</text>
+        <rect x="440" y="90" width="250" height="36" rx="8" fill="#1b2233" stroke="#e6c477" stroke-dasharray="6 5"/><text x="565" y="113" fill="#e6c477" font-size="12">T2へ：昇格？ 作り直し？</text>
+        <rect x="790" y="90" width="250" height="36" rx="8" fill="#1b2233" stroke="#e6c477" stroke-dasharray="6 5"/><text x="915" y="113" fill="#e6c477" font-size="12">T3へ：同じ決まり</text>
+        <!-- 型 -->
+        <rect x="90" y="150" width="250" height="36" rx="8" fill="#1b2233" stroke="#9fd49a"/><text x="215" y="173" fill="#ebe7dc" font-size="12">開拓・連撃・重断（今ある型）</text>
+        <rect x="790" y="150" width="250" height="36" rx="8" fill="#2a1822" stroke="#f2a3c0"/><text x="915" y="173" fill="#f2a3c0" font-size="12">桜牙の型・桜角の首飾り</text>
+        <!-- 特性 -->
+        <rect x="440" y="210" width="250" height="36" rx="8" fill="#1e1a2e" stroke="#b49ae8"/><text x="565" y="233" fill="#b49ae8" font-size="12">翳の外套（胴）＋角〈特性〉</text>
+        <rect x="790" y="210" width="250" height="36" rx="8" fill="#2a1f14" stroke="#f0a35e"/><text x="915" y="233" fill="#f0a35e" font-size="12">枝角〈特性〉を注入</text>
+        <!-- MOD -->
+        <rect x="90" y="270" width="950" height="36" rx="8" fill="#1b2233" stroke="#9fd49a"/><text x="565" y="293" fill="#ebe7dc" font-size="12">オーブ：変成でマジック → 錬金でレア → 混沌で引き直し（6つまで・どのTierでも）</text>
+        <!-- 強化 -->
+        <rect x="90" y="330" width="250" height="36" rx="8" fill="#1b2233" stroke="#9fd49a"/><text x="215" y="353" fill="#ebe7dc" font-size="12">+1〜8（T1素材・+5まで必ず成功）</text>
+        <rect x="440" y="330" width="250" height="36" rx="8" fill="#1b2233" stroke="#9fd49a"/><text x="565" y="353" fill="#ebe7dc" font-size="12">+9〜16（T2素材・ここが壁）</text>
+        <rect x="790" y="330" width="250" height="36" rx="8" fill="#1b2233" stroke="#9fd49a"/><text x="915" y="353" fill="#ebe7dc" font-size="12">+17〜24（T3素材・触媒が欲しい）</text>
+        <!-- Lv -->
+        <rect x="90" y="390" width="250" height="36" rx="8" fill="#1b2233" stroke="#9fd49a"/><text x="215" y="413" fill="#ebe7dc" font-size="12">Lv1〜10・技 1→3つ</text>
+        <rect x="440" y="390" width="250" height="36" rx="8" fill="#1b2233" stroke="#9fd49a"/><text x="565" y="413" fill="#ebe7dc" font-size="12">Lv11〜20・技 4→5つ</text>
+        <rect x="790" y="390" width="250" height="36" rx="8" fill="#1b2233" stroke="#9fd49a"/><text x="915" y="413" fill="#ebe7dc" font-size="12">Lv21〜30</text>
+        <text x="590" y="455" fill="#959bb0" font-size="12">横の道：採取（素材を売る）・魔術（触媒・封蝋・注入）・鍛冶（器・他人の装備）・領地（専用の炉・税・採取×1.3）</text>
+      </g>
+      <g fill="none" stroke="#5b6a90" stroke-width="2.5" marker-end="url(#ar)">
+        <path d="M340 39 L358 39"/><path d="M420 39 L438 39"/><path d="M690 39 L708 39"/><path d="M770 39 L788 39"/><path d="M1040 39 L1058 39"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="panel">
+    <h2>次に決めること：T1 → T2 に上がるとき、今の装備はどうなる？</h2>
+    <p>今のコードは「新しいTierを作り直す」しかできない（昇格の仕組みは書いてあるのに、どこからも呼ばれていない）。押すと、T1 の剣が T2 になったときの姿が変わる。</p>
+    <div class="opts" role="group" aria-label="Tierの上がり方">
+      <button class="opt" data-o="A" aria-pressed="true"><span class="k">A 昇格<span class="rec">おすすめ</span></span><span class="s">同じ剣を鍛え直す。+値・MOD・特性はそのまま。</span></button>
+      <button class="opt" data-o="B" aria-pressed="false"><span class="k">B 作り直し</span><span class="s">T2 の剣を新しく作る。古い剣は売る。+値とMODはやり直し。</span></button>
+      <button class="opt" data-o="C" aria-pressed="false"><span class="k">C 半分ひきつぐ</span><span class="s">作り直すが、+値の半分とMOD1つだけ移せる。</span></button>
+    </div>
+    <div class="demo">
+      <div class="card"><span class="nm">T1 大剣 <span class="num" style="color:var(--gold)">+12</span></span><span>攻撃 <span class="num">148</span></span><span class="mod">攻撃力 +7%　会心率 +4%　CD短縮 +5%　最大HP +6%</span></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="card" id="after"></div>
+    </div>
+    <ul class="why" id="why"></ul>
+  </div>
+</main>
+
+<script>
+(() => {
+  const AFTER = {
+    A: { card: `<span class="nm">T2 大剣 <span class="num" style="color:var(--gold)">+12</span></span><span>攻撃 <span class="num">244</span></span><span class="mod">攻撃力 +7%　会心率 +4%　CD短縮 +5%　最大HP +6%</span>`,
+      why: ['<b>失う物がない</b>。+30 に向けて積み上げが続く <span class="m">（強化の素材を「強化段階のTier」で決めたのは、このための作り）</span>', '費用：T1インゴット4・板材2・<b>黒翳竜の討伐証1</b> <span class="m">（今のコードの昇格レシピ。討伐証の使い道ができる）</span>', '出口（シンク）は強化の失敗・外れの特性・触媒が受け持つ'] },
+    B: { card: `<span class="nm">T2 大剣 <span class="num" style="color:var(--gold)">+0</span></span><span>攻撃 <span class="num">165</span></span><span class="lost">攻撃力 +7%　会心率 +4%　CD短縮 +5%　最大HP +6%</span><span style="color:var(--muted);font-size:.8rem">古い T1 +12 は市場で売れる</span>`,
+      why: ['Albion と同じ。<b>装備がたくさん作られて売られる</b>＝鍛冶と市場がよく回る', 'Tier が上がるたびに +値と MOD がやり直し。<b>T2 に上がった直後は T1 +12 より弱い</b>ことがある', '今のコードのまま（新しく作るものがない）'] },
+    C: { card: `<span class="nm">T2 大剣 <span class="num" style="color:var(--gold)">+6</span></span><span>攻撃 <span class="num">205</span></span><span class="mod">攻撃力 +7%</span><span class="lost">会心率 +4%　CD短縮 +5%　最大HP +6%</span>`,
+      why: ['A と B の間。作り直すので鍛冶と市場は回る', 'ルールが1つ増えて分かりにくい', '移す作業（どの MOD を移すか）の画面が要る'] },
+  };
+  function show(o) {
+    document.querySelectorAll('.opt').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.o === o)));
+    document.getElementById('after').innerHTML = AFTER[o].card;
+    document.getElementById('why').innerHTML = AFTER[o].why.map(w => `<li>${w}</li>`).join('');
+  }
+  document.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => show(b.dataset.o)));
+  show('A');
+})();
+</script>
