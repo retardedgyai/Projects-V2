@@ -4,48 +4,53 @@ import net.minestom.server.coordinate.Vec
 import kotlin.math.*
 
 /**
- * The greatsword's normal-attack slashes, drawn along the swing itself (2026-10-25, Creator: the slash must match the
- * class's swing animation). scripts/build_normal_slash_v4.py builds them with the approved slash's recipe (sections
- * born where the blade's tip was, widest where it was fastest, a bright cutting rim, a wake that drifts and erodes),
- * following the tip of the first-person swing tick by tick after the hit, so the trail is always behind the blade.
- *
- * The models are in the player's own frame, a quarter scale, as the swing is drawn (the camera looking [DRAWN_PITCH]
- * down). The display stands at the feet, turned to the facing, and round the eye to the owner's look pitch, so the
- * trail stays on the blade wherever the owner looks (the first-person sword is drawn the same whatever the pitch).
+ * The greatsword's normal-attack slashes (2026-10-26, Creator: 「斬撃エフェクトをスキルと同じにしてほしい作画を」, then
+ * 「アニメーションはいいの、エフェクトがだめ」 and 「てきとうにやっといて」 to a slash across the middle of the view). Painted
+ * as the warrior's skills paint their swings: the same dark band of wind (CoreWarriorRefChoreography "wind",
+ * build_warrior_ref_vfx.wind_band), its head running round with the blade and burning away from its tail. It stands
+ * about two blocks ahead, facing the eye along the look (pitch included), so it always reads as a whole crescent across
+ * the view: the first cut from the right over to the left, the second back, the slam from overhead down. Dropped on the
+ * way: the blade tip's own path (from the eye a level cut is a straight thin line), bands laid flat round the player
+ * as Better Combat lays its trails (a dark smear near the feet), bands at fixed angles in front (off to the side).
  */
 internal object CoreApprovedNormalV3 {
     val sceneIds = setOf("normal_sweep", "normal_reverse", "normal_finish")
-    private const val FOLDER = "combat_vfx/normal_slash_v4"
-    private const val SCALE = 4.0
+    const val LIFE = 8
     private const val EYE = 1.62
-    private val DRAWN_PITCH = Math.toRadians(12.0)
-    const val BLADE_TICKS = 7
-    const val WAKE_TICKS = 9
+    private const val AHEAD = 2.2
 
-    private fun beat(sceneId: String) = when (sceneId) { "normal_reverse" -> 2; "normal_finish" -> 3; else -> 1 }
+    /** (board x and y as angles on the view, degrees from the right toward up; the pivot right and up of the view's
+     *  middle; the board's size): found against first-person previews. The crescent runs round the pivot. */
+    private data class Arc(val x: Double, val y: Double, val right: Double, val up: Double, val size: Double)
+    private val arcs = mapOf(
+        "normal_sweep" to Arc(23.0, 113.0, 0.0, -1.5, 4.4),     // from the right over to the left
+        "normal_reverse" to Arc(157.0, 67.0, 0.0, -1.5, 4.4),   // from the left over to the right
+        "normal_finish" to Arc(-17.0, 73.0, -1.4, 0.0, 3.1))     // from overhead down
 
     fun parts(e: CoreSkillEffect): List<CoreCombatMeshPart>? {
         if (e.job != CoreClass.WARRIOR || e.sceneId !in sceneIds || !e.valid) return null
         if (e.phase == CoreSkillVisualPhase.CONTACT) return CoreApprovedDashV3.parts(
             CoreSkillEffect(e.job, e.skill, e.origin, e.direction, e.phase, sceneId = "dash"))
-        val yaw = atan2(e.direction.x(), e.direction.z())
-        val tilt = (e.lookPitch - DRAWN_PITCH).coerceIn(-PI / 3, PI / 3)
-        // Turned round the eye: the display turns about its own origin (the feet), so its origin moves the other way.
-        val eye = Vec(sin(yaw) * EYE * sin(tilt), EYE * cos(tilt), cos(yaw) * EYE * sin(tilt))
-        val offset = Vec(-eye.x(), EYE - eye.y(), -eye.z())
-        val blade = CoreCombatMeshPart("normal_slash_blade_${beat(e.sceneId)}", "steel", offset, Vec(SCALE, SCALE, SCALE),
-            yaw = yaw, pitch = tilt, durationTicks = BLADE_TICKS, startSize = 1.0, endSize = 1.0)
-        return listOf(blade, blade.copy(shape = "normal_slash_wake_${beat(e.sceneId)}", durationTicks = WAKE_TICKS, secondary = true))
-    }
-
-    fun owns(p: CoreCombatMeshPart) = p.shape.startsWith("normal_slash_")
-
-    fun pose(p: CoreCombatMeshPart, age: Double): CoreMeshPose? {
-        if (!owns(p)) return null
-        val layer = if (p.shape.startsWith("normal_slash_blade_")) "blade" else "wake"
-        val beat = p.shape.substringAfterLast('_')
-        val local = (age - p.delayTicks).coerceIn(0.0, (p.durationTicks - 1).toDouble())
-        return CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll, "$FOLDER/b${beat}_${layer}_${floor(local).toInt()}",
-            age >= p.delayTicks && age < p.delayTicks + p.durationTicks)
+        val arc = arcs.getValue(e.sceneId)
+        val a = atan2(e.direction.x(), e.direction.z())
+        val p = e.lookPitch.coerceIn(-PI / 2.2, PI / 2.2)
+        val right = doubleArrayOf(-cos(a), 0.0, sin(a))
+        val look = doubleArrayOf(sin(a) * cos(p), -sin(p), cos(a) * cos(p))
+        val up = doubleArrayOf(sin(a) * sin(p), cos(p), cos(a) * sin(p))
+        fun onView(deg: Double) = Math.toRadians(deg).let { r -> DoubleArray(3) { right[it] * cos(r) + up[it] * sin(r) } }
+        val x = onView(arc.x)
+        val y = onView(arc.y)
+        val z = doubleArrayOf(x[1] * y[2] - x[2] * y[1], x[2] * y[0] - x[0] * y[2], x[0] * y[1] - x[1] * y[0])
+        // m = [x y z] as columns, read as CoreCombatMeshArt.rotation's Ry(yaw) Rz(roll) Rx(pitch)
+        val yaw = atan2(-x[2], x[0])
+        val roll = asin(x[1].coerceIn(-1.0, 1.0))
+        val pitch = atan2(-z[1], y[1])
+        // the crescent's pivot (model (4, 7.5) of 16) stands AHEAD along the look, beside the view's middle
+        val pivot = DoubleArray(3) { look[it] * AHEAD + right[it] * arc.right + up[it] * arc.up + (if (it == 1) EYE else 0.0) }
+        val local = doubleArrayOf(-.25 * arc.size, -.03125 * arc.size)
+        val at = Vec(pivot[0] - x[0] * local[0] - y[0] * local[1], pivot[1] - x[1] * local[0] - y[1] * local[1],
+            pivot[2] - x[2] * local[0] - y[2] * local[1])
+        return listOf(CoreCombatMeshPart("war_ref:wind", "steel", at, Vec(arc.size, arc.size, arc.size), yaw = yaw,
+            pitch = pitch, roll = roll, durationTicks = LIFE, startSize = 1.0, endSize = 1.0))
     }
 }

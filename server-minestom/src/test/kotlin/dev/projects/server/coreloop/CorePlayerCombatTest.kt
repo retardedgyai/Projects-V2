@@ -604,18 +604,19 @@ class CorePlayerCombatTest {
                 it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY
             }.filter {
                 (it.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta).itemStack
-                    .get(DataComponents.ITEM_MODEL)?.let { it.startsWith("projects:combat_vfx/approved_") || it.startsWith("projects:combat_vfx/normal_slash_v4/") }==true
+                    .get(DataComponents.ITEM_MODEL)?.let { it.startsWith("projects:combat_vfx/approved_") || it.startsWith("projects:combat_vfx/warrior_ref/wind_") }==true
             }
-            assertEquals(3,displays.size)
+            // the slash (the skills' band of wind) and the hit
+            assertEquals(2,displays.size)
             for(display in displays) {
                 assertTrue(h.player in display.viewers)
                 val meta=display.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
                 assertTrue(meta.scale.x()>0)
-                assertEquals(0,meta.transformationInterpolationDuration)
+                if(meta.itemStack.get(DataComponents.ITEM_MODEL)!!.contains("approved_")) assertEquals(0,meta.transformationInterpolationDuration)
             }
             repeat(10) { h.actor.attack() }
             assertEquals(288.0,h.combat.bossHealth())
-            assertEquals(3,h.instance.entities.count { it in displays })
+            assertEquals(2,h.instance.entities.count { it in displays })
             h.actor.resetActions()
             assertTrue(displays.all { it.isRemoved })
         } finally { CoreCombatPresentation.forget(h.player) }

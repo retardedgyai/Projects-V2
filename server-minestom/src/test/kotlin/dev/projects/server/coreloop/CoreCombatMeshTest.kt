@@ -278,7 +278,8 @@ class CoreCombatMeshTest {
                         if(age>=p.durationTicks) { assertTrue(entity.isRemoved);continue }
                         val pose=CoreSkillChoreography.pose(p,age.toDouble())
                         val meta=entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
-                        assertEquals(0,meta.transformationInterpolationDuration)
+                        // the normal slash is the skills' band of wind and moves as theirs do; the approved dash keeps its fixed frames
+                        if(p.shape.startsWith("approved_")) assertEquals(0,meta.transformationInterpolationDuration)
                         assertEquals(pose.scale,meta.scale)
                         assertEquals(pose.offset,meta.translation)
                         assertContentEquals(CoreCombatMeshArt.rotation(pose.yaw,pose.pitch,pose.roll),meta.leftRotation)
@@ -302,7 +303,7 @@ class CoreCombatMeshTest {
         try {
             for((index,visual) in listOf(GreatswordVisual.SWEEP,GreatswordVisual.REVERSE,GreatswordVisual.FINISHER).withIndex()) {
                 vfx.play(visual,owner.position,Vec(0.0,0.0,1.0))
-                assertEquals(setOf("projects:combat_vfx/normal_slash_v4/b${index+1}_blade_0","projects:combat_vfx/normal_slash_v4/b${index+1}_wake_0"),models().toSet())
+                assertEquals(setOf("projects:combat_vfx/warrior_ref/wind_0"),models().toSet())
                 for(entity in owner.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }) {
                     assertTrue(owner in entity.viewers, "No hidden spawn wait for AA")
                     val meta=entity.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
@@ -328,7 +329,8 @@ class CoreCombatMeshTest {
             meshes.play(normal)
             assertEquals(0,displayed())
             CoreCombatPresentation.pack(owner,true)
-            for(expected in listOf(6,1,0)) {
+            // the normal slash is the skills' one band of wind: shown at full and subdued detail, not at minimal
+            for(expected in listOf(1,1,0)) {
                 meshes.play(normal)
                 assertEquals(expected,displayed())
                 meshes.cancel()

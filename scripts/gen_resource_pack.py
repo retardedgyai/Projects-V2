@@ -21,7 +21,6 @@ PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
 
 CHAIN = [
     "build_core_ui_assets.py",   # menu atlas (charset from */src/main/kotlin), pixel combat HUD, combat VFX models
-    "build_normal_slash_v4.py",  # combat_vfx/normal_slash_v4: the greatsword's normal slashes (after the slash ink texture)
     "build_ice_garden.py",       # combat_vfx/garden
     "build_ice_garden_bloom.py", # combat_vfx/garden_bloom
     # Only font/first_magic_canvas_*.json; the first_magic art itself is committed (partly hand-finished).
