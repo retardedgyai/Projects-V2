@@ -103,7 +103,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
             record.anchor=Pos(spawnAt.x(),spawnAt.y(),spawnAt.z())
             entity.setInstance(instance,Pos(spawnAt.x(),spawnAt.y(),spawnAt.z())).whenComplete { _,failure ->
                 if(failure!=null || record.cancelled.get() || entity.isRemoved || owner.instance!==instance) entity.remove()
-                else if(immediateContour && !part.notOwner && CoreCombatPresentation.packed(owner) &&
+                else if(immediateContour && CoreCombatPresentation.packed(owner) &&
                     (CoreCombatPresentation.detail(owner)!=CoreCombatPresentation.Detail.MINIMAL || boundary(part)) &&
                     (!part.secondary || CoreCombatPresentation.detail(owner)==CoreCombatPresentation.Detail.FULL) &&
                     owner.position.distanceSquared(effect.origin)<1600) {
@@ -199,8 +199,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
                     CoreCombatPresentation.packed(viewer) && (detail!=CoreCombatPresentation.Detail.MINIMAL || boundary(p)) &&
                         (!p.secondary || detail==CoreCombatPresentation.Detail.FULL && viewer===owner) &&
                         viewer.position.distanceSquared(v.entity.position)<=(if(viewer===owner) 1600.0 else 256.0) &&
-                        (viewer===owner || v.entity in observerParts[viewer].orEmpty()) &&
-                        !(p.notOwner && viewer===owner)
+                        (viewer===owner || v.entity in observerParts[viewer].orEmpty())
                 }.toSet()
                 v.entity.viewers.toList().filter { it !in allowed }.forEach { v.entity.removeViewer(it) }
                 allowed.filter { it !in v.entity.viewers }.forEach { v.entity.addViewer(it) }

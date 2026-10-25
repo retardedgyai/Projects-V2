@@ -87,14 +87,14 @@ internal object CoreArmamentPresentation {
         // clock, or the swing starts part-way through (or already over) and the sword jumps.
         val start = ((instance.worldAge % 24000L) and 255L).toInt()
         fun tint(mark: Int) = net.kyori.adventure.text.format.TextColor.color(ticks.coerceIn(1, 255), start, mark)
-        // Colours 1 and 2 tint the arms that come with the swing, 3 the slash's strip (the shader places each).
+        // Colours 1 and 2 tint the arms that come with the swing (the shader places them by their own keys).
         // 120 + beat: Java draws every value from 120 with the shader-moved model (the beat is in the tint); Geyser maps
         // each beat to its own Bedrock item, whose attachable plays that beat (scripts/build_bedrock_greatsword.py).
         val posed = pose(item, ANIM_POSE + (beat - 1).coerceIn(0, 2) + 1)
         val old = posed.get(DataComponents.CUSTOM_MODEL_DATA)!!
         player.setTag(shaderTag, ShaderSwing(player.aliveTicks + ticks, frame(item, 0)))
         player.setItemInMainHand(posed.with(DataComponents.CUSTOM_MODEL_DATA,
-            CustomModelData(old.floats(), old.flags(), old.strings(), listOf(tint(marker), tint(marker + 16), tint(marker + 32), tint(marker + 48)) + old.colors().drop(4))))
+            CustomModelData(old.floats(), old.flags(), old.strings(), listOf(tint(marker), tint(marker + 16), tint(marker + 32)) + old.colors().drop(3))))
         return true
     }
 

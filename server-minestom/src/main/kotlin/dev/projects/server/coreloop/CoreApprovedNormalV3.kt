@@ -16,6 +16,7 @@ import kotlin.math.*
 internal object CoreApprovedNormalV3 {
     val sceneIds = setOf("normal_sweep", "normal_reverse", "normal_finish")
     const val LIFE = 8
+    const val SHOW_SLASH = false
     private const val EYE = 1.62
     private const val AHEAD = 2.2
 
@@ -31,6 +32,8 @@ internal object CoreApprovedNormalV3 {
         if (e.job != CoreClass.WARRIOR || e.sceneId !in sceneIds || !e.valid) return null
         if (e.phase == CoreSkillVisualPhase.CONTACT) return CoreApprovedDashV3.parts(
             CoreSkillEffect(e.job, e.skill, e.origin, e.direction, e.phase, sceneId = "dash"))
+        // Off for now (Creator 2026-10-26: 「エフェクト一旦ださなくていいよ」): no slash yet sat on the first-person blade.
+        if (!SHOW_SLASH) return emptyList()
         val arc = arcs.getValue(e.sceneId)
         val a = atan2(e.direction.x(), e.direction.z())
         val p = e.lookPitch.coerceIn(-PI / 2.2, PI / 2.2)
@@ -51,8 +54,6 @@ internal object CoreApprovedNormalV3 {
         val at = Vec(pivot[0] - x[0] * local[0] - y[0] * local[1], pivot[1] - x[1] * local[0] - y[1] * local[1],
             pivot[2] - x[2] * local[0] - y[2] * local[1])
         return listOf(CoreCombatMeshPart("war_ref:wind", "steel", at, Vec(arc.size, arc.size, arc.size), yaw = yaw,
-            pitch = pitch, roll = roll, durationTicks = LIFE, startSize = 1.0, endSize = 1.0,
-            // the owner sees the slash drawn with the sword itself, along the blade (class_armament_swing.trail_elements)
-            notOwner = true))
+            pitch = pitch, roll = roll, durationTicks = LIFE, startSize = 1.0, endSize = 1.0))
     }
 }
