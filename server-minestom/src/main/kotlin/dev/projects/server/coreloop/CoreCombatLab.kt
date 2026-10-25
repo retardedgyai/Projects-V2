@@ -3,6 +3,8 @@ package dev.projects.server.coreloop
 import dev.projects.server.coreloop.adventure.BossArena
 import dev.projects.server.coreloop.adventure.BossArenaFactory
 import dev.projects.server.coreloop.ui.CoreMenuInventory
+import dev.projects.server.mob.MobGrade
+import dev.projects.server.mob.MobMod
 import dev.projects.server.mob.QuestCombatEncounter
 import dev.projects.server.mob.QuestEncounterCombat
 import dev.projects.server.questmap.VerdantRoadQuestRuntime
@@ -161,6 +163,7 @@ internal class CoreCombatLab(
                 evading = { entry.actor?.evading == true },
                 canTarget = { it === entry.player && !entry.returning },
                 explicitBossArchetype = arena.archetype)
+            next.pixelNameplates = packed(entry.player)
             entry.actor?.resetActions(); entry.combat?.dispose(); entry.combat = next
             return
         }
@@ -184,6 +187,10 @@ internal class CoreCombatLab(
             // This predicate also authorizes incoming player hits. Pausing AI must not disable damage.
             canTarget = { it === entry.player && !entry.returning },
             spawnBoss = false, healthMultiplier = 20.0)
+        // The three targets show the mob HUD's grades side by side. Only MODs that change how a mob moves or
+        // hits are given, so the damage a skill deals here still reads true (no 鉄皮 / 再生).
+        next.entities().zip(LAB_GRADES).forEach { (mob, grade) -> next.forceGrade(mob.uuid, grade.first, grade.second) }
+        next.pixelNameplates = packed(entry.player)
         entry.actor?.resetActions(); entry.combat?.dispose(); entry.combat = next
     }
 
@@ -326,4 +333,11 @@ internal class CoreCombatLab(
 }
 
 private const val LAB_POTIONS = 3
+
+/** Skill-lab targets, left to right: one grade each, with MODs that do not change the damage they take. */
+private val LAB_GRADES = listOf(
+    MobGrade.ELITE to listOf(MobMod.SWIFT),
+    MobGrade.RARE to listOf(MobMod.SWIFT, MobMod.MIGHT),
+    MobGrade.CALAMITY to listOf(MobMod.SWIFT, MobMod.MIGHT, MobMod.LEECH, MobMod.FRENZY),
+)
 private const val LAB_POTION_COOLDOWN_MILLIS = 10_000L

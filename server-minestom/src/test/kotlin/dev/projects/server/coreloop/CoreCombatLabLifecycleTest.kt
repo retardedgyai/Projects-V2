@@ -60,6 +60,26 @@ class CoreCombatLabLifecycleTest {
         }
     }
 
+    @Test fun `skill lab targets show the mob HUD with one grade each and no damage-changing MODs`() = player { p, hub ->
+        val executor = Executors.newSingleThreadExecutor()
+        val lab = CoreCombatLab(executor, { true }, { true }, {},
+            { it.setInstance(hub, Pos(8.5, 40.0, 8.5)).thenApply { true } }, {}, { 1_788_168_623_401L })
+        try {
+            lab.enter(p, CoreClass.WARRIOR)
+            pumpUntil { lab.ready(p) }
+            val combat = assertNotNull(lab.combat(p))
+            val huds = combat.combatTargets().map { assertNotNull(combat.hudOf(it.id)) }
+            assertEquals(listOf(dev.projects.server.mob.MobGrade.ELITE, dev.projects.server.mob.MobGrade.RARE,
+                dev.projects.server.mob.MobGrade.CALAMITY), huds.map { it.grade })
+            assertTrue(huds.none { hud -> hud.mods.any { it == dev.projects.server.mob.MobMod.IRONHIDE || it == dev.projects.server.mob.MobMod.REGEN } })
+            combat.tick(System.currentTimeMillis())
+            assertEquals(3, combat.plateCount, "every target carries its overhead plate")
+        } finally {
+            if (lab.contains(p)) { lab.leave(p); pumpUntil { !lab.contains(p) } }
+            executor.shutdownNow(); lab.close()
+        }
+    }
+
     @Test fun `leaving while queued cancels generation and duplicate entry cannot queue another map`() = player { p, _ ->
         val jobs = mutableListOf<Runnable>()
         var resets = 0
