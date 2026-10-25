@@ -16,3 +16,4 @@
 - `progression-map.html` — 強くなる道筋の地図（決まった／まだ）と、Tierの上がり方の比べ。公開版 https://claude.ai/artifact/EpYJyuU2uMjm39xuHTDPWe
 - `tier-up-sinks.html` — Tierの上がり方とシンクの4案（丸ごと引き継ぎはなし）。
 - `craft-spec.html` — クラフトの仕様（素材→製造→強化→破損→修理）と修理の材料の2案。
+- `repair-rules.html` — 修理の決まり3案（同じ型／どの型でも1本／修理ポイント）を実際に直して比べる。

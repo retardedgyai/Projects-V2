@@ -1,0 +1,137 @@
+<title>修理の決まり</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header; rule tabs (同じ型だけ / どの型でも1本 / 修理ポイント); left = broken sword + needed, middle = market list you buy from directly, right = result + risk meters */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --green: #9fd49a; --red: #e58b80; --sink: #e07a6a;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1200px; margin: 0 auto; padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 14px; }
+h1 { font-size: 1.4rem; margin: 0; }
+h2 { font-size: 1rem; margin: 0; }
+p { margin: 0; color: var(--muted); max-width: 80ch; }
+.opts { display: flex; gap: 8px; flex-wrap: wrap; }
+.opt { font: inherit; text-align: left; background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; cursor: pointer; display: grid; gap: 2px; flex: 1 1 250px; }
+.opt[aria-pressed="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.opt .k { color: var(--gold); font-weight: 700; }
+.opt .s { font-size: .82rem; color: var(--muted); }
+.opt:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.rec { font-size: .72rem; color: #1a1405; background: var(--gold); border-radius: 6px; padding: 0 6px; margin-left: 6px; }
+.grid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 8px; min-width: 0; }
+.item { background: #0f131d; border: 2px solid #3a3550; border-radius: 6px; padding: 6px 10px; font-size: .9rem; }
+.item.broken { border-color: #6a3a36; }
+.num { font-family: var(--num); color: var(--gold); }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; border-bottom: 1px solid #1f2740; padding: 4px 0; font-size: .88rem; }
+.row:last-child { border-bottom: 0; }
+.row .pts { font-size: .78rem; color: var(--cyan); }
+.row .no { font-size: .78rem; color: var(--red); }
+.btn { font: inherit; font-size: .85rem; background: #222b40; color: var(--fg); border: 1px solid #34405f; border-radius: 8px; padding: 3px 10px; cursor: pointer; }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+.btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.bar { height: 10px; background: #222b40; border-radius: 5px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--cyan); transition: width .2s; }
+.risk { display: grid; grid-template-columns: 8.5em minmax(0, 1fr) 2.5em; gap: 8px; align-items: center; font-size: .84rem; color: var(--muted); }
+.risk .bar i { background: var(--sink); }
+.note { font-size: .86rem; color: var(--fg); }
+.log { font-size: .84rem; color: var(--muted); min-height: 1.4em; }
+.fact { background: #17202c; border: 1px solid #2f5560; border-radius: 12px; padding: 10px 14px; font-size: .9rem; }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>修理の決まり ── 型は問う？ 問わない？</h1>
+    <p>藍：予備は持ち歩かず、市場で買えばいい。型を問わないと「いちばん安い装備で直す」が起きそう。同じ型だけにすると、人気のない型が市場に余りそう。── 3つの決まりで、T4 大剣 +18 を実際に直して比べる。修理の画面から市場の品をそのまま買える形にしてある。</p>
+  </header>
+
+  <div class="fact">今のコードで分かったこと：<b>武器はどの型でも作る費用がほぼ同じ</b>（インゴット4・板材2・石材1。型によって特殊素材が2個増えるだけ）。防具も4部位とも同じ費用。だから「安い型で直す」の得は今は小さい。差が大きくなるのは、頭・足を軽くしたときや、ボス素材の型（桜牙など）を足したとき。</div>
+
+  <div class="opts" role="group" aria-label="修理の決まり">
+    <button class="opt" data-r="same" aria-pressed="false"><span class="k">1 同じ型だけ</span><span class="s">大剣は大剣で直す。今のコードと同じ。</span></button>
+    <button class="opt" data-r="any" aria-pressed="false"><span class="k">2 どの型でも1本</span><span class="s">同じ Tier の武器なら何でも1本で直る。</span></button>
+    <button class="opt" data-r="pts" aria-pressed="true"><span class="k">3 修理ポイント<span class="rec">おすすめ</span></span><span class="s">どの型でも使えるが、つぶした装備の「素材の価値」ぶんしか直らない。+値が高いほど多く要る。</span></button>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>直したい物</h2>
+      <div class="item broken" id="target"></div>
+      <div id="need" style="display:grid;gap:4px"></div>
+    </div>
+    <div class="panel">
+      <h2>市場（その場で買って使う）</h2>
+      <div id="market"></div>
+      <div class="log" id="log" aria-live="polite"></div>
+    </div>
+    <div class="panel">
+      <h2>この決まりだと</h2>
+      <div id="risks" style="display:grid;gap:6px"></div>
+      <div class="note" id="note"></div>
+      <button class="btn" id="reset" style="justify-self:start">最初から</button>
+    </div>
+  </div>
+</main>
+
+<script>
+(() => {
+  // value = 素材の価値（T4 精製品の数で数える）。price = 市場の値段（作る手間の分だけ素材より少し高い）
+  const MARKET = [
+    { n: 'T4 大剣（開拓）+0', type: '大剣', value: 7, price: 330 },
+    { n: 'T4 大剣（重断）+0', type: '大剣', value: 9, price: 420 },
+    { n: 'T4 短剣 +0', type: '短剣', value: 7, price: 300, note: '人気がなく余りがち' },
+    { n: 'T4 弓 +0', type: '弓', value: 9, price: 410 },
+    { n: 'T4 桜牙の大剣 +0（特性なし）', type: '大剣', value: 14, price: 900 },
+    { n: 'T4 頭の防具 +0', type: '防具', value: 5, price: 220, note: '防具は武器に使えない' },
+  ];
+  const PLUS = 18;
+  const NEED_PTS = Math.round(7 * (1 + PLUS / 15)); // 7 × (1 + 18/15) = 15
+  const RISK = {
+    same: { exploit: 10, surplus: 75, sink: 50, note: '<b>いい所</b>：分かりやすい。大剣を作る鍛冶の需要が続く。<br><b>気になる所</b>：短剣など人気のない型は、修理にも使われず市場に余る。' },
+    any: { exploit: 70, surplus: 20, sink: 45, note: '<b>いい所</b>：余った型も修理で消える。<br><b>気になる所</b>：+18 も +1 も「1本」で直る。いちばん安い装備を作りまくって直す、が起きる（頭・足を軽くしたら特に）。高い +値の修理が安すぎる。' },
+    pts: { exploit: 10, surplus: 15, sink: 80, note: '<b>いい所</b>：どの型でも使える（余りが消える）のに、安い物では少ししか直らないので抜け道がない。+値が高いほど多く要る＝高い強化ほど強いシンク。<br><b>気になる所</b>：「ポイント」を1つ覚える必要がある。画面に「あと何ポイント」を出す。' },
+  };
+  let rule = 'pts', got = 0, spent = 0, fixed = false, log = '';
+  const $ = id => document.getElementById(id);
+  function usable(m) {
+    if (m.type === '防具') return false;
+    if (rule === 'same') return m.type === '大剣';
+    return true;
+  }
+  function render() {
+    document.querySelectorAll('.opt').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.r === rule)));
+    $('target').innerHTML = `<b>T4 大剣（開拓） <span class="num">+${PLUS}</span></b>　${fixed ? '<span style="color:var(--green)">直った</span>' : '<span style="color:var(--red)">壊れている</span>'}`;
+    if (rule === 'pts') {
+      $('need').innerHTML = `<span style="font-size:.85rem;color:var(--muted)">必要：修理ポイント <span class="num">${NEED_PTS}</span>（+値が高いほど多い）</span><div class="bar"><i style="width:${Math.min(100, got / NEED_PTS * 100)}%"></i></div><span style="font-size:.85rem">集めた <span class="num">${got}</span> / ${NEED_PTS}　使った銀貨 <span class="num">${spent}</span></span>`;
+    } else {
+      $('need').innerHTML = `<span style="font-size:.85rem;color:var(--muted)">必要：${rule === 'same' ? '同じ型（大剣）の T4 を1本' : 'T4 の武器を何でも1本'}</span><span style="font-size:.85rem">使った銀貨 <span class="num">${spent}</span></span>`;
+    }
+    $('market').innerHTML = MARKET.map((m, i) => {
+      const ok = usable(m) && !fixed;
+      return `<div class="row"><span>${m.n}${rule === 'pts' && usable(m) ? `<br><span class="pts">修理ポイント ${m.value}</span>` : ''}${!usable(m) ? `<br><span class="no">${m.type === '防具' ? '武器には使えない' : '型が違うので使えない'}</span>` : m.note ? `<br><span class="pts" style="color:var(--muted)">${m.note}</span>` : ''}</span><span class="num">${m.price}</span><button class="btn" data-i="${i}" ${ok ? '' : 'disabled'}>買って使う</button></div>`;
+    }).join('');
+    $('log').textContent = log;
+    const r = RISK[rule];
+    $('risks').innerHTML = [['安い物で直す抜け道', r.exploit], ['市場に余る', r.surplus], ['シンクの強さ', r.sink]].map(([n, v]) => `<div class="risk"><span>${n}</span><div class="bar"><i style="width:${v}%"></i></div><span>${v >= 65 ? '大' : v >= 35 ? '中' : '小'}</span></div>`).join('');
+    $('note').innerHTML = r.note;
+  }
+  document.querySelector('.opts').addEventListener('click', e => { const b = e.target.closest('.opt'); if (!b) return; rule = b.dataset.r; got = 0; spent = 0; fixed = false; log = ''; render(); });
+  $('market').addEventListener('click', e => {
+    const b = e.target.closest('.btn'); if (!b || b.disabled) return;
+    const m = MARKET[+b.dataset.i];
+    spent += m.price;
+    if (rule === 'pts') { got += m.value; log = `${m.n} を買ってつぶした（+${m.value}ポイント）。`; if (got >= NEED_PTS) { fixed = true; log += ' 直った！'; } }
+    else { fixed = true; log = `${m.n} を買ってつぶした。直った！`; }
+    render();
+  });
+  $('reset').addEventListener('click', () => { got = 0; spent = 0; fixed = false; log = ''; render(); });
+  render();
+})();
+</script>
