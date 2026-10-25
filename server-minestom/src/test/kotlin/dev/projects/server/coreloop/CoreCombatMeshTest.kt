@@ -286,6 +286,8 @@ class CoreCombatMeshTest {
                         assertEquals("projects:"+pose.model,meta.itemStack.get(net.minestom.server.component.DataComponents.ITEM_MODEL))
                     }
                 }
+                // Companions (motes) played with the slash may outlive it; everything is gone once they end too.
+                repeat(24) { meshes.tick() }
                 assertEquals(0,meshes.size)
             }
         } finally { meshes.cancel();CoreCombatPresentation.forget(owner) }
