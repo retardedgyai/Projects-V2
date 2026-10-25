@@ -26,30 +26,28 @@ internal object CoreWarriorLeap {
     private const val VERTICAL_DRAG = .98
     private const val AIR_FRICTION = .91
 
-    /** 天落とし jumps high whatever the reach. */
-    const val SKYFALL_APEX = 5.0
     /** Arc height for a leap of [reach] blocks: about 2.7 blocks over 6. */
     fun apex(reach: Double) = 1.2 + .25 * reach
 
-    /** Where the leap aims: the first solid block along the look within reach, else the full reach on the same level. */
-    fun aim(eye: Pos, look: Vec, solid: (Vec) -> Boolean): Vec {
+    /** Where the leap aims: the first solid block along the look within [reach], else the full reach on the same level. */
+    fun aim(eye: Pos, look: Vec, solid: (Vec) -> Boolean, reach: Double = MAX_REACH): Vec {
         val flat = Vec(look.x(), 0.0, look.z()).let { if (it.lengthSquared() < 1e-6) Vec(0.0, 0.0, 1.0) else it.normalize() }
         var t = 0.0
-        while (t <= MAX_REACH + 2.0) {
+        while (t <= reach + 2.0) {
             val p = Vec(eye.x() + look.x() * t, eye.y() + look.y() * t, eye.z() + look.z() * t)
             if (solid(p)) {
                 val ground = Vec(p.x(), Math.floor(p.y()) + 1.0, p.z())
-                return clampReach(eye, ground, flat)
+                return clampReach(eye, ground, flat, reach)
             }
             t += .25
         }
-        return Vec(eye.x() + flat.x() * MAX_REACH, eye.y() - 1.62, eye.z() + flat.z() * MAX_REACH)
+        return Vec(eye.x() + flat.x() * reach, eye.y() - 1.62, eye.z() + flat.z() * reach)
     }
 
-    private fun clampReach(eye: Pos, target: Vec, flat: Vec): Vec {
+    private fun clampReach(eye: Pos, target: Vec, flat: Vec, maximum: Double): Vec {
         val dx = target.x() - eye.x(); val dz = target.z() - eye.z()
         val d = sqrt(dx * dx + dz * dz)
-        val reach = d.coerceIn(MIN_REACH, MAX_REACH)
+        val reach = d.coerceIn(MIN_REACH, maximum)
         val dir = if (d < 1e-6) flat else Vec(dx / d, 0.0, dz / d)
         return Vec(eye.x() + dir.x() * reach, target.y(), eye.z() + dir.z() * reach)
     }

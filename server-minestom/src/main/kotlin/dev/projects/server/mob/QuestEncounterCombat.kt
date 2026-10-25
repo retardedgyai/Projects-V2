@@ -508,6 +508,15 @@ class QuestEncounterCombat(
         slide(mob, delta.normalize(), minOf(step, delta.length()))
         return true
     }
+    /** 大地崩し (warrior): a regular mob is thrown [distance] blocks straight away from [from]. Bosses stay put. */
+    fun shove(targetId: UUID, from: Pos, distance: Double): Boolean {
+        val mob = mobs[targetId] ?: return false
+        if (mob.boss || !mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING) return false
+        val away = Vec(mob.entity.position.x() - from.x(), 0.0, mob.entity.position.z() - from.z())
+        if (away.length() < .1) return false
+        slide(mob, away.normalize(), distance)
+        return true
+    }
     /** 叩き落とし (warrior): a mob up in the air is driven straight down. Bosses never leave the ground, so nothing. */
     fun slamDown(targetId: UUID): Boolean {
         val mob = mobs[targetId] ?: return false

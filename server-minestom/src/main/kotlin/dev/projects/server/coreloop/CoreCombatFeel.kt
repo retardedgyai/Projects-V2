@@ -110,26 +110,68 @@ internal object CoreWarriorRules {
     const val FINISHER_BONUS_PERCENT = 30
     /**
      * 地割り by the stacks it took (Creator 2026-10-23): the more beast, the longer and deeper the crack.
-     * 0 ≈4 m, regulars flinch / 1 ≈6 m, a low launch / 2 ≈8 m, launch then stun / 3 ≈8 m, a high launch and a longer
+     * 0 ≈4 m, regulars flinch / 1 ≈6 m, a low launch / 2 ≈8 m, launch then stun / 3 ≈10 m, a high launch and a longer
      * stun, and the crack splits a second time at its head (a second pulse).
      */
     fun slam(definition: CoreSkillDefinition, stacks: Int): CoreSkillDefinition = when (stacks.coerceIn(0, 3)) {
         0 -> definition.copy(radius = 4.0, stunAfterMillis = 0).copy(crowd = CrowdControl.FLINCH, crowdMillis = FLINCH_MILLIS)
         1 -> definition.copy(radius = 6.0, stunAfterMillis = 0).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 450)
         2 -> definition.copy(radius = 8.0, stunAfterMillis = 1500).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 700)
-        else -> definition.copy(radius = 8.0, stunAfterMillis = 2000, pulses = 2).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 1000)
+        else -> definition.copy(radius = 10.0, stunAfterMillis = 2000, pulses = 2).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 1000)
     }
-    /** Every spender by the stacks it took: 地割り reaches further, 狂乱 swings more, 天落とし sends more rings, 大地崩し breaks wider. */
+    /**
+     * Each spender has its own job, and the beast changes how it behaves, not only how hard it hits (Creator 2026-10-26):
+     * 地割り splits the far line, 狂乱 grinds down the one in front, 天落とし dives into a distant pack, 大地崩し breaks out
+     * of a crowd. Few stacks come out fast, a full beast winds up long ([STARTUP_BY_STACKS]).
+     */
     fun shape(definition: CoreSkillDefinition, stacks: Int): CoreSkillDefinition {
         val n = stacks.coerceIn(0, 3)
-        return when (definition.icon) {
+        val shaped = when (definition.icon) {
             "slam" -> slam(definition, n)
             FRENZY -> definition.copy(pulses = 2 + n)
-            SKYFALL -> definition.copy(pulses = maxOf(1, n))
-            SHATTER -> definition.copy(radius = 4.0 + n, crowdMillis = 450L + 150L * n, stunAfterMillis = if (n == 3) 1600L else 0L)
-            else -> definition
+            SKYFALL -> definition.copy(pulses = maxOf(1, n), range = SKYFALL_REACH[n])
+            SHATTER -> definition.copy(radius = SHATTER_RADIUS[n], crowdMillis = 350L + 150L * n, stunAfterMillis = if (n == 3) 1600L else 0L)
+            else -> return definition
         }
+        return shaped.copy(startup = maxOf(1, Math.round(definition.startup * STARTUP_BY_STACKS[n]).toInt()))
     }
+    /** A spender's wind-up by the stacks it took, against its listed startup: 0 stacks 60% … 3 stacks as listed. */
+    val STARTUP_BY_STACKS = listOf(.6, .75, .9, 1.0)
+    /** 狂乱 keeps to the one in front: a narrower fan than other swings, the last blow narrower still. */
+    const val FRENZY_MIN_DOT = .6
+    const val FRENZY_LAST_MIN_DOT = .75
+    /** 狂乱 breaks a boss harder than its listed break on every swing; with a full beast the last blow breaks far more. */
+    const val FRENZY_BREAK_SCALE = 1.25
+    const val FRENZY_FULL_LAST_BREAK = 2.0
+    /** 天落とし by the stacks: how far (blocks) and how high the jump goes. Few stacks hop low and land quickly. */
+    val SKYFALL_REACH = listOf(5.0, 5.0, 6.5, 8.0)
+    val SKYFALL_APEX = listOf(2.0, 2.0, 3.2, 5.0)
+    /** 大地崩し by the stacks; with none it throws the crowd outward this far (regulars only). */
+    val SHATTER_RADIUS = listOf(3.5, 5.0, 6.0, 7.0)
+    const val SHATTER_SHOVE = 2.5
+    /** 大地崩し: castable while staggered with at least one stack, untouchable for its first ticks. */
+    const val SHATTER_EVADE_TICKS = 6L
+
+    /**
+     * A + B (Creator 2026-10-26): a spender within [COMBO_TICKS] of a building skill that landed turns into that
+     * pair's variant (斬り上げ + 地割り's 叩き落とし goes by the launched enemies instead, see LAUNCHED_TICKS).
+     */
+    enum class Combo(val builder: String, val spender: String, val label: String) {
+        HOIST(DRAG, SHATTER, "引き摺り＋大地崩し"),
+        DOUBLE_DROP(CoreWarriorLeap.ICON, SKYFALL, "跳び叩き＋天落とし：二段落とし"),
+        RUSH("dash", FRENZY, "轟進＋狂乱"),
+    }
+    fun combo(builder: String?, spender: String): Combo? = Combo.entries.firstOrNull { it.builder == builder && it.spender == spender }
+    const val COMBO_TICKS = 40L
+    /** 引き摺り＋大地崩し: the gathered crowd goes up higher and comes down stunned, from a little further out. */
+    const val HOIST_RADIUS_BONUS = 1.0
+    const val HOIST_AIRBORNE_MILLIS = 1400L
+    const val HOIST_STUN_MILLIS = 1500L
+    /** 跳び叩き＋天落とし: the rings go out twice as fast. */
+    const val DOUBLE_DROP_RING_TICKS = 2
+    /** 轟進＋狂乱: the first step goes further and the first swing lands heavy (damage and break). */
+    const val RUSH_FIRST_PUSH = 9.0
+    const val RUSH_FIRST_SCALE = 1.8
     /** 剣聖: each connected third normal hit takes this much off the spenders' remaining cooldown. */
     const val SAINT_REFUND_TICKS = 30L
 }

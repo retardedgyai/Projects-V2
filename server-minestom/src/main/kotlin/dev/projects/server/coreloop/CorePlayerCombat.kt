@@ -100,6 +100,9 @@ internal class CorePlayerCombat(
     val awakened get() = classId == CoreClass.WARRIOR && tickNumber < awakenUntil
     /** 斬り上げ: enemies it threw up and until when they count as in the air (叩き落とし). */
     private val launched = mutableMapOf<UUID, Long>()
+    /** Warrior A + B: the building skill that last landed, and until when a spender turns into their variant. */
+    private var comboFrom: String? = null
+    private var comboUntil = -1L
     private var whetstoneUntil = 0L
     private var shot: Pair<Long, Vec>? = null
     private var skillBoost = 1.0
@@ -152,7 +155,11 @@ internal class CorePlayerCombat(
         /** 天落とし: where it landed and when; the rings go out from there (CoreWarriorRules.SKYFALL_RINGS). */
         var landAt: Pos? = null, var landTick: Long = -1L,
         /** 引き摺り: when the drag began, and the regular enemies hooked on the blade so far. */
-        var dragTick: Long = -1L, val hooked: MutableSet<UUID> = mutableSetOf())
+        var dragTick: Long = -1L, val hooked: MutableSet<UUID> = mutableSetOf(),
+        /** Warrior A + B: the variant this spender turned into, if any. */
+        val combo: CoreWarriorRules.Combo? = null,
+        /** The current pulse's damage and break, against the cast's (狂乱's heavy first and last swings). */
+        var hitScale: Double = 1.0, var breakScale: Double = 1.0)
 
     fun attack() {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
@@ -190,7 +197,7 @@ internal class CorePlayerCombat(
 
     fun skill(id: Int, unlocked: Boolean = false) {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
-        if (id !in 0..4 || defeated || encounter() == null || player.openInventory != null || staggered) return
+        if (id !in 0..4 || defeated || encounter() == null || player.openInventory != null || staggered && !breaksOut(id)) return
         if (!unlocked && !skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
         if (!crowd.canCast(tickNumber)) { notice("${crowd.cue(tickNumber) ?: "行動不能"}：技を使えません"); return }
@@ -225,6 +232,11 @@ internal class CorePlayerCombat(
         }
         manaValue -= cost
         classState.spend(definition, classId, journey().build)
+        if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.SHATTER) {
+            // 大地崩し breaks out of a stagger, and nothing touches the warrior while the sword goes in.
+            if (staggered) { staggerUntil = -1; slide = null }
+            evadeUntil = maxOf(evadeUntil, tickNumber + CoreWarriorRules.SHATTER_EVADE_TICKS)
+        }
         skillBoost = 1.0
         if (weaponBase() == CoreWeaponBase.CONDUIT && definition.spend > 0) skillBoost *= 1.12
         // Only a templar guard read sets counterUntil (CoreClassState.guarded); the warrior has no parry counter (D06).
@@ -234,18 +246,25 @@ internal class CorePlayerCombat(
         var castDefinition = definition
         var breakAmount = CoreBreak.skill(classId, definition.icon)
         var beastSpent = 0
+        var combo: CoreWarriorRules.Combo? = null
         if (classId == CoreClass.WARRIOR && definition.icon in CoreWarriorRules.spenders) {
             // The beast never gates a spender; whatever whole stacks are there, it takes them all for a heavier hit.
             // 獣の目覚め / 狂戦士の甲冑: the beast stays full, every spender takes all three and keeps them.
             beastSpent = if (awakened || armored) CoreWarriorRules.BEAST_MAX.toInt() else classState.takeStacks()
             skillBoost *= 1 + beastSpent * CoreWarriorRules.BEAST_DAMAGE_PERCENT_PER_STACK / 100.0
             breakAmount += beastSpent * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT
+            castDefinition = CoreWarriorRules.shape(castDefinition, beastSpent)
             if (definition.icon == "slam" && tickNumber <= finisherUntil) {
                 skillBoost *= 1 + CoreWarriorRules.FINISHER_BONUS_PERCENT / 100.0; finisherUntil = -1
                 breakAmount *= CoreBreak.FINISHER
-                castDefinition = definition.copy(startup = minOf(CoreWarriorRules.FINISHER_STARTUP, definition.startup))
+                castDefinition = castDefinition.copy(startup = minOf(CoreWarriorRules.FINISHER_STARTUP, castDefinition.startup))
             }
-            castDefinition = CoreWarriorRules.shape(castDefinition, beastSpent)
+            if (tickNumber <= comboUntil) combo = CoreWarriorRules.combo(comboFrom, definition.icon)
+            comboFrom = null; comboUntil = -1
+            if (combo == CoreWarriorRules.Combo.HOIST) castDefinition = castDefinition.copy(
+                radius = castDefinition.radius + CoreWarriorRules.HOIST_RADIUS_BONUS, crowdMillis = CoreWarriorRules.HOIST_AIRBORNE_MILLIS,
+                stunAfterMillis = maxOf(castDefinition.stunAfterMillis, CoreWarriorRules.HOIST_STUN_MILLIS))
+            if (combo != null) { notice(combo.label); sound(SoundEvent.ENTITY_WARDEN_ROAR, .4f, 1.2f) }
         }
         readyAt[id] = tickNumber + if (awakened && definition.icon in CoreWarriorRules.spenders && !definition.ultimate) cooldownTicks(id) / 2 else cooldownTicks(id)
         if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.ARMOR) {
@@ -259,13 +278,17 @@ internal class CorePlayerCombat(
         pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
             if (definition.motion == CoreSkillMotion.RAY) player.position.direction() else flatFacing(), startup,
             empowered = beastSpent.toDouble(), counter = counter, boost = skillBoost,
-            gardenCells = gardenCells, breakAmount = breakAmount)
+            gardenCells = gardenCells, breakAmount = breakAmount, combo = combo)
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
         if (startup > 1) vfx.playSkill(CoreSkillEffect(classId, castDefinition, pending!!.origin, pending!!.direction,
             CoreSkillVisualPhase.PREPARE, prepareTicks = startup - 1, gardenCells = gardenCells))
     }
+
+    /** 大地崩し may be cast out of a stagger, as long as there is a whole stack to throw (or the beast is full anyway). */
+    private fun breaksOut(id: Int) = classId == CoreClass.WARRIOR && skillDefinitions[id].icon == CoreWarriorRules.SHATTER &&
+        (awakened || armored || classState.resource >= 1.0)
 
     fun dodge() {
         if (defeated || encounter() == null || tickNumber < nextDodge || staggered) return
@@ -436,8 +459,9 @@ internal class CorePlayerCombat(
             if (action.landTick >= 0) {
                 // 天落とし: each ring goes out a little later than the one inside it.
                 val since = tickNumber - action.landTick
-                val ring = (since / CoreWarriorRules.SKYFALL_RING_TICKS).toInt()
-                if (since % CoreWarriorRules.SKYFALL_RING_TICKS == 0L && ring in 1 until action.definition.pulses) {
+                val every = if (action.combo == CoreWarriorRules.Combo.DOUBLE_DROP) CoreWarriorRules.DOUBLE_DROP_RING_TICKS else CoreWarriorRules.SKYFALL_RING_TICKS
+                val ring = (since / every).toInt()
+                if (since % every == 0L && ring in 1 until action.definition.pulses) {
                     skyfallRing(enemies, action, ring)
                     if (!actionsValid(enemies, epoch)) return
                 }
@@ -641,13 +665,28 @@ internal class CorePlayerCombat(
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.FRENZY) {
             // 狂乱: each swing steps in (a push the client moves, not a carried move) and reaches a little further;
             // the last is the overhead blow.
+            // It keeps to the one in front (a narrow fan) and breaks harder; a full beast's last blow breaks far more.
+            // 轟進＋狂乱: the first step goes further and the first swing lands heavy.
             val swing = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(s)
             val last = swing == s.pulses - 1
-            val push = flatFacing().mul(if (last) 7.0 else 5.0)
+            val rush = swing == 0 && action.combo == CoreWarriorRules.Combo.RUSH
+            val push = flatFacing().mul(if (last) 7.0 else if (rush) CoreWarriorRules.RUSH_FIRST_PUSH else 5.0)
             player.velocity = Vec(push.x(), player.velocity.y(), push.z())
+            action.hitScale = if (rush) CoreWarriorRules.RUSH_FIRST_SCALE else 1.0
+            action.breakScale = CoreWarriorRules.FRENZY_BREAK_SCALE * action.hitScale *
+                if (last && action.empowered >= CoreWarriorRules.BEAST_MAX) CoreWarriorRules.FRENZY_FULL_LAST_BREAK else 1.0
             val reach = s.radius + .3 * swing + if (last) .6 else 0.0
             emitSkillPulse(player.position, reach)
-            strike(enemies, player.position, action.direction, reach, if (last) .6 else .35, if (last) 2.0 else 1.0)
+            strike(enemies, player.position, action.direction, reach,
+                if (last) CoreWarriorRules.FRENZY_LAST_MIN_DOT else CoreWarriorRules.FRENZY_MIN_DOT, if (last || rush) 2.0 else 1.0)
+            return
+        }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.SHATTER) {
+            // 大地崩し: with no beast it is the quick way out, throwing the regulars round the warrior outward.
+            hitThisStrike.clear()
+            pulse(player.position)
+            if (!actionsValid(enemies, epoch)) return
+            if (action.empowered < 1.0) for (id in hitThisStrike.toList()) enemies.shove(id, player.position, CoreWarriorRules.SHATTER_SHOVE)
             return
         }
         when (s.motion) {
@@ -803,7 +842,7 @@ internal class CorePlayerCombat(
             if (classId == CoreClass.ASSASSIN && build.keystone == 0 && info != null && info.health / info.maximumHealth <= .35) classMultiplier *= 1.4
         }
         val damage = CoreCombatMath.outgoing(baseDamage, type, tags, stats, critical) *
-            (if (skill) skillAction!!.boost else 1.0) * classMultiplier * (if (tickNumber < whetstoneUntil) 1.2 else 1.0) * (if (weak) 1.25 else 1.0)
+            (if (skill) skillAction!!.boost * skillAction.hitScale else 1.0) * classMultiplier * (if (tickNumber < whetstoneUntil) 1.2 else 1.0) * (if (weak) 1.25 else 1.0)
         val applied = (if (fieldOrigin != null) enemies.applyCalculatedFieldDamage(id, player, fieldOrigin, damage, type, stats)
             else enemies.applyCalculatedDamage(id, player, damage, type, stats,
                 projectile = !classId.melee || definition?.motion == CoreSkillMotion.RAY || definition?.motion == CoreSkillMotion.FIELD || (definition?.radius ?: 0.0) > 7.0)) ?: return
@@ -828,7 +867,10 @@ internal class CorePlayerCombat(
         }
         else skillAction?.takeUnless { it.gained }?.let { action ->
             action.gained = true; classState.skillHit(classId, action.definition, build)
-            if (classId == CoreClass.WARRIOR && action.definition.icon !in CoreWarriorRules.spenders) feedBeast(CoreWarriorRules.BEAST_PER_SKILL)
+            if (classId == CoreClass.WARRIOR && action.definition.icon !in CoreWarriorRules.spenders) {
+                feedBeast(CoreWarriorRules.BEAST_PER_SKILL)
+                comboFrom = action.definition.icon; comboUntil = tickNumber + CoreWarriorRules.COMBO_TICKS
+            }
         }
         if (consumeMark) { classState.consumeMark(id, tickNumber); if (classId == CoreClass.ASSASSIN && build.keystone == 1) nextDodge = 0 }
         if (classId == CoreClass.TEMPLAR) enemies.taunt(id, player)
@@ -857,7 +899,7 @@ internal class CorePlayerCombat(
             ?: if (classId == CoreClass.WARRIOR && !skill && heavy) CrowdControl.FLINCH to CoreWarriorRules.FLINCH_MILLIS else null
         if (enemies.isBoss(id)) {
             // Bosses take break, not crowd control: the warrior breaks the most, every class a little (CoreBreak).
-            val amount = if (skill) skillAction?.breakAmount ?: 0.0 else CoreBreak.normal(classId, heavy)
+            val amount = if (skill) skillAction?.let { it.breakAmount * it.breakScale } ?: 0.0 else CoreBreak.normal(classId, heavy)
             enemies.applyBreak(id, amount, player)
         } else if (crowd != null) {
             // 地割り: the stun is put on first so it outlasts the launch; the launch then throws the target up.
@@ -941,8 +983,11 @@ internal class CorePlayerCombat(
     private fun leap(action: PendingSkill, high: Boolean = false) {
         val instance = player.instance ?: return
         val eye = player.position.add(0.0, player.eyeHeight, 0.0)
-        val target = CoreWarriorLeap.aim(eye, player.position.direction()) { instance.getBlock(it).solid() }
-        val velocity = CoreWarriorLeap.launch(player.position, target, if (high) CoreWarriorLeap.SKYFALL_APEX else null)
+        // 天落とし: few stacks hop low and short, a full beast jumps high and far (CoreWarriorRules.SKYFALL_REACH).
+        val n = action.empowered.toInt().coerceIn(0, 3)
+        val target = CoreWarriorLeap.aim(eye, player.position.direction(), solid = { instance.getBlock(it).solid() },
+            reach = if (high) CoreWarriorRules.SKYFALL_REACH[n] else CoreWarriorLeap.MAX_REACH)
+        val velocity = CoreWarriorLeap.launch(player.position, target, if (high) CoreWarriorRules.SKYFALL_APEX[n] else null)
         player.velocity = velocity.mul(20.0)  // Minestom velocity is blocks per second
         action.leapTick = tickNumber
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, .6f)
@@ -1198,7 +1243,7 @@ internal class CorePlayerCombat(
         garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); comboFrom = null; comboUntil = -1; armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0
         CoreArmamentPresentation.show(player)
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         crowd.clear()

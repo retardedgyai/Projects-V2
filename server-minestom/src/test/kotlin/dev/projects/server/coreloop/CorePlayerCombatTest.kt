@@ -461,11 +461,11 @@ class CorePlayerCombatTest {
         stats = CoreAffixStats(skillDamagePercent = 50.0, attackSpeedPercent = 50.0, cooldownReductionPercent = 25.0)) { h ->
         h.actor.classState.gain(1.0, h.journey.job, h.journey.build); h.actor.skill(1)
         assertEquals(192, h.actor.cooldownTicks(1))
-        h.ticks(7)
+        h.ticks(5) // one stack: 75% of 12 ticks, then 50% attack speed
         assertEquals(300.0, h.combat.bossHealth())
         h.ticks(1)
         assertEquals(300.0 - (20.0 + 12.0 * 3.2) * 1.5 * 1.25, h.combat.bossHealth(), 0.00001)
-        assertEquals(184, h.actor.cooldownRemaining(1))
+        assertEquals(186, h.actor.cooldownRemaining(1))
     }
 
     @Test
@@ -844,7 +844,7 @@ class CorePlayerCombatTest {
     }
 
     @Test fun `late AA during a skill executes once when recovery ends`() = arena { h ->
-        h.actor.skill(1); h.ticks(14)
+        h.actor.skill(1); h.ticks(9)
         repeat(10) { h.actor.attack() }
         h.ticks(4); assertEquals(241.6, h.combat.bossHealth(), .00001)
         h.ticks(1); assertEquals(229.6, h.combat.bossHealth(), .00001)
@@ -857,7 +857,7 @@ class CorePlayerCombatTest {
     }
 
     @Test fun `pending skill accepts only the latest intent and rechecks costs`() = arena { h ->
-        h.actor.skill(1); h.ticks(14)
+        h.actor.skill(1); h.ticks(9) // a slam with no beast comes out at 60% (7 ticks)
         h.actor.skill(2); h.actor.attack(); h.ticks(9)
         assertEquals(0, h.actor.cooldownRemaining(2))
         assertEquals(229.6, h.combat.bossHealth(), .00001)
@@ -890,7 +890,7 @@ class CorePlayerCombatTest {
     @Test fun `a slam long after the third hit is neither fast nor finisher boosted`() = arena { h ->
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(30)
         val before=h.combat.bossHealth()
-        h.actor.skill(1);h.ticks(11);assertEquals(before,h.combat.bossHealth())
+        h.actor.skill(1);h.ticks(6);assertEquals(before,h.combat.bossHealth()) // no beast: 60% of 12 ticks
         h.ticks(1);assertEquals(before-58.4,h.combat.bossHealth(),.00001)
     }
 
@@ -920,7 +920,7 @@ class CorePlayerCombatTest {
     @Test fun `the slam reaches further, lifts higher and splits twice with more beast`() {
         val base = CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "slam" }
         val shapes = (0..3).map { CoreWarriorRules.slam(base, it) }
-        assertEquals(listOf(4.0, 6.0, 8.0, 8.0), shapes.map { it.radius })
+        assertEquals(listOf(4.0, 6.0, 8.0, 10.0), shapes.map { it.radius })
         assertEquals(CrowdControl.FLINCH, shapes[0].crowd)
         assertTrue(shapes.drop(1).all { it.crowd == CrowdControl.AIRBORNE })
         assertTrue(shapes[1].crowdMillis < shapes[2].crowdMillis && shapes[2].crowdMillis < shapes[3].crowdMillis)
@@ -955,16 +955,69 @@ class CorePlayerCombatTest {
         val skills = CoreSkillCatalog.skills(CoreClass.WARRIOR).associateBy { it.icon }
         assertEquals(listOf(2, 3, 4, 5), (0..3).map { CoreWarriorRules.shape(skills.getValue(CoreWarriorRules.FRENZY), it).pulses })
         assertEquals(listOf(1, 1, 2, 3), (0..3).map { CoreWarriorRules.shape(skills.getValue(CoreWarriorRules.SKYFALL), it).pulses })
-        assertEquals(listOf(4.0, 5.0, 6.0, 7.0), (0..3).map { CoreWarriorRules.shape(skills.getValue(CoreWarriorRules.SHATTER), it).radius })
+        assertEquals(listOf(3.5, 5.0, 6.0, 7.0), (0..3).map { CoreWarriorRules.shape(skills.getValue(CoreWarriorRules.SHATTER), it).radius })
+        assertEquals(listOf(5.0, 5.0, 6.5, 8.0), (0..3).map { CoreWarriorRules.shape(skills.getValue(CoreWarriorRules.SKYFALL), it).range })
         assertTrue(CoreWarriorRules.spenders.containsAll(listOf("slam", CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER)))
     }
 
-    @Test fun `frenzy swings once more per stack and takes them all`() = arena(bossDistance = 2.5) { h ->
-        h.actor.classState.gain(3.0, h.journey.job, h.journey.build)
+    @Test fun `few stacks come out fast and a full beast winds up as listed`() {
+        val skills = CoreSkillCatalog.skills(CoreClass.WARRIOR).associateBy { it.icon }
+        assertEquals(listOf(7, 9, 11, 12), (0..3).map { CoreWarriorRules.shape(skills.getValue("slam"), it).startup })
+        assertEquals(listOf(8, 11, 13, 14), (0..3).map { CoreWarriorRules.shape(skills.getValue(CoreWarriorRules.SHATTER), it).startup })
+        assertEquals(skills.getValue("dash"), CoreWarriorRules.shape(skills.getValue("dash"), 0)) // builders are left alone
+    }
+
+    @Test fun `the shatter breaks out of a stagger with a stack, untouchable as the sword goes in`() = arena { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 5)); h.actor.reset()
+        assertEquals(CoreWarriorRules.SHATTER, h.actor.skillDefinitions[3].icon)
+        h.actor.hurt(25.0); assertTrue(h.actor.staggered)
+        h.actor.skill(3); assertTrue(h.actor.staggered) // no stack, no way out
+        h.actor.classState.gain(1.0, h.journey.job, h.journey.build)
+        h.actor.skill(3)
+        assertFalse(h.actor.staggered); assertTrue(h.actor.evading)
+        h.ticks(16); assertTrue(h.combat.bossHealth() < 300.0)
+    }
+
+    @Test fun `a frenzy right after a landed dash steps further and its first swing breaks heavy`() = arena { h ->
+        val id = h.combat.combatTargets().single().id
+        h.actor.skill(0); h.ticks(10) // 轟進 lands: one stack, and the frenzy may turn into 轟進＋狂乱
+        val before = h.combat.breakGauge(id)!!
+        h.actor.skill(2); h.ticks(20)
+        val swing = (4.0 + CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT) * CoreWarriorRules.FRENZY_BREAK_SCALE
+        assertEquals(before - swing * (CoreWarriorRules.RUSH_FIRST_SCALE + 2), h.combat.breakGauge(id)!!, 1e-6)
+    }
+
+    @Test fun `a frenzy long after the dash is a plain one`() = arena { h ->
+        val id = h.combat.combatTargets().single().id
+        h.actor.skill(0); h.ticks(10 + CoreWarriorRules.COMBO_TICKS.toInt())
+        val before = h.combat.breakGauge(id)!!
+        h.actor.skill(2); h.ticks(20)
+        val swing = (4.0 + CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT) * CoreWarriorRules.FRENZY_BREAK_SCALE
+        assertEquals(before - swing * 3, h.combat.breakGauge(id)!!, 1e-6)
+    }
+
+    @Test fun `each variant belongs to one builder and one spender`() {
+        assertEquals(CoreWarriorRules.Combo.HOIST, CoreWarriorRules.combo(CoreWarriorRules.DRAG, CoreWarriorRules.SHATTER))
+        assertEquals(CoreWarriorRules.Combo.DOUBLE_DROP, CoreWarriorRules.combo(CoreWarriorLeap.ICON, CoreWarriorRules.SKYFALL))
+        assertEquals(CoreWarriorRules.Combo.RUSH, CoreWarriorRules.combo("dash", CoreWarriorRules.FRENZY))
+        assertEquals(null, CoreWarriorRules.combo("dash", CoreWarriorRules.SHATTER))
+        assertEquals(null, CoreWarriorRules.combo(null, CoreWarriorRules.FRENZY))
+    }
+
+    @Test fun `frenzy swings once more per stack, takes them all and breaks harder`() = arena(bossDistance = 2.5) { h ->
+        h.actor.classState.gain(2.0, h.journey.job, h.journey.build)
         val id = h.combat.combatTargets().single().id
         h.actor.skill(2); h.ticks(40)
         assertEquals(0.0, h.actor.resource)
-        assertEquals(100.0 - 5 * 4.0 - 3 * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT * 5, h.combat.breakGauge(id)!!, .0001) // five swings
+        val swing = (4.0 + 2 * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT) * CoreWarriorRules.FRENZY_BREAK_SCALE
+        assertEquals(100.0 - 4 * swing, h.combat.breakGauge(id)!!, .0001) // four swings
+    }
+
+    @Test fun `a full beast frenzy's last blow breaks the boss outright`() = arena(bossDistance = 2.5) { h ->
+        h.actor.classState.gain(3.0, h.journey.job, h.journey.build)
+        val id = h.combat.combatTargets().single().id
+        h.actor.skill(2); h.ticks(40)
+        assertTrue(h.combat.isBroken(id))
     }
 
     @Test fun `skyfall sends one ring per stack out from where it lands`() = arena { h ->
@@ -1208,7 +1261,7 @@ class CorePlayerCombatTest {
     
 
     @Test fun `warrior buffer is discarded on map reset`() = arena { h ->
-        h.actor.skill(1);h.ticks(14);h.actor.skill(2)
+        h.actor.skill(1);h.ticks(9);h.actor.skill(2)
         h.actor.resetActions();h.ticks(30)
         assertEquals(241.6,h.combat.bossHealth(),.00001)
         assertEquals(0,h.actor.cooldownRemaining(2))

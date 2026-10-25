@@ -37,9 +37,8 @@ class CoreWarriorRefChoreographyTest {
             return f.offset.z() + f.scale.z() / 2
         }
         val ends = (0..3).map(::furrowEnd)
-        assertTrue(ends[0] < ends[1] && ends[1] < ends[2], "$ends")
-        assertEquals(ends[2], ends[3], 1e-9)
-        assertTrue(ends[0] in 3.5..5.0 && ends[2] in 7.5..9.0, "$ends")
+        assertTrue(ends[0] < ends[1] && ends[1] < ends[2] && ends[2] < ends[3], "$ends")
+        assertTrue(ends[0] in 3.5..5.0 && ends[2] in 7.5..9.0 && ends[3] in 9.5..11.0, "$ends")
         val split = CoreWarriorRefChoreography.parts(CoreSkillEffect(CoreClass.WARRIOR, CoreWarriorRules.slam(base, 3), Vec.ZERO,
             Vec(0.0, 0.0, 1.0), CoreSkillVisualPhase.PULSE, pulse = 1))!!
         assertTrue(split.isNotEmpty() && split.none { it.shape.endsWith("wind") }, "the second split is only the head")
