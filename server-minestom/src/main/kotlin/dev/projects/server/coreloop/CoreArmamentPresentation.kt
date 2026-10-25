@@ -36,7 +36,7 @@ internal object CoreArmamentPresentation {
     internal fun pose(item: ItemStack, pose: Int): ItemStack {
         if (item.get(DataComponents.ITEM_MODEL) !in models ||
             CoreLoopItems.gearSlot(item) != CoreGearSlot.WEAPON) return item
-        require(pose in 0..ANIM_POSE)
+        require(pose in 0..ANIM_POSE + 3)
         val old = item.get(DataComponents.CUSTOM_MODEL_DATA) ?: CustomModelData(emptyList(), emptyList(), emptyList(), emptyList())
         val value = pose.toFloat()
         if (old.floats().firstOrNull() == value) return item
@@ -88,7 +88,9 @@ internal object CoreArmamentPresentation {
         val start = ((instance.worldAge % 24000L) and 255L).toInt()
         fun tint(mark: Int) = net.kyori.adventure.text.format.TextColor.color(ticks.coerceIn(1, 255), start, mark)
         // Colours 1 and 2 tint the arms that come with the swing (the shader places them by their own keys).
-        val posed = pose(item, ANIM_POSE)
+        // 120 + beat: Java draws every value from 120 with the shader-moved model (the beat is in the tint); Geyser maps
+        // each beat to its own Bedrock item, whose attachable plays that beat (scripts/build_bedrock_greatsword.py).
+        val posed = pose(item, ANIM_POSE + (beat - 1).coerceIn(0, 2) + 1)
         val old = posed.get(DataComponents.CUSTOM_MODEL_DATA)!!
         player.setTag(shaderTag, ShaderSwing(player.aliveTicks + ticks, frame(item, 0)))
         player.setItemInMainHand(posed.with(DataComponents.CUSTOM_MODEL_DATA,
