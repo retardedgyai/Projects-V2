@@ -15,3 +15,4 @@
 - `boss-gear-map.html` — 桜牙獣と黒翳竜を並べた、素材→器→特性→装備の図。
 - `progression-map.html` — 強くなる道筋の地図（決まった／まだ）と、Tierの上がり方の比べ。公開版 https://claude.ai/artifact/EpYJyuU2uMjm39xuHTDPWe
 - `tier-up-sinks.html` — Tierの上がり方とシンクの4案（丸ごと引き継ぎはなし）。
+- `craft-spec.html` — クラフトの仕様（素材→製造→強化→破損→修理）と修理の材料の2案。

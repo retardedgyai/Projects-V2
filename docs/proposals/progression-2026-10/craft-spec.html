@@ -1,0 +1,148 @@
+<title>クラフトの仕様</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: header; flow picture (素材 Tn → 製造 Tn → 強化 → 壊れる → 修理 → 戻る) with sinks marked in red; then the open question (修理の材料) with A/B toggle and a small repair demo */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --green: #9fd49a; --red: #e58b80; --sink: #e07a6a;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1200px; margin: 0 auto; padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.4rem; margin: 0; }
+h2 { font-size: 1.02rem; margin: 0; }
+p { margin: 0; color: var(--muted); max-width: 80ch; }
+.pic { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: #0f1420; }
+.pic svg { display: block; width: 100%; min-width: 920px; height: auto; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.rule { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: .9rem; }
+.rule b { color: var(--green); display: block; font-size: .8rem; letter-spacing: .06em; }
+.panel { background: var(--panel); border: 1px solid #5b4a2a; border-radius: 14px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.opts { display: flex; gap: 8px; flex-wrap: wrap; }
+.opt { font: inherit; text-align: left; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 8px 14px; cursor: pointer; display: grid; gap: 2px; flex: 1 1 260px; }
+.opt[aria-pressed="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.opt .k { color: var(--gold); font-weight: 700; }
+.opt .s { font-size: .82rem; color: var(--muted); }
+.opt:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.rec { font-size: .72rem; color: #1a1405; background: var(--gold); border-radius: 6px; padding: 0 6px; margin-left: 6px; }
+.demo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 760px) { .demo { grid-template-columns: 1fr; } }
+.box { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; font-size: .88rem; min-width: 0; }
+.item { background: #0f131d; border: 2px solid #3a3550; border-radius: 6px; padding: 6px 10px; }
+.item.broken { border-color: #6a3a36; }
+.num { font-family: var(--num); color: var(--gold); }
+.btn { font: inherit; background: #222b40; color: var(--fg); border: 1px solid #34405f; border-radius: 8px; padding: 4px 12px; cursor: pointer; justify-self: start; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.log { font-size: .84rem; color: var(--muted); min-height: 1.5em; }
+.pros { font-size: .86rem; }
+.pros b { color: var(--green); } .pros i { color: var(--red); font-style: normal; }
+</style>
+
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>クラフトの仕様 ── 整理</h1>
+    <p>藍の言葉をそのまま絵にした。赤い丸がシンク（物が消える所）。いちばん下が、まだ迷っている「修理の材料」。</p>
+  </header>
+
+  <div class="pic">
+    <svg viewBox="0 0 1120 300" role="img" aria-label="素材から製造、強化、破損、修理までの流れとシンクの場所">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#5b6a90"/></marker></defs>
+      <g font-family="M PLUS 2, sans-serif" text-anchor="middle">
+        <rect x="20" y="40" width="170" height="80" rx="12" fill="#1b2233" stroke="#9fd49a"/><text x="105" y="74" fill="#ebe7dc" font-size="15">T4 の素材</text><text x="105" y="96" fill="#959bb0" font-size="11">採取・精製・市場</text>
+        <rect x="250" y="40" width="170" height="80" rx="12" fill="#1b2233" stroke="#9fd49a"/><text x="335" y="74" fill="#ebe7dc" font-size="15">T4 の武器を作る</text><text x="335" y="96" fill="#959bb0" font-size="11">T1 から上げなくていい</text>
+        <rect x="480" y="40" width="170" height="80" rx="12" fill="#1b2233" stroke="#9fd49a"/><text x="565" y="74" fill="#ebe7dc" font-size="15">強化 +1〜+30</text><text x="565" y="96" fill="#959bb0" font-size="11">素材を使う・失敗あり</text>
+        <rect x="710" y="40" width="170" height="80" rx="12" fill="#2a1616" stroke="#e58b80"/><text x="795" y="74" fill="#e58b80" font-size="15">壊れる</text><text x="795" y="96" fill="#959bb0" font-size="11">+15 から、失敗したとき</text>
+        <rect x="940" y="40" width="160" height="80" rx="12" fill="#1b2233" stroke="#e6c477" stroke-dasharray="6 5"/><text x="1020" y="74" fill="#e6c477" font-size="15">修理</text><text x="1020" y="96" fill="#959bb0" font-size="11">何を使う？（下で選ぶ）</text>
+        <!-- sinks -->
+        <circle cx="565" cy="160" r="12" fill="#e07a6a"/><text x="565" y="192" fill="#e07a6a" font-size="12">強化の素材が消える</text>
+        <circle cx="1020" cy="160" r="12" fill="#e07a6a"/><text x="1020" y="192" fill="#e07a6a" font-size="12">修理の材料が消える</text>
+        <circle cx="335" cy="160" r="12" fill="#e07a6a"/><text x="335" y="192" fill="#e07a6a" font-size="12">製造の素材が消える</text>
+        <text x="560" y="270" fill="#959bb0" font-size="12">直った武器は、強化値とMODを持ったまま戦いに戻る</text>
+      </g>
+      <g fill="none" stroke="#5b6a90" stroke-width="2.5" marker-end="url(#ar)">
+        <path d="M190 80 L248 80"/><path d="M420 80 L478 80"/><path d="M650 80 L708 80"/><path d="M880 80 L938 80"/>
+        <path d="M1020 120 C1020 240 565 240 565 124"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="rules">
+    <div class="rule"><b>決まった</b>T1 から順に上げなくていい。T4 の素材があれば、いきなり T4 を作れる（Albion と同じ）。</div>
+    <div class="rule"><b>決まった</b>Tier を上げる「昇格」はない。強化値・品質・MOD はその装備だけの物で、次の Tier へは持っていけない。</div>
+    <div class="rule"><b>今のコード</b>強化は +15 から、失敗すると壊れることがある（+値は残る）。壊れている間は強化分と MOD が効かない。</div>
+    <div class="rule"><b>今のコード</b>修理は「同じ Tier・同じ型の +0 の予備を1つ使う」か「魔術の修復の封蝋を Tier の数だけ使う」のどちらか。封蝋の道を残すかは A/B のあとで。</div>
+  </div>
+
+  <div class="panel">
+    <h2>迷っている所：修理に何を使う？</h2>
+    <div class="opts" role="group" aria-label="修理の材料">
+      <button class="opt" data-o="A" aria-pressed="true"><span class="k">A 同じ Tier の装備をそのまま使う<span class="rec">おすすめ</span></span><span class="s">T4 の剣を直すには、T4 の剣（+0 でいい）を1本つぶす。今のコードと同じ。</span></button>
+      <button class="opt" data-o="B" aria-pressed="false"><span class="k">B 装備を分解して「修理材」にする</span><span class="s">どの装備も分解すると、その Tier の修理材になる。修理材で直す。修理材は市場で売り買いできる。</span></button>
+    </div>
+    <div class="demo">
+      <div class="box">
+        <span style="color:var(--muted)">直したい物</span>
+        <div class="item broken"><b>T4 大剣 <span class="num">+18</span></b>　<span style="color:var(--red)">壊れている</span></div>
+        <span style="color:var(--muted)">持ち物</span>
+        <div id="bag" style="display:grid;gap:4px"></div>
+      </div>
+      <div class="box">
+        <div id="actions" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        <div class="log" id="log" aria-live="polite"></div>
+        <div class="pros" id="pros"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+(() => {
+  let o = 'A', st;
+  const fresh = () => ({ fixed: false, spare: 1, market: 2, parts: 0, log: '' });
+  st = fresh();
+  const PROS = {
+    A: '<b>いい所</b>：装備が丸ごと1本消える＝強いシンク。鍛冶は「修理用の +0 の剣」を作って売れる。今のコードのまま。<br><i>気になる所</i>：武器の型が違うと使えない（今のコードは同じ型が要る）。予備を持ち歩く手間。',
+    B: '<b>いい所</b>：どの装備からでも作れて融通がきく。修理材が市場の品目になる。いらない装備の行き先ができる。<br><i>気になる所</i>：品目が1つ増える。分解で何個になるかの調整が要る（少ないほどシンクが強い）。',
+  };
+  function render() {
+    document.querySelectorAll('.opt').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.o === o)));
+    const bag = [];
+    if (o === 'A') bag.push(`T4 大剣 +0（予備）×<span class="num">${st.spare}</span>`);
+    else { bag.push(`T4 の古い防具 ×<span class="num">${st.spare}</span>`); bag.push(`T4 修理材 ×<span class="num">${st.parts}</span>`); }
+    document.getElementById('bag').innerHTML = bag.map(x => `<div class="item">${x}</div>`).join('');
+    const acts = [];
+    if (o === 'A') {
+      acts.push(`<button class="btn" data-a="fixA" ${st.spare && !st.fixed ? '' : 'disabled'}>予備の剣で直す</button>`);
+      acts.push(`<button class="btn" data-a="buyA" ${st.market ? '' : 'disabled'}>市場で T4 +0 の剣を買う</button>`);
+    } else {
+      acts.push(`<button class="btn" data-a="salv" ${st.spare ? '' : 'disabled'}>古い防具を分解 → 修理材2</button>`);
+      acts.push(`<button class="btn" data-a="buyB">市場で修理材を買う</button>`);
+      acts.push(`<button class="btn" data-a="fixB" ${st.parts >= 3 && !st.fixed ? '' : 'disabled'}>修理材3で直す</button>`);
+    }
+    acts.push(`<button class="btn" data-a="reset">最初から</button>`);
+    document.getElementById('actions').innerHTML = acts.join('');
+    document.getElementById('log').textContent = st.fixed ? '直った！ +18 と MOD はそのまま。使った物は消えた。' : st.log;
+    document.querySelector('.item.broken').innerHTML = st.fixed ? '<b>T4 大剣 <span class="num">+18</span></b>　<span style="color:var(--green)">直った</span>' : '<b>T4 大剣 <span class="num">+18</span></b>　<span style="color:var(--red)">壊れている</span>';
+    document.getElementById('pros').innerHTML = PROS[o];
+  }
+  document.querySelector('.opts').addEventListener('click', e => { const b = e.target.closest('.opt'); if (!b) return; o = b.dataset.o; st = fresh(); render(); });
+  document.getElementById('actions').addEventListener('click', e => {
+    const b = e.target.closest('.btn'); if (!b || b.disabled) return;
+    const a = b.dataset.a;
+    if (a === 'reset') st = fresh();
+    if (a === 'fixA') { st.spare--; st.fixed = true; }
+    if (a === 'buyA') { st.market--; st.spare++; st.log = '鍛冶が作った T4 +0 の剣を市場で買った。'; }
+    if (a === 'salv') { st.spare--; st.parts += 2; st.log = '古い防具を分解して修理材2（防具は消えた）。'; }
+    if (a === 'buyB') { st.parts++; st.log = '市場で修理材を1つ買った。'; }
+    if (a === 'fixB') { st.parts -= 3; st.fixed = true; }
+    render();
+  });
+  render();
+})();
+</script>
