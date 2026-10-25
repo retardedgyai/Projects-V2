@@ -62,14 +62,17 @@ def fallen_trunk(bx, bz, ang, L=52, D0=11.0, D1=8.0, seed=1):
     cells = {}
     centre = []
     gbase = at(bx, bz)
+    gend = at(int(round(bx + ux * L)), int(round(bz + uz * L)))
+    mid = [at(int(round(bx + ux * L * f)), int(round(bz + uz * L * f))) for f in (.25, .5, .75)]
+    gend = int(round(min(max(gend, 2 * max(mid) - gbase - 2), gbase + 6)))        # the line stays near the ground all along
     for i in range(int(L * 2) + 1):
         t = i / (L * 2)
-        lat = math.sin(t * 2.6 + seed) * 1.6
+        lat = math.sin(t * 2.6 + seed) * .6
         cx, cz = bx + ux * t * L + nx * lat, bz + uz * t * L + nz * lat
         D = D0 + (D1 - D0) * t
         rh, rv = D / 2, D / 2 * .82
-        g = at(int(round(cx)), int(round(cz)))
-        g = min(g, gbase + 2) if t < .15 else g                        # the heavy base end rests low
+        g = gbase + (gend - gbase) * t                                 # a trunk is rigid: one straight line from root to crown end,
+        g = int(round(g))                                              # sunk where the ground rises, bridging where it dips
         cy = g - D * sink + rv
         centre.append((cx, cy, cz, rh, rv, t, g))
         ri = int(rh) + 2
@@ -91,14 +94,21 @@ def fallen_trunk(bx, bz, ang, L=52, D0=11.0, D1=8.0, seed=1):
         if inner:
             put(x, y, z, "stripped_dark_oak_log_top", "stripped_dark_oak_log")                  # sapwood under the bark
         else:
-            shade = s * (1 if nz > 0 else -1) > rh * .3 or dy < -rv * .3                       # the north / under side
-            put(x, y, z, bark(x, y, z, shade=shade))
+            # bark in long plates running along the trunk, so it reads as a lying log, not a wall: the stripe follows the
+            # angle around the axis and wanders a little along the length
+            th = math.atan2(dy / max(rv, 1), s / max(rh, 1))
+            stripe = int((th + math.pi) / math.tau * 16 + (noise3(t * 40, 0, 0, 716 + seed, 3) - .5) * 1.4)
+            under = dy < -rv * .3
+            m = "spruce_wood" if (stripe % 3 == 0 or under) else "dark_oak_wood"
+            if not under and stripe % 5 == 2 and _h(int(t * 30), stripe, 0, 717) < .5: m = "stripped_dark_oak_log"   # bark sloughed off in strips
+            put(x, y, z, m)
     # moss along the spine, in long patches, with tongues running down the sides
     for (x, y, z), (s, dy, rh, rv, t, cy, g) in cells.items():
         if (x, y + 1, z) in G.w.b or (x, y, z) not in G.w.b: continue
-        if noise3(x * .5, 0, z * .5, 711, 4) > .58:
+        if noise3(x * .5, 0, z * .5, 711, 4) > .66 and dy > rv * .45:
+            if _h(x, y, z, 718) < .3 and (x, y + 1, z) not in G.w.b: put(x, y + 1, z, "fern" if _h(x, y, z, 719) < .5 else "short_grass", shape="plant")
             put(x, y, z, "moss_block")
-            if _h(x, y, z, 712) < .35: put(x, y + 1, z, "moss_block", shape="carpet")
+            if _h(x, y, z, 712) < .35 and (x, y + 1, z) not in G.w.b: put(x, y + 1, z, "moss_block", shape="carpet")
             for k in range(1, 1 + int(_h(x, 1, z, 713) * 3)):                                 # tongue
                 p = (int(round(x + nx * math.copysign(1, s) * k * .5)), y - k, int(round(z + nz * math.copysign(1, s) * k * .5)))
                 if p in G.w.b and G.w.b[p][0] == "full": put(*p, "moss_block")
@@ -180,12 +190,14 @@ def fallen_trunk(bx, bz, ang, L=52, D0=11.0, D1=8.0, seed=1):
         a = R.random() * math.tau
         for j in range(R.randint(2, 5)): put(int(round(sx + math.cos(a) * 2.5)), sg + sh + j - 2, int(round(sz + math.sin(a) * 2.5)), "spruce_planks", shape="fence")
     # branch stubs on the upper half, one broken limb lying alongside
-    for k in range(5):
-        cx, cy, cz, rh, rv, t, g = centre[int(len(centre) * R.uniform(.2, .85))]
-        side = R.choice((-1, 1))
-        p0 = (cx + nx * side * rh * .6, cy + rv * .6, cz + nz * side * rh * .6)
-        p1 = (p0[0] + nx * side * R.uniform(2, 5), p0[1] + R.uniform(1, 4), p0[2] + nz * side * R.uniform(2, 5))
-        G.tube(p0, p1, 1.3, .8)
+    for k in range(3):                                                  # slim, raked toward the crown end the way limbs grow, snapped short
+        cx, cy, cz, rh, rv, t, g = centre[int(len(centre) * (.35 + k * .2))]
+        side = (-1, 1)[k % 2]
+        p0 = (cx + nx * side * rh * .7, cy + rv * .4, cz + nz * side * rh * .7)
+        Lb = R.uniform(3, 5)
+        p1 = (p0[0] + (nx * side * .75 + ux * .65) * Lb, p0[1] + R.uniform(.5, 1.5), p0[2] + (nz * side * .75 + uz * .65) * Lb)
+        G.tube(p0, p1, .9, .55)
+        put(int(round(p1[0])), int(round(p1[1])), int(round(p1[2])), "stripped_dark_oak_log_top", "stripped_dark_oak_log")
     cx, cy, cz, rh, rv, t, g = centre[len(centre) // 2]
     lx0, lz0 = cx + nx * (rh + 4), cz + nz * (rh + 4)
     G.tube((lx0, at(int(lx0), int(lz0)), lz0), (lx0 + ux * 14, at(int(lx0 + ux * 14), int(lz0 + uz * 14)), lz0 + uz * 14), 1.4, 1.0)

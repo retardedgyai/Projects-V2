@@ -35,7 +35,7 @@ for p in zone1.SPEC.get("pieces", []):
         c.reserve("水道橋", rx, zz, 0, allow_route=True)
         setpieces.aqueduct(x0, zz, bays=7, collapsed=5, seed=21, root_from=(236, 150))
     elif p["kind"] == "fallen_trunk":
-        setpieces.fallen_trunk(x, zz, .25, L=52, seed=31)
+        setpieces.fallen_trunk(x, zz, .25, L=46, D0=8.0, D1=5.5, seed=31)
     elif p["kind"] == "stump":
         c.reserve("切り株", x, zz, p["r"])
         setpieces.stump(x, zz, D=19, seed=41)
@@ -56,7 +56,7 @@ kit.ground_cover(c); print("cover", round(time.time() - t0, 1), flush=True)
 for zc in range(z.B):                                           # solid ground under every column, whatever the pieces dug
     for xc in range(z.B):
         hc = int(z.hi[zc, xc])
-        for y in range(hc - 4, hc):
+        for y in range(hc - (3 if (xc, zc) in bl.carved else 4), hc):
             if (xc, y, zc) not in bl.b: bl.b[(xc, y, zc)] = ("full", "dirt", "dirt")
         if (xc, hc, zc) not in bl.b: bl.b[(xc, hc, zc)] = ("full", "coarse_dirt", "coarse_dirt")
 for _ in range(3):                                              # tidy: loose single blocks left by diagonal tubes

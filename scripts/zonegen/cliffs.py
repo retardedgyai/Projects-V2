@@ -95,7 +95,7 @@ def finish(bl, Z, slope, concav):
                     m2 = ("short_grass", "fern", "short_grass")[int(_h(x, 6, z, 388) * 3) % 3]; b[(x, h + 1, z)] = ("plant", m2, m2)
                 n_ledge += 1
             # moss in grooves: a few blocks under a ledge where the face dips in
-            if concav[z, x] > .25:
+            if concav[z, x] > .25 and (x, z) not in getattr(bl, "carved", {}):
                 for k in range(1, 4):
                     if (x, h - k, z) in b and b[(x, h - k, z)][0] == "full" and _h(x, h - k, z, 389) < .5 - k * .1:
                         b[(x, h - k, z)] = ("full", "moss_block", "moss_block")
@@ -130,7 +130,7 @@ def sculpt(bl, Z, R):
     n_b = n_c = n_e = 0
     for (x, z, dx, dz, nh, h) in faces:
         r = _h(x, nh, z, 401)
-        if r < .09:                                                    # a buttress / boulder bulging out
+        if r < .04:                                                    # a buttress / boulder bulging out
             y0 = R.randint(nh + 1, max(nh + 1, h - 1))
             rx, ry, ro = R.uniform(1.8, 4.2), R.uniform(1.8, 4.5), R.uniform(1.0, 2.4)
             px, pz = -dz, dx                                           # along the wall
@@ -144,7 +144,7 @@ def sculpt(bl, Z, R):
                         if (X, Y, Zc) in b: continue
                         top = (X, Y + 1, Zc) not in b and v >= ry * .5
                         b[(X, Y, Zc)] = ("full", "moss_block", "moss_block") if top and _h(X, Y, Zc, 403) < .5 else \
-                            ("full",) + (block(X, Y, Zc, .7, .6, -.3),) * 2
+                            ("full",) + (face_block(X, Y, Zc, .6, .7, False, None),) * 2
             n_b += 1
         elif r < .1 and h - nh >= 2:                                   # a crack cut back into the wall
             px, pz = -dz, dx
@@ -243,3 +243,83 @@ def rockmass(bl, Z, x0, x1, z0, z1, R):
                 if q in b or Y - j <= hi[Zc, X]: break
                 b[q] = ("plant", "hanging_roots" if j < 3 else "vine", "vine")
     return dict(plates=len(plates), blocks=len(filled))
+
+
+def bed_of(x, y, z):
+    """Strata: beds 4-8 blocks thick, boundaries wander +-1.5 and dip gently, so bed lines run across the face but never level."""
+    yy = y + (noise3(x, 0, z, 431, 22) - .5) * 3 + (x * .04 + z * .02)
+    i = 0; top = 40.0
+    while top <= yy:
+        top += 4 + _h(i, 0, 0, 432) * 4; i += 1
+    return i, yy - (top - (4 + _h(i - 1, 0, 0, 432) * 4) if i else 0)   # bed index, height above the bed's base
+
+
+def warp(Z, slope):
+    """The face as a builder carves it, not as a staircase: the heightmap is sampled at a point pushed uphill or downhill by
+    a 3D field, so the wall stands vertical and its line moves in and out with height:
+      - ribs: tall vertical buttresses and gullies (noise stretched 4x in y)
+      - beds: each stratum steps out or in by up to a block; the base of every bed is eaten back (a shadow groove)
+      - the rim stays put: the top 4 blocks of every column are solid, so nothing can fall through.
+    Returns {(x, z): (top, solid y list)} for the cliff columns."""
+    B = Z.B; hi = Z.hi.astype(np.float32); kind = Z.kind
+    k = np.ones(5, np.float32) / 5
+    sm = np.apply_along_axis(lambda r: np.convolve(np.pad(r, 2, mode="edge"), k, "valid"), 0, hi)
+    sm = np.apply_along_axis(lambda r: np.convolve(np.pad(r, 2, mode="edge"), k, "valid"), 1, sm)
+    gz, gx = np.gradient(sm); gl = np.maximum(np.hypot(gx, gz), 1e-3)
+    ux, uz = gx / gl, gz / gl                                          # uphill
+    face = (slope > 1.0) & (kind == 0)
+    busy = kind != 0
+    near = np.zeros_like(busy); fz = np.zeros_like(face)
+    for dz in range(-3, 4):
+        for dx in range(-3, 4):
+            near |= np.roll(np.roll(busy, dz, 0), dx, 1)
+            if abs(dx) <= 2 and abs(dz) <= 2: fz |= np.roll(np.roll(face, dz, 0), dx, 1)
+    zone = fz & ~near & (gl > .6)
+    zone[:4] = zone[-4:] = False; zone[:, :4] = zone[:, -4:] = False
+
+    def H(px, pz):
+        x0, z0 = int(math.floor(px)), int(math.floor(pz)); fx, fz_ = px - x0, pz - z0
+        x0 = min(max(x0, 0), B - 2); z0 = min(max(z0, 0), B - 2)
+        return (hi[z0, x0] * (1 - fx) * (1 - fz_) + hi[z0, x0 + 1] * fx * (1 - fz_) + hi[z0 + 1, x0] * (1 - fx) * fz_ + hi[z0 + 1, x0 + 1] * fx * fz_)
+
+    out = {}
+    for z, x in zip(*np.nonzero(zone)):
+        h0 = int(hi[z, x]); lo = int(min(hi[max(0, z - 3):z + 4, max(0, x - 3):x + 4].min(), h0)) - 3
+        top_max = int(hi[max(0, z - 3):z + 4, max(0, x - 3):x + 4].max())
+        ys = []
+        for y in range(lo, top_max + 1):
+            bed, above = bed_of(x, y, z)
+            d = (noise3(x * 1.0, y * .2, z * 1.0, 433, 8) - .5) * 5.0 + (noise3(x, y * .5, z, 442, 3) - .5) * .9        # ribs and gullies
+            d += (_h(bed, 0, 0, 434) - .5) * 1.8                           # each bed sits a little in or out
+            if above < 1.2: d -= 1.1                                       # the eaten base of a bed: a groove of shadow
+            if y <= H(x + .5, z + .5) + .0 and y < lo + 4: ys.append(y); continue
+            if y <= H(x + .5 + ux[z, x] * d, z + .5 + uz[z, x] * d) - .5: ys.append(y)
+        if not ys: continue
+        t = max(ys)
+        if t > h0 + 1: t = h0 + 1; ys = [y for y in ys if y <= t]          # never grow a column far above where it was
+        for y in range(t - 3, t + 1):
+            if y not in ys: ys.append(y)
+        out[(int(x), int(z))] = (t, sorted(ys))
+    return out
+
+
+def face_block(x, y, z, expo, frac, under, depth):
+    """Material of a carved face block: one material per bed (stone / andesite / tuff), shifted darker in shade, at the
+    foot and under anything that overhangs; a neighbouring step in small clusters; light rock only at the very rim."""
+    bed, above = bed_of(x, y, z)
+    tone = _h(bed, 1, 0, 435)
+    base = 2 if tone < .5 else (3 if tone < .8 else 1)                    # LADDER index: stone / andesite / tuff
+    s = expo * .6 + (frac - .5) * 1.2 + (noise3(x, y * .4, z, 436, 12) - .5) * .6
+    if s < -.35: base -= 1
+    if s > .55 and base < 3: base += 1
+    if above < 1.2: base -= 1                                              # groove row
+    if under: base -= 2
+    if depth is not None and depth <= 1 and not under: base += 1           # the lip of a ledge catches light
+    base = min(max(base, 0), 4)
+    name = LADDER[base]
+    if _h(x // 2, y // 2, z // 2, 437) < .14: name = LADDER[min(4, max(0, base + (1 if _h(x // 2, y // 3, z // 2, 438) < .5 else -1)))]
+    if name == "diorite" and _h(x // 2, y // 2, z // 2, 439) > .35: name = "andesite"
+    return name
+
+
+LADDER = ["cobbled_deepslate", "tuff", "stone", "andesite", "andesite"]

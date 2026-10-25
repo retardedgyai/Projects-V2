@@ -1,0 +1,8 @@
+cliff1 330 g 215 350 g+12 165
+cliff2 100 g 215 125 g+8 168
+cliff6 400 g 210 420 g+8 172
+ramp 250 g 372 280 g+4 338
+trunk 80 g+3 290 50 g 268
+trunk2 62 g 250 45 g+2 268
+fungal 125 g 260 95 g+8 235
+meadow 300 g 420 340 g 470

@@ -193,7 +193,8 @@ def ground_cover(c):
                 if rise and _h(x, 77, z, 991) < .8:
                     c.put(x, y, z, "short_grass" if _h(x, 1, z, 9) < .6 else "fern", shape="plant")
                 elif drift > .78 and _h(x, 2, z, 41) < (drift - .76) * 2.2 and Z.forest[z, x] < .3:
-                    c.put(x, y, z, FL[int(noise3(x, 0, z, 403, 30) * 12) % 6], shape="plant")
+                    main = "oxeye_daisy" if noise3(x, 0, z, 403, 60) < .5 else "azure_bluet"     # one white species per meadow
+                    c.put(x, y, z, main if _h(x, 5, z, 404) > .12 else "cornflower", shape="plant")   # a blue accent, rare
                 elif clump > .52 and _h(x, 3, z, 42) < (clump - .45) * 2.2:
                     c.put(x, y, z, "tall_grass_top" if clump > .78 and _h(x, 4, z, 43) < .4 else "short_grass", shape="plant")
             elif t in ("podzol_top", "moss_block"):

@@ -23,6 +23,9 @@ class Blocks:
         Z = self.z; B = Z.B; hi = Z.hi; kind = Z.kind; water = Z.water
         slope, expo, concav = cliffs.fields(Z.hi.astype(np.float32))
         Z.slope = slope
+        W = cliffs.warp(Z, slope)                                          # carved faces: vertical, ribbed, bedded
+        for (x, z), (t, ys) in W.items(): hi[z, x] = t
+        self.carved = W
         p = np.pad(hi, 1, mode="edge")
         lo_nb = np.minimum.reduce([p[1:-1, 2:], p[1:-1, :-2], p[2:, 1:-1], p[:-2, 1:-1], hi])
         hi_nb = np.maximum.reduce([p[1:-1, 2:], p[1:-1, :-2], p[2:, 1:-1], p[:-2, 1:-1], hi])
@@ -33,10 +36,21 @@ class Blocks:
             for x in range(B):
                 h = int(hi[z, x]); k = int(kind[z, x])
                 lo = int(lo_nb[z, x]) - 3
+                if (x, z) in W:
+                    t, ys = W[(x, z)]; S = set(ys); lo2 = min(ys)
+                    rim = t >= int(hi_nb[z, x])
+                    for y in ys:
+                        if y == t and rim:                                 # the rim: turf on top; where the side shows, an overgrown lip of moss, not a dirt band
+                            put(x, y, z, *(("moss_block",) if (y - 1) not in S or t - int(lo_nb[z, x]) >= 2 else ("grass_block_top", "grass_block_side"))); continue
+                        fr = (y - lo2) / max(1, int(hi_nb[z, x]) - lo2)
+                        if (y + 1) not in S and noise3(x, y * 2, z, 441, 6) > .5:   # green gathers on every shelf the wall throws out
+                            put(x, y, z, "moss_block"); continue
+                        put(x, y, z, cliffs.face_block(x, y, z, float(expo[z, x]), fr, (y - 1) not in S and y > lo2, t - y))
+                    continue
                 face = slope[z, x] > 1.25 and k == 0
                 top_face = int(hi_nb[z, x])
-                drop = h - int(lo_nb[z, x]) - 3                           # how far this column's side is exposed
-                soil = 3 if drop < 2 else (1 if noise3(x, 0, z, 395, 3) > .55 else 0)   # an exposed side shows rock, at most one row of soil
+                drop = h - int(lo_nb[z, x])                               # how far this column's side is exposed
+                soil = 3 if drop < 2 else (1 if drop > 2 and noise3(x, 0, z, 395, 3) > .6 else 0)   # 1-block contour lines stay soil; a taller side shows rock, at most one row of soil
                 for y in range(lo, h):
                     depth = h - y
                     if face or depth > soil:
@@ -75,6 +89,23 @@ class Blocks:
                     continue
                 top = TM.surface(x, z, float(slope[z, x]), float(forest[z, x]), 0.0)
                 put(x, h, z, *top)
+        # around the carved faces no soil shows sideways: an exposed dirt side becomes rock, an exposed turf block becomes moss
+        near = set()
+        for (x, z) in W:
+            for dx in (-2, -1, 0, 1, 2):
+                for dz in (-2, -1, 0, 1, 2): near.add((x + dx, z + dz))
+        for z in range(1, B - 1):                                           # and every other face 3+ high (road verges on a rim too)
+            for x in range(1, B - 1):
+                if kind[z, x] in (0, 7) and int(hi[z, x]) - int(lo_nb[z, x]) >= 3: near.add((x, z))
+        for (x, z) in near:
+            if not (0 <= x < B and 0 <= z < B) or kind[z, x] not in (0, 7): continue
+            h = int(hi[z, x])
+            for y in range(h - 6, h + 1):
+                v = self.b.get((x, y, z))
+                if not v or v[1] not in ("dirt", "coarse_dirt", "grass_block_top"): continue
+                if all((x + a, y, z + c) in self.b for a, c in ((1, 0), (-1, 0), (0, 1), (0, -1))): continue
+                if v[1] == "grass_block_top": put(x, y, z, "moss_block")
+                else: put(x, y, z, cliffs.face_block(x, y, z, float(expo[z, x]), .8, False, h - y))
         self.cliff_stats = cliffs.finish(self, Z, slope, concav)
         import random as _r
         self.cliff_stats.update(cliffs.sculpt(self, Z, _r.Random(5)))

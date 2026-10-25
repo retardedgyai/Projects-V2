@@ -164,7 +164,7 @@ def fungal(FX, FZ):
         top = (x + lean[0], g + height, z + lean[1])
         pts = bez((x, g - 1, z), (x - lean[0] * .3, g + height * .55, z - lean[1] * .3), top, 10)   # a stem that bows, then reaches for light
         for i, (p0, p1) in enumerate(zip(pts, pts[1:])):
-            r_ = 1.1 + (1 - i / 10) * (.5 + height * .04)
+            r_ = .8 + (1 - i / 10) * (.4 + height * .03)                   # slender: a stem, not a pillar
             tube(p0, p1, r_, r_, mat=("mushroom_stem",))
         for k2 in range(6):                                           # root flare: thick at the stem, gripping the ground
             a = k2 / 6 * math.tau + R.uniform(-.3, .3); L = R.uniform(3, 5.5)
@@ -174,11 +174,14 @@ def fungal(FX, FZ):
                 if math.hypot(dx, dz) < 4 + 2.5 * noise3(x + dx, 0, z + dz, 73, 2) and (x + dx, at(x + dx, z + dz), z + dz) in w.b:
                     if w.b[(x + dx, at(x + dx, z + dz), z + dz)][1] in ("podzol_top", "moss_block", "grass_block_top", "coarse_dirt"):
                         put(x + dx, at(x + dx, z + dz), z + dz, "mycelium_top", "mycelium_side")
-        for (px_, py_, pz_) in pts[:4]:                                # moss creeps up the foot of the stem on the shaded side
-            for dx in range(-3, 4):
-                for dz in range(-3, 1):
-                    p = (int(round(px_)) + dx, int(py_), int(round(pz_)) + dz)
-                    if G_get(p) == "mushroom_stem" and _h(*p, 621) < .55: put(*p, "moss_block")
+        # the stem is fibrous: pale vertical streaks of grain (stripped birch) run up it, so it reads as flesh, not masonry
+        for X in range(int(min(p[0] for p in pts)) - 6, int(max(p[0] for p in pts)) + 7):
+            for Z in range(int(min(p[2] for p in pts)) - 6, int(max(p[2] for p in pts)) + 7):
+                for Y in range(g - 2, int(top[1]) + 1):
+                    if G_get((X, Y, Z)) != "mushroom_stem": continue
+                    q = min(pts, key=lambda p: abs(p[1] - Y))
+                    ang = math.atan2(Z - q[2], X - q[0])
+                    if noise3(ang * 2.2, Y * .09, 0, 622, 1) > .58: put(X, Y, Z, "stripped_birch_log", "stripped_birch_log")
         for (px_, py_, pz_) in pts[2:-2:2]:                            # glow lichen up the stem
             put(int(round(px_)) + 2, int(py_), int(round(pz_)), "glow_lichen", shape="shut_s")
         cap = "red_mushroom_block" if red else "brown_mushroom_block"
