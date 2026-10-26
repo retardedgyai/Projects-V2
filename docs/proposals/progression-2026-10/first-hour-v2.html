@@ -1,0 +1,238 @@
+<title>最初の1時間 v2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* layout: tabs (最初の1時間 / 遊ぶ / 強くなる道 / 要るUI) over one dark forge-like world; play tab = places | forge | gear, then market | log */
+:root {
+  --bg: #0c0f17; --panel: #141a27; --panel2: #1b2233; --line: #2a3450; --fg: #ebe7dc; --muted: #959bb0;
+  --gold: #e6c477; --cyan: #7fdcea; --sakura: #f2a3c0; --shade: #a98be0; --red: #e58b80; --green: #9fd49a;
+  --sans: "M PLUS 2", "Noto Sans CJK JP", system-ui, sans-serif; --num: "DotGothic16", "M PLUS 2", monospace;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+main { max-width: 1320px; margin: 0 auto; padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 1.45rem; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.02rem; margin: 0; letter-spacing: .04em; }
+h3 { font-size: .95rem; margin: 0; }
+p { margin: 4px 0 0; color: var(--muted); max-width: 78ch; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+button:disabled { cursor: not-allowed; opacity: .45; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 5px 16px; }
+.tab[aria-selected="true"] { border-color: var(--gold); color: var(--gold); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; min-width: 0; display: grid; gap: 10px; align-content: start; }
+.num { font-family: var(--num); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: .82rem; }
+.gold { color: var(--gold); } .cyan { color: var(--cyan); } .red { color: var(--red); } .green { color: var(--green); }
+.sak { color: var(--sakura); } .shd { color: var(--shade); }
+
+/* first hour map */
+.mapwrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--line); background: #0f1420; }
+.mapwrap svg { display: block; width: 100%; min-width: 640px; height: auto; }
+.stop { cursor: pointer; }
+.stop circle.ring { fill: var(--panel2); stroke: var(--gold); stroke-width: 2.5; }
+.stop.on circle.ring { fill: var(--gold); }
+.stop.on text.n { fill: #1a1405; }
+.stop text.n { fill: var(--gold); font-family: var(--num); font-size: 15px; text-anchor: middle; dominant-baseline: central; }
+.stop text.t { fill: var(--fg); font-size: 12px; text-anchor: middle; }
+.stop:focus-visible circle.ring { stroke: var(--cyan); stroke-width: 4; }
+.hour { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .hour { grid-template-columns: 1fr; } }
+.detail .time { font-family: var(--num); color: var(--gold); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: .8rem; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; background: var(--panel2); }
+.chip.ui { border-color: #2f5560; color: var(--cyan); }
+.chip.get { border-color: #5b5030; color: var(--gold); }
+.endcard { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.stat { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.stat b { display: block; font-family: var(--num); font-size: 1.15rem; color: var(--gold); font-weight: 400; }
+
+/* decision */
+.decide { border-color: #5b4a2a; }
+.opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 800px) { .opts { grid-template-columns: 1fr; } }
+.opt { text-align: left; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 4px; }
+.opt[aria-pressed="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.opt .k { font-family: var(--num); color: var(--gold); }
+.opt .rec { font-size: .75rem; color: var(--cyan); }
+
+/* play */
+.play { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 1050px) { .play { grid-template-columns: 1fr; } }
+.goal { background: #17202c; border: 1px solid #2f5560; border-radius: 12px; padding: 10px 14px; display: flex; gap: 14px; flex-wrap: wrap; align-items: baseline; }
+.goal .label { font-size: .75rem; letter-spacing: .08em; color: var(--cyan); }
+.goal .text { font-weight: 500; }
+.place { border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 6px; background: var(--panel2); }
+.place.locked { opacity: .55; }
+.place .head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.tier { font-family: var(--num); font-size: .8rem; border: 1px solid var(--line); border-radius: 6px; padding: 0 6px; color: var(--muted); }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.act { background: #222b40; border: 1px solid #34405f; border-radius: 8px; padding: 4px 10px; font-size: .86rem; }
+.act:hover:not(:disabled) { border-color: var(--cyan); }
+.act.boss { border-color: #6a4a7a; }
+.act.boss.sakura { border-color: #7a4a5e; }
+.need { font-size: .78rem; color: var(--muted); }
+.subtabs { display: flex; flex-wrap: wrap; gap: 4px; }
+.sub { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 3px 10px; font-size: .86rem; }
+.sub[aria-selected="true"] { border-color: var(--cyan); color: var(--cyan); }
+.recipe { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--panel2); display: grid; gap: 4px; }
+.recipe .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cost { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: .82rem; }
+.cost .ok { color: var(--green); } .cost .no { color: var(--red); }
+.bar { height: 8px; background: #222b40; border-radius: 4px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--gold); }
+.gear { display: grid; gap: 6px; }
+.slot { border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; background: var(--panel2); display: grid; gap: 2px; }
+.slot .top { display: flex; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+.slot.empty { border-style: dashed; color: var(--muted); }
+.r-magic { color: #8fb6ff; } .r-rare { color: #f1d36b; }
+.mods { font-size: .78rem; color: var(--muted); }
+.mark { font-size: .78rem; }
+.power { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.inv { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 4px 10px; font-size: .82rem; }
+.inv span.q { font-family: var(--num); color: var(--gold); }
+.lock { font-size: .72rem; color: var(--red); }
+.low { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .low { grid-template-columns: 1fr; } }
+.log { font-size: .84rem; max-height: 260px; overflow-y: auto; display: grid; gap: 2px; }
+.log div:first-child { color: var(--fg); }
+.log div { color: var(--muted); }
+.mrow { display: flex; justify-content: space-between; gap: 8px; align-items: center; border-bottom: 1px solid #1f2740; padding: 3px 0; font-size: .86rem; flex-wrap: wrap; }
+.mrow:last-child { border-bottom: 0; }
+
+/* ladder */
+.ladder { overflow-x: auto; }
+.ladder svg { display: block; width: 100%; min-width: 760px; height: auto; }
+.walls { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+
+/* ui list */
+.uicols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: start; }
+@media (max-width: 950px) { .uicols { grid-template-columns: 1fr; } }
+.ui-item { border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 2px; }
+.ui-item:first-of-type { border-top: 0; padding-top: 0; }
+.ui-item .who { font-size: .75rem; color: var(--shade); }
+.badge { font-size: .72rem; border-radius: 6px; padding: 0 6px; border: 1px solid; }
+.b-have { color: var(--green); border-color: #3d5a3a; }
+.b-fix { color: var(--gold); border-color: #5b5030; }
+.b-new { color: var(--cyan); border-color: #2f5560; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+<style>
+.rule { font-size: .78rem; border: 1px solid #3d5a3a; color: var(--green); border-radius: 999px; padding: 1px 10px; }
+.chg { font-size: .78rem; border: 1px solid #5b5030; color: var(--gold); border-radius: 999px; padding: 1px 10px; }
+.q .opt { flex: 1 1 240px; }
+</style>
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>最初の1時間 v2 ── 今の決まりで</h1>
+    <p>前の版（10/19）を、決まったこと（NPC は売らない・基本は自分で作る・Tier は直接作れる・+15 から壊れる・領地・ボス素材）に合わせて直した。番号を押すと、その場所ですることが出る。<span class="chg">変更</span> は前の版から変えた所、<span class="rule">決まり</span> はどの決まりから来たか。</p>
+  </header>
+  <div class="hour">
+    <div class="mapwrap"><svg viewBox="0 0 900 470" role="img" aria-label="港町から根の丘、根の洞、桜の柱までの最初の1時間の道">
+          <defs>
+            <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16314a"/><stop offset="1" stop-color="#0c1a2b"/></linearGradient>
+            <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26422c"/><stop offset="1" stop-color="#16261b"/></linearGradient>
+            <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#121a2c"/><stop offset="1" stop-color="#0f1420"/></linearGradient>
+          </defs>
+          <rect width="900" height="470" fill="url(#sky)"/>
+          <!-- sea + harbor -->
+          <path d="M0 330 Q120 320 210 360 L210 470 L0 470 Z" fill="url(#sea)"/>
+          <path d="M0 340 Q60 336 120 346" stroke="#2c5476" stroke-width="2" fill="none"/>
+          <path d="M20 372 Q80 366 150 380" stroke="#24486a" stroke-width="2" fill="none"/>
+          <!-- hills -->
+          <path d="M150 470 Q260 300 420 300 Q560 300 640 240 Q720 190 900 200 L900 470 Z" fill="url(#hill)"/>
+          <path d="M330 470 Q420 360 540 350 Q680 340 900 320 L900 470 Z" fill="#1a2f20"/>
+          <!-- town -->
+          <g fill="#3a3046" stroke="#5d4c6b" stroke-width="1">
+            <rect x="70" y="282" width="34" height="30"/><path d="M66 284 L87 266 L108 284 Z" fill="#7a3b33"/>
+            <rect x="112" y="290" width="30" height="24"/><path d="M108 292 L127 276 L146 292 Z" fill="#7a3b33"/>
+            <rect x="150" y="296" width="40" height="26"/><path d="M146 298 L170 280 L194 298 Z" fill="#8a4a2e"/>
+          </g>
+          <rect x="40" y="318" width="90" height="6" fill="#5a4630"/>
+          <!-- road -->
+          <path id="road" d="M110 330 C200 340 230 300 300 290 S420 300 470 270 S560 230 610 250 S700 300 740 260" stroke="#c9a86a" stroke-width="5" fill="none" stroke-dasharray="2 9" stroke-linecap="round"/>
+          <!-- roots -->
+          <g stroke="#5b4430" stroke-width="7" fill="none" stroke-linecap="round" opacity=".9">
+            <path d="M330 300 Q380 250 450 235"/><path d="M460 300 Q500 250 520 200"/><path d="M560 320 Q600 280 640 280"/>
+          </g>
+          <!-- giant tree -->
+          <rect x="505" y="120" width="26" height="120" fill="#4a3624"/>
+          <ellipse cx="518" cy="105" rx="92" ry="52" fill="#2f5a34"/>
+          <ellipse cx="490" cy="90" rx="48" ry="30" fill="#3a6c3d"/>
+          <ellipse cx="560" cy="96" rx="40" ry="26" fill="#376638"/>
+          <!-- cave -->
+          <path d="M600 262 Q625 228 650 262 Z" fill="#06080d" stroke="#5b4430" stroke-width="4"/>
+          <!-- pillars + sakura shrine -->
+          <rect x="790" y="70" width="44" height="200" fill="#4b4f5c"/><rect x="740" y="130" width="34" height="140" fill="#3f4350"/>
+          <path d="M774 132 L790 118" stroke="#6d6252" stroke-width="4"/>
+          <ellipse cx="812" cy="60" rx="38" ry="18" fill="#f2a3c0" opacity=".85"/>
+          <ellipse cx="796" cy="54" rx="18" ry="10" fill="#f7c6d8"/>
+          <rect x="804" y="44" width="14" height="10" fill="#c0392b"/>
+          <g><rect x="680" y="230" width="3" height="40" fill="#8a7a60"/><path d="M683 230 L708 238 L683 246 Z" fill="#6fa3e8"/></g>
+<!-- stops -->
+<g class="stop" data-stop="0" tabindex="0" role="button" aria-label="1 港の桟橋"><circle class="ring" cx="70" cy="340" r="15"/><text class="n" x="70" y="340">1</text><text class="t" x="70" y="372">港の桟橋</text></g>
+<g class="stop" data-stop="1" tabindex="0" role="button" aria-label="2 市場"><circle class="ring" cx="60" cy="262" r="15"/><text class="n" x="60" y="262">2</text><text class="t" x="60" y="240">市場</text></g>
+<g class="stop" data-stop="2" tabindex="0" role="button" aria-label="3 鍛冶屋"><circle class="ring" cx="170" cy="262" r="15"/><text class="n" x="170" y="262">3</text><text class="t" x="170" y="240">鍛冶屋</text></g>
+<g class="stop" data-stop="3" tabindex="0" role="button" aria-label="4 根の丘"><circle class="ring" cx="300" cy="290" r="15"/><text class="n" x="300" y="290">4</text><text class="t" x="300" y="322">根の丘</text></g>
+<g class="stop" data-stop="4" tabindex="0" role="button" aria-label="5 港で作る"><circle class="ring" cx="215" cy="330" r="15"/><text class="n" x="215" y="330">5</text><text class="t" x="215" y="362">港で作る</text></g>
+<g class="stop" data-stop="5" tabindex="0" role="button" aria-label="6 狩り場"><circle class="ring" cx="470" cy="270" r="15"/><text class="n" x="470" y="270">6</text><text class="t" x="470" y="304">狩り場</text></g>
+<g class="stop" data-stop="6" tabindex="0" role="button" aria-label="7 根の洞"><circle class="ring" cx="625" cy="282" r="15"/><text class="n" x="625" y="282">7</text><text class="t" x="625" y="314">根の洞</text></g>
+<g class="stop" data-stop="7" tabindex="0" role="button" aria-label="8 桜と領地"><circle class="ring" cx="812" cy="110" r="15"/><text class="n" x="812" y="110">8</text><text class="t" x="812" y="300">桜と領地</text></g>
+</svg></div>
+    <div class="panel detail" id="stopDetail" aria-live="polite"></div>
+  </div>
+  <div class="panel">
+    <h2>1時間後の手元（目安）</h2>
+    <div class="endcard">
+      <div class="stat">職業Lv<b>5〜6</b><span class="small muted">技 2〜3個</span></div>
+      <div class="stat">武器<b>T1 +5</b><span class="small muted">最初の武器を自分で鍛えた</span></div>
+      <div class="stat">防具<b>自作 T1 2〜4部位</b><span class="small muted">胴から</span></div>
+      <div class="stat">市場<b>1回は売った</b><span class="small muted">余った素材</span></div>
+      <div class="stat">次の目標<b class="shd">黒翳竜</b><span class="small muted">と、領地の旗</span></div>
+    </div>
+  </div>
+  <div class="panel decide q">
+    <h2>決めること（1つ）：鍛冶屋の頼みの報酬は？</h2>
+    <p class="small">NPC は品を渡さない決まりなので、前の版の「報酬に変成のオーブ」はやめた（最初のオーブは、今のコードの「初めての敵ドロップのおまけ」で手に入る）。</p>
+    <div class="opts" role="group" aria-label="頼みの報酬">
+      <button class="opt" data-q="A" aria-pressed="true"><span class="k">A 作り方が開く<span class="rec"> おすすめ</span></span><span class="small">頼みを終えると、工房の作り方が1つずつ開く（胴 → 残りの防具 → 精製のまとめ）。決まり「施設は作り方が開くまで」と同じ。</span></button>
+      <button class="opt" data-q="B" aria-pressed="false"><span class="k">B 銀貨だけ</span><span class="small">少しの銀貨。市場で最初の買い物ができる。お金が増える蛇口になる。</span></button>
+      <button class="opt" data-q="C" aria-pressed="false"><span class="k">C 報酬なし</span><span class="small">作れたこと自体が報酬。頼みは道案内だけ。</span></button>
+    </div>
+  </div>
+</main>
+<script>
+(() => {
+  const STOPS = [
+    { time: '0:00', title: '船が着き、職業を選ぶ', what: '最初の画面（職業選択）で職業を選び、桟橋に降りる。最初の一行は「鍛冶屋に会おう」。', get: ['職業の T1 武器（売れない）', '回復薬3', '採取の道具'], tags: [['chg', '最初の画面の最後の一行を「遠征受付」から「鍛冶屋」に'], ['rule', '最初の武器は職業を選んだ時にもらう（今のコード）']] },
+    { time: '0:02', title: '市場をのぞく', what: '港の市場の前を通る。並んでいるのは全部ほかのプレイヤーが作った物。テストの最初は空っぽに近い。', get: ['市場がどういう所か'], tags: [['chg', '新しく足した場所'], ['rule', 'NPC は売らない・売り買いはプレイヤーどうし']] },
+    { time: '0:04', title: '鍛冶屋の頼み', what: '鍛冶屋が「防具がないな。根の丘で毛皮と古木を取っておいで。作り方は教えてやる」。工房を開くと胴の材料が赤い（足りない）。', get: ['頼み「初めての防具」'], tags: [['rule', '施設は作り方が開く・設備を貸すまで（作るのは自分）']] },
+    { time: '0:08', title: '根の丘で取る・倒す', what: '街道を色の道案内でたどる。樹液甲虫・根の精を倒し、古木を伐り、石と鉱石を掘る。初めて倒した敵から変成のオーブ（今のコードの初回のおまけ）。', get: ['古木・毛皮・石・鉱石・菌糸', '変成のオーブ1'], tags: [['chg', 'オーブは頼みの報酬ではなく初回ドロップから'], ['rule', '採取と狩りがフィールドの主役']] },
+    { time: '0:20', title: '港に帰って自分で作る', what: '精製（2→1）→ 胴を自分で作る → 最初の武器を +1〜+5（必ず成功）→ 変成のオーブで初めての MOD。', get: ['自作の T1 の胴', '武器 +5', 'マジック'], tags: [['rule', '基本の物は全部自分で作る'], ['rule', '+15 までは壊れない']] },
+    { time: '0:35', title: '狩り場で群れと戦う', what: '根に巣くう狼・キノコの寄生体。Lv4 で2つ目の技。残りの防具の素材。余った素材は港の市場に出す（最初の売り）。', get: ['頭・脚・足の素材', 'オーブ', '初めての売上'], tags: [['chg', '余りを売る、を足した']] },
+    { time: '0:50', title: '根の洞の入口', what: '洞の奥に黒翳竜。扉に「目安：攻撃130・HP175／今のあなた」。近くに青い旗の立った領地が見える（持ち主のいる領地、または空きの領地）。', get: ['次の目標：黒翳竜', '領地があることを知る'], tags: [['chg', '領地の旗を見せる'], ['rule', '領地は Albion 型']] },
+    { time: '見えるだけ', title: '岩柱の上の桜', what: 'いちばん高い柱の上に桜の社。桜牙獣はずっと先。行けない・まだ早いと分かるだけでいい。', get: ['長い目標'], tags: [] },
+  ];
+  const stopEls = [...document.querySelectorAll('.stop')];
+  const det = document.getElementById('stopDetail');
+  function showStop(i) {
+    stopEls.forEach(s => s.classList.toggle('on', +s.dataset.stop === i));
+    const s = STOPS[i];
+    det.innerHTML = `<div><span class="time">${s.time}</span>　<h2 style="display:inline">${i + 1}. ${s.title}</h2></div>
+      <p style="color:var(--fg)">${s.what}</p>
+      <div class="chips">${s.get.map(g => `<span class="chip get">${g}</span>`).join('')}</div>
+      ${s.tags.length ? `<div class="chips">${s.tags.map(([c, t]) => `<span class="${c}">${t}</span>`).join('')}</div>` : ''}`;
+  }
+  stopEls.forEach(s => {
+    s.addEventListener('click', () => showStop(+s.dataset.stop));
+    s.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showStop(+s.dataset.stop); } });
+  });
+  showStop(0);
+  document.querySelectorAll('.q .opt').forEach(b => b.addEventListener('click', () => document.querySelectorAll('.q .opt').forEach(x => x.setAttribute('aria-pressed', String(x === b)))));
+})();
+</script>

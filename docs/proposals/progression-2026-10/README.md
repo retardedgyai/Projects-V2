@@ -18,3 +18,4 @@
 - `craft-spec.html` — クラフトの仕様（素材→製造→強化→破損→修理）と修理の材料の2案。
 - `repair-rules.html` — 修理の決まり3案（同じ型／どの型でも1本／修理ポイント）を実際に直して比べる。
 - `repair-sink-ideas.html` — 他のゲームの修理・強化・シンクを調べて Project S に合わせた10案（出典つき）。公開版 https://claude.ai/artifact/EW7K2aH9eiHDao3ZEpxYm8
+- `first-hour-v2.html` — 今の決まりに合わせた最初の1時間の絵地図。公開版 https://claude.ai/artifact/4ZnwbrPEgZ9BBH3VjEJfKJ
