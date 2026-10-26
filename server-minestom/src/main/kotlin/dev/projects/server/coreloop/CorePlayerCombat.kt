@@ -102,6 +102,9 @@ internal class CorePlayerCombat(
     private val launched = mutableMapOf<UUID, Long>()
     private var whetstoneUntil = 0L
     private var shot: Pair<Long, Vec>? = null
+    /** The mage's normal attack in flight (CoreMageBolt): hits land when the bolt arrives, not when it is cast. */
+    private val bolts = mutableListOf<CoreMageBolt>()
+    private val boltSprites = CoreMageBoltSprites(player)
     private var skillBoost = 1.0
     private var lastConduitGain = -1L
     private val lessonAttempts = mutableMapOf<Int, Long>()
@@ -323,6 +326,7 @@ internal class CorePlayerCombat(
             if (++geyserStep >= CoreWarriorRules.FULL_SWING_GEYSER_STEPS) { geyser = null; geyserStep = 0 }
         }
         visualContactsThisTick = 0
+        boltSprites.tick()
         classState.tick(tickNumber)
         previousPosition?.let { if (it.distance(player.position) > .035) classState.stationarySince = tickNumber }
         previousPosition = player.position
@@ -345,10 +349,12 @@ internal class CorePlayerCombat(
         shot?.takeIf { tickNumber >= it.first }?.let { (_, direction) ->
             shot = null
             val mobile = classId == CoreClass.RANGER && journey().build.keystone == 1 && tickNumber < classState.dodgeUntil
+            if (classId == CoreClass.MAGE) { launchBolt(direction); return@let }
             rangedStrike(enemies, direction, 18.0, .65, 1, if (mobile) .65 else 1.0, false)
             if (mobile && actionsValid(enemies, epoch)) rangedStrike(enemies, direction, 18.0, .65, 1, .65, false)
         }
         if (!actionsValid(enemies, epoch)) return
+        if (!flyBolts(enemies)) return
         // A kill callback may synchronously return/reset the actor, including clearing burns.
         for ((key, burn) in burns.toMap()) {
             val id=key.id
@@ -883,7 +889,8 @@ internal class CorePlayerCombat(
             vfx.holdContact(if (heavy) 3 else 2)
         } else {
             sound(if (classId == CoreClass.RANGER) SoundEvent.ENTITY_ARROW_HIT else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .4f, 1.4f)
-            vfx.particles(if (classId == CoreClass.MAGE) Particle.FLAME else Particle.END_ROD, position.add(0.0, 1.0, 0.0), 6, Vec(.2, .3, .2), .03f)
+            // The mage's bolt draws its own burst where it lands (CoreMageBoltSprites).
+            if (classId != CoreClass.MAGE) vfx.particles(if (classId == CoreClass.MAGE) Particle.FLAME else Particle.END_ROD, position.add(0.0, 1.0, 0.0), 6, Vec(.2, .3, .2), .03f)
         }
         showDamage(id, position, applied, critical, type, if (weak) enemies.weaknessOf(id) else null, weakSpot)
         if (stats.fireFlat > 0 && enemies.isAlive(id)) {
@@ -905,6 +912,34 @@ internal class CorePlayerCombat(
                     }
                 }
         }
+    }
+
+    /** The mage's bolt leaves the eye along the aim; its picture starts at the staff hand, low on the right. */
+    private fun launchBolt(direction: Vec) {
+        val flat = flatFacing()
+        val hand = Vec(-flat.z(), 0.0, flat.x()).mul(.45).add(0.0, -.35, 0.0)
+        val bolt = CoreMageBolt(player.position.add(0.0, player.eyeHeight, 0.0), direction.normalize(), hand, 1.0)
+        bolts += bolt
+        boltSprites.launch(bolt)
+    }
+
+    /** One tick of every bolt in flight; the first target on a bolt's path takes the normal hit. */
+    private fun flyBolts(enemies: QuestEncounterCombat): Boolean {
+        if (bolts.isEmpty()) return true
+        val epoch = actionEpoch
+        val instance = player.instance ?: return true
+        val targets = enemies.combatTargets()
+        for (bolt in bolts.toList()) {
+            val from = bolt.shown
+            val step = bolt.step(targets) { instance.getBlock(it).solid() }
+            boltSprites.flew(bolt, from, step.ended, step.hit != null)
+            if (step.ended) bolts.remove(bolt)
+            step.hit?.let { id ->
+                hit(enemies, id, bolt.multiplier, skill = false)
+                if (!actionsValid(enemies, epoch)) return false
+            }
+        }
+        return true
     }
 
     /** Narrow server ray with block occlusion. No client-selected target or through-wall projectile. */
@@ -1196,6 +1231,7 @@ internal class CorePlayerCombat(
         actionEpoch++
         garden?.let { it.encounter.clearSlowSource(it.field.slowSource) }
         garden = null
+        bolts.clear(); boltSprites.clear()
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
         queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0

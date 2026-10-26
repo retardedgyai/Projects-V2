@@ -27,6 +27,7 @@ CHAIN = [
     ["build_first_magic_assets.py", "--fonts-only"],
     "build_boss_vfx.py",         # boss_vfx data maps + the core/item shader experiment
     "build_player_puppet.py",    # combat_vfx/puppet: player skin parts, one tinted face per skin pixel
+    "build_mage_bolt.py",        # combat_vfx/mage_bolt: the mage's normal-attack bolt, sparkles and burst
 ]
 
 

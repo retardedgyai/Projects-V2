@@ -114,15 +114,22 @@ class CorePlayerCombatTest {
         }
     }
 
-    @Test fun `bow and mage projectile hit at twelve blocks but not through a wall`() {
-        for (job in listOf(CoreClass.RANGER, CoreClass.MAGE)) arena(bossDistance = 12.0) { h ->
-            h.journey = CoreJourney.legacy(job = job); h.base = if (job == CoreClass.RANGER) CoreWeaponBase.LONGBOW else CoreWeaponBase.STAFF
-            h.actor.attack(); h.ticks(3); assertEquals(300.0, h.combat.bossHealth())
-            h.ticks(1); assertTrue(h.combat.bossHealth() < 300.0, "$job cannot hit at range")
-            val hp = h.combat.bossHealth(); h.ticks(20)
-            for (y in 40..45) h.instance.setBlock(8,y,14,Block.STONE)
-            h.actor.attack(); h.ticks(20); assertEquals(hp, h.combat.bossHealth())
-        }
+    @Test fun `bow projectile hits at twelve blocks but not through a wall`() = arena(bossDistance = 12.0) { h ->
+        h.journey = CoreJourney.legacy(job = CoreClass.RANGER); h.base = CoreWeaponBase.LONGBOW
+        h.actor.attack(); h.ticks(3); assertEquals(300.0, h.combat.bossHealth())
+        h.ticks(1); assertTrue(h.combat.bossHealth() < 300.0, "the bow cannot hit at range")
+        val hp = h.combat.bossHealth(); h.ticks(20)
+        for (y in 40..45) h.instance.setBlock(8,y,14,Block.STONE)
+        h.actor.attack(); h.ticks(20); assertEquals(hp, h.combat.bossHealth())
+    }
+    @Test fun `mage bolt flies to twelve blocks before it hits and stops at a wall`() = arena(bossDistance = 12.0) { h ->
+        h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+        // Cast 4 ticks, then 1.5 blocks a tick: the boss's body (about 11 blocks off) is reached on the 8th step.
+        h.actor.attack(); h.ticks(9); assertEquals(300.0, h.combat.bossHealth(), "the bolt is still in the air")
+        h.ticks(3); assertTrue(h.combat.bossHealth() < 300.0, "the bolt cannot hit at range")
+        val hp = h.combat.bossHealth(); h.ticks(20)
+        for (y in 40..45) h.instance.setBlock(8,y,14,Block.STONE)
+        h.actor.attack(); h.ticks(30); assertEquals(hp, h.combat.bossHealth())
     }
     @Test fun `early class cannot cast level4 or level8 skill`() = arena { h ->
         h.journey = CoreJourney.fresh().copy(chosen = true, job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
@@ -680,7 +687,7 @@ class CorePlayerCombatTest {
         for (mod in listOf(CoreAffixStat.AD_FLAT, CoreAffixStat.AP_FLAT)) arena(
             stats = CoreAffixStats(additional = mapOf(mod to 20.0))) { h ->
             h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
-            h.actor.attack(); h.ticks(4)
+            h.actor.attack(); h.ticks(12)  // the bolt needs a few ticks to fly there
             assertEquals(300 - 12 * .92 - if (mod == CoreAffixStat.AD_FLAT) 20 else 0, h.combat.bossHealth(), .000001)
         }
     }
