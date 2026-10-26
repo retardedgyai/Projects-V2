@@ -51,23 +51,25 @@ p { margin: 0; color: var(--muted); max-width: 80ch; }
   </header>
 
   <div class="pic">
-    <svg viewBox="0 0 1120 300" role="img" aria-label="素材から製造、強化、破損、修理までの流れとシンクの場所">
+    <svg viewBox="0 0 1120 330" role="img" aria-label="素材から製造、強化、破損、修理までの流れとシンクの場所">
       <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#5b6a90"/></marker></defs>
       <g font-family="M PLUS 2, sans-serif" text-anchor="middle">
         <rect x="20" y="40" width="170" height="80" rx="12" fill="#1b2233" stroke="#9fd49a"/><text x="105" y="74" fill="#ebe7dc" font-size="15">T4 の素材</text><text x="105" y="96" fill="#959bb0" font-size="11">採取・精製・市場</text>
         <rect x="250" y="40" width="170" height="80" rx="12" fill="#1b2233" stroke="#9fd49a"/><text x="335" y="74" fill="#ebe7dc" font-size="15">T4 の武器を作る</text><text x="335" y="96" fill="#959bb0" font-size="11">T1 から上げなくていい</text>
         <rect x="480" y="40" width="170" height="80" rx="12" fill="#1b2233" stroke="#9fd49a"/><text x="565" y="74" fill="#ebe7dc" font-size="15">強化 +1〜+30</text><text x="565" y="96" fill="#959bb0" font-size="11">素材を使う・失敗あり</text>
-        <rect x="710" y="40" width="170" height="80" rx="12" fill="#2a1616" stroke="#e58b80"/><text x="795" y="74" fill="#e58b80" font-size="15">壊れる</text><text x="795" y="96" fill="#959bb0" font-size="11">+15 から、失敗したとき</text>
-        <rect x="940" y="40" width="160" height="80" rx="12" fill="#1b2233" stroke="#e6c477" stroke-dasharray="6 5"/><text x="1020" y="74" fill="#e6c477" font-size="15">修理</text><text x="1020" y="96" fill="#959bb0" font-size="11">何を使う？（下で選ぶ）</text>
+        <rect x="710" y="40" width="170" height="80" rx="12" fill="#2a1616" stroke="#e58b80"/><text x="795" y="70" fill="#e58b80" font-size="15">壊れて「残骸」に</text><text x="795" y="90" fill="#959bb0" font-size="11">+15 から、失敗したとき</text><text x="795" y="106" fill="#959bb0" font-size="11">MOD と特性は残る・装備できない</text>
+        <rect x="940" y="40" width="160" height="80" rx="12" fill="#1b2233" stroke="#9fd49a"/><text x="1020" y="66" fill="#ebe7dc" font-size="15">残骸を戻す</text><text x="1020" y="86" fill="#959bb0" font-size="11">同じ Tier の装備を食わせる</text><text x="1020" y="102" fill="#959bb0" font-size="11">+値が高いほど多く・戻ると −3</text>
         <!-- sinks -->
         <circle cx="565" cy="160" r="12" fill="#e07a6a"/><text x="565" y="192" fill="#e07a6a" font-size="12">強化の素材が消える</text>
-        <circle cx="1020" cy="160" r="12" fill="#e07a6a"/><text x="1020" y="192" fill="#e07a6a" font-size="12">修理の材料が消える</text>
+        <circle cx="1020" cy="160" r="12" fill="#e07a6a"/><text x="1020" y="192" fill="#e07a6a" font-size="12">食わせた装備と −3 が消える</text>
+        <rect x="480" y="215" width="170" height="64" rx="12" fill="#1b2233" stroke="#7fdcea"/><text x="565" y="242" fill="#7fdcea" font-size="14">保護符（使うかは自由）</text><text x="565" y="262" fill="#959bb0" font-size="11">費用3倍・その回は壊れない</text>
+        <circle cx="690" cy="247" r="12" fill="#e07a6a"/><text x="760" y="252" fill="#e07a6a" font-size="12">符と3倍の素材が消える</text>
         <circle cx="335" cy="160" r="12" fill="#e07a6a"/><text x="335" y="192" fill="#e07a6a" font-size="12">製造の素材が消える</text>
-        <text x="560" y="270" fill="#959bb0" font-size="12">直った武器は、強化値とMODを持ったまま戦いに戻る</text>
+        <text x="300" y="310" fill="#959bb0" font-size="12">戻った武器は MOD と特性を持ったまま戦いに戻る</text>
       </g>
       <g fill="none" stroke="#5b6a90" stroke-width="2.5" marker-end="url(#ar)">
         <path d="M190 80 L248 80"/><path d="M420 80 L478 80"/><path d="M650 80 L708 80"/><path d="M880 80 L938 80"/>
-        <path d="M1020 120 C1020 240 565 240 565 124"/>
+        <path d="M1020 120 C1020 210 900 210 660 130"/><path d="M565 213 L565 124"/>
       </g>
     </svg>
   </div>
@@ -79,70 +81,11 @@ p { margin: 0; color: var(--muted); max-width: 80ch; }
     <div class="rule"><b>今のコード</b>修理は「同じ Tier・同じ型の +0 の予備を1つ使う」か「魔術の修復の封蝋を Tier の数だけ使う」のどちらか。封蝋の道を残すかは A/B のあとで。</div>
   </div>
 
-  <div class="panel">
-    <h2>迷っている所：修理に何を使う？</h2>
-    <div class="opts" role="group" aria-label="修理の材料">
-      <button class="opt" data-o="A" aria-pressed="true"><span class="k">A 同じ Tier の装備をそのまま使う<span class="rec">おすすめ</span></span><span class="s">T4 の剣を直すには、T4 の剣（+0 でいい）を1本つぶす。今のコードと同じ。</span></button>
-      <button class="opt" data-o="B" aria-pressed="false"><span class="k">B 装備を分解して「修理材」にする</span><span class="s">どの装備も分解すると、その Tier の修理材になる。修理材で直す。修理材は市場で売り買いできる。</span></button>
-    </div>
-    <div class="demo">
-      <div class="box">
-        <span style="color:var(--muted)">直したい物</span>
-        <div class="item broken"><b>T4 大剣 <span class="num">+18</span></b>　<span style="color:var(--red)">壊れている</span></div>
-        <span style="color:var(--muted)">持ち物</span>
-        <div id="bag" style="display:grid;gap:4px"></div>
-      </div>
-      <div class="box">
-        <div id="actions" style="display:flex;gap:8px;flex-wrap:wrap"></div>
-        <div class="log" id="log" aria-live="polite"></div>
-        <div class="pros" id="pros"></div>
-      </div>
-    </div>
+  <div class="rules">
+    <div class="rule"><b>決まった（藍）</b>壊れたら「残骸」になる（元：MapleStory）。MOD と特性は残る。同じ Tier の装備を食わせて戻す。食わせる数は +値で増える（例：+15〜19 で1本、+25 以上で3本、仮）。戻ると +値が少し下がる（例：−3、仮）。</div>
+    <div class="rule"><b>決まった（藍）</b>保護符（元：MapleStory の Safeguard）。使うとその強化の費用が約3倍、その代わり失敗しても壊れない。使うかは本人が選ぶ。職人が作る。</div>
+    <div class="rule"><b>決まった（藍）</b>予備は持ち歩かない。戻す画面から市場の装備をその場で買って食わせる。</div>
+    <div class="rule" style="border-color:#5b4a2a"><b style="color:var(--gold)">まだ</b>食わせる装備の型を問うか（同じ型だけ／どの型でも／修理ポイント）。保護符を作るのは鍛冶か魔術か、材料は何か。</div>
   </div>
 </main>
 
-<script>
-(() => {
-  let o = 'A', st;
-  const fresh = () => ({ fixed: false, spare: 1, market: 2, parts: 0, log: '' });
-  st = fresh();
-  const PROS = {
-    A: '<b>いい所</b>：装備が丸ごと1本消える＝強いシンク。鍛冶は「修理用の +0 の剣」を作って売れる。今のコードのまま。<br><i>気になる所</i>：武器の型が違うと使えない（今のコードは同じ型が要る）。予備を持ち歩く手間。',
-    B: '<b>いい所</b>：どの装備からでも作れて融通がきく。修理材が市場の品目になる。いらない装備の行き先ができる。<br><i>気になる所</i>：品目が1つ増える。分解で何個になるかの調整が要る（少ないほどシンクが強い）。',
-  };
-  function render() {
-    document.querySelectorAll('.opt').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.o === o)));
-    const bag = [];
-    if (o === 'A') bag.push(`T4 大剣 +0（予備）×<span class="num">${st.spare}</span>`);
-    else { bag.push(`T4 の古い防具 ×<span class="num">${st.spare}</span>`); bag.push(`T4 修理材 ×<span class="num">${st.parts}</span>`); }
-    document.getElementById('bag').innerHTML = bag.map(x => `<div class="item">${x}</div>`).join('');
-    const acts = [];
-    if (o === 'A') {
-      acts.push(`<button class="btn" data-a="fixA" ${st.spare && !st.fixed ? '' : 'disabled'}>予備の剣で直す</button>`);
-      acts.push(`<button class="btn" data-a="buyA" ${st.market ? '' : 'disabled'}>市場で T4 +0 の剣を買う</button>`);
-    } else {
-      acts.push(`<button class="btn" data-a="salv" ${st.spare ? '' : 'disabled'}>古い防具を分解 → 修理材2</button>`);
-      acts.push(`<button class="btn" data-a="buyB">市場で修理材を買う</button>`);
-      acts.push(`<button class="btn" data-a="fixB" ${st.parts >= 3 && !st.fixed ? '' : 'disabled'}>修理材3で直す</button>`);
-    }
-    acts.push(`<button class="btn" data-a="reset">最初から</button>`);
-    document.getElementById('actions').innerHTML = acts.join('');
-    document.getElementById('log').textContent = st.fixed ? '直った！ +18 と MOD はそのまま。使った物は消えた。' : st.log;
-    document.querySelector('.item.broken').innerHTML = st.fixed ? '<b>T4 大剣 <span class="num">+18</span></b>　<span style="color:var(--green)">直った</span>' : '<b>T4 大剣 <span class="num">+18</span></b>　<span style="color:var(--red)">壊れている</span>';
-    document.getElementById('pros').innerHTML = PROS[o];
-  }
-  document.querySelector('.opts').addEventListener('click', e => { const b = e.target.closest('.opt'); if (!b) return; o = b.dataset.o; st = fresh(); render(); });
-  document.getElementById('actions').addEventListener('click', e => {
-    const b = e.target.closest('.btn'); if (!b || b.disabled) return;
-    const a = b.dataset.a;
-    if (a === 'reset') st = fresh();
-    if (a === 'fixA') { st.spare--; st.fixed = true; }
-    if (a === 'buyA') { st.market--; st.spare++; st.log = '鍛冶が作った T4 +0 の剣を市場で買った。'; }
-    if (a === 'salv') { st.spare--; st.parts += 2; st.log = '古い防具を分解して修理材2（防具は消えた）。'; }
-    if (a === 'buyB') { st.parts++; st.log = '市場で修理材を1つ買った。'; }
-    if (a === 'fixB') { st.parts -= 3; st.fixed = true; }
-    render();
-  });
-  render();
-})();
-</script>
