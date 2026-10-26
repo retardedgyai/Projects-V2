@@ -297,8 +297,9 @@ def weapon_pose(scene, tick):
 
 # ---------- camera ----------
 class Camera:
-    def __init__(self, eye, target):
+    def __init__(self, eye, target, focal=None):
         self.eye = np.array(eye, float)
+        self.focal = focal or FOCAL
         f = np.array(target, float) - self.eye; self.f = f / np.linalg.norm(f)
         r = np.cross(self.f, (0, 1, 0)); self.r = r / np.linalg.norm(r)
         self.u = np.cross(self.r, self.f)
@@ -308,7 +309,7 @@ class Camera:
         return np.array((d @ self.r, d @ self.u, d @ self.f))
 
     def screen(self, c):
-        return (W / 2 + c[0] / c[2] * FOCAL, H / 2 - c[1] / c[2] * FOCAL)
+        return (W / 2 + c[0] / c[2] * self.focal, H / 2 - c[1] / c[2] * self.focal)
 
 
 def clip(poly, near=.15):
@@ -381,7 +382,12 @@ def target_faces(p):
 # F5: the camera sits 4 blocks behind the eye (1.62 m) along the look vector; here looking 20 degrees down.
 VIEWS = {'behind': ('背後（F5視点）', (0.0, 3.0, -3.76), (0.0, .25, 4.0)), 'side': ('横から', (-5.2, 1.9, 1.6), (0.0, 1.0, 1.9)),
          # Ground skills (地割り etc.) are read from above: a high three-quarter view over the wielder's shoulder.
-         'high': ('斜め上から', (-4.0, 6.5, -1.5), (0.0, 0.0, 3.5))}
+         'high': ('斜め上から', (-4.0, 6.5, -1.5), (0.0, 0.0, 3.5)),
+         # First person: the camera rides the recorded body (eye height, its yaw, looking a little down) with
+         # Minecraft's default 70 degree vertical FOV. The held sword is drawn by the item shader in game and is
+         # not reproduced here; this view shows the body's motion, the world pieces and the enemies.
+         'fp': ('一人称（手の剣は描いていない）', None, None)}
+FP_FOCAL = (H / 2) / math.tan(math.radians(35))
 
 
 GRASS_FLOOR = [None]
@@ -405,7 +411,13 @@ def render(scene, tick, view):
     SHADER_TIME[0] = tick / 20
     origin = np.array(scene['frames'][0]['player'][:3])
     label, eye, target = VIEWS[view]
-    camera = Camera(eye, target)
+    if view == 'fp':
+        px, py, pz, yaw = frame['player']
+        at = np.array((px, py, pz)) - origin + (0.0, 1.62, 0.0)
+        a = math.radians(yaw)
+        camera = Camera(at, at + np.array((-math.sin(a), -.16, math.cos(a))), FP_FOCAL)
+    else:
+        camera = Camera(eye, target)
     camera.cam_dir_light = camera.cam(camera.eye + np.array((.3, 1.0, -.5)) / np.linalg.norm((.3, 1.0, -.5)))
     image = Image.new('RGBA', (W, H), BG + (255,))
     if GRASS_FLOOR[0] is not None:
@@ -417,9 +429,10 @@ def render(scene, tick, view):
     cast = scene['castTick']
     swing = (tick - cast) / 6 if 0 <= tick - cast < 6 else None
     faces, hand = player_faces(pos, yaw, swing)
+    if view == 'fp': faces = []          # the own body is not seen in first person
     # 引き摺り: the held sword is hidden while the dragged one is drawn (CoreArmamentPresentation.hide).
     dragging = scene['id'].startswith('war_cry') and scene['castTick'] + scene['startup'] <= tick < scene['castTick'] + scene['startup'] + 42
-    if not dragging: faces += weapon_faces(hand, weapon_pose(scene, tick))
+    if not dragging and view != 'fp': faces += weapon_faces(hand, weapon_pose(scene, tick))
     for t in frame['targets']: faces += target_faces(np.array(t) - origin)
     for d in frame['displays']:
         faces += display_faces({**d, 'offset': list(np.array(d['offset']) - origin)}, camera)
