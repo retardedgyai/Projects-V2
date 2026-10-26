@@ -1126,12 +1126,13 @@ def tackle_arm_keys(side, beat):
 
 # ---- 跳び叩き (2026-10-27): two more beats, authored the same way. Every key is (tick, ease, pose, big?), the sword
 # and both fists (the left on the handle under the right, two-handed) read from the same poses.
-# Rise (at the launch): in about three ticks the sword is hauled up the right side, the blade turning back about the
-# shoulders (an edge leads, the flat to the side), into a high two-handed hold at the top right of the screen, blade
-# up and back; held while the body flies. The server plays it over the expected air time (LEAP_RISE_HOLD of the clip
+# Rise (at the launch): in about three ticks the sword is hauled up the right side (an edge leads, the flat to the
+# side) into a two-handed hold over the right shoulder: the hands low in the lower right, the blade rising diagonally
+# to the upper right, most of it in view; held while the body flies. The server plays it over the expected air time (LEAP_RISE_HOLD of the clip
 # is the hold); unanswered by a landing it goes back to rest by its end.
-# Slam (at the landing): from that hold, one stroke straight down through the middle of the screen in under two
-# ticks, stopped low in front with a jolt (dips, bounces, settles: two ticks), then back to rest over eight. The
+# Slam (at the landing): from that hold the hands snap up over the middle and the stroke comes straight down through
+# the middle of the screen in under two ticks, laid across the lower middle toward the ground ahead (flat up, edge
+# down), stopped there with a jolt (dips, bounces, settles: two ticks), then back to rest over eight. The
 # way back keeps the blade turning in the same upright plane at arm's length, the hand sliding out to the right, so
 # it never sweeps flat across the eye.
 RISE_BEAT, SLAM_BEAT = 6, 7
@@ -1140,10 +1141,15 @@ RISE_TICKS = 24        # nominal length (Bedrock, previews); the server scales i
 LEAP_RISE_HOLD = .8    # the hold ends at this share of the clip: CoreArmamentPresentation.leapRiseTicks
 SLAM_TICKS = 12        # CoreArmamentPresentation.LEAP_SLAM_TICKS: down 1.5, jolt to 4, back by 12
 LEAP_FLAT = (-1.0, 0.0, 0.0)   # the flat faces the side the whole time, as at rest: the stroke is in the upright plane
-RISE_PASS = dict(grip=on_screen(.5, -.15, .8), blade=tuple(_unit((0.15, 0.97, 0.05))), flat=LEAP_FLAT)
-RISE_HOLD = dict(grip=on_screen(.42, .05, .85), blade=tuple(_unit((0.45, 0.85, -0.15))), flat=LEAP_FLAT)
-SLAM_MID = dict(grip=on_screen(.14, -.12, .82), blade=tuple(_unit((0.03, 0.5, 1.0))), flat=LEAP_FLAT)
-SLAM_LOW = dict(grip=on_screen(.05, -.78, .72), blade=tuple(_unit((-0.02, -0.1, 1.0))), flat=LEAP_FLAT)
+# The low point after the stroke: the blade laid across the lower middle toward the ground ahead, its flat up and the
+# edge down into the ground.
+SLAM_LOW_FLAT = (0.15, 0.6, -0.8)   # up and toward the eye, so the flat shows from above
+# The top of the stroke, passed in under half a tick: the hands come up over the middle so the stroke runs down it.
+SLAM_TOP = dict(grip=on_screen(.12, .5, 1.0), blade=tuple(_unit((0.0, 0.9, -0.35))), flat=LEAP_FLAT)
+RISE_PASS = dict(grip=on_screen(.55, -.4, .78), blade=tuple(_unit((0.3, 0.95, 0.05))), flat=LEAP_FLAT)
+RISE_HOLD = dict(grip=on_screen(.45, -.5, .92), blade=tuple(_unit((0.5, 0.85, -0.1))), flat=LEAP_FLAT)
+SLAM_MID = dict(grip=on_screen(.1, 0.0, 1.0), blade=tuple(_unit((-0.1, 0.35, 1.0))), flat=LEAP_FLAT)
+SLAM_LOW = dict(grip=on_screen(.48, -.4, .95), blade=tuple(_unit((-0.8, -0.48, 0.42))), flat=SLAM_LOW_FLAT)
 SLAM_BACK = dict(grip=on_screen(.42, -.6, .82), blade=tuple(_unit((0.05, 0.45, 0.9))), flat=LEAP_FLAT)
 LEAP_L_DOWN = .2       # the left fist this far down the handle from the right (blocks along the blade)
 LEAP_R_SHOULDER = np.array((0.75, -1.0, 0.15))
@@ -1151,14 +1157,14 @@ LEAP_L_SHOULDER = np.array((-0.65, -1.0, 0.15))
 
 
 def _shifted(pose, by=(0.0, 0.0, 0.0), tilt=0.0):
-    """The pose moved by [by] (authoring) with the tip turned [tilt] degrees further down the stroke."""
+    """The pose moved by [by] (authoring) with the tip turned [tilt] degrees up (negative: down, along the stroke)."""
     axis = np.cross(_unit(pose['blade']), (0.0, 1.0, 0.0))
     if np.linalg.norm(axis) < 1e-6: axis = np.array((1.0, 0.0, 0.0))
     return dict(grip=tuple(np.array(pose['grip']) + by), blade=tuple(_rot(axis, tilt, pose['blade'])), flat=pose['flat'])
 
 
-SLAM_DIP = _shifted(SLAM_LOW, (0.0, -0.08, -0.04), 10.0)     # the blade meets the ground: a dip...
-SLAM_BOUNCE = _shifted(SLAM_LOW, (0.0, 0.04, 0.0), -6.0)    # ...and the rebound off it
+SLAM_DIP = _shifted(SLAM_LOW, (0.0, -0.06, -0.03), -8.0)     # the blade meets the ground: a dip...
+SLAM_BOUNCE = _shifted(SLAM_LOW, (0.0, 0.04, 0.0), 5.0)    # ...and the rebound off it
 
 
 def _leap_track(beat):
@@ -1169,7 +1175,8 @@ def _leap_track(beat):
                    (h, 'linear', RISE_HOLD, True, False), (h + (n - h) * .5, 'inout', RISE_PASS, True, False),
                    (n, 'out', 'rest', False, True)]
     n = SLAM_TICKS
-    return n, [(0, 'linear', RISE_HOLD, True, False), (.7, 'in', SLAM_MID, True, False), (1.5, 'linear', SLAM_LOW, True, False),
+    return n, [(0, 'linear', RISE_HOLD, True, False), (.4, 'out', SLAM_TOP, True, False), (1.0, 'in', SLAM_MID, True, False),
+               (1.5, 'linear', SLAM_LOW, True, False),
                (2, 'out', SLAM_DIP, True, False), (2.8, 'out', SLAM_BOUNCE, True, False), (4, 'inout', SLAM_LOW, True, False),
                (8, 'inout', SLAM_BACK, True, False), (n, 'out', 'rest', False, True)]
 
