@@ -21,7 +21,7 @@ internal object CoreWarriorRefChoreography {
     private const val DRAG_SWORD_ROLL = -2.3
     /** 狂乱 / 天落とし / 大地崩し: every phase is drawn here (their ids still carry older choreographies elsewhere). */
     private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER, CoreWarriorRules.LAUNCHER,
-        CoreWarriorRules.DRAG, CoreWarriorRules.FULL_SWING, CoreWarriorRules.ARMOR, CoreWarriorRules.AWAKEN, CoreWarriorRules.KIZAMI, CoreWarriorRules.HYAKU)
+        CoreWarriorRules.DRAG, CoreWarriorRules.FULL_SWING, CoreWarriorRules.ARMOR, CoreWarriorRules.AWAKEN, CoreWarriorRules.KIZAMI, CoreWarriorRules.ABARE)
     /**
      * 刻み打ち's look (2026-10-27). TALLY and FAN were built from 狂乱's dark wind and earth and read the same as it
      * (Creator: 「狂乱に似てしまってて差がない」), so STEEL keeps away from both: no dark trail, no earth. Each cut is
@@ -267,11 +267,11 @@ internal object CoreWarriorRefChoreography {
             return out
         }
         if (e.sceneId == CoreWarriorRules.KIZAMI) return kizami(e, ::part, ::local, ::trail)
-        if (e.sceneId == CoreWarriorRules.HYAKU) {
-            // 百刃 (2026-10-27): neither 狂乱's dark wind and earth nor 刻み打ち's red crescents. Steel: each chop is a
-            // thin grey arc right in front, turned a different way every chop (down, across, up, back across), so
-            // they pile into a flurry of blades; every chop throws a white-gold streak where it lands. The finish is
-            // one wide steel arc low across the front and a scrape torn into the ground under it.
+        if (e.sceneId == CoreWarriorRules.ABARE) {
+            // 暴れ歩き (2026-10-27): neither 狂乱's dark wind and earth nor 刻み打ち's red crescents. White steel: each
+            // swing is a pair of steel crescents toward where the warrior walks, turned a different way every swing
+            // (down, across, up, back across) so they pile into a storm of blades; each throws white-gold streaks.
+            // The finish swings all the way round: steel crescents on every side and a dent knocked into the ground.
             if (e.phase == CoreSkillVisualPhase.PREPARE) {
                 out += part("twinkle0", local(.4, 1.9, .3), .5, 0.0, 3, ground = false, billboard = true)
                 return out
@@ -281,19 +281,22 @@ internal object CoreWarriorRefChoreography {
                     roll = (hash(e.pulse, 362) - .5) * 3.0)
                 return out
             }
-            if (e.pulse == CoreWarriorRules.HYAKU_FINISH_PULSE) {
-                // The finish: one huge steel arc across the front (facing the viewer, so it reads from any side),
-                // a second wider one a tick behind, a fan of white-gold streaks, and a dent knocked into the ground.
-                out += part("hsweep", local(0.0, 1.0, 1.6), 6.0, 0.0, 9, ground = false, roll = -.6, billboard = true)
-                out += part("hsweep", local(0.0, 1.05, 1.7), 7.0, 0.0, 8, ground = false, roll = -.45, delay = 1, billboard = true)
-                out += part("crater", local(0.0, .1, 2.2), 1.0, yaw, 30, delay = 1).copy(scale = Vec(2.6, 1.0, 2.6))
-                for (c in 0 until 8) out += part("streak${c}", local((c - 3.5) * .45, .7 + .5 * hash(c, 363), 2.2), 1.0, 0.0, 5, ground = false,
-                    delay = 1, billboard = true, roll = (c - 3.5) * .3 + (hash(c, 364) - .5) * .4)
+            if (e.pulse == CoreWarriorRules.ABARE_FINISH_PULSE) {
+                // The finish: the blade goes all the way round, a big steel crescent on each side in turn.
+                for (q in 0 until 4) {
+                    val a = q * PI / 2
+                    out += part("hsweep", local(sin(a) * 1.9, 1.2, cos(a) * 1.9), 6.8, 0.0, 9, ground = false, roll = -.6 + q * .4,
+                        delay = q / 2, billboard = true)
+                }
+                out += part("crater", local(0.0, .1, 0.0), 1.0, yaw, 30, delay = 1).copy(scale = Vec(3.0, 1.0, 3.0))
+                for (c in 0 until 8) { val a = c * PI / 4
+                    out += part("streak${c}", local(sin(a) * 2.3, .7 + .5 * hash(c, 363), cos(a) * 2.3), 1.0, 0.0, 5, ground = false,
+                        delay = 1 + c / 4, billboard = true, roll = (hash(c, 364) - .5) * 2.0) }
                 for (c in 0 until 8) out += part("ember${c}", local((hash(c, 365) - .5) * 2.6, .5 + hash(c, 366), 2.0 + hash(c, 367)),
                     .25 + .15 * hash(c, 368), 0.0, 8, ground = false, delay = 1 + c / 3, billboard = true)
                 return out
             }
-            // A chop: two steel arcs right in front, always facing the viewer, each turned round the line of sight a different
+            // A swing: two steel arcs toward where the warrior walks, always facing the viewer, each turned round the line of sight a different
             // way every chop (down, across, rising, back across) so they pile up into a storm of blades.
             val turn = e.pulse % 4
             val roll = doubleArrayOf(0.0, 1.6, 3.3, 4.8)[turn] + (hash(e.pulse, 370) - .5) * .7
@@ -646,7 +649,7 @@ internal object CoreWarriorRefChoreography {
                 val lift = (t.coerceAtLeast(0.0) / 10.0).coerceAtMost(1.0) * .45
                 CoreMeshPose(p.offset.add(0.0, lift + sin(t * 1.9) * .04, 0.0), p.scale, p.yaw + t * .05, .3, .2, CoreCombatMeshes.GROUND, live)
             }
-            // 百刃: the white-steel crescent (slash drawn in steel), sweeping through its eight frames fast.
+            // 暴れ歩き: the white-steel crescent (slash drawn in steel), sweeping through its eight frames fast.
             name == "hsweep" -> CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll, "$DIR/steel_${(tick * 8 / p.durationTicks).coerceAtMost(7)}", live)
             name == "sweep" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, p.roll, "$DIR/sweep_${tick.coerceAtMost(7)}", live)
             name == "scrape" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,

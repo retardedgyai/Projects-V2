@@ -28,7 +28,7 @@ internal object CoreCombatFeel {
         CoreClass.MAGE, CoreClass.HEALER -> Profile(6, 0, immediateNormal = false, recovery = 5, attackBreaksGuard = true)
     }
     fun recovery(job: CoreClass, s: CoreSkillDefinition) = when {
-        s.icon == "dash" || s.icon == "war_wound" || s.icon == CoreWarriorRules.KIZAMI || s.icon == CoreWarriorRules.HYAKU -> 3
+        s.icon == "dash" || s.icon == "war_wound" || s.icon == CoreWarriorRules.KIZAMI || s.icon == CoreWarriorRules.ABARE -> 3
         s.icon in setOf("war_breach", "war_cry", "war_banner", "war_awaken") -> 4
         s.icon == CoreWarriorRules.FRENZY -> 6
         s.icon == CoreWarriorRules.SHATTER -> 7
@@ -63,7 +63,7 @@ internal object CoreWarriorRules {
     const val LAUNCHER = "war_breach" // 斬り上げ (builds)
     const val DRAG = "war_cry"        // 引き摺り (builds)
     const val KIZAMI = "war_kizami"   // 刻み打ち (builds)
-    const val HYAKU = "war_hyakujin"  // 百刃 (builds)
+    const val ABARE = "war_abare"     // 暴れ歩き (builds)
     const val FULL_SWING = "war_ult"  // 全力の一振り (ultimate, spends)
     const val ARMOR = "war_banner"    // 狂戦士の甲冑 (ultimate)
     const val AWAKEN = "war_awaken"   // 獣の目覚め (ultimate)
@@ -95,21 +95,22 @@ internal object CoreWarriorRules {
     const val KIZAMI_LAST_SCALE = 1.8
     const val KIZAMI_FULL_BEAST = 1.0
     /**
-     * 百刃 (Creator 2026-10-27, after GW2's Hundred Blades; easy to play: one press to start, anything to stop): the
-     * warrior plants its feet and chops in front every [HYAKU_EVERY] ticks for up to [HYAKU_MAX] ticks. Pressing the key
-     * again, trying to walk (after [HYAKU_MOVE_GRACE] ticks) or running out ends it with a heavy finishing swing
-     * [HYAKU_FINISH_WINDUP] ticks later; a finish after at least [HYAKU_FULL_SWINGS] chops builds one more stack.
+     * 暴れ歩き (Creator 2026-10-27: 「手触りの良い暴れるためのスキル」; it replaced 百刃, which planted the feet): for
+     * [ABARE_MAX] ticks the warrior walks where it likes (a little heavy, [ABARE_SPEED]) and the greatsword swings by
+     * itself every [ABARE_EVERY] ticks toward where it is walking (ahead when standing). Pressing the key again or
+     * running out ends it with one swing all the way round [ABARE_FINISH_WINDUP] ticks later. [ABARE_HITS_FOR_BEAST]
+     * hits in one rampage build one more stack.
      */
-    const val HYAKU_EVERY = 3L
-    const val HYAKU_MAX = 50L
-    const val HYAKU_MOVE_GRACE = 6L
-    const val HYAKU_FINISH_WINDUP = 3L
-    const val HYAKU_RECOVERY = 6L
-    const val HYAKU_FULL_SWINGS = 8
-    const val HYAKU_FINISH_SCALE = 3.0
-    const val HYAKU_FULL_BEAST = 1.0
-    /** The effect pulse that marks 百刃's finishing swing (the chops count up from 0). */
-    const val HYAKU_FINISH_PULSE = 99
+    const val ABARE_EVERY = 4L
+    const val ABARE_MAX = 60L
+    const val ABARE_SPEED = .85
+    const val ABARE_FINISH_WINDUP = 3L
+    const val ABARE_RECOVERY = 6L
+    const val ABARE_HITS_FOR_BEAST = 10
+    const val ABARE_FINISH_SCALE = 3.0
+    const val ABARE_FULL_BEAST = 1.0
+    /** The effect pulse that marks 暴れ歩き's round finishing swing (the swings count up from 0). */
+    const val ABARE_FINISH_PULSE = 99
     /** The effect pulse that marks 引き摺り's final swing (the drag's own pulses count up from 1). */
     const val DRAG_FINISH_PULSE = 99
     /** How long an enemy 斬り上げ threw up counts as in the air for 叩き落とし. */

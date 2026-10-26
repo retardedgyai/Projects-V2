@@ -10,7 +10,7 @@ class CoreWarriorReworkTest {
 
     @Test fun `warrior skills sit in cooldown tiers and the beast gates nothing`() {
         val byIcon = warrior.filterNot { it.retired }.associateBy { it.icon }
-        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner", "war_awaken", CoreWarriorRules.KIZAMI, CoreWarriorRules.HYAKU), byIcon.keys)
+        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner", "war_awaken", CoreWarriorRules.KIZAMI, CoreWarriorRules.ABARE), byIcon.keys)
         assertEquals(100, byIcon.getValue("dash").cooldown)
         assertTrue(listOf("slam", "whirl", "war_guard", "war_counter").all { byIcon.getValue(it).cooldown in 200..320 }, "spenders")
         assertTrue(byIcon.getValue("war_wound").cooldown in 160..240, "the leap moves")

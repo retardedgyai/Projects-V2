@@ -13,7 +13,7 @@ internal object CoreSkillChoreography {
     // Explicit durations in server ticks. Assassin is not allowed to disappear in three frames.
     private val duration = mapOf(
         "normal_sweep" to 16,"normal_reverse" to 16,"normal_finish" to 24,
-        "dash" to 20,"slam" to 28,"whirl" to 20,"war_kizami" to 20,"war_hyakujin" to 20,"war_guard" to 30,"war_wound" to 18,
+        "dash" to 20,"slam" to 28,"whirl" to 20,"war_kizami" to 20,"war_abare" to 20,"war_guard" to 30,"war_wound" to 18,
         "war_counter" to 22,"war_cry" to 28,"war_breach" to 22,"war_ult" to 30,"war_banner" to 30,"war_awaken" to 24,
         "firebolt" to 22,"frost_nova" to 30,"meteor" to 30,"mage_blink" to 24,"mage_mark" to 22,
         "mage_garden" to 32,"mage_burst" to 28,"mage_ward" to 30,"mage_ult" to 34,"mage_zero" to 32,

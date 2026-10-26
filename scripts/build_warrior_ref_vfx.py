@@ -393,7 +393,7 @@ SLASH_TAIL = [150, 136, 112, 80, 40, 0, -20, -30]          # where the band's ta
 SLASH_FADE = [0, 0, 0, 0, .25, .5, .7, .85]
 
 
-# 百刃 (2026-10-27): the same crescent in white steel, so its flurry reads apart from 刻み打ち's red one.
+# 暴れ歩き (2026-10-27): the same crescent in white steel, so its flurry reads apart from 刻み打ち's red one.
 STEEL = {W: (255, 255, 255), C: (226, 236, 244), R: (156, 172, 190), O: (196, 208, 222), D: (74, 86, 104)}
 
 

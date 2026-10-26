@@ -16,7 +16,7 @@ internal object CoreWarriorSkillPresentation {
         "war_ult" to Identity("全力一振", "奥義・一撃", "担いで溜め、渾身の一振りで地面を大きく割る"),
         "war_banner" to Identity("狂戦士甲冑", "奥義・暴走", "10秒、CCも怯みも効かず速く、獣が満ちたまま"),
         "war_awaken" to Identity("獣の目覚め", "奥義・解放", "獣3つで撃つ。8秒、獣が減らず使う技の再使用が半分"),
-        CoreWarriorRules.HYAKU to Identity("百刃", "獣を溜める・足を止めて連打", "押して斬り続け、押し直すか歩くと締め。8振りで獣がもう1つ"),
+        CoreWarriorRules.ABARE to Identity("暴れ歩き", "獣を溜める・歩いて暴れる", "歩く方へ大剣が振り回され続ける。押し直すと一周の大振り。10回当てると獣がもう1つ", "暴れ歩"),
         CoreWarriorRules.KIZAMI to Identity("刻み打ち", "獣を溜める・連打", "振りの直後に押し直して刻む。4振り刻めば獣がもう1つ", "刻打ち")
     )
     // Three across: the building skills first (enter, leap, launch / drag, rhythm, flurry), then the four spenders.
