@@ -23,12 +23,13 @@ internal object CoreWarriorRefChoreography {
     private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER, CoreWarriorRules.LAUNCHER,
         CoreWarriorRules.DRAG, CoreWarriorRules.FULL_SWING, CoreWarriorRules.ARMOR, CoreWarriorRules.AWAKEN, CoreWarriorRules.KIZAMI)
     /**
-     * 刻み打ち's look, two candidates for the Creator to choose between (2026-10-27): TALLY carves a short gash where
-     * each cut's edge meets the ground and the overhead blow tears them up; FAN leaves each cut's dark trail hanging
-     * until the overhead blow breaks them.
+     * 刻み打ち's look (2026-10-27). TALLY and FAN were built from 狂乱's dark wind and earth and read the same as it
+     * (Creator: 「狂乱に似てしまってて差がない」), so STEEL keeps away from both: no dark trail, no earth. Each cut is
+     * the red-and-cream crescent (slash), the hit throws white-gold streaks and sparks, and the beat is a red ring
+     * opening at the feet, one more ring each cut, all of them bursting outward on the overhead blow.
      */
-    enum class KizamiLook { TALLY, FAN }
-    @Volatile var kizamiLook = KizamiLook.TALLY
+    enum class KizamiLook { TALLY, FAN, STEEL }
+    @Volatile var kizamiLook = KizamiLook.STEEL
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     /** Camera-facing pieces whose pose moves them (the meshes carry these by moving the entity). */
@@ -502,6 +503,33 @@ internal object CoreWarriorRefChoreography {
             return out
         }
         val k = e.pulse.coerceIn(0, 3)
+        if (kizamiLook == KizamiLook.STEEL) {
+            val overhead = k == 3
+            // The cause: the red crescent in the cut's own plane (the overhead one upright along the facing), bigger each cut.
+            val size = 4.2 + .35 * k
+            if (!overhead) {
+                val tilt = tilts[k]
+                out += p("kslash", local(0.0, 1.2, .8), size, yaw + PI / 2 - 1.15, 8, pitch = -tilt, ground = false, roll = if (k % 2 == 0) 0.0 else .35)
+            } else {
+                // Pivot at the shoulder, the drawing's blade sweeping from up-behind down to the ground ahead.
+                out += p("kslash", local(0.0, 1.0 + .031 * 4.2, 1.0 + .25 * 4.2), 4.2, yaw + PI / 2 - .26, 8, ground = false)
+                out += p("kslash", local(0.0, 1.05 + .031 * 4.6, 1.05 + .25 * 4.6), 4.6, yaw + PI / 2 - .26, 7, ground = false, delay = 1)
+            }
+            // The result: white-gold streaks thrown off where the edge met the target, and sparks scattering.
+            val hit = local(if (overhead) 0.0 else side(k) * .5, 1.1, 2.2)
+            val streaks = if (overhead) 5 else 2
+            for (c in 0 until streaks) out += p("streak${c}", hit.add(0.0, (hash(k, c, 351) - .5) * .4, 0.0), if (overhead) .9 else .6, 0.0, 4,
+                ground = false, delay = 1, roll = (hash(k, c, 352) - .5) * 2.6 + side(k.coerceAtMost(2)) * .6, billboard = true)
+            for (c in 0 until (if (overhead) 8 else 4)) out += p("ember${c}", hit.add((hash(k, c, 353) - .5) * 1.2, (hash(k, c, 354) - .5) * .8,
+                (hash(k, c, 355) - .5) * .6), .25 + .15 * hash(k, c, 356), 0.0, 8, ground = false, delay = 1 + c / 3, billboard = true)
+            // The beat: a red ring opens at the feet as the next press opens, one more ring each cut; the overhead blow
+            // sends one big ring out instead.
+            if (!overhead) {
+                for (r in 0..k) out += p("kring", Vec(0.0, .08, 0.0), 1.6 + .7 * r, 0.0, 8, delay = beat + r, ground = false).copy(pitch = -PI / 2)
+                out += p("twinkle${1 + k}", local(side(k) * 1.0, .7, 1.4), .7, 0.0, 3, ground = false, delay = beat, billboard = true)
+            } else for (r in 0 until 3) out += p("kring", Vec(0.0, .08, 0.0), 3.0 + 1.2 * r, 0.0, 8, delay = 1 + r, ground = false).copy(pitch = -PI / 2)
+            return out
+        }
         if (k < 3) {
             val tilt = tilts[k]
             val roll = if (k % 2 == 0) 0.0 else .35
@@ -562,6 +590,11 @@ internal object CoreWarriorRefChoreography {
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
             name == "wind" -> CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll, "$DIR/wind_${tick.coerceAtMost(7)}", live)
+            // 刻み打ち (STEEL): the red crescent's own eight frames, swept out and burning away.
+            name == "kslash" -> CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll, "$DIR/slash_${tick.coerceAtMost(7)}", live)
+            // Sparks: drift up a little and burn down through the three ember frames.
+            name.startsWith("ember") -> CoreMeshPose(p.offset.add(0.0, t.coerceAtLeast(0.0) * .05, 0.0), p.scale, 0.0, 0.0, 0.0,
+                "$DIR/ember_${(tick * 3 / p.durationTicks).coerceAtMost(2)}", live)
             // 刻み打ち (FAN): the trail holds its full stroke, then wears away over its last five ticks.
             name == "windhold" -> CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll,
                 "$DIR/wind_${if (tick < p.durationTicks - 5) tick.coerceAtMost(2) else (3 + tick - (p.durationTicks - 5)).coerceAtMost(7)}", live)
@@ -764,6 +797,8 @@ internal object CoreWarriorRefChoreography {
                 CoreMeshPose(p.offset, p.scale.mul(grow), 0.0, 0.0, p.roll, "$DIR/ray_$stage", live)
             }
             name == "frame" -> CoreMeshPose(p.offset, p.scale, 0.0, 0.0, 0.0, "$DIR/frame", live)
+            // 刻み打ち's beat: the red ring laid flat on the ground, widening as it fades.
+            name == "kring" -> CoreMeshPose(p.offset, p.scale.mul(1.0 + tick * .08), 0.0, p.pitch, 0.0, "$DIR/ring_${(tick / 2).coerceAtMost(3)}", live)
             name == "ring" -> CoreMeshPose(p.offset, p.scale.mul(1.0 + tick * .06), 0.0, 0.0, 0.0, "$DIR/ring_${(tick / 2).coerceAtMost(3)}", live)
             name.startsWith("twinkle") -> CoreMeshPose(p.offset, p.scale.mul(if (tick % 2 == 0) 1.0 else .8), 0.0, 0.0, 0.0,
                 "$DIR/twinkle_${(tick / 2).coerceAtMost(2)}", live)
