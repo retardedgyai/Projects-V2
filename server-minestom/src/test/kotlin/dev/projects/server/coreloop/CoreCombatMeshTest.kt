@@ -30,8 +30,8 @@ class CoreCombatMeshTest {
                 CoreCombatPresentation.pack(it,true)
                 assertEquals(CoreCombatPresentation.Detail.SUBDUED,CoreCombatPresentation.cycle(it))
             }
-            // 獣の目覚め has no flourish body: it is drawn only by CoreWarriorRefChoreography (the ground breaking open).
-            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon!=CoreWarriorRules.AWAKEN }) {
+            // 獣の目覚め and 刻み打ち have no flourish body: they are drawn only by CoreWarriorRefChoreography.
+            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon!=CoreWarriorRules.AWAKEN && it.icon!=CoreWarriorRules.KIZAMI }) {
                 val effect=CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0))
                 meshes.play(effect)
                 repeat(3) { meshes.tick() }

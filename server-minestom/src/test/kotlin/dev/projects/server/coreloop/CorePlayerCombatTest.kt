@@ -345,14 +345,20 @@ class CorePlayerCombatTest {
             listOf("whirl" to 2, "war_guard" to 3, "war_counter" to 3).flatMap { (icon, slot) -> listOf(0, 3).map { n -> Triple("${icon}_b$n", slot, false) } } +
             listOf(Triple("war_breach_b0", 3, false), Triple("war_cry_b0", 3, false)) +
             // The three ultimates (slot 4): 全力の一振り with a full beast, 狂戦士の甲冑, 獣の目覚め (needs three).
-            listOf(Triple("war_ult_b3", 4, false), Triple("war_banner_b0", 4, false), Triple("war_awaken_b3", 4, false))
-        val scenes=(runs+beastRuns).map { (run,slot,shader) -> var scene=emptyMap<String,Any>(); val icon=if(Regex("_b[0-3]$").containsMatchIn(run)) run.dropLast(3) else run
+            listOf(Triple("war_ult_b3", 4, false), Triple("war_banner_b0", 4, false), Triple("war_awaken_b3", 4, false)) +
+            // 刻み打ち pressed on every beat, once per candidate look.
+            CoreWarriorRefChoreography.KizamiLook.entries.map { Triple("war_kizami_${it.name.lowercase()}", 3, false) }
+        val scenes=(runs+beastRuns).map { (run,slot,shader) -> var scene=emptyMap<String,Any>()
+            val icon=if(Regex("_b[0-3]$").containsMatchIn(run)) run.dropLast(3) else if(run.startsWith(CoreWarriorRules.KIZAMI)) CoreWarriorRules.KIZAMI else run
+            CoreWarriorRefChoreography.kizamiLook=CoreWarriorRefChoreography.KizamiLook.entries.firstOrNull { run.endsWith(it.name.lowercase()) }
+                ?: CoreWarriorRefChoreography.KizamiLook.TALLY
             CoreWarriorIronChoreography.shaderCut=shader; try { arena(mobs = if (icon == CoreWarriorRules.DRAG) listOf(Pos(7.7, 40.0, 10.6), Pos(7.5, 40.0, 12.2)) else emptyList()) { h ->
             CoreCombatPresentation.pack(h.player,true)
             if(icon=="war_wound") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=4)); h.actor.reset()
                 h.player.teleport(h.player.position.withView(0f, 30f)) } // 跳び叩き aims at the ground short of the target
             if(icon=="war_counter") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=5)); h.actor.reset() }
             if(icon=="war_breach") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=7)); h.actor.reset() }
+            if(icon==CoreWarriorRules.KIZAMI) { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=11)); h.actor.reset() }
             if(icon==CoreWarriorRules.DRAG) { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=6)); h.actor.reset(); h.combat.tick(1000L) }
             if(icon=="war_banner") { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=1)); h.actor.reset() }
             if(icon==CoreWarriorRules.AWAKEN) { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=2)); h.actor.reset() }
@@ -381,10 +387,12 @@ class CorePlayerCombatTest {
                     arc = CoreWarriorLeap.path(h.player.position, h.player.velocity.div(20.0)).iterator()
                 arc?.let { if (it.hasNext()) h.player.teleport(it.next()) }
                 // 引き摺り: the client walks the warrior forward while the blade drags (about the slowed walk speed).
-                if (icon == CoreWarriorRules.DRAG && it in 8..48) h.player.teleport(h.player.position.add(0.0, 0.0, .17)) }
+                if (icon == CoreWarriorRules.DRAG && it in 8..48) h.player.teleport(h.player.position.add(0.0, 0.0, .17))
+                // 刻み打ち: pressed again as each beat opens (four ticks after each cut), so all four swings come.
+                if (icon == CoreWarriorRules.KIZAMI && it in setOf(7, 13, 19)) h.actor.skill(slot) }
             scene=mapOf("id" to if(shader) "${icon}_shader" else run,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
             CoreCombatPresentation.forget(h.player)
-        } } finally { CoreWarriorIronChoreography.shaderCut=false }; scene }
+        } } finally { CoreWarriorIronChoreography.shaderCut=false; CoreWarriorRefChoreography.kizamiLook=CoreWarriorRefChoreography.KizamiLook.TALLY }; scene }
         val cwd=java.nio.file.Path.of(System.getProperty("user.dir"))
         val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd
         java.nio.file.Files.createDirectories(root.resolve(".tools"))

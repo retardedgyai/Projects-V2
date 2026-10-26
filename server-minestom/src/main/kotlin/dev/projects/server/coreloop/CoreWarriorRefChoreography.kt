@@ -21,7 +21,14 @@ internal object CoreWarriorRefChoreography {
     private const val DRAG_SWORD_ROLL = -2.3
     /** 狂乱 / 天落とし / 大地崩し: every phase is drawn here (their ids still carry older choreographies elsewhere). */
     private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER, CoreWarriorRules.LAUNCHER,
-        CoreWarriorRules.DRAG, CoreWarriorRules.FULL_SWING, CoreWarriorRules.ARMOR, CoreWarriorRules.AWAKEN)
+        CoreWarriorRules.DRAG, CoreWarriorRules.FULL_SWING, CoreWarriorRules.ARMOR, CoreWarriorRules.AWAKEN, CoreWarriorRules.KIZAMI)
+    /**
+     * 刻み打ち's look, two candidates for the Creator to choose between (2026-10-27): TALLY carves a short gash where
+     * each cut's edge meets the ground and the overhead blow tears them up; FAN leaves each cut's dark trail hanging
+     * until the overhead blow breaks them.
+     */
+    enum class KizamiLook { TALLY, FAN }
+    @Volatile var kizamiLook = KizamiLook.TALLY
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     /** Camera-facing pieces whose pose moves them (the meshes carry these by moving the entity). */
@@ -258,6 +265,7 @@ internal object CoreWarriorRefChoreography {
             out += part("dust${80}", at.add(0.0, .4, 0.0), 1.5, 0.0, 10, ground = false, delay = 1, billboard = true)
             return out
         }
+        if (e.sceneId == CoreWarriorRules.KIZAMI) return kizami(e, ::part, ::local, ::trail)
         if (e.sceneId == CoreWarriorRules.FRENZY) {
             // 狂乱: each swing leaves a dark band of wind, left and right in turn, and kicks earth off the tip; the
             // last swing is the overhead blow and tears a short furrow forward like a small 地割り.
@@ -467,6 +475,78 @@ internal object CoreWarriorRefChoreography {
     }
 
     private val rise = doubleArrayOf(0.0, .72, 1.12, 1.0)
+    /**
+     * 刻み打ち: swings 0-2 are diagonal cuts, right-left, left-right, right-left (each in its own tilted plane like 狂乱's),
+     * swing 3 the heavier overhead blow. The cause (the trail) comes first; then [kizamiLook]'s result. When the beat
+     * opens (CoreWarriorRules.KIZAMI_BEAT_OPEN ticks after the cut) the blade glints where it came to rest.
+     */
+    private fun kizami(e: CoreSkillEffect,
+                       part: (String, Vec, Double, Double, Int, Double, Int, Boolean, Double, Boolean) -> CoreCombatMeshPart,
+                       local: (Double, Double, Double) -> Vec,
+                       trail: (Double, Int, Int, Boolean, Double, Double) -> CoreCombatMeshPart): List<CoreCombatMeshPart> {
+        val yaw = atan2(e.direction.x(), e.direction.z())
+        fun p(name: String, at: Vec, scale: Double, partYaw: Double, life: Int, pitch: Double = 0.0, delay: Int = 0,
+              ground: Boolean = true, roll: Double = 0.0, billboard: Boolean = false) = part(name, at, scale, partYaw, life, pitch, delay, ground, roll, billboard)
+        val out = mutableListOf<CoreCombatMeshPart>()
+        val beat = CoreWarriorRules.KIZAMI_BEAT_OPEN.toInt()
+        val gap = (CoreWarriorRules.KIZAMI_BEAT_OPEN + CoreWarriorRules.KIZAMI_WINDUP).toInt()   // a swing every 6 ticks on the beat
+        val tilts = doubleArrayOf(.8, -.8, .6)
+        fun side(k: Int) = if (tilts[k] > 0) -1.0 else 1.0                                       // where the edge comes down
+        fun notchAt(k: Int) = local(side(k) * (1.1 + .25 * (k / 2)), .12, 2.0 + .35 * k)
+        if (e.phase == CoreSkillVisualPhase.PREPARE) {
+            out += p("twinkle0", local(-.5, 2.2, .1), .5, 0.0, 3, ground = false, billboard = true)
+            return out
+        }
+        if (e.phase == CoreSkillVisualPhase.CONTACT) {
+            for (k in 0 until 2) out += p("clod${60 + k}", Vec((hash(k, 301) - .5) * .5, .4, (hash(k, 302) - .5) * .5), .3, hash(k, 303) * 6.0, 14, ground = false)
+            return out
+        }
+        val k = e.pulse.coerceIn(0, 3)
+        if (k < 3) {
+            val tilt = tilts[k]
+            val roll = if (k % 2 == 0) 0.0 else .35
+            if (kizamiLook == KizamiLook.FAN) {
+                // The trail stays hanging until the overhead blow (three swings later, on the beat) breaks it.
+                val life = (3 - k) * gap + 3
+                out += p("windhold", local(0.0, 1.15, .9), 5.0 + .3 * k, yaw + PI / 2 - 1.15, life, pitch = -tilt, ground = false, roll = roll)
+            } else {
+                out += p("wind", local(0.0, 1.15, .9), 5.0, yaw + PI / 2 - 1.15, 9, pitch = -tilt, ground = false, roll = roll)
+                out += p("wind", local(0.0, 1.1, .85), 5.6, yaw + PI / 2 - 1.15, 8, pitch = -tilt * .92, ground = false, roll = roll + .12, delay = 1)
+                // The gash where the edge bit the ground, across the line of the cut; it lasts until the overhead blow.
+                val at = notchAt(k)
+                out += p("notch", at, 1.0, yaw + side(k) * .9, (3 - k) * gap + 6, delay = 1).copy(scale = Vec(2.4, 1.0, 2.4))
+                out += p("turf${130 + k}", at, .55, yaw + side(k) * .8, 16, delay = 1, roll = -side(k) * .8)
+                for (c in 0 until 3) out += p("clod${70 + 3 * k + c}", at.add((hash(k, c, 311) - .5) * .5, .1, (hash(k, c, 312) - .5) * .5),
+                    .25 + .15 * hash(k, c, 313), yaw + hash(k, c, 314) * 6.0, 16, ground = false, delay = 1 + c / 2)
+            }
+            // The beat: the blade glints where it came to rest, low on the side the cut ended.
+            out += p("twinkle${1 + k}", local(side(k) * 1.0, .7, 1.4), .7, 0.0, 3, ground = false, delay = beat, billboard = true)
+            return out
+        }
+        // The overhead blow: straight down ahead, heavier than the three cuts.
+        out += trail(5.4, 9, 0, false, 1.5, 1.2)
+        out += trail(6.0, 8, 1, false, 1.55, 1.2)
+        out += p("furrow", local(0.0, .12, 2.6), 1.0, yaw, 34).copy(scale = Vec(4.2, 1.0, 4.2))
+        if (kizamiLook == KizamiLook.FAN) {
+            // The three hanging trails break: dark shards fall from where each one hung.
+            for (j in 0 until 3) for (c in 0 until 4) {
+                val at = local(side(j) * (.6 + .35 * c), 1.9 - .35 * c, 1.0 + .2 * j)
+                out += p("clod${90 + 4 * j + c}", at, .3 + .15 * hash(j, c, 321), yaw + hash(j, c, 322) * 6.0, 16, ground = false, delay = 1 + c / 2)
+            }
+        } else {
+            // The gashes tear open: turf and clods thrown up out of each, the blow's own line down the middle.
+            for (j in 0 until 3) {
+                val at = notchAt(j)
+                out += p("turf${140 + j}", at, .8, yaw + side(j) * .7, 22, delay = 2 + j, roll = -side(j) * 1.0)
+                for (c in 0 until 3) out += p("clod${100 + 3 * j + c}", at.add((hash(j, c, 331) - .5) * .6, .15, (hash(j, c, 332) - .5) * .6),
+                    .3 + .2 * hash(j, c, 333), yaw + hash(j, c, 334) * 6.0, 18, ground = false, delay = 2 + j + c / 2).copy(startSize = 1.1)
+            }
+        }
+        for (c in 0 until 5) out += p("clod${120 + c}", local((hash(c, 341) - .5) * 1.0, .25, 2.0 + .45 * c), .3 + .2 * hash(c, 342),
+            yaw + hash(c, 343) * 6.0, 18, ground = false, delay = c / 2).copy(startSize = 1.1)
+        return out
+    }
+
     private val flameGrow = doubleArrayOf(.6, 1.0, 1.12, 1.1, 1.0, .9, .78, .6)
 
     fun pose(p: CoreCombatMeshPart, age: Double): CoreMeshPose? {
@@ -482,6 +562,12 @@ internal object CoreWarriorRefChoreography {
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
             name == "wind" -> CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll, "$DIR/wind_${tick.coerceAtMost(7)}", live)
+            // 刻み打ち (FAN): the trail holds its full stroke, then wears away over its last five ticks.
+            name == "windhold" -> CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll,
+                "$DIR/wind_${if (tick < p.durationTicks - 5) tick.coerceAtMost(2) else (3 + tick - (p.durationTicks - 5)).coerceAtMost(7)}", live)
+            // 刻み打ち (TALLY): a short gash that opens, holds, and crumbles over its last ticks whatever its life.
+            name == "notch" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
+                "$DIR/furrow_${when { tick < 4 -> tick; tick < p.durationTicks - 4 -> 4; tick < p.durationTicks - 2 -> 5; else -> 6 }}", live)
             name.startsWith("dragsword:") -> CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll, name.substringAfter("dragsword:"), live)
             name.startsWith("pebble") -> {
                 // 大地崩し's warning: a stone lifts off the ground and trembles there until the blow.

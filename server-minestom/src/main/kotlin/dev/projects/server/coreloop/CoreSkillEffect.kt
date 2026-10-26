@@ -70,8 +70,7 @@ internal class CoreSkillEffect(
     prepareTicks: Int = 4,
     rayLength: Double = 0.0,
     internal val clippedRay: Boolean = false,
-    // 刻み打ち borrows 狂乱's alternating sweeps until it has art of its own.
-    internal val sceneId: String = if (skill.icon == CoreWarriorRules.KIZAMI) CoreWarriorRules.FRENZY else skill.icon,
+    internal val sceneId: String = skill.icon,
     internal val endpoint: CoreSkillEndpoint = CoreSkillEndpoint.NONE,
     internal val gardenCells: List<net.minestom.server.coordinate.Pos>? = null,
     /** 引き摺り: the held weapon's item model, drawn dragged at the side while the real one is hidden. */
