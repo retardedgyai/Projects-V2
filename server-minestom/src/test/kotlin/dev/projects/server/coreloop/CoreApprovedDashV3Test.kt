@@ -33,13 +33,15 @@ class CoreApprovedDashV3Test {
             assertTrue(parts.isNotEmpty(),"${skill.icon} $n")
             for(p in parts) for(t in -1..p.durationTicks) {
                 val pose=CoreSkillChoreography.pose(p,(p.delayTicks+t).toDouble())
-                if(t in 0 until p.durationTicks) assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/items/${pose.model}.json"),pose.model)
-                else assertFalse(pose.visible)
+                // The heaved turf is the real ground block under it (CoreCombatMeshes.GROUND), not a pack model.
+                if(t in 0 until p.durationTicks) { if(pose.model!=CoreCombatMeshes.GROUND)
+                    assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/items/${pose.model}.json"),pose.model) }
+                else assertFalse(pose.visible,"${skill.icon} $n ${p.shape} t=$t")
             }
         }
-        // A far leap lands bigger: more pieces, and the second ring of plates.
+        // A far leap lands bigger: a second, wider ring of heaved turf.
         val near=all(effect(leap,pulse=R.LEAP_LAND_PULSE)); val far=all(effect(leap,pulse=R.LEAP_FAR_LAND_PULSE))
-        assertTrue(far.count { it.shape=="war_ref:rplate" }>near.count { it.shape=="war_ref:rplate" }+3)
+        assertTrue(far.count { it.shape.startsWith("war_ref:turf") }>near.count { it.shape.startsWith("war_ref:turf") }+3)
         // Caught: harder than a plain hit.
         assertTrue(all(effect(dash,pulse=R.TACKLE_CAUGHT_PULSE)).size>all(effect(dash,pulse=R.TACKLE_HIT_PULSE)).size)
     }

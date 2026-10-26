@@ -586,38 +586,35 @@ internal object CoreWarriorRefChoreography {
                 for (s in listOf(-1.0, 1.0)) out += thrown(if (s < 0) 20 else 21, local(s * .35, .2, -.3), local(s * .6, 3.0, -1.4), .32)
             }
             n == LEAP_LAND_PULSE || n == LEAP_FAR_LAND_PULSE -> {
+                // The landing breaks the ground the way 天落とし and 大地崩し do (Creator 2026-10-27: 「ほかの割れる見た目と
+                // 同じにしてほしい、ブロックが浮くやつ」): a crater where the blade comes down in front, turf heaved up in
+                // blocks round it, tipped outward, and clods thrown. A far leap breaks a wider ring a moment later.
                 val far = n == LEAP_FAR_LAND_PULSE
-                val k0 = if (far) 1.3 else 1.0
-                val ahead = 2.6
+                val k0 = if (far) 1.25 else 1.0
+                val ahead = 1.9
                 val at = local(0.0, .12, ahead)
                 // The blade meets the ground a tick and a half into the slam (the hand's SLAM_LOW): the ground answers at 2.
                 val hit = 2
-                out += piece("cleft", at, 3.8 * k0, yaw, 48, delay = hit)
-                // The cleft's lips heave up on both sides, leaning away from the cut.
-                for (s in listOf(-1.0, 1.0))
-                    out += heaved(local(s * .6 * k0, .12, ahead + .2), yaw + PI / 2, .7 * k0, s * 1.0, hit)
-                // Slabs thrown on ahead in a fan (never back at the warrior), tumbling.
-                val slabs = if (far) 8 else 5
-                for (k in 0 until slabs) {
-                    val a = (k - (slabs - 1) / 2.0) * (2.8 / slabs) + (hash(n, k, 621) - .5) * .25
-                    val speed = (1.6 + 1.5 * hash(n, k, 622)) * k0
-                    out += thrown(k, local(sin(a) * .6, .25, ahead + .3 + cos(a) * .4),
-                        local(sin(a) * speed * 1.4, 3.0 + 1.4 * hash(n, k, 623), cos(a) * speed + .4), (.42 + .22 * hash(n, k, 624)) * k0, delay = hit + k % 2)
-                }
-                if (far) {
-                    // The second ring: rock plates heaved up round the blow, open toward the warrior.
-                    val r = 3.0
-                    // Uneven on purpose (not a fence): spacing, reach, size, lean and turn differ plate by plate, gaps left.
-                    for (k in 0 until 10) {
-                        if (k != 5 && hash(k, 628) < .22) continue
-                        val a = yaw + (k - 4.5) * .38 + (hash(k, 625) - .5) * .22
-                        val rr = r * (.85 + .3 * hash(k, 629))
-                        val p = local(0.0, .12, ahead).add(sin(a) * rr, 0.0, cos(a) * rr)
-                        if (hypot(p.x(), p.z()) < 2.6) continue
-                        out += heaved(p, a + (hash(k, 630) - .5) * .7, (.65 + .6 * hash(k, 626)) * (1.1 - .05 * abs(k - 4.5)),
-                            .35 + .6 * hash(k, 627), hit + 2 + (abs(k - 4.5) / 2.5).toInt(), 32)
+                out += piece("crater", at, 3.4 * k0, yaw + hash(n, 640) * 6.0, 44, delay = hit)
+                fun ring(count: Int, radius: Double, size: Double, delay: Int, seed: Int, base: Int) {
+                    for (k in 0 until count) {
+                        if (hash(seed, k, 641) < .15) continue
+                        val a = yaw + k * 2 * PI / count + (hash(seed, k, 642) - .5) * .5
+                        val d = radius * (.85 + .3 * hash(seed, k, 643))
+                        val p = at.add(sin(a) * d, 0.0, cos(a) * d)
+                        if (hypot(p.x(), p.z()) < 1.6) continue          // nothing heaves up in the warrior's own face
+                        out += piece("turf${base + k}", p, size * (.8 + .45 * hash(seed, k, 644)), a + PI / 2, 30,
+                            delay = delay + k % 2, roll = -(.8 + .5 * hash(seed, k, 645)), pitch = (hash(seed, k, 646) - .5) * .5)
                     }
                 }
+                ring(7, 1.2 * k0, .95 * k0, hit, 1, 150)
+                // Clods thrown up off the far side of the crater (none toward the warrior's eye).
+                for (k in 0 until 6) {
+                    val a = yaw + (k - 2.5) * .45 + (hash(k, 647) - .5) * .3
+                    out += piece("clod${150 + k}", at.add(sin(a) * 1.0, .2, cos(a) * 1.0), (.38 + .28 * hash(k, 648)) * k0, a, 22,
+                        delay = hit + k / 3, ground = false).copy(startSize = 1.2)
+                }
+                if (far) ring(11, 2.6, .85, hit + 3, 2, 160)
             }
         }
         return out
