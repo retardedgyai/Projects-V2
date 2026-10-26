@@ -5,18 +5,20 @@ data class CoreClassBuild(val first: Int = 0, val second: Int = 1, val third: In
     val ultimate: Int = 0, val nodes: Int = 0) {
     val skills get() = listOf(first, second, third, fourth)
     init {
-        require(skills.all { it in 0..7 } && skills.distinct().size == 4 && ultimate in 0..2)  // the warrior has three ultimates
+        // Catalog indices (CoreSkillCatalog.normalChoices checks the class); the warrior has three ultimates.
+        require(skills.all { it in 0..MAX_SKILL } && skills.distinct().size == 4 && ultimate in 0..2)
         require(nodes in 0 until (1 shl 18))
         for (i in 0..17) if (has(i)) require(CoreClassTrees.parents(i).isEmpty() || CoreClassTrees.parents(i).any(::has)) { "接続する前の技能が必要です" }
         require(listOf(2, 5, 8).count(::has) <= 1) { "大成技能は一つだけ選べます" }
     }
     fun has(index: Int) = nodes and (1 shl index) != 0
+    companion object { const val MAX_SKILL = 15 }
     val points get() = Integer.bitCount(nodes)
     val keystone get() = listOf(2, 5, 8).indexOfFirst(::has)
     fun equip(slot: Int, choice: Int): CoreClassBuild {
         require(slot in 0..4)
         if (slot == 4) return copy(ultimate = choice)
-        require(choice in 0..7)
+        require(choice in 0..MAX_SKILL)
         val next = skills.toMutableList()
         val oldSlot = next.indexOf(choice)
         if (oldSlot >= 0) next[oldSlot] = next[slot]

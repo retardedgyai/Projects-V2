@@ -330,7 +330,7 @@ class CoreLoopMenusTest {
         for(packed in listOf(false,true)) {
             val f=fixture(account(4),packed)
             f.menus.skillBuild(f.player)
-            f.click(14)
+            f.click(CoreWarriorSkillPresentation.candidateSlots[CoreWarriorSkillPresentation.candidateOrder.indexOf(1)])  // 地割り
             assertTrue(f.host.requests.isEmpty())
             assertEquals("キー2と3を入替",f.snapshot().buttons.single { it.firstSlot==49 }.label)
             f.click(49)

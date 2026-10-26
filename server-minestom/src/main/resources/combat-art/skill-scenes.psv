@@ -5,6 +5,7 @@ normal_finish|通常攻撃三段目|CLEAVE|gold|slash_heavy|ground_crack|edge_gl
 dash|轟進|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.1|1.0|1.0|移動後の胸元前方を短く横断する刃。突進距離を刃の長さにしない
 slam|地割り|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|2.7|1.0|1.0|正面の縦斬りと前方地割れ。背後へ振らない。通常3段目の直後は予備動作だけ短縮
 whirl|狂乱|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0|獣を使う連撃。踏み込みながら振り続け、最後は真上から振り下ろす（見た目はCoreWarriorRefChoreography）
+war_kizami|刻み打ち|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0|獣を溜める連打。押すたびに一振り、拍に合わせて押し直すと4振りまで刻む（見た目は今は狂乱を借りる）
 war_guard|天落とし|GUARD|steel|parry_blade|edge_glint|edge_glint|cut_spark|0.9|1.0|1.0|獣を使う跳躍。高く跳んで叩き落とし、着地から衝撃の輪が外へ広がる（見た目はCoreWarriorRefChoreography）
 war_wound|跳び叩き|CUT|steel|slash_short|blood_notch|edge_glint|cut_spark|1.8|1.0|1.0|狙った地点へ弧を描いて跳び、着地の前方に短い溝と扇形に跳ねる土（見た目はCoreWarriorRefChoreography）
 war_counter|大地崩し|CUT|gold|slash_reverse|speed_streak|edge_glint|cut_spark|2.3|1.0|1.0|獣を使う範囲技。大剣を突き立てて周り一面の地面を砕き、まとめて打ち上げる（見た目はCoreWarriorRefChoreography）

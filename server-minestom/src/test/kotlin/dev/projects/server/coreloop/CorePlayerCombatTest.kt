@@ -996,6 +996,37 @@ class CorePlayerCombatTest {
         assertEquals(before - swing * 3, h.combat.breakGauge(id)!!, 1e-6)
     }
 
+    @Test fun `kizami swings again on each press inside the beat and the fourth landed swing builds one more`() = arena(bossDistance = 2.5) { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 11)); h.actor.reset()
+        assertEquals(CoreWarriorRules.KIZAMI, h.actor.skillDefinitions[3].icon)
+        val id = h.combat.combatTargets().single().id
+        h.actor.skill(3); h.ticks(4)
+        assertEquals(100.0 - 3.0, h.combat.breakGauge(id)!!, 1e-9)
+        repeat(3) { h.ticks(4); h.actor.skill(3); h.ticks(2) } // press as the blade rings, the swing comes two ticks later
+        assertEquals(100.0 - 3.0 * (3 + CoreWarriorRules.KIZAMI_LAST_SCALE), h.combat.breakGauge(id)!!, 1e-9)
+        assertEquals(CoreWarriorRules.BEAST_PER_SKILL + CoreWarriorRules.KIZAMI_FULL_BEAST, h.actor.resource, 1e-9)
+    }
+
+    @Test fun `kizami pressed early or not at all stops after that swing`() = arena(bossDistance = 2.5) { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 11)); h.actor.reset()
+        val id = h.combat.combatTargets().single().id
+        h.actor.skill(3); h.ticks(5); h.actor.skill(3) // one tick after the impact: too early
+        h.ticks(4); h.actor.skill(3); h.ticks(20)
+        assertEquals(100.0 - 3.0, h.combat.breakGauge(id)!!, 1e-9)
+        h.actor.devCast(3); h.ticks(4 + CoreWarriorRules.KIZAMI_BEAT_CLOSE.toInt() + 2); h.actor.skill(3); h.ticks(10) // the beat lapsed
+        assertEquals(100.0 - 6.0, h.combat.breakGauge(id)!!, 1e-9)
+    }
+
+    @Test fun `kizami comes after the ultimates so older picks and ultimates keep their indices`() {
+        val skills = CoreSkillCatalog.skills(CoreClass.WARRIOR)
+        assertEquals(CoreWarriorRules.KIZAMI, skills[11].icon)
+        assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7, 11), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
+        assertEquals(listOf(0, 1, 2), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
+        val equipped = CoreSkillCatalog.equipped(CoreJourney.legacy(build = CoreClassBuild(fourth = 11, ultimate = 2)))
+        assertEquals(listOf("dash", "slam", "whirl", CoreWarriorRules.KIZAMI, CoreWarriorRules.AWAKEN), equipped.map { it.icon })
+        assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7), CoreSkillCatalog.normalChoices(CoreClass.MAGE))
+    }
+
     @Test fun `each variant belongs to one builder and one spender`() {
         assertEquals(CoreWarriorRules.Combo.HOIST, CoreWarriorRules.combo(CoreWarriorRules.DRAG, CoreWarriorRules.SHATTER))
         assertEquals(CoreWarriorRules.Combo.DOUBLE_DROP, CoreWarriorRules.combo(CoreWarriorLeap.ICON, CoreWarriorRules.SKYFALL))

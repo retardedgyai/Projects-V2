@@ -9,9 +9,9 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 CLASSES = ("warrior", "ranger", "mage", "assassin", "templar", "healer")
-# Same stable order as CoreClass.entries and its eight skills + two ultimates.
+# Same stable order as CoreClass.entries and its skills (eight + two ultimates; the warrior has three and a ninth after them).
 SKILLS = (
-    "dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner", "war_awaken",
+    "dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner", "war_awaken", "war_kizami",
     "pierce", "frost_fan", "arrow_rain", "hunt_retreat", "hunt_pierce", "hunt_trap", "hunt_mark", "hunt_volley", "hunt_ult", "hunt_storm",
     "firebolt", "frost_nova", "meteor", "mage_blink", "mage_mark", "mage_garden", "mage_burst", "mage_ward", "mage_ult", "mage_zero",
     "ass_stab", "ass_execute", "ass_fan", "ass_escape", "ass_poison", "ass_chase", "ass_needle", "ass_guard", "ass_ult", "ass_contract",
@@ -29,9 +29,9 @@ SKILLS = (
 
 
 def class_for_skill(name):
-    # Ten per class, but the warrior has an eleventh (a third ultimate, 2026-10-23).
+    # Ten per class, but the warrior has twelve (a third ultimate 2026-10-23, 刻み打ち 2026-10-27).
     index = SKILLS.index(name)
-    return CLASSES[0] if index < 11 else CLASSES[1 + (index - 11) // 10]
+    return CLASSES[0] if index < 12 else CLASSES[1 + (index - 12) // 10]
 
 
 def class_ornament(name, source=None):

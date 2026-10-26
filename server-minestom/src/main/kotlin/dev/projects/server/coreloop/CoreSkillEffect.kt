@@ -21,7 +21,7 @@ internal object CoreSkillArt {
         put(CoreSkillMotif.SLASH, "dash", "war_wound", "war_counter", "ass_execute")
         put(CoreSkillMotif.THRUST, "war_breach", "ass_stab", "ass_chase", "ass_contract", "temp_dash")
         put(CoreSkillMotif.CLEAVE, "slam", "war_ult", "temp_mace", "temp_break")
-        put(CoreSkillMotif.WHIRL, "whirl", "ass_fan", "ass_ult")
+        put(CoreSkillMotif.WHIRL, "whirl", "ass_fan", "ass_ult", CoreWarriorRules.KIZAMI)
         put(CoreSkillMotif.VENOM, "ass_poison")
         put(CoreSkillMotif.FROST_FAN, "frost_fan")
         put(CoreSkillMotif.ARROW, "pierce", "hunt_pierce", "hunt_mark", "hunt_volley", "hunt_ult", "hunt_retreat")
@@ -70,7 +70,8 @@ internal class CoreSkillEffect(
     prepareTicks: Int = 4,
     rayLength: Double = 0.0,
     internal val clippedRay: Boolean = false,
-    internal val sceneId: String = skill.icon,
+    // 刻み打ち borrows 狂乱's alternating sweeps until it has art of its own.
+    internal val sceneId: String = if (skill.icon == CoreWarriorRules.KIZAMI) CoreWarriorRules.FRENZY else skill.icon,
     internal val endpoint: CoreSkillEndpoint = CoreSkillEndpoint.NONE,
     internal val gardenCells: List<net.minestom.server.coordinate.Pos>? = null,
     /** 引き摺り: the held weapon's item model, drawn dragged at the side while the real one is hidden. */

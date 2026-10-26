@@ -10,8 +10,9 @@ class CoreClassBuildTest {
         assertEquals(6,CoreClass.entries.size)
         val icons=CoreClass.entries.flatMap { job ->
             val skills=CoreSkillCatalog.skills(job)
-            assertEquals(if(job==CoreClass.WARRIOR) 11 else 10,skills.size)  // the warrior has a third ultimate
-            assertTrue(skills.take(8).none { it.ultimate });assertTrue(skills.drop(8).all { it.ultimate })
+            // The warrior has a third ultimate and a ninth skill after the ultimates (刻み打ち).
+            assertEquals(if(job==CoreClass.WARRIOR) 12 else 10,skills.size)
+            assertTrue(skills.take(8).none { it.ultimate });assertEquals(if(job==CoreClass.WARRIOR) 3 else 2,skills.count { it.ultimate })
             // The warrior's beast is spent by the spender skills themselves (CoreWarriorRules), not by a cost.
             assertTrue(skills.any { it.gain>0 });assertTrue(skills.any { it.spend>0 } || job==CoreClass.WARRIOR)
             // Every class has a way out; the warrior's is the leap (跳び叩き), not a dodge skill.
@@ -22,7 +23,7 @@ class CoreClassBuildTest {
             }
             skills.map { it.icon }
         }
-        assertEquals(61,icons.distinct().size);assertEquals(icons,CoreSkillCatalog.artNames)
+        assertEquals(62,icons.distinct().size);assertEquals(icons,CoreSkillCatalog.artNames)
         val font=javaClass.classLoader.getResourceAsStream("core-ui-pack/assets/projects/font/hud_skills.json")!!.bufferedReader().readText()
         icons.forEach { assertContains(font,"hud_skill_${it}.png") }
     }
@@ -30,7 +31,9 @@ class CoreClassBuildTest {
         assertEquals(listOf(1,0,2,3),CoreClassBuild().equip(0,1).skills)
         assertEquals(listOf(7,1,2,3),CoreClassBuild().equip(0,7).skills)
         assertEquals(1,CoreClassBuild().equip(4,1).ultimate)
-        assertFailsWith<IllegalArgumentException> { CoreClassBuild().equip(0,8) }
+        assertFalse(CoreSkillCatalog.selectable(CoreClass.WARRIOR,0,8))  // index 8 is an ultimate, picked by slot 4 only
+        assertTrue(CoreSkillCatalog.selectable(CoreClass.WARRIOR,0,11))  // 刻み打ち, after the ultimates
+        assertFailsWith<IllegalArgumentException> { CoreClassBuild().equip(0,CoreClassBuild.MAX_SKILL+1) }
         assertFailsWith<IllegalArgumentException> { CoreClassBuild().equip(4,3) }  // the warrior's third ultimate is index 2
         assertFailsWith<IllegalArgumentException> { CoreClassBuild(first=1) }
     }

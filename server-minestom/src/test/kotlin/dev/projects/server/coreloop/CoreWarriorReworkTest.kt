@@ -10,7 +10,7 @@ class CoreWarriorReworkTest {
 
     @Test fun `warrior skills sit in cooldown tiers and the beast gates nothing`() {
         val byIcon = warrior.filterNot { it.retired }.associateBy { it.icon }
-        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner", "war_awaken"), byIcon.keys)
+        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner", "war_awaken", CoreWarriorRules.KIZAMI), byIcon.keys)
         assertEquals(100, byIcon.getValue("dash").cooldown)
         assertTrue(listOf("slam", "whirl", "war_guard", "war_counter").all { byIcon.getValue(it).cooldown in 200..320 }, "spenders")
         assertTrue(byIcon.getValue("war_wound").cooldown in 160..240, "the leap moves")
@@ -19,8 +19,8 @@ class CoreWarriorReworkTest {
     }
 
     @Test fun `retired entries keep catalog order and art but are never selectable`() {
-        assertEquals(61, CoreSkillCatalog.artNames.size)
-        assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
+        assertEquals(62, CoreSkillCatalog.artNames.size)
+        assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7, 11), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
         assertEquals(listOf(0, 1, 2), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
         assertEquals(emptyList<String>(), warrior.filter { it.retired }.map { it.icon })
         for (job in CoreClass.entries) {

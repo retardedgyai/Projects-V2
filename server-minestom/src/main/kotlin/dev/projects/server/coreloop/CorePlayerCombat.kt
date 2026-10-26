@@ -156,6 +156,8 @@ internal class CorePlayerCombat(
         var landAt: Pos? = null, var landTick: Long = -1L,
         /** 引き摺り: when the drag began, and the regular enemies hooked on the blade so far. */
         var dragTick: Long = -1L, val hooked: MutableSet<UUID> = mutableSetOf(),
+        /** 刻み打ち: the swing last made (0-based), its impact tick, when the next one comes, and whether a press was early. */
+        var kizamiSwing: Int = 0, var kizamiImpact: Long = -1L, var kizamiNextAt: Long = -1L, var kizamiEarly: Boolean = false,
         /** Warrior A + B: the variant this spender turned into, if any. */
         val combo: CoreWarriorRules.Combo? = null,
         /** The current pulse's damage and break, against the cast's (狂乱's heavy first and last swings). */
@@ -198,6 +200,7 @@ internal class CorePlayerCombat(
     fun skill(id: Int, unlocked: Boolean = false) {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
         if (id !in 0..4 || defeated || encounter() == null || player.openInventory != null || staggered && !breaksOut(id)) return
+        pending?.takeIf { it.id == id && it.definition.icon == CoreWarriorRules.KIZAMI && it.kizamiImpact >= 0 }?.let { kizamiPress(it); return }
         if (!unlocked && !skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
         if (!crowd.canCast(tickNumber)) { notice("${crowd.cue(tickNumber) ?: "行動不能"}：技を使えません"); return }
@@ -220,6 +223,8 @@ internal class CorePlayerCombat(
             if(cells.isEmpty()) { notice("氷の庭を置ける床を狙ってください"); return }
             cells
         } else null
+        // Another skill ends a 刻み打ち chain that is only waiting for its beat.
+        pending?.takeIf { it.definition.icon == CoreWarriorRules.KIZAMI && it.kizamiImpact >= 0 && it.kizamiNextAt < 0 }?.let { pending = null }
         val guard = CoreCombatFeel.cancelsIntoGuard(definition)
         val action = pending
         val canLeaveSkill = action == null || guard && action.elapsed >= CoreCombatFeel.lastImpact(action.definition, action.startup)
@@ -456,6 +461,21 @@ internal class CorePlayerCombat(
                 }
                 return@let
             }
+            if (action.kizamiImpact >= 0) {
+                // 刻み打ち: between swings; the blade rings when the beat opens.
+                if (action.kizamiNextAt in 0..tickNumber) {
+                    action.kizamiNextAt = -1; action.kizamiSwing++
+                    kizamiSwing(enemies, action)
+                    if (!actionsValid(enemies, epoch)) return
+                    return@let
+                }
+                val since = tickNumber - action.kizamiImpact
+                val done = action.kizamiEarly || action.kizamiSwing >= CoreWarriorRules.KIZAMI_SWINGS - 1
+                if (!done && since == CoreWarriorRules.KIZAMI_BEAT_OPEN) sound(SoundEvent.BLOCK_ANVIL_PLACE, .25f, 2.0f)
+                if (action.kizamiNextAt < 0 && (if (done) since >= CoreWarriorRules.KIZAMI_RECOVERY else since > CoreWarriorRules.KIZAMI_BEAT_CLOSE))
+                    pending = null
+                return@let
+            }
             if (action.landTick >= 0) {
                 // 天落とし: each ring goes out a little later than the one inside it.
                 val since = tickNumber - action.landTick
@@ -624,6 +644,7 @@ internal class CorePlayerCombat(
             vfx.playSkill(CoreSkillEffect(classId, s, player.position, flatFacing(), pulse = 0, weaponModel = model))
             return
         }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.KIZAMI) { kizamiSwing(enemies, action); return }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.LAUNCHER) {
             // 斬り上げ: the blade comes up from the ground; who it throws up is marked for 叩き落とし. Holding jump sends
             // the warrior up after them (a push the client flies, as with the leaps).
@@ -991,6 +1012,30 @@ internal class CorePlayerCombat(
         player.velocity = velocity.mul(20.0)  // Minestom velocity is blocks per second
         action.leapTick = tickNumber
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, .6f)
+    }
+    /** 刻み打ち: one swing of the chain (right, left, right, then overhead and heavier). */
+    private fun kizamiSwing(enemies: QuestEncounterCombat, action: PendingSkill) {
+        val epoch = actionEpoch
+        val swing = action.kizamiSwing
+        val last = swing == CoreWarriorRules.KIZAMI_SWINGS - 1
+        player.swingMainHand()
+        vfx.playSkill(CoreSkillEffect(classId, action.definition.copy(pulses = CoreWarriorRules.KIZAMI_SWINGS), player.position, flatFacing(), pulse = swing))
+        action.hitScale = if (last) CoreWarriorRules.KIZAMI_LAST_SCALE else 1.0
+        action.breakScale = action.hitScale
+        hitThisStrike.clear()
+        strike(enemies, player.position, flatFacing(), action.definition.radius + if (last) .4 else 0.0, CoreCombatFeel.minDot(action.definition.icon),
+            if (last) 2.0 else 1.0)
+        if (!actionsValid(enemies, epoch)) return
+        if (last && hitThisStrike.isNotEmpty()) { feedBeast(CoreWarriorRules.KIZAMI_FULL_BEAST); notice("刻み打ち：4振り") }
+        action.kizamiImpact = tickNumber
+    }
+    /** 刻み打ち: the key again. Inside the beat it calls the next swing; before it, the chain stops after this swing. */
+    private fun kizamiPress(action: PendingSkill) {
+        player.setHeldItemSlot(0)
+        if (action.kizamiNextAt >= 0 || action.kizamiEarly || action.kizamiSwing >= CoreWarriorRules.KIZAMI_SWINGS - 1) return
+        val since = tickNumber - action.kizamiImpact
+        if (since < CoreWarriorRules.KIZAMI_BEAT_OPEN) { action.kizamiEarly = true; notice("刻み打ち：早い"); return }
+        action.kizamiNextAt = tickNumber + CoreWarriorRules.KIZAMI_WINDUP
     }
     /** 引き摺り: where the dragged blade's tip touches the ground, behind and to the right of the warrior. */
     private fun dragTip(): Pos {

@@ -293,7 +293,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val sheet = game.combatSheet(player) ?: CoreCombatSheet.from(a)
         val equipped = CoreSkillCatalog.equipped(a.journey, sheet.mods)
         val current = equipped[slot]
-        val candidates = if (slot == 4) CoreSkillCatalog.skills(a.journey.job).drop(8) else CoreSkillCatalog.skills(a.journey.job).take(8)
+        val candidates = if (slot == 4) CoreSkillCatalog.ultimates(a.journey.job) else CoreSkillCatalog.skills(a.journey.job)
         // Retired catalog entries stay in the list for old saves but are never offered.
         val choices = if (slot == 4) CoreSkillCatalog.ultimateChoices(a.journey.job) else CoreSkillCatalog.normalChoices(a.journey.job)
         val pages = (choices.size + 3) / 4
@@ -340,7 +340,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val slot=selectedSlot.coerceIn(0,4)
         val sheet=game.combatSheet(player) ?: CoreCombatSheet.from(a)
         val equipped=CoreSkillCatalog.equipped(a.journey,sheet.mods)
-        val candidates=CoreSkillCatalog.skills(CoreClass.WARRIOR).let { if(slot==4) it.drop(8) else it.take(8) }
+        val candidates=if(slot==4) CoreSkillCatalog.ultimates(CoreClass.WARRIOR) else CoreSkillCatalog.skills(CoreClass.WARRIOR)
         val choice=candidate.takeIf { CoreSkillCatalog.selectable(CoreClass.WARRIOR,slot,it) }
         val preview=choice?.let { CoreSkillCatalog.modify(candidates[it],a.journey,sheet.mods) } ?: equipped[slot]
         val identity=CoreWarriorSkillPresentation.skills.getValue(preview.icon)
@@ -387,7 +387,10 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
                 val skill=CoreSkillCatalog.modify(candidates[i],a.journey,sheet.mods)
                 val equippedHere=if(slot==4) a.journey.build.ultimate==i else a.journey.build.skills[slot]==i
                 val other=if(slot<4) a.journey.build.skills.indexOf(i).takeIf { it>=0 && it!=slot } else null
-                tile(v,CoreWarriorSkillPresentation.candidateSlots[index],4,CoreWarriorSkillPresentation.skills.getValue(skill.icon).shortName,
+                val identity=CoreWarriorSkillPresentation.skills.getValue(skill.icon)
+                tile(v,if(slot==4) CoreWarriorSkillPresentation.ultimateSlots[index] else CoreWarriorSkillPresentation.candidateSlots[index],
+                    if(slot==4) CoreWarriorSkillPresentation.ULTIMATE_SPAN else CoreWarriorSkillPresentation.CANDIDATE_SPAN,
+                    if(slot==4) identity.shortName else identity.gridName,
                     CoreSkillTooltip.item(skill,sheet,a.journey,v.packed,footer=if(equippedHere) "$target に装備中" else
                         if(other!=null) "キー${other+2}に装備中 / 選択すると入替" else "選択して右下で装備"),
                     if(choice==i)Tone.SELECTED else if(equippedHere)Tone.PRIMARY else Tone.NEUTRAL,icon=true) { warriorSkills(player,slot,i) }

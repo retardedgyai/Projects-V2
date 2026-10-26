@@ -96,9 +96,13 @@ object CoreSkillCatalog {
             motion == CoreSkillMotion.RAY, motion != CoreSkillMotion.RAY, motion, range, radius, gain, spend, status, element, duration, ultimate)
     private val byClass: Map<CoreClass, List<CoreSkillDefinition>> = CoreClass.entries.associateWith(::buildSkills)
     fun skills(job: CoreClass): List<CoreSkillDefinition> = byClass.getValue(job)
-    /** Selectable catalog indices: normal 0..7 and the ultimates after them (two, the warrior three), without retired entries. */
-    fun normalChoices(job: CoreClass) = (0..7).filterNot { skills(job)[it].retired }
-    fun ultimateChoices(job: CoreClass) = (0 until skills(job).size - 8).filterNot { skills(job)[8 + it].retired }
+    /**
+     * Selectable picks without retired entries: normal skills by catalog index, ultimates by their place among the
+     * ultimates (two, the warrior three). Skills added later come after the ultimates, so older indices never move.
+     */
+    fun normalChoices(job: CoreClass) = skills(job).indices.filter { !skills(job)[it].ultimate && !skills(job)[it].retired }
+    fun ultimates(job: CoreClass) = skills(job).filter { it.ultimate }
+    fun ultimateChoices(job: CoreClass) = ultimates(job).indices.filterNot { ultimates(job)[it].retired }
     fun selectable(job: CoreClass, slot: Int, choice: Int) =
         if (slot == 4) choice in ultimateChoices(job) else slot in 0..3 && choice in normalChoices(job)
     /**
@@ -112,7 +116,7 @@ object CoreSkillCatalog {
         val ultimate = if (build.ultimate in ultimateChoices(job)) build.ultimate else ultimateChoices(job).first()
         return build.copy(first = picks[0], second = picks[1], third = picks[2], fourth = picks[3], ultimate = ultimate)
     }
-    fun equipped(j: CoreJourney, stats: CoreAffixStats = CoreAffixStats()) = (j.build.skills.map { skills(j.job)[it] } + skills(j.job)[8 + j.build.ultimate]).map { modify(it, j, stats) }
+    fun equipped(j: CoreJourney, stats: CoreAffixStats = CoreAffixStats()) = (j.build.skills.map { skills(j.job)[it] } + ultimates(j.job)[j.build.ultimate]).map { modify(it, j, stats) }
     fun modify(s: CoreSkillDefinition, j: CoreJourney, stats: CoreAffixStats): CoreSkillDefinition {
         var pulses = s.pulses
         var power = 1.0
@@ -194,7 +198,9 @@ object CoreSkillCatalog {
                 // Ultimates (Creator 2026-10-23): 全力の一振り, 狂戦士の甲冑 and 獣の目覚め. The warrior alone has three.
                 s("全力の一振り", "war_ult", "大剣を担いで溜め（押している間、最大2秒）、離すと真上から渾身の一振り。地面が前へ大きく割れ、線上を打ち上げる。溜め中は怯まない。獣を全部使う", CoreSkillMotion.CONE, 30.0, 4.0, mana=20, cd=1200, startup=10, gain=0, radius=12.0, ult=true).cc(CrowdControl.AIRBORNE, 1000),
                 s("狂戦士の甲冑", "war_banner", "10秒間、体から血が流れ、鼓動のたびに血しぶきが散る。CCも怯みも効かず、動きと振りが速くなり、獣が満ちたまま減らない。代わりに体力が毎秒2%ずつ減る（1で止まる）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=20, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
-                s("獣の目覚め", "war_awaken", "獣3つの時だけ使える。8秒間、獣が減らず、獣を使う技の再使用が半分になる", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=15, cd=1200, startup=2, gain=0, radius=0.0, duration=160, ult=true))
+                s("獣の目覚め", "war_awaken", "獣3つの時だけ使える。8秒間、獣が減らず、獣を使う技の再使用が半分になる", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=15, cd=1200, startup=2, gain=0, radius=0.0, duration=160, ult=true),
+                // 刻み打ち (Creator 2026-10-27) comes after the ultimates so every older catalog index (and art index) stays.
+                s("刻み打ち", CoreWarriorRules.KIZAMI, "押すと短く一振り。振りの直後、刃が鳴った所でもう一度押すと次の振りへ（最大4振り、右・左・右・真上）。早すぎても遅すぎてもそこで止まる。4振り目まで刻めば獣がもう1つ溜まる。獣を溜める", CoreSkillMotion.CONE, 4.0, .8, mana=8, cd=160, startup=4, radius=3.4).cc(CrowdControl.FLINCH, 200))
             CoreClass.MAGE -> listOf(
                 s("火炎弾", "firebolt", "火の術式を刻む。直前と違う属性なら獲得量増加", CoreSkillMotion.RAY, 8.0, 1.4, cd=60, startup=5, element=1),
                 s("霜の波紋", "frost_nova", "周囲を凍てつかせる。火や雷からつなぐと術式が育つ", CoreSkillMotion.NOVA, 10.0, 1.0, cd=110, startup=10, status=CoreSkillStatus.SLOW, element=2).cc(CrowdControl.ROOT, 1200),

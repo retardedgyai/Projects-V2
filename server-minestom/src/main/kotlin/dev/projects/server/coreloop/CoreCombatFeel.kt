@@ -28,7 +28,7 @@ internal object CoreCombatFeel {
         CoreClass.MAGE, CoreClass.HEALER -> Profile(6, 0, immediateNormal = false, recovery = 5, attackBreaksGuard = true)
     }
     fun recovery(job: CoreClass, s: CoreSkillDefinition) = when {
-        s.icon == "dash" || s.icon == "war_wound" -> 3
+        s.icon == "dash" || s.icon == "war_wound" || s.icon == CoreWarriorRules.KIZAMI -> 3
         s.icon in setOf("war_breach", "war_cry", "war_banner", "war_awaken") -> 4
         s.icon == CoreWarriorRules.FRENZY -> 6
         s.icon == CoreWarriorRules.SHATTER -> 7
@@ -62,6 +62,7 @@ internal object CoreWarriorRules {
     const val SHATTER = "war_counter" // 大地崩し
     const val LAUNCHER = "war_breach" // 斬り上げ (builds)
     const val DRAG = "war_cry"        // 引き摺り (builds)
+    const val KIZAMI = "war_kizami"   // 刻み打ち (builds)
     const val FULL_SWING = "war_ult"  // 全力の一振り (ultimate, spends)
     const val ARMOR = "war_banner"    // 狂戦士の甲冑 (ultimate)
     const val AWAKEN = "war_awaken"   // 獣の目覚め (ultimate)
@@ -80,6 +81,18 @@ internal object CoreWarriorRules {
     const val DRAG_TICKS = 40
     const val DRAG_SPEED = .8
     const val DRAG_HOOK = 1.5
+    /**
+     * 刻み打ち (Creator 2026-10-27): one short swing per press. Pressed again inside the beat after a swing's impact
+     * ([KIZAMI_BEAT_OPEN]..[KIZAMI_BEAT_CLOSE] ticks), the next swing comes [KIZAMI_WINDUP] ticks later; pressed early,
+     * the chain stops there; not pressed, it lapses. The fourth swing is heavier and, landed, builds one more stack.
+     */
+    const val KIZAMI_SWINGS = 4
+    const val KIZAMI_BEAT_OPEN = 4L
+    const val KIZAMI_BEAT_CLOSE = 10L
+    const val KIZAMI_WINDUP = 2L
+    const val KIZAMI_RECOVERY = 4L
+    const val KIZAMI_LAST_SCALE = 1.8
+    const val KIZAMI_FULL_BEAST = 1.0
     /** The effect pulse that marks 引き摺り's final swing (the drag's own pulses count up from 1). */
     const val DRAG_FINISH_PULSE = 99
     /** How long an enemy 斬り上げ threw up counts as in the air for 叩き落とし. */
