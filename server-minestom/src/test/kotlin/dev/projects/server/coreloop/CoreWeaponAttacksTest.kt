@@ -13,11 +13,12 @@ class CoreWeaponAttacksTest {
     private fun at(degrees: Double, distance: Double) = CombatTarget(UUID.randomUUID(),
         Vec(sin(Math.toRadians(degrees)) * distance, 0.0, cos(Math.toRadians(degrees)) * distance), Vec(.3, .9, .3))
 
-    @Test fun `greatsword sweeps wide twice then closes with a narrow overhead slice`() {
+    @Test fun `greatsword sweeps wide twice then closes with a narrow overhead slam`() {
         val gs = CoreWeaponCombat.of(CoreWeaponBase.STANDARD)!!
         assertEquals(listOf(CoreHitbox.HORIZONTAL, CoreHitbox.HORIZONTAL, CoreHitbox.VERTICAL), gs.attacks.map { it.hitbox })
         val flank = at(60.0, 3.0)
         assertTrue(gs.attacks[0].reaches(Vec.ZERO, forward, flank, gs.range), "a 150 degree sweep reaches 60 degrees out")
+        assertTrue(gs.attacks[1].reaches(Vec.ZERO, forward, flank, gs.range), "so does the rising cut")
         assertFalse(gs.attacks[2].reaches(Vec.ZERO, forward, flank, gs.range), "the overhead slice does not")
         assertTrue(gs.attacks[2].reaches(Vec.ZERO, forward, at(5.0, 4.0), gs.range))
         assertFalse(gs.attacks[0].reaches(Vec.ZERO, forward, at(0.0, 4.8), gs.range), "beyond the reach")

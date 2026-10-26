@@ -1,6 +1,7 @@
 package dev.projects.server.coreloop
 
 import dev.projects.server.mob.rayHit
+import dev.projects.server.puppet.PlayerPuppet
 import dev.projects.server.mob.distanceTo
 
 import dev.projects.server.mob.CrowdControl
@@ -170,13 +171,17 @@ internal class CorePlayerCombat(
             return
         }
         val weapon = CoreWeaponCombat.of(weaponBase())
-        normal.press(attackSpeed * if (armored) CoreWarriorRules.ARMOR_HASTE else 1.0, quick = classId == CoreClass.ASSASSIN, immediate = feel.immediateNormal,
-            attacks = weapon?.attacks ?: GreatswordCombo.DEFAULT)?.let { swing ->
+        // The greatsword swings in the Better Combat cadence: the blade lands a quarter of the way into the swing.
+        val greatsword = classId == CoreClass.WARRIOR && weaponBase().family == "greatsword"
+        normal.press(attackSpeed * if (armored) CoreWarriorRules.ARMOR_HASTE else 1.0, quick = classId == CoreClass.ASSASSIN,
+            immediate = feel.immediateNormal && !greatsword, attacks = weapon?.attacks ?: GreatswordCombo.DEFAULT,
+            upswing = if (greatsword) GREATSWORD_UPSWING else null)?.let { swing ->
             nextNormalAt = tickNumber + swing.totalTicks
             normalEmpowerment = if(classId == CoreClass.TEMPLAR && classState.counterUntil >= tickNumber) 1.35 else 1.0
             if(normalEmpowerment > 1) classState.counterUntil = -1
             normalDirection = flatFacing()
             lastCombat = tickNumber
+            if (greatsword) CoreArmamentPresentation.shaderSwing(player, swing.beat, swing.totalTicks)
             if (swing.impactTick == 0) releaseNormal(enemies, swing)
             else vfx.startSound(swing.beat)
         }
@@ -219,6 +224,7 @@ internal class CorePlayerCombat(
         if (!canLeaveSkill || !(guard || normalLinked()) || shot != null) { queueAction(id); return }
         queued = null
         if (normal.isAttacking) normal.endRecovery()
+        PlayerPuppet.stop(player)
         if (action != null) { pending = null; vfx.cancel(preserveGarden = garden != null) }
         if (feel.attackBreaksGuard && definition.motion !in setOf(CoreSkillMotion.GUARD, CoreSkillMotion.SHIELD)) {
             classState.guardUntil = -1; classState.perfectUntil = -1
@@ -277,6 +283,7 @@ internal class CorePlayerCombat(
         if (crowd.escape(tickNumber)) { refreshMovement(); sound(SoundEvent.ITEM_ARMOR_EQUIP_CHAIN, .7f, 1.4f) }
         queued = null
         if (normal.isAttacking) normal.endRecovery()
+        PlayerPuppet.stop(player)
         classState.guardUntil = -1; classState.perfectUntil = -1
         if (pending != null) { pending = null; vfx.cancel(preserveGarden = garden != null) }
         val input = player.inputs()
@@ -510,6 +517,7 @@ internal class CorePlayerCombat(
         val down = share >= KNOCKDOWN_SHARE
         queued = null; dodgeQueuedUntil = -1; shot = null
         if (normal.isAttacking) normal.endRecovery()
+        PlayerPuppet.stop(player)
         if (pending != null) { pending = null; vfx.cancel(preserveGarden = garden != null) }
         staggerUntil = tickNumber + if (down) KNOCKDOWN_TICKS else STAGGER_TICKS
         // Getting up is protected, as in MH: no juggling a downed hunter.
@@ -560,7 +568,10 @@ internal class CorePlayerCombat(
         vfx.swingSound(swing.beat)
         // Better Combat manner: the off hand swings the off-hand attacks of a dual weapon.
         if (swing.attack.hand == CoreAttackHand.OFF) player.swingOffHand() else player.swingMainHand()
-        if (classId == CoreClass.WARRIOR) vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.beat - 1], player.position, normalDirection)
+        if (classId == CoreClass.WARRIOR) {
+            // A sweep, a rising cut back, an overhead slam.
+            vfx.play(arrayOf(GreatswordVisual.SWEEP, GreatswordVisual.REVERSE, GreatswordVisual.FINISHER)[swing.beat - 1], player.position, normalDirection)
+        }
         else vfx.play(CoreClassEffect(classId, CoreSkillMotion.CONE, player.position, normalDirection,
             reach(), swing.finisher, reverse = swing.beat == 2))
         var connected = false
@@ -1324,6 +1335,8 @@ internal class CorePlayerCombat(
         const val HEAVY_STARTUP = 12
         const val CAST_SPEED = .35
         const val SWING_SPEED = .6
+        /** Better Combat's claymore: upswing .5 x the server's upswing_multiplier .5. */
+        const val GREATSWORD_UPSWING = .25
         const val STAGGER_SHARE = .2
         const val KNOCKDOWN_SHARE = .45
         const val STAGGER_TICKS = 10L

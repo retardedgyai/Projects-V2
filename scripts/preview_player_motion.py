@@ -57,7 +57,7 @@ def sample(track, t, field):
             u = (t - a['t']) / max(b['t'] - a['t'], 1e-9)
             w = ease(b.get('ease', 'linear'), u)
             va, vb = np.array(a[field], float), np.array(b[field], float)
-            return slerp(va, vb, w) if field == 'dir' else va * (1 - w) + vb * w
+            return slerp(va, vb, w) if field in ('dir', 'flat') else va * (1 - w) + vb * w
     return np.array(keys[-1][field], float)
 
 
@@ -103,6 +103,15 @@ def blade_frame(track, root, t, grip):
     z = (root @ np.append(sample(track, t, 'dir'), 0))[:3]
     z = z / np.linalg.norm(z)
     width = None
+    if any('flat' in k for k in track):
+        # Keyed roll: the flat faces the keyed way, the width lies across it. No guessing from the motion and no sign
+        # flip, so the blade never turns about its own axis unless the keys turn it.
+        n = (root @ np.append(sample(track, t, 'flat'), 0))[:3]
+        n = n - z * (n @ z)
+        if np.linalg.norm(n) > 1e-4:
+            width = np.cross(n / np.linalg.norm(n), z)
+            m = np.eye(4); m[:3, 0], m[:3, 1], m[:3, 2], m[:3, 3] = np.cross(width, z), width, z, grip
+            return m
     for dt in (.01, .03, .06, .1, .16, .25):
         for sgn in (1, -1):
             a = sample(track, t + sgn * dt, 'dir'); b = sample(track, t + sgn * dt + .01, 'dir')
@@ -147,6 +156,11 @@ def pose(motion, t, base_yaw=0.0):
         w = blade_frame(tr['blade'], root, t, g)
         weapons['sword'] = w
         targets = {'r': g, 'l': g - w[:3, 2] * weapon.get('second', 3.2) * K}
+        if any('one' in k for k in tr['blade']):
+            # One-handed: the left hand lets go and swings out to 'free' (root space) as 'one' goes to 1.
+            one = float(sample(tr['blade'], t, 'one')[0])
+            free = (root @ np.append(sample(tr['blade'], t, 'free'), 1))[:3]
+            targets['l'] = targets['l'] * (1 - one) + free * one
     for name, sx in (('r', -5), ('l', 5)):
         sh = (torso @ np.array([sx * K, 10 * K, 0, 1]))[:3]
         pole = (torso @ np.array([np.sign(sx), -1, -.6, 0]))[:3]
