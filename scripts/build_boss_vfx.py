@@ -275,10 +275,14 @@ def build(pack=PACK):
     core.mkdir(parents=True, exist_ok=True)
     for f in SHADER_FILES:
         shutil.copyfile(SHADERS / f, core / f)
+    # The greatsword swing's keys (scripts/class_armament_swing.py), included by item.vsh.
+    include = pack / "assets/minecraft/shaders/include"
+    include.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(SHADERS / "greatsword_swing.glsl", include / "greatsword_swing.glsl")
 
 
 def shader_overrides():
-    return {f"assets/minecraft/shaders/core/{f}" for f in SHADER_FILES}
+    return {f"assets/minecraft/shaders/core/{f}" for f in SHADER_FILES} | {"assets/minecraft/shaders/include/greatsword_swing.glsl"}
 
 
 if __name__ == "__main__":

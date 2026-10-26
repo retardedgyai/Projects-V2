@@ -10,6 +10,7 @@ import net.minestom.server.entity.EquipmentSlot
 import net.minestom.server.entity.Player
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
+import net.minestom.server.item.component.SwingAnimation
 import net.minestom.server.tag.Tag
 import java.util.UUID
 import kotlin.math.roundToInt
@@ -142,7 +143,12 @@ internal object CoreLoopItems {
             CoreTooltipStat("追加軽減", "${stats.mitigationPercent.toInt()}%", CoreUiIcon.DEFENSE),
             CoreTooltipStat("最大マナ", CoreCombatMath.number(sheet.mana), CoreUiIcon.MANA))
         val shown = if (slot == CoreGearSlot.WEAPON && packed) {
-            base.withItemModel(CoreArmamentPresentation.model(identity.base, account.journey.job, tier))
+            base.withItemModel(CoreArmamentPresentation.model(identity.base, account.journey.job, tier)).let {
+                // The greatsword swings in first person by its own frames (CoreArmamentPresentation.swing): no vanilla
+                // arm swing on top of them.
+                if (identity.base.family == "greatsword")
+                    it.with(DataComponents.ATTACK_ANIMATION, SwingAnimation(SwingAnimation.Type.NONE, 6)) else it
+            }
         } else if (slot == CoreGearSlot.WEAPON && identity.base.family != "greatsword") {
             val model = when(identity.base) { CoreWeaponBase.LONGBOW -> "minecraft:bow"; CoreWeaponBase.DAGGERS -> "minecraft:iron_sword";
                 CoreWeaponBase.MACE -> "minecraft:mace"; CoreWeaponBase.TOME -> "minecraft:enchanted_book"; else -> "minecraft:blaze_rod" }

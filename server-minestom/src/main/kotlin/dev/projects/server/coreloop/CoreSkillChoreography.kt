@@ -35,7 +35,6 @@ internal object CoreSkillChoreography {
     fun pose(p: CoreCombatMeshPart, age: Double): CoreMeshPose {
         CoreIceGardenChoreography.pose(p,age)?.let { return it }
         CoreWarriorFlourish.pose(p,age)?.let { return it }
-        CoreApprovedNormalV3.pose(p,age)?.let { return it }
         CoreApprovedDashV3.pose(p,age)?.let { return it }
         CoreWarriorRefChoreography.pose(p,age)?.let { return it }
         CoreWarriorIronChoreography.pose(p,age)?.let { return it }

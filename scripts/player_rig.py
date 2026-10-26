@@ -49,7 +49,8 @@ WEAPON_CUBES = {
                    ('blade', (-0.8, -2.3, 5), (0.8, 2.3, 24))],
     'dagger': [('handle', (-0.6, -0.6, -2.5), (0.6, 0.6, 2.5)), ('blade', (-0.6, -1.9, 3), (0.6, 1.9, 17))],
 }
-WEAPONS = {'greatsword_charge': ('greatsword', ['weapon_r']), 'dual_blades_dance': ('dual_blades', ['weapon_r', 'weapon_l'])}
+WEAPONS = {'greatsword_charge': ('greatsword', ['weapon_r']), 'greatsword_combo': ('greatsword', ['weapon_r']),
+           'dual_blades_dance': ('dual_blades', ['weapon_r', 'weapon_l'])}
 MODEL_WEAPON = {'greatsword': 'greatsword', 'dual_blades': 'dagger'}
 
 
@@ -246,12 +247,37 @@ def build(name, motions, force=False):
     return path, data
 
 
+def add(name, motion_name):
+    """Bake one motion into an existing .bbmodel as an animation of its own (replacing one of the same name), leaving
+    the model and its other, perhaps hand-edited, animations as they are."""
+    path = SOURCE / f'{name}.bbmodel'
+    data = json.loads(path.read_text())
+    uuids = {}
+    def walk(node):
+        if isinstance(node, dict):
+            uuids[node['name']] = node['uuid']
+            for c in node.get('children', []): walk(c)
+    for n in data['outliner']: walk(n)
+    model = boss_models.Model(name, size=64)
+    model.bones = uuids
+    motion, tracks = bake(motion_name)
+    frames = {bone: [(t, xyz) for t, xyz in keys] for bone, keys in tracks.items() if bone != 'root_pos'}
+    frames['root'] = frames['root'] + [(t, xyz, 'position') for t, xyz in tracks['root_pos']]
+    model.anim(motion_name, motion['length'], frames)
+    data['animations'] = [a for a in data['animations'] if a['name'] != motion_name] + model.animations
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+    return path
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['build'])
+    ap.add_argument('cmd', choices=['build', 'add'])
     ap.add_argument('motions', nargs='+')
     ap.add_argument('--force', action='store_true')
     args = ap.parse_args()
+    if args.cmd == 'add':
+        for m in args.motions: print('added to', add(WEAPONS[m][0], m).relative_to(ROOT), m)
+        return
     by_model = {}
     for m in args.motions: by_model.setdefault(WEAPONS[m][0], []).append(m)
     for name, motions in by_model.items():

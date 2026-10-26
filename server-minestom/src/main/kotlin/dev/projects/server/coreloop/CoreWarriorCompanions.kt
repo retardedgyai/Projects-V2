@@ -27,7 +27,9 @@ internal object CoreWarriorCompanions {
         // The old tall wind needles made unrelated skills look identical.
         // Authored dust/pressure/shell/thread now supplies those trajectories;
         // retain shared small particles only for actual contact and stone debris.
-        if(!contact && !ground && !support && e.sceneId !in CoreApprovedNormalV3.sceneIds) return emptyList()
+        // The normal attack's slash is drawn along the swing alone (CoreApprovedNormalV3); the wind needles that used
+        // to fly ahead of it read as a leftover of the old slash (Creator 2026-10-25).
+        if(!contact && !ground && !support) return emptyList()
         val spin=e.sceneId=="whirl" && e.skill.motion==CoreSkillMotion.SPIN
         val dash=e.sceneId in setOf("dash","war_breach")
         val count=when { contact->5; support->2; ground->4; spin->6; else->4 }

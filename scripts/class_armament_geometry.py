@@ -265,6 +265,10 @@ def item_definition(name):
     for stage,offset in (('prepare',12),('release',18)):
         animated['entries'] += [{'threshold':offset+i,'model':{'type':'minecraft:model',
             'model':f'projects:item/weapons/{name}_{stage}{i:02d}'}} for i in range(6)]
+    if name.startswith('greatsword'):
+        # First-person swing frames, one per tick (class_armament_swing).
+        import class_armament_swing as swing
+        animated['entries'] += swing.entries(name)
     return {'model':{'type':'minecraft:select','property':'minecraft:display_context',
         'cases':[{'when':['gui','fixed','ground'],'model':base}], 'fallback':animated}, 'hand_animation_on_swap':False}
 

@@ -2,6 +2,7 @@
 import json
 from class_armament_geometry import ASSETS, KINDS, FRAMES, all_models, authored_model, item_definition, write_atlas
 from class_armament_actions import ACTION_FRAMES, action_model
+from class_armament_swing import files as swing_files
 
 
 def build():
@@ -17,6 +18,8 @@ def build():
             for stage in ('prepare','release'):
                 for frame in range(ACTION_FRAMES):
                     files[f'models/item/weapons/{name}_{stage}{frame:02d}.json']=action_model(kind,tier,stage,frame)
+            if kind=='greatsword' and tier>1:  # T1 is the plain sprite: build_plain_weapons.py writes its frames
+                files.update(swing_files(name))
     files['textures/item/weapons/materials.png.mcmeta']={'texture':{'blur':False,'clamp':False}}
     for relative, data in files.items():
         path=ASSETS/relative

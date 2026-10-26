@@ -38,7 +38,7 @@ class PlayerPuppetTest {
     }
 
     @Test fun `feet stay on the ground, hands hold the weapons and the puppet ends where the player stands`() {
-        for (name in listOf("greatsword_charge", "dual_blades_dance")) {
+        for (name in listOf("greatsword_charge", "dual_blades_dance", "greatsword_combo")) {
             val motion = PlayerMotion.load(name)!!
             var t = 0.0
             while (t <= motion.length) {
