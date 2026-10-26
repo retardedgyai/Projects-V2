@@ -82,7 +82,11 @@ FACES = (('north', (3, 2, 0, 1)), ('south', (6, 7, 5, 4)), ('down', (4, 5, 1, 0)
 def element_rotation(e):
     r = e.get('rotation')
     if not r: return np.eye(4)
-    a = math.radians(r['angle']); o = r['origin']
+    o = r['origin']
+    if 'axis' not in r:   # 26.3's free rotation: Rz Ry Rx, degrees
+        rot = Rz(math.radians(r.get('z', 0))) @ Ry(math.radians(r.get('y', 0))) @ Rx(math.radians(r.get('x', 0)))
+        return T(*o) @ rot @ T(-o[0], -o[1], -o[2])
+    a = math.radians(r['angle'])
     rot = {'x': Rx, 'y': Ry, 'z': Rz}[r['axis']](a)
     return T(*o) @ rot @ T(-o[0], -o[1], -o[2])
 

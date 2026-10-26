@@ -18,6 +18,7 @@ import net.kyori.adventure.title.Title
 import net.minestom.server.Auth
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
+import net.minestom.server.timer.TaskSchedule
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.coordinate.BlockVec
@@ -546,10 +547,14 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("motion").apply {
             val name = net.minestom.server.command.builder.arguments.ArgumentType.Word("name")
             val self = net.minestom.server.command.builder.arguments.ArgumentType.Literal("self")
-            setDefaultExecutor { sender, _ -> sender.sendMessage(Component.text("/motion greatsword_charge | dual_blades_dance [self] | stop（self：自分にも人形を見せる。F5で確認用）", NamedTextColor.GRAY)) }
+            setDefaultExecutor { sender, _ -> sender.sendMessage(Component.text("/motion greatsword_charge | dual_blades_dance [self] | stop | watch（self：自分にも人形を見せる。watch：通常攻撃の人形も自分に見せるのを切り替え。F5で確認用）", NamedTextColor.GRAY)) }
             addSyntax({ sender, context -> (sender as? Player)?.let { player ->
                 val motion = context.get(name)
                 if (motion == "stop") dev.projects.server.puppet.PlayerPuppet.stop(player)
+                else if (motion == "watch") with(dev.projects.server.puppet.PlayerPuppet.watching) {
+                    val on = add(player.uuid) || !remove(player.uuid)
+                    player.sendMessage(Component.text("通常攻撃の人形を自分にも見せる：${if (on) "オン（F5で見てください）" else "オフ"}", NamedTextColor.GRAY))
+                }
                 else if (!dev.projects.server.puppet.PlayerPuppet.play(player, motion))
                     player.sendMessage(Component.text("そのモーションはありません: $motion", NamedTextColor.YELLOW))
             } }, name)
@@ -557,6 +562,38 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 if (!dev.projects.server.puppet.PlayerPuppet.play(player, context.get(name), showOwner = true))
                     player.sendMessage(Component.text("そのモーションはありません: ${context.get(name)}", NamedTextColor.YELLOW))
             } }, name, self)
+        })
+        // Test-only (2026-10-25): claude-demo.txt in the working directory ("<presses> <gap ticks> [distance]") makes the
+        // test client's player (ClaudeTest, else the first online) enter the skill lab, stand [distance] before the middle
+        // dummy and press the normal attack [presses] times, [gap] ticks apart. Lets the motion be filmed without input.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getSchedulerManager().buildTask {
+            val trigger = java.io.File("claude-demo.txt")
+            if (!trigger.exists()) return@buildTask
+            val player = MinecraftServer.getConnectionManager().onlinePlayers.let { all -> all.firstOrNull { it.username == "ClaudeTest" } ?: all.firstOrNull() }
+                ?: return@buildTask
+            if (!combatLab.contains(player)) { combatLab.enter(player, CoreClass.WARRIOR); return@buildTask }
+            val target = combatLab.combat(player)?.combatTargets()?.minByOrNull { it.position.distanceSquared(player.position) }
+            if (!combatLab.ready(player) || target == null) return@buildTask
+            val args = trigger.readText().trim().split(Regex("\\s+")).mapNotNull { it.toDoubleOrNull() }
+            trigger.delete()
+            val presses = args.getOrNull(0)?.toInt() ?: 4; val gap = args.getOrNull(1)?.toInt() ?: 18; val distance = args.getOrNull(2) ?: 2.6
+            val t = target.position
+            val away = player.position.sub(t).withY(0.0).let { if (it.lengthSquared() < .01) Vec(0.0, 0.0, -1.0) else it.normalize() }
+            val stand = Pos(t.x() + away.x() * distance, t.y(), t.z() + away.z() * distance)
+            val yaw = Math.toDegrees(kotlin.math.atan2(-(t.x() - stand.x()), t.z() - stand.z())).toFloat()
+            player.teleport(stand.withView(yaw, 8f))
+            repeat(presses) { i -> player.scheduler().buildTask { actor(player)?.attack() }.delay(TaskSchedule.tick(20 + i * gap)).schedule() }
+            player.scheduler().buildTask { java.io.File("claude-demo.done").writeText("${System.currentTimeMillis()}") }
+                .delay(TaskSchedule.tick(20 + presses * gap + 30)).schedule()
+        }.repeat(TaskSchedule.tick(5)).schedule()
+        // Test-only: /vm <beat 1-3> <ticks> plays the greatsword viewmodel swing slowly, to look at it frame by frame.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("vm").apply {
+            val beat = net.minestom.server.command.builder.arguments.ArgumentType.Integer("beat").between(1, 3)
+            val ticks = net.minestom.server.command.builder.arguments.ArgumentType.Integer("ticks").between(2, 400)
+            addSyntax({ sender, context -> (sender as? Player)?.let { player ->
+                if (!GreatswordViewmodel.swing(player, context.get(beat), context.get(ticks)))
+                    player.sendMessage(Component.text("大剣を持っていません", NamedTextColor.GRAY))
+            } }, beat, ticks)
         })
         // Test-only: /vfx <slot 0-4> casts that skill in the skill lab with cooldown, mana and resource refilled (filming).
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("vfx").apply {

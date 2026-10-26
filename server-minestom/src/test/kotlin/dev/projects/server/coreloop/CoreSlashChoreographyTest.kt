@@ -39,7 +39,7 @@ class CoreSlashChoreographyTest {
         val scenes=rows.map { (job,id) ->
             val s=skill(job,id)
             val waves=(0 until s.pulses).map { CoreSkillChoreography.parts(effect(job,id,it)) }
-            val end=(s.pulses-1)*8+waves.last().maxOf { it.durationTicks+it.delayTicks }
+            val end=(s.pulses-1)*8+(waves.last().maxOfOrNull { it.durationTicks+it.delayTicks } ?: 0)   // the normal slash may be off
             val frames=(0..end).map { tick -> waves.flatMapIndexed { pulse,parts -> parts.mapNotNull { p ->
                 val pose=CoreSkillChoreography.pose(p,tick-pulse*8.0)
                 if(!pose.visible) null else mapOf("model" to pose.model,"offset" to xyz(pose.offset),

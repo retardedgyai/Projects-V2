@@ -26,7 +26,12 @@ internal class GreatswordCombo {
     private var buffered = false
     val isAttacking: Boolean get() = swing != null
 
-    fun press(speed: Double, quick: Boolean = false, immediate: Boolean = false, attacks: List<CoreWeaponAttack> = DEFAULT): Swing? {
+    /**
+     * [upswing]: Better Combat cadence (2026-10-25, Creator: the greatsword must feel like Better Combat). The whole
+     * swing is the weapon's cooldown, shortened by attack speed, and the blade lands [upswing] of the way in.
+     */
+    fun press(speed: Double, quick: Boolean = false, immediate: Boolean = false, attacks: List<CoreWeaponAttack> = DEFAULT,
+              upswing: Double? = null): Swing? {
         val current = swing
         if (current != null) {
             if (elapsed >= current.totalTicks - 6) buffered = true
@@ -41,6 +46,10 @@ internal class GreatswordCombo {
         val recovery = round(attack.recovery / haste).toInt().coerceAtLeast(if(quick) 5 else 7)
         elapsed = 0
         idleTicks = 0
+        if (upswing != null) {
+            val total = round((attack.startup + 1 + attack.recovery) / haste).toInt().coerceAtLeast(8)
+            return Swing(step, round(total * upswing).toInt().coerceAtLeast(2), total, attack, step == attacks.size).also { swing = it }
+        }
         // Immediate AA spends its former startup AFTER the hit. Preserve cadence and
         // the one-slot late input buffer; repeated clicks cannot create extra strikes.
         return Swing(step, if (immediate) 0 else startup + 1, startup + 1 + recovery, attack, step == attacks.size).also { swing = it }
