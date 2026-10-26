@@ -138,6 +138,12 @@ def main():
             subprocess.run([sys.executable, here, str(wx + int(ww * .582)), str(wy + int(wh * .235))]); time.sleep(6)      # load anyway
             if mc_window(): subprocess.run([sys.executable, here, str(wx + int(ww * .419)), str(wy + int(wh * .544))])   # yes
             clicked = 2
+            t_exp = time.time() + 25
+        if clicked == 2 and "Loaded" in txt and "advancements" in txt and time.time() > t_exp and mc_window():
+            # the zone-colour data pack marks the world experimental: a second screen asks to load anyway
+            wx, wy, ww, wh = mc_window()
+            subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), "xclick.py"), str(wx + int(ww * .583)), str(wy + int(wh * .237))])
+            t_exp = time.time() + 15
         if "joined the game" in txt or "が世界に参加しました" in txt or "ゲームに参加しました" in txt:
             joined = time.time(); break
         time.sleep(1)

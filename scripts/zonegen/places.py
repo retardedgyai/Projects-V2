@@ -186,16 +186,16 @@ def fungal(FX, FZ):
             put(int(round(px_)) + 2, int(py_), int(round(pz_)), "glow_lichen", shape="shut_s")
         cap = "red_mushroom_block" if red else "brown_mushroom_block"
         ri = int(cap_r) + 1
-        ta = R.uniform(0, math.tau); tilt = R.uniform(.12, .3)              # caps tilt toward the light and are never quite round
+        ta = R.uniform(0, math.tau); tilt = R.uniform(.12, .3) if red else 0.0   # caps tilt toward the light; a broad flat cap only a little
         for dx in range(-ri, ri + 1):
             for dz in range(-ri, ri + 1):
                 d = math.hypot(dx, dz)
                 if d > cap_r * (1 + .1 * math.sin(3 * math.atan2(dz, dx) + ta) + .06 * math.sin(5 * math.atan2(dz, dx))): continue
-                dome = int(round((1 - (d / cap_r) ** 2) * (cap_r * .45 if red else cap_r * .2)))
+                dome = int(round((1 - (d / cap_r) ** 2) * cap_r * .45)) if red else (1 if d < cap_r * .55 else 0)   # brown: a flat plate with one raised boss
                 cx2, cz2 = int(round(top[0])) + dx, int(round(top[2])) + dz
                 y = int(top[1]) + dome + int(round((dx * math.cos(ta) + dz * math.sin(ta)) * tilt))
                 put(cx2, y, cz2, cap)
-                if d > cap_r - 1.5:
+                if d > cap_r - (1.5 if red else .9):
                     put(cx2, y - 1, cz2, cap)                          # rim turns down
                 else:
                     put(cx2, y - 1, cz2, "mushroom_block_inside")      # gills underneath

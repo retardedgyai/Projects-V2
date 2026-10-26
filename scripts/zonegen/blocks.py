@@ -71,16 +71,16 @@ class Blocks:
                     w = 2.6 if k == 1 else 1.6
                     e = road_d[z, x] / w
                     v = noise3(x, 0, z, 331, 3.0)
-                    u = _h(x, 3, z, 333)
+                    u = noise3(x, 3, z, 333, 2.2) * .85 + _h(x, 3, z, 333) * .15     # in 2-4 block patches, not per-block speckle
                     if e < .55 + (v - .5) * .5: name = "dirt_path_top" if u < .6 else ("coarse_dirt" if u < .9 else "gravel")     # tread: path 60 / coarse 30 / gravel 10
-                    else: name = "coarse_dirt" if u < .5 else ("grass_block_top" if u < .85 else "dirt_path_top")            # shoulder: coarse 50 / grass 35 / path 15
+                    else: name = "coarse_dirt" if u < .4 else ("grass_block_top" if u < .9 else "dirt_path_top")             # shoulder: worn patches feathering into the grass
                     put(x, h, z, name, TM.SIDE.get(name, name))
                     continue
                 if face:
                     put(x, h, z, cliffs.block(x, h, z, 1.0, float(expo[z, x]), float(concav[z, x])))
                     continue
                 if k == 7:                                                # verge beside a road: mostly grass, coarse dirt in short fingers
-                    name = "coarse_dirt" if noise3(x, 0, z, 334, 2.5) > .7 else "grass_block_top"
+                    name = "coarse_dirt" if noise3(x, 0, z, 334, 2.5) > .78 else "grass_block_top"
                     put(x, h, z, name, "grass_block_side" if name == "grass_block_top" else name)
                     continue
                 if k == 6:                                                # shore: grass to the water, a little mud

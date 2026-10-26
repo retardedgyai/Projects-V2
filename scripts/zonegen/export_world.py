@@ -17,7 +17,7 @@ DATA_VERSION = 4325          # 1.21.5
 import json as _json
 # zone colour: bright yellow-green fields, teal-green in the hollows and ruins (the Spellforged look), set per chunk
 HOLLOW_CHUNKS = set()
-for (hx, hz, r) in ((95, 235, 50), (400, 85, 40), (240, 125, 30)):   # fungal hollow, root hollow, the tree's knoll and dungeon
+for (hx, hz, r) in ((95, 235, 26), (400, 85, 24), (240, 125, 20)):   # only the hollows themselves, not the fields round them   # fungal hollow, root hollow, the tree's knoll and dungeon
     for cx_ in range((hx - r) // 16, (hx + r) // 16 + 1):
         for cz_ in range((hz - r) // 16, (hz + r) // 16 + 1): HOLLOW_CHUNKS.add((cx_, cz_))
 BIOME_AT = lambda cx, cz: "projects:root_hollow" if (cx, cz) in HOLLOW_CHUNKS else "projects:root_hills"
