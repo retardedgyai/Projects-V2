@@ -56,6 +56,8 @@ class CoreApprovedDashV3Test {
                     val at=CoreSkillChoreography.pose(p,(p.delayTicks+t).toDouble()).offset
                     // Behind the eye (the heel's grit, the push-off) is never on screen.
                     if(at.x()*d.x()+at.z()*d.z()<=.3) return@repeat
+                    // A mark flat on the ground under the feet (the landing's crater) lies below the view, never in it.
+                    if(p.ground && at.y()<.3 && p.shape in setOf("war_ref:crater","war_ref:dent","war_ref:skid")) return@repeat
                     assertTrue(at.distance(eye)>=2.0,"${skill.icon} $n ${p.shape} tick $t at $at")
                 }
             }

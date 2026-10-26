@@ -591,7 +591,9 @@ internal object CoreWarriorRefChoreography {
                 // blocks round it, tipped outward, and clods thrown. A far leap breaks a wider ring a moment later.
                 val far = n == LEAP_FAR_LAND_PULSE
                 val k0 = if (far) 1.25 else 1.0
-                val ahead = 1.9
+                // Centred on the landing itself (Creator 2026-10-27: 「なんで足元じゃなくて前にでるんだ」), only the
+                // blade's half block ahead of the feet; the heaved ring goes round the body, clear of the eye.
+                val ahead = .5
                 val at = local(0.0, .12, ahead)
                 // The blade meets the ground a tick and a half into the slam (the hand's SLAM_LOW): the ground answers at 2.
                 val hit = 2
@@ -607,14 +609,14 @@ internal object CoreWarriorRefChoreography {
                             delay = delay + k % 2, roll = -(.8 + .5 * hash(seed, k, 645)), pitch = (hash(seed, k, 646) - .5) * .5)
                     }
                 }
-                ring(7, 1.2 * k0, .95 * k0, hit, 1, 150)
+                ring(9, 2.0 * k0, .95 * k0, hit, 1, 150)
                 // Clods thrown up off the far side of the crater (none toward the warrior's eye).
                 for (k in 0 until 6) {
                     val a = yaw + (k - 2.5) * .45 + (hash(k, 647) - .5) * .3
-                    out += piece("clod${150 + k}", at.add(sin(a) * 1.0, .2, cos(a) * 1.0), (.38 + .28 * hash(k, 648)) * k0, a, 22,
+                    out += piece("clod${150 + k}", at.add(sin(a) * 1.9, .2, cos(a) * 1.9), (.38 + .28 * hash(k, 648)) * k0, a, 22,
                         delay = hit + k / 3, ground = false).copy(startSize = 1.2)
                 }
-                if (far) ring(11, 2.6, .85, hit + 3, 2, 160)
+                if (far) ring(13, 3.4, .85, hit + 3, 2, 160)
             }
         }
         return out
