@@ -29,3 +29,18 @@ branch: "play/gyai/mage-rework"
 ## 外す今の技
 
 閃光歩（→雷走り）、氷の庭、術式起爆、魔力障壁、雷の刻印、天火の大術式・絶対零界（→大詠唱の火・氷の形に入れる）。保存データは `CoreSkillCatalog.migrate` で置き換える。
+
+## 作り（2026-10-27、1回目）
+
+- 決まり：`CoreMageRules.kt`（`MageElement`、陣 `CoreMageSigils`、床と敵の状態 `CoreMageField`、大詠唱 `CoreMageRules.grand`）。混ざり方：砕け（凍った敵＋火、×2・ボスは冷えて×1.5）、伝導（氷の上の敵へ雷）、過負荷（燃えた敵・火の床に雷で爆発と吹き飛ばし）、巻き込み（突風・竜巻が床の元素を拾って運ぶ）。凍結は雑魚だけスタン2秒。
+- 大詠唱は**杖の右クリック**（ホットバーに空きがないため。`CoreLoopServer` の `weapon` 入力をメイジだけ `skill(CoreMageRules.GRAND)` に）。陣の紋は資源の欄に0〜3で出し、ヒントに「陣 火氷」のように並べる。
+- 技の表（`CoreSkillCatalog`）：今の絵の番号をそのまま借りる。外した氷の庭は番号5に `retired` で残すので、メイジだけ候補が9つ（`CoreSkillCatalog.ultimateStart`）。竜巻だけ新しい絵の名前 `mage_gale`（仮の絵）。
+- 奥義：反響（撃った技を2秒後に同じ場所で6割の威力で繰り返す）、元素の極み（火＝全部の技に火、氷＝砕いても凍ったまま、雷＝跳ねる回数2倍・伝導が氷の床全部、風＝範囲と射程1.5倍）。
+- 見た目はまだ全部仮（今の絵の流用と、床・凍結はバニラの粒）。技ごとの一人称の見本を藍に見せてから作る。
+- まだ：竜巻の吸い寄せ（今は当たるだけ）、技の説明欄の資源の行、技能ツリーのメイジ大成（連鎖術式・対位法・氷の賢者は古いまま）。
+
+### 共有の土台に触れたところ
+- `CoreClassBuild`：技の番号の上限を 0..7 から 0..8 に（メイジの9つ目）。保存の列と版は変えていない。古い保存で氷の庭を付けていた人は `migrate` で別の技に置き換わる（試験あり）。
+- `CoreSkillCatalog.ultimateStart`、`CoreCombatLab`・`CoreLoopMenus` の「奥義は8番から」の決め打ちを置き換えた。
+- 技の絵の並び（`scripts/build_core_hud_assets.py` の SKILLS、`class_for_skill`）に `mage_gale` を足した。
+- `CorePlayerCombat`：`readyAt` を6つに（6つ目が大詠唱）。メイジの処理は末尾の「Mage」の塊にまとめ、ほかは数行のつなぎだけ。

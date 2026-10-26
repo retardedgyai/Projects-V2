@@ -666,7 +666,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             action == "affix" -> CoreLoopItems.stoneId(item)?.let { menus.stoneDetail(player, it) }
             action == "currency" -> menus.affixes(player)
             action == "armor" -> menus.gearMods(player, CoreGearSlot.equipped(CoreLoopItems.gearSlot(item) ?: CoreGearSlot.CHEST))
-            action == "weapon" -> actor(player)?.skill(0)
+            // The mage's staff casts the grand chant (CoreMageRules.GRAND); for the others the weapon casts slot 1.
+            action == "weapon" -> actor(player)?.let { it.skill(if (it.classId == CoreClass.MAGE) CoreMageRules.GRAND else 0) }
             action?.startsWith("skill:") == true -> action.substringAfter(':').toIntOrNull()?.let { actor(player)?.skill(it) }
             action == "potion" -> consume(player, CoreResource.POTION)
             action == "whetstone" -> consume(player, CoreResource.WHETSTONE)
