@@ -158,6 +158,8 @@ internal class CorePlayerCombat(
         var dragTick: Long = -1L, val hooked: MutableSet<UUID> = mutableSetOf(),
         /** 刻み打ち: the swing last made (0-based), its impact tick, when the next one comes, and whether a press was early. */
         var kizamiSwing: Int = 0, var kizamiImpact: Long = -1L, var kizamiNextAt: Long = -1L, var kizamiEarly: Boolean = false,
+        /** 百刃: when the chopping began, how many chops so far, and when the finishing swing lands (-1 until asked for). */
+        var hyakuStart: Long = -1L, var hyakuChops: Int = 0, var hyakuFinishAt: Long = -1L,
         /** Warrior A + B: the variant this spender turned into, if any. */
         val combo: CoreWarriorRules.Combo? = null,
         /** The current pulse's damage and break, against the cast's (狂乱's heavy first and last swings). */
@@ -201,6 +203,7 @@ internal class CorePlayerCombat(
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
         if (id !in 0..4 || defeated || encounter() == null || player.openInventory != null || staggered && !breaksOut(id)) return
         pending?.takeIf { it.id == id && it.definition.icon == CoreWarriorRules.KIZAMI && it.kizamiImpact >= 0 }?.let { kizamiPress(it); return }
+        pending?.takeIf { it.id == id && it.definition.icon == CoreWarriorRules.HYAKU && it.hyakuStart >= 0 }?.let { hyakuFinish(it); player.setHeldItemSlot(0); return }
         if (!unlocked && !skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
         if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
         if (!crowd.canCast(tickNumber)) { notice("${crowd.cue(tickNumber) ?: "行動不能"}：技を使えません"); return }
@@ -461,6 +464,20 @@ internal class CorePlayerCombat(
                 }
                 return@let
             }
+            if (action.hyakuStart >= 0) {
+                // 百刃: planted, chopping on a steady count until asked to finish (a press, a step, or the time).
+                if (action.hyakuFinishAt >= 0) {
+                    if (tickNumber == action.hyakuFinishAt) { hyakuSwing(enemies, action, finish = true); if (!actionsValid(enemies, epoch)) return }
+                    if (tickNumber >= action.hyakuFinishAt + CoreWarriorRules.HYAKU_RECOVERY) pending = null
+                    return@let
+                }
+                val t = tickNumber - action.hyakuStart
+                val inputs = player.inputs()
+                val walking = inputs.forward() || inputs.backward() || inputs.left() || inputs.right()
+                if (t >= CoreWarriorRules.HYAKU_MAX || walking && t >= CoreWarriorRules.HYAKU_MOVE_GRACE) { hyakuFinish(action); return@let }
+                if (t % CoreWarriorRules.HYAKU_EVERY == 0L) { hyakuSwing(enemies, action, finish = false); if (!actionsValid(enemies, epoch)) return }
+                return@let
+            }
             if (action.kizamiImpact >= 0) {
                 // 刻み打ち: between swings; the blade rings when the beat opens.
                 if (action.kizamiNextAt in 0..tickNumber) {
@@ -525,6 +542,7 @@ internal class CorePlayerCombat(
         val action = pending
         if (armored && (action == null || action.elapsed >= action.startup)) return CoreWarriorRules.ARMOR_HASTE
         if (action != null && action.dragTick >= 0) return CoreWarriorRules.DRAG_SPEED
+        if (action != null && action.hyakuStart >= 0) return 0.0     // 百刃 plants the feet (walking only asks for the finish)
         if (action != null && action.elapsed < action.startup)
             return if (action.startup >= HEAVY_STARTUP || action.definition.ultimate) 0.0 else CAST_SPEED
         // Swinging: the weapon's own slowdown (Better Combat manner, CoreWeaponCombat), else the general one.
@@ -645,6 +663,7 @@ internal class CorePlayerCombat(
             return
         }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.KIZAMI) { kizamiSwing(enemies, action); return }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.HYAKU) { action.hyakuStart = tickNumber; hyakuSwing(enemies, action, finish = false); return }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.LAUNCHER) {
             // 斬り上げ: the blade comes up from the ground; who it throws up is marked for 叩き落とし. Holding jump sends
             // the warrior up after them (a push the client flies, as with the leaps).
@@ -1012,6 +1031,25 @@ internal class CorePlayerCombat(
         player.velocity = velocity.mul(20.0)  // Minestom velocity is blocks per second
         action.leapTick = tickNumber
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, .6f)
+    }
+    /** 百刃: one chop in front (the effect pulse counts the chops), or the heavy finishing swing. */
+    private fun hyakuSwing(enemies: QuestEncounterCombat, action: PendingSkill, finish: Boolean) {
+        val epoch = actionEpoch
+        player.swingMainHand()
+        vfx.playSkill(CoreSkillEffect(classId, action.definition, player.position, flatFacing(),
+            pulse = if (finish) CoreWarriorRules.HYAKU_FINISH_PULSE else action.hyakuChops))
+        action.hitScale = if (finish) CoreWarriorRules.HYAKU_FINISH_SCALE else 1.0
+        action.breakScale = action.hitScale
+        hitThisStrike.clear()
+        strike(enemies, player.position, flatFacing(), action.definition.radius + if (finish) .6 else 0.0, if (finish) .2 else .5, if (finish) 2.0 else 1.0)
+        if (!actionsValid(enemies, epoch)) return
+        if (finish && action.hyakuChops >= CoreWarriorRules.HYAKU_FULL_SWINGS && hitThisStrike.isNotEmpty()) {
+            feedBeast(CoreWarriorRules.HYAKU_FULL_BEAST); notice("百刃：振り切り")
+        }
+        if (!finish) action.hyakuChops++
+    }
+    private fun hyakuFinish(action: PendingSkill) {
+        if (action.hyakuFinishAt < 0) action.hyakuFinishAt = tickNumber + CoreWarriorRules.HYAKU_FINISH_WINDUP
     }
     /** 刻み打ち: one swing of the chain (right, left, right, then overhead and heavier). */
     private fun kizamiSwing(enemies: QuestEncounterCombat, action: PendingSkill) {

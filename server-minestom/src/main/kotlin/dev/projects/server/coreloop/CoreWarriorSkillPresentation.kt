@@ -16,11 +16,12 @@ internal object CoreWarriorSkillPresentation {
         "war_ult" to Identity("全力一振", "奥義・一撃", "担いで溜め、渾身の一振りで地面を大きく割る"),
         "war_banner" to Identity("狂戦士甲冑", "奥義・暴走", "10秒、CCも怯みも効かず速く、獣が満ちたまま"),
         "war_awaken" to Identity("獣の目覚め", "奥義・解放", "獣3つで撃つ。8秒、獣が減らず使う技の再使用が半分"),
+        CoreWarriorRules.HYAKU to Identity("百刃", "獣を溜める・足を止めて連打", "押して斬り続け、押し直すか歩くと締め。8振りで獣がもう1つ"),
         CoreWarriorRules.KIZAMI to Identity("刻み打ち", "獣を溜める・連打", "振りの直後に押し直して刻む。4振り刻めば獣がもう1つ", "刻打ち")
     )
-    // Three across: the building skills first (enter, leap, launch / drag, rhythm), then the four spenders.
-    val candidateOrder = listOf(0, 4, 7, 6, 11, 1, 2, 3, 5)
-    val candidateSlots = listOf(9, 12, 15, 18, 21, 24, 27, 30, 33)
+    // Three across: the building skills first (enter, leap, launch / drag, rhythm, flurry), then the four spenders.
+    val candidateOrder = listOf(0, 4, 7, 6, 11, 12, 1, 2, 3, 5)
+    val candidateSlots = listOf(9, 12, 15, 18, 21, 24, 27, 30, 33, 36)
     const val CANDIDATE_SPAN = 3
     /** The three ultimates keep the wide tiles their long names need. */
     val ultimateSlots = listOf(9, 14, 18)

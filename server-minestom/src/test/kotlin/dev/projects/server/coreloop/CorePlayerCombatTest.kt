@@ -347,7 +347,8 @@ class CorePlayerCombatTest {
             // The three ultimates (slot 4): 全力の一振り with a full beast, 狂戦士の甲冑, 獣の目覚め (needs three).
             listOf(Triple("war_ult_b3", 4, false), Triple("war_banner_b0", 4, false), Triple("war_awaken_b3", 4, false)) +
             // 刻み打ち pressed on every beat, once per candidate look.
-            CoreWarriorRefChoreography.KizamiLook.entries.map { Triple("war_kizami_${it.name.lowercase()}", 3, false) }
+            CoreWarriorRefChoreography.KizamiLook.entries.map { Triple("war_kizami_${it.name.lowercase()}", 3, false) } +
+            listOf(Triple(CoreWarriorRules.HYAKU, 3, false))
         val scenes=(runs+beastRuns).map { (run,slot,shader) -> var scene=emptyMap<String,Any>()
             val icon=if(Regex("_b[0-3]$").containsMatchIn(run)) run.dropLast(3) else if(run.startsWith(CoreWarriorRules.KIZAMI)) CoreWarriorRules.KIZAMI else run
             CoreWarriorRefChoreography.kizamiLook=CoreWarriorRefChoreography.KizamiLook.entries.firstOrNull { run.endsWith(it.name.lowercase()) }
@@ -359,6 +360,7 @@ class CorePlayerCombatTest {
             if(icon=="war_counter") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=5)); h.actor.reset() }
             if(icon=="war_breach") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=7)); h.actor.reset() }
             if(icon==CoreWarriorRules.KIZAMI) { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=11)); h.actor.reset() }
+            if(icon==CoreWarriorRules.HYAKU) { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=12)); h.actor.reset() }
             if(icon==CoreWarriorRules.DRAG) { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=6)); h.actor.reset(); h.combat.tick(1000L) }
             if(icon=="war_banner") { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=1)); h.actor.reset() }
             if(icon==CoreWarriorRules.AWAKEN) { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=2)); h.actor.reset() }
@@ -389,7 +391,9 @@ class CorePlayerCombatTest {
                 // 引き摺り: the client walks the warrior forward while the blade drags (about the slowed walk speed).
                 if (icon == CoreWarriorRules.DRAG && it in 8..48) h.player.teleport(h.player.position.add(0.0, 0.0, .17))
                 // 刻み打ち: pressed again as each beat opens (four ticks after each cut), so all four swings come.
-                if (icon == CoreWarriorRules.KIZAMI && it in setOf(7, 13, 19)) h.actor.skill(slot) }
+                if (icon == CoreWarriorRules.KIZAMI && it in setOf(7, 13, 19)) h.actor.skill(slot)
+                // 百刃: chops for about a second and a half, then pressed again for the finish.
+                if (icon == CoreWarriorRules.HYAKU && it == 32) h.actor.skill(slot) }
             scene=mapOf("id" to if(shader) "${icon}_shader" else run,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
             CoreCombatPresentation.forget(h.player)
         } } finally { CoreWarriorIronChoreography.shaderCut=false; CoreWarriorRefChoreography.kizamiLook=CoreWarriorRefChoreography.KizamiLook.TALLY }; scene }
@@ -1028,11 +1032,33 @@ class CorePlayerCombatTest {
     @Test fun `kizami comes after the ultimates so older picks and ultimates keep their indices`() {
         val skills = CoreSkillCatalog.skills(CoreClass.WARRIOR)
         assertEquals(CoreWarriorRules.KIZAMI, skills[11].icon)
-        assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7, 11), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
+        assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7, 11, 12), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
         assertEquals(listOf(0, 1, 2), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
         val equipped = CoreSkillCatalog.equipped(CoreJourney.legacy(build = CoreClassBuild(fourth = 11, ultimate = 2)))
         assertEquals(listOf("dash", "slam", "whirl", CoreWarriorRules.KIZAMI, CoreWarriorRules.AWAKEN), equipped.map { it.icon })
         assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7), CoreSkillCatalog.normalChoices(CoreClass.MAGE))
+    }
+
+    @Test fun `hyakujin chops on a count until pressed again, then finishes heavy and a long flurry builds one more`() = arena(bossDistance = 2.5) { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 12)); h.actor.reset()
+        assertEquals(CoreWarriorRules.HYAKU, h.actor.skillDefinitions[3].icon)
+        val id = h.combat.combatTargets().single().id
+        h.actor.skill(3); h.ticks(3 + 3 * CoreWarriorRules.HYAKU_FULL_SWINGS)   // startup, then a chop every three ticks
+        val chopped = 100.0 - h.combat.breakGauge(id)!!
+        assertEquals(1.5 * (CoreWarriorRules.HYAKU_FULL_SWINGS + 1), chopped, 1e-9)
+        h.actor.skill(3); h.ticks(CoreWarriorRules.HYAKU_FINISH_WINDUP.toInt() + 1)
+        assertEquals(chopped + 1.5 * CoreWarriorRules.HYAKU_FINISH_SCALE, 100.0 - h.combat.breakGauge(id)!!, 1e-9)
+        assertEquals(CoreWarriorRules.BEAST_PER_SKILL + CoreWarriorRules.HYAKU_FULL_BEAST, h.actor.resource, 1e-9)
+        h.ticks(CoreWarriorRules.HYAKU_RECOVERY.toInt() + 2); h.actor.devCast(1); h.ticks(1)   // done: other skills come at once
+        assertTrue(h.actor.cooldownRemaining(1) > 0)
+    }
+
+    @Test fun `hyakujin ends by itself with the finish when time runs out`() = arena(bossDistance = 2.5) { h ->
+        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 12)); h.actor.reset()
+        val id = h.combat.combatTargets().single().id
+        h.actor.skill(3); h.ticks(3 + CoreWarriorRules.HYAKU_MAX.toInt() + CoreWarriorRules.HYAKU_FINISH_WINDUP.toInt() + 2)
+        val chops = (CoreWarriorRules.HYAKU_MAX / CoreWarriorRules.HYAKU_EVERY + 1).toInt()
+        assertEquals(1.5 * (chops + CoreWarriorRules.HYAKU_FINISH_SCALE), 100.0 - h.combat.breakGauge(id)!!, 1e-9)
     }
 
     @Test fun `each variant belongs to one builder and one spender`() {

@@ -14,7 +14,7 @@ internal object CoreBreak {
     /** Any other class's skill, per hit. */
     const val SKILL = 4.0
     private val WARRIOR = mapOf("dash" to 4.0, "slam" to 12.0, "whirl" to 4.0, "war_wound" to 6.0, "war_ult" to 15.0,
-        "war_guard" to 8.0, "war_counter" to 12.0, CoreWarriorRules.KIZAMI to 3.0)
+        "war_guard" to 8.0, "war_counter" to 12.0, CoreWarriorRules.KIZAMI to 3.0, CoreWarriorRules.HYAKU to 1.5)
     /** 地割り right after the third normal hit. */
     const val FINISHER = 1.5
 

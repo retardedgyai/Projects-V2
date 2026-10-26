@@ -364,7 +364,7 @@ class CoreSkillChoreographyTest {
             val parts=CoreSkillChoreography.parts(e)
             // 地割り and the other ground strikes (CoreWarriorRefChoreography) are built from many small pieces: furrows, torn turf, clods.
             assertTrue(parts.size in 1..if(s.icon=="mage_garden")21 else if(job==CoreClass.WARRIOR && phase==CoreSkillVisualPhase.PULSE &&
-                s.icon in setOf("slam","war_wound","whirl",CoreWarriorRules.KIZAMI,"war_guard","war_counter","war_ult","war_banner","war_awaken")) 34 else 16,"${s.icon} $phase: ${parts.size}")
+                s.icon in setOf("slam","war_wound","whirl",CoreWarriorRules.KIZAMI,CoreWarriorRules.HYAKU,"war_guard","war_counter","war_ult","war_banner","war_awaken")) 34 else 16,"${s.icon} $phase: ${parts.size}")
             for(p in parts) for(tick in 0..p.delayTicks+p.durationTicks) {
                 val pose=CoreSkillChoreography.pose(p,tick.toDouble())
                 if(p.shape.startsWith("flow:") || p.shape.startsWith("warrior_trace:")) assertTrue(pose.scale.x()>=0 && pose.scale.y()>0 && pose.scale.z()>=0)

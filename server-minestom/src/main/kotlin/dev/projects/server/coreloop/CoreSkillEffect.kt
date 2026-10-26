@@ -21,7 +21,7 @@ internal object CoreSkillArt {
         put(CoreSkillMotif.SLASH, "dash", "war_wound", "war_counter", "ass_execute")
         put(CoreSkillMotif.THRUST, "war_breach", "ass_stab", "ass_chase", "ass_contract", "temp_dash")
         put(CoreSkillMotif.CLEAVE, "slam", "war_ult", "temp_mace", "temp_break")
-        put(CoreSkillMotif.WHIRL, "whirl", "ass_fan", "ass_ult", CoreWarriorRules.KIZAMI)
+        put(CoreSkillMotif.WHIRL, "whirl", "ass_fan", "ass_ult", CoreWarriorRules.KIZAMI, CoreWarriorRules.HYAKU)
         put(CoreSkillMotif.VENOM, "ass_poison")
         put(CoreSkillMotif.FROST_FAN, "frost_fan")
         put(CoreSkillMotif.ARROW, "pierce", "hunt_pierce", "hunt_mark", "hunt_volley", "hunt_ult", "hunt_retreat")

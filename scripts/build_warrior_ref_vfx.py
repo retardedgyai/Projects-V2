@@ -393,7 +393,11 @@ SLASH_TAIL = [150, 136, 112, 80, 40, 0, -20, -30]          # where the band's ta
 SLASH_FADE = [0, 0, 0, 0, .25, .5, .7, .85]
 
 
-def slash_texture(frame):
+# 百刃 (2026-10-27): the same crescent in white steel, so its flurry reads apart from 刻み打ち's red one.
+STEEL = {W: (255, 255, 255), C: (226, 236, 244), R: (156, 172, 190), O: (196, 208, 222), D: (74, 86, 104)}
+
+
+def slash_texture(frame, palette=None):
     img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
     px = img.load()
     cx, cy, radius = 16, 34, 33.0
@@ -417,6 +421,7 @@ def slash_texture(frame):
             elif inset < width * .9: c, al = (D if not streak else R), 150
             else: c, al = D, 96
             al = int(al * (1 - .55 * k))                   # the tail is see-through
+            if palette: c = palette.get(c, c)
             px[x, y] = c + (al,)
     if SLASH_FADE[frame]: img = dissolve(img, SLASH_FADE[frame], 21)
     return img
@@ -1153,6 +1158,7 @@ def build(assets, write):
                                        texture('stone_top', stone_texture(1)), texture('stone_side', stone_texture(2))))
     for f in range(len(SLASH_HEAD)):
         model(f'slash_{f}', centred_model(texture(f'slash_{f}', slash_texture(f))))
+        model(f'steel_{f}', centred_model(texture(f'steel_{f}', slash_texture(f, STEEL))))
     model('frame', centred_model(texture('frame', frame_texture())))
     model('bar', {'ambientocclusion': False, 'textures': {'0': texture('bar', bar_texture())}, 'elements': [
         box((0, 7.4, 6.5), (16, 8.6, 9.5), [0, 0, 16, 16], [0, 0, 16, 16])]})

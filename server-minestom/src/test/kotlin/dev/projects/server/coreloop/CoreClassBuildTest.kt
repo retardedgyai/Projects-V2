@@ -10,8 +10,8 @@ class CoreClassBuildTest {
         assertEquals(6,CoreClass.entries.size)
         val icons=CoreClass.entries.flatMap { job ->
             val skills=CoreSkillCatalog.skills(job)
-            // The warrior has a third ultimate and a ninth skill after the ultimates (刻み打ち).
-            assertEquals(if(job==CoreClass.WARRIOR) 12 else 10,skills.size)
+            // The warrior has a third ultimate and two more skills after the ultimates (刻み打ち, 百刃).
+            assertEquals(if(job==CoreClass.WARRIOR) 13 else 10,skills.size)
             assertTrue(skills.take(8).none { it.ultimate });assertEquals(if(job==CoreClass.WARRIOR) 3 else 2,skills.count { it.ultimate })
             // The warrior's beast is spent by the spender skills themselves (CoreWarriorRules), not by a cost.
             assertTrue(skills.any { it.gain>0 });assertTrue(skills.any { it.spend>0 } || job==CoreClass.WARRIOR)
@@ -23,7 +23,7 @@ class CoreClassBuildTest {
             }
             skills.map { it.icon }
         }
-        assertEquals(62,icons.distinct().size);assertEquals(icons,CoreSkillCatalog.artNames)
+        assertEquals(63,icons.distinct().size);assertEquals(icons,CoreSkillCatalog.artNames)
         val font=javaClass.classLoader.getResourceAsStream("core-ui-pack/assets/projects/font/hud_skills.json")!!.bufferedReader().readText()
         icons.forEach { assertContains(font,"hud_skill_${it}.png") }
     }

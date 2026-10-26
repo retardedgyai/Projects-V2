@@ -200,7 +200,9 @@ object CoreSkillCatalog {
                 s("狂戦士の甲冑", "war_banner", "10秒間、体から血が流れ、鼓動のたびに血しぶきが散る。CCも怯みも効かず、動きと振りが速くなり、獣が満ちたまま減らない。代わりに体力が毎秒2%ずつ減る（1で止まる）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=20, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
                 s("獣の目覚め", "war_awaken", "獣3つの時だけ使える。8秒間、獣が減らず、獣を使う技の再使用が半分になる", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=15, cd=1200, startup=2, gain=0, radius=0.0, duration=160, ult=true),
                 // 刻み打ち (Creator 2026-10-27) comes after the ultimates so every older catalog index (and art index) stays.
-                s("刻み打ち", CoreWarriorRules.KIZAMI, "押すと短く一振り。振りの直後、刃が鳴った所でもう一度押すと次の振りへ（最大4振り、右・左・右・真上）。早すぎても遅すぎてもそこで止まる。4振り目まで刻めば獣がもう1つ溜まる。獣を溜める", CoreSkillMotion.CONE, 4.0, .8, mana=8, cd=160, startup=4, radius=3.4).cc(CrowdControl.FLINCH, 200))
+                s("刻み打ち", CoreWarriorRules.KIZAMI, "押すと短く一振り。振りの直後、刃が鳴った所でもう一度押すと次の振りへ（最大4振り、右・左・右・真上）。早すぎても遅すぎてもそこで止まる。4振り目まで刻めば獣がもう1つ溜まる。獣を溜める", CoreSkillMotion.CONE, 4.0, .8, mana=8, cd=160, startup=4, radius=3.4).cc(CrowdControl.FLINCH, 200),
+                // 百刃 (Creator 2026-10-27) comes after 刻み打ち for the same reason.
+                s("百刃", CoreWarriorRules.HYAKU, "押すと足を止め、目の前を縦横に斬り続ける（最長2.5秒）。もう一度押すか、歩こうとすると締めの大振り。8振り以上斬ってから締めると獣がもう1つ溜まる。獣を溜める", CoreSkillMotion.CONE, 1.5, .35, mana=12, cd=220, startup=3, radius=3.2).cc(CrowdControl.FLINCH, 150))
             CoreClass.MAGE -> listOf(
                 s("火炎弾", "firebolt", "火の術式を刻む。直前と違う属性なら獲得量増加", CoreSkillMotion.RAY, 8.0, 1.4, cd=60, startup=5, element=1),
                 s("霜の波紋", "frost_nova", "周囲を凍てつかせる。火や雷からつなぐと術式が育つ", CoreSkillMotion.NOVA, 10.0, 1.0, cd=110, startup=10, status=CoreSkillStatus.SLOW, element=2).cc(CrowdControl.ROOT, 1200),

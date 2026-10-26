@@ -8,7 +8,7 @@ class CoreWarriorSkillPresentationTest {
         assertEquals(CoreSkillCatalog.normalChoices(CoreClass.WARRIOR),CoreWarriorSkillPresentation.candidateOrder.sorted())
         assertTrue(CoreWarriorSkillPresentation.candidateOrder.size<=CoreWarriorSkillPresentation.candidateSlots.size)
         val occupied=CoreWarriorSkillPresentation.candidateSlots.flatMap { it until it+CoreWarriorSkillPresentation.CANDIDATE_SPAN }
-        assertEquals(27,occupied.distinct().size)
+        assertEquals(30,occupied.distinct().size)
         assertTrue(occupied.none { it in CoreWarriorSkillPresentation.loadoutSlots || it>=45 })
     }
     @Test fun `caption reads actual defensive windows and vanishes when consumed or expired`() {

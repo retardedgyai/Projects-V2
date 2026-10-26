@@ -31,7 +31,7 @@ class CoreCombatMeshTest {
                 assertEquals(CoreCombatPresentation.Detail.SUBDUED,CoreCombatPresentation.cycle(it))
             }
             // 獣の目覚め and 刻み打ち have no flourish body: they are drawn only by CoreWarriorRefChoreography.
-            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon!=CoreWarriorRules.AWAKEN && it.icon!=CoreWarriorRules.KIZAMI }) {
+            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon !in setOf(CoreWarriorRules.AWAKEN, CoreWarriorRules.KIZAMI, CoreWarriorRules.HYAKU) }) {
                 val effect=CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0))
                 meshes.play(effect)
                 repeat(3) { meshes.tick() }

@@ -61,7 +61,7 @@ class CoreWarriorCompanionsTest {
         val seen=mutableSetOf<String>()
         // 獣の目覚め has no flourish body: it is drawn only by CoreWarriorRefChoreography.
         // 刻み打ち borrows 狂乱's sweeps until 藍 decides its look (CoreSkillEffect.sceneId).
-        for(s in CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon!=CoreWarriorRules.AWAKEN && it.icon!=CoreWarriorRules.KIZAMI }) for(beat in 0 until s.pulses) {
+        for(s in CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon !in setOf(CoreWarriorRules.AWAKEN, CoreWarriorRules.KIZAMI, CoreWarriorRules.HYAKU) }) for(beat in 0 until s.pulses) {
             val e=CoreSkillEffect(CoreClass.WARRIOR,s,Vec.ZERO,Vec(0.0,0.0,1.0),pulse=beat)
             val bodies=CoreWarriorFlourish.parts(e).filter { !it.secondary }
             assertTrue(bodies.isNotEmpty(),s.icon)
