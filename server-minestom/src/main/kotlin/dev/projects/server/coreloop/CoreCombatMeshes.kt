@@ -39,7 +39,7 @@ internal class CoreCombatMeshes(private val owner: Player) {
     fun play(effect: CoreSkillEffect): Boolean {
         val instance=owner.instance ?: return false
         val immediateContour=effect.sceneId=="mage_garden" || effect.job==CoreClass.WARRIOR &&
-            (effect.sceneId in CoreApprovedNormalV3.sceneIds || effect.sceneId in CoreWarriorBladeChoreography.sceneIds && effect.sceneId!="dash" ||
+            (effect.sceneId in CoreApprovedNormalV3.sceneIds || effect.sceneId in CoreWarriorBladeChoreography.sceneIds ||
                 effect.sceneId in CoreWarriorSupportChoreography.sceneIds)
         val parts=CoreSkillChoreography.parts(effect)+CoreWarriorCompanions.parts(effect)
         if(effect.sceneId!="mage_garden" && !instance.players.any { CoreCombatPresentation.packed(it) &&

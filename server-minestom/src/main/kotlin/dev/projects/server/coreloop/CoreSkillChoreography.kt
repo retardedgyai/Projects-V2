@@ -121,8 +121,8 @@ internal object CoreSkillChoreography {
         val raw=CoreCombatMeshArt.parts(e)
         if(raw.isEmpty()) return raw
         CoreApprovedNormalV3.parts(e)?.let { return it }
-        // 体当たり's own contact (the skill's, not the normal hits that borrow the approved impact) is drawn small.
-        if(e.sceneId=="dash" && e.phase==CoreSkillVisualPhase.CONTACT) CoreWarriorRefChoreography.parts(e)?.let { return it }
+        // 体当たり / 跳び叩き draw only what the body and blade leave in the world, every phase (CoreWarriorRefChoreography).
+        if(e.job==CoreClass.WARRIOR && e.sceneId in CoreWarriorRefChoreography.lookIds) CoreWarriorRefChoreography.parts(e)?.let { return it }
         CoreApprovedDashV3.parts(e)?.let { return it }
         CoreWarriorRefChoreography.parts(e)?.let { return it }
         CoreWarriorIronChoreography.parts(e)?.let { return it }

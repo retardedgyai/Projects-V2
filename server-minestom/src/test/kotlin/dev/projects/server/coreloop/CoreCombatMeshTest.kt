@@ -259,7 +259,8 @@ class CoreCombatMeshTest {
         val meshes=CoreCombatMeshes(owner)
         CoreCombatPresentation.pack(owner,true)
         try {
-            for(id in listOf("dash") + CoreApprovedNormalV3.sceneIds) for(phase in CoreSkillVisualPhase.entries) {
+            // 体当たり itself no longer draws the approved frames (2026-10-27); the normal hits still land with its impact.
+            for(id in CoreApprovedNormalV3.sceneIds) for(phase in CoreSkillVisualPhase.entries) {
                 val base=effect(CoreClass.WARRIOR,"dash",phase)
                 val e=CoreSkillEffect(base.job,base.skill,base.origin,base.direction,phase,sceneId=id)
                 val parts=CoreSkillChoreography.parts(e)

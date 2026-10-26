@@ -176,6 +176,13 @@ internal class GreatswordVfx(private val player: Player) {
                 category=ParticleCategory.OWN_ACTIVE,importance=ParticleImportance.COMBAT_FEEDBACK)
     }
 
+    /** Only the world pieces of [effect]: no sound, no hand pose, no particles (体当たり's steps, 跳び叩き's push-off...). */
+    fun look(effect: CoreSkillEffect) {
+        if (player.instance !== instance) cancel()
+        instance = player.instance
+        meshes.play(effect)
+    }
+
     fun normalContact(origin: Point, direction: Vec) {
         if (!CoreCombatPresentation.packed(player)) {
             play(GreatswordEffect(GreatswordVisual.HIT, origin, direction))

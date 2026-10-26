@@ -971,6 +971,266 @@ def lump_model(top, side, under, seed):
     return {'textures': {'top': top, 'side': side, 'under': under, 'particle': side}, 'elements': els}
 
 
+# 体当たり and 跳び叩き in the world (2026-10-27). The own swing is drawn by the hand alone; the world only gets what the
+# body and the blade leave behind: the charge's scraped streak and the grit kicked off the heels, the iron-and-dust
+# shock where the shoulder lands, the clang of a blow caught whole; the leap's push-off dent, and the cleft the blade
+# cuts on landing with cracks running out of it, slabs thrown up and (after a far leap) a horseshoe of rock heaved up.
+# Dark iron, blood red and cream, gold only on the clang. Flat tones, coarse pixels, gone by losing pixels.
+G = (232, 176, 72)
+S0, S1, S2, S3, S4 = (16, 13, 13), (34, 29, 29), (54, 47, 46), (78, 70, 67), (108, 98, 92)
+CH = (226, 206, 170)
+
+
+def skid_texture(stage):
+    """32 x 32 on the ground, the charge running up the image: two heel gouges with crumbs heaped on their outer lips."""
+    img = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+    px = img.load()
+    for n, gx in enumerate((10.5, 21.5)):
+        for y in range(32):
+            cx = gx + (_h(y // 4, n, 5) - .5) * 1.4
+            for x in range(32):
+                d = x + .5 - cx
+                v = _h(x // 2, y // 2, n, 6)
+                out = d if n else -d                      # positive toward the outside of the pair
+                if abs(d) <= 1.3: c = S0 if v > .3 else S1
+                elif abs(d) <= 2.5: c = S1 if v > .45 else S2
+                elif 2.5 < out <= 4.5 and v > .25: c = EARTH[2] if v > .62 else EARTH[0]     # heaped outer lip
+                elif 4.5 < out <= 6.5 and v > .8: c = EARTH[1]                               # crumbs thrown off it
+                elif -4.0 <= out < -2.5 and v > .7: c = EARTH[3]
+                else: continue
+                px[x, y] = c + (255,)
+    for x0, y0 in ((9, 6), (22, 13), (11, 21), (20, 27)):   # gravel left lying in the gouges
+        px[x0, y0] = S3 + (255,); px[x0 + 1, y0] = S2 + (255,)
+    if stage: img = dissolve(img, (0, .35, .7)[stage], 31)
+    return img
+
+
+def kick_texture(frame):
+    """32 x 32: dust and gravel kicked back off a heel, a low fan wider than it is tall, grit flying out of its top."""
+    img = Image.new('RGBA', (32, 32), (0, 0, 0, 0))
+    px = img.load()
+    r = (7, 10, 12, 13, 13)[frame]
+    base = 28 - (0, 1, 2, 3, 3)[frame]
+    for y in range(32):
+        for x in range(32):
+            dx, dy = (x + .5 - 16) / 1.3, base - (y + .5)
+            if dy < -1.5: continue
+            lump = 2.2 * math.sin(math.atan2(dy, dx) * 4 + 1.0) + 1.6 * _h(x // 3, y // 3, 2)
+            if math.hypot(dx, dy * 1.15) > r + lump: continue
+            v = _h(x // 2, y // 2, 4)
+            col = DUST[2] if v > .72 and dy > 3 else DUST[1] if v < .32 or dy < 1.5 else DUST[0]
+            px[x, y] = col + (255,)
+    for k, (x0, y0, vx, vy) in enumerate(((10, 18, -1.6, 3.0), (20, 17, 1.4, 3.4), (15, 15, -.3, 4.2), (24, 20, 2.4, 2.2),
+                                          (7, 21, -2.4, 2.0))):
+        x = int(x0 + vx * frame); y = int(y0 - vy * frame + .55 * frame * frame)
+        tone = S1 if k % 2 else S2
+        for ox, oy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+            if 0 <= x + ox < 32 and 0 <= y + oy < 32: px[x + ox, y + oy] = tone + (255,)
+    return dissolve(img, (0, 0, .2, .45, .72)[frame], 37) if frame > 1 else img
+
+
+# The shock's points: angle (degrees, 0 = right, 90 = up), length and half width at the root (pixels). Drawn by hand:
+# broad, long and low to the sides (the dust is driven out along the ground), short and blunt upward.
+SHOCK = [(6, 21, 5.5), (27, 15, 5.0), (52, 11, 4.4), (80, 12, 5.2), (104, 10, 4.6), (128, 13, 4.8), (154, 17, 5.4),
+         (174, 22, 5.8)]
+
+
+def shock_texture(frame):
+    """48 x 48, the ground at the bottom: the iron-and-dust shock off the shoulder's blow. A heap of broad grey
+    wedges thrown out round a white-hot jagged heart (0); the heart gone, the wedges thrown out (1); only the wedges'
+    broken outer halves (2); breaking up (3, 4)."""
+    img = Image.new('RGBA', (48, 48), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    ox, oy = 24, 41
+    grow = (1.0, 1.22, 1.38, 1.46, 1.5)[frame]
+    for k, (a, length, hw) in enumerate(SHOCK):
+        t = math.radians(a); n = (-math.sin(t), -math.cos(t))
+        root = (1.5 if frame < 2 else 8.5) * grow
+        tip = length * grow
+        def at(r, side=0.0): return (ox + math.cos(t) * r + n[0] * side, oy - math.sin(t) * r + n[1] * side)
+        body = I3 if frame < 2 else I2
+        d.polygon([at(root, -hw), at(tip * .6, -hw * .95), at(tip), at(tip * .6, hw * .95), at(root, hw)], fill=body + (255,))
+        d.polygon([at(tip * .6, -hw * .95), at(tip), at(tip * .6, -hw * .1)], fill=I1 + (255,))        # its shadowed side
+        d.polygon([at(tip * .82, -hw * .3), at(tip), at(tip * .82, hw * .3)], fill=I0 + (255,))          # the dark tip
+        g = at(tip + 3 + 3 * frame, (_h(k, 3) - .5) * 6)                                                # one lump of grit
+        d.rectangle((int(g[0]), int(g[1]), int(g[0]) + 1, int(g[1]) + 1), fill=I1 + (255,))
+    if frame < 2:
+        heart = [(0, 10), (30, 6), (55, 9), (90, 7), (125, 9), (150, 6), (180, 10)]
+        for tone, k in ((C, 1.0), (W, .55)):
+            pts = [(ox + math.cos(math.radians(a)) * r * k * (1.25 if frame else 1), oy - math.sin(math.radians(a)) * r * k * (1.25 if frame else 1))
+                   for a, r in heart]
+            d.polygon([(ox - 11, oy)] + pts + [(ox + 11, oy)], fill=(tone if frame == 0 or tone == C else (0, 0, 0)) + (228 if tone == C else 255,))
+        if frame == 1:
+            px = img.load()
+            for y in range(48):
+                for x in range(48):
+                    if px[x, y][:3] == (0, 0, 0): px[x, y] = (0, 0, 0, 0)
+    img.paste((0, 0, 0, 0), (0, oy + 1, 48, 48))
+    return dissolve(img, (0, 0, .12, .42, .72)[frame], 41) if frame > 1 else img
+
+
+def clang_texture(stage):
+    """48 x 48: a blow caught whole on iron. A flat cross of light, long sideways: white heart, cream, gold points (0);
+    the heart burnt out and the points stretched (1); gold splinters (2)."""
+    img = Image.new('RGBA', (48, 48), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    c = 23.5
+    def star(k, tone, wide=1.0):
+        pts = []
+        for a, r in ((0, 22), (22, 5), (45, 8), (68, 5), (90, 12), (112, 5), (135, 8), (158, 5), (180, 22), (202, 5),
+                     (225, 8), (248, 5), (270, 12), (292, 5), (315, 8), (338, 5)):
+            r = r * k * (wide if a in (0, 180) else 1.0)
+            pts.append((c + math.cos(math.radians(a)) * r, c - math.sin(math.radians(a)) * r))
+        d.polygon(pts, fill=tone + (255,))
+    if stage == 0:
+        star(1.0, G); star(.7, C); d.rectangle((c - 3, c - 3, c + 3, c + 3), fill=W + (255,))
+    elif stage == 1:
+        star(1.1, G, 1.08); star(.8, C, 1.08); star(.5, (0, 0, 0), 1.08)
+        img = img.copy(); px = img.load()
+        for y in range(48):
+            for x in range(48):
+                if px[x, y][:3] == (0, 0, 0): px[x, y] = (0, 0, 0, 0)
+        return img
+    else:
+        for a, r0, r1 in ((0, 13, 24), (180, 13, 24), (90, 8, 14), (270, 8, 14), (45, 6, 10), (225, 6, 10)):
+            t = math.radians(a)
+            d.line([(c + math.cos(t) * r0, c - math.sin(t) * r0), (c + math.cos(t) * r1, c - math.sin(t) * r1)], fill=G + (255,), width=2)
+            d.point((c + math.cos(t) * (r1 + 2), c - math.sin(t) * (r1 + 2)), fill=R + (255,))
+        img = dissolve(img, .35, 43)
+    return img
+
+
+def fspark_texture(stage):
+    """16 x 16: a spark flying up the image, a white head and a tail cooling from cream through gold to red."""
+    img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    rows = [(W, 2), (W, 2), (C, 2), (C, 2), (C, 2), (G, 2), (G, 2), (G, 1), (R, 1), (R, 1), (D, 1)]
+    if stage: rows = [(C, 2), (C, 2), (G, 2), (G, 1), (R, 1), (R, 1), (D, 1)]
+    for i, (tone, w) in enumerate(rows):
+        for x in range(7, 7 + w): px[x, 2 + i] = tone + (255,)
+    return img
+
+
+# The cleft the leap's blade cuts on landing, seen from above with the facing up the image: the cut itself down the
+# middle, a sunken dish broken round it, cracks run out uneven, forked, longest to the sides. Drawn by hand.
+CLEFT_CRACKS = [[(35, 26), (41, 22), (44, 15), (50, 12), (54, 5)], [(36, 33), (44, 35), (50, 32), (57, 38), (63, 37)],
+                [(34, 43), (39, 47), (38, 53), (43, 58), (42, 63)], [(29, 41), (23, 46), (18, 44), (11, 50), (3, 52)],
+                [(28, 30), (21, 27), (15, 29), (8, 24), (1, 25)], [(30, 21), (26, 16), (28, 9), (23, 3)],
+                [(32, 12), (34, 7), (32, 1)], [(31, 52), (29, 57), (31, 63)]]
+CLEFT_FORKS = [[(44, 15), (47, 21)], [(50, 32), (53, 26)], [(18, 44), (17, 51)], [(15, 29), (12, 35)],
+               [(39, 47), (46, 49)], [(26, 16), (20, 14)]]
+
+
+def cleft_texture(stage):
+    """64 x 64: 0 = just cut, the seam blood-red with a cream heart; 1 = the seam dark red; 2 = cold; 3, 4 = breaking up."""
+    img = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
+    px = img.load()
+    c = 31.5
+    for y in range(64):
+        for x in range(64):
+            r = math.hypot(x - c, (y - c) * 1.12) + 2.4 * (_h(x // 2, y // 2, 51) - .5)
+            v = _h(x // 2, y // 2, 52)
+            if r > 16.5: continue
+            if r > 13: col = (S4 if v > .55 else S3) if v > .28 else None      # the broken rim, heaved up
+            elif r > 8: col = S2 if v > .4 else S1                              # the sunken dish
+            else: col = S1 if v > .3 else S0
+            if col: px[x, y] = col + (255,)
+    for k in range(7):                                                          # cream chips on the rim
+        a = _h(k, 53) * math.tau; rr = 13.5 + 2 * _h(k, 54)
+        x, y = int(c + math.cos(a) * rr), int(c + math.sin(a) * rr / 1.12)
+        for ox, oy in ((0, 0), (1, 0), (0, 1)): px[x + ox, y + oy] = CH + (255,)
+    d = ImageDraw.Draw(img)
+    for n, line in enumerate(CLEFT_CRACKS + CLEFT_FORKS):
+        fork = n >= len(CLEFT_CRACKS)
+        for i in range(len(line) - 1):
+            w = 2 if i < 2 and not fork else 1
+            a, b = line[i], line[i + 1]
+            d.line([(a[0] + 1, a[1]), (b[0] + 1, b[1])], fill=S4 + (255,), width=1)    # the lit lip on one side
+            d.line([a, b], fill=S0 + (255,), width=w)
+            if stage == 0 and i == 0 and not fork: d.line([a, b], fill=R + (255,), width=1)
+    seam = [(C, R, D), (D, D, S0), (S0, S0, S0)][min(stage, 2)]
+    for y in range(11, 54):
+        t = (y - 32) / 21
+        hw = 3.4 * max(0.0, 1 - t * t) ** .6 + .7
+        cx = c + (_h(y // 3, 55) - .5) * 1.2
+        for x in range(64):
+            dd = abs(x + .5 - (cx + .5))
+            if dd > hw: continue
+            col = S0 if dd > hw * .6 else seam[2] if dd > hw * .3 else seam[1] if dd > .6 or hw < 2 else seam[0]
+            px[x, y] = col + (255,)
+    if stage >= 3: img = dissolve(img, .4 if stage == 3 else .75, 57)
+    return img
+
+
+def dent_texture(stage):
+    """48 x 48, the facing up the image: where the leap pushed off, a dent trodden in, cracks pushed out behind it
+    (toward the bottom) and crumbs thrown back."""
+    img = Image.new('RGBA', (48, 48), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(48):
+        for x in range(48):
+            r = math.hypot((x - 23.5) / 1.0, (y - 22) / 1.3) + 1.8 * (_h(x // 2, y // 2, 61) - .5)
+            v = _h(x // 2, y // 2, 62)
+            if r > 11: continue
+            col = (S3 if v > .45 else S4) if r > 8.5 and y < 22 else S2 if r > 8.5 else S2 if v > .55 else S1
+            px[x, y] = col + (255,)
+    d = ImageDraw.Draw(img)
+    for line in ([(20, 33), (17, 38), (18, 42)], [(27, 33), (30, 39)], [(15, 27), (10, 31)]):
+        d.line([(p[0] + 1, p[1]) for p in line], fill=S4 + (255,))
+        d.line(line, fill=S0 + (255,), width=2 if line[0][1] < 32 else 1)
+    for k in range(9):                                                           # crumbs thrown back
+        x, y = int(8 + 32 * _h(k, 63)), int(36 + 11 * _h(k, 64))
+        if px[x, y][3] == 0: px[x, y] = EARTH[k % 3] + (255,); px[min(x + 1, 47), y] = EARTH[(k + 1) % 3] + (255,)
+    if stage: img = dissolve(img, (0, .4, .75)[stage], 65)
+    return img
+
+
+def rock_textures(stage):
+    """Broken ground for the thrown slabs and the heaved plates: dark stone with a cream break along one edge."""
+    top = clustered(S2, (S1, S3), 71, density=.22)
+    tp = top.load()
+    for i in range(16):
+        if _h(i, 72) > .3: tp[i, 0] = CH + (255,)
+        if _h(i, 73) > .45: tp[15, i] = CH + (255,)
+    face = Image.new('RGBA', (16, 16))
+    fp = face.load()
+    for y in range(16):
+        for x in range(16):
+            band = S3 if (y // 3 + (x > 9 and y % 6 == 0)) % 2 else S2                    # strata
+            v = _h(x // 2, y, 74)
+            col = band if v > .2 else S1
+            if y >= 13: col = EARTH[3] if v > .4 else SHADOW                               # the dirt it was torn from
+            if y == 0 and v > .25: col = CH                                                # the fresh break on top
+            fp[x, y] = col + (255,)
+    under = block_tex((EARTH[3], SHADOW, EARTH[1], S1), 75)
+    if stage:
+        amount = (0, .38, .72)[stage]
+        top, face, under = dissolve(top, amount, 76), dissolve(face, amount, 77), dissolve(under, amount, 78)
+    return top, face, under
+
+
+def _named_box(lo, hi, up='#top', side='#side', down='#under'):
+    def f(t, uv): return {'texture': t, 'uv': uv}
+    def u(a, b): return [round(a % 16, 2), round(16 - (hi[1] - lo[1]) % 16.001, 2), round(a % 16 + (b - a), 2), 16]
+    return {'from': list(lo), 'to': list(hi), 'faces': {
+        'up': f(up, [lo[0], lo[2], hi[0], hi[2]]), 'down': f(down, [lo[0], lo[2], hi[0], hi[2]]),
+        'north': f(side, u(lo[0], hi[0])), 'south': f(side, u(lo[0], hi[0])),
+        'east': f(side, u(lo[2], hi[2])), 'west': f(side, u(lo[2], hi[2]))}}
+
+
+def rock_slab_model(top, face, under):
+    """A broad flat slab of broken ground (14 x 3 x 10 units) about the model centre, a chipped step on top."""
+    return {'textures': {'top': top, 'side': face, 'under': under, 'particle': face}, 'elements': [
+        _named_box((1, 6.5, 3), (15, 9.5, 13)), _named_box((3, 9.5, 4), (10, 10.5, 9))]}
+
+
+def rock_plate_model(top, face, under):
+    """A plate of ground heaved up on edge, standing on y=8: broad, thin, broken off in steps at the top."""
+    return {'textures': {'top': top, 'side': face, 'under': under, 'particle': face}, 'elements': [
+        _named_box((2, 8, 6.5), (14, 17, 9.5), side='#side'), _named_box((3, 17, 6.9), (12.5, 22, 9.1)),
+        _named_box((5, 22, 7.2), (9.5, 26, 8.8))]}
+
+
 # The reference's light is see-through (studied at full size, 2026-10-20): only the white core is opaque, the colour
 # around it lets the world show through, and a faint halo spills past the edge. The dark outline is dropped.
 # Alphas avoid the shader markers (253, 121, 65, 200..215 in scripts/shaders/item.fsh).
@@ -1158,6 +1418,21 @@ def build(assets, write):
     model('frame', centred_model(texture('frame', frame_texture())))
     model('bar', {'ambientocclusion': False, 'textures': {'0': texture('bar', bar_texture())}, 'elements': [
         box((0, 7.4, 6.5), (16, 8.6, 9.5), [0, 0, 16, 16], [0, 0, 16, 16])]})
+    # 体当たり / 跳び叩き (2026-10-27).
+    for st in range(3):
+        model(f'skid_{st}', ground_model(texture(f'skid_{st}', skid_texture(st))))
+        model(f'clang_{st}', centred_model(texture(f'clang_{st}', glow(clang_texture(st), halo=G))))
+        model(f'dent_{st}', ground_model(texture(f'dent_{st}', dent_texture(st))))
+        rtop, rface, runder = rock_textures(st)
+        rtop, rface, runder = texture(f'rock_top_{st}', rtop), texture(f'rock_face_{st}', rface), texture(f'rock_under_{st}', runder)
+        model(f'rslab_{st}', rock_slab_model(rtop, rface, runder))
+        model(f'rplate_{st}', rock_plate_model(rtop, rface, runder))
+    for f in range(5):
+        model(f'kick_{f}', centred_model(texture(f'kick_{f}', kick_texture(f))))
+        model(f'shock_{f}', centred_model(texture(f'shock_{f}', shock_texture(f))))
+        model(f'cleft_{f}', ground_model(texture(f'cleft_{f}', cleft_texture(f))))
+    for st in range(2):
+        model(f'fspark_{st}', centred_model(texture(f'fspark_{st}', glow(fspark_texture(st), halo=G))))
     for s in range(5):
         model(f'crack_{s}', ground_model(texture(f'crack_{s}', glow(crack_texture(s)))))
 

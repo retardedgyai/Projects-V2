@@ -45,8 +45,8 @@ class CoreWarriorRefChoreographyTest {
         assertTrue(split.filter { it.shape.contains("turf") }.all { it.offset.z() > ends[3] - 1.0 }, "it bursts forward at the head")
     }
 
-    @Test fun `only 地割り is taken over`() {
-        val other = CoreSkillEffect(CoreClass.WARRIOR, CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "dash" },
+    @Test fun `only the warrior is taken over`() {
+        val other = CoreSkillEffect(CoreClass.MAGE, CoreSkillCatalog.skills(CoreClass.MAGE).first(),
             Vec.ZERO, Vec(0.0, 0.0, 1.0), CoreSkillVisualPhase.PULSE)
         assertEquals(null, CoreWarriorRefChoreography.parts(other))
     }

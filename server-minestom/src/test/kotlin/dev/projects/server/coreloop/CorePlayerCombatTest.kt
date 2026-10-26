@@ -1584,7 +1584,7 @@ class CorePlayerCombatTest {
     @Test fun `full display budget never creates an invisible active garden and refunds its cost`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();CoreCombatPresentation.pack(h.player,true)
         val fillers=List(8) { CoreCombatMeshes(h.player) }
-        val skill=CoreSkillCatalog.skills(CoreClass.WARRIOR).first()
+        val skill=CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon=="slam" }
         try {
             for(mesh in fillers) repeat(48) { mesh.play(CoreSkillEffect(CoreClass.WARRIOR,skill,h.player.position,Vec(0.0,0.0,1.0))) }
             assertEquals(384,fillers.sumOf { it.size })

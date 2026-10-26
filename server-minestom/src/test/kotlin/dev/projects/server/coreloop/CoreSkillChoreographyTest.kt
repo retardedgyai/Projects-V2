@@ -363,7 +363,9 @@ class CoreSkillChoreographyTest {
             }
             val parts=CoreSkillChoreography.parts(e)
             // 地割り and the other ground strikes (CoreWarriorRefChoreography) are built from many small pieces: furrows, torn turf, clods.
-            assertTrue(parts.size in 1..if(s.icon=="mage_garden")21 else if(job==CoreClass.WARRIOR && phase==CoreSkillVisualPhase.PULSE &&
+            // 体当たり / 跳び叩き draw nothing on their own pulses: their world pieces are played at the moment (look pulses).
+            val least=if(job==CoreClass.WARRIOR && s.icon in CoreWarriorRefChoreography.lookIds) 0 else 1
+            assertTrue(parts.size in least..if(s.icon=="mage_garden")21 else if(job==CoreClass.WARRIOR && phase==CoreSkillVisualPhase.PULSE &&
                 s.icon in setOf("slam","war_wound","whirl","war_guard","war_counter","war_ult","war_banner","war_awaken")) 34 else 16,"${s.icon} $phase: ${parts.size}")
             for(p in parts) for(tick in 0..p.delayTicks+p.durationTicks) {
                 val pose=CoreSkillChoreography.pose(p,tick.toDouble())
@@ -414,21 +416,6 @@ class CoreSkillChoreographyTest {
                 val peak=if(p.durationTicks<=6) 2.0 else if(p.durationTicks<=10) 3.0 else 4.0
                 assertTrue(CoreSkillChoreography.pose(p,p.delayTicks+peak).model.endsWith("_4"),s.icon)
                 assertTrue(CoreSkillChoreography.pose(p,p.delayTicks+p.durationTicks-1.0).model.endsWith("_11"),s.icon)
-            }
-        }
-    }
-    @Test fun `warrior blade planes are not edge on from owner eye height`() {
-        // Curved native strips have multiple normals; their real vertices are tested separately.
-        for(id in listOf("dash")) {  // 全力の一振り (war_ult) is drawn by CoreWarriorRefChoreography now
-            val part=CoreSkillChoreography.parts(effect(CoreClass.WARRIOR,id)).first()
-            for(tick in 1..6) {
-                val p=CoreSkillChoreography.pose(part,tick.toDouble())
-                // The quad normal is +Y before pitch, roll and yaw (same order as runtime).
-                val x=-sin(p.roll)*cos(p.pitch);val y=cos(p.roll)*cos(p.pitch);val z=sin(p.pitch)
-                val normal=Vec(x*cos(p.yaw)+z*sin(p.yaw),y,-x*sin(p.yaw)+z*cos(p.yaw))
-                val sight=Vec(0.0,1.62,-.7).sub(p.offset).normalize()
-                val projected=abs(normal.x()*sight.x()+normal.y()*sight.y()+normal.z()*sight.z())
-                assertTrue(projected>.18,"$id tick=$tick visible-plane fraction=$projected")
             }
         }
     }
@@ -497,6 +484,7 @@ class CoreSkillChoreographyTest {
         for(job in CoreClass.entries) for(s in CoreSkillCatalog.skills(job)) {
             val e=effect(job,s.icon)
             val parts=CoreSkillChoreography.parts(e)
+            if(parts.isEmpty()) continue   // 体当たり / 跳び叩き: nothing on their own pulse (look pulses carry the pieces)
             val end=parts.maxOf { it.delayTicks+it.durationTicks }
             scenes+=mapOf("id" to s.icon,"name" to s.name,"job" to job.name,"frames" to (0..end).map { tick ->
                 parts.mapNotNull { p -> val pose=CoreSkillChoreography.pose(p,tick.toDouble());if(!pose.visible) null else

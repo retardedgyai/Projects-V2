@@ -430,6 +430,8 @@ internal class CorePlayerCombat(
                         return@let
                     }
                     emitSkillPulse(player.position, CoreWarriorLeap.LANDING_RADIUS)
+                    look(action, if (action.leapReach >= CoreWarriorRules.LEAP_FAR) CoreWarriorRefChoreography.LEAP_FAR_LAND_PULSE
+                        else CoreWarriorRefChoreography.LEAP_LAND_PULSE)
                     // In the hand (after the pulse's own pose): the raised sword comes straight down and jolts on the ground.
                     CoreArmamentPresentation.shaderSwing(player, CoreArmamentPresentation.SLAM_BEAT, CoreArmamentPresentation.LEAP_SLAM_TICKS)
                     leapLandingSound(action.leapReach >= CoreWarriorRules.LEAP_FAR)
@@ -1033,7 +1035,11 @@ internal class CorePlayerCombat(
         val air = CoreWarriorLeap.path(player.position, velocity, ground = target.y()).size
         CoreArmamentPresentation.shaderSwing(player, CoreArmamentPresentation.RISE_BEAT, CoreArmamentPresentation.leapRiseTicks(air))
         leapLaunchSound()
+        look(action, CoreWarriorRefChoreography.LEAP_TAKEOFF_PULSE)
     }
+    /** What 体当たり / 跳び叩き leave in the world at this moment (pieces only: the sound and the hand are their own). */
+    private fun look(action: PendingSkill, pulse: Int) =
+        vfx.look(CoreSkillEffect(classId, action.definition, player.position, action.direction, pulse = pulse))
     /** 跳び叩き's launch: a heavy push-off from the ground and a low whoosh of the body and blade going up. */
     private fun leapLaunchSound() {
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, varied(.6f))
@@ -1057,6 +1063,7 @@ internal class CorePlayerCombat(
         val t = tickNumber - action.chargeTick
         val ahead = enemies.combatTargets().any { greatswordInRange(player.position, action.direction, it, CoreWarriorRules.TACKLE_CONTACT, .5) }
         val moved = if (ahead || t >= CoreWarriorRules.TACKLE_TICKS) 0.0 else moveSafely(action.direction, CoreWarriorRules.TACKLE_STEP)
+        if (moved >= CoreWarriorRules.TACKLE_STEP * .5) look(action, CoreWarriorRefChoreography.TACKLE_STEP_PULSE + t.toInt())
         if (ahead || t >= CoreWarriorRules.TACKLE_TICKS || moved < CoreWarriorRules.TACKLE_STEP * .5) tackleImpact(enemies, action)
     }
     /** 体当たり's impact: everything just in front, harder and stunned after a catch. */
@@ -1069,6 +1076,8 @@ internal class CorePlayerCombat(
         strike(enemies, player.position, action.direction, CoreWarriorRules.TACKLE_RADIUS, .3, if (action.caught) 2.0 else 1.0)
         if (!actionsValid(enemies, epoch)) return
         val struck = hitThisStrike.toList()
+        look(action, when { struck.isEmpty() -> CoreWarriorRefChoreography.TACKLE_STOP_PULSE
+            action.caught -> CoreWarriorRefChoreography.TACKLE_CAUGHT_PULSE; else -> CoreWarriorRefChoreography.TACKLE_HIT_PULSE })
         if (action.caught) for (id in struck) if (!enemies.isBoss(id))
             enemies.applyCrowdControl(id, CrowdControl.STUN, CoreWarriorRules.TACKLE_CATCH_STUN_MILLIS, player)
         // Hit-stop: what the shoulder met stands frozen a moment (bosses refuse it), and the hand jolts back.
@@ -1286,6 +1295,7 @@ internal class CorePlayerCombat(
         pending?.takeIf { classId == CoreClass.WARRIOR && it.definition.icon == "dash" && !it.caught && type != CoreDamageType.TRUE &&
             (it.elapsed < it.startup || it.chargeTick >= 0) }?.let { charge ->
             charge.caught = true
+            look(charge, CoreWarriorRefChoreography.TACKLE_CATCH_PULSE)
             feedBeast(CoreWarriorRules.TACKLE_CATCH_BEAST, cap = CoreWarriorRules.TACKLE_CATCH_BEAST)
             notice("体当たり：受け止めた")
             // A sharp metal block, a low anvil under it.

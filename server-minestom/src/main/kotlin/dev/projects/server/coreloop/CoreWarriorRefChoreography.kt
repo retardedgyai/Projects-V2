@@ -26,11 +26,24 @@ internal object CoreWarriorRefChoreography {
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     /** Camera-facing pieces whose pose moves them (the meshes carry these by moving the entity). */
     fun drifts(p: CoreCombatMeshPart) = owns(p) && p.shape.removePrefix(PREFIX).let {
-        it == "bdrop" || it == "bfling" || it == "bsmoke" || it == "bmistup" || it == "bgush" || it.startsWith("scale") || it.startsWith("sgather") }
+        it == "bdrop" || it == "bfling" || it == "bsmoke" || it == "bmistup" || it == "bgush" || it.startsWith("scale") ||
+            it.startsWith("sgather") || it == "kick" || it == "fspark" }
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
-        (e.phase == CoreSkillVisualPhase.PULSE && e.sceneId in sceneIds || e.sceneId in ownedIds ||
-            e.phase == CoreSkillVisualPhase.CONTACT && e.sceneId == TACKLE)
+        (e.phase == CoreSkillVisualPhase.PULSE && e.sceneId in sceneIds || e.sceneId in ownedIds || e.sceneId in lookIds)
     private const val TACKLE = "dash"
+    /** 体当たり and 跳び叩き: every phase is drawn here, and only what the body and blade leave in the world. */
+    val lookIds = setOf(TACKLE, CoreWarriorLeap.ICON)
+
+    // The world look of 体当たり / 跳び叩き is played by the server at the moment it happens (CorePlayerCombat, look
+    // only: no sound, no hand pose). These pulse numbers say which moment; the skill's own pulses draw nothing.
+    const val TACKLE_STEP_PULSE = 100       // + the tick of the charge: one step
+    const val TACKLE_STOP_PULSE = 120       // the charge ran out (nothing met)
+    const val TACKLE_HIT_PULSE = 121        // the shoulder met something
+    const val TACKLE_CAUGHT_PULSE = 122     // ... after catching a blow: harder
+    const val TACKLE_CATCH_PULSE = 130      // the moment a blow is caught
+    const val LEAP_TAKEOFF_PULSE = 140
+    const val LEAP_LAND_PULSE = 141
+    const val LEAP_FAR_LAND_PULSE = 142     // after a leap of CoreWarriorRules.LEAP_FAR or more
 
     private fun hash(vararg v: Int): Double {
         val x = sin(v.foldIndexed(0.0) { i, a, n -> a + n * doubleArrayOf(127.1, 311.7, 74.7, 19.3)[i % 4] }) * 43758.5453
@@ -58,32 +71,8 @@ internal object CoreWarriorRefChoreography {
             return if (!rising) part("wind", local(0.0, shoulder + .031 * size, ahead + .25 * size), size, yaw + PI / 2 - skew, life, delay = delay, ground = false)
             else part("wind", local(0.0, shoulder - .031 * size, ahead + .25 * size), size, yaw - PI / 2 + skew, life, delay = delay, ground = false, roll = PI)
         }
-        if (e.sceneId == TACKLE) {
-            // 体当たり's contact (2026-10-27): only where the shoulder met the target, at its feet (e.origin is the
-            // accepted hit), so in first person it stays low and over two blocks from the eye: a brief white-gold
-            // glint and a little dust kicked up. No band or arc in the world: the hand and the sound carry the blow.
-            out += part("spark0", Vec(0.0, .35, 0.0), .55, 0.0, 6, ground = false, billboard = true)
-            out += part("dust90", Vec(0.0, .15, 0.0), .75, 0.0, 10, ground = false, billboard = true)
-            return out
-        }
-        if (e.sceneId == "war_wound") {
-            // 跳び叩き landing (Creator 2026-10-22): the blade comes down in front as the body lands. Same family as
-            // 地割り and no round crater: a short furrow torn forward, turf kicked up in a fan to the front (biggest
-            // straight ahead), a few clods. No dust: the puffs read as stars at this size.
-            out += part("furrow", local(0.0, .12, 2.3), 1.0, yaw, 34).copy(scale = Vec(3.8, 1.0, 3.8))
-            for (k in 0 until 7) {
-                val a = yaw + (k - 3) * .42 + (hash(k, 141) - .5) * .15     // a fan to the front, not a ring
-                val d = 1.2 + .4 * hash(k, 142) + .25 * (3 - abs(k - 3))
-                out += part("turf${70 + k}", Vec(sin(a) * d, .12, cos(a) * d), (.7 + .35 * hash(k, 143)) * (1.0 + .12 * (3 - abs(k - 3))), a + PI / 2, 30,
-                    delay = abs(k - 3) / 2, roll = -(.75 + .35 * hash(k, 144)), pitch = (hash(k, 145) - .5) * .3)
-            }
-            for (k in 0 until 6) {
-                val a = yaw + (k - 2.5) * .5
-                out += part("clod${30 + k}", Vec(sin(a) * 1.0, .25, cos(a) * 1.0), .35 + .25 * hash(k, 146), a, 20,
-                    ground = false, delay = k / 3).copy(startSize = .95)
-            }
-            return out
-        }
+        if (e.sceneId == TACKLE) return tackle(e, yaw)
+        if (e.sceneId == CoreWarriorLeap.ICON) return leap(e, yaw)
         if (e.sceneId == CoreWarriorRules.FULL_SWING && e.phase == CoreSkillVisualPhase.PREPARE) {
             // 全力の一振り's charge: the ground round the shouldered blade cracks and stones lift, wider as it charges.
             val life = e.prepareDuration.coerceIn(2, 40)
@@ -476,6 +465,164 @@ internal object CoreWarriorRefChoreography {
         return out
     }
 
+    private fun piece(name: String, at: Vec, scale: Double, partYaw: Double, life: Int, pitch: Double = 0.0, delay: Int = 0,
+                      ground: Boolean = true, roll: Double = 0.0, billboard: Boolean = false, travel: Vec = Vec.ZERO,
+                      follow: Boolean = false) =
+        CoreCombatMeshPart("$PREFIX$name", "steel", at, Vec(scale, scale, scale), yaw = partYaw, pitch = pitch, roll = roll,
+            durationTicks = life, startSize = 1.0, endSize = 1.0, delayTicks = delay, ground = ground, billboard = billboard,
+            travel = travel, followOwner = follow)
+
+    /** A slab of broken ground thrown from [at] along [travel] (blocks per second; y is the upward throw). */
+    private fun thrown(k: Int, at: Vec, travel: Vec, size: Double, delay: Int = 0, life: Int = 24) =
+        piece("rslab$k", at, size, hash(k, 601) * 6.0, life, delay = delay, ground = false, travel = travel)
+
+    /** A plate of ground heaved up on edge at [at], its broad face across [outward] (radians, as yaw), leaning out. */
+    private fun heaved(at: Vec, outward: Double, size: Double, lean: Double, delay: Int, life: Int = 34) =
+        piece("rplate", at, size, outward, life, pitch = lean, delay = delay)
+
+    /**
+     * 体当たり (2026-10-27). The own charge is in the hand; the world gets what the body leaves: each step scrapes a
+     * streak in the ground and kicks grit back off the heel (behind the eye, for the others); where the shoulder lands,
+     * low and over two blocks ahead, an iron-and-dust shock bursts out along the ground with slabs of it thrown on, and
+     * the met one's feet are driven back. A blow caught whole rings off iron in front of the body (carried with it).
+     */
+    private fun tackle(e: CoreSkillEffect, yaw: Double): List<CoreCombatMeshPart> {
+        fun local(x: Double, y: Double, z: Double) = Vec(cos(yaw) * x + sin(yaw) * z, y, -sin(yaw) * x + cos(yaw) * z)
+        val out = mutableListOf<CoreCombatMeshPart>()
+        val n = e.pulse
+        when {
+            e.phase == CoreSkillVisualPhase.PREPARE -> {
+                // The weight goes onto the back foot: it digs in and kicks a little grit back just before the charge.
+                val at = (e.prepareDuration - 2).coerceAtLeast(0)
+                out += piece("skid", local(.2, .12, -.2), 1.0, yaw, 26, delay = at).copy(scale = Vec(.6, 1.0, .55))
+                out += piece("kick", local(.25, .3, -.5), .8, 0.0, 8, delay = at, ground = false, billboard = true, travel = local(.1, .15, -.4))
+            }
+            e.phase == CoreSkillVisualPhase.CONTACT -> {
+                // At the feet of the one met (e.origin, the accepted hit): two slabs of ground knocked out from under it,
+                // away from the warrior. Nothing up at the height of the eye.
+                for (k in 0 until 2) out += thrown(k + 10, local((k - .5) * .5, .2, .45), local((k - .5) * 2.2, 3.4, 2.4), .4 + .1 * k, delay = 1)
+            }
+            n in TACKLE_STEP_PULSE until TACKLE_STOP_PULSE -> {
+                val k = n - TACKLE_STEP_PULSE
+                val side = if (k % 2 == 0) 1.0 else -1.0
+                // The streak: one step's length, laid end to end behind the body as it goes.
+                out += piece("skid", local(0.0, .12, -.15), 1.0, yaw, 28).copy(scale = Vec(1.05, 1.0, .78))
+                out += piece("kick", local(side * .24, .45, -.6), 1.25, 0.0, 9, ground = false, billboard = true,
+                    travel = local(side * .4, .55, -1.1))
+            }
+            n == TACKLE_STOP_PULSE -> {
+                // Ran out: the feet dig in and skid, grit thrown on ahead.
+                out += piece("skid", local(0.0, .12, .15), 1.0, yaw, 30).copy(scale = Vec(1.15, 1.0, 1.05))
+                for (s in listOf(-1.0, 1.0)) out += piece("kick", local(s * .45, .25, 1.75), .9, 0.0, 9, ground = false,
+                    billboard = true, travel = local(s * .3, .2, .7))
+            }
+            n == TACKLE_HIT_PULSE || n == TACKLE_CAUGHT_PULSE -> {
+                val big = n == TACKLE_CAUGHT_PULSE
+                val size = if (big) 3.0 else 2.3
+                // The feet planted at the blow, and the met one's feet driven back along the ground ahead.
+                out += piece("skid", local(0.0, .12, .15), 1.0, yaw, 30).copy(scale = Vec(1.15, 1.0, .9))
+                out += piece("skid", local(0.0, .121, 2.75), 1.0, yaw, 30, delay = 1).copy(scale = Vec(1.25, 1.0, if (big) 1.8 else 1.3))
+                // The shock bursts out on both sides of the one met (it stands about a block ahead, so the burst is put
+                // beside it, low, its foot on the ground: the drawing's ground row is .354 of it under its middle), and
+                // a lower one at its feet past it.
+                for (s in listOf(-1.0, 1.0)) out += piece("shock", local(s * 1.4, .354 * size * .85, 1.8), size * .85, 0.0, 9,
+                    ground = false, billboard = true, roll = -s * .35)
+                out += piece("shock", local(0.0, .354 * size * .7, 2.3), size * .7, 0.0, 8, delay = 1, ground = false, billboard = true)
+                // Broad slabs of the ground thrown out to both sides of it, tumbling.
+                val slabs = if (big) 8 else 4
+                for (k in 0 until slabs) {
+                    val s = if (k % 2 == 0) 1.0 else -1.0
+                    val a = s * (.75 + .8 * hash(n, k, 611))
+                    val speed = 1.8 + 1.4 * hash(n, k, 612)
+                    out += thrown(k, local(s * .7, .25, 1.5), local(sin(a) * speed * 1.2, 3.0 + 1.6 * hash(n, k, 613), cos(a) * speed + .6),
+                        (.45 + .25 * hash(n, k, 614)) * (if (big) 1.2 else 1.0), delay = k / 2 % 2)
+                }
+                if (big) {
+                    // Caught whole and given back: a second shock thrown on past the first, iron sparks sprayed ahead.
+                    for (s in listOf(-1.0, 1.0)) out += piece("shock", local(s * 1.9, .354 * 2.0, 2.3), 2.0, 0.0, 8, delay = 2, ground = false,
+                        billboard = true, roll = -s * .5)
+                    for (k in 0 until 6) {
+                        val a = (k - 2.5) * .45
+                        out += piece("fspark", local(sin(a) * .3 + (if (a < 0) -.9 else .9), .7, 1.6), .6, 0.0, 7, ground = false, billboard = true,
+                            travel = local(sin(a) * 2.6, 1.2 + .8 * hash(k, 615), 1.4 + cos(a)), roll = -a * 1.6)
+                    }
+                }
+            }
+            n == TACKLE_CATCH_PULSE -> {
+                // Caught: iron rings in front of the body (carried along with the charge), well clear of the eye and under
+                // its line, and sparks go off round it, none straight up across the middle of the view.
+                val at = local(0.0, .9, 2.4)
+                out += piece("clang", at, 1.8, 0.0, 6, ground = false, billboard = true, follow = true)
+                for ((k, deg) in listOf(-160.0, -125.0, -90.0, -55.0, -20.0, 15.0, 165.0, 200.0).withIndex()) {
+                    val a = Math.toRadians(deg)
+                    out += piece("fspark", at, .75, 0.0, 7, ground = false, billboard = true, follow = true,
+                        travel = local(cos(a) * 1.7, sin(a) * 1.3, .2), roll = PI / 2 - a + (hash(k, 616) - .5) * .2)
+                }
+            }
+        }
+        return out
+    }
+
+    /**
+     * 跳び叩き (2026-10-27). The push-off leaves a dent trodden into the ground with cracks pushed out behind and grit
+     * thrown back; the landing's blade comes down in front: a cleft cut along the facing, a dish caved in round it with
+     * cracks running out, its two lips heaved up, slabs thrown on ahead. After a far leap all of it is bigger and a
+     * horseshoe of rock plates heaves up round the blow a moment later (open toward the warrior, out of the eye's way).
+     */
+    private fun leap(e: CoreSkillEffect, yaw: Double): List<CoreCombatMeshPart> {
+        fun local(x: Double, y: Double, z: Double) = Vec(cos(yaw) * x + sin(yaw) * z, y, -sin(yaw) * x + cos(yaw) * z)
+        val out = mutableListOf<CoreCombatMeshPart>()
+        val n = e.pulse
+        when {
+            e.phase == CoreSkillVisualPhase.CONTACT ->
+                for (k in 0 until 2) out += thrown(k + 10, local((k - .5) * .5, .2, .45), local((k - .5) * 2.0, 3.8, 1.8), .42, delay = 2)
+            n == LEAP_TAKEOFF_PULSE -> {
+                out += piece("dent", local(0.0, .12, -.05), 1.7, yaw, 40)
+                for (k in 0 until 4) {
+                    val a = yaw + PI + (k - 1.5) * .75
+                    out += piece("kick", Vec(sin(a) * .55, .3, cos(a) * .55), 1.0, 0.0, 9, delay = k % 2, ground = false, billboard = true,
+                        travel = Vec(sin(a) * .9, .35, cos(a) * .9))
+                }
+                for (s in listOf(-1.0, 1.0)) out += thrown(if (s < 0) 20 else 21, local(s * .35, .2, -.3), local(s * .6, 3.0, -1.4), .32)
+            }
+            n == LEAP_LAND_PULSE || n == LEAP_FAR_LAND_PULSE -> {
+                val far = n == LEAP_FAR_LAND_PULSE
+                val k0 = if (far) 1.3 else 1.0
+                val ahead = 2.6
+                val at = local(0.0, .12, ahead)
+                // The blade meets the ground a tick and a half into the slam (the hand's SLAM_LOW): the ground answers at 2.
+                val hit = 2
+                out += piece("cleft", at, 3.8 * k0, yaw, 48, delay = hit)
+                // The cleft's lips heave up on both sides, leaning away from the cut.
+                for (s in listOf(-1.0, 1.0))
+                    out += heaved(local(s * .6 * k0, .12, ahead + .2), yaw + PI / 2, .7 * k0, s * 1.0, hit)
+                // Slabs thrown on ahead in a fan (never back at the warrior), tumbling.
+                val slabs = if (far) 8 else 5
+                for (k in 0 until slabs) {
+                    val a = (k - (slabs - 1) / 2.0) * (2.8 / slabs) + (hash(n, k, 621) - .5) * .25
+                    val speed = (1.6 + 1.5 * hash(n, k, 622)) * k0
+                    out += thrown(k, local(sin(a) * .6, .25, ahead + .3 + cos(a) * .4),
+                        local(sin(a) * speed * 1.4, 3.0 + 1.4 * hash(n, k, 623), cos(a) * speed + .4), (.42 + .22 * hash(n, k, 624)) * k0, delay = hit + k % 2)
+                }
+                if (far) {
+                    // The second ring: rock plates heaved up round the blow, open toward the warrior.
+                    val r = 3.0
+                    // Uneven on purpose (not a fence): spacing, reach, size, lean and turn differ plate by plate, gaps left.
+                    for (k in 0 until 10) {
+                        if (k != 5 && hash(k, 628) < .22) continue
+                        val a = yaw + (k - 4.5) * .38 + (hash(k, 625) - .5) * .22
+                        val rr = r * (.85 + .3 * hash(k, 629))
+                        val p = local(0.0, .12, ahead).add(sin(a) * rr, 0.0, cos(a) * rr)
+                        if (hypot(p.x(), p.z()) < 2.6) continue
+                        out += heaved(p, a + (hash(k, 630) - .5) * .7, (.65 + .6 * hash(k, 626)) * (1.1 - .05 * abs(k - 4.5)),
+                            .35 + .6 * hash(k, 627), hit + 2 + (abs(k - 4.5) / 2.5).toInt(), 32)
+                    }
+                }
+            }
+        }
+        return out
+    }
+
     private val rise = doubleArrayOf(0.0, .72, 1.12, 1.0)
     private val flameGrow = doubleArrayOf(.6, 1.0, 1.12, 1.1, 1.0, .9, .78, .6)
 
@@ -686,6 +833,49 @@ internal object CoreWarriorRefChoreography {
                 val stage = intArrayOf(0, 0, 1, 1, 2, 3)[tick.coerceAtMost(5)]
                 val grow = doubleArrayOf(.55, 1.0, 1.08, 1.05, .95, .8)[tick.coerceAtMost(5)]
                 CoreMeshPose(p.offset, p.scale.mul(grow), 0.0, 0.0, p.roll, "$DIR/ray_$stage", live)
+            }
+            // 体当たり / 跳び叩き (2026-10-27).
+            name == "skid" || name == "dent" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
+                "$DIR/${name}_${when { tick < p.durationTicks - 8 -> 0; tick < p.durationTicks - 4 -> 1; else -> 2 }}", live)
+            name == "cleft" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0,
+                "$DIR/cleft_${when { tick < 2 -> 0; tick < 8 -> 1; tick < p.durationTicks - 10 -> 2; tick < p.durationTicks - 5 -> 3; else -> 4 }}", live)
+            name == "kick" -> {
+                val u = (t.coerceAtLeast(0.0) / p.durationTicks).coerceAtMost(1.0)
+                CoreMeshPose(p.offset.add(p.travel.mul(u)), p.scale.mul(1.0 + .3 * u), 0.0, 0.0, p.roll,
+                    "$DIR/kick_${(tick * 5 / p.durationTicks).coerceAtMost(4)}", live)
+            }
+            name == "shock" -> CoreMeshPose(p.offset, p.scale.mul(doubleArrayOf(1.0, 1.06, 1.1, 1.13, 1.15)[min(tick / 2, 4)]), 0.0, 0.0, p.roll,
+                "$DIR/shock_${intArrayOf(0, 0, 1, 2, 2, 3, 3, 4, 4)[tick.coerceAtMost(8)]}", live)
+            name == "clang" -> CoreMeshPose(p.offset, p.scale.mul(doubleArrayOf(1.0, 1.1, 1.05, 1.0, .95, .9)[tick.coerceAtMost(5)]), 0.0, 0.0, 0.0,
+                "$DIR/clang_${intArrayOf(0, 0, 1, 1, 2, 2)[tick.coerceAtMost(5)]}", live)
+            name == "fspark" -> {
+                val u = (t.coerceAtLeast(0.0) / p.durationTicks).coerceAtMost(1.0)
+                CoreMeshPose(p.offset.add(p.travel.mul(u)).add(0.0, -.5 * u * u, 0.0), p.scale.mul(1.0 - .3 * u), 0.0, 0.0, p.roll,
+                    "$DIR/fspark_${if (u < .5) 0 else 1}", live)
+            }
+            name.startsWith("rslab") -> {
+                // Thrown under gravity; it comes down, lies where it fell, and breaks up.
+                val k = name.removePrefix("rslab").toInt()
+                val g = 16.0
+                val vy = p.travel.y()
+                val floor = -p.offset.y() + .06
+                val land = (vy + sqrt(vy * vy - 2 * g * floor)) / g        // seconds until it is back on the ground
+                val s = min(t.coerceAtLeast(0.0) / 20.0, land)
+                val y = vy * s - g * s * s / 2
+                val spin = s * 20
+                CoreMeshPose(p.offset.add(p.travel.x() * s, y, p.travel.z() * s), p.scale, p.yaw + spin * .25 * (hash(k, 631) - .5),
+                    spin * (.35 + .25 * hash(k, 632)), spin * (.2 * (hash(k, 633) - .5)),
+                    "$DIR/rslab_${when { tick < p.durationTicks - 7 -> 0; tick < p.durationTicks - 3 -> 1; else -> 2 }}", live)
+            }
+            name == "rplate" -> {
+                val up = when {
+                    tick < 4 -> doubleArrayOf(.0, .75, 1.12, 1.0)[tick]
+                    tick < p.durationTicks - 7 -> 1.0
+                    else -> 1.0 - (tick - (p.durationTicks - 7)) / 7.0 * .6
+                }.coerceIn(0.0, 1.2)
+                val height = p.scale.y() * 18.0 / 16.0
+                CoreMeshPose(p.offset.add(0.0, -height * (1 - up), 0.0), p.scale, p.yaw, p.pitch * up.coerceAtMost(1.0), 0.0,
+                    "$DIR/rplate_${when { tick < p.durationTicks - 7 -> 0; tick < p.durationTicks - 3 -> 1; else -> 2 }}", live)
             }
             name == "frame" -> CoreMeshPose(p.offset, p.scale, 0.0, 0.0, 0.0, "$DIR/frame", live)
             name == "ring" -> CoreMeshPose(p.offset, p.scale.mul(1.0 + tick * .06), 0.0, 0.0, 0.0, "$DIR/ring_${(tick / 2).coerceAtMost(3)}", live)
