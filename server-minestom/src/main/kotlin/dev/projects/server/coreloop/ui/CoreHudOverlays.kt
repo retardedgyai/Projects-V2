@@ -2,28 +2,54 @@ package dev.projects.server.coreloop.ui
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.TextColor
+import dev.projects.server.coreloop.CoreDamageType
 import dev.projects.server.mob.MobGrade
 import dev.projects.server.mob.MobHud
 import kotlin.math.roundToInt
 
-/** Floating damage numbers: pixel digits in a text display, centred on the hit. */
+/**
+ * Floating damage numbers (2026-10-20, learned from Spellforged: big digits, a minus, the damage type as an
+ * icon after the number): `[★] -1234 ⚔ [element / weak spot]`. The number takes the damage type's colour
+ * (physical gold, magical blue-violet, true white); a critical adds a star in front; a hit on the mob's
+ * weakness adds that element's mark, a weak spot (boss part) adds a target mark. Centred on the hit.
+ */
 internal object CoreDamageNumbers {
-    private val NORMAL: TextColor = TextColor.color(0xFFF3DC)
-    private val CRITICAL: TextColor = TextColor.color(0xFFC94A)
-    private val WEAK: TextColor = TextColor.color(0x8FE8FF)
+    private val PHYSICAL: TextColor = TextColor.color(0xFFD23A)
+    private val MAGICAL: TextColor = TextColor.color(0x8A96FF)
+    private val TRUE: TextColor = TextColor.color(0xF4F0E8)
+    private val STAR: TextColor = TextColor.color(0xFFF2A0)
+    private val SPOT: TextColor = TextColor.color(0xFF6A6A)
+    private val ELEMENTS = mapOf("fire" to TextColor.color(0xFF8C3C), "ice" to TextColor.color(0x8FE8FF),
+        "lightning" to TextColor.color(0xFFE65A))
     private const val PITCH = 6
 
-    fun render(amount: Double, critical: Boolean, weak: Boolean): Component {
+    fun color(type: CoreDamageType): TextColor = when (type) {
+        CoreDamageType.PHYSICAL -> PHYSICAL
+        CoreDamageType.MAGICAL -> MAGICAL
+        CoreDamageType.TRUE -> TRUE
+    }
+
+    /** [element]: the weakness this hit struck ("fire" / "ice" / "lightning"), or null; [spot]: hit a weak part. */
+    fun render(amount: Double, critical: Boolean, type: CoreDamageType, element: String? = null, spot: Boolean = false): Component {
         val digits = (if (amount.isFinite()) amount.coerceIn(0.0, 9_999_999.0).roundToInt() else 0).toString()
-        val color = if (critical) CRITICAL else if (weak) WEAK else NORMAL
-        val star = if (critical) CoreHudGlyphs["dmg_crit"].advance else 0
-        val mark = if (weak) CoreHudGlyphs["dmg_weak"].advance else 0
-        val width = star + CoreHudLine.digitsWidth(digits.length, PITCH, 7) + mark
+        val color = color(type)
+        val icon = "dmg_${type.name.lowercase()}"
+        val mark = when {
+            element != null && element in ELEMENTS -> "dmg_el_$element" to ELEMENTS.getValue(element)
+            spot -> "dmg_spot" to SPOT
+            else -> null
+        }
+        fun adv(name: String) = CoreHudGlyphs[name].advance
+        val width = (if (critical) adv("dmg_crit") else 0) + adv("dmg_minus") - 1 +
+            CoreHudLine.digitsWidth(digits.length, PITCH, 7) + 2 + adv(icon) + (mark?.let { 1 + adv(it.first) } ?: 0)
         val line = CoreHudLine()
-        var x = -width / 2
-        if (critical) x = line.put(x, "dmg_crit", color) + 1
+        var x = -(width - 1) / 2
+        if (critical) x = line.put(x, "dmg_crit", STAR) + 1
+        x = line.put(x, "dmg_minus", color)  // outlines touch: the minus sits right against the digits
         line.digits("dmg", x, digits, color, PITCH)
-        if (weak) line.put(x + CoreHudLine.digitsWidth(digits.length, PITCH, 7), "dmg_weak", color)
+        x += CoreHudLine.digitsWidth(digits.length, PITCH, 7) + 2
+        x = line.put(x, icon, color) + 2
+        if (mark != null) line.put(x, mark.first, mark.second)
         return line.build()
     }
 }
