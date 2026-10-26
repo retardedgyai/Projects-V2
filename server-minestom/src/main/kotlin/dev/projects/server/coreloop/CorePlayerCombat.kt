@@ -156,6 +156,8 @@ internal class CorePlayerCombat(
         var landAt: Pos? = null, var landTick: Long = -1L,
         /** 引き摺り: when the drag began, and the regular enemies hooked on the blade so far. */
         var dragTick: Long = -1L, val hooked: MutableSet<UUID> = mutableSetOf(),
+        /** 体当たり: when the charge began (-1 when not charging) and whether it caught a blow; 跳び叩き: how far it leapt. */
+        var chargeTick: Long = -1L, var caught: Boolean = false, var leapReach: Double = 0.0,
         /** Warrior A + B: the variant this spender turned into, if any. */
         val combo: CoreWarriorRules.Combo? = null,
         /** The current pulse's damage and break, against the cast's (狂乱's heavy first and last swings). */
@@ -427,6 +429,11 @@ internal class CorePlayerCombat(
                 }
                 return@let
             }
+            if (action.chargeTick >= 0) {
+                tackleStep(enemies, action)
+                if (!actionsValid(enemies, epoch)) return
+                return@let
+            }
             if (action.dragTick >= 0) {
                 // 引き摺り: the blade drags at the warrior's side; what it touches is hooked and comes along.
                 val t = tickNumber - action.dragTick
@@ -505,6 +512,7 @@ internal class CorePlayerCombat(
         val action = pending
         if (armored && (action == null || action.elapsed >= action.startup)) return CoreWarriorRules.ARMOR_HASTE
         if (action != null && action.dragTick >= 0) return CoreWarriorRules.DRAG_SPEED
+        if (action != null && action.chargeTick >= 0) return 0.0     // 体当たり carries the body itself
         if (action != null && action.elapsed < action.startup)
             return if (action.startup >= HEAVY_STARTUP || action.definition.ultimate) 0.0 else CAST_SPEED
         // Swinging: the weapon's own slowdown (Better Combat manner, CoreWeaponCombat), else the general one.
@@ -622,6 +630,14 @@ internal class CorePlayerCombat(
             CoreArmamentPresentation.hide(player, CoreWarriorRules.DRAG_TICKS + 4)
             action.dragTick = tickNumber
             vfx.playSkill(CoreSkillEffect(classId, s, player.position, flatFacing(), pulse = 0, weaponModel = model))
+            return
+        }
+        if (classId == CoreClass.WARRIOR && s.icon == "dash") {
+            // 体当たり: the shoulder goes in now (its look plays here), the body follows over the next ticks.
+            action.chargeTick = tickNumber
+            emitSkillPulse(player.position, CoreWarriorRules.TACKLE_RADIUS)
+            sound(SoundEvent.BLOCK_GRAVEL_STEP, .8f, .7f)
+            tackleStep(enemies, action)
             return
         }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.LAUNCHER) {
@@ -868,7 +884,8 @@ internal class CorePlayerCombat(
         else skillAction?.takeUnless { it.gained }?.let { action ->
             action.gained = true; classState.skillHit(classId, action.definition, build)
             if (classId == CoreClass.WARRIOR && action.definition.icon !in CoreWarriorRules.spenders) {
-                feedBeast(CoreWarriorRules.BEAST_PER_SKILL)
+                val gain = CoreWarriorRules.builderGain(action.definition.icon, action.caught, action.leapReach)
+                feedBeast(gain, cap = maxOf(gain, CoreWarriorRules.BEAST_PER_ACTION))
                 comboFrom = action.definition.icon; comboUntil = tickNumber + CoreWarriorRules.COMBO_TICKS
             }
         }
@@ -990,7 +1007,28 @@ internal class CorePlayerCombat(
         val velocity = CoreWarriorLeap.launch(player.position, target, if (high) CoreWarriorRules.SKYFALL_APEX[n] else null)
         player.velocity = velocity.mul(20.0)  // Minestom velocity is blocks per second
         action.leapTick = tickNumber
+        action.leapReach = kotlin.math.hypot(target.x() - player.position.x(), target.z() - player.position.z())
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, .6f)
+    }
+    /** 体当たり: one tick of the charge; it stops on the first enemy in front, a wall, or the end of the charge. */
+    private fun tackleStep(enemies: QuestEncounterCombat, action: PendingSkill) {
+        val t = tickNumber - action.chargeTick
+        val ahead = enemies.combatTargets().any { greatswordInRange(player.position, action.direction, it, CoreWarriorRules.TACKLE_CONTACT, .5) }
+        val moved = if (ahead || t >= CoreWarriorRules.TACKLE_TICKS) 0.0 else moveSafely(action.direction, CoreWarriorRules.TACKLE_STEP)
+        if (ahead || t >= CoreWarriorRules.TACKLE_TICKS || moved < CoreWarriorRules.TACKLE_STEP * .5) tackleImpact(enemies, action)
+    }
+    /** 体当たり's impact: everything just in front, harder and stunned after a catch. */
+    private fun tackleImpact(enemies: QuestEncounterCombat, action: PendingSkill) {
+        action.chargeTick = -1
+        val epoch = actionEpoch
+        action.hitScale = if (action.caught) CoreWarriorRules.TACKLE_CATCH_SCALE else 1.0
+        action.breakScale = action.hitScale
+        hitThisStrike.clear()
+        strike(enemies, player.position, action.direction, CoreWarriorRules.TACKLE_RADIUS, .3, if (action.caught) 2.0 else 1.0)
+        if (!actionsValid(enemies, epoch)) return
+        if (action.caught) for (id in hitThisStrike) if (!enemies.isBoss(id))
+            enemies.applyCrowdControl(id, CrowdControl.STUN, CoreWarriorRules.TACKLE_CATCH_STUN_MILLIS, player)
+        sound(SoundEvent.ENTITY_IRON_GOLEM_ATTACK, .9f, if (action.caught) .6f else .8f)
     }
     /** 引き摺り: where the dragged blade's tip touches the ground, behind and to the right of the warrior. */
     private fun dragTip(): Pos {
@@ -1180,6 +1218,16 @@ internal class CorePlayerCombat(
             sound(SoundEvent.ENTITY_BREEZE_WIND_BURST, .45f, 1.6f)
             return
         }
+        // 体当たり: from the press to the impact, the first blow is caught whole; only one, ever, per charge.
+        pending?.takeIf { classId == CoreClass.WARRIOR && it.definition.icon == "dash" && !it.caught && type != CoreDamageType.TRUE &&
+            (it.elapsed < it.startup || it.chargeTick >= 0) }?.let { charge ->
+            charge.caught = true
+            feedBeast(CoreWarriorRules.TACKLE_CATCH_BEAST, cap = CoreWarriorRules.TACKLE_CATCH_BEAST)
+            notice("体当たり：受け止めた")
+            sound(SoundEvent.BLOCK_ANVIL_LAND, .7f, .7f)
+            lastCombat = tickNumber
+            return
+        }
         val snapshot = sheet
         var adjusted = CoreCombatMath.mitigate(amount, type, snapshot.ar, snapshot.mr, damageReduction = snapshot.mods.mitigationPercent)
         if (classId == CoreClass.WARRIOR && journey().build.keystone == 0 && resource >= 2) adjusted *= 1.1
@@ -1323,9 +1371,9 @@ internal class CorePlayerCombat(
     private fun actionsValid(enemies: QuestEncounterCombat, epoch: Long): Boolean =
         epoch == actionEpoch && !defeated && encounter() === enemies && player.instance != null
     /** Feeds the beast, at most [CoreWarriorRules.BEAST_PER_ACTION] per tick (one action's hits land together). */
-    private fun feedBeast(amount: Double) {
+    private fun feedBeast(amount: Double, cap: Double = CoreWarriorRules.BEAST_PER_ACTION) {
         if (beastTick != tickNumber) { beastTick = tickNumber; beastThisTick = 0.0 }
-        val add = amount.coerceAtMost(CoreWarriorRules.BEAST_PER_ACTION - beastThisTick)
+        val add = amount.coerceAtMost(cap - beastThisTick)
         if (add <= 0.0) return
         beastThisTick += add
         val before = classState.resource.toInt()

@@ -179,7 +179,7 @@ class CorePlayerCombatTest {
         assertEquals(5L, h.actor.cooldownSeconds(0))
         h.ticks(4)
         assertEquals(300.0, h.combat.bossHealth())
-        h.ticks(1)
+        h.ticks(1 + CoreWarriorRules.TACKLE_TICKS)   // the charge carries the body in and hits on contact
         assertEquals(279.6, h.combat.bossHealth(), 0.00001)
         assertTrue(h.player.position.z() > 10.6)
         h.ticks(11)
@@ -196,8 +196,8 @@ class CorePlayerCombatTest {
     @Test
     fun `lunge stops before a close enemy and still connects instead of passing through`() = arena(bossDistance = 1.5) { h ->
         h.actor.skill(0)
-        h.ticks(5)
-        assertEquals(9.0, h.player.position.z(), 0.00001)
+        h.ticks(5)   // the enemy is already within the shoulder's reach: the charge stops where it starts and hits
+        assertTrue(h.player.position.z() < 10.0, "${h.player.position}")
         assertEquals(279.6, h.combat.bossHealth(), 0.00001)
         h.ticks(15)
         assertEquals(279.6, h.combat.bossHealth(), 0.00001)
@@ -913,8 +913,8 @@ class CorePlayerCombatTest {
         h.actor.attack();h.ticks(8)
         val afterSwing = h.actor.resource
         assertEquals(CoreWarriorRules.BEAST_PER_NORMAL, afterSwing, 1e-9) // one swing, however many it cleaves
-        h.ticks(20);h.actor.skill(0);h.ticks(10) // 轟進 lands
-        assertEquals(afterSwing + CoreWarriorRules.BEAST_PER_SKILL, h.actor.resource, 1e-9)
+        h.ticks(20);h.actor.skill(0);h.ticks(12) // 体当たり lands, nothing caught: half a stack
+        assertEquals(afterSwing + CoreWarriorRules.BUILDER_BASE, h.actor.resource, 1e-9)
     }
 
     @Test fun `the slam reaches further, lifts higher and splits twice with more beast`() {
@@ -980,7 +980,8 @@ class CorePlayerCombatTest {
 
     @Test fun `a frenzy right after a landed dash steps further and its first swing breaks heavy`() = arena { h ->
         val id = h.combat.combatTargets().single().id
-        h.actor.skill(0); h.ticks(10) // 轟進 lands: one stack, and the frenzy may turn into 轟進＋狂乱
+        h.actor.skill(0); h.ticks(12) // 体当たり lands; the frenzy may turn into 体当たり＋狂乱
+        h.actor.classState.gain(1 - h.actor.resource, h.journey.job, h.journey.build)   // one whole stack to spend
         val before = h.combat.breakGauge(id)!!
         h.actor.skill(2); h.ticks(20)
         val swing = (4.0 + CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT) * CoreWarriorRules.FRENZY_BREAK_SCALE
@@ -989,11 +990,39 @@ class CorePlayerCombatTest {
 
     @Test fun `a frenzy long after the dash is a plain one`() = arena { h ->
         val id = h.combat.combatTargets().single().id
-        h.actor.skill(0); h.ticks(10 + CoreWarriorRules.COMBO_TICKS.toInt())
+        h.actor.skill(0); h.ticks(12 + CoreWarriorRules.COMBO_TICKS.toInt())
+        h.actor.classState.gain(1 - h.actor.resource, h.journey.job, h.journey.build)
         val before = h.combat.breakGauge(id)!!
         h.actor.skill(2); h.ticks(20)
         val swing = (4.0 + CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT) * CoreWarriorRules.FRENZY_BREAK_SCALE
         assertEquals(before - swing * 3, h.combat.breakGauge(id)!!, 1e-6)
+    }
+
+    @Test fun `the tackle catches the first blow whole, builds two and hits harder, but only one blow`() = arena { h ->
+        val id = h.combat.combatTargets().single().id
+        val health = h.actor.health
+        h.actor.skill(0); h.ticks(1)
+        h.actor.hurt(30.0)                     // caught: no damage, no stagger
+        assertEquals(health, h.actor.health); assertFalse(h.actor.staggered)
+        assertEquals(CoreWarriorRules.TACKLE_CATCH_BEAST, h.actor.resource, 1e-9)
+        h.actor.hurt(10.0)                     // only one blow is ever caught
+        assertTrue(h.actor.health < health)
+        h.ticks(4 + CoreWarriorRules.TACKLE_TICKS)
+        assertEquals(100.0 - 4.0 * CoreWarriorRules.TACKLE_CATCH_SCALE, h.combat.breakGauge(id)!!, 1e-9)
+        assertEquals(CoreWarriorRules.TACKLE_CATCH_BEAST, h.actor.resource, 1e-9)   // the hit itself adds nothing more
+    }
+
+    @Test fun `a long leap that lands builds one and a half, a short one half`() {
+        for ((pitch, distance, gain) in listOf(Triple(0f, 7.5, CoreWarriorRules.LEAP_FAR_BEAST), Triple(20f, 4.0, CoreWarriorRules.BUILDER_BASE)))
+            arena(bossDistance = distance) { h ->
+                h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 4)); h.actor.reset()
+                h.player.teleport(h.player.position.withView(0f, pitch))
+                val from = h.player.position
+                h.actor.skill(3); h.ticks(5)
+                for (p in CoreWarriorLeap.path(from, h.player.velocity.div(20.0), ground = from.y())) { h.player.teleport(p); h.ticks(1) }
+                h.ticks(2)
+                assertEquals(gain, h.actor.resource, 1e-9, "pitch $pitch")
+            }
     }
 
     @Test fun `each variant belongs to one builder and one spender`() {

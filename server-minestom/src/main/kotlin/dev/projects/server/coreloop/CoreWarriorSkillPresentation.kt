@@ -4,7 +4,7 @@ package dev.projects.server.coreloop
 internal object CoreWarriorSkillPresentation {
     data class Identity(val shortName: String, val role: String, val use: String)
     val skills = mapOf(
-        "dash" to Identity("轟進", "つなぎ・突進", "突っ込んで敵を怯ませ、獣を溜める"),
+        "dash" to Identity("体当たり", "獣を溜める・突進", "殴られそうな時に突っ込み、1発受け止めると獣が2つ"),
         "slam" to Identity("地割り", "獣を使う・重撃", "獣を全部使って地を割る。3段目の直後なら速い"),
         "whirl" to Identity("狂乱", "獣を使う・連撃", "踏み込みながら振り続け、最後に振り下ろす"),
         "war_guard" to Identity("天落とし", "獣を使う・跳躍", "高く跳んで叩き落とし、衝撃の輪を広げる"),

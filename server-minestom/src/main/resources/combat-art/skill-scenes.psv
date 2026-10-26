@@ -2,7 +2,7 @@
 normal_sweep|通常攻撃一段目|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.1|1.0|1.0|大剣の一段目。短い右から左への振り
 normal_reverse|通常攻撃二段目|CUT|steel|slash_reverse|speed_streak|edge_glint|cut_spark|2.2|1.0|1.0|大剣の二段目。前方の左から右へ返す
 normal_finish|通常攻撃三段目|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|2.7|1.0|1.0|大剣の三段目。前方へ縦に下ろす
-dash|轟進|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.1|1.0|1.0|移動後の胸元前方を短く横断する刃。突進距離を刃の長さにしない
+dash|体当たり|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.1|1.0|1.0|移動後の胸元前方を短く横断する刃。突進距離を刃の長さにしない
 slam|地割り|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|2.7|1.0|1.0|正面の縦斬りと前方地割れ。背後へ振らない。通常3段目の直後は予備動作だけ短縮
 whirl|狂乱|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0|獣を使う連撃。踏み込みながら振り続け、最後は真上から振り下ろす（見た目はCoreWarriorRefChoreography）
 war_guard|天落とし|GUARD|steel|parry_blade|edge_glint|edge_glint|cut_spark|0.9|1.0|1.0|獣を使う跳躍。高く跳んで叩き落とし、着地から衝撃の輪が外へ広がる（見た目はCoreWarriorRefChoreography）

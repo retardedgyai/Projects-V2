@@ -38,7 +38,9 @@ internal object CoreCombatFeel {
     }
     /** Ticks between a skill's pulses: 狂乱 swings faster than the usual 8. */
     fun pulseTicks(s: CoreSkillDefinition) = if (s.icon == CoreWarriorRules.FRENZY) 5 else 8
-    fun lastImpact(s: CoreSkillDefinition, startup: Int) = startup + (s.pulses - 1) * pulseTicks(s)
+    /** 体当たり's impact comes at the end of its charge, at most [CoreWarriorRules.TACKLE_TICKS] after the startup. */
+    fun lastImpact(s: CoreSkillDefinition, startup: Int) = startup + (s.pulses - 1) * pulseTicks(s) +
+        if (s.icon == "dash") CoreWarriorRules.TACKLE_TICKS else 0
     fun finish(job: CoreClass, s: CoreSkillDefinition, startup: Int) = lastImpact(s, startup) + recovery(job, s)
     /** A guard may cut a skill after its last impact and any normal follow-through. */
     fun cancelsIntoGuard(s: CoreSkillDefinition) = s.motion == CoreSkillMotion.GUARD
@@ -80,6 +82,32 @@ internal object CoreWarriorRules {
     const val DRAG_TICKS = 40
     const val DRAG_SPEED = .8
     const val DRAG_HOOK = 1.5
+    /**
+     * Building skills by situation (Creator 2026-10-27: 「このスキルはこういうシチュエーションで…使い分け」): an ordinary
+     * hit builds only [BUILDER_BASE]; used where it is meant to be, it builds much more (see [builderGain]).
+     */
+    const val BUILDER_BASE = .5
+    /** 跳び叩き: a leap of at least [LEAP_FAR] blocks that lands on someone builds [LEAP_FAR_BEAST]. */
+    const val LEAP_FAR = 6.0
+    const val LEAP_FAR_BEAST = 1.5
+    /**
+     * 体当たり (it replaced 轟進, Creator 2026-10-27: 「一撃だけってのが肝」): a shoulder charge of up to [TACKLE_TICKS]
+     * ticks, [TACKLE_STEP] blocks a tick, that stops on the first enemy in front. From the press to the impact the
+     * first blow taken is caught whole (no damage, no stagger) and builds [TACKLE_CATCH_BEAST]; the impact after a
+     * catch hits [TACKLE_CATCH_SCALE] times as hard and stuns. Only one blow is ever caught.
+     */
+    const val TACKLE_TICKS = 6
+    const val TACKLE_STEP = .75
+    const val TACKLE_CONTACT = 1.5
+    const val TACKLE_RADIUS = 2.2
+    const val TACKLE_CATCH_BEAST = 2.0
+    const val TACKLE_CATCH_SCALE = 1.6
+    const val TACKLE_CATCH_STUN_MILLIS = 800L
+    fun builderGain(icon: String, caught: Boolean, leapReach: Double) = when (icon) {
+        "dash" -> if (caught) 0.0 else BUILDER_BASE                       // the catch already paid out
+        CoreWarriorLeap.ICON -> if (leapReach >= LEAP_FAR) LEAP_FAR_BEAST else BUILDER_BASE
+        else -> BEAST_PER_SKILL
+    }
     /** The effect pulse that marks 引き摺り's final swing (the drag's own pulses count up from 1). */
     const val DRAG_FINISH_PULSE = 99
     /** How long an enemy 斬り上げ threw up counts as in the air for 叩き落とし. */
@@ -159,7 +187,7 @@ internal object CoreWarriorRules {
     enum class Combo(val builder: String, val spender: String, val label: String) {
         HOIST(DRAG, SHATTER, "引き摺り＋大地崩し"),
         DOUBLE_DROP(CoreWarriorLeap.ICON, SKYFALL, "跳び叩き＋天落とし：二段落とし"),
-        RUSH("dash", FRENZY, "轟進＋狂乱"),
+        RUSH("dash", FRENZY, "体当たり＋狂乱"),
     }
     fun combo(builder: String?, spender: String): Combo? = Combo.entries.firstOrNull { it.builder == builder && it.spender == spender }
     const val COMBO_TICKS = 40L
