@@ -36,7 +36,7 @@ internal object CoreArmamentPresentation {
     internal fun pose(item: ItemStack, pose: Int): ItemStack {
         if (item.get(DataComponents.ITEM_MODEL) !in models ||
             CoreLoopItems.gearSlot(item) != CoreGearSlot.WEAPON) return item
-        require(pose in 0..ANIM_POSE + 3)
+        require(pose in 0..ANIM_POSE + SHADER_BEATS)
         val old = item.get(DataComponents.CUSTOM_MODEL_DATA) ?: CustomModelData(emptyList(), emptyList(), emptyList(), emptyList())
         val value = pose.toFloat()
         if (old.floats().firstOrNull() == value) return item
@@ -72,7 +72,19 @@ internal object CoreArmamentPresentation {
      * sword again (the tick only has 8 bits and would come round again).
      */
     const val ANIM_POSE = 120
-    private data class ShaderSwing(val until: Long, val weapon: ItemStack)
+    /**
+     * Beats 1..3 are the normal attacks; 4 and 5 are 体当たり's charge and impact (scripts/class_armament_swing.py
+     * CHARGE_BEAT / IMPACT_BEAT, keyed over CHARGE_TICKS / IMPACT_TICKS, which these lengths must match).
+     * Tint blue: 84 + beat - 1 for the big swords, + [SHADER_BEATS] for the T1 sprite (84..93), the arms +16 / +32;
+     * the light probes below (80..83) stay clear.
+     */
+    const val SHADER_BEATS = 5
+    const val CHARGE_BEAT = 4
+    const val IMPACT_BEAT = 5
+    const val TACKLE_CHARGE_TICKS = 14
+    const val TACKLE_IMPACT_TICKS = 11
+    internal fun shaderMarker(beat: Int, plain: Boolean) = 84 + (beat - 1).coerceIn(0, SHADER_BEATS - 1) + if (plain) SHADER_BEATS else 0
+    private data class ShaderSwing(val until: Long, val weapon: ItemStack, val beat: Int = 1)
     private val shaderTag = Tag.Transient<ShaderSwing>("projects_armament_shader_swing")
 
     fun shaderSwing(player: Player, beat: Int, ticks: Int): Boolean {
@@ -82,7 +94,7 @@ internal object CoreArmamentPresentation {
         val model = item.get(DataComponents.ITEM_MODEL) ?: return false
         if (model !in greatswords || CoreLoopItems.gearSlot(item) != CoreGearSlot.WEAPON) return false
         cancel(player); player.removeTag(swingTag)
-        val marker = 84 + (beat - 1).coerceIn(0, 2) + if (model.endsWith("_t1")) 3 else 0
+        val marker = shaderMarker(beat, model.endsWith("_t1"))
         // The shader's clock is GameTime, the client's game time modulo one day (24000): the start must be on that
         // clock, or the swing starts part-way through (or already over) and the sword jumps.
         val start = ((instance.worldAge % 24000L) and 255L).toInt()
@@ -90,9 +102,9 @@ internal object CoreArmamentPresentation {
         // Colours 1 and 2 tint the arms that come with the swing (the shader places them by their own keys).
         // 120 + beat: Java draws every value from 120 with the shader-moved model (the beat is in the tint); Geyser maps
         // each beat to its own Bedrock item, whose attachable plays that beat (scripts/build_bedrock_greatsword.py).
-        val posed = pose(item, ANIM_POSE + (beat - 1).coerceIn(0, 2) + 1)
+        val posed = pose(item, ANIM_POSE + (beat - 1).coerceIn(0, SHADER_BEATS - 1) + 1)
         val old = posed.get(DataComponents.CUSTOM_MODEL_DATA)!!
-        player.setTag(shaderTag, ShaderSwing(player.aliveTicks + ticks, frame(item, 0)))
+        player.setTag(shaderTag, ShaderSwing(player.aliveTicks + ticks, frame(item, 0), beat))
         player.setItemInMainHand(posed.with(DataComponents.CUSTOM_MODEL_DATA,
             CustomModelData(old.floats(), old.flags(), old.strings(), listOf(tint(marker), tint(marker + 16), tint(marker + 32)) + old.colors().drop(3))))
         return true
@@ -150,7 +162,16 @@ internal object CoreArmamentPresentation {
         player.setItemInMainHand(pose(item, stage.offset))
     }
 
-    fun cancel(player: Player) { player.removeTag(clipTag) }
+    fun cancel(player: Player) {
+        player.removeTag(clipTag)
+        // 体当たり's charge is held in the hand only while the charge lasts: a cancelled action lets the sword go.
+        player.getTag(shaderTag)?.takeIf { it.beat == CHARGE_BEAT }?.let { swing ->
+            player.removeTag(shaderTag)
+            val held = player.itemInMainHand
+            if (frame(held, 0).without(DataComponents.CUSTOM_MODEL_DATA) == swing.weapon.without(DataComponents.CUSTOM_MODEL_DATA))
+                player.setItemInMainHand(swing.weapon)
+        }
+    }
 
     /** 引き摺り: the held weapon's model is swapped out until [until] (a dragged one is drawn instead), then restored. */
     private data class Hidden(val model: String, val until: Long)

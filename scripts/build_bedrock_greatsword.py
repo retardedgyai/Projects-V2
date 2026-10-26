@@ -37,6 +37,7 @@ OUT = ROOT / 'server-minestom/build/bedrock'
 TIERS = (2, 3, 4)
 JAVA_ITEMS = {1: 'minecraft:stone_sword', 2: 'minecraft:iron_sword', 3: 'minecraft:diamond_sword', 4: 'minecraft:netherite_sword'}
 LENGTHS = {1: 20, 2: 22, 3: 30}   # the beats' swing lengths in ticks at attack speed 1 (CoreWeaponAttacks)
+LENGTHS.update({S.CHARGE_BEAT: S.CHARGE_TICKS, S.IMPACT_BEAT: S.IMPACT_TICKS})   # 体当たり's charge and impact, fixed lengths
 ANIM_POSE = S.ANIM_POSE           # custom_model_data 120 + beat while swinging
 FPS = 40                          # keys a second (more where the bone turns fast, see MAX_STEP)
 MAX_STEP = 6.0                    # degrees a key may turn from the last
@@ -207,7 +208,7 @@ def animations(tier):
     name = f'greatsword_t{tier}'
     out = {}
     grow = lambda s: s / ASSUMED['entity_scale']
-    for beat in (1, 2, 3):
+    for beat in S.SHADER_BEATS:
         L = LENGTHS[beat] / 20
         out[f'animation.projects.{name}.swing_{beat}'] = {'loop': 'hold_on_last_frame', 'animation_length': L, 'bones': {
             'fp_sword': bone_track(S.shader_keys(name, beat), L, grow, None),
@@ -263,7 +264,7 @@ def mapping():
         model = f'projects:weapons/greatsword_t{tier}'
         defs = [{'type': 'definition', 'model': model, 'bedrock_identifier': identifier(tier), 'display_name': '大剣',
                  'bedrock_options': {'icon': f'projects_greatsword_t{tier}', 'allow_offhand': False, 'display_handheld': True}}]
-        for beat in (1, 2, 3):
+        for beat in S.SHADER_BEATS:
             defs.append({'type': 'definition', 'model': model, 'bedrock_identifier': identifier(tier, beat),
                          'display_name': '大剣', 'priority': beat,
                          'bedrock_options': {'icon': f'projects_greatsword_t{tier}', 'allow_offhand': False, 'display_handheld': True},
@@ -289,7 +290,7 @@ def build():
         write(f'models/entity/projects_{name}.geo.json', geometry(tier))
         write(f'animations/projects_{name}.animation.json', {'format_version': '1.8.0', 'animations': animations(tier)})
         write(f'attachables/projects_{name}.json', attachable(tier))
-        for beat in (1, 2, 3): write(f'attachables/projects_{name}_swing_{beat}.json', attachable(tier, beat))
+        for beat in S.SHADER_BEATS: write(f'attachables/projects_{name}_swing_{beat}.json', attachable(tier, beat))
         (rp / 'textures/projects').mkdir(parents=True, exist_ok=True)
         texture(tier).save(rp / f'textures/projects/{name}.png')
         icons[f'projects_{name}'] = {'textures': 'textures/projects/greatsword_icon'}
@@ -373,7 +374,7 @@ def preview(path, tier=3, fps=10):
     import preview_greatsword_fp as P
     from PIL import Image, ImageDraw
     rows = []
-    for beat in (1, 2, 3):
+    for beat in S.SHADER_BEATS:
         L = LENGTHS[beat] / 20
         n = int(L * fps) + 1
         keys = S.shader_keys(f'greatsword_t{tier}', beat)

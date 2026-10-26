@@ -103,6 +103,9 @@ internal object CoreWarriorRules {
     const val TACKLE_CATCH_BEAST = 2.0
     const val TACKLE_CATCH_SCALE = 1.6
     const val TACKLE_CATCH_STUN_MILLIS = 800L
+    /** The impact's hit-stop: each regular enemy hit is frozen this long (bosses never), longer after a catch. */
+    const val TACKLE_HITSTOP_TICKS = 3
+    const val TACKLE_CATCH_HITSTOP_TICKS = 5
     fun builderGain(icon: String, caught: Boolean, leapReach: Double) = when (icon) {
         "dash" -> if (caught) 0.0 else BUILDER_BASE                       // the catch already paid out
         CoreWarriorLeap.ICON -> if (leapReach >= LEAP_FAR) LEAP_FAR_BEAST else BUILDER_BASE

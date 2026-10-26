@@ -444,7 +444,7 @@ def vm_keys(name, beat):
 
 # ---- The held sword, moved by the item shader (2026-10-25, Creator chose it over the display in front of the eye: that
 # one sank into walls, showed in F5 and could only be moved in straight lines). The server marks the held sword with a
-# tint (custom_model_data colour 0): blue 84 + beat - 1 (+3 for the T1 sprite), red the swing's length in ticks, green
+# tint (custom_model_data colour 0): blue 84 + beat - 1 (+5, the count of SHADER_BEATS, for the T1 sprite: 84..93; the arms +16 / +32; the light probes 80..83 stay clear), red the swing's length in ticks, green
 # the world tick it started on (mod 256). scripts/shaders/item.vsh, in the first-person hand only, takes each vertex
 # back to the sword's own space through the held resting pose, then places it by the keys below at the frame's time
 # (GameTime carries the part of the tick), so the swing is as smooth as the screen and eases where the keys say.
@@ -1044,8 +1044,100 @@ def arm_keys(side, beat):
     return thin(_arm_keys_full(side, beat), [np.zeros(3), np.array((0.0, 10.0, 0.0))])
 
 
+# ---- 体当たり (2026-10-27): two more beats on the same shader swing, not Better Combat's. Authored here as poses in
+# authoring view space (x right, y up, z ahead), keyed in ticks of a fixed clip length (the server plays them at it).
+# Charge (from the cast): the sword is hauled down and back to the lower right in two ticks, the blade turning in the
+# screen's plane through pointing right (so an edge leads and the flat faces the camera), and held there while the
+# shoulder leads; the left arm comes across the lower left. Unanswered by an impact it goes back to rest by its end.
+# Impact: from that hold, a one-tick jolt toward the camera and down (the recoil of the body hitting), held two ticks,
+# then eased back to rest over eight. Fast in, slow out.
+CHARGE_BEAT, IMPACT_BEAT = 4, 5
+SHADER_BEATS = (1, 2, 3, CHARGE_BEAT, IMPACT_BEAT)
+CHARGE_TICKS = 14      # CoreArmamentPresentation.TACKLE_CHARGE_TICKS: haul 2, held to 7 (the impact comes by 6), back by 14
+IMPACT_TICKS = 11      # CoreArmamentPresentation.TACKLE_IMPACT_TICKS: jolt 1, held 2, back over 8
+TACKLE_SIZE = 1.107    # times the held scale while it moves, as the Better Combat beats draw it
+# The hold: the hand low on the right, the blade back and down past the corner of the screen, its flat to the camera.
+TACKLE_HOLD = dict(grip=on_screen(.38, -.4, .85), blade=tuple(_unit((0.75, -0.6, -0.1))), flat=(0.0, 0.0, -1.0))
+# On the way down (and back up): the blade pointing out to the right, in the screen's plane.
+TACKLE_PASS = dict(grip=on_screen(.45, -.3, .8), blade=tuple(_unit((0.85, 0.45, 0.1))), flat=(0.0, 0.0, -1.0))
+TACKLE_JOLT = np.array((-0.04, -0.09, -0.15))    # the recoil: toward the camera and down (authoring, z ahead)
+TACKLE_JOLT_TILT = 12.0                          # degrees the blade drops further with it
+# The arms: shoulders (authoring) and where each fist goes; the right fist is on the handle.
+TACKLE_R_SHOULDER = np.array((0.55, -0.8, 0.35))
+TACKLE_L_SHOULDER = np.array((-0.5, -0.75, 0.3))
+TACKLE_L_FIST = np.array(on_screen(-.08, -.68, .6))
+ARM_REACH_PX = 9.0     # the fist's place along the arm (its own pixels from the shoulder)
+
+
+def _sword_key(t, ticks, e, pose, scale):
+    y = _unit(_view(pose['blade'])); z = _view(pose['flat']); z = _unit(z - y * (z @ y)); x = np.cross(y, z)
+    return _key(round(t / ticks, 4), e, _view(pose['grip']), np.column_stack((x, y, z)), scale)
+
+
+def _arm_key(t, ticks, e, shoulder, fist, away=False):
+    """An arm from its shoulder towards its fist (authoring); the box's flat side faces the camera."""
+    s = .938
+    y = _unit(_view(fist) - _view(shoulder)); z = np.array((0.0, 0.0, 1.0)); z = _unit(z - y * (z @ y)); x = np.cross(y, z)
+    at = _view(fist) - y * ARM_REACH_PX / 16 * s
+    return _key(round(t / ticks, 4), e, at + (ARM_AWAY if away else 0), np.column_stack((x, y, z)), s)
+
+
+def _jolted(pose):
+    axis = np.cross(_unit(pose['blade']), (0.0, 1.0, 0.0))   # tip goes down
+    return dict(grip=tuple(np.array(pose['grip']) + TACKLE_JOLT), blade=tuple(_rot(axis, TACKLE_JOLT_TILT, pose['blade'])), flat=pose['flat'])
+
+
+def _tackle_rest(name):
+    g, b, f = vm_rest(name)
+    return dict(grip=tuple(g), blade=tuple(b), flat=tuple(f))
+
+
+def tackle_keys(name, beat):
+    rest, held = _tackle_rest(name), MODELS[name][2]
+    big = held * TACKLE_SIZE if name != 'greatsword_t1' else .797
+    if beat == CHARGE_BEAT:
+        n = CHARGE_TICKS
+        return [_sword_key(0, n, 'linear', rest, held), _sword_key(1, n, 'in', TACKLE_PASS, big),
+                _sword_key(2, n, 'out', TACKLE_HOLD, big), _sword_key(7, n, 'linear', TACKLE_HOLD, big),
+                _sword_key(10, n, 'inout', TACKLE_PASS, big), _sword_key(n, n, 'out', rest, held)]
+    n = IMPACT_TICKS
+    jolt = _jolted(TACKLE_HOLD)
+    return [_sword_key(0, n, 'linear', TACKLE_HOLD, big), _sword_key(1, n, 'out', jolt, big),
+            _sword_key(3, n, 'linear', jolt, big), _sword_key(7, n, 'inout', TACKLE_PASS, big),
+            _sword_key(n, n, 'out', rest, held)]
+
+
+def tackle_arm_keys(side, beat):
+    right = side == 'rightArm'
+    shoulder = TACKLE_R_SHOULDER if right else TACKLE_L_SHOULDER
+    fist_of = (lambda pose: np.array(pose['grip'])) if right else (lambda pose: TACKLE_L_FIST)
+    hold, passing = fist_of(TACKLE_HOLD), fist_of(TACKLE_PASS)
+    if beat == CHARGE_BEAT:
+        n = CHARGE_TICKS
+        return [_arm_key(0, n, 'linear', shoulder, hold, away=True), _arm_key(1, n, 'in', shoulder, passing),
+                _arm_key(2, n, 'out', shoulder, hold), _arm_key(7, n, 'linear', shoulder, hold),
+                _arm_key(10, n, 'inout', shoulder, passing), _arm_key(n, n, 'in', shoulder, passing, away=True)]
+    n = IMPACT_TICKS
+    jolt_s, jolt_f = shoulder + TACKLE_JOLT, (fist_of(_jolted(TACKLE_HOLD)) if right else TACKLE_L_FIST + TACKLE_JOLT)
+    return [_arm_key(0, n, 'linear', shoulder, hold), _arm_key(1, n, 'out', jolt_s, jolt_f),
+            _arm_key(3, n, 'linear', jolt_s, jolt_f), _arm_key(7, n, 'inout', shoulder, passing),
+            _arm_key(n, n, 'in', shoulder, passing, away=True)]
+
+
+_shader_keys_bc = shader_keys
+_arm_keys_bc = arm_keys
+
+
+def shader_keys(name, beat):
+    return tackle_keys(name, beat) if beat in (CHARGE_BEAT, IMPACT_BEAT) else _shader_keys_bc(name, beat)
+
+
+def arm_keys(side, beat):
+    return tackle_arm_keys(side, beat) if beat in (CHARGE_BEAT, IMPACT_BEAT) else _arm_keys_bc(side, beat)
+
+
 def shader_glsl():
-    """The include item.vsh reads: the held resting pose of each sword kind and the keys of the three beats."""
+    """The include item.vsh reads: the held resting pose of each sword kind and the keys of every beat (SHADER_BEATS)."""
     def vec(v): return 'vec3(' + ', '.join(f'{float(x):.5f}' for x in v) + ')'
     lines = ['// Generated by scripts/class_armament_swing.py (shader_glsl). Do not edit by hand.',
              '#ifndef PROJECTS_GREATSWORD_SWING_GLSL', '#define PROJECTS_GREATSWORD_SWING_GLSL', '']
@@ -1057,15 +1149,18 @@ def shader_glsl():
                   f'const mat3 SWING_{tag}_R = mat3({vec(r[:, 0])}, {vec(r[:, 1])}, {vec(r[:, 2])});',
                   f'const float SWING_{tag}_S = {d["scale"][0]:.5f};',
                   f'const vec3 SWING_{tag}_GRIP = {vec(np.array(MODELS[name][1]) / 16)};']
-    lines += [f'const vec3 SWING_ARM = {vec(ARM)};', f'const vec3 SWING_ARM_ORIGIN = {vec(np.array(ARM_ORIGIN) / 16)};', '',
+    lines += [f'const vec3 SWING_ARM = {vec(ARM)};', f'const vec3 SWING_ARM_ORIGIN = {vec(np.array(ARM_ORIGIN) / 16)};',
+              '// 体当たり\'s clip lengths (CoreArmamentPresentation plays them at these; its test reads them back).',
+              f'const int SWING_BEATS = {len(SHADER_BEATS)};',
+              f'const int SWING_CHARGE_TICKS = {CHARGE_TICKS};', f'const int SWING_IMPACT_TICKS = {IMPACT_TICKS};', '',
               '// The two keys round the swing progress u: their u, the later key\'s ease, hand, rotation, scale.',
               'struct SwingSegment { float u0; float u1; int ease; vec3 h0; vec3 h1; vec4 q0; vec4 q1; float s0; float s1; };', '']
     # No arrays: the game hands the shader to the driver through SPIR-V, which copies a constant array into a
     # temporary wherever it is indexed by a variable; with the arms' keys NVIDIA ran out of room for those copies
     # (2026-10-25, the pack failed to load). Each track is a chain of ifs over its segments with the two keys of the
     # segment written in, so nothing is indexed.
-    tracks = {f'{tag}_{b}': shader_keys(name, b) for name, tag in kinds for b in VM_BEATS}
-    tracks.update({f'{"RARM" if side == "rightArm" else "LARM"}_{b}': arm_keys(side, b) for side in ARM_BOXES for b in VM_BEATS})
+    tracks = {f'{tag}_{b}': shader_keys(name, b) for name, tag in kinds for b in SHADER_BEATS}
+    tracks.update({f'{"RARM" if side == "rightArm" else "LARM"}_{b}': arm_keys(side, b) for side in ARM_BOXES for b in SHADER_BEATS})
     def f(v): return f'{float(v):.5f}'
     for label, keys in tracks.items():
         assert all(len(k) == 10 for k in keys)

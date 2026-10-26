@@ -28,7 +28,9 @@ internal object CoreWarriorRefChoreography {
     fun drifts(p: CoreCombatMeshPart) = owns(p) && p.shape.removePrefix(PREFIX).let {
         it == "bdrop" || it == "bfling" || it == "bsmoke" || it == "bmistup" || it == "bgush" || it.startsWith("scale") || it.startsWith("sgather") }
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
-        (e.phase == CoreSkillVisualPhase.PULSE && e.sceneId in sceneIds || e.sceneId in ownedIds)
+        (e.phase == CoreSkillVisualPhase.PULSE && e.sceneId in sceneIds || e.sceneId in ownedIds ||
+            e.phase == CoreSkillVisualPhase.CONTACT && e.sceneId == TACKLE)
+    private const val TACKLE = "dash"
 
     private fun hash(vararg v: Int): Double {
         val x = sin(v.foldIndexed(0.0) { i, a, n -> a + n * doubleArrayOf(127.1, 311.7, 74.7, 19.3)[i % 4] }) * 43758.5453
@@ -55,6 +57,14 @@ internal object CoreWarriorRefChoreography {
             val skew = .26
             return if (!rising) part("wind", local(0.0, shoulder + .031 * size, ahead + .25 * size), size, yaw + PI / 2 - skew, life, delay = delay, ground = false)
             else part("wind", local(0.0, shoulder - .031 * size, ahead + .25 * size), size, yaw - PI / 2 + skew, life, delay = delay, ground = false, roll = PI)
+        }
+        if (e.sceneId == TACKLE) {
+            // 体当たり's contact (2026-10-27): only where the shoulder met the target, at its feet (e.origin is the
+            // accepted hit), so in first person it stays low and over two blocks from the eye: a brief white-gold
+            // glint and a little dust kicked up. No band or arc in the world: the hand and the sound carry the blow.
+            out += part("spark0", Vec(0.0, .35, 0.0), .55, 0.0, 6, ground = false, billboard = true)
+            out += part("dust90", Vec(0.0, .15, 0.0), .75, 0.0, 10, ground = false, billboard = true)
+            return out
         }
         if (e.sceneId == "war_wound") {
             // 跳び叩き landing (Creator 2026-10-22): the blade comes down in front as the body lands. Same family as
@@ -679,6 +689,8 @@ internal object CoreWarriorRefChoreography {
             }
             name == "frame" -> CoreMeshPose(p.offset, p.scale, 0.0, 0.0, 0.0, "$DIR/frame", live)
             name == "ring" -> CoreMeshPose(p.offset, p.scale.mul(1.0 + tick * .06), 0.0, 0.0, 0.0, "$DIR/ring_${(tick / 2).coerceAtMost(3)}", live)
+            name.startsWith("spark") -> CoreMeshPose(p.offset, p.scale.mul(if (tick % 2 == 0) 1.0 else .8), 0.0, 0.0, 0.0,
+                "$DIR/spark_${(tick / 2).coerceAtMost(2)}", live)
             name.startsWith("twinkle") -> CoreMeshPose(p.offset, p.scale.mul(if (tick % 2 == 0) 1.0 else .8), 0.0, 0.0, 0.0,
                 "$DIR/twinkle_${(tick / 2).coerceAtMost(2)}", live)
             name.startsWith("bar") -> {

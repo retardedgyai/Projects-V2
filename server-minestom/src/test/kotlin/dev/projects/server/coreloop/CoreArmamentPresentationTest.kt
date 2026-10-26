@@ -139,4 +139,30 @@ class CoreArmamentPresentationTest {
         println("ARMAMENT_FRAME_PAYLOAD itemBytes=$bytes rawBytesPerSecondAt10fps=${bytes*10}; excludes packet headers, compression, observers and extra affixes")
         assertTrue(bytes>4) // Inventory synchronization transmits the item, not a float-only delta.
     }
+
+    @Test fun `the shader swing has a track for every beat and its markers stay clear of the light probes`() {
+        MinecraftServer.init(Auth.Offline())
+        val glsl = javaClass.classLoader.getResource("core-ui-pack/assets/minecraft/shaders/include/greatsword_swing.glsl")!!.readText()
+        val vsh = javaClass.classLoader.getResource("core-ui-pack/assets/minecraft/shaders/core/item.vsh")!!.readText()
+        fun int(name: String) = Regex("const int $name = (\\d+);").find(glsl)!!.groupValues[1].toInt()
+        assertEquals(CoreArmamentPresentation.SHADER_BEATS, int("SWING_BEATS"))
+        assertEquals(CoreArmamentPresentation.TACKLE_CHARGE_TICKS, int("SWING_CHARGE_TICKS"))
+        assertEquals(CoreArmamentPresentation.TACKLE_IMPACT_TICKS, int("SWING_IMPACT_TICKS"))
+        for (beat in 1..CoreArmamentPresentation.SHADER_BEATS) for (track in listOf("BIG", "PLAIN", "RARM", "LARM")) {
+            assertTrue("void swingTrack_${track}_$beat(" in glsl, "$track $beat")
+            assertTrue("swingTrack_${track}_$beat(u, g)" in vsh, "dispatched $track $beat")
+        }
+        val markers = (1..CoreArmamentPresentation.SHADER_BEATS).flatMap { b -> listOf(false, true).map { CoreArmamentPresentation.shaderMarker(b, it) } }
+        assertEquals((84..93).toList(), markers.sorted())
+        assertTrue("swingMarker >= 84 && swingMarker <= 93" in vsh)
+        assertTrue("swingMarker >= 116 && swingMarker <= 125" in vsh && "swingMarker >= 100 && swingMarker <= 109" in vsh)
+        assertTrue("bool plain = swingMarker >= 89;" in vsh)
+        assertTrue(markers.all { it !in 80..83 } && markers.all { it + 16 !in 80..83 && it + 32 <= 255 })
+        // Beats past the last fall back to it; the held sword's model takes every value from ANIM_POSE.
+        assertEquals(CoreArmamentPresentation.shaderMarker(CoreArmamentPresentation.SHADER_BEATS, false), CoreArmamentPresentation.shaderMarker(9, false))
+        val item = CoreLoopItems.gear(CoreAccount(UUID.randomUUID()), CoreGearSlot.WEAPON, true)
+        for (beat in 1..CoreArmamentPresentation.SHADER_BEATS)
+            assertEquals((CoreArmamentPresentation.ANIM_POSE + beat).toFloat(),
+                CoreArmamentPresentation.pose(item, CoreArmamentPresentation.ANIM_POSE + beat).get(DataComponents.CUSTOM_MODEL_DATA)?.floats()?.first())
+    }
 }

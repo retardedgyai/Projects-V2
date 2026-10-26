@@ -647,7 +647,9 @@ internal class CorePlayerCombat(
             // 体当たり: the shoulder goes in now (its look plays here), the body follows over the next ticks.
             action.chargeTick = tickNumber
             emitSkillPulse(player.position, CoreWarriorRules.TACKLE_RADIUS)
-            sound(SoundEvent.BLOCK_GRAVEL_STEP, .8f, .7f)
+            // In the hand (after the pulse's own pose): the sword hauled down to the lower right, the shoulder leads.
+            CoreArmamentPresentation.shaderSwing(player, CoreArmamentPresentation.CHARGE_BEAT, CoreArmamentPresentation.TACKLE_CHARGE_TICKS)
+            tackleChargeSound()
             tackleStep(enemies, action)
             return
         }
@@ -1037,9 +1039,31 @@ internal class CorePlayerCombat(
         hitThisStrike.clear()
         strike(enemies, player.position, action.direction, CoreWarriorRules.TACKLE_RADIUS, .3, if (action.caught) 2.0 else 1.0)
         if (!actionsValid(enemies, epoch)) return
-        if (action.caught) for (id in hitThisStrike) if (!enemies.isBoss(id))
+        val struck = hitThisStrike.toList()
+        if (action.caught) for (id in struck) if (!enemies.isBoss(id))
             enemies.applyCrowdControl(id, CrowdControl.STUN, CoreWarriorRules.TACKLE_CATCH_STUN_MILLIS, player)
-        sound(SoundEvent.ENTITY_IRON_GOLEM_ATTACK, .9f, if (action.caught) .6f else .8f)
+        // Hit-stop: what the shoulder met stands frozen a moment (bosses refuse it), and the hand jolts back.
+        val stop = if (action.caught) CoreWarriorRules.TACKLE_CATCH_HITSTOP_TICKS else CoreWarriorRules.TACKLE_HITSTOP_TICKS
+        for (id in struck) enemies.hitStop(id, stop * 50L)
+        if (struck.isNotEmpty()) CoreArmamentPresentation.shaderSwing(player, CoreArmamentPresentation.IMPACT_BEAT, CoreArmamentPresentation.TACKLE_IMPACT_TICKS)
+        tackleImpactSound(struck.isNotEmpty(), action.caught)
+    }
+    /** A little different every time (vanilla sounds only). */
+    private fun varied(pitch: Float) = pitch * (.94f + kotlin.random.Random.nextFloat() * .12f)
+    /** 体当たり's charge: the armour shifting and heavy steps. */
+    private fun tackleChargeSound() {
+        sound(SoundEvent.ITEM_ARMOR_EQUIP_IRON, .6f, varied(.75f))
+        sound(SoundEvent.ITEM_ARMOR_EQUIP_CHAIN, .45f, varied(.85f))
+        sound(SoundEvent.ENTITY_RAVAGER_STEP, .55f, varied(.9f))
+        sound(SoundEvent.BLOCK_STONE_STEP, .8f, varied(.6f))
+    }
+    /** 体当たり's impact: a body thud and a metal knock, heavier and lower with an anvil's ring after a catch. */
+    private fun tackleImpactSound(hit: Boolean, caught: Boolean) {
+        if (!hit) { sound(SoundEvent.BLOCK_GRAVEL_STEP, .7f, varied(.7f)); return }   // ran out: only the feet
+        sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, varied(if (caught) .55f else .7f))
+        sound(SoundEvent.ENTITY_IRON_GOLEM_ATTACK, .9f, varied(if (caught) .55f else .75f))
+        sound(SoundEvent.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, if (caught) .5f else .35f, varied(if (caught) .6f else .9f))
+        if (caught) sound(SoundEvent.BLOCK_ANVIL_LAND, .45f, varied(.5f))
     }
     /** 引き摺り: where the dragged blade's tip touches the ground, behind and to the right of the warrior. */
     private fun dragTip(): Pos {
@@ -1235,7 +1259,9 @@ internal class CorePlayerCombat(
             charge.caught = true
             feedBeast(CoreWarriorRules.TACKLE_CATCH_BEAST, cap = CoreWarriorRules.TACKLE_CATCH_BEAST)
             notice("体当たり：受け止めた")
-            sound(SoundEvent.BLOCK_ANVIL_LAND, .7f, .7f)
+            // A sharp metal block, a low anvil under it.
+            sound(SoundEvent.ITEM_SHIELD_BLOCK, .9f, varied(.9f))
+            sound(SoundEvent.BLOCK_ANVIL_LAND, .55f, varied(.55f))
             lastCombat = tickNumber
             return
         }

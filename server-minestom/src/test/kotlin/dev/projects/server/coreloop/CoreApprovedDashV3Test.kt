@@ -28,8 +28,11 @@ class CoreApprovedDashV3Test {
         }
         assertTrue(parts.last().durationTicks>parts.first().durationTicks)
         val hit=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.CONTACT)).filterNot(CoreWarriorCompanions::owns)
-        assertEquals(listOf("approved_dash_impact"),hit.map { it.shape })
-        assertEquals(Vec(0.0,1.0,0.0),hit.single().offset)
+        // 体当たり's contact: a small white-gold glint and dust at the target's feet, nothing up at eye height.
+        assertEquals(listOf("war_ref:spark0","war_ref:dust90"),hit.map { it.shape })
+        assertTrue(hit.all { it.offset.y()<=.5 && it.scale.x()<=1.0 })
+        for(p in hit) for(t in 0 until p.durationTicks)
+            assertNotNull(javaClass.getResource("/core-ui-pack/assets/projects/items/${CoreSkillChoreography.pose(p,(p.delayTicks+t).toDouble()).model}.json"))
         val prepare=CoreSkillChoreography.parts(effect(CoreSkillVisualPhase.PREPARE)).single()
         assertEquals(skill.startup,prepare.durationTicks)
         assertTrue(CoreSkillChoreography.pose(prepare,0.0).model.endsWith("blade_0"))

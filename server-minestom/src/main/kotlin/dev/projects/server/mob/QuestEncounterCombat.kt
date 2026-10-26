@@ -184,6 +184,8 @@ class QuestEncounterCombat(
         var shellHealth = 0.0
         /** Knocked down (the cast broken, the shell shattered): no attacks, no movement until then. */
         var downUntil = 0L
+        /** Hit-stop: held still, its AI paused, until then (no crowd control, no break, its attack is not cancelled). */
+        var frozenUntil = 0L
         /** Model bosses: a move round the target between attacks (see [startManeuver]). */
         var maneuver: Maneuver? = null
         var nextManeuverAt = 0L
@@ -400,6 +402,22 @@ class QuestEncounterCombat(
         slide(mob, direction, distance); mob.target = attacker
         return true
     }
+    /**
+     * Hit-stop (体当たり's impact, 2026-10-27): a regular enemy that was just hit stands frozen for [millis], its movement
+     * and AI paused. Not crowd control: it wears no gauge, cancels no attack and shows nothing. Bosses never freeze.
+     */
+    fun hitStop(targetId: UUID, millis: Long): Boolean {
+        if (disposed || millis <= 0L) return false
+        val mob = mobs[targetId] ?: return false
+        if (mob.boss || !mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING) return false
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        mob.frozenUntil = maxOf(mob.frozenUntil, now + millis.coerceAtMost(500L))
+        stopNavigation(mob)
+        return true
+    }
+    internal fun frozen(targetId: UUID): Boolean = mobs[targetId]?.let {
+        (if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt) < it.frozenUntil } ?: false
+
     /**
      * Server-validated crowd control from a hit that already landed. Bosses take none of it: it wears down their
      * break gauge, and an empty gauge breaks them for [BREAK_MILLIS] (no attacks, no movement, +30% damage taken).
@@ -877,6 +895,7 @@ class QuestEncounterCombat(
         mob.lastRegenAt = now
         updateMovementSpeed(mob, now)
         mob.entity.refreshActiveHand(guarding(mob), true, false)
+        if (now < mob.frozenUntil && mob.life.phase != QuestMobPhase.RETURNING) { stopNavigation(mob); return }
         if (mob.life.phase == QuestMobPhase.RETURNING) {
             if (mob.entity.position.distanceSquared(mob.home) < 1.5 * 1.5 || now - mob.returningSince > 6000L) {
                 // Failed paths cannot leave a damaged, invulnerable encounter stranded forever.

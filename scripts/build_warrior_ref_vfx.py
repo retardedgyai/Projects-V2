@@ -359,11 +359,11 @@ def ring_texture(stage):
     return dissolve(img, (0, .2, .45, .7)[stage], 11) if stage else img
 
 
-def twinkle_texture(stage):
+def twinkle_texture(stage, outer=R):
     img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     arm = (7, 6, 4)[stage]
-    d.polygon([(8, 8 - arm), (9, 7), (8 + arm, 8), (9, 9), (8, 8 + arm), (7, 9), (8 - arm, 8), (7, 7)], fill=R + (255,))
+    d.polygon([(8, 8 - arm), (9, 7), (8 + arm, 8), (9, 9), (8, 8 + arm), (7, 9), (8 - arm, 8), (7, 7)], fill=outer + (255,))
     a2 = max(1, arm - 2)
     d.polygon([(8, 8 - a2), (8.6, 7.4), (8 + a2, 8), (8.6, 8.6), (8, 8 + a2), (7.4, 8.6), (8 - a2, 8), (7.4, 7.4)], fill=W + (255,))
     return img
@@ -1083,6 +1083,8 @@ def build(assets, write):
         model(f'ring_{st}', centred_model(texture(f'ring_{st}', glow(ring_texture(st)))))
     for st in range(3):
         model(f'twinkle_{st}', centred_model(texture(f'twinkle_{st}', glow(twinkle_texture(st)))))
+        # 体当たり's contact (2026-10-27): the same glint, white-gold, where the shoulder meets the target.
+        model(f'spark_{st}', centred_model(texture(f'spark_{st}', glow(twinkle_texture(st, C), halo=C))))
     for st in range(4):
         model(f'gcrack_{st}', ground_model(texture(f'gcrack_{st}', chasm_pixels(st))))
     for st in range(3):

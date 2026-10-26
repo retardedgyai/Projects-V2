@@ -62,7 +62,9 @@ class CorePlayerCombatTest {
                 fun pose()=h.player.itemInMainHand.get(DataComponents.CUSTOM_MODEL_DATA)?.floats()?.firstOrNull()
                 assertEquals(12f,pose(),"$job accepted anticipation")
                 h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
-                assertEquals(18f,pose(),"$job first authoritative pulse")
+                // 体当たり on a greatsword: the hand plays the shader's charge beat instead of the release pose.
+                val tackle=job==CoreClass.WARRIOR && h.actor.skillDefinitions[0].icon=="dash" && h.base.family=="greatsword"
+                assertEquals(if(tackle) (CoreArmamentPresentation.ANIM_POSE+CoreArmamentPresentation.CHARGE_BEAT).toFloat() else 18f,pose(),"$job first authoritative pulse")
                 h.actor.resetActions();CoreArmamentPresentation.tick(h.player,true)
                 assertEquals(0f,pose(),"$job cancelled visual clip")
             }
@@ -1025,6 +1027,43 @@ class CorePlayerCombatTest {
         h.ticks(4 + CoreWarriorRules.TACKLE_TICKS)
         assertEquals(100.0 - 4.0 * CoreWarriorRules.TACKLE_CATCH_SCALE, h.combat.breakGauge(id)!!, 1e-9)
         assertEquals(CoreWarriorRules.TACKLE_CATCH_BEAST, h.actor.resource, 1e-9)   // the hit itself adds nothing more
+    }
+
+    @Test fun `the tackle plays its charge and impact beats in the hand of a held greatsword`() = arena { h ->
+        CoreCombatPresentation.pack(h.player, true)
+        try {
+            h.player.setItemInMainHand(CoreLoopItems.gear(CoreAccount(h.player.uuid), CoreGearSlot.WEAPON, true))
+            fun beat() = h.player.itemInMainHand.get(DataComponents.CUSTOM_MODEL_DATA)?.floats()?.firstOrNull()
+            fun marker() = h.player.itemInMainHand.get(DataComponents.CUSTOM_MODEL_DATA)!!.colors().first().blue()
+            val plain = h.player.itemInMainHand.get(DataComponents.ITEM_MODEL)!!.endsWith("_t1")
+            assertEquals("dash", h.actor.skillDefinitions[0].icon)
+            h.actor.skill(0)
+            h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
+            assertEquals((CoreArmamentPresentation.ANIM_POSE + CoreArmamentPresentation.CHARGE_BEAT).toFloat(), beat(), "the charge")
+            assertEquals(CoreArmamentPresentation.shaderMarker(CoreArmamentPresentation.CHARGE_BEAT, plain), marker())
+            h.ticks(CoreWarriorRules.TACKLE_TICKS)
+            assertTrue(h.combat.bossHealth() < 300.0, "it hit")
+            assertEquals((CoreArmamentPresentation.ANIM_POSE + CoreArmamentPresentation.IMPACT_BEAT).toFloat(), beat(), "the impact")
+            assertEquals(CoreArmamentPresentation.shaderMarker(CoreArmamentPresentation.IMPACT_BEAT, plain), marker())
+        } finally { CoreCombatPresentation.forget(h.player) }
+    }
+
+    @Test fun `the tackle's impact freezes a regular enemy briefly but never a boss`() {
+        arena(bossDistance = 30.0, mobs = listOf(Pos(8.5, 40.0, 10.5))) { h ->
+            h.combat.tick(1000L)
+            val id = h.combat.combatTargets().first { !h.combat.isBoss(it.id) }.id
+            h.actor.skill(0); h.ticks(5 + CoreWarriorRules.TACKLE_TICKS)
+            assertTrue(h.combat.isAlive(id)); assertTrue(h.combat.frozen(id), "held in the hit-stop")
+            assertTrue(CrowdControl.STUN !in h.combat.crowdControl(id), "a hit-stop is not a stun")
+            h.combat.tick(1000L + CoreWarriorRules.TACKLE_HITSTOP_TICKS * 50L)
+            assertFalse(h.combat.frozen(id), "and let go after three ticks")
+        }
+        arena { h ->
+            val boss = h.combat.combatTargets().single().id
+            h.actor.skill(0); h.ticks(5 + CoreWarriorRules.TACKLE_TICKS)
+            assertTrue(h.combat.bossHealth() < 300.0)
+            assertFalse(h.combat.frozen(boss))
+        }
     }
 
     @Test fun `a long leap that lands builds one and a half, a short one half`() {
