@@ -430,8 +430,15 @@ internal class CorePlayerCombat(
                         return@let
                     }
                     emitSkillPulse(player.position, CoreWarriorLeap.LANDING_RADIUS)
+                    // In the hand (after the pulse's own pose): the raised sword comes straight down and jolts on the ground.
+                    CoreArmamentPresentation.shaderSwing(player, CoreArmamentPresentation.SLAM_BEAT, CoreArmamentPresentation.LEAP_SLAM_TICKS)
+                    leapLandingSound(action.leapReach >= CoreWarriorRules.LEAP_FAR)
+                    hitThisStrike.clear()
                     strike(enemies, player.position, action.direction, CoreWarriorLeap.LANDING_RADIUS, -1.0, 1.0)
                     if (!actionsValid(enemies, epoch)) return
+                    // Hit-stop: what the slam met stands frozen a moment (bosses refuse it), longer after a far leap.
+                    val stop = CoreWarriorRules.leapHitStopTicks(action.leapReach)
+                    for (id in hitThisStrike.toList()) enemies.hitStop(id, stop * 50L)
                     pending = null
                 }
                 return@let
@@ -1021,7 +1028,29 @@ internal class CorePlayerCombat(
         player.velocity = velocity.mul(20.0)  // Minestom velocity is blocks per second
         action.leapTick = tickNumber
         action.leapReach = kotlin.math.hypot(target.x() - player.position.x(), target.z() - player.position.z())
-        sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, .6f)
+        if (high) { sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, .6f); return }
+        // 跳び叩き in the hand: the sword hauled up over the right shoulder and held there for the expected flight.
+        val air = CoreWarriorLeap.path(player.position, velocity, ground = target.y()).size
+        CoreArmamentPresentation.shaderSwing(player, CoreArmamentPresentation.RISE_BEAT, CoreArmamentPresentation.leapRiseTicks(air))
+        leapLaunchSound()
+    }
+    /** 跳び叩き's launch: a heavy push-off from the ground and a low whoosh of the body and blade going up. */
+    private fun leapLaunchSound() {
+        sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, varied(.6f))
+        sound(SoundEvent.BLOCK_ROOTED_DIRT_BREAK, .7f, varied(.6f))
+        sound(SoundEvent.ENTITY_RAVAGER_STEP, .5f, varied(.75f))
+        sound(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, .5f, varied(.55f))
+        sound(SoundEvent.ITEM_TRIDENT_RIPTIDE_1, .35f, varied(.6f))
+    }
+    /** 跳び叩き's landing: a deep thud into the ground and earth and stone breaking; heavier and lower after a far leap. */
+    private fun leapLandingSound(far: Boolean) {
+        val low = if (far) .82f else 1f
+        sound(SoundEvent.ENTITY_GENERIC_EXPLODE, if (far) .45f else .3f, varied(.55f * low))
+        sound(SoundEvent.ENTITY_IRON_GOLEM_ATTACK, .9f, varied(.6f * low))
+        sound(SoundEvent.BLOCK_ROOTED_DIRT_BREAK, 1f, varied(.6f * low))
+        sound(SoundEvent.BLOCK_STONE_BREAK, .8f, varied(.55f * low))
+        sound(SoundEvent.BLOCK_GRAVEL_BREAK, .7f, varied(.7f * low))
+        if (far) sound(SoundEvent.BLOCK_ANVIL_LAND, .3f, varied(.5f))
     }
     /** 体当たり: one tick of the charge; it stops on the first enemy in front, a wall, or the end of the charge. */
     private fun tackleStep(enemies: QuestEncounterCombat, action: PendingSkill) {

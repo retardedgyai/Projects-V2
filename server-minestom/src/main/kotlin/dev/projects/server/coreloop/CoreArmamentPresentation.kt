@@ -74,15 +74,26 @@ internal object CoreArmamentPresentation {
     const val ANIM_POSE = 120
     /**
      * Beats 1..3 are the normal attacks; 4 and 5 are 体当たり's charge and impact (scripts/class_armament_swing.py
-     * CHARGE_BEAT / IMPACT_BEAT, keyed over CHARGE_TICKS / IMPACT_TICKS, which these lengths must match).
-     * Tint blue: 84 + beat - 1 for the big swords, + [SHADER_BEATS] for the T1 sprite (84..93), the arms +16 / +32;
+     * CHARGE_BEAT / IMPACT_BEAT, keyed over CHARGE_TICKS / IMPACT_TICKS, which these lengths must match); 6 and 7 are
+     * 跳び叩き's rise and slam (RISE_BEAT / SLAM_BEAT, SLAM_TICKS).
+     * Tint blue: 84 + beat - 1 for the big swords, + [SHADER_BEATS] for the T1 sprite (84..97), the arms +16 / +32;
      * the light probes below (80..83) stay clear.
      */
-    const val SHADER_BEATS = 5
+    const val SHADER_BEATS = 7
     const val CHARGE_BEAT = 4
     const val IMPACT_BEAT = 5
+    const val RISE_BEAT = 6
+    const val SLAM_BEAT = 7
     const val TACKLE_CHARGE_TICKS = 14
     const val TACKLE_IMPACT_TICKS = 11
+    const val LEAP_SLAM_TICKS = 12
+    /** The rise's hold ends at this share of its clip (scripts/class_armament_swing.py LEAP_RISE_HOLD). */
+    const val LEAP_RISE_HOLD = .8
+    /**
+     * 跳び叩き's rise is played over the expected air time: long enough that the hold lasts until the body is down
+     * (two ticks to spare for the landing to be seen), never past the latest landing (CoreWarriorLeap.MAX_AIR_TICKS).
+     */
+    fun leapRiseTicks(airTicks: Int) = kotlin.math.ceil((airTicks + 2) / LEAP_RISE_HOLD).toInt().coerceIn(12, CoreWarriorLeap.MAX_AIR_TICKS)
     internal fun shaderMarker(beat: Int, plain: Boolean) = 84 + (beat - 1).coerceIn(0, SHADER_BEATS - 1) + if (plain) SHADER_BEATS else 0
     private data class ShaderSwing(val until: Long, val weapon: ItemStack, val beat: Int = 1)
     private val shaderTag = Tag.Transient<ShaderSwing>("projects_armament_shader_swing")
@@ -164,8 +175,9 @@ internal object CoreArmamentPresentation {
 
     fun cancel(player: Player) {
         player.removeTag(clipTag)
-        // 体当たり's charge is held in the hand only while the charge lasts: a cancelled action lets the sword go.
-        player.getTag(shaderTag)?.takeIf { it.beat == CHARGE_BEAT }?.let { swing ->
+        // 体当たり's charge and 跳び叩き's rise are held in the hand only while the action lasts: a cancelled one lets
+        // the sword go.
+        player.getTag(shaderTag)?.takeIf { it.beat == CHARGE_BEAT || it.beat == RISE_BEAT }?.let { swing ->
             player.removeTag(shaderTag)
             val held = player.itemInMainHand
             if (frame(held, 0).without(DataComponents.CUSTOM_MODEL_DATA) == swing.weapon.without(DataComponents.CUSTOM_MODEL_DATA))

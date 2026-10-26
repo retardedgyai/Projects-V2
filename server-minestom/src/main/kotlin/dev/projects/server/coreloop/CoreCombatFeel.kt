@@ -106,6 +106,10 @@ internal object CoreWarriorRules {
     /** The impact's hit-stop: each regular enemy hit is frozen this long (bosses never), longer after a catch. */
     const val TACKLE_HITSTOP_TICKS = 3
     const val TACKLE_CATCH_HITSTOP_TICKS = 5
+    /** 跳び叩き's landing hit-stop: each regular enemy hit is frozen this long (bosses never), longer after a far leap. */
+    const val LEAP_HITSTOP_TICKS = 3
+    const val LEAP_FAR_HITSTOP_TICKS = 5
+    fun leapHitStopTicks(leapReach: Double) = if (leapReach >= LEAP_FAR) LEAP_FAR_HITSTOP_TICKS else LEAP_HITSTOP_TICKS
     fun builderGain(icon: String, caught: Boolean, leapReach: Double) = when (icon) {
         "dash" -> if (caught) 0.0 else BUILDER_BASE                       // the catch already paid out
         CoreWarriorLeap.ICON -> if (leapReach >= LEAP_FAR) LEAP_FAR_BEAST else BUILDER_BASE

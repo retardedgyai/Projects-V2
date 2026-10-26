@@ -444,7 +444,7 @@ def vm_keys(name, beat):
 
 # ---- The held sword, moved by the item shader (2026-10-25, Creator chose it over the display in front of the eye: that
 # one sank into walls, showed in F5 and could only be moved in straight lines). The server marks the held sword with a
-# tint (custom_model_data colour 0): blue 84 + beat - 1 (+5, the count of SHADER_BEATS, for the T1 sprite: 84..93; the arms +16 / +32; the light probes 80..83 stay clear), red the swing's length in ticks, green
+# tint (custom_model_data colour 0): blue 84 + beat - 1 (+7, the count of SHADER_BEATS, for the T1 sprite: 84..97; the arms +16 / +32; the light probes 80..83 stay clear), red the swing's length in ticks, green
 # the world tick it started on (mod 256). scripts/shaders/item.vsh, in the first-person hand only, takes each vertex
 # back to the sword's own space through the held resting pose, then places it by the keys below at the frame's time
 # (GameTime carries the part of the tick), so the swing is as smooth as the screen and eases where the keys say.
@@ -1124,15 +1124,87 @@ def tackle_arm_keys(side, beat):
             _arm_key(n, n, 'in', shoulder, passing, away=True)]
 
 
+# ---- 跳び叩き (2026-10-27): two more beats, authored the same way. Every key is (tick, ease, pose, big?), the sword
+# and both fists (the left on the handle under the right, two-handed) read from the same poses.
+# Rise (at the launch): in about three ticks the sword is hauled up the right side, the blade turning back about the
+# shoulders (an edge leads, the flat to the side), into a high two-handed hold at the top right of the screen, blade
+# up and back; held while the body flies. The server plays it over the expected air time (LEAP_RISE_HOLD of the clip
+# is the hold); unanswered by a landing it goes back to rest by its end.
+# Slam (at the landing): from that hold, one stroke straight down through the middle of the screen in under two
+# ticks, stopped low in front with a jolt (dips, bounces, settles: two ticks), then back to rest over eight. The
+# way back keeps the blade turning in the same upright plane at arm's length, the hand sliding out to the right, so
+# it never sweeps flat across the eye.
+RISE_BEAT, SLAM_BEAT = 6, 7
+SHADER_BEATS = (1, 2, 3, CHARGE_BEAT, IMPACT_BEAT, RISE_BEAT, SLAM_BEAT)
+RISE_TICKS = 24        # nominal length (Bedrock, previews); the server scales it to the air time
+LEAP_RISE_HOLD = .8    # the hold ends at this share of the clip: CoreArmamentPresentation.leapRiseTicks
+SLAM_TICKS = 12        # CoreArmamentPresentation.LEAP_SLAM_TICKS: down 1.5, jolt to 4, back by 12
+LEAP_FLAT = (-1.0, 0.0, 0.0)   # the flat faces the side the whole time, as at rest: the stroke is in the upright plane
+RISE_PASS = dict(grip=on_screen(.5, -.15, .8), blade=tuple(_unit((0.15, 0.97, 0.05))), flat=LEAP_FLAT)
+RISE_HOLD = dict(grip=on_screen(.42, .05, .85), blade=tuple(_unit((0.45, 0.85, -0.15))), flat=LEAP_FLAT)
+SLAM_MID = dict(grip=on_screen(.14, -.12, .82), blade=tuple(_unit((0.03, 0.5, 1.0))), flat=LEAP_FLAT)
+SLAM_LOW = dict(grip=on_screen(.05, -.78, .72), blade=tuple(_unit((-0.02, -0.1, 1.0))), flat=LEAP_FLAT)
+SLAM_BACK = dict(grip=on_screen(.42, -.6, .82), blade=tuple(_unit((0.05, 0.45, 0.9))), flat=LEAP_FLAT)
+LEAP_L_DOWN = .2       # the left fist this far down the handle from the right (blocks along the blade)
+LEAP_R_SHOULDER = np.array((0.75, -1.0, 0.15))
+LEAP_L_SHOULDER = np.array((-0.65, -1.0, 0.15))
+
+
+def _shifted(pose, by=(0.0, 0.0, 0.0), tilt=0.0):
+    """The pose moved by [by] (authoring) with the tip turned [tilt] degrees further down the stroke."""
+    axis = np.cross(_unit(pose['blade']), (0.0, 1.0, 0.0))
+    if np.linalg.norm(axis) < 1e-6: axis = np.array((1.0, 0.0, 0.0))
+    return dict(grip=tuple(np.array(pose['grip']) + by), blade=tuple(_rot(axis, tilt, pose['blade'])), flat=pose['flat'])
+
+
+SLAM_DIP = _shifted(SLAM_LOW, (0.0, -0.08, -0.04), 10.0)     # the blade meets the ground: a dip...
+SLAM_BOUNCE = _shifted(SLAM_LOW, (0.0, 0.04, 0.0), -6.0)    # ...and the rebound off it
+
+
+def _leap_track(beat):
+    """[(tick, ease, pose or 'rest', big, arms away)] and the clip length."""
+    if beat == RISE_BEAT:
+        n = RISE_TICKS; h = LEAP_RISE_HOLD * n
+        return n, [(0, 'linear', 'rest', False, True), (1.4, 'in', RISE_PASS, True, False), (3, 'out', RISE_HOLD, True, False),
+                   (h, 'linear', RISE_HOLD, True, False), (h + (n - h) * .5, 'inout', RISE_PASS, True, False),
+                   (n, 'out', 'rest', False, True)]
+    n = SLAM_TICKS
+    return n, [(0, 'linear', RISE_HOLD, True, False), (.7, 'in', SLAM_MID, True, False), (1.5, 'linear', SLAM_LOW, True, False),
+               (2, 'out', SLAM_DIP, True, False), (2.8, 'out', SLAM_BOUNCE, True, False), (4, 'inout', SLAM_LOW, True, False),
+               (8, 'inout', SLAM_BACK, True, False), (n, 'out', 'rest', False, True)]
+
+
+def leap_keys(name, beat):
+    rest, held = _tackle_rest(name), MODELS[name][2]
+    big = held * TACKLE_SIZE if name != 'greatsword_t1' else .797
+    n, track = _leap_track(beat)
+    return [_sword_key(t, n, e, rest if p == 'rest' else p, big if b else held) for t, e, p, b, _ in track]
+
+
+def leap_arm_keys(side, beat):
+    right = side == 'rightArm'
+    shoulder = LEAP_R_SHOULDER if right else LEAP_L_SHOULDER
+    n, track = _leap_track(beat)
+    out = []
+    for i, (t, e, p, _, away) in enumerate(track):
+        if p == 'rest':   # the arms come in from (and go back) under the screen with the pose next to them
+            p = track[i + 1][2] if i == 0 else track[i - 1][2]
+        fist = np.array(p['grip']) - (0 if right else _unit(p['blade']) * LEAP_L_DOWN)
+        out.append(_arm_key(t, n, 'in' if away and i else e, shoulder, fist, away=away))
+    return out
+
+
 _shader_keys_bc = shader_keys
 _arm_keys_bc = arm_keys
 
 
 def shader_keys(name, beat):
+    if beat in (RISE_BEAT, SLAM_BEAT): return leap_keys(name, beat)
     return tackle_keys(name, beat) if beat in (CHARGE_BEAT, IMPACT_BEAT) else _shader_keys_bc(name, beat)
 
 
 def arm_keys(side, beat):
+    if beat in (RISE_BEAT, SLAM_BEAT): return leap_arm_keys(side, beat)
     return tackle_arm_keys(side, beat) if beat in (CHARGE_BEAT, IMPACT_BEAT) else _arm_keys_bc(side, beat)
 
 
@@ -1152,7 +1224,9 @@ def shader_glsl():
     lines += [f'const vec3 SWING_ARM = {vec(ARM)};', f'const vec3 SWING_ARM_ORIGIN = {vec(np.array(ARM_ORIGIN) / 16)};',
               '// 体当たり\'s clip lengths (CoreArmamentPresentation plays them at these; its test reads them back).',
               f'const int SWING_BEATS = {len(SHADER_BEATS)};',
-              f'const int SWING_CHARGE_TICKS = {CHARGE_TICKS};', f'const int SWING_IMPACT_TICKS = {IMPACT_TICKS};', '',
+              f'const int SWING_CHARGE_TICKS = {CHARGE_TICKS};', f'const int SWING_IMPACT_TICKS = {IMPACT_TICKS};',
+              '// 跳び叩き\'s slam length, and the share of the rise clip that is the hold (the server scales the rise to the air time).',
+              f'const int SWING_SLAM_TICKS = {SLAM_TICKS};', f'const float SWING_RISE_HOLD = {LEAP_RISE_HOLD:.5f};', '',
               '// The two keys round the swing progress u: their u, the later key\'s ease, hand, rotation, scale.',
               'struct SwingSegment { float u0; float u1; int ease; vec3 h0; vec3 h1; vec4 q0; vec4 q1; float s0; float s1; };', '']
     # No arrays: the game hands the shader to the driver through SPIR-V, which copies a constant array into a

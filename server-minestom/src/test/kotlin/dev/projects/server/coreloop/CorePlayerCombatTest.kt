@@ -1079,6 +1079,64 @@ class CorePlayerCombatTest {
             }
     }
 
+    @Test fun `the leap raises the sword at the launch and slams it down at the landing`() = arena(bossDistance = 7.5) { h ->
+        CoreCombatPresentation.pack(h.player, true)
+        try {
+            h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 4)); h.actor.reset()
+            h.player.setItemInMainHand(CoreLoopItems.gear(CoreAccount(h.player.uuid), CoreGearSlot.WEAPON, true))
+            fun beat() = h.player.itemInMainHand.get(DataComponents.CUSTOM_MODEL_DATA)?.floats()?.firstOrNull()
+            fun tint() = h.player.itemInMainHand.get(DataComponents.CUSTOM_MODEL_DATA)!!.colors().first()
+            val plain = h.player.itemInMainHand.get(DataComponents.ITEM_MODEL)!!.endsWith("_t1")
+            assertEquals(CoreWarriorLeap.ICON, h.actor.skillDefinitions[3].icon)
+            val from = h.player.position
+            h.actor.skill(3); h.ticks(5)
+            assertEquals((CoreArmamentPresentation.ANIM_POSE + CoreArmamentPresentation.RISE_BEAT).toFloat(), beat(), "the rise")
+            assertEquals(CoreArmamentPresentation.shaderMarker(CoreArmamentPresentation.RISE_BEAT, plain), tint().blue())
+            val path = CoreWarriorLeap.path(from, h.player.velocity.div(20.0), ground = from.y())
+            // Played over the flight: the hold lasts past the expected landing, the clip never past the latest one.
+            assertEquals(CoreArmamentPresentation.leapRiseTicks(path.size), tint().red())
+            assertTrue(tint().red() * CoreArmamentPresentation.LEAP_RISE_HOLD >= path.size && tint().red() <= CoreWarriorLeap.MAX_AIR_TICKS)
+            for (p in path) { h.player.teleport(p); h.ticks(1) }
+            h.ticks(2)
+            assertTrue(h.combat.bossHealth() < 300.0, "it landed and hit")
+            assertEquals((CoreArmamentPresentation.ANIM_POSE + CoreArmamentPresentation.SLAM_BEAT).toFloat(), beat(), "the slam")
+            assertEquals(CoreArmamentPresentation.shaderMarker(CoreArmamentPresentation.SLAM_BEAT, plain), tint().blue())
+            assertEquals(CoreArmamentPresentation.LEAP_SLAM_TICKS, tint().red())
+        } finally { CoreCombatPresentation.forget(h.player) }
+    }
+
+    @Test fun `the leap's landing freezes regular enemies three ticks, five after a far leap, never a boss`() {
+        assertEquals(CoreWarriorRules.LEAP_HITSTOP_TICKS, CoreWarriorRules.leapHitStopTicks(CoreWarriorRules.LEAP_FAR - .1))
+        assertEquals(CoreWarriorRules.LEAP_FAR_HITSTOP_TICKS, CoreWarriorRules.leapHitStopTicks(CoreWarriorRules.LEAP_FAR))
+        for ((pitch, mob, stop) in listOf(Triple(0f, Pos(8.5, 40.0, 16.5), CoreWarriorRules.LEAP_FAR_HITSTOP_TICKS),
+                Triple(20f, Pos(8.5, 40.0, 12.5), CoreWarriorRules.LEAP_HITSTOP_TICKS)))
+            arena(bossDistance = 30.0, mobs = listOf(mob)) { h ->
+                h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 4)); h.actor.reset()
+                h.combat.tick(1000L)
+                val id = h.combat.combatTargets().first { !h.combat.isBoss(it.id) }.id
+                h.player.teleport(h.player.position.withView(0f, pitch))
+                val from = h.player.position
+                h.actor.skill(3); h.ticks(5)
+                for (p in CoreWarriorLeap.path(from, h.player.velocity.div(20.0), ground = from.y())) { h.player.teleport(p); h.ticks(1) }
+                h.ticks(2)
+                assertTrue(h.combat.isAlive(id)); assertTrue(h.combat.frozen(id), "pitch $pitch: held in the hit-stop")
+                h.combat.tick(1000L + (stop - 1) * 50L)
+                assertTrue(h.combat.frozen(id), "pitch $pitch: still held at ${stop - 1} ticks")
+                h.combat.tick(1000L + stop * 50L)
+                assertFalse(h.combat.frozen(id), "pitch $pitch: let go after $stop ticks")
+            }
+        arena(bossDistance = 7.5) { h ->
+            h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 4)); h.actor.reset()
+            val boss = h.combat.combatTargets().single().id
+            val from = h.player.position
+            h.actor.skill(3); h.ticks(5)
+            for (p in CoreWarriorLeap.path(from, h.player.velocity.div(20.0), ground = from.y())) { h.player.teleport(p); h.ticks(1) }
+            h.ticks(2)
+            assertTrue(h.combat.bossHealth() < 300.0)
+            assertFalse(h.combat.frozen(boss))
+        }
+    }
+
     @Test fun `each variant belongs to one builder and one spender`() {
         assertEquals(CoreWarriorRules.Combo.HOIST, CoreWarriorRules.combo(CoreWarriorRules.DRAG, CoreWarriorRules.SHATTER))
         assertEquals(CoreWarriorRules.Combo.DOUBLE_DROP, CoreWarriorRules.combo(CoreWarriorLeap.ICON, CoreWarriorRules.SKYFALL))
