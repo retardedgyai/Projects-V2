@@ -569,6 +569,15 @@ internal object CoreWarriorRefChoreography {
                     out += piece("pebble${20 + k}", Vec(sin(a) * d, .1, cos(a) * d), .3 + .2 * hash(k, 705), a, life - delay,
                         ground = false, delay = delay)
                 }
+                // Red scale-dust drawn in from all round to the warrior while it charges, wave after wave (the old
+                // ultimate's charge, kept: Creator 2026-10-27 「溜めの赤い粒」を戻す).
+                // From the sides and behind only, so none of it crosses in front of the eye on its way in.
+                for (k in 0 until 8) {
+                    val a = yaw + PI / 2 + PI * (k + hash(k, 216)) / 8; val r = 2.0 + .8 * hash(k, 217)
+                    val from = Vec(sin(a) * r, .4 + 1.4 * hash(k, 218), cos(a) * r)
+                    out += piece("sgather$k", from, .26, 0.0, 10, ground = false, billboard = true,
+                        delay = (k * life / 8).coerceAtMost(life - 1), travel = Vec(0.0, 1.2, 0.0).sub(from))
+                }
             }
             n == SLAM_PULSE || n == FULL_SLAM_PULSE -> {
                 val bulk = if (full) 1.25 else .8 + .2 * weight
@@ -643,16 +652,18 @@ internal object CoreWarriorRefChoreography {
             geyser -> {
                 // 全力の一振り (Creator 2026-10-24, 案B 血の噴き上げ): blood bursts up out of the rift, from the near end to
                 // the far, in a wall; it falls back as drops and leaves the line soaked. Played a step a tick (two places
-                // each) after the blow. It starts clear of the eye.
+                // each) after the blow. As the old ultimate had it (Creator 2026-10-27 「血の位置」を戻す): from where the
+                // blade bit, along the whole rift.
                 val count = 2 * CoreWarriorRules.FULL_SWING_GEYSER_STEPS
                 val step = n - CoreWarriorRules.FULL_SWING_GEYSER_PULSE
-                val near = SLAM_IMPACT + 2.6        // past the one struck in front, out of the middle of the view
+                val near = SLAM_IMPACT
                 for (i in 2 * step until 2 * step + 2) {
                     val z = near + (head - near) * i / (count - 1)
                     val delay = i % 2
-                    out += piece("bmistup", local((hash(i, 501) - .5) * .5, .25, z), .8 + .05 * i, 0.0, 10, ground = false,
-                        billboard = true, delay = delay, roll = hash(i, 502) * 6.0)
-                    for (j in 0 until 2) {
+                    for (j in 0 until 2)
+                        out += piece("bmistup", local((hash(i, j, 501) - .5) * .5, .4 + j * .5, z), 1.6 * (1 - .02 * i), 0.0, 10, ground = false,
+                            billboard = true, delay = delay, roll = hash(i, j, 502) * 6.0)
+                    for (j in 0 until 3) {
                         val vy = 5.5 + 2.5 * hash(i, j, 503); val vx = (hash(i, j, 504) - .5) * 2.4
                         val flight = (2 * vy / 9.8 * 20).toInt()
                         out += piece("bgush", local((hash(i, j, 505) - .5) * .4, .2, z + (hash(i, j, 506) - .5) * .6), .32, 0.0, flight,
@@ -739,7 +750,7 @@ internal object CoreWarriorRefChoreography {
             name.startsWith("sgather") -> {
                 val u = (t.coerceAtLeast(0.0) / p.durationTicks).coerceAtMost(1.0)
                 val k = name.removePrefix("sgather").toInt()
-                CoreMeshPose(p.offset.add(p.travel.mul(u * u)), p.scale.mul(1 - .5 * u), 0.0, 0.0, 0.0, "$DIR/scale_${(t.toInt() + k) % 4}", live)
+                CoreMeshPose(p.offset.add(p.travel.mul(u * u)), p.scale.mul(1 - .5 * u), 0.0, 0.0, 0.0, "$DIR/scale_${(tick + k) % 4}", live)
             }
             name == "bmistup" -> CoreMeshPose(p.offset.add(0.0, t.coerceAtLeast(0.0) * .16, 0.0), p.scale.mul(1.0 + t.coerceAtLeast(0.0) * .09),
                 0.0, 0.0, p.roll, "$DIR/bmist_${(tick / 2).coerceAtMost(4)}", live)
