@@ -113,7 +113,7 @@ class CoreClassBuildTest {
         assertContains(CoreSkillCatalog.skills(j.job)[1].tooltip(conversion,j).joinToString("\n"),"/ 障壁")
     }
     @Test fun `profession changes retain independent skill and talent configurations through disk codec`() {
-        val warrior=CoreClassBuild(first=4,second=0,third=1,nodes=1031)
+        val warrior=CoreClassBuild(first=4,second=0,third=1,ultimate=1,nodes=1031)
         var j=CoreJourney.legacy(build=warrior).changeClass(CoreClass.MAGE)
         val mage=CoreClassBuild(first=4,third=6,nodes=8248)
         j=j.copy(build=mage).changeClass(CoreClass.WARRIOR)
@@ -139,8 +139,8 @@ class CoreClassBuildTest {
     }
     @Test fun `v10 rejects missing duplicate disconnected and overbudget builds even with a valid checksum`() {
         val a=CoreAccount(UUID.randomUUID(),journey=CoreJourney.fresh());val body=CoreAccountCodec.encode(a).substringBefore("checksum\t")
-        val row="class-build\t0\t1\t2\t3\t0\t0\n"
-        for(bad in listOf("",row+row,"class-build\t0\t0\t2\t3\t0\t0\n","class-build\t0\t1\t2\t3\t0\t4\n","class-build\t0\t1\t2\t3\t0\t7\n"))
+        val row="class-build\t0\t1\t2\t3\t1\t0\n" // a fresh warrior: 狂戦士の甲冑 (ultimate 0 is retired)
+        for(bad in listOf("",row+row,"class-build\t0\t0\t2\t3\t1\t0\n","class-build\t0\t1\t2\t3\t1\t4\n","class-build\t0\t1\t2\t3\t1\t7\n"))
             assertFailsWith<IllegalArgumentException> { CoreAccountCodec.decode(checksum(body.replace(row,bad)),a.playerId) }
     }
     @Test fun `split paths rejoin and refund preserves an independently connected keystone`() {
@@ -181,7 +181,7 @@ class CoreClassBuildTest {
         assertEquals(old,Files.readString(dir.resolve("$id.account.v9.bak")))
     }
     @Test fun `UI budget journey validation and v10 saved loadouts agree above six points`() {
-        var b=CoreClassBuild()
+        var b=CoreClassBuild(ultimate=1)
         for(i in listOf(0,1,10,2,3,4,13,6,7,16,15,17)) b=b.toggle(i,12)
         val j=CoreJourney.legacy(build=b).changeClass(CoreClass.MAGE)
         val a=CoreAccount(UUID.randomUUID(),journey=j)

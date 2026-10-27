@@ -58,13 +58,14 @@ internal object CoreCombatFeel {
  */
 internal object CoreWarriorRules {
     /** Skills that take every stack; everything else builds. */
-    val spenders = setOf("slam", FRENZY, SKYFALL, SHATTER, FULL_SWING)
+    val spenders = setOf("slam", FRENZY, SKYFALL, SHATTER)
     const val FRENZY = "whirl"        // 狂乱
     const val SKYFALL = "war_guard"   // 天落とし
     const val SHATTER = "war_counter" // 大地崩し
     const val LAUNCHER = "war_breach" // 斬り上げ (builds)
     const val DRAG = "war_cry"        // 引き摺り (builds)
-    const val FULL_SWING = "war_ult"  // 全力の一振り (ultimate, spends)
+    /** 全力の一振り: retired as an ultimate (Creator 2026-10-27); its id now names 地割り at a full beast (see [fullSwing]). */
+    const val FULL_SWING = "war_ult"
     const val ARMOR = "war_banner"    // 狂戦士の甲冑 (ultimate)
     const val AWAKEN = "war_awaken"   // 獣の目覚め (ultimate)
     /** 狂戦士の甲冑: faster moves and swings, and the health it burns each second (never below 1). */
@@ -78,6 +79,24 @@ internal object CoreWarriorRules {
     /** 全力の一振り's blood burst runs out along the rift over [FULL_SWING_GEYSER_STEPS] ticks, two places a tick. */
     const val FULL_SWING_GEYSER_PULSE = 200
     const val FULL_SWING_GEYSER_STEPS = 8
+    /**
+     * 全力の一振り (Creator 2026-10-27: no longer an ultimate; 地割り with a full beast IS it): the sword is shouldered and
+     * charged for [FULL_SWING_WINDUP] ticks (nothing stops it meanwhile), then one overhead blow cracks the ground far
+     * ahead and blood bursts up along the rift. It hits like the old ultimate did (30 + AD 4.0 against 地割り's
+     * 20 + AD 3.2, its break) and holds what it struck longer.
+     */
+    fun fullSwing(icon: String, stacks: Int) = icon == "slam" && stacks >= BEAST_MAX.toInt()
+    const val FULL_SWING_WINDUP = 18
+    const val FULL_SWING_RADIUS = 12.0
+    const val FULL_SWING_BASE_SCALE = 1.5
+    const val FULL_SWING_COEFFICIENT_SCALE = 1.25
+    const val FULL_SWING_AIRBORNE_MILLIS = 1000L
+    const val FULL_SWING_STUN_MILLIS = 2000L
+    /** The ticks into the wind-up when the low rumble comes in (the heavy breath is at the cast). */
+    const val FULL_SWING_RUMBLE_TICK = 8
+    /** 地割り's hit-stop on each regular enemy struck (bosses never); 全力の一振り's is heavier. */
+    const val SLAM_HITSTOP_TICKS = 3
+    const val FULL_SWING_HITSTOP_TICKS = 7
     /** 引き摺り: how long the blade is dragged, how fast the warrior walks meanwhile, how far the hook reaches. */
     const val DRAG_TICKS = 40
     const val DRAG_SPEED = .8
@@ -145,14 +164,17 @@ internal object CoreWarriorRules {
     const val FINISHER_BONUS_PERCENT = 30
     /**
      * 地割り by the stacks it took (Creator 2026-10-23): the more beast, the longer and deeper the crack.
-     * 0 ≈4 m, regulars flinch / 1 ≈6 m, a low launch / 2 ≈8 m, launch then stun / 3 ≈10 m, a high launch and a longer
-     * stun, and the crack splits a second time at its head (a second pulse).
+     * 0 ≈4 m, regulars flinch / 1 ≈6 m, a low launch / 2 ≈8 m, launch then stun / 3 is 全力の一振り ([fullSwing]):
+     * a long wind-up, then ≈12 m, a high launch and a longer stun, the old ultimate's weight.
      */
     fun slam(definition: CoreSkillDefinition, stacks: Int): CoreSkillDefinition = when (stacks.coerceIn(0, 3)) {
         0 -> definition.copy(radius = 4.0, stunAfterMillis = 0).copy(crowd = CrowdControl.FLINCH, crowdMillis = FLINCH_MILLIS)
         1 -> definition.copy(radius = 6.0, stunAfterMillis = 0).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 450)
         2 -> definition.copy(radius = 8.0, stunAfterMillis = 1500).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 700)
-        else -> definition.copy(radius = 10.0, stunAfterMillis = 2000, pulses = 2).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 1000)
+        else -> definition.copy(radius = FULL_SWING_RADIUS, stunAfterMillis = FULL_SWING_STUN_MILLIS,
+            formula = definition.formula.let { CoreDamageFormula(it.base * FULL_SWING_BASE_SCALE, it.ad * FULL_SWING_COEFFICIENT_SCALE,
+                it.ap * FULL_SWING_COEFFICIENT_SCALE) })
+            .copy(crowd = CrowdControl.AIRBORNE, crowdMillis = FULL_SWING_AIRBORNE_MILLIS)
     }
     /**
      * Each spender has its own job, and the beast changes how it behaves, not only how hard it hits (Creator 2026-10-26):
@@ -168,6 +190,7 @@ internal object CoreWarriorRules {
             SHATTER -> definition.copy(radius = SHATTER_RADIUS[n], crowdMillis = 350L + 150L * n, stunAfterMillis = if (n == 3) 1600L else 0L)
             else -> return definition
         }
+        if (fullSwing(definition.icon, n)) return shaped.copy(startup = FULL_SWING_WINDUP)
         return shaped.copy(startup = maxOf(1, Math.round(definition.startup * STARTUP_BY_STACKS[n]).toInt()))
     }
     /** A spender's wind-up by the stacks it took, against its listed startup: 0 stacks 60% … 3 stacks as listed. */

@@ -14,7 +14,7 @@ internal object CoreWarriorRefChoreography {
     private const val PREFIX = "war_ref:"
     private const val DIR = "combat_vfx/warrior_ref"
     @Volatile var enabled = true
-    private val sceneIds = setOf("slam", "war_wound")
+    private val sceneIds = setOf("war_wound")
     /** 引き摺り: how the dragged greatsword is held (found against the preview: blade down and back, tip on the ground). */
     private const val DRAG_SWORD_YAW = PI / 2
     private const val DRAG_SWORD_PITCH = 0.0
@@ -31,8 +31,9 @@ internal object CoreWarriorRefChoreography {
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
         (e.phase == CoreSkillVisualPhase.PULSE && e.sceneId in sceneIds || e.sceneId in ownedIds || e.sceneId in lookIds)
     private const val TACKLE = "dash"
-    /** 体当たり and 跳び叩き: every phase is drawn here, and only what the body and blade leave in the world. */
-    val lookIds = setOf(TACKLE, CoreWarriorLeap.ICON)
+    /** 体当たり, 跳び叩き and 地割り: every phase is drawn here, and only what the body and blade leave in the world. */
+    val lookIds = setOf(TACKLE, CoreWarriorLeap.ICON, SLAM)
+    private const val SLAM = "slam"
 
     // The world look of 体当たり / 跳び叩き is played by the server at the moment it happens (CorePlayerCombat, look
     // only: no sound, no hand pose). These pulse numbers say which moment; the skill's own pulses draw nothing.
@@ -44,6 +45,10 @@ internal object CoreWarriorRefChoreography {
     const val LEAP_TAKEOFF_PULSE = 140
     const val LEAP_LAND_PULSE = 141
     const val LEAP_FAR_LAND_PULSE = 142     // after a leap of CoreWarriorRules.LEAP_FAR or more
+    const val SLAM_PULSE = 150              // 地割り's blade meets the ground
+    const val SLAM_SPLIT_PULSE = 151        // ... and splits again at the head (a second pulse)
+    const val FULL_SLAM_PULSE = 152         // 全力の一振り's blow (its blood: CoreWarriorRules.FULL_SWING_GEYSER_PULSE + step)
+    const val FULL_WINDUP_PULSE = 153       // 全力の一振り's wind-up: the ground under the feet gives
 
     private fun hash(vararg v: Int): Double {
         val x = sin(v.foldIndexed(0.0) { i, a, n -> a + n * doubleArrayOf(127.1, 311.7, 74.7, 19.3)[i % 4] }) * 43758.5453
@@ -73,28 +78,8 @@ internal object CoreWarriorRefChoreography {
         }
         if (e.sceneId == TACKLE) return tackle(e, yaw)
         if (e.sceneId == CoreWarriorLeap.ICON) return leap(e, yaw)
-        if (e.sceneId == CoreWarriorRules.FULL_SWING && e.phase == CoreSkillVisualPhase.PREPARE) {
-            // 全力の一振り's charge: the ground round the shouldered blade cracks and stones lift, wider as it charges.
-            val life = e.prepareDuration.coerceIn(2, 40)
-            for (k in 0 until 3) {
-                val a = yaw + k * 2 * PI / 3 + (hash(k, 211) - .5) * .8
-                val len = 1.8 + 1.4 * hash(k, 212)
-                out += part("furrow", Vec(sin(a) * len / 2, .12, cos(a) * len / 2), 1.0, a, life, delay = k).copy(scale = Vec(len, 1.0, len))
-            }
-            for (k in 0 until 5) {
-                val a = hash(k, 213) * 2 * PI; val d = 1.0 + 2.2 * hash(k, 214)
-                out += part("pebble${10 + k}", Vec(sin(a) * d, .1, cos(a) * d), .6 + .35 * hash(k, 215), a, life, ground = false, delay = k % 4)
-            }
-            // Red scale-dust is drawn in from all round to the warrior while it charges (the same dust as the other
-            // two ultimates), wave after wave.
-            for (k in 0 until 8) {
-                val a = hash(k, 216) * 2 * PI; val r = 2.0 + .8 * hash(k, 217)
-                val from = Vec(sin(a) * r, .4 + 1.4 * hash(k, 218), cos(a) * r * .8)
-                out += part("sgather$k", from, .26, 0.0, 10, ground = false, billboard = true, delay = (k * life / 8).coerceAtMost(life - 1))
-                    .copy(travel = Vec(0.0, 1.2, 0.0).sub(from))
-            }
-            return out
-        }
+        // 全力の一振り is retired as an ultimate; anything still naming it is drawn as 地割り's full blow.
+        if (e.sceneId == SLAM || e.sceneId == CoreWarriorRules.FULL_SWING) return slam(e, yaw)
         if (e.sceneId == CoreWarriorRules.ARMOR && e.phase == CoreSkillVisualPhase.PULSE && e.pulse >= CoreWarriorRules.ARMOR_BEAT_PULSE) {
             // The heartbeat: blood sprays out of the body all round, drops flung out land in a ring of splats.
             val n = e.pulse
@@ -372,96 +357,6 @@ internal object CoreWarriorRefChoreography {
             }
             return out
         }
-        // 地割り in the Guts mood (Creator 2026-10-20): no light, the weight alone. The slab lands, the ground is torn
-        // forward in a furrow, turf is torn up along its lips, clods are thrown up along it (the knock-up) and tumble
-        // back, dust rolls out, and the swing leaves a dark band of wind.
-        // The beast it took sets the reach (CoreWarriorRules.slam puts it in the radius, Creator 2026-10-23): the furrow
-        // ends just past it, and the more beast, the bigger the torn turf and the higher the clods.
-        val impact = 1.9
-        val full = e.sceneId == CoreWarriorRules.FULL_SWING   // 全力の一振り: 地割り at its largest
-        val reach = e.skill.radius.coerceIn(3.0, if (full) 14.0 else 9.0)
-        val weight = ((reach - 4.0) / 4.0).coerceIn(0.0, 1.0)      // 0 at ≈4 m (no beast) .. 1 at ≈8 m
-        val furrow = reach - .8
-        val head = impact - .6 + furrow
-        if (full && e.pulse >= CoreWarriorRules.FULL_SWING_GEYSER_PULSE) {
-            // 全力の一振り (Creator 2026-10-24, 案B 血の噴き上げ): blood bursts up out of the rift, from the near end to the
-            // far, in a wall; it falls back as drops and leaves the line soaked. Played a step a tick (two places each)
-            // after the blow, so no one effect carries more than the piece budget.
-            val count = 2 * CoreWarriorRules.FULL_SWING_GEYSER_STEPS
-            val step = e.pulse - CoreWarriorRules.FULL_SWING_GEYSER_PULSE
-            for (i in 2 * step until 2 * step + 2) {
-                val z = impact + (head - impact) * i / (count - 1)
-                val delay = i % 2
-                for (j in 0 until 2)
-                    out += part("bmistup", local((hash(i, j, 501) - .5) * .5, .4 + j * .5, z), 1.6 * (1 - .02 * i), 0.0, 10, ground = false,
-                        billboard = true, delay = delay, roll = hash(i, j, 502) * 6.0)
-                for (j in 0 until 3) {
-                    val vy = 5.5 + 2.5 * hash(i, j, 503); val vx = (hash(i, j, 504) - .5) * 2.4
-                    val flight = (2 * vy / 9.8 * 20).toInt()
-                    out += part("bgush", local((hash(i, j, 505) - .5) * .4, .2, z + (hash(i, j, 506) - .5) * .6), .32, 0.0, flight,
-                        ground = false, billboard = true, delay = delay + 2).copy(travel = local(vx, vy, 0.0))
-                }
-                out += part("bsplat", local((hash(i, 507) - .5) * .8, .03, z), .8, yaw + hash(i, 508) * 6.0, 54, delay = delay + 6)
-            }
-            return out
-        }
-        if (e.pulse >= 1) {
-            // The second split at the head (three stacks): the ground bursts open where the furrow ended and forks.
-            for ((n, turn) in listOf(-.55, .55).withIndex())
-                out += part("furrow", local(0.0, .12, head - .3).add(sin(yaw + turn) * 1.6, 0.0, cos(yaw + turn) * 1.6), 1.0, yaw + turn, 36,
-                    delay = n).copy(scale = Vec(3.2, 1.0, 3.2))
-            // Not a ring (Creator: no round crater, no petals): the ground at the head heaves forward in a fan,
-            // slabs tipped forward over the forks, the far ones biggest.
-            for (k in 0 until 5) {
-                val a = yaw + (k - 2) * .42 + (hash(k, 131) - .5) * .12
-                val d = .9 + .5 * hash(k, 132) + .3 * (2 - abs(k - 2))
-                out += part("turf${60 + k}", local(0.0, .12, head).add(sin(a) * d, 0.0, cos(a) * d),
-                    1.1 + .4 * hash(k, 133), a, 34, delay = 1 + abs(k - 2) / 2, roll = (hash(k, 134) - .5) * .3, pitch = -(.9 + .3 * hash(k, 135)))
-            }
-            for (k in 0 until 6) {
-                val a = yaw + (k - 2.5) * .3
-                out += part("clod${20 + k}", local(0.0, .3, head).add(sin(a) * .8, 0.0, cos(a) * .8), .45 + .3 * hash(k, 136), a, 22,
-                    ground = false, delay = k / 4).copy(startSize = 1.2)
-            }
-            return out
-        }
-        out += trail(if (full) 7.4 else 5.4, if (full) 10 else 8)
-        if (full) out += trail(8.2, 9, delay = 1, shoulder = 1.6)
-        // The ground torn forward: one furrow, widest at the blow, running out ahead (texture row 0 = far end).
-        out += part("furrow", local(0.0, .12, impact - .6 + furrow / 2), 1.0, yaw, 44).copy(scale = Vec(furrow, 1.0, furrow))
-        // The furrow's lips: turf torn up along both edges and tipped outward, biggest at the blow, coming up as the
-        // furrow runs out (4 ticks for its whole length).
-        // Irregular on purpose (Creator: not tiles): sizes, gaps, tilt and shape differ piece by piece, a few gaps left.
-        val rows = (9 * furrow / 7.2).roundToInt().coerceIn(4, 9)
-        val bulk = .75 + .2 * weight
-        for (jj in 0 until rows) {
-            for ((n, side) in listOf(-1.0, 1.0).withIndex()) {
-                val k = jj * 2 + n
-                if (hash(k, 94) < .2) continue                             // a gap here and there
-                val tt = (1.0 - (jj + hash(k, 95) * .8) / rows).coerceIn(0.0, 1.0)   // 1 at the blow .. 0 far ahead
-                val along = impact - .4 + (1 - tt) * (furrow - .6)
-                val hw = (1.2 + 12.5 * tt.pow(1.4)) / 16.0 * furrow / 8.0
-                val size = (.35 + .8 * tt) * (.6 + .8 * hash(k, 96)) * bulk
-                out += part("turf$k", local(side * (hw + .15 + .2 * hash(k, 91)), .12, along), size,
-                    yaw + (hash(k, 92) - .5) * 1.4, 34 - jj, delay = ((1 - tt) * 4).toInt(),
-                    roll = -side * (.15 + .8 * hash(k, 93)) * (.7 + .5 * weight), pitch = (hash(k, 97) - .5) * .5)
-            }
-        }
-        // Clods thrown up at the furrow's head as it runs (the knock-up), grass-topped turf among the earth;
-        // more and higher with more beast.
-        val clods = 4 + (4 * weight).roundToInt()
-        for (k in 0 until clods) {
-            val along = impact + (k / 2) * (furrow - 1.0) / ((clods + 1) / 2)
-            val side = if (k % 2 == 0) -1.0 else 1.0
-            out += part("clod$k", local(side * (.2 + .35 * hash(k, 61)), .2, along), (.3 + .3 * hash(k, 62)) * bulk, yaw + hash(k, 63) * 6.0,
-                20, ground = false, delay = k / 2).copy(startSize = .7 + .6 * weight)
-        }
-        // A little dust, low and short: it must not hide the furrow.
-        for (k in 0 until 4) {
-            val a = yaw + PI / 2 + k * PI / 3
-            out += part("dust$k", local(0.0, .4, impact).add(sin(a) * 1.0, 0.0, cos(a) * 1.0), 1.0 + .3 * hash(k, 64), 0.0, 12,
-                ground = false, delay = 1 + k % 2, billboard = true, roll = hash(k, 65) * 6.0)
-        }
         return out
     }
 
@@ -617,6 +512,154 @@ internal object CoreWarriorRefChoreography {
                         delay = hit + k / 3, ground = false).copy(startSize = 1.2)
                 }
                 if (far) ring(13, 3.4, .85, hit + 3, 2, 160)
+            }
+        }
+        return out
+    }
+
+    /** 地割り: how far ahead the blade's point meets the ground (the hand's slam lays it along the middle of the view). */
+    private const val SLAM_IMPACT = 2.4
+    /** Nothing stands up nearer than this in front of the eye; only flat marks lie there. */
+    private const val CLEAR = 2.2
+    /** 全力の一振り's moments (its wind-up, its blow, its blood): worth the ultimate's piece budget (CoreCombatMeshes). */
+    fun fullBlow(e: CoreSkillEffect) = e.job == CoreClass.WARRIOR && e.sceneId == SLAM && (e.pulse == FULL_SLAM_PULSE ||
+        e.pulse == FULL_WINDUP_PULSE || e.pulse in CoreWarriorRules.FULL_SWING_GEYSER_PULSE until CoreWarriorRules.FULL_SWING_GEYSER_PULSE + CoreWarriorRules.FULL_SWING_GEYSER_STEPS)
+
+    /**
+     * 地割り (2026-10-27). The own swing is the hand's (the rise and the slam beat); the world gets only what the blade
+     * leaves. Where its point meets the ground ahead the ground caves in, and a crack runs forward from there: its lips
+     * heave up as blocks of ground tipped outward as it runs, clods are thrown off it, and its head breaks open. The
+     * beast sets the reach. 全力の一振り (a full beast) is the same family, bigger and longer: while it is charged the
+     * ground under the feet gives (cracks, stones lifting), the crack forks, and after the blow blood bursts up out of
+     * the rift step by step away from the warrior. Nothing stands up within [CLEAR] blocks in front of the eye.
+     */
+    private fun slam(e: CoreSkillEffect, yaw: Double): List<CoreCombatMeshPart> {
+        fun local(x: Double, y: Double, z: Double) = Vec(cos(yaw) * x + sin(yaw) * z, y, -sin(yaw) * x + cos(yaw) * z)
+        val out = mutableListOf<CoreCombatMeshPart>()
+        val n = e.pulse
+        val geyser = n >= CoreWarriorRules.FULL_SWING_GEYSER_PULSE && n < CoreWarriorRules.FULL_SWING_GEYSER_PULSE + CoreWarriorRules.FULL_SWING_GEYSER_STEPS
+        val full = n == FULL_SLAM_PULSE || e.sceneId == CoreWarriorRules.FULL_SWING
+        val reach = e.skill.radius.coerceIn(3.0, 14.0)
+        val furrow = reach - .8
+        val head = SLAM_IMPACT - .6 + furrow
+        val weight = ((reach - 4.0) / 4.0).coerceIn(0.0, 1.0)   // 0 at ≈4 m (no beast) .. 1 at ≈8 m and over
+        // The crack runs its whole length in this many ticks; each piece along it answers when the crack gets there.
+        val run = if (full) 6.0 else 4.0
+        fun at(along: Double) = ((along - SLAM_IMPACT) / (head - SLAM_IMPACT) * run).toInt().coerceAtLeast(0)
+        when {
+            e.phase == CoreSkillVisualPhase.PREPARE -> Unit   // the wind-up is the hand's (and FULL_WINDUP_PULSE)
+            e.phase == CoreSkillVisualPhase.CONTACT ->
+                // At the feet of the one struck: two slabs knocked out from under it, away from the warrior.
+                for (k in 0 until 2) out += thrown(k + 30, local((k - .5) * .5, .2, .45), local((k - .5) * 2.0, 4.2, 1.6), .42, delay = 1)
+            n == FULL_WINDUP_PULSE -> {
+                // Charged on the shoulder: short cracks open out from the feet one after another and stones lift off
+                // the ground round the body and tremble (none in front of the eye), until the blow.
+                val life = CoreWarriorRules.FULL_SWING_WINDUP + 2
+                for ((k, turn) in listOf(PI + .5, -1.8, 1.9, PI - .6, .35).withIndex()) {
+                    val a = yaw + turn + (hash(k, 701) - .5) * .3
+                    val len = 1.3 + .9 * hash(k, 702)
+                    val delay = k * 3
+                    out += piece("furrow", Vec(sin(a) * len / 2, .12, cos(a) * len / 2), 1.0, a, life - delay + 2, delay = delay)
+                        .copy(scale = Vec(len, 1.0, len))
+                }
+                for (k in 0 until 7) {
+                    val a = yaw + PI / 2 + PI * k / 6 + (hash(k, 703) - .5) * .3     // the sides and the back
+                    val d = 1.1 + 1.0 * hash(k, 704)
+                    val delay = 2 + k * 2
+                    out += piece("pebble${20 + k}", Vec(sin(a) * d, .1, cos(a) * d), .3 + .2 * hash(k, 705), a, life - delay,
+                        ground = false, delay = delay)
+                }
+            }
+            n == SLAM_PULSE || n == FULL_SLAM_PULSE -> {
+                val bulk = if (full) 1.25 else .8 + .2 * weight
+                // The blade's point dents the ground (flat, unlit; no round crater, Creator: that is a landing), and the
+                // crack runs on from it, widest at the blow. A long crack keeps its width (it would fill the view).
+                out += piece("dent", local(0.0, .123, SLAM_IMPACT + .2), if (full) 1.5 else 1.1, yaw, 44)
+                out += piece("furrow", local(0.0, .121, SLAM_IMPACT - .6 + furrow / 2), 1.0, yaw, 44).copy(scale = Vec(min(furrow, 5.5), 1.0, furrow))
+                if (full) for ((k, turn) in listOf(-.32, .3).withIndex()) {
+                    // 全力の一振り forks part way out: two branches split off the main crack.
+                    val from = SLAM_IMPACT + furrow * (.45 + .15 * k)
+                    val len = furrow * .4
+                    out += piece("furrow", local(0.0, .122, from).add(sin(yaw + turn) * len / 2, 0.0, cos(yaw + turn) * len / 2), 1.0, yaw + turn, 40,
+                        delay = at(from)).copy(scale = Vec(len, 1.0, len))
+                }
+                // The lips: blocks of ground heaved up along both edges, tipped outward, biggest near the blow, coming up
+                // as the crack runs. Irregular on purpose (Creator: not tiles); a gap here and there.
+                val rows = (furrow * (if (full) 1.1 else 1.25)).roundToInt().coerceIn(4, 12)
+                for (jj in 0 until rows) for ((m, side) in listOf(-1.0, 1.0).withIndex()) {
+                    val k = jj * 2 + m
+                    if (hash(k, 711) < .18) continue
+                    val tt = (1.0 - (jj + hash(k, 712) * .8) / rows).coerceIn(0.0, 1.0)   // 1 at the blow .. 0 at the head
+                    val along = SLAM_IMPACT + .3 + (1 - tt) * (furrow - .8)
+                    val hw = (.35 + .55 * tt) * (furrow / 8.0).coerceIn(.6, 1.4)
+                    val size = (.45 + .65 * tt) * (.65 + .7 * hash(k, 713)) * bulk
+                    out += piece("turf${k % 40}", local(side * (hw + .2 * hash(k, 714)), .12, along), size, yaw + (hash(k, 715) - .5) * 1.2,
+                        34 - jj / 2, delay = at(along), roll = -side * (.45 + .65 * hash(k, 716)) * (if (full) 1.2 else 1.0),
+                        pitch = (hash(k, 717) - .5) * .5)
+                }
+                // The head breaks open: blocks heaved up in a fan, tipped forward over it, the middle ones biggest.
+                val fan = if (full) 5 else 3
+                for (k in 0 until fan) {
+                    val a = yaw + (k - (fan - 1) / 2.0) * .45 + (hash(k, 718) - .5) * .15
+                    val d = .5 + .4 * hash(k, 719)
+                    out += piece("turf${60 + k}", local(0.0, .12, head).add(sin(a) * d, 0.0, cos(a) * d), (.8 + .4 * hash(k, 720)) * bulk, a, 32,
+                        delay = at(head) + abs(k - fan / 2) / 2, roll = (hash(k, 721) - .5) * .3, pitch = -(.8 + .4 * hash(k, 722)))
+                }
+                // Clods thrown up off the crack as it runs (the knock-up), higher with more beast; all beyond the eye.
+                val clods = if (full) 8 else 5 + (3 * weight).roundToInt()
+                for (k in 0 until clods) {
+                    val along = SLAM_IMPACT + .6 + (k + .5) / clods * (furrow - 1.0)
+                    val side = if (k % 2 == 0) -1.0 else 1.0
+                    out += piece("clod${80 + k}", local(side * (.25 + .35 * hash(k, 723)), .2, along), (.3 + .3 * hash(k, 724)) * bulk,
+                        yaw + side * (.6 + .6 * hash(k, 725)), 22, ground = false, delay = at(along)).copy(startSize = if (full) 1.5 else .75 + .55 * weight)
+                }
+                if (full) for (k in 0 until 4) {
+                    // ... and slabs thrown on ahead off the head.
+                    val s = if (k % 2 == 0) 1.0 else -1.0
+                    out += thrown(40 + k, local(s * .5, .25, head - .4), local(s * (1.0 + 1.2 * hash(k, 726)), 4.0 + 2.0 * hash(k, 727), 2.5 + 1.5 * hash(k, 728)),
+                        .55 + .2 * hash(k, 729), delay = at(head))
+                }
+                // A little dust where the head breaks open, low and short: it must not hide the crack.
+                if (full) for (k in 0 until 2) out += piece("dust${90 + k}", local((k - .5) * 1.4, .3, head + .4), .9 + .3 * hash(k, 730), 0.0, 10,
+                    ground = false, delay = at(head) + 1, billboard = true, roll = hash(k, 731) * 6.0)
+            }
+            n == SLAM_SPLIT_PULSE -> {
+                // A second pulse (重ね撃ち): the ground bursts open again where the crack ended and forks.
+                for ((m, turn) in listOf(-.55, .55).withIndex())
+                    out += piece("furrow", local(0.0, .12, head - .3).add(sin(yaw + turn) * 1.6, 0.0, cos(yaw + turn) * 1.6), 1.0, yaw + turn, 36,
+                        delay = m).copy(scale = Vec(3.2, 1.0, 3.2))
+                for (k in 0 until 5) {
+                    val a = yaw + (k - 2) * .42 + (hash(k, 131) - .5) * .12
+                    val d = .9 + .5 * hash(k, 132) + .3 * (2 - abs(k - 2))
+                    out += piece("turf${60 + k}", local(0.0, .12, head).add(sin(a) * d, 0.0, cos(a) * d),
+                        1.1 + .4 * hash(k, 133), a, 34, delay = 1 + abs(k - 2) / 2, roll = (hash(k, 134) - .5) * .3, pitch = -(.9 + .3 * hash(k, 135)))
+                }
+                for (k in 0 until 6) {
+                    val a = yaw + (k - 2.5) * .3
+                    out += piece("clod${20 + k}", local(0.0, .3, head).add(sin(a) * .8, 0.0, cos(a) * .8), .45 + .3 * hash(k, 136), a, 22,
+                        ground = false, delay = k / 4).copy(startSize = 1.2)
+                }
+            }
+            geyser -> {
+                // 全力の一振り (Creator 2026-10-24, 案B 血の噴き上げ): blood bursts up out of the rift, from the near end to
+                // the far, in a wall; it falls back as drops and leaves the line soaked. Played a step a tick (two places
+                // each) after the blow. It starts clear of the eye.
+                val count = 2 * CoreWarriorRules.FULL_SWING_GEYSER_STEPS
+                val step = n - CoreWarriorRules.FULL_SWING_GEYSER_PULSE
+                val near = SLAM_IMPACT + 2.6        // past the one struck in front, out of the middle of the view
+                for (i in 2 * step until 2 * step + 2) {
+                    val z = near + (head - near) * i / (count - 1)
+                    val delay = i % 2
+                    out += piece("bmistup", local((hash(i, 501) - .5) * .5, .25, z), .8 + .05 * i, 0.0, 10, ground = false,
+                        billboard = true, delay = delay, roll = hash(i, 502) * 6.0)
+                    for (j in 0 until 2) {
+                        val vy = 5.5 + 2.5 * hash(i, j, 503); val vx = (hash(i, j, 504) - .5) * 2.4
+                        val flight = (2 * vy / 9.8 * 20).toInt()
+                        out += piece("bgush", local((hash(i, j, 505) - .5) * .4, .2, z + (hash(i, j, 506) - .5) * .6), .32, 0.0, flight,
+                            ground = false, billboard = true, delay = delay + 2, travel = local(vx, vy, 1.2))
+                    }
+                    out += piece("bsplat", local((hash(i, 507) - .5) * .8, .03, z), .8, yaw + hash(i, 508) * 6.0, 54, delay = delay + 6)
+                }
             }
         }
         return out

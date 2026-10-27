@@ -355,7 +355,7 @@ class CoreSkillChoreographyTest {
         assertEquals(CoreSkillScenes.all.keys,CoreSkillChoreography.sceneIds)
         val index=javaClass.getResourceAsStream("/core-ui-pack/index.txt")!!.bufferedReader().use { it.readLines().toSet() }
         val checked=mutableSetOf<String>()
-        for(job in CoreClass.entries) for(s in CoreSkillCatalog.skills(job)) for(phase in CoreSkillVisualPhase.entries) {
+        for(job in CoreClass.entries) for(s in CoreSkillCatalog.skills(job).filterNot { it.retired }) for(phase in CoreSkillVisualPhase.entries) {
             val e=effect(job,s.icon,phase)
             if(phase==CoreSkillVisualPhase.PULSE) {
                 if(s.icon=="mage_garden") assertEquals(130,e.durationTicks)

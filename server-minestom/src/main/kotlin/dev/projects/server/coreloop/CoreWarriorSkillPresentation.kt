@@ -5,14 +5,15 @@ internal object CoreWarriorSkillPresentation {
     data class Identity(val shortName: String, val role: String, val use: String)
     val skills = mapOf(
         "dash" to Identity("体当たり", "獣を溜める・突進", "殴られそうな時に突っ込み、1発受け止めると獣が2つ"),
-        "slam" to Identity("地割り", "獣を使う・重撃", "獣を全部使って地を割る。3段目の直後なら速い"),
+        "slam" to Identity("地割り", "獣を使う・重撃", "獣を全部使って地を割る。獣3つなら担いで溜める全力の一振り、裂け目から血が噴く"),
         "whirl" to Identity("狂乱", "獣を使う・連撃", "踏み込みながら振り続け、最後に振り下ろす"),
         "war_guard" to Identity("天落とし", "獣を使う・跳躍", "高く跳んで叩き落とし、衝撃の輪を広げる"),
         "war_wound" to Identity("跳び叩き", "移動・着地", "狙った地点へ跳び、着地の周りを叩いて止める"),
         "war_counter" to Identity("大地崩し", "獣を使う・範囲", "突き立てて周り一面を砕き、まとめて打ち上げる"),
         "war_cry" to Identity("引き摺り", "獣を溜める・巻き込み", "大剣を引きずって歩き、引っかけた敵をまとめて叩きつける"),
         "war_breach" to Identity("斬り上げ", "獣を溜める・打ち上げ", "真上へ振り上げて打ち上げ、地割りで叩き落とす"),
-        "war_ult" to Identity("全力一振", "奥義・一撃", "担いで溜め、渾身の一振りで地面を大きく割る"),
+        // Retired as an ultimate (2026-10-27): never offered; the name stays for old art and saves.
+        "war_ult" to Identity("全力一振", "地割りに統合", "獣3つの地割りが全力の一振り"),
         "war_banner" to Identity("狂戦士甲冑", "奥義・暴走", "10秒、CCも怯みも効かず速く、獣が満ちたまま"),
         "war_awaken" to Identity("獣の目覚め", "奥義・解放", "獣3つで撃つ。8秒、獣が減らず使う技の再使用が半分")
     )

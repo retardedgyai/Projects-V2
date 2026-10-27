@@ -54,7 +54,7 @@ enum class CoreWeaponBase(val displayName: String, val detail: String, val power
 
 /** Defaults are a fresh, locked character; full unlock must be requested via [legacy]. */
 data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boolean = false,
-    val xp: Long = 0, val lessons: Int = 0, val legacy: Boolean = false, val build: CoreClassBuild = CoreClassBuild(),
+    val xp: Long = 0, val lessons: Int = 0, val legacy: Boolean = false, val build: CoreClassBuild = CoreSkillCatalog.defaultBuild(job),
     val savedBuilds: Map<CoreClass, CoreClassBuild> = emptyMap()) {
     init {
         require(xp in 0..1_000_000_000L && lessons in 0..63)
@@ -62,7 +62,7 @@ data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boole
         require(build.points <= budget && savedBuilds.values.all { it.points <= budget })
     }
     fun changeClass(next: CoreClass) = if(next == job) copy(chosen = true) else copy(job = next, chosen = true,
-        build = savedBuilds[next] ?: CoreClassBuild(), savedBuilds = (savedBuilds + (job to build)) - next)
+        build = savedBuilds[next] ?: CoreSkillCatalog.defaultBuild(next), savedBuilds = (savedBuilds + (job to build)) - next)
     val level get() = CoreJourneyRules.level(xp)
     fun knows(bit: Int) = lessons and (1 shl bit) != 0
     fun learn(bit: Int): CoreJourney { require(bit in 0..5); return copy(lessons = lessons or (1 shl bit)) }
@@ -73,7 +73,7 @@ data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boole
     companion object {
         fun fresh() = CoreJourney()
         /** Explicit full unlock: pre-journey saves (format < 8) and the skill-test lab only. */
-        fun legacy(job: CoreClass = CoreClass.WARRIOR, xp: Long = 0, build: CoreClassBuild = CoreClassBuild()) =
+        fun legacy(job: CoreClass = CoreClass.WARRIOR, xp: Long = 0, build: CoreClassBuild = CoreSkillCatalog.defaultBuild(job)) =
             CoreJourney(job, chosen = true, xp = xp, lessons = 63, legacy = true, build = build)
     }
 }

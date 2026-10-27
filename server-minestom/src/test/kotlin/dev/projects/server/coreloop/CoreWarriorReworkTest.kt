@@ -10,21 +10,26 @@ class CoreWarriorReworkTest {
 
     @Test fun `warrior skills sit in cooldown tiers and the beast gates nothing`() {
         val byIcon = warrior.filterNot { it.retired }.associateBy { it.icon }
-        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner", "war_awaken"), byIcon.keys)
+        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_banner", "war_awaken"), byIcon.keys)
         assertEquals(100, byIcon.getValue("dash").cooldown)
         assertTrue(listOf("slam", "whirl", "war_guard", "war_counter").all { byIcon.getValue(it).cooldown in 200..320 }, "spenders")
         assertTrue(byIcon.getValue("war_wound").cooldown in 160..240, "the leap moves")
-        assertTrue(byIcon.getValue("war_ult").cooldown >= 1200)
+        assertTrue(listOf("war_banner", "war_awaken").all { byIcon.getValue(it).cooldown >= 1200 }, "ultimates")
         assertTrue(byIcon.values.all { it.spend == 0 }, "no warrior skill needs the beast to be cast")
     }
 
     @Test fun `retired entries keep catalog order and art but are never selectable`() {
         assertEquals(61, CoreSkillCatalog.artNames.size)
         assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
-        assertEquals(listOf(0, 1, 2), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
-        assertEquals(emptyList<String>(), warrior.filter { it.retired }.map { it.icon })
+        // 全力の一振り (index 8, ultimate 0) is retired (2026-10-27): it is 地割り at a full beast now; its slot stays empty.
+        assertEquals(listOf(1, 2), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
+        assertEquals(listOf("war_ult"), warrior.filter { it.retired }.map { it.icon })
+        assertEquals(8, warrior.indexOfFirst { it.icon == CoreWarriorRules.FULL_SWING })
         for (job in CoreClass.entries) {
-            assertEquals(CoreClassBuild(), CoreSkillCatalog.migrate(job, CoreClassBuild()), "$job default build stays valid")
+            val fresh = CoreSkillCatalog.defaultBuild(job)
+            assertEquals(fresh, CoreSkillCatalog.migrate(job, fresh), "$job default build stays valid")
+            assertEquals(if (job == CoreClass.WARRIOR) CoreClassBuild(ultimate = 1) else CoreClassBuild(), fresh)
+            assertEquals(fresh, CoreJourney(job = job).build)
             assertFalse(CoreSkillCatalog.selectable(job, 0, 8))
             for (i in 0..7) assertEquals(!CoreSkillCatalog.skills(job)[i].retired, CoreSkillCatalog.selectable(job, 0, i))
         }
@@ -36,6 +41,17 @@ class CoreWarriorReworkTest {
         assertEquals(listOf(0, 1, 2, 3), migrated.skills); assertEquals(1, migrated.ultimate); assertEquals(1031, migrated.nodes)
         assertEquals(migrated, CoreSkillCatalog.migrate(CoreClass.WARRIOR, migrated))
         assertEquals(old, CoreSkillCatalog.migrate(CoreClass.MAGE, old), "classes without retired skills are untouched")
+    }
+
+    @Test fun `a save with 全力の一振り equipped loads with another ultimate and never equips it`() {
+        val old = CoreClassBuild(ultimate = 0, nodes = 1031)
+        val migrated = CoreSkillCatalog.migrate(CoreClass.WARRIOR, old)
+        assertEquals(1, migrated.ultimate); assertEquals(old.skills, migrated.skills); assertEquals(1031, migrated.nodes)
+        val a = CoreAccount(UUID.randomUUID(), journey = CoreJourney.legacy(build = old))
+        assertEquals(1, CoreAccountCodec.decode(CoreAccountCodec.encode(a), a.playerId).journey.build.ultimate)
+        // Even a build that never went through a save never equips it.
+        assertEquals(CoreWarriorRules.ARMOR, CoreSkillCatalog.equipped(CoreJourney.legacy(build = old))[4].icon)
+        assertFalse(CoreSkillCatalog.selectable(CoreClass.WARRIOR, 4, 0))
     }
 
     @Test fun `saved builds with retired skills load migrated through the codec and rewrite stably`() {

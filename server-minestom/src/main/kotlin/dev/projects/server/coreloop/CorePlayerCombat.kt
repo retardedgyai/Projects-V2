@@ -161,6 +161,8 @@ internal class CorePlayerCombat(
         var chargeTick: Long = -1L, var caught: Boolean = false, var leapReach: Double = 0.0,
         /** Warrior A + B: the variant this spender turned into, if any. */
         val combo: CoreWarriorRules.Combo? = null,
+        /** 地割り with a full beast: 全力の一振り (CoreWarriorRules.fullSwing). */
+        val full: Boolean = false,
         /** The current pulse's damage and break, against the cast's (狂乱's heavy first and last swings). */
         var hitScale: Double = 1.0, var breakScale: Double = 1.0)
 
@@ -255,6 +257,7 @@ internal class CorePlayerCombat(
         var breakAmount = CoreBreak.skill(classId, definition.icon)
         var beastSpent = 0
         var combo: CoreWarriorRules.Combo? = null
+        var full = false
         if (classId == CoreClass.WARRIOR && definition.icon in CoreWarriorRules.spenders) {
             // The beast never gates a spender; whatever whole stacks are there, it takes them all for a heavier hit.
             // 獣の目覚め / 狂戦士の甲冑: the beast stays full, every spender takes all three and keeps them.
@@ -262,10 +265,14 @@ internal class CorePlayerCombat(
             skillBoost *= 1 + beastSpent * CoreWarriorRules.BEAST_DAMAGE_PERCENT_PER_STACK / 100.0
             breakAmount += beastSpent * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT
             castDefinition = CoreWarriorRules.shape(castDefinition, beastSpent)
+            // 全力の一振り breaks like the old ultimate did.
+            full = CoreWarriorRules.fullSwing(definition.icon, beastSpent)
+            if (full) breakAmount += CoreBreak.skill(classId, CoreWarriorRules.FULL_SWING) - CoreBreak.skill(classId, definition.icon)
             if (definition.icon == "slam" && tickNumber <= finisherUntil) {
                 skillBoost *= 1 + CoreWarriorRules.FINISHER_BONUS_PERCENT / 100.0; finisherUntil = -1
                 breakAmount *= CoreBreak.FINISHER
-                castDefinition = castDefinition.copy(startup = minOf(CoreWarriorRules.FINISHER_STARTUP, castDefinition.startup))
+                // 全力の一振り keeps its whole wind-up: the shouldered charge is the blow.
+                if (!full) castDefinition = castDefinition.copy(startup = minOf(CoreWarriorRules.FINISHER_STARTUP, castDefinition.startup))
             }
             if (tickNumber <= comboUntil) combo = CoreWarriorRules.combo(comboFrom, definition.icon)
             comboFrom = null; comboUntil = -1
@@ -286,13 +293,30 @@ internal class CorePlayerCombat(
         pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
             if (definition.motion == CoreSkillMotion.RAY) player.position.direction() else flatFacing(), startup,
             empowered = beastSpent.toDouble(), counter = counter, boost = skillBoost,
-            gardenCells = gardenCells, breakAmount = breakAmount, combo = combo)
+            gardenCells = gardenCells, breakAmount = breakAmount, combo = combo, full = full)
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
         if (startup > 1) vfx.playSkill(CoreSkillEffect(classId, castDefinition, pending!!.origin, pending!!.direction,
             CoreSkillVisualPhase.PREPARE, prepareTicks = startup - 1, gardenCells = gardenCells))
+        if (classId == CoreClass.WARRIOR && definition.icon == "slam") slamWindup(pending!!)
     }
+
+    /**
+     * 地割り's cast. In the hand (after the PREPARE's own pose): the sword hauled up over the right shoulder and held
+     * there until the slam beat takes it down ([slamHand]); a startup too short for that goes straight into the slam.
+     * 全力の一振り also takes a breath, and the ground under the feet starts to give (the world gets no swing).
+     */
+    private fun slamWindup(action: PendingSkill) {
+        val lead = CoreArmamentPresentation.SLAM_LEAD_TICKS
+        if (action.startup <= lead) slamHand()
+        else CoreArmamentPresentation.shaderSwing(player, CoreArmamentPresentation.RISE_BEAT, CoreArmamentPresentation.slamRiseTicks(action.startup - lead))
+        if (!action.full) return
+        look(action, CoreWarriorRefChoreography.FULL_WINDUP_PULSE)
+        fullSwingBreathSound()
+    }
+    /** The slam beat: down through the middle a tick in, on the ground half a tick later (CoreArmamentPresentation.SLAM_LEAD_TICKS). */
+    private fun slamHand() = CoreArmamentPresentation.shaderSwing(player, CoreArmamentPresentation.SLAM_BEAT, CoreArmamentPresentation.LEAP_SLAM_TICKS)
 
     /** 大地崩し may be cast out of a stagger, as long as there is a whole stack to throw (or the beast is full anyway). */
     private fun breaksOut(id: Int) = classId == CoreClass.WARRIOR && skillDefinitions[id].icon == CoreWarriorRules.SHATTER &&
@@ -351,7 +375,7 @@ internal class CorePlayerCombat(
             }
         }
         geyser?.let { g ->
-            vfx.playSkill(CoreSkillEffect(g.job, g.skill, g.origin, g.direction, pulse = CoreWarriorRules.FULL_SWING_GEYSER_PULSE + geyserStep))
+            vfx.look(CoreSkillEffect(g.job, g.skill, g.origin, g.direction, pulse = CoreWarriorRules.FULL_SWING_GEYSER_PULSE + geyserStep))
             if (++geyserStep >= CoreWarriorRules.FULL_SWING_GEYSER_STEPS) { geyser = null; geyserStep = 0 }
         }
         visualContactsThisTick = 0
@@ -490,6 +514,11 @@ internal class CorePlayerCombat(
                 }
                 if (ring >= action.definition.pulses - 1) pending = null
                 return@let
+            }
+            if (classId == CoreClass.WARRIOR && action.definition.icon == "slam") {
+                // 地割り: the blade comes down so it crosses the middle just before the impact (cause first).
+                if (action.elapsed == action.startup - CoreArmamentPresentation.SLAM_LEAD_TICKS) slamHand()
+                if (action.full && action.elapsed == CoreWarriorRules.FULL_SWING_RUMBLE_TICK && action.elapsed < action.startup) fullSwingRumbleSound()
             }
             val pulse = action.elapsed - action.startup
             val every = CoreCombatFeel.pulseTicks(action.definition)
@@ -683,9 +712,19 @@ internal class CorePlayerCombat(
                 d <= s.radius && (dx * action.direction.x() + dz * action.direction.z()) >= .5 * d
             }.toSet()
             emitSkillPulse(player.position, s.radius)
+            // What the blade leaves in the world (the swing itself is the hand's): the crack forward, or after the first
+            // pulse (重ね撃ち) the head splitting again; 全力の一振り's blood bursts up the rift over the next ticks.
+            val again = action.elapsed - action.startup >= CoreCombatFeel.pulseTicks(s)
+            look(action, when { again -> CoreWarriorRefChoreography.SLAM_SPLIT_PULSE
+                action.full -> CoreWarriorRefChoreography.FULL_SLAM_PULSE; else -> CoreWarriorRefChoreography.SLAM_PULSE })
+            if (action.full && !again) { geyser = CoreSkillEffect(classId, s, player.position, action.direction); geyserStep = 0 }
+            if (action.full) fullSwingImpactSound()
             val hitBefore = hitThisStrike.also { it.clear() }
             strike(enemies, player.position, action.direction, s.radius, CoreCombatFeel.minDot(s.icon), 1.0)
             if (!actionsValid(enemies, epoch)) { smashTargets = emptySet(); return }
+            // Hit-stop: what the blow met stands frozen a moment (bosses refuse it), longer under 全力の一振り.
+            val stop = if (action.full) CoreWarriorRules.FULL_SWING_HITSTOP_TICKS else CoreWarriorRules.SLAM_HITSTOP_TICKS
+            for (id in hitThisStrike.toList()) enemies.hitStop(id, stop * 50L)
             for (id in smashTargets) {
                 launched.remove(id)
                 if (id !in hitBefore) hit(enemies, id, 1.0, skill = true)  // too high for the usual height check
@@ -1108,6 +1147,27 @@ internal class CorePlayerCombat(
         val f = flatFacing(); val right = Vec(-f.z(), 0.0, f.x())
         return player.position.add(right.mul(.7)).sub(f.mul(1.5))
     }
+    /** 全力の一振り's wind-up: a heavy breath drawn in as the sword goes onto the shoulder. */
+    private fun fullSwingBreathSound() {
+        sound(SoundEvent.ENTITY_PLAYER_BREATH, 1f, varied(.6f))
+        sound(SoundEvent.ENTITY_RAVAGER_STUNNED, .3f, varied(.7f))
+        sound(SoundEvent.ITEM_ARMOR_EQUIP_IRON, .55f, varied(.7f))
+    }
+    /** ...then a low rumble under the feet while it is held. */
+    private fun fullSwingRumbleSound() {
+        sound(SoundEvent.ENTITY_RAVAGER_ROAR, .35f, varied(.5f))
+        sound(SoundEvent.ENTITY_WARDEN_STEP, .9f, varied(.5f))
+        sound(SoundEvent.BLOCK_ROOTED_DIRT_BREAK, .6f, varied(.5f))
+    }
+    /** 全力の一振り's impact: a deep crack of the ground and a meaty, wet blow (the blood). */
+    private fun fullSwingImpactSound() {
+        sound(SoundEvent.ITEM_MACE_SMASH_GROUND_HEAVY, 1f, varied(.6f))
+        sound(SoundEvent.ENTITY_GENERIC_EXPLODE, .45f, varied(.5f))
+        sound(SoundEvent.BLOCK_DEEPSLATE_BREAK, .9f, varied(.5f))
+        sound(SoundEvent.ENTITY_WARDEN_ATTACK_IMPACT, .9f, varied(.6f))
+        sound(SoundEvent.ENTITY_SLIME_SQUISH, .8f, varied(.55f))
+        sound(SoundEvent.BLOCK_HONEY_BLOCK_BREAK, .6f, varied(.6f))
+    }
     /** 天落とし: ring [k] hits what stands between the ring inside it and its own radius, from the landing point. */
     private fun skyfallRing(enemies: QuestEncounterCombat, action: PendingSkill, k: Int) {
         val centre = action.landAt ?: return
@@ -1142,8 +1202,6 @@ internal class CorePlayerCombat(
         val pulse = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(action.definition)
         vfx.playSkill(CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction,
             pulse = pulse, endpoint = endpoint))
-        if (classId == CoreClass.WARRIOR && action.definition.icon == CoreWarriorRules.FULL_SWING && pulse == 0)
-            geyser = CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction)
     }
     /** 全力の一振り's blood burst, played out along the rift a step a tick after the blow (see tick()). */
     private var geyser: CoreSkillEffect? = null
@@ -1238,6 +1296,8 @@ internal class CorePlayerCombat(
      */
     fun receiveCrowdControl(kind: CrowdControl, millis: Long, from: Pos?, pvp: Boolean = false): Int {
         if (defeated || armored) return 0  // 狂戦士の甲冑: no crowd control takes hold
+        // 全力の一振り's wind-up cannot be stopped: nothing takes hold until the blow has landed.
+        if (classId == CoreClass.WARRIOR && pending?.let { it.full && it.elapsed <= it.startup } == true) return 0
         if (kind == CrowdControl.FLINCH || CorePlayerCrowdControl.INCAPACITATING.contains(kind)) {
             // A flinch or anything incapacitating cancels the windup in progress.
             queued = null

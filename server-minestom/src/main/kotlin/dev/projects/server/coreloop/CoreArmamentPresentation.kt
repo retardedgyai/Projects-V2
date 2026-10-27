@@ -49,6 +49,8 @@ internal object CoreArmamentPresentation {
         // 鉄槌 falls three times (2026-10-19): every pulse is its own swing, short enough to finish before the next.
         val threefold = effect.job == CoreClass.WARRIOR && effect.sceneId == "war_ult" && effect.phase == CoreSkillVisualPhase.PULSE
         if (!effect.valid || (effect.pulse != 0 && !threefold) || effect.phase == CoreSkillVisualPhase.CONTACT) return
+        // 地割り's hand is the shader's rise and slam (CorePlayerCombat): its pulse must not put the old pose over them.
+        if (effect.job == CoreClass.WARRIOR && effect.sceneId == "slam" && player.getTag(shaderTag) != null) return
         // A shout or planting a standard is not a sword release.
         if(effect.job==CoreClass.WARRIOR && effect.sceneId in CoreWarriorSupportChoreography.sceneIds) return
         if (!usesWeapon(player.itemInMainHand, effect.motif)) return
@@ -75,7 +77,7 @@ internal object CoreArmamentPresentation {
     /**
      * Beats 1..3 are the normal attacks; 4 and 5 are 体当たり's charge and impact (scripts/class_armament_swing.py
      * CHARGE_BEAT / IMPACT_BEAT, keyed over CHARGE_TICKS / IMPACT_TICKS, which these lengths must match); 6 and 7 are
-     * 跳び叩き's rise and slam (RISE_BEAT / SLAM_BEAT, SLAM_TICKS).
+     * 跳び叩き's rise and slam (RISE_BEAT / SLAM_BEAT, SLAM_TICKS), which 地割り and 全力の一振り play too.
      * Tint blue: 84 + beat - 1 for the big swords, + [SHADER_BEATS] for the T1 sprite (84..97), the arms +16 / +32;
      * the light probes below (80..83) stay clear.
      */
@@ -94,6 +96,16 @@ internal object CoreArmamentPresentation {
      * (two ticks to spare for the landing to be seen), never past the latest landing (CoreWarriorLeap.MAX_AIR_TICKS).
      */
     fun leapRiseTicks(airTicks: Int) = kotlin.math.ceil((airTicks + 2) / LEAP_RISE_HOLD).toInt().coerceIn(12, CoreWarriorLeap.MAX_AIR_TICKS)
+    /**
+     * 地割り: the slam beat starts this many ticks before the server's impact, so the blade crosses the middle a tick
+     * before it and is on the ground half a tick before it (SLAM_TICKS keys: the middle at 1, the ground at 1.5).
+     */
+    const val SLAM_LEAD_TICKS = 2
+    /**
+     * 地割り's haul over the shoulder, played from the cast so its hold lasts until the slam beat at [slamAt] ticks
+     * (two to spare). A short 地割り hauls up in about a tick, 全力の一振り's wind-up in about three and holds.
+     */
+    fun slamRiseTicks(slamAt: Int) = kotlin.math.ceil((slamAt + 2) / LEAP_RISE_HOLD).toInt().coerceIn(8, 255)
     internal fun shaderMarker(beat: Int, plain: Boolean) = 84 + (beat - 1).coerceIn(0, SHADER_BEATS - 1) + if (plain) SHADER_BEATS else 0
     private data class ShaderSwing(val until: Long, val weapon: ItemStack, val beat: Int = 1)
     private val shaderTag = Tag.Transient<ShaderSwing>("projects_armament_shader_swing")

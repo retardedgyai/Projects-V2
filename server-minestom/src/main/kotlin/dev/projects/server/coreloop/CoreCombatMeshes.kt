@@ -55,7 +55,8 @@ internal class CoreCombatMeshes(private val owner: Player) {
             if(!reserve(instance,parts.size)) return false
         }
         // An ultimate is the one moment worth more pieces (once a minute): it may run past the usual per-owner cap.
-        val limit=if(effect.skill.ultimate) OWNER_LIMIT+ULTIMATE_EXTRA else OWNER_LIMIT
+        // So may 全力の一振り (地割り at a full beast, once the ultimate), whose blood runs on after the crack.
+        val limit=if(effect.skill.ultimate || CoreWarriorRefChoreography.fullBlow(effect)) OWNER_LIMIT+ULTIMATE_EXTRA else OWNER_LIMIT
         for(authored in parts.sortedBy { it.secondary }) {
             if(!gardenBody && live.size>=limit) {
                 // A new strike must not silently vanish behind old secondary afterglow.
