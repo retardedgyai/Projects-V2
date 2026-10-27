@@ -1461,6 +1461,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         } }
         io.execute { firstMagic.forget(player.uuid) }
         CoreCombatPresentation.forget(player)
+        dev.projects.server.mob.PlayerPostEffects.forget(player)
         combatLab.disconnect(player)
         preparedMaps.forget(player.uuid)
         uiPack?.forget(player)

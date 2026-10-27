@@ -1,5 +1,6 @@
 package dev.projects.server.coreloop
 
+import dev.projects.server.mob.SakuraLight
 import dev.projects.server.particle.dust
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Pos
@@ -34,7 +35,7 @@ import kotlin.random.Random
  *   into ice blocks when the freeze ends.
  * Players without the pack get vanilla snowflakes.
  */
-internal class CoreMageFrost(private val owner: Player) {
+internal class CoreMageFrost(private val owner: Player, private val light: CoreMageLight) {
     private class Piece(val entity: Entity, var at: Pos, var age: Int = 0, val life: Int, val step: (Piece) -> Boolean)
     private class Frozen(val pieces: List<Piece?>, var age: Int = 0, var seen: Long = 0, val at: Pos)
 
@@ -43,9 +44,12 @@ internal class CoreMageFrost(private val owner: Player) {
     private val random = Random(0x66726f)
     private var tick = 0L
     private var chargePiece: Piece? = null
+    private var burstAt: Pos? = null
+    private var burstAge = 0
 
     /** The cast: a snowflake at [hand] for as long as this is called each tick. */
     fun charge(hand: Pos) {
+        light.glow(2)
         val c = chargePiece?.takeIf { it in live }
         if (c == null) chargePiece = sprite("flake", 5 / 16.0, hand, life = 3) { true }
         else { c.age = 0; c.at = hand; c.entity.teleport(hand) }
@@ -54,6 +58,7 @@ internal class CoreMageFrost(private val owner: Player) {
     /** The strike at [centre] (the mage's feet), the staff coming down ahead along [facing]. */
     fun nova(centre: Pos, facing: Vec) {
         chargePiece?.let(::drop); chargePiece = null
+        burstAt = Pos(centre.x(), centre.y() + 1.0, centre.z()); burstAge = 0
         val f = Vec(facing.x(), 0.0, facing.z()).normalize(); val right = Vec(-f.z(), 0.0, f.x())
         val ground = Pos(centre.x(), centre.y(), centre.z())
         // the pillar, a little ahead and to the right where the staff hits
@@ -109,6 +114,11 @@ internal class CoreMageFrost(private val owner: Player) {
     /** Ice growing out of each frozen enemy ([frozenAt]: id to where it stands). */
     fun tick(frozenAt: Map<UUID, Pos>) {
         tick++
+        // the nova's cold light: bright for the strike, then steady while the ice stands
+        burstAt?.let { at -> burstAge++
+            if (burstAge > STAND + 4) burstAt = null
+            else light.show(CoreMageLight.BURST, at, if (burstAge < 6) 10 else 7, if (burstAge < 6) 2.2 else 1.3, SakuraLight.FROST) }
+        if (frozenAt.isNotEmpty()) light.glow(2)
         for ((id, at) in frozenAt) {
             val fz = frozen.getOrPut(id) { Frozen(SPROUTS.map { (sx, y, sz, rx, rz, name) ->
                 val rot = CoreCombatMeshArt.rotation(0.0, rx, rz)
@@ -131,7 +141,7 @@ internal class CoreMageFrost(private val owner: Player) {
         }
     }
 
-    fun clear() { live.forEach { it.entity.remove() }; live.clear(); frozen.clear(); chargePiece = null }
+    fun clear() { live.forEach { it.entity.remove() }; live.clear(); frozen.clear(); chargePiece = null; burstAt = null }
 
     // ---- the small things
 

@@ -1,5 +1,6 @@
 package dev.projects.server.coreloop
 
+import dev.projects.server.mob.SakuraLight
 import dev.projects.server.particle.dust
 import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Pos
@@ -30,7 +31,7 @@ import kotlin.random.Random
  *   in the last half second, with one-pixel embers popping out and a thin smoke.
  * Players without the pack get vanilla dust instead.
  */
-internal class CoreMageFire(private val owner: Player) {
+internal class CoreMageFire(private val owner: Player, private val light: CoreMageLight) {
     /** A sprite: where it is and how it moves, which drawings it runs through, when it goes. */
     private class Sprite(val entity: Entity, var at: Pos, val life: Int, val frame: (Int) -> String, val move: (Sprite) -> Pos?, var age: Int = 0)
     private class Flight(val from: Pos, val to: Pos, val ticks: Int, var sprite: Sprite?, var age: Int = 0)
@@ -45,6 +46,7 @@ internal class CoreMageFire(private val owner: Player) {
 
     /** The cast: a flame at [hand] for as long as this is called each tick. */
     fun charge(hand: Pos) {
+        light.glow(2)
         val s = chargeSprite?.takeIf { it in live }
         // it lives three ticks unless the next tick's call renews it, so a cancelled cast leaves nothing behind
         if (s == null) chargeSprite = spawn("lick_0", LICK, hand, life = 3, frame = { "lick_${it % 3}" }) { it.at }
@@ -69,6 +71,7 @@ internal class CoreMageFire(private val owner: Player) {
     /** The flight has arrived: the burst and the embers. */
     private fun arrive(f: Flight) {
         val at = f.to
+        light.show(CoreMageLight.BURST, at.add(0.0, .8, 0.0), 9, 2.4, SakuraLight.EMBER, ticks = 4)
         spawn("burst_0", BURST_SMALL, at, life = 1, frame = { "burst_0" }) { it.at }
         spawn("burst_1", BURST_BIG, at, life = 2, delay = 1, frame = { "burst_1" }) { it.at }
         repeat(14) { embers(at, fast = true) }
@@ -83,9 +86,12 @@ internal class CoreMageFire(private val owner: Player) {
             // a small flame dropped where the ball was, burning out in 3 ticks: a dotted trail, never a beam
             if (f.age in 2 until f.ticks) f.sprite?.at?.let { prev -> val k = f.age
                 spawn("lick_0", LICK, prev.add(0.0, -.15, 0.0), life = 3, frame = { "lick_${(k + it) % 3}" }) { it.at } }
+            f.sprite?.at?.let { light.show(CoreMageLight.MOVING, it, 5, 1.4, SakuraLight.EMBER) }
             if (f.age >= f.ticks) { flights.remove(f); f.sprite?.let(::drop); arrive(f) }
         }
         for ((id, at) in burningAt) burnTick(id, at, remaining(id))
+        // the burning enemy lights round itself (the moving slot, once no ball is flying)
+        if (flights.isEmpty()) burningAt.entries.firstOrNull()?.let { (_, at) -> light.show(CoreMageLight.MOVING, at.add(0.0, 1.2, 0.0), 4, 1.2, SakuraLight.EMBER) }
         burns.entries.removeAll { (_, b) -> (b.seen != tick).also { gone -> if (gone) b.flames.forEach { it?.let(::drop) } } }
         live.removeAll { s ->
             s.age++

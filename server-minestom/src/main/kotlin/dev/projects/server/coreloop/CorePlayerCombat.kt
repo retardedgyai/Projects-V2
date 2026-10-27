@@ -107,9 +107,11 @@ internal class CorePlayerCombat(
     private val bolts = mutableListOf<CoreMageBolt>()
     private val boltSprites = CoreMageBoltSprites(player)
     /** The fire bolt's picture (CoreMageFire) and its hits, which land when the ball arrives. */
-    private val mageFire = CoreMageFire(player)
+    /** The light of the mage's spells: coloured lights and a glow (CoreMageLight). */
+    private val mageLight = CoreMageLight(player)
+    private val mageFire = CoreMageFire(player, mageLight)
     /** The frost nova's picture (CoreMageFrost): the ice, and the ice growing out of frozen enemies. */
-    private val mageFrost = CoreMageFrost(player)
+    private val mageFrost = CoreMageFrost(player, mageLight)
     private data class FireHit(val action: PendingSkill, val ids: List<UUID>, val due: Long)
     private val fireHits = mutableListOf<FireHit>()
     /** The mage's sigil circle and what its elements left on the ground and on enemies (CoreMageRules). */
@@ -1310,7 +1312,7 @@ internal class CorePlayerCombat(
         actionEpoch++
         garden?.let { it.encounter.clearSlowSource(it.field.slowSource) }
         garden = null
-        bolts.clear(); boltSprites.clear(); mageFire.clear(); fireHits.clear(); mageFrost.clear()
+        bolts.clear(); boltSprites.clear(); mageFire.clear(); fireHits.clear(); mageFrost.clear(); mageLight.clear()
         sigils.clear(); mageField.clear(); echoes.clear(); echoUntil = -1; peakUntil = -1; peakElement = null
         lightningRun = null; lightningRunHit.clear(); mixing = false
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; skillBoost = 1.0; burns.clear()
@@ -1568,6 +1570,7 @@ internal class CorePlayerCombat(
         val burning = mageField.burningIds(tickNumber)
         mageFire.tick(burning.mapNotNull { id -> enemies.positionOf(id)?.let { id to it } }.toMap()) { mageField.burnLeft(it, tickNumber) }
         mageFrost.tick(mageField.frozenIds(tickNumber).mapNotNull { id -> enemies.positionOf(id)?.let { id to it } }.toMap())
+        mageLight.tick()
         lightningRun?.let { run ->
             vfx.particles(Particle.ELECTRIC_SPARK, player.position.add(0.0, 1.0, 0.0), 6, Vec(.2, .5, .2), .05f)
             for (t in enemies.combatTargets().filter { it.id !in lightningRunHit && it.position.distance(player.position) <= run.definition.radius + 1.0 }) {
