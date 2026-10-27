@@ -207,7 +207,7 @@ object CoreSkillCatalog {
             // has nine normal entries (CoreSkillCatalog.ultimateStart). Element: 1 fire / 2 ice / 3 lightning / 4 wind.
             CoreClass.MAGE -> listOf(
                 s("火炎弾", "firebolt", "大きな火の玉。当たった所で爆発し、敵を4秒燃やす。凍った敵に当てると砕ける", CoreSkillMotion.RAY, 9.0, 1.5, mana=10, cd=100, startup=6, gain=0, radius=2.5, element=1),
-                s("霜の波紋", "frost_nova", "周りを一気に凍らせる。雑魚は凍って動けなくなり、足元に氷が張る", CoreSkillMotion.NOVA, 8.0, 1.0, mana=14, cd=160, startup=8, gain=0, radius=4.5, element=2),
+                s("霜の波紋", "frost_nova", "周りを一気に凍らせる。雑魚は凍って動けなくなる", CoreSkillMotion.NOVA, 8.0, 1.0, mana=14, cd=160, startup=8, gain=0, radius=4.5, element=2),
                 s("流星", "meteor", "狙った地点へ空から大きな流星を落とす。巻き込んだ敵を4秒燃やす", CoreSkillMotion.FIELD, 18.0, 2.6, mana=20, cd=260, startup=20, gain=0, radius=3.5, element=1),
                 s("雷走り", "mage_blink", "稲妻になって見ている先へ走る。通り道の敵が感電する", CoreSkillMotion.EVADE, 4.0, .8, mana=12, cd=180, startup=2, gain=0, range=8.0, radius=1.5, element=3),
                 s("落雷", "mage_mark", "狙った敵に雷を落とし、近くの敵へ3回跳ねる", CoreSkillMotion.RAY, 10.0, 1.6, mana=12, cd=140, startup=8, gain=0, element=3),

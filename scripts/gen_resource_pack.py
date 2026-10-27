@@ -28,6 +28,8 @@ CHAIN = [
     "build_boss_vfx.py",         # boss_vfx data maps + the core/item shader experiment
     "build_player_puppet.py",    # combat_vfx/puppet: player skin parts, one tinted face per skin pixel
     "build_mage_bolt.py",        # combat_vfx/mage_bolt: the mage's normal-attack bolt, sparkles and burst
+    "build_mage_fire.py",        # combat_vfx/mage_fire: the fire bolt, its hit and the burning (sample v21)
+    "build_mage_frost.py",       # combat_vfx/mage_frost: the frost nova's ice columns, rings, patch, frozen sprouts (sample v12)
 ]
 
 

@@ -72,6 +72,8 @@ internal class CoreMageField {
     fun isBurning(id: UUID, now: Long) = (burning[id] ?: 0) > now
     fun frozenIds(now: Long) = frozen.filterValues { it.until > now }.keys
     fun burningIds(now: Long) = burning.filterValues { it > now }.keys
+    /** Ticks this enemy still burns (0 when it does not). */
+    fun burnLeft(id: UUID, now: Long) = ((burning[id] ?: 0) - now).coerceAtLeast(0)
 
     /**
      * [element] lands on enemy [id]. Applies the element's own state (fire burns, ice freezes or chills) and returns

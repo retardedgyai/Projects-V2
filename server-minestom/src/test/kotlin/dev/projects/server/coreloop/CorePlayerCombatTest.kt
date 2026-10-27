@@ -175,7 +175,7 @@ class CorePlayerCombatTest {
         h.journey = CoreJourney.fresh().copy(chosen = true, job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
         h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1); h.actor.skill(2); assertEquals(100, h.actor.mana)
         h.ticks(30); assertEquals(300.0, h.combat.bossHealth())
-        h.actor.skill(0); h.ticks(7); assertTrue(h.combat.bossHealth() < 300.0)
+        h.actor.skill(0); h.ticks(12); assertTrue(h.combat.bossHealth() < 300.0)  // the fire ball flies there
     }
     @Test fun `weapon sheet attack speed and power match all actual bases`() = arena { h ->
         for (base in CoreWeaponBase.entries) {
@@ -727,7 +727,7 @@ class CorePlayerCombatTest {
             h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
             val expected = 9.0 + (12 * .92 + if (mod == CoreAffixStat.AP_FLAT) 20 else 0) * 1.5
             assertEquals(expected, h.actor.skillDefinitions[0].preview(h.actor.sheet), .000001)
-            h.actor.skill(0); h.ticks(7)
+            h.actor.skill(0); h.ticks(12)  // the fire ball flies there; its burn's first tick is later
             assertEquals(300 - expected, h.combat.bossHealth(), .000001)
         }
     }
@@ -1325,13 +1325,22 @@ class CorePlayerCombatTest {
         }
     }
 
+    @Test fun `the fire bolt's hit waits for its ball to arrive, then the enemy burns`() = arena(bossDistance=7.0) { h ->
+        h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+        val full=h.combat.bossHealth()
+        h.actor.skill(0);h.ticks(8)
+        assertEquals(full,h.combat.bossHealth(),"the ball is still in the air")
+        h.ticks(6);val hit=h.combat.bossHealth();assertTrue(hit<full,"the ball arrived and hit")
+        h.ticks(25);assertTrue(h.combat.bossHealth()<hit,"the enemy burns after the hit")
+    }
+
     @Test fun `garden deploy frees input and owns its context while firebolt earns a separate element gain`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();h.actor.skill(1);h.actor.skill(1)
         assertEquals(80,h.actor.mana)
         h.ticks(6);assertEquals(1,h.actor.activeGardens)
         val planted=h.combat.bossHealth()
         h.actor.skill(0);assertTrue(h.actor.cooldownRemaining(0)>0)
-        h.ticks(7);assertTrue(h.combat.bossHealth()<planted)
+        h.ticks(14);assertTrue(h.combat.bossHealth()<planted)
         h.ticks(28)
     }
     @Test fun `garden welcomes a late enemy after old channel end and never refunds reentry hit budget`() = arena(bossDistance=7.0) { h ->
