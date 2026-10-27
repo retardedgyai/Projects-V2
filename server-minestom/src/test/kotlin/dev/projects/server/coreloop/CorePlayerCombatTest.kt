@@ -402,7 +402,9 @@ class CorePlayerCombatTest {
         val root=if(cwd.fileName.toString()=="server-minestom") cwd.parent else cwd
         java.nio.file.Files.createDirectories(root.resolve(".tools"))
         java.nio.file.Files.writeString(root.resolve(".tools/warrior-cast-frames.json"),com.google.gson.Gson().toJson(scenes))
-        assertTrue(scenes.all { s -> (s["frames"] as List<*>).any { (it as Map<*,*>)["displays"].let { d -> (d as List<*>).isNotEmpty() } } })
+        // 体当たり・押し払い・切っ先薙ぎ have no world look for now (pulled 2026-10-28, drawn by the hand only).
+        val handOnly = setOf("dash", "dash_catch", "war_push", "war_tip_sweet", "war_tip_close")
+        assertTrue(scenes.filter { it["id"] !in handOnly }.all { s -> (s["frames"] as List<*>).any { (it as Map<*,*>)["displays"].let { d -> (d as List<*>).isNotEmpty() } } })
     }
 
     @Test fun `dodge slides over a few ticks and evades every hit but true damage while it lasts`() = arena { h ->

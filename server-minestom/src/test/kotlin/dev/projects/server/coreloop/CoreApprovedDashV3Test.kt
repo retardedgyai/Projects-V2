@@ -28,7 +28,9 @@ class CoreApprovedDashV3Test {
     }
 
     @Test fun `every look has its pieces and every pose names a shipped model`() {
-        for((skill,pulses) in listOf(dash to dashLooks,leap to leapLooks)) for(n in pulses) {
+        // 体当たり's world look is pulled until it is redesigned (2026-10-28): nothing in the world, so only the hand shows it.
+        for(n in dashLooks) assertTrue(all(effect(dash,pulse=n)).isEmpty(),"dash $n")
+        for((skill,pulses) in listOf(leap to leapLooks.filter { it != R.LEAP_TAKEOFF_PULSE })) for(n in pulses) {
             val parts=all(effect(skill,pulse=n))
             assertTrue(parts.isNotEmpty(),"${skill.icon} $n")
             for(p in parts) for(t in -1..p.durationTicks) {
@@ -42,8 +44,6 @@ class CoreApprovedDashV3Test {
         // A far leap lands bigger: a second, wider ring of heaved turf.
         val near=all(effect(leap,pulse=R.LEAP_LAND_PULSE)); val far=all(effect(leap,pulse=R.LEAP_FAR_LAND_PULSE))
         assertTrue(far.count { it.shape.startsWith("war_ref:turf") }>near.count { it.shape.startsWith("war_ref:turf") }+3)
-        // Caught: harder than a plain hit.
-        assertTrue(all(effect(dash,pulse=R.TACKLE_CAUGHT_PULSE)).size>all(effect(dash,pulse=R.TACKLE_HIT_PULSE)).size)
     }
 
     @Test fun `in first person nothing in front comes within two blocks of the eye, at all eight headings`() {

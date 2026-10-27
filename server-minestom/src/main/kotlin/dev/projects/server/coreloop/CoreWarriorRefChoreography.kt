@@ -325,6 +325,9 @@ internal object CoreWarriorRefChoreography {
             travel = travel, followOwner = follow)
 
     /** A slab of broken ground thrown from [at] along [travel] (blocks per second; y is the upward throw). */
+    /** 体当たり・押し払い・切っ先薙ぎ's world looks are pulled until they are redesigned as one form each. */
+    private const val STAMPED_LOOKS_PULLED = true
+
     private fun thrown(k: Int, at: Vec, travel: Vec, size: Double, delay: Int = 0, life: Int = 24) =
         piece("rslab$k", at, size, hash(k, 601) * 6.0, life, delay = delay, ground = false, travel = travel)
 
@@ -339,6 +342,9 @@ internal object CoreWarriorRefChoreography {
      * the met one's feet are driven back. A blow caught whole rings off iron in front of the body (carried with it).
      */
     private fun tackle(e: CoreSkillEffect, yaw: Double): List<CoreCombatMeshPart> {
+        // Pulled (Creator 2026-10-28: 「ぶつ切りで短絡的に配置された感じ」 — pieces stamped one by one at points, not one
+        // designed form). Nothing in the world until the look is redesigned as a whole; the hand, sound and hit-stop stay.
+        if (STAMPED_LOOKS_PULLED) return emptyList()
         fun local(x: Double, y: Double, z: Double) = Vec(cos(yaw) * x + sin(yaw) * z, y, -sin(yaw) * x + cos(yaw) * z)
         val out = mutableListOf<CoreCombatMeshPart>()
         val n = e.pulse
@@ -423,6 +429,9 @@ internal object CoreWarriorRefChoreography {
      */
     private const val PUSH_CLEAR = 2.1
     private fun push(e: CoreSkillEffect, yaw: Double): List<CoreCombatMeshPart> {
+        // Pulled (Creator 2026-10-28: 「ぶつ切りで短絡的に配置された感じ」 — pieces stamped one by one at points, not one
+        // designed form). Nothing in the world until the look is redesigned as a whole; the hand, sound and hit-stop stay.
+        if (STAMPED_LOOKS_PULLED) return emptyList()
         // x is the warrior's right here (local()'s +x is its left: Minecraft's yaw 0 faces +z with +x on the left).
         fun local(x: Double, y: Double, z: Double) = Vec(-cos(yaw) * x + sin(yaw) * z, y, sin(yaw) * x + cos(yaw) * z)
         val out = mutableListOf<CoreCombatMeshPart>()
@@ -456,6 +465,9 @@ internal object CoreWarriorRefChoreography {
      * way the blade went (to the left) and out; a hit with the middle of the blade only knocks a little dust off the feet.
      */
     private fun tip(e: CoreSkillEffect, yaw: Double): List<CoreCombatMeshPart> {
+        // Pulled (Creator 2026-10-28: 「ぶつ切りで短絡的に配置された感じ」 — pieces stamped one by one at points, not one
+        // designed form). Nothing in the world until the look is redesigned as a whole; the hand, sound and hit-stop stay.
+        if (STAMPED_LOOKS_PULLED) return emptyList()
         // x is the warrior's right here (local()'s +x is its left: Minecraft's yaw 0 faces +z with +x on the left).
         fun local(x: Double, y: Double, z: Double) = Vec(-cos(yaw) * x + sin(yaw) * z, y, sin(yaw) * x + cos(yaw) * z)
         val out = mutableListOf<CoreCombatMeshPart>()
@@ -492,17 +504,9 @@ internal object CoreWarriorRefChoreography {
         val out = mutableListOf<CoreCombatMeshPart>()
         val n = e.pulse
         when {
-            e.phase == CoreSkillVisualPhase.CONTACT ->
-                for (k in 0 until 2) out += thrown(k + 10, local((k - .5) * .5, .2, .45), local((k - .5) * 2.0, 3.8, 1.8), .42, delay = 2)
-            n == LEAP_TAKEOFF_PULSE -> {
-                out += piece("dent", local(0.0, .12, -.05), 1.7, yaw, 40)
-                for (k in 0 until 4) {
-                    val a = yaw + PI + (k - 1.5) * .75
-                    out += piece("kick", Vec(sin(a) * .55, .3, cos(a) * .55), 1.0, 0.0, 9, delay = k % 2, ground = false, billboard = true,
-                        travel = Vec(sin(a) * .9, .35, cos(a) * .9))
-                }
-                for (s in listOf(-1.0, 1.0)) out += thrown(if (s < 0) 20 else 21, local(s * .35, .2, -.3), local(s * .6, 3.0, -1.4), .32)
-            }
+            // The push-off and the contact were stamped pieces too (pulled 2026-10-28, see STAMPED_LOOKS_PULLED); the
+            // landing below is the approved one.
+            e.phase == CoreSkillVisualPhase.CONTACT || n == LEAP_TAKEOFF_PULSE -> Unit
             n == LEAP_LAND_PULSE || n == LEAP_FAR_LAND_PULSE -> {
                 // The landing breaks the ground the way 天落とし and 大地崩し do (Creator 2026-10-27: 「ほかの割れる見た目と
                 // 同じにしてほしい、ブロックが浮くやつ」): a crater where the blade comes down in front, turf heaved up in
