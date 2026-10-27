@@ -107,9 +107,3 @@ Do not restore that smooth import path for the current pixel-art direction.
 エフェクトの作風の型 `scripts/fx_art.py` の見本。火炎弾（第21版）の絵一式を、元素ごとの6段の帯
 （fire / frost / lightning / wind / iron / sakura / shade）で色替えしたもの。新しい技の1版目はこの帯の
 差し替えから始める。決まりと使い方は [docs/development/fx-style-kit.md](../../docs/development/fx-style-kit.md)。
-
-## Draft: frost-nova-draft-v1.png
-
-霜の波紋の1版目（2026-10-28）。火炎弾の絵一式を frost の帯に色替えし、氷の柱・輪の破片・雪片だけを同じ決まりで
-描き足して、第12版の流れ（打つ→輪が走る→氷が3重に立つ→冷えて割れる）に並べた見本。作り方は
-`scripts/build_fx_frost_draft.py`。ゲームには未投入。
