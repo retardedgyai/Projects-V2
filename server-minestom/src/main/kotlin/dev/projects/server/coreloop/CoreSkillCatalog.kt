@@ -206,15 +206,15 @@ object CoreSkillCatalog {
             // CoreMageRules) releases. Slots keep the old art; the retired 氷の庭 keeps index 5 for saves, so the mage
             // has nine normal entries (CoreSkillCatalog.ultimateStart). Element: 1 fire / 2 ice / 3 lightning / 4 wind.
             CoreClass.MAGE -> listOf(
-                s("火炎弾", "firebolt", "大きな火の玉。当たった所で爆発し、床が4秒燃える。凍った敵に当てると砕ける", CoreSkillMotion.RAY, 9.0, 1.5, mana=10, cd=100, startup=6, gain=0, radius=2.5, element=1),
+                s("火炎弾", "firebolt", "大きな火の玉。当たった所で爆発し、敵を4秒燃やす。凍った敵に当てると砕ける", CoreSkillMotion.RAY, 9.0, 1.5, mana=10, cd=100, startup=6, gain=0, radius=2.5, element=1),
                 s("霜の波紋", "frost_nova", "周りを一気に凍らせる。雑魚は凍って動けなくなり、足元に氷が張る", CoreSkillMotion.NOVA, 8.0, 1.0, mana=14, cd=160, startup=8, gain=0, radius=4.5, element=2),
-                s("流星", "meteor", "狙った地点へ空から大きな流星を落とす。落ちた所に広い火の床が残る", CoreSkillMotion.FIELD, 18.0, 2.6, mana=20, cd=260, startup=20, gain=0, radius=3.5, element=1),
+                s("流星", "meteor", "狙った地点へ空から大きな流星を落とす。巻き込んだ敵を4秒燃やす", CoreSkillMotion.FIELD, 18.0, 2.6, mana=20, cd=260, startup=20, gain=0, radius=3.5, element=1),
                 s("雷走り", "mage_blink", "稲妻になって見ている先へ走る。通り道の敵が感電する", CoreSkillMotion.EVADE, 4.0, .8, mana=12, cd=180, startup=2, gain=0, range=8.0, radius=1.5, element=3),
                 s("落雷", "mage_mark", "狙った敵に雷を落とし、近くの敵へ3回跳ねる", CoreSkillMotion.RAY, 10.0, 1.6, mana=12, cd=140, startup=8, gain=0, element=3),
                 s("氷の庭", "mage_garden", "狙った床に6秒の氷庭。設置後は自由に動ける。敵を誘い減速中に他の術を重ねる（1体4打まで・ボスは減速耐性）", CoreSkillMotion.FIELD, 2.0, .45, mana=20, cd=180, pulses=4, status=CoreSkillStatus.SLOW, radius=3.65, element=2, duration=120, retired=true),
                 s("氷槍の列", "mage_burst", "正面の地面から氷の槍が列で突き上がる。打ち上げて凍らせ、線の上に氷が残る", CoreSkillMotion.CONE, 12.0, 1.8, mana=16, cd=220, startup=10, gain=0, radius=7.0, element=2).cc(CrowdControl.AIRBORNE, 600),
-                s("突風", "mage_ward", "前へ風を吹いて敵を押し返す。床の火・氷を巻き込んで前へ運ぶ", CoreSkillMotion.CONE, 4.0, .7, mana=10, cd=140, startup=4, gain=0, radius=6.0, element=4).cc(CrowdControl.KNOCKBACK, 400),
-                s("竜巻", "mage_gale", "狙った所に竜巻を置き、周りの敵を3秒吸い寄せる。床の元素を巻き込むと色が変わる", CoreSkillMotion.FIELD, 3.0, .5, mana=16, cd=240, startup=8, pulses=4, gain=0, radius=3.5, element=4, duration=60),
+                s("突風", "mage_ward", "前へ風を吹いて敵を押し返す。燃えた敵・凍った敵の火や氷を巻き込んで、当たった敵みんなに広げる", CoreSkillMotion.CONE, 4.0, .7, mana=10, cd=140, startup=4, gain=0, radius=6.0, element=4).cc(CrowdControl.KNOCKBACK, 400),
+                s("竜巻", "mage_gale", "狙った所に竜巻を置き、周りの敵を3秒吸い寄せる。燃えた敵・凍った敵を巻き込むと、その火や氷を周りに広げる", CoreSkillMotion.FIELD, 3.0, .5, mana=16, cd=240, startup=8, pulses=4, gain=0, radius=3.5, element=4, duration=60),
                 s("反響", "mage_ult", "10秒間、撃った技が2秒後に同じ場所でもう一度唱えられる（陣の紋の数だけ、最大3回・6割の威力）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=25, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
                 s("元素の極み", "mage_zero", "10秒間、陣に一番多い紋の元素を極める。体は変わらず、魔法の威力と性質だけが上がる", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=25, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true))
             CoreClass.RANGER -> listOf(

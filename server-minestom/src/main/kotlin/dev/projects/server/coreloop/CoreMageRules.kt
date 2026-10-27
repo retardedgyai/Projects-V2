@@ -1,11 +1,10 @@
 package dev.projects.server.coreloop
 
-import net.minestom.server.coordinate.Point
 import java.util.UUID
 
 /**
  * The mage (Creator 2026-10-27, docs/development/mage-rework.md): fire, ice, lightning and wind. Every spell is one
- * button; what makes it a mage is what happens after: spells left on the ground mix by themselves, and every cast
+ * button; what makes it a mage is what happens after: the states spells leave on enemies mix by themselves, and every cast
  * carves its element into the sigil circle under the mage's feet for the grand chant (大詠唱) to release.
  */
 internal enum class MageElement(val label: String, val color: Int) {
@@ -16,9 +15,9 @@ internal enum class MageElement(val label: String, val color: Int) {
 internal enum class MageReaction(val label: String) {
     /** 砕け: fire on a frozen (or, for a boss, chilled) enemy. */
     SHATTER("砕け"),
-    /** 伝導: lightning on ice runs to every enemy frozen or standing on that ice. */
+    /** 伝導: lightning on a frozen enemy runs to every frozen enemy. */
     CONDUCT("伝導"),
-    /** 過負荷: lightning on a burning enemy or fire floor explodes and throws back. */
+    /** 過負荷: lightning on a burning enemy explodes and throws back. */
     OVERLOAD("過負荷"),
 }
 
@@ -54,42 +53,31 @@ internal class CoreMageSigils {
 }
 
 /**
- * The ground and the enemies as the mage's elements left them: fire and ice floors, frozen and burning enemies.
- * Server state only, in ticks. Bosses never freeze: ice only chills them, which still lets fire shatter (weaker).
+ * The enemies as the mage's elements left them: frozen and burning. Nothing is left on the ground (Creator
+ * 2026-10-28: states sit on enemies only). Server state only, in ticks. Bosses never freeze: ice only chills them,
+ * which still lets fire shatter (weaker).
  */
 internal class CoreMageField {
-    data class Floor(val element: MageElement, val centre: Point, val radius: Double, val until: Long)
     private data class Mark(val until: Long, val boss: Boolean)
 
-    private val floors = mutableListOf<Floor>()
     private val frozen = HashMap<UUID, Mark>()
     private val burning = HashMap<UUID, Long>()
-    val floorList: List<Floor> get() = floors.toList()
 
     fun tick(now: Long) {
-        floors.removeAll { it.until <= now }
         frozen.values.removeAll { it.until <= now }
         burning.values.removeAll { it <= now }
     }
 
-    /** Standing in fire: burning, without the freeze-shattering a fire spell does. */
-    fun ignite(id: UUID, now: Long) { burning[id] = maxOf(burning[id] ?: 0, now + 30) }
-
-    fun lay(element: MageElement, centre: Point, radius: Double, now: Long, ticks: Int) {
-        floors += Floor(element, centre, radius, now + ticks)
-    }
-
-    fun floorUnder(at: Point, element: MageElement): Floor? = floors.lastOrNull { it.element == element && flatDistance(it.centre, at) <= it.radius }
-
     fun isFrozen(id: UUID, now: Long) = (frozen[id]?.until ?: 0) > now
     fun isBurning(id: UUID, now: Long) = (burning[id] ?: 0) > now
     fun frozenIds(now: Long) = frozen.filterValues { it.until > now }.keys
+    fun burningIds(now: Long) = burning.filterValues { it > now }.keys
 
     /**
-     * [element] lands on enemy [id] standing at [at]. Applies the element's own state (fire burns, ice freezes or
-     * chills) and returns the mixes it set off. A shatter uses up the freeze.
+     * [element] lands on enemy [id]. Applies the element's own state (fire burns, ice freezes or chills) and returns
+     * the mixes it set off. A shatter uses up the freeze.
      */
-    fun land(element: MageElement, id: UUID, at: Point, boss: Boolean, now: Long): Set<MageReaction> {
+    fun land(element: MageElement, id: UUID, boss: Boolean, now: Long): Set<MageReaction> {
         val out = mutableSetOf<MageReaction>()
         when (element) {
             MageElement.FIRE -> {
@@ -101,8 +89,8 @@ internal class CoreMageField {
                 burning.remove(id)
             }
             MageElement.LIGHTNING -> {
-                if (isFrozen(id, now) || floorUnder(at, MageElement.ICE) != null) out += MageReaction.CONDUCT
-                if (isBurning(id, now) || floorUnder(at, MageElement.FIRE) != null) out += MageReaction.OVERLOAD
+                if (isFrozen(id, now)) out += MageReaction.CONDUCT
+                if (isBurning(id, now)) out += MageReaction.OVERLOAD
             }
             MageElement.WIND -> Unit
         }
@@ -110,26 +98,22 @@ internal class CoreMageField {
     }
 
     /**
-     * 巻き込み: wind blowing over [at] within [radius] picks up the floors it crosses (they are carried off, not
-     * left behind) and returns the element it now carries: the one covering the most ground, or null.
+     * 巻き込み: wind blowing over enemies [ids] picks up the state they carry and spreads it to everything it hits:
+     * the element on the most of them (burning = fire, frozen = ice; a tie goes to fire), or null. The states stay.
      */
-    fun carry(at: Point, radius: Double): MageElement? {
-        val crossed = floors.filter { it.element != MageElement.WIND && flatDistance(it.centre, at) <= it.radius + radius }
-        if (crossed.isEmpty()) return null
-        floors.removeAll(crossed.toSet())
-        return crossed.groupBy { it.element }.maxBy { (_, f) -> f.sumOf { it.radius * it.radius } }.key
+    fun carry(ids: Collection<UUID>, now: Long): MageElement? {
+        val fire = ids.count { isBurning(it, now) }; val ice = ids.count { isFrozen(it, now) }
+        return when { fire == 0 && ice == 0 -> null; fire >= ice -> MageElement.FIRE; else -> MageElement.ICE }
     }
 
     fun shatterMultiplier(boss: Boolean) = if (boss) BOSS_SHATTER else SHATTER
 
-    fun clear() { floors.clear(); frozen.clear(); burning.clear() }
-
-    private fun flatDistance(a: Point, b: Point) = kotlin.math.hypot(a.x() - b.x(), a.z() - b.z())
+    fun clear() { frozen.clear(); burning.clear() }
 
     companion object {
         const val FREEZE_TICKS = 40     // 2 s frozen solid (a stun on regular enemies)
         const val CHILL_TICKS = 60      // a boss is only chilled, a little longer
-        const val BURN_TICKS = 80
+        const val BURN_TICKS = 80       // 4 s burning, a hit every second
         const val SHATTER = 2.0         // the hit that shatters deals this many times its damage
         const val BOSS_SHATTER = 1.5
     }
@@ -143,11 +127,11 @@ internal object CoreMageRules {
     const val ECHO_DELAY = 40
     const val ECHO_POWER = .6
     const val PEAK_WIND_REACH = 1.5
-    const val FIRE_FLOOR_TICKS = 80
-    const val ICE_FLOOR_TICKS = 100
     const val CHAIN_JUMPS = 3
     const val CHAIN_REACH = 5.0
     const val OVERLOAD_RADIUS = 3.0
+    /** 元素の極み (lightning): a conduct also reaches what stands this near a frozen enemy. */
+    const val PEAK_CONDUCT_REACH = 3.0
 
     fun element(skill: CoreSkillDefinition): MageElement? = when (skill.element) {
         1 -> MageElement.FIRE; 2 -> MageElement.ICE; 3 -> MageElement.LIGHTNING; 4 -> MageElement.WIND; else -> null

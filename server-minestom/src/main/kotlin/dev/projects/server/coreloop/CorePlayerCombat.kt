@@ -1431,29 +1431,18 @@ internal class CorePlayerCombat(
         }
         val firstPulse = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(s) == 0
         if (firstPulse && CoreMageRules.element(s) == MageElement.WIND) {
+            // 巻き込み: the wind picks up the state of the enemies it blows over and spreads it to all it hits
             val over = if (s.motion == CoreSkillMotion.FIELD) action.origin else player.position.add(action.direction.mul(s.radius / 2))
-            carried = mageField.carry(over, s.radius)?.let { action to it }
+            val blown = enemies.combatTargets().filter { it.position.distance(over) <= s.radius }.map { it.id }
+            carried = mageField.carry(blown, tickNumber)?.let { action to it }
         }
         return false
     }
 
-    /** After a pulse: what the spell leaves on the ground, and the 反響 copy of it. */
+    /** After a pulse: the 反響 copy of it. Spells leave nothing on the ground; their states sit on the enemies. */
     private fun mageAfterPulse(action: PendingSkill) {
         val s = action.definition
         val firstPulse = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(s) == 0
-        when {
-            s.icon == "frost_nova" -> mageField.lay(MageElement.ICE, player.position, s.radius, tickNumber, CoreMageRules.ICE_FLOOR_TICKS)
-            s.icon == "meteor" -> mageField.lay(MageElement.FIRE, action.origin, s.radius, tickNumber, CoreMageRules.FIRE_FLOOR_TICKS)
-            s.icon == "mage_burst" && firstPulse -> {
-                var d = 1.5
-                while (d <= s.radius) { mageField.lay(MageElement.ICE, action.origin.add(action.direction.mul(d)), 1.2, tickNumber, CoreMageRules.ICE_FLOOR_TICKS); d += 2.0 }
-            }
-            action.id == CoreMageRules.GRAND && firstPulse -> when (CoreMageRules.element(s)) {
-                MageElement.FIRE -> mageField.lay(MageElement.FIRE, player.position, s.radius, tickNumber, CoreMageRules.FIRE_FLOOR_TICKS)
-                MageElement.ICE -> mageField.lay(MageElement.ICE, player.position, s.radius, tickNumber, CoreMageRules.ICE_FLOOR_TICKS)
-                else -> Unit
-            }
-        }
         if (firstPulse && tickNumber < echoUntil && action.id in 0..4 && !s.ultimate)
             echoes += Echo(s, action.origin, action.direction, tickNumber + CoreMageRules.ECHO_DELAY, echoRepeats)
     }
@@ -1471,11 +1460,14 @@ internal class CorePlayerCombat(
         val boss = enemies.isBoss(id)
         val out = mutableSetOf<MageReaction>()
         for (e in elements) {
-            out += mageField.land(e, id, at, boss, tickNumber)
+            out += mageField.land(e, id, boss, tickNumber)
             if (e == MageElement.ICE && !boss) enemies.applyCrowdControl(id, CrowdControl.STUN, CoreMageField.FREEZE_TICKS * 50L, player)
+            // burning: a hit every second for the 4 s it lasts
+            if (e == MageElement.FIRE) burns[DotKey(id)] = Burn(CoreCombatMath.outgoing(3.0 + abilityPower * .25, CoreDamageType.MAGICAL, setOf(CoreAttackTag.SKILL, CoreAttackTag.AREA), sheet.mods),
+                CoreDamageType.MAGICAL, sheet.mods, tickNumber + 20, CoreMageField.BURN_TICKS / 20)
         }
         // 元素の極み (ice): a shatter leaves the enemy frozen, to be shattered again.
-        if (MageReaction.SHATTER in out && tickNumber < peakUntil && peakElement == MageElement.ICE) mageField.land(MageElement.ICE, id, at, boss, tickNumber)
+        if (MageReaction.SHATTER in out && tickNumber < peakUntil && peakElement == MageElement.ICE) mageField.land(MageElement.ICE, id, boss, tickNumber)
         return out
     }
 
@@ -1488,7 +1480,6 @@ internal class CorePlayerCombat(
         mixing = true
         try {
             if (s.icon == "firebolt") {
-                mageField.lay(MageElement.FIRE, at, 2.0, tickNumber, CoreMageRules.FIRE_FLOOR_TICKS)
                 vfx.particles(Particle.FLAME, at.add(0.0, 1.0, 0.0), 14, Vec(.8, .5, .8), .06f)
                 for (t in others(at, s.radius)) { hit(enemies, t.id, .6, true, skillAction = action, contact = false); if (!actionsValid(enemies, epoch)) return }
             }
@@ -1510,10 +1501,11 @@ internal class CorePlayerCombat(
                 vfx.particles(Particle.ITEM_SNOWBALL, at.add(0.0, 1.0, 0.0), 16, Vec(.5, .6, .5), .15f)
             }
             if (MageReaction.CONDUCT in mixes) {
+                // every frozen enemy; under 元素の極み (lightning) also whatever stands near one of them
                 val iced = mageField.frozenIds(tickNumber)
+                val icedAt = iced.mapNotNull { enemies.positionOf(it) }
                 val conducted = enemies.combatTargets().filter { it.id != id && (it.id in iced ||
-                    (if (peak && peakElement == MageElement.LIGHTNING) mageField.floorList.any { f -> f.element == MageElement.ICE && it.position.distance(f.centre) <= f.radius + .5 }
-                     else mageField.floorUnder(it.position, MageElement.ICE) != null)) }
+                    (peak && peakElement == MageElement.LIGHTNING && icedAt.any { p -> it.position.distance(p) <= CoreMageRules.PEAK_CONDUCT_REACH })) }
                 for (t in conducted) {
                     enemies.positionOf(t.id)?.let { vfx.particles(Particle.ELECTRIC_SPARK, it.add(0.0, 1.0, 0.0), 8, Vec(.3, .5, .3), .1f) }
                     hit(enemies, t.id, .5, true, skillAction = action, contact = false); if (!actionsValid(enemies, epoch)) return
@@ -1531,23 +1523,12 @@ internal class CorePlayerCombat(
         } finally { mixing = false }
     }
 
-    /** Every tick: fire floors burn, the lightning run shocks, echoes replay; floors and frozen enemies are drawn. */
+    /** Every tick: the lightning run shocks, echoes replay; burning and frozen enemies are drawn. */
     private fun mageTick(enemies: QuestEncounterCombat): Boolean {
         val epoch = actionEpoch
-        val floors = mageField.floorList
-        if (tickNumber % 20 == 0L) for (f in floors.filter { it.element == MageElement.FIRE }) for (t in enemies.combatTargets()) {
-            if (t.position.distance(f.centre) > f.radius + .3) continue
-            mageField.ignite(t.id, tickNumber)
-            burns[DotKey(t.id)] = Burn(CoreCombatMath.outgoing(3.0 + abilityPower * .25, CoreDamageType.MAGICAL, setOf(CoreAttackTag.SKILL, CoreAttackTag.AREA), sheet.mods),
-                CoreDamageType.MAGICAL, sheet.mods, tickNumber + 20, 2)
-        }
         if (tickNumber % 5 == 0L) {
-            // Stand-in drawing until the floors get their art: a ring of flame or snow, frost on frozen enemies.
-            for (f in floors) for (k in 0 until 6) {
-                val a = (k + tickNumber / 5 % 6) * PI / 3
-                vfx.particles(if (f.element == MageElement.FIRE) Particle.FLAME else Particle.SNOWFLAKE,
-                    Pos(f.centre.x() + cos(a) * f.radius * .8, f.centre.y() + .15, f.centre.z() + sin(a) * f.radius * .8), 1)
-            }
+            // Stand-in drawing until the states get their art: small flames on head and shoulders, frost on the frozen.
+            for (id in mageField.burningIds(tickNumber)) enemies.positionOf(id)?.let { vfx.particles(Particle.FLAME, it.add(0.0, 1.6, 0.0), 2, Vec(.25, .2, .25), .01f) }
             for (id in mageField.frozenIds(tickNumber)) enemies.positionOf(id)?.let { vfx.particles(Particle.SNOWFLAKE, it.add(0.0, 1.0, 0.0), 3, Vec(.3, .6, .3), .01f) }
         }
         lightningRun?.let { run ->
