@@ -101,3 +101,9 @@ Mirrored return strokes use separate UV models, sharing the same textures.
 Native meshes also get seven progressive cuboid-removal stages.
 
 Do not restore that smooth import path for the current pixel-art direction.
+
+## Active: style-kit-v1.png
+
+エフェクトの作風の型 `scripts/fx_art.py` の見本。火炎弾（第21版）の絵一式を、元素ごとの6段の帯
+（fire / frost / lightning / wind / iron / sakura / shade）で色替えしたもの。新しい技の1版目はこの帯の
+差し替えから始める。決まりと使い方は [docs/development/fx-style-kit.md](../../docs/development/fx-style-kit.md)。
