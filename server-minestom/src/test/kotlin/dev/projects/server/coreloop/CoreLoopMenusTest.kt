@@ -316,7 +316,8 @@ class CoreLoopMenusTest {
             check("skills") { f.menus.skillBuild(f.player) }
             check("ultimates") { f.menus.skillBuild(f.player,4) }
             check("tree") { f.menus.talentTree(f.player) }
-            for(i in 0..17) check("tree node $i") { f.menus.talentTree(f.player,i) }
+            for(i in CorePassiveTree.nodes.indices) check("tree node $i") { f.menus.talentTree(f.player,i,0,0) }
+            for(x in 0..20 step 4) for(y in 0..16 step 2) check("tree window $x/$y") { f.menus.talentTree(f.player,-1,x,y) }
             for(slot in 0..4) for(i in 0 until if(slot==4)2 else 8)
                 check("candidate $slot/$i") { f.menus.skillBuild(f.player,slot,i,i/4) }
             check("weapon page 2") { f.menus.career(f.player);f.click(30);f.click(48) }
@@ -337,9 +338,12 @@ class CoreLoopMenusTest {
             assertEquals(CoreAction.SelectSkill(0,1),f.host.requests.single().action)
             f.host.requests.clear()
             f.menus.talentTree(f.player)
-            assertEquals(21,f.snapshot().treeEdges.size)
-            f.click(CoreClassTrees.slot(3));assertTrue(f.host.requests.isEmpty())
-            f.click(48);assertEquals(CoreAction.ToggleTalent(3),f.host.requests.single().action)
+            assertTrue(f.snapshot().treeEdges.isNotEmpty())
+            val start=CorePassiveTree.nodes[CorePassiveTree.start(f.host.current.journey.job)]
+            val next=CorePassiveTree.nodes[start.links.first { CorePassiveTree.nodes[it].ready }]
+            // The window opens centred on the class start: column 4, row 2.
+            f.click(18+4+(next.x-start.x)/2+(next.y-start.y)/2*9);assertTrue(f.host.requests.isEmpty())
+            f.click(50);assertEquals(CoreAction.TakePassive(next.id),f.host.requests.single().action)
         }
     }
     @Test fun `warrior loadout keys preview both sides of a swap and disable no-op assignments`() {

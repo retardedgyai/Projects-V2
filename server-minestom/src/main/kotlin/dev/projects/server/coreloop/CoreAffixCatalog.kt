@@ -227,6 +227,7 @@ object CoreAffixCatalog {
                 totals.merge(definition.stat, installed.stone.value, Double::plus)
             }
         }
+        CorePassiveTree.bonuses(account.journey.job, account.journey.build.passives).forEach { (stat, value) -> totals.merge(stat, value, Double::plus) }
         fun stat(type: CoreAffixStat, limit: Double) = (totals[type] ?: 0.0).coerceIn(0.0, limit)
         return CoreAffixStats(stat(CoreAffixStat.DAMAGE, 100.0), stat(CoreAffixStat.ATTACK_SPEED, 60.0),
             stat(CoreAffixStat.SKILL_DAMAGE, 100.0), stat(CoreAffixStat.MAX_MANA, 100.0),

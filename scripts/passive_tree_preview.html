@@ -1,0 +1,155 @@
+<title>パッシブツリー第1版</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&family=DotGothic16&display=swap">
+<style>
+/* 左に大きな木、右に選んだノードと割り振り。木は格子の上に置いた本番と同じ表。 */
+:root{
+  --bg:#f1efe9; --panel:#fffdf8; --fg:#25231f; --mute:#6e685f; --line:#cfc8ba; --grid:#e6e1d6;
+  --gold:#b07a12; --small:#8d877b; --notable:#5a6fa8; --key:#a8452f; --start:#2f6b4a;
+  --body:"Zen Kaku Gothic New",system-ui,sans-serif; --pix:"DotGothic16","Zen Kaku Gothic New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141518; --panel:#1e2024; --fg:#ece8df; --mute:#a39e94; --line:#3d3f45; --grid:#202226;
+  --gold:#e8b44c; --small:#86817a; --notable:#8ea3e0; --key:#e07a5f; --start:#7fcf9f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141518; --panel:#1e2024; --fg:#ece8df; --mute:#a39e94; --line:#3d3f45; --grid:#202226;
+  --gold:#e8b44c; --small:#86817a; --notable:#8ea3e0; --key:#e07a5f; --start:#7fcf9f; color-scheme:dark}
+html,body{background:var(--bg);color:var(--fg);font-family:var(--body)}
+.wrap{max-width:1200px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-family:var(--pix);font-weight:400;font-size:1.7rem;margin:0}
+.lead{color:var(--mute);margin:0;line-height:1.7}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+@media (max-width:820px){.main{grid-template-columns:minmax(0,1fr)}}
+.board{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:auto}
+svg{display:block;width:100%;min-width:640px;height:auto}
+.side{display:grid;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:grid;gap:8px}
+.card h2{font-size:1rem;margin:0}
+.k{font-family:var(--pix);font-size:.78rem;color:var(--gold);letter-spacing:.06em}
+label{font-size:.9rem;display:grid;gap:4px}
+select,input[type=range]{width:100%}
+.pts{font-family:var(--pix);font-size:1.4rem;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.82rem;color:var(--mute)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+button{font:inherit;padding:6px 10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:4px;cursor:pointer}
+button:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#info p{margin:0;font-size:.92rem;line-height:1.6}
+.sum{font-size:.85rem;margin:0;padding-left:1.1em;color:var(--fg)}
+.e{stroke:var(--line);stroke-width:.18}
+.e.on{stroke:var(--gold);stroke-width:.32}
+.n{cursor:pointer}
+.n circle,.n rect{stroke:var(--panel);stroke-width:.12}
+.lbl{font-size:.62px;fill:var(--mute);pointer-events:none;font-family:var(--body)}
+</style>
+<div class="wrap">
+  <header>
+    <div class="k">PROJECT S ／ 成長樹</div>
+    <h1>パッシブツリー第1版</h1>
+    <p class="lead">全職で一枚の木。職業を選んで、起点から光っているノードを押すと1点で取れます（Lv が1上がるごとに1点）。取ったノードをもう一度押すと戻せます。</p>
+  </header>
+  <div class="main">
+    <div class="board"><svg id="tree" role="img" aria-label="パッシブツリーの全体図"></svg></div>
+    <div class="side">
+      <div class="card">
+        <label for="job">職業<select id="job"></select></label>
+        <label for="lv">レベル <span id="lvv"></span><input id="lv" type="range" min="1" max="40" value="40"></label>
+        <div><span class="k">残りポイント</span><div class="pts" id="pts"></div></div>
+        <button id="reset" type="button">全部戻す</button>
+        <p class="lead" id="cost" style="font-size:.82rem"></p>
+      </div>
+      <div class="card" id="info"><span class="k">ノード</span><h2 id="iname">ノードを押すか、上に乗せてください</h2><p id="itext"></p></div>
+      <div class="card"><span class="k">合計</span><ul class="sum" id="sum"></ul></div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--start)"></i>起点</span>
+        <span><i class="dot" style="background:var(--small)"></i>小</span>
+        <span><i class="dot" style="background:var(--notable)"></i>主要</span>
+        <span><i class="dot" style="background:var(--key)"></i>キーストーン</span>
+        <span><i class="dot" style="background:var(--gold)"></i>取得済み</span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const D = /*DATA*/null;
+const NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById("tree");
+svg.setAttribute("viewBox", `-1 -1 ${D.w + 1} ${D.h + 1}`);
+const adj = new Map(D.nodes.map(n => [n.id, []]));
+D.edges.forEach(([a, b]) => { adj.get(a).push(b); adj.get(b).push(a); });
+const jobSel = document.getElementById("job"), lv = document.getElementById("lv");
+D.classes.forEach(([id, name]) => { const o = document.createElement("option"); o.value = id; o.textContent = name; jobSel.append(o); });
+let taken = new Set();
+const startOf = job => D.nodes.find(n => n.start === job).id;
+const budget = () => Number(lv.value) - 1;
+function connected(set, root) {
+  const seen = new Set([root]), todo = [root];
+  while (todo.length) for (const m of adj.get(todo.pop())) if (set.has(m) && !seen.has(m)) { seen.add(m); todo.push(m); }
+  return seen;
+}
+function canTake(id) {
+  const n = D.nodes[id];
+  if (taken.has(id) || n.kind === "START" || n.kind === "KEYSTONE") return false;
+  if (taken.size >= budget()) return false;
+  const root = startOf(jobSel.value);
+  return adj.get(id).some(m => m === root || taken.has(m));
+}
+function toggle(id) {
+  if (taken.has(id)) {
+    const rest = new Set(taken); rest.delete(id);
+    const keep = connected(new Set([...rest, startOf(jobSel.value)]), startOf(jobSel.value));
+    taken = new Set([...rest].filter(x => keep.has(x)));
+  } else if (canTake(id)) taken.add(id);
+  draw();
+}
+const color = n => n.kind === "START" ? "var(--start)" : n.kind === "KEYSTONE" ? "var(--key)" : n.kind === "NOTABLE" ? "var(--notable)" : "var(--small)";
+function show(n) {
+  document.getElementById("iname").textContent = n.name;
+  document.getElementById("itext").textContent = n.text + (taken.has(n.id) ? "（取得済み）" : canTake(n.id) ? "（取れる）" : "");
+}
+function draw() {
+  svg.replaceChildren();
+  const root = startOf(jobSel.value), on = new Set([...taken, root]);
+  for (let x = 0; x < D.w; x++) for (let y = 0; y < D.h; y++) {
+    const c = document.createElementNS(NS, "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", .05); c.setAttribute("fill", "var(--grid)"); svg.append(c);
+  }
+  D.edges.forEach(([a, b]) => {
+    const l = document.createElementNS(NS, "line"), A = D.nodes[a], B = D.nodes[b];
+    l.setAttribute("x1", A.x); l.setAttribute("y1", A.y); l.setAttribute("x2", B.x); l.setAttribute("y2", B.y);
+    l.setAttribute("class", "e" + (on.has(a) && on.has(b) ? " on" : "")); svg.append(l);
+  });
+  D.nodes.forEach(n => {
+    const g = document.createElementNS(NS, "g"); g.setAttribute("class", "n"); g.setAttribute("tabindex", "0");
+    const r = n.kind === "SMALL" ? .32 : n.kind === "NOTABLE" ? .5 : .62;
+    const shape = document.createElementNS(NS, n.kind === "KEYSTONE" ? "rect" : "circle");
+    if (n.kind === "KEYSTONE") { shape.setAttribute("x", n.x - r); shape.setAttribute("y", n.y - r); shape.setAttribute("width", 2 * r); shape.setAttribute("height", 2 * r); shape.setAttribute("transform", `rotate(45 ${n.x} ${n.y})`); }
+    else { shape.setAttribute("cx", n.x); shape.setAttribute("cy", n.y); shape.setAttribute("r", r); }
+    const lit = taken.has(n.id) || n.id === root;
+    shape.setAttribute("fill", lit ? "var(--gold)" : color(n));
+    shape.setAttribute("opacity", lit || canTake(n.id) || n.kind !== "SMALL" ? 1 : .55);
+    if (canTake(n.id)) { shape.setAttribute("stroke", "var(--gold)"); shape.setAttribute("stroke-width", ".14"); }
+    g.append(shape);
+    if (n.kind !== "SMALL") {
+      const t = document.createElementNS(NS, "text"); t.setAttribute("x", n.x); t.setAttribute("y", n.y + r + .7);
+      t.setAttribute("text-anchor", "middle"); t.setAttribute("class", "lbl"); t.textContent = n.name; g.append(t);
+    }
+    g.addEventListener("mouseenter", () => show(n));
+    g.addEventListener("click", () => { toggle(n.id); show(n); });
+    g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(n.id); show(n); } });
+    svg.append(g);
+  });
+  document.getElementById("lvv").textContent = `Lv${lv.value}`;
+  document.getElementById("pts").textContent = `${budget() - taken.size} / ${budget()}`;
+  document.getElementById("cost").textContent = `全部戻す代金の目安：銀貨 ${taken.size * resetPrice(Number(lv.value))} 枚（1点ごとに ${resetPrice(Number(lv.value))} 枚）`;
+  const total = {};
+  taken.forEach(id => D.nodes[id].text.split(" / ").forEach(s => { const m = s.match(/^(.*)\+(\d+)%$/); if (m) total[m[1]] = (total[m[1]] || 0) + Number(m[2]); }));
+  const ul = document.getElementById("sum"); ul.replaceChildren();
+  Object.entries(total).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => { const li = document.createElement("li"); li.textContent = `${k} +${v}%`; ul.append(li); });
+  if (!ul.children.length) { const li = document.createElement("li"); li.textContent = "まだ何も取っていません"; ul.append(li); }
+}
+function resetPrice(level) { return 10 * level; }
+jobSel.addEventListener("change", () => { taken.clear(); draw(); });
+lv.addEventListener("input", () => { while (taken.size > budget()) { taken = new Set(); } draw(); });
+document.getElementById("reset").addEventListener("click", () => { taken.clear(); draw(); });
+draw();
+</script>

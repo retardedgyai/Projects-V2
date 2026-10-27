@@ -174,9 +174,11 @@ class CoreClassBuildTest {
         val path=dir.resolve("$id.account");Files.writeString(path,old)
         val service=CoreAccountService(CoreAccountRepository(dir));val loaded=assertIs<CoreAccountLoadResult.Ready>(service.open(id))
         assertEquals(old,Files.readString(path))
-        val result=service.transact(id,CoreOperation(UUID.randomUUID(),0,CoreAction.ToggleTalent(0)))
+        val first=CorePassiveTree.nodes[CorePassiveTree.start(CoreClass.WARRIOR)].links.first { CorePassiveTree.nodes[it].ready }
+        val result=service.transact(id,CoreOperation(UUID.randomUUID(),0,CoreAction.TakePassive(first)))
         assertEquals(CoreTransactionStatus.COMMITTED,result.status,result.message)
-        assertEquals(1,result.account!!.journey.build.nodes);assertEquals(4,result.account.journey.build.first)
+        assertEquals(0,result.account!!.journey.build.nodes);assertEquals(setOf(first),result.account.journey.build.passives)
+        assertEquals(4,result.account.journey.build.first)
         assertEquals(54321,result.account.silver)
         assertEquals(old,Files.readString(dir.resolve("$id.account.v9.bak")))
     }

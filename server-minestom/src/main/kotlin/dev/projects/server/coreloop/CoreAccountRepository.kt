@@ -247,6 +247,7 @@ class CoreAccountRepository(
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t9\t") -> 9
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t10\t") -> 10
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t11\t") -> 11
+            bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t12\t") -> 12
             else -> return
         }
         val backup = directory.resolve("$playerId.account.v$version.bak")
@@ -271,7 +272,7 @@ class CoreAccountRepository(
 internal object CoreAccountCodec {
     fun encode(account: CoreAccount): String {
         val body = buildString {
-            append("PROJECTS_CORE_LOOP\t12\t${account.playerId}\t${account.revision}\n")
+            append("PROJECTS_CORE_LOOP\t13\t${account.playerId}\t${account.revision}\n")
             append("gear\t${account.weaponTier}\t${account.armorTier}\t${account.unlockedMapTier}\n")
             append("crafting\t${account.weaponRarity}\t${account.armorRarity}\t${account.craftingSeed}\n")
             append("enhancement\t${account.weaponEnhancement.level}\t${account.weaponEnhancement.failures}\t${account.armorEnhancement.level}\t${account.armorEnhancement.failures}\t${account.smithingXp}\n")
@@ -293,6 +294,10 @@ internal object CoreAccountCodec {
             account.journey.build.let { append("class-build\t${it.first}\t${it.second}\t${it.third}\t${it.fourth}\t${it.ultimate}\t${it.nodes}\n") }
             account.journey.savedBuilds.entries.sortedBy { it.key.ordinal }.forEach { (job, b) ->
                 append("class-loadout\t$job\t${b.first}\t${b.second}\t${b.third}\t${b.fourth}\t${b.ultimate}\t${b.nodes}\n")
+            }
+            append("passive\t${account.journey.job}\t${account.journey.build.passives.sorted().joinToString(",")}\n")
+            account.journey.savedBuilds.entries.sortedBy { it.key.ordinal }.forEach { (job, b) ->
+                if (b.passives.isNotEmpty()) append("passive\t$job\t${b.passives.sorted().joinToString(",")}\n")
             }
             (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity + account.armorParts.values.map { it.identity }).forEach { append("gear-base\t${it.id}\t${it.base}\t${it.itemLevel}\n") }
             (account.maps + listOfNotNull(account.activeRun?.map)).forEach { append("map-level\t${it.id}\t${it.level}\n") }
@@ -323,7 +328,7 @@ internal object CoreAccountCodec {
         require(text.substring(checksumAt) == "checksum\t${digest(body)}\n") { "保存データの検証に失敗しました" }
         val rows = body.trimEnd('\n').split('\n').map { it.split('\t') }
         val header = rows.first()
-        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in (1..12).map(Int::toString)) { "未対応の保存形式です" }
+        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in (1..13).map(Int::toString)) { "未対応の保存形式です" }
         val version = header[1].toInt()
         require(UUID.fromString(header[2]) == playerId) { "保存データのプレイヤーが一致しません" }
         val gear = rows.getOrNull(1) ?: error("装備データがありません")
@@ -355,11 +360,15 @@ internal object CoreAccountCodec {
         val legacyTreeMasks = mutableListOf<Int>()
         fun readTreeMask(value: String): Int {
             val mask=value.toInt()
-            if(version!=9)return mask
-            legacyTreeMasks += mask
-            return CoreClassTrees.refundLegacyMask(mask)
+            if(version==9) {
+                legacyTreeMasks += mask
+                return CoreClassTrees.refundLegacyMask(mask)
+            }
+            // v13 replaced the per-class trees with the shared passive tree; their points are refunded.
+            return if(version<13) 0 else mask
         }
         val savedBuilds = mutableMapOf<CoreClass, CoreClassBuild>()
+        val passives = mutableMapOf<CoreClass, Set<Int>>()
         // The retired Starweaver class loads as Mage; its own loadout cannot carry over.
         var retiredStarweaver = false
         val bases = linkedMapOf<UUID, Pair<CoreWeaponBase, Int>>()
@@ -376,6 +385,8 @@ internal object CoreAccountCodec {
                     savedBuilds[job] = build
                 }
             }
+            "passive" -> { require(version >= 13 && row.size == 3); val job = CoreClass.valueOf(row[1])
+                require(passives.put(job, row[2].split(',').filter { it.isNotEmpty() }.map(String::toInt).toSet()) == null) }
             "journey" -> { require(version >= 8 && row.size == 6 && journey == null); retiredStarweaver = row[1] == RETIRED_STARWEAVER
                 journey = CoreJourney(if (retiredStarweaver) CoreClass.MAGE else CoreClass.valueOf(row[1]), row[2].toBooleanStrict(), row[3].toLong(), row[4].toInt(), row[5].toBooleanStrict()) }
             "gear-base" -> { require(version >= 8 && row.size == 4); require(bases.put(UUID.fromString(row[1]), CoreWeaponBase.valueOf(row[2]) to row[3].toInt()) == null) }
@@ -480,8 +491,11 @@ internal object CoreAccountCodec {
             require(build.points <= CoreClassTrees.budget(existingJourney)) { "技能ポイントが不正です" }
             require(existingJourney.job !in savedBuilds) { "現在の職業の構成が重複しています" }
             // 2026-10 class rework: retired skill indices are replaced on load (same columns, so no new version).
-            journey = existingJourney.copy(build = CoreSkillCatalog.migrate(existingJourney.job, build),
-                savedBuilds = savedBuilds.mapValues { (job, saved) -> CoreSkillCatalog.migrate(job, saved) })
+            if (version >= 13) require(existingJourney.job in passives) { "パッシブの保存項目がありません" }
+            require(passives.keys.all { it == existingJourney.job || it in savedBuilds }) { "パッシブの職業が構成と一致しません" }
+            fun withPassives(job: CoreClass, b: CoreClassBuild) = b.copy(passives = passives[job].orEmpty())
+            journey = existingJourney.copy(build = withPassives(existingJourney.job, CoreSkillCatalog.migrate(existingJourney.job, build)),
+                savedBuilds = savedBuilds.mapValues { (job, saved) -> withPassives(job, CoreSkillCatalog.migrate(job, saved)) })
         }
         if (version >= 8) {
             require(journey != null && bases.keys == qualities.keys)

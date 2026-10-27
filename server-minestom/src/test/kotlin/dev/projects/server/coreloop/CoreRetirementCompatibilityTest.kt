@@ -78,7 +78,9 @@ class CoreRetirementCompatibilityTest {
     }
 
     private fun savedVersion(account: CoreAccount, version: Int, extraRows: List<String>, transform: (String) -> String = { it }): String {
-        var body = if (version == 11) CoreAccountCodec.encode(account).substringBefore("checksum\t") else armorV10Body(account) + "\n"
+        var body = if (version == 11) CoreAccountCodec.encode(account).substringBefore("checksum\t").lineSequence()
+            .filterNot { it.startsWith("passive\t") }.joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t13\t", "PROJECTS_CORE_LOOP\t11\t")
+            else armorV10Body(account) + "\n"
         if (version == 7) body = body.lineSequence().filterNot {
             it.substringBefore('\t') in setOf("journey", "gear-base", "map-level", "class-build", "class-loadout")
         }.joinToString("\n").replaceFirst("\t10\t", "\t7\t")

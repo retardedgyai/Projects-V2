@@ -401,40 +401,70 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         }
     }
 
-    fun talentTree(player: Player, selectedNode: Int = 0) {
+    /**
+     * The shared passive tree through a 9x5 window. The tree is laid out on a grid with even x and odd y,
+     * so each node gets its own slot at (x / 2, y / 2) and every edge runs along a slot direction.
+     */
+    fun talentTree(player: Player, selectedNode: Int = -1, originX: Int? = null, originY: Int? = null) {
         val a = game.account(player) ?: return
-        val build = a.journey.build
-        val nodes = CoreClassTrees.nodes(a.journey.job)
-        val budget = CoreClassTrees.budget(a.journey)
-        val selected=selectedNode.coerceIn(nodes.indices)
-        val node=nodes[selected]
-        val change=runCatching { build.toggle(selected,budget) }
-        val permitted=a.activeRun==null && change.isSuccess
-        val reason=if(a.activeRun!=null) "港で変更できます" else change.exceptionOrNull()?.message ?: if(build.has(selected)) "切れた先も返還" else "1ポイントで習得"
-        view(player, "${a.journey.job.displayName} / スキルツリー", { talentTree(player,selected) }) { v ->
-            v.canvas.left("残り ${budget-build.points} ポイント", lines("Lv4ごとに増える", "最大12ポイント", "", "上の起点から進む", "分岐を選んで育てる", "最終パッシブは一つ", "", "金の線：習得済み", "灰の線：未習得", "右下で習得を確定"))
-            v.canvas.right(node.name, paragraph(node.description) + lines("", if(build.has(selected)) "習得済み" else "未習得") + paragraph(reason))
-            val root = CoreSkillTooltip.item(CoreSkillCatalog.skills(a.journey.job)[8],game.combatSheet(player)?:CoreCombatSheet.from(a),a.journey,v.packed)
-            tile(v,4,1,"",root,Tone.SELECTED,icon=true)
-            for(i in nodes.indices) {
-                val parents=CoreClassTrees.parents(i)
-                if(parents.isEmpty()) v.canvas.treeEdge(4,CoreClassTrees.slot(i),build.has(i))
-                else parents.forEach { parent -> v.canvas.treeEdge(CoreClassTrees.slot(parent),CoreClassTrees.slot(i),build.has(parent)&&build.has(i)) }
+        val job = a.journey.job
+        val taken = a.journey.build.passives
+        val budget = CorePassiveTree.budget(a.journey)
+        val start = CorePassiveTree.start(job)
+        val selected = selectedNode.takeIf { it in CorePassiveTree.nodes.indices } ?: start
+        val node = CorePassiveTree.nodes[selected]
+        val columns = CorePassiveTree.width / 2 + 1
+        val rows = CorePassiveTree.height / 2 + 1
+        val home = CorePassiveTree.nodes[start]
+        val ox = (originX ?: (home.x / 2 - 4)).coerceIn(0, columns - 9)
+        val oy = (originY ?: (home.y / 2 - 2)).coerceIn(0, rows - 5)
+        fun slot(n: CorePassiveNode) = (n.x / 2 - ox).takeIf { it in 0..8 }?.let { c -> (n.y / 2 - oy).takeIf { it in 0..4 }?.let { r -> r * 9 + c } }
+        val lit = taken + start
+        val owned = selected in taken
+        val price = CorePassiveTree.refundPrice(a.journey)
+        val refundCount = if (owned) taken.size - CorePassiveTree.refund(job, taken, selected).size else 0
+        val canTake = CorePassiveTree.canTake(job, taken, selected, budget)
+        val reason = when {
+            a.activeRun != null -> "港で変更できます"
+            node.kind == CorePassiveKind.START -> "${job.displayName}はここから伸ばします"
+            !node.ready -> "中身はまだ準備中です"
+            owned -> "戻す：銀貨${price * refundCount}枚" + if (refundCount > 1) "（先の${refundCount - 1}つも戻る）" else ""
+            canTake -> "1ポイントで取れます"
+            taken.size >= budget -> "ポイントが足りません"
+            else -> "取得済みのノードとつながっていません"
+        }
+        view(player, "${job.displayName} / パッシブツリー", { talentTree(player, selected, ox, oy) }) { v ->
+            v.canvas.left("残り ${budget - taken.size} ポイント", lines("Lvが1上がるごとに1点", "全職で一枚の木", "${job.displayName}の起点から伸ばす", "", "金：取得済み", "戻すには銀貨が要る", "1点ごとに銀貨${price}枚"))
+            v.canvas.right(node.name, paragraph(node.description) + lines("", if (owned) "取得済み" else if (node.kind == CorePassiveKind.START) "起点" else "未取得") + paragraph(reason))
+            CorePassiveTree.nodes.forEach { n ->
+                val from = slot(n) ?: return@forEach
+                n.links.filter { it > n.id }.forEach { other -> slot(CorePassiveTree.nodes[other])?.let { to -> v.canvas.treeEdge(from, to, n.id in lit && other in lit) } }
             }
-            nodes.forEachIndexed { i, node ->
-                val learned=build.has(i)
-                val available=runCatching { build.toggle(i,budget) }.isSuccess
-                val art=CoreSkillCatalog.skills(a.journey.job)[when(i) { 2,5,8 -> 8+i/3%2;9,10,14 -> CoreClassTrees.signature(a.journey.job);11,13 -> 0;12 -> 3;15 -> CoreClassTrees.support(a.journey.job);16,17 -> 9;else -> i.coerceAtMost(7) }].icon
-                var item=CoreLoopItems.icon(if(learned)Material.ENCHANTED_BOOK else Material.BOOK,node.name,node.description,
-                    if(learned) "習得済み" else if(available) "習得可能 / 1ポイント" else "前提未達・ポイント不足・最終パッシブの排他", "クリック：詳細を確認")
-                if(v.packed)item=item.withItemModel("projects:core_ui/$art")
-                tile(v,CoreClassTrees.slot(i),1,"",item,if(i==selected)Tone.SELECTED else if(learned)Tone.PRIMARY else Tone.NEUTRAL,icon=true) { talentTree(player,i) }
+            CorePassiveTree.nodes.forEach { n ->
+                val at = slot(n) ?: return@forEach
+                val learned = n.id in lit
+                val material = when (n.kind) {
+                    CorePassiveKind.START -> Material.NETHER_STAR
+                    CorePassiveKind.KEYSTONE -> Material.ECHO_SHARD
+                    CorePassiveKind.NOTABLE -> if (learned) Material.ENCHANTED_BOOK else Material.BOOK
+                    CorePassiveKind.SMALL -> if (learned) Material.GOLD_NUGGET else if (CorePassiveTree.canTake(job, taken, n.id, budget)) Material.GLOWSTONE_DUST else Material.GUNPOWDER
+                }
+                val item = CoreLoopItems.icon(material, n.name, n.description, if (learned) "取得済み" else "クリック：詳細を確認")
+                tile(v, at, 1, "", item, if (n.id == selected) Tone.SELECTED else if (learned) Tone.PRIMARY else Tone.NEUTRAL, icon = true) { talentTree(player, n.id, ox, oy) }
             }
-            back(v, player) { career(player) }
-            tile(v,48,3,if(build.has(selected)) "返還する" else "習得する",tone=if(permitted)Tone.PRIMARY else Tone.DISABLED) {
-                mutate(v,player,CoreAction.ToggleTalent(selected),a.revision) { talentTree(player,selected) }
+            back(v, player, compact = true) { career(player) }
+            tile(v, 46, 1, "左", tone = if (ox > 0) Tone.NEUTRAL else Tone.DISABLED) { talentTree(player, selected, ox - 4, oy) }
+            tile(v, 47, 1, "上", tone = if (oy > 0) Tone.NEUTRAL else Tone.DISABLED) { talentTree(player, selected, ox, oy - 2) }
+            tile(v, 48, 1, "下", tone = if (oy < rows - 5) Tone.NEUTRAL else Tone.DISABLED) { talentTree(player, selected, ox, oy + 2) }
+            tile(v, 49, 1, "右", tone = if (ox < columns - 9) Tone.NEUTRAL else Tone.DISABLED) { talentTree(player, selected, ox + 4, oy) }
+            val permitted = a.activeRun == null && (canTake || (owned && a.silver >= price * refundCount))
+            tile(v, 50, 2, if (owned) "戻す" else "取る", tone = if (permitted) Tone.PRIMARY else Tone.DISABLED) {
+                mutate(v, player, if (owned) CoreAction.RefundPassive(selected) else CoreAction.TakePassive(selected), a.revision) { talentTree(player, selected, ox, oy) }
             }
-            tile(v,51,3,"技能編成") { skillBuild(player) }
+            val resetAllowed = a.activeRun == null && taken.isNotEmpty() && a.silver >= price * taken.size
+            tile(v, 52, 2, "全戻し", tone = if (resetAllowed) Tone.DANGER else Tone.DISABLED) {
+                mutate(v, player, CoreAction.ResetPassives, a.revision) { talentTree(player, selected, ox, oy) }
+            }
         }
     }
 

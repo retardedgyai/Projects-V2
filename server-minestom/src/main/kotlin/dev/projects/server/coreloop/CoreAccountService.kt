@@ -101,13 +101,22 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             require(CoreSkillCatalog.selectable(account.journey.job, action.slot, action.choice)) { "この技は選べません" }
             account.copy(journey = account.journey.copy(build = account.journey.build.equip(action.slot, action.choice))) to "スキル構成を保存しました"
         }
-        is CoreAction.ToggleTalent -> {
+        is CoreAction.TakePassive -> {
             requireHub(account)
-            account.copy(journey = account.journey.copy(build = account.journey.build.toggle(action.index, CoreClassTrees.budget(account.journey)))) to "技能ツリーを保存しました"
+            val journey = account.journey
+            val taken = CorePassiveTree.take(journey.job, journey.build.passives, action.node, CorePassiveTree.budget(journey))
+            account.copy(journey = journey.copy(build = journey.build.copy(passives = taken))) to "${CorePassiveTree.nodes[action.node].name}を取得しました"
         }
-        CoreAction.ResetTalents -> {
+        is CoreAction.RefundPassive -> {
             requireHub(account)
-            account.copy(journey = account.journey.copy(build = account.journey.build.copy(nodes = 0))) to "技能ポイントをすべて返還しました"
+            val journey = account.journey
+            val kept = CorePassiveTree.refund(journey.job, journey.build.passives, action.node)
+            refundPassives(account, kept, "${CorePassiveTree.nodes[action.node].name}を戻しました")
+        }
+        CoreAction.ResetPassives -> {
+            requireHub(account)
+            require(account.journey.build.passives.isNotEmpty()) { "戻すノードがありません" }
+            refundPassives(account, emptySet(), "パッシブをすべて戻しました")
         }
         is CoreAction.ChooseClass -> {
             requireHub(account)
@@ -610,6 +619,12 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         val run = account.activeRun ?: error("進行中の遠征がありません")
         require(run.id == runId) { "遠征が切り替わっています" }
         return run
+    }
+    private fun refundPassives(account: CoreAccount, kept: Set<Int>, message: String): Pair<CoreAccount, String> {
+        val journey = account.journey
+        val price = CorePassiveTree.refundPrice(journey) * (journey.build.passives.size - kept.size)
+        require(account.silver >= price) { "銀貨が足りません（${price}枚必要）" }
+        return account.copy(silver = account.silver - price, journey = journey.copy(build = journey.build.copy(passives = kept))) to "$message（銀貨${price}枚）"
     }
     private fun requireHub(account: CoreAccount) { require(account.activeRun == null) { "拠点で操作してください" } }
     /** Run ids are random per departure; a bounded recent window still rejects replayed or reused ids. */

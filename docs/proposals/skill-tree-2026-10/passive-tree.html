@@ -1,0 +1,155 @@
+<title>パッシブツリー第1版</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&family=DotGothic16&display=swap">
+<style>
+/* 左に大きな木、右に選んだノードと割り振り。木は格子の上に置いた本番と同じ表。 */
+:root{
+  --bg:#f1efe9; --panel:#fffdf8; --fg:#25231f; --mute:#6e685f; --line:#cfc8ba; --grid:#e6e1d6;
+  --gold:#b07a12; --small:#8d877b; --notable:#5a6fa8; --key:#a8452f; --start:#2f6b4a;
+  --body:"Zen Kaku Gothic New",system-ui,sans-serif; --pix:"DotGothic16","Zen Kaku Gothic New",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141518; --panel:#1e2024; --fg:#ece8df; --mute:#a39e94; --line:#3d3f45; --grid:#202226;
+  --gold:#e8b44c; --small:#86817a; --notable:#8ea3e0; --key:#e07a5f; --start:#7fcf9f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141518; --panel:#1e2024; --fg:#ece8df; --mute:#a39e94; --line:#3d3f45; --grid:#202226;
+  --gold:#e8b44c; --small:#86817a; --notable:#8ea3e0; --key:#e07a5f; --start:#7fcf9f; color-scheme:dark}
+html,body{background:var(--bg);color:var(--fg);font-family:var(--body)}
+.wrap{max-width:1200px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-family:var(--pix);font-weight:400;font-size:1.7rem;margin:0}
+.lead{color:var(--mute);margin:0;line-height:1.7}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+@media (max-width:820px){.main{grid-template-columns:minmax(0,1fr)}}
+.board{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:auto}
+svg{display:block;width:100%;min-width:640px;height:auto}
+.side{display:grid;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:grid;gap:8px}
+.card h2{font-size:1rem;margin:0}
+.k{font-family:var(--pix);font-size:.78rem;color:var(--gold);letter-spacing:.06em}
+label{font-size:.9rem;display:grid;gap:4px}
+select,input[type=range]{width:100%}
+.pts{font-family:var(--pix);font-size:1.4rem;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.82rem;color:var(--mute)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+button{font:inherit;padding:6px 10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:4px;cursor:pointer}
+button:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+#info p{margin:0;font-size:.92rem;line-height:1.6}
+.sum{font-size:.85rem;margin:0;padding-left:1.1em;color:var(--fg)}
+.e{stroke:var(--line);stroke-width:.18}
+.e.on{stroke:var(--gold);stroke-width:.32}
+.n{cursor:pointer}
+.n circle,.n rect{stroke:var(--panel);stroke-width:.12}
+.lbl{font-size:.62px;fill:var(--mute);pointer-events:none;font-family:var(--body)}
+</style>
+<div class="wrap">
+  <header>
+    <div class="k">PROJECT S ／ 成長樹</div>
+    <h1>パッシブツリー第1版</h1>
+    <p class="lead">全職で一枚の木。職業を選んで、起点から光っているノードを押すと1点で取れます（Lv が1上がるごとに1点）。取ったノードをもう一度押すと戻せます。</p>
+  </header>
+  <div class="main">
+    <div class="board"><svg id="tree" role="img" aria-label="パッシブツリーの全体図"></svg></div>
+    <div class="side">
+      <div class="card">
+        <label for="job">職業<select id="job"></select></label>
+        <label for="lv">レベル <span id="lvv"></span><input id="lv" type="range" min="1" max="40" value="40"></label>
+        <div><span class="k">残りポイント</span><div class="pts" id="pts"></div></div>
+        <button id="reset" type="button">全部戻す</button>
+        <p class="lead" id="cost" style="font-size:.82rem"></p>
+      </div>
+      <div class="card" id="info"><span class="k">ノード</span><h2 id="iname">ノードを押すか、上に乗せてください</h2><p id="itext"></p></div>
+      <div class="card"><span class="k">合計</span><ul class="sum" id="sum"></ul></div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--start)"></i>起点</span>
+        <span><i class="dot" style="background:var(--small)"></i>小</span>
+        <span><i class="dot" style="background:var(--notable)"></i>主要</span>
+        <span><i class="dot" style="background:var(--key)"></i>キーストーン</span>
+        <span><i class="dot" style="background:var(--gold)"></i>取得済み</span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const D = {"w": 45, "h": 39, "nodes": [{"id": 0, "x": 22, "y": 19, "kind": "NOTABLE", "name": "原点", "stats": {"DAMAGE": 6, "HEALTH_PERCENT": 6}, "start": null, "group": null, "text": "与ダメージ+6% / 最大HP+6%"}, {"id": 1, "x": 22, "y": 5, "kind": "START", "name": "戦士の起点", "stats": {}, "start": "WARRIOR", "group": "WARRIOR", "text": "ここから伸ばす"}, {"id": 2, "x": 38, "y": 11, "kind": "START", "name": "テンプラーの起点", "stats": {}, "start": "TEMPLAR", "group": "TEMPLAR", "text": "ここから伸ばす"}, {"id": 3, "x": 38, "y": 27, "kind": "START", "name": "ヒーラーの起点", "stats": {}, "start": "HEALER", "group": "HEALER", "text": "ここから伸ばす"}, {"id": 4, "x": 22, "y": 33, "kind": "START", "name": "メイジの起点", "stats": {}, "start": "MAGE", "group": "MAGE", "text": "ここから伸ばす"}, {"id": 5, "x": 6, "y": 27, "kind": "START", "name": "レンジャーの起点", "stats": {}, "start": "RANGER", "group": "RANGER", "text": "ここから伸ばす"}, {"id": 6, "x": 6, "y": 11, "kind": "START", "name": "アサシンの起点", "stats": {}, "start": "ASSASSIN", "group": "ASSASSIN", "text": "ここから伸ばす"}, {"id": 7, "x": 24, "y": 5, "kind": "SMALL", "name": "近接ダメージ", "stats": {"MELEE_DAMAGE": 5}, "start": null, "group": "ring0", "text": "近接ダメージ+5%"}, {"id": 8, "x": 26, "y": 5, "kind": "SMALL", "name": "物理防御 AR", "stats": {"AR_PERCENT": 6}, "start": null, "group": "ring0", "text": "物理防御 AR+6%"}, {"id": 9, "x": 28, "y": 5, "kind": "SMALL", "name": "物理攻撃力 AD", "stats": {"AD_PERCENT": 5}, "start": null, "group": "ring0", "text": "物理攻撃力 AD+5%"}, {"id": 10, "x": 30, "y": 7, "kind": "NOTABLE", "name": "武人の心得", "stats": {"MELEE_DAMAGE": 12, "AR_PERCENT": 15}, "start": null, "group": "ring0", "text": "近接ダメージ+12% / 物理防御 AR+15%"}, {"id": 11, "x": 32, "y": 9, "kind": "SMALL", "name": "近接ダメージ", "stats": {"MELEE_DAMAGE": 5}, "start": null, "group": "ring0", "text": "近接ダメージ+5%"}, {"id": 12, "x": 34, "y": 11, "kind": "SMALL", "name": "物理防御 AR", "stats": {"AR_PERCENT": 6}, "start": null, "group": "ring0", "text": "物理防御 AR+6%"}, {"id": 13, "x": 36, "y": 11, "kind": "SMALL", "name": "物理攻撃力 AD", "stats": {"AD_PERCENT": 5}, "start": null, "group": "ring0", "text": "物理攻撃力 AD+5%"}, {"id": 14, "x": 40, "y": 13, "kind": "SMALL", "name": "物理防御 AR", "stats": {"AR_PERCENT": 6}, "start": null, "group": "ring1", "text": "物理防御 AR+6%"}, {"id": 15, "x": 40, "y": 15, "kind": "SMALL", "name": "回復力", "stats": {"HEALING_PERCENT": 5}, "start": null, "group": "ring1", "text": "回復力+5%"}, {"id": 16, "x": 40, "y": 17, "kind": "SMALL", "name": "シールド量", "stats": {"SHIELD_POWER": 6}, "start": null, "group": "ring1", "text": "シールド量+6%"}, {"id": 17, "x": 40, "y": 19, "kind": "NOTABLE", "name": "鉄壁の祈り", "stats": {"AR_PERCENT": 15, "HEALING_PERCENT": 12}, "start": null, "group": "ring1", "text": "物理防御 AR+15% / 回復力+12%"}, {"id": 18, "x": 40, "y": 21, "kind": "SMALL", "name": "物理防御 AR", "stats": {"AR_PERCENT": 6}, "start": null, "group": "ring1", "text": "物理防御 AR+6%"}, {"id": 19, "x": 40, "y": 23, "kind": "SMALL", "name": "回復力", "stats": {"HEALING_PERCENT": 5}, "start": null, "group": "ring1", "text": "回復力+5%"}, {"id": 20, "x": 40, "y": 25, "kind": "SMALL", "name": "シールド量", "stats": {"SHIELD_POWER": 6}, "start": null, "group": "ring1", "text": "シールド量+6%"}, {"id": 21, "x": 36, "y": 27, "kind": "SMALL", "name": "回復力", "stats": {"HEALING_PERCENT": 5}, "start": null, "group": "ring2", "text": "回復力+5%"}, {"id": 22, "x": 34, "y": 27, "kind": "SMALL", "name": "魔法攻撃力 AP", "stats": {"AP_PERCENT": 5}, "start": null, "group": "ring2", "text": "魔法攻撃力 AP+5%"}, {"id": 23, "x": 32, "y": 29, "kind": "SMALL", "name": "与回復量", "stats": {"OUTGOING_HEALING": 5}, "start": null, "group": "ring2", "text": "与回復量+5%"}, {"id": 24, "x": 30, "y": 31, "kind": "NOTABLE", "name": "癒しの術理", "stats": {"HEALING_PERCENT": 12, "AP_PERCENT": 12}, "start": null, "group": "ring2", "text": "回復力+12% / 魔法攻撃力 AP+12%"}, {"id": 25, "x": 28, "y": 33, "kind": "SMALL", "name": "回復力", "stats": {"HEALING_PERCENT": 5}, "start": null, "group": "ring2", "text": "回復力+5%"}, {"id": 26, "x": 26, "y": 33, "kind": "SMALL", "name": "魔法攻撃力 AP", "stats": {"AP_PERCENT": 5}, "start": null, "group": "ring2", "text": "魔法攻撃力 AP+5%"}, {"id": 27, "x": 24, "y": 33, "kind": "SMALL", "name": "与回復量", "stats": {"OUTGOING_HEALING": 5}, "start": null, "group": "ring2", "text": "与回復量+5%"}, {"id": 28, "x": 20, "y": 33, "kind": "SMALL", "name": "魔法攻撃力 AP", "stats": {"AP_PERCENT": 5}, "start": null, "group": "ring3", "text": "魔法攻撃力 AP+5%"}, {"id": 29, "x": 18, "y": 33, "kind": "SMALL", "name": "投射物ダメージ", "stats": {"PROJECTILE_DAMAGE": 5}, "start": null, "group": "ring3", "text": "投射物ダメージ+5%"}, {"id": 30, "x": 16, "y": 33, "kind": "SMALL", "name": "魔法ダメージ", "stats": {"MAGICAL_DAMAGE": 5}, "start": null, "group": "ring3", "text": "魔法ダメージ+5%"}, {"id": 31, "x": 14, "y": 31, "kind": "NOTABLE", "name": "魔弾の奥義", "stats": {"AP_PERCENT": 12, "PROJECTILE_DAMAGE": 12}, "start": null, "group": "ring3", "text": "魔法攻撃力 AP+12% / 投射物ダメージ+12%"}, {"id": 32, "x": 12, "y": 29, "kind": "SMALL", "name": "魔法攻撃力 AP", "stats": {"AP_PERCENT": 5}, "start": null, "group": "ring3", "text": "魔法攻撃力 AP+5%"}, {"id": 33, "x": 10, "y": 27, "kind": "SMALL", "name": "投射物ダメージ", "stats": {"PROJECTILE_DAMAGE": 5}, "start": null, "group": "ring3", "text": "投射物ダメージ+5%"}, {"id": 34, "x": 8, "y": 27, "kind": "SMALL", "name": "魔法ダメージ", "stats": {"MAGICAL_DAMAGE": 5}, "start": null, "group": "ring3", "text": "魔法ダメージ+5%"}, {"id": 35, "x": 4, "y": 25, "kind": "SMALL", "name": "投射物ダメージ", "stats": {"PROJECTILE_DAMAGE": 5}, "start": null, "group": "ring4", "text": "投射物ダメージ+5%"}, {"id": 36, "x": 4, "y": 23, "kind": "SMALL", "name": "クリティカル率増加", "stats": {"CRIT_CHANCE_INCREASED": 8}, "start": null, "group": "ring4", "text": "クリティカル率増加+8%"}, {"id": 37, "x": 4, "y": 21, "kind": "SMALL", "name": "攻撃速度", "stats": {"ATTACK_SPEED": 3}, "start": null, "group": "ring4", "text": "攻撃速度+3%"}, {"id": 38, "x": 4, "y": 19, "kind": "NOTABLE", "name": "狩人の構え", "stats": {"PROJECTILE_DAMAGE": 12, "CRIT_CHANCE_INCREASED": 20}, "start": null, "group": "ring4", "text": "投射物ダメージ+12% / クリティカル率増加+20%"}, {"id": 39, "x": 4, "y": 17, "kind": "SMALL", "name": "投射物ダメージ", "stats": {"PROJECTILE_DAMAGE": 5}, "start": null, "group": "ring4", "text": "投射物ダメージ+5%"}, {"id": 40, "x": 4, "y": 15, "kind": "SMALL", "name": "クリティカル率増加", "stats": {"CRIT_CHANCE_INCREASED": 8}, "start": null, "group": "ring4", "text": "クリティカル率増加+8%"}, {"id": 41, "x": 4, "y": 13, "kind": "SMALL", "name": "攻撃速度", "stats": {"ATTACK_SPEED": 3}, "start": null, "group": "ring4", "text": "攻撃速度+3%"}, {"id": 42, "x": 8, "y": 11, "kind": "SMALL", "name": "クリティカル率増加", "stats": {"CRIT_CHANCE_INCREASED": 8}, "start": null, "group": "ring5", "text": "クリティカル率増加+8%"}, {"id": 43, "x": 10, "y": 11, "kind": "SMALL", "name": "近接ダメージ", "stats": {"MELEE_DAMAGE": 5}, "start": null, "group": "ring5", "text": "近接ダメージ+5%"}, {"id": 44, "x": 12, "y": 9, "kind": "SMALL", "name": "移動速度", "stats": {"MOVE_SPEED": 2}, "start": null, "group": "ring5", "text": "移動速度+2%"}, {"id": 45, "x": 14, "y": 7, "kind": "NOTABLE", "name": "刃の嵐", "stats": {"CRIT_CHANCE_INCREASED": 20, "MELEE_DAMAGE": 12}, "start": null, "group": "ring5", "text": "クリティカル率増加+20% / 近接ダメージ+12%"}, {"id": 46, "x": 16, "y": 5, "kind": "SMALL", "name": "クリティカル率増加", "stats": {"CRIT_CHANCE_INCREASED": 8}, "start": null, "group": "ring5", "text": "クリティカル率増加+8%"}, {"id": 47, "x": 18, "y": 5, "kind": "SMALL", "name": "近接ダメージ", "stats": {"MELEE_DAMAGE": 5}, "start": null, "group": "ring5", "text": "近接ダメージ+5%"}, {"id": 48, "x": 20, "y": 5, "kind": "SMALL", "name": "移動速度", "stats": {"MOVE_SPEED": 2}, "start": null, "group": "ring5", "text": "移動速度+2%"}, {"id": 49, "x": 22, "y": 7, "kind": "SMALL", "name": "与ダメージ", "stats": {"DAMAGE": 4}, "start": null, "group": "spoke0", "text": "与ダメージ+4%"}, {"id": 50, "x": 22, "y": 9, "kind": "SMALL", "name": "最大HP", "stats": {"HEALTH_PERCENT": 4}, "start": null, "group": "spoke0", "text": "最大HP+4%"}, {"id": 51, "x": 22, "y": 11, "kind": "SMALL", "name": "最大HP", "stats": {"HEALTH_PERCENT": 4}, "start": null, "group": "spoke0", "text": "最大HP+4%"}, {"id": 52, "x": 22, "y": 13, "kind": "NOTABLE", "name": "鋭い一撃", "stats": {"DAMAGE": 10, "HEALTH_PERCENT": 10}, "start": null, "group": "spoke0", "text": "与ダメージ+10% / 最大HP+10%"}, {"id": 53, "x": 22, "y": 15, "kind": "SMALL", "name": "最大HP", "stats": {"HEALTH_PERCENT": 4}, "start": null, "group": "spoke0", "text": "最大HP+4%"}, {"id": 54, "x": 22, "y": 17, "kind": "SMALL", "name": "最大HP", "stats": {"HEALTH_PERCENT": 4}, "start": null, "group": "spoke0", "text": "最大HP+4%"}, {"id": 55, "x": 32, "y": 11, "kind": "SMALL", "name": "CC耐性", "stats": {"CC_RESIST": 5}, "start": null, "group": "spoke1", "text": "CC耐性+5%"}, {"id": 56, "x": 30, "y": 13, "kind": "NOTABLE", "name": "不屈", "stats": {"HEALTH_PERCENT": 10, "COOLDOWN_REDUCTION": 8}, "start": null, "group": "spoke1", "text": "最大HP+10% / CD回復速度+8%"}, {"id": 57, "x": 28, "y": 15, "kind": "SMALL", "name": "CD回復速度", "stats": {"COOLDOWN_REDUCTION": 3}, "start": null, "group": "spoke1", "text": "CD回復速度+3%"}, {"id": 58, "x": 26, "y": 17, "kind": "SMALL", "name": "CC耐性", "stats": {"CC_RESIST": 5}, "start": null, "group": "spoke1", "text": "CC耐性+5%"}, {"id": 59, "x": 24, "y": 19, "kind": "SMALL", "name": "最大HP", "stats": {"HEALTH_PERCENT": 4}, "start": null, "group": "spoke1", "text": "最大HP+4%"}, {"id": 60, "x": 32, "y": 27, "kind": "SMALL", "name": "魔法防御 MR", "stats": {"MR_PERCENT": 6}, "start": null, "group": "spoke2", "text": "魔法防御 MR+6%"}, {"id": 61, "x": 30, "y": 25, "kind": "NOTABLE", "name": "巡る力", "stats": {"COOLDOWN_REDUCTION": 8, "SKILL_DAMAGE": 10}, "start": null, "group": "spoke2", "text": "CD回復速度+8% / スキルダメージ+10%"}, {"id": 62, "x": 28, "y": 23, "kind": "SMALL", "name": "スキルダメージ", "stats": {"SKILL_DAMAGE": 4}, "start": null, "group": "spoke2", "text": "スキルダメージ+4%"}, {"id": 63, "x": 26, "y": 21, "kind": "SMALL", "name": "魔法防御 MR", "stats": {"MR_PERCENT": 6}, "start": null, "group": "spoke2", "text": "魔法防御 MR+6%"}, {"id": 64, "x": 22, "y": 31, "kind": "SMALL", "name": "スキルダメージ", "stats": {"SKILL_DAMAGE": 4}, "start": null, "group": "spoke3", "text": "スキルダメージ+4%"}, {"id": 65, "x": 22, "y": 29, "kind": "SMALL", "name": "マナ回復速度", "stats": {"MANA_REGEN": 6}, "start": null, "group": "spoke3", "text": "マナ回復速度+6%"}, {"id": 66, "x": 22, "y": 27, "kind": "SMALL", "name": "詠唱速度", "stats": {"CAST_REDUCTION": 3}, "start": null, "group": "spoke3", "text": "詠唱速度+3%"}, {"id": 67, "x": 22, "y": 25, "kind": "NOTABLE", "name": "技の切れ", "stats": {"SKILL_DAMAGE": 10, "MANA_REGEN": 15}, "start": null, "group": "spoke3", "text": "スキルダメージ+10% / マナ回復速度+15%"}, {"id": 68, "x": 22, "y": 23, "kind": "SMALL", "name": "マナ回復速度", "stats": {"MANA_REGEN": 6}, "start": null, "group": "spoke3", "text": "マナ回復速度+6%"}, {"id": 69, "x": 22, "y": 21, "kind": "SMALL", "name": "詠唱速度", "stats": {"CAST_REDUCTION": 3}, "start": null, "group": "spoke3", "text": "詠唱速度+3%"}, {"id": 70, "x": 12, "y": 27, "kind": "SMALL", "name": "クリティカル倍率", "stats": {"CRIT_MULTIPLIER": 6}, "start": null, "group": "spoke4", "text": "クリティカル倍率+6%"}, {"id": 71, "x": 14, "y": 25, "kind": "NOTABLE", "name": "満ちる魔力", "stats": {"MANA_REGEN": 15, "MITIGATION": 5}, "start": null, "group": "spoke4", "text": "マナ回復速度+15% / 被ダメージ軽減+5%"}, {"id": 72, "x": 16, "y": 23, "kind": "SMALL", "name": "被ダメージ軽減", "stats": {"MITIGATION": 2}, "start": null, "group": "spoke4", "text": "被ダメージ軽減+2%"}, {"id": 73, "x": 18, "y": 21, "kind": "SMALL", "name": "クリティカル倍率", "stats": {"CRIT_MULTIPLIER": 6}, "start": null, "group": "spoke4", "text": "クリティカル倍率+6%"}, {"id": 74, "x": 20, "y": 19, "kind": "SMALL", "name": "マナ回復速度", "stats": {"MANA_REGEN": 6}, "start": null, "group": "spoke4", "text": "マナ回復速度+6%"}, {"id": 75, "x": 12, "y": 11, "kind": "SMALL", "name": "ライフスティール", "stats": {"LIFESTEAL": 1}, "start": null, "group": "spoke5", "text": "ライフスティール+1%"}, {"id": 76, "x": 14, "y": 13, "kind": "NOTABLE", "name": "不動の心", "stats": {"MITIGATION": 5, "DAMAGE": 10}, "start": null, "group": "spoke5", "text": "被ダメージ軽減+5% / 与ダメージ+10%"}, {"id": 77, "x": 16, "y": 15, "kind": "SMALL", "name": "与ダメージ", "stats": {"DAMAGE": 4}, "start": null, "group": "spoke5", "text": "与ダメージ+4%"}, {"id": 78, "x": 18, "y": 17, "kind": "SMALL", "name": "ライフスティール", "stats": {"LIFESTEAL": 1}, "start": null, "group": "spoke5", "text": "ライフスティール+1%"}, {"id": 79, "x": 20, "y": 3, "kind": "SMALL", "name": "近接ダメージ", "stats": {"MELEE_DAMAGE": 5}, "start": null, "group": "WARRIOR", "text": "近接ダメージ+5%"}, {"id": 80, "x": 18, "y": 1, "kind": "NOTABLE", "name": "剛力", "stats": {"MELEE_DAMAGE": 12, "AD_PERCENT": 12}, "start": null, "group": "WARRIOR", "text": "近接ダメージ+12% / 物理攻撃力 AD+12%"}, {"id": 81, "x": 24, "y": 3, "kind": "SMALL", "name": "物理攻撃力 AD", "stats": {"AD_PERCENT": 5}, "start": null, "group": "WARRIOR", "text": "物理攻撃力 AD+5%"}, {"id": 82, "x": 26, "y": 1, "kind": "NOTABLE", "name": "鋼の体", "stats": {"HEALTH_PERCENT": 10, "MITIGATION": 5}, "start": null, "group": "WARRIOR", "text": "最大HP+10% / 被ダメージ軽減+5%"}, {"id": 83, "x": 38, "y": 9, "kind": "SMALL", "name": "物理防御 AR", "stats": {"AR_PERCENT": 6}, "start": null, "group": "TEMPLAR", "text": "物理防御 AR+6%"}, {"id": 84, "x": 38, "y": 7, "kind": "NOTABLE", "name": "城壁", "stats": {"AR_PERCENT": 15, "MR_PERCENT": 15}, "start": null, "group": "TEMPLAR", "text": "物理防御 AR+15% / 魔法防御 MR+15%"}, {"id": 85, "x": 40, "y": 9, "kind": "SMALL", "name": "シールド量", "stats": {"SHIELD_POWER": 6}, "start": null, "group": "TEMPLAR", "text": "シールド量+6%"}, {"id": 86, "x": 42, "y": 7, "kind": "NOTABLE", "name": "誓いの盾", "stats": {"SHIELD_POWER": 15, "CC_RESIST": 12}, "start": null, "group": "TEMPLAR", "text": "シールド量+15% / CC耐性+12%"}, {"id": 87, "x": 40, "y": 29, "kind": "SMALL", "name": "回復力", "stats": {"HEALING_PERCENT": 5}, "start": null, "group": "HEALER", "text": "回復力+5%"}, {"id": 88, "x": 42, "y": 31, "kind": "NOTABLE", "name": "慈雨", "stats": {"HEALING_PERCENT": 12, "OUTGOING_HEALING": 12}, "start": null, "group": "HEALER", "text": "回復力+12% / 与回復量+12%"}, {"id": 89, "x": 38, "y": 29, "kind": "SMALL", "name": "与回復量", "stats": {"OUTGOING_HEALING": 5}, "start": null, "group": "HEALER", "text": "与回復量+5%"}, {"id": 90, "x": 38, "y": 31, "kind": "NOTABLE", "name": "祈りの泉", "stats": {"MANA_REGEN": 15, "MR_PERCENT": 15}, "start": null, "group": "HEALER", "text": "マナ回復速度+15% / 魔法防御 MR+15%"}, {"id": 91, "x": 24, "y": 35, "kind": "SMALL", "name": "魔法攻撃力 AP", "stats": {"AP_PERCENT": 5}, "start": null, "group": "MAGE", "text": "魔法攻撃力 AP+5%"}, {"id": 92, "x": 26, "y": 37, "kind": "NOTABLE", "name": "深淵の知", "stats": {"AP_PERCENT": 12, "MAGICAL_DAMAGE": 12}, "start": null, "group": "MAGE", "text": "魔法攻撃力 AP+12% / 魔法ダメージ+12%"}, {"id": 93, "x": 20, "y": 35, "kind": "SMALL", "name": "魔法ダメージ", "stats": {"MAGICAL_DAMAGE": 5}, "start": null, "group": "MAGE", "text": "魔法ダメージ+5%"}, {"id": 94, "x": 18, "y": 37, "kind": "NOTABLE", "name": "早口の詠唱", "stats": {"CAST_REDUCTION": 8, "COOLDOWN_REDUCTION": 8}, "start": null, "group": "MAGE", "text": "詠唱速度+8% / CD回復速度+8%"}, {"id": 95, "x": 6, "y": 29, "kind": "SMALL", "name": "投射物ダメージ", "stats": {"PROJECTILE_DAMAGE": 5}, "start": null, "group": "RANGER", "text": "投射物ダメージ+5%"}, {"id": 96, "x": 6, "y": 31, "kind": "NOTABLE", "name": "鷹の目", "stats": {"PROJECTILE_DAMAGE": 12, "CRIT_MULTIPLIER": 15}, "start": null, "group": "RANGER", "text": "投射物ダメージ+12% / クリティカル倍率+15%"}, {"id": 97, "x": 4, "y": 29, "kind": "SMALL", "name": "攻撃速度", "stats": {"ATTACK_SPEED": 3}, "start": null, "group": "RANGER", "text": "攻撃速度+3%"}, {"id": 98, "x": 2, "y": 31, "kind": "NOTABLE", "name": "速射", "stats": {"ATTACK_SPEED": 8, "NORMAL_DAMAGE": 12}, "start": null, "group": "RANGER", "text": "攻撃速度+8% / 通常攻撃ダメージ+12%"}, {"id": 99, "x": 4, "y": 9, "kind": "SMALL", "name": "クリティカル率増加", "stats": {"CRIT_CHANCE_INCREASED": 8}, "start": null, "group": "ASSASSIN", "text": "クリティカル率増加+8%"}, {"id": 100, "x": 2, "y": 7, "kind": "NOTABLE", "name": "急所狙い", "stats": {"CRIT_CHANCE_INCREASED": 20, "CRIT_MULTIPLIER": 15}, "start": null, "group": "ASSASSIN", "text": "クリティカル率増加+20% / クリティカル倍率+15%"}, {"id": 101, "x": 6, "y": 9, "kind": "SMALL", "name": "移動速度", "stats": {"MOVE_SPEED": 2}, "start": null, "group": "ASSASSIN", "text": "移動速度+2%"}, {"id": 102, "x": 6, "y": 7, "kind": "NOTABLE", "name": "影の足", "stats": {"MOVE_SPEED": 5, "LIFESTEAL": 3}, "start": null, "group": "ASSASSIN", "text": "移動速度+5% / ライフスティール+3%"}, {"id": 103, "x": 28, "y": 9, "kind": "SMALL", "name": "通り道", "stats": {"DAMAGE": 2, "HEALTH_PERCENT": 2}, "start": null, "group": "key0", "text": "与ダメージ+2% / 最大HP+2%"}, {"id": 104, "x": 26, "y": 11, "kind": "KEYSTONE", "name": "キーストーン1", "stats": {}, "start": null, "group": "key0", "text": "中身は藍と決める"}, {"id": 105, "x": 38, "y": 19, "kind": "SMALL", "name": "通り道", "stats": {"DAMAGE": 2, "HEALTH_PERCENT": 2}, "start": null, "group": "key1", "text": "与ダメージ+2% / 最大HP+2%"}, {"id": 106, "x": 36, "y": 19, "kind": "KEYSTONE", "name": "キーストーン2", "stats": {}, "start": null, "group": "key1", "text": "中身は藍と決める"}, {"id": 107, "x": 28, "y": 29, "kind": "SMALL", "name": "通り道", "stats": {"DAMAGE": 2, "HEALTH_PERCENT": 2}, "start": null, "group": "key2", "text": "与ダメージ+2% / 最大HP+2%"}, {"id": 108, "x": 26, "y": 27, "kind": "KEYSTONE", "name": "キーストーン3", "stats": {}, "start": null, "group": "key2", "text": "中身は藍と決める"}, {"id": 109, "x": 16, "y": 29, "kind": "SMALL", "name": "通り道", "stats": {"DAMAGE": 2, "HEALTH_PERCENT": 2}, "start": null, "group": "key3", "text": "与ダメージ+2% / 最大HP+2%"}, {"id": 110, "x": 18, "y": 27, "kind": "KEYSTONE", "name": "キーストーン4", "stats": {}, "start": null, "group": "key3", "text": "中身は藍と決める"}, {"id": 111, "x": 6, "y": 19, "kind": "SMALL", "name": "通り道", "stats": {"DAMAGE": 2, "HEALTH_PERCENT": 2}, "start": null, "group": "key4", "text": "与ダメージ+2% / 最大HP+2%"}, {"id": 112, "x": 8, "y": 19, "kind": "KEYSTONE", "name": "キーストーン5", "stats": {}, "start": null, "group": "key4", "text": "中身は藍と決める"}, {"id": 113, "x": 16, "y": 9, "kind": "SMALL", "name": "通り道", "stats": {"DAMAGE": 2, "HEALTH_PERCENT": 2}, "start": null, "group": "key5", "text": "与ダメージ+2% / 最大HP+2%"}, {"id": 114, "x": 18, "y": 11, "kind": "KEYSTONE", "name": "キーストーン6", "stats": {}, "start": null, "group": "key5", "text": "中身は藍と決める"}], "edges": [[0, 54], [0, 59], [0, 69], [0, 74], [1, 7], [1, 48], [1, 49], [1, 79], [1, 81], [2, 13], [2, 14], [2, 83], [2, 85], [3, 20], [3, 21], [3, 87], [3, 89], [4, 27], [4, 28], [4, 64], [4, 91], [4, 93], [5, 34], [5, 35], [5, 95], [5, 97], [6, 41], [6, 42], [6, 99], [6, 101], [7, 8], [8, 9], [9, 10], [10, 11], [10, 103], [11, 12], [12, 13], [12, 55], [14, 15], [15, 16], [16, 17], [17, 18], [17, 105], [18, 19], [19, 20], [21, 22], [22, 23], [22, 60], [23, 24], [24, 25], [24, 107], [25, 26], [26, 27], [28, 29], [29, 30], [30, 31], [31, 32], [31, 109], [32, 33], [33, 34], [33, 70], [35, 36], [36, 37], [37, 38], [38, 39], [38, 111], [39, 40], [40, 41], [42, 43], [43, 44], [43, 75], [44, 45], [45, 46], [45, 113], [46, 47], [47, 48], [49, 50], [50, 51], [51, 52], [52, 53], [53, 54], [55, 56], [56, 57], [57, 58], [58, 59], [59, 63], [60, 61], [61, 62], [62, 63], [64, 65], [65, 66], [66, 67], [67, 68], [68, 69], [70, 71], [71, 72], [72, 73], [73, 74], [74, 78], [75, 76], [76, 77], [77, 78], [79, 80], [81, 82], [83, 84], [85, 86], [87, 88], [89, 90], [91, 92], [93, 94], [95, 96], [97, 98], [99, 100], [101, 102], [103, 104], [105, 106], [107, 108], [109, 110], [111, 112], [113, 114]], "classes": [["WARRIOR", "戦士"], ["TEMPLAR", "テンプラー"], ["HEALER", "ヒーラー"], ["MAGE", "メイジ"], ["RANGER", "レンジャー"], ["ASSASSIN", "アサシン"]]};
+const NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById("tree");
+svg.setAttribute("viewBox", `-1 -1 ${D.w + 1} ${D.h + 1}`);
+const adj = new Map(D.nodes.map(n => [n.id, []]));
+D.edges.forEach(([a, b]) => { adj.get(a).push(b); adj.get(b).push(a); });
+const jobSel = document.getElementById("job"), lv = document.getElementById("lv");
+D.classes.forEach(([id, name]) => { const o = document.createElement("option"); o.value = id; o.textContent = name; jobSel.append(o); });
+let taken = new Set();
+const startOf = job => D.nodes.find(n => n.start === job).id;
+const budget = () => Number(lv.value) - 1;
+function connected(set, root) {
+  const seen = new Set([root]), todo = [root];
+  while (todo.length) for (const m of adj.get(todo.pop())) if (set.has(m) && !seen.has(m)) { seen.add(m); todo.push(m); }
+  return seen;
+}
+function canTake(id) {
+  const n = D.nodes[id];
+  if (taken.has(id) || n.kind === "START" || n.kind === "KEYSTONE") return false;
+  if (taken.size >= budget()) return false;
+  const root = startOf(jobSel.value);
+  return adj.get(id).some(m => m === root || taken.has(m));
+}
+function toggle(id) {
+  if (taken.has(id)) {
+    const rest = new Set(taken); rest.delete(id);
+    const keep = connected(new Set([...rest, startOf(jobSel.value)]), startOf(jobSel.value));
+    taken = new Set([...rest].filter(x => keep.has(x)));
+  } else if (canTake(id)) taken.add(id);
+  draw();
+}
+const color = n => n.kind === "START" ? "var(--start)" : n.kind === "KEYSTONE" ? "var(--key)" : n.kind === "NOTABLE" ? "var(--notable)" : "var(--small)";
+function show(n) {
+  document.getElementById("iname").textContent = n.name;
+  document.getElementById("itext").textContent = n.text + (taken.has(n.id) ? "（取得済み）" : canTake(n.id) ? "（取れる）" : "");
+}
+function draw() {
+  svg.replaceChildren();
+  const root = startOf(jobSel.value), on = new Set([...taken, root]);
+  for (let x = 0; x < D.w; x++) for (let y = 0; y < D.h; y++) {
+    const c = document.createElementNS(NS, "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", .05); c.setAttribute("fill", "var(--grid)"); svg.append(c);
+  }
+  D.edges.forEach(([a, b]) => {
+    const l = document.createElementNS(NS, "line"), A = D.nodes[a], B = D.nodes[b];
+    l.setAttribute("x1", A.x); l.setAttribute("y1", A.y); l.setAttribute("x2", B.x); l.setAttribute("y2", B.y);
+    l.setAttribute("class", "e" + (on.has(a) && on.has(b) ? " on" : "")); svg.append(l);
+  });
+  D.nodes.forEach(n => {
+    const g = document.createElementNS(NS, "g"); g.setAttribute("class", "n"); g.setAttribute("tabindex", "0");
+    const r = n.kind === "SMALL" ? .32 : n.kind === "NOTABLE" ? .5 : .62;
+    const shape = document.createElementNS(NS, n.kind === "KEYSTONE" ? "rect" : "circle");
+    if (n.kind === "KEYSTONE") { shape.setAttribute("x", n.x - r); shape.setAttribute("y", n.y - r); shape.setAttribute("width", 2 * r); shape.setAttribute("height", 2 * r); shape.setAttribute("transform", `rotate(45 ${n.x} ${n.y})`); }
+    else { shape.setAttribute("cx", n.x); shape.setAttribute("cy", n.y); shape.setAttribute("r", r); }
+    const lit = taken.has(n.id) || n.id === root;
+    shape.setAttribute("fill", lit ? "var(--gold)" : color(n));
+    shape.setAttribute("opacity", lit || canTake(n.id) || n.kind !== "SMALL" ? 1 : .55);
+    if (canTake(n.id)) { shape.setAttribute("stroke", "var(--gold)"); shape.setAttribute("stroke-width", ".14"); }
+    g.append(shape);
+    if (n.kind !== "SMALL") {
+      const t = document.createElementNS(NS, "text"); t.setAttribute("x", n.x); t.setAttribute("y", n.y + r + .7);
+      t.setAttribute("text-anchor", "middle"); t.setAttribute("class", "lbl"); t.textContent = n.name; g.append(t);
+    }
+    g.addEventListener("mouseenter", () => show(n));
+    g.addEventListener("click", () => { toggle(n.id); show(n); });
+    g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(n.id); show(n); } });
+    svg.append(g);
+  });
+  document.getElementById("lvv").textContent = `Lv${lv.value}`;
+  document.getElementById("pts").textContent = `${budget() - taken.size} / ${budget()}`;
+  document.getElementById("cost").textContent = `全部戻す代金の目安：銀貨 ${taken.size * resetPrice(Number(lv.value))} 枚（1点ごとに ${resetPrice(Number(lv.value))} 枚）`;
+  const total = {};
+  taken.forEach(id => D.nodes[id].text.split(" / ").forEach(s => { const m = s.match(/^(.*)\+(\d+)%$/); if (m) total[m[1]] = (total[m[1]] || 0) + Number(m[2]); }));
+  const ul = document.getElementById("sum"); ul.replaceChildren();
+  Object.entries(total).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => { const li = document.createElement("li"); li.textContent = `${k} +${v}%`; ul.append(li); });
+  if (!ul.children.length) { const li = document.createElement("li"); li.textContent = "まだ何も取っていません"; ul.append(li); }
+}
+function resetPrice(level) { return 10 * level; }
+jobSel.addEventListener("change", () => { taken.clear(); draw(); });
+lv.addEventListener("input", () => { while (taken.size > budget()) { taken = new Set(); } draw(); });
+document.getElementById("reset").addEventListener("click", () => { taken.clear(); draw(); });
+draw();
+</script>
