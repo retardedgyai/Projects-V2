@@ -348,7 +348,6 @@ class CorePlayerCombatTest {
         // 地割り by the beast it takes (0..3) as extra scenes "slam_b<n>".
         val beastRuns=(0..3).map { n -> Triple("slam_b$n",1,false) } +
             listOf("whirl" to 2, "war_guard" to 3, "war_counter" to 3).flatMap { (icon, slot) -> listOf(0, 3).map { n -> Triple("${icon}_b$n", slot, false) } } +
-            listOf(Triple("war_breach_b0", 3, false), Triple("war_cry_b0", 3, false)) +
             // The two ultimates (slot 4): 狂戦士の甲冑, 獣の目覚め (needs three). 全力の一振り is slam_b3 now.
             listOf(Triple("war_banner_b0", 4, false), Triple("war_awaken_b3", 4, false)) +
             // 体当たり catching a blow as it charges, and 跳び叩き leaping far (both build more beast that way).
@@ -1158,7 +1157,7 @@ class CorePlayerCombatTest {
     }
 
     @Test fun `each variant belongs to one builder and one spender`() {
-        assertEquals(CoreWarriorRules.Combo.HOIST, CoreWarriorRules.combo(CoreWarriorRules.DRAG, CoreWarriorRules.SHATTER))
+        assertEquals(null, CoreWarriorRules.combo(CoreWarriorRules.DRAG, CoreWarriorRules.SHATTER))   // 引き摺り is retired, so is its variant
         assertEquals(CoreWarriorRules.Combo.DOUBLE_DROP, CoreWarriorRules.combo(CoreWarriorLeap.ICON, CoreWarriorRules.SKYFALL))
         assertEquals(CoreWarriorRules.Combo.RUSH, CoreWarriorRules.combo("dash", CoreWarriorRules.FRENZY))
         assertEquals(null, CoreWarriorRules.combo("dash", CoreWarriorRules.SHATTER))
@@ -1203,37 +1202,6 @@ class CorePlayerCombatTest {
         h.player.teleport(h.player.position.withView(180f, 0f)) // facing away: it is all round, not a cone
         h.actor.skill(3); h.ticks(16)
         assertTrue(h.combat.breakGauge(id)!! < 100.0)
-    }
-
-    @Test fun `the launcher throws up the one in front and a slam on it is the smash down`() =
-        arena(bossDistance = 30.0, mobs = listOf(Pos(8.5, 40.0, 10.5))) { h ->
-        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 7)); h.actor.reset()
-        assertEquals(CoreWarriorRules.LAUNCHER, h.actor.skillDefinitions[3].icon)
-        h.combat.tick(1000L)
-        val id = h.combat.combatTargets().first { !h.combat.isBoss(it.id) }.id
-        h.actor.skill(3); h.ticks(10)
-        assertTrue(CrowdControl.AIRBORNE in h.combat.crowdControl(id), "thrown up")
-        assertEquals(CoreWarriorRules.BEAST_PER_SKILL, h.actor.resource, 1e-9) // it builds
-        h.actor.skill(1); h.ticks(24) // a slam with one stack would only launch low; on a thrown enemy it is the smash down
-        // The smash lands on it up in the air: stunned, or (a tier-1 soldier) dead from the boosted hit.
-        assertTrue(!h.combat.isAlive(id) || CrowdControl.STUN in h.combat.crowdControl(id), "smashed down: ${h.combat.crowdControl(id)}")
-        assertTrue(h.actor.cooldownRemaining(1) > 0)
-    }
-
-    @Test fun `the drag hooks a regular enemy at the blade, brings it along and hits it at the end`() =
-        arena(bossDistance = 30.0, mobs = listOf(Pos(7.8, 40.0, 7.0))) { h ->
-        h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 6)); h.actor.reset()
-        assertEquals(CoreWarriorRules.DRAG, h.actor.skillDefinitions[3].icon)
-        h.combat.tick(1000L)
-        val id = h.combat.combatTargets().first { !h.combat.isBoss(it.id) }.id
-        h.actor.skill(3); h.ticks(4)
-        // Walk forward as the client would; the hooked enemy is dragged along behind the blade.
-        repeat(20) { h.player.teleport(h.player.position.add(0.0, 0.0, .17)); h.ticks(1) }
-        val p = h.combat.positionOf(id)!!
-        assertTrue(p.z() > 7.5, "dragged along: $p")
-        h.ticks(CoreWarriorRules.DRAG_TICKS)
-        assertTrue(!h.combat.isAlive(id) || CrowdControl.STUN in h.combat.crowdControl(id), "hit at the end")
-        assertTrue(h.actor.cooldownRemaining(3) > 0)
     }
 
     @Test fun `the awakening needs three stacks and then keeps them while spenders cool twice as fast`() = arena { h ->

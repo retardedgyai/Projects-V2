@@ -18,7 +18,7 @@ internal object CoreWarriorSkillPresentation {
         "war_awaken" to Identity("獣の目覚め", "奥義・解放", "獣3つで撃つ。8秒、獣が減らず使う技の再使用が半分")
     )
     // Rows: enter or heavy / crowd or reach / hold. Retired catalog entries (5, 6, 7) are not offered.
-    val candidateOrder = listOf(0, 1, 4, 7, 6, 2, 3, 5)
+    val candidateOrder = listOf(0, 1, 4, 2, 3, 5)   // 引き摺り (6) and 斬り上げ (7) are retired
     val candidateSlots = listOf(9, 14, 18, 23, 27, 32, 36, 41)
     val loadoutSlots = listOf(0, 2, 4, 6, 8)
 

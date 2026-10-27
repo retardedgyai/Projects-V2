@@ -10,7 +10,7 @@ class CoreWarriorReworkTest {
 
     @Test fun `warrior skills sit in cooldown tiers and the beast gates nothing`() {
         val byIcon = warrior.filterNot { it.retired }.associateBy { it.icon }
-        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_banner", "war_awaken"), byIcon.keys)
+        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_banner", "war_awaken"), byIcon.keys)
         assertEquals(100, byIcon.getValue("dash").cooldown)
         assertTrue(listOf("slam", "whirl", "war_guard", "war_counter").all { byIcon.getValue(it).cooldown in 200..320 }, "spenders")
         assertTrue(byIcon.getValue("war_wound").cooldown in 160..240, "the leap moves")
@@ -20,10 +20,11 @@ class CoreWarriorReworkTest {
 
     @Test fun `retired entries keep catalog order and art but are never selectable`() {
         assertEquals(61, CoreSkillCatalog.artNames.size)
-        assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
+        // 引き摺り (6) and 斬り上げ (7) are retired (2026-10-27).
+        assertEquals(listOf(0, 1, 2, 3, 4, 5), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
         // 全力の一振り (index 8, ultimate 0) is retired (2026-10-27): it is 地割り at a full beast now; its slot stays empty.
         assertEquals(listOf(1, 2), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
-        assertEquals(listOf("war_ult"), warrior.filter { it.retired }.map { it.icon })
+        assertEquals(listOf("war_cry", "war_breach", "war_ult"), warrior.filter { it.retired }.map { it.icon })
         assertEquals(8, warrior.indexOfFirst { it.icon == CoreWarriorRules.FULL_SWING })
         for (job in CoreClass.entries) {
             val fresh = CoreSkillCatalog.defaultBuild(job)

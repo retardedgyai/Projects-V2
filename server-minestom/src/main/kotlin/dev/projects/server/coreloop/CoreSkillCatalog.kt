@@ -187,18 +187,19 @@ object CoreSkillCatalog {
             CoreClass.WARRIOR -> listOf(
                 // 体当たり (Creator 2026-10-27) takes 轟進's slot and id, so its art and saves stay.
                 s("体当たり", "dash", "肩から短く突っ込み、最初に当たった敵にぶつかってよろけさせる。押してからぶつかるまでに受けた攻撃を1発だけ受け止め（ダメージも怯みもなし）、獣が2つ溜まり、ぶつかりが重くなって相手をスタンさせる。受け止めなければ獣は半分", CoreSkillMotion.LUNGE, 6.0, 1.2, mana=8, cd=100, startup=5).cc(CrowdControl.FLINCH, 400),
-                s("地割り", "slam", "前へまっすぐ地を割り、遠くの列まで届く。溜めた獣を全部使う。獣が少ないほど速く出て、多いほど亀裂が長く敵は高く打ち上がり長くスタン。獣3つなら全力の一振り：大剣を担いで溜め（溜め中は何も効かない）、真上からの一撃で地面が前へ大きく割れ、裂け目から血が噴き上がる。通常3段目の直後なら速く重い。斬り上げで浮かせた敵には叩き落とし", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE).cc(CrowdControl.AIRBORNE, 700).copy(stunAfterMillis = 1500),
+                s("地割り", "slam", "前へまっすぐ地を割り、遠くの列まで届く。溜めた獣を全部使う。獣が少ないほど速く出て、多いほど亀裂が長く敵は高く打ち上がり長くスタン。獣3つなら全力の一振り：大剣を担いで溜め（溜め中は何も効かない）、真上からの一撃で地面が前へ大きく割れ、裂け目から血が噴き上がる。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE).cc(CrowdControl.AIRBORNE, 700).copy(stunAfterMillis = 1500),
                 // 狂乱 / 天落とし / 大地崩し (Creator 2026-10-23) take the dropped 押し薙ぎ / 根張り and the retired 返し刃's
                 // slots and ids, so their HUD art slots stay; their icons are still to be drawn.
                 s("狂乱", "whirl", "目の前の1体を狙い、踏み込みながら細く続けて振り、最後は真上から振り下ろす。ボスの崩しを大きく削る。獣の数だけ振りが増え、獣3つなら最後の一振りで大きく崩す。振っている間は怯まない。轟進の直後なら踏み込みが長く、最初の一振りが重い", CoreSkillMotion.CONE, 7.0, 1.3, mana=12, cd=200, startup=4, gain=0, radius=3.6).cc(CrowdControl.FLINCH, 300),
                 s("天落とし", "war_guard", "離れた群れへ跳び込んで叩き落とす。着地の衝撃が輪になって外へ広がる。獣が少ないと低く速い跳び（約5m・輪1重）、獣3つなら高く遠い跳び（約8m・輪3重）。空中で少し曲げられる。跳び叩きの直後なら二段落とし（輪が2倍の速さで広がる）", CoreSkillMotion.CONE, 14.0, 2.4, mana=15, cd=280, startup=6, gain=0, range=CoreWarriorLeap.MAX_REACH, radius=8.0).cc(CrowdControl.AIRBORNE, 600),
                 // 跳び叩き (Creator 2026-10-22) takes the retired 地走り's slot and id (CoreWarriorLeap).
                 s("跳び叩き", "war_wound", "狙った地点へ弧を描いて跳び、着地の周りを叩いて短くスタン。空中で少し曲げられる。遠く（6m以上）へ跳んで当てると獣が1つ半、近くだと半分。離れた敵へ飛び込む技", CoreSkillMotion.CONE, 6.0, 1.4, mana=10, cd=180, startup=4, range=CoreWarriorLeap.MAX_REACH, radius=CoreWarriorLeap.LANDING_RADIUS).cc(CrowdControl.STUN, 600),
-                s("大地崩し", "war_counter", "囲まれた時の脱出。大剣を地面に突き立て、周り一面を砕いて打ち上げる。獣1つ以上あれば怯み中でも出せ、出始めは攻撃を受けない。獣0なら速く狭く、周りを外へ押し出す。獣が多いほど広く高く、獣3つならスタン。引き摺りの直後なら、集めた敵をより高く打ち上げてスタン", CoreSkillMotion.NOVA, 12.0, 2.0, mana=15, cd=320, startup=14, gain=0, radius=5.0).cc(CrowdControl.AIRBORNE, 600),
-                // 引き摺り (Creator 2026-10-23) takes the retired 雄叫び's slot and id.
-                s("引き摺り", "war_cry", "大剣を片手で引きずって2秒歩く（自分で動ける）。刃に触れた雑魚は引っかかってついて来て、最後の振り抜きでまとめて叩きつける。獣を溜める", CoreSkillMotion.CONE, 10.0, 1.8, mana=12, cd=240, startup=3, radius=3.6).cc(CrowdControl.STUN, 700),
+                s("大地崩し", "war_counter", "囲まれた時の脱出。大剣を地面に突き立て、周り一面を砕いて打ち上げる。獣1つ以上あれば怯み中でも出せ、出始めは攻撃を受けない。獣0なら速く狭く、周りを外へ押し出す。獣が多いほど広く高く、獣3つならスタン", CoreSkillMotion.NOVA, 12.0, 2.0, mana=15, cd=320, startup=14, gain=0, radius=5.0).cc(CrowdControl.AIRBORNE, 600),
+                // 引き摺り (Creator 2026-10-23) takes the retired 雄叫び's slot and id. Retired 2026-10-27 with 斬り上げ
+                // (Creator: 「引き摺りと斬り上げ結構微妙だったから外してもいい」); slot, id and art stay for old saves.
+                s("引き摺り", "war_cry", "大剣を片手で引きずって2秒歩く（自分で動ける）。刃に触れた雑魚は引っかかってついて来て、最後の振り抜きでまとめて叩きつける。獣を溜める", CoreSkillMotion.CONE, 10.0, 1.8, mana=12, cd=240, startup=3, radius=3.6, retired=true).cc(CrowdControl.STUN, 700),
                 // 斬り上げ (Creator 2026-10-23) takes the retired 破城突き's slot and id.
-                s("斬り上げ", "war_breach", "大剣を引きずって真上へ振り上げ、正面の敵を高く打ち上げる。ジャンプを押していれば自分も追って跳ぶ。打ち上げた敵に地割りを当てると叩き落とし。獣を溜める", CoreSkillMotion.CONE, 9.0, 1.8, mana=10, cd=180, startup=8, radius=3.4).cc(CrowdControl.AIRBORNE, 1200),
+                s("斬り上げ", "war_breach", "大剣を引きずって真上へ振り上げ、正面の敵を高く打ち上げる。ジャンプを押していれば自分も追って跳ぶ。打ち上げた敵に地割りを当てると叩き落とし。獣を溜める", CoreSkillMotion.CONE, 9.0, 1.8, mana=10, cd=180, startup=8, radius=3.4, retired=true).cc(CrowdControl.AIRBORNE, 1200),
                 // Ultimates (Creator 2026-10-23): 狂戦士の甲冑 and 獣の目覚め. 全力の一振り is retired as an ultimate
                 // (Creator 2026-10-27: it is 地割り at a full beast now); its index and art stay, its slot is left empty.
                 s("全力の一振り", "war_ult", "地割りに統合（獣3つの地割りが全力の一振り）", CoreSkillMotion.CONE, 30.0, 4.0, mana=20, cd=1200, startup=10, gain=0, radius=12.0, ult=true, retired=true).cc(CrowdControl.AIRBORNE, 1000),

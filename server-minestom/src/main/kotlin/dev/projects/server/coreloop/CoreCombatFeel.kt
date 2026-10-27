@@ -215,16 +215,11 @@ internal object CoreWarriorRules {
      * pair's variant (斬り上げ + 地割り's 叩き落とし goes by the launched enemies instead, see LAUNCHED_TICKS).
      */
     enum class Combo(val builder: String, val spender: String, val label: String) {
-        HOIST(DRAG, SHATTER, "引き摺り＋大地崩し"),
         DOUBLE_DROP(CoreWarriorLeap.ICON, SKYFALL, "跳び叩き＋天落とし：二段落とし"),
         RUSH("dash", FRENZY, "体当たり＋狂乱"),
     }
     fun combo(builder: String?, spender: String): Combo? = Combo.entries.firstOrNull { it.builder == builder && it.spender == spender }
     const val COMBO_TICKS = 40L
-    /** 引き摺り＋大地崩し: the gathered crowd goes up higher and comes down stunned, from a little further out. */
-    const val HOIST_RADIUS_BONUS = 1.0
-    const val HOIST_AIRBORNE_MILLIS = 1400L
-    const val HOIST_STUN_MILLIS = 1500L
     /** 跳び叩き＋天落とし: the rings go out twice as fast. */
     const val DOUBLE_DROP_RING_TICKS = 2
     /** 轟進＋狂乱: the first step goes further and the first swing lands heavy (damage and break). */

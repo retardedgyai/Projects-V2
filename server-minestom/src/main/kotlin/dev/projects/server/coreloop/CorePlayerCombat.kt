@@ -276,9 +276,6 @@ internal class CorePlayerCombat(
             }
             if (tickNumber <= comboUntil) combo = CoreWarriorRules.combo(comboFrom, definition.icon)
             comboFrom = null; comboUntil = -1
-            if (combo == CoreWarriorRules.Combo.HOIST) castDefinition = castDefinition.copy(
-                radius = castDefinition.radius + CoreWarriorRules.HOIST_RADIUS_BONUS, crowdMillis = CoreWarriorRules.HOIST_AIRBORNE_MILLIS,
-                stunAfterMillis = maxOf(castDefinition.stunAfterMillis, CoreWarriorRules.HOIST_STUN_MILLIS))
             if (combo != null) { notice(combo.label); sound(SoundEvent.ENTITY_WARDEN_ROAR, .4f, 1.2f) }
         }
         readyAt[id] = tickNumber + if (awakened && definition.icon in CoreWarriorRules.spenders && !definition.ultimate) cooldownTicks(id) / 2 else cooldownTicks(id)
