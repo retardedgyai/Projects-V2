@@ -104,7 +104,7 @@ internal object CoreArmamentPresentation {
     const val TIP_WIND_TICKS = 14
     const val TIP_CUT_TICKS = 16
     const val TIP_LEAD_TICKS = 2
-    const val TIP_BITE_TICKS = 18
+    const val TIP_BITE_TICKS = 17
     private val shaderHanded = setOf("slam", CoreWarriorRules.PUSH, CoreWarriorRules.TIP)
     const val TACKLE_CHARGE_TICKS = 14
     const val TACKLE_IMPACT_TICKS = 11
