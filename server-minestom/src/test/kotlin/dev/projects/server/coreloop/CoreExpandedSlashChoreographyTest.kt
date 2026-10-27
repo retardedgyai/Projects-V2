@@ -107,7 +107,7 @@ class CoreExpandedSlashChoreographyTest {
             }
             assertTrue(legacyParts(effect(id)).all { CoreSkillChoreography.pose(it,0.0).model.startsWith("combat_vfx/flow/") })
         }
-        assertNull(CoreExpandedSlashChoreography.parts(effect("war_breach")))
+        assertNull(CoreExpandedSlashChoreography.parts(effect("war_tip")))
         assertNull(CoreExpandedSlashChoreography.parts(effect("ass_ult")))
     }
 

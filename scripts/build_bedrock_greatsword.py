@@ -39,6 +39,8 @@ JAVA_ITEMS = {1: 'minecraft:stone_sword', 2: 'minecraft:iron_sword', 3: 'minecra
 LENGTHS = {1: 20, 2: 22, 3: 30}   # the beats' swing lengths in ticks at attack speed 1 (CoreWeaponAttacks)
 LENGTHS.update({S.CHARGE_BEAT: S.CHARGE_TICKS, S.IMPACT_BEAT: S.IMPACT_TICKS})   # 体当たり's charge and impact, fixed lengths
 LENGTHS.update({S.RISE_BEAT: S.RISE_TICKS, S.SLAM_BEAT: S.SLAM_TICKS})   # 跳び叩き: the slam is fixed; the rise at its nominal length (Java scales it to the air time)
+LENGTHS.update({S.PUSH_BEAT: S.PUSH_TICKS, S.TIP_WIND_BEAT: S.TIP_WIND_TICKS, S.TIP_CUT_BEAT: S.TIP_CUT_TICKS,   # 押し払い / 切っ先薙ぎ
+                S.TIP_BITE_BEAT: S.TIP_BITE_TICKS})
 ANIM_POSE = S.ANIM_POSE           # custom_model_data 120 + beat while swinging
 FPS = 40                          # keys a second (more where the bone turns fast, see MAX_STEP)
 MAX_STEP = 6.0                    # degrees a key may turn from the last

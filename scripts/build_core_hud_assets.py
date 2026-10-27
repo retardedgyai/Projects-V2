@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CLASSES = ("warrior", "ranger", "mage", "assassin", "templar", "healer")
 # Same stable order as CoreClass.entries and its eight skills + two ultimates.
 SKILLS = (
-    "dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner", "war_awaken",
+    "dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_push", "war_tip", "war_ult", "war_banner", "war_awaken",
     "pierce", "frost_fan", "arrow_rain", "hunt_retreat", "hunt_pierce", "hunt_trap", "hunt_mark", "hunt_volley", "hunt_ult", "hunt_storm",
     "firebolt", "frost_nova", "meteor", "mage_blink", "mage_mark", "mage_garden", "mage_burst", "mage_ward", "mage_ult", "mage_zero",
     "ass_stab", "ass_execute", "ass_fan", "ass_escape", "ass_poison", "ass_chase", "ass_needle", "ass_guard", "ass_ult", "ass_contract",

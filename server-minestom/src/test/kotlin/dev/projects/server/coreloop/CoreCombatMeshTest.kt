@@ -30,8 +30,8 @@ class CoreCombatMeshTest {
                 CoreCombatPresentation.pack(it,true)
                 assertEquals(CoreCombatPresentation.Detail.SUBDUED,CoreCombatPresentation.cycle(it))
             }
-            // 獣の目覚め has no flourish body: it is drawn only by CoreWarriorRefChoreography (the ground breaking open).
-            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon!=CoreWarriorRules.AWAKEN }) {
+            // 獣の目覚め (and 押し払い / 切っ先薙ぎ) have no flourish body: it is drawn only by CoreWarriorRefChoreography (the ground breaking open).
+            for(skill in CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon!=CoreWarriorRules.AWAKEN && it.icon !in CoreWarriorRules.countedBuilders }) {
                 val effect=CoreSkillEffect(CoreClass.WARRIOR,skill,owner.position,Vec(0.0,0.0,1.0))
                 meshes.play(effect)
                 repeat(3) { meshes.tick() }
@@ -56,8 +56,7 @@ class CoreCombatMeshTest {
                 val expectedBodies=CoreWarriorFlourish.parts(CoreSkillEffect(CoreClass.WARRIOR,skill,
                     owner.position,Vec(0.0,0.0,1.0))).count { !it.secondary }
                 assertEquals(expectedBodies,visibleIdentity.size,skill.icon)
-                assertEquals(if(skill.icon=="war_breach")1 else 0,identity.size-visibleIdentity.size,
-                    "Only the perpendicular thrust rib is optional body geometry")
+                assertEquals(0,identity.size-visibleIdentity.size,"no optional body geometry")
                 for(entity in visibleIdentity) {
                     assertTrue(observer in entity.viewers,skill.icon)
                 }
@@ -83,7 +82,7 @@ class CoreCombatMeshTest {
             val skills=CoreSkillCatalog.skills(CoreClass.WARRIOR)
             val attacks=CoreApprovedNormalV3.sceneIds.mapIndexed { i,id ->
                 skills.first().copy(icon=id,name="通常攻撃 ${i+1}",startup=0,pulses=1,radius=3.9) }
-            for(skill in skills+attacks) for(hit in if(skill.icon in setOf("war_cry","war_banner")) listOf(false) else listOf(false,true)) {
+            for(skill in skills+attacks) for(hit in if(skill.icon in setOf("war_banner")) listOf(false) else listOf(false,true)) {
                 val normal=skill.icon in CoreApprovedNormalV3.sceneIds
                 val definition=if(normal) skills.first { it.icon==if(skill.icon=="normal_finish")"slam" else "war_wound" }.copy(radius=3.9) else skill
                 meshes.cancel()

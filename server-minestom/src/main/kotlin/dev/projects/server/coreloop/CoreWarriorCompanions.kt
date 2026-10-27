@@ -18,7 +18,7 @@ internal object CoreWarriorCompanions {
         fun local(x:Double,y:Double,z:Double)=Vec(cos(yaw)*x+sin(yaw)*z,y,-sin(yaw)*x+cos(yaw)*z)
         val support=e.sceneId in CoreWarriorSupportChoreography.sceneIds
         if(e.phase==CoreSkillVisualPhase.CONTACT && support && e.sceneId!="war_guard") return emptyList()
-        if(e.phase==CoreSkillVisualPhase.PULSE && e.sceneId in setOf("war_banner","war_cry"))
+        if(e.phase==CoreSkillVisualPhase.PULSE && e.sceneId in setOf("war_banner"))
             return listOf(CoreCombatMeshPart("war_mote_boundary","steel",Vec(0.0,.12,0.0),
                 Vec(e.radius*16/7,1.0,e.radius*16/7),durationTicks=12,
                 startSize=1.0,endSize=1.0,erode=true,ground=true))
@@ -31,7 +31,7 @@ internal object CoreWarriorCompanions {
         // to fly ahead of it read as a leftover of the old slash (Creator 2026-10-25).
         if(!contact && !ground && !support) return emptyList()
         val spin=e.sceneId=="whirl" && e.skill.motion==CoreSkillMotion.SPIN
-        val dash=e.sceneId in setOf("dash","war_breach")
+        val dash=e.sceneId=="dash"
         val count=when { contact->5; support->2; ground->4; spin->6; else->4 }
         return (0 until count).map { i ->
             val a=i*2.399+e.pulse*.6

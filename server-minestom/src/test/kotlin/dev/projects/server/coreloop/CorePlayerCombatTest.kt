@@ -25,6 +25,7 @@ import kotlin.math.sqrt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 /** Real Minestom entities, but no sockets, external client, native input, or live server port. */
@@ -351,16 +352,21 @@ class CorePlayerCombatTest {
             // The two ultimates (slot 4): 狂戦士の甲冑, 獣の目覚め (needs three). 全力の一振り is slam_b3 now.
             listOf(Triple("war_banner_b0", 4, false), Triple("war_awaken_b3", 4, false)) +
             // 体当たり catching a blow as it charges, and 跳び叩き leaping far (both build more beast that way).
-            listOf(Triple("dash_catch", 0, false), Triple("war_wound_far", 3, false))
+            listOf(Triple("dash_catch", 0, false), Triple("war_wound_far", 3, false)) +
+            // 押し払い among three close in front; 切っ先薙ぎ with its tip on one (3.6 m) and with the middle of the blade (1.5 m).
+            listOf(Triple(CoreWarriorRules.PUSH, 3, false), Triple("war_tip_sweet", 3, false), Triple("war_tip_close", 3, false))
+        val mobsFor = mapOf(CoreWarriorRules.PUSH to listOf(Pos(8.5, 40.0, 10.4), Pos(10.1, 40.0, 9.7), Pos(6.9, 40.0, 9.7)),
+            "war_tip_sweet" to listOf(Pos(8.5, 40.0, 12.1)), "war_tip_close" to listOf(Pos(8.5, 40.0, 10.0)))
         val scenes=(runs+beastRuns).map { (run,slot,shader) -> var scene=emptyMap<String,Any>()
-            val icon=if(Regex("_b[0-3]$").containsMatchIn(run)) run.dropLast(3) else when(run) { "dash_catch" -> "dash"; "war_wound_far" -> "war_wound"; else -> run }
-            CoreWarriorIronChoreography.shaderCut=shader; try { arena(bossDistance = if (run == "war_wound_far") 7.5 else 4.0, mobs = if (icon == CoreWarriorRules.DRAG) listOf(Pos(7.7, 40.0, 10.6), Pos(7.5, 40.0, 12.2)) else emptyList()) { h ->
+            val icon=if(Regex("_b[0-3]$").containsMatchIn(run)) run.dropLast(3) else when(run) { "dash_catch" -> "dash"; "war_wound_far" -> "war_wound"; "war_tip_sweet", "war_tip_close" -> CoreWarriorRules.TIP; else -> run }
+            CoreWarriorIronChoreography.shaderCut=shader; try { arena(bossDistance = if (run == "war_wound_far") 7.5 else if (run in mobsFor) 14.0 else 4.0, mobs = mobsFor[run] ?: emptyList(), mobHealth = if (run in mobsFor) 10.0 else 1.0) { h ->
             CoreCombatPresentation.pack(h.player,true)
             if(icon=="war_wound") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=4)); h.actor.reset()
                 h.player.teleport(h.player.position.withView(0f, if (run == "war_wound_far") 0f else 30f)) } // 跳び叩き aims at the ground short of the target (far: straight ahead)
             if(icon=="war_counter") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=5)); h.actor.reset() }
-            if(icon=="war_breach") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=7)); h.actor.reset() }
-            if(icon==CoreWarriorRules.DRAG) { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=6)); h.actor.reset(); h.combat.tick(1000L) }
+            if(icon==CoreWarriorRules.PUSH) { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=6)); h.actor.reset() }
+            if(icon==CoreWarriorRules.TIP) { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=7)); h.actor.reset() }
+            if(run in mobsFor) h.combat.tick(1000L)
             if(icon=="war_banner") { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=1)); h.actor.reset() }
             if(icon==CoreWarriorRules.AWAKEN) { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=2)); h.actor.reset() }
             if(icon=="war_guard") h.player.teleport(h.player.position.withView(0f, 30f))
@@ -387,8 +393,6 @@ class CorePlayerCombatTest {
                 if ((icon == CoreWarriorLeap.ICON || icon == CoreWarriorRules.SKYFALL) && arc == null && h.player.velocity.y() > 0)
                     arc = CoreWarriorLeap.path(h.player.position, h.player.velocity.div(20.0)).iterator()
                 arc?.let { if (it.hasNext()) h.player.teleport(it.next()) }
-                // 引き摺り: the client walks the warrior forward while the blade drags (about the slowed walk speed).
-                if (icon == CoreWarriorRules.DRAG && it in 8..48) h.player.teleport(h.player.position.add(0.0, 0.0, .17))
                 if (run == "dash_catch" && it == 2) h.actor.hurt(20.0) }
             scene=mapOf("id" to if(shader) "${icon}_shader" else run,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to CoreWarriorRules.shape(h.actor.skillDefinitions[slot],
                 if(Regex("_b[0-3]$").containsMatchIn(run)) run.last().digitToInt() else 3).startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
@@ -440,9 +444,9 @@ class CorePlayerCombatTest {
     }
 
     private fun arena(bossDistance: Double = 4.0, armorTier: Int = 1, stats: CoreAffixStats = CoreAffixStats(), roll: Double = 1.0,
-        weaponEnhancement: Int = 0, armorEnhancement: Int = 0, mobs: List<Pos> = emptyList(), test: (Harness) -> Unit) {
+        weaponEnhancement: Int = 0, armorEnhancement: Int = 0, mobs: List<Pos> = emptyList(), mobHealth: Double = 1.0, test: (Harness) -> Unit) {
         MinecraftServer.init(Auth.Offline())
-        Harness(bossDistance, armorTier, stats, roll, weaponEnhancement, armorEnhancement, mobs).use(test)
+        Harness(bossDistance, armorTier, stats, roll, weaponEnhancement, armorEnhancement, mobs, mobHealth).use(test)
     }
 
     @Test
@@ -1157,7 +1161,7 @@ class CorePlayerCombatTest {
     }
 
     @Test fun `each variant belongs to one builder and one spender`() {
-        assertEquals(null, CoreWarriorRules.combo(CoreWarriorRules.DRAG, CoreWarriorRules.SHATTER))   // 引き摺り is retired, so is its variant
+        assertEquals(null, CoreWarriorRules.combo(CoreWarriorRules.PUSH, CoreWarriorRules.SHATTER))   // the new builders have no variant (yet)
         assertEquals(CoreWarriorRules.Combo.DOUBLE_DROP, CoreWarriorRules.combo(CoreWarriorLeap.ICON, CoreWarriorRules.SKYFALL))
         assertEquals(CoreWarriorRules.Combo.RUSH, CoreWarriorRules.combo("dash", CoreWarriorRules.FRENZY))
         assertEquals(null, CoreWarriorRules.combo("dash", CoreWarriorRules.SHATTER))
@@ -1263,6 +1267,139 @@ class CorePlayerCombatTest {
         assertTrue(h.incomingHits.isEmpty())
         h.actor.attack(); h.ticks(5); assertEquals(300.0 - 12.0 * QuestEncounterCombat.BROKEN_DAMAGE, h.combat.bossHealth(), .00001)
         h.combat.tick(5000L); assertFalse(h.combat.isBroken(id))
+    }
+
+    // ---- 押し払い / 切っ先薙ぎ (Creator 2026-10-28) ----
+    private fun Harness.equipBuilder(icon: String) {
+        journey = CoreJourney.legacy(build = CoreClassBuild(fourth = if (icon == CoreWarriorRules.PUSH) 6 else 7)); actor.reset()
+        assertEquals(icon, actor.skillDefinitions[3].icon)
+    }
+
+    @Test fun `push builds by how many it meets and tip builds two only off the tip`() {
+        assertEquals(listOf(0.0, .5, 1.0, 2.0, 2.0), (0..4).map { CoreWarriorRules.pushBeast(it) })
+        assertEquals(.5, CoreWarriorRules.builderGain(CoreWarriorRules.PUSH, false, 0.0, struck = 1))
+        assertEquals(2.0, CoreWarriorRules.builderGain(CoreWarriorRules.PUSH, false, 0.0, struck = 3))
+        assertEquals(CoreWarriorRules.TIP_BEAST, CoreWarriorRules.builderGain(CoreWarriorRules.TIP, false, 0.0, tip = true))
+        assertEquals(CoreWarriorRules.BUILDER_BASE, CoreWarriorRules.builderGain(CoreWarriorRules.TIP, false, 0.0, tip = false))
+        val three = listOf(Pos(8.5, 40.0, 10.4), Pos(10.1, 40.0, 9.7), Pos(6.9, 40.0, 9.7))
+        for ((mobs, gain) in listOf(three.take(1) to .5, three.take(2) to 1.0, three to 2.0))
+            arena(bossDistance = 30.0, mobs = mobs) { h ->
+                h.equipBuilder(CoreWarriorRules.PUSH); h.combat.tick(1000L)
+                h.actor.skill(3); h.ticks(h.actor.skillDefinitions[3].startupTicks(h.actor.sheet) + 2)
+                assertEquals(gain, h.actor.resource, 1e-9, "${mobs.size} met: the per-action cap is raised to the gain")
+            }
+        for ((at, gain) in listOf(Pos(8.5, 40.0, 12.1) to CoreWarriorRules.TIP_BEAST, Pos(8.5, 40.0, 10.0) to CoreWarriorRules.BUILDER_BASE))
+            arena(bossDistance = 30.0, mobs = listOf(at)) { h ->
+                h.equipBuilder(CoreWarriorRules.TIP); h.combat.tick(1000L)
+                h.actor.skill(3); h.ticks(h.actor.skillDefinitions[3].startupTicks(h.actor.sheet) + 2)
+                assertEquals(gain, h.actor.resource, 1e-9, "a target ${at.z() - 8.5} m ahead")
+            }
+    }
+
+    @Test fun `push throws regular enemies outward with a flinch but a boss only takes the hit and its break`() {
+        arena(bossDistance = 30.0, mobs = listOf(Pos(8.5, 40.0, 10.4), Pos(10.1, 40.0, 9.7))) { h ->
+            h.equipBuilder(CoreWarriorRules.PUSH); h.combat.tick(1000L)
+            val ids = h.combat.combatTargets().filter { !h.combat.isBoss(it.id) }.map { it.id }
+            val before = ids.associateWith { h.combat.positionOf(it)!! }
+            h.actor.skill(3); h.ticks(h.actor.skillDefinitions[3].startupTicks(h.actor.sheet))
+            for (id in ids) {
+                val from = before.getValue(id); val to = h.combat.positionOf(id)!!
+                val out = Vec(from.x() - 8.5, 0.0, from.z() - 8.5).normalize()
+                val moved = Vec(to.x() - from.x(), 0.0, to.z() - from.z())
+                assertEquals(CoreWarriorRules.PUSH_SHOVE, moved.length(), .21, "shoved its full length")
+                assertTrue(moved.normalize().dot(out) > .99, "straight away from the warrior")
+                assertTrue(CrowdControl.FLINCH in h.combat.crowdControl(id), "and staggered")
+            }
+        }
+        arena(bossDistance = 2.4) { h ->
+            h.equipBuilder(CoreWarriorRules.PUSH)
+            val boss = h.combat.combatTargets().single().id
+            val at = h.combat.positionOf(boss)!!
+            h.actor.skill(3); h.ticks(h.actor.skillDefinitions[3].startupTicks(h.actor.sheet))
+            assertTrue(h.combat.bossHealth() < 300.0, "the boss takes the hit")
+            assertEquals(at, h.combat.positionOf(boss), "but is not moved")
+            assertEquals(100.0 - CoreBreak.skill(CoreClass.WARRIOR, CoreWarriorRules.PUSH), h.combat.breakGauge(boss)!!, 1e-9)
+        }
+    }
+
+    @Test fun `the tip band takes the near surface of the body from three to four point two blocks`() {
+        assertFalse(CoreWarriorRules.tipBand(2.99)); assertTrue(CoreWarriorRules.tipBand(3.0))
+        assertTrue(CoreWarriorRules.tipBand(4.2)); assertFalse(CoreWarriorRules.tipBand(4.21))
+        // The same soldier, once on the tip (3.6 m) and once on the middle of the blade (1.5 m): the tip hits 1.5 times as hard.
+        fun lost(z: Double): Double { var out = 0.0
+            arena { h -> soldierArena(h, Pos(8.5, 40.0, 8.5 + z)) { e, id ->
+                h.equipBuilder(CoreWarriorRules.TIP); e.tick(1000L)
+                val before = e.mobInfo(id)!!.health
+                h.actor.skill(3); h.ticks(h.actor.skillDefinitions[3].startupTicks(h.actor.sheet))
+                out = before - e.mobInfo(id)!!.health
+            } }
+            return out }
+        val tip = lost(3.6); val close = lost(1.5)
+        assertTrue(close > 0.0)
+        assertEquals(CoreWarriorRules.TIP_SCALE, tip / close, 1e-6)
+        assertEquals(0.0, lost(4.9), "out of reach")
+    }
+
+    @Test fun `a tip hit freezes the enemy five ticks, the middle of the blade two, never a boss`() {
+        assertEquals(5, CoreWarriorRules.tipHitStopTicks(true)); assertEquals(2, CoreWarriorRules.tipHitStopTicks(false))
+        for ((z, stop) in listOf(3.6 to CoreWarriorRules.TIP_HITSTOP_TICKS, 1.5 to CoreWarriorRules.TIP_CLOSE_HITSTOP_TICKS))
+            arena { h -> soldierArena(h, Pos(8.5, 40.0, 8.5 + z)) { e, id ->
+                h.equipBuilder(CoreWarriorRules.TIP); e.tick(1000L)
+                h.actor.skill(3); h.ticks(h.actor.skillDefinitions[3].startupTicks(h.actor.sheet))
+                assertTrue(e.isAlive(id)); assertTrue(e.frozen(id), "$z m: held in the hit-stop")
+                e.tick(1000L + (stop - 1) * 50L)
+                assertTrue(e.frozen(id), "$z m: still held at ${stop - 1} ticks")
+                e.tick(1000L + stop * 50L)
+                assertFalse(e.frozen(id), "$z m: let go after $stop ticks")
+            } }
+        arena(bossDistance = 3.0) { h ->
+            h.equipBuilder(CoreWarriorRules.TIP)
+            val boss = h.combat.combatTargets().single().id
+            h.actor.skill(3); h.ticks(h.actor.skillDefinitions[3].startupTicks(h.actor.sheet))
+            assertTrue(h.combat.bossHealth() < 300.0)
+            assertFalse(h.combat.frozen(boss))
+        }
+    }
+
+    @Test fun `push and tip play their beats in the hand at the right ticks`() {
+        fun Harness.hand(test: (beat: () -> Float?, marker: () -> Int, plain: Boolean) -> Unit) {
+            CoreCombatPresentation.pack(player, true)
+            try {
+                player.setItemInMainHand(CoreLoopItems.gear(CoreAccount(player.uuid), CoreGearSlot.WEAPON, true))
+                test({ player.itemInMainHand.get(DataComponents.CUSTOM_MODEL_DATA)?.floats()?.firstOrNull() },
+                    { player.itemInMainHand.get(DataComponents.CUSTOM_MODEL_DATA)!!.colors().first().blue() },
+                    player.itemInMainHand.get(DataComponents.ITEM_MODEL)!!.endsWith("_t1"))
+            } finally { CoreCombatPresentation.forget(player) }
+        }
+        fun pose(beat: Int) = (CoreArmamentPresentation.ANIM_POSE + beat).toFloat()
+        arena(bossDistance = 30.0, mobs = listOf(Pos(8.5, 40.0, 10.4))) { h -> h.hand { beat, marker, plain ->
+            h.equipBuilder(CoreWarriorRules.PUSH); h.combat.tick(1000L)
+            h.player.setItemInMainHand(CoreLoopItems.gear(CoreAccount(h.player.uuid), CoreGearSlot.WEAPON, true))
+            val startup = h.actor.skillDefinitions[3].startupTicks(h.actor.sheet)
+            h.actor.skill(3)
+            h.ticks(startup - CoreArmamentPresentation.PUSH_LEAD_TICKS - 1)
+            assertNotEquals(pose(CoreArmamentPresentation.PUSH_BEAT), beat(), "not yet")
+            h.ticks(1)
+            assertEquals(pose(CoreArmamentPresentation.PUSH_BEAT), beat(), "the sweep starts ${CoreArmamentPresentation.PUSH_LEAD_TICKS} before the impact")
+            assertEquals(CoreArmamentPresentation.shaderMarker(CoreArmamentPresentation.PUSH_BEAT, plain), marker())
+            h.ticks(CoreArmamentPresentation.PUSH_LEAD_TICKS)
+            assertEquals(pose(CoreArmamentPresentation.PUSH_BEAT), beat(), "the impact does not put another pose over it")
+        } }
+        for ((z, bites) in listOf(3.6 to true, 1.5 to false))
+            arena(bossDistance = 30.0, mobs = listOf(Pos(8.5, 40.0, 8.5 + z))) { h -> h.hand { beat, marker, plain ->
+                h.equipBuilder(CoreWarriorRules.TIP); h.combat.tick(1000L)
+                h.player.setItemInMainHand(CoreLoopItems.gear(CoreAccount(h.player.uuid), CoreGearSlot.WEAPON, true))
+                val startup = h.actor.skillDefinitions[3].startupTicks(h.actor.sheet)
+                h.actor.skill(3)
+                assertEquals(pose(CoreArmamentPresentation.TIP_WIND_BEAT), beat(), "drawn back from the cast")
+                assertEquals(CoreArmamentPresentation.shaderMarker(CoreArmamentPresentation.TIP_WIND_BEAT, plain), marker())
+                h.ticks(startup - CoreArmamentPresentation.TIP_LEAD_TICKS)
+                assertEquals(pose(CoreArmamentPresentation.TIP_CUT_BEAT), beat(), "the cut starts ${CoreArmamentPresentation.TIP_LEAD_TICKS} before the impact")
+                h.ticks(CoreArmamentPresentation.TIP_LEAD_TICKS)
+                assertTrue(h.actor.resource > 0.0, "it hit")
+                assertEquals(pose(if (bites) CoreArmamentPresentation.TIP_BITE_BEAT else CoreArmamentPresentation.TIP_CUT_BEAT), beat(),
+                    if (bites) "the tip bites" else "the middle of the blade goes on through")
+            } }
     }
 
     private fun soldierArena(h: Harness, at: Pos = Pos(8.5, 40.0, 10.0), test: (QuestEncounterCombat, java.util.UUID) -> Unit) {
@@ -1694,7 +1831,7 @@ class CorePlayerCombatTest {
     }
 
     private class Harness(bossDistance: Double, armorTier: Int, stats: CoreAffixStats, roll: Double,
-        weaponEnhancement: Int, armorEnhancement: Int, mobs: List<Pos> = emptyList()) : AutoCloseable {
+        weaponEnhancement: Int, armorEnhancement: Int, mobs: List<Pos> = emptyList(), mobHealth: Double = 1.0) : AutoCloseable {
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
         val player: Player
         val combat: QuestEncounterCombat
@@ -1736,7 +1873,7 @@ class CorePlayerCombatTest {
                 weaponEnhancement = { weaponEnhancement }, armorEnhancement = { armorEnhancement },
                 weaponBroken = { weaponBroken }, armorBroken = { armorBroken }, journey = { journey }, weaponBase = { base }, allies = {otherActors}) { deaths++ }
             combat = QuestEncounterCombat(instance, 1, if (mobs.isEmpty()) emptyList() else listOf(QuestCombatEncounter(mobs)), Pos(8.5, 40.0, 8.5 + bossDistance),
-                onMobDefeated = { _, _ -> afterKill() },
+                onMobDefeated = { _, _ -> afterKill() }, healthMultiplier = mobHealth,
                 damagePlayer = { _, amount -> incomingHits += amount; actor.hurt(amount) },
                 canTarget = { (it === player && !actor.defeated) || otherActors.any { a -> a.player===it && !a.defeated } })
             activeEncounter = combat

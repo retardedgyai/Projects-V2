@@ -59,8 +59,8 @@ class CoreWarriorCompanionsTest {
     }
     @Test fun `every skill has a dedicated readable body rather than recoloured shared flourishes`() {
         val seen=mutableSetOf<String>()
-        // 獣の目覚め has no flourish body: it is drawn only by CoreWarriorRefChoreography.
-        for(s in CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon!=CoreWarriorRules.AWAKEN }) for(beat in 0 until s.pulses) {
+        // 獣の目覚め (and 押し払い / 切っ先薙ぎ) have no flourish body: it is drawn only by CoreWarriorRefChoreography.
+        for(s in CoreSkillCatalog.skills(CoreClass.WARRIOR).filter { it.icon!=CoreWarriorRules.AWAKEN && it.icon !in CoreWarriorRules.countedBuilders }) for(beat in 0 until s.pulses) {
             val e=CoreSkillEffect(CoreClass.WARRIOR,s,Vec.ZERO,Vec(0.0,0.0,1.0),pulse=beat)
             val bodies=CoreWarriorFlourish.parts(e).filter { !it.secondary }
             assertTrue(bodies.isNotEmpty(),s.icon)

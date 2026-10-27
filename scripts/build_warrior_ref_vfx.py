@@ -1111,6 +1111,37 @@ def fspark_texture(stage):
     return img
 
 
+def tipflash_texture(stage):
+    """48 x 48: 切っ先薙ぎ's tip going in (2026-10-28). Sharper than the clang: a hair-thin white line long along the cut
+    (the image's sideways), a small white diamond heart in a cream star, short gold points slanting off it (0); the
+    heart burnt out, the line broken in two and flung apart, the points stretched to splinters (1); gold splinters and
+    a few red sparks left, breaking up (2)."""
+    img = Image.new('RGBA', (48, 48), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    c = 23.5
+    def ray(a, r0, r1, tone, width=1):
+        t = math.radians(a)
+        d.line([(c + math.cos(t) * r0, c - math.sin(t) * r0), (c + math.cos(t) * r1, c - math.sin(t) * r1)], fill=tone + (255,), width=width)
+    if stage == 0:
+        d.polygon([(c - 23, c), (c - 6, c - 1.5), (c, c - 7), (c + 6, c - 1.5), (c + 23, c), (c + 6, c + 1.5), (c, c + 7),
+                   (c - 6, c + 1.5)], fill=C + (255,))
+        for a, r in ((32, 13), (148, 11), (212, 12), (328, 10), (90, 9), (270, 8)): ray(a, 5, r, G, 2)
+        d.line([(c - 22, c), (c + 22, c)], fill=W + (255,), width=1)
+        d.polygon([(c - 4, c), (c, c - 4), (c + 4, c), (c, c + 4)], fill=W + (255,))
+    elif stage == 1:
+        for x0, x1 in ((-23, -9), (9, 23)):
+            d.line([(c + x0, c), (c + x1, c)], fill=C + (255,), width=2)
+            d.line([(c + x0 + 2, c), (c + x1 - 2, c)], fill=W + (255,), width=1)
+        for a, r0, r1 in ((30, 9, 18), (150, 8, 16), (210, 9, 17), (330, 8, 15), (95, 7, 13), (265, 6, 12)): ray(a, r0, r1, G, 2)
+    else:
+        for a, r0, r1 in ((0, 14, 23), (180, 14, 23), (28, 12, 20), (152, 11, 18), (208, 12, 19), (332, 11, 17)):
+            ray(a, r0, r1, G, 1)
+            t = math.radians(a)
+            d.point((c + math.cos(t) * (r1 + 2), c - math.sin(t) * (r1 + 2)), fill=R + (255,))
+        img = dissolve(img, .4, 47)
+    return img
+
+
 # The cleft the leap's blade cuts on landing, seen from above with the facing up the image: the cut itself down the
 # middle, a sunken dish broken round it, cracks run out uneven, forked, longest to the sides. Drawn by hand.
 CLEFT_CRACKS = [[(35, 26), (41, 22), (44, 15), (50, 12), (54, 5)], [(36, 33), (44, 35), (50, 32), (57, 38), (63, 37)],
@@ -1374,8 +1405,6 @@ def build(assets, write):
         model(f'sweep_{f}', ground_model(texture(f'sweep_{f}', sweep_wind(f).transpose(Image.Transpose.ROTATE_180))))
     for st in range(7):
         model(f'scrape_{st}', ground_model(texture(f'scrape_{st}', scrape_arc(st).transpose(Image.Transpose.ROTATE_180))))
-    # 引き摺り: the held greatsword is swapped to this while a dragged one is drawn at the side.
-    model('empty', {'textures': {}, 'elements': []})
     for f in range(5):
         model(f'dust_{f}', centred_model(texture(f'dust_{f}', dust_puff(f))))
         # 狂戦士の甲冑: the black that climbs the body as the armor closes over it.
@@ -1433,6 +1462,9 @@ def build(assets, write):
         model(f'cleft_{f}', ground_model(texture(f'cleft_{f}', cleft_texture(f))))
     for st in range(2):
         model(f'fspark_{st}', centred_model(texture(f'fspark_{st}', glow(fspark_texture(st), halo=G))))
+    # 切っ先薙ぎ (2026-10-28): the tip going in.
+    for st in range(3):
+        model(f'tipflash_{st}', centred_model(texture(f'tipflash_{st}', glow(tipflash_texture(st), halo=G))))
     for s in range(5):
         model(f'crack_{s}', ground_model(texture(f'crack_{s}', glow(crack_texture(s)))))
 

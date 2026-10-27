@@ -517,29 +517,13 @@ class QuestEncounterCombat(
         return true
     }
 
-    /** 引き摺り (warrior): a hooked mob is dragged along toward [point], as far as the ground allows. Bosses stay put. */
-    fun dragTo(targetId: UUID, point: Pos, step: Double = .7): Boolean {
-        val mob = mobs[targetId] ?: return false
-        if (mob.boss || !mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING) return false
-        val delta = Vec(point.x() - mob.entity.position.x(), 0.0, point.z() - mob.entity.position.z())
-        if (delta.length() < .3) return true
-        slide(mob, delta.normalize(), minOf(step, delta.length()))
-        return true
-    }
-    /** 大地崩し (warrior): a regular mob is thrown [distance] blocks straight away from [from]. Bosses stay put. */
+    /** 大地崩し / 押し払い (warrior): a regular mob is thrown [distance] blocks straight away from [from]. Bosses stay put. */
     fun shove(targetId: UUID, from: Pos, distance: Double): Boolean {
         val mob = mobs[targetId] ?: return false
         if (mob.boss || !mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING) return false
         val away = Vec(mob.entity.position.x() - from.x(), 0.0, mob.entity.position.z() - from.z())
         if (away.length() < .1) return false
         slide(mob, away.normalize(), distance)
-        return true
-    }
-    /** 叩き落とし (warrior): a mob up in the air is driven straight down. Bosses never leave the ground, so nothing. */
-    fun slamDown(targetId: UUID): Boolean {
-        val mob = mobs[targetId] ?: return false
-        if (mob.boss || !mob.life.isAlive) return false
-        mob.entity.velocity = Vec(0.0, -30.0, 0.0)
         return true
     }
     fun crowdControl(targetId: UUID): Set<CrowdControl> {

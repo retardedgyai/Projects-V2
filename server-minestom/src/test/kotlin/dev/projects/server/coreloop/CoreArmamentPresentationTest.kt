@@ -150,24 +150,33 @@ class CoreArmamentPresentationTest {
         assertEquals(CoreArmamentPresentation.TACKLE_IMPACT_TICKS, int("SWING_IMPACT_TICKS"))
         assertEquals(CoreArmamentPresentation.LEAP_SLAM_TICKS, int("SWING_SLAM_TICKS"))
         assertEquals(CoreArmamentPresentation.LEAP_RISE_HOLD, Regex("const float SWING_RISE_HOLD = ([0-9.]+);").find(glsl)!!.groupValues[1].toDouble(), 1e-6)
+        assertEquals(CoreArmamentPresentation.PUSH_TICKS, int("SWING_PUSH_TICKS"))
+        assertEquals(CoreArmamentPresentation.PUSH_LEAD_TICKS, int("SWING_PUSH_LEAD"))
+        assertEquals(CoreArmamentPresentation.TIP_WIND_TICKS, int("SWING_TIP_WIND_TICKS"))
+        assertEquals(CoreArmamentPresentation.TIP_CUT_TICKS, int("SWING_TIP_CUT_TICKS"))
+        assertEquals(CoreArmamentPresentation.TIP_LEAD_TICKS, int("SWING_TIP_LEAD"))
+        assertEquals(CoreArmamentPresentation.TIP_BITE_TICKS, int("SWING_TIP_BITE_TICKS"))
         for (beat in 1..CoreArmamentPresentation.SHADER_BEATS) for (track in listOf("BIG", "PLAIN", "RARM", "LARM")) {
             assertTrue("void swingTrack_${track}_$beat(" in glsl, "$track $beat")
             assertTrue("swingTrack_${track}_$beat(u, g)" in vsh, "dispatched $track $beat")
         }
         val markers = (1..CoreArmamentPresentation.SHADER_BEATS).flatMap { b -> listOf(false, true).map { CoreArmamentPresentation.shaderMarker(b, it) } }
-        assertEquals((84..97).toList(), markers.sorted())
-        assertTrue("swingMarker >= 84 && swingMarker <= 97" in vsh)
-        assertTrue("swingMarker >= 116 && swingMarker <= 129" in vsh && "swingMarker >= 100 && swingMarker <= 113" in vsh)
-        assertTrue("bool plain = swingMarker >= 91;" in vsh)
-        assertTrue(markers.all { it !in 80..83 } && markers.all { it + 16 !in 80..83 && it + 32 <= 255 })
+        assertEquals((84..105).toList(), markers.sorted())
+        assertTrue("swingMarker >= 84 && swingMarker <= 105" in vsh)
+        assertTrue("swingMarker >= 128 && swingMarker <= 149" in vsh && "swingMarker >= 106 && swingMarker <= 127" in vsh)
+        assertTrue("swingMarker -= swingPart * ${CoreArmamentPresentation.ARM_MARK_STEP};" in vsh)
+        assertTrue("bool plain = swingMarker >= 95;" in vsh)
+        val step = CoreArmamentPresentation.ARM_MARK_STEP
+        assertTrue(markers.all { it !in 80..83 } && markers.all { it + step !in 80..83 && it + 2 * step <= 255 })
         // The arms' ranges stay apart from each other and from the swords'.
-        val right = markers.map { it + 16 }; val left = markers.map { it + 32 }
+        val right = markers.map { it + step }; val left = markers.map { it + 2 * step }
+        assertEquals(106..127, right.min()..right.max()); assertEquals(128..149, left.min()..left.max())
         assertTrue(right.none { it in markers || it in left } && left.none { it in markers })
         // 跳び叩き's rise covers the flight and never outlasts the latest landing.
         assertEquals(CoreWarriorLeap.MAX_AIR_TICKS, CoreArmamentPresentation.leapRiseTicks(200))
         assertTrue(CoreArmamentPresentation.leapRiseTicks(17) * CoreArmamentPresentation.LEAP_RISE_HOLD >= 17 + 2)
         // Beats past the last fall back to it; the held sword's model takes every value from ANIM_POSE.
-        assertEquals(CoreArmamentPresentation.shaderMarker(CoreArmamentPresentation.SHADER_BEATS, false), CoreArmamentPresentation.shaderMarker(9, false))
+        assertEquals(CoreArmamentPresentation.shaderMarker(CoreArmamentPresentation.SHADER_BEATS, false), CoreArmamentPresentation.shaderMarker(14, false))
         val item = CoreLoopItems.gear(CoreAccount(UUID.randomUUID()), CoreGearSlot.WEAPON, true)
         for (beat in 1..CoreArmamentPresentation.SHADER_BEATS)
             assertEquals((CoreArmamentPresentation.ANIM_POSE + beat).toFloat(),

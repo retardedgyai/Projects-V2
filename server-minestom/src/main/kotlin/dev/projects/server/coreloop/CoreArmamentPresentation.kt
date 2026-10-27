@@ -49,8 +49,9 @@ internal object CoreArmamentPresentation {
         // 鉄槌 falls three times (2026-10-19): every pulse is its own swing, short enough to finish before the next.
         val threefold = effect.job == CoreClass.WARRIOR && effect.sceneId == "war_ult" && effect.phase == CoreSkillVisualPhase.PULSE
         if (!effect.valid || (effect.pulse != 0 && !threefold) || effect.phase == CoreSkillVisualPhase.CONTACT) return
-        // 地割り's hand is the shader's rise and slam (CorePlayerCombat): its pulse must not put the old pose over them.
-        if (effect.job == CoreClass.WARRIOR && effect.sceneId == "slam" && player.getTag(shaderTag) != null) return
+        // 地割り's, 押し払い's and 切っ先薙ぎ's hands are the shader's beats (CorePlayerCombat): their pulses must not put the
+        // old pose over them.
+        if (effect.job == CoreClass.WARRIOR && effect.sceneId in shaderHanded && player.getTag(shaderTag) != null) return
         // A shout or planting a standard is not a sword release.
         if(effect.job==CoreClass.WARRIOR && effect.sceneId in CoreWarriorSupportChoreography.sceneIds) return
         if (!usesWeapon(player.itemInMainHand, effect.motif)) return
@@ -77,15 +78,34 @@ internal object CoreArmamentPresentation {
     /**
      * Beats 1..3 are the normal attacks; 4 and 5 are 体当たり's charge and impact (scripts/class_armament_swing.py
      * CHARGE_BEAT / IMPACT_BEAT, keyed over CHARGE_TICKS / IMPACT_TICKS, which these lengths must match); 6 and 7 are
-     * 跳び叩き's rise and slam (RISE_BEAT / SLAM_BEAT, SLAM_TICKS), which 地割り and 全力の一振り play too.
-     * Tint blue: 84 + beat - 1 for the big swords, + [SHADER_BEATS] for the T1 sprite (84..97), the arms +16 / +32;
-     * the light probes below (80..83) stay clear.
+     * 跳び叩き's rise and slam (RISE_BEAT / SLAM_BEAT, SLAM_TICKS), which 地割り and 全力の一振り play too; 8 is 押し払い's
+     * sweep; 9, 10 and 11 are 切っ先薙ぎ's wind-up, cut and bite (PUSH_BEAT, TIP_WIND_BEAT, TIP_CUT_BEAT, TIP_BITE_BEAT).
+     * Tint blue: 84 + beat - 1 for the big swords, + [SHADER_BEATS] for the T1 sprite (84..105), the arms
+     * + [ARM_MARK_STEP] / twice it (106..127 / 128..149), so no two ranges meet; the light probes below (80..83) stay clear.
      */
-    const val SHADER_BEATS = 7
+    const val SHADER_BEATS = 11
+    const val ARM_MARK_STEP = 2 * SHADER_BEATS
     const val CHARGE_BEAT = 4
     const val IMPACT_BEAT = 5
     const val RISE_BEAT = 6
     const val SLAM_BEAT = 7
+    const val PUSH_BEAT = 8
+    const val TIP_WIND_BEAT = 9
+    const val TIP_CUT_BEAT = 10
+    const val TIP_BITE_BEAT = 11
+    /** 押し払い's sweep: the blade is through the middle [PUSH_LEAD_TICKS] after it starts (scripts/class_armament_swing.py). */
+    const val PUSH_TICKS = 13
+    const val PUSH_LEAD_TICKS = 3
+    /**
+     * 切っ先薙ぎ: the wind-up is played from the cast at its full length (drawn back in about three ticks, held to
+     * TIP_WIND_HOLD, back to rest by its end if no cut comes); the cut starts [TIP_LEAD_TICKS] before the impact and is
+     * through the middle at it; the bite takes over from the cut at the impact when the tip met someone.
+     */
+    const val TIP_WIND_TICKS = 14
+    const val TIP_CUT_TICKS = 16
+    const val TIP_LEAD_TICKS = 2
+    const val TIP_BITE_TICKS = 18
+    private val shaderHanded = setOf("slam", CoreWarriorRules.PUSH, CoreWarriorRules.TIP)
     const val TACKLE_CHARGE_TICKS = 14
     const val TACKLE_IMPACT_TICKS = 11
     const val LEAP_SLAM_TICKS = 12
@@ -129,7 +149,7 @@ internal object CoreArmamentPresentation {
         val old = posed.get(DataComponents.CUSTOM_MODEL_DATA)!!
         player.setTag(shaderTag, ShaderSwing(player.aliveTicks + ticks, frame(item, 0), beat))
         player.setItemInMainHand(posed.with(DataComponents.CUSTOM_MODEL_DATA,
-            CustomModelData(old.floats(), old.flags(), old.strings(), listOf(tint(marker), tint(marker + 16), tint(marker + 32)) + old.colors().drop(3))))
+            CustomModelData(old.floats(), old.flags(), old.strings(), listOf(tint(marker), tint(marker + ARM_MARK_STEP), tint(marker + 2 * ARM_MARK_STEP)) + old.colors().drop(3))))
         return true
     }
 
@@ -187,9 +207,9 @@ internal object CoreArmamentPresentation {
 
     fun cancel(player: Player) {
         player.removeTag(clipTag)
-        // 体当たり's charge and 跳び叩き's rise are held in the hand only while the action lasts: a cancelled one lets
-        // the sword go.
-        player.getTag(shaderTag)?.takeIf { it.beat == CHARGE_BEAT || it.beat == RISE_BEAT }?.let { swing ->
+        // 体当たり's charge, 跳び叩き's rise and 切っ先薙ぎ's wind-up are held in the hand only while the action lasts: a
+        // cancelled one lets the sword go.
+        player.getTag(shaderTag)?.takeIf { it.beat == CHARGE_BEAT || it.beat == RISE_BEAT || it.beat == TIP_WIND_BEAT }?.let { swing ->
             player.removeTag(shaderTag)
             val held = player.itemInMainHand
             if (frame(held, 0).without(DataComponents.CUSTOM_MODEL_DATA) == swing.weapon.without(DataComponents.CUSTOM_MODEL_DATA))
@@ -197,33 +217,11 @@ internal object CoreArmamentPresentation {
         }
     }
 
-    /** 引き摺り: the held weapon's model is swapped out until [until] (a dragged one is drawn instead), then restored. */
-    private data class Hidden(val model: String, val until: Long)
-    private val hiddenTag = Tag.Transient<Hidden>("projects_armament_hidden")
-    const val HIDDEN_MODEL = "projects:combat_vfx/warrior_ref/empty"
-    fun hide(player: Player, ticks: Int) {
-        val item = player.itemInMainHand
-        val model = item.get(DataComponents.ITEM_MODEL) ?: return
-        if (model !in models && player.getTag(hiddenTag) == null) return
-        val original = player.getTag(hiddenTag)?.model ?: model
-        cancel(player)
-        player.removeTag(swingTag)
-        GreatswordViewmodel.stop(player)
-        player.setTag(hiddenTag, Hidden(original, player.aliveTicks + ticks))
-        player.setItemInMainHand(item.with(DataComponents.ITEM_MODEL, HIDDEN_MODEL))
-    }
-    fun show(player: Player) {
-        val hidden = player.getTag(hiddenTag) ?: return
-        player.removeTag(hiddenTag)
-        val item = player.itemInMainHand
-        if (item.get(DataComponents.ITEM_MODEL) == HIDDEN_MODEL) player.setItemInMainHand(item.with(DataComponents.ITEM_MODEL, hidden.model))
-    }
-
     fun tick(player: Player, packed: Boolean) {
         // Hand-held equipment only, 10 fps. No background timers or entities.
         // Do not churn container/cursor projections while a menu is open.
         if (!packed || player.instance == null || player.openInventory != null || player.isRemoved) {
-            cancel(player); player.removeTag(swingTag); GreatswordViewmodel.stop(player); show(player); return
+            cancel(player); player.removeTag(swingTag); GreatswordViewmodel.stop(player); return
         }
         if (GreatswordViewmodel.playing(player)) { GreatswordViewmodel.tick(player); return }
         player.getTag(shaderTag)?.let { swing ->
@@ -234,7 +232,6 @@ internal object CoreArmamentPresentation {
             if (frame(held, 0).without(DataComponents.CUSTOM_MODEL_DATA) == swing.weapon.without(DataComponents.CUSTOM_MODEL_DATA))
                 player.setItemInMainHand(swing.weapon)
         }
-        player.getTag(hiddenTag)?.let { if (player.aliveTicks >= it.until) show(player) else return }
         val old = player.itemInMainHand
         // A swing moves every tick (the 10 fps idle frames would stutter it); a beat left unfollowed settles back.
         player.getTag(swingTag)?.let { swing ->

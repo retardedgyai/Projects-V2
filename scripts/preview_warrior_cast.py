@@ -434,9 +434,7 @@ def render(scene, tick, view):
     swing = (tick - cast) / 6 if 0 <= tick - cast < 6 else None
     faces, hand = player_faces(pos, yaw, swing)
     if view == 'fp': faces = []          # the own body is not seen in first person
-    # 引き摺り: the held sword is hidden while the dragged one is drawn (CoreArmamentPresentation.hide).
-    dragging = scene['id'].startswith('war_cry') and scene['castTick'] + scene['startup'] <= tick < scene['castTick'] + scene['startup'] + 42
-    if not dragging and view != 'fp': faces += weapon_faces(hand, weapon_pose(scene, tick))
+    if view != 'fp': faces += weapon_faces(hand, weapon_pose(scene, tick))
     for t in frame['targets']: faces += target_faces(np.array(t) - origin)
     for d in frame['displays']:
         faces += display_faces({**d, 'offset': list(np.array(d['offset']) - origin)}, camera)

@@ -29,7 +29,7 @@ internal object CoreCombatFeel {
     }
     fun recovery(job: CoreClass, s: CoreSkillDefinition) = when {
         s.icon == "dash" || s.icon == "war_wound" -> 3
-        s.icon in setOf("war_breach", "war_cry", "war_banner", "war_awaken") -> 4
+        s.icon in setOf(CoreWarriorRules.PUSH, "war_banner", "war_awaken") -> 4
         s.icon == CoreWarriorRules.FRENZY -> 6
         s.icon == CoreWarriorRules.SHATTER -> 7
         s.motion == CoreSkillMotion.GUARD -> 0
@@ -45,7 +45,7 @@ internal object CoreCombatFeel {
     /** A guard may cut a skill after its last impact and any normal follow-through. */
     fun cancelsIntoGuard(s: CoreSkillDefinition) = s.motion == CoreSkillMotion.GUARD
     fun minDot(icon: String) = when (icon) {
-        "slam", "war_breach", "war_ult" -> .8 // Commit the heavy blade along the aimed lane.
+        "slam", "war_ult" -> .8 // Commit the heavy blade along the aimed lane.
         else -> .35
     }
 }
@@ -62,8 +62,9 @@ internal object CoreWarriorRules {
     const val FRENZY = "whirl"        // 狂乱
     const val SKYFALL = "war_guard"   // 天落とし
     const val SHATTER = "war_counter" // 大地崩し
-    const val LAUNCHER = "war_breach" // 斬り上げ (builds)
-    const val DRAG = "war_cry"        // 引き摺り (builds)
+    /** 押し払い / 切っ先薙ぎ (Creator 2026-10-28) take the retired 引き摺り's and 斬り上げ's catalog slots (6, 7). */
+    const val PUSH = "war_push"       // 押し払い (builds)
+    const val TIP = "war_tip"         // 切っ先薙ぎ (builds)
     /** 全力の一振り: retired as an ultimate (Creator 2026-10-27); its id now names 地割り at a full beast (see [fullSwing]). */
     const val FULL_SWING = "war_ult"
     const val ARMOR = "war_banner"    // 狂戦士の甲冑 (ultimate)
@@ -97,10 +98,6 @@ internal object CoreWarriorRules {
     /** 地割り's hit-stop on each regular enemy struck (bosses never); 全力の一振り's is heavier. */
     const val SLAM_HITSTOP_TICKS = 3
     const val FULL_SWING_HITSTOP_TICKS = 7
-    /** 引き摺り: how long the blade is dragged, how fast the warrior walks meanwhile, how far the hook reaches. */
-    const val DRAG_TICKS = 40
-    const val DRAG_SPEED = .8
-    const val DRAG_HOOK = 1.5
     /**
      * Building skills by situation (Creator 2026-10-27: 「このスキルはこういうシチュエーションで…使い分け」): an ordinary
      * hit builds only [BUILDER_BASE]; used where it is meant to be, it builds much more (see [builderGain]).
@@ -129,18 +126,39 @@ internal object CoreWarriorRules {
     const val LEAP_HITSTOP_TICKS = 3
     const val LEAP_FAR_HITSTOP_TICKS = 5
     fun leapHitStopTicks(leapReach: Double) = if (leapReach >= LEAP_FAR) LEAP_FAR_HITSTOP_TICKS else LEAP_HITSTOP_TICKS
-    fun builderGain(icon: String, caught: Boolean, leapReach: Double) = when (icon) {
+    /**
+     * 押し払い (Creator 2026-10-28, for when the warrior is surrounded): the flat of the sword sweeps a wide fan in front
+     * ([PUSH_RADIUS], about 160 degrees) and throws every regular enemy it meets [PUSH_SHOVE] blocks outward with a short
+     * flinch; bosses take the hit and its break but are not moved. The more it meets, the more beast ([pushBeast]).
+     */
+    const val PUSH_RADIUS = 3.2
+    const val PUSH_MIN_DOT = .17
+    const val PUSH_SHOVE = 3.0
+    fun pushBeast(struck: Int) = when { struck >= 3 -> 2.0; struck == 2 -> 1.0; struck == 1 -> BUILDER_BASE; else -> 0.0 }
+    /**
+     * 切っ先薙ぎ (Creator 2026-10-28: the sweet spot): one wide horizontal cut, right to left, reaching [TIP_REACH]. What the
+     * blade meets in the tip band ([TIP_NEAR]..[TIP_REACH] from the warrior, to the body's near surface) is a tip hit:
+     * [TIP_SCALE] times the damage and break, a [TIP_HITSTOP_TICKS] hit-stop, a ringing blow and sparks; anything
+     * nearer is met by the middle of the blade: a dull, ordinary hit and a short hit-stop. Any tip hit builds [TIP_BEAST].
+     */
+    const val TIP_REACH = 4.2
+    const val TIP_NEAR = 3.0
+    const val TIP_MIN_DOT = .35
+    const val TIP_SCALE = 1.5
+    const val TIP_BEAST = 2.0
+    const val TIP_HITSTOP_TICKS = 5
+    const val TIP_CLOSE_HITSTOP_TICKS = 2
+    fun tipBand(distance: Double) = distance >= TIP_NEAR && distance <= TIP_REACH
+    fun tipHitStopTicks(tip: Boolean) = if (tip) TIP_HITSTOP_TICKS else TIP_CLOSE_HITSTOP_TICKS
+    /** Builders whose beast is counted after the whole strike (how many it met, whether the tip met one), not at the first hit. */
+    val countedBuilders = setOf(PUSH, TIP)
+    fun builderGain(icon: String, caught: Boolean, leapReach: Double, struck: Int = 1, tip: Boolean = false) = when (icon) {
         "dash" -> if (caught) 0.0 else BUILDER_BASE                       // the catch already paid out
         CoreWarriorLeap.ICON -> if (leapReach >= LEAP_FAR) LEAP_FAR_BEAST else BUILDER_BASE
+        PUSH -> pushBeast(struck)
+        TIP -> if (tip) TIP_BEAST else BUILDER_BASE
         else -> BEAST_PER_SKILL
     }
-    /** The effect pulse that marks 引き摺り's final swing (the drag's own pulses count up from 1). */
-    const val DRAG_FINISH_PULSE = 99
-    /** How long an enemy 斬り上げ threw up counts as in the air for 叩き落とし. */
-    const val LAUNCHED_TICKS = 36L
-    /** 叩き落とし: 地割り on an enemy 斬り上げ threw up. */
-    const val SMASH_DOWN_PERCENT = 50
-    const val SMASH_DOWN_STUN_MILLIS = 2000L
     /** 天落とし: the rings the landing sends out, inside to outside. */
     val SKYFALL_RINGS = listOf(3.5, 6.0, 8.0)
     const val SKYFALL_RING_TICKS = 4
@@ -210,10 +228,7 @@ internal object CoreWarriorRules {
     /** 大地崩し: castable while staggered with at least one stack, untouchable for its first ticks. */
     const val SHATTER_EVADE_TICKS = 6L
 
-    /**
-     * A + B (Creator 2026-10-26): a spender within [COMBO_TICKS] of a building skill that landed turns into that
-     * pair's variant (斬り上げ + 地割り's 叩き落とし goes by the launched enemies instead, see LAUNCHED_TICKS).
-     */
+    /** A + B (Creator 2026-10-26): a spender within [COMBO_TICKS] of a building skill that landed turns into that pair's variant. */
     enum class Combo(val builder: String, val spender: String, val label: String) {
         DOUBLE_DROP(CoreWarriorLeap.ICON, SKYFALL, "跳び叩き＋天落とし：二段落とし"),
         RUSH("dash", FRENZY, "体当たり＋狂乱"),

@@ -8,8 +8,8 @@ whirl|狂乱|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0
 war_guard|天落とし|GUARD|steel|parry_blade|edge_glint|edge_glint|cut_spark|0.9|1.0|1.0|獣を使う跳躍。高く跳んで叩き落とし、着地から衝撃の輪が外へ広がる（見た目はCoreWarriorRefChoreography）
 war_wound|跳び叩き|CUT|steel|slash_short|blood_notch|edge_glint|cut_spark|1.8|1.0|1.0|狙った地点へ弧を描いて跳び、着地の前方に短い溝と扇形に跳ねる土（見た目はCoreWarriorRefChoreography）
 war_counter|大地崩し|CUT|gold|slash_reverse|speed_streak|edge_glint|cut_spark|2.3|1.0|1.0|獣を使う範囲技。大剣を突き立てて周り一面の地面を砕き、まとめて打ち上げる（見た目はCoreWarriorRefChoreography）
-war_cry|引き摺り|SHIELD|gold|roar_wave|shield_arch|cast_spark|light_spark|1.2|1.0|1.0|獣を溜める巻き込み。大剣を体の横で引きずって歩き、刃先の後ろに溝、最後に前へ振り下ろす（見た目はCoreWarriorRefChoreography）
-war_breach|斬り上げ|THRUST|steel|thrust_tip|speed_streak|edge_glint|armor_break|2.6|0.8|0.8|獣を溜める打ち上げ。引きずった跡から真上への軌跡、敵の足元から土が噴き上がる（見た目はCoreWarriorRefChoreography）
+war_push|押し払い|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0|獣を溜める押し出し。自分の振りは手の剣だけ、世界には前へ低く押し出される砂埃と、押された敵の足の滑り跡（見た目はCoreWarriorRefChoreography）
+war_tip|切っ先薙ぎ|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0|獣を溜める間合いの薙ぎ。自分の振りは手の剣だけ、切っ先が入った所に白金の閃光と火花、近いと土埃だけ（見た目はCoreWarriorRefChoreography）
 war_ult|全力の一振り|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|3.4|1.2|1.0|奥義。担いで溜め、地割りの最大の形で前へ大きく割る（見た目はCoreWarriorRefChoreography）
 war_banner|狂戦士の甲冑|BANNER|gold|battle_banner|shield_arch|cast_spark|light_spark|1.5|1.0|1.0|奥義。足元が割れて土が噴き、10秒暴れる（見た目はCoreWarriorRefChoreography）
 war_awaken|獣の目覚め|BANNER|gold|battle_banner|shield_arch|cast_spark|light_spark|1.5|1.0|1.0|奥義。獣が解き放たれ、足元が割れる（見た目はCoreWarriorRefChoreography）

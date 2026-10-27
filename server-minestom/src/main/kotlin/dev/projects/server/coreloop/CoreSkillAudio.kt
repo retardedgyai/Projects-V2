@@ -32,9 +32,7 @@ internal object CoreSkillAudio {
                 if(heavy) add(Cue(SoundEvent.ENTITY_ZOMBIE_ATTACK_IRON_DOOR,.55f,.7f))
             }
             CoreSkillVisualPhase.PULSE -> buildList {
-                // Thrust moves air forward; it must not sound like a sideways sweep.
-                add(Cue(if(effect.sceneId=="war_breach") SoundEvent.ENTITY_PLAYER_ATTACK_STRONG else SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP,
-                    if(effect.sceneId=="war_breach") .7f else 1f,pitch))
+                        add(Cue(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP,1f,pitch))
                 add(Cue(SoundEvent.ITEM_TRIDENT_THROW,if(quick) .75f else 1f,pitch))
                 // Low body only on committed finishers; not an explosion on every click.
                 if(heavy) add(Cue(SoundEvent.ENTITY_IRON_GOLEM_ATTACK,.8f,.7f))
@@ -66,8 +64,6 @@ internal object CoreSkillAudio {
         CoreSkillVisualPhase.PULSE -> when(effect.sceneId) {
             "war_guard" -> listOf(Cue(SoundEvent.ITEM_ARMOR_EQUIP_IRON,.9f,.8f),
                 Cue(SoundEvent.ITEM_TRIDENT_RETURN,.6f,1.1f))
-            "war_cry" -> listOf(Cue(SoundEvent.ENTITY_RAVAGER_ROAR,.7f,1.45f),
-                Cue(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG,.55f,.65f))
             else -> listOf(Cue(SoundEvent.BLOCK_ANVIL_LAND,.5f,.8f),
                 Cue(SoundEvent.BLOCK_WOOL_PLACE,1f,.75f),Cue(SoundEvent.EVENT_RAID_HORN,.35f,1.4f))
         }
@@ -89,6 +85,8 @@ internal object CoreSkillAudio {
             }
             return
         }
+        // 押し払い / 切っ先薙ぎ are voiced by CorePlayerCombat at their own moments (the swing, the shove, the ring or the thud).
+        if(effect.job==CoreClass.WARRIOR && effect.sceneId in CoreWarriorRules.countedBuilders) return
         val scene = CoreSkillScenes.get(effect.sceneId)
         if(effect.job==CoreClass.WARRIOR && (effect.sceneId in CoreWarriorBladeChoreography.sceneIds ||
                 effect.sceneId in CoreWarriorSupportChoreography.sceneIds)) {

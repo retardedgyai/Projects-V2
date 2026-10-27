@@ -18,8 +18,8 @@ internal object CoreSkillArt {
     // Explicit assignments: adding a skill requires choosing its visual language, not hashing its name.
     val motifs = buildMap {
         fun put(kind: CoreSkillMotif, vararg ids: String) = ids.forEach { put(it, kind) }
-        put(CoreSkillMotif.SLASH, "dash", "war_wound", "war_counter", "ass_execute")
-        put(CoreSkillMotif.THRUST, "war_breach", "ass_stab", "ass_chase", "ass_contract", "temp_dash")
+        put(CoreSkillMotif.SLASH, "dash", "war_wound", "war_counter", "war_push", "war_tip", "ass_execute")
+        put(CoreSkillMotif.THRUST, "ass_stab", "ass_chase", "ass_contract", "temp_dash")
         put(CoreSkillMotif.CLEAVE, "slam", "war_ult", "temp_mace", "temp_break")
         put(CoreSkillMotif.WHIRL, "whirl", "ass_fan", "ass_ult")
         put(CoreSkillMotif.VENOM, "ass_poison")
@@ -34,7 +34,7 @@ internal object CoreSkillArt {
         put(CoreSkillMotif.FROST, "frost_nova", "mage_garden", "mage_zero")
         put(CoreSkillMotif.TRAP, "hunt_trap")
         put(CoreSkillMotif.PULL, "temp_pull", "temp_ult")
-        put(CoreSkillMotif.WARD, "war_cry", "war_banner", "war_awaken", "mage_ward", "temp_ward", "temp_sanctuary",
+        put(CoreSkillMotif.WARD, "war_banner", "war_awaken", "mage_ward", "temp_ward", "temp_sanctuary",
             "heal_shield")
         put(CoreSkillMotif.HEAL, "heal_ring", "heal_wind", "heal_ult")
         put(CoreSkillMotif.PILLAR, "heal_pillar", "heal_lamp", "heal_judgment", "temp_field")
@@ -73,8 +73,6 @@ internal class CoreSkillEffect(
     internal val sceneId: String = skill.icon,
     internal val endpoint: CoreSkillEndpoint = CoreSkillEndpoint.NONE,
     internal val gardenCells: List<net.minestom.server.coordinate.Pos>? = null,
-    /** 引き摺り: the held weapon's item model, drawn dragged at the side while the real one is hidden. */
-    internal val weaponModel: String? = null,
 ) : ParticleEffect {
     internal var solidCompanion: Boolean = false
     /** The owner's look pitch (radians, down positive) when the effect began: the greatsword's slash lies along it. */

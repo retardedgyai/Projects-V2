@@ -40,8 +40,10 @@ class CoreSkillAudioTest {
         }
         assertEquals(CoreWarriorSupportChoreography.sceneIds.size,signatures.distinct().size)
     }
-    @Test fun `thrust has no sweep sound and only ground finishers add fracture audio`() {
-        assertTrue(CoreSkillAudio.warriorCues(effect("war_breach")).none { it.event==SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP })
+    @Test fun `the shader-handed builders are silent here and only ground finishers add fracture audio`() {
+        // 押し払い / 切っ先薙ぎ are voiced at their own moments by the combat, never by the effect.
+        for(id in CoreWarriorRules.countedBuilders) for(phase in CoreSkillVisualPhase.entries)
+            assertTrue(CoreSkillAudio.warriorCues(effect(id,phase=phase)).isEmpty(),"$id $phase")
         assertEquals(3,(0..2).map { CoreSkillAudio.warriorCues(effect("war_ult",it)) }.distinct().size)
         for(pulse in 0..2) assertEquals(pulse==2,CoreSkillAudio.warriorCues(effect("war_ult",pulse)).any { it.event==SoundEvent.BLOCK_STONE_BREAK })
         assertTrue(CoreSkillAudio.warriorCues(effect("slam")).any { it.event==SoundEvent.BLOCK_STONE_BREAK })

@@ -4,6 +4,7 @@ import dev.projects.server.mob.rayHit
 import dev.projects.server.puppet.PlayerPuppet
 import dev.projects.server.mob.distanceTo
 
+import dev.projects.server.mob.CombatTarget
 import dev.projects.server.mob.CrowdControl
 import dev.projects.server.mob.QuestEncounterCombat
 import net.kyori.adventure.sound.Sound
@@ -99,8 +100,6 @@ internal class CorePlayerCombat(
     private var awakenUntil = -1L
     val armored get() = classId == CoreClass.WARRIOR && tickNumber < armorUntil
     val awakened get() = classId == CoreClass.WARRIOR && tickNumber < awakenUntil
-    /** 斬り上げ: enemies it threw up and until when they count as in the air (叩き落とし). */
-    private val launched = mutableMapOf<UUID, Long>()
     /** Warrior A + B: the building skill that last landed, and until when a spender turns into their variant. */
     private var comboFrom: String? = null
     private var comboUntil = -1L
@@ -155,8 +154,6 @@ internal class CorePlayerCombat(
         var leapTick: Long = -1L,
         /** 天落とし: where it landed and when; the rings go out from there (CoreWarriorRules.SKYFALL_RINGS). */
         var landAt: Pos? = null, var landTick: Long = -1L,
-        /** 引き摺り: when the drag began, and the regular enemies hooked on the blade so far. */
-        var dragTick: Long = -1L, val hooked: MutableSet<UUID> = mutableSetOf(),
         /** 体当たり: when the charge began (-1 when not charging) and whether it caught a blow; 跳び叩き: how far it leapt. */
         var chargeTick: Long = -1L, var caught: Boolean = false, var leapReach: Double = 0.0,
         /** Warrior A + B: the variant this spender turned into, if any. */
@@ -297,6 +294,27 @@ internal class CorePlayerCombat(
         if (startup > 1) vfx.playSkill(CoreSkillEffect(classId, castDefinition, pending!!.origin, pending!!.direction,
             CoreSkillVisualPhase.PREPARE, prepareTicks = startup - 1, gardenCells = gardenCells))
         if (classId == CoreClass.WARRIOR && definition.icon == "slam") slamWindup(pending!!)
+        if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.PUSH && startup <= CoreArmamentPresentation.PUSH_LEAD_TICKS) pushHand()
+        if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.TIP) tipWindup(pending!!)
+    }
+
+    /** 押し払い in the hand: a one-tick cock to the right, then the flat low across, through the middle at the impact. */
+    private fun pushHand() {
+        CoreArmamentPresentation.shaderSwing(player, CoreArmamentPresentation.PUSH_BEAT, CoreArmamentPresentation.PUSH_TICKS)
+        pushSwingSound()
+    }
+    /**
+     * 切っ先薙ぎ's cast: the sword drawn back to the right and held (the wind-up beat), until the cut starts
+     * [CoreArmamentPresentation.TIP_LEAD_TICKS] before the impact; a startup too short for that goes straight into the cut.
+     */
+    private fun tipWindup(action: PendingSkill) {
+        if (action.startup <= CoreArmamentPresentation.TIP_LEAD_TICKS) { tipCutHand(); return }
+        CoreArmamentPresentation.shaderSwing(player, CoreArmamentPresentation.TIP_WIND_BEAT, CoreArmamentPresentation.TIP_WIND_TICKS)
+        tipWindupSound()
+    }
+    private fun tipCutHand() {
+        CoreArmamentPresentation.shaderSwing(player, CoreArmamentPresentation.TIP_CUT_BEAT, CoreArmamentPresentation.TIP_CUT_TICKS)
+        tipCutSound()
     }
 
     /**
@@ -471,35 +489,6 @@ internal class CorePlayerCombat(
                 if (!actionsValid(enemies, epoch)) return
                 return@let
             }
-            if (action.dragTick >= 0) {
-                // 引き摺り: the blade drags at the warrior's side; what it touches is hooked and comes along.
-                val t = tickNumber - action.dragTick
-                val tip = dragTip()
-                for (target in enemies.combatTargets()) {
-                    if (target.id in action.hooked || enemies.isBoss(target.id)) continue
-                    val p = enemies.positionOf(target.id) ?: continue
-                    if (kotlin.math.hypot(p.x() - tip.x(), p.z() - tip.z()) <= CoreWarriorRules.DRAG_HOOK && abs(p.y() - tip.y()) < 2.0)
-                        action.hooked += target.id
-                }
-                action.hooked.removeIf { !enemies.isAlive(it) }
-                for (id in action.hooked) enemies.dragTo(id, tip)
-                if (t % 3 == 0L) vfx.playSkill(CoreSkillEffect(classId, action.definition, tip, flatFacing(), pulse = 1 + (t / 3).toInt()))
-                if (t >= CoreWarriorRules.DRAG_TICKS) {
-                    // The blade comes round and down in front: everything in front, and everything it dragged, is hit.
-                    action.dragTick = -1
-                    CoreArmamentPresentation.show(player)
-                    vfx.playSkill(CoreSkillEffect(classId, action.definition, player.position, flatFacing(), pulse = CoreWarriorRules.DRAG_FINISH_PULSE))
-                    hitThisStrike.clear()
-                    strike(enemies, player.position, flatFacing(), action.definition.radius, CoreCombatFeel.minDot(action.definition.icon), 1.0)
-                    if (!actionsValid(enemies, epoch)) return
-                    for (id in action.hooked.toList()) if (id !in hitThisStrike && enemies.isAlive(id)) {
-                        hit(enemies, id, 1.0, skill = true)
-                        if (!actionsValid(enemies, epoch)) return
-                    }
-                    pending = null
-                }
-                return@let
-            }
             if (action.landTick >= 0) {
                 // 天落とし: each ring goes out a little later than the one inside it.
                 val since = tickNumber - action.landTick
@@ -517,6 +506,11 @@ internal class CorePlayerCombat(
                 if (action.elapsed == action.startup - CoreArmamentPresentation.SLAM_LEAD_TICKS) slamHand()
                 if (action.full && action.elapsed == CoreWarriorRules.FULL_SWING_RUMBLE_TICK && action.elapsed < action.startup) fullSwingRumbleSound()
             }
+            // 押し払い / 切っ先薙ぎ: the blade is through the middle of the view at the impact (cause first).
+            if (classId == CoreClass.WARRIOR && action.definition.icon == CoreWarriorRules.PUSH &&
+                action.elapsed == action.startup - CoreArmamentPresentation.PUSH_LEAD_TICKS) pushHand()
+            if (classId == CoreClass.WARRIOR && action.definition.icon == CoreWarriorRules.TIP &&
+                action.elapsed == action.startup - CoreArmamentPresentation.TIP_LEAD_TICKS) tipCutHand()
             val pulse = action.elapsed - action.startup
             val every = CoreCombatFeel.pulseTicks(action.definition)
             if (pulse >= 0 && pulse % every == 0 && pulse / every < action.definition.pulses) {
@@ -553,7 +547,6 @@ internal class CorePlayerCombat(
         if (defeated || staggered || !crowd.canMove(tickNumber)) return 0.0
         val action = pending
         if (armored && (action == null || action.elapsed >= action.startup)) return CoreWarriorRules.ARMOR_HASTE
-        if (action != null && action.dragTick >= 0) return CoreWarriorRules.DRAG_SPEED
         if (action != null && action.chargeTick >= 0) return 0.0     // 体当たり carries the body itself
         if (action != null && action.elapsed < action.startup)
             return if (action.startup >= HEAVY_STARTUP || action.definition.ultimate) 0.0 else CAST_SPEED
@@ -669,15 +662,8 @@ internal class CorePlayerCombat(
         }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorLeap.ICON) { leap(action); return }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.SKYFALL) { leap(action, high = true); return }
-        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.DRAG) {
-            // 引き摺り: the held sword is hidden and a dragged one drawn at the side for the whole walk.
-            val model = player.itemInMainHand.get(net.minestom.server.component.DataComponents.ITEM_MODEL)
-                ?.takeIf { it.startsWith("projects:weapons/") }?.removePrefix("projects:") ?: "weapons/greatsword_t1"
-            CoreArmamentPresentation.hide(player, CoreWarriorRules.DRAG_TICKS + 4)
-            action.dragTick = tickNumber
-            vfx.playSkill(CoreSkillEffect(classId, s, player.position, flatFacing(), pulse = 0, weaponModel = model))
-            return
-        }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.PUSH) { pushSweep(enemies, action); return }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.TIP) { tipSweep(enemies, action); return }
         if (classId == CoreClass.WARRIOR && s.icon == "dash") {
             // 体当たり: the shoulder goes in now (its look plays here), the body follows over the next ticks.
             action.chargeTick = tickNumber
@@ -688,26 +674,7 @@ internal class CorePlayerCombat(
             tackleStep(enemies, action)
             return
         }
-        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.LAUNCHER) {
-            // 斬り上げ: the blade comes up from the ground; who it throws up is marked for 叩き落とし. Holding jump sends
-            // the warrior up after them (a push the client flies, as with the leaps).
-            emitSkillPulse(player.position, s.radius)
-            val before = enemies.combatTargets().map { it.id }.toSet()
-            strike(enemies, player.position, action.direction, s.radius, CoreCombatFeel.minDot(s.icon), 1.0)
-            for (id in before) if (enemies.isAlive(id) && CrowdControl.AIRBORNE in enemies.crowdControl(id)) launched[id] = tickNumber + CoreWarriorRules.LAUNCHED_TICKS
-            if (player.inputs().jump()) player.velocity = CoreWarriorLeap.launch(player.position,
-                player.position.add(flatFacing().mul(1.2)).asVec(), 4.2).mul(20.0)
-            return
-        }
         if (classId == CoreClass.WARRIOR && s.icon == "slam") {
-            // 地割り, plus 叩き落とし on anything 斬り上げ threw up that is still above the crack (out of the usual height).
-            launched.entries.removeIf { (id, until) -> until < tickNumber || !enemies.isAlive(id) }
-            smashTargets = launched.keys.filter { id ->
-                val p = enemies.positionOf(id) ?: return@filter false
-                val dx = p.x() - player.position.x(); val dz = p.z() - player.position.z()
-                val d = kotlin.math.hypot(dx, dz)
-                d <= s.radius && (dx * action.direction.x() + dz * action.direction.z()) >= .5 * d
-            }.toSet()
             emitSkillPulse(player.position, s.radius)
             // What the blade leaves in the world (the swing itself is the hand's): the crack forward, or after the first
             // pulse (重ね撃ち) the head splitting again; 全力の一振り's blood bursts up the rift over the next ticks.
@@ -716,19 +683,12 @@ internal class CorePlayerCombat(
                 action.full -> CoreWarriorRefChoreography.FULL_SLAM_PULSE; else -> CoreWarriorRefChoreography.SLAM_PULSE })
             if (action.full && !again) { geyser = CoreSkillEffect(classId, s, player.position, action.direction); geyserStep = 0 }
             if (action.full) fullSwingImpactSound()
-            val hitBefore = hitThisStrike.also { it.clear() }
+            hitThisStrike.clear()
             strike(enemies, player.position, action.direction, s.radius, CoreCombatFeel.minDot(s.icon), 1.0)
-            if (!actionsValid(enemies, epoch)) { smashTargets = emptySet(); return }
+            if (!actionsValid(enemies, epoch)) return
             // Hit-stop: what the blow met stands frozen a moment (bosses refuse it), longer under 全力の一振り.
             val stop = if (action.full) CoreWarriorRules.FULL_SWING_HITSTOP_TICKS else CoreWarriorRules.SLAM_HITSTOP_TICKS
             for (id in hitThisStrike.toList()) enemies.hitStop(id, stop * 50L)
-            for (id in smashTargets) {
-                launched.remove(id)
-                if (id !in hitBefore) hit(enemies, id, 1.0, skill = true)  // too high for the usual height check
-                if (!actionsValid(enemies, epoch)) { smashTargets = emptySet(); return }
-                smashDown(enemies, id)
-            }
-            smashTargets = emptySet()
             return
         }
         if (classId == CoreClass.WARRIOR && (s.icon == CoreWarriorRules.ARMOR || s.icon == CoreWarriorRules.AWAKEN)) {
@@ -904,7 +864,6 @@ internal class CorePlayerCombat(
         if (classId == CoreClass.WARRIOR && build.keystone == 0 && resource >= 2) classMultiplier *= 1.2
         val beastSpender = skill && classId == CoreClass.WARRIOR && definition!!.icon in CoreWarriorRules.spenders
         if (skill) hitThisStrike += id
-        if (skill && id in smashTargets) classMultiplier *= 1 + CoreWarriorRules.SMASH_DOWN_PERCENT / 100.0
         // The beast let loose on a downed enemy: the window the warrior builds toward.
         if (beastSpender && enemies.isBroken(id)) classMultiplier *= 1 + skillAction!!.empowered * CoreWarriorRules.BEAST_DOWN_PERCENT_PER_STACK / 100.0
         if (classId == CoreClass.HEALER && build.keystone == 0) classMultiplier *= 1.25
@@ -941,11 +900,9 @@ internal class CorePlayerCombat(
         }
         else skillAction?.takeUnless { it.gained }?.let { action ->
             action.gained = true; classState.skillHit(classId, action.definition, build)
-            if (classId == CoreClass.WARRIOR && action.definition.icon !in CoreWarriorRules.spenders) {
-                val gain = CoreWarriorRules.builderGain(action.definition.icon, action.caught, action.leapReach)
-                feedBeast(gain, cap = maxOf(gain, CoreWarriorRules.BEAST_PER_ACTION))
-                comboFrom = action.definition.icon; comboUntil = tickNumber + CoreWarriorRules.COMBO_TICKS
-            }
+            // 押し払い / 切っ先薙ぎ count theirs after the whole strike (how many it met, whether the tip met one).
+            if (classId == CoreClass.WARRIOR && action.definition.icon !in CoreWarriorRules.spenders &&
+                action.definition.icon !in CoreWarriorRules.countedBuilders) feedBuilder(action)
         }
         if (consumeMark) { classState.consumeMark(id, tickNumber); if (classId == CoreClass.ASSASSIN && build.keystone == 1) nextDodge = 0 }
         if (classId == CoreClass.TEMPLAR) enemies.taunt(id, player)
@@ -1139,10 +1096,123 @@ internal class CorePlayerCombat(
         sound(SoundEvent.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, if (caught) .5f else .35f, varied(if (caught) .6f else .9f))
         if (caught) sound(SoundEvent.BLOCK_ANVIL_LAND, .45f, varied(.5f))
     }
-    /** 引き摺り: where the dragged blade's tip touches the ground, behind and to the right of the warrior. */
-    private fun dragTip(): Pos {
-        val f = flatFacing(); val right = Vec(-f.z(), 0.0, f.x())
-        return player.position.add(right.mul(.7)).sub(f.mul(1.5))
+    /** A building skill landed: the beast it builds (at most that much this tick), and the A + B window it opens. */
+    private fun feedBuilder(action: PendingSkill, struck: Int = 1, tip: Boolean = false) {
+        val gain = CoreWarriorRules.builderGain(action.definition.icon, action.caught, action.leapReach, struck, tip)
+        feedBeast(gain, cap = maxOf(gain, CoreWarriorRules.BEAST_PER_ACTION))
+        comboFrom = action.definition.icon; comboUntil = tickNumber + CoreWarriorRules.COMBO_TICKS
+    }
+    /**
+     * 押し払い's impact: the flat goes across a wide fan in front; every regular enemy it meets is thrown outward
+     * ([CoreWarriorRules.PUSH_SHOVE]) and flinches (the catalog's crowd control), a boss takes the hit and its break
+     * where it stands. The beast is counted by how many it met.
+     */
+    private fun pushSweep(enemies: QuestEncounterCombat, action: PendingSkill) {
+        val epoch = actionEpoch
+        look(action, CoreWarriorRefChoreography.PUSH_SWEEP_PULSE)
+        hitThisStrike.clear()
+        strike(enemies, player.position, action.direction, action.definition.radius, CoreWarriorRules.PUSH_MIN_DOT, 1.0)
+        if (!actionsValid(enemies, epoch)) return
+        val struck = hitThisStrike.toList()
+        var skids = 0
+        for (id in struck) {
+            if (enemies.isBoss(id)) continue
+            val from = enemies.positionOf(id) ?: continue
+            if (!enemies.shove(id, player.position, CoreWarriorRules.PUSH_SHOVE)) continue
+            val away = Vec(from.x() - player.position.x(), 0.0, from.z() - player.position.z())
+            if (skids++ < 4 && away.lengthSquared() > 1e-6) vfx.look(CoreSkillEffect(classId, action.definition, from, away.normalize(),
+                pulse = CoreWarriorRefChoreography.PUSH_SKID_PULSE))
+        }
+        if (struck.isNotEmpty()) feedBuilder(action, struck = struck.size)
+        pushImpactSound(struck.isNotEmpty())
+    }
+    /**
+     * 切っ先薙ぎ's impact: one wide cut. Each enemy met is a tip hit when the near surface of its body is in the tip band
+     * ([CoreWarriorRules.tipBand]): 1.5 times the damage and break, a long hit-stop, the ring and the spark on it;
+     * nearer, the middle of the blade meets it: an ordinary hit, a short hit-stop, a thud. The hand catches on a tip hit.
+     */
+    private fun tipSweep(enemies: QuestEncounterCombat, action: PendingSkill) {
+        val epoch = actionEpoch
+        hitThisStrike.clear()
+        var tips = 0; var closes = 0
+        for (target in enemies.combatTargets()) {
+            if (!greatswordInRange(player.position, action.direction, target, action.definition.radius, CoreWarriorRules.TIP_MIN_DOT) ||
+                !visibleTo(target.id, enemies)) continue
+            val distance = tipDistance(target)
+            val tip = CoreWarriorRules.tipBand(distance)
+            action.hitScale = if (tip) CoreWarriorRules.TIP_SCALE else 1.0
+            action.breakScale = action.hitScale
+            val before = hitThisStrike.size
+            hit(enemies, target.id, 1.0, skill = true, contact = false)
+            if (!actionsValid(enemies, epoch)) return
+            if (hitThisStrike.size == before) continue
+            enemies.hitStop(target.id, CoreWarriorRules.tipHitStopTicks(tip) * 50L)
+            val feet = enemies.positionOf(target.id) ?: target.position.let { Pos(it.x(), it.y(), it.z()) }
+            if (tip) {
+                // Where the tip went in: just off the near side of the body (so the body does not hide it), at the
+                // height of the cut.
+                val to = Vec(feet.x() - player.position.x(), 0.0, feet.z() - player.position.z())
+                val at = if (to.lengthSquared() > 1e-6) player.position.add(to.normalize().mul((distance - .3).coerceAtLeast(.5))) else feet
+                if (tips++ < 3) vfx.look(CoreSkillEffect(classId, action.definition, Pos(at.x(), player.position.y() + 1.15, at.z()),
+                    action.direction, pulse = CoreWarriorRefChoreography.TIP_SPARK_PULSE))
+            } else if (closes++ < 3) vfx.look(CoreSkillEffect(classId, action.definition, feet, action.direction,
+                pulse = CoreWarriorRefChoreography.TIP_CLOSE_PULSE))
+        }
+        action.hitScale = 1.0; action.breakScale = 1.0
+        // The bite takes over from the cut where it stands (the cut started TIP_LEAD_TICKS before this).
+        if (tips > 0 && action.startup >= CoreArmamentPresentation.TIP_LEAD_TICKS)
+            CoreArmamentPresentation.shaderSwing(player, CoreArmamentPresentation.TIP_BITE_BEAT, CoreArmamentPresentation.TIP_BITE_TICKS)
+        if (tips + closes > 0) feedBuilder(action, struck = tips + closes, tip = tips > 0)
+        tipImpactSound(tips > 0, closes > 0)
+    }
+    /** How far from the warrior the blade meets [target]: the near surface of its body (its nearest part for a boss). */
+    private fun tipDistance(target: CombatTarget): Double {
+        val o = player.position
+        if (target.parts.isNotEmpty()) return target.parts.minOf { kotlin.math.hypot(it.center.x() - o.x(), it.center.z() - o.z()) - it.radius }
+            .coerceAtLeast(0.0)
+        return (kotlin.math.hypot(target.position.x() - o.x(), target.position.z() - o.z()) - target.halfExtent.x()).coerceAtLeast(0.0)
+    }
+    /** 押し払い's swing: the heavy blade hauled round flat, air shoved. */
+    private fun pushSwingSound() {
+        sound(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, .8f, varied(.55f))
+        sound(SoundEvent.ITEM_ARMOR_EQUIP_IRON, .5f, varied(.7f))
+        sound(SoundEvent.ITEM_TRIDENT_THROW, .4f, varied(.5f))
+    }
+    /** 押し払い's impact: the flat slapping into bodies, the shove, grit scraped along the ground; only the grit on a miss. */
+    private fun pushImpactSound(hit: Boolean) {
+        sound(SoundEvent.BLOCK_GRAVEL_BREAK, .55f, varied(.75f))
+        if (!hit) return
+        sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, varied(.62f))
+        sound(SoundEvent.ITEM_SHIELD_BLOCK, .6f, varied(.6f))
+        sound(SoundEvent.ENTITY_IRON_GOLEM_ATTACK, .55f, varied(.85f))
+        sound(SoundEvent.BLOCK_ROOTED_DIRT_BREAK, .6f, varied(.7f))
+    }
+    /** 切っ先薙ぎ's wind-up: the weight going back, the blade drawn. */
+    private fun tipWindupSound() {
+        sound(SoundEvent.ITEM_ARMOR_EQUIP_IRON, .55f, varied(.75f))
+        sound(SoundEvent.ITEM_TRIDENT_RETURN, .45f, varied(.55f))
+        sound(SoundEvent.BLOCK_GRAVEL_STEP, .6f, varied(.7f))
+    }
+    /** 切っ先薙ぎ's cut: a long low whoosh. */
+    private fun tipCutSound() {
+        sound(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, 1f, varied(.62f))
+        sound(SoundEvent.ITEM_TRIDENT_THROW, .7f, varied(.6f))
+        sound(SoundEvent.ITEM_TRIDENT_RIPTIDE_1, .3f, varied(.75f))
+    }
+    /** 切っ先薙ぎ's impact: the tip rings sharp and bright off what it met; the middle of the blade only thuds dully. */
+    private fun tipImpactSound(tip: Boolean, close: Boolean) {
+        if (tip) {
+            sound(SoundEvent.ITEM_TRIDENT_HIT, 1f, varied(1.3f))
+            sound(SoundEvent.BLOCK_ANVIL_LAND, .3f, varied(1.85f))
+            sound(SoundEvent.BLOCK_BELL_USE, .4f, varied(1.7f))
+            sound(SoundEvent.ENTITY_PLAYER_ATTACK_CRIT, .9f, varied(1.15f))
+            sound(SoundEvent.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, .3f, varied(1.4f))
+        }
+        if (close) {
+            sound(SoundEvent.ENTITY_PLAYER_ATTACK_STRONG, .9f, varied(.6f))
+            sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .6f, varied(.7f))
+            sound(SoundEvent.BLOCK_WOOD_HIT, .5f, varied(.6f))
+        }
     }
     /** 全力の一振り's wind-up: a heavy breath drawn in as the sword goes onto the shoulder. */
     private fun fullSwingBreathSound() {
@@ -1181,15 +1251,7 @@ internal class CorePlayerCombat(
             }
         }
     }
-    /** 叩き落とし: the launched enemy is driven into the ground and stunned longer (the damage bonus is in hit()). */
-    private fun smashDown(enemies: QuestEncounterCombat, id: UUID) {
-        enemies.slamDown(id)
-        enemies.applyCrowdControl(id, CrowdControl.STUN, CoreWarriorRules.SMASH_DOWN_STUN_MILLIS, player)
-        notice("叩き落とし")
-        sound(SoundEvent.ENTITY_GENERIC_EXPLODE, .6f, .6f)
-    }
-    /** 地割り's current 叩き落とし targets, and who its strike already hit. */
-    private var smashTargets: Set<UUID> = emptySet()
+    /** Who the current strike has hit (hit-stop, shoves, the beast counted per strike). */
     private val hitThisStrike = mutableSetOf<UUID>()
     private fun grounded(): Boolean = player.isOnGround ||
         player.instance?.getBlock(player.position.sub(0.0, .05, 0.0))?.solid() == true
@@ -1424,8 +1486,7 @@ internal class CorePlayerCombat(
         garden = null
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); comboFrom = null; comboUntil = -1; armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0
-        CoreArmamentPresentation.show(player)
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; comboFrom = null; comboUntil = -1; armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0
         classState.reset(); moveHasteUntil = -1; previousPosition = null
         crowd.clear()
         evadeUntil = -1; dodgeQueuedUntil = -1; slide = null; staggerUntil = -1

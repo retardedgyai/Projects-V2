@@ -96,7 +96,7 @@
       ],
       "preapproved": false
     },
-    "war_cry": {
+    "war_push": {
       "source_sha256": "2e54914c19d7eb71153fd0b72d48bf1a2291dbcdcaf42de3570309851305dfa1",
       "master_sha256": "4c0d14d106c7b661f6b5e3335a7a190e1ac05bde01449c41fb6717a3144555d7",
       "source_size": [
@@ -109,7 +109,7 @@
       ],
       "preapproved": false
     },
-    "war_breach": {
+    "war_tip": {
       "source_sha256": "e70b631442990f22c03a66e140d0868e5f82d1029f48755ff252c6fea3f18edc",
       "master_sha256": "f242566c86d26e83c001b3e46a858832e720ac1188eb9ac976cb96f9ea92105b",
       "source_size": [

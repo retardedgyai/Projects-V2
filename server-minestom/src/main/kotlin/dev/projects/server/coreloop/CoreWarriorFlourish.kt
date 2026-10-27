@@ -25,7 +25,6 @@ internal object CoreWarriorFlourish {
         if(e.phase==CoreSkillVisualPhase.PREPARE) {
             val clip=when(e.sceneId) {
                 "slam" -> "weight_load"
-                "war_breach" -> "point_load"
                 "war_ult" -> "ultimate_load"
                 else -> return emptyList()
             }
@@ -33,11 +32,6 @@ internal object CoreWarriorFlourish {
         }
         return when(e.sceneId) {
             "dash" -> pair("step_dust",local(0.0,.14,.5),Vec(2.9,1.0,2.7),0.0,13)
-            "war_breach" -> pair("pierce_shell",local(0.0,1.15,reach*.5),Vec(3.0,1.0,reach*1.2),-.12,18).let { shell ->
-                // Two intersecting ribs give the forward puncture depth; never
-                // face the same slash towards the camera or rotate it over time.
-                shell + shell.first().copy(scale=Vec(2.2,1.0,reach*1.2),pitch=0.0,roll=PI/2,secondary=true)
-            }
             "war_wound" -> pair("cut_thread",local(0.0,1.05,reach*.42),Vec(reach*1.1,1.0,2.0),-.55,14,-.45)
             "war_counter" -> pair("reversal",local(0.0,1.25,reach*.45),Vec(reach*1.4,1.0,2.7),-.55,18,.4)
             "slam" -> pair("stone_break",local(0.0,.16,reach*.5),Vec(reach*1.3,1.0,reach),0.0,20)+
@@ -54,7 +48,6 @@ internal object CoreWarriorFlourish {
                 else -> pair("ultimate_rift",local(0.0,.18,reach*.5),Vec(reach*1.45,1.0,reach),0.0,20)+
                     pair("ultimate_fall",local(0.0,1.9,reach*.5),Vec(reach*1.1,1.0,3.7),-PI/2,20)
             }
-            "war_cry" -> pair("voice_compression",local(0.0,1.5,.8),Vec(4.6,.7,2.9),-PI/2,18)
             "war_guard" -> pair("guard_edge",local(.5,1.2,.75),Vec(1.05,.5,1.5),-PI/2,12)
             "war_banner" -> pair("standard_foot",local(-.9,.14,.55),Vec(2.3,1.0,2.3),0.0,14)
             else -> emptyList()

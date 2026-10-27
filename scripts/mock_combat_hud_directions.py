@@ -166,8 +166,8 @@ RAGE = 35                            # class resource 0..100
 BARRIER = 48
 BOSS, BOSS_MAX, BOSS_LOST = 12480, 20000, 900
 # (icon, cd seconds remaining, cd total, state) for hotbar keys 2..6
-SKILL_ROW = [("war_breach", 0, 8, "ready"), ("war_wound", 8, 12, "cd"), ("whirl", 0, 6, "ready"),
-             ("war_counter", 3, 10, "cd"), ("war_cry", 0, 20, "nomana")]
+SKILL_ROW = [("war_tip", 0, 8, "ready"), ("war_wound", 8, 12, "cd"), ("whirl", 0, 6, "ready"),
+             ("war_counter", 3, 10, "cd"), ("war_push", 0, 20, "nomana")]
 BUFFS = [("砥石", "temp_mace", 96), ("回復", "heal_light", 7)]
 NOTICE = "マナが足りません"
 

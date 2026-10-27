@@ -8,7 +8,7 @@ import kotlin.math.*
  */
 internal object CoreWarriorBladeChoreography {
     val sceneIds = setOf("normal_sweep", "normal_reverse", "normal_finish", "dash", "war_wound",
-        "war_counter", "slam", "whirl", "war_breach", "war_ult")
+        "war_counter", "slam", "whirl", "war_ult")
     private const val PREFIX = "warrior_skill:"
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
 
@@ -24,7 +24,6 @@ internal object CoreWarriorBladeChoreography {
             "war_wound" -> "wound"
             "war_counter" -> "counter"
             "slam" -> "cleave"
-            "war_breach" -> "thrust"
             "whirl" -> if(sweep) "sweep" else listOf("spin_a", "spin_b", "spin_c")[e.pulse % 3]
             else -> listOf("rise", "return", "finish")[e.pulse % 3]
         }

@@ -195,11 +195,10 @@ object CoreSkillCatalog {
                 // 跳び叩き (Creator 2026-10-22) takes the retired 地走り's slot and id (CoreWarriorLeap).
                 s("跳び叩き", "war_wound", "狙った地点へ弧を描いて跳び、着地の周りを叩いて短くスタン。空中で少し曲げられる。遠く（6m以上）へ跳んで当てると獣が1つ半、近くだと半分。離れた敵へ飛び込む技", CoreSkillMotion.CONE, 6.0, 1.4, mana=10, cd=180, startup=4, range=CoreWarriorLeap.MAX_REACH, radius=CoreWarriorLeap.LANDING_RADIUS).cc(CrowdControl.STUN, 600),
                 s("大地崩し", "war_counter", "囲まれた時の脱出。大剣を地面に突き立て、周り一面を砕いて打ち上げる。獣1つ以上あれば怯み中でも出せ、出始めは攻撃を受けない。獣0なら速く狭く、周りを外へ押し出す。獣が多いほど広く高く、獣3つならスタン", CoreSkillMotion.NOVA, 12.0, 2.0, mana=15, cd=320, startup=14, gain=0, radius=5.0).cc(CrowdControl.AIRBORNE, 600),
-                // 引き摺り (Creator 2026-10-23) takes the retired 雄叫び's slot and id. Retired 2026-10-27 with 斬り上げ
-                // (Creator: 「引き摺りと斬り上げ結構微妙だったから外してもいい」); slot, id and art stay for old saves.
-                s("引き摺り", "war_cry", "大剣を片手で引きずって2秒歩く（自分で動ける）。刃に触れた雑魚は引っかかってついて来て、最後の振り抜きでまとめて叩きつける。獣を溜める", CoreSkillMotion.CONE, 10.0, 1.8, mana=12, cd=240, startup=3, radius=3.6, retired=true).cc(CrowdControl.STUN, 700),
-                // 斬り上げ (Creator 2026-10-23) takes the retired 破城突き's slot and id.
-                s("斬り上げ", "war_breach", "大剣を引きずって真上へ振り上げ、正面の敵を高く打ち上げる。ジャンプを押していれば自分も追って跳ぶ。打ち上げた敵に地割りを当てると叩き落とし。獣を溜める", CoreSkillMotion.CONE, 9.0, 1.8, mana=10, cd=180, startup=8, radius=3.4, retired=true).cc(CrowdControl.AIRBORNE, 1200),
+                // 押し払い / 切っ先薙ぎ (Creator 2026-10-28) take the retired 引き摺り's and 斬り上げ's slots (6, 7) under new ids,
+                // so old saves that had either now carry these (their art is still to be drawn).
+                s("押し払い", CoreWarriorRules.PUSH, "囲まれた時に。大剣の腹で前を広く（約160°）払い、触れた敵をまとめて約3m外へ押し出してよろけさせる（ボスは動かない）。当てた数で獣が溜まる：1体で半分、2体で1つ、3体以上で2つ", CoreSkillMotion.CONE, 6.0, 1.0, mana=10, cd=160, startup=4, radius=CoreWarriorRules.PUSH_RADIUS).cc(CrowdControl.FLINCH, 400),
+                s("切っ先薙ぎ", CoreWarriorRules.TIP, "大きく構えて右から左へ一気に薙ぐ。刃先（約3〜4.2m）で捉えると切っ先が入る：威力と崩し1.5倍、長い手応えと甲高い金属音、火花。近すぎると刃の根元で鈍く当たるだけ。切っ先が入れば獣が2つ、入らなければ半分", CoreSkillMotion.CONE, 10.0, 1.8, mana=10, cd=140, startup=6, radius=CoreWarriorRules.TIP_REACH),
                 // Ultimates (Creator 2026-10-23): 狂戦士の甲冑 and 獣の目覚め. 全力の一振り is retired as an ultimate
                 // (Creator 2026-10-27: it is 地割り at a full beast now); its index and art stay, its slot is left empty.
                 s("全力の一振り", "war_ult", "地割りに統合（獣3つの地割りが全力の一振り）", CoreSkillMotion.CONE, 30.0, 4.0, mana=20, cd=1200, startup=10, gain=0, radius=12.0, ult=true, retired=true).cc(CrowdControl.AIRBORNE, 1000),

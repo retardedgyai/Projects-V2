@@ -15,24 +15,20 @@ internal object CoreWarriorRefChoreography {
     private const val DIR = "combat_vfx/warrior_ref"
     @Volatile var enabled = true
     private val sceneIds = setOf("war_wound")
-    /** 引き摺り: how the dragged greatsword is held (found against the preview: blade down and back, tip on the ground). */
-    private const val DRAG_SWORD_YAW = PI / 2
-    private const val DRAG_SWORD_PITCH = 0.0
-    private const val DRAG_SWORD_ROLL = -2.3
     /** 狂乱 / 天落とし / 大地崩し: every phase is drawn here (their ids still carry older choreographies elsewhere). */
-    private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER, CoreWarriorRules.LAUNCHER,
-        CoreWarriorRules.DRAG, CoreWarriorRules.FULL_SWING, CoreWarriorRules.ARMOR, CoreWarriorRules.AWAKEN)
+    private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER,
+        CoreWarriorRules.FULL_SWING, CoreWarriorRules.ARMOR, CoreWarriorRules.AWAKEN)
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     /** Camera-facing pieces whose pose moves them (the meshes carry these by moving the entity). */
     fun drifts(p: CoreCombatMeshPart) = owns(p) && p.shape.removePrefix(PREFIX).let {
         it == "bdrop" || it == "bfling" || it == "bsmoke" || it == "bmistup" || it == "bgush" || it.startsWith("scale") ||
-            it.startsWith("sgather") || it == "kick" || it == "fspark" }
+            it.startsWith("sgather") || it == "kick" || it == "fspark" || it == "tipflash" }
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
         (e.phase == CoreSkillVisualPhase.PULSE && e.sceneId in sceneIds || e.sceneId in ownedIds || e.sceneId in lookIds)
     private const val TACKLE = "dash"
-    /** 体当たり, 跳び叩き and 地割り: every phase is drawn here, and only what the body and blade leave in the world. */
-    val lookIds = setOf(TACKLE, CoreWarriorLeap.ICON, SLAM)
+    /** 体当たり, 跳び叩き, 地割り, 押し払い and 切っ先薙ぎ: every phase is drawn here, and only what the body and blade leave in the world. */
+    val lookIds = setOf(TACKLE, CoreWarriorLeap.ICON, SLAM, CoreWarriorRules.PUSH, CoreWarriorRules.TIP)
     private const val SLAM = "slam"
 
     // The world look of 体当たり / 跳び叩き is played by the server at the moment it happens (CorePlayerCombat, look
@@ -49,6 +45,10 @@ internal object CoreWarriorRefChoreography {
     const val SLAM_SPLIT_PULSE = 151        // ... and splits again at the head (a second pulse)
     const val FULL_SLAM_PULSE = 152         // 全力の一振り's blow (its blood: CoreWarriorRules.FULL_SWING_GEYSER_PULSE + step)
     const val FULL_WINDUP_PULSE = 153       // 全力の一振り's wind-up: the ground under the feet gives
+    const val PUSH_SWEEP_PULSE = 160        // 押し払い's flat goes across: dust and grit shoved out along the ground in front
+    const val PUSH_SKID_PULSE = 161         // ... one shoved enemy (origin: its feet before; direction: the way it was shoved)
+    const val TIP_SPARK_PULSE = 170         // 切っ先薙ぎ's tip met someone (origin: the contact on its body; direction: the facing)
+    const val TIP_CLOSE_PULSE = 171         // ... the middle of the blade met someone close (origin: its feet)
 
     private fun hash(vararg v: Int): Double {
         val x = sin(v.foldIndexed(0.0) { i, a, n -> a + n * doubleArrayOf(127.1, 311.7, 74.7, 19.3)[i % 4] }) * 43758.5453
@@ -77,6 +77,8 @@ internal object CoreWarriorRefChoreography {
             else part("wind", local(0.0, shoulder - .031 * size, ahead + .25 * size), size, yaw - PI / 2 + skew, life, delay = delay, ground = false, roll = PI)
         }
         if (e.sceneId == TACKLE) return tackle(e, yaw)
+        if (e.sceneId == CoreWarriorRules.PUSH) return push(e, yaw)
+        if (e.sceneId == CoreWarriorRules.TIP) return tip(e, yaw)
         if (e.sceneId == CoreWarriorLeap.ICON) return leap(e, yaw)
         // 全力の一振り is retired as an ultimate; anything still naming it is drawn as 地割り's full blow.
         if (e.sceneId == SLAM || e.sceneId == CoreWarriorRules.FULL_SWING) return slam(e, yaw)
@@ -187,13 +189,6 @@ internal object CoreWarriorRefChoreography {
             }
             return out
         }
-        if (e.sceneId == CoreWarriorRules.LAUNCHER && e.phase == CoreSkillVisualPhase.PREPARE) {
-            // The blade is dragged along the ground behind the warrior before it comes up: a scrape opening forward.
-            out += part("furrow", local(0.0, .12, .2), 1.0, yaw, e.prepareDuration.coerceIn(2, 20) + 20).copy(scale = Vec(2.6, 1.0, 2.6))
-            for (k in 0 until 3) out += part("clod${95 + k}", local((k - 1) * .3, .2, .9), .25, yaw + k * 2.0, 12, ground = false,
-                delay = e.prepareDuration.coerceIn(2, 20) - 2).copy(startSize = .5)
-            return out
-        }
         if (e.sceneId in ownedIds && e.phase == CoreSkillVisualPhase.PREPARE) {
             // The wind-up: the weight settles, a little dust off the feet.
             out += part("dust${20}", Vec(0.0, .3, 0.0), .8, 0.0, e.prepareDuration.coerceIn(1, 12), ground = false, billboard = true)
@@ -202,44 +197,6 @@ internal object CoreWarriorRefChoreography {
         if (e.sceneId in ownedIds && e.phase != CoreSkillVisualPhase.PULSE) {
             // A hit landing on an enemy: a clod or two knocked off at its feet.
             for (k in 0 until 2) out += part("clod${90 + k}", Vec((k - .5) * .5, .2, 0.0), .3, yaw + k * 2.0, 14, ground = false).copy(startSize = .6)
-            return out
-        }
-        if (e.sceneId == CoreWarriorRules.DRAG) {
-            // 引き摺り (Creator 2026-10-23): the cause is the greatsword itself, held low at the right side with its tip
-            // on the ground behind (the held one is hidden meanwhile); behind the tip the ground is scored in a line
-            // that follows the walk; the drag ends with a cut coming down in front.
-            when {
-                e.pulse == 0 -> (e.weaponModel ?: "weapons/greatsword_t1").let { model ->
-                    out += part("dragsword:$model", local(-.6, .45, -.85), 1.7, yaw + DRAG_SWORD_YAW, CoreWarriorRules.DRAG_TICKS + 2, ground = false,
-                        pitch = DRAG_SWORD_PITCH, roll = DRAG_SWORD_ROLL).copy(followOwner = true)
-                }
-                e.pulse < CoreWarriorRules.DRAG_FINISH_PULSE -> {
-                    out += part("furrow", Vec(0.0, .12, 0.0), 1.0, yaw, 40).copy(scale = Vec(1.5, 1.0, 1.5))
-                    if (e.pulse % 2 == 0) out += part("clod${100 + e.pulse % 6}", Vec(0.0, .2, 0.0), .22 + .1 * hash(e.pulse, 201), yaw + hash(e.pulse, 202) * 6.0,
-                        12, ground = false).copy(startSize = .45)
-                }
-                else -> {
-                    out += trail(5.2, 8)
-                    out += trail(5.8, 7, delay = 1, shoulder = 1.55)
-                    val at = local(0.0, .25, 2.4)
-                    for (k in 0 until 6) out += part("clod${110 + k}", at.add((hash(k, 203) - .5) * .8, 0.0, (hash(k, 204) - .5) * .8), .3 + .2 * hash(k, 205),
-                        yaw + hash(k, 206) * 6.0, 20, ground = false, delay = 1 + k / 3).copy(startSize = 1.0)
-                    out += part("furrow", local(0.0, .12, 2.6), 1.0, yaw, 34).copy(scale = Vec(3.4, 1.0, 3.4))
-                }
-            }
-            return out
-        }
-        if (e.sceneId == CoreWarriorRules.LAUNCHER) {
-            // 斬り上げ: the cause is the blade's trail going UP (the overhead trail turned round in its plane), then earth
-            // erupts under the one it throws, thrown high, with a slab torn up.
-            out += trail(4.4, 8, rising = true, shoulder = 1.3, ahead = .6)
-            out += trail(5.0, 7, delay = 1, rising = true, shoulder = 1.25, ahead = .6)
-            val at = local(0.0, .25, 2.3)
-            for (k in 0 until 7) out += part("clod${24 + k}", at.add((hash(k, 196) - .5) * .8, 0.0, (hash(k, 197) - .5) * .8),
-                .3 + .25 * hash(k, 198), yaw + hash(k, 199) * 6.0, 24, ground = false, delay = 1 + k / 3).copy(startSize = 1.7)
-            for (k in 0 until 2) out += part("turf${120 + k}", at.add((k - .5) * .9, 0.0, 0.0), .8, yaw + (k - .5), 22, delay = 1,
-                roll = (k - .5) * 2.0 * .9)
-            out += part("dust${80}", at.add(0.0, .4, 0.0), 1.5, 0.0, 10, ground = false, delay = 1, billboard = true)
             return out
         }
         if (e.sceneId == CoreWarriorRules.FRENZY) {
@@ -453,6 +410,72 @@ internal object CoreWarriorRefChoreography {
                     out += piece("fspark", at, .75, 0.0, 7, ground = false, billboard = true, follow = true,
                         travel = local(cos(a) * 1.7, sin(a) * 1.3, .2), roll = PI / 2 - a + (hash(k, 616) - .5) * .2)
                 }
+            }
+        }
+        return out
+    }
+
+    /**
+     * 押し払い (2026-10-28). The flat's sweep is the hand's alone; the world gets what it pushes: dust and grit shoved out
+     * along the ground in a low fan in front, the right side first as the blade comes across; each shoved enemy's feet
+     * skid back along the ground, the dirt heaped where they stop. Nothing that stands up comes nearer the eye than
+     * [PUSH_CLEAR].
+     */
+    private const val PUSH_CLEAR = 2.1
+    private fun push(e: CoreSkillEffect, yaw: Double): List<CoreCombatMeshPart> {
+        // x is the warrior's right here (local()'s +x is its left: Minecraft's yaw 0 faces +z with +x on the left).
+        fun local(x: Double, y: Double, z: Double) = Vec(-cos(yaw) * x + sin(yaw) * z, y, sin(yaw) * x + cos(yaw) * z)
+        val out = mutableListOf<CoreCombatMeshPart>()
+        when (e.pulse) {
+            PUSH_SWEEP_PULSE -> {
+                // Bearings from the right (+) across to the left (-), as the flat goes; each answers as it passes.
+                for (k in 0 until 7) {
+                    val bearing = Math.toRadians(70.0 - k * 23.0) + (hash(k, 801) - .5) * .15
+                    val dir = local(sin(bearing), 0.0, cos(bearing))
+                    val at = (k / 2.5).toInt()
+                    val d = PUSH_CLEAR + .35 + .5 * hash(k, 802)
+                    out += piece("kick", dir.mul(d).add(0.0, .3, 0.0), .95 + .35 * hash(k, 803), 0.0, 10, delay = at, ground = false,
+                        billboard = true, travel = dir.mul(1.3 + .6 * hash(k, 804)).add(0.0, .15, 0.0))
+                }
+            }
+            PUSH_SKID_PULSE -> {
+                // Shoved [CoreWarriorRules.PUSH_SHOVE] outward: the heels drag a long streak, grit heaped where it stops.
+                val len = CoreWarriorRules.PUSH_SHOVE
+                out += piece("skid", local(0.0, .121, len * .5), 1.0, yaw, 30).copy(scale = Vec(.85, 1.0, len * .95))
+                out += piece("kick", local(0.0, .3, .4), .8, 0.0, 8, ground = false, billboard = true, travel = local(0.0, .2, 1.4))
+                for (s in listOf(-1.0, 1.0)) out += piece("kick", local(s * .3, .25, len), .75, 0.0, 9, delay = 2, ground = false,
+                    billboard = true, travel = local(s * .4, .15, .6))
+            }
+        }
+        return out
+    }
+
+    /**
+     * 切っ先薙ぎ (2026-10-28). The cut is the hand's alone; the world shows only where it met. A tip hit flares on the body
+     * where the tip went in: a sharp white-gold star (long along the cut), a spark of light on it, and sparks thrown on the
+     * way the blade went (to the left) and out; a hit with the middle of the blade only knocks a little dust off the feet.
+     */
+    private fun tip(e: CoreSkillEffect, yaw: Double): List<CoreCombatMeshPart> {
+        // x is the warrior's right here (local()'s +x is its left: Minecraft's yaw 0 faces +z with +x on the left).
+        fun local(x: Double, y: Double, z: Double) = Vec(-cos(yaw) * x + sin(yaw) * z, y, sin(yaw) * x + cos(yaw) * z)
+        val out = mutableListOf<CoreCombatMeshPart>()
+        when (e.pulse) {
+            TIP_SPARK_PULSE -> {
+                out += piece("tipflash", Vec.ZERO, 2.1, 0.0, 6, ground = false, billboard = true)
+                out += piece("spark", local(-.15, .05, 0.0), 1.1, 0.0, 6, ground = false, billboard = true)
+                for (k in 0 until 9) {
+                    // Most go on with the blade (to the left), a few back out to the right and up off the body.
+                    val back = k >= 7
+                    val speed = 2.2 + 1.6 * hash(k, 812)
+                    val side = if (back) .8 + .8 * hash(k, 811) else -(1.6 + 1.6 * hash(k, 811))
+                    val travel = local(side * speed * .55, .3 + 1.7 * hash(k, 813), (hash(k, 816) - .3) * speed * .45)
+                    out += piece("fspark", Vec.ZERO, .55 + .25 * hash(k, 814), 0.0, 6 + (hash(k, 815) * 4).toInt(), ground = false,
+                        billboard = true, travel = travel, roll = atan2(-travel.dot(local(1.0, 0.0, 0.0)), travel.y()) * -1.0)
+                }
+            }
+            TIP_CLOSE_PULSE -> {
+                out += piece("dust21", Vec(0.0, .25, 0.0), .55, 0.0, 9, ground = false, billboard = true, roll = hash(e.pulse, 821) * 6.0)
+                out += piece("kick", local(0.0, .2, .1), .5, 0.0, 7, ground = false, billboard = true, travel = local(-.4, .1, .3))
             }
         }
         return out
@@ -692,7 +715,6 @@ internal object CoreWarriorRefChoreography {
             }
             name == "field" -> CoreMeshPose(p.offset, p.scale, p.yaw, 0.0, 0.0, "$DIR/field", live && tick < p.durationTicks - 2)
             name == "wind" -> CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll, "$DIR/wind_${tick.coerceAtMost(7)}", live)
-            name.startsWith("dragsword:") -> CoreMeshPose(p.offset, p.scale, p.yaw, p.pitch, p.roll, name.substringAfter("dragsword:"), live)
             name.startsWith("pebble") -> {
                 // 大地崩し's warning: a stone lifts off the ground and trembles there until the blow.
                 val lift = (t.coerceAtLeast(0.0) / 10.0).coerceAtMost(1.0) * .45
@@ -899,6 +921,8 @@ internal object CoreWarriorRefChoreography {
             }
             name == "shock" -> CoreMeshPose(p.offset, p.scale.mul(doubleArrayOf(1.0, 1.06, 1.1, 1.13, 1.15)[min(tick / 2, 4)]), 0.0, 0.0, p.roll,
                 "$DIR/shock_${intArrayOf(0, 0, 1, 2, 2, 3, 3, 4, 4)[tick.coerceAtMost(8)]}", live)
+            name == "tipflash" -> CoreMeshPose(p.offset, p.scale.mul(doubleArrayOf(.8, 1.15, 1.05, 1.0, .95, .9)[tick.coerceAtMost(5)]), 0.0, 0.0, 0.0,
+                "$DIR/tipflash_${intArrayOf(0, 0, 1, 1, 2, 2)[tick.coerceAtMost(5)]}", live)
             name == "clang" -> CoreMeshPose(p.offset, p.scale.mul(doubleArrayOf(1.0, 1.1, 1.05, 1.0, .95, .9)[tick.coerceAtMost(5)]), 0.0, 0.0, 0.0,
                 "$DIR/clang_${intArrayOf(0, 0, 1, 1, 2, 2)[tick.coerceAtMost(5)]}", live)
             name == "fspark" -> {

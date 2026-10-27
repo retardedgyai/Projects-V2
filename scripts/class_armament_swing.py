@@ -444,7 +444,8 @@ def vm_keys(name, beat):
 
 # ---- The held sword, moved by the item shader (2026-10-25, Creator chose it over the display in front of the eye: that
 # one sank into walls, showed in F5 and could only be moved in straight lines). The server marks the held sword with a
-# tint (custom_model_data colour 0): blue 84 + beat - 1 (+7, the count of SHADER_BEATS, for the T1 sprite: 84..97; the arms +16 / +32; the light probes 80..83 stay clear), red the swing's length in ticks, green
+# tint (custom_model_data colour 0): blue 84 + beat - 1 (+11, the count of SHADER_BEATS, for the T1 sprite: 84..105; the arms
+# +22 / +44, twice that count, so no two ranges meet; the light probes 80..83 stay clear), red the swing's length in ticks, green
 # the world tick it started on (mod 256). scripts/shaders/item.vsh, in the first-person hand only, takes each vertex
 # back to the sword's own space through the held resting pose, then places it by the keys below at the frame's time
 # (GameTime carries the part of the tick), so the swing is as smooth as the screen and eases where the keys say.
@@ -935,7 +936,7 @@ def shader_keys(name, beat):
 # claymore's attacks; the keys below are its result, sampled every half animation tick and timed by its upswing gears.
 # Side by side with Better Combat footage, what reads as the swing there is mostly the two arms sweeping across the
 # screen (the blade itself is often end-on), so the arms come along: two boxes in the shader-moved model, tinted
-# (custom_model_data colours 1, 2) like the sword but marked +16 / +32, each placed by its own keys. Only while swinging.
+# (custom_model_data colours 1, 2) like the sword but marked +22 / +44, each placed by its own keys. Only while swinging.
 ARM_ORIGIN = (8.0, 8.0, 8.0)   # where an arm's own pixel (0, 0, 0), its shoulder pivot, sits in the item model
 ARM_BOXES = {'rightArm': ((-3, -2, -2), (1, 10, 2)), 'leftArm': ((-1, -2, -2), (3, 10, 2))}
 ARM_MARKS = {'rightArm': 16, 'leftArm': 32}
@@ -1201,16 +1202,129 @@ def leap_arm_keys(side, beat):
     return out
 
 
+# ---- 押し払い / 切っ先薙ぎ (2026-10-28): four more beats, authored the same way (tick, ease, pose or 'rest', big, arms
+# away). Both are horizontal sweeps about the body, right to left: the hands ride a circle round a point under the
+# chest and the blade points out along the same bearing ([_sweep]), so the tip sweeps across the screen far more than
+# the hands. Fast in, slow out; the way back drops the blade low and brings it up the right side, never across the eye.
+# 押し払い (one beat, from just before the impact): the flat leads (it shoves, it does not cut). A one-tick cock out to the
+# right, low; the sweep low across the lower half of the screen, through the middle at the impact; stopped short on
+# the left, then a quick return.
+# 切っ先薙ぎ: the wind-up (from the cast: drawn back to the right, arms out, held until the cut), the cut (the edge leads,
+# flat up, at chest height: through the middle at the impact, on into a weighted follow-through to the left, an eased
+# return), and the bite (played at the impact instead of the rest of the cut when the tip met someone: the blade
+# catches there three ticks with a shudder, then goes on through as the cut does).
+PUSH_BEAT, TIP_WIND_BEAT, TIP_CUT_BEAT, TIP_BITE_BEAT = 8, 9, 10, 11
+SHADER_BEATS = (1, 2, 3, CHARGE_BEAT, IMPACT_BEAT, RISE_BEAT, SLAM_BEAT, PUSH_BEAT, TIP_WIND_BEAT, TIP_CUT_BEAT, TIP_BITE_BEAT)
+PUSH_TICKS = 13        # CoreArmamentPresentation.PUSH_TICKS
+PUSH_LEAD = 3          # CoreArmamentPresentation.PUSH_LEAD_TICKS: the blade is through the middle this long after the beat starts
+TIP_WIND_TICKS = 14    # CoreArmamentPresentation.TIP_WIND_TICKS: drawn back by ~3, held to TIP_WIND_HOLD, back by 14 if no cut
+TIP_WIND_HOLD = 11
+TIP_CUT_TICKS = 16     # CoreArmamentPresentation.TIP_CUT_TICKS
+TIP_LEAD = 2           # CoreArmamentPresentation.TIP_LEAD_TICKS: the cut is through the middle (the contact) this long in
+TIP_BITE_TICKS = 18    # CoreArmamentPresentation.TIP_BITE_TICKS
+SWEEP_PIVOT = (0.0, -0.28, 0.1)   # the circle the hands ride: at the chest, a little ahead of the eye
+
+
+def _sweep(theta, reach=.5, tilt=0.0, lead='flat', pivot=SWEEP_PIVOT, rise=0.0, bias=(0.0, 0.0, 0.0), lag=0.0):
+    """The hands at [reach] from [pivot] toward bearing [theta] (degrees, 0 ahead, + right), the blade along bearing
+    theta + [lag] (the heavy blade trails the hands while they pull it round, then overtakes them) tipped [tilt] degrees
+    down (negative: up). [lead] 'flat': the flat faces the way the sweep goes (leftward), turned half up so the broad
+    face still shows from the eye; 'edge': the flat faces up, so an edge leads."""
+    t, b, p = math.radians(theta), math.radians(theta + lag), math.radians(tilt)
+    grip = np.array(pivot) + np.array((math.sin(t), 0.0, math.cos(t))) * reach + np.array((0.0, rise, 0.0)) + np.array(bias)
+    blade = _unit((math.sin(b) * math.cos(p), -math.sin(p), math.cos(b) * math.cos(p)))
+    flat = tuple(_unit((-math.cos(b), .9, math.sin(b)))) if lead == 'flat' else (0.0, 1.0, 0.0)
+    return dict(grip=tuple(grip), blade=tuple(blade), flat=flat)
+
+
+# 押し払い: low, the blade a little tipped down so it runs across the lower half of the screen.
+PUSH_COCK = _sweep(40, .8, 8, 'flat', rise=-.1, lag=26)
+PUSH_MID = _sweep(-6, .9, 7, 'flat', rise=-.12, lag=10)
+PUSH_END = _sweep(-46, .82, 9, 'flat', rise=-.12, lag=-16)
+PUSH_LOW = dict(grip=on_screen(.15, -1.05, .5), blade=tuple(_unit((-0.1, -0.55, 0.85))), flat=(-1.0, 0.0, 0.0))
+# 切っ先薙ぎ: the wind-up drawn back to the right with the arms out and the tip a little raised; the cut level at chest
+# height, the tip far out; the follow-through dropping a little to the left as the weight carries it on.
+TIP_WIND = _sweep(30, .8, -14, 'edge', rise=.04, bias=(.06, 0.0, -.06), lag=30)
+TIP_WIND_PASS = _sweep(26, .72, -22, 'edge', rise=0.0, lag=10)
+TIP_CONTACT = _sweep(-4, .92, -9, 'edge', rise=-.07, lag=6)
+TIP_THROUGH = _sweep(-36, .88, -5, 'edge', rise=-.07, lag=-12)
+TIP_FOLLOW = _sweep(-52, .8, 8, 'edge', rise=-.05, lag=-22)
+TIP_SETTLE = _sweep(-56, .76, 15, 'edge', rise=-.09, lag=-24)
+TIP_LOW = dict(grip=on_screen(-.05, -1.05, .5), blade=tuple(_unit((-0.25, -0.5, 0.83))), flat=(0.0, 1.0, 0.0))
+TIP_BACK = dict(grip=on_screen(.45, -.85, .6), blade=tuple(_unit((0.15, -0.2, 0.97))), flat=(-1.0, 0.0, 0.0))
+
+
+def _shudder(pose, k):
+    """The blade caught in a body: pushed on a hair and shaking (k alternates the sign)."""
+    return _shifted(pose, (0.008 * k, 0.012 * k, 0.02), 1.6 * k)
+
+
+def _sweep_track(beat):
+    """[(tick, ease, pose or 'rest', big, arms away)] and the clip length of one of the four sweep beats."""
+    if beat == PUSH_BEAT:
+        return PUSH_TICKS, [(0, 'linear', 'rest', False, True), (1.3, 'out', PUSH_COCK, True, False),
+                            (2.2, 'in', _sweep(22, .86, 7, 'flat', rise=-.11, lag=22), True, False), (PUSH_LEAD, 'linear', PUSH_MID, True, False),
+                            (3.6, 'out', _sweep(-30, .86, 8, 'flat', rise=-.12, lag=-6), True, False), (4.3, 'out', PUSH_END, True, False),
+                            (6, 'linear', PUSH_END, True, False), (9, 'inout', PUSH_LOW, True, False),
+                            (PUSH_TICKS, 'out', 'rest', False, True)]
+    if beat == TIP_WIND_BEAT:
+        n = TIP_WIND_TICKS
+        return n, [(0, 'linear', 'rest', False, True), (1.4, 'in', TIP_WIND_PASS, True, False), (3.2, 'out', TIP_WIND, True, False),
+                   (TIP_WIND_HOLD, 'linear', TIP_WIND, True, False), (TIP_WIND_HOLD + 1.5, 'inout', TIP_WIND_PASS, True, False),
+                   (n, 'out', 'rest', False, True)]
+    if beat == TIP_CUT_BEAT:
+        n = TIP_CUT_TICKS
+        return n, [(0, 'linear', TIP_WIND, True, False), (.5, 'out', _sweep(34, .8, -15, 'edge', rise=.05, bias=(.07, 0.0, -.08), lag=32), True, False),
+                   (1.2, 'in', _sweep(24, .86, -9, 'edge', rise=.03, lag=26), True, False),
+                   (1.65, 'linear', _sweep(14, .9, -9, 'edge', rise=-.04, lag=16), True, False), (TIP_LEAD, 'linear', TIP_CONTACT, True, False),
+                   (2.5, 'out', TIP_THROUGH, True, False), (3.4, 'out', TIP_FOLLOW, True, False), (5.5, 'linear', TIP_SETTLE, True, False),
+                   (9.5, 'inout', TIP_LOW, True, False), (12.5, 'inout', TIP_BACK, True, False), (n, 'out', 'rest', False, True)]
+    n = TIP_BITE_TICKS
+    return n, [(0, 'linear', TIP_CONTACT, True, False), (.4, 'out', _shudder(TIP_CONTACT, 1), True, False),
+               (1.2, 'linear', _shudder(TIP_CONTACT, -1), True, False), (2.0, 'linear', _shudder(TIP_CONTACT, .6), True, False),
+               (3.0, 'inout', _shudder(TIP_CONTACT, .2), True, False),
+               (3.5, 'in', _sweep(-18, .9, -7, 'edge', rise=-.07, lag=0), True, False), (4.2, 'out', TIP_THROUGH, True, False),
+               (5.1, 'out', TIP_FOLLOW, True, False), (7.3, 'linear', TIP_SETTLE, True, False),
+               (11.5, 'inout', TIP_LOW, True, False), (14.5, 'inout', TIP_BACK, True, False), (n, 'out', 'rest', False, True)]
+
+
+SWEEP_BEATS = (PUSH_BEAT, TIP_WIND_BEAT, TIP_CUT_BEAT, TIP_BITE_BEAT)
+SWEEP_R_SHOULDER = np.array((0.75, -1.15, 0.1))
+SWEEP_L_SHOULDER = np.array((-0.7, -1.15, 0.1))
+
+
+def sweep_keys(name, beat):
+    rest, held = _tackle_rest(name), MODELS[name][2]
+    big = held * TACKLE_SIZE if name != 'greatsword_t1' else .797
+    n, track = _sweep_track(beat)
+    return [_sword_key(t, n, e, rest if p == 'rest' else p, big if b else held) for t, e, p, b, _ in track]
+
+
+def sweep_arm_keys(side, beat):
+    right = side == 'rightArm'
+    shoulder = SWEEP_R_SHOULDER if right else SWEEP_L_SHOULDER
+    n, track = _sweep_track(beat)
+    out = []
+    for i, (t, e, p, _, away) in enumerate(track):
+        if p == 'rest':   # the arms come in from (and go back) under the screen with the pose next to them
+            p = track[i + 1][2] if i == 0 else track[i - 1][2]
+        fist = np.array(p['grip']) - (0 if right else _unit(p['blade']) * LEAP_L_DOWN)
+        out.append(_arm_key(t, n, 'in' if away and i else e, shoulder, fist, away=away))
+    return out
+
+
 _shader_keys_bc = shader_keys
 _arm_keys_bc = arm_keys
 
 
 def shader_keys(name, beat):
+    if beat in SWEEP_BEATS: return sweep_keys(name, beat)
     if beat in (RISE_BEAT, SLAM_BEAT): return leap_keys(name, beat)
     return tackle_keys(name, beat) if beat in (CHARGE_BEAT, IMPACT_BEAT) else _shader_keys_bc(name, beat)
 
 
 def arm_keys(side, beat):
+    if beat in SWEEP_BEATS: return sweep_arm_keys(side, beat)
     if beat in (RISE_BEAT, SLAM_BEAT): return leap_arm_keys(side, beat)
     return tackle_arm_keys(side, beat) if beat in (CHARGE_BEAT, IMPACT_BEAT) else _arm_keys_bc(side, beat)
 
@@ -1233,7 +1347,11 @@ def shader_glsl():
               f'const int SWING_BEATS = {len(SHADER_BEATS)};',
               f'const int SWING_CHARGE_TICKS = {CHARGE_TICKS};', f'const int SWING_IMPACT_TICKS = {IMPACT_TICKS};',
               '// 跳び叩き\'s slam length, and the share of the rise clip that is the hold (the server scales the rise to the air time).',
-              f'const int SWING_SLAM_TICKS = {SLAM_TICKS};', f'const float SWING_RISE_HOLD = {LEAP_RISE_HOLD:.5f};', '',
+              f'const int SWING_SLAM_TICKS = {SLAM_TICKS};', f'const float SWING_RISE_HOLD = {LEAP_RISE_HOLD:.5f};',
+              '// 押し払い / 切っ先薙ぎ\'s clip lengths and leads (CoreArmamentPresentation plays them at these; its test reads them back).',
+              f'const int SWING_PUSH_TICKS = {PUSH_TICKS};', f'const int SWING_PUSH_LEAD = {PUSH_LEAD};',
+              f'const int SWING_TIP_WIND_TICKS = {TIP_WIND_TICKS};', f'const int SWING_TIP_CUT_TICKS = {TIP_CUT_TICKS};',
+              f'const int SWING_TIP_LEAD = {TIP_LEAD};', f'const int SWING_TIP_BITE_TICKS = {TIP_BITE_TICKS};', '',
               '// The two keys round the swing progress u: their u, the later key\'s ease, hand, rotation, scale.',
               'struct SwingSegment { float u0; float u1; int ease; vec3 h0; vec3 h1; vec4 q0; vec4 q1; float s0; float s1; };', '']
     # No arrays: the game hands the shader to the driver through SPIR-V, which copies a constant array into a

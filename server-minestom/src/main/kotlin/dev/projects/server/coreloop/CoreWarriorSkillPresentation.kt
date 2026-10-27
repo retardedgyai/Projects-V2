@@ -10,15 +10,15 @@ internal object CoreWarriorSkillPresentation {
         "war_guard" to Identity("天落とし", "獣を使う・跳躍", "高く跳んで叩き落とし、衝撃の輪を広げる"),
         "war_wound" to Identity("跳び叩き", "移動・着地", "狙った地点へ跳び、着地の周りを叩いて止める"),
         "war_counter" to Identity("大地崩し", "獣を使う・範囲", "突き立てて周り一面を砕き、まとめて打ち上げる"),
-        "war_cry" to Identity("引き摺り", "獣を溜める・巻き込み", "大剣を引きずって歩き、引っかけた敵をまとめて叩きつける"),
-        "war_breach" to Identity("斬り上げ", "獣を溜める・打ち上げ", "真上へ振り上げて打ち上げ、地割りで叩き落とす"),
+        CoreWarriorRules.PUSH to Identity("押し払い", "獣を溜める・押し出し", "囲まれた時に腹で払って周りを押し出す。多く当てるほど獣が溜まる"),
+        CoreWarriorRules.TIP to Identity("切っ先薙ぎ", "獣を溜める・間合い", "刃先の間合いで薙ぐと切っ先が入り、重く鳴って獣が2つ"),
         // Retired as an ultimate (2026-10-27): never offered; the name stays for old art and saves.
         "war_ult" to Identity("全力一振", "地割りに統合", "獣3つの地割りが全力の一振り"),
         "war_banner" to Identity("狂戦士甲冑", "奥義・暴走", "10秒、CCも怯みも効かず速く、獣が満ちたまま"),
         "war_awaken" to Identity("獣の目覚め", "奥義・解放", "獣3つで撃つ。8秒、獣が減らず使う技の再使用が半分")
     )
-    // Rows: enter or heavy / crowd or reach / hold. Retired catalog entries (5, 6, 7) are not offered.
-    val candidateOrder = listOf(0, 1, 4, 2, 3, 5)   // 引き摺り (6) and 斬り上げ (7) are retired
+    // Rows: enter or heavy / crowd or reach / hold. 押し払い (6) and 切っ先薙ぎ (7) sit where 引き摺り and 斬り上げ were.
+    val candidateOrder = listOf(0, 1, 4, 7, 6, 2, 3, 5)
     val candidateSlots = listOf(9, 14, 18, 23, 27, 32, 36, 41)
     val loadoutSlots = listOf(0, 2, 4, 6, 8)
 

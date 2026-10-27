@@ -9,12 +9,13 @@
 // not drawn where it stands: its quad moves onto the screen's bottom pixel row, where item.fsh writes the light's data
 // for the post effect, which lights the scene and hides the row again.
 // The greatsword swing (CoreArmamentPresentation.shaderSwing, scripts/class_armament_swing.py): a held sword tinted blue
-// 84..97 is moved here, in the first-person hand only: back to the sword's own space through its held resting pose,
+// 84..105 is moved here, in the first-person hand only: back to the sword's own space through its held resting pose,
 // then placed by the beat's keys at this frame's time, so the swing runs at the screen's frame rate. Elsewhere (other
 // players, F5, the hotbar) it is drawn as the plain held sword, its tint dropped. The two arms that come with the
-// swing (Better Combat's first person shows them) are tinted the same, marked 100..113 (right) and 116..129 (left), and
+// swing (Better Combat's first person shows them) are tinted the same, marked 106..127 (right) and 128..149 (left), and
 // each is placed by its own keys. Beats 1..3 are the normal attacks; 4 and 5 are 体当たり's charge and impact; 6 and 7
-// are 跳び叩き's rise and slam. Big swords are 84..90 (beat 1..7), the T1 sprite 91..97.
+// are 跳び叩き's rise and slam; 8 is 押し払い; 9, 10 and 11 are 切っ先薙ぎ's wind-up, cut and bite. Big swords are 84..94
+// (beat 1..11), the T1 sprite 95..105.
 
 #include <minecraft:light.glsl>
 #include <minecraft:globals.glsl>
@@ -60,20 +61,24 @@ const float LIGHT_PROBE_PIXELS = 97.0;   // item.fsh: header 33 + 8 lights x 8
 void swingSegment(int beat, bool plain, int part, float u, out SwingSegment g) {
     if (part == 1) {
         if (beat == 1) swingTrack_RARM_1(u, g); else if (beat == 2) swingTrack_RARM_2(u, g); else if (beat == 3) swingTrack_RARM_3(u, g);
-        else if (beat == 4) swingTrack_RARM_4(u, g); else if (beat == 5) swingTrack_RARM_5(u, g);
-        else if (beat == 6) swingTrack_RARM_6(u, g); else swingTrack_RARM_7(u, g);
+        else if (beat == 4) swingTrack_RARM_4(u, g); else if (beat == 5) swingTrack_RARM_5(u, g); else if (beat == 6) swingTrack_RARM_6(u, g);
+        else if (beat == 7) swingTrack_RARM_7(u, g); else if (beat == 8) swingTrack_RARM_8(u, g); else if (beat == 9) swingTrack_RARM_9(u, g);
+        else if (beat == 10) swingTrack_RARM_10(u, g); else swingTrack_RARM_11(u, g);
     } else if (part == 2) {
         if (beat == 1) swingTrack_LARM_1(u, g); else if (beat == 2) swingTrack_LARM_2(u, g); else if (beat == 3) swingTrack_LARM_3(u, g);
-        else if (beat == 4) swingTrack_LARM_4(u, g); else if (beat == 5) swingTrack_LARM_5(u, g);
-        else if (beat == 6) swingTrack_LARM_6(u, g); else swingTrack_LARM_7(u, g);
+        else if (beat == 4) swingTrack_LARM_4(u, g); else if (beat == 5) swingTrack_LARM_5(u, g); else if (beat == 6) swingTrack_LARM_6(u, g);
+        else if (beat == 7) swingTrack_LARM_7(u, g); else if (beat == 8) swingTrack_LARM_8(u, g); else if (beat == 9) swingTrack_LARM_9(u, g);
+        else if (beat == 10) swingTrack_LARM_10(u, g); else swingTrack_LARM_11(u, g);
     } else if (plain) {
         if (beat == 1) swingTrack_PLAIN_1(u, g); else if (beat == 2) swingTrack_PLAIN_2(u, g); else if (beat == 3) swingTrack_PLAIN_3(u, g);
-        else if (beat == 4) swingTrack_PLAIN_4(u, g); else if (beat == 5) swingTrack_PLAIN_5(u, g);
-        else if (beat == 6) swingTrack_PLAIN_6(u, g); else swingTrack_PLAIN_7(u, g);
+        else if (beat == 4) swingTrack_PLAIN_4(u, g); else if (beat == 5) swingTrack_PLAIN_5(u, g); else if (beat == 6) swingTrack_PLAIN_6(u, g);
+        else if (beat == 7) swingTrack_PLAIN_7(u, g); else if (beat == 8) swingTrack_PLAIN_8(u, g); else if (beat == 9) swingTrack_PLAIN_9(u, g);
+        else if (beat == 10) swingTrack_PLAIN_10(u, g); else swingTrack_PLAIN_11(u, g);
     } else {
         if (beat == 1) swingTrack_BIG_1(u, g); else if (beat == 2) swingTrack_BIG_2(u, g); else if (beat == 3) swingTrack_BIG_3(u, g);
-        else if (beat == 4) swingTrack_BIG_4(u, g); else if (beat == 5) swingTrack_BIG_5(u, g);
-        else if (beat == 6) swingTrack_BIG_6(u, g); else swingTrack_BIG_7(u, g);
+        else if (beat == 4) swingTrack_BIG_4(u, g); else if (beat == 5) swingTrack_BIG_5(u, g); else if (beat == 6) swingTrack_BIG_6(u, g);
+        else if (beat == 7) swingTrack_BIG_7(u, g); else if (beat == 8) swingTrack_BIG_8(u, g); else if (beat == 9) swingTrack_BIG_9(u, g);
+        else if (beat == 10) swingTrack_BIG_10(u, g); else swingTrack_BIG_11(u, g);
     }
 }
 
@@ -113,9 +118,9 @@ void main() {
     bool swung = false;
     bool hidden = false;
     int swingMarker = int(Color.b * 255.0 + .5);
-    int swingPart = swingMarker >= 116 && swingMarker <= 129 ? 2 : swingMarker >= 100 && swingMarker <= 113 ? 1 : 0;
-    swingMarker -= swingPart * 16;
-    if (swingMarker >= 84 && swingMarker <= 97) {
+    int swingPart = swingMarker >= 128 && swingMarker <= 149 ? 2 : swingMarker >= 106 && swingMarker <= 127 ? 1 : 0;
+    swingMarker -= swingPart * 22;
+    if (swingMarker >= 84 && swingMarker <= 105) {
         tint = vec4(1.0, 1.0, 1.0, Color.a);
         // The first-person hand: a perspective projection and the vertex within reach of the eye (26.3 draws the hand
         // with a model-view matrix of its own, so everything here is worked in view space and carried back).
@@ -123,8 +128,8 @@ void main() {
         vec3 view = (mv * vec4(Position, 1.0)).xyz;
         bool hand = ProjMat[2][3] < -.5 && length(view) < 2.0;
         if (hand) {
-            bool plain = swingMarker >= 91;
-            int beat = swingMarker - (plain ? 90 : 83);
+            bool plain = swingMarker >= 95;
+            int beat = swingMarker - (plain ? 94 : 83);
             float swingLength = max(Color.r * 255.0, 1.0);
             float elapsed = mod(GameTime * 24000.0 - Color.g * 255.0 + 512.0, 256.0);
             float u = clamp(elapsed / swingLength, 0.0, 1.0);
