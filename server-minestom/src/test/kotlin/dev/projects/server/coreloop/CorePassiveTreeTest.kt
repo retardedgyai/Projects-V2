@@ -21,10 +21,9 @@ class CorePassiveTreeTest {
         CoreClass.entries.forEach { job -> assertEquals(job, tree.nodes[tree.start(job)].start) }
         val seen = mutableSetOf(0); val todo = ArrayDeque(listOf(0))
         while (todo.isNotEmpty()) tree.nodes[todo.removeFirst()].links.forEach { if (seen.add(it)) todo += it }
-        assertEquals(tree.nodes.size, seen.size)
-        // The chest window gives each node its own slot.
-        assertEquals(tree.nodes.size, tree.nodes.map { it.x / 2 to it.y / 2 }.distinct().size)
-        assertTrue(tree.nodes.all { it.x % 2 == 0 && it.y % 2 == 1 })
+        assertEquals(tree.nodes.count { it.kind != CorePassiveKind.MASTERY }, seen.size)
+        // Masteries hang in their wheel without links; everything else is reachable.
+        assertTrue(tree.nodes.filter { it.kind == CorePassiveKind.MASTERY }.all { it.links.isEmpty() && !it.ready })
     }
 
     @Test fun `a point per level after the first`() {
@@ -38,9 +37,15 @@ class CorePassiveTreeTest {
         val job = CoreClass.MAGE
         val first = firstStep(job)
         assertFailsWith<IllegalArgumentException> { tree.take(job, emptySet(), first, 0) }
-        val far = tree.nodes.indices.first { tree.nodes[it].ready && it !in tree.nodes[tree.start(job)].links }
-        assertFailsWith<IllegalArgumentException> { tree.take(job, emptySet(), far, 5) }
         assertEquals(setOf(first), tree.take(job, emptySet(), first, 1))
+        // A far node is taken with the whole shortest path to it, if the points cover it.
+        val far = tree.nodes.first { it.kind == CorePassiveKind.NOTABLE && (tree.pathTo(job, emptySet(), it.id)?.size ?: 0) >= 4 }
+        val path = tree.pathTo(job, emptySet(), far.id)!!
+        assertEquals(far.id, path.last())
+        assertTrue(tree.nodes[path.first()].links.contains(tree.start(job)))
+        path.zipWithNext().forEach { (p, q) -> assertTrue(q in tree.nodes[p].links) }
+        assertFailsWith<IllegalArgumentException> { tree.take(job, emptySet(), far.id, path.size - 1) }
+        assertEquals(path.toSet(), tree.take(job, emptySet(), far.id, path.size))
         val keystone = tree.nodes.first { it.kind == CorePassiveKind.KEYSTONE }
         assertFailsWith<IllegalArgumentException> { tree.take(job, tree.nodes.indices.toSet(), keystone.id, 999) }
     }

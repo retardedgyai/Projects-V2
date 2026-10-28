@@ -1,0 +1,384 @@
+<title>パッシブツリー画面</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&family=DotGothic16&display=swap">
+<style>
+/* 1920x1080 のゲーム画面をそのまま縮小して見せる。枠は Forge、真ん中の木だけが色を持つ。 */
+:root{
+  --page:#0b0c0e; --ink:#ECE6DC; --mute:#A29E97; --dim:#6F6B65;
+  --panel:rgba(16,17,20,.95); --line:rgba(255,255,255,.09); --slot:#0D0E10;
+  --ember:#F07A2A; --ember-soft:#FFC48A; --gold:#E8C878; --danger:#E58B80; --ok:#9AF0A0;
+  --body:"M PLUS 2",system-ui,sans-serif; --num:"DotGothic16",monospace;
+  color-scheme:dark;
+}
+html,body{background:var(--page);color:var(--ink);font-family:var(--body);margin:0}
+.wrap{min-width:0;padding-block:14px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:12px;max-width:1700px;margin:0 auto}
+.bar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:14px;color:var(--mute)}
+.bar b{color:var(--ink);font-size:16px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;background:transparent;color:var(--mute);border:0;padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed=true]{background:#24262b;color:var(--ink)}
+.bar select{font:inherit;font-size:13px;background:#17181b;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px 8px}
+.frame{position:relative;width:100%;aspect-ratio:16/9;max-width:100%}
+.stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;background:#121316;border-radius:6px;user-select:none}
+canvas{position:absolute;inset:0;width:1920px;height:1080px;display:block}
+/* Forge の部品 */
+.panel{position:absolute;backdrop-filter:blur(6px);background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.ornate .panel{border-color:rgba(200,170,110,.35)}
+.ornate .panel::before,.ornate .panel::after{content:"";position:absolute;width:26px;height:26px;border:2px solid rgba(200,170,110,.7);pointer-events:none}
+.ornate .panel::before{left:10px;top:10px;border-right:0;border-bottom:0}
+.ornate .panel::after{right:10px;bottom:10px;border-left:0;border-top:0}
+.slot{background:var(--slot);box-shadow:inset 3px 3px 0 #050506,inset -3px -3px 0 #2C2E34}
+.num{font-family:var(--num)}
+.fade{position:absolute;left:0;right:0;top:0;height:150px;background:linear-gradient(#121316 35%,rgba(18,19,22,0));pointer-events:none}
+.fade.b{top:auto;bottom:0;height:90px;background:linear-gradient(rgba(18,19,22,0),#121316 70%)}
+header.top{position:absolute;left:56px;right:56px;top:30px;height:60px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;column-gap:24px;pointer-events:none}
+header.top>*{pointer-events:auto}
+.brand{display:flex;align-items:center;gap:14px}
+.brand .slot{width:46px;height:46px;display:flex;align-items:center;justify-content:center}
+.brand b{font-size:22px;display:block}
+.brand span{font-size:13px;color:var(--mute)}
+nav.tabs{display:flex;gap:32px;align-items:flex-end;height:60px}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:10px;text-decoration:none;color:var(--mute);font-size:19px;font-weight:500;cursor:pointer}
+nav.tabs a[aria-current=page]{color:var(--ink);font-weight:700}
+nav.tabs a i{display:block;width:26px;height:3px;border-radius:2px;background:transparent}
+nav.tabs a[aria-current=page] i{background:var(--ember)}
+.chips{display:flex;gap:10px;justify-content:flex-end}
+.chip{display:flex;align-items:center;gap:10px;height:42px;padding:0 18px;border-radius:22px;background:var(--panel);border:1px solid var(--line);font-size:14px;color:var(--mute)}
+.chip .num{color:var(--ink);font-size:20px}
+.chip .pts{color:var(--gold)}
+.left{left:56px;top:110px;width:380px;bottom:62px;padding:22px 22px;display:flex;flex-direction:column;gap:14px}
+.right{right:56px;top:110px;width:460px;bottom:62px;padding:24px 26px;display:flex;flex-direction:column;gap:12px}
+.panel h3{margin:0;font-size:17px;display:flex;justify-content:space-between;align-items:baseline}
+.panel h3 small{font-size:13px;color:var(--mute);font-weight:400}
+.rule{height:1px;background:var(--line)}
+.totals{display:grid;gap:6px;font-size:15px;overflow:auto;min-height:0;flex:1}
+.totals div{display:flex;justify-content:space-between}
+.totals .num{color:var(--ink)}
+.totals .empty{color:var(--dim)}
+.keyrow{display:flex;gap:10px;flex-wrap:wrap}
+.keybadge{width:38px;height:38px;display:grid;place-items:center}
+.keybadge i{width:22px;height:22px;transform:rotate(45deg);border:2px solid #4a4640;background:#18191c}
+.keybadge.on i{border-color:var(--gold);background:#5a4214}
+.kind{font-size:13px;color:var(--mute)}
+.name{font-size:30px;font-weight:700;line-height:1.2}
+.lines{display:grid;gap:6px;font-size:18px}
+.lines .stat{color:var(--ink)}
+.lines .stat em{font-style:normal;color:var(--region,#8FB4F0);font-family:var(--num);font-size:20px;margin-left:6px}
+.lines p{margin:0;color:#C9C3B8;line-height:1.6;font-size:16px}
+.status{font-size:16px;margin-top:4px}
+.status.ok{color:var(--ok)} .status.bad{color:var(--danger)} .status.own{color:var(--gold)} .status.mute{color:var(--mute)}
+.spacer{flex:1}
+.cost{display:flex;justify-content:space-between;font-size:14px;color:var(--mute)}
+.cost .num{color:var(--ink);font-size:18px}
+.go{height:72px;border-radius:12px;border:0;font:inherit;font-size:24px;font-weight:700;cursor:pointer;background:linear-gradient(#FFB070,#F07A2A);color:#2a1406;box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 8px 24px rgba(240,122,42,.25)}
+.go.refund{background:#2a1c1c;color:var(--danger);box-shadow:inset 0 0 0 1px rgba(229,139,128,.4)}
+.go:disabled{background:#1c1d22;color:#5e5a54;box-shadow:none;cursor:not-allowed}
+.row2{display:flex;gap:10px}
+.row2 button{flex:1;height:48px;border-radius:10px;border:1px solid var(--line);background:#1b1c20;color:var(--ink);font:inherit;font-size:16px;cursor:pointer}
+.row2 button:disabled{color:#5e5a54;cursor:not-allowed}
+footer.keys{position:absolute;left:56px;bottom:22px;display:flex;gap:22px;font-size:14px;color:var(--mute);align-items:center}
+.key{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:26px;padding:0 7px;box-sizing:border-box;border-radius:5px;background:#1E2025;border:1px solid #3A3C42;border-bottom-width:3px;color:var(--ink);font-size:13px;margin-right:6px}
+.toast{position:absolute;left:50%;top:120px;transform:translateX(-50%);background:rgba(16,17,20,.92);border:1px solid var(--line);border-radius:22px;padding:10px 22px;font-size:17px;opacity:0;transition:opacity .25s}
+.toast.on{opacity:1}
+.zoom{position:absolute;left:460px;bottom:72px;display:flex;gap:8px}
+.zoom button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:22px;cursor:pointer}
+.legend{position:absolute;left:470px;top:118px;display:flex;gap:16px;font-size:13px;color:var(--mute)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.sheet{display:grid;gap:8px;font-size:15px}
+#sheet{display:flex;flex-wrap:wrap;gap:14px}
+#sheet figure{margin:0;display:grid;gap:6px;justify-items:center;font-size:12px;color:var(--mute)}
+#sheet canvas{position:static;inset:auto;width:auto;height:auto;image-rendering:pixelated;background:#18191d;border:1px solid var(--line);border-radius:6px}
+.note{font-size:13px;color:var(--mute);line-height:1.7;margin:0}
+</style>
+<div class="wrap">
+  <div class="bar">
+    <b>パッシブツリー画面（触れる見本）</b>
+    <span>枠の飾り</span>
+    <span class="seg" role="group" aria-label="枠の飾り"><button id="sForge" aria-pressed="true" type="button">Forge のまま</button><button id="sMap" aria-pressed="false" type="button">地図の金の飾り</button></span>
+    <label for="job">職業 <select id="job"></select></label>
+    <label for="lv">Lv <select id="lv"></select></label>
+  </div>
+  <div class="frame" id="frame">
+    <div class="stage" id="stage">
+      <canvas id="cv" width="1920" height="1080"></canvas>
+      <div class="fade"></div><div class="fade b"></div>
+      <div class="legend" id="legend"></div>
+      <header class="top">
+        <div class="brand">
+          <span class="slot"><svg width="26" height="26" viewBox="0 0 13 13" aria-hidden="true" style="image-rendering:pixelated"><rect x="6" y="0" width="1" height="13" fill="#6B7078"/><rect x="0" y="6" width="13" height="1" fill="#6B7078"/><rect x="5" y="5" width="3" height="3" fill="#E8C878"/><rect x="1" y="1" width="2" height="2" fill="#8FB4F0"/><rect x="10" y="2" width="2" height="2" fill="#E0604A"/><rect x="2" y="10" width="2" height="2" fill="#7CD69B"/><rect x="10" y="10" width="2" height="2" fill="#B58CFF"/></svg></span>
+          <div><b>星の盤</b><span>開拓港 · 修練所</span></div>
+        </div>
+        <nav class="tabs" aria-label="成長メニュー">
+          <a aria-current="page">パッシブ<i></i></a><a>技の編成<i></i></a><a>戦闘能力<i></i></a>
+        </nav>
+        <div class="chips">
+          <div class="chip">残りポイント <span class="num pts" id="cPts">0</span></div>
+          <div class="chip">銀貨 <span class="num" id="cSilver">0</span></div>
+        </div>
+      </header>
+      <section class="panel left" aria-label="合計">
+        <h3>取ったものの合計 <small id="lUsed"></small></h3>
+        <div class="rule"></div>
+        <div class="totals" id="totals"></div>
+        <div class="rule"></div>
+        <h3>キーストーン <small>外周の◆</small></h3>
+        <div class="keyrow" id="keys"></div>
+      </section>
+      <section class="panel right" aria-label="選んだノード" id="right">
+        <span class="kind" id="rKind">ノード</span>
+        <span class="name" id="rName">ノードを選んでください</span>
+        <div class="lines" id="rLines"><p>木の上でノードを押すと、ここに中身が出ます。もう一度押すと、そこまでの道をまとめて取ります。</p></div>
+        <span class="status mute" id="rStatus"></span>
+        <div class="spacer"></div>
+        <div class="cost" id="rCost" hidden><span>戻す代金</span><span><span class="num" id="rCostN">0</span> 銀貨</span></div>
+        <button class="go" id="go" type="button" disabled>取る</button>
+        <div class="row2"><button id="reset" type="button">全部戻す</button><button id="center" type="button">起点へ戻る</button></div>
+      </section>
+      <div class="zoom"><button id="zin" type="button" aria-label="拡大">＋</button><button id="zout" type="button" aria-label="縮小">－</button></div>
+      <footer class="keys"><span><span class="key">左クリック</span>選ぶ・2回で取る</span><span><span class="key">端</span>移動</span><span><span class="key">ホイール</span>拡大縮小</span><span><span class="key">Shift</span>閉じる</span></footer>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+  <section class="sheet"><b>アイコン一覧</b><span class="note">左右対称・中央・光の向き（左上から）を決まりで作っています。上が主要ノード用（13ドット）、下が小さいノード用（9ドット）。</span><div id="sheet"></div></section>
+  <p class="note">ゲームと同じ 1920×1080 の画面を縮めて表示しています。カーソルを木の端に寄せると動き（ドラッグでも動きます）、ホイールで拡大縮小。ノードを押すと右に中身、同じノードをもう一度押すと道ごと取ります。取ったノードを選ぶと「戻す」になり、銀貨を使います。</p>
+</div>
+<script>
+const D = /*DATA*/null;
+const N = D.nodes, G = D.groups;
+const adj = N.map(() => []); D.edges.forEach(([a, b]) => { adj[a].push(b); adj[b].push(a); });
+const CLASSES = [["WARRIOR","戦士",-90,"#E0604A"],["TEMPLAR","テンプラー",-30,"#E8C35A"],["MAGE","メイジ",30,"#7FA6FF"],["HEALER","ヒーラー",90,"#7CD69B"],["RANGER","レンジャー",150,"#5FC7C0"],["ASSASSIN","アサシン",210,"#B58CFF"]];
+const hex = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16));
+const mix = (a,b,t) => a.map((v,i) => Math.round(v+(b[i]-v)*t));
+function region(n) {
+  // Colour by direction from the centre: a class colour, blended across the wedge between two classes.
+  const deg = Math.atan2(n.y, n.x) * 180 / Math.PI;
+  const rel = ((deg + 90) % 360 + 360) % 360, i = Math.floor(rel / 60), f = (rel % 60) / 60;
+  const t = f < .3 ? 0 : f > .7 ? 1 : (f - .3) / .4;
+  const c = mix(hex(CLASSES[i][3]), hex(CLASSES[(i+1)%6][3]), t);
+  return Math.hypot(n.x, n.y) < 420 ? [236,230,220] : c;
+}
+N.forEach(n => n.rgb = region(n));
+const $ = id => document.getElementById(id);
+const cv = $("cv"), ctx = cv.getContext("2d"), stage = $("stage"), frame = $("frame");
+CLASSES.forEach(([id, name]) => { const o = document.createElement("option"); o.value = id; o.textContent = name; $("job").append(o); });
+for (let l = 40; l >= 1; l -= (l > 10 ? 5 : 1)) { const o = document.createElement("option"); o.value = l; o.textContent = l; $("lv").append(o); }
+const legend = $("legend"); CLASSES.forEach(([, name, , c]) => { const s = document.createElement("span"); s.innerHTML = `<i style="background:${c}"></i>`; s.append(name); legend.append(s); });
+let job = "WARRIOR", level = 40, silver = 18600, taken = new Set(), selected = -1, hover = -1;
+let zoom = .621, panX = 0, panY = 0, cursor = null, drag = null;
+const budget = () => level - 1;
+const startOf = () => N.findIndex(n => n.start === job);
+const ready = n => n.kind === "SMALL" || n.kind === "NOTABLE";
+const price = () => 10 * level;
+function centre() { const s = N[startOf()]; dot = 3; zoom = ZOOM_PER_DOT * 3; panX = 960 - s.x * zoom; panY = 600 - s.y * zoom; }
+function pathTo(id) {
+  if (id < 0 || taken.has(id) || !ready(N[id])) return null;
+  const roots = [startOf(), ...taken], seen = new Set(roots), from = new Map(); let q = roots.slice();
+  while (q.length) { const nx = []; for (const u of q) for (const v of adj[u]) { if (seen.has(v) || !ready(N[v])) continue; seen.add(v); from.set(v, u);
+    if (v === id) { const p = [v]; let w = u; while (from.has(w) && !roots.includes(w)) { p.push(w); w = from.get(w); } return p.reverse(); } nx.push(v); } q = nx; }
+  return null;
+}
+function keep(set) { const root = startOf(), seen = new Set(), todo = [root]; while (todo.length) for (const v of adj[todo.pop()]) if (set.has(v) && !seen.has(v)) { seen.add(v); todo.push(v); } return seen; }
+const sx = x => x * zoom + panX, sy = y => y * zoom + panY;
+// ---- Pixel art: the whole tree is drawn on a small buffer (one cell = one art pixel) and scaled up
+// with no smoothing, so lines, frames and icons share one dot size like Minecraft and the map's pins.
+const ICONSET = /*ICONS*/null;
+// Small nodes show the small icon of their stat, notables the big one, keystones a gem, starts the class icon.
+const iconOf = n => n.start ? ICONSET.classIcon[n.start] : n.kind === "KEYSTONE" ? "crown" : ICONSET.statIcon[Object.keys(n.stats)[0]] || "gem";
+const rgb = h => typeof h === "string" ? hex(h) : h;
+const shade = (c, f) => c.map(v => Math.max(0, Math.min(255, Math.round(v * f))));
+const css = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+// Frames are masks: '#' outline, 'r' rim, 'i' inside. Built from simple shapes so every size stays crisp.
+function frameMask(kind) {
+  const size = { SMALL: 13, NOTABLE: 19, KEYSTONE: 29, START: 23, MASTERY: 13 }[kind], c = (size - 1) / 2, rows = [];
+  for (let y = 0; y < size; y++) { let row = ""; for (let x = 0; x < size; x++) {
+    const dx = Math.abs(x - c), dy = Math.abs(y - c);
+    let d; // distance in the frame's own shape
+    if (kind === "KEYSTONE") d = dx + dy;
+    else if (kind === "NOTABLE" || kind === "START") d = Math.max(dx, dy, (dx + dy) * 0.72); // octagon like the map badges
+    else d = Math.hypot(dx, dy);
+    const R = c + (kind === "KEYSTONE" ? 0 : .35);
+    row += d > R ? "." : d > R - 1 ? "#" : d > R - (kind === "SMALL" ? 2 : 3) ? "r" : kind === "MASTERY" && d > R - 4 ? "." : "i";
+  } rows.push(row); }
+  return rows;
+}
+const FRAMES = {}; ["SMALL", "NOTABLE", "KEYSTONE", "START", "MASTERY"].forEach(k => FRAMES[k] = frameMask(k));
+function stamp(img, W, H, rows, x0, y0, pal) {
+  for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y].length; x++) {
+    const ch = rows[y][x], c = pal[ch]; if (!c) continue;
+    const px = x0 + x, py = y0 + y; if (px < 0 || py < 0 || px >= W || py >= H) continue;
+    const o = (py * W + px) * 4; img[o] = c[0]; img[o + 1] = c[1]; img[o + 2] = c[2]; img[o + 3] = 255;
+  }
+}
+function plot(img, W, H, x, y, c) { x |= 0; y |= 0; if (x < 0 || y < 0 || x >= W || y >= H) return; const o = (y * W + x) * 4; img[o] = c[0]; img[o + 1] = c[1]; img[o + 2] = c[2]; img[o + 3] = 255; }
+function line(img, W, H, pts, c, thick) {
+  for (let i = 0; i + 1 < pts.length; i++) { let [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
+    const n = Math.max(1, Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
+    for (let k = 0; k <= n; k++) { const x = Math.round(x0 + (x1 - x0) * k / n), y = Math.round(y0 + (y1 - y0) * k / n);
+      plot(img, W, H, x, y, c); if (thick > 1) { plot(img, W, H, x + 1, y, c); plot(img, W, H, x, y + 1, c); } } }
+}
+let dot = 3;
+const ZOOM_PER_DOT = .207;
+const R = { SMALL: 6, NOTABLE: 9, KEYSTONE: 14, START: 11, MASTERY: 6 }; // half sizes in art pixels (for picking)
+// Two layers with a fixed rule:
+//  - pixel art: the things themselves (node badges and their icons). One dot size, scaled by whole numbers.
+//  - smooth: everything that explains or connects (lines, state rings, glow, background, names, panels).
+function sprite(n, on) {
+  // Each node badge is a tiny pixel image, cached per look, drawn scaled with no smoothing.
+  const key = `${n.kind}|${n.rgb}|${on}|${n.start === job || !n.start}|${iconOf(n)}`;
+  if (sprite.cache.has(key)) return sprite.cache.get(key);
+  const fr = FRAMES[n.kind], S = fr.length, c = document.createElement("canvas"); c.width = S; c.height = S;
+  const g = c.getContext("2d"), id = g.createImageData(S, S), img = id.data;
+  const GOLD = [232, 200, 120], OUT = [10, 10, 14];
+  const rim = on ? GOLD : n.kind === "START" && n.start !== job ? shade(n.rgb, .45) : n.kind === "SMALL" ? shade(n.rgb, .85) : n.rgb;
+  const inside = on ? shade(GOLD, .42) : n.kind === "SMALL" ? shade(n.rgb, .38) : [24, 24, 30];
+  stamp(img, S, S, fr, 0, 0, { "#": OUT, r: rim, i: inside });
+  if (n.kind !== "MASTERY") {
+    const px = ICONSET.icons[iconOf(n)][n.kind === "SMALL" ? "small" : "big"], o = (S - px.length) >> 1;
+    for (let y = 0; y < px.length; y++) for (let x = 0; x < px.length; x++) { const c = px[y][x]; if (!c) continue;
+      let v = hex(c); if (!on) { const l = (v[0] * .3 + v[1] * .59 + v[2] * .11); v = v.map(t => Math.round((t * .55 + l * .45) * .78)); }
+      const q = ((o + y) * S + o + x) * 4; img[q] = v[0]; img[q + 1] = v[1]; img[q + 2] = v[2]; img[q + 3] = 255; }
+  }
+  if (n.kind === "MASTERY") stamp(img, S, S, [".k.", "kak", ".k."], (S >> 1) - 1, (S >> 1) - 1, { k: OUT, a: on ? GOLD : n.rgb });
+  g.putImageData(id, 0, 0); sprite.cache.set(key, c); return c;
+}
+sprite.cache = new Map();
+function drawNebula() {
+  ctx.fillStyle = "#101116"; ctx.fillRect(0, 0, 1920, 1080);
+  ctx.globalCompositeOperation = "lighter";
+  CLASSES.forEach(([, , deg, c]) => { const x = sx(Math.cos(deg*Math.PI/180) * 1500), y = sy(Math.sin(deg*Math.PI/180) * 1500), r = 1900 * zoom;
+    const gr = ctx.createRadialGradient(x, y, 0, x, y, r); const [cr, cg, cb] = hex(c);
+    gr.addColorStop(0, `rgba(${cr},${cg},${cb},.15)`); gr.addColorStop(1, `rgba(${cr},${cg},${cb},0)`); ctx.fillStyle = gr; ctx.fillRect(0, 0, 1920, 1080); });
+  ctx.globalCompositeOperation = "source-over";
+  let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 500; i++) { const x = sx(rnd() * 7000 - 3500), y = sy(rnd() * 7000 - 3500), a = .15 + rnd() * .35, r = .6 + rnd() * 1.1;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.fillStyle = `rgba(230,235,255,${a})`; ctx.fill(); }
+}
+function smoothArc(a, b) { const g = G[a.group], r = D.orbitRadii[a.orbit]; let a1 = Math.atan2(a.y-g.y, a.x-g.x), d = Math.atan2(b.y-g.y, b.x-g.x) - a1;
+  while (d > Math.PI) d -= 2*Math.PI; while (d < -Math.PI) d += 2*Math.PI; ctx.arc(sx(g.x), sy(g.y), r*zoom, a1, a1+d, d < 0); }
+function draw() {
+  drawNebula();
+  const root = startOf(), lit = new Set([...taken, root]);
+  const path = new Set(pathTo(hover >= 0 ? hover : selected) || []);
+  const reach = new Set(); if (taken.size < budget()) lit.forEach(i => adj[i].forEach(m => { if (!lit.has(m) && ready(N[m])) reach.add(m); }));
+  ctx.lineCap = "round";
+  for (const pass of [0, 1, 2]) for (const [a, b, isArc] of D.edges) {
+    const on = lit.has(a) && lit.has(b), pre = !on && (path.has(a) || lit.has(a)) && (path.has(b) || lit.has(b));
+    if (pass === 0 && (on || pre)) continue; if (pass === 1 && !pre) continue; if (pass === 2 && !on) continue;
+    const trace = () => { ctx.beginPath(); if (isArc) smoothArc(N[a], N[b]); else { ctx.moveTo(sx(N[a].x), sy(N[a].y)); ctx.lineTo(sx(N[b].x), sy(N[b].y)); } };
+    if (on) { trace(); ctx.strokeStyle = "rgba(232,200,120,.28)"; ctx.lineWidth = 3.4 * dot; ctx.stroke(); trace(); ctx.strokeStyle = "#E8C878"; ctx.lineWidth = 1.3 * dot; ctx.stroke(); }
+    else if (pre) { trace(); ctx.setLineDash([3 * dot, 2.5 * dot]); ctx.strokeStyle = "#FFC48A"; ctx.lineWidth = 1.1 * dot; ctx.stroke(); ctx.setLineDash([]); }
+    else { trace(); const [r, g, bb] = N[a].rgb; ctx.strokeStyle = `rgba(${r},${g},${bb},.26)`; ctx.lineWidth = .9 * dot; ctx.stroke(); }
+  }
+  ctx.imageSmoothingEnabled = false;
+  for (const n of N) {
+    const x = sx(n.x), y = sy(n.y); if (x < -80 || y < -80 || x > 2000 || y > 1160) continue;
+    const on = lit.has(n.id), sp = sprite(n, on), S = sp.width * dot;
+    // Taken badges sit in a soft glow: the glow is smooth, the badge stays pixel.
+    if (on || n.kind === "START") { const gr = ctx.createRadialGradient(x, y, 0, x, y, S * .9); gr.addColorStop(0, on ? "rgba(232,200,120,.35)" : "rgba(236,230,220,.18)"); gr.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = gr; ctx.fillRect(x - S, y - S, 2 * S, 2 * S); }
+    ctx.drawImage(sp, Math.round(x - S / 2), Math.round(y - S / 2), S, S);
+  }
+  // State rings are UI: smooth, drawn over the badges.
+  for (const n of N) {
+    const ring = n.id === selected ? "#F07A2A" : n.id === hover ? "#ECE6DC" : reach.has(n.id) ? "#9AF0A0" : path.has(n.id) ? "#FFC48A" : null;
+    if (!ring) continue;
+    const x = sx(n.x), y = sy(n.y), r = FRAMES[n.kind].length * dot / 2 + 1.6 * dot;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.strokeStyle = ring; ctx.lineWidth = n.id === selected ? 3 : 2; ctx.stroke();
+    if (n.id === selected) { ctx.beginPath(); ctx.arc(x, y, r + 5, 0, 2 * Math.PI); ctx.strokeStyle = "rgba(240,122,42,.35)"; ctx.lineWidth = 4; ctx.stroke(); }
+  }
+  for (const n of N) {
+    if (!((n.kind === "NOTABLE" && dot >= 3) || n.kind === "KEYSTONE" || n.kind === "START")) continue;
+    const x = sx(n.x), y = sy(n.y); if (x < -60 || y < -60 || x > 1980 || y > 1140) continue;
+    const r = (FRAMES[n.kind].length / 2) * dot, label = n.kind === "START" ? n.name.replace("の起点", "") : n.name, [cr, cg, cb] = n.rgb;
+    ctx.font = `${n.kind === "START" ? 700 : 500} ${n.kind === "START" ? 22 : n.kind === "KEYSTONE" ? 17 : 15}px "M PLUS 2", sans-serif`;
+    ctx.textAlign = "center"; ctx.lineWidth = 4; ctx.strokeStyle = "rgba(10,10,14,.9)"; ctx.strokeText(label, x, y + r + 18);
+    ctx.fillStyle = n.kind === "START" ? "#ECE6DC" : `rgb(${Math.min(255,cr+40)},${Math.min(255,cg+40)},${Math.min(255,cb+40)})`; ctx.fillText(label, x, y + r + 18);
+  }
+  panel();
+}
+
+function pick(px, py) { let best = -1, bd = 1e9; for (const n of N) { const d = Math.hypot(sx(n.x) - px, sy(n.y) - py), lim = R[n.kind] * dot + 6; if (d < lim && d < bd) { bd = d; best = n.id; } } return best; }
+function setDot(nd, px = 960, py = 580) { nd = Math.max(2, Math.min(5, nd)); if (nd === dot) return; const nz = ZOOM_PER_DOT * nd;
+  panX = px - (px - panX) * nz / zoom; panY = py - (py - panY) * nz / zoom; zoom = nz; dot = nd; }
+
+const STAT = /^(.*)\+(\d+)%$/;
+function panel() {
+  $("cPts").textContent = `${budget() - taken.size} / ${budget()}`; $("cSilver").textContent = silver.toLocaleString();
+  $("lUsed").textContent = `${taken.size} 点`;
+  const total = {}; taken.forEach(i => N[i].text.split(" / ").forEach(t => { const m = t.match(STAT); if (m) total[m[1]] = (total[m[1]] || 0) + Number(m[2]); }));
+  const box = $("totals"); box.replaceChildren();
+  const rows = Object.entries(total).sort((a, b) => b[1] - a[1]);
+  if (!rows.length) { const d = document.createElement("div"); d.className = "empty"; d.textContent = "まだ何も取っていません"; box.append(d); }
+  rows.forEach(([k, v]) => { const d = document.createElement("div"); d.innerHTML = `<span></span><span class="num">+${v}%</span>`; d.firstChild.textContent = k; box.append(d); });
+  const keys = $("keys"); keys.replaceChildren();
+  N.filter(n => n.kind === "KEYSTONE").forEach(n => { const k = document.createElement("span"); k.className = "keybadge slot" + (taken.has(n.id) ? " on" : ""); k.title = n.name; k.innerHTML = "<i></i>"; keys.append(k); });
+  const show = hover >= 0 ? hover : selected;
+  const right = $("right"), go = $("go");
+  if (show < 0) { $("rKind").textContent = "ノード"; $("rName").textContent = "ノードを選んでください"; $("rLines").innerHTML = "<p>木の上でノードを押すと、ここに中身が出ます。もう一度押すと、そこまでの道をまとめて取ります。</p>"; $("rStatus").textContent = ""; }
+  else {
+    const n = N[show]; right.style.setProperty("--region", `rgb(${n.rgb.join(",")})`);
+    $("rKind").textContent = { SMALL: "小さいノード", NOTABLE: "主要ノード", KEYSTONE: "キーストーン（中身は案）", START: "起点", MASTERY: "極意（中身は案）" }[n.kind];
+    $("rName").textContent = n.name;
+    const lines = $("rLines"); lines.replaceChildren();
+    if (n.kind === "SMALL" || n.kind === "NOTABLE") n.text.split(" / ").forEach(t => { const m = t.match(STAT); const d = document.createElement("div"); d.className = "stat"; d.textContent = m ? m[1] : t; if (m) { const e = document.createElement("em"); e.textContent = `+${m[2]}%`; d.append(e); } lines.append(d); });
+    else if (n.kind === "MASTERY") { const p = document.createElement("p"); p.textContent = "この輪の主要ノードを取ると、1点で次から1つ選べる"; lines.append(p); (n.choices || []).forEach(c => { const q = document.createElement("p"); q.textContent = "・" + c; lines.append(q); }); }
+    else { const p = document.createElement("p"); p.textContent = n.text; lines.append(p); }
+    const st = $("rStatus"), p = pathTo(show);
+    st.className = "status " + (taken.has(show) ? "own" : !ready(n) ? "mute" : !p ? "bad" : taken.size + p.length > budget() ? "bad" : "ok");
+    st.textContent = taken.has(show) ? "取得済み" : n.kind === "START" ? (n.start === job ? "ここから伸ばす" : "ほかの職業の起点") : !ready(n) ? "中身はこれから決めます" : !p ? "つながっていない" : taken.size + p.length > budget() ? `${p.length} 点必要（ポイントが足りない）` : `あと ${p.length} 点で届く`;
+  }
+  const sel = selected >= 0 ? N[selected] : null, owned = sel && taken.has(sel.id);
+  const drop = owned ? taken.size - keep(new Set([...taken].filter(i => i !== sel.id))).size : 0;
+  const cost = drop * price(), p = sel ? pathTo(sel.id) : null;
+  $("rCost").hidden = !owned; $("rCostN").textContent = cost.toLocaleString();
+  go.className = "go" + (owned ? " refund" : "");
+  go.textContent = owned ? (drop > 1 ? `戻す（先の ${drop - 1} 個も）` : "戻す") : p ? `取る（${p.length} 点）` : "取る";
+  go.disabled = !sel || (owned ? silver < cost : !p || taken.size + p.length > budget());
+  $("reset").disabled = !taken.size || silver < taken.size * price();
+}
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove("on"), 1600); }
+function confirmSel() {
+  if (selected < 0) return; const n = N[selected];
+  if (taken.has(selected)) { const rest = keep(new Set([...taken].filter(i => i !== selected))); const cost = (taken.size - rest.size) * price(); if (silver < cost) return; silver -= cost; taken = rest; toast(`${n.name}を戻しました（銀貨 ${cost}）`); }
+  else { const p = pathTo(selected); if (!p || taken.size + p.length > budget()) return; p.forEach(i => taken.add(i)); toast(`${n.name}まで ${p.length} 点で取りました`); }
+  draw();
+}
+// Input: the stage is the game screen scaled down, so pointer positions are divided by the scale.
+let scale = 1;
+function fit() { scale = frame.clientWidth / 1920; stage.style.transform = `scale(${scale})`; frame.style.height = 1080 * scale + "px"; draw(); }
+const local = e => { const r = stage.getBoundingClientRect(); return [(e.clientX - r.left) / scale, (e.clientY - r.top) / scale]; };
+const overUi = e => e.target !== cv;
+cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); const [x, y] = local(e); drag = { x, y, moved: false }; });
+cv.addEventListener("pointermove", e => { const [x, y] = local(e); cursor = [x, y];
+  if (drag) { const dx = x - drag.x, dy = y - drag.y; if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true; panX += dx; panY += dy; drag.x = x; drag.y = y; }
+  const h = pick(x, y); if (h !== hover) { hover = h; } draw(); });
+cv.addEventListener("pointerup", e => { const [x, y] = local(e); if (drag && !drag.moved) { const id = pick(x, y);
+  if (id < 0) selected = -1; else if (id === selected && !taken.has(id) && pathTo(id)) confirmSel(); else selected = id; } drag = null; draw(); });
+cv.addEventListener("pointerleave", () => { hover = -1; cursor = null; draw(); });
+let wheelAcc = 0;
+cv.addEventListener("wheel", e => { e.preventDefault(); wheelAcc += e.deltaY; if (Math.abs(wheelAcc) < 60) return; const [x, y] = local(e); setDot(dot + (wheelAcc < 0 ? 1 : -1), x, y); wheelAcc = 0; draw(); }, { passive: false });
+$("zin").onclick = () => { setDot(dot + 1); draw(); }; $("zout").onclick = () => { setDot(dot - 1); draw(); };
+// Edge scrolling like the game: rest the cursor near the tree's edges.
+function tick() { if (cursor && !drag) { const [x, y] = cursor, E = 70; let vx = 0, vy = 0;
+  if (x < 440 + E && x > 440 - 10 && !(y > 110 && x < 440)) vx = 14 * (1 - (x - 440 + 10) / (E + 10));
+  if (x > 1404 - E && x < 1404 + 10) vx = -14 * (1 - (1404 + 10 - x) / (E + 10));
+  if (y < 110 + E && y > 100) vy = 14 * (1 - (y - 100) / (E + 10));
+  if (y > 1018 - E && y < 1030) vy = -14 * (1 - (1030 - y) / (E + 12));
+  if (vx || vy) { panX += vx; panY += vy; draw(); } } requestAnimationFrame(tick); }
+$("go").onclick = confirmSel;
+$("reset").onclick = () => { const cost = taken.size * price(); if (!taken.size || silver < cost) return; silver -= cost; taken.clear(); toast(`全部戻しました（銀貨 ${cost}）`); draw(); };
+$("center").onclick = () => { centre(); draw(); };
+$("job").onchange = e => { job = e.target.value; taken.clear(); selected = -1; centre(); draw(); };
+$("lv").onchange = e => { level = Number(e.target.value); if (taken.size > budget()) taken.clear(); draw(); };
+function setStyle(ornate) { stage.classList.toggle("ornate", ornate); $("sForge").setAttribute("aria-pressed", String(!ornate)); $("sMap").setAttribute("aria-pressed", String(ornate)); }
+$("sForge").onclick = () => setStyle(false); $("sMap").onclick = () => setStyle(true);
+window.addEventListener("resize", fit);
+const ICON_NAMES = { heart: "最大HP", blood: "吸収", shield: "防御", sword: "物理", spear: "貫通", star: "魔法", hourglass: "速さ", aim: "会心", plus: "回復", drop: "マナ", chevron: "移動", arrow: "投射", flame: "火", snow: "氷", bolt: "雷", gem: "シールド", mountain: "CC耐性", crown: "キーストーン" };
+Object.entries(ICONSET.icons).forEach(([name, set]) => {
+  const fig = document.createElement("figure"), cnv = document.createElement("canvas"), Z = 6; cnv.width = 15 * Z; cnv.height = 27 * Z; const g = cnv.getContext("2d");
+  const put = (px, oy) => { const o = (15 - px.length) >> 1; px.forEach((row, y) => row.forEach((c, x) => { if (c) { g.fillStyle = c; g.fillRect((o + x) * Z, (oy + y) * Z, Z, Z); } })); };
+  put(set.big, 1); put(set.small, 16);
+  g.strokeStyle = "rgba(240,122,42,.35)"; g.beginPath(); g.moveTo(7.5 * Z, 0); g.lineTo(7.5 * Z, 27 * Z); g.stroke();
+  const cap = document.createElement("figcaption"); cap.textContent = ICON_NAMES[name] || name; fig.append(cnv, cap); $("sheet").append(fig); });
+centre(); document.fonts.ready.then(fit); fit(); tick();
+</script>

@@ -74,7 +74,7 @@ object CoreLoopServer {
 internal class CoreLoopGame(private val hub: InstanceContainer, private val harbor: HarborScene.Result) : CoreMenuHost {
     internal fun consumeImmediateUiPacket(player: Player, packet: ClientPacket): Boolean =
         polishSessions?.consumeImmediateUiPacket(player,packet) == true || atlasSessions?.consumeImmediateUiPacket(player,packet) == true ||
-            grimoireSessions?.consumeImmediateUiPacket(player,packet) == true
+            grimoireSessions?.consumeImmediateUiPacket(player,packet) == true || passiveTreeSessions?.consumeImmediateUiPacket(player,packet) == true
     private val io = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "projects-core-ledger").apply { isDaemon = true } }
     private val mapBuilder = Executors.newSingleThreadExecutor { r -> Thread(r, "projects-core-map-builder").apply { isDaemon = true } }
     private val preparedMaps = CoreMapPreparation(mapBuilder)
@@ -138,6 +138,16 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         { player -> AtlasMapFlow(atlasMap, { account(player) },
             depart = { zone -> player.scheduler().scheduleNextTick { departFromAtlas(player, zone) } },
             leave = { player.scheduler().scheduleNextTick { atlasSessions?.close(player) } }) },
+        { Pos(0.0,100.0,0.0,0f,0f) })
+    else null
+    private val passiveTreeArt = runCatching {
+        PassiveTreeFlow.Art(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/passive-tree.json")).use { it.readBytes() })
+    }.onFailure { System.err.println("PASSIVE_TREE_DISABLED: ${it.message}") }.getOrNull()
+    private val passiveTreeSessions: UiSessions? = if(uiPack != null && passiveTreeArt != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
+        { player -> uiPack.enabled(player) }, null,
+        { player -> PassiveTreeFlow(passiveTreeArt, { account(player) },
+            act = { action, revision, done -> mutate(player, action, revision, { done(false) }, { done(true) }) },
+            leave = { player.scheduler().scheduleNextTick { passiveTreeSessions?.close(player) } }) },
         { Pos(0.0,100.0,0.0,0f,0f) })
     else null
     private val grimoireArt = runCatching {
@@ -1074,6 +1084,14 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
     }
 
+    override fun openPassiveTree(player: Player): Boolean {
+        val sessions = passiveTreeSessions ?: return false
+        if (uiPack?.enabled(player) != true || !requireHub(player)) return false
+        player.closeInventory()
+        sessions.open(player)
+        return true
+    }
+
     override fun departTrial(player: Player, kind: CoreActivityKind, tier: Int, revision: Long) {
         if (account(player)?.journey?.chosen != true) { menus.career(player); return }
         if (!requireHub(player) || !busy.add(player.uuid)) return
@@ -1401,7 +1419,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     private fun updateHud(player: Player) {
         // The smith's forge covers the whole view; the action-bar HUD would sit on top of it.
-        if (polishSessions?.isOpen(player) == true || atlasSessions?.isOpen(player) == true || grimoireSessions?.isOpen(player) == true) {
+        if (polishSessions?.isOpen(player) == true || atlasSessions?.isOpen(player) == true || grimoireSessions?.isOpen(player) == true ||
+            passiveTreeSessions?.isOpen(player) == true) {
             player.sendActionBar(Component.empty()); return
         }
         val a = combatLab.account(player) ?: account(player) ?: return
@@ -1466,6 +1485,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         polishSessions?.close(player,false)
         atlasSessions?.close(player,false)
         grimoireSessions?.close(player,false)
+        passiveTreeSessions?.close(player,false)
         departing.remove(player.uuid)
         sessions.remove(player.uuid)?.let { session ->
             if (session.combat.bossDefeated && accounts[player.uuid]?.activeRun?.bossDefeated != true) {
@@ -1532,6 +1552,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         polishSessions?.close()
         atlasSessions?.close()
         grimoireSessions?.close()
+        passiveTreeSessions?.close()
     }
 
     private fun disciplineResource(discipline: QuestGatheringDiscipline): CoreResource = when (discipline) {

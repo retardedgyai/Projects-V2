@@ -401,69 +401,56 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         }
     }
 
+    /** The passive tree: the full screen when the UI pack is on, otherwise [passiveList]. */
+    fun talentTree(player: Player) {
+        if (!game.openPassiveTree(player)) passiveList(player)
+    }
+
     /**
-     * The shared passive tree through a 9x5 window. The tree is laid out on a grid with even x and odd y,
-     * so each node gets its own slot at (x / 2, y / 2) and every edge runs along a slot direction.
+     * Without the UI pack the tree cannot be drawn, so this lists what matters: the nodes one step from the
+     * allocation (take) or the taken ones (refund, which costs silver). The rules are [CorePassiveTree]'s.
      */
-    fun talentTree(player: Player, selectedNode: Int = -1, originX: Int? = null, originY: Int? = null) {
+    fun passiveList(player: Player, owned: Boolean = false, page: Int = 0, selectedNode: Int = -1) {
         val a = game.account(player) ?: return
         val job = a.journey.job
         val taken = a.journey.build.passives
         val budget = CorePassiveTree.budget(a.journey)
-        val start = CorePassiveTree.start(job)
-        val selected = selectedNode.takeIf { it in CorePassiveTree.nodes.indices } ?: start
-        val node = CorePassiveTree.nodes[selected]
-        val columns = CorePassiveTree.width / 2 + 1
-        val rows = CorePassiveTree.height / 2 + 1
-        val home = CorePassiveTree.nodes[start]
-        val ox = (originX ?: (home.x / 2 - 4)).coerceIn(0, columns - 9)
-        val oy = (originY ?: (home.y / 2 - 2)).coerceIn(0, rows - 5)
-        fun slot(n: CorePassiveNode) = (n.x / 2 - ox).takeIf { it in 0..8 }?.let { c -> (n.y / 2 - oy).takeIf { it in 0..4 }?.let { r -> r * 9 + c } }
-        val lit = taken + start
-        val owned = selected in taken
         val price = CorePassiveTree.refundPrice(a.journey)
-        val refundCount = if (owned) taken.size - CorePassiveTree.refund(job, taken, selected).size else 0
-        val canTake = CorePassiveTree.canTake(job, taken, selected, budget)
+        val lit = taken + CorePassiveTree.start(job)
+        val entries = if (owned) taken.sorted() else lit.flatMap { CorePassiveTree.nodes[it].links }.distinct()
+            .filter { it !in lit && CorePassiveTree.nodes[it].ready }.sortedBy { CorePassiveTree.nodes[it].kind != CorePassiveKind.NOTABLE }
+        val pages = maxOf(1, (entries.size + 26) / 27)
+        val shown = page.coerceIn(0, pages - 1)
+        val selected = selectedNode.takeIf { it in entries }
+        val node = selected?.let { CorePassiveTree.nodes[it] }
+        val refundCount = if (owned && selected != null) taken.size - CorePassiveTree.refund(job, taken, selected).size else 0
         val reason = when {
+            node == null -> if (owned) "戻すノードを選ぶ" else "取るノードを選ぶ"
             a.activeRun != null -> "港で変更できます"
-            node.kind == CorePassiveKind.START -> "${job.displayName}はここから伸ばします"
-            !node.ready -> "中身はまだ準備中です"
-            owned -> "戻す：銀貨${price * refundCount}枚" + if (refundCount > 1) "（先の${refundCount - 1}つも戻る）" else ""
-            canTake -> "1ポイントで取れます"
+            owned -> "銀貨${price * refundCount}枚で戻す" + if (refundCount > 1) "（先の${refundCount - 1}つも）" else ""
             taken.size >= budget -> "ポイントが足りません"
-            else -> "取得済みのノードとつながっていません"
+            else -> "1ポイントで取れます"
         }
-        view(player, "${job.displayName} / パッシブツリー", { talentTree(player, selected, ox, oy) }) { v ->
-            v.canvas.left("残り ${budget - taken.size} ポイント", lines("Lvが1上がるごとに1点", "全職で一枚の木", "${job.displayName}の起点から伸ばす", "", "金：取得済み", "戻すには銀貨が要る", "1点ごとに銀貨${price}枚"))
-            v.canvas.right(node.name, paragraph(node.description) + lines("", if (owned) "取得済み" else if (node.kind == CorePassiveKind.START) "起点" else "未取得") + paragraph(reason))
-            CorePassiveTree.nodes.forEach { n ->
-                val from = slot(n) ?: return@forEach
-                n.links.filter { it > n.id }.forEach { other -> slot(CorePassiveTree.nodes[other])?.let { to -> v.canvas.treeEdge(from, to, n.id in lit && other in lit) } }
-            }
-            CorePassiveTree.nodes.forEach { n ->
-                val at = slot(n) ?: return@forEach
-                val learned = n.id in lit
-                val material = when (n.kind) {
-                    CorePassiveKind.START -> Material.NETHER_STAR
-                    CorePassiveKind.KEYSTONE -> Material.ECHO_SHARD
-                    CorePassiveKind.NOTABLE -> if (learned) Material.ENCHANTED_BOOK else Material.BOOK
-                    CorePassiveKind.SMALL -> if (learned) Material.GOLD_NUGGET else if (CorePassiveTree.canTake(job, taken, n.id, budget)) Material.GLOWSTONE_DUST else Material.GUNPOWDER
-                }
-                val item = CoreLoopItems.icon(material, n.name, n.description, if (learned) "取得済み" else "クリック：詳細を確認")
-                tile(v, at, 1, "", item, if (n.id == selected) Tone.SELECTED else if (learned) Tone.PRIMARY else Tone.NEUTRAL, icon = true) { talentTree(player, n.id, ox, oy) }
+        view(player, "${job.displayName} / パッシブ", { passiveList(player, owned, shown, selectedNode) }) { v ->
+            v.canvas.left("残り ${budget - taken.size} ポイント", lines("Lvが1上がるごとに1点", "全職で一枚の木", "${job.displayName}の起点から伸ばす", "", "戻すには銀貨が要る", "1点ごとに銀貨${price}枚"))
+            v.canvas.right(node?.name ?: if (owned) "取得済み" else "取れるノード", (node?.let { paragraph(it.description) + lines("") } ?: emptyList()) + paragraph(reason))
+            entries.drop(shown * 27).take(27).forEachIndexed { i, id ->
+                val n = CorePassiveTree.nodes[id]
+                val material = if (n.kind == CorePassiveKind.NOTABLE) (if (owned) Material.ENCHANTED_BOOK else Material.BOOK) else if (owned) Material.GOLD_NUGGET else Material.GLOWSTONE_DUST
+                tile(v, 9 + i, 1, "", CoreLoopItems.icon(material, n.name, n.description, "クリック：選ぶ"),
+                    if (id == selected) Tone.SELECTED else if (owned) Tone.PRIMARY else Tone.NEUTRAL, icon = true) { passiveList(player, owned, shown, id) }
             }
             back(v, player, compact = true) { career(player) }
-            tile(v, 46, 1, "左", tone = if (ox > 0) Tone.NEUTRAL else Tone.DISABLED) { talentTree(player, selected, ox - 4, oy) }
-            tile(v, 47, 1, "上", tone = if (oy > 0) Tone.NEUTRAL else Tone.DISABLED) { talentTree(player, selected, ox, oy - 2) }
-            tile(v, 48, 1, "下", tone = if (oy < rows - 5) Tone.NEUTRAL else Tone.DISABLED) { talentTree(player, selected, ox, oy + 2) }
-            tile(v, 49, 1, "右", tone = if (ox < columns - 9) Tone.NEUTRAL else Tone.DISABLED) { talentTree(player, selected, ox + 4, oy) }
-            val permitted = a.activeRun == null && (canTake || (owned && a.silver >= price * refundCount))
+            tile(v, 46, 2, if (owned) "取れる" else "取った") { passiveList(player, !owned) }
+            tile(v, 48, 1, "左", tone = if (shown > 0) Tone.NEUTRAL else Tone.DISABLED) { passiveList(player, owned, shown - 1) }
+            tile(v, 49, 1, "右", tone = if (shown < pages - 1) Tone.NEUTRAL else Tone.DISABLED) { passiveList(player, owned, shown + 1) }
+            val permitted = a.activeRun == null && selected != null && (if (owned) a.silver >= price * refundCount else taken.size < budget)
             tile(v, 50, 2, if (owned) "戻す" else "取る", tone = if (permitted) Tone.PRIMARY else Tone.DISABLED) {
-                mutate(v, player, if (owned) CoreAction.RefundPassive(selected) else CoreAction.TakePassive(selected), a.revision) { talentTree(player, selected, ox, oy) }
+                mutate(v, player, if (owned) CoreAction.RefundPassive(selected!!) else CoreAction.TakePassive(selected!!), a.revision) { passiveList(player, owned, shown) }
             }
             val resetAllowed = a.activeRun == null && taken.isNotEmpty() && a.silver >= price * taken.size
             tile(v, 52, 2, "全戻し", tone = if (resetAllowed) Tone.DANGER else Tone.DISABLED) {
-                mutate(v, player, CoreAction.ResetPassives, a.revision) { talentTree(player, selected, ox, oy) }
+                mutate(v, player, CoreAction.ResetPassives, a.revision) { passiveList(player, owned, 0) }
             }
         }
     }
