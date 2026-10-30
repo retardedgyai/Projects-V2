@@ -23,6 +23,6 @@
 | `ui.md` | UI | まだない。決まりは `rules/` の ui-design-concept |
 | `gear.md` | 装備・武器の見た目 | まだない |
 | `boss.md` | ボスの姿・動き | まだない。正典は `canon/sakura-fang.md` |
-| `build.md` | 建築・地形 | まだない。基準は harbor-visual-reference |
+| [build.md](build.md) | 建築・地形 | 手本5件（藍の言葉つき）と習作4軒。基準は harbor-visual-reference |
 
 棚を増やすときは同じ行の形で。空の棚を先に作らない。

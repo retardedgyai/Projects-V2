@@ -25,6 +25,10 @@
 | 「コレジャナイ、作画まで変えるな、のっぺりはダメ」「全然だめ」 | 月蝕の大剣の作り直し（10/17） | 構成を変えるとき作画（塗り・まだら）まで変えない | 共有ノート `movsum-weapons.md` |
 | 「似たようなアニメーションだらけ」 | 武器の見本のアニメ（10/17） | 型外しの案を並べて選んでもらう（→ しずく） | 共有ノート `movsum-weapons.md` |
 | 「本当に PoE みたいな配置、ゴミ」「第1版はゴミ」 | スキルツリーの最初の木（PR #190 第1版）、その後の見た目「これじゃない」 | 見た目の借り物。配置の理屈（中心の6職から外へ）は借りてよいが、見た目は Forge と地図（自分たちの正典）に寄せる | 共有ノート `skill-tree.md`（10/28） |
+| 「変な空洞とか建築物としておかしな構造にならないようにはしよう」 | 建築：L字の家の1版目（2026-10-31） | 屋根を「高い方だけ残す」作りにして、軒の下の屋根が消えた。煙突が張り出した壁にめり込んだ | 聞き取り。`design/shelves/build.md`、memory `build-structural-integrity`・`usable-functional-builds` |
+| 「ハーフブロックで浮いてたり」「まだ建築としてらーなろっそと比べると地味」 | 建築：L字の家の2版目（2026-10-31） | 塔の円すい屋根を輪で重ねて、半ブロックの隙間が出た | 聞き取り。`design/shelves/build.md`、memory `build-structural-integrity`・`usable-functional-builds` |
+| 「原木が浮いてるのがすごく気になるな」 | 建築：L字の家の3版目（2026-10-31） | 壁から1マス出した2階の柱の下に梁が無かった | 聞き取り。`design/shelves/build.md`、memory `build-structural-integrity`・`usable-functional-builds` |
+| 「この鍛冶屋使いづらそうすぎるな、鍛冶できる部分を外に出すようにしてほしい」 | 建築：街道の鍛冶屋の1版目（2026-10-31） | 炉を1階のアーチの奥に入れ、入り込まないと使えなかった | 聞き取り。`design/shelves/build.md`、memory `build-structural-integrity`・`usable-functional-builds` |
 
 ## 繰り返し出てくる型
 
