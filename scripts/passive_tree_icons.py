@@ -45,9 +45,10 @@ ICONS: dict[str, tuple[dict[str, str], list[str], list[str]]] = {
     "heart": ({"A": "red", "B": "white"}, mirror([
         "......", ".AAA..", "AAAAA.", "AAAAAA", "AAAAAA", ".AAAAA", "..AAAA", "...AAA", "....AA", ".....A"]),
         mirror([".AA.", "AAAA", ".AAA", "..AA", "...A"])),
+    # Life and mana share the drop shape (as in PoE); the colour tells them apart.
     "blood": ({"A": "blood", "B": "white"}, mirror([
-        ".....A", ".....A", "....AA", "....AA", "...AAA", "..AAAA", ".AAAAA", ".AAAAA", ".AAAAA", "..AAAA", "....AA"]),
-        mirror(["...A", "..AA", ".AAA", "AAAA", "AAAA", ".AAA"])),
+        ".....A", "....AA", "....AA", "...AAA", "...AAA", "..AAAA", ".AAAAA", ".AAAAA", ".AAAAA", "..AAAA", "...AAA"]),
+        mirror(["...A", "..AA", "..AA", ".AAA", ".AAA", ".AAA", "..AA"])),
     "shield": ({"A": "blue", "B": "steel"}, mirror([
         "AAAABB", "AAAABB", "AAAABB", "BBBBBB", "AAAABB", "AAAABB", ".AAABB", ".AAABB", "..AABB", "...ABB", ".....B"]),
         mirror(["AAAB", "AAAB", "BBBB", "AAAB", ".AAB", "..AB", "...B"])),
@@ -64,20 +65,20 @@ ICONS: dict[str, tuple[dict[str, str], list[str], list[str]]] = {
         "AAAAAA", ".ABBBB", "..ABBB", "...ABB", "....AB", ".....A", "....A.", "...A..", "..A.BB", ".ABBBB", "AAAAAA"]),
         mirror(["AAAA", ".ABB", "..AB", "...A", "..A.", ".ABB", "AAAA"])),
     "aim": ({"A": "ember", "B": "white"}, mirror([
-        "...AAA", ".AA...", ".A...A", "A....A", "A.....", "A.AA.B", "A.....", "A....A", ".A...A", ".AA...", "...AAA"]),
-        mirror(["..AA", ".A..", "A...", "A..B", "A...", ".A..", "..AA"])),
+        ".....A", "...AAA", "..A..A", ".A....", ".A....", "AAA..B", ".A....", ".A....", "..A..A", "...AAA", ".....A"]),
+        mirror(["...A", "...A", "....", "AA.B", "....", "...A", "...A"])),
     "plus": ({"A": "green", "B": "white"}, mirror([
         "...AAA", "...AAA", "...AAA", "AAAAAA", "AAAAAA", "AAAAAA", "...AAA", "...AAA", "...AAA"]),
         mirror(["..AA", "..AA", "AAAA", "AAAA", "AAAA", "..AA", "..AA"])),
     "drop": ({"A": "mana", "B": "white"}, mirror([
-        ".....A", ".....A", "....AA", "....AA", "...AAA", "..AAAA", ".AAAAA", ".AAAAA", ".AAAAA", "..AAAA", "....AA"]),
-        mirror(["...A", "..AA", ".AAA", "AAAA", "AAAA", ".AAA"])),
+        ".....A", "....AA", "....AA", "...AAA", "...AAA", "..AAAA", ".AAAAA", ".AAAAA", ".AAAAA", "..AAAA", "...AAA"]),
+        mirror(["...A", "..AA", "..AA", ".AAA", ".AAA", ".AAA", "..AA"])),
     "chevron": ({"A": "teal", "B": "white"}, mirror([
         ".....A", "....AA", "...AA.", "..AA..", ".AA...", ".....A", "....AA", "...AA.", "..AA..", ".AA..."]),
         mirror(["...A", "..A.", ".A..", "...A", "..A.", ".A.."])),
-    "arrow": ({"A": "steel", "B": "wood"}, mirror([
-        ".....A", "....AA", "...AAA", "..AAAA", ".....B", ".....B", ".....B", ".....B", "...A.B", "..AA.B", ".AA..B"]),
-        mirror(["...A", "..AA", ".AAA", "...B", "...B", "..AB", ".A.B"])),
+    "arrow": ({"A": "steel", "B": "wood", "C": "red"}, mirror([
+        ".....A", "....AA", "...AAA", "..AAAA", ".....B", ".....B", ".....B", "....CB", "...CCB", "...CCB", "...C.B"]),
+        mirror(["...A", "..AA", ".AAA", "...B", "..CB", "..CB", ".C.B"])),
     "flame": ({"A": "fire", "B": "flame"}, mirror([
         ".....A", "....AA", "....AA", "...AAA", "..AAAA", "..AAAB", ".AAABB", ".AABBB", ".AABBB", "..AABB", "...AAA"]),
         mirror(["...A", "..AA", "..AA", ".AAB", ".ABB", ".ABB", "..AA"])),
