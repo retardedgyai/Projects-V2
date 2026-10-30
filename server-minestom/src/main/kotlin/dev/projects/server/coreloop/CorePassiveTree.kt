@@ -7,30 +7,95 @@ package dev.projects.server.coreloop
  */
 enum class CorePassiveKind { START, SMALL, NOTABLE, KEYSTONE, MASTERY }
 
-data class CorePassiveNode(val id: Int, val x: Int, val y: Int, val kind: CorePassiveKind, val name: String,
-    val start: CoreClass?, val stats: Map<CoreAffixStat, Double>, val links: List<Int>) {
-    /** Keystone and mastery contents are still being designed with the Creator; they exist but cannot be taken. */
-    val ready get() = kind == CorePassiveKind.SMALL || kind == CorePassiveKind.NOTABLE
-    val description get() = when (kind) {
-        CorePassiveKind.START -> "ここから伸ばす"
-        CorePassiveKind.KEYSTONE, CorePassiveKind.MASTERY -> "準備中"
-        else -> stats.entries.joinToString(" / ") { (stat, value) -> "${stat.displayName}+${CoreCombatMath.number(value)}${if (stat.percent) "%" else ""}" }
+/** A stat list from the table: plain values, and values that only count under a [CorePassiveCondition]. */
+data class CorePassiveStats(val stats: Map<CoreAffixStat, Double> = emptyMap(),
+    val conditional: Map<CorePassiveCondition, Map<CoreAffixStat, Double>> = emptyMap()) {
+    val text get() = (stats.entries.map { (s, v) -> line(s, v) } +
+        conditional.entries.flatMap { (c, values) -> values.entries.map { (s, v) -> "${c.label}、${line(s, v)}" } }).joinToString(" / ")
+
+    companion object {
+        val NONE = CorePassiveStats()
+        fun line(stat: CoreAffixStat, value: Double) = "${stat.displayName}+${CoreCombatMath.number(value)}${if (stat.percent) "%" else ""}"
+        /** `STAT=v` or `STAT@CONDITION=v`, comma separated; "-" or empty for none. */
+        fun parse(text: String): CorePassiveStats {
+            if (text == "-" || text.isBlank()) return NONE
+            val plain = linkedMapOf<CoreAffixStat, Double>()
+            val conditional = linkedMapOf<CorePassiveCondition, MutableMap<CoreAffixStat, Double>>()
+            for (entry in text.split(',')) {
+                val key = entry.substringBefore('=')
+                val value = entry.substringAfter('=', "").toDouble()
+                require(value.isFinite() && value >= 0) { "パッシブの数値が不正です: $entry" }
+                val stat = CoreAffixStat.valueOf(key.substringBefore('@'))
+                if ('@' in key) conditional.getOrPut(CorePassiveCondition.valueOf(key.substringAfter('@'))) { linkedMapOf() }.merge(stat, value, Double::plus)
+                else plain.merge(stat, value, Double::plus)
+            }
+            return CorePassiveStats(plain, conditional)
+        }
     }
 }
 
+/** One option of a mastery; [code] is the raw table text, so the same option in two wheels is recognised. */
+data class CorePassiveChoice(val code: String, val effect: CorePassiveStats) { val text get() = effect.text }
+
+data class CorePassiveNode(val id: Int, val x: Int, val y: Int, val kind: CorePassiveKind, val name: String,
+    val start: CoreClass?, val effect: CorePassiveStats, val links: List<Int>, val group: Int = -1,
+    val keystone: CoreKeystone? = null, val choices: List<CorePassiveChoice> = emptyList()) {
+    val stats get() = effect.stats
+    /** Taken along a path. Masteries are taken apart, with a choice ([CorePassiveTree.takeMastery]). */
+    val ready get() = kind != CorePassiveKind.START && kind != CorePassiveKind.MASTERY
+    val description get() = when (kind) {
+        CorePassiveKind.START -> "ここから伸ばす"
+        CorePassiveKind.KEYSTONE -> keystone?.text ?: ""
+        CorePassiveKind.MASTERY -> "この輪の主要ノードを取ると、1点で次から1つ選べる：" + choices.joinToString("／") { it.text }
+        else -> effect.text
+    }
+}
+
+/** What a legal allocation adds up to. */
+data class CorePassiveEffects(val stats: Map<CoreAffixStat, Double> = emptyMap(),
+    val conditional: Map<CorePassiveCondition, Map<CoreAffixStat, Double>> = emptyMap(), val keystones: Set<CoreKeystone> = emptySet())
+
 object CorePassiveTree {
     val nodes: List<CorePassiveNode> = load()
+    /**
+     * The tree's content in 16 hex digits. Saves record it next to their `passive` rows: node ids are table
+     * row numbers, so after the table is regenerated a save from another tree is refunded, never re-read
+     * against different nodes (2026-10-31 review, PR #194).
+     */
+    val fingerprint: String = fingerprint(table())
+    fun fingerprint(table: String): String = java.security.MessageDigest.getInstance("SHA-256")
+        .digest(table.lineSequence().filter { it.isNotBlank() && !it.startsWith("#") }.joinToString("\n").toByteArray(Charsets.UTF_8))
+        .take(8).joinToString("") { "%02x".format(it) }
     val width = nodes.maxOf { it.x } + 1
     val height = nodes.maxOf { it.y } + 1
+    private val masteryIds = nodes.filter { it.kind == CorePassiveKind.MASTERY }.map { it.id }.toSet()
 
     fun start(job: CoreClass) = nodes.first { it.start == job }.id
     /** One point for every level after the first. */
     fun budget(journey: CoreJourney) = if (journey.legacy) CoreJourneyRules.MAX_LEVEL - 1 else journey.level - 1
+    /** Plus one point for every distinct boss this account has beaten (its zone clear records name the boss). */
+    fun budget(account: CoreAccount) = budget(account.journey) + bonusPoints(account)
+    fun bonusPoints(account: CoreAccount) = bonusPoints(account.zoneRecords.keys)
+    fun bonusPoints(clearedZones: Collection<Int>) = clearedZones.mapNotNull { CoreFrontierZones.expedition(it)?.boss }.distinct().size
+    /** The most bonus points any account can hold (for checks that only see a journey). */
+    val maxBonus get() = CoreFrontierZones.BOSSES.size
     /** Silver destroyed for every refunded point; it grows with level so the sink keeps up with income. */
     fun refundPrice(journey: CoreJourney) = 10L * journey.level
 
-    /** A legal allocation is connected to the class start and holds only takeable nodes. */
-    fun valid(job: CoreClass, taken: Set<Int>) = taken.all { it in nodes.indices && nodes[it].ready } && reachable(job, taken) == taken
+    fun isMastery(id: Int) = id in masteryIds
+
+    /**
+     * A legal allocation: the path nodes are takeable and connected to the class start; every taken mastery has a
+     * choice and a taken notable in its wheel, and no choice is taken twice.
+     */
+    fun valid(job: CoreClass, taken: Set<Int>, masteries: Map<Int, Int> = emptyMap()): Boolean {
+        if (!taken.all { it in nodes.indices }) return false
+        val path = taken - masteryIds
+        if (!path.all { nodes[it].ready } || reachable(job, path) != path) return false
+        if (masteries.keys != (taken intersect masteryIds)) return false
+        if (masteries.any { (id, choice) -> choice !in nodes[id].choices.indices || !wheelOpen(path, id) }) return false
+        return masteries.map { (id, choice) -> nodes[id].choices[choice].code }.distinct().size == masteries.size
+    }
 
     fun canTake(job: CoreClass, taken: Set<Int>, id: Int, budget: Int) = id in nodes.indices && id !in taken && nodes[id].ready &&
         taken.size < budget && nodes[id].links.any { it == start(job) || it in taken }
@@ -39,7 +104,7 @@ object CorePassiveTree {
     fun pathTo(job: CoreClass, taken: Set<Int>, id: Int): List<Int>? {
         if (id !in nodes.indices || !nodes[id].ready || id in taken) return null
         val from = mutableMapOf<Int, Int>()
-        val roots = taken + start(job)
+        val roots = (taken - masteryIds) + start(job)
         val seen = roots.toMutableSet()
         val todo = ArrayDeque(roots)
         while (todo.isNotEmpty()) {
@@ -55,6 +120,7 @@ object CorePassiveTree {
     }
 
     fun take(job: CoreClass, taken: Set<Int>, id: Int, budget: Int): Set<Int> {
+        require(!isMastery(id)) { "極意は選択肢を選んで取得します" }
         require(id in nodes.indices && nodes[id].ready) { "このノードはまだ取れません" }
         require(id !in taken) { "取得済みです" }
         val path = requireNotNull(pathTo(job, taken, id)) { "取得済みのノードとつながっていません" }
@@ -62,17 +128,48 @@ object CorePassiveTree {
         return taken + path
     }
 
-    /** Removing a node also removes everything that only reached the start through it. */
-    fun refund(job: CoreClass, taken: Set<Int>, id: Int): Set<Int> {
-        require(id in taken) { "取得していないノードです" }
-        return reachable(job, taken - id)
+    /** A wheel's mastery opens once any notable of the same group is taken. */
+    fun wheelOpen(taken: Set<Int>, mastery: Int) = taken.any { nodes[it].kind == CorePassiveKind.NOTABLE && nodes[it].group == nodes[mastery].group }
+
+    /** The choice [choice] of mastery [id] (one point). The same option may not be held in two wheels. */
+    fun takeMastery(taken: Set<Int>, masteries: Map<Int, Int>, id: Int, choice: Int, budget: Int): Pair<Set<Int>, Map<Int, Int>> {
+        require(isMastery(id)) { "極意ではありません" }
+        require(id !in taken) { "取得済みです" }
+        require(choice in nodes[id].choices.indices) { "選択肢が不正です" }
+        require(wheelOpen(taken, id)) { "この輪の主要ノードを先に取ってください" }
+        val code = nodes[id].choices[choice].code
+        require(masteries.none { (m, c) -> nodes[m].choices[c].code == code }) { "同じ極意はほかの輪で取得済みです" }
+        require(taken.size + 1 <= budget) { "ポイントが足りません（1点必要）" }
+        return (taken + id) to (masteries + (id to choice))
     }
 
-    fun bonuses(job: CoreClass, taken: Set<Int>): Map<CoreAffixStat, Double> {
-        if (!valid(job, taken)) return emptyMap()
+    /** Whether choice [choice] of [id] is held in another wheel already. */
+    fun choiceTaken(masteries: Map<Int, Int>, id: Int, choice: Int): Boolean {
+        val code = nodes[id].choices.getOrNull(choice)?.code ?: return false
+        return masteries.any { (m, c) -> m != id && nodes[m].choices[c].code == code }
+    }
+
+    /** Removing a node also removes everything that only reached the start through it, and the masteries of emptied wheels. */
+    fun refund(job: CoreClass, taken: Set<Int>, id: Int): Set<Int> {
+        require(id in taken) { "取得していないノードです" }
+        if (isMastery(id)) return taken - id
+        val path = reachable(job, taken - masteryIds - id)
+        return path + (taken intersect masteryIds).filter { wheelOpen(path, it) }
+    }
+
+    fun bonuses(job: CoreClass, taken: Set<Int>, masteries: Map<Int, Int> = emptyMap()) = effects(job, taken, masteries).stats
+
+    fun effects(job: CoreClass, taken: Set<Int>, masteries: Map<Int, Int> = emptyMap()): CorePassiveEffects {
+        if (taken.isEmpty() || !valid(job, taken, masteries)) return CorePassiveEffects()
         val totals = mutableMapOf<CoreAffixStat, Double>()
-        taken.forEach { id -> nodes[id].stats.forEach { (stat, value) -> totals.merge(stat, value, Double::plus) } }
-        return totals
+        val conditional = mutableMapOf<CorePassiveCondition, MutableMap<CoreAffixStat, Double>>()
+        fun add(effect: CorePassiveStats) {
+            effect.stats.forEach { (stat, value) -> totals.merge(stat, value, Double::plus) }
+            effect.conditional.forEach { (c, values) -> values.forEach { (stat, value) -> conditional.getOrPut(c) { mutableMapOf() }.merge(stat, value, Double::plus) } }
+        }
+        taken.forEach { id -> add(nodes[id].effect) }
+        masteries.forEach { (id, choice) -> add(nodes[id].choices[choice].effect) }
+        return CorePassiveEffects(totals, conditional, taken.mapNotNull { nodes[it].keystone }.toSet())
     }
 
     private fun reachable(job: CoreClass, taken: Set<Int>): Set<Int> {
@@ -82,20 +179,31 @@ object CorePassiveTree {
         return seen
     }
 
+    /** One row: id x y kind name start stats links group extra (see scripts/build_passive_tree.py). */
+    internal fun parse(line: String): CorePassiveNode {
+        val row = line.split('\t')
+        require(row.size == 10) { "passive-tree.tsv の列数が不正です: $line" }
+        val kind = CorePassiveKind.valueOf(row[3])
+        val extra = row[9].takeIf { it != "-" && it.isNotEmpty() }
+        return CorePassiveNode(row[0].toInt(), row[1].toInt(), row[2].toInt(), kind, row[4],
+            row[5].takeIf { it != "-" }?.let(CoreClass::valueOf), CorePassiveStats.parse(row[6]),
+            row[7].split(',').filter { it.isNotEmpty() }.map(String::toInt), row[8].toInt(),
+            if (kind == CorePassiveKind.KEYSTONE) CoreKeystone.valueOf(requireNotNull(extra) { "キーストーンの効果がありません: $line" }) else null,
+            if (kind == CorePassiveKind.MASTERY) requireNotNull(extra) { "極意の選択肢がありません: $line" }.split('|')
+                .map { CorePassiveChoice(it, CorePassiveStats.parse(it)) } else emptyList())
+    }
+
+    private fun table(): String = requireNotNull(CorePassiveTree::class.java.classLoader.getResourceAsStream("passive-tree.tsv")) { "passive-tree.tsv がありません" }
+        .use { String(it.readAllBytes(), Charsets.UTF_8) }
+
     private fun load(): List<CorePassiveNode> {
-        val text = requireNotNull(CorePassiveTree::class.java.classLoader.getResourceAsStream("passive-tree.tsv")) { "passive-tree.tsv がありません" }
-            .use { String(it.readAllBytes(), Charsets.UTF_8) }
-        val parsed = text.lineSequence().filter { it.isNotBlank() && !it.startsWith("#") }.map { line ->
-            val row = line.split('\t')
-            require(row.size == 8) { "passive-tree.tsv の列数が不正です: $line" }
-            CorePassiveNode(row[0].toInt(), row[1].toInt(), row[2].toInt(), CorePassiveKind.valueOf(row[3]), row[4],
-                row[5].takeIf { it != "-" }?.let(CoreClass::valueOf),
-                if (row[6] == "-") emptyMap() else row[6].split(',').associate { it.substringBefore('=').let(CoreAffixStat::valueOf) to it.substringAfter('=').toDouble() },
-                row[7].split(',').filter { it.isNotEmpty() }.map(String::toInt))
-        }.toList()
+        val text = table()
+        val parsed = text.lineSequence().filter { it.isNotBlank() && !it.startsWith("#") }.map(::parse).toList()
         require(parsed.withIndex().all { (i, n) -> n.id == i }) { "passive-tree.tsv の番号が連番ではありません" }
         require(parsed.all { n -> n.links.all { n.id in parsed[it].links } }) { "passive-tree.tsv のつながりが片方向です" }
         require(CoreClass.entries.all { job -> parsed.count { it.start == job } == 1 }) { "職業の起点が足りません" }
+        require(parsed.filter { it.kind == CorePassiveKind.MASTERY }.all { m -> m.choices.isNotEmpty() &&
+            parsed.any { it.kind == CorePassiveKind.NOTABLE && it.group == m.group } }) { "極意の輪に主要ノードがありません" }
         return parsed
     }
 }

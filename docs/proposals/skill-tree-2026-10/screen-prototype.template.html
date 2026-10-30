@@ -78,6 +78,11 @@ nav.tabs a[aria-current=page] i{background:var(--ember)}
 .row2 button:disabled{color:#5e5a54;cursor:not-allowed}
 footer.keys{position:absolute;left:56px;bottom:22px;display:flex;gap:22px;font-size:14px;color:var(--mute);align-items:center}
 .key{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:26px;padding:0 7px;box-sizing:border-box;border-radius:5px;background:#1E2025;border:1px solid #3A3C42;border-bottom-width:3px;color:var(--ink);font-size:13px;margin-right:6px}
+.search{display:flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:22px;background:var(--panel);border:1px solid var(--line);font-size:14px;color:var(--mute)}
+.search input{width:150px;background:transparent;border:0;color:var(--fg,#ECE6DC);font:inherit;font-size:15px;outline:none}
+.choice{display:block;width:100%;text-align:left;margin:6px 0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:inherit;font:inherit;font-size:15px;cursor:pointer}
+.choice[aria-pressed="true"]{border-color:#F07A2A;background:rgba(240,122,42,.12)}
+.choice:disabled{opacity:.4;cursor:default}
 .toast{position:absolute;left:50%;top:120px;transform:translateX(-50%);background:rgba(16,17,20,.92);border:1px solid var(--line);border-radius:22px;padding:10px 22px;font-size:17px;opacity:0;transition:opacity .25s}
 .toast.on{opacity:1}
 .zoom{position:absolute;left:460px;bottom:72px;display:flex;gap:8px}
@@ -113,6 +118,7 @@ footer.keys{position:absolute;left:56px;bottom:22px;display:flex;gap:22px;font-s
           <a aria-current="page">パッシブ<i></i></a><a>技の編成<i></i></a><a>戦闘能力<i></i></a>
         </nav>
         <div class="chips">
+          <label class="search">探す <input id="find" type="search" placeholder="会心、回避…" aria-label="ノードを探す"><span class="num" id="findN"></span></label>
           <div class="chip">残りポイント <span class="num pts" id="cPts">0</span></div>
           <div class="chip">銀貨 <span class="num" id="cSilver">0</span></div>
         </div>
@@ -147,7 +153,7 @@ footer.keys{position:absolute;left:56px;bottom:22px;display:flex;gap:22px;font-s
 const D = /*DATA*/null;
 const N = D.nodes, G = D.groups;
 const adj = N.map(() => []); D.edges.forEach(([a, b]) => { adj[a].push(b); adj[b].push(a); });
-const CLASSES = [["WARRIOR","戦士",-90,"#E0604A"],["TEMPLAR","テンプラー",-30,"#E8C35A"],["MAGE","メイジ",30,"#7FA6FF"],["HEALER","ヒーラー",90,"#7CD69B"],["RANGER","レンジャー",150,"#5FC7C0"],["ASSASSIN","アサシン",210,"#B58CFF"]];
+const CLASSES = [["WARRIOR","戦士",-90,"#E0604A"],["TEMPLAR","テンプラー",-30,"#E8C35A"],["HEALER","ヒーラー",30,"#7CD69B"],["MAGE","メイジ",90,"#7FA6FF"],["ASSASSIN","アサシン",150,"#B58CFF"],["RANGER","レンジャー",210,"#5FC7C0"]];
 const hex = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16));
 const mix = (a,b,t) => a.map((v,i) => Math.round(v+(b[i]-v)*t));
 function region(n) {
@@ -162,13 +168,16 @@ N.forEach(n => n.rgb = region(n));
 const $ = id => document.getElementById(id);
 const cv = $("cv"), ctx = cv.getContext("2d"), stage = $("stage"), frame = $("frame");
 CLASSES.forEach(([id, name]) => { const o = document.createElement("option"); o.value = id; o.textContent = name; $("job").append(o); });
-for (let l = 40; l >= 1; l -= (l > 10 ? 5 : 1)) { const o = document.createElement("option"); o.value = l; o.textContent = l; $("lv").append(o); }
+for (let l = 70; l >= 1; l -= (l > 10 ? 5 : 1)) { const o = document.createElement("option"); o.value = l; o.textContent = l; $("lv").append(o); }
 const legend = $("legend"); CLASSES.forEach(([, name, , c]) => { const s = document.createElement("span"); s.innerHTML = `<i style="background:${c}"></i>`; s.append(name); legend.append(s); });
-let job = "WARRIOR", level = 40, silver = 18600, taken = new Set(), selected = -1, hover = -1;
+let job = "WARRIOR", level = 70, silver = 48300, taken = new Set(), selected = -1, hover = -1, choice = new Map(), pick2 = -1, found = new Set();
 let zoom = .621, panX = 0, panY = 0, cursor = null, drag = null;
 const budget = () => level - 1;
 const startOf = () => N.findIndex(n => n.start === job);
-const ready = n => n.kind === "SMALL" || n.kind === "NOTABLE";
+const ready = n => n.kind === "SMALL" || n.kind === "NOTABLE" || n.kind === "KEYSTONE";
+// A mastery opens once a notable of its wheel is taken; one choice per wheel, each choice once in the whole tree.
+const masteryOpen = n => n.kind === "MASTERY" && N.some(m => m.group === n.group && m.kind === "NOTABLE" && taken.has(m.id));
+const choiceUsed = (n, k) => [...choice].some(([id, c]) => id !== n.id && N[id].choiceTexts[c] === n.choiceTexts[k]);
 const price = () => 10 * level;
 function centre() { const s = N[startOf()]; dot = 3; zoom = ZOOM_PER_DOT * 3; panX = 960 - s.x * zoom; panY = 600 - s.y * zoom; }
 function pathTo(id) {
@@ -178,7 +187,10 @@ function pathTo(id) {
     if (v === id) { const p = [v]; let w = u; while (from.has(w) && !roots.includes(w)) { p.push(w); w = from.get(w); } return p.reverse(); } nx.push(v); } q = nx; }
   return null;
 }
-function keep(set) { const root = startOf(), seen = new Set(), todo = [root]; while (todo.length) for (const v of adj[todo.pop()]) if (set.has(v) && !seen.has(v)) { seen.add(v); todo.push(v); } return seen; }
+function keep(set) { const root = startOf(), seen = new Set(), todo = [root]; while (todo.length) for (const v of adj[todo.pop()]) if (set.has(v) && !seen.has(v)) { seen.add(v); todo.push(v); }
+  // Masteries hang on their wheel, not on links: they stay while a notable of the wheel stays.
+  set.forEach(i => { if (N[i].kind === "MASTERY" && N.some(m => m.group === N[i].group && m.kind === "NOTABLE" && seen.has(m.id))) seen.add(i); });
+  return seen; }
 const sx = x => x * zoom + panX, sy = y => y * zoom + panY;
 // ---- Pixel art: the whole tree is drawn on a small buffer (one cell = one art pixel) and scaled up
 // with no smoothing, so lines, frames and icons share one dot size like Minecraft and the map's pins.
@@ -280,10 +292,10 @@ function draw() {
   }
   // State rings are UI: smooth, drawn over the badges.
   for (const n of N) {
-    const ring = n.id === selected ? "#F07A2A" : n.id === hover ? "#ECE6DC" : reach.has(n.id) ? "#9AF0A0" : path.has(n.id) ? "#FFC48A" : null;
+    const ring = n.id === selected ? "#F07A2A" : n.id === hover ? "#ECE6DC" : found.has(n.id) ? "#6FE3FF" : reach.has(n.id) ? "#9AF0A0" : path.has(n.id) ? "#FFC48A" : masteryOpen(n) && !taken.has(n.id) ? "#9AF0A0" : null;
     if (!ring) continue;
     const x = sx(n.x), y = sy(n.y), r = FRAMES[n.kind].length * dot / 2 + 1.6 * dot;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.strokeStyle = ring; ctx.lineWidth = n.id === selected ? 3 : 2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.strokeStyle = ring; ctx.lineWidth = n.id === selected ? 3 : found.has(n.id) ? 3 : 2; ctx.stroke();
     if (n.id === selected) { ctx.beginPath(); ctx.arc(x, y, r + 5, 0, 2 * Math.PI); ctx.strokeStyle = "rgba(240,122,42,.35)"; ctx.lineWidth = 4; ctx.stroke(); }
   }
   for (const n of N) {
@@ -304,8 +316,8 @@ function setDot(nd, px = 960, py = 580) { nd = Math.max(2, Math.min(5, nd)); if 
 const STAT = /^(.*)\+(\d+)%$/;
 function panel() {
   $("cPts").textContent = `${budget() - taken.size} / ${budget()}`; $("cSilver").textContent = silver.toLocaleString();
-  $("lUsed").textContent = `${taken.size} 点`;
-  const total = {}; taken.forEach(i => N[i].text.split(" / ").forEach(t => { const m = t.match(STAT); if (m) total[m[1]] = (total[m[1]] || 0) + Number(m[2]); }));
+  $("lUsed").textContent = `${taken.size} 点`; $("findN").textContent = found.size ? `${found.size}件` : "";
+  const total = {}; taken.forEach(i => (N[i].kind === "MASTERY" ? N[i].choiceTexts[choice.get(i)] : N[i].kind === "KEYSTONE" ? "" : N[i].text).split(" / ").forEach(t => { const m = t.match(STAT); if (m) total[m[1]] = (total[m[1]] || 0) + Number(m[2]); }));
   const box = $("totals"); box.replaceChildren();
   const rows = Object.entries(total).sort((a, b) => b[1] - a[1]);
   if (!rows.length) { const d = document.createElement("div"); d.className = "empty"; d.textContent = "まだ何も取っていません"; box.append(d); }
@@ -317,19 +329,23 @@ function panel() {
   if (show < 0) { $("rKind").textContent = "ノード"; $("rName").textContent = "ノードを選んでください"; $("rLines").innerHTML = "<p>木の上でノードを押すと、ここに中身が出ます。もう一度押すと、そこまでの道をまとめて取ります。</p>"; $("rStatus").textContent = ""; }
   else {
     const n = N[show]; right.style.setProperty("--region", `rgb(${n.rgb.join(",")})`);
-    $("rKind").textContent = { SMALL: "小さいノード", NOTABLE: "主要ノード", KEYSTONE: "キーストーン（中身は案）", START: "起点", MASTERY: "極意（中身は案）" }[n.kind];
+    $("rKind").textContent = { SMALL: "小さいノード", NOTABLE: "主要ノード", KEYSTONE: "キーストーン", START: "起点", MASTERY: "極意（マスタリー）" }[n.kind];
     $("rName").textContent = n.name;
     const lines = $("rLines"); lines.replaceChildren();
     if (n.kind === "SMALL" || n.kind === "NOTABLE") n.text.split(" / ").forEach(t => { const m = t.match(STAT); const d = document.createElement("div"); d.className = "stat"; d.textContent = m ? m[1] : t; if (m) { const e = document.createElement("em"); e.textContent = `+${m[2]}%`; d.append(e); } lines.append(d); });
-    else if (n.kind === "MASTERY") { const p = document.createElement("p"); p.textContent = "この輪の主要ノードを取ると、1点で次から1つ選べる"; lines.append(p); (n.choices || []).forEach(c => { const q = document.createElement("p"); q.textContent = "・" + c; lines.append(q); }); }
+    else if (n.kind === "MASTERY") { const p = document.createElement("p"); p.textContent = "この輪の主要ノードを取ると、1点で1つ選べる。同じ効果はツリー全体で1回だけ。"; lines.append(p);
+      n.choiceTexts.forEach((c, k) => { const b = document.createElement("button"); b.type = "button"; b.className = "choice"; b.textContent = c;
+        const mine = taken.has(n.id) ? choice.get(n.id) === k : pick2 === k; b.setAttribute("aria-pressed", String(mine));
+        b.disabled = taken.has(n.id) || !masteryOpen(n) || choiceUsed(n, k); if (choiceUsed(n, k)) b.title = "ほかの輪で選び済み";
+        b.onclick = () => { pick2 = k; selected = n.id; draw(); }; lines.append(b); }); }
     else { const p = document.createElement("p"); p.textContent = n.text; lines.append(p); }
     const st = $("rStatus"), p = pathTo(show);
-    st.className = "status " + (taken.has(show) ? "own" : !ready(n) ? "mute" : !p ? "bad" : taken.size + p.length > budget() ? "bad" : "ok");
-    st.textContent = taken.has(show) ? "取得済み" : n.kind === "START" ? (n.start === job ? "ここから伸ばす" : "ほかの職業の起点") : !ready(n) ? "中身はこれから決めます" : !p ? "つながっていない" : taken.size + p.length > budget() ? `${p.length} 点必要（ポイントが足りない）` : `あと ${p.length} 点で届く`;
+    st.className = "status " + (taken.has(show) ? "own" : n.kind === "MASTERY" ? (masteryOpen(n) ? "ok" : "mute") : !ready(n) ? "mute" : !p ? "bad" : taken.size + p.length > budget() ? "bad" : "ok");
+    st.textContent = taken.has(show) ? "取得済み" : n.kind === "START" ? (n.start === job ? "ここから伸ばす" : "ほかの職業の起点") : n.kind === "MASTERY" ? (masteryOpen(n) ? "1つ選んで 1 点で取る" : "この輪の主要ノードを先に取る") : !ready(n) ? "" : !p ? "つながっていない" : taken.size + p.length > budget() ? `${p.length} 点必要（ポイントが足りない）` : `あと ${p.length} 点で届く`;
   }
   const sel = selected >= 0 ? N[selected] : null, owned = sel && taken.has(sel.id);
   const drop = owned ? taken.size - keep(new Set([...taken].filter(i => i !== sel.id))).size : 0;
-  const cost = drop * price(), p = sel ? pathTo(sel.id) : null;
+  const cost = drop * price(), mastery = sel && sel.kind === "MASTERY" && !owned, p = sel ? (mastery ? (masteryOpen(sel) && pick2 >= 0 ? [sel.id] : null) : pathTo(sel.id)) : null;
   $("rCost").hidden = !owned; $("rCostN").textContent = cost.toLocaleString();
   go.className = "go" + (owned ? " refund" : "");
   go.textContent = owned ? (drop > 1 ? `戻す（先の ${drop - 1} 個も）` : "戻す") : p ? `取る（${p.length} 点）` : "取る";
@@ -339,7 +355,8 @@ function panel() {
 function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove("on"), 1600); }
 function confirmSel() {
   if (selected < 0) return; const n = N[selected];
-  if (taken.has(selected)) { const rest = keep(new Set([...taken].filter(i => i !== selected))); const cost = (taken.size - rest.size) * price(); if (silver < cost) return; silver -= cost; taken = rest; toast(`${n.name}を戻しました（銀貨 ${cost}）`); }
+  if (taken.has(selected)) { const rest = keep(new Set([...taken].filter(i => i !== selected))); const cost = (taken.size - rest.size) * price(); if (silver < cost) return; silver -= cost; taken = rest; [...choice.keys()].forEach(i => { if (!taken.has(i)) choice.delete(i); }); toast(`${n.name}を戻しました（銀貨 ${cost}）`); }
+  else if (n.kind === "MASTERY") { if (!masteryOpen(n) || pick2 < 0 || choiceUsed(n, pick2) || taken.size >= budget()) return; taken.add(n.id); choice.set(n.id, pick2); toast(`極意：${n.choiceTexts[pick2]}`); pick2 = -1; }
   else { const p = pathTo(selected); if (!p || taken.size + p.length > budget()) return; p.forEach(i => taken.add(i)); toast(`${n.name}まで ${p.length} 点で取りました`); }
   draw();
 }
@@ -353,7 +370,7 @@ cv.addEventListener("pointermove", e => { const [x, y] = local(e); cursor = [x, 
   if (drag) { const dx = x - drag.x, dy = y - drag.y; if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true; panX += dx; panY += dy; drag.x = x; drag.y = y; }
   const h = pick(x, y); if (h !== hover) { hover = h; } draw(); });
 cv.addEventListener("pointerup", e => { const [x, y] = local(e); if (drag && !drag.moved) { const id = pick(x, y);
-  if (id < 0) selected = -1; else if (id === selected && !taken.has(id) && pathTo(id)) confirmSel(); else selected = id; } drag = null; draw(); });
+  if (id !== selected) pick2 = -1; if (id < 0) selected = -1; else if (id === selected && !taken.has(id) && pathTo(id)) confirmSel(); else selected = id; } drag = null; draw(); });
 cv.addEventListener("pointerleave", () => { hover = -1; cursor = null; draw(); });
 let wheelAcc = 0;
 cv.addEventListener("wheel", e => { e.preventDefault(); wheelAcc += e.deltaY; if (Math.abs(wheelAcc) < 60) return; const [x, y] = local(e); setDot(dot + (wheelAcc < 0 ? 1 : -1), x, y); wheelAcc = 0; draw(); }, { passive: false });
@@ -366,9 +383,13 @@ function tick() { if (cursor && !drag) { const [x, y] = cursor, E = 70; let vx =
   if (y > 1018 - E && y < 1030) vy = -14 * (1 - (1030 - y) / (E + 12));
   if (vx || vy) { panX += vx; panY += vy; draw(); } } requestAnimationFrame(tick); }
 $("go").onclick = confirmSel;
-$("reset").onclick = () => { const cost = taken.size * price(); if (!taken.size || silver < cost) return; silver -= cost; taken.clear(); toast(`全部戻しました（銀貨 ${cost}）`); draw(); };
+$("find").oninput = e => { const q = e.target.value.trim(); found = new Set(q ? N.filter(n => n.kind !== "START" && (n.name + n.text + (n.choiceTexts || []).join("")).includes(q)).map(n => n.id) : []); draw(); };
+$("find").onkeydown = e => { if (e.key !== "Enter" || !found.size) return; const cx = (960 - panX) / zoom, cy = (580 - panY) / zoom;
+  const far = [...found].sort((a, b) => Math.hypot(N[a].x - cx, N[a].y - cy) - Math.hypot(N[b].x - cx, N[b].y - cy)).find(i => Math.hypot(N[i].x - cx, N[i].y - cy) > 60) ?? [...found][0];
+  panX = 960 - N[far].x * zoom; panY = 580 - N[far].y * zoom; selected = far; draw(); };
+$("reset").onclick = () => { const cost = taken.size * price(); if (!taken.size || silver < cost) return; silver -= cost; taken.clear(); choice.clear(); toast(`全部戻しました（銀貨 ${cost}）`); draw(); };
 $("center").onclick = () => { centre(); draw(); };
-$("job").onchange = e => { job = e.target.value; taken.clear(); selected = -1; centre(); draw(); };
+$("job").onchange = e => { job = e.target.value; taken.clear(); choice.clear(); selected = -1; centre(); draw(); };
 $("lv").onchange = e => { level = Number(e.target.value); if (taken.size > budget()) taken.clear(); draw(); };
 function setStyle(ornate) { stage.classList.toggle("ornate", ornate); $("sForge").setAttribute("aria-pressed", String(!ornate)); $("sMap").setAttribute("aria-pressed", String(ornate)); }
 $("sForge").onclick = () => setStyle(false); $("sMap").onclick = () => setStyle(true);

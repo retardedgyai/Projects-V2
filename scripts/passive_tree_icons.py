@@ -31,6 +31,7 @@ RAMPS = {
     "ice": ["#2E6A98", "#6CB6E6", "#C2ECFF", "#FFFFFF"], "volt": ["#9A7A0E", "#E8C23A", "#FFEE8A", "#FFFFFF"],
     "crystal": ["#226E8E", "#4CB8DC", "#AEEAFF", "#FFFFFF"], "stone": ["#43434C", "#6E6E7A", "#9C9CA8", "#D0D0DA"],
     "snowcap": ["#A8B4C2", "#E2EAF2", "#FFFFFF", "#FFFFFF"],
+    "bone": ["#7E7462", "#C8BCA0", "#EDE4CC", "#FFFFFF"], "iron": ["#3E4250", "#6C7284", "#A4ABBC", "#E6EAF2"],
 }
 OUTLINE = "#0A0A0E"
 
@@ -96,6 +97,18 @@ ICONS: dict[str, tuple[dict[str, str], list[str], list[str]]] = {
     "mountain": ({"A": "stone", "B": "snowcap"}, mirror([
         ".....B", "....BB", "...BBA", "..AAAA", "..AAAA", ".AAAAA", ".AAAAA", "AAAAAA"]),
         mirror(["...B", "..BA", "..AA", ".AAA", "AAAA"])),
+    "hammer": ({"A": "iron", "B": "wood"}, mirror([
+        "..AAAA", "..AAAA", "..AAAA", "..AAAA", ".....B", ".....B", ".....B", ".....B", ".....B", ".....B", ".....B"]),
+        mirror([".AAA", ".AAA", ".AAA", "...B", "...B", "...B", "...B"])),
+    "chain": ({"A": "steel", "B": "iron"}, mirror([
+        "...AAA", "...A..", "...A..", "...AAA", ".....B", ".....B", ".....B", "...AAA", "...A..", "...A..", "...AAA"]),
+        mirror(["..AA", "..A.", "..AA", "...B", "..AA", "..A.", "..AA"])),
+    "skull": ({"A": "bone", "B": "white"}, mirror([
+        "..AAAA", ".AAAAA", "AAAAAA", "A..AAA", "A..AAA", "AAAAA.", ".AAAAA", "..A.A.", "..AAAA"]),
+        mirror([".AAA", "AAAA", "A.AA", "AAA.", ".A.A"])),
+    "wing": ({"A": "teal", "B": "white"}, mirror([
+        "A.....", "AA....", "AAA...", ".AAA.B", ".AAAAB", "..AAAB", "...AAB", "....A."]),
+        mirror(["A...", "AA..", ".AAB", "..AB"])),
     "crown": ({"A": "gold", "B": "red"}, mirror([
         "A....B", "AA..AA", "AAAAAA", "AAAAAA", "AAAAAA", "......", "AAAAAA"]),
         mirror(["A..B", "AAAA", "AAAA", "....", "AAAA"])),
@@ -110,7 +123,7 @@ STAT_ICON = {
     "HEALTH_PERCENT": "heart", "INCOMING_HEALING": "heart", "LIFESTEAL": "blood",
     "AR_PERCENT": "shield", "MR_PERCENT": "shield", "MITIGATION": "shield", "CC_RESIST": "mountain", "SHIELD_POWER": "gem",
     "HEALING_PERCENT": "plus", "OUTGOING_HEALING": "plus", "MANA_PERCENT": "drop", "MANA_REGEN": "drop",
-    "MOVE_SPEED": "chevron", "PROJECTILE_DAMAGE": "arrow", "FIRE": "flame", "ICE": "snow", "LIGHTNING": "bolt",
+    "MOVE_SPEED": "chevron", "PROJECTILE_DAMAGE": "arrow", "CC_DURATION": "chain", "BREAK_POWER": "hammer", "DOT_DAMAGE": "skull", "DODGE_RECOVERY": "wing", "FIRE": "flame", "ICE": "snow", "LIGHTNING": "bolt",
 }
 CLASS_ICON = {"WARRIOR": "sword", "TEMPLAR": "shield", "MAGE": "star", "HEALER": "plus", "RANGER": "arrow", "ASSASSIN": "aim"}
 

@@ -149,7 +149,7 @@ class CoreFrontierZonesTest {
         fun sealed(body: String) = body + "checksum\t" + MessageDigest.getInstance("SHA-256").digest(body.toByteArray(UTF_8))
             .joinToString("") { "%02x".format(it) } + "\n"
         val v11 = encoded.substringBefore("checksum\t").lineSequence()
-            .filterNot { it.startsWith("map-zone\t") || it.startsWith("zone-record\t") || it.startsWith("passive\t") }
+            .filterNot { it.startsWith("map-zone\t") || it.startsWith("zone-record\t") || it.startsWith("passive") }
             .joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t13\t", "PROJECTS_CORE_LOOP\t11\t")
         val migrated = CoreAccountCodec.decode(sealed(v11), id)
         assertTrue(migrated.zoneRecords.isEmpty())
@@ -169,7 +169,7 @@ class CoreFrontierZonesTest {
         val directory = Files.createTempDirectory("projects-frontier-v11")
         val id = UUID.randomUUID()
         val current = CoreAccountCodec.encode(CoreAccount(id, revision = 1)).substringBefore("checksum\t")
-            .lineSequence().filterNot { it.startsWith("passive\t") }.joinToString("\n")
+            .lineSequence().filterNot { it.startsWith("passive") }.joinToString("\n")
             .replaceFirst("PROJECTS_CORE_LOOP\t13\t", "PROJECTS_CORE_LOOP\t11\t")
         val bytes = (current + "checksum\t" + MessageDigest.getInstance("SHA-256").digest(current.toByteArray(UTF_8))
             .joinToString("") { "%02x".format(it) } + "\n").toByteArray(UTF_8)

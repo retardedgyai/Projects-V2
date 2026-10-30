@@ -33,6 +33,8 @@ internal class PassiveTreeFlow(
         val sprites: Map<String, UiSprite>
         val infos: Map<Int, List<Placed>>
         val labels: Map<String, List<Placed>>
+        /** Per node: the label keys of its mastery options (empty for other kinds). */
+        val choiceLabels: List<List<String>>
         init {
             val root = JsonParser.parseString(json.toString(Charsets.UTF_8)).asJsonObject
             sprites = root.getAsJsonObject("sprites").entrySet().associate { (name, v) ->
@@ -47,10 +49,12 @@ internal class PassiveTreeFlow(
                 (o["a"].asInt to o["b"].asInt) to o.getAsJsonArray("parts").map { placed(it.asJsonObject, "sprite") }
             }
             spots = root.getAsJsonArray("nodes").map { n -> n.asJsonObject.let { Spot(it["x"].asDouble, it["y"].asDouble) } }
+            choiceLabels = root.getAsJsonArray("nodes").map { n -> n.asJsonObject.getAsJsonArray("choiceLabels")?.map { it.asString }.orEmpty() }
             require(spots.size == CorePassiveTree.nodes.size) { "passive-tree.json と passive-tree.tsv のノード数が違います" }
             fun blocks(o: com.google.gson.JsonObject) = o.entrySet().associate { (k, v) -> k to v.asJsonArray.map { placed(it.asJsonObject, "sprite") } }
             infos = blocks(root.getAsJsonObject("infos")).mapKeys { it.key.toInt() }
             labels = blocks(root.getAsJsonObject("labels"))
+            require(CorePassiveTree.nodes.all { choiceLabels[it.id].size == it.choices.size }) { "passive-tree.json の極意の選択肢が passive-tree.tsv と違います" }
         }
     }
 
@@ -123,6 +127,12 @@ internal class PassiveTreeFlow(
                 selected = id; failed = false
             }
             "confirm" -> return confirm(a)
+            "choice:0", "choice:1", "choice:2" -> {
+                val id = selected ?: return false
+                val choice = action.substringAfter(':').toInt()
+                if (busy || !masteryChoosable(a, id, choice)) return false
+                send(a, CoreAction.TakeMastery(id, choice))
+            }
             "reset" -> { if (taken.isEmpty() || busy) return false; send(a, CoreAction.ResetPassives) }
             "zoom:in", "page:next" -> zoomBy(+1)
             "zoom:out", "page:prev" -> zoomBy(-1)
@@ -137,6 +147,14 @@ internal class PassiveTreeFlow(
         if (busy) return false
         send(a, if (id in a.journey.build.passives) CoreAction.RefundPassive(id) else CoreAction.TakePassive(id))
         return true
+    }
+
+    /** Whether option [choice] of mastery [id] can be taken now (the service re-checks everything). */
+    private fun masteryChoosable(a: CoreAccount, id: Int, choice: Int): Boolean {
+        val b = a.journey.build
+        return CorePassiveTree.isMastery(id) && a.activeRun == null && id !in b.passives && choice in CorePassiveTree.nodes[id].choices.indices &&
+            CorePassiveTree.wheelOpen(b.passives, id) && !CorePassiveTree.choiceTaken(b.masteries, id, choice) &&
+            b.passives.size < CorePassiveTree.budget(a)
     }
 
     private fun send(a: CoreAccount, operation: CoreAction) {
@@ -181,7 +199,7 @@ internal class PassiveTreeFlow(
         val taken = a?.journey?.build?.passives.orEmpty()
         val start = CorePassiveTree.start(job)
         val lit = taken + start
-        val budget = a?.journey?.let(CorePassiveTree::budget) ?: 0
+        val budget = a?.let { CorePassiveTree.budget(it) } ?: 0
         val hovered = nodeAt(pointerX, pointerY)
         val path = (hovered ?: selected)?.let { CorePassiveTree.pathTo(job, taken, it) }.orEmpty().toSet()
 
@@ -213,6 +231,9 @@ internal class PassiveTreeFlow(
         // Nodes one step away glow green; the path the pointer would take is outlined white.
         if (taken.size < budget) for (i in lit) for (m in CorePassiveTree.nodes[i].links)
             if (m !in lit && CorePassiveTree.nodes[m].ready) mark("r$m", "reach_${CorePassiveTree.nodes[m].kind}", m, 4)
+        // A wheel whose notable is taken offers its mastery.
+        if (taken.size < budget) for (m in CorePassiveTree.nodes.indices)
+            if (CorePassiveTree.isMastery(m) && m !in taken && CorePassiveTree.wheelOpen(taken, m)) mark("r$m", "reach_MASTERY", m, 4)
         for (i in path) mark("p$i", "ring_${CorePassiveTree.nodes[i].kind}", i, 5)
         selected?.let { mark("sel", "ring_${CorePassiveTree.nodes[it].kind}", it, 6) }
         rect("tree", 0.0, TOP_BAR, VIEW_W, 1080 - TOP_BAR, "#00000000", 7, "tree", "#00000000")
@@ -241,10 +262,15 @@ internal class PassiveTreeFlow(
         val node = shown?.let { CorePassiveTree.nodes[it] }
         if (node != null) {
             block("info", art.infos[node.id], ix, TOP_BAR + 30, 12)
+            val mastery = node.kind == CorePassiveKind.MASTERY
             val status = when {
                 a == null -> null
                 a.activeRun != null -> "hub"
                 node.kind == CorePassiveKind.START -> null
+                mastery && node.id in taken -> "taken"
+                mastery && !CorePassiveTree.wheelOpen(taken, node.id) -> "locked"
+                mastery && taken.size >= budget -> "nopoint"
+                mastery -> "pick"
                 !node.ready -> "soon"
                 node.id in taken -> "taken"
                 path.isEmpty() -> "far"
@@ -253,7 +279,8 @@ internal class PassiveTreeFlow(
             }
             val sy = TOP_BAR + 330
             block("st", status?.let { art.labels[it] }, ix, sy, 12)
-            if (status == "need" || status == "nopoint") {
+            if (mastery && a != null) masteryChoices(a, node, TOP_BAR + 380)
+            if (!mastery && (status == "need" || status == "nopoint")) {
                 number("st-n", ix + 60, sy - 2, 80.0, "${path.size}", 26.0, "#9af0a0", 12)
                 if (status == "need") block("st-p", art.labels["pt"], ix + 100, sy, 12)
             }
@@ -284,6 +311,21 @@ internal class PassiveTreeFlow(
         rect("close", 1920.0 - 28 - 180, 1080.0 - 90, 180.0, 56.0, "#ff202126", 12, "close", "#ff2a2416")
         block("close-t", art.labels["close"], 1920.0 - 28 - 90 - width(art.labels["close"]) / 2, 1080.0 - 76, 13)
         if (failed) block("failed", art.labels["failed"], ix, by - 80, 12)
+    }
+
+    /** The options of a mastery as buttons; the chosen one stays lit once taken. */
+    private fun masteryChoices(a: CoreAccount, node: CorePassiveNode, top: Double) {
+        val ix = VIEW_W + 28; val w = 1920 - ix - 28
+        val chosen = a.journey.build.masteries[node.id]
+        for ((k, key) in art.choiceLabels[node.id].withIndex()) {
+            val y = top + k * 76
+            val open = node.id == selected && !busy && masteryChoosable(a, node.id, k)
+            val color = when { chosen == k -> "#ff3a2f18"; open -> "#ff202a22"; else -> "#ff1c1d22" }
+            rect("ch$k", ix, y, w, 64.0, color, 12, if (open) "choice:$k" else null, if (open) "#ff2c4a30" else null)
+            if (chosen == k) rect("ch$k-l", ix, y, 4.0, 64.0, "#ffe8b652", 13)
+            block("ch$k-t", art.labels[key], ix + 14, y + 8, 13)
+            if (chosen == null && CorePassiveTree.choiceTaken(a.journey.build.masteries, node.id, k)) block("ch$k-d", art.labels["dup"], ix + 14, y + 38, 13)
+        }
     }
 
     companion object {

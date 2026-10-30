@@ -515,7 +515,13 @@ class QuestEncounterCombat(
         mob.entity.velocity = Vec(0.0, -30.0, 0.0)
         return true
     }
-    fun crowdControl(targetId: UUID): Set<CrowdControl> {
+    /** Under crowd control or slowed right now (passive condition VS_CONTROLLED). */
+    fun controlled(targetId: UUID): Boolean {
+        val mob = mobs[targetId] ?: return false
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        return mob.crowd.values.any { it > now } || mob.slows.values.any { it.until > now }
+    }
+        fun crowdControl(targetId: UUID): Set<CrowdControl> {
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
         return mobs[targetId]?.crowd?.filterValues { it > now }?.keys ?: emptySet()
     }

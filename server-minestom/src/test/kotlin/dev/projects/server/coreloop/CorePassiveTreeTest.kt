@@ -30,10 +30,10 @@ class CorePassiveTreeTest {
         assertEquals(0, tree.budget(CoreJourney()))
         val lv10 = CoreJourney(chosen = true, xp = CoreJourneyRules.threshold(10))
         assertEquals(9, tree.budget(lv10))
-        assertEquals(39, tree.budget(CoreJourney.legacy()))
+        assertEquals(69, tree.budget(CoreJourney.legacy()))
     }
 
-    @Test fun `nodes are taken next to the start or to a taken node, and keystones wait`() {
+    @Test fun `nodes are taken next to the start or to a taken node, keystones too`() {
         val job = CoreClass.MAGE
         val first = firstStep(job)
         assertFailsWith<IllegalArgumentException> { tree.take(job, emptySet(), first, 0) }
@@ -46,8 +46,11 @@ class CorePassiveTreeTest {
         path.zipWithNext().forEach { (p, q) -> assertTrue(q in tree.nodes[p].links) }
         assertFailsWith<IllegalArgumentException> { tree.take(job, emptySet(), far.id, path.size - 1) }
         assertEquals(path.toSet(), tree.take(job, emptySet(), far.id, path.size))
+        // Keystones are taken along a path like any node; masteries only with a choice.
         val keystone = tree.nodes.first { it.kind == CorePassiveKind.KEYSTONE }
-        assertFailsWith<IllegalArgumentException> { tree.take(job, tree.nodes.indices.toSet(), keystone.id, 999) }
+        assertTrue(keystone.id in tree.take(job, emptySet(), keystone.id, 999))
+        val mastery = tree.nodes.first { it.kind == CorePassiveKind.MASTERY }
+        assertFailsWith<IllegalArgumentException> { tree.take(job, emptySet(), mastery.id, 999) }
     }
 
     @Test fun `refunding a node drops what only hung from it`() {
@@ -99,5 +102,26 @@ class CorePassiveTreeTest {
         val decoded = CoreAccountCodec.decode(CoreAccountCodec.encode(a), a.playerId)
         assertEquals(j, decoded.journey)
         assertEquals(saved, decoded.journey.savedBuilds.getValue(CoreClass.MAGE).passives)
+    }
+
+    @Test fun `a save from another version of the tree gets every point back instead of other nodes`() {
+        val taken = path(CoreClass.RANGER, 3)
+        val a = CoreAccount(UUID.randomUUID(), silver = 999, journey = CoreJourney.legacy(CoreClass.RANGER, build = CoreClassBuild(passives = taken)))
+        val text = CoreAccountCodec.encode(a)
+        assertTrue("passive-tree\t${tree.fingerprint}\n" in text)
+        assertEquals(taken, CoreAccountCodec.decode(text, a.playerId).journey.build.passives)
+        // The table was regenerated since this save: same ids, other nodes. Refund, never re-read.
+        fun sealed(body: String) = body + "checksum\t" + java.security.MessageDigest.getInstance("SHA-256")
+            .digest(body.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) } + "\n"
+        val body = text.substringBefore("checksum\t")
+        val other = sealed(body.replace("passive-tree\t${tree.fingerprint}", "passive-tree\t0123456789abcdef"))
+        assertEquals(emptySet(), CoreAccountCodec.decode(other, a.playerId).journey.build.passives)
+        // Saves written before the fingerprint row existed are treated the same way.
+        val none = sealed(body.lines().filterNot { it.startsWith("passive-tree\t") }.joinToString("\n"))
+        assertEquals(emptySet(), CoreAccountCodec.decode(none, a.playerId).journey.build.passives)
+        // Comment lines (the header) do not count, the rows do.
+        val table = Files.readString(java.nio.file.Path.of("src/main/resources/passive-tree.tsv"))
+        assertEquals(tree.fingerprint, tree.fingerprint("# another header\n$table"))
+        assertTrue(tree.fingerprint != tree.fingerprint(table.replaceFirst("DAMAGE=4", "DAMAGE=5")))
     }
 }

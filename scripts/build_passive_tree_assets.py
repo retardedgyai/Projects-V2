@@ -177,8 +177,8 @@ def ring(kind, color, gap=5, width=3):
 
 
 PANEL_W = 400
-KIND_LABEL = {"SMALL": "小さいノード", "NOTABLE": "主要ノード", "KEYSTONE": "キーストーン（準備中）", "START": "起点",
-              "MASTERY": "極意（準備中）"}
+KIND_LABEL = {"SMALL": "小さいノード", "NOTABLE": "主要ノード", "KEYSTONE": "キーストーン", "START": "起点",
+              "MASTERY": "極意"}
 # Fixed words on the screen: key -> (text, size, colour).
 LABELS = {
     "title": ("パッシブツリー", 34, TEXT), "points": ("残りポイント", 18, TEXT_DIM),
@@ -187,7 +187,9 @@ LABELS = {
     "close": ("閉じる", 20, TEXT), "cost": ("戻す代金（銀貨）", 16, TEXT_DIM), "silver": ("所持銀貨", 16, TEXT_DIM),
     "reach": ("あと何点で届くか", 16, TEXT_DIM), "taken": ("取得済み", 22, (242, 212, 138)), "far": ("つながっていない", 20, (255, 154, 138)),
     "nopoint": ("ポイントが足りない", 20, (255, 154, 138)), "soon": ("中身はこれから決めます", 20, TEXT_DIM),
-    "hub": ("港で変更できます", 20, (255, 154, 138)), "failed": ("できませんでした", 20, (255, 154, 138)), "need": ("必要", 20, TEXT_DIM), "pt": ("点", 20, TEXT_DIM),
+    "hub": ("港で変更できます", 20, (255, 154, 138)),
+    "locked": ("この輪の主要ノードを先に取る", 20, (255, 154, 138)), "pick": ("下から1つ選ぶ（1点）", 20, (154, 240, 160)),
+    "dup": ("ほかの輪で取得済み", 15, (255, 154, 138)), "failed": ("できませんでした", 20, (255, 154, 138)), "need": ("必要", 20, TEXT_DIM), "pt": ("点", 20, TEXT_DIM),
 }
 for job, label in [("WARRIOR", "戦士"), ("TEMPLAR", "テンプラー"), ("MAGE", "メイジ"), ("HEALER", "ヒーラー"), ("RANGER", "レンジャー"), ("ASSASSIN", "アサシン")]:
     LABELS[f"job_{job}"] = (label, 22, (242, 212, 138))
@@ -212,7 +214,7 @@ def info_image(n):
     body = font(20, False)
     parts = n["text"].split(" / ") if n["kind"] in ("SMALL", "NOTABLE") else [n["text"]]
     if n["kind"] == "MASTERY":
-        parts = ["この輪の主要ノードを取ると選べる："] + ["・" + c for c in n.get("choices", [])]
+        parts = ["この輪の主要ノードを取ると、1点で次の3つから1つ選べる。同じものはほかの輪では選べない。"]
     for part in parts:
         for line in wrap(d, part, body, PANEL_W):
             color = (169, 200, 255) if n["kind"] in ("SMALL", "NOTABLE") else TEXT
@@ -275,6 +277,16 @@ def main(preview: bool) -> None:
         img = label_image(text, size, color)
         labels[key] = [{"sprite": add(f"label_{key}_{k}", img.crop((k * 256, 0, min(img.width, (k + 1) * 256), img.height))),
                         "x": k * 256, "y": 0} for k in range(math.ceil(img.width / 256))]
+    # Mastery option buttons: one label per distinct option text, shared by every wheel that offers it.
+    choice_keys: dict[str, str] = {}
+    for n in nodes:
+        for text in n.get("choiceTexts", []):
+            if text in choice_keys:
+                continue
+            key = choice_keys[text] = f"choice_{len(choice_keys)}"
+            img = label_image(text, 16, TEXT)
+            labels[key] = [{"sprite": add(f"label_{key}_{k}", img.crop((k * 256, 0, min(img.width, (k + 1) * 256), img.height))),
+                            "x": k * 256, "y": 0} for k in range(math.ceil(img.width / 256))]
     for kind in RADIUS:
         add(f"face_{kind}", face(kind))
         add(f"ring_{kind}", ring(kind, (245, 240, 225)))
@@ -286,7 +298,8 @@ def main(preview: bool) -> None:
     layout = {"scale": SCALE, "originX": origin[0], "originY": origin[1], "width": base.width, "height": base.height,
               "tiles": tiles, "edges": edges, "sprites": sprites, "infos": infos, "labels": labels,
               "nodes": [{"id": n["id"], "x": round((n["x"] - origin[0]) * SCALE, 1), "y": round((n["y"] - origin[1]) * SCALE, 1),
-                         "kind": n["kind"], "text": n["text"], "choices": n.get("choices", [])} for n in nodes]}
+                         "kind": n["kind"], "text": n["text"],
+                         "choiceLabels": [choice_keys[t] for t in n.get("choiceTexts", [])]} for n in nodes]}
     (OUT / "passive-tree.json").write_text(json.dumps(layout, ensure_ascii=False), encoding="utf-8")
     print(f"PASSIVE_TREE_PACK_BUILT tiles={len(tiles)} sprites={len(sprites)} bytes={(OUT / 'passive-tree.zip').stat().st_size}")
     if preview:

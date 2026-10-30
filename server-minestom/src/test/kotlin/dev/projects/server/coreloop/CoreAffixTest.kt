@@ -35,7 +35,10 @@ class CoreAffixTest {
 
     @Test fun `catalog deterministic source rolls span all live stats and four ranks`() {
         assertEquals(48, CoreAffixCatalog.definitions.size)
-        assertEquals(CoreAffixStat.entries.toSet(), CoreAffixCatalog.definitions.map { it.stat }.toSet())
+        // The passive tree also grants these; no stone rolls them (2026-10-31).
+        val treeOnly = setOf(CoreAffixStat.CC_DURATION, CoreAffixStat.BREAK_POWER, CoreAffixStat.DOT_DAMAGE,
+            CoreAffixStat.DODGE_RECOVERY, CoreAffixStat.HEAL_ON_KILL, CoreAffixStat.OVERHEAL_SHIELD)
+        assertEquals(CoreAffixStat.entries.toSet() - treeOnly, CoreAffixCatalog.definitions.map { it.stat }.toSet())
         val seen = mutableSetOf<String>()
         for (tier in 1..4) {
             val run = CoreActiveRun(UUID(77, 88), CoreOwnedMap(UUID(99, 11), 1234567, tier))

@@ -104,8 +104,16 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         is CoreAction.TakePassive -> {
             requireHub(account)
             val journey = account.journey
-            val taken = CorePassiveTree.take(journey.job, journey.build.passives, action.node, CorePassiveTree.budget(journey))
+            val taken = CorePassiveTree.take(journey.job, journey.build.passives, action.node, CorePassiveTree.budget(account))
             account.copy(journey = journey.copy(build = journey.build.copy(passives = taken))) to "${CorePassiveTree.nodes[action.node].name}を取得しました"
+        }
+        is CoreAction.TakeMastery -> {
+            requireHub(account)
+            val journey = account.journey
+            val (taken, masteries) = CorePassiveTree.takeMastery(journey.build.passives, journey.build.masteries, action.node, action.choice,
+                CorePassiveTree.budget(account))
+            account.copy(journey = journey.copy(build = journey.build.copy(passives = taken, masteries = masteries))) to
+                "極意「${CorePassiveTree.nodes[action.node].choices[action.choice].text}」を取得しました"
         }
         is CoreAction.RefundPassive -> {
             requireHub(account)
@@ -624,7 +632,8 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         val journey = account.journey
         val price = CorePassiveTree.refundPrice(journey) * (journey.build.passives.size - kept.size)
         require(account.silver >= price) { "銀貨が足りません（${price}枚必要）" }
-        return account.copy(silver = account.silver - price, journey = journey.copy(build = journey.build.copy(passives = kept))) to "$message（銀貨${price}枚）"
+        return account.copy(silver = account.silver - price, journey = journey.copy(build = journey.build.copy(passives = kept,
+            masteries = journey.build.masteries.filterKeys { it in kept }))) to "$message（銀貨${price}枚）"
     }
     private fun requireHub(account: CoreAccount) { require(account.activeRun == null) { "拠点で操作してください" } }
     /** Run ids are random per departure; a bounded recent window still rejects replayed or reused ids. */

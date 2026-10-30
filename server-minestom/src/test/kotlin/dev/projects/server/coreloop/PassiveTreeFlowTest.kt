@@ -67,4 +67,23 @@ class PassiveTreeFlowTest {
         assertEquals(CoreAction.ResetPassives, sent.last())
         assertFalse(flow.action("nothing"))
     }
+
+    @Test fun `a mastery shows its options as buttons and takes the one clicked`() {
+        val job = CoreClass.MAGE
+        val masteries = CorePassiveTree.nodes.filter { it.kind == CorePassiveKind.MASTERY }
+        fun notable(m: CorePassiveNode) = CorePassiveTree.nodes.filter { it.kind == CorePassiveKind.NOTABLE && it.group == m.group }
+            .minBy { CorePassiveTree.pathTo(job, emptySet(), it.id)?.size ?: 999 }
+        val mastery = masteries.minBy { CorePassiveTree.pathTo(job, emptySet(), notable(it).id)?.size ?: 999 }
+        assertEquals(mastery.choices.size, art.choiceLabels[mastery.id].size)
+        assertTrue(art.choiceLabels[mastery.id].all { it in art.labels })
+        val taken = CorePassiveTree.take(job, emptySet(), notable(mastery).id, 999)
+        account = account.copy(journey = account.journey.copy(build = account.journey.build.copy(passives = taken)))
+        flow.action("zoom:out")
+        pointAt(mastery.id)
+        assertTrue(flow.action("tree"))
+        val buttons = flow.scene().nodes.filter { it.action?.startsWith("choice:") == true }
+        assertEquals(3, buttons.size)
+        assertTrue(flow.action("choice:1"))
+        assertEquals(CoreAction.TakeMastery(mastery.id, 1), sent.single())
+    }
 }

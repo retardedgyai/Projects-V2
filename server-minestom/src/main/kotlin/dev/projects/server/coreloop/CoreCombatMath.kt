@@ -46,8 +46,10 @@ data class CoreCombatSheet(val ad: Double, val ap: Double, val ar: Double, val m
     val health: Double, val mana: Double, val attackSpeed: Double, val healingPower: Double,
     val mods: CoreAffixStats = CoreAffixStats()) {
     val shieldMultiplier get() = 1 + mods.bonus(CoreAffixStat.SHIELD_POWER) / 100
+    /** The class base armour/resist joins the total that AR%/MR% multiply (power is linear in its base). */
     fun specialize(j: CoreJourney) = copy(health = health * j.job.healthFactor,
-        ar = ar + j.job.baseArmor, mr = mr + j.job.baseResist)
+        ar = ar + CoreCombatMath.power(j.job.baseArmor, 0.0, mods.bonus(CoreAffixStat.AR_PERCENT)),
+        mr = mr + CoreCombatMath.power(j.job.baseResist, 0.0, mods.bonus(CoreAffixStat.MR_PERCENT)))
     companion object {
         fun from(a: CoreAccount) = from(CoreCombatGear.from(a), CoreAffixCatalog.stats(a)).specialize(a.journey)
         fun from(g: CoreCombatGear, s: CoreAffixStats): CoreCombatSheet {
@@ -82,10 +84,10 @@ data class CoreCombatSheet(val ad: Double, val ap: Double, val ar: Double, val m
                 if (g.weaponBroken) 0.0 else CoreCombatMath.power(spellWeapon, b(CoreAffixStat.AP_FLAT), b(CoreAffixStat.AP_PERCENT)),
                 CoreCombatMath.power(defense, b(CoreAffixStat.AR_FLAT), b(CoreAffixStat.AR_PERCENT)),
                 CoreCombatMath.power(defense, b(CoreAffixStat.MR_FLAT), b(CoreAffixStat.MR_PERCENT)),
-                CoreCombatMath.power(armorHp.toInt().toDouble(), s.healthFlat, b(CoreAffixStat.HEALTH_PERCENT)),
-                CoreCombatMath.power(100.0, s.maxManaFlat, b(CoreAffixStat.MANA_PERCENT)),
+                CoreCombatMath.power(armorHp.toInt().toDouble(), s.healthFlat, b(CoreAffixStat.HEALTH_PERCENT)) * CoreKeystone.maxHealth(s.keystones),
+                CoreCombatMath.power(100.0, s.maxManaFlat, b(CoreAffixStat.MANA_PERCENT)) * CoreKeystone.maxMana(s.keystones),
                 if (g.weaponBroken) 1.0 else g.base.speed * (1 + (CoreCombatMath.safe(s.attackSpeedPercent) + .8 * g.weaponEnhancement.coerceIn(0, 30)) / 100),
-                CoreCombatMath.power(0.0, b(CoreAffixStat.HEALING_FLAT), b(CoreAffixStat.HEALING_PERCENT)), s)
+                CoreCombatMath.power(CoreCombatMath.BASE_HEALING_POWER, b(CoreAffixStat.HEALING_FLAT), b(CoreAffixStat.HEALING_PERCENT)), s)
         }
     }
 }
@@ -95,6 +97,8 @@ object CoreCombatMath {
     const val DEFENSE_CONSTANT = 300.0
     const val BASE_CRITICAL_MULTIPLIER = 1.5
     const val MAX_REDUCTION_PERCENT = 80.0
+    /** Everyone heals a little (2026-10-31): healing power starts here, and it also feeds lifesteal and health regeneration. */
+    const val BASE_HEALING_POWER = 20.0
     private const val LIMIT = 1.0e12
     fun safe(v: Double): Double = if (v.isNaN()) 0.0 else v.coerceIn(0.0, LIMIT)
     fun percent(v: Double) = safe(v).coerceAtMost(100.0) / 100
@@ -127,7 +131,21 @@ object CoreCombatMath {
     fun healing(base: Double, coefficient: Double, source: CoreCombatSheet, target: CoreAffixStats = source.mods): Double =
         safe((safe(base) + source.healingPower * safe(coefficient)) * (1 + source.mods.bonus(CoreAffixStat.OUTGOING_HEALING) / 100) *
             (1 + target.bonus(CoreAffixStat.INCOMING_HEALING) / 100))
-    fun lifeSteal(actualHealthDamage: Double, stats: CoreAffixStats, area: Boolean) =
-        safe(actualHealthDamage) * percent(stats.bonus(CoreAffixStat.LIFESTEAL)) * (if (area) .33 else 1.0)
+    fun lifeSteal(actualHealthDamage: Double, stats: CoreAffixStats, area: Boolean, healingPower: Double = 0.0) =
+        safe(actualHealthDamage) * percent(stats.bonus(CoreAffixStat.LIFESTEAL)) * (if (area) .33 else 1.0) * healingScale(healingPower)
+    /** Lifesteal and regeneration grow with healing power: +1% per point. */
+    fun healingScale(healingPower: Double) = 1 + safe(healingPower) / 100
+    /** Health back per second: 5% of healing power in combat, three times that out of combat (like mana). */
+    fun healthRegeneration(healingPower: Double, outOfCombat: Boolean) = safe(healingPower) * .05 * if (outOfCombat) 3 else 1
+    fun dot(damage: Double, s: CoreAffixStats) = safe(damage) * (1 + safe(s.bonus(CoreAffixStat.DOT_DAMAGE)).coerceAtMost(200.0) / 100)
+    fun crowdMillis(millis: Long, s: CoreAffixStats) = (millis * (1 + safe(s.bonus(CoreAffixStat.CC_DURATION)).coerceAtMost(100.0) / 100)).toLong()
+    fun breakAmount(amount: Double, s: CoreAffixStats) = safe(amount) * (1 + safe(s.bonus(CoreAffixStat.BREAK_POWER)).coerceAtMost(100.0) / 100)
+    fun dodgeTicks(base: Long, s: CoreAffixStats) = ceil(base / (1 + safe(s.bonus(CoreAffixStat.DODGE_RECOVERY)).coerceAtMost(50.0) / 100)).toLong()
+    /** INCOMING_HEALING (被回復量) on any heal the player receives. */
+    fun incomingHealing(amount: Double, s: CoreAffixStats) = safe(amount) * (1 + s.bonus(CoreAffixStat.INCOMING_HEALING) / 100)
+    /** HEAL_ON_KILL: percent of max HP back on a kill (capped at 20%). */
+    fun healOnKill(maxHealth: Double, s: CoreAffixStats) = safe(maxHealth) * safe(s.bonus(CoreAffixStat.HEAL_ON_KILL)).coerceAtMost(20.0) / 100
+    /** OVERHEAL_SHIELD: percent of the healing that did not fit becomes a shield (capped at 100%). */
+    fun overhealShield(overheal: Double, s: CoreAffixStats) = safe(overheal) * percent(s.bonus(CoreAffixStat.OVERHEAL_SHIELD))
     fun number(v: Double): String = String.format(Locale.ROOT, "%.1f", safe(v)).removeSuffix(".0")
 }

@@ -31,6 +31,17 @@ sealed interface CoreRepositorySave {
 /** Retired class id that old saves may still contain; it loads as Mage. */
 private const val RETIRED_STARWEAVER = "STARWEAVER"
 
+/** A `passive` row's ids: `12` for a node, `78.2` for mastery 78 with option 2. */
+internal fun decodePassives(text: String): Pair<Set<Int>, Map<Int, Int>> {
+    val ids = linkedSetOf<Int>(); val masteries = linkedMapOf<Int, Int>()
+    text.split(',').filter { it.isNotEmpty() }.forEach { token ->
+        val id = token.substringBefore('.').toInt()
+        require(ids.add(id)) { "パッシブが重複しています" }
+        if ('.' in token) masteries[id] = token.substringAfter('.').toInt()
+    }
+    return ids to masteries
+}
+
 /** Dedicated core-loop directory. Existing progression files are never opened or migrated. */
 class CoreAccountRepository(
     directory: Path,
@@ -295,9 +306,12 @@ internal object CoreAccountCodec {
             account.journey.savedBuilds.entries.sortedBy { it.key.ordinal }.forEach { (job, b) ->
                 append("class-loadout\t$job\t${b.first}\t${b.second}\t${b.third}\t${b.fourth}\t${b.ultimate}\t0\n")
             }
-            append("passive\t${account.journey.job}\t${account.journey.build.passives.sorted().joinToString(",")}\n")
+            // A taken mastery is written as id.choice (2026-10-31); plain ids are the v13 form and still read.
+            fun passiveRow(b: CoreClassBuild) = b.passives.sorted().joinToString(",") { id -> b.masteries[id]?.let { "$id.$it" } ?: "$id" }
+            append("passive-tree\t${CorePassiveTree.fingerprint}\n")
+            append("passive\t${account.journey.job}\t${passiveRow(account.journey.build)}\n")
             account.journey.savedBuilds.entries.sortedBy { it.key.ordinal }.forEach { (job, b) ->
-                if (b.passives.isNotEmpty()) append("passive\t$job\t${b.passives.sorted().joinToString(",")}\n")
+                if (b.passives.isNotEmpty()) append("passive\t$job\t${passiveRow(b)}\n")
             }
             (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity + account.armorParts.values.map { it.identity }).forEach { append("gear-base\t${it.id}\t${it.base}\t${it.itemLevel}\n") }
             (account.maps + listOfNotNull(account.activeRun?.map)).forEach { append("map-level\t${it.id}\t${it.level}\n") }
@@ -371,7 +385,8 @@ internal object CoreAccountCodec {
             } else if(version>=13) require(mask==0) { "旧技能ツリーの保存値が不正です" }
         }
         val savedBuilds = mutableMapOf<CoreClass, CoreClassBuild>()
-        val passives = mutableMapOf<CoreClass, Set<Int>>()
+        val passives = mutableMapOf<CoreClass, Pair<Set<Int>, Map<Int, Int>>>()
+        var passiveTree: String? = null
         // The retired Starweaver class loads as Mage; its own loadout cannot carry over.
         var retiredStarweaver = false
         val bases = linkedMapOf<UUID, Pair<CoreWeaponBase, Int>>()
@@ -389,8 +404,9 @@ internal object CoreAccountCodec {
                     savedBuilds[job] = build
                 }
             }
+            "passive-tree" -> { require(version >= 13 && row.size == 2 && passiveTree == null); passiveTree = row[1] }
             "passive" -> { require(version >= 13 && row.size == 3); val job = CoreClass.valueOf(row[1])
-                require(passives.put(job, row[2].split(',').filter { it.isNotEmpty() }.map(String::toInt).toSet()) == null) }
+                require(passives.put(job, decodePassives(row[2])) == null) }
             "journey" -> { require(version >= 8 && row.size == 6 && journey == null); retiredStarweaver = row[1] == RETIRED_STARWEAVER
                 journey = CoreJourney(if (retiredStarweaver) CoreClass.MAGE else CoreClass.valueOf(row[1]), row[2].toBooleanStrict(), row[3].toLong(), row[4].toInt(), row[5].toBooleanStrict()) }
             "gear-base" -> { require(version >= 8 && row.size == 4); require(bases.put(UUID.fromString(row[1]), CoreWeaponBase.valueOf(row[2]) to row[3].toInt()) == null) }
@@ -495,8 +511,11 @@ internal object CoreAccountCodec {
             require(existingJourney.job !in savedBuilds) { "現在の職業の構成が重複しています" }
             // 2026-10 class rework: retired skill indices are replaced on load (same columns, so no new version).
             if (version >= 13) require(existingJourney.job in passives) { "パッシブの保存項目がありません" }
+            // Allocated on another version of the tree (or before the fingerprint row existed): every point is
+            // given back, free. The ids would otherwise point at other nodes, or at nothing.
+            if (passiveTree != CorePassiveTree.fingerprint) passives.replaceAll { _, _ -> emptySet<Int>() to emptyMap() }
             require(passives.keys.all { it == existingJourney.job || it in savedBuilds }) { "パッシブの職業が構成と一致しません" }
-            fun withPassives(job: CoreClass, b: CoreClassBuild) = b.copy(passives = passives[job].orEmpty())
+            fun withPassives(job: CoreClass, b: CoreClassBuild) = passives[job]?.let { (ids, masteries) -> b.copy(passives = ids, masteries = masteries) } ?: b
             journey = existingJourney.copy(build = withPassives(existingJourney.job, CoreSkillCatalog.migrate(existingJourney.job, build)),
                 savedBuilds = savedBuilds.mapValues { (job, saved) -> withPassives(job, CoreSkillCatalog.migrate(job, saved)) })
         }

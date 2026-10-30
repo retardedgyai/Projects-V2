@@ -710,9 +710,10 @@ class CorePlayerCombatTest {
         h.actor.hurt(60.0, blow = false)
         h.combat.applyEffectDamage(h.combat.combatTargets().single().id, h.player, 296.0)
         h.actor.attack(); h.ticks(8)
-        assertEquals(47.718824, h.actor.health, .000001)
+        val stolen = h.actor.health
+        assertEquals(47.850824, stolen, .000001) // lifesteal grows with the base healing power (×1.2)
         h.ticks(80)
-        assertEquals(47.718824, h.actor.health, .000001)
+        assertEquals(stolen + 4.0, h.actor.health, .000001) // only four seconds of regeneration; the burn steals nothing
     }
 
     @Test fun `only cast speed shortens a Mage skill while physical attack speed does not`() {
@@ -1051,7 +1052,7 @@ class CorePlayerCombatTest {
         assertEquals(CoreWarriorRules.BEAST_MAX, h.actor.resource)
         val before = h.actor.health
         h.ticks(20); assertTrue(h.actor.health < before, "it burns")
-        h.actor.hurt(h.actor.health - 1.5, CoreDamageType.TRUE); h.ticks(40); assertEquals(1.0, h.actor.health, 1e-9) // never below one
+        h.actor.hurt(h.actor.health - 1.5, CoreDamageType.TRUE); h.ticks(40); assertTrue(h.actor.health in 1.0..2.0, "${h.actor.health}") // never below one; regeneration lifts it by 1/s
         h.ticks(200); assertFalse(h.actor.armored)
     }
 

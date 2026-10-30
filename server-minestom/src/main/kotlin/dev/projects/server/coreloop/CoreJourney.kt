@@ -58,9 +58,10 @@ data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boole
     val savedBuilds: Map<CoreClass, CoreClassBuild> = emptyMap()) {
     init {
         require(xp in 0..1_000_000_000L && lessons in 0..63)
-        val passiveBudget = CorePassiveTree.budget(this)
-        require(build.passives.size <= passiveBudget && CorePassiveTree.valid(job, build.passives)) { "パッシブの割り振りが不正です" }
-        require(savedBuilds.all { (saved, b) -> b.passives.size <= passiveBudget && CorePassiveTree.valid(saved, b.passives) }) { "パッシブの割り振りが不正です" }
+        // Boss bonus points live on the account (CoreAccount re-checks the exact budget); a journey allows the most there can be.
+        val passiveBudget = CorePassiveTree.budget(this) + CorePassiveTree.maxBonus
+        require(build.passives.size <= passiveBudget && CorePassiveTree.valid(job, build.passives, build.masteries)) { "パッシブの割り振りが不正です" }
+        require(savedBuilds.all { (saved, b) -> b.passives.size <= passiveBudget && CorePassiveTree.valid(saved, b.passives, b.masteries) }) { "パッシブの割り振りが不正です" }
     }
     fun changeClass(next: CoreClass) = if(next == job) copy(chosen = true) else copy(job = next, chosen = true,
         build = savedBuilds[next] ?: CoreClassBuild(), savedBuilds = (savedBuilds + (job to build)) - next)
@@ -80,7 +81,8 @@ data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boole
 }
 
 object CoreJourneyRules {
-    const val MAX_LEVEL = 40
+    /** Raised from 40 on 2026-10-31; one passive point per level (69 in all). Tiers still span 10 levels each up to T4. */
+    const val MAX_LEVEL = 70
     fun floor(tier: Int): Int { require(tier in 1..4); return (tier - 1) * 10 + 1 }
     fun ceiling(tier: Int) = floor(tier) + 9
     fun threshold(level: Int): Long { require(level in 1..MAX_LEVEL); return (1 until level).sumOf { 80L + 20L * it + 3L * it * it } }

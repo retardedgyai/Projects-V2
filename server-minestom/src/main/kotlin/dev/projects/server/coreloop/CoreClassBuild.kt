@@ -2,7 +2,9 @@ package dev.projects.server.coreloop
 
 /** Stable catalog indices: four distinct skills, one ultimate, and the shared passive tree picks ([CorePassiveTree]). */
 data class CoreClassBuild(val first: Int = 0, val second: Int = 1, val third: Int = 2, val fourth: Int = 3,
-    val ultimate: Int = 0, val passives: Set<Int> = emptySet()) {
+    val ultimate: Int = 0, val passives: Set<Int> = emptySet(),
+    /** Mastery node -> chosen option index; its keys are the masteries among [passives]. */
+    val masteries: Map<Int, Int> = emptyMap()) {
     val skills get() = listOf(first, second, third, fourth)
     init {
         require(skills.all { it in 0..7 } && skills.distinct().size == 4 && ultimate in 0..2)  // the warrior has three ultimates

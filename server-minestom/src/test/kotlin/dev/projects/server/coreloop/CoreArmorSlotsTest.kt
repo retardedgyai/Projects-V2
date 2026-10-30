@@ -112,7 +112,7 @@ class CoreArmorSlotsTest {
         val current = CoreAccountCodec.encode(account).substringBefore("checksum\t")
         val newPartIds = account.armorParts.values.map { it.identity.id.toString() }.toSet()
         val oldBody = current.lineSequence().filterNot { row ->
-            row.startsWith("armor-part\t") || row.startsWith("passive\t") ||
+            row.startsWith("armor-part\t") || row.startsWith("passive") ||
                 (row.startsWith("gear-quality\t") || row.startsWith("gear-base\t")) &&
                     row.split('\t').getOrNull(1) in newPartIds
         }.joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t13\t", "PROJECTS_CORE_LOOP\t10\t")

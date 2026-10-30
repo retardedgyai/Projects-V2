@@ -277,7 +277,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             if (event.isFirstSpawn) {
                 actors[player.uuid] = CorePlayerCombat(player, { accounts[player.uuid]?.weaponTier ?: 1 },
                     { accounts[player.uuid]?.armorTier ?: 1 }, { sessions[player.uuid]?.takeUnless { it.returning }?.combat },
-                    statSource = { accounts[player.uuid]?.let(CoreAffixCatalog::stats) ?: CoreAffixStats() },
+                    statSource = CoreAffixCatalog.cached { accounts[player.uuid] },
                     weaponEnhancement = { accounts[player.uuid]?.weaponEnhancement?.level ?: 0 },
                     armorEnhancement = { accounts[player.uuid]?.armorEnhancement?.level ?: 0 },
                     weaponBroken = { accounts[player.uuid]?.weaponBroken ?: false },
