@@ -16,4 +16,4 @@
 | [warrior-slam.md](warrior-slam.md) | 地割りの見た目（重さだけで見せる） | 「ベルセルクのガッツみたいな雰囲気」「地割りはこれでいい」 |
 | [starter-weapons.md](starter-weapons.md) | 初期武器6種の地味版・溶鉄の斧 | 「藍OK」（2026-10-17） |
 
-戦士の当たり炎（`scripts/warrior_vfx_art.py` の `hit_flame`）は正典ではない。2026-10-30 藍「よくない絵だな、OK していない」（`../ng.md`）。戦士の技の見た目の正典は、地割り（`warrior-slam.md`）と狂乱・縦振りの軌跡（`warrior-skills.md`）。
+戦士の当たり炎（`scripts/warrior_vfx_art.py` の `hit_flame`）は正典ではない。2026-10-30 藍「よくない絵だな、OK していない」（`../ng.md`）。戦士の技の見た目の正典は、地割り（`warrior-slam.md`）と狂乱・縦振りの軌跡（`warrior-skills.md`）。OK が出た計算プレビュー（GIF と静止画）は `img/` に置いた。実機の録画はまだない。
