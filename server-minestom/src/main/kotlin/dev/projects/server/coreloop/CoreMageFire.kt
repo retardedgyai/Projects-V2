@@ -49,7 +49,7 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
         light.glow(2)
         val s = chargeSprite?.takeIf { it in live }
         // it lives three ticks unless the next tick's call renews it, so a cancelled cast leaves nothing behind
-        if (s == null) chargeSprite = spawn("lick_0", LICK, hand, life = 3, frame = { "lick_${it % 3}" }) { it.at }
+        if (s == null) chargeSprite = spawn("lick_0", LICK * CHARGE, hand, life = 3, frame = { "lick_${it % 3}" }) { it.at }
         else { s.age = 0; s.at = hand; s.entity.teleport(hand) }
     }
 
@@ -71,7 +71,7 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
     /** The flight has arrived: the burst and the embers. */
     private fun arrive(f: Flight) {
         val at = f.to
-        light.show(CoreMageLight.BURST, at.add(0.0, .8, 0.0), 9, 2.4, SakuraLight.EMBER, ticks = 4)
+        light.show(CoreMageLight.BURST, at.add(0.0, .8, 0.0), 9, 2.4, SakuraLight.EMBER, ticks = 8)
         spawn("burst_0", BURST_SMALL, at, life = 1, frame = { "burst_0" }) { it.at }
         spawn("burst_1", BURST_BIG, at, life = 2, delay = 1, frame = { "burst_1" }) { it.at }
         repeat(14) { embers(at, fast = true) }
@@ -169,6 +169,8 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
             if (failure != null || owner.instance !== instance || sprite !in live) entity.remove()
             else viewers(instance, at).forEach(entity::addViewer)
         }
+        // every sprite also removes itself: if this owner stops ticking (the actor is replaced), nothing is left standing
+        entity.scheduleRemove(java.time.Duration.ofMillis(50L * (if (life == Int.MAX_VALUE) SAFETY else life + delay + 4)))
         return sprite
     }
 
@@ -191,6 +193,8 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
     companion object {
         // 16 px to a block: a sprite's scale is its canvas size over 16
         const val BALL = 18 / 16.0
+        /** The charge flame sits at the staff tip, close to the eye: drawn smaller there so it does not fill the view. */
+        const val CHARGE = .3
         const val LICK = 14 / 16.0
         const val BURST_SMALL = 24 / 16.0
         const val BURST_BIG = 40 / 16.0
@@ -201,6 +205,8 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
         /** Blocks a tick the ball flies; the sample's ball took 7 ticks for 5 blocks. */
         const val SPEED = 1.4
         const val LIMIT = 160
+        /** Ticks a sprite without its own end (a burning enemy's flames) may live at most. */
+        const val SAFETY = 200
         const val VIEW = 48.0
         fun flightTicks(distance: Double) = kotlin.math.ceil(distance / SPEED).toInt().coerceIn(2, 8)
     }

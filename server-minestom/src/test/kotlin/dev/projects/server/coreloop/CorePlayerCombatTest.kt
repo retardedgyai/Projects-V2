@@ -1334,6 +1334,12 @@ class CorePlayerCombatTest {
         h.ticks(25);assertTrue(h.combat.bossHealth()<hit,"the enemy burns after the hit")
     }
 
+    @Test fun `the frost nova casts once the fire bolt is done (vfx 1 after vfx 0)`() = arena(bossDistance=3.0) { h ->
+        h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+        h.actor.devCast(0);h.ticks(20);h.actor.devCast(1);h.ticks(40)
+        assertTrue(h.actor.cooldownRemaining(1)>0,"the frost nova was cast")
+    }
+
     @Test fun `garden deploy frees input and owns its context while firebolt earns a separate element gain`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();h.actor.skill(1);h.actor.skill(1)
         assertEquals(80,h.actor.mana)

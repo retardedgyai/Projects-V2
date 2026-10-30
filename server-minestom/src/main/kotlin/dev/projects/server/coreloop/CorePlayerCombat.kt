@@ -1035,8 +1035,10 @@ internal class CorePlayerCombat(
         if (fireAction != null) {
             // the fire bolt is a ball you see fly (CoreMageFire); its hits wait for it to arrive
             val end = origin.add(direction.mul(visibleDistance))
-            val ticks = CoreMageFire.flightTicks(staffHand().distance(end))
-            mageFire.launch(staffHand(), end, ticks)
+            // the ball appears a little ahead of the staff: at the tip it would cover the view
+            val start = staffHand().add(direction.mul(.9))
+            val ticks = CoreMageFire.flightTicks(start.distance(end))
+            mageFire.launch(start, end, ticks)
             vfx.skillCue(CoreSkillEffect(classId, fireAction.definition, origin, direction, pulse = 0, rayLength = visibleDistance, clippedRay = true))
             fireHits += FireHit(fireAction, candidates.map { it.first }, tickNumber + ticks)
             return

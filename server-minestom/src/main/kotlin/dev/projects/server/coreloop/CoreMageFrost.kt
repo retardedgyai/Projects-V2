@@ -224,6 +224,8 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
             if (failure != null || owner.instance !== instance || piece !in live) entity.remove()
             else viewers(instance, at).forEach(entity::addViewer)
         }
+        // every piece also removes itself: if this owner stops ticking (the actor is replaced), nothing is left standing
+        entity.scheduleRemove(java.time.Duration.ofMillis(50L * (if (life == Int.MAX_VALUE) SAFETY else life + delay + 4)))
         if (delay == 0) step(piece)
         return piece
     }
@@ -255,6 +257,8 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
         /** Ticks a column stands before it breaks. */
         const val STAND = 22
         const val LIMIT = 260
+        /** Ticks a piece without its own end (the ice on a frozen enemy) may live at most. */
+        const val SAFETY = 200
         const val VIEW = 48.0
     }
 }
