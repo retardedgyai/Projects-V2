@@ -18,7 +18,13 @@ layout(location = 0) in vec2 texCoord;
 layout(location = 0) out vec4 fragColor;
 
 void main() {
-    vec3 c = texture(InSampler, texCoord).rgb;
+    // the 3 x 3 pixels round this one, averaged: a one-pixel ice ring or a far flame flickers in and out of the filter
+    // as it moves over the pixel grid (the Creator 2026-10-31, "the ice still blinks"); averaged, it fades instead
+    ivec2 size = textureSize(InSampler, 0);
+    ivec2 at = ivec2(texCoord * vec2(size));
+    vec3 c = vec3(0.0);
+    for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) c += texelFetch(InSampler, clamp(at + ivec2(x, y), ivec2(0), size - 1), 0).rgb;
+    c /= 9.0;
     // only the fire's and the ice's own colours glow, never the sky, the fog, clouds, wood or sand (the effect is on
     // for the whole fight: 2026-10-28 the Creator, "a flash, like Valorant"; 10-31 "the sky and the fog glow too, it
     // hurts my eyes"). Fire: red high and well above green and blue (orange, not planks or sand). Ice: the cyan, green

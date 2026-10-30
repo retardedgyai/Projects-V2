@@ -65,8 +65,12 @@ internal class CoreMageLight(private val owner: Player) {
         val GLOW: Key = Key.key("projects", "mage_glow")
         const val MOVING = 6
         const val BURST = 7
-        /** The one strength of every mage light (of 3): enough to tint the ground round the fire and the ice. */
-        const val DIM = .8
+        /** Each light's one strength (of 3) and reach. The light leaves its first 1.5 blocks alone and fades with the
+         *  square of the distance, so .8 over 5 blocks showed nothing (2026-10-31, "the fire's light is gone"). */
+        const val FIRE = 1.6
+        const val FIRE_REACH = 7
+        const val FROST = 1.4
+        const val FROST_REACH = 9
         const val VIEW = 48.0
     }
 }

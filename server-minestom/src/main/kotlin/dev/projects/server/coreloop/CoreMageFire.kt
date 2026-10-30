@@ -85,12 +85,12 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
             // a small flame dropped where the ball was, burning out in 3 ticks: a dotted trail, never a beam
             if (f.age in 2 until f.ticks) f.sprite?.at?.let { prev -> val k = f.age
                 spawn("lick_0", LICK, prev.add(0.0, -.15, 0.0), life = 3, frame = { "lick_${(k + it) % 3}" }) { it.at } }
-            f.sprite?.at?.let { light.show(CoreMageLight.MOVING, it, 5, CoreMageLight.DIM, SakuraLight.EMBER, ticks = 4) }
+            f.sprite?.at?.let { light.show(CoreMageLight.MOVING, it, CoreMageLight.FIRE_REACH, CoreMageLight.FIRE, SakuraLight.EMBER, ticks = 4) }
             if (f.age >= f.ticks) { flights.remove(f); f.sprite?.let(::drop); arrive(f) }
         }
         for ((id, at) in burningAt) burnTick(id, at, remaining(id))
         // the burning enemy lights round itself (the moving slot, once no ball is flying)
-        if (flights.isEmpty()) burningAt.entries.firstOrNull()?.let { (_, at) -> light.show(CoreMageLight.MOVING, at.add(0.0, 1.2, 0.0), 5, CoreMageLight.DIM, SakuraLight.EMBER, ticks = 4) }
+        if (flights.isEmpty()) burningAt.entries.firstOrNull()?.let { (_, at) -> light.show(CoreMageLight.MOVING, at.add(0.0, 1.2, 0.0), CoreMageLight.FIRE_REACH, CoreMageLight.FIRE, SakuraLight.EMBER, ticks = 4) }
         burns.entries.removeAll { (_, b) -> (b.seen != tick).also { gone -> if (gone) b.flames.forEach { it?.let(::drop) } } }
         live.removeAll { s ->
             s.age++

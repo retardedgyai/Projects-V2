@@ -117,7 +117,7 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
         // the nova's cold light, one steady strength while the ice stands
         burstAt?.let { at -> burstAge++
             if (burstAge > STAND + 4) burstAt = null
-            else light.show(CoreMageLight.BURST, at, 8, CoreMageLight.DIM, SakuraLight.FROST, ticks = 4) }
+            else light.show(CoreMageLight.BURST, at, CoreMageLight.FROST_REACH, CoreMageLight.FROST, SakuraLight.FROST, ticks = 4) }
         if (frozenAt.isNotEmpty()) light.glow(2)
         for ((id, at) in frozenAt) {
             val fz = frozen.getOrPut(id) { Frozen(SPROUTS.map { (sx, y, sz, rx, rz, name) ->
@@ -160,7 +160,8 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
             set(p, scale = Vec(s, s, s), translation = Vec(0.0, s / 2, 0.0), rotation = CoreCombatMeshArt.rotation(l * .4, l * .5, 0.0)); true }
     }
 
-    /** A snowflake: a few on the strike, more when the ice breaks; they drift down, turning, and twinkle. */
+    /** A snowflake: a few on the strike, more when the ice breaks; they drift down, turning (no twinkle: a flake growing every
+     *  fourth tick read as the ice blinking, the Creator 2026-10-31). */
     private fun flake(base: Pos, late: Int) {
         val life = if (late > 3) 24 + random.nextInt(16) else 16 + random.nextInt(8)
         val y0 = if (late > 3) .5 + random.nextDouble() * 3 else .6 + random.nextDouble() * 2
@@ -170,8 +171,7 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
             val y = y0 + if (late > 3) -l * .035 else l * .05
             if (y < .05) return@sprite false
             p.entity.teleport(base.add(sin(l * .15 + sway) * .2, y, 0.0))
-            val s = (if ((p.age + sway.toInt()) % 4 == 0) 1.3 else 1.0) * 5 / 16.0
-            set(p, scale = Vec(s, s, s)); true }
+            true }
     }
 
     // ---- display entities
