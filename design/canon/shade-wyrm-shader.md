@@ -2,7 +2,7 @@
 
 - **何か**：技の見た目をパーティクルでなくシェーダーで描く部品（斬撃・輪・光線・煙・幕、発光・揺らぐ鱗粉・燃える先端・溶ける尾）と、怒りで闘技場が紫になる光、画面の光のにじみ。
 - **どこにあるか**：
-  - シェーダー：`scripts/shaders/item.fsh`（印：tint 青77＝黒翳竜、緑＝種類1..9）、`scripts/build_boss_vfx.py` がパックへ
+  - シェーダー：`scripts/shaders/item.fsh`（印：tint 青77＝黒翳竜、緑＝種類1..6。7..9 は戦士の熱斬 `war_slash` の物）、`scripts/build_boss_vfx.py` がパックへ
   - サーバー：`mob/ShadeWyrmShaderFx.kt`（技ごとに表示用エンティティを置き、毎tick進み具合を色で渡す）、`ShadeWyrmLights.kt`
   - にじみ：`scripts/shaders/post/shade_glow_*.fsh`、持ち主は `mob/PlayerPostEffects`（PR #189 でプレイヤーごとに）
   - 色付きの光（桜から始まった部品）：`scripts/shaders/post/sakura_light.fsh`、`mob/SakuraLight.kt`
