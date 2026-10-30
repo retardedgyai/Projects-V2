@@ -2,15 +2,11 @@ package dev.projects.server.coreloop
 
 import dev.projects.server.mob.SakuraLight
 import dev.projects.server.particle.dust
-import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Entity
-import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.Player
-import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
 import net.minestom.server.entity.metadata.display.ItemDisplayMeta
-import net.minestom.server.instance.Instance
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import net.minestom.server.network.packet.server.play.ParticlePacket
@@ -43,13 +39,13 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
     private var chargeSprite: Sprite? = null
     private val random = Random(0x6d61)
     private var tick = 0L
+    private val beat = CoreMageDisplay.Heartbeat()
 
     /** The cast: a flame at [hand] for as long as this is called each tick. */
     fun charge(hand: Pos) {
-        light.glow(2)
-        val s = chargeSprite?.takeIf { it in live }
+        val s = chargeSprite?.takeIf { it in live && !it.entity.isRemoved }
         // it lives three ticks unless the next tick's call renews it, so a cancelled cast leaves nothing behind
-        if (s == null) chargeSprite = spawn("lick_0", LICK * CHARGE, hand, life = 3, frame = { "lick_${it % 3}" }) { it.at }
+        if (s == null) chargeSprite = spawn("lick_0", LICK * CHARGE, hand, life = 3, renewed = true, frame = { "lick_${it % 3}" }) { it.at }
         else { s.age = 0; s.at = hand; s.entity.teleport(hand) }
     }
 
@@ -79,7 +75,7 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
 
     /** One tick of [burningAt] (each burning enemy and where it stands) and of every sprite. */
     fun tick(burningAt: Map<UUID, Pos>, remaining: (UUID) -> Long) {
-        tick++
+        tick++; beat.touch()
         for (f in flights.toList()) {
             f.age++
             // a small flame dropped where the ball was, burning out in 3 ticks: a dotted trail, never a beam
@@ -110,6 +106,7 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
             val (an, r, sc) = SPOTS[i]
             val sinkAt = 8 + i * 3
             if (left < sinkAt - 2) { b.flames[i]?.let(::drop); b.flames[i] = null; continue }
+            if (b.flames[i]?.let { it !in live || it.entity.isRemoved } == true) b.flames[i] = null
             if (b.flames[i] == null) b.flames[i] = spawn("tall_$i", TALL * sc, at, life = Int.MAX_VALUE, frame = { "tall_${(it + i) % 4}" }) { it.at }
             val f = b.flames[i] ?: continue
             val wobble = Random(id.hashCode() * 31 + i * 7 + (b.age / 3)).nextDouble(.92, 1.08)
@@ -145,45 +142,24 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
 
     private fun drop(s: Sprite) { s.entity.remove(); live.remove(s) }
 
-    private fun viewers(instance: Instance, at: Point) =
-        instance.players.filter { CoreCombatPresentation.packed(it) && it.position.distanceSquared(at) < VIEW * VIEW }
-
-    private fun spawn(model: String, scale: Double, at: Pos, life: Int, delay: Int = 0, frame: (Int) -> String, move: (Sprite) -> Pos?): Sprite? {
-        val instance = owner.instance ?: return null
-        if (live.size >= LIMIT || viewers(instance, at).isEmpty()) return null
-        val entity = Entity(EntityType.ITEM_DISPLAY)
-        entity.setHasPhysics(false); entity.setNoGravity(true); entity.setAutoViewable(false)
-        entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
-            meta.setItemStack(stack(model))
-            meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
-            meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
-            meta.setPosRotInterpolationDuration(1)
-            meta.setBrightness(15, 15); meta.setViewRange(1.0f)
-            meta.setScale(Vec(scale, scale, scale))
-            meta.setRightRotation(CoreCombatMeshArt.vanillaItemCorrection)
-        }
-        val sprite = Sprite(entity, at, life + delay, { a -> if (a < delay) "none" else frame(a - delay) }, move, age = 0)
-        live += sprite
-        entity.setInstance(instance, at).whenComplete { _, failure ->
-            if (failure != null || owner.instance !== instance || sprite !in live) entity.remove()
-            else viewers(instance, at).forEach(entity::addViewer)
-        }
-        // every sprite also removes itself: if this owner stops ticking (the actor is replaced), nothing is left standing
-        entity.scheduleRemove(java.time.Duration.ofMillis(50L * (if (life == Int.MAX_VALUE) SAFETY else life + delay + 4)))
-        return sprite
+    /** [renewed]: its age is put back each tick it is wanted (the charge flame), so it has no end of its own. */
+    private fun spawn(model: String, scale: Double, at: Pos, life: Int, delay: Int = 0, renewed: Boolean = false, frame: (Int) -> String, move: (Sprite) -> Pos?): Sprite? {
+        if (live.size >= LIMIT) return null
+        var sprite: Sprite? = null
+        val entity = CoreMageDisplay.spawn(owner, at, stack(model), scale, billboard = true,
+            life = if (life == Int.MAX_VALUE || renewed) null else life + delay, alive = { beat.fresh() && sprite in live }, wanted = { sprite in live }) ?: return null
+        return Sprite(entity, at, if (life == Int.MAX_VALUE) life else life + delay, { a -> if (a < delay) "none" else frame(a - delay) }, move, age = 0)
+            .also { sprite = it; live += it }
     }
 
-    private fun fallback(at: Pos, count: Int) {
-        val instance = owner.instance ?: return
-        val packet = ParticlePacket(dust(0xff7a2c, 1.1f), at, Vec(.3, .3, .3), 0f, count)
-        instance.players.filter { !CoreCombatPresentation.packed(it) && it.position.distanceSquared(at) < VIEW * VIEW }.forEach { it.sendPacket(packet) }
-    }
+    private fun fallback(at: Pos, count: Int) =
+        CoreMageDisplay.fallback(owner, at, ParticlePacket(dust(0xff7a2c, 1.1f), at, Vec(.3, .3, .3), 0f, count))
 
     /** The smoke stays vanilla dust for everyone: dark, small, rising. */
     private fun fallbackSmoke(at: Pos) {
         val instance = owner.instance ?: return
         val packet = ParticlePacket(dust(0x1e1616, .6f), at, Vec(.12, .05, .12), 0f, 1)
-        instance.players.filter { it.position.distanceSquared(at) < VIEW * VIEW }.forEach { it.sendPacket(packet) }
+        instance.players.filter { it.position.distanceSquared(at) < CoreMageDisplay.VIEW * CoreMageDisplay.VIEW }.forEach { it.sendPacket(packet) }
     }
 
     private fun stack(model: String) =
@@ -204,9 +180,6 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
         /** Blocks a tick the ball flies; the sample's ball took 7 ticks for 5 blocks. */
         const val SPEED = 1.4
         const val LIMIT = 160
-        /** Ticks a sprite without its own end (a burning enemy's flames) may live at most: a little past the burn (80). */
-        const val SAFETY = 100
-        const val VIEW = 48.0
         fun flightTicks(distance: Double) = kotlin.math.ceil(distance / SPEED).toInt().coerceIn(2, 8)
     }
 }

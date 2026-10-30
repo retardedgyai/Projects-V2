@@ -7,11 +7,8 @@ import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Entity
-import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.Player
-import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
 import net.minestom.server.entity.metadata.display.ItemDisplayMeta
-import net.minestom.server.instance.Instance
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import net.minestom.server.network.packet.server.play.ParticlePacket
@@ -93,7 +90,7 @@ internal class CoreMageBoltSprites(private val owner: Player) {
 
     /** After the bolt's [step]: move its sprite, leave a sparkle where it was, burst where it ended. */
     fun flew(bolt: CoreMageBolt, from: Pos, ended: Boolean, hit: Boolean) {
-        bolts[bolt]?.entity?.teleport(bolt.shown)
+        bolts[bolt]?.entity?.takeIf { !it.isRemoved }?.teleport(bolt.shown)
         if (bolt.age % 2 == 1) spawn("spark", SPARK_SCALE, from, life = 8, frames = 4)
         fallback(bolt.shown, if (hit) 8 else 1)
         if (!ended) return
@@ -113,38 +110,15 @@ internal class CoreMageBoltSprites(private val owner: Player) {
 
     fun clear() { live.forEach { it.entity.remove() }; live.clear(); bolts.clear() }
 
-    private fun viewers(instance: Instance, at: Point) =
-        instance.players.filter { CoreCombatPresentation.packed(it) && it.position.distanceSquared(at) < VIEW * VIEW }
-
     private fun spawn(kind: String, scale: Double, at: Pos, life: Int, frames: Int): Sprite? {
-        val instance = owner.instance ?: return null
-        if (live.size >= LIMIT || viewers(instance, at).isEmpty()) return null
-        val entity = Entity(EntityType.ITEM_DISPLAY)
-        entity.setHasPhysics(false); entity.setNoGravity(true); entity.setAutoViewable(false)
-        entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
-            meta.setItemStack(stack(kind, 0))
-            meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
-            meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
-            meta.setPosRotInterpolationDuration(1)
-            meta.setBrightness(15, 15); meta.setViewRange(1.0f)
-            meta.setScale(Vec(scale, scale, scale))
-            meta.setRightRotation(CoreCombatMeshArt.vanillaItemCorrection)
-        }
-        val sprite = Sprite(entity, kind, frames, life)
-        live += sprite
-        entity.setInstance(instance, at).whenComplete { _, failure ->
-            if (failure != null || owner.instance !== instance || sprite !in live) entity.remove()
-            else viewers(instance, at).forEach(entity::addViewer)
-        }
-        return sprite
+        if (live.size >= LIMIT) return null
+        var sprite: Sprite? = null
+        val entity = CoreMageDisplay.spawn(owner, at, stack(kind, 0), scale, billboard = true, life = life, alive = { true }, wanted = { sprite in live }) ?: return null
+        return Sprite(entity, kind, frames, life).also { sprite = it; live += it }
     }
 
-    private fun fallback(at: Pos, count: Int) {
-        val instance = owner.instance ?: return
-        val packet = ParticlePacket(dust(0x8f7bff, 1.2f), at, Vec(.06, .06, .06), 0f, count)
-        instance.players.filter { !CoreCombatPresentation.packed(it) && it.position.distanceSquared(at) < VIEW * VIEW }
-            .forEach { it.sendPacket(packet) }
-    }
+    private fun fallback(at: Pos, count: Int) =
+        CoreMageDisplay.fallback(owner, at, ParticlePacket(dust(0x8f7bff, 1.2f), at, Vec(.06, .06, .06), 0f, count))
 
     private fun stack(kind: String, frame: Int) =
         ItemStack.of(Material.PAPER).withItemModel("projects:combat_vfx/mage_bolt/${kind}_$frame")
@@ -154,6 +128,5 @@ internal class CoreMageBoltSprites(private val owner: Player) {
         const val SPARK_SCALE = .35
         const val BURST_SCALE = 1.6
         const val LIMIT = 40
-        const val VIEW = 48.0
     }
 }

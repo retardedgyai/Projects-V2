@@ -2,15 +2,11 @@ package dev.projects.server.coreloop
 
 import dev.projects.server.mob.SakuraLight
 import dev.projects.server.particle.dust
-import net.minestom.server.coordinate.Point
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Entity
-import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.Player
-import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
 import net.minestom.server.entity.metadata.display.ItemDisplayMeta
-import net.minestom.server.instance.Instance
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import net.minestom.server.network.packet.server.play.ParticlePacket
@@ -43,15 +39,15 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
     private val frozen = HashMap<UUID, Frozen>()
     private val random = Random(0x66726f)
     private var tick = 0L
+    private val beat = CoreMageDisplay.Heartbeat()
     private var chargePiece: Piece? = null
     private var burstAt: Pos? = null
     private var burstAge = 0
 
     /** The cast: a snowflake at [hand] for as long as this is called each tick. */
     fun charge(hand: Pos) {
-        light.glow(2)
-        val c = chargePiece?.takeIf { it in live }
-        if (c == null) chargePiece = sprite("flake", 5 / 16.0, hand, life = 3) { true }
+        val c = chargePiece?.takeIf { it in live && !it.entity.isRemoved }
+        if (c == null) chargePiece = spawn("flake", hand, life = 3, delay = 0, billboard = true, scale = 5 / 16.0, renewed = true) { true }
         else { c.age = 0; c.at = hand; c.entity.teleport(hand) }
     }
 
@@ -113,12 +109,11 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
 
     /** Ice growing out of each frozen enemy ([frozenAt]: id to where it stands). */
     fun tick(frozenAt: Map<UUID, Pos>) {
-        tick++
+        tick++; beat.touch()
         // the nova's cold light, one steady strength while the ice stands
         burstAt?.let { at -> burstAge++
             if (burstAge > STAND + 4) burstAt = null
             else light.show(CoreMageLight.BURST, at, CoreMageLight.FROST_REACH, CoreMageLight.FROST, SakuraLight.FROST, ticks = 4) }
-        if (frozenAt.isNotEmpty()) light.glow(2)
         for ((id, at) in frozenAt) {
             val fz = frozen.getOrPut(id) { Frozen(SPROUTS.map { (sx, y, sz, rx, rz, name) ->
                 val rot = CoreCombatMeshArt.rotation(0.0, rx, rz)
@@ -129,7 +124,7 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
             }, at = at) }
             // the ice is on the enemy: a chilled boss walks on, and its ice goes with it (left behind, it stood in the air)
             if (fz.at.distanceSquared(at) > 1e-4) {
-                fz.pieces.forEachIndexed { i, piece -> piece?.let { val (sx, y, sz) = SPROUTS[i]; it.at = at.add(sx, y, sz); it.entity.teleport(it.at) } }
+                fz.pieces.forEachIndexed { i, piece -> piece?.takeIf { it in live && !it.entity.isRemoved }?.let { val (sx, y, sz) = SPROUTS[i]; it.at = at.add(sx, y, sz); it.entity.teleport(it.at) } }
                 fz.at = at
             }
             fz.seen = tick; fz.age++
@@ -200,48 +195,25 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
     private fun shaped(model: String, at: Pos, life: Int, delay: Int = 0, step: (Piece) -> Boolean) =
         spawn(model, at, life, delay, billboard = false, scale = 1.0, step = step)
 
-    private fun viewers(instance: Instance, at: Point) =
-        instance.players.filter { CoreCombatPresentation.packed(it) && it.position.distanceSquared(at) < VIEW * VIEW }
-
-    private fun spawn(model: String, at: Pos, life: Int, delay: Int, billboard: Boolean, scale: Double, step: (Piece) -> Boolean): Piece? {
-        val instance = owner.instance ?: return null
-        if (live.size >= LIMIT || viewers(instance, at).isEmpty()) return null
-        val entity = Entity(EntityType.ITEM_DISPLAY)
-        entity.setHasPhysics(false); entity.setNoGravity(true); entity.setAutoViewable(false)
-        entity.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
-            meta.setItemStack(if (delay > 0) ItemStack.AIR else stack(model))
-            meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
-            if (billboard) {
-                meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
-                meta.setRightRotation(CoreCombatMeshArt.vanillaItemCorrection)
-            }
-            meta.setPosRotInterpolationDuration(1)
-            meta.setBrightness(15, 15); meta.setViewRange(1.0f)
-            meta.setScale(Vec(scale, scale, scale))
-        }
+    /** [renewed]: its age is put back each tick it is wanted (the charge flake), so it has no end of its own. */
+    private fun spawn(model: String, at: Pos, life: Int, delay: Int, billboard: Boolean, scale: Double, renewed: Boolean = false, step: (Piece) -> Boolean): Piece? {
+        if (live.size >= LIMIT) return null
+        var piece: Piece? = null
+        val entity = CoreMageDisplay.spawn(owner, at, if (delay > 0) ItemStack.AIR else stack(model), scale, billboard,
+            life = if (life == Int.MAX_VALUE || renewed) null else life + delay, alive = { beat.fresh() && piece in live }, wanted = { piece in live }) ?: return null
         // a delayed piece waits empty, then runs its own clock from zero
         var waited = 0
-        val piece = Piece(entity, at, life = life, step = { p ->
+        val p = Piece(entity, at, life = life, step = { p ->
             if (waited < delay) { waited++; p.age = 0; if (waited == delay) model(p, model); true } else step(p) })
-        piece.age = 0
-        live += piece
-        entity.setInstance(instance, at).whenComplete { _, failure ->
-            if (failure != null || owner.instance !== instance || piece !in live) entity.remove()
-            else viewers(instance, at).forEach(entity::addViewer)
-        }
-        // every piece also removes itself: if this owner stops ticking (the actor is replaced), nothing is left standing
-        entity.scheduleRemove(java.time.Duration.ofMillis(50L * (if (life == Int.MAX_VALUE) SAFETY else life + delay + 4)))
-        if (delay == 0) step(piece)
-        return piece
+        piece = p; live += p
+        if (delay == 0) step(p)
+        return p
     }
 
     private fun drop(p: Piece) { p.entity.remove(); live.remove(p) }
 
-    private fun fallback(at: Pos, count: Int, spread: Double) {
-        val instance = owner.instance ?: return
-        val packet = ParticlePacket(dust(0xc8f2ff, 1.0f), at, Vec(spread, .4, spread), 0f, count)
-        instance.players.filter { !CoreCombatPresentation.packed(it) && it.position.distanceSquared(at) < VIEW * VIEW }.forEach { it.sendPacket(packet) }
-    }
+    private fun fallback(at: Pos, count: Int, spread: Double) =
+        CoreMageDisplay.fallback(owner, at, ParticlePacket(dust(0xc8f2ff, 1.0f), at, Vec(spread, .4, spread), 0f, count))
 
     private fun stack(model: String) = ItemStack.of(Material.PAPER).withItemModel("projects:combat_vfx/mage_frost/$model")
 
@@ -262,9 +234,5 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
         /** Ticks a column stands before it breaks. */
         const val STAND = 22
         const val LIMIT = 260
-        /** Ticks a piece without its own end (the ice on a frozen enemy) may live at most: a little past the longest
-         *  freeze (a boss's chill, CoreMageField.CHILL_TICKS). */
-        const val SAFETY = 80
-        const val VIEW = 48.0
     }
 }

@@ -126,6 +126,8 @@ internal class CorePlayerCombat(
     private val lightningRunHit = mutableSetOf<UUID>()
     /** Set while a mix's own follow-up hits land, so they never set off further mixes. */
     private var mixing = false
+    /** The fire bolt's blast: its hits land their fire like the bolt's own, inside [mixing]. */
+    private var blasting = false
     private var skillBoost = 1.0
     private var lastConduitGain = -1L
     private val lessonAttempts = mutableMapOf<Int, Long>()
@@ -291,7 +293,7 @@ internal class CorePlayerCombat(
         }
         if (classId == CoreClass.MAGE) castDefinition = mageCast(id, castDefinition)
         val startup = castDefinition.startupTicks(sheet)
-        pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
+        pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(castDefinition, encounter()!!) else player.position,
             if (definition.motion == CoreSkillMotion.RAY) player.position.direction() else flatFacing(), startup,
             empowered = beastSpent.toDouble(), counter = counter, boost = skillBoost,
             gardenCells = gardenCells, breakAmount = breakAmount)
@@ -852,14 +854,18 @@ internal class CorePlayerCombat(
             val info = enemies.mobInfo(id)
             if (classId == CoreClass.ASSASSIN && build.keystone == 0 && info != null && info.health / info.maximumHealth <= .35) classMultiplier *= 1.4
         }
-        val mageMixes = if (classId == CoreClass.MAGE && definition != null && !mixing) mageLand(enemies, id, position, definition, skillAction) else emptySet()
-        if (MageReaction.SHATTER in mageMixes) classMultiplier *= mageField.shatterMultiplier(enemies.isBoss(id))
+        // the spell's elements land only once the hit is taken (a sealed boss, an invulnerable enemy keep no state);
+        // whether it shatters is read first, for the damage
+        val mageLands = classId == CoreClass.MAGE && definition != null && (!mixing || blasting)
+        if (mageLands && MageElement.FIRE in mageElements(definition!!, skillAction) && mageField.isFrozen(id, tickNumber))
+            classMultiplier *= mageField.shatterMultiplier(enemies.isBoss(id))
         val damage = CoreCombatMath.outgoing(baseDamage, type, tags, stats, critical) *
             (if (skill) skillAction!!.boost else 1.0) * classMultiplier * (if (tickNumber < whetstoneUntil) 1.2 else 1.0) * (if (weak) 1.25 else 1.0)
         val applied = (if (fieldOrigin != null) enemies.applyCalculatedFieldDamage(id, player, fieldOrigin, damage, type, stats)
             else enemies.applyCalculatedDamage(id, player, damage, type, stats,
                 projectile = !classId.melee || definition?.motion == CoreSkillMotion.RAY || definition?.motion == CoreSkillMotion.FIELD || (definition?.radius ?: 0.0) > 7.0)) ?: return
         accepted?.invoke()
+        val mageMixes = if (mageLands) mageLand(enemies, id, position, definition!!, skillAction) else emptySet()
         val weakSpot = enemies.takeWeakSpot(player)
         if (weakSpot) sound(SoundEvent.ENTITY_PLAYER_ATTACK_CRIT, .7f, 1.25f)
         val lesson = if (skill) 1 else 0
@@ -940,7 +946,7 @@ internal class CorePlayerCombat(
         } else {
             sound(if (classId == CoreClass.RANGER) SoundEvent.ENTITY_ARROW_HIT else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .4f, 1.4f)
             // The mage's bolt draws its own burst where it lands (CoreMageBoltSprites).
-            if (classId != CoreClass.MAGE) vfx.particles(if (classId == CoreClass.MAGE) Particle.FLAME else Particle.END_ROD, position.add(0.0, 1.0, 0.0), 6, Vec(.2, .3, .2), .03f)
+            if (classId != CoreClass.MAGE) vfx.particles(Particle.END_ROD, position.add(0.0, 1.0, 0.0), 6, Vec(.2, .3, .2), .03f)
         }
         showDamage(id, position, applied, critical, type, if (weak) enemies.weaknessOf(id) else null, weakSpot)
         if (stats.fireFlat > 0 && enemies.isAlive(id)) {
@@ -1316,7 +1322,7 @@ internal class CorePlayerCombat(
         garden = null
         bolts.clear(); boltSprites.clear(); mageFire.clear(); fireHits.clear(); mageFrost.clear(); mageLight.clear()
         sigils.clear(); mageField.clear(); echoes.clear(); echoUntil = -1; peakUntil = -1; peakElement = null
-        lightningRun = null; lightningRunHit.clear(); mixing = false
+        lightningRun = null; lightningRunHit.clear(); mixing = false; blasting = false
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
         queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0
@@ -1493,14 +1499,7 @@ internal class CorePlayerCombat(
 
     /** A mage spell lands on [id]: its element (and what the wind carried, and 極み's fire) meets what is there. */
     private fun mageLand(enemies: QuestEncounterCombat, id: UUID, at: Pos, s: CoreSkillDefinition, action: PendingSkill?): Set<MageReaction> {
-        if (s.retired) return emptySet()  // the old 氷の庭, still castable from old test builds, keeps its own rules
-        val own = CoreMageRules.element(s)
-        val mixedGrand = action?.id == CoreMageRules.GRAND && own == null && s.pulses >= CoreMageSigils.MAX
-        val elements = buildList {
-            if (mixedGrand) addAll(listOf(MageElement.FIRE, MageElement.ICE, MageElement.LIGHTNING)) else own?.takeIf { it != MageElement.WIND }?.let(::add)
-            carried?.takeIf { it.first === action }?.second?.let(::add)
-            if (tickNumber < peakUntil && peakElement == MageElement.FIRE && MageElement.FIRE !in this) add(0, MageElement.FIRE)
-        }
+        val elements = mageElements(s, action)
         val boss = enemies.isBoss(id)
         val out = mutableSetOf<MageReaction>()
         for (e in elements) {
@@ -1515,6 +1514,18 @@ internal class CorePlayerCombat(
         return out
     }
 
+    /** The elements a mage spell puts on what it hits: its own, what the wind carried, and 極み's fire. */
+    private fun mageElements(s: CoreSkillDefinition, action: PendingSkill?): List<MageElement> {
+        if (s.retired) return emptyList()  // the old 氷の庭, still castable from old test builds, keeps its own rules
+        val own = CoreMageRules.element(s)
+        val mixedGrand = action?.id == CoreMageRules.GRAND && own == null && s.pulses >= CoreMageSigils.MAX
+        return buildList {
+            if (mixedGrand) addAll(listOf(MageElement.FIRE, MageElement.ICE, MageElement.LIGHTNING)) else own?.takeIf { it != MageElement.WIND }?.let(::add)
+            carried?.takeIf { it.first === action }?.second?.let(::add)
+            if (tickNumber < peakUntil && peakElement == MageElement.FIRE && MageElement.FIRE !in this) add(0, MageElement.FIRE)
+        }
+    }
+
     /** The follow-ups of a mage hit: the fireball's blast, the lightning's jumps, and the mixes it set off. */
     private fun mageAfterHit(enemies: QuestEncounterCombat, id: UUID, at: Pos, s: CoreSkillDefinition, mixes: Set<MageReaction>, action: PendingSkill?) {
         action ?: return
@@ -1524,7 +1535,11 @@ internal class CorePlayerCombat(
         mixing = true
         try {
             if (s.icon == "firebolt") {
-                for (t in others(at, s.radius)) { hit(enemies, t.id, .6, true, skillAction = action, contact = false); if (!actionsValid(enemies, epoch)) return }
+                // the blast burns (and shatters) everything it reaches, as its description says; only the follow-ups
+                // of those hits stay off, so a blast never sets off another
+                blasting = true
+                try { for (t in others(at, s.radius)) { hit(enemies, t.id, .6, true, skillAction = action, contact = false); if (!actionsValid(enemies, epoch)) return } }
+                finally { blasting = false }
             }
             if (s.icon == "mage_mark") {
                 // 落雷: jumps to the nearest enemy not struck yet.
@@ -1599,7 +1614,7 @@ internal class CorePlayerCombat(
         val epoch = actionEpoch
         val s = e.definition
         val action = PendingSkill(-1, s, e.origin, e.direction, 0, boost = CoreMageRules.ECHO_POWER)
-        vfx.playSkill(CoreSkillEffect(classId, s, e.origin, e.direction))
+        CoreSkillEffect(classId, s, e.origin, e.direction).let { if (s.icon in OWN_PICTURE) vfx.skillCue(it) else vfx.playSkill(it) }
         sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .7f, .6f)
         val targets = when (s.motion) {
             CoreSkillMotion.RAY -> enemies.combatTargets().mapNotNull { t ->
@@ -1608,6 +1623,16 @@ internal class CorePlayerCombat(
             }.minByOrNull { it.second }?.let { listOf(it.first) } ?: emptyList()
             CoreSkillMotion.CONE -> enemies.combatTargets().filter { greatswordInRange(e.origin, e.direction, it, s.radius, CoreCombatFeel.minDot(s.icon)) }
             else -> enemies.combatTargets().filter { it.position.distance(e.origin) <= s.radius }
+        }
+        // the fire bolt and the frost nova draw their own picture again; the echoed bolt's hit waits for its ball too
+        if (s.icon == "frost_nova") mageFrost.nova(e.origin, e.direction)
+        if (s.icon == "firebolt") {
+            val start = e.origin.add(0.0, 1.4, 0.0)
+            val end = targets.firstOrNull()?.let { enemies.positionOf(it.id)?.add(0.0, 1.0, 0.0) } ?: start.add(e.direction.mul(s.range))
+            val ticks = CoreMageFire.flightTicks(start.distance(end))
+            mageFire.launch(start, end, ticks)
+            fireHits += FireHit(action, targets.map { it.id }, tickNumber + ticks)
+            return
         }
         for (t in targets) { hit(enemies, t.id, 1.0, true, skillAction = action); if (!actionsValid(enemies, epoch)) return }
     }
