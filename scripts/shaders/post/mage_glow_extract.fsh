@@ -19,9 +19,11 @@ layout(location = 0) out vec4 fragColor;
 
 void main() {
     vec3 c = texture(InSampler, texCoord).rgb;
-    // only clearly coloured pixels glow: white clouds, the sky and pale blocks stay out (the effect is on for the
-    // whole fight, so it must never light the scene by itself; 2026-10-28 the Creator: "a flash, like Valorant")
-    float warm = smoothstep(Threshold + .05, Threshold + .3, c.r) * smoothstep(.28, .5, c.r - c.b);
-    float cold = smoothstep(.7, .9, c.b) * smoothstep(.16, .32, c.b - c.r) * smoothstep(.6, .8, c.g);
+    // only the fire's and the ice's own colours glow, never the sky, the fog, clouds, wood or sand (the effect is on
+    // for the whole fight: 2026-10-28 the Creator, "a flash, like Valorant"; 10-31 "the sky and the fog glow too, it
+    // hurts my eyes"). Fire: red high and well above green and blue (orange, not planks or sand). Ice: the cyan, green
+    // as high as blue and red low (the sky and the fog are bluer than green, so they stay out).
+    float warm = smoothstep(Threshold + .1, Threshold + .3, c.r) * smoothstep(.25, .4, c.r - c.g) * smoothstep(.4, .6, c.r - c.b);
+    float cold = smoothstep(.8, .92, c.g) * smoothstep(-.06, -.01, c.g - c.b) * (1.0 - smoothstep(.4, .55, c.r));
     fragColor = vec4(c * max(warm, cold) * Strength, 1.0);
 }

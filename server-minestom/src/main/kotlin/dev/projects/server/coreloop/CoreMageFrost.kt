@@ -37,7 +37,7 @@ import kotlin.random.Random
  */
 internal class CoreMageFrost(private val owner: Player, private val light: CoreMageLight) {
     private class Piece(val entity: Entity, var at: Pos, var age: Int = 0, val life: Int, val step: (Piece) -> Boolean)
-    private class Frozen(val pieces: List<Piece?>, var age: Int = 0, var seen: Long = 0, val at: Pos)
+    private class Frozen(val pieces: List<Piece?>, var age: Int = 0, var seen: Long = 0, var at: Pos)
 
     private val live = mutableListOf<Piece>()
     private val frozen = HashMap<UUID, Frozen>()
@@ -114,10 +114,10 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
     /** Ice growing out of each frozen enemy ([frozenAt]: id to where it stands). */
     fun tick(frozenAt: Map<UUID, Pos>) {
         tick++
-        // the nova's cold light: bright for the strike, then steady while the ice stands
+        // the nova's cold light, one steady strength while the ice stands
         burstAt?.let { at -> burstAge++
             if (burstAge > STAND + 4) burstAt = null
-            else light.show(CoreMageLight.BURST, at, if (burstAge < 6) 10 else 7, if (burstAge < 6) 2.2 else 1.3, SakuraLight.FROST) }
+            else light.show(CoreMageLight.BURST, at, 8, CoreMageLight.DIM, SakuraLight.FROST, ticks = 4) }
         if (frozenAt.isNotEmpty()) light.glow(2)
         for ((id, at) in frozenAt) {
             val fz = frozen.getOrPut(id) { Frozen(SPROUTS.map { (sx, y, sz, rx, rz, name) ->
@@ -127,6 +127,11 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
                     model(p, "sprout_${name}_${(p.age + 1).coerceAtMost(stages)}")
                     set(p, translation = pivot(rot, -.5), rotation = rot); true }
             }, at = at) }
+            // the ice is on the enemy: a chilled boss walks on, and its ice goes with it (left behind, it stood in the air)
+            if (fz.at.distanceSquared(at) > 1e-4) {
+                fz.pieces.forEachIndexed { i, piece -> piece?.let { val (sx, y, sz) = SPROUTS[i]; it.at = at.add(sx, y, sz); it.entity.teleport(it.at) } }
+                fz.at = at
+            }
             fz.seen = tick; fz.age++
             if (fz.age % 6 == 0) fallback(at.add(0.0, 1.0, 0.0), 2, .3)
         }
@@ -257,8 +262,9 @@ internal class CoreMageFrost(private val owner: Player, private val light: CoreM
         /** Ticks a column stands before it breaks. */
         const val STAND = 22
         const val LIMIT = 260
-        /** Ticks a piece without its own end (the ice on a frozen enemy) may live at most. */
-        const val SAFETY = 200
+        /** Ticks a piece without its own end (the ice on a frozen enemy) may live at most: a little past the longest
+         *  freeze (a boss's chill, CoreMageField.CHILL_TICKS). */
+        const val SAFETY = 80
         const val VIEW = 48.0
     }
 }

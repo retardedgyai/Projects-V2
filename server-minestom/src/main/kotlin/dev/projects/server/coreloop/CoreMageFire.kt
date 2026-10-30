@@ -71,7 +71,6 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
     /** The flight has arrived: the burst and the embers. */
     private fun arrive(f: Flight) {
         val at = f.to
-        light.show(CoreMageLight.BURST, at.add(0.0, .8, 0.0), 9, 2.4, SakuraLight.EMBER, ticks = 8)
         spawn("burst_0", BURST_SMALL, at, life = 1, frame = { "burst_0" }) { it.at }
         spawn("burst_1", BURST_BIG, at, life = 2, delay = 1, frame = { "burst_1" }) { it.at }
         repeat(14) { embers(at, fast = true) }
@@ -86,12 +85,12 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
             // a small flame dropped where the ball was, burning out in 3 ticks: a dotted trail, never a beam
             if (f.age in 2 until f.ticks) f.sprite?.at?.let { prev -> val k = f.age
                 spawn("lick_0", LICK, prev.add(0.0, -.15, 0.0), life = 3, frame = { "lick_${(k + it) % 3}" }) { it.at } }
-            f.sprite?.at?.let { light.show(CoreMageLight.MOVING, it, 5, 1.4, SakuraLight.EMBER) }
+            f.sprite?.at?.let { light.show(CoreMageLight.MOVING, it, 5, CoreMageLight.DIM, SakuraLight.EMBER, ticks = 4) }
             if (f.age >= f.ticks) { flights.remove(f); f.sprite?.let(::drop); arrive(f) }
         }
         for ((id, at) in burningAt) burnTick(id, at, remaining(id))
         // the burning enemy lights round itself (the moving slot, once no ball is flying)
-        if (flights.isEmpty()) burningAt.entries.firstOrNull()?.let { (_, at) -> light.show(CoreMageLight.MOVING, at.add(0.0, 1.2, 0.0), 4, 1.2, SakuraLight.EMBER) }
+        if (flights.isEmpty()) burningAt.entries.firstOrNull()?.let { (_, at) -> light.show(CoreMageLight.MOVING, at.add(0.0, 1.2, 0.0), 5, CoreMageLight.DIM, SakuraLight.EMBER, ticks = 4) }
         burns.entries.removeAll { (_, b) -> (b.seen != tick).also { gone -> if (gone) b.flames.forEach { it?.let(::drop) } } }
         live.removeAll { s ->
             s.age++
@@ -205,8 +204,8 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
         /** Blocks a tick the ball flies; the sample's ball took 7 ticks for 5 blocks. */
         const val SPEED = 1.4
         const val LIMIT = 160
-        /** Ticks a sprite without its own end (a burning enemy's flames) may live at most. */
-        const val SAFETY = 200
+        /** Ticks a sprite without its own end (a burning enemy's flames) may live at most: a little past the burn (80). */
+        const val SAFETY = 100
         const val VIEW = 48.0
         fun flightTicks(distance: Double) = kotlin.math.ceil(distance / SPEED).toInt().coerceIn(2, 8)
     }
