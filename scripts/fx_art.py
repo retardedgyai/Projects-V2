@@ -2,9 +2,10 @@
 
 Why this exists: the mage fire bolt took 21 sample versions, and the first seven each looked like a different
 author's work because each one swapped the whole way of drawing (three.js boxes, a lava cube, smoke balls, a
-Gorebound copy, a boss claw ...). Meanwhile the approved look already existed in three places that agree with each
-other: scripts/warrior_vfx_art.py (hand-placed flat tones), the sakura / shade shader pieces, and the fire bolt's
-version 21. This module is that look, so a first draft comes out in it without anyone re-deciding it:
+Gorebound copy, a boss claw ...). Meanwhile the approved look already existed in two places that agree with each
+other: the sakura / shade shader pieces and the fire bolt's version 21 (the warrior's hit flame in
+scripts/warrior_vfx_art.py is NOT approved: 2026-10-30 藍「よくない絵だな、OK していない」, design/ng.md). This
+module is that look, so a first draft comes out in it without anyone re-deciding it:
 
   - 16 px to a block, and a sprite is shown at exactly that size. A bigger state is a bigger drawing, never a
     stretched one.
@@ -16,13 +17,14 @@ version 21. This module is that look, so a first draft comes out in it without a
   - Things appear whole and leave by breaking apart or sinking, never by fading or shrinking (the timing lives in
     the Kotlin, but the drawings come in frames that do that).
 
-The drawings of the fire bolt (sample version 21, 藍「この燃え方で火炎弾を決める」) are kept here as the reference
-set, so a new element's first look is `samples(RAMPS['frost'])`.
+The drawings of the fire bolt (sample version 21, 藍「この燃え方で火炎弾を決める」) are the reference set, so a new
+element's first look is `samples(RAMPS['frost'])`. They live in ONE place, scripts/build_mage_fire.py (PR #189), and
+are imported from there, so a fix to the bolt's tail reaches every element's first draft; until #189 is merged the
+helpers `smear` / `upright` / `burst` and `samples()` are unavailable here (RAMPS, check, cool, art, canvas work).
 
     python3 scripts/fx_art.py --sheet .tools/fx/style-kit.png    # the reference set in every ramp, with the glow
     python3 scripts/fx_art.py --check path/to/sprite.png ...     # is this sprite in the style?
 """
-import math
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageFilter
@@ -33,7 +35,8 @@ TONES = 'kroypw'       # edge -> core: dark, red, orange, yellow, pale, white
 EMPTY = '.'
 
 # One ramp per element, dark edge to white-hot core. fire = the fire bolt's own palette; iron = the warrior's
-# (warrior_vfx_art.py: outline, deep red, red, orange, cream, white core); sakura and shade = the item shader's
+# hit flame (warrior_vfx_art.py: outline, deep red, red, orange, cream, white core -- NOT approved by the Creator,
+# so iron is unconfirmed until a warrior effect is); sakura and shade = the item shader's
 # sakuraRamp / ramp sampled at six steps; frost, lightning, wind = the mage rework's element colours
 # (氷=水色, 雷=黄, 風=薄い緑) in the same edge-to-core shape.
 RAMPS = {
@@ -51,26 +54,16 @@ EMBER_STEPS = ('w', 'y', 'o', 'r', 'k')
 
 
 # ---------------------------------------------------------------- drawing helpers (text rows, one letter per pixel)
-def smear(right, left, length):
-    """A smeared flame pointing right: rows of bars with hand-set front (right) and tail (left) ends. White in the
-    middle rows near the front, then pale, yellow, orange, red toward the ragged tail (Demon Reaper's jets)."""
-    height = len(right); mid = (height - 1) / 2; rows = []
-    for y in range(height):
-        row = ''
-        for x in range(length):
-            if x > right[y] or x < left[y]:
-                row += EMPTY; continue
-            d = right[y] - x; c = abs(y - mid)
-            row += ('r' if x <= left[y] + 1 else 'o' if d == 0 and c > 2.5 else 'w' if c <= 1.5 and 2 <= d <= 12 else
-                    'p' if c <= 2.5 and 1 <= d <= 16 else 'y' if c <= 3.5 and d <= 20 else 'o' if d <= 25 else 'r')
-        rows.append(row)
-    return rows
+# smear (a smeared flame pointing right), upright (turned so the front is the top) and burst (a white heart with
+# tapered rays) are the fire bolt's own, in scripts/build_mage_fire.py (PR #189): one copy, imported, never repeated.
+try:
+    from build_mage_fire import smear, upright, burst
+    HAS_FIRE = True
+except ImportError:
+    smear = upright = burst = None
+    HAS_FIRE = False
 
-
-def upright(rows):
-    """Turned a quarter so the front (right) becomes the top: a standing flame."""
-    h, w = len(rows), len(rows[0])
-    return [''.join(rows[y][x] for y in range(h)) for x in range(w - 1, -1, -1)]
+NEEDS_FIRE = 'scripts/build_mage_fire.py (PR #189) is not here: the reference drawings and smear/upright/burst come from it'
 
 
 def mirror(rows):
@@ -81,29 +74,6 @@ def cool(rows, steps=1):
     """The same drawing one step cooler (white gone, edges darker): how a flame ages before it goes out."""
     for _ in range(steps):
         rows = [''.join(EMPTY if ch == EMPTY else TONES[max(0, TONES.index(ch) - 1)] for ch in row) for row in rows]
-    return rows
-
-
-def burst(n, rays):
-    """A hit: a white heart with tapered rays, (angle, length, width) each, in an n x n drawing."""
-    c = (n - 1) / 2; rows = []
-    for y in range(n):
-        row = ''
-        for x in range(n):
-            dx, dy = x - c, y - c; r = math.hypot(dx, dy); ch = EMPTY
-            if r < n * .14:
-                ch = 'w' if r < n * .08 else 'p'
-            else:
-                for a, length, w in rays:
-                    u = dx * math.cos(a) + dy * math.sin(a); v = abs(-dx * math.sin(a) + dy * math.cos(a))
-                    if u < 0 or u > length or v > w * (1 - u / length) + .5:
-                        continue
-                    f = u / length
-                    k = 'w' if f < .25 else 'p' if f < .45 else 'y' if f < .65 else 'o' if f < .85 else 'r'
-                    if ch == EMPTY or TONES.index(k) > TONES.index(ch):
-                        ch = k
-            row += ch
-        rows.append(row)
     return rows
 
 
@@ -135,31 +105,26 @@ def pixel(ramp, tone):
 
 
 # ---------------------------------------------------------------- the reference set: the fire bolt's drawings
-BALL_HEAD = ['......r..r......', '....rroorr.r....', '...royyyoorr....', '..royppppyor.r..', '.roypwwwwpyorr..', 'rroypwwwwwpyor..',
-             '.oyppwwwwwppyor.', 'royypwwwwppyyorr', '.oyyppppppyyyor.', '.royyyyyyyyyork.']
-BALL_TAILS = [
-    ['..ooyoyyyoyoor..', '.r.royoroyooor..', '...ro.or.oroor..', '..r..or..r.or...', '.....r....r.....', '....k.....r..k..', '.......k........', '................'],
-    ['.rooyyoyoyyoo...', '..roorooyorr.r..', '..oro.ro.or.r...', '...r.or..ror....', '..k...r...r.....', '.......r.....k..', '....k...........', '..........k.....'],
-    ['..oroyyoyyoor.r.', '.rroyoroyoorr...', '..r.ror.oor.r...', '.r..or..r..or...', '....r...k..r....', '..k.........k...', '........r.......', '.....k..........']]
-BALL = [BALL_HEAD + tail for tail in BALL_TAILS]                                  # the bolt, 16 x 18, three in turn
-LICK = [upright(smear(R, [2, 1, 0, 0, 1, 0, 2, 3], 14)) for R in                 # a small flame, 8 x 14
-        ([6, 9, 12, 13, 13, 11, 8, 5], [5, 10, 11, 13, 12, 12, 9, 6], [7, 8, 12, 12, 13, 10, 9, 4])]
-TALL = [upright(smear(R, L, 26)) for R, L in (                                   # the standing flames, 10 x 26
-    ([14, 19, 23, 25, 24, 25, 22, 18, 15, 10], [9, 4, 2, 0, 1, 0, 3, 5, 8, 11]),
-    ([12, 17, 21, 24, 25, 23, 25, 20, 16, 11], [8, 5, 1, 2, 0, 1, 0, 4, 7, 10]),
-    ([15, 18, 22, 25, 23, 24, 21, 19, 13, 9], [10, 6, 3, 0, 2, 0, 2, 6, 9, 12]),
-    ([10, 16, 19, 22, 23, 21, 18, 14, 11, 7], [7, 4, 1, 0, 1, 0, 3, 5, 8, 10]))]
-BURST = [burst(24, [(0, 11, 2), (.8, 8, 1.5), (1.6, 10, 2), (2.4, 7, 1.5), (3.1, 11, 2), (3.9, 8, 1.5), (4.7, 10, 2), (5.5, 7, 1.5)]),
-         burst(40, [(.2, 19, 3), (1, 13, 2), (1.8, 18, 3), (2.6, 12, 2), (3.3, 19, 3), (4.1, 13, 2), (4.9, 17, 3), (5.7, 12, 2)])]
+def reference():
+    """The fire bolt's drawings as text rows, name -> rows, read from scripts/build_mage_fire.py (the one copy):
+    ball_0..2 (16 x 18), lick_0..2 (8 x 14, standing), burst_0/1 (24, 40), tall_0..3 (10 x 26, standing)."""
+    if not HAS_FIRE:
+        raise ImportError(NEEDS_FIRE)
+    import build_mage_fire as fire
+    out = {f'ball_{k}': fire.BALL_HEAD + tail for k, tail in enumerate(fire.BALL_TAIL)}
+    out.update({f'lick_{k}': rows for k, rows in enumerate(fire.LICK)})
+    out.update({f'burst_{k}': rows for k, rows in enumerate(fire.BURST)})
+    out.update({f'tall_{k}': rows for k, rows in enumerate(fire.TALL)})
+    return out
 
 
 def samples(ramp):
     """The fire bolt's sprite set in the given ramp: name -> image. `samples(RAMPS['frost'])` is the first draft of
-    a frost bolt; the sprite names and canvases match scripts/build_mage_fire.py so the Kotlin needs no change."""
-    out = {f'ball_{k}': canvas(r, ramp) for k, r in enumerate(BALL)}
-    out.update({f'lick_{k}': canvas(r, ramp, standing=True) for k, r in enumerate(LICK)})
-    out.update({f'burst_{k}': canvas(r, ramp) for k, r in enumerate(BURST)})
-    out.update({f'tall_{k}': canvas(r, ramp, standing=True) for k, r in enumerate(TALL)})
+    a frost bolt; the sprite names and canvases match build_mage_fire.sprites() so the Kotlin needs no change. The
+    one difference: the embers here are the ramp's own `w y o r k`, where the fire bolt uses five hand-picked colours."""
+    out = {}
+    for name, rows in reference().items():
+        out[name] = canvas(rows, ramp, standing=name.startswith(('lick', 'tall')))
     out.update({f'ember_{k}': pixel(ramp, tone) for k, tone in enumerate(EMBER_STEPS)})
     return out
 
@@ -167,7 +132,11 @@ def samples(ramp):
 # ---------------------------------------------------------------- the style check
 def check(img, ramp=None):
     """Why this sprite is not in the house style: a list of problems, empty when it is. With no ramp given, the
-    sprite must sit entirely in one of RAMPS."""
+    sprite must sit entirely in one of RAMPS.
+
+    What it sees: the size (<= MAX_SIDE), alpha 0 / 255 only, every colour in one ramp, more than one flat colour.
+    What it does NOT see (the Creator's eye does): 16 px to a block and no stretching (that is how the sprite is
+    shown, not what is in it), the edge -> core order of the tones, a ramp laid out as a stripe gradient."""
     problems = []
     img = img.convert('RGBA')
     w, h = img.size
@@ -237,6 +206,8 @@ if __name__ == '__main__':
         sheet([(name, samples(ramp)) for name, ramp in RAMPS.items()], out)
         print(out)
     elif args[:1] == ['--check']:
+        if not args[1:]:                       # an empty glob must not look like "all ok"
+            print('usage: fx_art.py --check path/to/sprite.png ...'); sys.exit(2)
         bad = 0
         for path in args[1:]:
             problems = check(Image.open(path))

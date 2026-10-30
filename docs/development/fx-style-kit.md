@@ -8,8 +8,9 @@
 （three.js の箱を回す → 溶岩の箱 → ドット絵の煙玉 → Gorebound 風 → ボスの爪の炎）ので、毎回別の作者の作品に見えた。
 第8版（ドット絵＋光）で初めて「すごくいい」が出て、以後は作り方を変えずに詰めたので作風は揺れていない。
 
-一方で、藍の OK が出た作風はすでに repo の3か所にあり、互いに一致していた：
-`scripts/warrior_vfx_art.py`（手で点を置く平塗り）、黒翳竜・桜牙獣のシェーダー部品、火炎弾の第21版。
+一方で、藍の OK が出た作風はすでに repo の2か所にあり、互いに一致していた：
+黒翳竜・桜牙獣のシェーダー部品、火炎弾の第21版。
+（`scripts/warrior_vfx_art.py` の当たり炎は OK 済みではない。2026-10-30 藍「よくない絵だな、OK していない」、`design/ng.md`。下の「未確認」に。）
 この型はその作風をコードにしたもので、**1版目から同じ作風で出る**ことだけを保証する。
 形や動きの好み（火の床はいらない、光の玉はダメ）は保証しない。そこは往復が残る。
 
@@ -23,26 +24,43 @@
   新しい形を描くのは、藍が「方向を変えたい」と言ったときだけ。
 - 出るときは一度に全部出て、消えるときは割れる・沈む・1本ずつ消える。薄くなる・縮むはしない（時間は Kotlin 側、絵はそのコマを持つ）。
 
+### `check()` が見るもの / 見ないもの
+
+`check(img, ramp)` が調べるのは、一辺 64 ドット以内・alpha が 0/255 だけ・色が一つの帯の中・平たい1色でない、の4つだけ。
+「16ドット/ブロックで伸ばさない」（出し方の話で絵の中にはない）、「縁→芯の段の順」、「帯の6色を並べただけの縞のグラデーション」は
+**見ない**。そこは藍の目。check が空でも作風の中とは限らない。
+
+## 今できていること / これからの決まり
+
+**今できていること**：`fx_art.py` の帯・check・色替え、`test_fx_art.py`（手で回す。CI の `build.yml` は gradle だけで、python のテストは回さない）。
+手本の絵（火炎弾 第21版）と `smear` / `upright` / `burst` は **PR #189 の `scripts/build_mage_fire.py` が唯一の正**で、
+`fx_art` はそこから import する。#189 が main に入るまでは `samples()` と `reference()` は使えず（ImportError）、テストもその分は skip になる。
+`fx_art` を import する `build_*.py` はまだ一つもなく、型はどこにも強制されていない。
+
+**これからの決まり**：新しい技の絵を作る `build_*.py` は `from fx_art import RAMPS, art, canvas, smear, upright, cool, burst, check` を使い、
+出す前に `check(img, ramp)` が空であることをテストに入れる。手本の一式は `fx_art.samples(ramp)` にあり、
+名前と枠は `build_mage_fire.py` と同じなので、Kotlin 側を変えずに帯だけ替えて試せる。
+
 ## 使い方
 
 ```bash
-python3 scripts/fx_art.py --sheet .tools/fx/style-kit.png   # 手本の一式を全部の帯で、光のにじみつき
-python3 scripts/fx_art.py --check path/to/sprite.png ...    # その絵は作風の中か（理由を出す）
+python3 scripts/fx_art.py --sheet .tools/fx/style-kit.png   # 手本の一式を全部の帯で、光のにじみつき（#189 の後）
+python3 scripts/fx_art.py --check path/to/sprite.png ...    # その絵は作風の中か（理由を出す。パスなしは exit 2）
 python3 -m unittest discover -s scripts -p 'test_fx_art.py'
 ```
-
-新しい技の絵を作る `build_*.py` は `from fx_art import RAMPS, art, canvas, smear, upright, cool, burst, check` を使い、
-出す前に `check(img, ramp)` が空であることをテストに入れる。手本の一式（火炎弾の絵）は `fx_art.samples(ramp)` にあり、
-名前と枠は `build_mage_fire.py`（PR #189）と同じなので、Kotlin 側を変えずに帯だけ替えて試せる。
 
 見本（全部の帯で同じ絵）：[assets/combat-vfx/style-kit-v1.png](../../assets/combat-vfx/style-kit-v1.png)
 
 ## 型に通して分かったこと（2026-10-28）
 
-- 戦士の当たり炎（`warrior_vfx_art.hit_flame` 4コマ）は iron の帯にそのまま収まる。
 - 火炎弾 第21版（PR #189 の `build_mage_fire.py`）は、本体・小さな炎・爆発・背の高い炎は fire の帯に収まる。
   **火の粉 ember_0..4 だけ**が帯の外の5色（別に手で選んだ色）。`samples()` では帯の `w y o r k` にしてある。
   どちらにするかは藍の判断。帯に寄せれば火の粉も他の元素へそのまま色替えできる。
+
+## 未確認
+
+- 戦士の当たり炎（`warrior_vfx_art.hit_flame` 4コマ）は iron の帯に収まるが、藍の OK は出ていない（2026-10-30「OK していない」）。
+  iron の帯そのものの根拠はこの絵だけなので、戦士の技の色は手本を藍に聞くところから。
 
 ## やっていないこと
 

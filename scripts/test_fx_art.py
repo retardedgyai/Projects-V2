@@ -12,6 +12,11 @@ def luminance(rgb):
     return .2126 * r + .7152 * g + .0722 * b
 
 
+# The reference drawings are the fire bolt's own (scripts/build_mage_fire.py, PR #189); without it only the ramps,
+# the check and the helpers can be tested.
+needs_fire = unittest.skipUnless(fx_art.HAS_FIRE, fx_art.NEEDS_FIRE)
+
+
 class RampTest(unittest.TestCase):
     def test_every_ramp_has_the_six_tones_edge_to_core(self):
         for name, ramp in RAMPS.items():
@@ -29,7 +34,20 @@ class RampTest(unittest.TestCase):
                 seen[rgb] = f'{name}.{tone}'
 
 
+@needs_fire
 class ReferenceSetTest(unittest.TestCase):
+    def test_the_reference_is_the_fire_bolts_own_drawings(self):
+        import build_mage_fire as fire
+        ref = fx_art.reference()
+        self.assertEqual(ref['ball_1'], fire.BALL_HEAD + fire.BALL_TAIL[1])
+        self.assertIs(ref['tall_2'], fire.TALL[2])
+        self.assertIs(fx_art.smear, fire.smear)
+        theirs = fire.sprites()
+        for name, img in samples(RAMPS['fire']).items():
+            if name.startswith('ember'):
+                continue
+            self.assertEqual(list(img.getchannel('A').getdata()), list(theirs[name].getchannel('A').getdata()), f'{name}: not the game sprite')
+
     def test_the_fire_bolt_set_is_in_the_style(self):
         for name, img in samples(RAMPS['fire']).items():
             self.assertEqual(check(img), [], name)
@@ -54,6 +72,7 @@ class ReferenceSetTest(unittest.TestCase):
 
 
 class PaletteSwapTest(unittest.TestCase):
+    @needs_fire
     def test_another_element_is_the_same_drawing_in_its_ramp(self):
         fire, frost = samples(RAMPS['fire']), samples(RAMPS['frost'])
         for name in fire:
@@ -102,10 +121,17 @@ class SheetTest(unittest.TestCase):
     def test_sheet_renders_every_ramp_without_touching_the_sprites(self):
         import tempfile, pathlib
         out = pathlib.Path(tempfile.mkdtemp()) / 'kit.png'
-        page = fx_art.sheet([(n, samples(r)) for n, r in RAMPS.items()], out, scale=2)
+        rows = ['.w.', 'ryr', 'kok']
+        page = fx_art.sheet([(n, {'a': canvas(rows, r), 'b': fx_art.pixel(r, 'p')}) for n, r in RAMPS.items()], out, scale=2)
         self.assertTrue(out.exists())
-        self.assertGreater(page.width, 100)
-        self.assertEqual(check(samples(RAMPS['fire'])['ball_0']), [])
+        self.assertEqual(page.width, 14)                       # 3 px + 1 px tiles at scale 2, with the gaps
+        self.assertGreater(page.height, 7 * 10)                # one strip per ramp
+        self.assertEqual(check(canvas(rows, RAMPS['fire'])), [])
+
+    def test_check_with_no_paths_fails_instead_of_passing(self):
+        import subprocess, sys, pathlib
+        r = subprocess.run([sys.executable, str(pathlib.Path(fx_art.__file__)), '--check'], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 2, r.stdout)
 
 
 if __name__ == '__main__':
