@@ -12,5 +12,8 @@
 | [ui-concept.md](ui-concept.md) | UI の決まり | 2026-10-10 に合意 |
 | [harbor-architecture.md](harbor-architecture.md) | 港町の建築基準 | 藍が指した3投稿（言葉は未確認） |
 | [shade-wyrm-shader.md](shade-wyrm-shader.md) | 黒翳竜のシェーダー部品と色付きの光 | 「シェーダーは動いた」（実機） |
+| [warrior-skills.md](warrior-skills.md) | 戦士の技の組み立て（獣・8技・狂乱・縦振りの軌跡） | 狂乱「藍OK」、軌跡「剣が進む縦の面、体の前」で OK |
+| [warrior-slam.md](warrior-slam.md) | 地割りの見た目（重さだけで見せる） | 「ベルセルクのガッツみたいな雰囲気」「地割りはこれでいい」 |
+| [starter-weapons.md](starter-weapons.md) | 初期武器6種の地味版・溶鉄の斧 | 「藍OK」（2026-10-17） |
 
-戦士の当たり炎（`scripts/warrior_vfx_art.py` の `hit_flame`）は正典ではない。2026-10-30 藍「よくない絵だな、OK していない」（`../ng.md`）。戦士の技の見た目には、まだ正典がない。
+戦士の当たり炎（`scripts/warrior_vfx_art.py` の `hit_flame`）は正典ではない。2026-10-30 藍「よくない絵だな、OK していない」（`../ng.md`）。戦士の技の見た目の正典は、地割り（`warrior-slam.md`）と狂乱・縦振りの軌跡（`warrior-skills.md`）。
