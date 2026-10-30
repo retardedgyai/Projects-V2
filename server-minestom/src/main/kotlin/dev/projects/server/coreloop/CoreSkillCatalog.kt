@@ -80,7 +80,7 @@ object CoreSkillCatalog {
     fun healConversion(j: CoreJourney?, stats: CoreAffixStats): Double {
         if(j?.job != CoreClass.HEALER) return 0.0
         val mod = stats.bonus(CoreAffixStat.HEAL_CONVERSION)
-        return maxOf(if(j.build.keystone == 0) .5 else 0.0, if(mod>0) (.25+mod*.03).coerceAtMost(.8) else 0.0)
+        return if(mod>0) (.25+mod*.03).coerceAtMost(.8) else 0.0
     }
     val unlockLevels = listOf(1, 4, 8, 12, 16)
     val basicFormula = CoreDamageFormula(ad = 1.0)
@@ -103,7 +103,7 @@ object CoreSkillCatalog {
         if (slot == 4) choice in ultimateChoices(job) else slot in 0..3 && choice in normalChoices(job)
     /**
      * Old saves store catalog indices. A retired pick becomes the first selectable skill not already equipped,
-     * keeping slot order, tree nodes and every still-valid pick. Idempotent; the save columns are unchanged.
+     * keeping slot order, passives and every still-valid pick. Idempotent; the save columns are unchanged.
      */
     fun migrate(job: CoreClass, build: CoreClassBuild): CoreClassBuild {
         val picks = build.skills.toMutableList()
@@ -119,7 +119,6 @@ object CoreSkillCatalog {
         var radius = s.radius
         val notes = mutableListOf<String>()
         if (j.job == CoreClass.MAGE && s.spend > 0) {
-            if (j.build.keystone == 0) { pulses++; power *= .85; notes += "連鎖術式" }
             val echo = stats.bonus(CoreAffixStat.MAGE_ECHO)
             if (echo > 0) { pulses++; power *= (.65 + echo.coerceAtMost(20.0) / 100); notes += "残響MOD" }
         }
@@ -131,36 +130,12 @@ object CoreSkillCatalog {
             val arrow = stats.bonus(CoreAffixStat.HUNT_RETURN)
             if (arrow > 0) { pulses++; power *= .6 + arrow.coerceAtMost(20.0) / 100; notes += "追矢MOD" }
         }
-        if (j.job == CoreClass.RANGER && j.build.keystone == 2 && s.motion == CoreSkillMotion.FIELD) { pulses++; notes += "罠師" }
         if (j.job == CoreClass.TEMPLAR && s.motion == CoreSkillMotion.PULL) {
             val gravity = stats.bonus(CoreAffixStat.TEMP_GRAVITY)
             if (gravity > 0) { radius *= 1 + gravity.coerceAtMost(10.0) * .1; power *= .8; notes += "重力MOD" }
-            if (j.build.keystone == 1) radius += 1.5
-        }
-        var cooldown = s.cooldown
-        var startup = s.startup
-        var mana = s.mana
-        var gain = s.gain
-        var spend = s.spend
-        val index = skills(j.job).indexOf(s)
-        if (index == CoreClassTrees.signature(j.job)) {
-            if (j.build.has(9)) { radius *= 1.3; power *= .9; notes += "広域化" }
-            if (j.build.has(10)) { pulses++; power *= .75; notes += "追加発動" }
-            if (j.build.has(14)) { cooldown = (cooldown * .8).toInt(); power *= .9; notes += "循環" }
-        }
-        if (index == 0) {
-            if (j.build.has(11)) { startup = (startup * .7).toInt().coerceAtLeast(1); gain = kotlin.math.ceil(gain * 1.25).toInt(); notes += "高速始動" }
-            if (j.build.has(13)) { mana = (mana * .6).toInt(); gain = kotlin.math.ceil(gain * 1.25).toInt(); notes += "始動の備え" }
-        }
-        if (index == 3 && j.build.has(12)) { cooldown = (cooldown * .75).toInt(); notes += "軽やかな構え" }
-        if (index == CoreClassTrees.support(j.job) && j.build.has(15)) { radius += 1.5; mana = (mana * .6).toInt(); notes += "広い備え" }
-        if (s.ultimate) {
-            if (j.build.has(16)) { spend = kotlin.math.ceil(spend * .8).toInt(); notes += "奥義の備え" }
-            if (j.build.has(17)) { cooldown = (cooldown * .85).toInt(); power *= .9; notes += "奥義の循環" }
         }
         return s.copy(formula = CoreDamageFormula(s.formula.base * power, s.formula.ad * power, s.formula.ap * power),
-            cooldown = cooldown, startup = startup, mana = mana, gain = gain,
-            pulses = pulses.coerceAtMost(8), radius = radius.coerceAtMost(10.5), spend = kotlin.math.ceil(spend * if (j.build.has(1)) .85 else 1.0).toInt(),
+            pulses = pulses.coerceAtMost(8), radius = radius.coerceAtMost(10.5),
             description = s.description + if (notes.isEmpty()) "" else " / ${notes.joinToString("・")}適用")
     }
     private fun CoreSkillDefinition.cc(kind: CrowdControl, millis: Long) = copy(crowd = kind, crowdMillis = millis)

@@ -44,12 +44,10 @@ data class CoreArmorCombatPiece(val slot: CoreGearSlot, val tier: Int, val enhan
 
 data class CoreCombatSheet(val ad: Double, val ap: Double, val ar: Double, val mr: Double,
     val health: Double, val mana: Double, val attackSpeed: Double, val healingPower: Double,
-    val mods: CoreAffixStats = CoreAffixStats(), val shieldTalent: Double = 1.0) {
-    val shieldMultiplier get() = shieldTalent * (1 + mods.bonus(CoreAffixStat.SHIELD_POWER) / 100)
-    fun specialize(j: CoreJourney) = copy(health = health * j.job.healthFactor * if (j.build.has(6)) 1.1 else 1.0,
-        ar = ar + j.job.baseArmor, mr = mr + j.job.baseResist,
-        mods = mods.copy(damagePercent = mods.damagePercent + if (j.build.has(0)) 8 else 0),
-        shieldTalent = if(j.build.has(7)) 1.2 else 1.0)
+    val mods: CoreAffixStats = CoreAffixStats()) {
+    val shieldMultiplier get() = 1 + mods.bonus(CoreAffixStat.SHIELD_POWER) / 100
+    fun specialize(j: CoreJourney) = copy(health = health * j.job.healthFactor,
+        ar = ar + j.job.baseArmor, mr = mr + j.job.baseResist)
     companion object {
         fun from(a: CoreAccount) = from(CoreCombatGear.from(a), CoreAffixCatalog.stats(a)).specialize(a.journey)
         fun from(g: CoreCombatGear, s: CoreAffixStats): CoreCombatSheet {

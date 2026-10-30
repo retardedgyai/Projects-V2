@@ -76,8 +76,6 @@ internal class CorePlayerCombat(
     private var lastCombat = -400L
     private val readyAt = LongArray(5)
     internal val classState = CoreClassState()
-    private var previousPosition: Pos? = null
-    private var moveHasteUntil = -1L
     private var pending: PendingSkill? = null
     private data class PlantedGarden(val field: CoreIceGarden, val action: PendingSkill,
         val encounter: QuestEncounterCombat, val instance: net.minestom.server.instance.Instance)
@@ -113,7 +111,7 @@ internal class CorePlayerCombat(
     val skillDefinitions get() = CoreSkillCatalog.equipped(journey(), statSource())
     val skillNames get() = skillDefinitions.map { it.name }
     fun skillAvailable(index: Int) = index in 0..4 && (journey().legacy || journey().level >= CoreSkillCatalog.unlockLevels[index])
-    fun resourceAvailable(index: Int) = classState.canCast(skillDefinitions[index], journey().build)
+    fun resourceAvailable(index: Int) = classState.canCast(skillDefinitions[index])
     val weaponHint get() = "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}"
     val combatCue get() = crowd.cue(tickNumber) ?: CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil)
     val resource get() = classState.resource
@@ -203,7 +201,7 @@ internal class CorePlayerCombat(
         if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN && classState.resource < CoreWarriorRules.BEAST_MAX) {
             notice("獣が3つ必要です"); return
         }
-        if (!classState.canCast(definition, journey().build)) { notice("${classId.resourceName}が足りません（必要 ${definition.spend} / 現在 ${resource.toInt()}）"); return }
+        if (!classState.canCast(definition)) { notice("${classId.resourceName}が足りません（必要 ${definition.spend} / 現在 ${resource.toInt()}）"); return }
         val cost = definition.mana
         if (mana < cost) { notice("マナが足りません（必要 $cost）"); return }
         val gardenCells = if(definition.icon == "mage_garden") {
@@ -230,7 +228,7 @@ internal class CorePlayerCombat(
             classState.guardUntil = -1; classState.perfectUntil = -1
         }
         manaValue -= cost
-        classState.spend(definition, classId, journey().build)
+        classState.spend(definition, classId)
         skillBoost = 1.0
         if (weaponBase() == CoreWeaponBase.CONDUIT && definition.spend > 0) skillBoost *= 1.12
         // Only a templar guard read sets counterUntil (CoreClassState.guarded); the warrior has no parry counter (D06).
@@ -295,9 +293,8 @@ internal class CorePlayerCombat(
         startSlide(direction, DODGE_DISTANCE, DODGE_SLIDE_TICKS)
         evadeUntil = tickNumber + DODGE_EVADE_TICKS
         if (weaponBase() == CoreWeaponBase.FLOW) normal.holdSequence()
-        dodgeCooldown = if (journey().build.has(4)) 20L else 24L
+        dodgeCooldown = 24L
         nextDodge = tickNumber + dodgeCooldown
-        classState.dodgeUntil = tickNumber + 60
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_SWEEP, 0.35f, 1.7f)
     }
 
@@ -331,14 +328,12 @@ internal class CorePlayerCombat(
         }
         visualContactsThisTick = 0
         classState.tick(tickNumber)
-        previousPosition?.let { if (it.distance(player.position) > .035) classState.stationarySince = tickNumber }
-        previousPosition = player.position
         damageLabels.removeAll { if (tickNumber >= it.expiry) { it.entity.remove(); true } else false }
         if (defeated) return
         if(player.isRemoved) { resetActions(); return }
         if (tickNumber % 20 == 0L) {
             manaValue = (manaValue + CoreCombatMath.manaRegeneration(statSource(), tickNumber - lastCombat > 100)).coerceAtMost(maxMana.toDouble())
-            baseSpeed = 0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0 + if (tickNumber < moveHasteUntil) .2 else 0.0)
+            baseSpeed = 0.1 * (1.0 + statSource().moveSpeedPercent.coerceIn(0.0, 25.0) / 100.0)
         }
         applySpeed(speedFactor())
         crowdTick()
@@ -351,9 +346,7 @@ internal class CorePlayerCombat(
         val epoch = actionEpoch
         shot?.takeIf { tickNumber >= it.first }?.let { (_, direction) ->
             shot = null
-            val mobile = classId == CoreClass.RANGER && journey().build.keystone == 1 && tickNumber < classState.dodgeUntil
-            rangedStrike(enemies, direction, 18.0, .65, 1, if (mobile) .65 else 1.0, false)
-            if (mobile && actionsValid(enemies, epoch)) rangedStrike(enemies, direction, 18.0, .65, 1, .65, false)
+            rangedStrike(enemies, direction, 18.0, .65, 1, 1.0, false)
         }
         if (!actionsValid(enemies, epoch)) return
         // A kill callback may synchronously return/reset the actor, including clearing burns.
@@ -585,9 +578,6 @@ internal class CorePlayerCombat(
         if (connected && swing.finisher && weaponBase() == CoreWeaponBase.FLOW) manaValue = min(maxMana.toDouble(), manaValue + 8)
         if (connected && swing.finisher && classId == CoreClass.WARRIOR) {
             finisherUntil = tickNumber + CoreWarriorRules.FINISHER_TICKS
-            if (journey().build.keystone == 1) skillDefinitions.forEachIndexed { i, s ->
-                if (s.icon in CoreWarriorRules.spenders) readyAt[i] = maxOf(tickNumber, readyAt[i] - CoreWarriorRules.SAINT_REFUND_TICKS)
-            }
         }
         return actionsValid(enemies, epoch)
     }
@@ -595,7 +585,6 @@ internal class CorePlayerCombat(
     private fun executeSkill(enemies: QuestEncounterCombat, action: PendingSkill) {
         val s = action.definition
         val epoch = actionEpoch
-        val build = journey().build
         fun pulse(at: Pos, radius: Double = s.radius) {
             emitSkillPulse(at, radius)
             strike(enemies, at, action.direction, radius, -1.0, 1.0)
@@ -686,7 +675,6 @@ internal class CorePlayerCombat(
             CoreSkillMotion.EVADE -> {
                 val departure = player.position
                 moveSafely(action.direction.mul(if (s.range < 0) -1.0 else 1.0), abs(s.range))
-                classState.dodgeUntil = tickNumber + 60
                 if (classId == CoreClass.HEALER) grantNearbyShields(8 + abilityPower * .3, 4.0, 60)
                 if (s.formula.ad > 0 || s.formula.ap > 0) rangedStrike(enemies, action.direction, 18.0, .7, 1, 1.0, true)
                 else if (s.status == CoreSkillStatus.SLOW) enemies.combatTargets().filter { it.distanceTo(action.origin) < 4 && visibleTo(it.id, enemies) }
@@ -698,7 +686,6 @@ internal class CorePlayerCombat(
             }
             CoreSkillMotion.GUARD -> {
                 classState.guardUntil = tickNumber + s.duration; classState.perfectUntil = tickNumber + 12
-                if (classId == CoreClass.WARRIOR && build.keystone == 2) grantNearbyShields(12 + attackDamage * .4, 6.0, 80)
                 emitSkillPulse(player.position, 1.0)
                 sound(SoundEvent.ITEM_SHIELD_BLOCK, .7f, 1.0f)
             }
@@ -710,21 +697,15 @@ internal class CorePlayerCombat(
                     if (!actionsValid(enemies, epoch)) return
                     enemies.pull(target.id, player, 3 + statSource().bonus(CoreAffixStat.TEMP_GRAVITY).coerceAtMost(10.0) * .2)
                     enemies.taunt(target.id, player)
-                    if (build.keystone == 1) enemies.expose(target.id)
                 }
             }
             CoreSkillMotion.HEAL -> {
                 val conversion = CoreSkillCatalog.healConversion(journey(), statSource())
-                var recovered = 0.0
                 for (ally in nearbyAllies(s.radius)) {
                     val amount = CoreCombatMath.healing(s.formula.evaluate(sheet), 1.0, sheet, ally.sheet.mods) * skillBoost
-                    val before = ally.health
                     ally.heal(amount * (1 - conversion))
-                    recovered += ally.health - before
                     if (conversion > 0) ally.receiveShield(amount * conversion * shieldScale, 100)
-                    if (build.keystone == 2 && classId == CoreClass.HEALER) ally.moveHasteUntil = ally.tickNumber + 60
                 }
-                if (classId == CoreClass.HEALER && build.keystone == 1) classState.gain((recovered * .15).coerceAtMost(15.0), classId, build)
                 if (s.icon == "heal_wind") nextDodge = 0
                 emitSkillPulse(player.position, s.radius)
             }
@@ -733,7 +714,6 @@ internal class CorePlayerCombat(
                 if (classId == CoreClass.TEMPLAR || s.icon == "war_banner") {
                     classState.guardUntil = tickNumber + minOf(s.duration, 60); classState.perfectUntil = tickNumber + 12
                 }
-                if (classId == CoreClass.TEMPLAR && build.keystone == 0) classState.counterUntil = tickNumber + 80
                 emitSkillPulse(player.position, s.radius.coerceAtLeast(1.0))
             }
         }
@@ -747,8 +727,7 @@ internal class CorePlayerCombat(
     private val shieldScale get() = sheet.shieldMultiplier
     private fun grantNearbyShields(amount: Double, radius: Double, duration: Int) {
         val scale = shieldScale
-        for (ally in nearbyAllies(radius)) ally.receiveShield(amount * scale *
-            if (classId == CoreClass.TEMPLAR && journey().build.keystone == 2 && ally !== this) 1.4 else 1.0, duration)
+        for (ally in nearbyAllies(radius)) ally.receiveShield(amount * scale, duration)
     }
     private fun receiveShield(amount: Double, duration: Int) {
         if (defeated || !amount.isFinite() || amount <= 0) return
@@ -779,7 +758,6 @@ internal class CorePlayerCombat(
         skillAction: PendingSkill? = pending, contact: Boolean = true, fieldOrigin: Pos? = null, accepted: (() -> Unit)? = null) {
         val epoch = actionEpoch
         val stats = sheet.mods
-        val build = journey().build
         val position = enemies.positionOf(id) ?: return
         val definition = if (skill) skillAction?.definition ?: return else null
         val formula = definition?.formula ?: CoreSkillCatalog.basicFormula
@@ -795,24 +773,14 @@ internal class CorePlayerCombat(
         }
         val baseDamage = definition?.baseDamage(sheet) ?: (formula.evaluate(sheet) * multiplier + element)
         var classMultiplier = 1.0
-        if (classId == CoreClass.RANGER) {
-            if (classState.focus == id) classMultiplier *= 1 + classState.focusHits * .04
-            if (build.keystone == 0 && tickNumber - classState.stationarySince >= 40) classMultiplier *= 1.25
-        }
-        if (classId == CoreClass.WARRIOR && build.keystone == 0 && resource >= 2) classMultiplier *= 1.2
+        if (classId == CoreClass.RANGER && classState.focus == id) classMultiplier *= 1 + classState.focusHits * .04
         val beastSpender = skill && classId == CoreClass.WARRIOR && definition!!.icon in CoreWarriorRules.spenders
         if (skill) hitThisStrike += id
         if (skill && id in smashTargets) classMultiplier *= 1 + CoreWarriorRules.SMASH_DOWN_PERCENT / 100.0
         // The beast let loose on a downed enemy: the window the warrior builds toward.
         if (beastSpender && enemies.isBroken(id)) classMultiplier *= 1 + skillAction!!.empowered * CoreWarriorRules.BEAST_DOWN_PERCENT_PER_STACK / 100.0
-        if (classId == CoreClass.HEALER && build.keystone == 0) classMultiplier *= 1.25
-        if (classId == CoreClass.TEMPLAR && build.keystone == 2) classMultiplier *= .9
         val consumeMark = skill && classId != CoreClass.WARRIOR && classState.marked(id, tickNumber) && definition!!.spend > 0
-        if (consumeMark) {
-            classMultiplier *= 1.35
-            val info = enemies.mobInfo(id)
-            if (classId == CoreClass.ASSASSIN && build.keystone == 0 && info != null && info.health / info.maximumHealth <= .35) classMultiplier *= 1.4
-        }
+        if (consumeMark) classMultiplier *= 1.35
         val damage = CoreCombatMath.outgoing(baseDamage, type, tags, stats, critical) *
             (if (skill) skillAction!!.boost else 1.0) * classMultiplier * (if (tickNumber < whetstoneUntil) 1.2 else 1.0) * (if (weak) 1.25 else 1.0)
         val applied = (if (fieldOrigin != null) enemies.applyCalculatedFieldDamage(id, player, fieldOrigin, damage, type, stats)
@@ -827,34 +795,27 @@ internal class CorePlayerCombat(
         }
         if (!actionsValid(enemies, epoch)) return
         if (!skill) {
-            classState.normalHit(classId, id, tickNumber, build)
+            classState.normalHit(classId, id, tickNumber)
             // Once per swing, however many it cleaves.
             if (classId == CoreClass.WARRIOR && lastNormalBeast != tickNumber) {
                 lastNormalBeast = tickNumber; feedBeast(CoreWarriorRules.BEAST_PER_NORMAL * if (heavy) 2 else 1)
             }
             if(weaponBase() == CoreWeaponBase.CONDUIT && lastConduitGain != tickNumber) {
-                if (classId == CoreClass.WARRIOR) feedBeast(CoreWarriorRules.BEAST_PER_NORMAL) else classState.gain(4.0, classId, build)
+                if (classId == CoreClass.WARRIOR) feedBeast(CoreWarriorRules.BEAST_PER_NORMAL) else classState.gain(4.0, classId)
                 lastConduitGain = tickNumber
             }
         }
         else skillAction?.takeUnless { it.gained }?.let { action ->
-            action.gained = true; classState.skillHit(classId, action.definition, build)
+            action.gained = true; classState.skillHit(classId, action.definition)
             if (classId == CoreClass.WARRIOR && action.definition.icon !in CoreWarriorRules.spenders) feedBeast(CoreWarriorRules.BEAST_PER_SKILL)
         }
-        if (consumeMark) { classState.consumeMark(id, tickNumber); if (classId == CoreClass.ASSASSIN && build.keystone == 1) nextDodge = 0 }
+        if (consumeMark) classState.consumeMark(id, tickNumber)
         if (classId == CoreClass.TEMPLAR) enemies.taunt(id, player)
         if (definition != null) when (definition.status) {
             CoreSkillStatus.MARK -> classState.mark(id, tickNumber)
             CoreSkillStatus.SLOW -> {
                 // Garden slow is refreshed by actual occupancy, never a three-second tail on exit.
-                if(definition.icon == "mage_garden") {
-                    if(classId == CoreClass.MAGE && build.keystone == 2 && !enemies.isBoss(id))
-                        receiveShield((8 + abilityPower * .3) * shieldScale, 80)
-                } else {
-                val slow = if (classId == CoreClass.MAGE && build.keystone == 2) .6 else .4
-                enemies.applySlow(id, slow, if (classId == CoreClass.RANGER && build.keystone == 2) 4500 else 3000)
-                if (classId == CoreClass.MAGE && build.keystone == 2) receiveShield((8 + abilityPower * .3) * shieldScale, 80)
-                }
+                if(definition.icon != "mage_garden") enemies.applySlow(id, .4, 3000)
             }
             CoreSkillStatus.EXPOSE -> enemies.expose(id)
             CoreSkillStatus.POISON -> {
@@ -876,8 +837,7 @@ internal class CorePlayerCombat(
             enemies.applyCrowdControl(id, crowd.first, crowd.second, player)
         }
         val venom = stats.bonus(CoreAffixStat.ASS_VENOM)
-        if (classId == CoreClass.ASSASSIN && ((venom > 0 && definition?.status == CoreSkillStatus.MARK) ||
-                (!skill && build.keystone == 2 && classState.marked(id, tickNumber)))) {
+        if (classId == CoreClass.ASSASSIN && venom > 0 && definition?.status == CoreSkillStatus.MARK) {
             burns[DotKey(id,true)] = Burn(CoreCombatMath.outgoing(attackDamage * (.1 + venom * .02),type,tags,stats), type, stats, tickNumber + 20, 3)
         }
         val stolen = CoreCombatMath.lifeSteal(applied, stats, piercing || CoreAttackTag.AREA in tags || classId.melee)
@@ -1148,12 +1108,11 @@ internal class CorePlayerCombat(
         }
         val snapshot = sheet
         var adjusted = CoreCombatMath.mitigate(amount, type, snapshot.ar, snapshot.mr, damageReduction = snapshot.mods.mitigationPercent)
-        if (classId == CoreClass.WARRIOR && journey().build.keystone == 0 && resource >= 2) adjusted *= 1.1
         val guarded = tickNumber < classState.guardUntil
         if (guarded) {
             val perfect = tickNumber <= classState.perfectUntil
             adjusted *= if (perfect) .2 else .45
-            classState.guarded(classId, tickNumber, journey().build)
+            classState.guarded(classId, tickNumber)
             if (classId == CoreClass.WARRIOR && perfect) {
                 // One read per stance; it shows the catch but refreshes nothing (the parry/slam reset was removed, D06).
                 classState.perfectUntil = -1
@@ -1199,7 +1158,7 @@ internal class CorePlayerCombat(
     /** Explicit laboratory control. Does not cancel the skill currently being observed. */
     internal fun refillTraining() {
         manaValue = maxMana.toDouble(); health = maxHealth.toDouble(); readyAt.fill(0L); nextDodge = 0L
-        classState.gain(classState.cap(classId), classId, journey().build)
+        classState.gain(classState.cap(classId), classId)
         syncVanillaHealth()
     }
     fun revive(fraction: Double) { require(fraction in .1..1.0); reset(); health = maxHealth * fraction; syncVanillaHealth() }
@@ -1211,7 +1170,7 @@ internal class CorePlayerCombat(
         normalEmpowerment = 1.0
         queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0
         CoreArmamentPresentation.show(player)
-        classState.reset(); moveHasteUntil = -1; previousPosition = null
+        classState.reset()
         crowd.clear()
         evadeUntil = -1; dodgeQueuedUntil = -1; slide = null; staggerUntil = -1
         if (movementHeld) { movementHeld = false; player.getAttribute(Attribute.JUMP_STRENGTH).baseValue = JUMP_STRENGTH }
@@ -1279,7 +1238,7 @@ internal class CorePlayerCombat(
             val feet = enemies.positionOf(target.id) ?: continue
             if(field.cellAt(feet,supported) == null || !clearLine(planted.action.origin,feet)) continue
             // QuestEncounterCombat halves boss slow: .20 here yields only 10% and never an interrupt.
-            val slow = if(enemies.isBoss(target.id)) .2 else if(journey().build.keystone == 2) .5 else .4
+            val slow = if(enemies.isBoss(target.id)) .2 else .4
             enemies.applySlow(target.id,slow,CoreIceGarden.SLOW_MILLIS,field.slowSource)
             if(field.canHit(target.id,tickNumber)) hit(enemies,target.id,1.0,skill=true,skillAction=planted.action,
                 contact=field.hitCount(target.id)==0,fieldOrigin=planted.action.origin,accepted={ field.claimHit(target.id,tickNumber) })
@@ -1295,7 +1254,7 @@ internal class CorePlayerCombat(
         if (add <= 0.0) return
         beastThisTick += add
         val before = classState.resource.toInt()
-        classState.gain(add, classId, journey().build)
+        classState.gain(add, classId)
         if (classState.resource.toInt() > before) sound(SoundEvent.ENTITY_WARDEN_HEARTBEAT, .8f, .7f + .15f * classState.resource.toInt())
     }
     /** Feedback goes into the HUD caption slot; a separate action-bar message would blank the HUD. */

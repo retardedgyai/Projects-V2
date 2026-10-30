@@ -291,9 +291,9 @@ internal object CoreAccountCodec {
             account.buyOrders.forEach { append("buy-order\t${it.id}\t${it.unitPrice}\t${it.remaining}\t${it.tier}\t${it.resource ?: ""}\t${it.slot ?: ""}\t${it.family ?: ""}\n") }
             (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity + account.armorParts.values.map { it.identity }).forEach { append("gear-quality\t${it.id}\t${it.quality}\n") }
             account.journey.let { append("journey\t${it.job}\t${it.chosen}\t${it.xp}\t${it.lessons}\t${it.legacy}\n") }
-            account.journey.build.let { append("class-build\t${it.first}\t${it.second}\t${it.third}\t${it.fourth}\t${it.ultimate}\t${it.nodes}\n") }
+            account.journey.build.let { append("class-build\t${it.first}\t${it.second}\t${it.third}\t${it.fourth}\t${it.ultimate}\t0\n") }
             account.journey.savedBuilds.entries.sortedBy { it.key.ordinal }.forEach { (job, b) ->
-                append("class-loadout\t$job\t${b.first}\t${b.second}\t${b.third}\t${b.fourth}\t${b.ultimate}\t${b.nodes}\n")
+                append("class-loadout\t$job\t${b.first}\t${b.second}\t${b.third}\t${b.fourth}\t${b.ultimate}\t0\n")
             }
             append("passive\t${account.journey.job}\t${account.journey.build.passives.sorted().joinToString(",")}\n")
             account.journey.savedBuilds.entries.sortedBy { it.key.ordinal }.forEach { (job, b) ->
@@ -358,14 +358,17 @@ internal object CoreAccountCodec {
         var journey: CoreJourney? = null
         var classBuild: CoreClassBuild? = null
         val legacyTreeMasks = mutableListOf<Int>()
-        fun readTreeMask(value: String): Int {
+        // The per-class talent trees were removed: v10-12 points are refunded, and v13+ writes the column as 0.
+        // The column stays so the file format is unchanged; it is only validated on load.
+        fun readTreeMask(value: String) {
             val mask=value.toInt()
             if(version==9) {
+                // The original nine-node contract: in-branch prerequisites and at most one keystone.
+                require(mask in 0..511)
+                for(i in 0..8) if(mask and (1 shl i)!=0 && i%3>0) require(mask and (1 shl (i-1))!=0)
+                require(listOf(2,5,8).count { mask and (1 shl it)!=0 }<=1)
                 legacyTreeMasks += mask
-                return CoreClassTrees.refundLegacyMask(mask)
-            }
-            // v13 replaced the per-class trees with the shared passive tree; their points are refunded.
-            return if(version<13) 0 else mask
+            } else if(version>=13) require(mask==0) { "旧技能ツリーの保存値が不正です" }
         }
         val savedBuilds = mutableMapOf<CoreClass, CoreClassBuild>()
         val passives = mutableMapOf<CoreClass, Set<Int>>()
@@ -376,10 +379,11 @@ internal object CoreAccountCodec {
         val mapZones = linkedMapOf<UUID, Int>()
         val zoneRecords = linkedMapOf<Int, CoreZoneRecord>()
         rows.drop(2).forEach { row -> when (row[0]) {
-            "class-build" -> { require(version >= 9 && row.size == 7 && classBuild == null); classBuild = CoreClassBuild(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), readTreeMask(row[6])) }
+            "class-build" -> { require(version >= 9 && row.size == 7 && classBuild == null); readTreeMask(row[6]); classBuild = CoreClassBuild(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt()) }
             "class-loadout" -> {
                 require(version >= 9 && row.size == 8)
-                val build = CoreClassBuild(row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), row[6].toInt(), readTreeMask(row[7]))
+                readTreeMask(row[7])
+                val build = CoreClassBuild(row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), row[6].toInt())
                 if (row[1] != RETIRED_STARWEAVER) {
                     val job = CoreClass.valueOf(row[1]); require(job !in savedBuilds)
                     savedBuilds[job] = build
@@ -488,7 +492,6 @@ internal object CoreAccountCodec {
             }
             val saved = requireNotNull(classBuild) { "職業の構成データがありません" }
             val build = if (retiredStarweaver) savedBuilds.remove(CoreClass.MAGE) ?: CoreClassBuild() else saved
-            require(build.points <= CoreClassTrees.budget(existingJourney)) { "技能ポイントが不正です" }
             require(existingJourney.job !in savedBuilds) { "現在の職業の構成が重複しています" }
             // 2026-10 class rework: retired skill indices are replaced on load (same columns, so no new version).
             if (version >= 13) require(existingJourney.job in passives) { "パッシブの保存項目がありません" }

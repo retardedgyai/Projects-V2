@@ -58,8 +58,6 @@ data class CoreJourney(val job: CoreClass = CoreClass.WARRIOR, val chosen: Boole
     val savedBuilds: Map<CoreClass, CoreClassBuild> = emptyMap()) {
     init {
         require(xp in 0..1_000_000_000L && lessons in 0..63)
-        val budget = CoreClassTrees.budget(this)
-        require(build.points <= budget && savedBuilds.values.all { it.points <= budget })
         val passiveBudget = CorePassiveTree.budget(this)
         require(build.passives.size <= passiveBudget && CorePassiveTree.valid(job, build.passives)) { "パッシブの割り振りが不正です" }
         require(savedBuilds.all { (saved, b) -> b.passives.size <= passiveBudget && CorePassiveTree.valid(saved, b.passives) }) { "パッシブの割り振りが不正です" }

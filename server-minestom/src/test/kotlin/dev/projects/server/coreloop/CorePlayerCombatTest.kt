@@ -126,7 +126,7 @@ class CorePlayerCombatTest {
     }
     @Test fun `early class cannot cast level4 or level8 skill`() = arena { h ->
         h.journey = CoreJourney.fresh().copy(chosen = true, job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1); h.actor.skill(2); assertEquals(100, h.actor.mana)
+        h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1); h.actor.skill(2); assertEquals(100, h.actor.mana)
         h.ticks(30); assertEquals(300.0, h.combat.bossHealth())
         h.actor.skill(0); h.ticks(5); assertTrue(h.combat.bossHealth() < 300.0)
     }
@@ -208,7 +208,7 @@ class CorePlayerCombatTest {
 
     @Test
     fun `ground slam resolves once at its startup boundary and has a twelve second cooldown`() = arena { h ->
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1)
         assertEquals(88, h.actor.mana)
         assertEquals(12L, h.actor.cooldownSeconds(1))
         h.ticks(11)
@@ -219,14 +219,14 @@ class CorePlayerCombatTest {
         h.ticks(20)
         assertEquals(300.0 - 2 * 58.4 * 1.75, h.combat.bossHealth(), 0.00001) // three stacks split the ground a second time
         val mana = h.actor.mana
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1)
         assertEquals(mana, h.actor.mana)
     }
 
     @Test
     fun `skill links six ticks after the AA impact instead of waiting the entire AA recovery`() = arena { h ->
         h.actor.attack()
-        h.actor.classState.gain(1.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(1.0, h.journey.job); h.actor.skill(1)
         assertEquals(100, h.actor.mana)
         h.ticks(10)
         assertEquals(100, h.actor.mana)
@@ -271,7 +271,7 @@ class CorePlayerCombatTest {
 
     @Test
     fun `death cancels pending and queued actions and callback fires once until reset`() = arena { h ->
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1)
         h.actor.dodge()
         val deathPosition = h.player.position
         h.actor.hurt(1000.0)
@@ -322,7 +322,7 @@ class CorePlayerCombatTest {
 
     @Test
     fun `resetActions on map exit prevents a delayed skill from leaking into the next map`() = arena { h ->
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1)
         h.ticks(5)
         h.actor.resetActions()
         h.activeEncounter = null
@@ -361,7 +361,7 @@ class CorePlayerCombatTest {
             if(icon==CoreWarriorRules.AWAKEN) { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=2)); h.actor.reset() }
             if(icon=="war_guard") h.player.teleport(h.player.position.withView(0f, 30f))
             assertEquals(icon,h.actor.skillDefinitions[slot].icon)
-            h.actor.classState.gain(if(Regex("_b[0-3]$").containsMatchIn(run)) run.last().digitToInt().toDouble() else 100.0,h.journey.job,h.journey.build)
+            h.actor.classState.gain(if(Regex("_b[0-3]$").containsMatchIn(run)) run.last().digitToInt().toDouble() else 100.0,h.journey.job)
             val frames=mutableListOf<Map<String,Any>>()
             fun record() { frames+=mapOf("player" to xyz(h.player.position)+h.player.position.yaw().toDouble(),
                 "targets" to h.combat.combatTargets().map { xyz(it.position) },
@@ -424,7 +424,7 @@ class CorePlayerCombatTest {
     }
 
     @Test fun `a heavy skill roots its startup and F waits for it to fire`() = arena { h ->
-        h.actor.classState.gain(100.0,h.journey.job,h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(100.0,h.journey.job); h.actor.skill(1)
         h.ticks(6); assertEquals(0.0,h.player.getAttribute(Attribute.MOVEMENT_SPEED).baseValue)
         val origin=h.player.position
         h.actor.dodge(); assertEquals(origin,h.player.position)
@@ -462,7 +462,7 @@ class CorePlayerCombatTest {
     @Test
     fun `physical skill startup uses attack speed and cooldown uses recovery speed`() = arena(
         stats = CoreAffixStats(skillDamagePercent = 50.0, attackSpeedPercent = 50.0, cooldownReductionPercent = 25.0)) { h ->
-        h.actor.classState.gain(1.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(1.0, h.journey.job); h.actor.skill(1)
         assertEquals(192, h.actor.cooldownTicks(1))
         h.ticks(7)
         assertEquals(300.0, h.combat.bossHealth())
@@ -656,7 +656,7 @@ class CorePlayerCombatTest {
         h.actor.dodge()
         assertTrue(origin.distance(h.player.position) > 0)
         h.weaponBroken = false
-        h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1)
+        h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1)
         assertEquals(88, h.actor.mana)
     }
 
@@ -718,12 +718,12 @@ class CorePlayerCombatTest {
     @Test fun `only cast speed shortens a Mage skill while physical attack speed does not`() {
         arena(stats = CoreAffixStats(castReductionPercent = 100.0)) { h ->
             h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
-            h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(4); assertEquals(300.0, h.combat.bossHealth())
+            h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1); h.ticks(4); assertEquals(300.0, h.combat.bossHealth())
             h.ticks(1); assertTrue(h.combat.bossHealth() < 300)
         }
         arena(stats = CoreAffixStats(attackSpeedPercent = 100.0)) { h ->
             h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
-            h.actor.classState.gain(100.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(9); assertEquals(300.0, h.combat.bossHealth())
+            h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1); h.ticks(9); assertEquals(300.0, h.combat.bossHealth())
             h.ticks(1); assertTrue(h.combat.bossHealth() < 300)
         }
     }
@@ -733,27 +733,27 @@ class CorePlayerCombatTest {
         h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
         assertEquals(0,h.actor.activeMarkLabels)
         assertFalse(h.actor.classState.marked(h.combat.combatTargets().first().id, 3))
-        h.ticks(12);h.actor.classState.gain(100.0,CoreClass.WARRIOR,h.journey.build)
+        h.ticks(12);h.actor.classState.gain(100.0,CoreClass.WARRIOR)
         h.actor.skill(1);h.ticks(h.actor.skillDefinitions[1].startupTicks(h.actor.sheet))
         assertEquals(0,h.actor.activeMarkLabels)
         val target=h.combat.combatTargets().first();h.actor.classState.mark(target.id,1000)
         h.ticks(1);assertEquals(1,h.actor.activeMarkLabels)
         h.actor.resetActions();assertEquals(0,h.actor.activeMarkLabels)
     }
-    @Test fun `assassin mark consumption enhances one real hit and shadow keystone resets dodge`() = arena(bossDistance=2.0) { h ->
-        h.journey=CoreJourney.legacy(job=CoreClass.ASSASSIN,build=CoreClassBuild(nodes=8248));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
+    @Test fun `assassin mark consumption enhances one real hit`() = arena(bossDistance=2.0) { h ->
+        h.journey=CoreJourney.legacy(job=CoreClass.ASSASSIN);h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
         h.actor.skill(0);h.ticks(18)
         val id=h.combat.combatTargets().single().id;assertTrue(h.actor.classState.marked(id,18))
-        h.actor.classState.gain(40.0,h.journey.job,h.journey.build)
-        h.actor.dodge();h.ticks(3);h.player.teleport(Pos(8.5,40.0,8.5)).join();val at=h.player.position
+        h.actor.classState.gain(40.0,h.journey.job)
+        h.actor.dodge();h.ticks(3);h.player.teleport(Pos(8.5,40.0,8.5)).join()
         val before=h.combat.bossHealth();h.actor.skill(1);h.ticks(4)
         assertEquals(before-(10+12*.78*2.8)*1.35,h.combat.bossHealth(),.00001)
-        assertFalse(h.actor.classState.marked(id,22));h.actor.dodge();assertTrue(h.player.position.distance(at)>0)
+        assertFalse(h.actor.classState.marked(id,22))
     }
     @Test fun `mage echo adds an actual pulse and full spell damage matches the modified preview`() = arena(bossDistance=7.0,
         stats=CoreAffixStats(additional=mapOf(CoreAffixStat.MAGE_ECHO to 4.0))) { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
-        h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
+        h.actor.classState.gain(100.0,h.journey.job)
         val spell=h.actor.skillDefinitions[2];assertEquals(4,spell.pulses)
         h.actor.skill(2);h.ticks(42)
         assertEquals(300-spell.preview(h.actor.sheet)*4,h.combat.bossHealth(),.00001)
@@ -768,35 +768,36 @@ class CorePlayerCombatTest {
         h.actor.skill(1);h.ticks(heal.startupTicks(h.actor.sheet))
         assertEquals(before+heal.preview(h.actor.sheet),h.actor.health,.00001)
     }
-    @Test fun `healing conversion splits real recovery and shield and cannot extend a stronger shield`() = arena { h ->
-        h.journey=CoreJourney.legacy(job=CoreClass.HEALER,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.TOME;h.actor.reset()
-        h.actor.hurt(60.0, blow = false);h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
+    @Test fun `healing conversion splits real recovery and shield and cannot extend a stronger shield`() = arena(
+        stats=CoreAffixStats(additional=mapOf(CoreAffixStat.HEAL_CONVERSION to 5.0))) { h ->
+        h.journey=CoreJourney.legacy(job=CoreClass.HEALER);h.base=CoreWeaponBase.TOME;h.actor.reset()
+        h.actor.hurt(60.0, blow = false);h.actor.classState.gain(100.0,h.journey.job)
         val value=h.actor.skillDefinitions[1].preview(h.actor.sheet);val before=h.actor.health
         h.actor.skill(1);h.ticks(6)
-        assertEquals(before+value*.5,h.actor.health,.00001);assertEquals(value*.5,h.actor.shield,.00001)
-        h.actor.hurt(value*.25);assertEquals(before+value*.5,h.actor.health,.00001);assertEquals(value*.5-value*.25*300/320,h.actor.shield,.00001) // healer base AR 20
+        assertEquals(before+value*.6,h.actor.health,.00001);assertEquals(value*.4,h.actor.shield,.00001)
+        h.actor.hurt(value*.25);assertEquals(before+value*.6,h.actor.health,.00001);assertEquals(value*.4-value*.25*300/320,h.actor.shield,.00001) // healer base AR 20
         h.ticks(100);assertEquals(0.0,h.actor.shield)
     }
     @Test fun `templar shielding supports nearby allies but never passes walls`() = arena { h ->
-        h.journey=CoreJourney.legacy(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=65984));h.base=CoreWeaponBase.MACE;h.actor.reset()
+        h.journey=CoreJourney.legacy(job=CoreClass.TEMPLAR);h.base=CoreWeaponBase.MACE;h.actor.reset()
         val ally=h.addAlly(Pos(10.5,40.0,8.5))
         val blocked=h.addAlly(Pos(5.5,40.0,8.5))
         for(y in 40..43) h.instance.setBlock(6,y,8,Block.STONE)
         val value=h.actor.skillDefinitions[2].preview(h.actor.sheet)
         h.actor.skill(2);h.ticks(h.actor.skillDefinitions[2].startupTicks(h.actor.sheet))
-        assertEquals(value,h.actor.shield,.00001);assertEquals(value*1.4,ally.shield,.00001);assertEquals(0.0,blocked.shield)
+        assertEquals(value,h.actor.shield,.00001);assertEquals(value,ally.shield,.00001);assertEquals(0.0,blocked.shield)
         h.actor.resetActions();assertEquals(0.0,h.actor.shield)
     }
     @Test fun `dodging a channeled field cancels remaining pulses but never refunds its cost`() = arena(bossDistance=7.0) { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
-        h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
+        h.actor.classState.gain(100.0,h.journey.job)
         h.actor.skill(2);h.ticks(12);val before=h.combat.bossHealth();assertTrue(before<300)
         h.actor.dodge();h.ticks(35);assertEquals(before,h.combat.bossHealth());assertEquals(40.0,h.actor.resource)
         assertTrue(h.actor.cooldownRemaining(2)>0)
     }
     @Test fun `fourth normal skill and ultimate have real runtime cooldowns and separate input slots`() = arena { h ->
         h.actor.skill(3);h.ticks(15);assertTrue(h.actor.cooldownRemaining(3)>0)
-        h.actor.classState.gain(100.0,h.journey.job,h.journey.build)
+        h.actor.classState.gain(100.0,h.journey.job)
         h.actor.skill(4);assertTrue(h.actor.cooldownRemaining(4)>0);assertEquals(0.0,h.actor.resource) // 全力の一振り takes the beast
         h.ticks(40);assertTrue(h.combat.bossHealth()<300)
     }
@@ -827,12 +828,6 @@ class CorePlayerCombatTest {
         assertFalse(h.combat.pull(id,h.player));h.combat.tick(System.currentTimeMillis()+6100)
         assertTrue(h.combat.pull(id,h.player))
     }
-    @Test fun `shield keystone enhances the next normal mace attack once`() = arena { h ->
-        h.journey=CoreJourney.legacy(job=CoreClass.TEMPLAR,build=CoreClassBuild(nodes=1031));h.base=CoreWeaponBase.MACE;h.actor.reset()
-        h.actor.skill(2);h.ticks(20);h.actor.attack();h.ticks(10)
-        assertEquals(300-12*.95*1.08*1.35,h.combat.bossHealth(),.00001)
-        assertEquals(-1,h.actor.classState.counterUntil)
-    }
     @Test fun `poison and fire coexist as separate nonrecursive effects`() = arena(bossDistance=2.0,stats=CoreAffixStats(fireFlat=10.0)) { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.ASSASSIN,build=CoreClassBuild(first=4,second=1,third=2,fourth=3));h.base=CoreWeaponBase.DAGGERS;h.actor.reset()
         h.actor.skill(0);h.ticks(h.actor.skillDefinitions[0].startupTicks(h.actor.sheet))
@@ -841,7 +836,7 @@ class CorePlayerCombatTest {
     }
     @Test fun `ground field follows a visible aimed enemy beyond the old fixed seven block centre`() = arena(bossDistance=15.0) { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
-        h.actor.classState.gain(100.0,h.journey.job,h.journey.build);h.actor.skill(2);h.ticks(12)
+        h.actor.classState.gain(100.0,h.journey.job);h.actor.skill(2);h.ticks(12)
         assertTrue(h.combat.bossHealth()<300)
     }
 
@@ -909,7 +904,7 @@ class CorePlayerCombatTest {
         // Three normal swings: 0.1 + 0.1 + 0.2 (the heavy third).
         h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(30)
         assertEquals(4 * CoreWarriorRules.BEAST_PER_NORMAL, h.actor.resource, 1e-9)
-        h.actor.classState.gain(5.0, h.journey.job, h.journey.build)
+        h.actor.classState.gain(5.0, h.journey.job)
         assertEquals(CoreWarriorRules.BEAST_MAX, h.actor.resource) // capped at three
         assertEquals("獣 3/3", h.actor.weaponHint)
         val before = h.combat.bossHealth()
@@ -941,7 +936,7 @@ class CorePlayerCombatTest {
 
     @Test fun `three stacks break the boss twice, once per split`() = arena { h ->
         val id = h.combat.combatTargets().single().id
-        h.actor.classState.gain(3.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(21)
+        h.actor.classState.gain(3.0, h.journey.job); h.actor.skill(1); h.ticks(21)
         assertEquals(100.0 - 2 * (12.0 + 3 * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT), h.combat.breakGauge(id)!!, .0001)
     }
 
@@ -971,7 +966,7 @@ class CorePlayerCombatTest {
     }
 
     @Test fun `frenzy swings once more per stack and takes them all`() = arena(bossDistance = 2.5) { h ->
-        h.actor.classState.gain(3.0, h.journey.job, h.journey.build)
+        h.actor.classState.gain(3.0, h.journey.job)
         val id = h.combat.combatTargets().single().id
         h.actor.skill(2); h.ticks(40)
         assertEquals(0.0, h.actor.resource)
@@ -980,7 +975,7 @@ class CorePlayerCombatTest {
 
     @Test fun `skyfall sends one ring per stack out from where it lands`() = arena { h ->
         h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 3)); h.actor.reset()
-        h.actor.classState.gain(3.0, h.journey.job, h.journey.build)
+        h.actor.classState.gain(3.0, h.journey.job)
         val id = h.combat.combatTargets().single().id
         h.player.teleport(h.player.position.withView(0f, 75f)) // straight down: lands short, the boss stands 4 blocks off
         val from = h.player.position
@@ -995,7 +990,7 @@ class CorePlayerCombatTest {
 
     @Test fun `shatter launches everything round the planted blade`() = arena { h ->
         h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 5)); h.actor.reset()
-        h.actor.classState.gain(3.0, h.journey.job, h.journey.build)
+        h.actor.classState.gain(3.0, h.journey.job)
         val id = h.combat.combatTargets().single().id
         h.player.teleport(h.player.position.withView(180f, 0f)) // facing away: it is all round, not a cone
         h.actor.skill(3); h.ticks(16)
@@ -1038,7 +1033,7 @@ class CorePlayerCombatTest {
         assertEquals(CoreWarriorRules.AWAKEN, h.actor.skillDefinitions[4].icon)
         h.actor.skill(4); h.ticks(1)
         assertEquals(0, h.actor.cooldownRemaining(4)) // not with less than three
-        h.actor.classState.gain(3.0, h.journey.job, h.journey.build)
+        h.actor.classState.gain(3.0, h.journey.job)
         h.actor.skill(4); h.ticks(4)
         assertTrue(h.actor.awakened)
         h.actor.skill(1); h.ticks(12)
@@ -1061,7 +1056,7 @@ class CorePlayerCombatTest {
     }
 
     @Test fun `the slam is never gated by the beast and keeps a part-built stack`() = arena { h ->
-        h.actor.classState.gain(1.5, h.journey.job, h.journey.build)
+        h.actor.classState.gain(1.5, h.journey.job)
         h.actor.skill(1); h.ticks(12)
         assertEquals(.5, h.actor.resource, 1e-9)
         assertTrue(h.combat.bossHealth() < 300.0)
@@ -1128,7 +1123,7 @@ class CorePlayerCombatTest {
 
     @Test fun `warrior slam stuns the enemy it hits and the third normal hit makes it flinch`() = arena { h ->
         soldierArena(h) { e, id ->
-            h.actor.classState.gain(2.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(12)
+            h.actor.classState.gain(2.0, h.journey.job); h.actor.skill(1); h.ticks(12)
             assertTrue(CrowdControl.STUN in e.crowdControl(id)) // two stacks: launched, then stunned
         }
         soldierArena(h) { e, id ->
@@ -1191,7 +1186,7 @@ class CorePlayerCombatTest {
 
     @Test fun `the warrior's slam breaks the boss by the beast it takes and takes no crowd control`() = arena { h ->
         val id = h.combat.combatTargets().single().id
-        h.actor.classState.gain(3.0, h.journey.job, h.journey.build); h.actor.skill(1); h.ticks(12)
+        h.actor.classState.gain(3.0, h.journey.job); h.actor.skill(1); h.ticks(12)
         assertEquals(100.0 - (12.0 + 3 * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT), h.combat.breakGauge(id)!!, .0001)
         assertTrue(h.combat.crowdControl(id).isEmpty())
     }
@@ -1209,13 +1204,6 @@ class CorePlayerCombatTest {
         val id = h.combat.combatTargets().single().id
         h.actor.attack(); h.ticks(12)
         assertEquals(100.0 - CoreBreak.NORMAL, h.combat.breakGauge(id)!!, .0001)
-    }
-
-    @Test fun `sword saint third hits take time off the spender cooldowns`() = arena { h ->
-        h.journey=CoreJourney.legacy(build=CoreClassBuild(nodes=8248));h.actor.reset()
-        h.actor.skill(1);h.ticks(40)
-        h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(25);h.actor.attack();h.ticks(8)
-        assertEquals(240-40-50-8-30,h.actor.cooldownRemaining(1))
     }
 
     
