@@ -260,7 +260,7 @@ class CoreEnhancementTest {
         assertEquals(CoreEnhancementState(1), after.weaponEnhancement)
         assertEquals(1, after.smithingXp)
         assertEquals(encoded, Files.readString(backup))
-        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t12\t"))
+        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t13\t"))
         assertEquals(CoreTransactionStatus.REPLAYED, service.transact(old.playerId, operation).status)
     }
 

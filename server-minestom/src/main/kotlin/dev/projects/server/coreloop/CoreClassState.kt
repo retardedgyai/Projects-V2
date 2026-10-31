@@ -16,17 +16,14 @@ internal class CoreClassState {
     var counterUntil = -1L
     var guardUntil = -1L
     var perfectUntil = -1L
-    var dodgeUntil = -1L
     var shield = 0.0
     var shieldUntil = -1L
-    var stationarySince = 0L
     private var lastGuardGain = -100L
     private var lastNormalGain = -1L
     private val marks = mutableMapOf<UUID, Long>()
     fun cap(job: CoreClass) = when (job) { CoreClass.WARRIOR -> CoreWarriorRules.BEAST_MAX; else -> 100.0 }
-    fun gain(value: Double, job: CoreClass, build: CoreClassBuild) {
-        val multiplier = if (build.has(3)) 1.2 else 1.0
-        resource = (resource + value * multiplier).coerceIn(0.0, cap(job))
+    fun gain(value: Double, job: CoreClass) {
+        resource = (resource + value).coerceIn(0.0, cap(job))
     }
     /** Warrior spender: takes every whole beast stack (a part-built one stays); returns how many. */
     fun takeStacks(): Int = resource.toInt().also { resource -= it }
@@ -34,15 +31,15 @@ internal class CoreClassState {
     fun fill(job: CoreClass) { resource = cap(job) }
     /** Takes [amount] only when it is all there; never leaves a partial spend. */
     fun consume(amount: Double): Boolean = (resource >= amount).also { if (it) resource -= amount }
-    fun cost(skill: CoreSkillDefinition, build: CoreClassBuild): Int = skill.spend
-    fun canCast(skill: CoreSkillDefinition, build: CoreClassBuild) = resource >= cost(skill, build)
-    fun spend(skill: CoreSkillDefinition, job: CoreClass, build: CoreClassBuild): Double {
-        check(canCast(skill, build))
+    fun cost(skill: CoreSkillDefinition): Int = skill.spend
+    fun canCast(skill: CoreSkillDefinition) = resource >= cost(skill)
+    fun spend(skill: CoreSkillDefinition, job: CoreClass): Double {
+        check(canCast(skill))
         val before = resource
-        resource -= cost(skill, build)
+        resource -= cost(skill)
         return before
     }
-    fun normalHit(job: CoreClass, target: UUID, tick: Long, build: CoreClassBuild) {
+    fun normalHit(job: CoreClass, target: UUID, tick: Long) {
         if (lastNormalGain == tick) return
         lastNormalGain = tick
         if (job == CoreClass.RANGER) {
@@ -51,21 +48,21 @@ internal class CoreClassState {
             focus = target
         }
         gain(when (job) { CoreClass.WARRIOR -> 0.0; CoreClass.RANGER -> 10.0 + focusHits;
-            CoreClass.ASSASSIN -> 12.0; CoreClass.TEMPLAR -> 8.0; CoreClass.HEALER -> 8.0; CoreClass.MAGE -> 5.0 }, job, build)
+            CoreClass.ASSASSIN -> 12.0; CoreClass.TEMPLAR -> 8.0; CoreClass.HEALER -> 8.0; CoreClass.MAGE -> 5.0 }, job)
     }
-    fun skillHit(job: CoreClass, skill: CoreSkillDefinition, build: CoreClassBuild) {
+    fun skillHit(job: CoreClass, skill: CoreSkillDefinition) {
         if (job == CoreClass.WARRIOR) return  // the beast is built by crowd control and break (CorePlayerCombat)
         var amount = skill.gain.toDouble()
         if (job == CoreClass.MAGE && skill.gain > 0 && skill.element != 0) {
-            if (lastElement != 0 && skill.element != lastElement) amount += if (build.keystone == 1) 30 else 15
+            if (lastElement != 0 && skill.element != lastElement) amount += 15
             lastElement = skill.element
         }
-        gain(amount, job, build)
+        gain(amount, job)
     }
-    fun guarded(job: CoreClass, tick: Long, build: CoreClassBuild) {
+    fun guarded(job: CoreClass, tick: Long) {
         if (tick - lastGuardGain < 10) return
         lastGuardGain = tick
-        if (job != CoreClass.WARRIOR) gain(if (tick <= perfectUntil) 30.0 else 15.0, job, build)
+        if (job != CoreClass.WARRIOR) gain(if (tick <= perfectUntil) 30.0 else 15.0, job)
         // Only the templar turns a read into a retaliation; the warrior guard just holds the line (D06).
         if (tick <= perfectUntil && job == CoreClass.TEMPLAR) counterUntil = tick + 60
     }
@@ -76,7 +73,7 @@ internal class CoreClassState {
     fun tick(tick: Long) { marks.entries.removeIf { it.value < tick }; if (tick >= shieldUntil) shield = 0.0 }
     fun reset() {
         resource = 0.0; focus = null; focusHits = 0; lastElement = 0; counterUntil = -1; guardUntil = -1
-        perfectUntil = -1; dodgeUntil = -1; shield = 0.0; shieldUntil = -1; stationarySince = 0
+        perfectUntil = -1; shield = 0.0; shieldUntil = -1
         lastGuardGain = -100; lastNormalGain = -1; marks.clear()
     }
 }

@@ -36,46 +36,19 @@ class CoreClassBuildTest {
         assertFailsWith<IllegalArgumentException> { CoreClassBuild().equip(4,3) }  // the warrior's third ultimate is index 2
         assertFailsWith<IllegalArgumentException> { CoreClassBuild(first=1) }
     }
-    @Test fun `tree requires parents excludes simultaneous keystones and refunds descendants`() {
-        val first=CoreClassBuild().toggle(0,6).toggle(1,6).toggle(10,6).toggle(2,6)
-        assertEquals(0,first.keystone)
-        val mixed=first.toggle(3,6).toggle(4,6)
-        assertFailsWith<IllegalArgumentException> { mixed.toggle(5,6) }
-        assertEquals(1,first.toggle(1,6).nodes)
-        assertEquals(0,first.toggle(0,6).nodes)
-        assertFailsWith<IllegalArgumentException> { CoreClassBuild().toggle(2,6) }
-        assertFailsWith<IllegalArgumentException> { mixed.toggle(6,5) }
-    }
-    @Test fun `every class has three distinct branching mechanics and a bounded point budget`() {
-        for(job in CoreClass.entries) {
-            assertEquals(18,CoreClassTrees.nodes(job).size)
-            assertEquals(3,CoreClassTrees.nodes(job).take(9).filterIndexed { i,_ -> i%3==2 }.map { it.description }.distinct().size)
-        }
-        assertEquals(2,CoreClassTrees.budget(CoreJourney.fresh()))
-        assertEquals(4,CoreClassTrees.budget(CoreJourney.fresh().copy(xp=CoreJourneyRules.threshold(8))))
-        assertEquals(12,CoreClassTrees.budget(CoreJourney.fresh().copy(xp=CoreJourneyRules.threshold(40))))
-        assertFailsWith<IllegalArgumentException> { CoreJourney.fresh().copy(build=CoreClassBuild(nodes=7)) }
-    }
-    @Test fun `resource cost reduction is applied once`() {
-        val j=CoreJourney.legacy(job=CoreClass.ASSASSIN,build=CoreClassBuild(second=1,nodes=3))
-        val s=CoreSkillCatalog.equipped(j)[1]
-        assertEquals(26,s.spend)
-        val state=CoreClassState();state.gain(26.0,j.job,j.build)
-        state.spend(s,j.job,j.build);assertEquals(0.0,state.resource)
-    }
     @Test fun `resource gains are per normal impact not per cleaved target and capped`() {
         val s=CoreClassState();val j=CoreJourney.legacy(job=CoreClass.ASSASSIN)
-        repeat(20) { s.normalHit(j.job,UUID.randomUUID(),1,j.build) }
+        repeat(20) { s.normalHit(j.job,UUID.randomUUID(),1) }
         assertEquals(12.0,s.resource)
-        repeat(20) { s.normalHit(j.job,UUID.randomUUID(),it+2L,j.build) }
+        repeat(20) { s.normalHit(j.job,UUID.randomUUID(),it+2L) }
         assertEquals(100.0,s.resource)
         s.reset();assertEquals(0.0,s.resource)
     }
     @Test fun `ranger focus rewards one quarry and loses half its saved resource on target change`() {
         val s=CoreClassState();val id=UUID.randomUUID();val j=CoreJourney.legacy(job=CoreClass.RANGER)
-        s.normalHit(j.job,id,1,j.build);s.normalHit(j.job,id,2,j.build)
+        s.normalHit(j.job,id,1);s.normalHit(j.job,id,2)
         assertEquals(23.0,s.resource);assertEquals(2,s.focusHits)
-        s.normalHit(j.job,UUID.randomUUID(),3,j.build)
+        s.normalHit(j.job,UUID.randomUUID(),3)
         assertEquals(22.5,s.resource);assertEquals(1,s.focusHits)
     }
     @Test fun `marks are personal finite and consume only once`() {
@@ -85,9 +58,9 @@ class CoreClassBuildTest {
     }
     @Test fun `guard resource cannot multiply from simultaneous hits`() {
         val s=CoreClassState();s.perfectUntil=12
-        repeat(20) { s.guarded(CoreClass.TEMPLAR,1,CoreClassBuild()) }
+        repeat(20) { s.guarded(CoreClass.TEMPLAR,1) }
         assertEquals(30.0,s.resource);assertEquals(61,s.counterUntil)
-        s.guarded(CoreClass.TEMPLAR,20,CoreClassBuild());assertEquals(45.0,s.resource)
+        s.guarded(CoreClass.TEMPLAR,20);assertEquals(45.0,s.resource)
     }
     @Test fun `echo and returning modifiers change pulses and their displayed coefficients`() {
         for((job,stat,index) in listOf(Triple(CoreClass.MAGE,CoreAffixStat.MAGE_ECHO,2),Triple(CoreClass.RANGER,CoreAffixStat.HUNT_RETURN,0))) {
@@ -99,19 +72,19 @@ class CoreClassBuildTest {
             assertContains(modified.description,"MOD")
         }
     }
-    @Test fun `shield tooltip uses same tree and modifier multiplier and heal conversion reports split`() {
-        val j=CoreJourney.legacy(job=CoreClass.HEALER,build=CoreClassBuild(nodes=192))
+    @Test fun `shield tooltip uses the modifier multiplier and heal conversion reports split`() {
+        val j=CoreJourney.legacy(job=CoreClass.HEALER)
         val sheet=CoreCombatSheet.from(CoreCombatGear(base=CoreWeaponBase.TOME),CoreAffixStats(additional=mapOf(CoreAffixStat.SHIELD_POWER to 20.0))).specialize(j)
         val shield=CoreSkillCatalog.skills(j.job)[5]
-        assertEquals((shield.formula.evaluate(sheet)+sheet.healingPower)*1.44,shield.preview(sheet),.000001)
+        assertEquals((shield.formula.evaluate(sheet)+sheet.healingPower)*1.2,shield.preview(sheet),.000001)
         val conversion=sheet.copy(mods=sheet.mods.copy(additional=mapOf(CoreAffixStat.HEAL_CONVERSION to 5.0)))
         assertEquals(.4,CoreSkillCatalog.healConversion(j,conversion.mods))
         assertContains(CoreSkillCatalog.skills(j.job)[1].tooltip(conversion,j).joinToString("\n"),"/ 障壁")
     }
-    @Test fun `profession changes retain independent skill and talent configurations through disk codec`() {
-        val warrior=CoreClassBuild(first=4,second=0,third=1,nodes=1031)
+    @Test fun `profession changes retain independent skill configurations through disk codec`() {
+        val warrior=CoreClassBuild(first=4,second=0,third=1)
         var j=CoreJourney.legacy(build=warrior).changeClass(CoreClass.MAGE)
-        val mage=CoreClassBuild(first=4,third=6,nodes=8248)
+        val mage=CoreClassBuild(first=4,third=6)
         j=j.copy(build=mage).changeClass(CoreClass.WARRIOR)
         assertEquals(warrior,j.build)
         val a=CoreAccount(UUID.randomUUID(),journey=j)
@@ -139,29 +112,6 @@ class CoreClassBuildTest {
         for(bad in listOf("",row+row,"class-build\t0\t0\t2\t3\t0\t0\n","class-build\t0\t1\t2\t3\t0\t4\n","class-build\t0\t1\t2\t3\t0\t7\n"))
             assertFailsWith<IllegalArgumentException> { CoreAccountCodec.decode(checksum(body.replace(row,bad)),a.playerId) }
     }
-    @Test fun `split paths rejoin and refund preserves an independently connected keystone`() {
-        var build=CoreClassBuild()
-        for(i in listOf(0,1,10,9,11,2)) build=build.toggle(i,12)
-        val leftRefund=build.toggle(1,12)
-        assertFalse(leftRefund.has(10));assertTrue(leftRefund.has(2));assertTrue(leftRefund.has(11))
-        assertEquals(0,leftRefund.toggle(0,12).nodes)
-        for(i in 0..17) {
-            assertTrue(CoreClassTrees.slot(i) in 9..44)
-            assertTrue(CoreClassTrees.parents(i).all { it in 0..17 && it!=i })
-        }
-        assertEquals(18,(0..17).map(CoreClassTrees::slot).distinct().size)
-    }
-    @Test fun `new skill branches change the same catalog used by casts and tooltips`() {
-        for(job in CoreClass.entries) {
-            val raw=CoreSkillCatalog.skills(job)[CoreClassTrees.signature(job)]
-            val j=CoreJourney.legacy(job=job,build=CoreClassBuild(nodes=(1 shl 0) or (1 shl 1) or (1 shl 10)))
-            val skill=CoreSkillCatalog.modify(raw,j,CoreAffixStats())
-            assertEquals(raw.pulses+1,skill.pulses)
-            assertEquals(raw.formula.base*.75,skill.formula.base,.00001)
-            assertContains(skill.description,"追加発動")
-            assertContains(skill.tooltip(CoreCombatSheet.from(CoreAccount(UUID.randomUUID(),journey=j)),j).joinToString(),"回")
-        }
-    }
     @Test fun `v9 tree is refunded with skills gear and exact backup preserved`() {
         val dir=Files.createTempDirectory("class-v9-");val id=UUID.randomUUID()
         val a=CoreAccount(id,silver=54321,journey=CoreJourney.legacy(build=CoreClassBuild(first=4)))
@@ -170,23 +120,13 @@ class CoreClassBuildTest {
         val path=dir.resolve("$id.account");Files.writeString(path,old)
         val service=CoreAccountService(CoreAccountRepository(dir));val loaded=assertIs<CoreAccountLoadResult.Ready>(service.open(id))
         assertEquals(old,Files.readString(path))
-        val result=service.transact(id,CoreOperation(UUID.randomUUID(),0,CoreAction.ToggleTalent(0)))
+        val first=CorePassiveTree.nodes[CorePassiveTree.start(CoreClass.WARRIOR)].links.first { CorePassiveTree.nodes[it].ready }
+        val result=service.transact(id,CoreOperation(UUID.randomUUID(),0,CoreAction.TakePassive(first)))
         assertEquals(CoreTransactionStatus.COMMITTED,result.status,result.message)
-        assertEquals(1,result.account!!.journey.build.nodes);assertEquals(4,result.account.journey.build.first)
+        assertEquals(setOf(first),result.account!!.journey.build.passives)
+        assertEquals(4,result.account.journey.build.first)
         assertEquals(54321,result.account.silver)
         assertEquals(old,Files.readString(dir.resolve("$id.account.v9.bak")))
-    }
-    @Test fun `UI budget journey validation and v10 saved loadouts agree above six points`() {
-        var b=CoreClassBuild()
-        for(i in listOf(0,1,10,2,3,4,13,6,7,16,15,17)) b=b.toggle(i,12)
-        val j=CoreJourney.legacy(build=b).changeClass(CoreClass.MAGE)
-        val a=CoreAccount(UUID.randomUUID(),journey=j)
-        val decoded=CoreAccountCodec.decode(CoreAccountCodec.encode(a),a.playerId)
-        assertEquals(j,decoded.journey)
-        assertEquals(CoreAccountCodec.encode(a),CoreAccountCodec.encode(decoded))
-        assertEquals(12,a.journey.savedBuilds.getValue(CoreClass.WARRIOR).points)
-        val lvl4=CoreJourney.fresh().copy(xp=CoreJourneyRules.threshold(4),build=CoreClassBuild(nodes=11))
-        assertEquals(3,CoreClassTrees.budget(lvl4))
     }
     private fun checksum(body:String)=body+"checksum\t"+MessageDigest.getInstance("SHA-256").digest(body.toByteArray()).joinToString(""){"%02x".format(it)}+"\n"
 }

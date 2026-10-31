@@ -52,7 +52,7 @@ class CoreRetirementCompatibilityTest {
     }
 
     @Test fun `retired Starweaver saves load as Mage and drop the Starweaver loadout`() {
-        val star = CoreClassBuild(first = 2, second = 3, third = 4, fourth = 5, nodes = 1)
+        val star = CoreClassBuild(first = 2, second = 3, third = 4, fourth = 5)
         val mage = CoreClassBuild(first = 4, second = 6, third = 7, fourth = 8, ultimate = 1)
         val warrior = CoreClassBuild(first = 1, second = 2, third = 3, fourth = 4)
         // HEALER rows stand in for the removed enum value and are renamed to the retired id on disk.
@@ -78,7 +78,9 @@ class CoreRetirementCompatibilityTest {
     }
 
     private fun savedVersion(account: CoreAccount, version: Int, extraRows: List<String>, transform: (String) -> String = { it }): String {
-        var body = if (version == 11) CoreAccountCodec.encode(account).substringBefore("checksum\t") else armorV10Body(account) + "\n"
+        var body = if (version == 11) CoreAccountCodec.encode(account).substringBefore("checksum\t").lineSequence()
+            .filterNot { it.startsWith("passive") }.joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t13\t", "PROJECTS_CORE_LOOP\t11\t")
+            else armorV10Body(account) + "\n"
         if (version == 7) body = body.lineSequence().filterNot {
             it.substringBefore('\t') in setOf("journey", "gear-base", "map-level", "class-build", "class-loadout")
         }.joinToString("\n").replaceFirst("\t10\t", "\t7\t")

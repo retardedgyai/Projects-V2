@@ -30,10 +30,10 @@ class CoreWarriorReworkTest {
         }
     }
 
-    @Test fun `migration replaces only retired picks and keeps slot order tree and ultimate when valid`() {
-        val old = CoreClassBuild(first = 0, second = 1, third = 2, fourth = 3, ultimate = 1, nodes = 1031)
+    @Test fun `migration replaces only retired picks and keeps slot order and ultimate when valid`() {
+        val old = CoreClassBuild(first = 0, second = 1, third = 2, fourth = 3, ultimate = 1)
         val migrated = CoreSkillCatalog.migrate(CoreClass.WARRIOR, old)
-        assertEquals(listOf(0, 1, 2, 3), migrated.skills); assertEquals(1, migrated.ultimate); assertEquals(1031, migrated.nodes)
+        assertEquals(listOf(0, 1, 2, 3), migrated.skills); assertEquals(1, migrated.ultimate)
         assertEquals(migrated, CoreSkillCatalog.migrate(CoreClass.WARRIOR, migrated))
         assertEquals(old, CoreSkillCatalog.migrate(CoreClass.MAGE, old), "classes without retired skills are untouched")
     }
@@ -46,7 +46,7 @@ class CoreWarriorReworkTest {
         val saved = loaded.journey.savedBuilds.getValue(CoreClass.WARRIOR)
         assertEquals(listOf(0, 1, 2, 3), saved.skills); assertEquals(1, saved.ultimate)
         assertEquals(CoreAccountCodec.encode(loaded), CoreAccountCodec.encode(CoreAccountCodec.decode(CoreAccountCodec.encode(loaded), a.playerId)))
-        assertTrue(CoreAccountCodec.encode(loaded).startsWith("PROJECTS_CORE_LOOP\t12\t"))
+        assertTrue(CoreAccountCodec.encode(loaded).startsWith("PROJECTS_CORE_LOOP\t13\t"))
         val current = CoreAccount(UUID.randomUUID(), journey = CoreJourney.legacy(build = legacyWarrior))
         assertEquals(listOf(0, 1, 2, 3), CoreAccountCodec.decode(CoreAccountCodec.encode(current), current.playerId).journey.build.skills)
     }
@@ -66,17 +66,8 @@ class CoreWarriorReworkTest {
     @Test fun `only templar guard reads open a counter`() {
         for (job in CoreClass.entries) {
             val s = CoreClassState(); s.perfectUntil = 12
-            s.guarded(job, 1, CoreClassBuild())
+            s.guarded(job, 1)
             assertEquals(if (job == CoreClass.TEMPLAR) 61L else -1L, s.counterUntil, "$job")
-        }
-    }
-
-    @Test fun `support tree node targets a selectable skill for every class`() {
-        for (job in CoreClass.entries) {
-            assertTrue(CoreSkillCatalog.selectable(job, 0, CoreClassTrees.support(job)))
-            val j = CoreJourney.legacy(job = job, build = CoreClassBuild(nodes = (1 shl 6) or (1 shl 7) or (1 shl 15) or (1 shl 16)))
-            val raw = CoreSkillCatalog.skills(job)[CoreClassTrees.support(job)]
-            assertContains(CoreSkillCatalog.modify(raw, j, CoreAffixStats()).description, "広い備え")
         }
     }
 

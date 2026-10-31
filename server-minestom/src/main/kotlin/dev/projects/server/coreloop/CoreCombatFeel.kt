@@ -130,6 +130,4 @@ internal object CoreWarriorRules {
             else -> definition
         }
     }
-    /** 剣聖: each connected third normal hit takes this much off the spenders' remaining cooldown. */
-    const val SAINT_REFUND_TICKS = 30L
 }

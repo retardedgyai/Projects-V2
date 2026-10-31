@@ -31,6 +31,17 @@ sealed interface CoreRepositorySave {
 /** Retired class id that old saves may still contain; it loads as Mage. */
 private const val RETIRED_STARWEAVER = "STARWEAVER"
 
+/** A `passive` row's ids: `12` for a node, `78.2` for mastery 78 with option 2. */
+internal fun decodePassives(text: String): Pair<Set<Int>, Map<Int, Int>> {
+    val ids = linkedSetOf<Int>(); val masteries = linkedMapOf<Int, Int>()
+    text.split(',').filter { it.isNotEmpty() }.forEach { token ->
+        val id = token.substringBefore('.').toInt()
+        require(ids.add(id)) { "パッシブが重複しています" }
+        if ('.' in token) masteries[id] = token.substringAfter('.').toInt()
+    }
+    return ids to masteries
+}
+
 /** Dedicated core-loop directory. Existing progression files are never opened or migrated. */
 class CoreAccountRepository(
     directory: Path,
@@ -247,6 +258,7 @@ class CoreAccountRepository(
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t9\t") -> 9
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t10\t") -> 10
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t11\t") -> 11
+            bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t12\t") -> 12
             else -> return
         }
         val backup = directory.resolve("$playerId.account.v$version.bak")
@@ -271,7 +283,7 @@ class CoreAccountRepository(
 internal object CoreAccountCodec {
     fun encode(account: CoreAccount): String {
         val body = buildString {
-            append("PROJECTS_CORE_LOOP\t12\t${account.playerId}\t${account.revision}\n")
+            append("PROJECTS_CORE_LOOP\t13\t${account.playerId}\t${account.revision}\n")
             append("gear\t${account.weaponTier}\t${account.armorTier}\t${account.unlockedMapTier}\n")
             append("crafting\t${account.weaponRarity}\t${account.armorRarity}\t${account.craftingSeed}\n")
             append("enhancement\t${account.weaponEnhancement.level}\t${account.weaponEnhancement.failures}\t${account.armorEnhancement.level}\t${account.armorEnhancement.failures}\t${account.smithingXp}\n")
@@ -290,9 +302,16 @@ internal object CoreAccountCodec {
             account.buyOrders.forEach { append("buy-order\t${it.id}\t${it.unitPrice}\t${it.remaining}\t${it.tier}\t${it.resource ?: ""}\t${it.slot ?: ""}\t${it.family ?: ""}\n") }
             (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity + account.armorParts.values.map { it.identity }).forEach { append("gear-quality\t${it.id}\t${it.quality}\n") }
             account.journey.let { append("journey\t${it.job}\t${it.chosen}\t${it.xp}\t${it.lessons}\t${it.legacy}\n") }
-            account.journey.build.let { append("class-build\t${it.first}\t${it.second}\t${it.third}\t${it.fourth}\t${it.ultimate}\t${it.nodes}\n") }
+            account.journey.build.let { append("class-build\t${it.first}\t${it.second}\t${it.third}\t${it.fourth}\t${it.ultimate}\t0\n") }
             account.journey.savedBuilds.entries.sortedBy { it.key.ordinal }.forEach { (job, b) ->
-                append("class-loadout\t$job\t${b.first}\t${b.second}\t${b.third}\t${b.fourth}\t${b.ultimate}\t${b.nodes}\n")
+                append("class-loadout\t$job\t${b.first}\t${b.second}\t${b.third}\t${b.fourth}\t${b.ultimate}\t0\n")
+            }
+            // A taken mastery is written as id.choice (2026-10-31); plain ids are the v13 form and still read.
+            fun passiveRow(b: CoreClassBuild) = b.passives.sorted().joinToString(",") { id -> b.masteries[id]?.let { "$id.$it" } ?: "$id" }
+            append("passive-tree\t${CorePassiveTree.fingerprint}\n")
+            append("passive\t${account.journey.job}\t${passiveRow(account.journey.build)}\n")
+            account.journey.savedBuilds.entries.sortedBy { it.key.ordinal }.forEach { (job, b) ->
+                if (b.passives.isNotEmpty()) append("passive\t$job\t${passiveRow(b)}\n")
             }
             (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity + account.armorParts.values.map { it.identity }).forEach { append("gear-base\t${it.id}\t${it.base}\t${it.itemLevel}\n") }
             (account.maps + listOfNotNull(account.activeRun?.map)).forEach { append("map-level\t${it.id}\t${it.level}\n") }
@@ -323,7 +342,7 @@ internal object CoreAccountCodec {
         require(text.substring(checksumAt) == "checksum\t${digest(body)}\n") { "保存データの検証に失敗しました" }
         val rows = body.trimEnd('\n').split('\n').map { it.split('\t') }
         val header = rows.first()
-        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in (1..12).map(Int::toString)) { "未対応の保存形式です" }
+        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in (1..13).map(Int::toString)) { "未対応の保存形式です" }
         val version = header[1].toInt()
         require(UUID.fromString(header[2]) == playerId) { "保存データのプレイヤーが一致しません" }
         val gear = rows.getOrNull(1) ?: error("装備データがありません")
@@ -353,13 +372,21 @@ internal object CoreAccountCodec {
         var journey: CoreJourney? = null
         var classBuild: CoreClassBuild? = null
         val legacyTreeMasks = mutableListOf<Int>()
-        fun readTreeMask(value: String): Int {
+        // The per-class talent trees were removed: v10-12 points are refunded, and v13+ writes the column as 0.
+        // The column stays so the file format is unchanged; it is only validated on load.
+        fun readTreeMask(value: String) {
             val mask=value.toInt()
-            if(version!=9)return mask
-            legacyTreeMasks += mask
-            return CoreClassTrees.refundLegacyMask(mask)
+            if(version==9) {
+                // The original nine-node contract: in-branch prerequisites and at most one keystone.
+                require(mask in 0..511)
+                for(i in 0..8) if(mask and (1 shl i)!=0 && i%3>0) require(mask and (1 shl (i-1))!=0)
+                require(listOf(2,5,8).count { mask and (1 shl it)!=0 }<=1)
+                legacyTreeMasks += mask
+            } else if(version>=13) require(mask==0) { "旧技能ツリーの保存値が不正です" }
         }
         val savedBuilds = mutableMapOf<CoreClass, CoreClassBuild>()
+        val passives = mutableMapOf<CoreClass, Pair<Set<Int>, Map<Int, Int>>>()
+        var passiveTree: String? = null
         // The retired Starweaver class loads as Mage; its own loadout cannot carry over.
         var retiredStarweaver = false
         val bases = linkedMapOf<UUID, Pair<CoreWeaponBase, Int>>()
@@ -367,15 +394,19 @@ internal object CoreAccountCodec {
         val mapZones = linkedMapOf<UUID, Int>()
         val zoneRecords = linkedMapOf<Int, CoreZoneRecord>()
         rows.drop(2).forEach { row -> when (row[0]) {
-            "class-build" -> { require(version >= 9 && row.size == 7 && classBuild == null); classBuild = CoreClassBuild(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), readTreeMask(row[6])) }
+            "class-build" -> { require(version >= 9 && row.size == 7 && classBuild == null); readTreeMask(row[6]); classBuild = CoreClassBuild(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt()) }
             "class-loadout" -> {
                 require(version >= 9 && row.size == 8)
-                val build = CoreClassBuild(row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), row[6].toInt(), readTreeMask(row[7]))
+                readTreeMask(row[7])
+                val build = CoreClassBuild(row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt(), row[6].toInt())
                 if (row[1] != RETIRED_STARWEAVER) {
                     val job = CoreClass.valueOf(row[1]); require(job !in savedBuilds)
                     savedBuilds[job] = build
                 }
             }
+            "passive-tree" -> { require(version >= 13 && row.size == 2 && passiveTree == null); passiveTree = row[1] }
+            "passive" -> { require(version >= 13 && row.size == 3); val job = CoreClass.valueOf(row[1])
+                require(passives.put(job, decodePassives(row[2])) == null) }
             "journey" -> { require(version >= 8 && row.size == 6 && journey == null); retiredStarweaver = row[1] == RETIRED_STARWEAVER
                 journey = CoreJourney(if (retiredStarweaver) CoreClass.MAGE else CoreClass.valueOf(row[1]), row[2].toBooleanStrict(), row[3].toLong(), row[4].toInt(), row[5].toBooleanStrict()) }
             "gear-base" -> { require(version >= 8 && row.size == 4); require(bases.put(UUID.fromString(row[1]), CoreWeaponBase.valueOf(row[2]) to row[3].toInt()) == null) }
@@ -477,11 +508,16 @@ internal object CoreAccountCodec {
             }
             val saved = requireNotNull(classBuild) { "職業の構成データがありません" }
             val build = if (retiredStarweaver) savedBuilds.remove(CoreClass.MAGE) ?: CoreClassBuild() else saved
-            require(build.points <= CoreClassTrees.budget(existingJourney)) { "技能ポイントが不正です" }
             require(existingJourney.job !in savedBuilds) { "現在の職業の構成が重複しています" }
             // 2026-10 class rework: retired skill indices are replaced on load (same columns, so no new version).
-            journey = existingJourney.copy(build = CoreSkillCatalog.migrate(existingJourney.job, build),
-                savedBuilds = savedBuilds.mapValues { (job, saved) -> CoreSkillCatalog.migrate(job, saved) })
+            if (version >= 13) require(existingJourney.job in passives) { "パッシブの保存項目がありません" }
+            // Allocated on another version of the tree (or before the fingerprint row existed): every point is
+            // given back, free. The ids would otherwise point at other nodes, or at nothing.
+            if (passiveTree != CorePassiveTree.fingerprint) passives.replaceAll { _, _ -> emptySet<Int>() to emptyMap() }
+            require(passives.keys.all { it == existingJourney.job || it in savedBuilds }) { "パッシブの職業が構成と一致しません" }
+            fun withPassives(job: CoreClass, b: CoreClassBuild) = passives[job]?.let { (ids, masteries) -> b.copy(passives = ids, masteries = masteries) } ?: b
+            journey = existingJourney.copy(build = withPassives(existingJourney.job, CoreSkillCatalog.migrate(existingJourney.job, build)),
+                savedBuilds = savedBuilds.mapValues { (job, saved) -> withPassives(job, CoreSkillCatalog.migrate(job, saved)) })
         }
         if (version >= 8) {
             require(journey != null && bases.keys == qualities.keys)

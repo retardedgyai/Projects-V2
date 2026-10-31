@@ -1,0 +1,266 @@
+<title>パッシブツリー第2版</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700&family=Shippori+Mincho:wght@600&display=swap">
+<style>
+/* 夜空に浮かぶ星図のような木。左に大きなキャンバス、右に割り振りと合計。 */
+:root{
+  --bg:#0f1013; --panel:#17191d; --fg:#ece6d8; --mute:#9a9385; --line:#2c2e33;
+  --edge:#4a463d; --gold:#e6b450; --small:#8f897c; --notable:#86a3e8; --key:#e57a5c; --start:#7fd1a0;
+  --body:"Zen Kaku Gothic New",system-ui,sans-serif; --title:"Shippori Mincho","Zen Kaku Gothic New",serif;
+  color-scheme:dark;
+}
+html,body{background:var(--bg);color:var(--fg);font-family:var(--body);margin:0}
+.wrap{padding-block:16px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:12px;max-width:1500px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px 20px}
+h1{font-family:var(--title);font-weight:600;font-size:1.8rem;margin:0;letter-spacing:.08em}
+.lead{color:var(--mute);margin:0;font-size:.92rem;line-height:1.6}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:12px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.stage{position:relative;background:radial-gradient(circle at 50% 50%,#1a1c22 0,#0f1013 70%);border:1px solid var(--line);border-radius:6px;overflow:hidden;height:min(78vh,900px);touch-action:none}
+canvas{display:block;width:100%;height:100%;cursor:grab}
+canvas.drag{cursor:grabbing}
+.zoom{position:absolute;right:10px;top:10px;display:grid;gap:6px}
+.zoom button{width:34px;height:34px;font-size:1.1rem}
+#tip{position:absolute;pointer-events:none;background:rgba(15,16,19,.94);border:1px solid var(--gold);border-radius:4px;padding:8px 10px;max-width:260px;font-size:.85rem;line-height:1.5}
+#tip b{font-family:var(--title);font-size:1rem;display:block}
+#tip .k{font-size:.72rem;color:var(--mute)}
+.side{display:grid;gap:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:grid;gap:8px}
+.card h2{font-size:.95rem;margin:0;font-family:var(--title);letter-spacing:.05em}
+label{font-size:.88rem;display:grid;gap:4px;color:var(--mute)}
+select,input{font:inherit;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:5px 7px;width:100%;box-sizing:border-box}
+input[type=range]{padding:0}
+.pts{font-family:var(--title);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;padding:6px 10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:4px;cursor:pointer}
+button:hover{border-color:var(--gold)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.sum{margin:0;padding-left:1.1em;font-size:.86rem;line-height:1.6;max-height:220px;overflow:auto}
+.keys{margin:0;padding:0;list-style:none;font-size:.84rem;display:grid;gap:6px;max-height:260px;overflow:auto}
+.keys li{cursor:pointer}
+.keys b{color:var(--key)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:.8rem;color:var(--mute)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.note{font-size:.8rem;color:var(--mute);margin:0;line-height:1.6}
+</style>
+<div class="wrap">
+  <header>
+    <h1>パッシブツリー第2版</h1>
+    <p class="lead">6職の起点は中心のまわり。外へ行くほど強い主要ノード、いちばん外にキーストーン。ドラッグで移動、ホイールかピンチで拡大。ノードを押すと、そこまでの一番近い道をまとめて取ります。</p>
+  </header>
+  <div class="main">
+    <div class="stage" id="stage">
+      <canvas id="cv" aria-label="パッシブツリー"></canvas>
+      <div class="zoom"><button id="zin" type="button" aria-label="拡大">＋</button><button id="zout" type="button" aria-label="縮小">－</button><button id="zfit" type="button" aria-label="全体を見る">⤢</button></div>
+      <div id="tip" hidden></div>
+    </div>
+    <div class="side">
+      <div class="card">
+        <label for="job">職業<select id="job"></select></label>
+        <label for="lv">レベル <span id="lvv"></span><input id="lv" type="range" min="1" max="40" value="40"></label>
+        <div><span class="note">残りポイント</span><div class="pts" id="pts"></div></div>
+        <div class="row"><button id="reset" type="button">全部戻す</button></div>
+        <p class="note" id="cost"></p>
+      </div>
+      <div class="card">
+        <label for="q">探す<input id="q" type="search" placeholder="例：会心、氷、シールド"></label>
+        <p class="note" id="hits"></p>
+      </div>
+      <div class="card" id="mcard" hidden><h2>極意を選ぶ</h2><p class="note" id="mnote"></p><div class="row" id="mchoices" style="display:grid;gap:6px"></div></div>
+      <div class="card"><h2>合計</h2><ul class="sum" id="sum"></ul></div>
+      <div class="card"><h2>キーストーン（案）</h2><ul class="keys" id="keys"></ul></div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--start)"></i>起点</span>
+        <span><i class="dot" style="background:var(--small)"></i>小</span>
+        <span><i class="dot" style="background:var(--notable)"></i>主要</span>
+        <span><i class="dot" style="background:var(--key)"></i>キーストーン</span>
+        <span><i class="dot" style="border:2px solid var(--fg);box-sizing:border-box"></i>極意</span>
+        <span><i class="dot" style="background:var(--gold)"></i>取得済み</span>
+      </div>
+      <p class="note" id="count"></p>
+    </div>
+  </div>
+</div>
+<script>
+const D = /*DATA*/null;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C = { edge: css("--edge"), gold: css("--gold"), small: css("--small"), notable: css("--notable"), key: css("--key"), start: css("--start"), fg: css("--fg"), bg: css("--bg") };
+const N = D.nodes, G = D.groups;
+const adj = N.map(() => []);
+D.edges.forEach(([a, b]) => { adj[a].push(b); adj[b].push(a); });
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d"), stage = document.getElementById("stage"), tip = document.getElementById("tip");
+const jobSel = document.getElementById("job"), lv = document.getElementById("lv"), q = document.getElementById("q");
+D.classes.forEach(([id, name]) => { const o = document.createElement("option"); o.value = id; o.textContent = name; jobSel.append(o); });
+let taken = new Set(), hover = -1, matches = new Set(), mastery = new Map(), openMastery = -1;
+const startOf = () => N.findIndex(n => n.start === jobSel.value);
+const budget = () => Number(lv.value) - 1;
+const takeable = n => n.kind === "SMALL" || n.kind === "NOTABLE" || n.kind === "KEYSTONE";
+const RADIUS = { SMALL: 22, NOTABLE: 40, KEYSTONE: 62, START: 80, MASTERY: 34 };
+const groupHasNotable = (g, set) => N.some(n => n.group === g && n.kind === "NOTABLE" && set.has(n.id));
+const used = () => taken.size + mastery.size;
+function pruneMasteries() { for (const id of [...mastery.keys()]) if (!groupHasNotable(N[id].group, taken)) mastery.delete(id); }
+
+// View transform: world -> screen.
+let scale = 0.2, ox = 0, oy = 0, dpr = 1;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  cv.width = stage.clientWidth * dpr; cv.height = stage.clientHeight * dpr;
+  draw();
+}
+function fit() {
+  const xs = N.map(n => n.x), ys = N.map(n => n.y);
+  const w = Math.max(...xs) - Math.min(...xs) + 300, h = Math.max(...ys) - Math.min(...ys) + 300;
+  scale = Math.min(stage.clientWidth / w, stage.clientHeight / h);
+  ox = stage.clientWidth / 2; oy = stage.clientHeight / 2; draw();
+}
+const sx = x => (x * scale + ox), sy = y => (y * scale + oy);
+
+function shortestPath(target) {
+  // BFS from the allocated set (and the start) to the target through takeable nodes.
+  const root = startOf(), from = new Map(), seen = new Set([root, ...taken]);
+  let queue = [root, ...taken];
+  while (queue.length) {
+    const next = [];
+    for (const u of queue) for (const v of adj[u]) {
+      if (seen.has(v) || !takeable(N[v])) continue;
+      seen.add(v); from.set(v, u);
+      if (v === target) { const p = [v]; let w = u; while (from.has(w)) { p.push(w); w = from.get(w); } return p; }
+      next.push(v);
+    }
+    queue = next;
+  }
+  return null;
+}
+function reachableFrom(set) {
+  const root = startOf(), seen = new Set(), todo = [root];
+  while (todo.length) for (const v of adj[todo.pop()]) if (set.has(v) && !seen.has(v)) { seen.add(v); todo.push(v); }
+  return seen;
+}
+function click(i) {
+  if (i >= 0 && N[i].kind === "MASTERY") { openMastery = i; renderMastery(); update(); return; }
+  if (i < 0 || !takeable(N[i])) return;
+  if (taken.has(i)) { const rest = new Set(taken); rest.delete(i); taken = reachableFrom(rest); pruneMasteries(); }
+  else { const p = shortestPath(i); if (p && used() + p.length <= budget()) p.forEach(v => taken.add(v)); }
+  renderMastery();
+  update();
+}
+
+function renderMastery() {
+  const card = document.getElementById("mcard"), box = document.getElementById("mchoices");
+  if (openMastery < 0) { card.hidden = true; return; }
+  const n = N[openMastery], open = groupHasNotable(n.group, taken), chosen = mastery.get(openMastery);
+  card.hidden = false; box.replaceChildren();
+  document.getElementById("mnote").textContent = open ? (chosen === undefined ? "1点で1つ選べます。" : "選び直せます（点は増えません）。") : "この輪の主要ノードを1つ取ると選べます。";
+  n.choices.forEach((c, k) => { const b = document.createElement("button"); b.type = "button"; b.textContent = (chosen === k ? "✓ " : "") + c;
+    b.disabled = !open || (chosen === undefined && used() >= budget());
+    b.onclick = () => { mastery.set(openMastery, k); renderMastery(); update(); }; box.append(b); });
+  if (chosen !== undefined) { const b = document.createElement("button"); b.type = "button"; b.textContent = "戻す"; b.onclick = () => { mastery.delete(openMastery); renderMastery(); update(); }; box.append(b); }
+}
+function arcEdge(a, b) {
+  const g = G[a.group], r = D.orbitRadii[a.orbit];
+  let a1 = Math.atan2(a.y - g.y, a.x - g.x), a2 = Math.atan2(b.y - g.y, b.x - g.x);
+  let d = a2 - a1; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+  ctx.arc(sx(g.x), sy(g.y), r * scale, a1, a1 + d, d < 0);
+}
+function draw() {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  const root = startOf(), lit = new Set([...taken, root]);
+  const path = hover >= 0 && !taken.has(hover) ? new Set(shortestPath(hover) || []) : new Set();
+  for (const pass of [0, 1, 2]) for (const [a, b, arc] of D.edges) {
+    const on = lit.has(a) && lit.has(b), pre = (path.has(a) || lit.has(a)) && (path.has(b) || lit.has(b)) && !on;
+    if ((pass === 0 && (on || pre)) || (pass === 1 && !pre) || (pass === 2 && !on)) continue;
+    ctx.beginPath();
+    if (arc) arcEdge(N[a], N[b]); else { ctx.moveTo(sx(N[a].x), sy(N[a].y)); ctx.lineTo(sx(N[b].x), sy(N[b].y)); }
+    ctx.strokeStyle = on ? C.gold : pre ? C.fg : C.edge;
+    ctx.lineWidth = Math.max(1, (on ? 9 : 6) * scale);
+    ctx.globalAlpha = pre ? .55 : 1; ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  const big = scale > 0.32;
+  for (const n of N) {
+    const r = RADIUS[n.kind] * scale;
+    const x = sx(n.x), y = sy(n.y);
+    if (x < -80 || y < -80 || x > cv.width / dpr + 80 || y > cv.height / dpr + 80) continue;
+    const on = lit.has(n.id) || mastery.has(n.id);
+    if (n.kind === "MASTERY") {
+      ctx.beginPath(); ctx.arc(x, y, Math.max(r, 3), 0, 2 * Math.PI);
+      ctx.lineWidth = Math.max(1.5, 8 * scale); ctx.strokeStyle = on ? C.gold : groupHasNotable(n.group, taken) ? C.fg : C.edge; ctx.stroke();
+      if (n.id === openMastery || n.id === hover) { ctx.lineWidth = 2; ctx.strokeStyle = "#fff"; ctx.beginPath(); ctx.arc(x, y, Math.max(r, 3) + 4, 0, 2 * Math.PI); ctx.stroke(); }
+      continue;
+    }
+    ctx.beginPath();
+    if (n.kind === "KEYSTONE") { ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath(); }
+    else ctx.arc(x, y, Math.max(r, 2), 0, 2 * Math.PI);
+    ctx.fillStyle = on ? C.gold : { SMALL: C.small, NOTABLE: C.notable, KEYSTONE: C.key, START: C.start }[n.kind];
+    ctx.globalAlpha = on || n.kind !== "SMALL" ? 1 : .8;
+    if (n.kind === "START" && n.start !== jobSel.value) ctx.globalAlpha = .35;
+    ctx.fill(); ctx.globalAlpha = 1;
+    if (matches.has(n.id) || n.id === hover || path.has(n.id)) { ctx.lineWidth = 2; ctx.strokeStyle = matches.has(n.id) ? "#fff" : C.fg; ctx.stroke(); }
+    if (n.kind === "START" || n.kind === "KEYSTONE" || (n.kind === "NOTABLE" && big)) {
+      ctx.fillStyle = C.fg; ctx.font = `${n.kind === "NOTABLE" ? 12 : 13}px "Zen Kaku Gothic New", sans-serif`; ctx.textAlign = "center";
+      ctx.fillText(n.kind === "START" ? n.name.replace("の起点", "") : n.name, x, y + r + 14);
+    }
+  }
+}
+function pick(px, py) {
+  let best = -1, bd = 1e9;
+  for (const n of N) { const d = Math.hypot(sx(n.x) - px, sy(n.y) - py); const lim = Math.max(8, RADIUS[n.kind] * scale + 4); if (d < lim && d < bd) { bd = d; best = n.id; } }
+  return best;
+}
+function showTip(i, px, py) {
+  if (i < 0) { tip.hidden = true; return; }
+  const n = N[i], p = !taken.has(i) && takeable(n) ? shortestPath(i) : null;
+  const kind = { SMALL: "小さいノード", NOTABLE: "主要ノード", KEYSTONE: "キーストーン（中身は案）", START: "起点", MASTERY: "極意（押して選ぶ）" }[n.kind];
+  tip.innerHTML = `<span class="k">${kind}</span><b></b><div></div><span class="k"></span>`;
+  tip.querySelector("b").textContent = n.name; tip.querySelector("div").textContent = n.text;
+  tip.querySelectorAll(".k")[1].textContent = n.kind === "MASTERY" ? (mastery.has(i) ? "選択中：" + n.choices[mastery.get(i)] : "") : taken.has(i) ? "取得済み（押すと戻す）" : p ? `あと ${p.length} 点で届く` : n.kind === "START" ? "" : "届かない";
+  tip.hidden = false;
+  const w = stage.clientWidth;
+  tip.style.left = Math.min(px + 14, w - 270) + "px"; tip.style.top = (py + 14) + "px";
+}
+function update() {
+  document.getElementById("lvv").textContent = `Lv${lv.value}`;
+  document.getElementById("pts").textContent = `${budget() - used()} / ${budget()}`;
+  const per = 10 * Number(lv.value);
+  document.getElementById("cost").textContent = `戻す代金：1点ごとに銀貨 ${per} 枚（全部戻すと ${per * used()} 枚）`;
+  const total = {};
+  taken.forEach(id => { const n = N[id]; if (n.kind === "KEYSTONE") total["◆ " + n.name] = null; else Object.entries(n.stats).forEach(([s, v]) => { const label = n.text.split(" / ").find(t => t.includes("+" + v + "%"))?.split("+")[0] || s; total[label] = (total[label] || 0) + v; }); });
+  mastery.forEach((k, id) => { total["◇ " + N[id].choices[k]] = null; });
+  const ul = document.getElementById("sum"); ul.replaceChildren();
+  Object.entries(total).sort((a, b) => (b[1] ?? 999) - (a[1] ?? 999)).forEach(([k, v]) => { const li = document.createElement("li"); li.textContent = v === null ? k : `${k} +${v}%`; ul.append(li); });
+  if (!ul.children.length) { const li = document.createElement("li"); li.textContent = "まだ何も取っていません"; ul.append(li); }
+  draw();
+}
+// Pan, zoom, pinch.
+const pointers = new Map(); let lastDist = 0, moved = false;
+cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.offsetX, e.offsetY]); moved = false; cv.classList.add("drag"); });
+cv.addEventListener("pointermove", e => {
+  if (pointers.has(e.pointerId)) {
+    const [px, py] = pointers.get(e.pointerId);
+    if (pointers.size === 1) { ox += e.offsetX - px; oy += e.offsetY - py; if (Math.hypot(e.offsetX - px, e.offsetY - py) > 2) moved = true; }
+    pointers.set(e.pointerId, [e.offsetX, e.offsetY]);
+    if (pointers.size === 2) { const [a, b] = [...pointers.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (lastDist) zoomAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, d / lastDist); lastDist = d; moved = true; }
+    draw(); tip.hidden = true;
+  } else { hover = pick(e.offsetX, e.offsetY); showTip(hover, e.offsetX, e.offsetY); draw(); }
+});
+cv.addEventListener("pointerup", e => { pointers.delete(e.pointerId); lastDist = 0; cv.classList.remove("drag"); if (!moved) { click(pick(e.offsetX, e.offsetY)); showTip(pick(e.offsetX, e.offsetY), e.offsetX, e.offsetY); } });
+cv.addEventListener("pointerleave", () => { hover = -1; tip.hidden = true; draw(); });
+function zoomAt(px, py, f) { const ns = Math.min(1.2, Math.max(0.08, scale * f)); ox = px - (px - ox) * ns / scale; oy = py - (py - oy) * ns / scale; scale = ns; }
+cv.addEventListener("wheel", e => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * 0.0015)); draw(); }, { passive: false });
+document.getElementById("zin").onclick = () => { zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1.3); draw(); };
+document.getElementById("zout").onclick = () => { zoomAt(stage.clientWidth / 2, stage.clientHeight / 2, 1 / 1.3); draw(); };
+document.getElementById("zfit").onclick = fit;
+const clearAll = () => { taken.clear(); mastery.clear(); renderMastery(); update(); };
+jobSel.onchange = clearAll;
+lv.oninput = () => { if (used() > budget()) { taken.clear(); mastery.clear(); renderMastery(); } update(); };
+document.getElementById("reset").onclick = clearAll;
+q.oninput = () => { const s = q.value.trim(); matches = new Set(s ? N.filter(n => n.name.includes(s) || n.text.includes(s)).map(n => n.id) : []); document.getElementById("hits").textContent = s ? `${matches.size} 件` : ""; draw(); };
+const keys = document.getElementById("keys");
+N.filter(n => n.kind === "KEYSTONE").forEach(n => { const li = document.createElement("li"); li.innerHTML = "<b></b><br><span></span>"; li.querySelector("b").textContent = n.name; li.querySelector("span").textContent = n.text;
+  li.onclick = () => { scale = 0.5; ox = stage.clientWidth / 2 - n.x * scale; oy = stage.clientHeight / 2 - n.y * scale; hover = n.id; draw(); }; keys.append(li); });
+const kinds = {}; N.forEach(n => kinds[n.kind] = (kinds[n.kind] || 0) + 1);
+document.getElementById("count").textContent = `全 ${N.length} ノード（小 ${kinds.SMALL}・主要 ${kinds.NOTABLE}・極意 ${kinds.MASTERY}・キーストーン ${kinds.KEYSTONE}）。Lv40 で 39 点。`;
+window.addEventListener("resize", resize);
+resize(); fit(); update();
+</script>

@@ -25,4 +25,6 @@ internal interface CoreMenuHost {
     fun gatheringMastery(player: Player): QuestGatheringMastery
     fun unlockMastery(player: Player, discipline: QuestGatheringDiscipline, node: QuestGatheringMasteryNode)
     fun departTrial(player: Player, kind: CoreActivityKind, tier: Int, revision: Long)
+    /** Opens the full passive tree screen; false when this player cannot see it (no UI pack, away from the hub). */
+    fun openPassiveTree(player: Player): Boolean = false
 }

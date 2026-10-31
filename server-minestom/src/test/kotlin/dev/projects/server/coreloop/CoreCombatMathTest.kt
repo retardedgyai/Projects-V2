@@ -73,8 +73,8 @@ class CoreCombatMathTest {
         assertEquals(156.0, sheet.mana)
         assertEquals(9.0, CoreCombatMath.manaRegeneration(s, false))
         assertEquals(27.0, CoreCombatMath.manaRegeneration(s, true))
-        assertEquals(52.8, CoreCombatMath.healing(20.0, 1.0, sheet), .000001)
-        assertEquals(10.0, CoreCombatMath.lifeSteal(100.0, s, false))
+        assertEquals(105.6, CoreCombatMath.healing(20.0, 1.0, sheet), .000001) // (20 + (20 base + 10) × 2) × 1.1 × 1.2
+        assertEquals(10.0, CoreCombatMath.lifeSteal(100.0, s, false)) // no healing power passed: unscaled
         assertEquals(3.3, CoreCombatMath.lifeSteal(100.0, s, true), .000001)
     }
     @Test fun `catalog previews show each actual per-hit formula timing and hit count`() {

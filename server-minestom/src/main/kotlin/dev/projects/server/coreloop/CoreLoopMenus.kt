@@ -401,40 +401,77 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         }
     }
 
-    fun talentTree(player: Player, selectedNode: Int = 0) {
+    /** The passive tree: the full screen when the UI pack is on, otherwise [passiveList]. */
+    fun talentTree(player: Player) {
+        if (!game.openPassiveTree(player)) passiveList(player)
+    }
+
+    /**
+     * Without the UI pack the tree cannot be drawn, so this lists what matters: the nodes one step from the
+     * allocation (take) or the taken ones (refund, which costs silver). The rules are [CorePassiveTree]'s.
+     * An open mastery is listed too; clicking it again steps through its options ([choice]).
+     */
+    fun passiveList(player: Player, owned: Boolean = false, page: Int = 0, selectedNode: Int = -1, choice: Int = 0) {
         val a = game.account(player) ?: return
-        val build = a.journey.build
-        val nodes = CoreClassTrees.nodes(a.journey.job)
-        val budget = CoreClassTrees.budget(a.journey)
-        val selected=selectedNode.coerceIn(nodes.indices)
-        val node=nodes[selected]
-        val change=runCatching { build.toggle(selected,budget) }
-        val permitted=a.activeRun==null && change.isSuccess
-        val reason=if(a.activeRun!=null) "港で変更できます" else change.exceptionOrNull()?.message ?: if(build.has(selected)) "切れた先も返還" else "1ポイントで習得"
-        view(player, "${a.journey.job.displayName} / スキルツリー", { talentTree(player,selected) }) { v ->
-            v.canvas.left("残り ${budget-build.points} ポイント", lines("Lv4ごとに増える", "最大12ポイント", "", "上の起点から進む", "分岐を選んで育てる", "最終パッシブは一つ", "", "金の線：習得済み", "灰の線：未習得", "右下で習得を確定"))
-            v.canvas.right(node.name, paragraph(node.description) + lines("", if(build.has(selected)) "習得済み" else "未習得") + paragraph(reason))
-            val root = CoreSkillTooltip.item(CoreSkillCatalog.skills(a.journey.job)[CoreSkillCatalog.ultimateStart(a.journey.job)],game.combatSheet(player)?:CoreCombatSheet.from(a),a.journey,v.packed)
-            tile(v,4,1,"",root,Tone.SELECTED,icon=true)
-            for(i in nodes.indices) {
-                val parents=CoreClassTrees.parents(i)
-                if(parents.isEmpty()) v.canvas.treeEdge(4,CoreClassTrees.slot(i),build.has(i))
-                else parents.forEach { parent -> v.canvas.treeEdge(CoreClassTrees.slot(parent),CoreClassTrees.slot(i),build.has(parent)&&build.has(i)) }
+        val job = a.journey.job
+        val taken = a.journey.build.passives
+        val masteries = a.journey.build.masteries
+        val budget = CorePassiveTree.budget(a)
+        val price = CorePassiveTree.refundPrice(a.journey)
+        val lit = taken + CorePassiveTree.start(job)
+        val entries = if (owned) taken.sorted() else lit.flatMap { CorePassiveTree.nodes[it].links }.distinct()
+            .filter { it !in lit && CorePassiveTree.nodes[it].ready }.sortedBy { CorePassiveTree.nodes[it].kind != CorePassiveKind.NOTABLE }
+            .let { open -> CorePassiveTree.nodes.indices.filter { CorePassiveTree.isMastery(it) && it !in taken && CorePassiveTree.wheelOpen(taken, it) } + open }
+        val pages = maxOf(1, (entries.size + 26) / 27)
+        val shown = page.coerceIn(0, pages - 1)
+        val selected = selectedNode.takeIf { it in entries }
+        val node = selected?.let { CorePassiveTree.nodes[it] }
+        val mastery = node?.kind == CorePassiveKind.MASTERY
+        val option = if (mastery && !owned) choice.mod(node!!.choices.size) else -1
+        fun describe(n: CorePassiveNode) = masteries[n.id]?.let { "選んだ極意：${n.choices[it].text}" } ?: n.description
+        val refundCount = if (owned && selected != null) taken.size - CorePassiveTree.refund(job, taken, selected).size else 0
+        val reason = when {
+            node == null -> if (owned) "戻すノードを選ぶ" else "取るノードを選ぶ"
+            a.activeRun != null -> "港で変更できます"
+            owned -> "銀貨${price * refundCount}枚で戻す" + if (refundCount > 1) "（先の${refundCount - 1}つも）" else ""
+            taken.size >= budget -> "ポイントが足りません"
+            mastery && CorePassiveTree.choiceTaken(masteries, node!!.id, option) -> "「${node.choices[option].text}」はほかの輪で取得済み。もう一度押すと次の選択肢"
+            mastery -> "「${node!!.choices[option].text}」を1ポイントで取る。もう一度押すと次の選択肢"
+            else -> "1ポイントで取れます"
+        }
+        view(player, "${job.displayName} / パッシブ", { passiveList(player, owned, shown, selectedNode) }) { v ->
+            v.canvas.left("残り ${budget - taken.size} ポイント", lines("Lvが1上がるごとに1点", "ボス初討伐ごとに+1点", "全職で一枚の木", "${job.displayName}の起点から伸ばす", "", "戻すには銀貨が要る", "1点ごとに銀貨${price}枚"))
+            v.canvas.right(node?.name ?: if (owned) "取得済み" else "取れるノード", (node?.let { paragraph(describe(it)) + lines("") } ?: emptyList()) + paragraph(reason))
+            entries.drop(shown * 27).take(27).forEachIndexed { i, id ->
+                val n = CorePassiveTree.nodes[id]
+                val material = when (n.kind) {
+                    CorePassiveKind.NOTABLE -> if (owned) Material.ENCHANTED_BOOK else Material.BOOK
+                    CorePassiveKind.MASTERY -> Material.AMETHYST_SHARD
+                    CorePassiveKind.KEYSTONE -> Material.NETHER_STAR
+                    else -> if (owned) Material.GOLD_NUGGET else Material.GLOWSTONE_DUST
+                }
+                tile(v, 9 + i, 1, "", CoreLoopItems.icon(material, n.name, describe(n), "クリック：選ぶ"),
+                    if (id == selected) Tone.SELECTED else if (owned) Tone.PRIMARY else Tone.NEUTRAL, icon = true) {
+                    passiveList(player, owned, shown, id, if (id == selected) option + 1 else 0)
+                }
             }
-            nodes.forEachIndexed { i, node ->
-                val learned=build.has(i)
-                val available=runCatching { build.toggle(i,budget) }.isSuccess
-                val art=CoreSkillCatalog.skills(a.journey.job)[when(i) { 2,5,8 -> CoreSkillCatalog.ultimateStart(a.journey.job)+i/3%2;9,10,14 -> CoreClassTrees.signature(a.journey.job);11,13 -> 0;12 -> 3;15 -> CoreClassTrees.support(a.journey.job);16,17 -> CoreSkillCatalog.ultimateStart(a.journey.job)+1;else -> i.coerceAtMost(7) }].icon
-                var item=CoreLoopItems.icon(if(learned)Material.ENCHANTED_BOOK else Material.BOOK,node.name,node.description,
-                    if(learned) "習得済み" else if(available) "習得可能 / 1ポイント" else "前提未達・ポイント不足・最終パッシブの排他", "クリック：詳細を確認")
-                if(v.packed)item=item.withItemModel("projects:core_ui/$art")
-                tile(v,CoreClassTrees.slot(i),1,"",item,if(i==selected)Tone.SELECTED else if(learned)Tone.PRIMARY else Tone.NEUTRAL,icon=true) { talentTree(player,i) }
+            back(v, player, compact = true) { career(player) }
+            tile(v, 46, 2, if (owned) "取れる" else "取った") { passiveList(player, !owned) }
+            tile(v, 48, 1, "左", tone = if (shown > 0) Tone.NEUTRAL else Tone.DISABLED) { passiveList(player, owned, shown - 1) }
+            tile(v, 49, 1, "右", tone = if (shown < pages - 1) Tone.NEUTRAL else Tone.DISABLED) { passiveList(player, owned, shown + 1) }
+            val permitted = a.activeRun == null && selected != null && (if (owned) a.silver >= price * refundCount else taken.size < budget &&
+                !(mastery && CorePassiveTree.choiceTaken(masteries, selected, option)))
+            tile(v, 50, 2, if (owned) "戻す" else "取る", tone = if (permitted) Tone.PRIMARY else Tone.DISABLED) {
+                mutate(v, player, when {
+                    owned -> CoreAction.RefundPassive(selected!!)
+                    mastery -> CoreAction.TakeMastery(selected!!, option)
+                    else -> CoreAction.TakePassive(selected!!)
+                }, a.revision) { passiveList(player, owned, shown) }
             }
-            back(v, player) { career(player) }
-            tile(v,48,3,if(build.has(selected)) "返還する" else "習得する",tone=if(permitted)Tone.PRIMARY else Tone.DISABLED) {
-                mutate(v,player,CoreAction.ToggleTalent(selected),a.revision) { talentTree(player,selected) }
+            val resetAllowed = a.activeRun == null && taken.isNotEmpty() && a.silver >= price * taken.size
+            tile(v, 52, 2, "全戻し", tone = if (resetAllowed) Tone.DANGER else Tone.DISABLED) {
+                mutate(v, player, CoreAction.ResetPassives, a.revision) { passiveList(player, owned, 0) }
             }
-            tile(v,51,3,"技能編成") { skillBuild(player) }
         }
     }
 

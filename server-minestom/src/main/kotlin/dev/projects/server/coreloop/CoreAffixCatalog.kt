@@ -40,6 +40,8 @@ enum class CoreAffixStat(val displayName: String, val percent: Boolean = true) {
     LIFESTEAL("ライフスティール"),
     SHIELD_POWER("シールド量"),
     CC_RESIST("CC耐性"),
+    CC_DURATION("CC時間"), BREAK_POWER("ブレイク力"), DOT_DAMAGE("継続ダメージ"), DODGE_RECOVERY("回避の再使用速度"),
+    HEAL_ON_KILL("撃破時HP回復"), OVERHEAL_SHIELD("溢れた回復をシールドに"),
     WAR_AFTERSHOCK("戦士・余波", false), MAGE_ECHO("メイジ・残響", false), HUNT_RETURN("狩人・追矢", false),
     ASS_VENOM("暗殺者・毒印", false), TEMP_GRAVITY("聖騎士・重力", false), HEAL_CONVERSION("治療師・予防", false),
 }
@@ -97,8 +99,25 @@ data class CoreAffixStats(
     val iceFlat: Double = 0.0,
     val lightningFlat: Double = 0.0,
     val additional: Map<CoreAffixStat, Double> = emptyMap(),
+    /** Passive values that only count while their condition holds (added before the caps, see [under]). */
+    val conditional: Map<CorePassiveCondition, Map<CoreAffixStat, Double>> = emptyMap(),
+    val keystones: Set<CoreKeystone> = emptySet(),
 ) {
     fun bonus(stat: CoreAffixStat): Double = CoreCombatMath.safe(additional[stat] ?: 0.0)
+    fun has(keystone: CoreKeystone) = keystone in keystones
+    private val variants = arrayOfNulls<CoreAffixStats>(1 shl CorePassiveCondition.entries.size)
+    private val conditionMask = CorePassiveCondition.mask(conditional.keys)
+    /** These stats with the conditional values of [mask] ([CorePassiveCondition.bit]s) on top; cached, so cheap per hit. */
+    fun under(mask: Int): CoreAffixStats {
+        val relevant = mask and conditionMask
+        if (relevant == 0) return this
+        variants[relevant]?.let { return it }
+        val totals = additional.toMutableMap()
+        conditional.forEach { (condition, values) ->
+            if (relevant and condition.bit != 0) values.forEach { (stat, value) -> totals.merge(stat, value, Double::plus) }
+        }
+        return CoreAffixCatalog.capped(totals, conditional, keystones).also { variants[relevant] = it }
+    }
     val criticalChance: Double get() = (0.05 * (1.0 + CoreCombatMath.safe(critChanceIncreasedPercent) / 100.0)).coerceAtMost(0.75)
     val criticalMultiplier: Double get() = (CoreCombatMath.BASE_CRITICAL_MULTIPLIER + CoreCombatMath.safe(critMultiplierBonusPercent) / 100.0).coerceAtMost(4.0)
 }
@@ -227,6 +246,29 @@ object CoreAffixCatalog {
                 totals.merge(definition.stat, installed.stone.value, Double::plus)
             }
         }
+        val build = account.journey.build
+        val passive = CorePassiveTree.effects(account.journey.job, build.passives, build.masteries)
+        passive.stats.forEach { (stat, value) -> totals.merge(stat, value, Double::plus) }
+        if (CoreKeystone.MANA_CYCLE in passive.keystones) totals.merge(CoreAffixStat.COOLDOWN_REDUCTION, CoreKeystone.MANA_CYCLE_COOLDOWN, Double::plus)
+        return capped(totals, passive.conditional, passive.keystones)
+    }
+
+    /**
+     * A stat source for a live player: recomputed only when the account object changes (accounts are immutable), so the
+     * per-condition variants ([CoreAffixStats.under]) stay cached between hits.
+     */
+    fun cached(account: () -> CoreAccount?): () -> CoreAffixStats {
+        var cache: Pair<CoreAccount, CoreAffixStats>? = null
+        return {
+            val now = account()
+            if (now == null) CoreAffixStats()
+            else cache?.takeIf { it.first === now }?.second ?: stats(now).also { cache = now to it }
+        }
+    }
+
+    /** The caps every stat source shares; [totals] are the uncapped sums. */
+    internal fun capped(totals: Map<CoreAffixStat, Double>, conditional: Map<CorePassiveCondition, Map<CoreAffixStat, Double>>,
+        keystones: Set<CoreKeystone>): CoreAffixStats {
         fun stat(type: CoreAffixStat, limit: Double) = (totals[type] ?: 0.0).coerceIn(0.0, limit)
         return CoreAffixStats(stat(CoreAffixStat.DAMAGE, 100.0), stat(CoreAffixStat.ATTACK_SPEED, 60.0),
             stat(CoreAffixStat.SKILL_DAMAGE, 100.0), stat(CoreAffixStat.MAX_MANA, 100.0),
@@ -236,7 +278,7 @@ object CoreAffixCatalog {
             stat(CoreAffixStat.CRIT_MULTIPLIER, 100.0), stat(CoreAffixStat.NORMAL_DAMAGE, 100.0),
             stat(CoreAffixStat.CAST_REDUCTION, 40.0), stat(CoreAffixStat.FIRE, 100.0),
             stat(CoreAffixStat.ICE, 100.0), stat(CoreAffixStat.LIGHTNING, 100.0),
-            Collections.unmodifiableMap(totals.toMap()))
+            Collections.unmodifiableMap(totals.toMap()), conditional, keystones)
     }
 
     internal fun requireSource(sourceId: String) {

@@ -316,7 +316,9 @@ class CoreLoopMenusTest {
             check("skills") { f.menus.skillBuild(f.player) }
             check("ultimates") { f.menus.skillBuild(f.player,4) }
             check("tree") { f.menus.talentTree(f.player) }
-            for(i in 0..17) check("tree node $i") { f.menus.talentTree(f.player,i) }
+            for(owned in listOf(false,true)) for(page in 0..2) check("passive list $owned/$page") { f.menus.passiveList(f.player,owned,page) }
+            val start=CorePassiveTree.start(job)
+            for(i in CorePassiveTree.nodes[start].links) check("passive node $i") { f.menus.passiveList(f.player,false,0,i) }
             for(slot in 0..4) for(i in 0 until if(slot==4)2 else 8)
                 check("candidate $slot/$i") { f.menus.skillBuild(f.player,slot,i,i/4) }
             check("weapon page 2") { f.menus.career(f.player);f.click(30);f.click(48) }
@@ -336,10 +338,10 @@ class CoreLoopMenusTest {
             f.click(49)
             assertEquals(CoreAction.SelectSkill(0,1),f.host.requests.single().action)
             f.host.requests.clear()
+            // Without the full screen the tree opens as a list of the nodes one step away.
             f.menus.talentTree(f.player)
-            assertEquals(21,f.snapshot().treeEdges.size)
-            f.click(CoreClassTrees.slot(3));assertTrue(f.host.requests.isEmpty())
-            f.click(48);assertEquals(CoreAction.ToggleTalent(3),f.host.requests.single().action)
+            f.click(9);assertTrue(f.host.requests.isEmpty())
+            f.click(50);assertIs<CoreAction.TakePassive>(f.host.requests.single().action)
         }
     }
     @Test fun `warrior loadout keys preview both sides of a swap and disable no-op assignments`() {

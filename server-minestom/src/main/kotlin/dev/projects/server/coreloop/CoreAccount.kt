@@ -137,6 +137,8 @@ class CoreAccount(
     init {
         require(surveyPoints in 0..1_000_000_000L)
         require(zoneRecords.keys.all { it in 0..CoreZoneRecord.MAX_ZONE_ID })
+        val passiveBudget = CorePassiveTree.budget(journey) + CorePassiveTree.bonusPoints(zoneRecords.keys)
+        require((journey.savedBuilds.values + journey.build).all { it.passives.size <= passiveBudget }) { "パッシブの割り振りが不正です" }
         require(buyOrders.size <= CoreEconomy.MAX_OFFERS && buyOrders.map { it.id }.distinct().size == buyOrders.size)
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
         require(smithingXp in 0..CoreEnhancementCatalog.MAX_SMITHING_XP)
@@ -225,8 +227,12 @@ data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val ac
 sealed interface CoreAction {
     data class ChooseClass(val job: CoreClass) : CoreAction
     data class SelectSkill(val slot: Int, val choice: Int) : CoreAction
-    data class ToggleTalent(val index: Int) : CoreAction
-    data object ResetTalents : CoreAction
+    data class TakePassive(val node: Int) : CoreAction
+    /** Refunds cost silver (a gold sink); taking a node is free. */
+    data class RefundPassive(val node: Int) : CoreAction
+    data object ResetPassives : CoreAction
+    /** Takes mastery [node] with option [choice] (one point; refund it like any node). */
+    data class TakeMastery(val node: Int, val choice: Int) : CoreAction
     /** Emitted only from authoritative server gameplay, never a menu's arbitrary completion claim. */
     data class LearnCombat(val lesson: Int) : CoreAction
     data class TemperEquipment(val slot: CoreGearSlot) : CoreAction

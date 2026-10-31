@@ -35,7 +35,10 @@ class CoreAffixTest {
 
     @Test fun `catalog deterministic source rolls span all live stats and four ranks`() {
         assertEquals(48, CoreAffixCatalog.definitions.size)
-        assertEquals(CoreAffixStat.entries.toSet(), CoreAffixCatalog.definitions.map { it.stat }.toSet())
+        // The passive tree also grants these; no stone rolls them (2026-10-31).
+        val treeOnly = setOf(CoreAffixStat.CC_DURATION, CoreAffixStat.BREAK_POWER, CoreAffixStat.DOT_DAMAGE,
+            CoreAffixStat.DODGE_RECOVERY, CoreAffixStat.HEAL_ON_KILL, CoreAffixStat.OVERHEAL_SHIELD)
+        assertEquals(CoreAffixStat.entries.toSet() - treeOnly, CoreAffixCatalog.definitions.map { it.stat }.toSet())
         val seen = mutableSetOf<String>()
         for (tier in 1..4) {
             val run = CoreActiveRun(UUID(77, 88), CoreOwnedMap(UUID(99, 11), 1234567, tier))
@@ -187,7 +190,7 @@ class CoreAffixTest {
         assertTrue(read.affixStones.isEmpty() && read.equippedAffixes.isEmpty())
         assertEquals(CoreTransactionStatus.COMMITTED, service.transact(player, CoreOperation(UUID.randomUUID(), 1, CoreAction.ClaimMap(1, 222))).status)
         assertEquals(v1, Files.readString(backup))
-        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t12\t"))
+        assertTrue(Files.readString(path).startsWith("PROJECTS_CORE_LOOP\t13\t"))
         service.forget(player)
         val after = assertIs<CoreAccountLoadResult.Ready>(service.open(player)).account
         assertEquals(77, after.amount(CoreResource.ORE, 4))
