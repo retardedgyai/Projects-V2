@@ -120,7 +120,7 @@ def verify():
     assert layout["skill_icons"] == {"left_x": -88, "pitch": 20, "top": 19, "size": 16, "texels": 16,
                                      "states": list(hud_art.SKILL_STATES)}
     assert layout["console"]["width"] == 184 and layout["console"]["left_x"] == -92
-    assert len(SKILLS) == len(set(SKILLS)) == 70
+    assert len(SKILLS) == len(set(SKILLS)) == 71
     # Slots retain exact vanilla coordinates and readable socket centers (items render afterwards).
     png = (PACK / "assets/projects/textures/gui/core/menu_frame.png").read_bytes()
     cursor, compressed = 8, b""

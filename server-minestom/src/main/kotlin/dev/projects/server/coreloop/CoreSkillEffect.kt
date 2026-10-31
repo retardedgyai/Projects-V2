@@ -33,7 +33,7 @@ internal object CoreSkillArt {
         put(CoreSkillMotif.METEOR, "meteor", "mage_ult")
         put(CoreSkillMotif.FROST, "frost_nova", "mage_garden", "mage_zero")
         put(CoreSkillMotif.TRAP, "hunt_trap")
-        put(CoreSkillMotif.PULL, "temp_pull", "temp_ult")
+        put(CoreSkillMotif.PULL, "temp_pull", "temp_ult", "mage_gale")
         put(CoreSkillMotif.WARD, "war_cry", "war_banner", "war_awaken", "mage_ward", "temp_ward", "temp_sanctuary",
             "heal_shield")
         put(CoreSkillMotif.HEAL, "heal_ring", "heal_wind", "heal_ult")
@@ -48,6 +48,7 @@ internal object CoreSkillArt {
         skill.element == 1 -> 0xff9438
         skill.element == 2 -> 0x82daff
         skill.element == 3 -> 0xa693ff
+        skill.element == 4 -> 0xc8f0c0
         else -> when (job) {
             CoreClass.WARRIOR -> 0xf5b667
             CoreClass.ASSASSIN -> 0xc378ca

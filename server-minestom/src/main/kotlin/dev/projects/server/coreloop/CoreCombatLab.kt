@@ -28,7 +28,10 @@ internal class CoreLabLoadout(private val id: UUID, job: CoreClass) {
     var selectedSlot = 0
     val weaponBase get() = CoreWeaponBase.entries.first { it.usable(journey.job) }
     fun changeClass(job: CoreClass) { journey = journey.changeClass(job) }
-    fun equip(choice: Int) { journey = journey.copy(build = journey.build.equip(if (choice >= 8) 4 else selectedSlot, if (choice >= 8) choice - 8 else choice)) }
+    fun equip(choice: Int) {
+        val start = CoreSkillCatalog.ultimateStart(journey.job)
+        journey = journey.copy(build = journey.build.equip(if (choice >= start) 4 else selectedSlot, if (choice >= start) choice - start else choice))
+    }
     fun account(): CoreAccount = CoreAccount(id, balances = emptyMap(), journey = journey,
         weaponIdentity = CoreGearIdentity.legacy(id, CoreGearSlot.WEAPON).copy(base = weaponBase))
 }
@@ -265,9 +268,10 @@ internal class CoreCombatLab(
         val skills = CoreSkillCatalog.skills(state.journey.job)
         skills.forEachIndexed { i, skill ->
             if (skill.retired) return@forEachIndexed
-            val slot = if (i < 8) 18 + i else 27 + i - 8
+            val start = CoreSkillCatalog.ultimateStart(state.journey.job)
+            val slot = if (i < start) 18 + i else 27 + i - start
             items[slot] = CoreSkillTooltip.item(skill, actor.sheet, state.journey, packed(player),
-                footer = if (i < 8) "クリック：枠${state.selectedSlot + 1}へ設定" else "クリック：奥義へ設定")
+                footer = if (i < start) "クリック：枠${state.selectedSlot + 1}へ設定" else "クリック：奥義へ設定")
             actions[slot] = { state.equip(i); changed() }
         }
         button(36, Material.POTION, "全回復・再使用を補充", "HP・マナ・固有ゲージ・クールダウンを補充") { actor.refillTraining(); player.closeInventory() }

@@ -8,7 +8,9 @@ import kotlin.math.*
 import kotlin.test.*
 
 class CoreFrostChoreographyTest {
+    // The frost domain art (old 絶対零界) now draws the grand chant of ice (CoreMageRules.grand); keep its old shape here.
     private val skill=CoreSkillCatalog.skills(CoreClass.MAGE).first { it.icon=="mage_zero" }
+        .copy(motion=CoreSkillMotion.NOVA,pulses=5,radius=8.0,duration=160,element=2,ultimate=false)
     private fun effect(pulse: Int=0,radius: Double=skill.radius)=
         CoreSkillEffect(CoreClass.MAGE,skill.copy(radius=radius),Vec.ZERO,Vec(0.0,0.0,1.0),pulse=pulse)
 

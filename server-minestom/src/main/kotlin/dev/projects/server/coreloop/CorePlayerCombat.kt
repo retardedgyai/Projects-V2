@@ -74,7 +74,7 @@ internal class CorePlayerCombat(
     private var baseSpeed = 0.1
     private var appliedSpeed = -1.0
     private var lastCombat = -400L
-    private val readyAt = LongArray(5)
+    private val readyAt = LongArray(6)  // the five slots, then the mage's grand chant (CoreMageRules.GRAND)
     internal val classState = CoreClassState()
     private var previousPosition: Pos? = null
     private var moveHasteUntil = -1L
@@ -103,6 +103,31 @@ internal class CorePlayerCombat(
     private val launched = mutableMapOf<UUID, Long>()
     private var whetstoneUntil = 0L
     private var shot: Pair<Long, Vec>? = null
+    /** The mage's normal attack in flight (CoreMageBolt): hits land when the bolt arrives, not when it is cast. */
+    private val bolts = mutableListOf<CoreMageBolt>()
+    private val boltSprites = CoreMageBoltSprites(player)
+    /** The fire bolt's picture (CoreMageFire) and its hits, which land when the ball arrives. */
+    /** The light of the mage's spells: coloured lights and a glow (CoreMageLight). */
+    private val mageLight = CoreMageLight(player)
+    private val mageFire = CoreMageFire(player, mageLight)
+    /** The frost nova's picture (CoreMageFrost): the ice, and the ice growing out of frozen enemies. */
+    private val mageFrost = CoreMageFrost(player, mageLight)
+    private data class FireHit(val action: PendingSkill, val ids: List<UUID>, val due: Long)
+    private val fireHits = mutableListOf<FireHit>()
+    /** The mage's sigil circle and what its elements left on the ground and on enemies (CoreMageRules). */
+    private val sigils = CoreMageSigils()
+    private val mageField = CoreMageField()
+    private var echoUntil = -1L; private var echoRepeats = 0
+    private var peakUntil = -1L; private var peakElement: MageElement? = null
+    private data class Echo(val definition: CoreSkillDefinition, val origin: Pos, val direction: Vec, val at: Long, val left: Int)
+    private val echoes = mutableListOf<Echo>()
+    /** 雷走り: the run in flight and the enemies it has already shocked. */
+    private var lightningRun: PendingSkill? = null; private var lightningRunTicks = 0
+    private val lightningRunHit = mutableSetOf<UUID>()
+    /** Set while a mix's own follow-up hits land, so they never set off further mixes. */
+    private var mixing = false
+    /** The fire bolt's blast: its hits land their fire like the bolt's own, inside [mixing]. */
+    private var blasting = false
     private var skillBoost = 1.0
     private var lastConduitGain = -1L
     private val lessonAttempts = mutableMapOf<Int, Long>()
@@ -112,12 +137,17 @@ internal class CorePlayerCombat(
     val classId get() = journey().job
     val skillDefinitions get() = CoreSkillCatalog.equipped(journey(), statSource())
     val skillNames get() = skillDefinitions.map { it.name }
-    fun skillAvailable(index: Int) = index in 0..4 && (journey().legacy || journey().level >= CoreSkillCatalog.unlockLevels[index])
+    /** The five slots, and for the mage index [CoreMageRules.GRAND]: the grand chant as the circle stands now. */
+    private fun definitionAt(id: Int) = if (id == CoreMageRules.GRAND) CoreMageRules.grand(sigils.list, sigils.dominant()) else skillDefinitions[id]
+    fun skillAvailable(index: Int) = index == CoreMageRules.GRAND && classId == CoreClass.MAGE ||
+        index in 0..4 && (journey().legacy || journey().level >= CoreSkillCatalog.unlockLevels[index])
     fun resourceAvailable(index: Int) = classState.canCast(skillDefinitions[index], journey().build)
-    val weaponHint get() = "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}"
+    val weaponHint get() = if (classId == CoreClass.MAGE) "陣 ${sigils.list.joinToString("") { it.label }.ifEmpty { "なし" }}"
+        else "${classId.resourceName} ${classState.resource.toInt()}/${classState.cap(classId).toInt()}"
     val combatCue get() = crowd.cue(tickNumber) ?: CoreWarriorSkillPresentation.combatCue(classId,tickNumber,classState.counterUntil,classState.guardUntil)
-    val resource get() = classState.resource
-    val resourceMax get() = classState.cap(classId)
+    // The mage's class resource is its sigil circle: 0-3 marks.
+    val resource get() = if (classId == CoreClass.MAGE) sigils.size.toDouble() else classState.resource
+    val resourceMax get() = if (classId == CoreClass.MAGE) CoreMageSigils.MAX.toDouble() else classState.cap(classId)
     val shield get() = classState.shield
     var defeated = false
         private set
@@ -195,11 +225,11 @@ internal class CorePlayerCombat(
 
     fun skill(id: Int, unlocked: Boolean = false) {
         if (weaponBroken()) { notice("武器が破損しています。装備庫で修理してください"); return }
-        if (id !in 0..4 || defeated || encounter() == null || player.openInventory != null || staggered) return
+        if (id !in 0..4 && !(id == CoreMageRules.GRAND && classId == CoreClass.MAGE) || defeated || encounter() == null || player.openInventory != null || staggered) return
         if (!unlocked && !skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
-        if (tickNumber < readyAt[id]) { notice("${skillNames[id]}：あと${cooldownSeconds(id)}秒"); return }
+        if (tickNumber < readyAt[id]) { notice("${definitionAt(id).name}：あと${cooldownSeconds(id)}秒"); return }
         if (!crowd.canCast(tickNumber)) { notice("${crowd.cue(tickNumber) ?: "行動不能"}：技を使えません"); return }
-        val definition = skillDefinitions[id]
+        val definition = definitionAt(id)
         if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN && classState.resource < CoreWarriorRules.BEAST_MAX) {
             notice("獣が3つ必要です"); return
         }
@@ -261,16 +291,17 @@ internal class CorePlayerCombat(
         if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN) {
             awakenUntil = tickNumber + definition.duration; notice("獣の目覚め"); sound(SoundEvent.ENTITY_WARDEN_ROAR, .6f, .8f)
         }
+        if (classId == CoreClass.MAGE) castDefinition = mageCast(id, castDefinition)
         val startup = castDefinition.startupTicks(sheet)
-        pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(definition, encounter()!!) else player.position,
+        pending = PendingSkill(id, castDefinition, if(definition.motion == CoreSkillMotion.FIELD) aimedGround(castDefinition, encounter()!!) else player.position,
             if (definition.motion == CoreSkillMotion.RAY) player.position.direction() else flatFacing(), startup,
             empowered = beastSpent.toDouble(), counter = counter, boost = skillBoost,
             gardenCells = gardenCells, breakAmount = breakAmount)
         lastCombat = tickNumber
         player.setHeldItemSlot(0)
         player.swingMainHand()
-        if (startup > 1) vfx.playSkill(CoreSkillEffect(classId, castDefinition, pending!!.origin, pending!!.direction,
-            CoreSkillVisualPhase.PREPARE, prepareTicks = startup - 1, gardenCells = gardenCells))
+        if (startup > 1) CoreSkillEffect(classId, castDefinition, pending!!.origin, pending!!.direction,
+            CoreSkillVisualPhase.PREPARE, prepareTicks = startup - 1, gardenCells = gardenCells).let { if (castDefinition.icon in OWN_PICTURE) vfx.skillCue(it) else vfx.playSkill(it) }
     }
 
     fun dodge() {
@@ -330,6 +361,8 @@ internal class CorePlayerCombat(
             if (++geyserStep >= CoreWarriorRules.FULL_SWING_GEYSER_STEPS) { geyser = null; geyserStep = 0 }
         }
         visualContactsThisTick = 0
+        boltSprites.tick()
+        if (classId == CoreClass.MAGE) mageField.tick(tickNumber)
         classState.tick(tickNumber)
         previousPosition?.let { if (it.distance(player.position) > .035) classState.stationarySince = tickNumber }
         previousPosition = player.position
@@ -352,10 +385,13 @@ internal class CorePlayerCombat(
         shot?.takeIf { tickNumber >= it.first }?.let { (_, direction) ->
             shot = null
             val mobile = classId == CoreClass.RANGER && journey().build.keystone == 1 && tickNumber < classState.dodgeUntil
+            if (classId == CoreClass.MAGE) { launchBolt(direction); return@let }
             rangedStrike(enemies, direction, 18.0, .65, 1, if (mobile) .65 else 1.0, false)
             if (mobile && actionsValid(enemies, epoch)) rangedStrike(enemies, direction, 18.0, .65, 1, .65, false)
         }
         if (!actionsValid(enemies, epoch)) return
+        if (!flyBolts(enemies)) return
+        if (!landFireHits(enemies)) return
         // A kill callback may synchronously return/reset the actor, including clearing burns.
         for ((key, burn) in burns.toMap()) {
             val id=key.id
@@ -370,9 +406,12 @@ internal class CorePlayerCombat(
             }
             if (burn.remaining <= 0) burns.remove(key)
         }
+        if (classId == CoreClass.MAGE && !mageTick(enemies)) return
         normal.tick()?.let { swing -> if (!releaseNormal(enemies, swing)) return }
         pending?.let { action ->
             action.elapsed++
+            if (action.definition.icon == "firebolt" && action.elapsed < action.startup) mageFire.charge(staffHand())
+            if (action.definition.icon == "frost_nova" && action.elapsed < action.startup) mageFrost.charge(staffHand())
             if(action.definition.icon == "mage_garden") {
                 if(action.elapsed >= action.startup) {
                     val cellSize = CoreIceGarden.cellSize(action.definition.radius)
@@ -550,7 +589,7 @@ internal class CorePlayerCombat(
         val input = queued ?: return
         if (tickNumber > queueUntil || player.openInventory != null) { queued = null; return }
         val action = pending
-        val guarding = input >= 0 && CoreCombatFeel.cancelsIntoGuard(skillDefinitions[input])
+        val guarding = input >= 0 && CoreCombatFeel.cancelsIntoGuard(definitionAt(input))
         if (action != null && !(guarding && action.elapsed >= CoreCombatFeel.lastImpact(action.definition, action.startup))) return
         if (shot != null) return
         if (normal.isAttacking && (input == CoreCombatFeel.NORMAL || !guarding && !normalLinked())) return
@@ -600,6 +639,7 @@ internal class CorePlayerCombat(
             emitSkillPulse(at, radius)
             strike(enemies, at, action.direction, radius, -1.0, 1.0)
         }
+        if (classId == CoreClass.MAGE && mageExecute(enemies, action)) return
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorLeap.ICON) { leap(action); return }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.SKYFALL) { leap(action, high = true); return }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.DRAG) {
@@ -738,6 +778,7 @@ internal class CorePlayerCombat(
             }
         }
         if (!actionsValid(enemies, epoch)) return
+        if (classId == CoreClass.MAGE) mageAfterPulse(action)
     }
 
     private fun nearbyAllies(radius: Double): List<CorePlayerCombat> = (allies() + this).distinctBy { it.player.uuid }.filter {
@@ -813,12 +854,18 @@ internal class CorePlayerCombat(
             val info = enemies.mobInfo(id)
             if (classId == CoreClass.ASSASSIN && build.keystone == 0 && info != null && info.health / info.maximumHealth <= .35) classMultiplier *= 1.4
         }
+        // the spell's elements land only once the hit is taken (a sealed boss, an invulnerable enemy keep no state);
+        // whether it shatters is read first, for the damage
+        val mageLands = classId == CoreClass.MAGE && definition != null && (!mixing || blasting)
+        if (mageLands && MageElement.FIRE in mageElements(definition!!, skillAction) && mageField.isFrozen(id, tickNumber))
+            classMultiplier *= mageField.shatterMultiplier(enemies.isBoss(id))
         val damage = CoreCombatMath.outgoing(baseDamage, type, tags, stats, critical) *
             (if (skill) skillAction!!.boost else 1.0) * classMultiplier * (if (tickNumber < whetstoneUntil) 1.2 else 1.0) * (if (weak) 1.25 else 1.0)
         val applied = (if (fieldOrigin != null) enemies.applyCalculatedFieldDamage(id, player, fieldOrigin, damage, type, stats)
             else enemies.applyCalculatedDamage(id, player, damage, type, stats,
                 projectile = !classId.melee || definition?.motion == CoreSkillMotion.RAY || definition?.motion == CoreSkillMotion.FIELD || (definition?.radius ?: 0.0) > 7.0)) ?: return
         accepted?.invoke()
+        val mageMixes = if (mageLands) mageLand(enemies, id, position, definition!!, skillAction) else emptySet()
         val weakSpot = enemies.takeWeakSpot(player)
         if (weakSpot) sound(SoundEvent.ENTITY_PLAYER_ATTACK_CRIT, .7f, 1.25f)
         val lesson = if (skill) 1 else 0
@@ -880,10 +927,14 @@ internal class CorePlayerCombat(
                 (!skill && build.keystone == 2 && classState.marked(id, tickNumber)))) {
             burns[DotKey(id,true)] = Burn(CoreCombatMath.outgoing(attackDamage * (.1 + venom * .02),type,tags,stats), type, stats, tickNumber + 20, 3)
         }
+        if (classId == CoreClass.MAGE && definition != null && !mixing) {
+            mageAfterHit(enemies, id, position, definition, mageMixes, skillAction)
+            if (!actionsValid(enemies, epoch)) return
+        }
         val stolen = CoreCombatMath.lifeSteal(applied, stats, piercing || CoreAttackTag.AREA in tags || classId.melee)
         if (stolen > 0) heal(stolen)
         if (definition != null) {
-            if (contact && visualContactsThisTick++ < 3) vfx.playSkill(CoreSkillEffect(classId, definition, position,
+            if (contact && definition.icon !in OWN_PICTURE && visualContactsThisTick++ < 3) vfx.playSkill(CoreSkillEffect(classId, definition, position,
                 skillAction!!.direction, CoreSkillVisualPhase.CONTACT, pulse = (skillAction.elapsed - skillAction.startup) / 8))
             if (burns.containsKey(DotKey(id, true))) vfx.status(CorePoisonEffect(position, tickNumber, false))
         } else if (classId.melee) {
@@ -894,7 +945,8 @@ internal class CorePlayerCombat(
             vfx.holdContact(if (heavy) 3 else 2)
         } else {
             sound(if (classId == CoreClass.RANGER) SoundEvent.ENTITY_ARROW_HIT else SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .4f, 1.4f)
-            vfx.particles(if (classId == CoreClass.MAGE) Particle.FLAME else Particle.END_ROD, position.add(0.0, 1.0, 0.0), 6, Vec(.2, .3, .2), .03f)
+            // The mage's bolt draws its own burst where it lands (CoreMageBoltSprites).
+            if (classId != CoreClass.MAGE) vfx.particles(Particle.END_ROD, position.add(0.0, 1.0, 0.0), 6, Vec(.2, .3, .2), .03f)
         }
         showDamage(id, position, applied, critical, type, if (weak) enemies.weaknessOf(id) else null, weakSpot)
         if (stats.fireFlat > 0 && enemies.isAlive(id)) {
@@ -918,6 +970,54 @@ internal class CorePlayerCombat(
         }
     }
 
+    /** Where the staff's tip is: low on the right, a little ahead of the eye. */
+    private fun staffHand(): Pos {
+        val flat = flatFacing()
+        return player.position.add(0.0, player.eyeHeight, 0.0).add(Vec(-flat.z(), 0.0, flat.x()).mul(.45)).add(0.0, -.35, 0.0)
+            .add(player.position.direction().mul(.6))
+    }
+
+    /** The fire bolt's hits, when its ball arrives. */
+    private fun landFireHits(enemies: QuestEncounterCombat): Boolean {
+        val epoch = actionEpoch
+        for (f in fireHits.filter { it.due <= tickNumber }) {
+            fireHits.remove(f)
+            for (id in f.ids) {
+                hit(enemies, id, 1.0, true, skillAction = f.action, contact = false)
+                if (!actionsValid(enemies, epoch)) return false
+            }
+        }
+        return true
+    }
+
+    /** The mage's bolt leaves the eye along the aim; its picture starts at the staff hand, low on the right. */
+    private fun launchBolt(direction: Vec) {
+        val flat = flatFacing()
+        val hand = Vec(-flat.z(), 0.0, flat.x()).mul(.45).add(0.0, -.35, 0.0)
+        val bolt = CoreMageBolt(player.position.add(0.0, player.eyeHeight, 0.0), direction.normalize(), hand, 1.0)
+        bolts += bolt
+        boltSprites.launch(bolt)
+    }
+
+    /** One tick of every bolt in flight; the first target on a bolt's path takes the normal hit. */
+    private fun flyBolts(enemies: QuestEncounterCombat): Boolean {
+        if (bolts.isEmpty()) return true
+        val epoch = actionEpoch
+        val instance = player.instance ?: return true
+        val targets = enemies.combatTargets()
+        for (bolt in bolts.toList()) {
+            val from = bolt.shown
+            val step = bolt.step(targets) { instance.getBlock(it).solid() }
+            boltSprites.flew(bolt, from, step.ended, step.hit != null)
+            if (step.ended) bolts.remove(bolt)
+            step.hit?.let { id ->
+                hit(enemies, id, bolt.multiplier, skill = false)
+                if (!actionsValid(enemies, epoch)) return false
+            }
+        }
+        return true
+    }
+
     /** Narrow server ray with block occlusion. No client-selected target or through-wall projectile. */
     private fun rangedStrike(enemies: QuestEncounterCombat, direction: Vec, range: Double, width: Double, count: Int, multiplier: Double, skill: Boolean) {
         val origin = player.position.add(0.0, 1.0, 0.0)
@@ -936,6 +1036,18 @@ internal class CorePlayerCombat(
             if (player.instance.getBlock(p).solid()) break
             visibleDistance = step / 4.0
             if (!skill && step % 2 == 0) vfx.particles(if (classId == CoreClass.MAGE) Particle.FLAME else Particle.END_ROD, p, 1)
+        }
+        val fireAction = pending?.takeIf { skill && classId == CoreClass.MAGE && it.definition.icon == "firebolt" }
+        if (fireAction != null) {
+            // the fire bolt is a ball you see fly (CoreMageFire); its hits wait for it to arrive
+            val end = origin.add(direction.mul(visibleDistance))
+            // the ball appears a little ahead of the staff: at the tip it would cover the view
+            val start = staffHand().add(direction.mul(.9))
+            val ticks = CoreMageFire.flightTicks(start.distance(end))
+            mageFire.launch(start, end, ticks)
+            vfx.skillCue(CoreSkillEffect(classId, fireAction.definition, origin, direction, pulse = 0, rayLength = visibleDistance, clippedRay = true))
+            fireHits += FireHit(fireAction, candidates.map { it.first }, tickNumber + ticks)
+            return
         }
         if (skill) pending?.let { action ->
             vfx.playSkill(CoreSkillEffect(classId, action.definition, origin, direction,
@@ -995,8 +1107,8 @@ internal class CorePlayerCombat(
     private fun emitSkillPulse(centre: Pos, radius: Double, endpoint: CoreSkillEndpoint = CoreSkillEndpoint.NONE) {
         val action = pending ?: return
         val pulse = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(action.definition)
-        vfx.playSkill(CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction,
-            pulse = pulse, endpoint = endpoint))
+        CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction,
+            pulse = pulse, endpoint = endpoint).let { if (action.definition.icon in OWN_PICTURE) vfx.skillCue(it) else vfx.playSkill(it) }
         if (classId == CoreClass.WARRIOR && action.definition.icon == CoreWarriorRules.FULL_SWING && pulse == 0)
             geyser = CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction)
     }
@@ -1193,13 +1305,14 @@ internal class CorePlayerCombat(
 
     fun sharpen() { whetstoneUntil = tickNumber + WHETSTONE_TICKS }
     fun cooldownSeconds(id: Int): Long = ((readyAt[id] - tickNumber).coerceAtLeast(0) + 19) / 20
-    fun cooldownTicks(id: Int): Int = skillDefinitions[id].cooldownTicks(statSource())
+    fun cooldownTicks(id: Int): Int = definitionAt(id).cooldownTicks(statSource())
     fun cooldownRemaining(id: Int): Int = (readyAt[id] - tickNumber).coerceAtLeast(0).toInt()
     fun reset() { resetActions(); defeated = false; manaValue = maxMana.toDouble(); health = maxHealth.toDouble(); readyAt.fill(0L); nextDodge = 0L; syncVanillaHealth() }
     /** Explicit laboratory control. Does not cancel the skill currently being observed. */
     internal fun refillTraining() {
         manaValue = maxMana.toDouble(); health = maxHealth.toDouble(); readyAt.fill(0L); nextDodge = 0L
         classState.gain(classState.cap(classId), classId, journey().build)
+        if (classId == CoreClass.MAGE) while (sigils.size < CoreMageSigils.MAX) sigils.carve(sigils.list.lastOrNull() ?: MageElement.FIRE)
         syncVanillaHealth()
     }
     fun revive(fraction: Double) { require(fraction in .1..1.0); reset(); health = maxHealth * fraction; syncVanillaHealth() }
@@ -1207,6 +1320,9 @@ internal class CorePlayerCombat(
         actionEpoch++
         garden?.let { it.encounter.clearSlowSource(it.field.slowSource) }
         garden = null
+        bolts.clear(); boltSprites.clear(); mageFire.clear(); fireHits.clear(); mageFrost.clear(); mageLight.clear()
+        sigils.clear(); mageField.clear(); echoes.clear(); echoUntil = -1; peakUntil = -1; peakElement = null
+        lightningRun = null; lightningRunHit.clear(); mixing = false; blasting = false
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
         queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0
@@ -1320,8 +1436,214 @@ internal class CorePlayerCombat(
     }
     private fun sound(event: SoundEvent, volume: Float, pitch: Float) = player.playSound(Sound.sound(event, Sound.Source.PLAYER, volume, pitch))
 
+
+    // ---- Mage (Creator 2026-10-27, docs/development/mage-rework.md; rules in CoreMageRules) ----
+
+    /** 突風 / 竜巻: the element the wind picked up off the ground at the cast, for every hit of that cast. */
+    private var carried: Pair<PendingSkill, MageElement>? = null
+
+    /** At the cast: a spell carves its mark; the grand chant spends the circle. 元素の極み (wind) widens every spell. */
+    private fun mageCast(id: Int, definition: CoreSkillDefinition): CoreSkillDefinition {
+        if (id == CoreMageRules.GRAND) {
+            val dominant = sigils.dominant()
+            return CoreMageRules.grand(sigils.spend(), dominant)
+        }
+        val element = CoreMageRules.element(definition) ?: return definition
+        if (definition.ultimate || definition.retired) return definition
+        sigils.carve(element)
+        return if (tickNumber < peakUntil && peakElement == MageElement.WIND)
+            definition.copy(radius = definition.radius * CoreMageRules.PEAK_WIND_REACH, range = definition.range * CoreMageRules.PEAK_WIND_REACH)
+        else definition
+    }
+
+    /** Mage casts that are not one of the shared motions. True when the cast is fully handled here. */
+    private fun mageExecute(enemies: QuestEncounterCombat, action: PendingSkill): Boolean {
+        val s = action.definition
+        if (s.ultimate && s.icon == CoreMageRules.ECHO) {
+            echoUntil = tickNumber + s.duration; echoRepeats = sigils.size.coerceIn(1, CoreMageSigils.MAX)
+            notice("反響：技が${echoRepeats}回繰り返される"); sound(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE, 1f, .7f)
+            emitSkillPulse(player.position, 2.0); return true
+        }
+        if (s.ultimate && s.icon == CoreMageRules.PEAK) {
+            peakElement = sigils.dominant() ?: sigils.list.lastOrNull() ?: MageElement.FIRE
+            peakUntil = tickNumber + s.duration
+            notice("元素の極み：${peakElement!!.label}"); sound(SoundEvent.BLOCK_BEACON_POWER_SELECT, 1f, 1.4f)
+            emitSkillPulse(player.position, 2.0); return true
+        }
+        if (s.icon == "mage_blink") {
+            // 雷走り: a run with a visible path, not a jump cut: 8 blocks over 4 ticks, shocking what it passes.
+            lightningRun = action; lightningRunTicks = 4; lightningRunHit.clear()
+            slide = Slide(action.direction, s.range / 4, 4)
+            emitSkillPulse(player.position, s.radius, CoreSkillEndpoint.DEPARTURE)
+            sound(SoundEvent.ENTITY_LIGHTNING_BOLT_THUNDER, .35f, 1.8f)
+            return true
+        }
+        val firstPulse = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(s) == 0
+        if (firstPulse && CoreMageRules.element(s) == MageElement.WIND) {
+            // 巻き込み: the wind picks up the state of the enemies it blows over and spreads it to all it hits
+            val over = if (s.motion == CoreSkillMotion.FIELD) action.origin else player.position.add(action.direction.mul(s.radius / 2))
+            val blown = enemies.combatTargets().filter { it.position.distance(over) <= s.radius }.map { it.id }
+            carried = mageField.carry(blown, tickNumber)?.let { action to it }
+        }
+        return false
+    }
+
+    /** After a pulse: the 反響 copy of it. Spells leave nothing on the ground; their states sit on the enemies. */
+    private fun mageAfterPulse(action: PendingSkill) {
+        val s = action.definition
+        val firstPulse = (action.elapsed - action.startup) / CoreCombatFeel.pulseTicks(s) == 0
+        if (firstPulse && s.icon == "frost_nova") mageFrost.nova(player.position, action.direction)
+        if (firstPulse && tickNumber < echoUntil && action.id in 0..4 && !s.ultimate)
+            echoes += Echo(s, action.origin, action.direction, tickNumber + CoreMageRules.ECHO_DELAY, echoRepeats)
+    }
+
+    /** A mage spell lands on [id]: its element (and what the wind carried, and 極み's fire) meets what is there. */
+    private fun mageLand(enemies: QuestEncounterCombat, id: UUID, at: Pos, s: CoreSkillDefinition, action: PendingSkill?): Set<MageReaction> {
+        val elements = mageElements(s, action)
+        val boss = enemies.isBoss(id)
+        val out = mutableSetOf<MageReaction>()
+        for (e in elements) {
+            out += mageField.land(e, id, boss, tickNumber)
+            if (e == MageElement.ICE && !boss) enemies.applyCrowdControl(id, CrowdControl.STUN, CoreMageField.FREEZE_TICKS * 50L, player)
+            // burning: a hit every second for the 4 s it lasts
+            if (e == MageElement.FIRE) burns[DotKey(id)] = Burn(CoreCombatMath.outgoing(3.0 + abilityPower * .25, CoreDamageType.MAGICAL, setOf(CoreAttackTag.SKILL, CoreAttackTag.AREA), sheet.mods),
+                CoreDamageType.MAGICAL, sheet.mods, tickNumber + 20, CoreMageField.BURN_TICKS / 20)
+        }
+        // 元素の極み (ice): a shatter leaves the enemy frozen, to be shattered again.
+        if (MageReaction.SHATTER in out && tickNumber < peakUntil && peakElement == MageElement.ICE) mageField.land(MageElement.ICE, id, boss, tickNumber)
+        return out
+    }
+
+    /** The elements a mage spell puts on what it hits: its own, what the wind carried, and 極み's fire. */
+    private fun mageElements(s: CoreSkillDefinition, action: PendingSkill?): List<MageElement> {
+        if (s.retired) return emptyList()  // the old 氷の庭, still castable from old test builds, keeps its own rules
+        val own = CoreMageRules.element(s)
+        val mixedGrand = action?.id == CoreMageRules.GRAND && own == null && s.pulses >= CoreMageSigils.MAX
+        return buildList {
+            if (mixedGrand) addAll(listOf(MageElement.FIRE, MageElement.ICE, MageElement.LIGHTNING)) else own?.takeIf { it != MageElement.WIND }?.let(::add)
+            carried?.takeIf { it.first === action }?.second?.let(::add)
+            if (tickNumber < peakUntil && peakElement == MageElement.FIRE && MageElement.FIRE !in this) add(0, MageElement.FIRE)
+        }
+    }
+
+    /** The follow-ups of a mage hit: the fireball's blast, the lightning's jumps, and the mixes it set off. */
+    private fun mageAfterHit(enemies: QuestEncounterCombat, id: UUID, at: Pos, s: CoreSkillDefinition, mixes: Set<MageReaction>, action: PendingSkill?) {
+        action ?: return
+        val epoch = actionEpoch
+        val peak = tickNumber < peakUntil
+        fun others(centre: Pos, radius: Double) = enemies.combatTargets().filter { it.id != id && it.position.distance(centre) <= radius }
+        mixing = true
+        try {
+            if (s.icon == "firebolt") {
+                // the blast burns (and shatters) everything it reaches, as its description says; only the follow-ups
+                // of those hits stay off, so a blast never sets off another
+                blasting = true
+                try { for (t in others(at, s.radius)) { hit(enemies, t.id, .6, true, skillAction = action, contact = false); if (!actionsValid(enemies, epoch)) return } }
+                finally { blasting = false }
+            }
+            if (s.icon == "mage_mark") {
+                // 落雷: jumps to the nearest enemy not struck yet.
+                val struck = mutableSetOf(id); var from = at
+                repeat(CoreMageRules.CHAIN_JUMPS * if (peak && peakElement == MageElement.LIGHTNING) 2 else 1) {
+                    val next = enemies.combatTargets().filter { it.id !in struck && it.position.distance(from) <= CoreMageRules.CHAIN_REACH }
+                        .minByOrNull { it.position.distance(from) } ?: return@repeat
+                    val to = enemies.positionOf(next.id) ?: return@repeat
+                    for (step in 0..6) vfx.particles(Particle.ELECTRIC_SPARK, from.add(to.sub(from).mul(step / 6.0)).add(0.0, 1.2, 0.0), 2)
+                    struck += next.id; from = to
+                    hit(enemies, next.id, .7, true, skillAction = action, contact = false)
+                    if (!actionsValid(enemies, epoch)) return
+                }
+            }
+            if (MageReaction.SHATTER in mixes) {
+                sound(SoundEvent.BLOCK_GLASS_BREAK, 1f, .8f)
+                vfx.particles(Particle.ITEM_SNOWBALL, at.add(0.0, 1.0, 0.0), 16, Vec(.5, .6, .5), .15f)
+            }
+            if (MageReaction.CONDUCT in mixes) {
+                // every frozen enemy; under 元素の極み (lightning) also whatever stands near one of them
+                val iced = mageField.frozenIds(tickNumber)
+                val icedAt = iced.mapNotNull { enemies.positionOf(it) }
+                val conducted = enemies.combatTargets().filter { it.id != id && (it.id in iced ||
+                    (peak && peakElement == MageElement.LIGHTNING && icedAt.any { p -> it.position.distance(p) <= CoreMageRules.PEAK_CONDUCT_REACH })) }
+                for (t in conducted) {
+                    enemies.positionOf(t.id)?.let { vfx.particles(Particle.ELECTRIC_SPARK, it.add(0.0, 1.0, 0.0), 8, Vec(.3, .5, .3), .1f) }
+                    hit(enemies, t.id, .5, true, skillAction = action, contact = false); if (!actionsValid(enemies, epoch)) return
+                }
+                sound(SoundEvent.ENTITY_LIGHTNING_BOLT_IMPACT, .5f, 1.6f)
+            }
+            if (MageReaction.OVERLOAD in mixes) {
+                vfx.particles(Particle.EXPLOSION, at.add(0.0, 1.0, 0.0), 1)
+                sound(SoundEvent.ENTITY_GENERIC_EXPLODE, .6f, 1.3f)
+                for (t in enemies.combatTargets().filter { it.position.distance(at) <= CoreMageRules.OVERLOAD_RADIUS }) {
+                    hit(enemies, t.id, .6, true, skillAction = action, contact = false); if (!actionsValid(enemies, epoch)) return
+                    if (!enemies.isBoss(t.id)) enemies.applyCrowdControl(t.id, CrowdControl.KNOCKBACK, 400, player)
+                }
+            }
+        } finally { mixing = false }
+    }
+
+    /** Every tick: the lightning run shocks, echoes replay; burning and frozen enemies are drawn. */
+    private fun mageTick(enemies: QuestEncounterCombat): Boolean {
+        val epoch = actionEpoch
+        val burning = mageField.burningIds(tickNumber)
+        mageFire.tick(burning.mapNotNull { id -> enemies.positionOf(id)?.let { id to it } }.toMap()) { mageField.burnLeft(it, tickNumber) }
+        mageFrost.tick(mageField.frozenIds(tickNumber).mapNotNull { id -> enemies.positionOf(id)?.let { id to it } }.toMap())
+        mageLight.tick()
+        lightningRun?.let { run ->
+            vfx.particles(Particle.ELECTRIC_SPARK, player.position.add(0.0, 1.0, 0.0), 6, Vec(.2, .5, .2), .05f)
+            for (t in enemies.combatTargets().filter { it.id !in lightningRunHit && it.position.distance(player.position) <= run.definition.radius + 1.0 }) {
+                lightningRunHit += t.id
+                hit(enemies, t.id, 1.0, true, skillAction = run)
+                if (!actionsValid(enemies, epoch)) return false
+            }
+            if (--lightningRunTicks <= 0) { lightningRun = null; emitSkillPulseFor(run, player.position, CoreSkillEndpoint.ARRIVAL) }
+        }
+        val due = echoes.filter { it.at <= tickNumber }
+        if (due.isNotEmpty()) {
+            echoes.removeAll(due.toSet())
+            for (e in due) {
+                if (e.left > 1) echoes += e.copy(at = e.at + CoreMageRules.ECHO_DELAY, left = e.left - 1)
+                replayEcho(enemies, e)
+                if (!actionsValid(enemies, epoch)) return false
+            }
+        }
+        return true
+    }
+
+    /** 反響: the spell again where it was cast, at a share of its power. Its hits never feed the circle. */
+    private fun replayEcho(enemies: QuestEncounterCombat, e: Echo) {
+        val epoch = actionEpoch
+        val s = e.definition
+        val action = PendingSkill(-1, s, e.origin, e.direction, 0, boost = CoreMageRules.ECHO_POWER)
+        CoreSkillEffect(classId, s, e.origin, e.direction).let { if (s.icon in OWN_PICTURE) vfx.skillCue(it) else vfx.playSkill(it) }
+        sound(SoundEvent.BLOCK_AMETHYST_BLOCK_CHIME, .7f, .6f)
+        val targets = when (s.motion) {
+            CoreSkillMotion.RAY -> enemies.combatTargets().mapNotNull { t ->
+                val o = t.position.sub(e.origin); val along = o.x() * e.direction.x() + o.y() * e.direction.y() + o.z() * e.direction.z()
+                if (along !in 0.0..s.range || e.origin.add(e.direction.mul(along)).distance(t.position) > 1.0 + t.halfExtent.x()) null else t to along
+            }.minByOrNull { it.second }?.let { listOf(it.first) } ?: emptyList()
+            CoreSkillMotion.CONE -> enemies.combatTargets().filter { greatswordInRange(e.origin, e.direction, it, s.radius, CoreCombatFeel.minDot(s.icon)) }
+            else -> enemies.combatTargets().filter { it.position.distance(e.origin) <= s.radius }
+        }
+        // the fire bolt and the frost nova draw their own picture again; the echoed bolt's hit waits for its ball too
+        if (s.icon == "frost_nova") mageFrost.nova(e.origin, e.direction)
+        if (s.icon == "firebolt") {
+            val start = e.origin.add(0.0, 1.4, 0.0)
+            val end = targets.firstOrNull()?.let { enemies.positionOf(it.id)?.add(0.0, 1.0, 0.0) } ?: start.add(e.direction.mul(s.range))
+            val ticks = CoreMageFire.flightTicks(start.distance(end))
+            mageFire.launch(start, end, ticks)
+            fireHits += FireHit(action, targets.map { it.id }, tickNumber + ticks)
+            return
+        }
+        for (t in targets) { hit(enemies, t.id, 1.0, true, skillAction = action); if (!actionsValid(enemies, epoch)) return }
+    }
+
+    private fun emitSkillPulseFor(action: PendingSkill, centre: Pos, endpoint: CoreSkillEndpoint) =
+        vfx.playSkill(CoreSkillEffect(classId, action.definition.copy(radius = 2.0), centre, action.direction, endpoint = endpoint))
+
     companion object {
         val SKILL_NAMES = listOf("轟進", "地割り", "押し薙ぎ")
+        /** Skills drawn by their own picture (CoreMageFire, CoreMageFrost), not the shared skill meshes. */
+        val OWN_PICTURE = setOf("firebolt", "frost_nova")
         const val WHETSTONE_TICKS = 20L * 180
         const val NOTICE_MILLIS = 1_600L
         /** Vanilla player jump strength, restored when a movement lock ends. */

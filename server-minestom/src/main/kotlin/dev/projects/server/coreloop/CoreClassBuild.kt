@@ -5,7 +5,7 @@ data class CoreClassBuild(val first: Int = 0, val second: Int = 1, val third: In
     val ultimate: Int = 0, val nodes: Int = 0) {
     val skills get() = listOf(first, second, third, fourth)
     init {
-        require(skills.all { it in 0..7 } && skills.distinct().size == 4 && ultimate in 0..2)  // the warrior has three ultimates
+        require(skills.all { it in 0..8 } && skills.distinct().size == 4 && ultimate in 0..2)  // the mage has nine normals, the warrior three ultimates
         require(nodes in 0 until (1 shl 18))
         for (i in 0..17) if (has(i)) require(CoreClassTrees.parents(i).isEmpty() || CoreClassTrees.parents(i).any(::has)) { "接続する前の技能が必要です" }
         require(listOf(2, 5, 8).count(::has) <= 1) { "大成技能は一つだけ選べます" }
@@ -16,7 +16,7 @@ data class CoreClassBuild(val first: Int = 0, val second: Int = 1, val third: In
     fun equip(slot: Int, choice: Int): CoreClassBuild {
         require(slot in 0..4)
         if (slot == 4) return copy(ultimate = choice)
-        require(choice in 0..7)
+        require(choice in 0..8)
         val next = skills.toMutableList()
         val oldSlot = next.indexOf(choice)
         if (oldSlot >= 0) next[oldSlot] = next[slot]
@@ -43,8 +43,8 @@ data class CoreTalentNode(val name: String, val description: String)
 
 object CoreClassTrees {
     fun signature(job: CoreClass) = if(job==CoreClass.TEMPLAR)6 else 2
-    /** Target of the "広い備え" node; the warrior's index 5 was retired. */
-    fun support(job: CoreClass) = if(job==CoreClass.WARRIOR) 4 else 5
+    /** Target of the "広い備え" node; the warrior's and the mage's index 5 were retired (the mage's goes to 霜の波紋). */
+    fun support(job: CoreClass) = when (job) { CoreClass.WARRIOR -> 4; CoreClass.MAGE -> 1; else -> 5 }
     fun budget(journey: CoreJourney) = if (journey.legacy) 12 else (2 + journey.level / 4).coerceAtMost(12)
     fun parents(i: Int): List<Int> {
         require(i in 0..17)

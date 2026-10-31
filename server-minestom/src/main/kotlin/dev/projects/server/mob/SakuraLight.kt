@@ -13,7 +13,6 @@ import net.minestom.server.instance.Instance
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import net.minestom.server.item.component.CustomModelData
-import net.minestom.server.network.packet.server.common.PostEffectsPacket
 
 /**
  * A coloured point light (prototype, 2026-10-20): the ground, blocks and mobs within [radius] blocks take its colour,
@@ -83,8 +82,9 @@ internal class SakuraLight(instance: Instance, at: Pos, slot: Int, radius: Int =
                 .with(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), emptyList(), listOf(tint)))
         }
 
-        fun enable(player: Player) = player.sendPacket(PostEffectsPacket(listOf(POST)))
+        /** /lighttest's own switch; it shares the player's list with the arena and the mage (PlayerPostEffects). */
+        fun enable(player: Player) = PlayerPostEffects.set(player, "lighttest", listOf(POST))
 
-        fun disable(player: Player) = player.sendPacket(PostEffectsPacket(emptyList()))
+        fun disable(player: Player) = PlayerPostEffects.clear(player, "lighttest")
     }
 }

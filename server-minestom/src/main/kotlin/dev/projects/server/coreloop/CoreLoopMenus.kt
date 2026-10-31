@@ -293,7 +293,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val sheet = game.combatSheet(player) ?: CoreCombatSheet.from(a)
         val equipped = CoreSkillCatalog.equipped(a.journey, sheet.mods)
         val current = equipped[slot]
-        val candidates = if (slot == 4) CoreSkillCatalog.skills(a.journey.job).drop(8) else CoreSkillCatalog.skills(a.journey.job).take(8)
+        val candidates = CoreSkillCatalog.ultimateStart(a.journey.job).let { start -> if (slot == 4) CoreSkillCatalog.skills(a.journey.job).drop(start) else CoreSkillCatalog.skills(a.journey.job).take(start) }
         // Retired catalog entries stay in the list for old saves but are never offered.
         val choices = if (slot == 4) CoreSkillCatalog.ultimateChoices(a.journey.job) else CoreSkillCatalog.normalChoices(a.journey.job)
         val pages = (choices.size + 3) / 4
@@ -414,7 +414,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         view(player, "${a.journey.job.displayName} / スキルツリー", { talentTree(player,selected) }) { v ->
             v.canvas.left("残り ${budget-build.points} ポイント", lines("Lv4ごとに増える", "最大12ポイント", "", "上の起点から進む", "分岐を選んで育てる", "最終パッシブは一つ", "", "金の線：習得済み", "灰の線：未習得", "右下で習得を確定"))
             v.canvas.right(node.name, paragraph(node.description) + lines("", if(build.has(selected)) "習得済み" else "未習得") + paragraph(reason))
-            val root = CoreSkillTooltip.item(CoreSkillCatalog.skills(a.journey.job)[8],game.combatSheet(player)?:CoreCombatSheet.from(a),a.journey,v.packed)
+            val root = CoreSkillTooltip.item(CoreSkillCatalog.skills(a.journey.job)[CoreSkillCatalog.ultimateStart(a.journey.job)],game.combatSheet(player)?:CoreCombatSheet.from(a),a.journey,v.packed)
             tile(v,4,1,"",root,Tone.SELECTED,icon=true)
             for(i in nodes.indices) {
                 val parents=CoreClassTrees.parents(i)
@@ -424,7 +424,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             nodes.forEachIndexed { i, node ->
                 val learned=build.has(i)
                 val available=runCatching { build.toggle(i,budget) }.isSuccess
-                val art=CoreSkillCatalog.skills(a.journey.job)[when(i) { 2,5,8 -> 8+i/3%2;9,10,14 -> CoreClassTrees.signature(a.journey.job);11,13 -> 0;12 -> 3;15 -> CoreClassTrees.support(a.journey.job);16,17 -> 9;else -> i.coerceAtMost(7) }].icon
+                val art=CoreSkillCatalog.skills(a.journey.job)[when(i) { 2,5,8 -> CoreSkillCatalog.ultimateStart(a.journey.job)+i/3%2;9,10,14 -> CoreClassTrees.signature(a.journey.job);11,13 -> 0;12 -> 3;15 -> CoreClassTrees.support(a.journey.job);16,17 -> CoreSkillCatalog.ultimateStart(a.journey.job)+1;else -> i.coerceAtMost(7) }].icon
                 var item=CoreLoopItems.icon(if(learned)Material.ENCHANTED_BOOK else Material.BOOK,node.name,node.description,
                     if(learned) "習得済み" else if(available) "習得可能 / 1ポイント" else "前提未達・ポイント不足・最終パッシブの排他", "クリック：詳細を確認")
                 if(v.packed)item=item.withItemModel("projects:core_ui/$art")
