@@ -7,12 +7,12 @@ data class CoreClassBuild(val first: Int = 0, val second: Int = 1, val third: In
     val masteries: Map<Int, Int> = emptyMap()) {
     val skills get() = listOf(first, second, third, fourth)
     init {
-        require(skills.all { it in 0..7 } && skills.distinct().size == 4 && ultimate in 0..2)  // the warrior has three ultimates
+        require(skills.all { it in 0..8 } && skills.distinct().size == 4 && ultimate in 0..2)  // the mage has nine normals, the warrior three ultimates
     }
     fun equip(slot: Int, choice: Int): CoreClassBuild {
         require(slot in 0..4)
         if (slot == 4) return copy(ultimate = choice)
-        require(choice in 0..7)
+        require(choice in 0..8)
         val next = skills.toMutableList()
         val oldSlot = next.indexOf(choice)
         if (oldSlot >= 0) next[oldSlot] = next[slot]

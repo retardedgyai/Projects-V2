@@ -97,8 +97,13 @@ object CoreSkillCatalog {
     private val byClass: Map<CoreClass, List<CoreSkillDefinition>> = CoreClass.entries.associateWith(::buildSkills)
     fun skills(job: CoreClass): List<CoreSkillDefinition> = byClass.getValue(job)
     /** Selectable catalog indices: normal 0..7 and the ultimates after them (two, the warrior three), without retired entries. */
-    fun normalChoices(job: CoreClass) = (0..7).filterNot { skills(job)[it].retired }
-    fun ultimateChoices(job: CoreClass) = (0 until skills(job).size - 8).filterNot { skills(job)[8 + it].retired }
+    /**
+     * Where the ultimates begin in a class's catalog: after eight normal skills, or nine for the mage (2026-10-27:
+     * eight new spells, with the retired 氷の庭 kept at its old index for saves and art).
+     */
+    fun ultimateStart(job: CoreClass) = if (job == CoreClass.MAGE) 9 else 8
+    fun normalChoices(job: CoreClass) = (0 until ultimateStart(job)).filterNot { skills(job)[it].retired }
+    fun ultimateChoices(job: CoreClass) = (0 until skills(job).size - ultimateStart(job)).filterNot { skills(job)[ultimateStart(job) + it].retired }
     fun selectable(job: CoreClass, slot: Int, choice: Int) =
         if (slot == 4) choice in ultimateChoices(job) else slot in 0..3 && choice in normalChoices(job)
     /**
@@ -112,13 +117,14 @@ object CoreSkillCatalog {
         val ultimate = if (build.ultimate in ultimateChoices(job)) build.ultimate else ultimateChoices(job).first()
         return build.copy(first = picks[0], second = picks[1], third = picks[2], fourth = picks[3], ultimate = ultimate)
     }
-    fun equipped(j: CoreJourney, stats: CoreAffixStats = CoreAffixStats()) = (j.build.skills.map { skills(j.job)[it] } + skills(j.job)[8 + j.build.ultimate]).map { modify(it, j, stats) }
+    fun equipped(j: CoreJourney, stats: CoreAffixStats = CoreAffixStats()) = (j.build.skills.map { skills(j.job)[it] } + skills(j.job)[ultimateStart(j.job) + j.build.ultimate]).map { modify(it, j, stats) }
     fun modify(s: CoreSkillDefinition, j: CoreJourney, stats: CoreAffixStats): CoreSkillDefinition {
         var pulses = s.pulses
         var power = 1.0
         var radius = s.radius
         val notes = mutableListOf<String>()
-        if (j.job == CoreClass.MAGE && s.spend > 0) {
+        // The mage has no spenders since 2026-10-27; its build modifiers add a beat to the ground spells (流星・竜巻).
+        if (j.job == CoreClass.MAGE && s.motion == CoreSkillMotion.FIELD && !s.ultimate && !s.retired) {
             val echo = stats.bonus(CoreAffixStat.MAGE_ECHO)
             if (echo > 0) { pulses++; power *= (.65 + echo.coerceAtMost(20.0) / 100); notes += "残響MOD" }
         }
@@ -170,17 +176,22 @@ object CoreSkillCatalog {
                 s("全力の一振り", "war_ult", "大剣を担いで溜め（押している間、最大2秒）、離すと真上から渾身の一振り。地面が前へ大きく割れ、線上を打ち上げる。溜め中は怯まない。獣を全部使う", CoreSkillMotion.CONE, 30.0, 4.0, mana=20, cd=1200, startup=10, gain=0, radius=12.0, ult=true).cc(CrowdControl.AIRBORNE, 1000),
                 s("狂戦士の甲冑", "war_banner", "10秒間、体から血が流れ、鼓動のたびに血しぶきが散る。CCも怯みも効かず、動きと振りが速くなり、獣が満ちたまま減らない。代わりに体力が毎秒2%ずつ減る（1で止まる）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=20, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
                 s("獣の目覚め", "war_awaken", "獣3つの時だけ使える。8秒間、獣が減らず、獣を使う技の再使用が半分になる", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=15, cd=1200, startup=2, gain=0, radius=0.0, duration=160, ult=true))
+            // 2026-10-27 rework (docs/development/mage-rework.md): fire, ice, lightning and wind, every spell one button.
+            // Spells mix on the ground (CoreMageField) and carve the sigil circle the grand chant (大詠唱, the staff,
+            // CoreMageRules) releases. Slots keep the old art; the retired 氷の庭 keeps index 5 for saves, so the mage
+            // has nine normal entries (CoreSkillCatalog.ultimateStart). Element: 1 fire / 2 ice / 3 lightning / 4 wind.
             CoreClass.MAGE -> listOf(
-                s("火炎弾", "firebolt", "火の術式を刻む。直前と違う属性なら獲得量増加", CoreSkillMotion.RAY, 8.0, 1.4, cd=60, startup=5, element=1),
-                s("霜の波紋", "frost_nova", "周囲を凍てつかせる。火や雷からつなぐと術式が育つ", CoreSkillMotion.NOVA, 10.0, 1.0, cd=110, startup=10, status=CoreSkillStatus.SLOW, element=2).cc(CrowdControl.ROOT, 1200),
-                s("流星雨", "meteor", "術式60を消費。狙った地点へ三度の流星", CoreSkillMotion.FIELD, 7.0, 1.3, mana=25, cd=180, startup=12, pulses=3, gain=0, spend=60, element=1),
-                s("閃光歩", "mage_blink", "前方へ安全に転移。周囲の敵を遅らせる", CoreSkillMotion.EVADE, 0.0, 0.0, mana=15, cd=140, gain=0, status=CoreSkillStatus.SLOW, range=4.5, element=3),
-                s("雷の刻印", "mage_mark", "射線に雷印を残す。起爆技は印を消費して強化", CoreSkillMotion.RAY, 5.0, 1.1, cd=80, status=CoreSkillStatus.MARK, element=3),
-                s("氷の庭", "mage_garden", "狙った床に6秒の氷庭。設置後は自由に動ける。敵を誘い減速中に他の術を重ねる（1体4打まで・ボスは減速耐性）", CoreSkillMotion.FIELD, 2.0, .45, mana=20, cd=180, pulses=4, status=CoreSkillStatus.SLOW, radius=3.65, element=2, duration=120),
-                s("術式起爆", "mage_burst", "術式を40消費。印のある敵なら威力+35%", CoreSkillMotion.NOVA, 12.0, 2.5, mana=20, cd=120, gain=0, spend=40, radius=6.0, element=3),
-                s("魔力障壁", "mage_ward", "魔力で短い障壁を作る。攻撃に使うマナと競合する", CoreSkillMotion.SHIELD, 10.0, 1.2, mana=25, cd=200, gain=0, radius=0.0, duration=100, element=3),
-                s("天火の大術式", "mage_ult", "術式80を消費。広い範囲に四度の大爆発", CoreSkillMotion.FIELD, 15.0, 2.0, mana=35, cd=640, startup=22, pulses=4, gain=0, spend=80, radius=7.0, element=1, ult=true),
-                s("絶対零界", "mage_zero", "術式70を消費。広範囲を減速する五連波", CoreSkillMotion.NOVA, 7.0, 1.3, mana=30, cd=600, startup=12, pulses=5, gain=0, spend=70, status=CoreSkillStatus.SLOW, radius=8.0, element=2, duration=160, ult=true))
+                s("火炎弾", "firebolt", "大きな火の玉。当たった所で爆発し、敵を4秒燃やす。凍った敵に当てると砕ける", CoreSkillMotion.RAY, 9.0, 1.5, mana=10, cd=100, startup=6, gain=0, radius=2.5, element=1),
+                s("霜の波紋", "frost_nova", "周りを一気に凍らせる。雑魚は凍って動けなくなる", CoreSkillMotion.NOVA, 8.0, 1.0, mana=14, cd=160, startup=8, gain=0, radius=4.5, element=2),
+                s("流星", "meteor", "狙った地点へ空から大きな流星を落とす。巻き込んだ敵を4秒燃やす", CoreSkillMotion.FIELD, 18.0, 2.6, mana=20, cd=260, startup=20, gain=0, radius=3.5, element=1),
+                s("雷走り", "mage_blink", "稲妻になって見ている先へ走る。通り道の敵が感電する", CoreSkillMotion.EVADE, 4.0, .8, mana=12, cd=180, startup=2, gain=0, range=8.0, radius=1.5, element=3),
+                s("落雷", "mage_mark", "狙った敵に雷を落とし、近くの敵へ3回跳ねる", CoreSkillMotion.RAY, 10.0, 1.6, mana=12, cd=140, startup=8, gain=0, element=3),
+                s("氷の庭", "mage_garden", "狙った床に6秒の氷庭。設置後は自由に動ける。敵を誘い減速中に他の術を重ねる（1体4打まで・ボスは減速耐性）", CoreSkillMotion.FIELD, 2.0, .45, mana=20, cd=180, pulses=4, status=CoreSkillStatus.SLOW, radius=3.65, element=2, duration=120, retired=true),
+                s("氷槍の列", "mage_burst", "正面の地面から氷の槍が列で突き上がる。打ち上げて凍らせ、線の上に氷が残る", CoreSkillMotion.CONE, 12.0, 1.8, mana=16, cd=220, startup=10, gain=0, radius=7.0, element=2).cc(CrowdControl.AIRBORNE, 600),
+                s("突風", "mage_ward", "前へ風を吹いて敵を押し返す。燃えた敵・凍った敵の火や氷を巻き込んで、当たった敵みんなに広げる", CoreSkillMotion.CONE, 4.0, .7, mana=10, cd=140, startup=4, gain=0, radius=6.0, element=4).cc(CrowdControl.KNOCKBACK, 400),
+                s("竜巻", "mage_gale", "狙った所に竜巻を置き、周りの敵を3秒吸い寄せる。燃えた敵・凍った敵を巻き込むと、その火や氷を周りに広げる", CoreSkillMotion.FIELD, 3.0, .5, mana=16, cd=240, startup=8, pulses=4, gain=0, radius=3.5, element=4, duration=60),
+                s("反響", "mage_ult", "10秒間、撃った技が2秒後に同じ場所でもう一度唱えられる（陣の紋の数だけ、最大3回・6割の威力）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=25, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
+                s("元素の極み", "mage_zero", "10秒間、陣に一番多い紋の元素を極める。体は変わらず、魔法の威力と性質だけが上がる", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=25, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true))
             CoreClass.RANGER -> listOf(
                 s("狙い射ち", "pierce", "同じ獲物を狙い続けるほど集中を得る", CoreSkillMotion.RAY, 6.0, 1.7, cd=70, startup=8, radius=.5),
                 s("霜矢の扇", "frost_fan", "前方の扇を減速。距離を作り、射線を確保する", CoreSkillMotion.CONE, 5.0, 1.0, cd=130, status=CoreSkillStatus.SLOW, radius=6.5, element=2),

@@ -109,7 +109,7 @@ class CoreSkillChoreographyTest {
         }
     }
     @Test fun `fire landing breaks the prepared rock into flames and arcing debris`() {
-        for(id in listOf("meteor","mage_ult")) {
+        for(id in listOf("meteor")) {  // mage_ult became 反響 (2026-10-27); its art is still to be drawn
             val e=effect(CoreClass.MAGE,id)
             val prepared=CoreSkillChoreography.parts(effect(CoreClass.MAGE,id,CoreSkillVisualPhase.PREPARE))
             assertTrue(prepared.any { it.shape in setOf("meteor_rock","meteor_crown") && it.motion==CoreMeshMotion.FALL })

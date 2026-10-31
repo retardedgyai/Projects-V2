@@ -53,7 +53,7 @@ class CoreRetirementCompatibilityTest {
 
     @Test fun `retired Starweaver saves load as Mage and drop the Starweaver loadout`() {
         val star = CoreClassBuild(first = 2, second = 3, third = 4, fourth = 5)
-        val mage = CoreClassBuild(first = 4, second = 5, third = 6, fourth = 7, ultimate = 1)
+        val mage = CoreClassBuild(first = 4, second = 6, third = 7, fourth = 8, ultimate = 1)
         val warrior = CoreClassBuild(first = 1, second = 2, third = 3, fourth = 4)
         // HEALER rows stand in for the removed enum value and are renamed to the retired id on disk.
         val cases = listOf(

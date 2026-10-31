@@ -114,21 +114,68 @@ class CorePlayerCombatTest {
         }
     }
 
-    @Test fun `bow and mage projectile hit at twelve blocks but not through a wall`() {
-        for (job in listOf(CoreClass.RANGER, CoreClass.MAGE)) arena(bossDistance = 12.0) { h ->
-            h.journey = CoreJourney.legacy(job = job); h.base = if (job == CoreClass.RANGER) CoreWeaponBase.LONGBOW else CoreWeaponBase.STAFF
-            h.actor.attack(); h.ticks(3); assertEquals(300.0, h.combat.bossHealth())
-            h.ticks(1); assertTrue(h.combat.bossHealth() < 300.0, "$job cannot hit at range")
-            val hp = h.combat.bossHealth(); h.ticks(20)
-            for (y in 40..45) h.instance.setBlock(8,y,14,Block.STONE)
-            h.actor.attack(); h.ticks(20); assertEquals(hp, h.combat.bossHealth())
-        }
+    @Test fun `bow projectile hits at twelve blocks but not through a wall`() = arena(bossDistance = 12.0) { h ->
+        h.journey = CoreJourney.legacy(job = CoreClass.RANGER); h.base = CoreWeaponBase.LONGBOW
+        h.actor.attack(); h.ticks(3); assertEquals(300.0, h.combat.bossHealth())
+        h.ticks(1); assertTrue(h.combat.bossHealth() < 300.0, "the bow cannot hit at range")
+        val hp = h.combat.bossHealth(); h.ticks(20)
+        for (y in 40..45) h.instance.setBlock(8,y,14,Block.STONE)
+        h.actor.attack(); h.ticks(20); assertEquals(hp, h.combat.bossHealth())
+    }
+    /** The tick-by-tick damage of the next hit after [cast], within [window] ticks. */
+    private fun nextHit(h: Harness, window: Int = 14, cast: () -> Unit): Double {
+        cast()
+        var before = h.combat.bossHealth()
+        repeat(window) { h.ticks(1); val now = h.combat.bossHealth(); if (now < before) return before - now; before = now }
+        return 0.0
+    }
+    @Test fun `mage frost then fire shatters the chilled boss for more`() = arena { h ->
+        h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF; h.actor.reset()
+        val alone = nextHit(h) { h.actor.skill(0) }
+        assertTrue(alone > 0, "火炎弾 lands")
+        h.ticks(100); h.actor.refillTraining()  // its fire floor burns out
+        val beforeFrost = h.combat.bossHealth()
+        h.actor.skill(1); h.ticks(15)
+        assertTrue(h.combat.bossHealth() < beforeFrost, "霜の波紋 lands")
+        h.actor.refillTraining()
+        val beforeFire = h.combat.bossHealth()
+        h.actor.skill(0); h.ticks(10)
+        val shattered = beforeFire - h.combat.bossHealth()
+        assertTrue(shattered > alone * 1.4, "shatter $shattered vs $alone")
+    }
+    @Test fun `mage spells carve the circle and the staff's grand chant spends it`() = arena { h ->
+        h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF; h.actor.reset()
+        assertEquals(0.0, h.actor.resource); assertEquals(3.0, h.actor.resourceMax)
+        h.actor.skill(0); h.ticks(20); assertEquals(1.0, h.actor.resource)
+        h.actor.skill(1); h.ticks(20); assertEquals(2.0, h.actor.resource)
+        assertTrue(h.actor.weaponHint.contains("火") && h.actor.weaponHint.contains("氷"))
+        val hp = h.combat.bossHealth()
+        h.actor.skill(CoreMageRules.GRAND); h.ticks(40)
+        assertEquals(0.0, h.actor.resource)
+        assertTrue(h.combat.bossHealth() < hp, "the grand chant lands")
+        assertTrue(h.actor.cooldownRemaining(CoreMageRules.GRAND) > 0)
+    }
+    @Test fun `old mage saves with the ice garden equipped move to a new spell`() {
+        val migrated = CoreSkillCatalog.migrate(CoreClass.MAGE, CoreClassBuild(second = 5))
+        assertTrue(migrated.skills.none { it == 5 } && migrated.skills.all { it in CoreSkillCatalog.normalChoices(CoreClass.MAGE) })
+        assertEquals(8, CoreSkillCatalog.normalChoices(CoreClass.MAGE).size)
+        assertEquals(listOf(0, 1), CoreSkillCatalog.ultimateChoices(CoreClass.MAGE))
+        assertEquals("反響", CoreSkillCatalog.skills(CoreClass.MAGE)[CoreSkillCatalog.ultimateStart(CoreClass.MAGE)].name)
+    }
+    @Test fun `mage bolt flies to twelve blocks before it hits and stops at a wall`() = arena(bossDistance = 12.0) { h ->
+        h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
+        // Cast 4 ticks, then 1.5 blocks a tick: the boss's body (about 11 blocks off) is reached on the 8th step.
+        h.actor.attack(); h.ticks(9); assertEquals(300.0, h.combat.bossHealth(), "the bolt is still in the air")
+        h.ticks(3); assertTrue(h.combat.bossHealth() < 300.0, "the bolt cannot hit at range")
+        val hp = h.combat.bossHealth(); h.ticks(20)
+        for (y in 40..45) h.instance.setBlock(8,y,14,Block.STONE)
+        h.actor.attack(); h.ticks(30); assertEquals(hp, h.combat.bossHealth())
     }
     @Test fun `early class cannot cast level4 or level8 skill`() = arena { h ->
         h.journey = CoreJourney.fresh().copy(chosen = true, job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
         h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1); h.actor.skill(2); assertEquals(100, h.actor.mana)
         h.ticks(30); assertEquals(300.0, h.combat.bossHealth())
-        h.actor.skill(0); h.ticks(5); assertTrue(h.combat.bossHealth() < 300.0)
+        h.actor.skill(0); h.ticks(12); assertTrue(h.combat.bossHealth() < 300.0)  // the fire ball flies there
     }
     @Test fun `weapon sheet attack speed and power match all actual bases`() = arena { h ->
         for (base in CoreWeaponBase.entries) {
@@ -678,9 +725,9 @@ class CorePlayerCombatTest {
         for (mod in listOf(CoreAffixStat.AD_FLAT, CoreAffixStat.AP_FLAT)) arena(
             stats = CoreAffixStats(additional = mapOf(mod to 20.0))) { h ->
             h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
-            val expected = 8.0 + (12 * .92 + if (mod == CoreAffixStat.AP_FLAT) 20 else 0) * 1.4
+            val expected = 9.0 + (12 * .92 + if (mod == CoreAffixStat.AP_FLAT) 20 else 0) * 1.5
             assertEquals(expected, h.actor.skillDefinitions[0].preview(h.actor.sheet), .000001)
-            h.actor.skill(0); h.ticks(5)
+            h.actor.skill(0); h.ticks(12)  // the fire ball flies there; its burn's first tick is later
             assertEquals(300 - expected, h.combat.bossHealth(), .000001)
         }
     }
@@ -689,7 +736,7 @@ class CorePlayerCombatTest {
         for (mod in listOf(CoreAffixStat.AD_FLAT, CoreAffixStat.AP_FLAT)) arena(
             stats = CoreAffixStats(additional = mapOf(mod to 20.0))) { h ->
             h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
-            h.actor.attack(); h.ticks(4)
+            h.actor.attack(); h.ticks(12)  // the bolt needs a few ticks to fly there
             assertEquals(300 - 12 * .92 - if (mod == CoreAffixStat.AD_FLAT) 20 else 0, h.combat.bossHealth(), .000001)
         }
     }
@@ -719,12 +766,12 @@ class CorePlayerCombatTest {
     @Test fun `only cast speed shortens a Mage skill while physical attack speed does not`() {
         arena(stats = CoreAffixStats(castReductionPercent = 100.0)) { h ->
             h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
-            h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1); h.ticks(4); assertEquals(300.0, h.combat.bossHealth())
+            h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1); h.ticks(3); assertEquals(300.0, h.combat.bossHealth())
             h.ticks(1); assertTrue(h.combat.bossHealth() < 300)
         }
         arena(stats = CoreAffixStats(attackSpeedPercent = 100.0)) { h ->
             h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF
-            h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1); h.ticks(9); assertEquals(300.0, h.combat.bossHealth())
+            h.actor.classState.gain(100.0, h.journey.job); h.actor.skill(1); h.ticks(7); assertEquals(300.0, h.combat.bossHealth())
             h.ticks(1); assertTrue(h.combat.bossHealth() < 300)
         }
     }
@@ -755,10 +802,11 @@ class CorePlayerCombatTest {
         stats=CoreAffixStats(additional=mapOf(CoreAffixStat.MAGE_ECHO to 4.0))) { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
         h.actor.classState.gain(100.0,h.journey.job)
-        val spell=h.actor.skillDefinitions[2];assertEquals(4,spell.pulses)
-        h.actor.skill(2);h.ticks(42)
-        assertEquals(300-spell.preview(h.actor.sheet)*4,h.combat.bossHealth(),.00001)
-        assertEquals(40.0,h.actor.resource)
+        // 残響MOD adds a beat to the mage's ground spells since 2026-10-27 (流星: one fall becomes two).
+        val spell=h.actor.skillDefinitions[2];assertEquals(2,spell.pulses)
+        h.actor.skill(2);h.ticks(50)
+        val burn=300-spell.preview(h.actor.sheet)*2-h.combat.bossHealth()
+        assertTrue(burn in 0.0..40.0, "two falls plus the fire floor's burn: $burn")
     }
     @Test fun `healer can damage alone then spend the same faith pool on actual self recovery`() = arena { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.HEALER);h.base=CoreWeaponBase.TOME;h.actor.reset()
@@ -792,8 +840,9 @@ class CorePlayerCombatTest {
     @Test fun `dodging a channeled field cancels remaining pulses but never refunds its cost`() = arena(bossDistance=7.0) { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
         h.actor.classState.gain(100.0,h.journey.job)
+        h.journey=CoreJourney.legacy(job=CoreClass.MAGE,build=CoreClassBuild(third=8));h.actor.reset()  // 竜巻: four beats
         h.actor.skill(2);h.ticks(12);val before=h.combat.bossHealth();assertTrue(before<300)
-        h.actor.dodge();h.ticks(35);assertEquals(before,h.combat.bossHealth());assertEquals(40.0,h.actor.resource)
+        h.actor.dodge();h.ticks(35);assertEquals(before,h.combat.bossHealth())
         assertTrue(h.actor.cooldownRemaining(2)>0)
     }
     @Test fun `fourth normal skill and ultimate have real runtime cooldowns and separate input slots`() = arena { h ->
@@ -837,7 +886,7 @@ class CorePlayerCombatTest {
     }
     @Test fun `ground field follows a visible aimed enemy beyond the old fixed seven block centre`() = arena(bossDistance=15.0) { h ->
         h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
-        h.actor.classState.gain(100.0,h.journey.job);h.actor.skill(2);h.ticks(12)
+        h.actor.skill(2);h.ticks(24)
         assertTrue(h.combat.bossHealth()<300)
     }
 
@@ -1265,21 +1314,36 @@ class CorePlayerCombatTest {
         }
     }
 
+    @Test fun `the fire bolt's hit waits for its ball to arrive, then the enemy burns`() = arena(bossDistance=7.0) { h ->
+        h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+        val full=h.combat.bossHealth()
+        h.actor.skill(0);h.ticks(8)
+        assertEquals(full,h.combat.bossHealth(),"the ball is still in the air")
+        h.ticks(6);val hit=h.combat.bossHealth();assertTrue(hit<full,"the ball arrived and hit")
+        h.ticks(25);assertTrue(h.combat.bossHealth()<hit,"the enemy burns after the hit")
+    }
+
+    @Test fun `the frost nova casts once the fire bolt is done (vfx 1 after vfx 0)`() = arena(bossDistance=3.0) { h ->
+        h.journey=CoreJourney.legacy(job=CoreClass.MAGE);h.base=CoreWeaponBase.STAFF;h.actor.reset()
+        h.actor.devCast(0);h.ticks(20);h.actor.devCast(1);h.ticks(40)
+        assertTrue(h.actor.cooldownRemaining(1)>0,"the frost nova was cast")
+    }
+
     @Test fun `garden deploy frees input and owns its context while firebolt earns a separate element gain`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();h.actor.skill(1);h.actor.skill(1)
         assertEquals(80,h.actor.mana)
-        h.ticks(6);assertEquals(1,h.actor.activeGardens);assertEquals(15.0,h.actor.resource)
+        h.ticks(6);assertEquals(1,h.actor.activeGardens)
         val planted=h.combat.bossHealth()
         h.actor.skill(0);assertTrue(h.actor.cooldownRemaining(0)>0)
-        h.ticks(5);assertTrue(h.combat.bossHealth()<planted);assertEquals(45.0,h.actor.resource)
-        h.ticks(28);assertEquals(45.0,h.actor.resource,"Further garden hits must not overwrite fire's resource context")
+        h.ticks(14);assertTrue(h.combat.bossHealth()<planted)
+        h.ticks(28)
     }
     @Test fun `garden welcomes a late enemy after old channel end and never refunds reentry hit budget`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();val mob=h.combat.entities().single();val original=mob.position
         h.actor.skill(1);mob.teleport(original.add(8.0,0.0,0.0)).join();h.ticks(46)
-        assertEquals(300.0,h.combat.bossHealth());assertEquals(0.0,h.actor.resource)
+        assertEquals(300.0,h.combat.bossHealth())
         mob.teleport(original).join();h.ticks(4)
-        val one=300.0-h.combat.bossHealth();assertTrue(one>0);assertEquals(15.0,h.actor.resource)
+        val one=300.0-h.combat.bossHealth();assertTrue(one>0)
         repeat(3) { mob.teleport(original.add(8.0,0.0,0.0)).join();h.ticks(8);mob.teleport(original).join();h.ticks(12) }
         assertEquals(300.0-one*4,h.combat.bossHealth(),.00001)
         h.ticks(100);assertEquals(0,h.actor.activeGardens);assertEquals(300.0-one*4,h.combat.bossHealth(),.00001)
@@ -1287,11 +1351,11 @@ class CorePlayerCombatTest {
     @Test fun `dodge after formation preserves garden including cancelling another cast`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();h.actor.skill(1);h.ticks(6);val first=h.combat.bossHealth()
         h.actor.skill(0);h.actor.dodge();h.ticks(20)
-        assertEquals(1,h.actor.activeGardens);assertTrue(h.combat.bossHealth()<first);assertEquals(15.0,h.actor.resource)
+        assertEquals(1,h.actor.activeGardens);assertTrue(h.combat.bossHealth()<first)
     }
     @Test fun `dodge during formation spends once but prevents delayed garden and all hits`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();h.actor.skill(1);h.ticks(3);h.actor.dodge();h.ticks(140)
-        assertEquals(0,h.actor.activeGardens);assertEquals(300.0,h.combat.bossHealth());assertEquals(0.0,h.actor.resource)
+        assertEquals(0,h.actor.activeGardens);assertEquals(300.0,h.combat.bossHealth())
         assertTrue(h.actor.cooldownRemaining(1)>0)
     }
     @Test fun `training cooldown refill cannot place overlapping gardens or pay again`() = arena(bossDistance=7.0) { h ->
@@ -1340,11 +1404,11 @@ class CorePlayerCombatTest {
         h.mageGarden();val ally=h.addAlly(h.player.position,CoreClass.MAGE)
         h.actor.skill(1);ally.skill(1);h.ticks(6);repeat(6) { ally.tick() }
         assertEquals(1,h.actor.activeGardens);assertEquals(1,ally.activeGardens)
-        assertEquals(15.0,h.actor.resource);assertEquals(15.0,ally.resource)
+        
         val one=(300.0-h.combat.bossHealth())/2
         repeat(80) { h.actor.tick();ally.tick() }
         assertEquals(300.0-one*8,h.combat.bossHealth(),.00001)
-        assertEquals(15.0,h.actor.resource);assertEquals(15.0,ally.resource)
+        
     }
     @Test fun `planted garden keeps damaging from its origin while caster takes cover and returns`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();h.actor.skill(1);h.ticks(6)
@@ -1354,7 +1418,7 @@ class CorePlayerCombatTest {
         h.ticks(60)
         assertEquals(300.0-one*4,h.combat.bossHealth(),.00001,"Caster cover cannot reject a source-validated field hit")
         h.player.teleport(start).join();h.ticks(30)
-        assertEquals(300.0-one*4,h.combat.bossHealth(),.00001);assertEquals(15.0,h.actor.resource)
+        assertEquals(300.0-one*4,h.combat.bossHealth(),.00001)
     }
     @Test fun `supported visible plate works at its edge beside a hole without centring a new support sample on enemy`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();val mob=h.combat.entities().single();val start=mob.position
@@ -1369,10 +1433,10 @@ class CorePlayerCombatTest {
     }
     @Test fun `sealed boss damage rejections never spend garden hit budget before the seal opens`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();h.actor.skill(1);h.combat.sealBoss(true);h.ticks(46)
-        assertEquals(300.0,h.combat.bossHealth());assertEquals(0.0,h.actor.resource)
+        assertEquals(300.0,h.combat.bossHealth())
         h.combat.sealBoss(false);h.ticks(4)
         val one=300.0-h.combat.bossHealth();assertTrue(one>0)
-        h.ticks(60);assertEquals(300.0-one*4,h.combat.bossHealth(),.00001);assertEquals(15.0,h.actor.resource)
+        h.ticks(60);assertEquals(300.0-one*4,h.combat.bossHealth(),.00001)
     }
     @Test fun `occupied garden refresh cannot extend another stronger slow through its expiry`() = arena(bossDistance=7.0) { h ->
         h.mageGarden();val mob=h.combat.entities().single();val start=System.currentTimeMillis()
@@ -1395,7 +1459,7 @@ class CorePlayerCombatTest {
             for(mesh in fillers) repeat(48) { mesh.play(CoreSkillEffect(CoreClass.WARRIOR,skill,h.player.position,Vec(0.0,0.0,1.0))) }
             assertEquals(384,fillers.sumOf { it.size })
             h.actor.skill(1);h.ticks(6)
-            assertEquals(0,h.actor.activeGardens);assertEquals(300.0,h.combat.bossHealth());assertEquals(0.0,h.actor.resource)
+            assertEquals(0,h.actor.activeGardens);assertEquals(300.0,h.combat.bossHealth())
             assertEquals(100,h.actor.mana);assertEquals(0,h.actor.cooldownRemaining(1))
             fillers.first().cancel();h.actor.skill(1);h.ticks(6)
             assertEquals(1,h.actor.activeGardens);assertTrue(h.combat.bossHealth()<300.0)

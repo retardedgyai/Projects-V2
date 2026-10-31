@@ -16,7 +16,7 @@ internal object CoreSkillChoreography {
         "dash" to 20,"slam" to 28,"whirl" to 20,"war_guard" to 30,"war_wound" to 18,
         "war_counter" to 22,"war_cry" to 28,"war_breach" to 22,"war_ult" to 30,"war_banner" to 30,"war_awaken" to 24,
         "firebolt" to 22,"frost_nova" to 30,"meteor" to 30,"mage_blink" to 24,"mage_mark" to 22,
-        "mage_garden" to 32,"mage_burst" to 28,"mage_ward" to 30,"mage_ult" to 34,"mage_zero" to 32,
+        "mage_garden" to 32,"mage_gale" to 30,"mage_burst" to 28,"mage_ward" to 30,"mage_ult" to 34,"mage_zero" to 32,
         "pierce" to 18,"frost_fan" to 24,"arrow_rain" to 24,"hunt_retreat" to 20,"hunt_pierce" to 22,
         "hunt_trap" to 32,"hunt_mark" to 22,"hunt_volley" to 18,"hunt_ult" to 28,"hunt_storm" to 26,
         "ass_stab" to 22,"ass_execute" to 24,"ass_fan" to 24,"ass_escape" to 24,"ass_poison" to 26,

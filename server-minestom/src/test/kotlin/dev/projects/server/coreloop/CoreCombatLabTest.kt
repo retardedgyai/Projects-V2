@@ -24,12 +24,13 @@ class CoreCombatLabTest {
         val loadout = CoreLabLoadout(UUID.randomUUID(), CoreClass.WARRIOR)
         for (job in CoreClass.entries) {
             loadout.changeClass(job)
-            for (slot in 0..3) for (choice in 0..7) {
+            val start = CoreSkillCatalog.ultimateStart(job)
+            for (slot in 0..3) for (choice in CoreSkillCatalog.normalChoices(job)) {
                 loadout.selectedSlot = slot; loadout.equip(choice)
                 assertEquals(choice, loadout.journey.build.skills[slot])
                 assertEquals(4, loadout.journey.build.skills.distinct().size)
             }
-            for (choice in 8..9) { loadout.equip(choice); assertEquals(choice - 8, loadout.journey.build.ultimate) }
+            for (choice in start..start + 1) { loadout.equip(choice); assertEquals(choice - start, loadout.journey.build.ultimate) }
         }
     }
 

@@ -293,7 +293,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val sheet = game.combatSheet(player) ?: CoreCombatSheet.from(a)
         val equipped = CoreSkillCatalog.equipped(a.journey, sheet.mods)
         val current = equipped[slot]
-        val candidates = if (slot == 4) CoreSkillCatalog.skills(a.journey.job).drop(8) else CoreSkillCatalog.skills(a.journey.job).take(8)
+        val candidates = CoreSkillCatalog.ultimateStart(a.journey.job).let { start -> if (slot == 4) CoreSkillCatalog.skills(a.journey.job).drop(start) else CoreSkillCatalog.skills(a.journey.job).take(start) }
         // Retired catalog entries stay in the list for old saves but are never offered.
         val choices = if (slot == 4) CoreSkillCatalog.ultimateChoices(a.journey.job) else CoreSkillCatalog.normalChoices(a.journey.job)
         val pages = (choices.size + 3) / 4

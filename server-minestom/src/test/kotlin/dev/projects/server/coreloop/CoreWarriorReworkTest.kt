@@ -19,14 +19,14 @@ class CoreWarriorReworkTest {
     }
 
     @Test fun `retired entries keep catalog order and art but are never selectable`() {
-        assertEquals(61, CoreSkillCatalog.artNames.size)
+        assertEquals(62, CoreSkillCatalog.artNames.size)
         assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
         assertEquals(listOf(0, 1, 2), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
         assertEquals(emptyList<String>(), warrior.filter { it.retired }.map { it.icon })
         for (job in CoreClass.entries) {
             assertEquals(CoreClassBuild(), CoreSkillCatalog.migrate(job, CoreClassBuild()), "$job default build stays valid")
-            assertFalse(CoreSkillCatalog.selectable(job, 0, 8))
-            for (i in 0..7) assertEquals(!CoreSkillCatalog.skills(job)[i].retired, CoreSkillCatalog.selectable(job, 0, i))
+            assertFalse(CoreSkillCatalog.selectable(job, 0, CoreSkillCatalog.ultimateStart(job)))
+            for (i in 0 until CoreSkillCatalog.ultimateStart(job)) assertEquals(!CoreSkillCatalog.skills(job)[i].retired, CoreSkillCatalog.selectable(job, 0, i))
         }
     }
 

@@ -210,6 +210,12 @@ internal class GreatswordVfx(private val player: Player) {
         scheduler.start(effect, frame)
     }
 
+    /** The weapon pose and the sound of a skill whose picture is drawn elsewhere (CoreMageFire, CoreMageFrost). */
+    fun skillCue(effect: CoreSkillEffect) {
+        CoreArmamentPresentation.skill(player, effect)
+        if (effect.phase != CoreSkillVisualPhase.CONTACT) CoreSkillAudio.play(player, effect)
+    }
+
     fun playSkill(effect: ParticleEffect): Boolean {
         if (player.instance !== instance) cancel()
         instance = player.instance

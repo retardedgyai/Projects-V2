@@ -815,6 +815,21 @@
         32
       ],
       "preapproved": false
+    },
+    "mage_gale": {
+      "source_sha256": "2027cdd7acee2cfbca93c6b934909b94b467b1d4b83d7d9cd7ff9fad22adff69",
+      "master_sha256": "2027cdd7acee2cfbca93c6b934909b94b467b1d4b83d7d9cd7ff9fad22adff69",
+      "source_size": [
+        32,
+        32
+      ],
+      "master_size": [
+        32,
+        32
+      ],
+      "preapproved": false,
+      "source": "assets/core-ui/skills/mage_gale.png",
+      "authored_by": "placeholder for \u7adc\u5dfb (2026-10-27), to be redrawn as a diamond icon"
     }
   },
   "frames": {

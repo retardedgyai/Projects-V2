@@ -782,7 +782,7 @@ class QuestEncounterCombat(
         gimmicks.dispose()
         lights.dispose()
         hideGimmickBars()
-        glowing.keys.forEach { it.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList())) }
+        glowing.keys.forEach { PlayerPostEffects.clear(it, postSource) }
         glowing.clear()
         sakuraLight?.remove()
         shaderFx.dispose()
@@ -1540,13 +1540,15 @@ class QuestEncounterCombat(
 
     /** The glow post effect is on for exactly the players in an arena whose model boss is alive; the sakura light while
      *  桜牙獣's light stands. */
+    /** This arena's name in each player's post-effect list (PlayerPostEffects). */
+    private val postSource = "arena@${System.identityHashCode(this)}"
+
     private fun tickGlow() {
         val shade = mobs.values.any { it.view != null && it.life.isAlive && it.definition.model == "shade_wyrm" }
         val effects = listOfNotNull(GLOW.takeIf { shade }, SakuraLight.POST.takeIf { sakuraLight != null })
         val wanted = if (effects.isEmpty()) emptyMap() else instance.players.associateWith { effects }
-        for ((p, list) in wanted) if (glowing[p] != list)
-            p.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(list))
-        for (p in glowing.keys - wanted.keys) p.sendPacket(net.minestom.server.network.packet.server.common.PostEffectsPacket(emptyList()))
+        for ((p, list) in wanted) if (glowing[p] != list) PlayerPostEffects.set(p, postSource, list)
+        for (p in glowing.keys - wanted.keys) PlayerPostEffects.clear(p, postSource)
         glowing.clear(); glowing += wanted
     }
 
