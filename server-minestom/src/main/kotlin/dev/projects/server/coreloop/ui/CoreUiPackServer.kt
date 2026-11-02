@@ -171,6 +171,8 @@ class CoreUiPackServer private constructor(
             val passiveTreeBytes = loader.getResourceAsStream("polish05/passive-tree.zip")?.use { it.readBytes() }
             // Dialog look: ProjectS widget frames plus the private dialog fonts.
             val dialogBytes = loader.getResourceAsStream("polish05/dialog.zip")?.use { it.readBytes() }
+            // The player menu drawn inside a dialog: its fonts, baked pages and sprites (scripts/build_menu_dialog_assets.py).
+            val menuBytes = loader.getResourceAsStream("polish05/menu.zip")?.use { it.readBytes() }
             val output = ByteArrayOutputStream()
             ZipOutputStream(output).use { zip ->
                 paths.sorted().forEach { path ->
@@ -181,7 +183,7 @@ class CoreUiPackServer private constructor(
                 // Vanilla client reload twice and could leave the forge unavailable until rejoin.
                 val seen = paths.toMutableSet()
                 var privateAssets = 0
-                listOfNotNull(polishBytes, atlasBytes, grimoireBytes, passiveTreeBytes, dialogBytes).forEach { archive -> ZipInputStream(archive.inputStream()).use { source ->
+                listOfNotNull(polishBytes, atlasBytes, grimoireBytes, passiveTreeBytes, dialogBytes, menuBytes).forEach { archive -> ZipInputStream(archive.inputStream()).use { source ->
                     while (true) {
                         val entry = source.nextEntry ?: break
                         val path = entry.name
