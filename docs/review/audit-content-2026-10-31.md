@@ -43,7 +43,7 @@
 - 実装：敵の防御は QEC:612 `(tier−1)×30 + (敵Lv − Tier最低Lv)×2`。T1 Lv1 の敵は AR=MR=0 なので貫通は何も引けない。T2 の敵でも防御30（軽減 9%）に穿甲 +10〜20 を引いて +3% 程度。
 - 確かめ方：QEC:612-617 と CCM:117-121（`effectiveDefense` の `safe()` で 0 止め）。
 - 直し方：敵に T1 から土台の防御を持たせる（例：30 + 30×(T−1)）か、貫通石を T2 以上の段でだけ抽選する。
-- 2026-11-02 対応：敵の防御を `30×Tier + (Lv−最低Lv)×2` に変更（play/gyai/enemy-base-defense）。抽選は変えていない。
+- 2026-11-02 対応：敵の防御を `30×Tier + (Lv−最低Lv)×2` に変更（play/gyai/enemy-base-defense）。抽選の仕組みは変えていない。同時に貫通の値の幅を引き上げた（class-combat-formula-recovery.md）。
 
 ## 2. 説明と違う
 

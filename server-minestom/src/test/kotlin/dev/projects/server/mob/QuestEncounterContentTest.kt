@@ -249,11 +249,12 @@ class QuestEncounterContentTest {
             h.player, 5.0, type, CoreAffixStats(additional = mods.toMap()))!!
         // Small hits so the 44 HP soldier outlives all six.
         assertEquals(5 * 300.0 / 330, hit(CoreDamageType.PHYSICAL), .000001)
-        // T1 rolls: 穿甲 5..10 flat, 破甲 3..6 %, 破魔/解呪 the same for MR.
-        assertEquals(5 * 300.0 / 320, hit(CoreDamageType.PHYSICAL, CoreAffixStat.PHYSICAL_PEN_FLAT to 10.0), .000001)
-        assertEquals(5 * 300.0 / (300 + 30 * .94), hit(CoreDamageType.PHYSICAL, CoreAffixStat.PHYSICAL_PEN_PERCENT to 6.0), .000001)
-        assertEquals(5 * 300.0 / 325, hit(CoreDamageType.MAGICAL, CoreAffixStat.MAGICAL_PEN_FLAT to 5.0), .000001)
-        assertEquals(5 * 300.0 / (300 + 30 * .97), hit(CoreDamageType.MAGICAL, CoreAffixStat.MAGICAL_PEN_PERCENT to 3.0), .000001)
+        // T1 rolls: 穿甲/破魔 20..30 flat, 破甲/解呪 30..45 %.
+        assertEquals(5 * 300.0 / 310, hit(CoreDamageType.PHYSICAL, CoreAffixStat.PHYSICAL_PEN_FLAT to 20.0), .000001)
+        assertEquals(5.0, hit(CoreDamageType.PHYSICAL, CoreAffixStat.PHYSICAL_PEN_FLAT to 30.0), .000001)
+        assertEquals(5 * 300.0 / (300 + 30 * .55), hit(CoreDamageType.PHYSICAL, CoreAffixStat.PHYSICAL_PEN_PERCENT to 45.0), .000001)
+        assertEquals(5 * 300.0 / 305, hit(CoreDamageType.MAGICAL, CoreAffixStat.MAGICAL_PEN_FLAT to 25.0), .000001)
+        assertEquals(5 * 300.0 / (300 + 30 * .7), hit(CoreDamageType.MAGICAL, CoreAffixStat.MAGICAL_PEN_PERCENT to 30.0), .000001)
     }
 
     private fun arena(archetype: QuestMobArchetype, seed: Long = 0L, typed: Boolean = false, tier: Int = 1, test: (Harness) -> Unit) {
