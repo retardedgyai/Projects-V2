@@ -473,6 +473,11 @@ class CoreAccountService(private val repository: CoreAccountRepository,
                 .let { if (slot == CoreGearSlot.WEAPON) it else it.withArmor(slot, it.armor(slot).copy(broken = false)) } to
                 "修復の封蝋${seals}個で修理しました。MOD・強化値・成功保証は維持しています"
         }
+        is CoreAction.GrantTreeTest -> {
+            require(action.level in 1..CoreJourneyRules.MAX_LEVEL && action.silverFloor in 0..100_000) { "試しの内容が不正です" }
+            account.copy(journey = account.journey.copy(xp = maxOf(account.journey.xp, CoreJourneyRules.threshold(action.level))),
+                silver = maxOf(account.silver, action.silverFloor)) to "Lv${action.level}・銀貨${action.silverFloor}にしました"
+        }
         is CoreAction.GrantResearchMaterials -> {
             require(action.materials.all { (resource, amount) -> resource.research && amount in 1..999 }) { "研究素材の内容が不正です" }
             require(action.silverFloor in 0..10_000) { "銀貨の指定が不正です" }

@@ -171,7 +171,8 @@ class UiSessions(
         val id=ids.getAndDecrement()
         s.pending[id]=System.nanoTime()
         if(reset) { s.pointer.reset();s.recenter=true }
-        // External cameras suppress natural LOOK updates. Relative zero sync requests a vanilla PosRot reply.
+        // External cameras suppress natural LOOK updates. A relative zero sync makes the client confirm it, and
+        // since 26.3 that confirm carries the look (before, a separate PosRot reply did).
         val flags=RelativeFlags.COORD or RelativeFlags.DELTA_COORD or if(reset) 0 else RelativeFlags.VIEW
         s.player.sendPacket(PlayerPositionAndLookPacket(id,Vec.ZERO,Vec.ZERO,0f,0f,flags))
     }
@@ -201,7 +202,11 @@ class UiSessions(
         when(val packet=event.packet) {
             is ClientTeleportConfirmPacket -> if(packet.teleportId()<0) {
                 event.isCancelled=true
-                if(s.pending.remove(packet.teleportId())!=null) { s.active=true;s.lastResponse=System.nanoTime() }
+                if(s.pending.remove(packet.teleportId())!=null) {
+                    s.active=true;s.lastResponse=System.nanoTime()
+                    // 26.3 carries the look in the confirm itself and no longer follows it with a PosRot.
+                    rotation(s,packet.position().yaw(),packet.position().pitch())
+                }
             }
             is ClientPlayerPositionAndRotationPacket -> {
                 event.isCancelled=true
@@ -250,7 +255,12 @@ class UiSessions(
             when(packet) {
                 is ClientTeleportConfirmPacket -> {
                     if(packet.teleportId()>=0) return false
-                    if(s.pending.remove(packet.teleportId())!=null) { s.active=true;s.lastResponse=System.nanoTime() }
+                    if(s.pending.remove(packet.teleportId())!=null) {
+                        s.active=true;s.lastResponse=System.nanoTime()
+                        // Minecraft 26.3: the confirm carries the client's look (ServerboundAcceptTeleportationPacket
+                        // gained yRot/xRot) and the PosRot reply the probe used to read is gone (2026-11-02).
+                        rotation(s,packet.position().yaw(),packet.position().pitch(),true)
+                    }
                 }
                 is ClientPlayerRotationPacket -> rotation(s,packet.yaw(),packet.pitch(),true)
                 is ClientPlayerPositionAndRotationPacket -> rotation(s,packet.position().yaw(),packet.position().pitch(),true)

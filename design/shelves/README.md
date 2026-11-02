@@ -19,7 +19,7 @@
 
 | ファイル | 分野 | 状態 |
 |---|---|---|
-| [vfx.md](vfx.md) | 技のエフェクト（メイジ・戦士・大剣） | 候補あり。藍の言葉が付いた行は Gorebound と Spellforged だけ |
+| [vfx.md](vfx.md) | 技のエフェクト（メイジ・戦士・大剣） | 2026-11-02 から Minecraft Dungeons がもと。藍の言葉が付いた行は Dungeons・Gorebound・Spellforged |
 | `ui.md` | UI | まだない。決まりは `rules/` の ui-design-concept |
 | `gear.md` | 装備・武器の見た目 | まだない |
 | `boss.md` | ボスの姿・動き | まだない。正典は `canon/sakura-fang.md` |

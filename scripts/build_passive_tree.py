@@ -55,6 +55,7 @@ STATS = {
     "LIFESTEAL": ("ライフスティール", 1, 3), "CC_RESIST": ("CC耐性", 6, 15),
     "CC_DURATION": ("CC時間", 6, 15), "BREAK_POWER": ("ブレイク力", 6, 15),
     "DOT_DAMAGE": ("継続ダメージ", 8, 20), "DODGE_RECOVERY": ("回避の再使用速度", 4, 10),
+    "ELEMENT_EFFECT": ("属性効果", 8, 20),
     "HEAL_ON_KILL": ("撃破時に最大HPの回復", 1, 3), "OVERHEAL_SHIELD": ("溢れた回復をシールドに", 10, 25),
     "MAGICAL_PEN_PERCENT": ("魔法貫通", 4, 10), "PHYSICAL_PEN_PERCENT": ("物理貫通", 4, 10),
     "INCOMING_HEALING": ("被回復量", 6, 15),
@@ -69,7 +70,7 @@ CONDITIONS = {
 TARGET_CONDITIONS = {"VS_BOSS", "VS_CONTROLLED"}
 OFFENSE = {"DAMAGE", "SKILL_DAMAGE", "NORMAL_DAMAGE", "MELEE_DAMAGE", "PROJECTILE_DAMAGE", "MAGICAL_DAMAGE", "PHYSICAL_DAMAGE",
            "AD_PERCENT", "AP_PERCENT", "CRIT_CHANCE_INCREASED", "CRIT_MULTIPLIER", "MAGICAL_PEN_PERCENT", "PHYSICAL_PEN_PERCENT",
-           "DOT_DAMAGE", "CC_DURATION", "BREAK_POWER", "LIFESTEAL"}
+           "DOT_DAMAGE", "CC_DURATION", "BREAK_POWER", "LIFESTEAL", "ELEMENT_EFFECT"}
 # Which conditions each region's deeper notables use (PoE: "if you've killed recently", "on low life"...).
 THEME_CONDITIONS = {
     "WARRIOR": ["LOW_LIFE", "RECENT_KILL"], "TEMPLAR": ["STILL", "FULL_LIFE"], "HEALER": ["FULL_LIFE", "STILL"],
@@ -97,7 +98,7 @@ THEMES = {
             ("剛力", ["AD_PERCENT", "MELEE_DAMAGE"]), ("鋼の体", ["HEALTH_PERCENT", "AR_PERCENT"]),
             ("大振り", ["MELEE_DAMAGE", "BREAK_POWER"]), ("不屈", ["HEALTH_PERCENT", "CC_RESIST"]),
             ("血の渇き", ["LIFESTEAL", "MELEE_DAMAGE"]), ("重い一撃", ["BREAK_POWER", "CRIT_MULTIPLIER"]),
-            ("戦場の心得", ["DAMAGE", "MITIGATION"]), ("鉄塊の主", ["AD_PERCENT", "PHYSICAL_PEN_PERCENT"]),
+            ("戦場の心得", ["DAMAGE", "MITIGATION"]), ("宿る力", ["ELEMENT_EFFECT", "MELEE_DAMAGE"]),
         ]},
     "TEMPLAR": {
         "small": ["AR_PERCENT", "SHIELD_POWER", "MR_PERCENT", "HEALTH_PERCENT"],
@@ -114,7 +115,7 @@ THEMES = {
             ("深淵の知", ["AP_PERCENT", "MAGICAL_DAMAGE"]), ("術の急所", ["CRIT_CHANCE_INCREASED", "MAGICAL_DAMAGE"]),
             ("魔力の奔流", ["SKILL_DAMAGE", "CRIT_MULTIPLIER"]), ("貫く魔弾", ["MAGICAL_PEN_PERCENT", "MAGICAL_DAMAGE"]),
             ("燃え残る術", ["DOT_DAMAGE", "MAGICAL_DAMAGE"]), ("早口の詠唱", ["CAST_REDUCTION", "COOLDOWN_REDUCTION"]),
-            ("魔弾の奥義", ["SKILL_DAMAGE", "AP_PERCENT"]), ("縛る術", ["CC_DURATION", "AP_PERCENT"]),
+            ("魔弾の奥義", ["SKILL_DAMAGE", "AP_PERCENT"]), ("元素の理", ["ELEMENT_EFFECT", "MAGICAL_DAMAGE"]),
         ]},
     "HEALER": {
         "small": ["HEALING_PERCENT", "OUTGOING_HEALING", "MANA_REGEN", "MR_PERCENT"],
@@ -145,9 +146,9 @@ THEMES = {
 HYBRIDS = [
     [("武人の心得", ["MELEE_DAMAGE", "AR_PERCENT"]), ("戦う聖者", ["HEALTH_PERCENT", "SHIELD_POWER"]), ("鉄壁の構え", ["AR_PERCENT", "CC_RESIST"])],
     [("祈る盾", ["SHIELD_POWER", "HEALING_PERCENT"]), ("聖なる守り手", ["MR_PERCENT", "OUTGOING_HEALING"]), ("揺るがぬ祈り", ["CC_RESIST", "MANA_REGEN"])],
-    [("命の術式", ["AP_PERCENT", "HEALING_PERCENT"]), ("静かな水面", ["MANA_REGEN", "CAST_REDUCTION"]), ("雨の詠唱", ["CC_DURATION", "OUTGOING_HEALING"])],
-    [("呪いの刃", ["DOT_DAMAGE", "CRIT_CHANCE_INCREASED"]), ("影の術式", ["MAGICAL_PEN_PERCENT", "CRIT_MULTIPLIER"]), ("闇の詠唱", ["CRIT_CHANCE_INCREASED", "MAGICAL_DAMAGE"])],
-    [("影の狩人", ["PROJECTILE_DAMAGE", "CRIT_CHANCE_INCREASED"]), ("闇夜の弓", ["CRIT_MULTIPLIER", "ATTACK_SPEED"]), ("素早い手", ["ATTACK_SPEED", "DODGE_RECOVERY"])],
+    [("命の術式", ["AP_PERCENT", "HEALING_PERCENT"]), ("静かな水面", ["MANA_REGEN", "CAST_REDUCTION"]), ("雨の詠唱", ["ELEMENT_EFFECT", "CC_DURATION"])],
+    [("呪いの刃", ["DOT_DAMAGE", "ELEMENT_EFFECT"]), ("影の術式", ["MAGICAL_PEN_PERCENT", "CRIT_MULTIPLIER"]), ("闇の詠唱", ["CRIT_CHANCE_INCREASED", "MAGICAL_DAMAGE"])],
+    [("影の狩人", ["PROJECTILE_DAMAGE", "CRIT_CHANCE_INCREASED"]), ("属性の矢", ["ELEMENT_EFFECT", "PROJECTILE_DAMAGE"]), ("素早い手", ["ATTACK_SPEED", "DODGE_RECOVERY"])],
     [("斬り込み", ["MOVE_SPEED", "MELEE_DAMAGE"]), ("武芸の才", ["ATTACK_SPEED", "PHYSICAL_DAMAGE"]), ("戦場の目", ["CRIT_CHANCE_INCREASED", "HEALTH_PERCENT"])],
 ]
 # Masteries sit in the middle of a wheel: once a notable of that wheel is taken, one point buys
@@ -184,6 +185,8 @@ KEYSTONES = [
     ("HYBRID", 0, "BREAKER", "崩しの達人", "ボスのブレイクゲージが50%多く溜まる。ボス以外への与ダメージ-15%。"),
     ("HYBRID", 2, "LONE_WOLF", "孤高", "パーティにいないとき与ダメージ+20%・被ダメージ-10%。"),
     ("HYBRID", 4, "MANA_CYCLE", "循環する魔力", "CD回復速度+30%。最大マナ-40%。"),
+    # The tree gives no element itself (2026-11-02): this keystone makes the ones from gear count as one.
+    ("HYBRID", 3, "ELEMENTAL_ALLIANCE", "元素の同盟", "火・氷・雷の属性値を、一番高い属性に全部まとめる。"),
 ]
 
 nodes: list[dict] = []

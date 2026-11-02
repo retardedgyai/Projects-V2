@@ -524,6 +524,14 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 }
             } }
         })
+        // Test-only: Lv70 and silver, to try the passive tree (手帳 → 成長樹).
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("treetest").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
+                transact(player.uuid, CoreAction.GrantTreeTest(CoreJourneyRules.MAX_LEVEL)).thenAccept { r ->
+                    player.sendMessage(CoreLoopItems.text(if (r.successful) "Lv${CoreJourneyRules.MAX_LEVEL}・銀貨50000にしました。手帳の「成長樹」で開けます" else "できませんでした", NamedTextColor.YELLOW))
+                }
+            } }
+        })
         // Test-only: the Blockbench boss in its own arena via the skill lab (no reward, no save).
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("bosstest").apply {
             // /bosstest [tier]: without a tier, the tier of the player's level (review 2026-10-19: always tier 1 before).
@@ -1089,7 +1097,10 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val sessions = passiveTreeSessions ?: return false
         if (uiPack?.enabled(player) != true || !requireHub(player)) return false
         player.closeInventory()
-        sessions.open(player)
+        // Opened from the journal (a chest screen): wait until the client has closed it and grabbed the mouse again,
+        // or the camera cursor never moves (2026-11-02, in game).
+        player.scheduler().scheduleNextTick { player.scheduler().scheduleNextTick {
+            if (player.isOnline && !sessions.isOpen(player)) sessions.open(player) } }
         return true
     }
 

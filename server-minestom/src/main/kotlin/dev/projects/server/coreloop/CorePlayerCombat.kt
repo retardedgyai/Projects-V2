@@ -836,7 +836,7 @@ internal class CorePlayerCombat(
         val formula = definition?.formula ?: CoreSkillCatalog.basicFormula
         val type = definition?.type ?: CoreSkillCatalog.basicType(classId)
         val tags = definition?.tags ?: CoreSkillCatalog.basicTags(classId)
-        val element = (stats.fireFlat + stats.iceFlat + stats.lightningFlat) * (if (skill) 1.0 else multiplier) * 0.65
+        val element = (stats.fireFlat + stats.iceFlat + stats.lightningFlat) * (if (skill) 1.0 else multiplier) * 0.65 * CoreCombatMath.elementScale(stats)
         val critical = criticalRoll() < CoreKeystone.critChance(stats, activeMask and CorePassiveCondition.STILL.bit != 0)
         val keystoneDot = CoreKeystone.damage(stats.keystones, missingHealth(), activeMask and CorePassiveCondition.AFTER_DODGE.bit != 0,
             boss, CoreKeystone.LONE_WOLF in stats.keystones && alone, direct = false)
@@ -947,17 +947,17 @@ internal class CorePlayerCombat(
         }
         showDamage(id, position, applied, critical, type, if (weak) enemies.weaknessOf(id) else null, weakSpot)
         if (stats.fireFlat > 0 && enemies.isAlive(id)) {
-            burns[DotKey(id)] = Burn(maxOf(burns[DotKey(id)]?.damage ?: 0.0, CoreCombatMath.dot(CoreCombatMath.outgoing(stats.fireFlat * .3, type, tags, stats), stats) * keystoneDot), type, stats, tickNumber + 20, 3)
+            burns[DotKey(id)] = Burn(maxOf(burns[DotKey(id)]?.damage ?: 0.0, CoreCombatMath.dot(CoreCombatMath.outgoing(stats.fireFlat * .3 * CoreCombatMath.elementScale(stats), type, tags, stats), stats) * keystoneDot), type, stats, tickNumber + 20, 3)
             vfx.particles(Particle.SMALL_FLAME, position.add(0.0, 1.0, 0.0), 7, Vec(0.2, 0.4, 0.2), 0.01f)
         }
         if (stats.iceFlat > 0) {
-            enemies.applySlow(id, (0.15 + stats.iceFlat / 100.0).coerceAtMost(0.45), 2000)
+            enemies.applySlow(id, ((0.15 + stats.iceFlat / 100.0) * CoreCombatMath.elementScale(stats)).coerceAtMost(0.6), 2000)
             vfx.particles(Particle.SNOWFLAKE, position.add(0.0, 0.8, 0.0), 7, Vec(0.3, 0.3, 0.3), 0.03f)
         }
         if (stats.lightningFlat > 0) {
             enemies.combatTargets().filter { it.id != id && it.position.distance(position) <= 4.0 && visibleTo(it.id, enemies) }
                 .minByOrNull { it.position.distance(position) }?.let { chained ->
-                    if (enemies.applyCalculatedDamage(chained.id, player, CoreCombatMath.outgoing(stats.lightningFlat * .8, type, tags, stats) * keystoneDirect,
+                    if (enemies.applyCalculatedDamage(chained.id, player, CoreCombatMath.outgoing(stats.lightningFlat * .8 * CoreCombatMath.elementScale(stats), type, tags, stats) * keystoneDirect,
                             type, stats, effect = true) != null) {
                         killed(enemies, chained.id)
                         if (!actionsValid(enemies, epoch)) return

@@ -137,6 +137,8 @@ object CoreCombatMath {
     fun healingScale(healingPower: Double) = 1 + safe(healingPower) / 100
     /** Health back per second: 5% of healing power in combat, three times that out of combat (like mana). */
     fun healthRegeneration(healingPower: Double, outOfCombat: Boolean) = safe(healingPower) * .05 * if (outOfCombat) 3 else 1
+    /** 属性効果 (2026-10-31): what the elements do — their added damage, the burn, the slow, the chain — grows by this. */
+    fun elementScale(s: CoreAffixStats) = 1 + safe(s.bonus(CoreAffixStat.ELEMENT_EFFECT)).coerceAtMost(200.0) / 100
     fun dot(damage: Double, s: CoreAffixStats) = safe(damage) * (1 + safe(s.bonus(CoreAffixStat.DOT_DAMAGE)).coerceAtMost(200.0) / 100)
     fun crowdMillis(millis: Long, s: CoreAffixStats) = (millis * (1 + safe(s.bonus(CoreAffixStat.CC_DURATION)).coerceAtMost(100.0) / 100)).toLong()
     fun breakAmount(amount: Double, s: CoreAffixStats) = safe(amount) * (1 + safe(s.bonus(CoreAffixStat.BREAK_POWER)).coerceAtMost(100.0) / 100)
