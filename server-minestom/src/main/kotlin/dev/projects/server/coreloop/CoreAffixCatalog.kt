@@ -156,10 +156,10 @@ object CoreAffixCatalog {
         CoreAffixDefinition("projects:arcane", "秘術の刻印石", CoreAffixStat.MAGICAL_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
         CoreAffixDefinition("projects:close-combat", "接戦の刻印石", CoreAffixStat.MELEE_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
         CoreAffixDefinition("projects:ballistics", "弾道の刻印石", CoreAffixStat.PROJECTILE_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
-        CoreAffixDefinition("projects:puncture", "穿甲の刻印石", CoreAffixStat.PHYSICAL_PEN_FLAT, CoreAffixCategory.OFFENSE, 20, 30, 20),
-        CoreAffixDefinition("projects:breach", "破甲の刻印石", CoreAffixStat.PHYSICAL_PEN_PERCENT, CoreAffixCategory.OFFENSE, 30, 45, 10),
-        CoreAffixDefinition("projects:dispel", "破魔の刻印石", CoreAffixStat.MAGICAL_PEN_FLAT, CoreAffixCategory.OFFENSE, 20, 30, 20),
-        CoreAffixDefinition("projects:unravel", "解呪の刻印石", CoreAffixStat.MAGICAL_PEN_PERCENT, CoreAffixCategory.OFFENSE, 30, 45, 10),
+        CoreAffixDefinition("projects:puncture", "穿甲の刻印石", CoreAffixStat.PHYSICAL_PEN_FLAT, CoreAffixCategory.OFFENSE, 5, 10, 5),
+        CoreAffixDefinition("projects:breach", "破甲の刻印石", CoreAffixStat.PHYSICAL_PEN_PERCENT, CoreAffixCategory.OFFENSE, 3, 6, 3),
+        CoreAffixDefinition("projects:dispel", "破魔の刻印石", CoreAffixStat.MAGICAL_PEN_FLAT, CoreAffixCategory.OFFENSE, 5, 10, 5),
+        CoreAffixDefinition("projects:unravel", "解呪の刻印石", CoreAffixStat.MAGICAL_PEN_PERCENT, CoreAffixCategory.OFFENSE, 3, 6, 3),
         CoreAffixDefinition("projects:vigor", "活力の刻印石", CoreAffixStat.HEALTH_PERCENT, CoreAffixCategory.DEFENSE, 3, 6, 2),
         CoreAffixDefinition("projects:deep-well", "深泉の刻印石", CoreAffixStat.MANA_PERCENT, CoreAffixCategory.RESOURCE, 4, 8, 3),
         CoreAffixDefinition("projects:spring", "湧泉の刻印石", CoreAffixStat.MANA_REGEN_FLAT, CoreAffixCategory.RESOURCE, 1, 2, 1),
@@ -184,12 +184,12 @@ object CoreAffixCatalog {
 
     fun definition(stone: CoreAffixStone): CoreAffixDefinition? = byId[stone.modId]?.takeIf { stone.definitionRevision == 1 }
     /**
-     * 2026-11-02 the penetration rolls were raised to sit near 武技 against the tier's enemy defence
-     * (flat 5..10 +5/tier → 20..30 +20, percent 3..6 +3/tier → 30..45 +10). A stone saved inside its old range keeps
-     * its place within the range instead of going inert. The old and new ranges never overlap, so this is idempotent.
+     * #196 briefly raised the penetration rolls (flat 20..30 +20/tier, percent 30..45 +10); 2026-11-02 藍 put them back to
+     * the plain +5 / +3% ones. A stone rolled in that window keeps its place within the range instead of failing the
+     * account's validity check. The two ranges never overlap, so this is idempotent.
      */
-    private val penetrationBefore = mapOf("projects:puncture" to Triple(5, 10, 5), "projects:dispel" to Triple(5, 10, 5),
-        "projects:breach" to Triple(3, 6, 3), "projects:unravel" to Triple(3, 6, 3))
+    private val penetrationBefore = mapOf("projects:puncture" to Triple(20, 30, 20), "projects:dispel" to Triple(20, 30, 20),
+        "projects:breach" to Triple(30, 45, 10), "projects:unravel" to Triple(30, 45, 10))
     fun migrate(stone: CoreAffixStone): CoreAffixStone {
         val (min, max, perTier) = penetrationBefore[stone.modId] ?: return stone
         val now = definition(stone)?.range(stone.tier) ?: return stone

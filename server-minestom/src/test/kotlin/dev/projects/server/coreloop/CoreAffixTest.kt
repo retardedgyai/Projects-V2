@@ -155,27 +155,27 @@ class CoreAffixTest {
         assertEquals(original, f.account.affixStones)
     }
 
-    @Test fun `penetration stones saved in the old range move to the same place in the raised range on load`() {
+    @Test fun `penetration stones rolled in the raised range move to the same place in the plain range on load`() {
         fun saved(mod: String, tier: Int, value: Double) = CoreAffixStone(UUID.randomUUID(), mod, tier, value)
-        assertEquals(20.0, CoreAffixCatalog.migrate(saved("projects:puncture", 1, 5.0)).value)
-        assertEquals(30.0, CoreAffixCatalog.migrate(saved("projects:dispel", 1, 10.0)).value)
-        assertEquals(85.0, CoreAffixCatalog.migrate(saved("projects:puncture", 4, 22.5)).value)
-        assertEquals(35.0, CoreAffixCatalog.migrate(saved("projects:breach", 1, 4.0)).value)
-        assertEquals(75.0, CoreAffixCatalog.migrate(saved("projects:unravel", 4, 15.0)).value)
-        // Already raised, or another MOD: untouched.
-        val raised = saved("projects:puncture", 2, 44.0)
-        assertEquals(raised, CoreAffixCatalog.migrate(raised))
+        assertEquals(5.0, CoreAffixCatalog.migrate(saved("projects:puncture", 1, 20.0)).value)
+        assertEquals(10.0, CoreAffixCatalog.migrate(saved("projects:dispel", 1, 30.0)).value)
+        assertEquals(23.0, CoreAffixCatalog.migrate(saved("projects:puncture", 4, 85.0)).value)
+        assertEquals(4.0, CoreAffixCatalog.migrate(saved("projects:breach", 1, 35.0)).value)
+        assertEquals(15.0, CoreAffixCatalog.migrate(saved("projects:unravel", 4, 75.0)).value)
+        // Already plain, or another MOD: untouched.
+        val plain = saved("projects:puncture", 2, 12.0)
+        assertEquals(plain, CoreAffixCatalog.migrate(plain))
         val other = saved("projects:brutality", 1, 9.0)
         assertEquals(other, CoreAffixCatalog.migrate(other))
 
-        // A save written before the raise: breach T2 was 6..9, so 7 sits a third of the way up.
-        val raisedStone = saved("projects:breach", 2, 45.0)
-        val account = CoreAccount(UUID.randomUUID(), revision = 1, affixStones = listOf(raisedStone))
-        val body = CoreAccountCodec.encode(account).substringBefore("checksum\t").replace("\t2\t45.0\t1\n", "\t2\t7.0\t1\n")
-        assertTrue("\t2\t7.0\t1\n" in body)
+        // A save written while breach T2 was 40..55: 45 sits a third of the way up, so 7 in 6..9.
+        val plainStone = saved("projects:breach", 2, 7.0)
+        val account = CoreAccount(UUID.randomUUID(), revision = 1, affixStones = listOf(plainStone))
+        val body = CoreAccountCodec.encode(account).substringBefore("checksum\t").replace("\t2\t7.0\t1\n", "\t2\t45.0\t1\n")
+        assertTrue("\t2\t45.0\t1\n" in body)
         val sum = java.security.MessageDigest.getInstance("SHA-256").digest(body.toByteArray()).joinToString("") { "%02x".format(it) }
         val decoded = CoreAccountCodec.decode(body + "checksum\t$sum\n", account.playerId).affixStones.single()
-        assertEquals(raisedStone, decoded)
+        assertEquals(plainStone, decoded)
         assertTrue(CoreAffixCatalog.valid(decoded))
     }
 
