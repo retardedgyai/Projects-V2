@@ -209,6 +209,18 @@ fun main(args: Array<String>) {
             check(moved.x()>at.x() && moved.y()<at.y()) { "Nonzero first angle left the cursor frozen" }
             check((instance.entities.single { it.entityId==id }.entityMeta as TextDisplayMeta).translation==at)
         }
+        // Minecraft 26.3 sends no PosRot after a probe: the look rides in the confirm itself, and must move the cursor.
+        val beforeConfirm=beforeBaseline.keys.associateWith { checkNotNull(cursorTranslation(it)) }
+        val probesBefore26=packets.filterIsInstance<PlayerPositionAndLookPacket>().size
+        val waitUntil=System.nanoTime()+1_000_000_000L
+        while(packets.filterIsInstance<PlayerPositionAndLookPacket>().size==probesBefore26 && System.nanoTime()<waitUntil) Thread.sleep(5)
+        val fresh=packets.filterIsInstance<PlayerPositionAndLookPacket>().last()
+        check(packets.filterIsInstance<PlayerPositionAndLookPacket>().size>probesBefore26) { "No fresh probe to answer" }
+        check(sessions.consumeImmediateUiPacket(first,ClientTeleportConfirmPacket(fresh.teleportId(),Pos(0.0,1.0,0.0,40f,20f))))
+        beforeConfirm.forEach { (id,at) ->
+            val moved=checkNotNull(cursorTranslation(id))
+            check(moved.x()>at.x() && moved.y()<at.y()) { "A 26.3 probe confirm does not move the cursor" }
+        }
         sessions.close(first,teleportBack=false)
         check(sessions.sessionCount==0)
         val probesAfterClose=packets.filterIsInstance<PlayerPositionAndLookPacket>().size
