@@ -48,7 +48,8 @@ enum class CoreKeystone(val text: String) {
     ONE_STRIKE("会心しなくなる。代わりに与ダメージ+30%。"),
     BREAKER("ボスのブレイクゲージが50%多く溜まる。ボス以外への与ダメージ-15%。"),
     LONE_WOLF("パーティにいないとき与ダメージ+20%・被ダメージ-10%。"),
-    MANA_CYCLE("CD回復速度+30%。最大マナ-40%。");
+    MANA_CYCLE("CD回復速度+30%。最大マナ-40%。"),
+    ELEMENTAL_ALLIANCE("火・氷・雷の属性値を、一番高い属性に全部まとめる。");
 
     companion object {
         const val SANCTUARY_RADIUS = 6.0

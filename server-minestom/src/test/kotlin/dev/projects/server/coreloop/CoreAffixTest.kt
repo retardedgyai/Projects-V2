@@ -37,7 +37,7 @@ class CoreAffixTest {
         assertEquals(48, CoreAffixCatalog.definitions.size)
         // The passive tree also grants these; no stone rolls them (2026-10-31).
         val treeOnly = setOf(CoreAffixStat.CC_DURATION, CoreAffixStat.BREAK_POWER, CoreAffixStat.DOT_DAMAGE,
-            CoreAffixStat.DODGE_RECOVERY, CoreAffixStat.HEAL_ON_KILL, CoreAffixStat.OVERHEAL_SHIELD)
+            CoreAffixStat.DODGE_RECOVERY, CoreAffixStat.ELEMENT_EFFECT, CoreAffixStat.HEAL_ON_KILL, CoreAffixStat.OVERHEAL_SHIELD)
         assertEquals(CoreAffixStat.entries.toSet() - treeOnly, CoreAffixCatalog.definitions.map { it.stat }.toSet())
         val seen = mutableSetOf<String>()
         for (tier in 1..4) {

@@ -10,7 +10,8 @@ scene = json.load(open(src, encoding="utf-8"))
 
 # --- sprites: char -> image cell, from the font providers in the packs
 cells = {}
-for z in ("server-minestom/src/main/resources/polish05/pack.zip", "server-minestom/src/main/resources/polish05/grimoire.zip"):
+for z in ("server-minestom/src/main/resources/polish05/pack.zip", "server-minestom/src/main/resources/polish05/grimoire.zip",
+          "server-minestom/src/main/resources/polish05/passive-tree.zip"):
     with zipfile.ZipFile(f"{repo}/{z}") as a:
         names = set(a.namelist())
         for n in names:
