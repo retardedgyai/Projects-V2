@@ -643,7 +643,9 @@ def main(preview: bool) -> None:
             image = image.quantize(colors=32, method=Image.Quantize.FASTOCTREE)  # indexed PNG + tRNS
         assert code[0] <= LAST_CHAR, "passive tree glyphs ran past the private use area"
         char = chr(code[0]); code[0] += 1
-        rel = f"passive_tree/{name}.png"
+        # Minecraft resource paths take [a-z0-9/._-] only: one bad name voids the whole font (2026-11-02, in game).
+        rel = f"passive_tree/{name.lower()}.png"
+        assert re.fullmatch(r"[a-z0-9/._-]+", rel), rel
         buffer = io.BytesIO(); image.save(buffer, "PNG", optimize=True)
         files[f"assets/{NS}/textures/{rel}"] = buffer.getvalue()
         providers.append({"type": "bitmap", "file": f"{NS}:{rel}", "ascent": image.height, "height": image.height, "chars": [char]})
