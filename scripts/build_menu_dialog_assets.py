@@ -54,7 +54,7 @@ PATHS = [  # id, name, icon, colour
     ("combat", "戦い", "class_warrior", "#ff9a4a"),
     ("gather", "採取", "ore", "#6fd0c0"),
     ("smith", "鍛冶", "ingot", "#ffd166"),
-    ("magic", "魔術", "firebolt", "#a98cf0")]
+    ("magic", "魔術", "book", "#a98cf0")]
 CLASSES = ["warrior", "ranger", "mage", "assassin", "templar", "healer"]
 
 # ---------------------------------------------------------------- layout (canvas px; exported for PlayerMenuCanvas)
@@ -106,11 +106,21 @@ def build_fonts(src: Path, chars: set[int]) -> dict[str, bytes]:
 
 
 def advances(ttf: bytes, size: int, chars: set[int]) -> dict[str, float]:
-    """Advance per character in GUI px, the way the client measures it (FreeType at size*oversample, / oversample)."""
-    font = ImageFont.truetype(io.BytesIO(ttf), int(round(size * OVERSAMPLE)))
-    from fontTools.ttLib import TTFont
-    cmap = TTFont(io.BytesIO(ttf)).getBestCmap()
-    return {str(cp): round(font.getlength(chr(cp)) / OVERSAMPLE, 4) for cp in sorted(chars) if cp in cmap}
+    """Advance per character in GUI px exactly as the 26.3 client gets it: FreeType at round(size * oversample) px,
+    FT_Load_Glyph(NO_BITMAP | BITMAP_METRICS_ONLY), hinted advance.x / 64 / oversample (TrueTypeGlyphProvider).
+    Pillow's getlength differed enough to wrap the lines in game (2026-11-02)."""
+    import freetype
+    face = freetype.Face(io.BytesIO(ttf))
+    px = int(round(size * OVERSAMPLE))
+    face.set_pixel_sizes(px, px)
+    flags = freetype.FT_LOAD_NO_BITMAP | 0x400000
+    out = {}
+    for cp in sorted(chars):
+        index = face.get_char_index(cp)
+        if index:
+            face.load_glyph(index, flags)
+            out[str(cp)] = face.glyph.advance.x / 64 / OVERSAMPLE
+    return out
 
 
 class Sprites:
@@ -135,6 +145,34 @@ class Sprites:
                                    "height": gui_h, "chars": [chr(ch)]})
             entry["chars"][str(ascent)] = ch
         self.meta[name] = entry
+
+    def add_tiled(self, name: str, image: Image.Image, gui_h: int, tops: list[int], origin: int = 0):
+        """A sprite bigger than the client's 256 px font texture page, cut into TILE x TILE GUI px pieces."""
+        scale = image.height // gui_h
+        gui_w = image.width // scale
+        tiles = []
+        for ty in range(0, gui_h, TILE):
+            for tx in range(0, gui_w, TILE):
+                w, h = min(TILE, gui_w - tx), min(TILE, gui_h - ty)
+                piece = image.crop((tx * scale, ty * scale, (tx + w) * scale, (ty + h) * scale))
+                if piece.getchannel("A").getbbox() is None:
+                    continue
+                tile = f"{name}_{tx}_{ty}"
+                self.add(tile, piece, h, {ascent_for(top + ty, origin, h) for top in tops})
+                tiles.append({"sprite": tile, "dx": tx, "dy": ty})
+        self.meta[name] = {"tiles": tiles}
+
+
+TILE = 60  # GUI px; 240 texture px at 4x fits the client's 256 x 256 font texture page
+
+
+def ascent_for(top: int, origin: int, h: int) -> int:
+    """The ascent that puts a sprite's top at `top` (measured like the canvas, from `origin`): on the line holding it,
+    or hung from the line above when the client would reject ascent > height. DialogCanvas.sprite tries the same."""
+    y = top - origin
+    line = max(0, y // 9)
+    ascent = 7 - (y - 9 * line)
+    return ascent if ascent <= h else ascent - 9
 
 
 def body_ascents(top: int, h: int) -> set[int]:
@@ -271,7 +309,7 @@ def main() -> None:
     raw = lambda z, p: Image.open(io.BytesIO(z.read(p))).convert("RGBA")
     icons = {"ore": raw(pack, f"assets/{NS}/textures/forge_materials/ore.png"),
              "ingot": raw(pack, f"assets/{NS}/textures/forge_materials/ingot.png"),
-             "firebolt": Image.open(ROOT / "assets/core-ui/skills/firebolt.png").convert("RGBA"),
+             "book": raw(zipfile.ZipFile(OUT / "grimoire.zip"), f"assets/{NS}/textures/grimoire/ic_book.png"),
              "class_warrior": Image.open(ROOT / "assets/core-ui/proposals/2026-10-16-class-emblems/warrior-32.png").convert("RGBA")}
     book = raw(pack, f"assets/{NS}/textures/raw/book_ui.png")
 
@@ -298,8 +336,8 @@ def main() -> None:
 
     sprites = Sprites()
     page, tab_boxes = bake_page(fonts, icons)
-    sprites.add("page_self", page, CANVAS_H, {7})
-    sprites.add("band", bake_band(fonts, book), 33, {7 + TITLE_TOP})
+    sprites.add_tiled("page_self", page, CANVAS_H, [0])
+    sprites.add_tiled("band", bake_band(fonts, book), 33, [0], TITLE_TOP)
     for c in CLASSES:
         path = ROOT / f"assets/core-ui/proposals/2026-10-16-class-emblems/{c}-32.png"
         sprites.add(f"emblem_{c}", Image.open(path).convert("RGBA").resize((EMBLEM[2] * K, EMBLEM[2] * K), Image.NEAREST), EMBLEM[2], body_ascents(EMBLEM[1], EMBLEM[2]))
@@ -311,9 +349,10 @@ def main() -> None:
             sprites.add(f"ring_{pid}_{step}", ring(colour, step), RING, body_ascents(RING_Y, RING))
     sel = Image.new("RGBA", (ROW_W * K, ROW_H * K)); sd = ImageDraw.Draw(sel)
     for xx in range(ROW_W * K):
-        sd.line([(xx, 0), (xx, ROW_H * K)], fill=(239, 230, 210, int(34 * (1 - xx / (ROW_W * K)))))
+        # the client drops texels under 0.1 alpha, so the fade stays above 26/255 or it ends in a hard edge (2026-11-02)
+        sd.line([(xx, 0), (xx, ROW_H * K)], fill=(239, 230, 210, int(44 - 16 * xx / (ROW_W * K))))
     sd.rectangle((0, 0, 2 * K - 1, ROW_H * K - 1), fill=hexc(C["ivory"]))
-    sprites.add("row_sel", sel, ROW_H, {a for i in range(4) for a in body_ascents(ROW_Y0 + i * ROW_STEP, ROW_H)})
+    sprites.add_tiled("row_sel", sel, ROW_H, [ROW_Y0 + i * ROW_STEP for i in range(4)])
     halo = Image.new("RGBA", ((RING + 4) * K, (RING + 4) * K)); hd = ImageDraw.Draw(halo)
     hd.ellipse((0, 0, (RING + 4) * K - 1, (RING + 4) * K - 1), outline=hexc(C["ivory"]), width=K)
     sprites.add("ring_sel", halo, RING + 4, body_ascents(RING_Y - 2, RING + 4))
@@ -326,6 +365,7 @@ def main() -> None:
         sprites.add(f"hit_{name}", Image.new("RGBA", (w, h), (0, 0, 0, 1)), h, asc)
         # a fully transparent column at the right would shrink the advance; alpha 1 everywhere keeps it = w + 1
     for name, image in sprites.images.items():
+        assert image.width <= 256 and image.height <= 256, name
         png(f"assets/{NS}/textures/menu/{name}.png", image)
     files[f"assets/{NS}/font/menu_art.json"] = json.dumps({"providers": sprites.providers}).encode()
     metrics["sprites"] = sprites.meta

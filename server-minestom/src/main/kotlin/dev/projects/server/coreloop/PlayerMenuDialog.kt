@@ -5,6 +5,7 @@ import dev.projects.server.coreloop.ui.DialogCanvas.Align
 import dev.projects.server.questmap.QuestGatheringDiscipline
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.nbt.BinaryTag
+import net.kyori.adventure.nbt.api.BinaryTagHolder
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.TextColor
@@ -75,7 +76,9 @@ internal class PlayerMenuDialog(
 
     private fun dialog(player: Player, account: CoreAccount): Dialog {
         val meta = DialogMetadata(title(account), Component.text("冒険の手帳"), true, false, DialogAfterAction.NONE,
-            listOf(DialogBody.PlainMessage(body(player, account), metrics.canvasWidth + 2)), emptyList())
+            // The width includes the text widget's 4 px padding on each side, so lines need canvas + 8 or they wrap; but a
+            // body wider than the screen (474 at GUI scale 4) is pushed to its left edge instead of centred (2026-11-02, in game).
+            listOf(DialogBody.PlainMessage(body(player, account), metrics.canvasWidth + 9)), emptyList())
         val close = DialogActionButton(Component.text("閉じる", MUTED).font(DIALOG_FONT), null, 80,
             DialogAction.Custom(Key.key(NS, "close"), null))
         return Dialog.Notice(meta, close)
@@ -85,7 +88,7 @@ internal class PlayerMenuDialog(
     private fun title(account: CoreAccount): Component {
         val canvas = DialogCanvas(metrics, metrics.titleWidth.toDouble(), 1, metrics.titleTop)
         val x0 = metrics.titleX.toDouble()
-        canvas.sprite("band", -x0, 0)
+        canvas.background("band", -x0, 0)
         val wallet = layout.getAsJsonArray("wallet")
         canvas.text("d9", wallet[0].asDouble - x0, wallet[1].asInt, "%,d".format(account.silver), TEXT, Align.RIGHT)
         return canvas.buildLine()
@@ -93,7 +96,7 @@ internal class PlayerMenuDialog(
 
     private fun body(player: Player, account: CoreAccount): Component {
         val canvas = DialogCanvas(metrics, metrics.canvasWidth.toDouble(), metrics.lines)
-        canvas.sprite("page_self", 0.0, 0)
+        canvas.background("page_self", 0.0, 0)
         val tabs = layout.getAsJsonArray("tabs")
         for (i in 1 until tabs.size()) {
             val box = tabs[i].asJsonArray
@@ -247,7 +250,8 @@ internal class PlayerMenuDialog(
         return Component.`object`(builder.build())
     }
 
-    private fun click(action: String) = ClickEvent.custom(Key.key(NS, action))
+    // Minestom cannot write a custom click without a payload, so every one carries an empty compound.
+    private fun click(action: String) = ClickEvent.custom(Key.key(NS, action), BinaryTagHolder.binaryTagHolder("{}"))
 
     companion object {
         const val NS = "projects_menu"

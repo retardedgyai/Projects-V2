@@ -22,7 +22,7 @@ import kotlin.math.roundToInt
 internal class DialogCanvas(private val metrics: Metrics, private val width: Double, private val lineCount: Int, private val originTop: Int = 0) {
     enum class Align { LEFT, CENTER, RIGHT }
 
-    private class Piece(val line: Int, val x: Double, val advance: Double, val component: Component)
+    private class Piece(val line: Int, val x: Double, val advance: Double, val component: Component, val layer: Int)
 
     private val pieces = mutableListOf<Piece>()
 
@@ -44,8 +44,21 @@ internal class DialogCanvas(private val metrics: Metrics, private val width: Dou
     }
 
     /** A baked sprite whose top-left corner is at ([x], [top]). Only the positions the build script baked exist. */
-    fun sprite(name: String, x: Double, top: Int, click: ClickEvent<*>? = null, hover: Component? = null) {
+    fun sprite(name: String, x: Double, top: Int, click: ClickEvent<*>? = null, hover: Component? = null) = sprite(name, x, top, click, hover, 1)
+
+    /**
+     * A sprite drawn under everything else. The client draws a line's glyphs left to right and the lines top to
+     * bottom, so a translucent panel placed after a word covers it (2026-11-02, in game); backgrounds go first.
+     */
+    fun background(name: String, x: Double, top: Int) = sprite(name, x, top, null, null, 0)
+
+    private fun sprite(name: String, x: Double, top: Int, click: ClickEvent<*>?, hover: Component?, layer: Int) {
         val sprite = metrics.sprites[name] ?: error("Unknown menu sprite $name")
+        if (sprite.tiles.isNotEmpty()) {
+            // Too big for the client's 256 px font texture page: baked as tiles, each placed on its own.
+            sprite.tiles.forEach { tile -> sprite(tile.sprite, x + tile.dx, top + tile.dy, click, hover, layer) }
+            return
+        }
         val y = top - originTop
         val line = maxOf(0, floor(y / 9.0).toInt())
         // Short sprites hang from the line above (the client rejects ascent > height); the script baked the same choice.
@@ -56,7 +69,7 @@ internal class DialogCanvas(private val metrics: Metrics, private val width: Dou
             .color(WHITE).shadowColor(ShadowColor.none())
         if (click != null) component = component.clickEvent(click)
         if (hover != null) component = component.hoverEvent(HoverEvent.showText(hover))
-        add(choice.first, x, sprite.advance.toDouble(), component)
+        add(choice.first, x, sprite.advance.toDouble(), component, layer)
     }
 
     /** Any other component of known advance (a player's face is 8 px wide), on the line holding [baseline]. */
@@ -70,9 +83,9 @@ internal class DialogCanvas(private val metrics: Metrics, private val width: Dou
         return text.codePoints().toArray().sumOf { font.advances[it] ?: missing(style, it) }
     }
 
-    private fun add(line: Int, x: Double, advance: Double, component: Component) {
+    private fun add(line: Int, x: Double, advance: Double, component: Component, layer: Int = 1) {
         require(line < lineCount) { "Line $line is past the canvas" }
-        pieces += Piece(line, x, advance, component)
+        pieces += Piece(line, x, advance, component, layer)
     }
 
     /** Every line, padded to the full width so the client's centring leaves each one at the same left edge. */
@@ -80,13 +93,13 @@ internal class DialogCanvas(private val metrics: Metrics, private val width: Dou
         val out = Component.text()
         for (line in 0 until lineCount) {
             if (line > 0) out.append(Component.newline())
-            out.append(row(pieces.filter { it.line == line }.sortedBy { it.x }))
+            out.append(row(pieces.filter { it.line == line }.sortedWith(compareBy({ it.layer }, { it.x }))))
         }
         return out.build()
     }
 
     /** One line only, ending at [width] (the title). */
-    fun buildLine(): Component = row(pieces.sortedBy { it.x })
+    fun buildLine(): Component = row(pieces.sortedWith(compareBy({ it.layer }, { it.x })))
 
     private fun row(items: List<Piece>): Component {
         val out = Component.text()
@@ -116,7 +129,8 @@ internal class DialogCanvas(private val metrics: Metrics, private val width: Dou
     }
 
     class Font(val font: String, val advances: Map<Int, Double>)
-    class Sprite(val advance: Int, val chars: Map<Int, Int>)
+    class Tile(val sprite: String, val dx: Int, val dy: Int)
+    class Sprite(val advance: Int, val chars: Map<Int, Int>, val tiles: List<Tile> = emptyList())
 
     class Metrics(val styles: Map<String, Font>, val sprites: Map<String, Sprite>, val space: Map<Double, Int>, val layout: JsonObject,
                   val canvasWidth: Int, val lines: Int, val titleWidth: Int, val titleX: Int, val titleTop: Int) {
@@ -129,7 +143,9 @@ internal class DialogCanvas(private val metrics: Metrics, private val width: Dou
                 }
                 val sprites = root.getAsJsonObject("sprites").entrySet().associate { (name, value) ->
                     val o = value.asJsonObject
-                    name to Sprite(o["advance"].asInt, o.getAsJsonObject("chars").entrySet().associate { (a, cp) -> a.toInt() to cp.asInt })
+                    if (o.has("tiles")) name to Sprite(0, emptyMap(), o.getAsJsonArray("tiles").map {
+                        val t = it.asJsonObject; Tile(t["sprite"].asString, t["dx"].asInt, t["dy"].asInt) })
+                    else name to Sprite(o["advance"].asInt, o.getAsJsonObject("chars").entrySet().associate { (a, cp) -> a.toInt() to cp.asInt })
                 }
                 val space = root.getAsJsonObject("space").entrySet().associate { (advance, cp) -> advance.toDouble() to cp.asInt }
                 return Metrics(styles, sprites, space, root.getAsJsonObject("layout"), root["canvasWidth"].asInt, root["lines"].asInt,
