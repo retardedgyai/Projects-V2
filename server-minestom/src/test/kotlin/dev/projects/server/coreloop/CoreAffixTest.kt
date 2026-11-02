@@ -155,6 +155,32 @@ class CoreAffixTest {
         assertEquals(original, f.account.affixStones)
     }
 
+    @Test fun `penetration stones from earlier ranges move to the same place in the current range on load`() {
+        fun saved(mod: String, tier: Int, value: Double) = CoreAffixStone(UUID.randomUUID(), mod, tier, value)
+        // Flat: #196's 20..30 +20/tier back to 5..10 +5/tier.
+        assertEquals(5.0, CoreAffixCatalog.migrate(saved("projects:puncture", 1, 20.0)).value)
+        assertEquals(10.0, CoreAffixCatalog.migrate(saved("projects:dispel", 1, 30.0)).value)
+        assertEquals(23.0, CoreAffixCatalog.migrate(saved("projects:puncture", 4, 85.0)).value)
+        // Percent: the old 3..6 +3/tier and #196's 30..45 +10/tier both land in 10..20 at every tier.
+        assertEquals(13.0, CoreAffixCatalog.migrate(saved("projects:breach", 1, 4.0)).value)
+        assertEquals(20.0, CoreAffixCatalog.migrate(saved("projects:unravel", 2, 9.0)).value)
+        assertEquals(13.0, CoreAffixCatalog.migrate(saved("projects:breach", 1, 35.0)).value)
+        assertEquals(20.0, CoreAffixCatalog.migrate(saved("projects:unravel", 4, 75.0)).value)
+        // Already in the current range, or another MOD: untouched.
+        listOf(saved("projects:puncture", 2, 12.0), saved("projects:breach", 4, 12.0), saved("projects:brutality", 1, 9.0))
+            .forEach { assertEquals(it, CoreAffixCatalog.migrate(it)) }
+
+        // A save written with breach T2 at 6..9: 7 sits a third of the way up, so 13 in 10..20.
+        val current = saved("projects:breach", 2, 13.0)
+        val account = CoreAccount(UUID.randomUUID(), revision = 1, affixStones = listOf(current))
+        val body = CoreAccountCodec.encode(account).substringBefore("checksum\t").replace("\t2\t13.0\t1\n", "\t2\t7.0\t1\n")
+        assertTrue("\t2\t7.0\t1\n" in body)
+        val sum = java.security.MessageDigest.getInstance("SHA-256").digest(body.toByteArray()).joinToString("") { "%02x".format(it) }
+        val decoded = CoreAccountCodec.decode(body + "checksum\t$sum\n", account.playerId).affixStones.single()
+        assertEquals(current, decoded)
+        assertTrue(CoreAffixCatalog.valid(decoded))
+    }
+
     @Test fun `unknown definitions and future revisions round trip inert while malformed known rolls fail closed`() {
         val unknown = CoreAffixStone(UUID.randomUUID(), "future:effect", 1, 99.5, 2)
         val future = stone().copy(definitionRevision = 2)

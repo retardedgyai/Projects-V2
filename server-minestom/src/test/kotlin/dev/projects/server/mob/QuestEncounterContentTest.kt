@@ -1,6 +1,8 @@
 package dev.projects.server.mob
 
+import dev.projects.server.coreloop.CoreAffixStat
 import dev.projects.server.coreloop.CoreAffixStats
+import dev.projects.server.coreloop.CoreCombatMath
 import dev.projects.server.coreloop.CoreDamageType
 
 import net.minestom.server.Auth
@@ -228,12 +230,40 @@ class QuestEncounterContentTest {
     }
 
     @Test fun `tier2 caster real health uses separate AR MR without double mitigation`() = arena(QuestMobArchetype.RIFT_CASTER, tier = 2) { h ->
-        assertEquals(10 * 300.0 / 330, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
+        assertEquals(10 * 300.0 / 360, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
             CoreDamageType.PHYSICAL, CoreAffixStats())!!, .000001)
-        assertEquals(10 * 300.0 / 345, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
+        assertEquals(10 * 300.0 / 390, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
             CoreDamageType.MAGICAL, CoreAffixStats())!!, .000001)
         assertEquals(10.0, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
             CoreDamageType.TRUE, CoreAffixStats())!!, .000001)
+    }
+
+    @Test fun `enemy defense starts at 30 on T1 and grows by tier and level`() {
+        assertEquals(30.0, QuestEncounterCombat.enemyDefense(1, 1))
+        assertEquals(48.0, QuestEncounterCombat.enemyDefense(1, 10))
+        assertEquals(60.0, QuestEncounterCombat.enemyDefense(2, 11))
+        assertEquals(138.0, QuestEncounterCombat.enemyDefense(4, 40))
+    }
+
+    @Test fun `penetration affixes cut a tier1 enemy's defense`() = arena(QuestMobArchetype.SOLDIER) { h ->
+        fun hit(type: CoreDamageType, vararg mods: Pair<CoreAffixStat, Double>) = h.combat.applyCalculatedDamage(h.enemyId,
+            h.player, 5.0, type, CoreAffixStats(additional = mods.toMap()))!!
+        // Small hits so the 44 HP soldier outlives all five.
+        assertEquals(5 * 300.0 / 330, hit(CoreDamageType.PHYSICAL), .000001)
+        // T1 rolls: 穿甲/破魔 +5..10, 破甲/解呪 +10..20%.
+        assertEquals(5 * 300.0 / 320, hit(CoreDamageType.PHYSICAL, CoreAffixStat.PHYSICAL_PEN_FLAT to 10.0), .000001)
+        assertEquals(5 * 300.0 / (300 + 30 * .8), hit(CoreDamageType.PHYSICAL, CoreAffixStat.PHYSICAL_PEN_PERCENT to 20.0), .000001)
+        assertEquals(5 * 300.0 / 325, hit(CoreDamageType.MAGICAL, CoreAffixStat.MAGICAL_PEN_FLAT to 5.0), .000001)
+        assertEquals(5 * 300.0 / (300 + 30 * .9), hit(CoreDamageType.MAGICAL, CoreAffixStat.MAGICAL_PEN_PERCENT to 10.0), .000001)
+    }
+
+    @Test fun `flat penetration suits a frail enemy and percent a tank`() {
+        // Mid T1 rolls (7.5 flat, 15%) against a T1 Lv5 soldier (39) and a shield guard's AR (×1.5).
+        fun taken(defense: Double, flat: Double, percent: Double) = CoreCombatMath.mitigate(100.0, CoreDamageType.PHYSICAL,
+            defense, 0.0, CoreAffixStats(additional = mapOf(CoreAffixStat.PHYSICAL_PEN_FLAT to flat, CoreAffixStat.PHYSICAL_PEN_PERCENT to percent)))
+        val frail = QuestEncounterCombat.enemyDefense(1, 5)
+        assertTrue(taken(frail, 7.5, 0.0) > taken(frail, 0.0, 15.0))
+        assertTrue(taken(frail * 1.5, 0.0, 15.0) > taken(frail * 1.5, 7.5, 0.0))
     }
 
     private fun arena(archetype: QuestMobArchetype, seed: Long = 0L, typed: Boolean = false, tier: Int = 1, test: (Harness) -> Unit) {

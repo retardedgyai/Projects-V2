@@ -608,7 +608,7 @@ internal object CoreAccountCodec {
     }
     private fun readAffix(parts: List<String>): CoreAffixStone {
         require(parts.size == 5)
-        return CoreAffixStone(UUID.fromString(parts[0]), parts[1], parts[2].toInt(), parts[3].toDouble(), parts[4].toInt())
+        return CoreAffixCatalog.migrate(CoreAffixStone(UUID.fromString(parts[0]), parts[1], parts[2].toInt(), parts[3].toDouble(), parts[4].toInt()))
     }
 
     private fun mapFields(map: CoreOwnedMap): String = "${map.id}\t${map.seed}\t${map.tier}\t" +
