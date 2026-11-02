@@ -1,6 +1,8 @@
 package dev.projects.server.coreloop
 
 import java.util.UUID
+import com.google.gson.Gson
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -16,15 +18,15 @@ class PassiveTreeFlowTest {
     private val scale = 800.0 / 1920.0
     private val top = (480.0 - 1080.0 * scale) / 2
 
-    /** Points the cursor at a tree node through the same scene transform the screen uses. */
-    private fun pointAt(node: Int) {
+    /** Points the cursor at a tree node through the same scene transform the screen uses, measured from a lit badge. */
+    private fun pointAt(node: Int, from: Int = CorePassiveTree.start(CoreClass.MAGE)) {
         val scene = flow.scene()
-        val face = scene.nodes.firstOrNull { it.id == "f${CorePassiveTree.start(CoreClass.MAGE)}" }
-        assertNotNull(face, "the class start is drawn gold")
-        // Start face centre in scene units, then offset by the node's position relative to the start.
+        val face = scene.nodes.firstOrNull { it.id == "f$from" }
+        assertNotNull(face, "the reference node is drawn lit")
+        // Badge centre in scene units, then offset by the node's position relative to it.
         val sx = face.box.x + face.box.w / 2; val sy = face.box.y + face.box.h / 2
-        val s = art.spots[CorePassiveTree.start(CoreClass.MAGE)]; val n = art.spots[node]
-        val zoom = face.box.w / scale / art.sprites.getValue("face_START").width
+        val s = art.spots[from]; val n = art.spots[node]
+        val zoom = face.box.w / scale / face.sprite!!.width
         flow.pointer(sx + (n.x - s.x) * zoom * scale, sy + (n.y - s.y) * zoom * scale)
     }
 
@@ -85,5 +87,54 @@ class PassiveTreeFlowTest {
         assertEquals(3, buttons.size)
         assertTrue(flow.action("choice:1"))
         assertEquals(CoreAction.TakeMastery(mastery.id, 1), sent.single())
+    }
+
+    /**
+     * The still that scripts/build_passive_tree_assets.py preview renders: a warrior who walked 14 points outward,
+     * one reachable notable selected so the right panel has content. Written to build/passive-tree-preview/scene.json.
+     */
+    @Test fun `a warrior's screen for the preview`() {
+        val job = CoreClass.WARRIOR
+        val start = CorePassiveTree.nodes[CorePassiveTree.start(job)]
+        var taken = setOf<Int>()
+        repeat(14) {
+            val best = (listOf(start.id) + taken).flatMap { CorePassiveTree.nodes[it].links }
+                .filter { it !in taken && CorePassiveTree.nodes[it].kind in setOf(CorePassiveKind.SMALL, CorePassiveKind.NOTABLE) }
+                .minBy { val n = CorePassiveTree.nodes[it]; kotlin.math.hypot(n.x - start.x * 1.6, n.y - start.y * 1.6) }
+            taken = taken + best
+        }
+        account = CoreAccount(UUID.randomUUID(), silver = 48_300, journey = CoreJourney.legacy(job).let { it.copy(build = it.build.copy(passives = taken)) })
+        val preview = PassiveTreeFlow(art, { account }, act = { _, _, _ -> }, leave = {})
+        val cx = taken.map { CorePassiveTree.nodes[it].x }.average(); val cy = taken.map { CorePassiveTree.nodes[it].y }.average()
+        val target = CorePassiveTree.nodes.filter { it.kind == CorePassiveKind.NOTABLE && it.id !in taken && (CorePassiveTree.pathTo(job, taken, it.id)?.size ?: 99) <= 3 }
+            .minBy { kotlin.math.hypot(it.x - cx, it.y - cy) }
+        // Glide up until the walked branch sits in the middle of the view.
+        val ref = taken.minBy { CorePassiveTree.nodes[it].y }
+        repeat(400) {
+            val face = preview.scene().nodes.firstOrNull { it.id == "f$ref" }
+            val y = face?.let { (it.box.y + it.box.h / 2 - top) / scale } ?: -1.0
+            if (y >= 330) return@repeat
+            preview.pointer(922 * scale, top + 105 * scale); preview.tick()
+        }
+        preview.pointer(922 * scale, top + 600 * scale); repeat(60) { preview.tick() }
+        val face = assertNotNull(preview.scene().nodes.firstOrNull { it.id == "f$ref" })
+        val sx = face.box.x + face.box.w / 2; val sy = face.box.y + face.box.h / 2
+        val s = art.spots[ref]; val n = art.spots[target.id]
+        preview.pointer(sx + (n.x - s.x) * scale, sy + (n.y - s.y) * scale)
+        assertTrue(preview.action("tree"))
+        preview.pointer(1600 * scale, top + 600 * scale)  // rest on the right panel: no hover, no scrolling
+        val scene = preview.scene()
+        assertTrue(scene.nodes.any { it.id == "sel" })
+        val dir = File("build/passive-tree-preview").apply { mkdirs() }
+        dir.resolve("scene.json").writeText(Gson().toJson(scene))
+        // A second still with an open mastery chosen, for its option buttons.
+        CorePassiveTree.nodes.firstOrNull { CorePassiveTree.isMastery(it.id) && CorePassiveTree.wheelOpen(taken, it.id) }?.let { m ->
+            val n2 = art.spots[m.id]
+            preview.pointer(sx + (n2.x - s.x) * scale, sy + (n2.y - s.y) * scale)
+            if (preview.action("tree")) {
+                preview.pointer(1600 * scale, top + 600 * scale)
+                dir.resolve("scene-mastery.json").writeText(Gson().toJson(preview.scene()))
+            }
+        }
     }
 }

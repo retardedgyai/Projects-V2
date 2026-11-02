@@ -31,7 +31,7 @@ data class CoreSkillDefinition(
     fun startupTicks(sheet: CoreCombatSheet) = CoreCombatMath.castTicks(startup,
         if (type == CoreDamageType.MAGICAL) sheet.mods.castReductionPercent else (sheet.attackSpeed - 1) * 100)
     fun baseDamage(sheet: CoreCombatSheet) = formula.evaluate(sheet) +
-        (sheet.mods.fireFlat + sheet.mods.iceFlat + sheet.mods.lightningFlat) * .65
+        (sheet.mods.fireFlat + sheet.mods.iceFlat + sheet.mods.lightningFlat) * .65 * CoreCombatMath.elementScale(sheet.mods)
     fun preview(sheet: CoreCombatSheet) = when (motion) {
         CoreSkillMotion.HEAL -> CoreCombatMath.healing(formula.evaluate(sheet), 1.0, sheet)
         CoreSkillMotion.SHIELD -> (formula.evaluate(sheet) + sheet.healingPower) * sheet.shieldMultiplier

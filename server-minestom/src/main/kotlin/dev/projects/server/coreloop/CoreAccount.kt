@@ -285,6 +285,8 @@ sealed interface CoreAction {
     data class SealRepair(val slot: CoreGearSlot) : CoreAction
     /** Server-only: legacy sidecar materials at login, and the dev-only /researchtest top-up. */
     data class GrantResearchMaterials(val materials: Map<CoreResource, Long>, val silverFloor: Long = 0) : CoreAction
+    /** Test-only (/treetest): lifts the journey to [level] and silver to a floor, to try the passive tree. */
+    data class GrantTreeTest(val level: Int, val silverFloor: Long = 50_000) : CoreAction
 }
 
 enum class CoreTransactionStatus { COMMITTED, REPLAYED, REJECTED, STALE, CONFLICT, UNAVAILABLE, SAVE_FAILED }

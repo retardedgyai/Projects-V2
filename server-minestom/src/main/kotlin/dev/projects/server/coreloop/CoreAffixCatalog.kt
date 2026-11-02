@@ -40,7 +40,7 @@ enum class CoreAffixStat(val displayName: String, val percent: Boolean = true) {
     LIFESTEAL("ライフスティール"),
     SHIELD_POWER("シールド量"),
     CC_RESIST("CC耐性"),
-    CC_DURATION("CC時間"), BREAK_POWER("ブレイク力"), DOT_DAMAGE("継続ダメージ"), DODGE_RECOVERY("回避の再使用速度"),
+    CC_DURATION("CC時間"), BREAK_POWER("ブレイク力"), DOT_DAMAGE("継続ダメージ"), DODGE_RECOVERY("回避の再使用速度"), ELEMENT_EFFECT("属性効果"),
     HEAL_ON_KILL("撃破時HP回復"), OVERHEAL_SHIELD("溢れた回復をシールドに"),
     WAR_AFTERSHOCK("戦士・余波", false), MAGE_ECHO("メイジ・残響", false), HUNT_RETURN("狩人・追矢", false),
     ASS_VENOM("暗殺者・毒印", false), TEMP_GRAVITY("聖騎士・重力", false), HEAL_CONVERSION("治療師・予防", false),
@@ -288,7 +288,14 @@ object CoreAffixCatalog {
     /** The caps every stat source shares; [totals] are the uncapped sums. */
     internal fun capped(totals: Map<CoreAffixStat, Double>, conditional: Map<CorePassiveCondition, Map<CoreAffixStat, Double>>,
         keystones: Set<CoreKeystone>): CoreAffixStats {
-        fun stat(type: CoreAffixStat, limit: Double) = (totals[type] ?: 0.0).coerceIn(0.0, limit)
+        // 元素の同盟: every element value goes to the highest one (ties: fire, ice, lightning).
+        val elements = listOf(CoreAffixStat.FIRE, CoreAffixStat.ICE, CoreAffixStat.LIGHTNING)
+        val merged = if (CoreKeystone.ELEMENTAL_ALLIANCE !in keystones) totals else totals.toMutableMap().also { t ->
+            val top = elements.maxBy { t[it] ?: 0.0 }
+            val sum = elements.sumOf { t[it] ?: 0.0 }
+            elements.forEach { t[it] = if (it == top) sum else 0.0 }
+        }
+        fun stat(type: CoreAffixStat, limit: Double) = (merged[type] ?: 0.0).coerceIn(0.0, limit)
         return CoreAffixStats(stat(CoreAffixStat.DAMAGE, 100.0), stat(CoreAffixStat.ATTACK_SPEED, 60.0),
             stat(CoreAffixStat.SKILL_DAMAGE, 100.0), stat(CoreAffixStat.MAX_MANA, 100.0),
             stat(CoreAffixStat.MANA_REGEN, 100.0), stat(CoreAffixStat.COOLDOWN_REDUCTION, 45.0),

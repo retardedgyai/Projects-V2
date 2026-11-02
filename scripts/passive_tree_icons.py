@@ -123,7 +123,7 @@ STAT_ICON = {
     "HEALTH_PERCENT": "heart", "INCOMING_HEALING": "heart", "LIFESTEAL": "blood",
     "AR_PERCENT": "shield", "MR_PERCENT": "shield", "MITIGATION": "shield", "CC_RESIST": "mountain", "SHIELD_POWER": "gem",
     "HEALING_PERCENT": "plus", "OUTGOING_HEALING": "plus", "MANA_PERCENT": "drop", "MANA_REGEN": "drop",
-    "MOVE_SPEED": "chevron", "PROJECTILE_DAMAGE": "arrow", "CC_DURATION": "chain", "BREAK_POWER": "hammer", "DOT_DAMAGE": "skull", "DODGE_RECOVERY": "wing", "FIRE": "flame", "ICE": "snow", "LIGHTNING": "bolt",
+    "MOVE_SPEED": "chevron", "PROJECTILE_DAMAGE": "arrow", "CC_DURATION": "chain", "BREAK_POWER": "hammer", "DOT_DAMAGE": "skull", "DODGE_RECOVERY": "wing", "ELEMENT_EFFECT": "flame", "FIRE": "flame", "ICE": "snow", "LIGHTNING": "bolt",
 }
 CLASS_ICON = {"WARRIOR": "sword", "TEMPLAR": "shield", "MAGE": "star", "HEALER": "plus", "RANGER": "arrow", "ASSASSIN": "aim"}
 

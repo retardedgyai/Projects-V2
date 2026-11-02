@@ -41,4 +41,18 @@ class CoreTreeStatsTest {
             assertTrue(nearest == CoreClass.MAGE || nearest == CoreClass.HEALER, "${n.name} (${n.id}) は ${nearest} の近く")
         }
     }
+
+    @Test fun `element effect grows what the elements do, and the alliance puts every element into the highest`() {
+        assertEquals(1.0, CoreCombatMath.elementScale(CoreAffixStats()), 1e-9)
+        assertEquals(1.4, CoreCombatMath.elementScale(stats(CoreAffixStat.ELEMENT_EFFECT to 40.0)), 1e-9)
+        assertEquals(3.0, CoreCombatMath.elementScale(stats(CoreAffixStat.ELEMENT_EFFECT to 900.0)), 1e-9)
+        val gear = mapOf(CoreAffixStat.FIRE to 6.0, CoreAffixStat.ICE to 9.0, CoreAffixStat.LIGHTNING to 3.0)
+        val apart = CoreAffixCatalog.capped(gear, emptyMap(), emptySet())
+        assertEquals(listOf(6.0, 9.0, 3.0), listOf(apart.fireFlat, apart.iceFlat, apart.lightningFlat))
+        val allied = CoreAffixCatalog.capped(gear, emptyMap(), setOf(CoreKeystone.ELEMENTAL_ALLIANCE))
+        assertEquals(listOf(0.0, 18.0, 0.0), listOf(allied.fireFlat, allied.iceFlat, allied.lightningFlat))
+        assertTrue(CorePassiveTree.nodes.none { n -> n.stats.keys.any { it in setOf(CoreAffixStat.FIRE, CoreAffixStat.ICE, CoreAffixStat.LIGHTNING) } },
+            "the tree gives no element value itself")
+        assertTrue(CorePassiveTree.nodes.any { it.keystone == CoreKeystone.ELEMENTAL_ALLIANCE })
+    }
 }

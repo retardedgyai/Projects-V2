@@ -36,7 +36,7 @@ class CorePassiveMasteryTest {
         assertEquals(mapOf(CoreAffixStat.DAMAGE to 4.0), notable.stats)
         assertEquals(mapOf(CorePassiveCondition.STILL to mapOf(CoreAffixStat.AR_PERCENT to 10.0)), notable.effect.conditional)
         assertTrue(notable.description.contains("2秒動いていないとき"))
-        assertEquals(15, tree.nodes.count { it.keystone != null })
+        assertEquals(16, tree.nodes.count { it.keystone != null })
         assertTrue(tree.nodes.filter { it.kind == CorePassiveKind.MASTERY }.all { it.choices.size == 3 })
     }
 
