@@ -38,11 +38,12 @@ EMPTY = '.'
 # hit flame (warrior_vfx_art.py: outline, deep red, red, orange, cream, white core -- NOT approved by the Creator,
 # so iron is unconfirmed until a warrior effect is); sakura and shade = the item shader's
 # sakuraRamp / ramp sampled at six steps; frost, lightning, wind = the mage rework's element colours
-# (氷=水色, 雷=黄, 風=薄い緑) in the same edge-to-core shape.
+# (氷=水色, 風=薄い緑) in the same edge-to-core shape; lightning = Minecraft Dungeons' cyan and white (藍 2026-11-02
+# 「Dungeonsでいこう」, design/shelves/vfx.md), kept apart from frost by being greener and whiter.
 RAMPS = {
     'fire':      {'k': (106, 44, 28), 'r': (204, 68, 32), 'o': (232, 116, 44), 'y': (244, 180, 60), 'p': (252, 228, 132), 'w': (255, 251, 224)},
     'frost':     {'k': (40, 72, 140), 'r': (64, 124, 200), 'o': (96, 170, 232), 'y': (132, 202, 242), 'p': (186, 230, 250), 'w': (236, 250, 255)},
-    'lightning': {'k': (120, 92, 20), 'r': (196, 160, 28), 'o': (240, 206, 48), 'y': (250, 228, 96), 'p': (254, 244, 160), 'w': (255, 255, 236)},
+    'lightning': {'k': (40, 110, 140), 'r': (60, 170, 200), 'o': (90, 214, 236), 'y': (127, 230, 242), 'p': (196, 248, 252), 'w': (250, 255, 255)},
     'wind':      {'k': (50, 108, 78), 'r': (84, 164, 116), 'o': (124, 206, 150), 'y': (166, 232, 182), 'p': (206, 246, 212), 'w': (242, 255, 246)},
     'iron':      {'k': (52, 8, 14), 'r': (140, 16, 30), 'o': (226, 40, 46), 'y': (255, 120, 40), 'p': (255, 214, 150), 'w': (255, 250, 236)},
     'sakura':    {'k': (36, 8, 23), 'r': (199, 51, 120), 'o': (246, 112, 180), 'y': (255, 150, 200), 'p': (255, 196, 224), 'w': (255, 236, 244)},
