@@ -40,7 +40,6 @@ ICONS = ROOT / "assets/ui/passive-tree/icons.json"
 OUT = ROOT / "server-minestom/src/main/resources/polish05"
 # The forge v3 faces (the same files the approved HTML and the forge glyph pages use).
 MPLUS = ROOT / "web-ui-lab/ui/forge-v3-fonts/MPLUS2.ttf"
-DOTGOTHIC = ROOT / "web-ui-lab/ui/forge-v3-fonts/DotGothic16.ttf"
 NS = "projects_ui_polish05"
 FONT = f"{NS}:passive_tree"
 FIRST_CHAR = 0xE000
@@ -159,12 +158,6 @@ def draw_text(draw, x, y, text, size, weight=400, centre=False, **kw):
         draw.text((x, y), piece, font=f, anchor="ls", **kw)
         x += draw.textlength(piece, font=f)
 
-
-def dotgothic(size):
-    key = ("d", size)
-    if key not in _fonts:
-        _fonts[key] = ImageFont.truetype(str(DOTGOTHIC), size)
-    return _fonts[key]
 
 
 # ------------------------------------------------------------------ pixel badges (the prototype's sprite())
@@ -445,13 +438,6 @@ def ink_on(text, size, weight, fg, bg, cut=.28, pad=2):
     return blend_mask(m, fg, bg, cut)
 
 
-def ink_font(text, f, fg, bg, cut=.28):
-    """Like [ink_on] for a single face (the DotGothic numbers)."""
-    l, t, r, b = ImageDraw.Draw(Image.new("L", (1, 1))).textbbox((0, 0), text, font=f, anchor="ls")
-    asc, desc = f.getmetrics()
-    m = Image.new("L", (max(1, math.ceil(r - min(0, l))), asc + desc)); ImageDraw.Draw(m).text((-min(0, l), asc), text, font=f, anchor="ls", fill=255)
-    return blend_mask(m, fg, bg, cut)
-
 
 def blend_mask(mask, fg, bg, cut=.28):
     a = np.asarray(mask, np.float32)[..., None] / 255
@@ -544,7 +530,7 @@ def keystone_slot(on):
 
 def keycap(text):
     """A footer key: dark cap with a thicker bottom edge."""
-    t = ink_on(text, 13, 400, INK, (30, 32, 37), pad=0)
+    t = ink_on(text, 14, 700, INK, (30, 32, 37), pad=0)
     w = max(28, t.width + 14); h = 26
     img = rounded(w, h, 5, (30, 32, 37), edge=(58, 60, 66), back=STAGE)
     ImageDraw.Draw(img).rectangle([1, h - 3, w - 2, h - 2], fill=(58, 60, 66, 255))
@@ -563,7 +549,7 @@ def strip(parts, gap):
 
 def footer():
     keys = [("左クリック", "選ぶ・2回で取る"), ("端", "移動"), ("ホイール", "拡大縮小"), ("Shift", "閉じる")]
-    return strip([strip([keycap(k), ink_on(t, 14, 400, MUTE, STAGE)], 6) for k, t in keys], 22)
+    return strip([strip([keycap(k), ink_on(t, 15, 700, MUTE, STAGE)], 6) for k, t in keys], 22)
 
 
 def legend():
@@ -571,7 +557,7 @@ def legend():
     disc = np.where(supersampled(10, 10, lambda d, k: d.ellipse([0, 0, 10 * k - 1, 10 * k - 1], fill=255)) >= .5, 255, 0).astype(np.uint8)
     for _, name, _, c in CLASSES:
         dot = Image.fromarray(np.dstack([np.full((10, 10, 3), hexrgb(c), np.uint8), disc]), "RGBA")
-        parts.append(strip([dot, ink_on(name, 13, 400, MUTE, (20, 21, 26))], 6))
+        parts.append(strip([dot, ink_on(name, 15, 700, MUTE, (20, 21, 26))], 6))
     return strip(parts, 16)
 
 
@@ -604,8 +590,8 @@ def info_image(kind, name, body, rgb=None):
 
     def put(im, x, y):
         img.alpha_composite(im.crop((0, 0, min(im.width, INFO_W - x), im.height)), (x, y))
-    put(ink_on(kind, 13, 400, MUTE, PANEL, pad=0), 0, 0)
-    y = 22
+    put(ink_on(kind, 15, 700, MUTE, PANEL, pad=0), 0, 0)
+    y = 24
     for line in wrap(30, 700, name, INFO_W):
         put(ink_on(line, 30, 700, INK, PANEL, pad=0), 0, y); y += 38
     y += 12
@@ -613,16 +599,16 @@ def info_image(kind, name, body, rgb=None):
         for part in body:
             m = STAT.match(part)
             head = m[1] if m else part
-            lines = wrap(18, 400, head, INFO_W - (70 if m else 0))
+            lines = wrap(18, 700, head, INFO_W - (70 if m else 0))
             for k, line in enumerate(lines):
-                t = ink_on(line, 18, 400, INK, PANEL, pad=0); put(t, 0, y)
+                t = ink_on(line, 18, 700, INK, PANEL, pad=0); put(t, 0, y)
                 if m and k == len(lines) - 1:
-                    e = ink_font(f"+{m[2]}%", dotgothic(20), rgb, PANEL)
-                    put(e, t.width + 6, y + t.height - e.height)
+                    # The value in the same face, weight and size as its name, on the same baseline.
+                    put(ink_on(f"+{m[2]}%", 18, 700, rgb, PANEL, pad=0), t.width + 6, y)
                 y += 30
     else:
-        for line in wrap(16, 400, body, INFO_W):
-            put(ink_on(line, 16, 400, (201, 195, 184), PANEL, pad=0), 0, y); y += 26
+        for line in wrap(16, 700, body, INFO_W):
+            put(ink_on(line, 16, 700, (201, 195, 184), PANEL, pad=0), 0, y); y += 26
     return img.crop((0, 0, INFO_W, min(256, y + 2)))
 
 
@@ -724,25 +710,25 @@ def main(preview: bool) -> None:
         labels[key] = columns(f"label_{key}", ink_on(text, size, weight, color, bg))
     # Header, panel and footer words (the forge glyph subset lacks many of these kanji).
     label("brand", "星の盤", 22, INK, STAGE, 700)
-    label("brand_sub", "開拓港 · 修練所", 13, MUTE, STAGE)
+    label("brand_sub", "開拓港 · 修練所", 15, MUTE, STAGE, 700)
     label("tab_passive", "パッシブ", 19, INK, STAGE, 700)
     label("tab_skills", "技の編成", 19, MUTE, STAGE, 500)
     label("tab_stats", "戦闘能力", 19, MUTE, STAGE, 500)
-    label("chip_points", "残りポイント", 14, MUTE, PANEL)
-    label("chip_silver", "銀貨", 14, MUTE, PANEL)
+    label("chip_points", "残りポイント", 15, MUTE, PANEL, 700)
+    label("chip_silver", "銀貨", 15, MUTE, PANEL, 700)
     label("totals", "取ったものの合計", 17, INK, PANEL, 700)
-    label("totals_empty", "まだ何も取っていません", 15, DIM, PANEL)
+    label("totals_empty", "まだ何も取っていません", 16, DIM, PANEL, 700)
     label("keystones", "キーストーン", 17, INK, PANEL, 700)
-    label("keystones_sub", "外周の◆", 13, MUTE, PANEL)
-    label("cost", "戻す代金", 14, MUTE, PANEL)
-    label("cost_unit", "銀貨", 14, MUTE, PANEL)
+    label("keystones_sub", "外周の◆", 15, MUTE, PANEL, 700)
+    label("cost", "戻す代金", 15, MUTE, PANEL, 700)
+    label("cost_unit", "銀貨", 15, MUTE, PANEL, 700)
     for key, text, color in [("taken", "取得済み", GOLD), ("here", "ここから伸ばす", MUTE), ("other", "ほかの職業の起点", MUTE),
                              ("pick", "1つ選んで 1 点で取る", OK), ("locked", "この輪の主要ノードを先に取る", MUTE),
                              ("far", "つながっていない", DANGER), ("need_a", "あと", OK), ("need_b", "点で届く", OK),
                              ("short", "点必要（ポイントが足りない）", DANGER), ("nopoint", "ポイントが足りない", DANGER),
                              ("hub", "港で変更できます", DANGER), ("soon", "中身はこれから決めます", MUTE), ("failed", "できませんでした", DANGER)]:
-        label(f"st_{key}", text, 16, color, PANEL)
-    label("dup", "ほかの輪で選び済み", 13, DANGER, CHOICE)
+        label(f"st_{key}", text, 16, color, PANEL, 700)
+    label("dup", "ほかの輪で選び済み", 15, DANGER, CHOICE, 700)
     labels["footer"] = columns("label_footer", footer())
     labels["legend"] = columns("label_legend", legend())
     # Stat names for the totals, one per distinct name.
@@ -750,13 +736,13 @@ def main(preview: bool) -> None:
                          [p for c in n.get("choiceTexts", []) for p in c.split(" / ")] if (m := STAT.match(part))})
     stat_keys = {}
     for i, name in enumerate(stat_names):
-        stat_keys[name] = f"stat_{i}"; label(f"stat_{i}", name, 15, INK, PANEL)
+        stat_keys[name] = f"stat_{i}"; label(f"stat_{i}", name, 16, INK, PANEL, 700)
     # Mastery option buttons: one label per distinct option text, shared by every wheel that offers it.
     choice_keys: dict[str, str] = {}
     for n in nodes:
         for text in n.get("choiceTexts", []):
             if text not in choice_keys:
-                choice_keys[text] = f"choice_{len(choice_keys)}"; label(choice_keys[text], text, 15, INK, CHOICE)
+                choice_keys[text] = f"choice_{len(choice_keys)}"; label(choice_keys[text], text, 16, INK, CHOICE, 700)
 
     # Chrome sprites: rounded corners (white, tinted per use), the emblem, keystone slots, buttons.
     q = supersampled(64, 64, lambda d, s: d.ellipse([-64 * s, -64 * s, 64 * s - 1, 64 * s - 1], fill=255))

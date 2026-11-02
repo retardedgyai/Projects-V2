@@ -228,7 +228,7 @@ internal class PassiveTreeFlow(
     private fun height(parts: List<Art.Placed>?) = parts?.maxOfOrNull { it.sprite.height.toDouble() } ?: 0.0
     private fun label(id: String, key: String, x: Double, y: Double, depth: Int, tint: String? = null) = block(id, art.labels[key], x, y, depth, tint)
     private fun text(id: String, x: Double, y: Double, w: Double, value: String, size: Double, color: String, depth: Int,
-                     align: String = "left", family: String = "v3num") {
+                     align: String = "left", family: String = "v3b") {
         val page = "$family${size.toInt()}".takeIf(Polish05FontMetrics::has) ?: family
         nodes += UiNode(id, box(x, y, w, size * 1.25), value,
             mapOf("font-size" to "${size * SCALE}px", "color" to color, "text-align" to align, "font-family" to "projects_ui_polish05:$page"),
@@ -342,12 +342,12 @@ internal class PassiveTreeFlow(
         }
         var right = 1920 - LEFT_X
         fun chip(id: String, key: String, value: String, color: String) {
-            val lw = width(art.labels[key]); val nw = measure(value, "v3num", 20.0)
+            val lw = width(art.labels[key]); val nw = measure(value, "v3b", 20.0)
             val w = 18 + lw + 10 + nw + 18
             val x = right - w
             framed(id, x, 39.0, w, 42.0, 21.0, PANEL, 12)
             label("$id-l", key, x + 18, 60 - height(art.labels[key]) / 2, 14)
-            text("$id-n", x + 18 + lw + 10, 47.0, nw + 4, value, 20.0, color, 14)
+            text("$id-n", x + 18 + lw + 10, 43.5, nw + 4, value, 20.0, color, 14, family = "v3b")
             right = x - 10
         }
         chip("chip-silver", "chip_silver", "%,d".format(a?.silver ?: 0), "#ece6dc")
@@ -359,7 +359,7 @@ internal class PassiveTreeFlow(
         framed("lp", LEFT_X, PANEL_TOP, LEFT_W, PANEL_BOTTOM - PANEL_TOP, 14.0, PANEL, 10)
         val ix = LEFT_X + 22; val iw = LEFT_W - 44
         label("lp-h", "totals", ix, 128.0, 12)
-        text("lp-n", ix, 134.0, iw, "${taken.size} 点", 13.0, "#a29e97", 12, "right", "v3m")
+        text("lp-n", ix, 131.5, iw, "${taken.size} 点", 16.0, "#a29e97", 12, "right", "v3b")
         rect("lp-rule", ix, 168.0, iw, 1.5, "#ff" + LINE.removePrefix("#"), 12)
         val sum = linkedMapOf<String, Int>()
         val masteries = a?.journey?.build?.masteries.orEmpty()
@@ -378,11 +378,11 @@ internal class PassiveTreeFlow(
         rows.take(fit).forEachIndexed { k, (name, value) ->
             val y = 180 + k * ROW
             art.statLabels[name]?.let { label("lp-s$k", it, ix, y, 12) }
-            text("lp-v$k", ix, y + 4, iw, "+$value%", 15.0, "#ece6dc", 12, "right")
+            text("lp-v$k", ix, y + 2.5, iw, "+$value%", 16.0, "#ece6dc", 12, "right", "v3b")
         }
         rect("lp-rule2", ix, keysTop - 52, iw, 1.5, "#ff" + LINE.removePrefix("#"), 12)
         label("lp-k", "keystones", ix, keysTop - 42, 12)
-        label("lp-ks", "keystones_sub", ix + iw - width(art.labels["keystones_sub"]), keysTop - 37, 12)
+        label("lp-ks", "keystones_sub", ix + iw - width(art.labels["keystones_sub"]), keysTop - 39, 12)
         CorePassiveTree.nodes.filter { it.kind == CorePassiveKind.KEYSTONE }.forEachIndexed { k, n ->
             art.sprites[if (n.id in taken) "key_on" else "key_off"]?.let {
                 sprite("lp-key$k", it, ix + (k % 7) * 48, keysTop + (k / 7) * 48, 38.0, 38.0, 12)
@@ -417,13 +417,13 @@ internal class PassiveTreeFlow(
                 "need" -> {
                     label("st", "st_need_a", ix, sy, 12)
                     val nx = ix + width(art.labels["st_need_a"]) + 4; val n = "${path.size}"
-                    text("st-n", nx, sy + 3, 60.0, n, 19.0, "#9af0a0", 12)
-                    label("st-b", "st_need_b", nx + measure(n, "v3num", 19.0) + 6, sy, 12)
+                    text("st-n", nx, sy + 2.5, 60.0, n, 16.0, "#9af0a0", 12, family = "v3b")
+                    label("st-b", "st_need_b", nx + measure(n, "v3b", 16.0) + 4, sy, 12)
                 }
                 "short" -> {
                     val n = "${path.size}"
-                    text("st-n", ix, sy + 3, 60.0, n, 19.0, "#e58b80", 12)
-                    label("st", "st_short", ix + measure(n, "v3num", 19.0) + 6, sy, 12)
+                    text("st-n", ix, sy + 2.5, 60.0, n, 16.0, "#e58b80", 12, family = "v3b")
+                    label("st", "st_short", ix + measure(n, "v3b", 16.0) + 4, sy, 12)
                 }
                 else -> label("st", "st_$status", ix, sy, 12)
             }
@@ -442,7 +442,7 @@ internal class PassiveTreeFlow(
             label("cost-l", "cost", ix, 830.0, 12)
             val unit = width(art.labels["cost_unit"])
             label("cost-u", "cost_unit", ix + iw - unit, 830.0, 12)
-            text("cost", ix, 829.0, iw - unit - 6, "%,d".format(cost), 18.0, if (a != null && a.silver >= cost) "#ece6dc" else "#e58b80", 12, "right")
+            text("cost", ix, 827.0, iw - unit - 6, "%,d".format(cost), 20.0, if (a != null && a.silver >= cost) "#ece6dc" else "#e58b80", 12, "right", "v3b")
         }
         if (failed) label("failed", "st_failed", ix, if (owned) 796.0 else 826.0, 12)
         val by = 862.0
@@ -462,7 +462,7 @@ internal class PassiveTreeFlow(
             val x = ix + k * (bw + 10)
             framed("b-$act", x, 946.0, bw, 48.0, 10.0, "#1b1c20", 12)
             if (on) rect("b-$act-hit", x, 946.0, bw, 48.0, "#00000000", 14, act, "#30ffffff")
-            text("b-$act-t", x, 960.0, bw, word, 16.0, if (on) "#ece6dc" else "#5e5a54", 15, "center", "v3m")
+            text("b-$act-t", x, 960.0, bw, word, 16.0, if (on) "#ece6dc" else "#5e5a54", 15, "center", "v3b")
         }
     }
 

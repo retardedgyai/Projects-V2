@@ -160,7 +160,7 @@ PAGE = r"""<!doctype html>
 <title>パッシブツリー（ゲーム画面）</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+2:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root { --bg:#f4f3f0; --fg:#1c1c1f; --muted:#5d5b57; --line:#d6d3cc; --card:#ffffff; --accent:#c45f1c; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0b0c0f; --fg:#ece6dc; --muted:#a29e97; --line:#25262a; --card:#16171b; --accent:#f07a2a; } }
@@ -358,10 +358,9 @@ const width = parts => parts ? parts.reduce((a, p) => a + full(p[0])[0], 0) : 0;
 const height = parts => parts ? parts.reduce((a, p) => Math.max(a, full(p[0])[1]), 0) : 0;
 const label = (key, x, y, depth, tint) => block(D.labels[key], x, y, depth, tint);
 function fontOf(family, size) {
-  if (family === "v3num") return `${size}px "DotGothic16", monospace`;
   return `${family === "v3b" ? 700 : family === "v3m" ? 500 : 400} ${size}px "M PLUS 2", sans-serif`;
 }
-function text(x, y, w, value, size, color, depth, align = "left", family = "v3num") {
+function text(x, y, w, value, size, color, depth, align = "left", family = "v3b") {
   ops.push({ z: depth * 2 + 10, i: seq++, t: "t", x, y, w, v: value, size, c: color, align, family });
 }
 function measure(value, family, size) { ctx.font = fontOf(family, size); return ctx.measureText(value).width; }
@@ -451,10 +450,10 @@ function header(taken, bud) {
   }
   let right = 1920 - LEFT_X;
   const chip = (key, value, color) => {
-    const lw = width(D.labels[key]), nw = measure(value, "v3num", 20), w = 18 + lw + 10 + nw + 18, x = right - w;
+    const lw = width(D.labels[key]), nw = measure(value, "v3b", 20), w = 18 + lw + 10 + nw + 18, x = right - w;
     framed(x, 39, w, 42, 21, PANEL, 12);
     label(key, x + 18, 60 - height(D.labels[key]) / 2, 14);
-    text(x + 18 + lw + 10, 47, nw + 4, value, 20, color, 14);
+    text(x + 18 + lw + 10, 43.5, nw + 4, value, 20, color, 14);
     right = x - 10;
   };
   chip("chip_silver", fmt(A.silver), "#ece6dc");
@@ -465,7 +464,7 @@ function totals(taken) {
   framed(LEFT_X, PANEL_TOP, LEFT_W, PANEL_BOTTOM - PANEL_TOP, 14, PANEL, 10);
   const ix = LEFT_X + 22, iw = LEFT_W - 44;
   label("totals", ix, 128, 12);
-  text(ix, 134, iw, `${taken.size} 点`, 13, "#a29e97", 12, "right", "v3m");
+  text(ix, 131.5, iw, `${taken.size} 点`, 16, "#a29e97", 12, "right", "v3b");
   rect(null, ix, 168, iw, 1.5, "#ff" + LINE.slice(1), 12);
   const sum = new Map();
   for (const i of taken) {
@@ -481,11 +480,11 @@ function totals(taken) {
   rows.slice(0, fit).forEach(([name, value], k) => {
     const y = 180 + k * ROW;
     if (D.statLabels[name]) label(D.statLabels[name], ix, y, 12);
-    text(ix, y + 4, iw, `+${value}%`, 15, "#ece6dc", 12, "right");
+    text(ix, y + 2.5, iw, `+${value}%`, 16, "#ece6dc", 12, "right");
   });
   rect(null, ix, keysTop - 52, iw, 1.5, "#ff" + LINE.slice(1), 12);
   label("keystones", ix, keysTop - 42, 12);
-  label("keystones_sub", ix + iw - width(D.labels["keystones_sub"]), keysTop - 37, 12);
+  label("keystones_sub", ix + iw - width(D.labels["keystones_sub"]), keysTop - 39, 12);
   N.filter(n => n.kind === "KEYSTONE").forEach((n, k) =>
     sprite(taken.has(n.id) ? "key_on" : "key_off", ix + (k % 7) * 48, keysTop + Math.trunc(k / 7) * 48, 38, 38, 12));
 }
@@ -511,12 +510,12 @@ function panel(job, taken, bud, shown, path) {
     if (status === "need") {
       label("st_need_a", ix, sy, 12);
       const nx = ix + width(D.labels["st_need_a"]) + 4, n = `${path.size}`;
-      text(nx, sy + 3, 60, n, 19, "#9af0a0", 12);
-      label("st_need_b", nx + measure(n, "v3num", 19) + 6, sy, 12);
+      text(nx, sy + 2.5, 60, n, 16, "#9af0a0", 12);
+      label("st_need_b", nx + measure(n, "v3b", 16) + 4, sy, 12);
     } else if (status === "short") {
       const n = `${path.size}`;
-      text(ix, sy + 3, 60, n, 19, "#e58b80", 12);
-      label("st_short", ix + measure(n, "v3num", 19) + 6, sy, 12);
+      text(ix, sy + 2.5, 60, n, 16, "#e58b80", 12);
+      label("st_short", ix + measure(n, "v3b", 16) + 4, sy, 12);
     } else label("st_" + status, ix, sy, 12);
     if (mastery) masteryChoices(node, sy + 36);
   }
@@ -530,7 +529,7 @@ function panel(job, taken, bud, shown, path) {
     label("cost", ix, 830, 12);
     const unit = width(D.labels["cost_unit"]);
     label("cost_unit", ix + iw - unit, 830, 12);
-    text(ix, 829, iw - unit - 6, fmt(cost), 18, A.silver >= cost ? "#ece6dc" : "#e58b80", 12, "right");
+    text(ix, 827, iw - unit - 6, fmt(cost), 20, A.silver >= cost ? "#ece6dc" : "#e58b80", 12, "right");
   }
   if (failed) label("st_failed", ix, owned ? 796 : 826, 12);
   const by = 862;
@@ -546,7 +545,7 @@ function panel(job, taken, bud, shown, path) {
     const x = ix + k * (bw + 10);
     framed(x, 946, bw, 48, 10, "#1b1c20", 12);
     if (on) rect("b-" + act, x, 946, bw, 48, "#00000000", 14, act, "#30ffffff");
-    text(x, 960, bw, word, 16, on ? "#ece6dc" : "#5e5a54", 15, "center", "v3m");
+    text(x, 960, bw, word, 16, on ? "#ece6dc" : "#5e5a54", 15, "center", "v3b");
   });
 }
 
@@ -615,7 +614,8 @@ function draw() {
       ctx.font = fontOf(op.family, op.size); ctx.fillStyle = op.c; ctx.textBaseline = "alphabetic";
       ctx.textAlign = op.align;
       const x = op.align === "center" ? op.x + op.w / 2 : op.align === "right" ? op.x + op.w : op.x;
-      ctx.fillText(op.v, x, op.y + op.size * 1.0);
+      // The game puts the baseline at y + size * (1.125 + 1/32): the box is 1.25 * size, the glyph cell 40 units with ascent 32.
+      ctx.fillText(op.v, x, op.y + op.size * (1.125 + 1 / 32));
     }
   }
   cv.style.cursor = hoverHit && hoverHit.act !== "tree" ? "pointer" : nodeAt(pointerX, pointerY) != null ? "pointer" : "";
@@ -694,7 +694,7 @@ function note(msg) {
 let loaded = false;
 const loadImg = src => new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => bad(src); i.src = src; });
 const fontsReady = (document.fonts ? Promise.all([
-  document.fonts.load('20px "DotGothic16"'), document.fonts.load('500 16px "M PLUS 2"'), document.fonts.load('700 24px "M PLUS 2"'),
+  document.fonts.load('700 16px "M PLUS 2"'), document.fonts.load('500 16px "M PLUS 2"'), document.fonts.load('700 24px "M PLUS 2"'),
 ]).catch(() => null) : Promise.resolve());
 centreOnStart();
 Promise.all([
