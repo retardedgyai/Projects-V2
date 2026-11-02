@@ -615,7 +615,7 @@ class QuestEncounterCombat(
         stats: CoreAffixStats, projectile: Boolean, effect: Boolean, fieldOrigin: Pos?): Double? {
         if (!amount.isFinite() || amount <= 0) return null
         val mob = mobs[targetId] ?: return null
-        val defense = (tier - 1) * 30.0 + (encounterLevel - ((tier - 1) * 10 + 1)) * 2.0
+        val defense = enemyDefense(tier, encounterLevel)
         val armored = mob.definition.archetype in setOf(QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.IRON_WARDEN)
         val caster = mob.definition.archetype in setOf(QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE)
         val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
@@ -2387,6 +2387,11 @@ class QuestEncounterCombat(
         const val BREAK_MAX = 100.0
         const val BREAK_MILLIS = 4000L
         const val BROKEN_DAMAGE = 1.3
+        /**
+         * Enemy AR/MR: 30 per tier plus 2 per level above the tier floor, so T1 Lv1 already has 30 (2026-11-02 藍:
+         * penetration affixes are a damage affix at every tier). Shield/caster archetypes multiply it by 1.5.
+         */
+        fun enemyDefense(tier: Int, level: Int) = 30.0 * tier + (level - ((tier - 1) * 10 + 1)) * 2.0
     }
 
     private fun sound(position: Pos, key: String, volume: Float, pitch: Float) {

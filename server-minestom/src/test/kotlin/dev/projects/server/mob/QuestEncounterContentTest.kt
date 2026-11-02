@@ -1,5 +1,6 @@
 package dev.projects.server.mob
 
+import dev.projects.server.coreloop.CoreAffixStat
 import dev.projects.server.coreloop.CoreAffixStats
 import dev.projects.server.coreloop.CoreDamageType
 
@@ -228,12 +229,31 @@ class QuestEncounterContentTest {
     }
 
     @Test fun `tier2 caster real health uses separate AR MR without double mitigation`() = arena(QuestMobArchetype.RIFT_CASTER, tier = 2) { h ->
-        assertEquals(10 * 300.0 / 330, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
+        assertEquals(10 * 300.0 / 360, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
             CoreDamageType.PHYSICAL, CoreAffixStats())!!, .000001)
-        assertEquals(10 * 300.0 / 345, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
+        assertEquals(10 * 300.0 / 390, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
             CoreDamageType.MAGICAL, CoreAffixStats())!!, .000001)
         assertEquals(10.0, h.combat.applyCalculatedDamage(h.enemyId, h.player, 10.0,
             CoreDamageType.TRUE, CoreAffixStats())!!, .000001)
+    }
+
+    @Test fun `enemy defense starts at 30 on T1 and grows by tier and level`() {
+        assertEquals(30.0, QuestEncounterCombat.enemyDefense(1, 1))
+        assertEquals(48.0, QuestEncounterCombat.enemyDefense(1, 10))
+        assertEquals(60.0, QuestEncounterCombat.enemyDefense(2, 11))
+        assertEquals(138.0, QuestEncounterCombat.enemyDefense(4, 40))
+    }
+
+    @Test fun `penetration affixes cut a tier1 enemy's defense`() = arena(QuestMobArchetype.SOLDIER) { h ->
+        fun hit(type: CoreDamageType, vararg mods: Pair<CoreAffixStat, Double>) = h.combat.applyCalculatedDamage(h.enemyId,
+            h.player, 5.0, type, CoreAffixStats(additional = mods.toMap()))!!
+        // Small hits so the 44 HP soldier outlives all six.
+        assertEquals(5 * 300.0 / 330, hit(CoreDamageType.PHYSICAL), .000001)
+        // T1 rolls: 穿甲 5..10 flat, 破甲 3..6 %, 破魔/解呪 the same for MR.
+        assertEquals(5 * 300.0 / 320, hit(CoreDamageType.PHYSICAL, CoreAffixStat.PHYSICAL_PEN_FLAT to 10.0), .000001)
+        assertEquals(5 * 300.0 / (300 + 30 * .94), hit(CoreDamageType.PHYSICAL, CoreAffixStat.PHYSICAL_PEN_PERCENT to 6.0), .000001)
+        assertEquals(5 * 300.0 / 325, hit(CoreDamageType.MAGICAL, CoreAffixStat.MAGICAL_PEN_FLAT to 5.0), .000001)
+        assertEquals(5 * 300.0 / (300 + 30 * .97), hit(CoreDamageType.MAGICAL, CoreAffixStat.MAGICAL_PEN_PERCENT to 3.0), .000001)
     }
 
     private fun arena(archetype: QuestMobArchetype, seed: Long = 0L, typed: Boolean = false, tier: Int = 1, test: (Harness) -> Unit) {
