@@ -1,4 +1,5 @@
 """Build the pack's item shader with this machine's own OpenGL driver, headless, before any client loads it
+and the night light core/lightmap.fsh with vanilla's screenquad.vsh
 (2026-10-25: NVIDIA refused the greatsword swing's key arrays, "Possibly large array", and the whole pack failed).
 
 Resolves the includes the way the game does (minecraft: from the client's own shaders, ours from scripts/shaders),
@@ -64,6 +65,17 @@ def main():
             failed += not ok
             print(('OK  ' if ok else 'FAIL'), ' '.join(defines) or '(none)')
             if not ok: print(r.stdout[-2000:])
+    # The night light (core/lightmap) draws one full-screen quad with vanilla's own screenquad.vsh.
+    with zipfile.ZipFile(CLIENT) as jar:
+        quad = jar.read('assets/minecraft/shaders/core/screenquad.vsh').decode().replace('gl_VertexIndex', 'gl_VertexID')
+    with tempfile.TemporaryDirectory() as tmp:
+        v, f = Path(tmp) / 'screenquad.vsh', Path(tmp) / 'lightmap.fsh'
+        v.write_text(quad); f.write_text((OURS / 'lightmap.fsh').read_text())
+        r = subprocess.run([str(TOOL), str(v), str(f)], capture_output=True, text=True)
+        ok = r.returncode == 0 and 'FAILED' not in r.stdout
+        failed += not ok
+        print(('OK  ' if ok else 'FAIL'), 'lightmap')
+        if not ok: print(r.stdout[-2000:])
     print(r.stdout.splitlines()[0] if r.stdout else '')
     return 1 if failed else 0
 

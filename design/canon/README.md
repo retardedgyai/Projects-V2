@@ -16,5 +16,6 @@
 | [frost-nova-v12.md](frost-nova-v12.md) | メイジ 霜の波紋 第12版 | 「氷は一旦これでOK」 | 未確認（見本ページへの OK。main にない） | 正典候補 |
 | [ui-concept.md](ui-concept.md) | UI の決まり | 2026-10-10 に合意（言葉は未確認） | 決まりの文書（地図画面は main） | 正典（決まり） |
 | [harbor-architecture.md](harbor-architecture.md) | 港町の建築基準 | 藍が指した3投稿（言葉は未確認） | 未確認（一括改修後の判定が残っていない） | 正典候補 |
+| [night-light.md](night-light.md) | 夜の光のシェーダー（灯りは琥珀色、月明かりは青） | 「シェーダー作って欲しいな」（出来への言葉はまだ） | 未確認（ブラウザで同じシェーダーを動かした見本だけ） | 正典候補 |
 
 戦士の当たり炎（`scripts/warrior_vfx_art.py` の `hit_flame`）は正典ではない。2026-10-30 藍「よくない絵だな、OK していない」（`../ng.md`）。戦士の技の見た目で寄せる先は、地割り（`warrior-slam.md`）と狂乱・縦振りの軌跡（`warrior-skills.md`）。どちらもまだ正典候補。OK が出た計算プレビュー（GIF と静止画）は `img/` に置いた。実機の録画はまだない。

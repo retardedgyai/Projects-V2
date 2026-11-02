@@ -43,9 +43,11 @@ internal object CoreUiPackPolicy {
      * (scripts/build_warrior_iron_vfx.py) and items tinted with the 黒翳竜 VFX marker (scripts/build_boss_vfx.py).
      * Every other item renders as vanilla. The include holds the greatsword swing's keys (scripts/class_armament_swing.py),
      * which item.vsh plays on the first-person held sword.
+     * core/lightmap is the night light (scripts/shaders/lightmap.fsh): warm amber lamps and a cool blue moon; by day
+     * the sky matches vanilla.
      */
     val shaderOverrides: Set<String> = setOf("assets/minecraft/shaders/core/item.vsh", "assets/minecraft/shaders/core/item.fsh",
-        "assets/minecraft/shaders/include/greatsword_swing.glsl")
+        "assets/minecraft/shaders/core/lightmap.fsh", "assets/minecraft/shaders/include/greatsword_swing.glsl")
 
     fun allowedPath(path: String): Boolean = !path.startsWith('/') && ".." !in path && '\\' !in path &&
         (!path.startsWith("assets/minecraft/") || path in vanillaOverrides || path in vanillaAdditions || path in dialogWidgets ||

@@ -18,7 +18,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "server-minestom/src/main/resources/core-ui-pack"
 SHADERS = ROOT / "scripts/shaders"  # one core/item for every combat VFX marker
-SHADER_FILES = ("item.vsh", "item.fsh")
+SHADER_FILES = ("item.vsh", "item.fsh", "lightmap.fsh")  # lightmap: the night light (warm lamps, blue moon)
 
 
 def data_map(w, h, fn):
