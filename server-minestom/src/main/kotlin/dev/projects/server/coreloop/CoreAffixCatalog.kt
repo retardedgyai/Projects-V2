@@ -156,10 +156,10 @@ object CoreAffixCatalog {
         CoreAffixDefinition("projects:arcane", "秘術の刻印石", CoreAffixStat.MAGICAL_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
         CoreAffixDefinition("projects:close-combat", "接戦の刻印石", CoreAffixStat.MELEE_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
         CoreAffixDefinition("projects:ballistics", "弾道の刻印石", CoreAffixStat.PROJECTILE_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
-        CoreAffixDefinition("projects:puncture", "穿甲の刻印石", CoreAffixStat.PHYSICAL_PEN_FLAT, CoreAffixCategory.OFFENSE, 20, 30, 20),
-        CoreAffixDefinition("projects:breach", "破甲の刻印石", CoreAffixStat.PHYSICAL_PEN_PERCENT, CoreAffixCategory.OFFENSE, 30, 45, 10),
-        CoreAffixDefinition("projects:dispel", "破魔の刻印石", CoreAffixStat.MAGICAL_PEN_FLAT, CoreAffixCategory.OFFENSE, 20, 30, 20),
-        CoreAffixDefinition("projects:unravel", "解呪の刻印石", CoreAffixStat.MAGICAL_PEN_PERCENT, CoreAffixCategory.OFFENSE, 30, 45, 10),
+        CoreAffixDefinition("projects:puncture", "穿甲の刻印石", CoreAffixStat.PHYSICAL_PEN_FLAT, CoreAffixCategory.OFFENSE, 5, 10, 5),
+        CoreAffixDefinition("projects:breach", "破甲の刻印石", CoreAffixStat.PHYSICAL_PEN_PERCENT, CoreAffixCategory.OFFENSE, 10, 20, 0),
+        CoreAffixDefinition("projects:dispel", "破魔の刻印石", CoreAffixStat.MAGICAL_PEN_FLAT, CoreAffixCategory.OFFENSE, 5, 10, 5),
+        CoreAffixDefinition("projects:unravel", "解呪の刻印石", CoreAffixStat.MAGICAL_PEN_PERCENT, CoreAffixCategory.OFFENSE, 10, 20, 0),
         CoreAffixDefinition("projects:vigor", "活力の刻印石", CoreAffixStat.HEALTH_PERCENT, CoreAffixCategory.DEFENSE, 3, 6, 2),
         CoreAffixDefinition("projects:deep-well", "深泉の刻印石", CoreAffixStat.MANA_PERCENT, CoreAffixCategory.RESOURCE, 4, 8, 3),
         CoreAffixDefinition("projects:spring", "湧泉の刻印石", CoreAffixStat.MANA_REGEN_FLAT, CoreAffixCategory.RESOURCE, 1, 2, 1),
@@ -184,17 +184,21 @@ object CoreAffixCatalog {
 
     fun definition(stone: CoreAffixStone): CoreAffixDefinition? = byId[stone.modId]?.takeIf { stone.definitionRevision == 1 }
     /**
-     * 2026-11-02 the penetration rolls were raised to sit near 武技 against the tier's enemy defence
-     * (flat 5..10 +5/tier → 20..30 +20, percent 3..6 +3/tier → 30..45 +10). A stone saved inside its old range keeps
-     * its place within the range instead of going inert. The old and new ranges never overlap, so this is idempotent.
+     * Earlier penetration rolls. Flat was briefly 20..30 +20/tier (#196); percent was 3..6 +3/tier, then briefly 30..45
+     * +10. 2026-11-02 藍: flat (+5..10, +5/tier) is for frail enemies and percent for tanks, so percent became a flat
+     * 10..20% at every tier (it already grows with the enemy's defence). A stone that no longer fits keeps its place
+     * within the first earlier range holding it, instead of failing the account's validity check.
      */
-    private val penetrationBefore = mapOf("projects:puncture" to Triple(5, 10, 5), "projects:dispel" to Triple(5, 10, 5),
-        "projects:breach" to Triple(3, 6, 3), "projects:unravel" to Triple(3, 6, 3))
+    private val penetrationBefore = mapOf(
+        "projects:puncture" to listOf(Triple(20, 30, 20)), "projects:dispel" to listOf(Triple(20, 30, 20)),
+        "projects:breach" to listOf(Triple(3, 6, 3), Triple(30, 45, 10)), "projects:unravel" to listOf(Triple(3, 6, 3), Triple(30, 45, 10)))
     fun migrate(stone: CoreAffixStone): CoreAffixStone {
-        val (min, max, perTier) = penetrationBefore[stone.modId] ?: return stone
+        val earlier = penetrationBefore[stone.modId] ?: return stone
         val now = definition(stone)?.range(stone.tier) ?: return stone
-        val before = (min + perTier * (stone.tier - 1)).toDouble()..(max + perTier * (stone.tier - 1)).toDouble()
-        if (stone.value !in before) return stone
+        if (valid(stone)) return stone
+        val before = earlier.map { (min, max, perTier) ->
+            (min + perTier * (stone.tier - 1)).toDouble()..(max + perTier * (stone.tier - 1)).toDouble()
+        }.firstOrNull { stone.value in it } ?: return stone
         val place = (stone.value - before.start) / (before.endInclusive - before.start)
         return stone.copy(value = (now.first + place * (now.last - now.first)).roundToInt().toDouble())
     }
