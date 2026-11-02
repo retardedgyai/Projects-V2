@@ -14,6 +14,8 @@
 | [warrior-skills.md](warrior-skills.md) | 戦士の技の組み立て（獣・8技・狂乱・縦振りの軌跡） | 「狂乱はこれでいい。次へ」 | 未確認（計算プレビューへの OK） | 正典候補 |
 | [fire-bolt-v21.md](fire-bolt-v21.md) | メイジ 火炎弾 第21版 | 「この燃え方で火炎弾を決める」 | 未確認（見本ページへの OK。main にない） | 正典候補 |
 | [frost-nova-v12.md](frost-nova-v12.md) | メイジ 霜の波紋 第12版 | 「氷は一旦これでOK」 | 未確認（見本ページへの OK。main にない） | 正典候補 |
+| [lightning-v6.md](lightning-v6.md) | メイジ 落雷 6版目（16 ドットの雷・雷雲・焦げ） | 「一旦これでいいとしましょう」 | 未確認（見本ページへの OK。ゲームにない） | 正典候補 |
+| [mage-harness-trio.md](mage-harness-trio.md) | メイジ 突風・氷槍の列・流星 3版目（Dungeons もとの作り方を決めた試し） | 「全体的によくなったね、一旦ここの磨きはもういい」 | 未確認（見本ページへの OK。ゲームにない） | 正典候補 |
 | [ui-concept.md](ui-concept.md) | UI の決まり | 2026-10-10 に合意（言葉は未確認） | 決まりの文書（地図画面は main） | 正典（決まり） |
 | [harbor-architecture.md](harbor-architecture.md) | 港町の建築基準 | 藍が指した3投稿（言葉は未確認） | 未確認（一括改修後の判定が残っていない） | 正典候補 |
 
