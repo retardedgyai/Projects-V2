@@ -374,8 +374,8 @@ internal class PlayerMenuDialog(
         val acts = layout.getAsJsonArray("acts")
         val raiseLabel = when {
             base >= CoreSkillLevels.MAX_BASE -> "Lv ${CoreSkillLevels.MAX_BASE}（上限）"
-            points <= 0 -> "点数がありません"
-            else -> "Lv を上げる（点数 1）"
+            points <= 0 -> "技ポイントがありません"
+            else -> "Lv を上げる（1 ポイント）"
         }
         val raise = acts[0].asJsonArray
         canvas.text("b7", raise[0].asDouble + 42, raise[1].asDouble + 8, raiseLabel, if (raiseLabel.startsWith("Lv を")) GOLD else MUTED)
@@ -389,7 +389,7 @@ internal class PlayerMenuDialog(
         if (spent > 0) {
             val reset = layout.getAsJsonArray("reset")
             val price = CorePassiveTree.refundPrice(account.journey) * spent
-            canvas.text("m6", reset[0].asDouble, reset[1].asDouble + 8, "点数を全部戻す（銀貨 ${"%,d".format(price)}）", MUTED)
+            canvas.text("m6", reset[0].asDouble, reset[1].asDouble + 8, "技ポイントを全部戻す（銀貨 ${"%,d".format(price)}）", MUTED)
             canvas.sprite("hit_reset", reset[0].asDouble, reset[1].asDouble, click("reset"))
         }
         return canvas.build()

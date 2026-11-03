@@ -75,7 +75,7 @@ SLOT = 26
 TOP = 32                                           # content starts under the tab row
 # 技
 EMBLEM64 = (51, TOP + 2)                           # x, y of the 64 px class emblem
-HEX = [(15, TOP + 18), (121, TOP + 18)]            # left hex frames (26 x 28): Lv, 点数
+HEX = [(15, TOP + 18), (121, TOP + 18)]            # left hex frames (26 x 28): Lv, ポイント
 KEYS = [(10 + i * 29, TOP + 90) for i in range(5)] # key slots 2..6
 GRID = [(172 + c * 29, TOP + 4 + r * 29) for r in range(3) for c in range(3)]   # normal skills
 ULTS = [(172 + c * 29, TOP + 101) for c in range(3)]
@@ -96,7 +96,7 @@ PATH_BAR = (192, TOP + 76, 130)
 STEPS = (348, TOP + 24, 15)                        # x, first baseline, line step
 PRIMARY = (348, TOP + 128)                         # the gold action line
 EDIT = (40, TOP + 132)
-BAKED = "".join(TABS) + "冒険の手帳いまの組枠を押してから技を選ぶ奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩点数銀貨"
+BAKED = "".join(TABS) + "冒険の手帳いまの組枠を押してから技を選ぶ奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨"
 
 def hexc(v, a=255):
     if isinstance(v, tuple):
@@ -311,7 +311,7 @@ def bake_skills(fonts, icons):
     img = Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K)); d = ImageDraw.Draw(img)
     tabs_row(img, d, fonts, icons, "技")
     img.alpha_composite(glow(110, 110, 55, 55, 55, 55, (255, 170, 110), 90), ((EMBLEM64[0] - 23) * K, (EMBLEM64[1] - 23) * K))
-    for (x, y), label in zip(HEX, ["Lv", "点数"]):
+    for (x, y), label in zip(HEX, ["Lv", "ポイント"]):
         hex_frame(img, x, y); draw_text(d, fonts, "m6", x + 13, y + 11, label, C["muted"], anchor="ms")
     draw_text(d, fonts, "dot9", 83, TOP + 85, "いまの組", C["ink"], anchor="ms")
     for x, y in KEYS: slot_frame(d, x, y)
