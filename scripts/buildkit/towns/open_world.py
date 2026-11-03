@@ -47,6 +47,30 @@ def terrace(m, x, z):
     edge = 0.62 + 0.2 * vnoise(x, z, 9, 93)                                           # 棚の奥行き：段の6〜8割は緩い棚
     rise = f / edge * 0.35 if f < edge * T and False else (0.35 * f / T if f / T < edge else 0.35 * edge + (1 - 0.35 * edge) * (f / T - edge) / (1 - edge))
     return k * T + rise * T - 6 * vnoise(x, z, 17, 92)
+# ================================================================ 山脈：尾根の線 → 侵食2回 → 緩い面を均す（kit/terrain.py、rules 68〜）
+import terrain as TE
+SNOW_H = 62                                                                        # 雪の線（侵食後の高さ）
+def _mountain_grid():
+    G = TE.Grid(-B, -B, 2 * B, 2 * B, 0.0)
+    pk = sorted(PEAKS, key=lambda p: p[0])
+    main = [(-B - 10, -100, 40)] + [(px, pz, 16 + ph) for (px, pz, ph, pr) in pk if pz < -90] + [(B + 10, -100, 40)]
+    ridges = [(main, 70)]                                                          # 主脈：峰を結ぶ背骨
+    for (px, pz, ph, pr) in pk:                                                    # 枝尾根：峰から谷（南）へ 30〜60°で下る
+        for sgn in (-1, 1):
+            a = math.radians(90 + sgn * (30 + 25 * vnoise(px, pz + sgn, 9, 5)))
+            L = pr * 1.6
+            ex, ez = px + math.cos(a) * L, pz + math.sin(a) * L
+            ridges.append(([(px, pz, 16 + ph * 0.85), (ex, ez, 16 + ph * 0.35)], pr * 1.1))
+    def nz(x, z): return vnoise(x, z, 14, 3) + 0.5 * vnoise(x, z, 6, 4) - 0.75
+    TE.ridge_field(G, ridges, nz)
+    TE.erode2(G, mask=lambda x, z: z < 10)                                          # 雨は山側にだけ（村と丘は侵食しない）
+    TE.smooth_gentle(G)
+    TE.flow_cut(G, 0.08)
+    return G
+MG = _mountain_grid()
+def mountains(x, z):
+    if not MG.inside(x, z): return 0.0
+    return max(0.0, MG.get(x, z) - 16) * smooth((-z - 20) / 50.0)                 # 手前（村の側）は谷の平地へなじませる
 def base(x, z):
     h = 16 + (fbm(x, z, 70, 3) - 0.5) * 12 + mountains(x, z)
     h += 14 * math.exp(-((x - HILL[0]) ** 2 + (z - HILL[1]) ** 2) / 420.0)        # 館の丘
@@ -75,17 +99,26 @@ class World(Town):
       1段ずつの所は白い段々、2段以上落ちる壁の下だけ灰色の岩が見え、壁の棚の雪が斜めの白い線になる。
     ・岩は石を地にして、安山岩・閃緑岩を大きな塊で入れる（細かく混ぜると斑点になる）。
     ・山すそは、岩と草の段々の間に土の厚い帯をはさむ。"""
-    def snow(self, x, z, g): return g >= 44 + 8 * vnoise(x, z, 12, 41)
+    def snow(self, x, z, g): return g >= SNOW_H + 8 * vnoise(x, z, 12, 41)
     def foot(self, x, z, g):
         if not 32 <= g < 44 + 4 * vnoise(x, z, 14, 49): return False
         return max(abs(g - self.H.get((x + dx, z + dz), g)) for dx, dz in N4) <= 2       # 土の帯は緩い所だけ（急な壁に塗ると浮いた三角に見えた）
+    def mpaint(self, x, z, g):
+        if g < 34 or not MG.inside(x, z) or z > 10: return None
+        n = TE.paint(MG, x, z, SNOW_H)
+        return grass() if n == 'grass' else full(n)
     def steep_top(self, x, z):
         g = self.H[(x, z)]
+        m = self.mpaint(x, z, g)
+        if m: return m
         if self.snow(x, z, g): return full('snow')
         if g >= 44: return full(self.rock_at(x, g, z))
         if self.foot(x, z, g): return full('coarse_dirt') if vnoise(x, z, 4, 46) < 0.5 else full('dirt')
         return super().steep_top(x, z)
     def ground_top(self, x, z, k, g, sand=lambda x, z, g: False):
+        if k == 'nat':
+            m = self.mpaint(x, z, g)
+            if m: return m
         if k == 'nat' and self.snow(x, z, g): return full('snow')
         if k == 'nat' and g >= 46: return full(self.rock_at(x, g, z))
         if k == 'nat' and self.foot(x, z, g) and vnoise(x, z, 6, 45) > 0.62: return full('coarse_dirt')
@@ -194,12 +227,13 @@ for (cx, cz) in [(VX - 34, VZ - 4), (VX + 30, VZ + 34), (VX - 12, VZ - 36), (20,
 def tree_kind(x, z, r):
     """木の種類は帯で分ける：水際に白樺、中にオーク、奥と高い所にトウヒ。種類を交互に混ぜない（めいきゃん 19:11〜19:45）。"""
     g = H[(x, z)]
-    if g >= 56: return None
+    if g >= SNOW_H - 2: return None
     w = T.WD.get((x, z), 99) if hasattr(T, 'WD') else 99
     if g >= 34 or z < -40 + 10 * vnoise(x, z, 30, 7): return 'spruce'
     if w <= 9: return 'birch' if r < 0.85 else 'oak'
     return 'big' if r < 0.015 else 'cherry' if r < 0.04 else 'birch' if r < 0.12 else 'oak'
 def skip(x, z):
+    if MG.inside(x, z) and z < 10 and TE.slope_deg(MG, x, z) >= 40: return True     # 急な岩の面には木を置かない
     return tree_kind(x, z, 0.5) is None or KIND.get((x, z)) in ('flowers', 'stream') or abs(x - river_x(z)) < 7
 # 森の踏み跡：村 → 湖、湖 → 山すその森、館の丘 → 東の森、村 → 南の森。木は道の両脇2マスまで残す [rules 32]
 T.trail([(VX - 20, VZ - 12), (-60, 52), (-66, 42)])
