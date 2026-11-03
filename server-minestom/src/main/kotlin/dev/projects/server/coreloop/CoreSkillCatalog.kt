@@ -140,6 +140,9 @@ object CoreSkillCatalog {
             val gravity = stats.bonus(CoreAffixStat.TEMP_GRAVITY)
             if (gravity > 0) { radius *= 1 + gravity.coerceAtMost(10.0) * .1; power *= .8; notes += "重力MOD" }
         }
+        // Skill level (points + gear MODs): damage only for now (CoreSkillLevels).
+        val level = CoreSkillLevels.level(j.build, stats, s.icon)
+        power *= CoreSkillLevels.multiplier(s, level)
         return s.copy(formula = CoreDamageFormula(s.formula.base * power, s.formula.ad * power, s.formula.ap * power),
             pulses = pulses.coerceAtMost(8), radius = radius.coerceAtMost(10.5),
             description = s.description + if (notes.isEmpty()) "" else " / ${notes.joinToString("・")}適用")
