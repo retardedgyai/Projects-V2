@@ -39,9 +39,6 @@ class DialogCanvasTest {
     fun theTitleEndsAtItsFixedWidthSoTheWarningMarkLandsAtTheRight() {
         for ((scale, size) in metrics.sizes) {
             val canvas = DialogCanvas(size, metrics.space, size.titleWidth.toDouble(), 1, size.titleTop, 1.0, metrics.forScale(4).styles)
-            canvas.background("band", -size.titleX.toDouble(), 0.0)
-            val wallet = size.layout.getAsJsonArray("wallet")
-            canvas.text("d9", wallet[0].asDouble - size.titleX, wallet[1].asDouble, "48,300", NamedTextColor.WHITE, DialogCanvas.Align.RIGHT)
             assertEquals(size.titleWidth.toDouble(), width(size, flatten(canvas.buildLine()), metrics.forScale(4)), 0.26, "GUI scale $scale")
         }
     }
@@ -67,7 +64,7 @@ class DialogCanvasTest {
 
     @Test
     fun everySpriteThePageUsesWasBakedAtItsPosition() {
-        val names = listOf("page_self", "page_skills", "band", "slot_sel", "slot_dim", "slot_x", "key_tri", "dia_on", "dia_gear", "row_on",
+        val names = listOf("page_self", "page_skills", "slot_sel", "slot_dim", "slot_x", "key_tri", "dia_on", "dia_gear", "row_on",
             "bar_fill", "ms_now", "hit_slot", "hit_row", "hit_act", "hit_go", "hit_edit", "hit_reset") + (0..3).map { "hit_tab$it" } +
             CoreClass.entries.flatMap { listOf("emblem64_${it.name.lowercase()}", "emblem24_${it.name.lowercase()}") } +
             listOf("combat", "gather", "smith", "magic").map { "bar_$it" }

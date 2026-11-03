@@ -21,7 +21,8 @@ at 4 texture px per design px. Words, numbers, rings, the selected row and hit a
 The server cannot see a player's GUI scale, so each player tells it once (PlayerDisplaySettings). Every page exists
 in three SIZES, one per GUI scale 2 / 3 / 4: the same design (in design px, laid out for GUI scale 4) multiplied by
 a unit of 2, 4/3 and 1 GUI px per design px, so it covers the same screen pixels at each scale. Textures are shared;
-only glyph heights, ascents, font sizes and the title band (fixed 33 GUI px tall, as wide as the screen) differ.
+only glyph heights, ascents, font sizes and the title width differ. Nothing is drawn behind the windows: the client
+already blurs the world, and 藍 wanted it neither darkened nor topped with a band (2026-11-03, in game).
 """
 from __future__ import annotations
 
@@ -39,8 +40,7 @@ OUT = ROOT / "server-minestom/src/main/resources/polish05"
 NS = "projects_ui_polish05"
 K = 4                      # texture pixels per design pixel (= one screen pixel at every size)
 CANVAS_W, CANVAS_H = 464, 189  # body canvas in design px
-SCREEN_W, SCREEN_H = 480, 270  # design px across and down a 1080p screen
-GROUND_K = 2               # texture px per design px for the blurred full-screen ground
+SCREEN_W = 480             # design px across a 1080p screen
 TITLE_X = 8                # where the title starts on screen; its advance puts the vanilla warning mark at the right
 TITLE_TOP = 12             # the title line's top on screen (GUI px; the header is 33 GUI px at every scale)
 SIZES = {"4": 1.0, "3": 4 / 3, "2": 2.0}  # GUI scale -> GUI px per design px
@@ -93,7 +93,7 @@ CARD = (4, WIN_Y + 4, 142, 32)                     # the harbour banner on the n
 EMBLEM24 = (11, WIN_Y + 29)                        # the class emblem in its slot (slot 30 x 30 at -3)
 NAME = (46, WIN_Y + 47)                            # face + name baseline; the title 10 below
 KV = (8, WIN_Y + 70, 134, 11)                      # x, first baseline, width, step
-KV_LABELS = ["職", "冒険 Lv", "踏破", "技ポイント", "パッシブポイント"]
+KV_LABELS = ["職", "冒険 Lv", "踏破", "技ポイント", "パッシブポイント", "銀貨"]
 EDIT = (8, WIN_Y + 147, 134)                       # charcoal button
 ROWS = [(161, WIN_Y + 14 + i * 28) for i in range(4)]   # 140 x 26 path banners
 ROW_W, ROW_H = 140, 26
@@ -422,18 +422,6 @@ def bake_self(fonts):
     return img
 
 
-def bake_band(fonts, book, w: int) -> Image.Image:
-    """The title band in GUI px (4 texture px each): a darker strip over the world, the book, the purse."""
-    h = 33
-    img = Image.new("RGBA", (w * K, h * K), (8, 8, 10, 170))
-    d = ImageDraw.Draw(img)
-    d.rectangle((0, (h - 1) * K, w * K - 1, h * K - 1), fill=(255, 138, 61, 70))
-    img.alpha_composite(book.resize((16 * K, 17 * K), Image.NEAREST), (12 * K, 9 * K))
-    draw_text(d, fonts, "m7", 32, 20, "冒険の手帳", C["muted"])
-    draw_text(d, fonts, "dot9", w - 108, 21, "◆", C["gold"])
-    return img
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(); parser.add_argument("--fonts", required=True)
     src = Path(parser.parse_args().fonts)
@@ -444,9 +432,6 @@ def main() -> None:
     def png(path, image):
         buf = io.BytesIO(); image.save(buf, "PNG", optimize=True); files[path] = buf.getvalue()
 
-    pack = zipfile.ZipFile(OUT / "pack.zip")
-    raw = lambda z, p: Image.open(io.BytesIO(z.read(p))).convert("RGBA")
-    book = raw(pack, f"assets/{NS}/textures/raw/book_ui.png")
     for key, data in fonts.items():
         files[f"assets/{NS}/font/menu_{key}.ttf"] = data
     metrics = {"space": {}, "sizes": {}}
@@ -458,8 +443,6 @@ def main() -> None:
     files[f"assets/{NS}/font/menu_space.json"] = json.dumps({"providers": [{"type": "space", "advances": advances_map}]}).encode()
 
     page_self, page_skills = bake_self(fonts), bake_skills(fonts)
-    # The world stays in sight, darkened, behind the windows (7版 C).
-    ground = Image.new("RGBA", (SCREEN_W * GROUND_K, SCREEN_H * GROUND_K), (6, 6, 8, 150))
     tab_boxes = tabs_row(None, None, fonts, "")
     skill_source = (ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreSkillCatalog.kt").read_text(encoding="utf-8")
     skill_icons = sorted(set(re.findall(r's\("[^"]*", "([a-z_]+)"', skill_source)))
@@ -484,12 +467,8 @@ def main() -> None:
                     {"type": "ttf", "file": f"{NS}:menu_{key}.ttf", "size": pt * unit, "oversample": oversample, "shift": [0.0, float(r)]},
                 ]}).encode()
             size["styles"][style] = {"font": f"{NS}:menu{tag}_{style}_", "advances": advances(fonts[key], pt * unit, oversample, chars)}
-        # The ground covers the whole screen from the title, which the client draws before the body and does not clip
-        # (the body is clipped to its own box, so a page background left the world showing around it; 2026-11-03).
-        sprites.add_tiled("ground", ground, SCREEN_H, [0], TITLE_TOP, unit=unit, first_line=True, k=GROUND_K, tile_size=120, place=unit)
         sprites.add_tiled("page_self", page_self, CANVAS_H, [0], first_line=True)
         sprites.add_tiled("page_skills", page_skills, CANVAS_H, [0], first_line=True)
-        sprites.add_tiled(f"band{tag}", bake_band(fonts, book, screen), 33, [0], TITLE_TOP, unit=1.0, first_line=True)
         for c in CLASSES:
             art = Image.open(ROOT / f"assets/core-ui/proposals/2026-10-16-class-emblems/{c}-32.png").convert("RGBA")
             sprites.add(f"emblem64_{c}", art.resize((64 * K, 64 * K), Image.NEAREST).resize((256, 256), Image.NEAREST), 64, [EMBLEM64[1]])
@@ -516,7 +495,6 @@ def main() -> None:
             hits[f"tab{i}"] = (w, h, [y])
         for name, (w, h, tops) in hits.items():
             sprites.add(f"hit_{name}", Image.new("RGBA", (w, h), (0, 0, 0, 1)), h, tops)
-        sprites.meta["band"] = sprites.meta.pop(f"band{tag}")
         files[f"assets/{NS}/font/menu{tag}_art.json"] = json.dumps({"providers": sprites.providers}).encode()
         size["sprites"] = sprites.meta
         size["layout"] = {"tabs": [list(b) for b in tab_boxes], "emblem64": list(EMBLEM64), "hex": [list(h) for h in HEX],
@@ -524,7 +502,7 @@ def main() -> None:
                           "rx": RX, "big": list(BIG), "bars": [list(b) for b in BARS], "barW": BAR_W, "dias": [list(x) for x in DIAS],
                           "acts": [list(a) for a in ACTS], "reset": list(RESET), "emblem24": list(EMBLEM24), "name": list(NAME),
                           "kv": list(KV), "rows": [list(r) for r in ROWS], "pathBar": list(PATH_BAR), "steps": list(STEPS) + [STEP_LINES],
-                          "primary": list(PRIMARY), "edit": list(EDIT), "wallet": [screen - 100, 21]}
+                          "primary": list(PRIMARY), "edit": list(EDIT)}
         metrics["sizes"][tag] = size
         glyphs += len(sprites.providers)
     for name, image in Sprites.textures.items():

@@ -107,7 +107,7 @@ internal class PlayerMenuDialog(
     // ------------------------------------------------------------------ drawing (design px: the layout for GUI scale 4)
 
     private fun dialog(player: Player, account: CoreAccount, size: DialogCanvas.Size): Dialog {
-        val meta = DialogMetadata(title(account, size), Component.text("冒険の手帳"), true, false, DialogAfterAction.NONE,
+        val meta = DialogMetadata(title(size), Component.text("冒険の手帳"), true, false, DialogAfterAction.NONE,
             // The width includes the text widget's 4 px padding on each side, so lines need canvas + 8 or they wrap; but a
             // body wider than the screen (474 at GUI scale 4) is pushed to its left edge instead of centred (2026-11-02, in game).
             listOf(DialogBody.PlainMessage(body(player, account, size), size.canvasWidth + 9)), emptyList())
@@ -116,17 +116,9 @@ internal class PlayerMenuDialog(
         return Dialog.Notice(meta, close)
     }
 
-    /** The title band, in GUI px from the screen's top-left: the header is 33 GUI px at every scale. */
-    private fun title(account: CoreAccount, size: DialogCanvas.Size): Component {
-        val canvas = DialogCanvas(size, metrics.space, size.titleWidth.toDouble(), 1, size.titleTop, 1.0, metrics.forScale(4).styles)
-        val x0 = size.titleX.toDouble()
-        // The whole screen's ground hangs from the title: the client draws it first and does not clip it, unlike the body.
-        canvas.background("ground", -x0, 0.0)
-        canvas.sprite("band", -x0, 0.0)
-        val wallet = size.layout.getAsJsonArray("wallet")
-        canvas.text("d9", wallet[0].asDouble - x0, wallet[1].asDouble, "%,d".format(account.silver), TEXT)
-        return canvas.buildLine()
-    }
+    /** The title is left empty (only its width, which keeps the vanilla warning mark at the right). */
+    private fun title(size: DialogCanvas.Size): Component =
+        DialogCanvas(size, metrics.space, size.titleWidth.toDouble(), 1, size.titleTop, 1.0, metrics.forScale(4).styles).buildLine()
 
     private fun body(player: Player, account: CoreAccount, size: DialogCanvas.Size): Component {
         if (pages[player.uuid] == Page.SKILLS) return skills(player, account, size)
@@ -167,7 +159,8 @@ internal class PlayerMenuDialog(
         val passives = CorePassiveTree.budget(account) - account.journey.build.passives.size
         val skillPoints = CoreSkillLevels.available(account)
         listOf(account.journey.job.displayName to TEXT, "${account.journey.level}" to TEXT, "$clears" to TEXT,
-            "$skillPoints" to if (skillPoints > 0) GOLD else TEXT, "$passives" to if (passives > 0) GOLD else TEXT)
+            "$skillPoints" to if (skillPoints > 0) GOLD else TEXT, "$passives" to if (passives > 0) GOLD else TEXT,
+            "%,d".format(account.silver) to TEXT)
             .forEachIndexed { i, (value, color) -> canvas.text("d7", right, kv[1].asDouble + i * kv[3].asDouble, value, color, Align.RIGHT) }
         val edit = layout.getAsJsonArray("edit")
         canvas.sprite("hit_edit", edit[0].asDouble, edit[1].asDouble, click("edit"))
