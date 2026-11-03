@@ -64,7 +64,7 @@ PATHS = [  # id, name, icon, colour
 CLASSES = ["warrior", "ranger", "mage", "assassin", "templar", "healer"]
 
 # ---------------------------------------------------------------- layout (canvas px; exported for PlayerMenuCanvas)
-TABS = ["自分", "技", "パッシブ", "持ち物", "目標"]
+TABS = ["自分", "技", "パッシブ", "持ち物"]  # 目標 dropped (藍 2026-11-03: あんまりいらない)
 TAB_BASE, TAB_GAP = 10, 16
 LEFT_X, ROW_Y0, ROW_STEP, ROW_W, ROW_H = 4, 32, 30, 136, 26
 BAR_DX, BAR_DY, BAR_W, BAR_H = 28, 17, 104, 3

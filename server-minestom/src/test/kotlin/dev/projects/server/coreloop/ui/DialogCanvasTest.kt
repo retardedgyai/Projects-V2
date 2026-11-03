@@ -64,7 +64,7 @@ class DialogCanvasTest {
     @Test
     fun everySpriteThePageUsesWasBakedAtItsPosition() {
         val names = listOf("page_self", "band", "row_sel", "ring_sel", "hit_row", "hit_edit", "hit_primary") +
-            (1..4).map { "hit_tab$it" } + CoreClass.entries.map { "emblem_${it.name.lowercase()}" } +
+            (1..3).map { "hit_tab$it" } + CoreClass.entries.map { "emblem_${it.name.lowercase()}" } +
             listOf("combat", "gather", "smith", "magic").flatMap { id -> listOf("bar_$id") + (0..10).map { "ring_${id}_$it" } }
         metrics.sizes.forEach { (scale, size) -> names.forEach { assertTrue(it in size.sprites, "GUI scale $scale: sprite $it") } }
     }

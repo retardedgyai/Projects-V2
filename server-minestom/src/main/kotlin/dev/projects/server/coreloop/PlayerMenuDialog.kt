@@ -260,7 +260,7 @@ internal class PlayerMenuDialog(
 
     companion object {
         const val NS = "projects_menu"
-        private val TAB_TARGETS = listOf(Target.JOURNAL, Target.SKILLS, Target.PASSIVES, Target.STORAGE, Target.JOURNAL)
+        private val TAB_TARGETS = listOf(Target.JOURNAL, Target.SKILLS, Target.PASSIVES, Target.STORAGE)
         private val DIALOG_FONT = Key.key("projects_ui_polish05", "dialog")
         private val TEXT = TextColor.color(0xECE6DC)
         private val SOFT = TextColor.color(0xC9C3B8)
