@@ -20,11 +20,11 @@ class DialogCanvasTest {
         for ((scale, size) in metrics.sizes) {
             val canvas = DialogCanvas(size, metrics.space, size.canvasWidth.toDouble(), size.lines)
             canvas.background("page_self", 0.0, 0.0)
-            canvas.text("b14", 200.0, 84.0, "Steve_42", NamedTextColor.WHITE)
+            canvas.text("dot16", 200.0, 84.0, "Steve_42", NamedTextColor.WHITE)
             canvas.text("d7", 136.0, 43.0, "Lv 17", NamedTextColor.WHITE, DialogCanvas.Align.RIGHT)
-            repeat(20) { canvas.sprite("bar_combat", 32.0 + it * 2, 49.0) }
-            canvas.sprite("row_sel", 4.0, 92.0)
-            canvas.sprite("ring_gather_4", 206.0, 120.0)
+            repeat(20) { canvas.sprite("bar_combat", 192.0 + it * 2, 108.0) }
+            canvas.sprite("slot_sel", 39.0, 122.0)
+            repeat(7) { canvas.sprite("dia_on", 287.0 + it * 10, 125.0) }
             canvas.text("m7", 331.0, 46.0, "冒険 Lv 17 / 70", NamedTextColor.WHITE)
             val lines = split(canvas.build())
             assertEquals(size.lines, lines.size, "GUI scale $scale")
@@ -64,11 +64,11 @@ class DialogCanvasTest {
 
     @Test
     fun everySpriteThePageUsesWasBakedAtItsPosition() {
-        val names = listOf("page_self", "band", "row_sel", "ring_sel", "hit_row", "hit_edit", "hit_primary") +
-            (1..3).map { "hit_tab$it" } + CoreClass.entries.map { "emblem_${it.name.lowercase()}" } +
-            listOf("combat", "gather", "smith", "magic").flatMap { id -> listOf("bar_$id") + (0..10).map { "ring_${id}_$it" } }
-        val skillPage = listOf("page_skills", "hit_key", "hit_cell", "hit_raise", "hit_equip", "hit_reset", "cell_sel", "cell_dim", "hit_tab0") +
-            CoreClass.entries.flatMap { job -> dev.projects.server.coreloop.CoreSkillCatalog.skills(job).flatMap { listOf("sk_${it.icon}", "skh_${it.icon}") } }
+        val names = listOf("page_self", "page_skills", "band", "slot_sel", "slot_dim", "slot_x", "key_tri", "dia_on", "dia_gear", "dia_sel",
+            "bar_fill", "ms_now", "hit_slot", "hit_dia", "hit_act", "hit_edit", "hit_reset") + (0..3).map { "hit_tab$it" } +
+            CoreClass.entries.flatMap { listOf("emblem64_${it.name.lowercase()}", "emblem48_${it.name.lowercase()}") } +
+            listOf("combat", "gather", "smith", "magic").map { "bar_$it" }
+        val skillPage = CoreClass.entries.flatMap { job -> dev.projects.server.coreloop.CoreSkillCatalog.skills(job).flatMap { listOf("sk20_${it.icon}", "skb_${it.icon}") } }
         metrics.sizes.forEach { (scale, size) -> (names + skillPage).forEach { assertTrue(it in size.sprites, "GUI scale $scale: sprite $it") } }
     }
 

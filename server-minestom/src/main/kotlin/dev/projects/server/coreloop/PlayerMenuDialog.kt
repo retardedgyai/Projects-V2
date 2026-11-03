@@ -130,89 +130,85 @@ internal class PlayerMenuDialog(
         val canvas = DialogCanvas(size, metrics.space, size.canvasWidth.toDouble(), size.lines)
         val layout = size.layout
         canvas.background("page_self", 0.0, 0.0)
-        val tabs = layout.getAsJsonArray("tabs")
-        for (i in 1 until tabs.size()) {
-            val box = tabs[i].asJsonArray
-            canvas.sprite("hit_tab$i", box[0].asDouble, box[1].asDouble, click("tab_$i"))
-        }
+        tabs(canvas, layout, 0)
         val path = selected[player.uuid] ?: Path.COMBAT
         val progress = Path.entries.associateWith { progress(player, account, it) }
+        portrait(canvas, layout, player, account)
         paths(canvas, layout, path, progress)
-        card(canvas, layout, player, account, path, progress)
         panel(canvas, layout, player, account, path)
         return canvas.build()
     }
 
-    private fun paths(canvas: DialogCanvas, layout: JsonObject, chosen: Path, progress: Map<Path, Progress>) {
-        val left = layout["left"].asDouble
-        val barDx = layout["barDx"].asDouble
-        val barDy = layout["barDy"].asDouble
-        val barW = layout["barW"].asInt
-        for (path in Path.entries) {
-            val top = layout["rowY"].asDouble + path.ordinal * layout["rowStep"].asDouble
-            val p = progress.getValue(path)
-            if (path == chosen) canvas.sprite("row_sel", left, top)
-            val nameW = canvas.width("b7", path.label)
-            canvas.text("m6", left + 28 + nameW + 5, top + 11, p.sub, MUTED)
-            canvas.text("d7", left + 132, top + 11, p.value, if (path == chosen) IVORY else TEXT, Align.RIGHT)
-            repeat((p.next * barW / 2).roundToInt().coerceIn(0, barW / 2)) { canvas.sprite("bar_${path.id}", left + barDx + it * 2, top + barDy) }
-            canvas.sprite("hit_row", left, top, click("path_${path.ordinal}"))
+    /** The tab row is baked; each tab but the open one gets a hit area. */
+    private fun tabs(canvas: DialogCanvas, layout: JsonObject, open: Int) {
+        val tabs = layout.getAsJsonArray("tabs")
+        for (i in 0 until tabs.size()) if (i != open) {
+            val box = tabs[i].asJsonArray
+            canvas.sprite("hit_tab$i", box[0].asDouble, box[1].asDouble, click("tab_$i"))
         }
     }
 
-    private fun card(canvas: DialogCanvas, layout: JsonObject, player: Player, account: CoreAccount, chosen: Path, progress: Map<Path, Progress>) {
-        val box = layout.getAsJsonArray("card")
-        val cx = box[0].asDouble + box[2].asDouble / 2
-        val emblem = layout.getAsJsonArray("emblem")
-        canvas.sprite("emblem_${account.journey.job.name.lowercase()}", emblem[0].asDouble, emblem[1].asDouble)
-        // Face and name: the face is the vanilla player-head object, 8 GUI px wide on its line at every scale.
+    /** Left: the class emblem in its glow, the player's face and name, title, and two hex plates. */
+    private fun portrait(canvas: DialogCanvas, layout: JsonObject, player: Player, account: CoreAccount) {
+        val emblem = layout.getAsJsonArray("emblem48")
+        canvas.sprite("emblem48_${account.journey.job.name.lowercase()}", emblem[0].asDouble, emblem[1].asDouble)
+        val cx = 84.0
+        val top = emblem[1].asDouble
+        // The face is the vanilla player-head object, 8 GUI px wide on its line at every scale.
         val name = player.username
         val face = canvas.design(8.0)
-        val nameW = canvas.width("b14", name)
+        val nameW = canvas.width("dot16", name)
         val start = cx - (face + 4 + nameW) / 2
-        canvas.inline(start, 80.0, 8.0, head(player))
-        canvas.text("b14", start + face + 4, 84.0, name, TEXT)
-        canvas.text("m7", cx, 97.0, "称号はまだありません", FAINT, Align.CENTER)
-        val job = account.journey.job.displayName + " "
-        val lv = "Lv ${account.journey.level}"
-        val jobW = canvas.width("b9", job) + canvas.width("d9", lv)
-        canvas.text("b9", cx - jobW / 2, 111.0, job, TEXT)
-        canvas.text("d9", cx - jobW / 2 + canvas.width("b9", job), 111.0, lv, TEXT)
-        val ring = layout["ring"].asDouble
-        val gap = layout["ringGap"].asDouble
-        val ringY = layout["ringY"].asDouble
-        val first = cx - (4 * ring + 3 * gap) / 2
-        for (path in Path.entries) {
-            val x = first + path.ordinal * (ring + gap)
-            val p = progress.getValue(path)
-            if (path == chosen) canvas.sprite("ring_sel", x - 2, ringY - 2)
-            canvas.sprite("ring_${path.id}_${(p.next * 10).roundToInt().coerceIn(0, 10)}", x, ringY, click("path_${path.ordinal}"),
-                Component.text("${path.label}　${p.value}", TEXT))
-            canvas.text("d6", x + ring / 2, ringY + ring + 9, p.short, if (path == chosen) IVORY else SOFT, Align.CENTER)
-        }
+        canvas.inline(start, top + 66, 8.0, head(player))
+        canvas.text("dot16", start + face + 4, top + 70, name, TEXT)
+        canvas.text("m7", cx, top + 81, "称号はまだありません", FAINT, Align.CENTER)
+        val hexes = layout.getAsJsonArray("hexSelf")
         val clears = account.zoneRecords.values.sumOf { it.clears }
-        canvas.text("m6", cx, 160.0, "踏破 $clears　開放 T${account.unlockedMapTier}", MUTED, Align.CENTER)
+        for ((i, pair) in listOf(account.journey.job.displayName to "${account.journey.level}", "踏破" to "$clears").withIndex()) {
+            val hex = hexes[i].asJsonArray
+            canvas.text("m6", hex[0].asDouble + 13, hex[1].asDouble + 11, pair.first, MUTED, Align.CENTER)
+            canvas.text("d9", hex[0].asDouble + 13, hex[1].asDouble + 21, pair.second, TEXT, Align.CENTER)
+        }
         val edit = layout.getAsJsonArray("edit")
-        canvas.sprite("hit_edit", edit[0].asDouble, edit[1].asDouble, click("edit"))
+        canvas.sprite("hit_edit", edit[0].asDouble, edit[1].asDouble - 1, click("edit"))
     }
 
+    /** Middle: the four paths as diamonds (the icons are baked), the chosen one lit, and its bar to the next step. */
+    private fun paths(canvas: DialogCanvas, layout: JsonObject, chosen: Path, progress: Map<Path, Progress>) {
+        val diamonds = layout.getAsJsonArray("pathD")
+        for (path in Path.entries) {
+            val d = diamonds[path.ordinal].asJsonArray
+            val p = progress.getValue(path)
+            if (path == chosen) canvas.sprite("dia_sel", d[0].asDouble, d[1].asDouble)
+            canvas.text("d7", d[0].asDouble + 13, d[1].asDouble + 44, p.short, if (path == chosen) TEXT else MUTED, Align.CENTER)
+            canvas.sprite("hit_dia", d[0].asDouble, d[1].asDouble, click("path_${path.ordinal}"), Component.text("${path.label}　${p.value}", TEXT))
+        }
+        val bar = layout.getAsJsonArray("pathBar")
+        val p = progress.getValue(chosen)
+        canvas.text("m6", bar[0].asDouble, bar[1].asDouble - 4, "${chosen.label} · ${p.sub}　${p.value}", MUTED)
+        val width = bar[2].asInt
+        repeat((p.next * width / 2).roundToInt().coerceIn(0, width / 2)) { canvas.sprite("bar_${chosen.id}", bar[0].asDouble + it * 2, bar[1].asDouble) }
+    }
+
+    /** Right: the chosen path's next steps and the gold action. */
     private fun panel(canvas: DialogCanvas, layout: JsonObject, player: Player, account: CoreAccount, path: Path) {
-        val box = layout.getAsJsonArray("panel")
-        val x = box[0].asDouble + 7
-        val width = box[2].asDouble - 14
-        canvas.text("m6", x, 32.0, "${path.label}の次の一歩", MUTED)
-        var baseline = 46.0
+        val steps = layout.getAsJsonArray("steps")
+        val x = steps[0].asDouble
+        var baseline = steps[1].asDouble
+        val step = steps[2].asDouble
+        var row = 0
         for ((text, color) in details(player, account, path)) {
-            for (line in wrap(canvas, text, width)) {
-                if (baseline > 150) break
-                canvas.text("m7", x, baseline, line, color)
-                baseline += 11
+            for ((i, line) in wrap(canvas, text, 104.0).withIndex()) {
+                if (row >= 7) break
+                if (i == 0) canvas.sprite("ms_now", x, baseline - 6)
+                canvas.text("m7", x + 10, baseline, line, color)
+                baseline += step; row++
             }
         }
-        notices[player.uuid]?.let { canvas.text("m6", x, 160.0, it, HEAT) }
+        notices[player.uuid]?.let { canvas.text("m6", x, 150.0, it, HEAT) }
         val primary = layout.getAsJsonArray("primary")
-        canvas.text("b7", primary[0].asDouble + primary[2].asDouble / 2, primary[1].asDouble + 11, path.button, DARK, Align.CENTER)
-        canvas.sprite("hit_primary", primary[0].asDouble, primary[1].asDouble, click("primary"))
+        canvas.text("b7", primary[0].asDouble + 42, primary[1].asDouble + 8, path.button, GOLD)
+        canvas.sprite("hit_act", primary[0].asDouble, primary[1].asDouble - 2, click("primary"))
     }
 
     private fun details(player: Player, account: CoreAccount, path: Path): List<Pair<String, TextColor>> = when (path) {
@@ -279,11 +275,7 @@ internal class PlayerMenuDialog(
         val canvas = DialogCanvas(size, metrics.space, size.canvasWidth.toDouble(), size.lines)
         val layout = size.layout
         canvas.background("page_skills", 0.0, 0.0)
-        val tabs = layout.getAsJsonArray("tabs")
-        for (i in 0 until tabs.size()) if (i != 1) {
-            val box = tabs[i].asJsonArray
-            canvas.sprite("hit_tab$i", box[0].asDouble, box[1].asDouble, click("tab_$i"))
-        }
+        tabs(canvas, layout, 1)
         val job = account.journey.job
         val build = account.journey.build
         val catalog = CoreSkillCatalog.skills(job)
@@ -293,82 +285,108 @@ internal class PlayerMenuDialog(
         if (!CoreJourneyRules.skillUnlocked(account, pick.slot)) { pick.slot = 0; pick.candidate = null }
         val shown = chosen(account, pick)
         fun lv(icon: String) = CoreSkillLevels.level(build, stats, icon)
+        fun gearOn(icon: String) = CoreSkillLevels.gear(stats, icon) > 0
+        val points = CoreSkillLevels.available(account)
 
-        // Left: the five keys.
-        val left = layout["left"].asDouble
+        // Left: the class emblem with the Lv and points hexes, and the five keys.
+        val emblem = layout.getAsJsonArray("emblem64")
+        canvas.sprite("emblem64_${job.name.lowercase()}", emblem[0].asDouble, emblem[1].asDouble)
+        val hexes = layout.getAsJsonArray("hex")
+        for ((i, value) in listOf("${account.journey.level}" to TEXT, "$points" to if (points > 0) GOLD else MUTED).withIndex()) {
+            val hex = hexes[i].asJsonArray
+            canvas.text("d9", hex[0].asDouble + 13, hex[1].asDouble + 21, value.first, value.second, Align.CENTER)
+        }
+        val keys = layout.getAsJsonArray("keys")
         for (slot in 0..4) {
-            val top = layout["keyY"].asDouble + slot * layout["keyStep"].asDouble
-            if (slot == pick.slot) canvas.sprite("row_sel", left, top)
-            if (CoreJourneyRules.skillUnlocked(account, slot)) {
-                val skill = catalog[equipped[slot]]
-                canvas.sprite("sk_${skill.icon}", left + 20, top + 5)
-                canvas.text("b7", left + 42, top + 11, fit(canvas, "b7", skill.name, 66.0), if (slot == pick.slot) IVORY else TEXT)
-                canvas.text("d7", left + 136, top + 11, "Lv ${lv(skill.icon)}", if (slot == pick.slot) IVORY else SOFT, Align.RIGHT)
-                role(skill)?.let { canvas.text("m6", left + 42, top + 21, fit(canvas, "m6", it, 92.0), MUTED) }
-                canvas.sprite("hit_key", left, top, click("key_$slot"))
-            } else {
-                canvas.text("m6", left + 42, top + 15, "冒険 Lv ${CoreSkillCatalog.unlockLevels[slot]} で使えます", FAINT)
+            val k = keys[slot].asJsonArray
+            val x = k[0].asDouble; val top = k[1].asDouble
+            if (!CoreJourneyRules.skillUnlocked(account, slot)) {
+                canvas.sprite("slot_x", x, top, hover = Component.text("冒険 Lv ${CoreSkillCatalog.unlockLevels[slot]} で使えます", TEXT))
+                continue
+            }
+            val skill = catalog[equipped[slot]]
+            canvas.sprite("sk20_${skill.icon}", x + 3, top + 3)
+            canvas.sprite("key_tri", x, top)
+            canvas.text("d6", x + 1, top + 6, "${slot + 2}", DARK)
+            canvas.text("d6", x + 25, top + 25, "${lv(skill.icon)}", if (gearOn(skill.icon)) HEAT else TEXT, Align.RIGHT)
+            if (slot == pick.slot) canvas.sprite("slot_sel", x, top)
+            canvas.sprite("hit_slot", x, top, click("key_$slot"), Component.text("キー${slot + 2}　${skill.name}", TEXT))
+        }
+
+        // Middle: every skill the open key can take.
+        val start = CoreSkillCatalog.ultimateStart(job)
+        val normals = CoreSkillCatalog.normalChoices(job)
+        val ultimates = CoreSkillCatalog.ultimateChoices(job).map { start + it }
+        fun cells(name: String, choices: List<Int>, active: Boolean) {
+            val spots = layout.getAsJsonArray(name)
+            for (n in 0 until spots.size()) {
+                val s = spots[n].asJsonArray
+                val x = s[0].asDouble; val top = s[1].asDouble
+                val index = choices.getOrNull(n)
+                if (index == null) { canvas.sprite("slot_x", x, top); continue }
+                val skill = catalog[index]
+                canvas.sprite("sk20_${skill.icon}", x + 3, top + 3)
+                val key = equipped.indexOf(index)
+                if (key >= 0) { canvas.sprite("key_tri", x, top); canvas.text("d6", x + 1, top + 6, "${key + 2}", DARK) }
+                canvas.text("d6", x + 25, top + 25, "${lv(skill.icon)}", if (gearOn(skill.icon)) HEAT else TEXT, Align.RIGHT)
+                if (!active || (key >= 0 && key != pick.slot)) canvas.overlay("slot_dim", x, top)
+                if (skill.icon == shown.icon) canvas.sprite("slot_sel", x, top)
+                canvas.sprite("hit_slot", x, top, if (active) click("cell_$index") else null, Component.text(skill.name, TEXT))
             }
         }
+        cells("grid", normals, pick.slot != 4)
+        cells("ults", ultimates, pick.slot == 4)
 
-        // Middle: the skill looked at.
-        val card = layout.getAsJsonArray("card")
-        val cx = card[0].asDouble + card[2].asDouble / 2
-        val hero = layout.getAsJsonArray("hero")
-        canvas.sprite("skh_${shown.icon}", hero[0].asDouble, hero[1].asDouble)
-        canvas.text("b14", cx, 84.0, shown.name, TEXT, Align.CENTER)
-        role(shown)?.let { canvas.text("m6", cx, 96.0, it, HEAT, Align.CENTER) }
+        // Right: the skill looked at.
+        val rx = layout["rx"].asDouble
+        val big = layout.getAsJsonArray("big")
+        canvas.sprite("skb_${shown.icon}", big[0].asDouble, big[1].asDouble)
         val base = CoreSkillLevels.base(build, shown.icon)
         val gear = CoreSkillLevels.gear(stats, shown.icon)
-        val parts = listOf(Triple("b9", "Lv $base", TEXT)) + (if (gear > 0) listOf(Triple("b9", " +$gear", HEAT)) else emptyList()) +
-            Triple("m6", "  / ${CoreSkillLevels.MAX_BASE}", MUTED)
-        var x = cx - parts.sumOf { (style, text, _) -> canvas.width(style, text) } / 2
-        for ((style, text, color) in parts) x += canvas.text(style, x, 111.0, text, color)
-        canvas.text("m7", cx, 124.0, "威力 ×%.2f".format(CoreSkillLevels.multiplier(shown, base + gear)), SOFT, Align.CENTER)
-        wrap(canvas, description(shown), 156.0, "m6").take(2).forEachIndexed { i, line ->
-            canvas.text("m6", card[0].asDouble + 8, 137.0 + i * 10, line, MUTED)
+        var x = rx
+        x += canvas.text("d9", x, 40.0, "Lv $base", GOLD)
+        if (gear > 0) x += canvas.text("d9", x + 3, 40.0, "+$gear", HEAT) + 3
+        canvas.text("m6", x + 4, 40.0, "/ ${CoreSkillLevels.MAX_BASE}", MUTED)
+        canvas.text("dot16", rx, 58.0, fit(canvas, "dot16", shown.name, 104.0), TEXT)
+        role(shown)?.let { canvas.text("m6", rx, 69.0, "◆ $it", SOFT) }
+        wrap(canvas, description(shown), 104.0, "m6").take(2).forEachIndexed { i, line -> canvas.text("m6", rx, 79.0 + i * 9, line, MUTED) }
+        val bars = layout.getAsJsonArray("bars")
+        val barW = layout["barW"].asInt
+        val all = (normals + ultimates).map { catalog[it] }
+        fun fill(n: Int, fraction: Double) {
+            val b = bars[n].asJsonArray
+            repeat((fraction * barW / 2).roundToInt().coerceIn(0, barW / 2)) { canvas.sprite("bar_fill", b[0].asDouble + it * 2, b[1].asDouble) }
         }
-        val raise = layout.getAsJsonArray("raise")
-        val points = CoreSkillLevels.available(account)
+        fun power(s: CoreSkillDefinition) = s.formula.base + s.formula.ad * 100 + s.formula.ap * 100
+        fill(0, power(shown) / (all.maxOf(::power).takeIf { it > 0 } ?: 1.0))
+        fill(1, 1 - shown.cooldown.toDouble() / (all.maxOf { it.cooldown }.takeIf { it > 0 } ?: 1))
+        fill(2, shown.radius / all.maxOf { it.radius })
+        canvas.text("m6", rx + 32, 122.0, "×%.2f → 次 ×%.2f".format(CoreSkillLevels.multiplier(shown, base + gear),
+            CoreSkillLevels.multiplier(shown, base + gear + 1)), MUTED)
+        val dias = layout.getAsJsonArray("dias")
+        for (i in 0 until minOf(10, base + gear)) {
+            val d = dias[i].asJsonArray
+            canvas.sprite(if (i < base) "dia_on" else "dia_gear", d[0].asDouble, d[1].asDouble)
+        }
+        val acts = layout.getAsJsonArray("acts")
         val raiseLabel = when {
             base >= CoreSkillLevels.MAX_BASE -> "Lv ${CoreSkillLevels.MAX_BASE}（上限）"
             points <= 0 -> "点数がありません"
-            else -> "Lv を上げる"
+            else -> "Lv を上げる（点数 1）"
         }
-        canvas.text("b7", raise[0].asDouble + raise[2].asDouble / 2, raise[1].asDouble + 11, raiseLabel,
-            if (raiseLabel == "Lv を上げる") TEXT else FAINT, Align.CENTER)
-        canvas.sprite("hit_raise", raise[0].asDouble, raise[1].asDouble, click("raise"))
-        val equip = layout.getAsJsonArray("equip")
+        val raise = acts[0].asJsonArray
+        canvas.text("b7", raise[0].asDouble + 42, raise[1].asDouble + 8, raiseLabel, if (raiseLabel.startsWith("Lv を")) GOLD else MUTED)
+        canvas.sprite("hit_act", raise[0].asDouble, raise[1].asDouble - 2, click("raise"))
+        val equip = acts[1].asJsonArray
         val candidate = pick.candidate
         val equipLabel = if (candidate != null && candidate != equipped[pick.slot]) "キー${pick.slot + 2} に入れる" else "キー${pick.slot + 2} の技"
-        canvas.text("b7", equip[0].asDouble + equip[2].asDouble / 2, equip[1].asDouble + 11, equipLabel,
-            if (equipLabel.endsWith("入れる")) DARK else FAINT, Align.CENTER)
-        canvas.sprite("hit_equip", equip[0].asDouble, equip[1].asDouble, click("equip"))
-
-        // Right: what this key can take.
-        val panel = layout.getAsJsonArray("panel")
-        canvas.text("m6", panel[0].asDouble + 7, 30.0, if (pick.slot == 4) "選べる奥義" else "選べる技", MUTED)
-        canvas.text("d7", panel[0].asDouble + panel[2].asDouble - 7, 30.0, "点数 $points", if (points > 0) GOLD else MUTED, Align.RIGHT)
-        val start = CoreSkillCatalog.ultimateStart(job)
-        val choices = if (pick.slot == 4) CoreSkillCatalog.ultimateChoices(job).map { start + it } else CoreSkillCatalog.normalChoices(job)
-        val cell = layout.getAsJsonArray("cell")
-        for ((k, index) in choices.withIndex()) {
-            val cellX = cell[0].asDouble + (k % 2) * cell[4].asDouble
-            val cellTop = cell[1].asDouble + (k / 2) * cell[5].asDouble
-            val skill = catalog[index]
-            if (skill.icon == shown.icon) canvas.sprite("cell_sel", cellX, cellTop)
-            canvas.sprite("sk_${skill.icon}", cellX + 2, cellTop + 3)
-            canvas.text("m6", cellX + 21, cellTop + 9, fit(canvas, "m6", skill.name, 41.0), TEXT)
-            canvas.text("m6", cellX + 21, cellTop + 18, "Lv ${lv(skill.icon)}", MUTED)
-            if (index in equipped && index != equipped[pick.slot]) canvas.overlay("cell_dim", cellX, cellTop)
-            canvas.sprite("hit_cell", cellX, cellTop, click("cell_$index"))
-        }
+        canvas.text("b7", equip[0].asDouble + 42, equip[1].asDouble + 8, equipLabel, if (equipLabel.endsWith("入れる")) TEXT else MUTED)
+        canvas.sprite("hit_act", equip[0].asDouble, equip[1].asDouble - 2, click("equip"))
         val spent = CoreSkillLevels.spent(build)
         if (spent > 0) {
             val reset = layout.getAsJsonArray("reset")
             val price = CorePassiveTree.refundPrice(account.journey) * spent
-            canvas.text("m6", reset[0].asDouble + reset[2].asDouble / 2, reset[1].asDouble + 9, "点数を全部戻す（銀貨 ${"%,d".format(price)}）",
-                MUTED, Align.CENTER)
+            canvas.text("m6", reset[0].asDouble, reset[1].asDouble + 8, "点数を全部戻す（銀貨 ${"%,d".format(price)}）", MUTED)
             canvas.sprite("hit_reset", reset[0].asDouble, reset[1].asDouble, click("reset"))
         }
         return canvas.build()
@@ -413,10 +431,9 @@ internal class PlayerMenuDialog(
         private val SOFT = TextColor.color(0xC9C3B8)
         private val MUTED = TextColor.color(0x8F8A82)
         private val FAINT = TextColor.color(0x6E6A64)
-        private val IVORY = TextColor.color(0xEFE6D2)
         private val HEAT = TextColor.color(0xFF9A4A)
         private val DARK = TextColor.color(0x16181C)
-        private val GOLD = TextColor.color(0xE8C878)
+        private val GOLD = TextColor.color(0xF2C84B)
 
         /** Null when the menu art was never built (the old chest journal stays the only menu). */
         fun metrics(): DialogCanvas.Metrics? = PlayerMenuDialog::class.java.classLoader.getResourceAsStream("polish05/menu-metrics.json")
