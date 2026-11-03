@@ -71,7 +71,10 @@ CLASSES = ["warrior", "ranger", "mage", "assassin", "templar", "healer"]
 # ---------------------------------------------------------------- layout (design px; exported for PlayerMenuDialog)
 # 2026-11-03 藍 chose 7版 C (港の窓): framed windows with iron rims and bronze corners over the darkened world, pixel
 # buttons in gold / charcoal, sunken slots, and each path as a banner of that path being done (assets/core-ui/menu-banners).
-TABS = ["自分", "技", "パッシブ", "持ち物"]
+# 2026-11-03 藍: a path is entered from its banner, and then the tabs are that path's growth (戦闘: 技, パッシブ; 採取 and 鍛冶
+# get theirs when their growth exists). 自分 keeps only what is not a path.
+SELF_TABS = ["自分", "持ち物"]
+COMBAT_TABS = ["技", "パッシブ"]                     # after the 自分 back button and the path's name
 TAB_Y, TAB_H, TAB_GAP = 1, 14, 3                   # pill tabs centred along the top
 SLOT = 26
 TOP = 32                                           # 技: content starts here, inside the windows
@@ -92,20 +95,17 @@ ACTS = [(RX, TOP + 109), (RX, TOP + 126)]          # gold (raise), charcoal (equ
 ACT_W, BTN_H = 168, 14
 RESET = (RX, TOP + 144)
 # 自分
-SELF_WINS = [(0, 150), (156, 150), (312, 152)]     # 名刺, 道, 
+SELF_WINS = [(0, 150), (156, 308)]                 # 名刺, 道
 CARD = (4, WIN_Y + 4, 142, 32)                     # the harbour banner on the name card
 EMBLEM24 = (11, WIN_Y + 29)                        # the class emblem in its slot (slot 30 x 30 at -3)
 NAME = (46, WIN_Y + 47)                            # face + name baseline; the title 10 below
 KV = (8, WIN_Y + 70, 134, 11)                      # x, first baseline, width, step
 KV_LABELS = ["職", "冒険 Lv", "踏破", "技ポイント", "パッシブポイント", "銀貨"]
 EDIT = (8, WIN_Y + 147, 134)                       # charcoal button
-ROWS = [(161, WIN_Y + 14 + i * 28) for i in range(4)]   # 140 x 26 path banners
-ROW_W, ROW_H = 140, 26
-PATH_BAR = (161, WIN_Y + 136, 140)                 # x, y, width; the label 4 above, the next-step line 9 below
-PRIMARY = (161, WIN_Y + 147, 140)                  # gold button
-STEPS = (320, WIN_Y + 28, 13)                      # x, first baseline, line step (the path's name 14 above)
-STEP_LINES = 10
-BAKED = "".join(TABS) + "".join(KV_LABELS) + "冒険の手帳いまの組奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨"
+ROWS = [(161, WIN_Y + 13 + i * 38) for i in range(4)]   # 298 x 34 path banners, each one the way into its path
+ROW_W, ROW_H = 298, 34
+NOTICE = (8, WIN_Y + 140)                          # one short line above the edit button
+BAKED = "".join(SELF_TABS + COMBAT_TABS) + "".join(KV_LABELS) + "冒険の手帳いまの組奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨"
 
 def hexc(v, a=255):
     if isinstance(v, tuple):
@@ -115,7 +115,7 @@ def hexc(v, a=255):
 
 def text_chars() -> set[int]:
     chars = set(range(0x20, 0x7F)) | set(range(0x3041, 0x3097)) | set(range(0x30A0, 0x3100)) | {ord(c) for c in "・·×／〜…％、。「」『』（）：！？―─→›‹◆"}
-    chars |= {ord(c) for c in "".join(TABS) + "".join(p[1] for p in PATHS) + BAKED}
+    chars |= {ord(c) for c in "".join(SELF_TABS + COMBAT_TABS) + "".join(p[1] for p in PATHS) + BAKED}
     for rel in TEXT_SOURCES:
         path = ROOT / rel
         if path.exists():
@@ -365,12 +365,12 @@ def button(img, d, fonts, x, y, w, plate, kbd=None):
         draw_text(d, fonts, "dot6", x + w - kw - 2, y + 9.5, kbd, ink)
 
 
-def tabs_row(img, d, fonts, selected):
-    """Pill tabs centred along the top: the open one gold, the others charcoal. Returns their boxes."""
-    widths = [text_w(fonts, "b7", t) + 18 for t in TABS]
-    x = (CANVAS_W - sum(widths) - TAB_GAP * (len(TABS) - 1)) / 2
+def tabs_row(img, d, fonts, tabs, selected, lead=0):
+    """Pill tabs centred along the top (after `lead` px of other things): the open one gold, the others charcoal. Returns their boxes."""
+    widths = [text_w(fonts, "b7", t) + 18 for t in tabs]
+    x = (CANVAS_W - lead - sum(widths) - TAB_GAP * (len(tabs) - 1)) / 2 + lead
     boxes = []
-    for t, w in zip(TABS, widths):
+    for t, w in zip(tabs, widths):
         on = t == selected
         if img is not None:
             img.alpha_composite(nine(GOLD_BTN if on else DARK_BTN, 5, round(w), TAB_H), (round(x * K), TAB_Y * K))
@@ -388,9 +388,22 @@ def banner(name, dim=False):
     return art
 
 
+def combat_tabs(img, d, fonts):
+    """戦闘's tab row: the 自分 button at the left edge, then the path's name and its tabs centred. Returns [自分, 技, パッシブ] boxes."""
+    name = PATHS[0][1]
+    lead = text_w(fonts, "b8", name) + 8
+    tabs = tabs_row(img, d, fonts, COMBAT_TABS, "技", lead)
+    back = (2, TAB_Y, round(text_w(fonts, "b7", "自分") + 18), TAB_H)
+    if img is not None:
+        img.alpha_composite(nine(DARK_BTN, 5, back[2], TAB_H), (back[0] * K, TAB_Y * K))
+        draw_text(d, fonts, "b7", back[0] + back[2] / 2, TAB_Y + 10, "自分", C["muted"], anchor="ms")
+        draw_text(d, fonts, "b8", tabs[0][0] - lead, TAB_Y + 11, name, PATHS[0][2])
+    return [back] + tabs
+
+
 def bake_skills(fonts):
     img = Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K)); d = ImageDraw.Draw(img)
-    tabs_row(img, d, fonts, "技")
+    combat_tabs(img, d, fonts)
     for x, w in SKILL_WINS: window(img, d, fonts, x, w)
     img.alpha_composite(glow(110, 110, 55, 55, 55, 55, (255, 170, 110), 70), ((EMBLEM64[0] - 23) * K, (EMBLEM64[1] - 23) * K))
     for (x, y), label in zip(HEX, ["Lv", "ポイント"]):
@@ -411,8 +424,8 @@ def bake_skills(fonts):
 
 def bake_self(fonts):
     img = Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K)); d = ImageDraw.Draw(img)
-    tabs_row(img, d, fonts, "自分")
-    (lx, lw), (mx, mw), (rx, rw) = SELF_WINS
+    tabs_row(img, d, fonts, SELF_TABS, "自分")
+    (lx, lw), (mx, mw) = SELF_WINS
     window(img, d, fonts, lx, lw)
     x, y, w, h = CARD
     card = Image.open(ROOT / "assets/core-ui/menu-banners/card_harbor.png").convert("RGBA")
@@ -428,11 +441,7 @@ def bake_self(fonts):
     for (x, y), (pid, name, colour) in zip(ROWS, PATHS):
         img.alpha_composite(banner(f"ban_{pid}", dim=pid == "magic"), (x * K, y * K))
         img.alpha_composite(nine(row_tile(), 4, ROW_W, ROW_H), (x * K, y * K))
-        draw_text(d, fonts, "b8", x + 6, y + 11, name, colour if pid != "magic" else C["muted"])
-    px, py, pw = PATH_BAR
-    tint(img, px, py, px + pw, py + 2, (255, 255, 255, 26))
-    button(img, d, fonts, PRIMARY[0], PRIMARY[1], PRIMARY[2], GOLD_BTN, "左クリック")
-    window(img, d, fonts, rx, rw)
+        draw_text(d, fonts, "b8", x + 7, y + 14, name, colour if pid != "magic" else C["muted"])
     return img
 
 
@@ -455,7 +464,7 @@ def main() -> None:
     files[f"assets/{NS}/font/menu_space.json"] = json.dumps({"providers": [{"type": "space", "advances": advances_map}]}).encode()
 
     page_self, page_skills = bake_self(fonts), bake_skills(fonts)
-    tab_boxes = tabs_row(None, None, fonts, "")
+    self_tabs, combat_boxes = tabs_row(None, None, fonts, SELF_TABS, ""), combat_tabs(None, None, fonts)
     skill_source = (ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreSkillCatalog.kt").read_text(encoding="utf-8")
     skill_icons = sorted(set(re.findall(r's\("[^"]*", "([a-z_]+)"', skill_source)))
     skill_art = {icon: Image.open(ROOT / f"assets/core-ui/skills/{icon}.png").convert("RGBA") for icon in skill_icons}
@@ -494,27 +503,24 @@ def main() -> None:
         sprites.add("key_tri", tri, 9, slot_tops)
         sprites.add("dia_on", diamond(10, (233, 221, 208, 255), None, (255, 230, 200)), 10, [DIAS[0][1]])
         sprites.add("dia_gear", diamond(10, hexc(C["heat"]), None, (255, 150, 80)), 10, [DIAS[0][1]])
-        sprites.add_tiled("row_on", nine(row_tile(True), 4, ROW_W, ROW_H), ROW_H, [y for _, y in ROWS])
         sprites.add("bar_fill", Image.new("RGBA", (2 * K, 2 * K), hexc(C["ink"])), 2, [BARS[0][1]])
-        for pid, name, colour in PATHS:
-            sprites.add(f"bar_{pid}", Image.new("RGBA", (2 * K, 2 * K), hexc(colour)), 2, [PATH_BAR[1]])
-        bullet = lambda colour: diamond(6, colour)
-        sprites.add("ms_now", bullet(hexc(C["ink"])), 6, [STEPS[1] - 6 + i * STEPS[2] for i in range(STEP_LINES)])
         # invisible hit areas (alpha 1: under the client's 0.1 cut, but the glyph rectangle still takes clicks)
         hits = {"slot": (SLOT, SLOT, slot_tops), "row": (ROW_W, ROW_H, [y for _, y in ROWS]), "act": (ACT_W, BTN_H, [y for _, y in ACTS]),
-                "go": (PRIMARY[2], BTN_H, [PRIMARY[1]]), "edit": (EDIT[2], BTN_H, [EDIT[1]]), "reset": (110, 10, [RESET[1]])}
-        for i, (x, y, w, h) in enumerate(tab_boxes):
-            hits[f"tab{i}"] = (w, h, [y])
+                "edit": (EDIT[2], BTN_H, [EDIT[1]]), "reset": (110, 10, [RESET[1]])}
+        for page, boxes in (("self", self_tabs), ("combat", combat_boxes)):
+            for i, (x, y, w, h) in enumerate(boxes):
+                hits[f"tab_{page}{i}"] = (w, h, [y])
         for name, (w, h, tops) in hits.items():
-            sprites.add(f"hit_{name}", Image.new("RGBA", (w, h), (0, 0, 0, 1)), h, tops)
+            q = 2 if w > 256 else 1                # the glyph keeps the texture's aspect, so a wide one is drawn at half
+            sprites.add(f"hit_{name}", Image.new("RGBA", (w // q, h // q), (0, 0, 0, 1)), h, tops)
         files[f"assets/{NS}/font/menu{tag}_art.json"] = json.dumps({"providers": sprites.providers}).encode()
         size["sprites"] = sprites.meta
-        size["layout"] = {"tabs": [list(b) for b in tab_boxes], "emblem64": list(EMBLEM64), "hex": [list(h) for h in HEX],
+        size["layout"] = {"tabsSelf": [list(b) for b in self_tabs], "tabsCombat": [list(b) for b in combat_boxes], "emblem64": list(EMBLEM64), "hex": [list(h) for h in HEX],
                           "keys": [list(k) for k in KEYS], "grid": [list(g) for g in GRID], "ults": [list(u) for u in ULTS],
                           "rx": RX, "big": list(BIG), "bars": [list(b) for b in BARS], "barW": BAR_W, "dias": [list(x) for x in DIAS],
                           "acts": [list(a) for a in ACTS], "reset": list(RESET), "emblem24": list(EMBLEM24), "name": list(NAME),
-                          "kv": list(KV), "rows": [list(r) for r in ROWS], "pathBar": list(PATH_BAR), "steps": list(STEPS) + [STEP_LINES],
-                          "primary": list(PRIMARY), "edit": list(EDIT)}
+                          "kv": list(KV), "rows": [list(r) for r in ROWS], "rowW": ROW_W, "notice": list(NOTICE),
+                          "edit": list(EDIT)}
         metrics["sizes"][tag] = size
         glyphs += len(sprites.providers)
     for name, image in Sprites.textures.items():

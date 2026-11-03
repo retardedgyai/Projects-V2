@@ -23,9 +23,9 @@ import java.util.UUID
 import kotlin.math.roundToInt
 
 /**
- * The player menu (冒険の手帳) drawn inside a vanilla dialog, in the 7版 C look (港の窓): the 自分 page is three
- * windows, the name card, the four paths (戦闘・採取・鍛冶・魔術) as banners, and the chosen path's numbers; the 技
- * page picks and raises skills. The other tabs still open the existing screens. Picture: the 「プレイヤーメニュー
+ * The player menu (冒険の手帳) drawn inside a vanilla dialog, in the 7版 C look (港の窓): the 自分 page is the name
+ * card and the four paths (戦闘・採取・鍛冶・魔術) as banners. A banner is the way into its path, whose tabs are that
+ * path's growth: 戦闘 is 技 (drawn here) and パッシブ; 採取 and 鍛冶 still open their existing screens until theirs exist. Picture: the 「プレイヤーメニュー
  * ダイアログ案」 page (7版 C); look and positions: scripts/build_menu_dialog_assets.py.
  */
 internal class PlayerMenuDialog(
@@ -39,17 +39,11 @@ internal class PlayerMenuDialog(
 ) {
     enum class Target { SKILLS, PASSIVES, STORAGE, JOURNAL, ATLAS, MASTERY, WORKSHOP, GRIMOIRE }
 
-    private enum class Path(val id: String, val label: String, val target: Target, val button: String, val color: TextColor) {
-        COMBAT("combat", "戦闘", Target.ATLAS, "地図台を開く", TextColor.color(0xFF8A3D)),
-        GATHER("gather", "採取", Target.MASTERY, "採取の育成を開く", TextColor.color(0x79E0D2)),
-        SMITH("smith", "鍛冶", Target.WORKSHOP, "工房を開く", TextColor.color(0xF2C84B)),
-        MAGIC("magic", "魔術", Target.GRIMOIRE, "魔術書を開く", TextColor.color(0xB9A0FF)),
-    }
+    private enum class Path(val label: String) { COMBAT("戦闘"), GATHER("採取"), SMITH("鍛冶"), MAGIC("魔術") }
 
-    /** What one path shows: the line under its name, the value in its tooltip, the number on its banner, how far to the next step (0..1). */
-    private class Progress(val sub: String, val value: String, val short: String, val next: Double)
+    /** What one path shows: the line under its name, the value in its tooltip, the number on its banner. */
+    private class Progress(val sub: String, val value: String, val short: String)
 
-    private val selected = mutableMapOf<UUID, Path>()
     private val notices = mutableMapOf<UUID, String>()
     private enum class Page { SELF, SKILLS }
     private val pages = mutableMapOf<UUID, Page>()
@@ -68,12 +62,16 @@ internal class PlayerMenuDialog(
         val action = key.value()
         when {
             action == "close" -> { player.closeDialog(); notices -= player.uuid }
-            action.startsWith("path_") -> { selected[player.uuid] = Path.entries[action.removePrefix("path_").toInt()]; show(player) }
+            action.startsWith("path_") -> when (Path.entries[action.removePrefix("path_").toInt()]) {
+                Path.COMBAT -> { pages[player.uuid] = Page.SKILLS; show(player) }
+                Path.GATHER -> leave(player, Target.MASTERY)
+                Path.SMITH -> leave(player, Target.WORKSHOP)
+                Path.MAGIC -> { notices[player.uuid] = "魔術は準備中です"; show(player) }
+            }
             action == "edit" -> { notices[player.uuid] = "名刺を整える画面は準備中です"; show(player) }
-            action == "primary" -> leave(player, (selected[player.uuid] ?: Path.COMBAT).target)
-            action == "tab_0" -> { pages[player.uuid] = Page.SELF; show(player) }
-            action == "tab_1" -> { pages[player.uuid] = Page.SKILLS; show(player) }
-            action.startsWith("tab_") -> leave(player, TAB_TARGETS[action.removePrefix("tab_").toInt()])
+            action == "self" -> { pages[player.uuid] = Page.SELF; show(player) }
+            action == "storage" -> leave(player, Target.STORAGE)
+            action == "passives" -> leave(player, Target.PASSIVES)
             action.startsWith("key_") -> { picks.getOrPut(player.uuid, ::SkillPick).apply { slot = action.removePrefix("key_").toInt(); candidate = null }; show(player) }
             action.startsWith("cell_") -> { picks.getOrPut(player.uuid, ::SkillPick).candidate = action.removePrefix("cell_").toInt(); show(player) }
             action == "equip" -> skillAction(player) { account, pick ->
@@ -97,7 +95,7 @@ internal class PlayerMenuDialog(
         }
     }
 
-    fun forget(player: UUID) { selected -= player; notices -= player; pages -= player; picks -= player }
+    fun forget(player: UUID) { notices -= player; pages -= player; picks -= player }
 
     private fun leave(player: Player, target: Target) {
         player.closeDialog()
@@ -125,21 +123,20 @@ internal class PlayerMenuDialog(
         val canvas = DialogCanvas(size, metrics.space, size.canvasWidth.toDouble(), size.lines)
         val layout = size.layout
         canvas.background("page_self", 0.0, 0.0)
-        tabs(canvas, layout, 0)
-        val path = selected[player.uuid] ?: Path.COMBAT
-        val progress = Path.entries.associateWith { progress(player, account, it) }
+        tabs(canvas, layout, "self", listOf(null, "storage"))
         portrait(canvas, layout, player, account)
-        paths(canvas, layout, path, progress)
-        panel(canvas, layout, player, account, path)
+        paths(canvas, layout, player, account)
+        notices[player.uuid]?.let { val n = layout.getAsJsonArray("notice"); canvas.text("m6", n[0].asDouble, n[1].asDouble, it, HEAT) }
         return canvas.build()
     }
 
-    /** The tab row is baked; each tab but the open one gets a hit area. */
-    private fun tabs(canvas: DialogCanvas, layout: JsonObject, open: Int) {
-        val tabs = layout.getAsJsonArray("tabs")
-        for (i in 0 until tabs.size()) if (i != open) {
+    /** The tab row is baked; each tab with an action (null: the open one) gets a hit area. */
+    private fun tabs(canvas: DialogCanvas, layout: JsonObject, page: String, actions: List<String?>) {
+        val tabs = layout.getAsJsonArray("tabs" + page.replaceFirstChar { it.uppercase() })
+        actions.forEachIndexed { i, action ->
+            if (action == null) return@forEachIndexed
             val box = tabs[i].asJsonArray
-            canvas.sprite("hit_tab$i", box[0].asDouble, box[1].asDouble, click("tab_$i"))
+            canvas.sprite("hit_tab_$page$i", box[0].asDouble, box[1].asDouble, click(action))
         }
     }
 
@@ -165,96 +162,39 @@ internal class PlayerMenuDialog(
         canvas.sprite("hit_edit", edit[0].asDouble, edit[1].asDouble, click("edit"))
     }
 
-    /** Middle window: the four path banners (baked) with each one's step and number, the chosen one framed. */
-    private fun paths(canvas: DialogCanvas, layout: JsonObject, chosen: Path, progress: Map<Path, Progress>) {
+    /** Right window: the four path banners (baked), each with its step and number, and each the way into its path. */
+    private fun paths(canvas: DialogCanvas, layout: JsonObject, player: Player, account: CoreAccount) {
         val rows = layout.getAsJsonArray("rows")
+        val width = layout.get("rowW").asDouble
         for (path in Path.entries) {
             val r = rows[path.ordinal].asJsonArray
             val x = r[0].asDouble; val top = r[1].asDouble
-            val p = progress.getValue(path)
-            if (path == chosen) canvas.sprite("row_on", x, top)
-            canvas.text("m6", x + 6, top + 21, fit(canvas, "m6", p.sub, 100.0), SOFT)
-            canvas.text("d9", x + 134, top + 16, p.short, if (path == Path.MAGIC) MUTED else TEXT, Align.RIGHT)
+            val p = progress(player, account, path)
+            canvas.text("m6", x + 7, top + 27, fit(canvas, "m6", p.sub, 120.0), SOFT)
+            canvas.text("d9", x + width - 8, top + 21, p.short, if (path == Path.MAGIC) MUTED else TEXT, Align.RIGHT)
             canvas.sprite("hit_row", x, top, click("path_${path.ordinal}"), Component.text("${path.label}　${p.value}", TEXT))
         }
-        val bar = layout.getAsJsonArray("pathBar")
-        val p = progress.getValue(chosen)
-        val bx = bar[0].asDouble; val by = bar[1].asDouble
-        val w = canvas.text("b7", bx, by - 4, "いまの道 ・ ", TEXT)
-        canvas.text("b7", bx + w, by - 4, chosen.label, chosen.color)
-        canvas.text("d7", bx + bar[2].asDouble, by - 4, p.value, TEXT, Align.RIGHT)
-        val width = bar[2].asInt
-        repeat((p.next * width / 2).roundToInt().coerceIn(0, width / 2)) { canvas.sprite("bar_${chosen.id}", bx + it * 2, by) }
-        val primary = layout.getAsJsonArray("primary")
-        canvas.text("b7", primary[0].asDouble + 6, primary[1].asDouble + 10, chosen.button, DARK)
-        canvas.sprite("hit_go", primary[0].asDouble, primary[1].asDouble, click("primary"))
-    }
-
-    /** Right window: the chosen path's own numbers, a label on the left and its value on the right. No sentences. */
-    private fun panel(canvas: DialogCanvas, layout: JsonObject, player: Player, account: CoreAccount, path: Path) {
-        val steps = layout.getAsJsonArray("steps")
-        val x = steps[0].asDouble
-        val step = steps[2].asDouble
-        canvas.text("b8", x - 6, steps[1].asDouble - 14, path.label, path.color)
-        numbers(player, account, path).take(steps[3].asInt).forEachIndexed { i, (label, value) ->
-            val baseline = steps[1].asDouble + i * step
-            canvas.text("m6", x, baseline, label, MUTED)
-            canvas.text("d7", x + 136, baseline, value, TEXT, Align.RIGHT)
-        }
-        notices[player.uuid]?.let { canvas.text("m6", x, 182.0, it, HEAT) }
-    }
-
-    private fun numbers(player: Player, account: CoreAccount, path: Path): List<Pair<String, String>> = when (path) {
-        Path.COMBAT -> {
-            val level = account.journey.level
-            buildList {
-                add("冒険 Lv" to "$level / ${CoreJourneyRules.MAX_LEVEL}")
-                if (level < CoreJourneyRules.MAX_LEVEL) add("次の Lv まで" to "%,d".format(CoreJourneyRules.threshold(level + 1) - account.journey.xp))
-                add("開いた遠征" to "T${account.unlockedMapTier}")
-                add("踏破" to "${account.zoneRecords.values.sumOf { it.clears }}")
-            }
-        }
-        Path.GATHER -> {
-            val mastery = host.gatheringMastery(player)
-            QuestGatheringDiscipline.entries.map { it.displayName to "Lv ${mastery.level(it)}" }
-        }
-        Path.SMITH -> {
-            val rank = CoreEnhancementCatalog.masteryRank(account.smithingXp)
-            val max = (CoreEnhancementCatalog.MAX_SMITHING_XP / CoreEnhancementCatalog.XP_PER_RANK).toInt()
-            buildList {
-                add("鍛冶熟練" to "Rank $rank / $max")
-                if (rank < max) add("次の Rank まで" to "${CoreEnhancementCatalog.XP_PER_RANK - CoreEnhancementCatalog.masteryProgress(account.smithingXp)}")
-            }
-        }
-        Path.MAGIC -> emptyList()
     }
 
     private fun progress(player: Player, account: CoreAccount, path: Path): Progress = when (path) {
         Path.COMBAT -> {
             val level = account.journey.level
-            val next = if (level >= CoreJourneyRules.MAX_LEVEL) 1.0 else {
-                val from = CoreJourneyRules.threshold(level); val to = CoreJourneyRules.threshold(level + 1)
-                (account.journey.xp - from).toDouble() / (to - from)
-            }
             val sub = if (level >= CoreJourneyRules.MAX_LEVEL) "冒険 Lv は上限" else "次の Lv まで ${"%,d".format(CoreJourneyRules.threshold(level + 1) - account.journey.xp)}"
-            Progress(sub, "Lv $level", "$level", next)
+            Progress(sub, "Lv $level", "$level")
         }
         Path.GATHER -> {
             val mastery = host.gatheringMastery(player)
             val best = QuestGatheringDiscipline.entries.maxBy { mastery.experience(it) }
             val level = mastery.level(best)
-            val xp = mastery.experience(best)
-            val next = (xp - 10.0 * level * level) / (10.0 * ((level + 1) * (level + 1) - level * level))
-            Progress(best.displayName, "Lv $level", "$level", next)
+            Progress(best.displayName, "Lv $level", "$level")
         }
         Path.SMITH -> {
             val rank = CoreEnhancementCatalog.masteryRank(account.smithingXp)
             val sub = if (rank >= (CoreEnhancementCatalog.MAX_SMITHING_XP / CoreEnhancementCatalog.XP_PER_RANK).toInt()) "Rank は上限"
                 else "次の Rank まで ${CoreEnhancementCatalog.XP_PER_RANK - CoreEnhancementCatalog.masteryProgress(account.smithingXp)}"
-            Progress(sub, "Rank $rank", "$rank",
-                CoreEnhancementCatalog.masteryProgress(account.smithingXp).toDouble() / CoreEnhancementCatalog.XP_PER_RANK)
+            Progress(sub, "Rank $rank", "$rank")
         }
-        Path.MAGIC -> Progress("準備中", "—", "–", 0.0)
+        Path.MAGIC -> Progress("準備中", "—", "–")
     }
 
     // ------------------------------------------------------------------ 技 page
@@ -271,7 +211,7 @@ internal class PlayerMenuDialog(
         val canvas = DialogCanvas(size, metrics.space, size.canvasWidth.toDouble(), size.lines)
         val layout = size.layout
         canvas.background("page_skills", 0.0, 0.0)
-        tabs(canvas, layout, 1)
+        tabs(canvas, layout, "combat", listOf("self", null, "passives"))
         val job = account.journey.job
         val build = account.journey.build
         val catalog = CoreSkillCatalog.skills(job)
@@ -421,7 +361,6 @@ internal class PlayerMenuDialog(
 
     companion object {
         const val NS = "projects_menu"
-        private val TAB_TARGETS = listOf(Target.JOURNAL, Target.SKILLS, Target.PASSIVES, Target.STORAGE)
         private val DIALOG_FONT = Key.key("projects_ui_polish05", "dialog")
         private val TEXT = TextColor.color(0xECE6DC)
         private val SOFT = TextColor.color(0xC9C3B8)

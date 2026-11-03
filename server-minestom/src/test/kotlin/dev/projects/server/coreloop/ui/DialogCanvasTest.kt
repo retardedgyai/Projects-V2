@@ -22,10 +22,8 @@ class DialogCanvasTest {
             canvas.background("page_self", 0.0, 0.0)
             canvas.text("dot16", 200.0, 84.0, "Steve_42", NamedTextColor.WHITE)
             canvas.text("d7", 136.0, 43.0, "Lv 17", NamedTextColor.WHITE, DialogCanvas.Align.RIGHT)
-            val bar = size.layout.getAsJsonArray("pathBar")
-            repeat(20) { canvas.sprite("bar_combat", bar[0].asDouble + it * 2, bar[1].asDouble) }
             val row = size.layout.getAsJsonArray("rows")[1].asJsonArray
-            canvas.sprite("row_on", row[0].asDouble, row[1].asDouble)
+            canvas.sprite("hit_row", row[0].asDouble, row[1].asDouble)
             canvas.sprite("slot_sel", 39.0, 122.0)
             repeat(7) { canvas.sprite("dia_on", 287.0 + it * 10, 125.0) }
             canvas.text("m7", 331.0, 46.0, "冒険 Lv 17 / 70", NamedTextColor.WHITE)
@@ -64,10 +62,9 @@ class DialogCanvasTest {
 
     @Test
     fun everySpriteThePageUsesWasBakedAtItsPosition() {
-        val names = listOf("page_self", "page_skills", "slot_sel", "slot_dim", "slot_x", "key_tri", "dia_on", "dia_gear", "row_on",
-            "bar_fill", "ms_now", "hit_slot", "hit_row", "hit_act", "hit_go", "hit_edit", "hit_reset") + (0..3).map { "hit_tab$it" } +
-            CoreClass.entries.flatMap { listOf("emblem64_${it.name.lowercase()}", "emblem24_${it.name.lowercase()}") } +
-            listOf("combat", "gather", "smith", "magic").map { "bar_$it" }
+        val names = listOf("page_self", "page_skills", "slot_sel", "slot_dim", "slot_x", "key_tri", "dia_on", "dia_gear",
+            "bar_fill", "hit_slot", "hit_row", "hit_act", "hit_edit", "hit_reset", "hit_tab_self1") + (0..2).map { "hit_tab_combat$it" } +
+            CoreClass.entries.flatMap { listOf("emblem64_${it.name.lowercase()}", "emblem24_${it.name.lowercase()}") }
         val skillPage = CoreClass.entries.flatMap { job -> dev.projects.server.coreloop.CoreSkillCatalog.skills(job).flatMap { listOf("sk20_${it.icon}", "skb_${it.icon}") } }
         metrics.sizes.forEach { (scale, size) -> (names + skillPage).forEach { assertTrue(it in size.sprites, "GUI scale $scale: sprite $it") } }
     }
