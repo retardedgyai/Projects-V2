@@ -187,12 +187,50 @@ water |= pools
 di = [i for i, r in enumerate(REG) if r[0] == 'deitan'][0]
 flats = (region == di) & (noise(25, 11) > 0.62) & ~on_road & ~sea
 h = np.where(flats, np.minimum(h, SEA - 1), h); water |= flats
-river = catmull([(760, 120), (740, 230), (760, 360), (735, 470), (760, 620), (800, 740), (850, 860), (880, 960)])
-rv_d = dist_to_path(river, step=2)
-rv = (rv_d < 4 + 2 * noise(30, 12)) & (rim_d > 40)
-bank = np.where(rv, 0, 0)
-h = np.where(rv_d < 9, np.minimum(h, blur(h, 6) - 2 + np.clip(rv_d - 4, 0, 5) * 0.6), h)
-river_surface = h - 1
+def trace_river(sx, sz, step=4):
+    """川は流れに任せて引く：低い所を埋めた地形（priority flood）の上で、源から一番低い隣へ下り続けて海まで。
+    線で引くと谷に沿わず、尾根や雪原を横切った。 [McMeddon 6:19「川は流れの地図から」、Lord Dakr 9:05]"""
+    import heapq
+    c = h[::step, ::step].astype(np.float64); n0, n1 = c.shape
+    filled = np.full_like(c, np.inf); seen = np.zeros(c.shape, bool); pq = []
+    for z in range(n0):
+        for x in range(n1):
+            if z == n0 - 1 or x in (0, n1 - 1) or z == 0 or sea[z * step, x * step]:
+                filled[z, x] = c[z, x]; seen[z, x] = True; heapq.heappush(pq, (c[z, x], z, x))
+    down = {}
+    while pq:
+        v, z, x = heapq.heappop(pq)
+        for dz, dx in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)):
+            zz, xx = z + dz, x + dx
+            if 0 <= zz < n0 and 0 <= xx < n1 and not seen[zz, xx]:
+                seen[zz, xx] = True; filled[zz, xx] = max(c[zz, xx], v + 1e-3); down[(zz, xx)] = (z, x)
+                heapq.heappush(pq, (filled[zz, xx], zz, xx))
+    pts = []; cur = (sz // step, sx // step)
+    while cur in down and len(pts) < 2000:
+        pts.append((cur[1] * step + step / 2, cur[0] * step + step / 2)); cur = down[cur]
+        if sea[min(N - 1, cur[0] * step), min(N - 1, cur[1] * step)]: pts.append((cur[1] * step, cur[0] * step)); break
+    return np.array(pts, np.float32)
+rivers = [trace_river(760, 150), trace_river(250, 160)]
+rv = np.zeros((N, N), bool); bridge = np.zeros((N, N), bool); river_lines = []
+for rp in rivers:
+    if len(rp) < 10: continue
+    sm = np.array([rp[max(0, i - 3):i + 4].mean(0) for i in range(len(rp))])            # 折れ線をならす
+    seg = np.hypot(*np.diff(sm, axis=0).T); cum = np.concatenate([[0], np.cumsum(seg)])
+    tt = np.arange(0, cum[-1], 1.0)                                                       # 1マスおきに置き直す（間が空くと点線になった）
+    sm = np.stack([np.interp(tt, cum, sm[:, 0]), np.interp(tt, cum, sm[:, 1])], 1)
+    river_lines.append(sm)
+    d = dist_to_path(sm, step=2)
+    ys = np.array([h[int(min(N - 1, z)), int(min(N - 1, x))] for x, z in sm]); ys = np.minimum.accumulate(ys)  # 水面は下流へ下がるだけ
+    wid = np.linspace(2.5, 6.0, len(sm))
+    for (x, z), y, w_ in zip(sm[::2], ys[::2], wid[::2]):
+        x0, x1, z0, z1 = int(max(0, x - 12)), int(min(N, x + 13)), int(max(0, z - 12)), int(min(N, z + 13))
+        dd = np.hypot(X[z0:z1, x0:x1] - x, Z[z0:z1, x0:x1] - z)
+        wet = dd < w_ + 1.5 * noise(30, 12)[z0:z1, x0:x1]
+        bed = np.where(wet, y - 2, np.minimum(h[z0:z1, x0:x1], y + np.clip(dd - w_, 0, 8) * 0.7))   # 川の外は水面より高く、岸はなだらか
+        keep = rw[z0:z1, x0:x1] > 0.5                                                     # 街道の所は削らない（橋の場所）
+        h[z0:z1, x0:x1] = np.where((dd < w_ + 8) & ~keep, np.minimum(h[z0:z1, x0:x1], bed), h[z0:z1, x0:x1])
+        rv[z0:z1, x0:x1] |= wet & (rim_d[z0:z1, x0:x1] > 30) & ~keep
+        bridge[z0:z1, x0:x1] |= wet & keep
 water |= rv
 bridges = rv & on_road
 
@@ -258,7 +296,7 @@ print('遊ぶ所の面積 %.0f%%、ジャンプなしで歩けるマス %.1f%%�
 
 # ================================================================ 10. 書き出しと、上から見た地図
 np.save(os.path.join(OUT, 'height.npy'), h.astype(np.float32)); np.save(os.path.join(OUT, 'ground.npy'), ground.astype(np.uint8))
-np.save(os.path.join(OUT, 'region.npy'), region.astype(np.uint8)); np.save(os.path.join(OUT, 'water.npy'), water)
+np.save(os.path.join(OUT, 'region.npy'), region.astype(np.uint8)); np.save(os.path.join(OUT, 'water.npy'), water); np.save(os.path.join(OUT, 'bridge.npy'), bridge)
 json.dump({'size': N, 'sea': SEA, 'regions': [{'key': r[0], 'name': r[1], 'style': r[2], 'tier': r[3], 'x': r[4], 'z': r[5], 'zone_id': r[7]} for r in REG],
            'roads': {k: [[float(a), float(b)] for a, b in v] for k, v in ROADS.items()}, 'pois': pois,
            'checks': {'walkable': float(walk_ok), 'road_walkable': float(road_ok), 'play_area': float(play.mean())}},
