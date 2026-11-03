@@ -3,7 +3,7 @@
 どれも (x, z, g, 向き) を取り、g は立つ地面の一番上のブロックの高さ。向き f は「正面（人が来る側）」。
 手本：らーなろっそ 冒険者の街（露店 4:53、船着き場 15:20）、港町（20:50）、領主邸（街灯・ベンチ）。
 """
-from vox import put, get, full, log, stair, slab, trap, cross, fence, door
+from vox import put, get, full, log, stair, slab, trap, cross, fence, door, water, CHAIN
 
 D = {'n': (0, -1), 's': (0, 1), 'e': (1, 0), 'w': (-1, 0)}
 OPP = {'n': 's', 's': 'n', 'e': 'w', 'w': 'e'}
@@ -257,4 +257,54 @@ def trail_end(x, z, g, f):
     for (fw, rt, plant) in ((0, 1, 'brown_mushroom'), (-1, 0, 'oxeye_daisy'), (-1, 1, 'cornflower'), (0, -1, 'fern')):
         cx, cz = at(x, z, f, fw, rt)
         if get(cx, g + 1, cz) is None: put(cx, g + 1, cz, cross(plant))
+    return cells
+
+
+# ---- 井戸：3×3。地面の高さの輪は四隅が石レンガで、口と四方は水。その上の縁は前後が低い石レンガの階段（背は内側）、
+#      左右が石レンガ、四隅が塀。左右の柱は塀 → トウヒの柵、上にトウヒの階段の屋根と庇のトラップドア、
+#      真ん中に上付きのハーフ、その下に砥石を吊り、鎖を口へ下ろす。縁にランタン。f は正面（人が来る側）。
+#      [ごをくんな 庭の装飾 0:31〜1:38・props-notes.md D16]
+def well(x, z, g, f):
+    cells = []
+    put(x, g - 1, z, full('stone_bricks'))
+    for fw in (-1, 0, 1):
+        for rt in (-1, 0, 1):
+            cx, cz = at(x, z, f, fw, rt); cells.append((cx, cz))
+            corner = fw != 0 and rt != 0
+            put(cx, g, cz, full('stone_bricks') if corner else water())
+            if fw == 0 and rt == 0: continue
+            if corner: put(cx, g + 1, cz, wall('stone_bricks'))
+            elif rt != 0: put(cx, g + 1, cz, full('stone_bricks'))
+            else: put(cx, g + 1, cz, stair('stone_bricks', f if fw < 0 else OPP[f]))   # 前後は低い縁、背は内側
+    for rt in (-1, 1):
+        cx, cz = at(x, z, f, 0, rt)
+        put(cx, g + 2, cz, wall('stone_bricks')); put(cx, g + 3, cz, fence('spruce_planks'))
+        side = RIGHT[f] if rt > 0 else OPP[RIGHT[f]]
+        put(cx, g + 4, cz, stair('spruce_planks', OPP[side]))                     # 屋根：外へ下がる
+        ox, oz = at(x, z, f, 0, rt * 2)
+        put(ox, g + 4, oz, stair('spruce_planks', side, 'top')); put(ox, g + 3, oz, trap('spruce_trapdoor', 'top'))
+    put(x, g + 4, z, slab('spruce_planks', 'top'))
+    put(x, g + 3, z, {'s': 'grindstone', 't': 'grindstone_side'})
+    put(x, g + 2, z, CHAIN); put(x, g + 1, z, CHAIN)
+    lx, lz = at(x, z, f, -1, -1); put(lx, g + 2, lz, LANTERN)
+    return cells
+
+
+# ---- 荷車：トウヒの上付きハーフ 3×2 の荷台、両側面に開いたオークのトラップドアの車輪 2 つずつ（1マス空け）、
+#      前に引き手（柵）、後ろにトラップドア、荷台に樽と木箱とランタン。f は引き手の向き。
+#      [ごをくんな 庭の装飾 1:43〜2:27・props-notes.md D17]
+def cart(x, z, g, f):
+    cells = []
+    for fw in (0, 1, 2):
+        for rt in (0, 1):
+            cx, cz = at(x, z, f, -fw, rt); put(cx, g + 1, cz, slab('spruce_planks', 'top')); cells.append((cx, cz))
+    side = RIGHT[f]
+    for fw in (0, 2):                                                    # 車輪：側面に貼った開いたトラップドア
+        cx, cz = at(x, z, f, -fw, -1); put(cx, g + 1, cz, trap('oak_trapdoor', side)); cells.append((cx, cz))
+        cx, cz = at(x, z, f, -fw, 2); put(cx, g + 1, cz, trap('oak_trapdoor', OPP[side])); cells.append((cx, cz))
+    hx, hz = at(x, z, f, 1, 0); put(hx, g + 1, hz, fence('spruce_planks')); cells.append((hx, hz))
+    bx, bz = at(x, z, f, -3, 0); put(bx, g + 1, bz, trap('spruce_trapdoor', f)); cells.append((bx, bz))
+    for (fw, rt, b) in ((-1, 0, BARREL), (-2, 1, CRATE), (-2, 0, HAY)):
+        cx, cz = at(x, z, f, fw, rt); put(cx, g + 2, cz, b)
+    cx, cz = at(x, z, f, 0, 1); put(cx, g + 2, cz, LANTERN)
     return cells

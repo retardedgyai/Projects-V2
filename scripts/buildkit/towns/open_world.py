@@ -124,6 +124,20 @@ def place_near(fn, x, z, g, *rest):
 for (x, z, f, c) in [(VX + 6, VZ - 5, 'w', 'yellow_wool'), (VX - 6, VZ + 4, 'e', 'lime_wool')]:
     place_near(P.stall, x, z, VY, f, c, 'white_wool', [P.MELON, P.HAY])
 place_near(P.cargo, VX + 5, VZ + 6, VY, 'n')
+def place_by_lane(fn, x0, z0, f, reach=8):
+    """(x0, z0) の近くの、道の脇の平らな所に置く（道の縁から1〜2マス外）。 [rules 53：道の小物は種類を変えて6〜10マスおき]"""
+    for r in range(0, reach + 1):
+        for dx in range(-r, r + 1):
+            for dz in (-r, r) if abs(dx) != r else range(-r, r + 1):
+                x, z = x0 + dx, z0 + dz
+                g = H.get((x, z))
+                if g is None: continue
+                cs = T.cells_of(fn, x, z, g, f)
+                if not T.spot_ok(cs, g, ('nat', 'yard')): continue
+                if not any(KIND.get((cx + ex, cz + ez)) in ('lane', 'lane_edge') for (cx, cz) in cs for ex, ez in N4): continue
+                fn(x, z, g, f); return (x, z)
+    print('置けない', fn.__name__, (x0, z0)); return None
+print('well', place_by_lane(P.well, VX - 14, VZ + 6, 'e'), 'cart', place_by_lane(P.cart, VX + 16, VZ - 8, 's'))
 for (x, z, arm) in [(VX - 8, VZ - 3, 'e'), (VX + 8, VZ + 3, 'w')]:
     if T.spot_ok([(x, z)], VY, allow=('plaza', 'lane', 'lane_edge')): P.lamp_post(x, z, VY, arm)
 print('畑', T.fields(range(VX - 40, VX + 40, 11), range(VZ + 20, VZ + 50, 8), n=6))
@@ -178,6 +192,8 @@ print('書き出し', save('open_world', {
     'mountains': [V(0, 70, 60), V(0, 70, -110)],
     'woods': [V(112, H[(112, 60)] + 30, 60), V(80, H[(80, 20)], 20)],
     'trail': [V(-64, H[(-64, 42)] + 4, 42), V(-58, H[(-58, 54)] + 2, 54)],
+    'well': [V(-38, H[(-38, 88)] + 5, 88), V(-44, H[(-44, 82)] + 2, 82)],
+    'cart': [V(-15, H[(-15, 53)] + 4, 53), V(-21, H[(-21, 59)] + 1, 59)],
     'rest': [V(-66, H[(-66, 58)] + 7, 58), V(-75, H[(-75, 49)] + 1, 49)],
     'eastpath': [V(76, H[(76, -4)] + 3, -4), V(96, H[(96, -26)] + 2, -26)],
     'top': [V(0, 320, 0), V(0, 0, 1)],
