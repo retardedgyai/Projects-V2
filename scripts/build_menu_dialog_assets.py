@@ -45,8 +45,10 @@ TEXT_SOURCES = ["server-minestom/src/main/kotlin/dev/projects/server/coreloop/Pl
                 "server-minestom/src/main/kotlin/dev/projects/server/questmap/QuestGathering.kt"]
 
 # style -> (font file key, size)
+# d* are the numbers (Lv, Rank, silver): M PLUS 2 Bold like the passive tree's (e2cc3b29). DotGothic16 next to the
+# names looked like a different hand in game (藍 2026-11-03); it stays only for the baked ◆, which M PLUS 2 lacks.
 STYLES = {"m6": ("m", 6), "m7": ("m", 7), "b7": ("b", 7), "b8": ("b", 8), "b9": ("b", 9), "b14": ("b", 14),
-          "d6": ("d", 6), "d7": ("d", 7), "d9": ("d", 9)}
+          "d6": ("b", 6), "d7": ("b", 7), "d9": ("b", 9), "dot9": ("d", 9)}
 
 C = dict(text="#ece6dc", muted="#8f8a82", faint="#5e5a54", ivory="#efe6d2", gold="#e8c878", heat="#ff9a4a",
          line=(255, 255, 255, 23), panel=(20, 21, 24, 214), dark="#16181c")
@@ -279,7 +281,7 @@ def bake_band(fonts, book) -> Image.Image:
     draw_text(d, fonts, "b9", 42, 19, "冒険の手帳", C["text"])
     # wallet chip: the number is drawn per player, right-aligned at WALLET_RIGHT
     rounded(d, (352, 9, 92, 15), fill=(232, 200, 120, 18), outline=(232, 200, 120, 64), r=2)
-    draw_text(d, fonts, "d9", 357, 20, "◆", C["gold"])
+    draw_text(d, fonts, "dot9", 357, 20, "◆", C["gold"])
     draw_text(d, fonts, "m6", 423, 20, "銀貨", C["muted"])
     return img
 
