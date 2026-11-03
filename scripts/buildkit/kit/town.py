@@ -360,24 +360,29 @@ class Town:
         return cells
 
     # ================================================================ 橋と壁
-    def stone_bridge(self, bx, za, zb):
-        """川を渡る石のアーチ橋（z 方向、幅3）。両端に柱と灯り。橋の床の高さを返す。"""
-        mid = (za + zb) / 2; half = (zb - za) / 2
-        for z in range(za, zb + 1):
-            y = 1 if abs(z - mid) > half - 2 else 2
-            dep = int(round(math.sqrt(max(0, half * half - (z - mid) ** 2)) * 0.5))
-            for x in range(bx - 1, bx + 2):
-                put(x, y, z, full('stone_bricks' if x == bx else 'polished_andesite')); self.BRIDGE[(x, z)] = y
-                if abs(z - mid) > half - 1.5:
-                    for yy in range(-3, y): put(x, yy, z, full('stone_bricks'))
-                elif dep >= 1: put(x, y - 1, z, stair('stone_bricks', 's' if z < mid else 'n', 'top'))
-            for x in (bx - 2, bx + 2):
-                put(x, y, z, full('stone_bricks')); put(x, y + 1, z, slab('stone_bricks'))
-                if abs(z - mid) > half - 1.5:
-                    for yy in range(-3, y): put(x, yy, z, full('stone_bricks'))
-        for (x, z) in [(bx - 2, za), (bx + 2, za), (bx - 2, zb), (bx + 2, zb)]:
-            put(x, self.BRIDGE[(bx, z)] + 1, z, full('chiseled_stone_bricks')); put(x, self.BRIDGE[(bx, z)] + 2, z, LANTERN)
-        return self.BRIDGE[(bx, zb)]
+    def stone_bridge(self, bx, za, zb, axis='z', base=-1):
+        """川を渡る石のアーチ橋（幅3）。axis='z' なら x=bx で z を za→zb、'x' なら z=bx で x を za→zb。base は水面の高さ。
+        両端に柱と灯り。橋の床の高さ（終わりの端）を返す。"""
+        P_ = (lambda u, v, y, b: put(u, y, v, b)) if axis == 'z' else (lambda u, v, y, b: put(v, y, u, b))
+        key = (lambda u, v: (u, v)) if axis == 'z' else (lambda u, v: (v, u))
+        f_lo, f_hi = ('s', 'n') if axis == 'z' else ('e', 'w')
+        mid = (za + zb) / 2; half = (zb - za) / 2; ys = {}
+        for v in range(za, zb + 1):
+            y = base + 2 if abs(v - mid) > half - 2 else base + 3
+            ys[v] = y
+            dep = int(round(math.sqrt(max(0, half * half - (v - mid) ** 2)) * 0.5))
+            for u in range(bx - 1, bx + 2):
+                P_(u, v, y, full('stone_bricks' if u == bx else 'polished_andesite')); self.BRIDGE[key(u, v)] = y
+                if abs(v - mid) > half - 1.5:
+                    for yy in range(base - 2, y): P_(u, v, yy, full('stone_bricks'))
+                elif dep >= 1: P_(u, v, y - 1, stair('stone_bricks', f_lo if v < mid else f_hi, 'top'))
+            for u in (bx - 2, bx + 2):
+                P_(u, v, y, full('stone_bricks')); P_(u, v, y + 1, slab('stone_bricks'))
+                if abs(v - mid) > half - 1.5:
+                    for yy in range(base - 2, y): P_(u, v, yy, full('stone_bricks'))
+        for (u, v) in [(bx - 2, za), (bx + 2, za), (bx - 2, zb), (bx + 2, zb)]:
+            P_(u, v, ys[v] + 1, full('chiseled_stone_bricks')); P_(u, v, ys[v] + 2, LANTERN)
+        return ys[zb]
 
     def ramp(self, cells_z, xs, y_from, y_to):
         """坂道：cells_z の順に y_from から y_to へ均した土の道（地面を削る・盛る）。"""
