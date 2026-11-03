@@ -305,18 +305,20 @@ class Town:
                 put(nx, y - 1, nz, trap('spruce_trapdoor', {(1, 0): 'w', (-1, 0): 'e', (0, 1): 'n', (0, -1): 's'}[(ox, oz)]))
 
     def fire_pit(self, cx, cz, y):
-        """広場の真ん中の大きな火：ネザーラックの山を、石レンガの段の輪で囲む。"""
+        """広場の真ん中の大きな火：ネザーラックを3段のピラミッドに積み、段の上面すべてに火をつける（ネザーラックを火で隠す）。
+        燃えるので木で囲わず、泥の輪、石レンガの輪、外に石レンガの階段の輪。平らな所に火を散らさない。
+        [らーなろっそ 廃キャンプ 3:36「ネザーラックが見えると変なのでピラミッド状に隠す」「泥などを置いて石レンガで囲う」]"""
         for x in range(-4, 5):
             for z in range(-4, 5):
                 d = max(abs(x), abs(z)); X, Z = cx + x, cz + z
                 if d == 4: put(X, y + 1, Z, stair('stone_bricks', 'e' if x == -4 else 'w' if x == 4 else 's' if z == -4 else 'n'))
                 elif d == 3: put(X, y + 1, Z, full('stone_bricks'))
+                elif d == 2 and abs(x) + abs(z) == 4: put(X, y + 1, Z, full('mud'))          # 角は泥（丸く見せる）
+                elif d == 2: put(X, y + 1, Z, full('netherrack')); put(X, y + 2, Z, cross('fire_0'))
+                elif d == 1: put(X, y + 1, Z, full('netherrack')); put(X, y + 2, Z, full('netherrack')); put(X, y + 3, Z, cross('fire_0'))
                 else:
-                    put(X, y + 1, Z, full('mud'))
-                    if d <= 1: put(X, y + 2, Z, full('netherrack'))
-                    if d == 0: put(X, y + 3, Z, full('netherrack')); put(X, y + 4, Z, cross('fire_0'))
-                    elif d == 1: put(X, y + 3, Z, cross('fire_0'))
-                    elif (x + z) % 2 == 0: put(X, y + 2, Z, cross('fire_0'))
+                    for k in range(1, 4): put(X, y + k, Z, full('netherrack'))
+                    put(X, y + 4, Z, cross('fire_0'))
 
     def floor_marks(self, cx, cz, y, ring=8, n=6):
         """広い床に、木の模様（3×3）を円く n 個。"""
