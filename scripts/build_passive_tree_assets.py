@@ -548,7 +548,7 @@ def strip(parts, gap):
 
 
 def footer():
-    keys = [("左クリック", "選ぶ・2回で取る"), ("端", "移動"), ("ホイール", "拡大縮小"), ("Shift", "閉じる")]
+    keys = [("左クリック", "選ぶ・2回で仮に取る"), ("端", "移動"), ("ホイール", "拡大縮小"), ("Shift", "閉じる")]
     return strip([strip([keycap(k), ink_on(t, 15, 700, MUTE, STAGE)], 6) for k, t in keys], 22)
 
 
@@ -702,7 +702,7 @@ def main(preview: bool) -> None:
             "この輪の主要ノードを取ると、1点で1つ選べる。同じ効果はツリー全体で1回だけ。" if n["kind"] == "MASTERY" else n["text"]
         infos[str(n["id"])] = columns(f"info_{n['id']}", info_image(KIND_LABEL[n["kind"]], n["name"], body, n["rgb"]))
     infos["none"] = columns("info_none", info_image("ノード", "ノードを選んでください",
-                                                    "木の上でノードを押すと、ここに中身が出ます。もう一度押すと、そこまでの道をまとめて取ります。"))
+                                                    "木の上でノードを押すと、ここに中身が出ます。もう一度押すと、そこまでの道を仮に取ります。確定を押すまでは無料で外せます。"))
 
     labels = {}
 
@@ -726,9 +726,11 @@ def main(preview: bool) -> None:
                              ("pick", "1つ選んで 1 点で取る", OK), ("locked", "この輪の主要ノードを先に取る", MUTE),
                              ("far", "つながっていない", DANGER), ("need_a", "あと", OK), ("need_b", "点で届く", OK),
                              ("short", "点必要（ポイントが足りない）", DANGER), ("nopoint", "ポイントが足りない", DANGER),
-                             ("hub", "港で変更できます", DANGER), ("soon", "中身はこれから決めます", MUTE), ("failed", "できませんでした", DANGER)]:
+                             ("hub", "港で変更できます", DANGER), ("planned", "仮に取った（確定まで無料で外せる）", OK), ("soon", "中身はこれから決めます", MUTE), ("failed", "できませんでした", DANGER)]:
         label(f"st_{key}", text, 16, color, PANEL, 700)
     label("dup", "ほかの輪で選び済み", 15, DANGER, CHOICE, 700)
+    label("delta", "取るとこう変わる", 16, MUTE, PANEL, 700)
+    label("arrow", "→", 16, MUTE, PANEL, 700)
     labels["footer"] = columns("label_footer", footer())
     labels["legend"] = columns("label_legend", legend())
     # Stat names for the totals, one per distinct name.
