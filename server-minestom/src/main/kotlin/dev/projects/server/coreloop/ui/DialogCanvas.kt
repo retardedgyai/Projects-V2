@@ -145,7 +145,7 @@ internal class DialogCanvas(private val size: Size, private val space: Map<Doubl
     }
 
     class Font(val font: String, val advances: Map<Int, Double>)
-    class Tile(val sprite: String, val dx: Int, val dy: Int)
+    class Tile(val sprite: String, val dx: Double, val dy: Double)
     class Sprite(val advance: Int, val chars: Map<Int, Int>, val tiles: List<Tile> = emptyList())
 
     /** One baked size (GUI scale 4, 3 or 2). */
@@ -172,7 +172,7 @@ internal class DialogCanvas(private val size: Size, private val space: Map<Doubl
                 val sprites = o.getAsJsonObject("sprites").entrySet().associate { (name, value) ->
                     val s = value.asJsonObject
                     if (s.has("tiles")) name to Sprite(0, emptyMap(), s.getAsJsonArray("tiles").map {
-                        val t = it.asJsonObject; Tile(t["sprite"].asString, t["dx"].asInt, t["dy"].asInt) })
+                        val t = it.asJsonObject; Tile(t["sprite"].asString, t["dx"].asDouble, t["dy"].asDouble) })
                     else name to Sprite(s["advance"].asInt, s.getAsJsonObject("chars").entrySet().associate { (a, cp) -> a.toInt() to cp.asInt })
                 }
                 return Size(o["unit"].asDouble, styles, sprites, Key.key(o["art"].asString), o.getAsJsonObject("layout"),

@@ -119,7 +119,9 @@ internal class PlayerMenuDialog(
     private fun title(account: CoreAccount, size: DialogCanvas.Size): Component {
         val canvas = DialogCanvas(size, metrics.space, size.titleWidth.toDouble(), 1, size.titleTop, 1.0, metrics.forScale(4).styles)
         val x0 = size.titleX.toDouble()
-        canvas.background("band", -x0, 0.0)
+        // The whole screen's ground hangs from the title: the client draws it first and does not clip it, unlike the body.
+        canvas.background("ground", -x0, 0.0)
+        canvas.sprite("band", -x0, 0.0)
         val wallet = size.layout.getAsJsonArray("wallet")
         canvas.text("d9", wallet[0].asDouble - x0, wallet[1].asDouble, "%,d".format(account.silver), TEXT)
         return canvas.buildLine()

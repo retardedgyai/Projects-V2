@@ -39,7 +39,8 @@ OUT = ROOT / "server-minestom/src/main/resources/polish05"
 NS = "projects_ui_polish05"
 K = 4                      # texture pixels per design pixel (= one screen pixel at every size)
 CANVAS_W, CANVAS_H = 464, 189  # body canvas in design px
-SCREEN_W = 480             # design px across a 1080p screen
+SCREEN_W, SCREEN_H = 480, 270  # design px across and down a 1080p screen
+GROUND_K = 2               # texture px per design px for the blurred full-screen ground
 TITLE_X = 8                # where the title starts on screen; its advance puts the vanilla warning mark at the right
 TITLE_TOP = 12             # the title line's top on screen (GUI px; the header is 33 GUI px at every scale)
 SIZES = {"4": 1.0, "3": 4 / 3, "2": 2.0}  # GUI scale -> GUI px per design px
@@ -181,19 +182,21 @@ class Sprites:
         self.meta[name] = entry
 
     def add_tiled(self, name: str, image: Image.Image, h: int, tops: list[int], origin: int = 0, unit: float | None = None,
-                  first_line: bool = False):
-        """A sprite bigger than the client's 256 px font texture page, cut into TILE x TILE pieces (same units as h)."""
-        w = image.width // K
+                  first_line: bool = False, k: int = K, tile_size: int = None, place: float = 1.0):
+        """A sprite bigger than the client's 256 px font texture page, cut into tiles of `tile_size` (same units as h,
+        `k` texture px each). `place` scales the stored tile offsets into the units of the canvas that draws it."""
+        tile_size = tile_size or TILE
+        w = image.width // k
         tiles = []
-        for ty in range(0, h, TILE):
-            for tx in range(0, w, TILE):
-                tw, th = min(TILE, w - tx), min(TILE, h - ty)
-                piece = image.crop((tx * K, ty * K, (tx + tw) * K, (ty + th) * K))
+        for ty in range(0, h, tile_size):
+            for tx in range(0, w, tile_size):
+                tw, th = min(tile_size, w - tx), min(tile_size, h - ty)
+                piece = image.crop((tx * k, ty * k, (tx + tw) * k, (ty + th) * k))
                 if piece.getchannel("A").getbbox() is None:
                     continue
                 tile = f"{name}_{tx}_{ty}"
                 self.add(tile, piece, th, [t + ty for t in tops], origin, unit, first_line)
-                tiles.append({"sprite": tile, "dx": tx, "dy": ty})
+                tiles.append({"sprite": tile, "dx": tx * place, "dy": ty * place})
         self.meta[name] = {"tiles": tiles}
 
 
@@ -243,25 +246,25 @@ def rounded(d, box, fill=None, outline=None, r=3, width=1):
 
 
 
-def bigpixel(w, h, block=10, seed=7):
+def bigpixel(w, h, block=10, seed=7, k=K, centre=(.5, .15)):
     """The Dungeons ground: a warm crimson glow from the upper middle fading to violet-black, drawn in big blocks."""
     import math, random
     rng = random.Random(seed)
     pad = block
-    img = Image.new("RGBA", ((w + 2 * pad) * K, (h + 2 * pad) * K))
+    img = Image.new("RGBA", ((w + 2 * pad) * k, (h + 2 * pad) * k))
     d = ImageDraw.Draw(img)
     for by in range(-pad, h + pad, block):
         for bx in range(-pad, w + pad, block):
             cx, cy = (bx + block / 2) / w, (by + block / 2) / h
-            dist = math.hypot((cx - .5) * 1.3, (cy - .15) * 1.1)
+            dist = math.hypot((cx - centre[0]) * 1.3, (cy - centre[1]) * 1.1)
             t = max(0.0, 1 - dist * 1.35)
             base, mid, hot = (14, 10, 16), (36, 14, 30), (78, 22, 38)
             c = [base[i] + (mid[i] - base[i]) * min(1, t * 1.6) + (hot[i] - mid[i]) * max(0, t - .45) * 1.4 for i in range(3)]
-            k = 1 + rng.uniform(-.09, .09)
-            d.rectangle(((bx + pad) * K, (by + pad) * K, (bx + pad + block) * K - 1, (by + pad + block) * K - 1),
-                        fill=tuple(max(0, min(255, int(v * k))) for v in c) + (255,))
+            jitter = 1 + rng.uniform(-.09, .09)
+            d.rectangle(((bx + pad) * k, (by + pad) * k, (bx + pad + block) * k - 1, (by + pad + block) * k - 1),
+                        fill=tuple(max(0, min(255, int(v * jitter))) for v in c) + (255,))
     # blurred with a margin so the edges do not fade dark
-    return img.filter(ImageFilter.GaussianBlur(K * 1.2)).crop((pad * K, pad * K, (pad + w) * K, (pad + h) * K))
+    return img.filter(ImageFilter.GaussianBlur(k * 1.2)).crop((pad * k, pad * k, (pad + w) * k, (pad + h) * k))
 
 
 def slot_frame(d, x, y, size=SLOT):
@@ -305,7 +308,7 @@ def tabs_row(img, d, fonts, icons, selected):
 
 
 def bake_skills(fonts, icons):
-    img = bigpixel(CANVAS_W, CANVAS_H); d = ImageDraw.Draw(img)
+    img = Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K)); d = ImageDraw.Draw(img)
     tabs_row(img, d, fonts, icons, "技")
     img.alpha_composite(glow(110, 110, 55, 55, 55, 55, (255, 170, 110), 90), ((EMBLEM64[0] - 23) * K, (EMBLEM64[1] - 23) * K))
     for (x, y), label in zip(HEX, ["Lv", "点数"]):
@@ -329,7 +332,7 @@ def bake_skills(fonts, icons):
 
 
 def bake_self(fonts, icons):
-    img = bigpixel(CANVAS_W, CANVAS_H); d = ImageDraw.Draw(img)
+    img = Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K)); d = ImageDraw.Draw(img)
     tabs_row(img, d, fonts, icons, "自分")
     img.alpha_composite(glow(120, 120, 60, 60, 60, 60, (255, 170, 110), 90), ((EMBLEM48[0] - 36) * K, (EMBLEM48[1] - 36) * K))
     for x, y in HEX_SELF: hex_frame(img, x, y)
@@ -355,10 +358,11 @@ def bake_self(fonts, icons):
 
 
 def bake_band(fonts, book, w: int) -> Image.Image:
-    """The title band in GUI px (4 texture px each): the same big-pixel ground, the book, the purse."""
+    """The title band in GUI px (4 texture px each): a darker strip over the ground, the book, the purse."""
     h = 33
-    img = bigpixel(w, h, seed=3)
+    img = Image.new("RGBA", (w * K, h * K), (8, 5, 10, 150))
     d = ImageDraw.Draw(img)
+    d.rectangle((0, (h - 1) * K, w * K - 1, h * K - 1), fill=(255, 240, 230, 30))
     img.alpha_composite(book.resize((16 * K, 17 * K), Image.NEAREST), (12 * K, 9 * K))
     draw_text(d, fonts, "m7", 32, 20, "冒険の手帳", C["muted"])
     draw_text(d, fonts, "dot9", w - 108, 21, "◆", C["gold"])
@@ -394,6 +398,7 @@ def main() -> None:
     files[f"assets/{NS}/font/menu_space.json"] = json.dumps({"providers": [{"type": "space", "advances": advances_map}]}).encode()
 
     page_self, page_skills = bake_self(fonts, icons), bake_skills(fonts, icons)
+    ground = bigpixel(SCREEN_W, SCREEN_H, k=GROUND_K, centre=(.5, .3))
     tab_boxes = tabs_row(Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K)), ImageDraw.Draw(Image.new("RGBA", (4, 4))), fonts, icons, "")
     skill_source = (ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreSkillCatalog.kt").read_text(encoding="utf-8")
     skill_icons = sorted(set(re.findall(r's\("[^"]*", "([a-z_]+)"', skill_source)))
@@ -418,7 +423,9 @@ def main() -> None:
                     {"type": "ttf", "file": f"{NS}:menu_{key}.ttf", "size": pt * unit, "oversample": oversample, "shift": [0.0, float(r)]},
                 ]}).encode()
             size["styles"][style] = {"font": f"{NS}:menu{tag}_{style}_", "advances": advances(fonts[key], pt * unit, oversample, chars)}
-        # Opaque now: a tile hung from a lower line would be drawn after (and over) everything on the lines above.
+        # The ground covers the whole screen from the title, which the client draws before the body and does not clip
+        # (the body is clipped to its own box, so a page background left the world showing around it; 2026-11-03).
+        sprites.add_tiled("ground", ground, SCREEN_H, [0], TITLE_TOP, unit=unit, first_line=True, k=GROUND_K, tile_size=120, place=unit)
         sprites.add_tiled("page_self", page_self, CANVAS_H, [0], first_line=True)
         sprites.add_tiled("page_skills", page_skills, CANVAS_H, [0], first_line=True)
         sprites.add_tiled(f"band{tag}", bake_band(fonts, book, screen), 33, [0], TITLE_TOP, unit=1.0, first_line=True)
