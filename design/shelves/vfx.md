@@ -22,7 +22,7 @@
 
 ## Dungeons もとの技の作り方（手順）
 
-2026-11-02 に突風・氷槍の列・流星と落雷で決まった作り方。手本の版は `../canon/mage-harness-trio.md`・`../canon/lightning-v6.md`（正典候補）・`../canon/tornado-v7.md`（正典）・`../canon/lightning-dash-v1.md`（移動の技、正典候補）、
+2026-11-02 に突風・氷槍の列・流星と落雷で決まった作り方。手本の版は `../canon/mage-harness-trio.md`・`../canon/lightning-v6.md`（正典候補）・`../canon/tornado-v7.md`（正典）・`../canon/lightning-dash-v3.md`（移動の技、正典候補）、
 火炎弾は `../canon/fire-bolt-v21.md`、氷は `../canon/frost-nova-v12.md`。
 
 1. **技の中身を読む。** `server-minestom/.../coreloop/CoreSkillCatalog.kt` の説明・範囲（radius）・発生（startup、tick）・元素。何が起きる技かを一言にする。
