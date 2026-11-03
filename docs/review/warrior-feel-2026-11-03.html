@@ -1,0 +1,197 @@
+<title>ウォーリアーの手触り</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column. Order: conclusion → why skills blur → durability → what Destroyer really is → the verb grid (main) → toughness → build breadth → question. */
+:root {
+  --bg: #f6f4f1; --surface: #ffffff; --fg: #231e1b; --muted: #6d625b; --line: #ddd5ce;
+  --accent: #8e2a1f; --bad: #b3261e; --warn: #a65f00; --ok: #2f6b3a; --chip: #efe7e1;
+  --display: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #181412; --surface: #221c19; --fg: #eee6e0; --muted: #a8998f; --line: #3a302b;
+  --accent: #e0705f; --bad: #ff8a80; --warn: #f0b35a; --ok: #8fcf98; --chip: #2e2522; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #181412; --surface: #221c19; --fg: #eee6e0; --muted: #a8998f; --line: #3a302b;
+  --accent: #e0705f; --bad: #ff8a80; --warn: #f0b35a; --ok: #8fcf98; --chip: #2e2522; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--display); font-size: 15px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 64px; }
+main { max-width: 1000px; margin: 0 auto; display: grid; gap: 40px; }
+h1 { font-weight: 900; font-size: 1.9rem; margin: 0; text-wrap: balance; }
+h2 { font-weight: 700; font-size: 1.25rem; margin: 0 0 12px; text-wrap: balance; }
+h3 { font-size: 1rem; margin: 0 0 4px; }
+p { margin: 0; max-width: 70ch; }
+section { display: grid; gap: 12px; }
+.lead { color: var(--muted); }
+.facts { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+.fact b { display: block; font-size: 1.02rem; margin-bottom: 4px; }
+.fact .tag { font-size: .75rem; letter-spacing: .06em; color: var(--muted); }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 820px; font-size: .9rem; }
+th, td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { font-size: .75rem; letter-spacing: .06em; color: var(--muted); font-weight: 700; background: var(--chip); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hl { color: var(--accent); font-weight: 700; }
+.bar { display: grid; grid-template-columns: 8.5em 1fr 3em; gap: 10px; align-items: center; font-size: .9rem; }
+.bar .track { height: 12px; background: var(--chip); border-radius: 3px; overflow: hidden; }
+.bar .fill { height: 100%; background: var(--accent); }
+.bar .fill.muted { background: var(--muted); }
+.bars { display: grid; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+ul { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; max-width: 74ch; }
+.note { font-size: .82rem; color: var(--muted); }
+.ask { border-left: 4px solid var(--accent); padding: 12px 16px; background: var(--surface); border-radius: 0 6px 6px 0; }
+.src { font-size: .78rem; color: var(--muted); overflow-wrap: anywhere; }
+.src a { color: var(--muted); }
+</style>
+
+<main>
+  <header style="display:grid;gap:10px">
+    <h1>ウォーリアーの手触り</h1>
+    <p class="lead">2026-11-03。今のコードの全体レビューと、ロストアークのデストロイヤー、モンハン（ライズ・ワイルズ）、Vermintide / Darktide、ドラゴンズドグマ2、ディアブロ4、PoE2 を調べた結果。ここに並べたのはすべて案。技の中身は藍が決める。</p>
+  </header>
+
+  <section>
+    <h2>結論</h2>
+    <div class="facts">
+      <div class="fact"><span class="tag">技が似ている理由</span><b>全部が同じ動詞</b>「押す → 大剣を振る → 正面の地面が割れる → 敵が浮く」。違うのは大きさと数字だけ。押し方も全部タップ1回。</div>
+      <div class="fact"><span class="tag">デストロイヤーの芯</span><b>差は「押し方」で付いている</b>溜める・押しっぱなしで走る・押し直して続ける・跳ぶ・吸い寄せる。技ごとに入力が違うので、威力が近くても別物に感じる。</div>
+      <div class="fact"><span class="tag">体の硬さ</span><b>数字は中くらい、実際は脆い</b>守りの手段がなく、回復もなく、「怯まない」技も敵の CC で止まる。デストロイヤーの硬さは「使う技を撃つと障壁」「振っている間は被ダメ減」から来ている。</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>1. いまの技が似ている理由（数えた）</h2>
+    <div class="bars">
+      <div class="bar"><span>地面が割れる</span><div class="track"><div class="fill" style="width:89%"></div></div><span class="num">8/9</span></div>
+      <div class="bar"><span>当たりが1回だけ</span><div class="track"><div class="fill" style="width:78%"></div></div><span class="num">7/9</span></div>
+      <div class="bar"><span>正面の扇</span><div class="track"><div class="fill" style="width:67%"></div></div><span class="num">6/9</span></div>
+      <div class="bar"><span>敵を打ち上げる</span><div class="track"><div class="fill" style="width:56%"></div></div><span class="num">5/9</span></div>
+      <div class="bar"><span>押し方が違う</span><div class="track"><div class="fill muted" style="width:0%"></div></div><span class="num">0/9</span></div>
+    </div>
+    <ul>
+      <li><b>見た目が同じ部品。</b>轟進以外は全部、黒い軌跡・溝・芝・土塊・土煙の5つで組まれている。地割りと全力の一振りは描く処理そのものが同じ。</li>
+      <li><b>音も同じ。</b>剣の技はすべて「薙ぎ＋三叉槍を投げる音」で、音程が違うだけ。</li>
+      <li><b>間が同じ。</b>発生が0.1〜0.7秒、戻りが0.15〜0.35秒に収まっていて、長い溜めと速い一撃の対比がない。</li>
+      <li><b>跳ぶ技が2つ重なる。</b>天落としと跳び叩きは、どちらも「跳んで着地の周りを叩く」。差は輪の数だけ。</li>
+      <li><b>獣が数字しか変えない。</b>溜める技は何に当たっても+1。使う技は獣の数で威力と範囲が伸びるだけ。</li>
+      <li><b>轟進は瞬間移動。</b>中身は2.2ブロックのテレポートで、「移動技は軌道を描く」の決まりに反している。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>2. 体の硬さ（いまの数字）</h2>
+    <div class="scroll">
+    <table style="min-width:560px">
+      <thead><tr><th>職</th><th>HP</th><th>物理防御 / 魔法防御</th><th>物理での実質HP</th><th>守りの技</th><th>回復</th></tr></thead>
+      <tbody>
+        <tr><td>テンプラー</td><td class="num">140</td><td class="num">70 / 50</td><td class="num">173</td><td>3つ</td><td>なし</td></tr>
+        <tr><td class="hl">ウォーリアー</td><td class="num">100</td><td class="num">40 / 25</td><td class="num hl">113</td><td class="hl">なし</td><td class="hl">なし</td></tr>
+        <tr><td>メイジ</td><td class="num">80</td><td class="num">5 / 35</td><td class="num">81</td><td>—</td><td>なし</td></tr>
+        <tr><td>アサシン</td><td class="num">75</td><td class="num">10 / 10</td><td class="num">77</td><td>2つ</td><td>なし</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <ul>
+      <li>近接で敵の目の前に立ち続けるのに、守る手段が回避（全職共通）だけ。</li>
+      <li>「使う技は怯まない」は、HPの減りによる怯みしか防いでいない。敵のスタン・打ち上げ・ノックバックでは溜めが止まる。</li>
+      <li>最大HPの20%を一度に受けると怯み、45%で転倒する。HPが少ないほど転びやすい。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. デストロイヤーは何が気持ちいいのか</h2>
+    <ul>
+      <li><b>溜める→吐くが「守り」にもなる。</b>コアを使う技を撃つと、コア1つで威力+10%と最大HP10%の障壁、3つで+45%と30%の障壁。全力の一撃を撃つほど硬くなる。</li>
+      <li><b>技ごとに入力が違う。</b>パーフェクトスイングは最大2秒溜めて、踏み込んで叩く。ランニングクラッシュは押しっぱなしで走って、離すと爆発する。パワーストライクは3連の叩きつけ。グラビティインパクトは場を作って吸い寄せる。ジャンピングスマッシュは跳ぶ。</li>
+      <li><b>改造（トライポッド）が入力そのものを変える。</b>溜め技が即撃ちになる。通常の技が押しっぱなしになる。走りながら当てる技が、地点まで突っ込む技になる。数字だけの改造は少ない。</li>
+      <li><b>振っている間だけ硬い。</b>「振っている間の被ダメ−30〜60%」「押されない」が多くの技に付く。重く遅い技を、安心して振り切れる。</li>
+      <li><b>追わずに寄せる。</b>吸い寄せで敵を自分の前に集める。一人称では追いかけるのが一番つらいので、ここは特に効く。</li>
+      <li><b>悪い所も参考になる。</b>「遅くて重い」「動けない」「超重力モード中は左クリック押しっぱなしだけ」と言われている。一人称で動きを全部取り上げると、ただ立っているだけになる。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. 技を似せない作り方：動詞を4つの軸で分ける</h2>
+    <p>調べたどのゲームも、大剣の戦士に「振る」以外の動詞を持たせている。技ごとに、下の4つの軸の少なくとも2つが、ほかの技と違うように並べる。</p>
+    <div class="scroll">
+    <table style="min-width:640px">
+      <thead><tr><th>軸</th><th>選べるもの</th><th>例</th></tr></thead>
+      <tbody>
+        <tr><td><b>押し方</b></td><td>タップ／溜めて離す／押しっぱなしで続く／押し直して続ける</td><td>モンハン大剣の溜め、ランニングクラッシュ、ガンブレイカーの追撃</td></tr>
+        <tr><td><b>体の動き</b></td><td>その場／一直線に突き抜ける／跳ぶ（上→下）／歩きながら</td><td>ブルラッシュ（Darktide）、スレイヤーの跳躍（Vermintide）、引き摺り</td></tr>
+        <tr><td><b>結果の出る場所</b></td><td>刃の前／自分の周り／敵の体から／自分の方へ寄ってくる／群れの向こう</td><td>ボーンシャッター（PoE2：割れが敵から出る）、グラビティインパクト（寄せる）</td></tr>
+        <tr><td><b>敵がどうなるか</b></td><td>怯む／寄る／転ぶ／浮く／刺さって運ばれる／押し返される</td><td>レイヴニングランジ（DD2：刺して運ぶ）、タックル</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3 style="margin-top:12px">いまの8つに当てはめた案（名前と役はなるべく残す）</h3>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>技</th><th>押し方</th><th>体</th><th>結果の場所</th><th>敵</th><th>元にした物</th></tr></thead>
+      <tbody>
+        <tr><td>轟進</td><td class="hl">押しっぱなしで走る</td><td>一直線に突き抜ける（テレポートをやめる）</td><td>通り道、離すと肩で当たる</td><td>押し返す</td><td>ランニングクラッシュ、ブルラッシュ、モンハンのタックル</td></tr>
+        <tr><td>地割り</td><td>タップ（今のまま）</td><td>その場</td><td class="hl">正面の線（割れはこの技だけ）</td><td>浮く→スタン</td><td>今の形が芯</td></tr>
+        <tr><td>狂乱</td><td class="hl">押し直して続ける</td><td>1振りごとに踏み込む</td><td>刃の前</td><td>怯むだけ（割れない、浮かない）</td><td>パワーストライク、DD2 ウィンドストーム</td></tr>
+        <tr><td>天落とし</td><td>タップ</td><td>高く跳ぶ</td><td class="hl">着地点へ周りの敵が寄る</td><td>寄る</td><td>グラビティインパクト、ボルテックスグラビティ</td></tr>
+        <tr><td>跳び叩き</td><td>タップ</td><td>弧を描いて跳ぶ（移動の技）</td><td>着地の周り</td><td>短いスタン</td><td>今のまま（天落としと差が付く）</td></tr>
+        <tr><td>大地崩し</td><td class="hl">突き立てて耐える</td><td>その場</td><td>周り。受けた分だけ大きく割れる</td><td>転ぶ</td><td>エンデュアペイン、DD2 の構え（タイミング不要の形）</td></tr>
+        <tr><td>引き摺り</td><td>タップ→歩く</td><td>歩きながら</td><td>刃に刺さった敵が運ばれる</td><td>運ばれる</td><td>今のまま（一番個性がある）</td></tr>
+        <tr><td>斬り上げ</td><td>タップ</td><td>追って跳べる</td><td>真上</td><td class="hl">浮く（浮かせる技はこれとウルトだけ）</td><td>今のまま</td></tr>
+        <tr><td>全力の一振り</td><td class="hl">溜めて離す（最大2秒、光ったら最大）</td><td>離すと踏み込む</td><td>正面</td><td>転ぶ</td><td>パーフェクトスイング、モンハン大剣の真溜め</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note">こうすると「浮く」は2つ、「割れる」は地割りが主役になる。押し方は4種類に分かれる（タップ・溜め・押しっぱなし・押し直し）。統合版でも、タップと押しっぱなしだけで成り立つ。</p>
+  </section>
+
+  <section>
+    <h2>5. 脆くないが、タンクでもない：攻めると硬くなる</h2>
+    <p>調べたゲームに共通する決まりは「殴っている間だけ生き残れる」。止まると硬さが消えるので、守りではなく攻めの手触りになる。</p>
+    <ul>
+      <li><b>獣を使うと障壁。</b>デストロイヤーと同じ形で、獣1つにつき最大HPの数%（例：5% / 10% / 15%）。全力で吐くほど硬くなる。自己回復ではない。</li>
+      <li><b>振っている間だけ被ダメ減。</b>使う技の発生から最後の当たりまで、被ダメ−30%に加えて、敵の CC で止まらない（いまの抜け穴を塞ぐ）。</li>
+      <li><b>突っ込むと硬さが戻る。</b>Darktide のチャスティス（突進で守りが回復）と同じ考え方。轟進を押しっぱなしの走りにするなら、当てた数だけ障壁が少し戻る形が合う。</li>
+      <li><b>暴れ続けると速くなる。</b>ディアブロ4のバーサーキングと同じ。使う技を2体以上かボスに当てると、数秒だけ移動と振りが速くなる。続ければ切れない。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>6. ビルドの幅：数字ではなく動詞を変える改造</h2>
+    <ul>
+      <li>いま、ウォーリアーの技の遊び方を変えるビルドは一つもない。パッシブツリー733個はすべて汎用の数字で、獣や戦士の技に触れる物はない。戦士専用の改造（余波）も範囲が上書きされて、威力が減るだけになっている。</li>
+      <li>案：技ごとに2〜3個の「型」を用意する（デストロイヤーのトライポッド、ディアブロ4の強化の分岐と同じ）。型が変えるのは「どこに結果が出るか」「いつ出るか」「何が返ってくるか」のどれか。「威力+20%」の型は作らない。<br>例：地割りに「長く走る（線が伸びる）」「短く深い（転倒）」。轟進に「群れの向こうまで抜ける」「最初の敵で止まって肩で崩す」。</li>
+      <li>技どうしが変え合う形もある（PoE2：叫びの後の叩きつけに余震が付く）。技の数を増やさずに組み合わせが増える。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>7. ウルト3つ（前回の表から）</h2>
+    <ul>
+      <li>全力の一振りは、上の「溜めて離す」を作れば、ウルトらしい重さが出る。</li>
+      <li>獣の目覚めと狂戦士の甲冑は、獣を満たしたままにするのをやめる。デストロイヤーの超重力モードの悪い所（動けない、左クリックだけ）は真似しない。モード中も技は使える形にする。</li>
+    </ul>
+  </section>
+
+  <section class="ask">
+    <h2>藍に聞きたいこと</h2>
+    <p>暴れまわっている時、体はどう動いている？ 走り回って群れを次々つぶしていくのか、その場に居座って寄ってくる敵を叩き続けるのか。どちらを想像しているかで、轟進・天落とし・硬さの付け方が変わる。</p>
+  </section>
+
+  <p class="src">出典：
+    <a href="https://maxroll.gg/lost-ark/build-guides/destroyer-raid-guide">デストロイヤー（Maxroll）</a>、
+    <a href="https://lostark.wiki.fextralife.com/Destroyer+Skills">デストロイヤーの技（fextralife、2022年の数値）</a>、
+    <a href="https://maxroll.gg/lost-ark/news/october-balance-patch-kr-10-22">2024年10月の調整</a>、
+    <a href="https://www.gamerguides.com/monster-hunter-rise-sunbreak/guide/weapons/great-sword/new-great-sword-silkbind-attacks-and-switch-skills">モンハンライズ大剣</a>、
+    <a href="https://www.icy-veins.com/monster-hunter-wilds/great-sword-guide">モンハンワイルズ大剣</a>、
+    <a href="https://vermintide.gameslantern.com/careers/slayer">Vermintide スレイヤー</a>、
+    <a href="https://primagames.com/tips/what-is-toughness-in-warhammer-40k-darktide-answered">Darktide の守り</a>、
+    <a href="https://www.pcgamesn.com/dragons-dogma-2/warrior-skills">ドラゴンズドグマ2 ウォーリアー</a>、
+    <a href="https://www.icy-veins.com/d4/guides/barbarian-skills">ディアブロ4 バーバリアン</a>、
+    <a href="https://www.poe2wiki.net/wiki/Warcries">PoE2 の叫び</a>。
+    デストロイヤーの数値は古い版で、いまの数値とは違う。
+  </p>
+</main>
