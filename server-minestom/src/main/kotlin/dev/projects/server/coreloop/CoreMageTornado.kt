@@ -1,6 +1,5 @@
 package dev.projects.server.coreloop
 
-import dev.projects.server.particle.dust
 import net.kyori.adventure.text.format.TextColor
 import net.minestom.server.component.DataComponents
 import net.minestom.server.coordinate.Pos
@@ -14,7 +13,6 @@ import net.minestom.server.instance.Instance
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import net.minestom.server.item.component.CustomModelData
-import net.minestom.server.network.packet.server.play.ParticlePacket
 import net.minestom.server.timer.TaskSchedule
 import kotlin.math.PI
 import kotlin.math.cos
@@ -38,6 +36,11 @@ import kotlin.random.Random
  * sucked in and up, grass and stone blocks carried round, dust at the foot, and at the end the funnel comes undone from
  * the top while its pixels fly off like wind (short streaks, white and pale green, flung on round the spin, not falling).
  * Timing in ticks as the preview: start-up 8, the funnel 60, coming undone 14.
+ *
+ * Version 2 (2026-11-03): 藍 saw version 1 in the game「全部違うなこれ」「そもそもが違うから直そう」. Its loose bits were
+ * vanilla dust particles (soft, star-shaped, sizes all over the place: confetti, not pixels), and the funnel's pixels
+ * were coarse. Now every loose bit is a small sprite whose texel is 1/16 block (px_* in build_boss_vfx.py), the mark on
+ * the ground is a flat shader plate (marker 84 kind 2), and the funnel's coordinate map is four times finer.
  */
 internal object CoreMageTornado {
     private const val CH = 8
@@ -47,7 +50,6 @@ internal object CoreMageTornado {
     private const val QUAD = 4.8                // the billboard: 4.8 x 4.8 blocks, its foot on the ground
     private const val MARKER_B = 84
     private val LEAF = intArrayOf(0x3c8c28, 0x50a834, 0x2e6e1e)
-    private val SCATTER = intArrayOf(0xffffff, 0xd8ffe4, 0xd8ffe4, 0x7cce96, 0x7cce96, 0x9ce4b4, 0x56685a)
 
     private fun r(y: Double) = .28 + (max(0.0, y) / TOP).pow(1.35) * 1.55
     private fun wobX(y: Double, tt: Double) = (sin(y * 1.1 + tt * .22) * .3 + sin(y * 2.3 - tt * .13) * .1) * (y / TOP)
@@ -59,37 +61,31 @@ internal object CoreMageTornado {
         val instance = owner.instance ?: return
         val foot = Pos(at.x(), at.y(), at.z())
         var funnel: Entity? = null
+        var plate: Entity? = null
         val chunks = ArrayList<Entity>()
+        val bits = HashMap<Int, Entity>()
         var t = 0
-        owner.scheduler().buildTask(fun() {
-            if (owner.instance !== instance || t > CH + END + UNR + 20) { funnel?.remove(); chunks.forEach(Entity::remove); return }
-            tick(instance, foot, t, { funnel }, { funnel = it }, chunks)
+        lateinit var task: net.minestom.server.timer.Task
+        task = owner.scheduler().buildTask {
+            if (owner.instance !== instance || t > CH + END + UNR + 20) {
+                funnel?.remove(); plate?.remove(); chunks.forEach(Entity::remove); bits.values.forEach(Entity::remove); bits.clear(); chunks.clear()
+                task.cancel(); return@buildTask
+            }
+            tick(instance, foot, t, { funnel }, { funnel = it }, { plate }, { plate = it }, chunks, bits)
             t++
-        }).repeat(TaskSchedule.tick(1)).schedule()
+        }.repeat(TaskSchedule.tick(1)).schedule()
     }
 
-    private fun tick(instance: Instance, g: Pos, t: Int, funnel: () -> Entity?, setFunnel: (Entity?) -> Unit, chunks: MutableList<Entity>) {
+    private fun tick(instance: Instance, g: Pos, t: Int, funnel: () -> Entity?, setFunnel: (Entity?) -> Unit,
+                     ground: () -> Entity?, setGround: (Entity?) -> Unit, chunks: MutableList<Entity>, bits: MutableMap<Int, Entity>) {
         val a = t - CH
         val tt = t.toDouble()
-        val dots = ArrayList<Pair<Vec, Pair<Int, Float>>>()
-        fun dot(x: Double, y: Double, z: Double, color: Int, size: Float = .5f) { dots += Vec(g.x() + x, g.y() + y, g.z() + z) to (color to size) }
+        val want = ArrayList<Bit>()
+        fun bit(id: Int, x: Double, y: Double, z: Double, sprite: String, color: Int = 0xffffff) { want += Bit(id, Pos(g.x() + x, g.y() + y, g.z() + z), sprite, color) }
 
-        // the mark: a pale ring of dust closing in round the spot
-        if (t < CH) {
-            val rad = 3.5 - t * .05
-            val n = (rad * 6.28 * 5).toInt()
-            for (k in 0 until n) { if (rnd(t * 131 + k).nextDouble() > .6) continue; val an = k * 2 * PI / n; dot(cos(an) * rad, .05, sin(an) * rad, if (t % 2 == 1) 0x7cce96 else 0xa6e8ba) }
-        }
-        // the pull: short lines on the ground running inward, before and while the funnel stands
-        if (a < END + 2) {
-            val n = if (a < 0) 8 else 14
-            for (k in 0 until n) {
-                val R = rnd(60 + k); val an = R.nextDouble() * 6.28 + max(0, a) * .03
-                val d = 3.6 - ((max(0, t) * .22 + R.nextDouble() * 2.6) % 2.6)
-                if (d < .6) continue
-                for (q in 0 until 4) { val dd = d - q / 16.0; dot(cos(an) * dd, .05, sin(an) * dd, if (q == 3) 0xf2fff6 else 0x9ce4b4, .45f) }
-            }
-        }
+        // the mark and the pull: a flat shader plate on the ground (a ring of pixels closing in, lines running inward)
+        if (a < END + 2) { val p = ground() ?: spawnPlate(instance, g)?.also(setGround); p?.editEntityMeta(ItemDisplayMeta::class.java) { it.setItemStack(plateStack(t)) } }
+        else { ground()?.remove(); setGround(null) }
         // the funnel: grows from the ground at the white tick, stands, comes undone from the top
         val stand = when {
             a < 0 -> 0.0
@@ -103,7 +99,7 @@ internal object CoreMageTornado {
         // the white tick: white pixels thrown up and out
         if (a in 0..1) for (j in 0 until 24) {
             val R = rnd(140 + j); val an = R.nextDouble() * 6.28; val d = .3 + a * .5 + R.nextDouble() * .4
-            dot(cos(an) * d, .1 + R.nextDouble() * 1.4 + a * .6, sin(an) * d, 0xffffff)
+            bit(1000 + j, cos(an) * d, .1 + R.nextDouble() * 1.4 + a * .6, sin(an) * d, "px_dot1")
         }
         // leaves and grass bits: torn up round the area, sucked in along a spiral, carried up round the funnel
         for (j in 0 until 60) {
@@ -114,7 +110,7 @@ internal object CoreMageTornado {
             var y = .05 + (if (lc < 9) lc * .03 else .27 + (lc - 9) * .22); var rr = r0 * (1 - u) + r(y) * 1.05 * u
             if (y > TOP) continue
             if (a >= END) { val f = a - END; if (f >= 12) continue; rr += f * .18; y -= f * f * .012; if (y < .02) continue }
-            dot(wobX(y, tt) + cos(an) * rr, y, wobZ(y, tt) + sin(an) * rr, LEAF[j % 3], if (j % 5 == 0) .8f else .45f)
+            bit(2000 + j, wobX(y, tt) + cos(an) * rr, y, wobZ(y, tt) + sin(an) * rr, if (j % 5 == 0) "px_dot2" else "px_dot1", LEAF[j % 3])
         }
         // grass and stone blocks torn up and carried round and up; when it stops they drop, bounce once and sink
         while (chunks.size < 9 && a >= 0) chunks += spawnChunk(instance, g, chunks.size) ?: break
@@ -141,26 +137,72 @@ internal object CoreMageTornado {
         if (a >= 0 && a < END + 14) for (k in 0 until 6) {
             val an = k / 6.0 * 6.28 + a * .5; val e = max(0, a - END); val rr = .55 + (k % 2) * .35 + e * .06
             if (rnd(800 + k * 7 + a).nextDouble() > (if (e > 0) 1 - e / 14.0 else 1.0)) continue
-            dot(cos(an) * rr, .18 + (k % 3) * .12 + e * .05, sin(an) * rr, if (k % 2 == 1) 0xd8d0c0 else 0xa8a094, 1.4f)
+            bit(3000 + k, cos(an) * rr, .18 + (k % 3) * .12 + e * .05, sin(an) * rr, "px_puff", if (k % 2 == 1) 0xd8d0c0 else 0xa8a094)
         }
         // the scatter: where the funnel has come undone its pixels fly off like wind, on round the spin and out, a little
         // up, never falling; each a streak of 2-4 pixels along its way, shortening and thinning out
-        if (a >= END) for (j in 0 until 300) {
+        if (a >= END) for (j in 0 until 140) {
             val R = rnd(3000 + j); val yb = R.nextDouble() * TOP; val tb = END + (1 - yb / TOP) * UNR; val age = a - tb
             if (age < 0 || age >= 14) continue
             val r0 = r(yb); val an0 = R.nextDouble() * 6.28 + tb * .9; val sp = .8 + R.nextDouble() * .6; val r2 = R.nextDouble()
             val q = tb + CH
-            fun at(gg: Double): Vec { val an = an0 + sp * .35 * (1 - exp(-gg * .25)) / .25; val out = r0 + gg * (.1 + r2 * .08) + gg * gg * .006
-                return Vec(wobX(yb, q) + cos(an) * out, yb + gg * (.025 + r2 * .03), wobZ(yb, q) + sin(an) * out) }
+            val an = an0 + sp * .35 * (1 - exp(-age * .25)) / .25; val out = r0 + age * (.1 + r2 * .08) + age * age * .006
             if (age >= 8 && rnd(3500 + j + age.toInt()).nextDouble() < (age - 7) / 6) continue
-            val p = at(age); val dir = p.sub(at(max(0.0, age - .6))); val len = dir.length(); if (len < 1e-4) continue
-            val d = dir.div(len); val n = max(1, round((4 - age * .22) * (.7 + R.nextDouble() * .5)).toInt()); val col = SCATTER[j % SCATTER.size]
-            for (k in 0 until n) { val s = p.sub(d.mul(k / 16.0)); dot(s.x(), s.y(), s.z(), if (k == 0 && col != 0x56685a) 0xffffff else col, .45f) }
+            val n = max(2, round((4 - age * .22) * (.7 + R.nextDouble() * .5)).toInt()).coerceAtMost(4)
+            val dark = j % 7 == 6
+            bit(4000 + j, wobX(yb, q) + cos(an) * out, yb + age * (.025 + r2 * .03), wobZ(yb, q) + sin(an) * out,
+                if (dark) (if (n >= 3) "px_streak3d" else "px_streak2d") else "px_streak$n")
         }
-        // send the dots to everyone near
-        val near = instance.players.filter { it.position.distanceSquared(g) < 48.0 * 48.0 }
-        if (near.isEmpty()) return
-        for ((p, cs) in dots) { val packet = ParticlePacket(dust(cs.first, cs.second), p, Vec.ZERO, 0f, 1); near.forEach { it.sendPacket(packet) } }
+        // the loose pixels: one small sprite each, made, moved, or taken away to match this tick
+        val seen = HashSet<Int>()
+        for (b in want) {
+            seen += b.id
+            val e = bits[b.id] ?: spawnBit(instance, b)?.also { bits[b.id] = it } ?: continue
+            e.teleport(b.at)
+        }
+        bits.keys.filter { it !in seen }.forEach { bits.remove(it)?.remove() }
+    }
+
+    private class Bit(val id: Int, val at: Pos, val sprite: String, val color: Int)
+
+    private fun spriteStack(sprite: String, color: Int): ItemStack =
+        ItemStack.of(Material.PAPER).withItemModel("projects:boss_vfx/$sprite")
+            .with(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), emptyList(), listOf(TextColor.color(color))))
+
+    private fun spawnBit(instance: Instance, b: Bit): Entity? {
+        val viewers = instance.players.filter { CoreCombatPresentation.packed(it) && it.position.distanceSquared(b.at) < 48.0 * 48.0 }
+        if (viewers.isEmpty()) return null
+        val e = Entity(EntityType.ITEM_DISPLAY)
+        e.setHasPhysics(false); e.setNoGravity(true); e.setAutoViewable(false)
+        e.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
+            meta.setItemStack(spriteStack(b.sprite, b.color))
+            meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
+            meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.CENTER)
+            meta.setPosRotInterpolationDuration(1)
+            meta.setBrightness(15, 15); meta.setViewRange(1.0f)
+        }
+        e.setInstance(instance, b.at).thenRun { viewers.forEach(e::addViewer) }
+        return e
+    }
+
+    private fun plateStack(t: Int): ItemStack =
+        ItemStack.of(Material.PAPER).withItemModel("projects:boss_vfx/mage_ground")
+            .with(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), emptyList(),
+                listOf(TextColor.color(t.coerceIn(0, 255), 2, MARKER_B))))
+
+    private fun spawnPlate(instance: Instance, g: Pos): Entity? {
+        val viewers = instance.players.filter { CoreCombatPresentation.packed(it) && it.position.distanceSquared(g) < 48.0 * 48.0 }
+        if (viewers.isEmpty()) return null
+        val e = Entity(EntityType.ITEM_DISPLAY)
+        e.setHasPhysics(false); e.setNoGravity(true); e.setAutoViewable(false)
+        e.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
+            meta.setItemStack(plateStack(0))
+            meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
+            meta.setBrightness(15, 15); meta.setViewRange(1.0f)
+            meta.setScale(Vec(8.0, 8.0, 8.0))
+        }
+        e.setInstance(instance, g.add(0.0, .03, 0.0)).thenRun { viewers.forEach(e::addViewer) }
+        return e
     }
 
     private fun funnelStack(stand: Double): ItemStack =

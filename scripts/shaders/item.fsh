@@ -2,7 +2,8 @@
 #extension GL_ARB_separate_shader_objects : require
 
 // ProjectS combat VFX on vanilla 26.3 core/item. Independent markers, every other item renders as vanilla:
-// - メイジの竜巻 (CoreMageTornado.kt): tint blue == 84, green == 1, red == how much of the funnel stands; see mageFunnel.
+// - メイジの竜巻 (CoreMageTornado.kt): tint blue == 84; green 1 = the funnel (red = how much stands, see mageFunnel),
+//   green 2 = its mark on the ground (red = ticks since the cast, see mageGround).
 // - 黒翳竜 (scripts/build_boss_vfx.py): items whose tint is blue == 77, green == the effect kind (1..6). The
 //   texture is a data map (R = shape mask, G = flow coordinate along the effect, B = across), the tint red is the
 //   effect's progress (0..1, driven by the server every tick) and the colour is computed here: emissive, moving
@@ -285,6 +286,37 @@ vec4 mageFunnel(vec4 data, float stand) {
     return vec4(0.0);
 }
 
+// 竜巻's mark on the ground (marker 84, kind 2): a flat 8 x 8 block plate, the same coordinate map. tint red = ticks since
+// the cast (0..255). While the funnel starts up, a sparse ring of pale pixels closes in (radius 3.5); until it ends,
+// short pixel lines run inward over the ground (the pull). 16 px a block like everything else.
+vec4 mageGround(vec4 data, float tick) {
+    const float GW = 8.0;
+    float px = floor(data.b * GW * 16.0), pz = floor(data.g * GW * 16.0);
+    vec2 c = (vec2(px, pz) + .5) / 16.0 - GW * .5;
+    float dist = length(c), ang = atan(c.y, c.x);
+    float a = tick - 8.0;
+    if (tick < 9.0) {
+        float rr = 3.5 - tick * .05;
+        if (abs(dist - rr) < .5 / 16.0 + .01 && twHash(vec2(floor((ang + 3.1416) * rr * 16.0), tick)) < .6)
+            return vec4(mod(tick, 2.0) > .5 ? vec3(.486, .808, .588) : vec3(.651, .91, .729), 1.0);
+    }
+    if (a < 62.0) {
+        float T = GameTime * 24000.0;
+        float n = a < 0.0 ? 8.0 : 14.0;
+        for (int k = 0; k < 14; k++) {
+            if (float(k) >= n) break;
+            float an = twHash(vec2(float(k), 60.0)) * 6.2832 + max(0.0, a) * .03 - 3.1416;
+            float d = 3.6 - mod(T * .22 + twHash(vec2(float(k), 61.0)) * 2.6, 2.6);
+            if (d < .6) continue;
+            vec2 dir = vec2(cos(an), sin(an));
+            float along = dot(c, dir), side = abs(dot(c, vec2(-dir.y, dir.x)));
+            if (side < .5 / 16.0 && along <= d + .5 / 16.0 && along > d - 3.5 / 16.0)
+                return vec4(along < d - 2.5 / 16.0 ? vec3(.949, 1.0, .965) : vec3(.612, .894, .706), 1.0);
+        }
+    }
+    return vec4(0.0);
+}
+
 void main() {
     vec4 color = texture(Sampler0, texCoord0);
     int markerB = int(rawColor.b * 255.0 + .5);
@@ -311,8 +343,8 @@ void main() {
         finishUnlit(fx);
         return;
     }
-    if (markerB == 84 && kind == 1) {
-        vec4 fx = mageFunnel(color, rawColor.r);
+    if (markerB == 84 && (kind == 1 || kind == 2)) {
+        vec4 fx = kind == 1 ? mageFunnel(color, rawColor.r) : mageGround(color, rawColor.r * 255.0);
         if (fx.a < .5) {
             discard;
         }

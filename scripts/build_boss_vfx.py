@@ -202,6 +202,11 @@ def petal_curtain(u, v):
     return m * smooth(0, .15, u) * smooth(0, .15, 1 - u), u, 1 - v
 
 
+def ground(u, v):
+    """メイジの竜巻's mark on the ground (marker 84, kind 2): the same plain coordinate map, flat. G = along +Z, B = across."""
+    return 1.0, 1.0 - v, u
+
+
 def funnel(u, v):
     """メイジの竜巻 (CoreMageTornado.kt, marker 84): a plain coordinate map on an upright billboard. The shader draws the
     funnel itself from it; G = height (0 at the foot, 1 at the top), B = across (0 at the left)."""
@@ -215,7 +220,7 @@ SPRITES = {"slash": (128, 128, slash, "flat"), "war_slash": (128, 128, war_slash
            "sakura_crest": (128, 128, crest, "flat"), "sakura_ring": (128, 128, petal_ring, "flat"),
            "sakura_slash": (128, 128, petal_slash, "flat"), "sakura_trail": (32, 128, petal_trail, "flat"),
            "sakura_blossom": (64, 64, blossom, "upright"), "sakura_curtain": (64, 64, petal_curtain, "upright"),
-           "mage_funnel": (128, 128, funnel, "upright")}
+           "mage_funnel": (512, 512, funnel, "upright"), "mage_ground": (512, 512, ground, "flat")}
 
 
 def model(name, kind):
@@ -236,6 +241,42 @@ def model(name, kind):
     return {"ambientocclusion": False, "elements": [element],
             "textures": {"fx": {"sprite": f"projects:item/boss_vfx/{name}", "force_translucent": True},
                          "particle": f"projects:item/boss_vfx/{name}"}}
+
+
+# メイジの竜巻's loose pixels (CoreMageTornado.kt): small upright sprites in real colours, one texel = 1/16 block at
+# display scale 1, so they are the preview's one-pixel dots and streaks, not vanilla's soft dust. White ones are tinted
+# by the server (custom_model_data); none of the tints it uses is an item.fsh marker.
+PIXELS = {
+    "px_dot1": ["W"], "px_dot2": ["WW", "WW"],
+    "px_streak2": ["WG"], "px_streak3": ["WPG"], "px_streak4": ["WPGG"],
+    "px_streak2d": ["DD"], "px_streak3d": ["DDD"],
+    "px_puff": ["..WW..", ".WWWW.", "WWWWWW", "WWWWWW", ".WWWW.", "..WW.."],
+}
+PIXEL_COLOURS = {"W": (255, 255, 255, 255), "P": (216, 255, 228, 255), "G": (124, 206, 150, 255), "D": (86, 104, 90, 255)}
+
+
+def pixel_sprites(pack):
+    for name, rows in PIXELS.items():
+        im = Image.new("RGBA", (16, 16))
+        h, w = len(rows), len(rows[0])
+        x0, y0 = 8 - w // 2, 8 - h // 2
+        for y, row in enumerate(rows):
+            for x, c in enumerate(row):
+                if c != ".":
+                    im.putpixel((x0 + x, y0 + y), PIXEL_COLOURS[c])
+        tex = pack / f"assets/projects/textures/item/boss_vfx/{name}.png"
+        tex.parent.mkdir(parents=True, exist_ok=True)
+        im.save(tex)
+        face = {"texture": "#fx", "uv": [0, 0, 16, 16], "tintindex": 0}
+        files = {"models": {"ambientocclusion": False, "textures": {"fx": f"projects:item/boss_vfx/{name}", "particle": f"projects:item/boss_vfx/{name}"},
+                            "elements": [{"from": [0, 0, 8], "to": [16, 16, 8], "shade": False, "light_emission": 15,
+                                          "faces": {"north": face, "south": face}}]},
+                 "items": {"model": {"type": "minecraft:model", "model": f"projects:boss_vfx/{name}",
+                                     "tints": [{"type": "minecraft:custom_model_data", "index": 0, "default": 16777215}]}}}
+        for sub, value in files.items():
+            path = pack / f"assets/projects/{sub}/boss_vfx/{name}.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
 
 
 def light_probe(pack):
@@ -269,6 +310,7 @@ def build(pack=PACK):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
     light_probe(pack)
+    pixel_sprites(pack)
     # The arena glow (26.3 post effect, turned on per player by the server): our own namespace, no vanilla override.
     post = pack / "assets/projects/shaders/post"
     post.mkdir(parents=True, exist_ok=True)
