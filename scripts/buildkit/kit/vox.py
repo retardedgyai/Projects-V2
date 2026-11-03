@@ -77,7 +77,10 @@ def write(out_dir, extra=None):
         atlas.paste(im, ((i % cols) * 16, (i // cols) * 16)); index[n] = i
     atlas.save(os.path.join(out_dir, 'atlas.png'))
     pal, palidx, blocks = [], {}, []
+    def solid(b): return b is not None and b['s'] == 'full' and not any(k in b.get('t', '') for k in ('leaves', 'glass', 'ice', 'barrier'))
     for (x, y, zz), b in W.items():
+        if solid(b) and all(solid(W.get(p)) for p in ((x + 1, y, zz), (x - 1, y, zz), (x, y + 1, zz), (x, y - 1, zz), (x, y, zz + 1), (x, y, zz - 1))):
+            continue                                                       # 6面とも囲まれて見えない中身は書き出さない（ページが重くて固まった）
         key = json.dumps(b, sort_keys=True)
         if key not in palidx: palidx[key] = len(pal); pal.append(b)
         blocks.append([x, y, zz, palidx[key]])

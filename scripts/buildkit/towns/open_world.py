@@ -32,11 +32,11 @@ def mountains(x, z):
         d = math.hypot(x - px, (z - pz) * 1.15) / (pr * 1.7 * (0.8 + 0.4 * vnoise(x, z, 18, 61)))   # 裾を広く：勾配を1マスずつの段々に近づけ、雪の乗る上面を見せる
         if d < 1.8:
             sh = max(0.0, 1 - d / 1.8) ** 0.95                                         # 裾の広い山塊（細い牙にしない）
-            crag = (1 - abs(2 * fbm(x, z, 22, 81) - 1)) * 18 + (fbm(x, z, 9, 83) - 0.5) * 14   # 尾根と岩の起伏（なめらかな円錐にしない）
+            crag = (1 - abs(2 * fbm(x, z, 22, 81) - 1)) * 18 + (fbm(x, z, 16, 83) - 0.5) * 6    # 尾根の起伏。細かい揺れは弱く（強いと雪の段が市松模様になった）
             h = max(h, 0.72 * ph * sh + crag * sh)
     ridge = 1 - abs(2 * fbm(x, z, 36, 11) - 1)
     mf = smooth((-z - 50) / 60.0)
-    return terrace(h * (0.82 + 0.3 * ridge) + mf * 10 * ridge, x, z)
+    return h * (0.82 + 0.3 * ridge) + mf * 10 * ridge                      # 段にする式はやめた（段の高さを場所で変えると高さが途切れ、壁ができた）
 def terrace(m, x, z):
     """岩山を段にする：垂直な岩の板（高さ5〜12）と、雪の乗る狭い棚を交互に重ねる。段の高さと位置は場所でずらし、
     同心の輪にしない（らーなろっその尖った峰：RgH1E52D1cA 8:50「垂直な板が重なり、棚の雪が斜めの白い線になる」）。"""
@@ -53,12 +53,13 @@ def base(x, z):
     return h
 def nat(x, z):
     h = base(x, z)
-    if -75 <= z:                                                                   # 川の谷：川に向かって下がる
-        d = abs(x - river_x(z)); w = river_w(z)
-        if d > 4: h = min(h, w + 1 + (d - 4) * (0.35 + 0.4 * fbm(x, z, 30, 21)))
-    else:                                                                          # 川の源：谷は山の奥へ上りながら細っていく（谷の削りを途中で切ると高さ70の壁ができた）
-        d = abs(x - river_x(z)); w = river_w(-75) + (-75 - z) * 1.3
-        h = min(h, w + 1 + max(0, d - 4) * (0.6 + 0.5 * fbm(x, z, 30, 21)))
+    # 川の谷：川に向かって下がる。z=-75 より奥は、同じ式のまま底だけ上げて山へ上らせ、中心線を少しずつ揺らす
+    # （奥を別の式にすると境目で高さ35〜70の壁ができた）
+    t = smooth((-75 - z) / 30.0) if z < -75 else 0.0
+    cxr = river_x(max(z, -75)) + 10 * (vnoise(x * 0.2, z, 18, 24) - 0.5) * t
+    d = abs(x - cxr); w = river_w(max(z, -75))
+    up = max(0.0, -75 - z) * (1.1 + 0.8 * vnoise(x, z, 12, 25)) + 6 * fbm(x, z, 9, 26) * t
+    if d > 4 or z < -75: h = min(h, w + 1 + up + max(0.0, d - 4 * (1 - t)) * (0.35 + 0.4 * fbm(x, z, 30, 21) + 0.5 * t))
     lx, lz, lr, lw = LAKE
     dl = math.hypot(x - lx, (z - lz) * 1.2) - lr * (0.85 + 0.3 * vnoise(x, z, 9, 31))
     if dl < 10: h = min(h, lw + 1 + max(0, dl) * 0.5)
@@ -75,7 +76,9 @@ class World(Town):
     ・岩は石を地にして、安山岩・閃緑岩を大きな塊で入れる（細かく混ぜると斑点になる）。
     ・山すそは、岩と草の段々の間に土の厚い帯をはさむ。"""
     def snow(self, x, z, g): return g >= 44 + 8 * vnoise(x, z, 12, 41)
-    def foot(self, x, z, g): return 32 <= g < 44 + 4 * vnoise(x, z, 14, 49)
+    def foot(self, x, z, g):
+        if not 32 <= g < 44 + 4 * vnoise(x, z, 14, 49): return False
+        return max(abs(g - self.H.get((x + dx, z + dz), g)) for dx, dz in N4) <= 2       # 土の帯は緩い所だけ（急な壁に塗ると浮いた三角に見えた）
     def steep_top(self, x, z):
         g = self.H[(x, z)]
         if self.snow(x, z, g): return full('snow')

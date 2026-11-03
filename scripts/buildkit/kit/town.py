@@ -792,6 +792,8 @@ class Town:
             if (x, z) in canopy or self.town_zone(x, z) or not any(H.get((x + dx, z + dz), g) < g for dx, dz in N4): continue
             if get(x, g + 1, z) is None or get(x, g + 1, z)['s'] == 'cross':
                 put(x, g + 1, z, None); self.rock(x, z, g, rng)
+        for (x, y, z), b in list(W.items()):                                     # 岩に下を取られた背の高い草の上半分を消す
+            if b and b.get('t') == 'tall_grass_top' and (get(x, y - 1, z) or {}).get('t') != 'tall_grass_bottom': put(x, y, z, None)
 
     def rock(self, x, z, g, rng):
         """岩：芯の石を半分埋め、周りに石の階段とハーフ、苔の石を少し。大きい岩は芯を2〜3つ。"""
