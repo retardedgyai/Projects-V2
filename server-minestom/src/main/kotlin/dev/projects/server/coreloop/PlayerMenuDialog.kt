@@ -24,7 +24,7 @@ import kotlin.math.roundToInt
 
 /**
  * The player menu (冒険の手帳) drawn inside a vanilla dialog: the 自分 page, a name card with the four paths
- * (戦い・採取・鍛冶・魔術). The other tabs still open the existing screens. Picture: design/log.md 2026-11-02 and the
+ * (討伐・採取・鍛冶・魔術). The other tabs still open the existing screens. Picture: design/log.md 2026-11-02 and the
  * 「プレイヤーメニュー ダイアログ案」 page; look and positions: scripts/build_menu_dialog_assets.py.
  */
 internal class PlayerMenuDialog(
@@ -39,7 +39,7 @@ internal class PlayerMenuDialog(
     enum class Target { SKILLS, PASSIVES, STORAGE, JOURNAL, ATLAS, MASTERY, WORKSHOP, GRIMOIRE }
 
     private enum class Path(val id: String, val label: String, val target: Target, val button: String) {
-        COMBAT("combat", "戦い", Target.ATLAS, "地図台を開く"),
+        COMBAT("combat", "討伐", Target.ATLAS, "地図台を開く"),
         GATHER("gather", "採取", Target.MASTERY, "採取の育成を開く"),
         SMITH("smith", "鍛冶", Target.WORKSHOP, "工房を開く"),
         MAGIC("magic", "魔術", Target.GRIMOIRE, "魔術書を開く"),

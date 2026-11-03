@@ -59,7 +59,7 @@ STYLES = {"m6": ("m", 6), "m7": ("m", 7), "b7": ("b", 7), "b9": ("b", 9),
 C = dict(ink="#f1ece4", muted="#9b8f96", faint="#5c5258", gold="#f2c84b", heat="#ff9a4a", line=(255, 240, 230, 46),
          slot=(10, 7, 10, 190), slot_line=(255, 240, 230, 48))
 PATHS = [  # id, name, icon, colour
-    ("combat", "戦い", "class_warrior", "#ff9a4a"),
+    ("combat", "討伐", "class_warrior", "#ff9a4a"),
     ("gather", "採取", "ore", "#6fd0c0"),
     ("smith", "鍛冶", "ingot", "#ffd166"),
     ("magic", "魔術", "book", "#a98cf0")]
