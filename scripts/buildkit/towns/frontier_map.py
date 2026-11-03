@@ -128,32 +128,91 @@ vi = [i for i, s in enumerate(STYLE) if s == 'volcano'][0]
 vd = np.hypot(X - CX[vi], (Z - CZ[vi]) * 1.1)
 h += np.where(vd < 120, 70 * np.clip(1 - vd / 120, 0, 1) ** 1.3, 0) - np.where(vd < 38, 70 * np.clip(1 - vd / 38, 0, 1) ** 0.6, 0)
 
-# ================================================================ 3. 境目の尾根（Tier が上がる境ほど高い）と外周の山、南の海
-ti, tj = TIER[region], TIER[second]
-ridge_h = np.where(ti == tj, 16, 26 + 10 * np.abs(ti - tj)).astype(np.float32)
-ridge_h = np.where((STYLE_arr := np.array(STYLE))[region] == 'harbor', 10, ridge_h)
-ridge_w = 34.0
-ridge = ridge_h * np.clip(1 - border / ridge_w, 0, 1) ** 1.4 * (0.75 + 0.5 * noise(60, 6))
-pass_cut = np.clip(road_d / 26.0, 0, 1) ** 1.5                                          # 峠：道の所だけ尾根を刻む
-ridge *= pass_cut
-rim_d = np.minimum.reduce([X, N - 1 - X, Z])                                              # 東・西・北の外周
-rim = 95 * np.clip(1 - rim_d / 110.0, 0, 1) ** 1.3 * (0.7 + 0.6 * noise(80, 8))
-coast = 925 + (noise(120, 9) - 0.5) * 70
-coast = np.where(np.abs(X - 500) < 70, coast + 10, coast)                                # 港の入江は少し奥まで陸
-sea = Z > coast
-h = h + ridge + rim
-h = np.where(sea, SEA - 6 - np.clip(Z - coast, 0, 30) * 0.4, np.where(Z > coast - 25, np.minimum(h, SEA + 1 + (coast - Z) * 0.25), h))
+# ================================================================ 3. 山脈の骨：主脈（区域の境目と外周）→ 主峰 → 枝尾根 → 裾 [rules 68、Lord Dakr 0:35・2:00、Calven 28:00]
+def profile(dd, w, top):
+    """尾根の断面：尾根で尖り、幅 w で下に凸に下がり、幅の2倍まで緩い裾（前山）が続く。"""
+    s_ = np.clip(1 - dd / w, 0, 1)
+    sk = np.clip(1 - (dd - w) / w, 0, 1) ** 2 * 0.22
+    return top * np.where(dd < w, 0.22 + 0.78 * s_ ** 1.4, sk)
 
-# ================================================================ 4. 侵食（尾根と外周の山だけ）と、遊ぶ所を均す
-mount = (ridge + rim) > 10
-print('NaN', int(np.isnan(h).sum()))
+def seg_dist(ax, az, bx, bz, box=None):
+    dx, dz = bx - ax, bz - az; L2 = dx * dx + dz * dz or 1e-6
+    t = np.clip(((X - ax) * dx + (Z - az) * dz) / L2, 0, 1)
+    return np.hypot(X - (ax + dx * t), Z - (az + dz * t)), t
+
+ti, tj = TIER[region], TIER[second]
+STYLE_arr = np.array(STYLE)
+ridge_top = np.where(ti == tj, 22, 30 + 14 * np.abs(ti - tj)).astype(np.float32)          # Tier が上がる境ほど高い主脈
+ridge_top = np.where(STYLE_arr[region] == 'harbor', 12, ridge_top) * (0.7 + 0.6 * noise(70, 6))
+pass_cut = np.clip(road_d / 30.0, 0, 1) ** 1.5                                             # 峠：街道の所だけ刻む
+mount = profile(border, 26.0, ridge_top)
+rim_d = np.minimum.reduce([X, N - 1 - X, Z])                                                # 東・西・北の外周
+rim_top = 105 * (0.75 + 0.5 * noise(90, 8))
+mount = np.maximum(mount, profile(rim_d, 70.0, rim_top))
+
+# 主峰：主脈の上に、Tier の境ごとに1〜2本だけ突き出す。外周の北には一番高い峰。 [Calven 28:00「主峰を1〜2本」]
+prng = np.random.default_rng(11)
+peaks = []
+bmask = (border < 2) & (road_d > 70) & (rim_d > 60)
+for (i, j) in sorted({(min(a_, b_), max(a_, b_)) for a_, b_ in zip(region[bmask].tolist(), second[bmask].tolist())}):
+    cells = np.argwhere(bmask & (((region == i) & (second == j)) | ((region == j) & (second == i))))
+    if len(cells) < 30: continue
+    k = 1
+    for c in cells[prng.choice(len(cells), k, replace=False)]:
+        px_, pz_ = int(c[1]), int(c[0])
+        if math.hypot(px_ - 500, pz_ - 150) < 170: continue                                   # 火口のまわりは火山だけ
+        peaks.append((px_, pz_, 30 + 14 * abs(int(TIER[i]) - int(TIER[j])) + 8 * max(TIER[i], TIER[j]), 44, i, j))
+for (x_, z_) in [(250, 45), (500, 30), (760, 40), (40, 300), (960, 330), (30, 620), (970, 640)]:
+    peaks.append((x_, z_, 75 if z_ < 100 else 55, 50, -1, -1))
+spurs = []
+for (px, pz, ph, pr, i, j) in peaks:
+    mount = np.maximum(mount, profile(np.hypot(X - px, (Z - pz) * 1.1) * (0.85 + 0.3 * noise(40, 30)), pr, ph + float(rim_top[pz, px] if i < 0 else ridge_top[pz, px])))
+    # 枝尾根：峰から区域の中へ、主脈に対して 30〜60°で2〜3本。長さは区域の中心までの 4 割まで（遊ぶ所を塞がない）
+    for r_ in ([i, j] if i >= 0 else [int(region[min(N - 1, pz + 80) if pz < 500 else pz, min(N - 1, max(0, px))])]):
+        cx_, cz_ = CX[r_], CZ[r_]
+        base = math.atan2(cz_ - pz, cx_ - px)
+        for sgn in (-1, 1):
+            ang = base + sgn * math.radians(30 + 30 * prng.random())
+            L = min(55.0, 0.3 * math.hypot(cx_ - px, cz_ - pz))
+            spurs.append((px, pz, px + math.cos(ang) * L, pz + math.sin(ang) * L, ph * 0.75, ph * 0.15))
+for (px, pz, ph, pr, i, j) in list(peaks):                                                  # 大きな峰のまわりに小峰を3つ（尖りを和らげる） [Lord Dakr 4:30]
+    for k_ in range(2):
+        a_ = prng.uniform(0, 2 * math.pi); d_ = pr * prng.uniform(0.4, 0.6)
+        qx, qz = px + math.cos(a_) * d_, pz + math.sin(a_) * d_
+        mount = np.maximum(mount, profile(np.hypot(X - qx, Z - qz), pr * 0.45, ph * 0.5 + float(ridge_top[int(np.clip(qz, 0, N - 1)), int(np.clip(qx, 0, N - 1))])))
+for (ax, az, bx, bz, h0, h1) in spurs:
+    dd, t = seg_dist(ax, az, bx, bz)
+    mount = np.maximum(mount, profile(dd * (0.85 + 0.3 * noise(30, 31)), 12.0, (h0 + (h1 - h0) * t) * 0.8))
+mount *= np.where(rim_d < 60, 1.0, pass_cut)
+coast = 925 + (noise(120, 9) - 0.5) * 70
+coast = np.where(np.abs(X - 500) < 70, coast + 10, coast)                                  # 港の入江は少し奥まで陸
+sea = Z > coast
+h = h + mount
+h = np.where(sea, SEA - 6 - np.clip(Z - coast, 0, 30) * 0.4, np.where(Z > coast - 25, np.minimum(h, SEA + 1 + (coast - Z) * 0.25), h))
 h = np.nan_to_num(h, nan=float(SEA))
-print('高さの下地', round(time.time() - t0, 1), 's')
-h, flow = TE.erode_np(h.astype(np.float64), drops=int(mount.sum() * 1.5), mask=mount)
+print('山脈の骨', round(time.time() - t0, 1), 's', '峰', len(peaks), '枝尾根', len(spurs))
+
+# ================================================================ 4. 侵食を全体に2回（柔らかく長く → 硬く弱く）、緩い面を均す、遊ぶ所をならす [rules 69・71]
+land = ~sea
+h, flow = TE.erode_np(h.astype(np.float64), drops=int(land.sum() * 1.5), mask=land)
+h2, flow2 = TE.erode_np(h, drops=int(land.sum() * 0.6), seed=6, erode_rate=0.1, capacity=2.0, mask=land)
+h = h2; flow = flow + flow2
 h = TE.smooth_gentle_np(h, rounds=2).astype(np.float32)
-play = ((ridge + rim) < 6) & ~sea                                                         # 遊ぶ所：ジャンプなしで歩ける傾斜に
-for _ in range(3):
-    h = np.where(play, blur(h, 3), h)
+cliffw = cl * np.clip((road_d - 20) / 25, 0, 1) * (mount < 30)
+h = np.where(cliffw > 0.5, np.floor(h / 8) * 8 + np.clip((h % 8) - 6, 0, 2), h)               # 風穴の崖：高さ8の台地の段（見る崖）。道の近くは段にしない
+play = (mount < 16) & ~sea & ~(cliffw > 0.5)                                                  # 遊ぶ所：ジャンプなしで歩ける傾斜に
+for _ in range(2):
+    h = np.where(play, blur(h, 2), h)
+vf = FLOOR[vi]
+cone = vf + 75 * np.clip(1 - vd / 130, 0, 1) ** 1.2 * (0.9 + 0.2 * noise(20, 34))
+crater = vd < 46 + 6 * noise(15, 35)
+h = np.where(vd < 130, np.maximum(h, cone), h)
+cr = 46 + 6 * noise(15, 35)
+tw = np.clip((vd - cr) / 22.0, 0, 1); tw = tw * tw * (3 - 2 * tw)                             # 火口の内側の壁：縁から底へ 22 マスかけて下げる（まっすぐな円筒の壁にしない）
+h = np.where(vd < cr + 22, (vf + 22 + 3 * noise(10, 36)) * (1 - tw) + h * tw, h)          # 火口の底：平らな遊ぶ所
+h = np.where((vd < 130) & (road_d < 6), np.minimum(h, vf + 24 + np.clip(vd - 46, 0, 90) * 0.0), h)   # 街道は火口の縁を切って入る
+play |= crater
+flow_cut = np.quantile(flow[land], 0.92)
 print('侵食と均し', round(time.time() - t0, 1), 's')
 
 # ================================================================ 5. 街道を刻む（勾配は 1/4 まで、幅 5、両脇はなじませる）
@@ -244,11 +303,19 @@ G = {'water': 0, 'sand': 1, 'grass': 2, 'sakura': 3, 'marsh': 4, 'forest': 5, 'm
 style_g = {'harbor': 'grass', 'sakura': 'sakura', 'marsh': 'marsh', 'meadow': 'meadow', 'forest': 'forest',
            'highland': 'highland', 'cliffs': 'cliff', 'snow': 'snow', 'volcano': 'ash'}
 ground = np.array([G[style_g[s]] for s in STYLE])[region]
-snowline = 150 + (noise(50, 13) - 0.5) * 20
-ground = np.where((h > snowline) & (S < 45), G['snow'], ground)
-ground = np.where(S >= 45, np.where(h > snowline - 10, G['rock'], G['rock']), ground)
+# 雪：高さと傾きの段（5マス下がるごとに許す傾きを5°減らす）＋谷筋を流れ下る雪の筋。急な所（45°以上）は岩。
+# 雪原の砦は区域ごと雪原（緩い面）。 [rules 55・72・74、Lord Dakr 22:10、Calven 34:30]
+SL = 128 + (noise(50, 13) - 0.5) * 16
+snow = np.zeros((N, N), bool)
+for i in range(6): snow |= (h >= SL - 5 * i) & (S < 55 - 5 * i)
+snow |= (flow > flow_cut) & (h >= SL - 18) & (S < 70)
+snow |= (STYLE_arr[region] == 'snow') & (S < 40)
+snow &= ~((STYLE_arr[region] == 'volcano') & (mount < 40))                                # 火山は灰と玄武岩（雪は外周の高い峰だけ）
+ground = np.where(snow, G['snow'], ground)
+ground = np.where((S >= 45) & ~((flow > flow_cut) & (h >= SL - 18)), G['rock'], ground)
 ground = np.where((ground == G['ash']) & (vd < 60), G['basalt'], ground)
 ground = np.where((S >= 35) & (S < 45) & (ground != G['snow']), G['gravel'], ground)
+ground = np.where((h >= SL - 25) & (h < SL) & (S < 35) & (ground != G['snow']) & (noise(12, 33) > 0.55), G['gravel'], ground)   # 雪の線の下は砂利と粗い土がまだら
 ground = np.where((Z > coast - 10) & ~sea, G['sand'], ground)
 ground = np.where(on_road, G['road'], ground)
 ground = np.where(water, G['water'], ground)

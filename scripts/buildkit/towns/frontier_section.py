@@ -44,7 +44,7 @@ class Section(Town):
         if code == G['basalt']: return full('basalt_side', top='basalt_top') if m < 0.6 else full('blackstone')
         if code == G['ash']: return full('coarse_dirt') if m < 0.4 else full('tuff') if m < 0.6 else full('gravel') if m < 0.7 else grass()
         if code == G['marsh']: return full('mud') if m < 0.22 else full('podzol_side', top='podzol_top', bottom='dirt') if m < 0.35 else grass()
-        if code == G['cliff']: return full('coarse_dirt') if m < 0.3 else full('red_sand') if m < 0.38 else grass()
+        if code == G['cliff']: return full('coarse_dirt') if m < 0.22 else grass()                 # 橙の砂の斑点はやめた（汚く見えた）
         return grass()
 
     def steep_top(self, x, z): return self.ground_top(x, z, 'nat', self.H[(x, z)])
@@ -95,12 +95,14 @@ if __name__ == '__main__':
     X0, Z0 = max(2, cx - size // 2), max(2, cz - size // 2)
     X1, Z1 = min(997, X0 + size), min(997, Z0 + size)
     T = build(X0, Z0, X1, Z1); H = T.H
+    road = [(x, z) for (x, z), k in T.KIND.items() if k == 'lane' and abs(x - cx) + abs(z - cz) > 25]
+    ex, ez = min(road, key=lambda c: abs(math.hypot(c[0] - cx, c[1] - cz) - 45)) if road else (cx, min(Z1 - 5, cz + 40))   # 目の高さは街道の上から
     V = lambda x, y, z: [-x, y, z]
     mid = (X0 + X1) // 2, (Z0 + Z1) // 2
     gm = H[(cx, cz)]
     print(save('frontier_' + key, {
         'over': [V(mid[0], gm + 110, Z1 + 60), V(mid[0], gm, mid[1] - 20)],
         'top': [V(mid[0], gm + 260, mid[1] + 1), V(mid[0], gm, mid[1])],
-        'eye': [V(cx, H[(cx, min(Z1 - 5, cz + 40))] + 3, min(Z1 - 5, cz + 40)), V(cx, gm + 2, cz)],
+        'eye': [V(ex, H[(ex, ez)] + 3, ez), V(cx, gm + 4, cz)],
         'north': [V(cx, gm + 40, cz + 30), V(cx, gm + 30, Z0)],
     }, V(mid[0], gm, mid[1]), shadowR=180, fog=(260, 700)))
