@@ -95,17 +95,21 @@ ACTS = [(RX, TOP + 109), (RX, TOP + 126)]          # gold (raise), charcoal (equ
 ACT_W, BTN_H = 168, 14
 RESET = (RX, TOP + 144)
 # 自分
-SELF_WINS = [(0, 150), (156, 308)]                 # 名刺, 道
+SELF_WINS = [(0, 150), (156, 150), (312, 152)]     # 名刺, 道, 能力値 (藍 kept three windows of one width: two were lopsided)
 CARD = (4, WIN_Y + 4, 142, 32)                     # the harbour banner on the name card
 EMBLEM24 = (11, WIN_Y + 29)                        # the class emblem in its slot (slot 30 x 30 at -3)
 NAME = (46, WIN_Y + 47)                            # face + name baseline; the title 10 below
 KV = (8, WIN_Y + 70, 134, 11)                      # x, first baseline, width, step
 KV_LABELS = ["職", "冒険 Lv", "踏破", "技ポイント", "パッシブポイント", "銀貨"]
 EDIT = (8, WIN_Y + 147, 134)                       # charcoal button
-ROWS = [(161, WIN_Y + 13 + i * 38) for i in range(4)]   # 298 x 34 path banners, each one the way into its path
-ROW_W, ROW_H = 298, 34
-NOTICE = (8, WIN_Y + 140)                          # one short line above the edit button
-BAKED = "".join(SELF_TABS + COMBAT_TABS) + "".join(KV_LABELS) + "冒険の手帳いまの組奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨"
+ROWS = [(161, WIN_Y + 14 + i * 38) for i in range(4)]   # 140 x 35 path banners, each the way into its path
+ROW_W, ROW_H = 140, 35
+# 能力値: two groups of five, the labels baked; the values (CoreCombatSheet, as the gear tooltip shows them) drawn at the right.
+STAT_GROUPS = [("攻め", ["物理攻撃 AD", "魔法攻撃 AP", "攻撃速度", "会心率 / 倍率", "炎 / 氷 / 雷"]),
+               ("守り", ["最大HP", "最大マナ", "物理防御 AR", "魔法防御 MR", "追加軽減"])]
+STATS = (320, [WIN_Y + 28, WIN_Y + 107], 136, 11)   # x, each group's first baseline (its heading 13 above), width, step
+NOTICE = (8, WIN_Y + 139)                          # one short line above the edit button
+BAKED = "".join(SELF_TABS + COMBAT_TABS) + "".join(h + "".join(l) for h, l in STAT_GROUPS) + "".join(KV_LABELS) + "冒険の手帳いまの組奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨"
 
 def hexc(v, a=255):
     if isinstance(v, tuple):
@@ -425,10 +429,11 @@ def bake_skills(fonts):
 def bake_self(fonts):
     img = Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K)); d = ImageDraw.Draw(img)
     tabs_row(img, d, fonts, SELF_TABS, "自分")
-    (lx, lw), (mx, mw) = SELF_WINS
+    (lx, lw), (mx, mw), (rx, rw) = SELF_WINS
     window(img, d, fonts, lx, lw)
     x, y, w, h = CARD
     card = Image.open(ROOT / "assets/core-ui/menu-banners/card_harbor.png").convert("RGBA")
+    card = card.resize((w * K, round(card.height * w * K / card.width)), Image.LANCZOS)
     img.alpha_composite(card.crop((0, 0, w * K, h * K)), (x * K, y * K))
     slot_frame(img, EMBLEM24[0] - 3, EMBLEM24[1] - 3, 30, 30, on=True)
     kx, ky, kw, step = KV
@@ -441,7 +446,14 @@ def bake_self(fonts):
     for (x, y), (pid, name, colour) in zip(ROWS, PATHS):
         img.alpha_composite(banner(f"ban_{pid}", dim=pid == "magic"), (x * K, y * K))
         img.alpha_composite(nine(row_tile(), 4, ROW_W, ROW_H), (x * K, y * K))
-        draw_text(d, fonts, "b8", x + 7, y + 14, name, colour if pid != "magic" else C["muted"])
+        draw_text(d, fonts, "b8", x + 6, y + 13, name, colour if pid != "magic" else C["muted"])
+    window(img, d, fonts, rx, rw)
+    sx, tops, sw, step = STATS
+    for (head, labels), top in zip(STAT_GROUPS, tops):
+        draw_text(d, fonts, "b7", sx - 2, top - 13, head, C["ink"])
+        for i, label in enumerate(labels):
+            draw_text(d, fonts, "m6", sx, top + i * step, label, C["muted"])
+            tint(img, sx, top + i * step + 3, sx + sw, top + i * step + 3.5, C["line"])
     return img
 
 
@@ -519,7 +531,7 @@ def main() -> None:
                           "keys": [list(k) for k in KEYS], "grid": [list(g) for g in GRID], "ults": [list(u) for u in ULTS],
                           "rx": RX, "big": list(BIG), "bars": [list(b) for b in BARS], "barW": BAR_W, "dias": [list(x) for x in DIAS],
                           "acts": [list(a) for a in ACTS], "reset": list(RESET), "emblem24": list(EMBLEM24), "name": list(NAME),
-                          "kv": list(KV), "rows": [list(r) for r in ROWS], "rowW": ROW_W, "notice": list(NOTICE),
+                          "kv": list(KV), "rows": [list(r) for r in ROWS], "rowW": ROW_W, "rowH": ROW_H, "stats": [STATS[0], STATS[1][0], STATS[1][1], STATS[2], STATS[3]], "notice": list(NOTICE),
                           "edit": list(EDIT)}
         metrics["sizes"][tag] = size
         glyphs += len(sprites.providers)

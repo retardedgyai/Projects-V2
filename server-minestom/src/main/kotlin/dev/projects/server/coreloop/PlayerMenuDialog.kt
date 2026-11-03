@@ -23,8 +23,8 @@ import java.util.UUID
 import kotlin.math.roundToInt
 
 /**
- * The player menu (冒険の手帳) drawn inside a vanilla dialog, in the 7版 C look (港の窓): the 自分 page is the name
- * card and the four paths (戦闘・採取・鍛冶・魔術) as banners. A banner is the way into its path, whose tabs are that
+ * The player menu (冒険の手帳) drawn inside a vanilla dialog, in the 7版 C look (港の窓): the 自分 page is three
+ * windows, the name card, the four paths (戦闘・採取・鍛冶・魔術) as banners, and the 能力値. A banner is the way into its path, whose tabs are that
  * path's growth: 戦闘 is 技 (drawn here) and パッシブ; 採取 and 鍛冶 still open their existing screens until theirs exist. Picture: the 「プレイヤーメニュー
  * ダイアログ案」 page (7版 C); look and positions: scripts/build_menu_dialog_assets.py.
  */
@@ -126,6 +126,7 @@ internal class PlayerMenuDialog(
         tabs(canvas, layout, "self", listOf(null, "storage"))
         portrait(canvas, layout, player, account)
         paths(canvas, layout, player, account)
+        stats(canvas, layout, account)
         notices[player.uuid]?.let { val n = layout.getAsJsonArray("notice"); canvas.text("m6", n[0].asDouble, n[1].asDouble, it, HEAT) }
         return canvas.build()
     }
@@ -148,7 +149,7 @@ internal class PlayerMenuDialog(
         val name = layout.getAsJsonArray("name")
         val x = name[0].asDouble; val baseline = name[1].asDouble
         canvas.inline(x, baseline - 1, 8.0, head(player))
-        canvas.text("dot16", x + canvas.design(8.0) + 4, baseline + 3, fit(canvas, "dot16", player.username, 90.0), TEXT)
+        canvas.text("dot16", x + canvas.design(8.0) + 4, baseline + 3, fit(canvas, "dot16", player.username, 120.0), TEXT)
         val kv = layout.getAsJsonArray("kv")
         val right = kv[0].asDouble + kv[2].asDouble
         val clears = account.zoneRecords.values.sumOf { it.clears }
@@ -162,17 +163,36 @@ internal class PlayerMenuDialog(
         canvas.sprite("hit_edit", edit[0].asDouble, edit[1].asDouble, click("edit"))
     }
 
-    /** Right window: the four path banners (baked), each with its step and number, and each the way into its path. */
+    /** Middle window: the four path banners (baked), each with its step and number, and each the way into its path. */
     private fun paths(canvas: DialogCanvas, layout: JsonObject, player: Player, account: CoreAccount) {
         val rows = layout.getAsJsonArray("rows")
         val width = layout.get("rowW").asDouble
+        val height = layout.get("rowH").asDouble
         for (path in Path.entries) {
             val r = rows[path.ordinal].asJsonArray
             val x = r[0].asDouble; val top = r[1].asDouble
             val p = progress(player, account, path)
-            canvas.text("m6", x + 7, top + 27, fit(canvas, "m6", p.sub, 120.0), SOFT)
-            canvas.text("d9", x + width - 8, top + 21, p.short, if (path == Path.MAGIC) MUTED else TEXT, Align.RIGHT)
+            canvas.text("m6", x + 6, top + height - 6, fit(canvas, "m6", p.sub, width - 12), SOFT)
+            canvas.text("d9", x + width - 6, top + height / 2 + 5, p.short, if (path == Path.MAGIC) MUTED else TEXT, Align.RIGHT)
             canvas.sprite("hit_row", x, top, click("path_${path.ordinal}"), Component.text("${path.label}　${p.value}", TEXT))
+        }
+    }
+
+    /** Right window: the values beside the baked 能力値 labels, the same numbers the gear tooltip shows. */
+    private fun stats(canvas: DialogCanvas, layout: JsonObject, account: CoreAccount) {
+        val box = layout.getAsJsonArray("stats")
+        val right = box[0].asDouble + box[3].asDouble
+        val step = box[4].asDouble
+        val stats = CoreAffixCatalog.stats(account)
+        val sheet = CoreCombatSheet.from(account)
+        val groups = listOf(
+            listOf(CoreCombatMath.number(sheet.ad), CoreCombatMath.number(sheet.ap), CoreWeaponPresentation.attackSpeedLabel(account),
+                "${(stats.criticalChance * 1000).roundToInt() / 10.0}% / ${(stats.criticalMultiplier * 100).toInt()}%",
+                "${stats.fireFlat.toInt()} / ${stats.iceFlat.toInt()} / ${stats.lightningFlat.toInt()}"),
+            listOf("${CoreWeaponPresentation.health(account)}", CoreCombatMath.number(sheet.mana), CoreCombatMath.number(sheet.ar),
+                CoreCombatMath.number(sheet.mr), "${stats.mitigationPercent.toInt()}%"))
+        groups.forEachIndexed { g, values ->
+            values.forEachIndexed { i, value -> canvas.text("d7", right, box[1 + g].asDouble + i * step, value, TEXT, Align.RIGHT) }
         }
     }
 
