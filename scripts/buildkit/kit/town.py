@@ -547,7 +547,7 @@ class Town:
         return trees
 
     # ================================================================ 森の並べ方と地面 [rules/nature.md 28〜39]
-    TREE_R = {'oak': 4.6, 'birch': 3.0, 'cherry': 4.0, 'spruce': 4.0, 'small_spruce': 2.3, 'big': 9.0}
+    TREE_R = {'oak': 5.4, 'birch': 3.0, 'cherry': 4.0, 'spruce': 4.0, 'small_spruce': 2.3, 'big': 9.0}
 
     def trail(self, pts, w=3.0):
         """森の小道（踏み跡）：折れ線を幅 w で通す。縁はギザギザ。地面は ground_cover で塗る。 [rules 32]"""
@@ -597,6 +597,25 @@ class Town:
                     P.rest_spot(x, z, g, f); return (x, z)
         print('置けない rest_spot', (x0, z0)); return None
 
+    def trail_ends(self, lines):
+        """踏み跡の奥の端に、行き止まりの休み場を置く（端から2〜4マス、踏み跡の外の平らな所）。 [props.trail_end]"""
+        n = 0
+        for line in lines:
+            ex, ez = line[-1]
+            done = False
+            for rad in (2, 3, 4):
+                for (dx, dz) in ((rad, 0), (-rad, 0), (0, rad), (0, -rad), (rad, rad), (-rad, -rad)):
+                    x, z = int(ex) + dx, int(ez) + dz
+                    g = self.H.get((x, z))
+                    if g is None: continue
+                    for f in ('n', 's', 'e', 'w'):
+                        cs = self.cells_of(P.trail_end, x, z, g, f)
+                        if any(c in self.TRAIL for c in cs) or not self.spot_ok(cs, g, ('nat',)): continue
+                        P.trail_end(x, z, g, f); n += 1; done = True; break
+                    if done: break
+                if done: break
+        return n
+
     def _water_dist(self, reach=9):
         wet = [c for c, k in self.KIND.items() if k in ('river', 'stream', 'brook', 'lake') or self.in_water(*c)]
         d = {c: 0 for c in wet}; q = deque(wet)
@@ -644,6 +663,7 @@ class Town:
             gap = (-0.3 if k in ('spruce', 'small_spruce') else -1.0) if zone == 'dense' else 2 + 8 * _h(x, z, 84)
             if any(math.hypot(x - tx, z - tz) < R + tr + gap for (tx, tz, tr, tk) in near(x, z, R + 12)): continue
             trees.append((x, z, R, k)); grid.setdefault((x // 12, z // 12), []).append((x, z, R, k))
+            if zone == 'dense': self.TALL = getattr(self, 'TALL', set()); self.TALL.add((x, z))
         for (x, z, R, k) in trees:
             g = H[(x, z)]; sd = x * 7919 + z
             if k == 'spruce': TR.spruce(x, z, g, sd)
@@ -651,7 +671,7 @@ class Town:
             elif k == 'cherry': TR.cherry(x, z, g, sd)
             elif k == 'birch': TR.birch(x, z, g, sd)
             elif k == 'big': TR.big_tree(x, z, g, sd)
-            else: TR.oak(x, z, g, sd, R / self.TREE_R['oak'])
+            else: TR.oak(x, z, g, sd, R / self.TREE_R['oak'], tall=(x, z) in getattr(self, 'TALL', ()))
         self.TREES = trees
         # 茂み：森の縁から草地へ、6〜10マスおきに散らして薄くする。水際の草の帯の外にも。 [rules 31]
         bushes = 0
@@ -692,6 +712,20 @@ class Town:
                 c = (sx + dx, sz + dz)
                 if c not in cells and H.get(c) == g and get(c[0], g + 1, c[1]) is None and rng.random() < 0.5:
                     put(c[0], g, c[1], full('moss_block'))
+            ex, ez = cells[-1]                                                     # L字：端から横へ短い丸太 2〜3（One Team 11:20）
+            px, pz = (ax[1], ax[0])
+            for i in range(1, rng.randint(2, 3) + 1):
+                c = (ex + px * i, ez + pz * i)
+                if H.get(c) == g and self.KIND.get(c) == 'nat' and get(c[0], g + 1, c[1]) in (None,) or (H.get(c) == g and get(c[0], g + 1, c[1]) and get(c[0], g + 1, c[1])['s'] == 'cross'):
+                    put(c[0], g + 1, c[1], log(lt, 'x' if px else 'z'))
+                else: break
+            lx, lz = cells[len(cells) // 2][0] - px * 2, cells[len(cells) // 2][1] - pz * 2   # 反対側に2×2の葉の塊
+            for (dx, dz) in ((0, 0), (1, 0), (0, 1), (1, 1)):
+                c = (lx + dx, lz + dz)
+                if H.get(c) == g and (get(c[0], g + 1, c[1]) is None or get(c[0], g + 1, c[1])['s'] == 'cross'): put(c[0], g + 1, c[1], full('oak_leaves' if not sp else 'spruce_leaves'))
+            for (dx, dz, pl) in ((-1, -1, 'brown_mushroom'), (1, -1, 'fern'), (-1, 1, 'fern')):   # 足元にキノコとシダ
+                c = (sx + dx, sz + dz)
+                if H.get(c) == g and get(c[0], g + 1, c[1]) is None: put(c[0], g + 1, c[1], cross(pl))
             done += 1
         return done
 
@@ -730,13 +764,15 @@ class Town:
             beside = any((x + dx, z + dz) in trail for dx in (-2, 0, 2) for dz in (-2, 0, 2))
             mix = vnoise(x, z, 3, 97)
             want = 0.30 if (x, z) in root or beside else 0.22 if slope else 0.06
-            if (x, z) in conifer: want += 0.25
+            if (x, z) in conifer: want += 0.35                                   # 針葉樹の床は茶色を4〜5割（azrel 森）
             if mix < want:
                 r = _h(x, z, 98)
                 if (x, z) in conifer: put(x, g, z, PODZOL if r < 0.6 else full('coarse_dirt') if r < 0.85 else full('moss_block'))
                 elif slope: put(x, g, z, full('coarse_dirt') if r < 0.5 else full('gravel') if r < 0.7 else full('moss_block'))
                 else: put(x, g, z, full('moss_block') if r < 0.4 else full('coarse_dirt') if r < 0.7 else PODZOL)
             if above is not None: continue
+            if beside and any((x + dx, z + dz) in trail for dx, dz in N4 + ((1, 1), (-1, -1), (1, -1), (-1, 1))) and _h(x, z, 103) < 0.7 and get(x, g + 2, z) is None:
+                put(x, g + 1, z, cross('tall_grass_bottom')); put(x, g + 2, z, cross('tall_grass_top')); continue   # 踏み跡の脇は背の高い草で縁取る（Mr CozyCraft 1:20）
             dens = 0.78 if (x, z) in canopy or wd.get((x, z), 99) <= 3 else 0.36
             if vnoise(x, z, 4, 99) < dens and _h(x, z, 100) < 0.85:
                 put(x, g + 1, z, cross('fern' if (x, z) in canopy and _h(x, z, 101) < 0.45 else 'short_grass'))

@@ -44,7 +44,7 @@ GRASS = (0x91, 0xBD, 0x59); FOLIAGE = (0x77, 0xAB, 0x2F); SPRUCE = (0x61, 0x99, 
 WATER = (0x3F, 0x76, 0xE4)
 TINT = {'water_still': WATER, 'sugar_cane': GRASS, 'lily_pad': (0x20, 0x80, 0x30), 'oak_leaves': FOLIAGE, 'dark_oak_leaves': FOLIAGE, 'vine': FOLIAGE, 'spruce_leaves': SPRUCE,
         'short_grass': GRASS, 'tall_grass_bottom': GRASS, 'tall_grass_top': GRASS, 'fern': GRASS, 'grass_top': GRASS,
-        'birch_leaves': (0x80, 0xA7, 0x55)}
+        'birch_leaves': (0x80, 0xA7, 0x55), 'bush': FOLIAGE}
 
 def _tint(im, rgb):
     px = im.load(); out = im.copy(); po = out.load()

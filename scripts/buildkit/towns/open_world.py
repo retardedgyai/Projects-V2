@@ -145,10 +145,13 @@ for (cx, cz) in [(VX - 34, VZ - 4), (VX + 30, VZ + 34), (VX - 12, VZ - 36), (20,
 
 # ================================================================ 森と草
 def tree_kind(x, z, r):
+    """木の種類は帯で分ける：水際に白樺、中にオーク、奥と高い所にトウヒ。種類を交互に混ぜない（めいきゃん 19:11〜19:45）。"""
     g = H[(x, z)]
     if g >= 56: return None
-    if g >= 34 or z < -40: return 'spruce'
-    return 'big' if r < 0.02 else 'cherry' if r < 0.07 else 'birch' if r < 0.28 else 'oak' if r < 0.75 else 'spruce'
+    w = T.WD.get((x, z), 99) if hasattr(T, 'WD') else 99
+    if g >= 34 or z < -40 + 10 * vnoise(x, z, 30, 7): return 'spruce'
+    if w <= 9: return 'birch' if r < 0.85 else 'oak'
+    return 'big' if r < 0.015 else 'cherry' if r < 0.04 else 'birch' if r < 0.12 else 'oak'
 def skip(x, z):
     return tree_kind(x, z, 0.5) is None or KIND.get((x, z)) in ('flowers', 'stream') or abs(x - river_x(z)) < 7
 # 森の踏み跡：村 → 湖、湖 → 山すその森、館の丘 → 東の森、村 → 南の森。木は道の両脇2マスまで残す [rules 32]
@@ -158,6 +161,7 @@ T.trail([(HILL[0] + 22, HILL[1] + 6), (78, -6), (96, -26), (104, -52)], w=2.5)
 T.trail([(-48, 96), (-30, 112), (-6, 116), (16, 106)], w=2.5)
 print('trees, bushes', T.woods(skip=skip, kind=lambda x, z, r: tree_kind(x, z, r) or 'spruce'))
 print('fallen logs', T.fallen_logs(40))
+print('trail ends', T.trail_ends(T.TRAIL_LINES[1:]))
 print('lamps', sum(T.trail_lamps(l) for l in T.TRAIL_LINES[:2]), 'rest', T.rest_near(-62, 46), T.rest_near(-86, 26))
 T.ground_cover()
 

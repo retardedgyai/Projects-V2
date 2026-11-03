@@ -10,7 +10,7 @@
 木を置く前に、置ける所か（根元が平らで、上が空いているか）を呼ぶ側で確かめる。
 """
 import math, random
-from vox import put, get, full, log, stair, slab, trap, fence
+from vox import put, get, full, log, stair, slab, trap, fence, cross
 
 D8 = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
 FACE = {(1, 0): 'e', (-1, 0): 'w', (0, 1): 's', (0, -1): 'n'}
@@ -31,7 +31,9 @@ def spruce(x, z, g, seed, h=None):
     h = h or r.randint(13, 18)
     lt = 'spruce_leaves'
     for y in range(g + 1, g + h - 3): put(x, y, z, log('spruce_log'))                 # 幹は先の3段手前で止め、先は葉だけにする
-    y0, y1 = g + 3, g + h - 1
+    y0, y1 = g + max(3, h // 3), g + h - 1                                                 # 下の3分の1は枝を付けず、床と道を見通せるように（azrel 森）
+    for (dx, dz) in ((1, 0), (-1, 0), (0, 1), (0, -1)):                                  # 根元は苔むした色
+        if r.random() < 0.5 and get(x + dx, g, z + dz) is not None: put(x + dx, g, z + dz, full('moss_block'))
     for y in range(y0, y1 + 1):
         t = (y - y0) / max(1, y1 - y0)
         big = (y - y0) % 2 == 0
@@ -70,11 +72,10 @@ def small_spruce(x, z, g, seed):
 def _roots(x, z, g, r, logt, plank, n):
     """根：幹と同じ材料の階段とハーフを、地面に這わせる。"""
     dirs = r.sample([(1, 0), (-1, 0), (0, 1), (0, -1)], n)
-    for (dx, dz) in dirs:
-        for k in range(1, r.randint(1, 2) + 1):                                          # 根は横に寝かせた原木1〜2つ（明るい板の階段は箱に見える）
-            X, Z = x + dx * k, z + dz * k
-            if get(X, g + 1, Z) is not None and get(X, g + 1, Z)['s'] != 'cross': break
-            put(X, g + 1, Z, log(logt, 'x' if dx else 'z'))
+    for (dx, dz) in dirs:                                                                # 根は1マス、外へ下がる暗い階段（原木の十字に見せない）
+        X, Z = x + dx, z + dz
+        if get(X, g + 1, Z) is not None and get(X, g + 1, Z)['s'] != 'cross': continue
+        put(X, g + 1, Z, stair('spruce_planks' if 'birch' not in logt else 'birch_planks', FACE[(-dx, -dz)]))
 
 
 def _lens(cx, cy, cz, rad, r, dark, mid, light, flat=True):
@@ -144,30 +145,83 @@ def _dome(cx, cy, cz, W, Hh, r, leaves):
     return [(cx + int(round(lx)), cy + int(round(ly)), cz + int(round(lz))) for (lx, ly, lz, lr) in lumps[:-1]]
 
 
-def oak(x, z, g, seed, size=1.0, logt='oak_log', plank='oak', leaves=('dark_oak_leaves', 'oak_leaves', 'azalea_leaves')):
-    """広葉樹：幹は1〜2段ごとに横へずらし、根元は太い。冠は背の高い丸い山（幅8〜12・高さ7〜10）で、下の縁は地面から4〜5マス上。
-    幹の上で3〜5本の枝に分かれ、中ほどのこぶへ伸びる。 [rules 2・4・35]"""
+def oak(x, z, g, seed, size=1.0, logt='oak_log', plank='oak', leaves=('dark_oak_leaves', 'oak_leaves', 'azalea_leaves'), tall=False):
+    """広葉樹：卵形の冠（幅は高さの1.1〜1.3倍）、幹が見えるのは全高の約4分の1。
+    骨を先に作る：幹は原木で冠の中ほどまで上げ、枝の根元に階段のこぶ、そこから柵の枝を外へ上向きに伸ばす（原木は冠の外に出さない）。
+    葉は枝に触れる所にだけ付け、卵形の外形の中に収める。枝が無い所は空いて塊が分かれ、下面は枝先ごとに1〜2マス垂れたぎざぎざになる。
+    下と内側は暗い葉、上は明るい葉、中に苔を少し、上面にブッシュを点々と。 [rules 40〜44：LadazMC・Renly・AdieCraft]"""
     r = random.Random(seed)
-    W = r.uniform(8.0, 10.5) * size
-    Hh = W * r.uniform(0.8, 0.95)
-    base = int(round(r.uniform(3.5, 5.0) * min(1.2, size)))
-    th = base + int(Hh * 0.4)
+    CH = r.uniform(8.0, 10.0) * size                        # 冠の高さ
+    W = CH * r.uniform(1.1, 1.3)                             # 冠の幅
+    base = max(3, int(round(CH * (r.uniform(0.6, 0.75) if tall else r.uniform(0.38, 0.48)))))  # 冠の下の縁。森の中の木は幹を長く（めいきゃん 19:45）
+    c0 = g + base + 1                                        # 冠の下端
+    cy = c0 + CH / 2.0                                       # 冠の中心の高さ
     cx, cz = x, z
     lean = r.choice([(1, 0), (-1, 0), (0, 1), (0, -1), (0, 0)])
-    for i, y in enumerate(range(g + 1, g + th + 1)):
+    top = int(c0 + CH * 0.55)
+    for i, y in enumerate(range(g + 1, top + 1)):
         put(cx, y, cz, log(logt))
-        if size >= 1.15 and i < 2:                                                     # 根元を太く
+        if size >= 1.15 and i < 2:
             for (dx, dz) in ((1, 0), (0, 1)): put(cx + dx, y, cz + dz, log(logt))
-        if i in (2, 4) and lean != (0, 0) and r.random() < 0.6:                       # 1マスずらし、段差は階段で埋める
-            put(cx + lean[0], y, cz + lean[1], stair(plank + '_planks', FACE[(-lean[0], -lean[1])]))
-            cx += lean[0]; cz += lean[1]
+        if i == 2 and lean != (0, 0) and r.random() < 0.5:                         # 傾き：同じ高さに原木を横に並べて1マスずらす（明るい板は使わない）
+            put(cx + lean[0], y, cz + lean[1], log(logt)); cx += lean[0]; cz += lean[1]
+    bones = set((cx, y, cz) for y in range(c0, top + 1))
     tips = []
-    for i in range(r.randint(3, 5)):                                                   # 冠の下に見える枝
-        a = r.uniform(0, 2 * math.pi)
-        dx, dz = round(math.cos(a)), round(math.sin(a))
-        if (dx, dz) == (0, 0): dx = 1
-        _branch(cx, g + base - r.randint(0, 1), cz, dx, dz, max(2, int(W * 0.22)), 0.8, r, logt, plank, tips)   # 上向きに伸ばし、冠の中へ消す
-    _dome(cx, g + base + 1, cz, W, Hh, r, leaves)
+    n = r.randint(7, 10)
+    a0 = r.uniform(0, 2 * math.pi)
+    for i in range(n):
+        a = a0 + i * 2 * math.pi / n + r.uniform(-0.3, 0.3)
+        by = int(c0 + (top - c0) * (i % 3) / 2.0) + r.randint(0, 1)
+        dx, dz = math.cos(a), math.sin(a)
+        L = (W / 2.0 - 1.0) * (1.0 - 0.35 * (by - c0) / max(1, top - c0))     # 下の枝ほど長く、上は短く
+        sx, sz = int(round(cx + dx)), int(round(cz + dz))
+        if by >= c0 + 2 and get(sx, by, sz) is None: put(sx, by, sz, stair('spruce_planks', FACE.get((round(-dx), round(-dz)), 'n'), 'top'))   # 枝の根元のこぶは冠の中だけ（下に出すと棚に見えた）
+        px, py, pz = float(cx), float(by), float(cz)
+        steps = int(L * 1.6)
+        for k in range(steps):
+            px += dx * 0.65; pz += dz * 0.65; py += 0.35 + r.uniform(-0.15, 0.25)
+            X, Y, Z = int(round(px)), int(round(py)), int(round(pz))
+            if (X, Y, Z) in bones: continue
+            if math.hypot(X - cx, Z - cz) > W / 2.0 or Y > c0 + CH - 1: break
+            wood(X, Y, Z, fence('dark_oak_planks' if plank == 'oak' else plank + '_planks')); bones.add((X, Y, Z))   # 枝は幹の色に近い暗い柵
+        tips.append((X, Y, Z))
+    dark, mid, light = leaves
+    R = int(W / 2.0) + 2
+    for dy in range(-1, int(CH) + 2):
+        Y = c0 + dy
+        for dx in range(-R, R + 1):
+            for dz in range(-R, R + 1):
+                X, Z = cx + dx, cz + dz
+                e = math.hypot(dx / (W / 2.0), (Y - cy) / (CH / 2.0), dz / (W / 2.0)) if False else math.sqrt((dx / (W / 2.0)) ** 2 + ((Y - cy) / (CH / 2.0)) ** 2 + (dz / (W / 2.0)) ** 2)
+                if e > 1.0 + r.uniform(-0.1, 0.06): continue
+                near = min((abs(X - bx) + abs(Y - by) + abs(Z - bz) for (bx, by, bz) in bones), default=99)
+                t = (Y - c0) / CH
+                reach = 3.2 if t > 0.3 else 2.0                                   # 下の方は枝の近くだけ（ぎざぎざの下面）
+                if near > reach: continue
+                if t < 0.25 and not any(abs(X - tx) + abs(Z - tz) <= 2 and Y >= ty - 2 for (tx, ty, tz) in tips) and near > 1: continue
+                if get(X, Y, Z) is not None: continue
+                q = r.random()
+                if t < 0.3 or e < 0.55: lt = dark if q < 0.7 else mid
+                elif t > 0.65: lt = light if q < 0.5 else mid
+                else: lt = mid if q < 0.75 else dark
+                if e < 0.6 and q < 0.08: put(X, Y, Z, full('moss_block')); continue
+                put(X, Y, Z, full(lt))
+    for dx in range(-R, R + 1):                                                   # 冠の下の外周を1段垂らして庇にする（くつろぎ 17:12）
+        for dz in range(-R, R + 1):
+            if math.hypot(dx, dz) < W / 2.0 - 2.6 or r.random() > 0.65: continue
+            for Y in range(c0 - 1, int(c0 + CH)):
+                b = get(cx + dx, Y, cz + dz)
+                if b is not None and 'leaves' in b.get('t', ''):
+                    if get(cx + dx, Y - 1, cz + dz) is None: put(cx + dx, Y - 1, cz + dz, full(dark))
+                    break
+    for dx in range(-R, R + 1):                                                   # 上面にブッシュを点々と
+        for dz in range(-R, R + 1):
+            if r.random() > 0.12: continue
+            for Y in range(int(c0 + CH + 2), c0, -1):
+                b = get(cx + dx, Y, cz + dz)
+                if b is not None:
+                    if 'leaves' in b.get('t', '') and get(cx + dx, Y + 1, cz + dz) is None: put(cx + dx, Y + 1, cz + dz, cross('bush'))
+                    break
     _roots(x, z, g, r, logt, plank, 3 if size >= 1 else 2)
 
 

@@ -244,3 +244,17 @@ def rest_spot(x, z, g, f, flowers=('red_tulip', 'orange_tulip', 'cornflower', 'o
         cx, cz = at(x, z, f, j, 7)
         if get(cx, g + 1, cz) is None: put(cx, g + 1, cz, wall('cobbled_deepslate')); cells.append((cx, cz))
     return cells
+
+
+# ---- 踏み跡の行き止まりの休み場：切り株の上にランタン、横に寝かせた丸太の腰掛け、足元に花2〜3本とキノコ。
+#      小道の行き先になる。 [Mr CozyCraft 1:20 小道の突き当たりの空き地・One Team 小物の足元のキノコ]
+def trail_end(x, z, g, f):
+    cells = []
+    put(x, g + 1, z, log('spruce_log')); put(x, g + 2, z, LANTERN); cells.append((x, z))
+    for i in (1, 2):
+        cx, cz = at(x, z, f, 1, i - 1)
+        put(cx, g + 1, cz, log('oak_log', 'x' if f in ('n', 's') else 'z')); cells.append((cx, cz))
+    for (fw, rt, plant) in ((0, 1, 'brown_mushroom'), (-1, 0, 'oxeye_daisy'), (-1, 1, 'cornflower'), (0, -1, 'fern')):
+        cx, cz = at(x, z, f, fw, rt)
+        if get(cx, g + 1, cz) is None: put(cx, g + 1, cz, cross(plant))
+    return cells
