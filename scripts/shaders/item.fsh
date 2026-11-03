@@ -1,7 +1,8 @@
 #version 330
 #extension GL_ARB_separate_shader_objects : require
 
-// ProjectS combat VFX on vanilla 26.3 core/item. Two independent markers, every other item renders as vanilla:
+// ProjectS combat VFX on vanilla 26.3 core/item. Independent markers, every other item renders as vanilla:
+// - メイジの竜巻 (CoreMageTornado.kt): tint blue == 84, green == 1, red == how much of the funnel stands; see mageFunnel.
 // - 黒翳竜 (scripts/build_boss_vfx.py): items whose tint is blue == 77, green == the effect kind (1..6). The
 //   texture is a data map (R = shape mask, G = flow coordinate along the effect, B = across), the tint red is the
 //   effect's progress (0..1, driven by the server every tick) and the colour is computed here: emissive, moving
@@ -237,6 +238,53 @@ vec3 lightProbePixel(int x, int slot, int code, int palette) {
     return (local & 1) == 0 ? floatHigh(f) : vec3(float(floatBitsToUint(f) & 255u), 0.0, 0.0);
 }
 
+// メイジの竜巻 (marker 84, CoreMageTornado.kt; the preview is refs/mage-vfx/preview/src_tornado.js version 7, 藍
+// 「いいね　マシになった求台点だね」 2026-11-03). One upright billboard quad; the data map gives G = height, B = across. The
+// funnel is drawn here: 16 px a block, every pixel snapped to the 1/16-block grid on the funnel's surface. One-pixel wind
+// lines climb round it in stairs (a white head pixel), in uneven bands; dull dust pixels between, sandy near the
+// ground; denser toward the outline (the shading); the far side shows darker through the gaps. The lines turn and rise a
+// whole pixel at a time with GameTime, so they move between server ticks; the axis snakes. tint red = how much of the
+// funnel stands (0..1, the server grows it and undoes it from the top).
+const float TW_W = 4.8, TW_H = 4.8, TW_TOP = 4.4;
+float twHash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+vec4 twPattern(float ang, float r, float py, float y, float tt, float rim) {
+    float N = floor(6.2832 * r * 16.0);
+    float turn = floor(tt / 20.0 * (26.0 - y * 2.5)), rise = floor(tt / 20.0 * 7.0);
+    float px = mod(floor(ang * N) + turn, N), qy = py - rise;
+    float line = qy - floor(px / 2.0);
+    bool lineRow = mod(line, 3.0) < .5 && twHash(vec2(floor(line / 5.0), 9.0)) > .3;
+    float sh = px + twHash(vec2(line, 1.0)) * 97.0, seg = floor(sh / 28.0), along = mod(sh, 28.0);
+    float len = 10.0 + floor(twHash(vec2(line, seg + 2.0)) * 16.0);
+    if (lineRow && twHash(vec2(line, seg + 3.0)) < .65 + rim * .35 && along < len) {
+        vec3 g = vec3(.486, .808, .588) * (.75 + .25 * twHash(vec2(line, 5.0)));
+        return vec4(along > len - 1.0 ? vec3(1.0) : (along > len - 4.0 ? vec3(.847, 1.0, .894) : g), 1.0);
+    }
+    if (twHash(vec2(px, py) + vec2(3.1, 7.7)) < .2 + rim * .45) {
+        float k = twHash(vec2(px, py) + vec2(5.0, 2.0));
+        return vec4(mix(vec3(.337, .408, .353), vec3(.541, .51, .439), smoothstep(1.4, .2, y)) * (.7 + .3 * k), 1.0);
+    }
+    return vec4(0.0);
+}
+vec4 mageFunnel(vec4 data, float stand) {
+    float tt = GameTime * 24000.0;
+    float py = floor(data.g * TW_H * 16.0), y = py / 16.0;
+    float pxs = floor(data.b * TW_W * 16.0);
+    if (y > stand * TW_TOP) return vec4(0.0);
+    if (y > TW_TOP - .45 && twHash(vec2(pxs, py) + vec2(9.0, 1.0)) < (y - (TW_TOP - .45)) / .45) return vec4(0.0);
+    float x = (pxs + .5) / 16.0 - TW_W * .5;
+    float cx = (sin(y * 1.1 + tt * .22) * .3 + sin(y * 2.3 - tt * .13) * .1) * (y / TW_TOP);
+    float r = .28 + pow(max(0.0, y) / TW_TOP, 1.35) * 1.55;
+    float d = (x - cx) / r;
+    if (abs(d) > 1.0) return vec4(0.0);
+    float rim = smoothstep(.55, .95, 1.0 - sqrt(1.0 - d * d));
+    float s = asin(d) / 6.2832;
+    vec4 front = twPattern(fract(s), r, py, y, tt, rim);
+    if (front.a > .5) return front;
+    vec4 back = twPattern(fract(.5 - s), r, py, y, tt, rim);
+    if (back.a > .5) return vec4(back.rgb * .32, 1.0);
+    return vec4(0.0);
+}
+
 void main() {
     vec4 color = texture(Sampler0, texCoord0);
     int markerB = int(rawColor.b * 255.0 + .5);
@@ -258,6 +306,14 @@ void main() {
         vec4 fx = markerB == 77 && kind >= 7 ? heatCut(color, float(kind), rawColor.r)
             : shadeVfx(color, float(kind), rawColor.r, markerB == 79);
         if (fx.a < .01) {
+            discard;
+        }
+        finishUnlit(fx);
+        return;
+    }
+    if (markerB == 84 && kind == 1) {
+        vec4 fx = mageFunnel(color, rawColor.r);
+        if (fx.a < .5) {
             discard;
         }
         finishUnlit(fx);

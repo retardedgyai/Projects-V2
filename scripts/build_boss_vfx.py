@@ -202,13 +202,20 @@ def petal_curtain(u, v):
     return m * smooth(0, .15, u) * smooth(0, .15, 1 - u), u, 1 - v
 
 
+def funnel(u, v):
+    """メイジの竜巻 (CoreMageTornado.kt, marker 84): a plain coordinate map on an upright billboard. The shader draws the
+    funnel itself from it; G = height (0 at the foot, 1 at the top), B = across (0 at the left)."""
+    return 1.0, 1.0 - v, u
+
+
 SPRITES = {"slash": (128, 128, slash, "flat"), "war_slash": (128, 128, war_slash, "flat"), "ring": (64, 64, ring, "flat"), "beam": (32, 128, beam, "flat"),
            "beam_up": (128, 32, lambda u, v: beam(v, u), "upright"), "ring_up": (64, 64, ring, "upright"), "puff": (32, 32, puff, "upright"), "smoke": (32, 32, puff, "upright"), "disc": (32, 32, puff, "flat"),
            "curtain": (32, 64, curtain, "upright"),
            "sakura_streak": (16, 80, streak, "cross"),
            "sakura_crest": (128, 128, crest, "flat"), "sakura_ring": (128, 128, petal_ring, "flat"),
            "sakura_slash": (128, 128, petal_slash, "flat"), "sakura_trail": (32, 128, petal_trail, "flat"),
-           "sakura_blossom": (64, 64, blossom, "upright"), "sakura_curtain": (64, 64, petal_curtain, "upright")}
+           "sakura_blossom": (64, 64, blossom, "upright"), "sakura_curtain": (64, 64, petal_curtain, "upright"),
+           "mage_funnel": (128, 128, funnel, "upright")}
 
 
 def model(name, kind):
