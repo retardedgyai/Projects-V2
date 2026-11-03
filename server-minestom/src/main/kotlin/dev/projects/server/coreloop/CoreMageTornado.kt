@@ -138,8 +138,8 @@ internal object CoreMageTornado {
                 if (f >= 16) null else {
                     val y0 = min(hy, .1 + (END - st0) * .12); val an = an0 + (END - st0) * .3 + f * .08; val rr = r(y0) * 1.2 + f * .12
                     var y = y0 + .1 * f - .03 * f * f
-                    if (y < .12) { val gg = f - (.1 + sqrt(.01 + .12 * y0)) / .06; y = if (gg < 4) max(.12, .12 + .06 * gg - .03 * gg * gg) else .12 - (gg - 4) * .07 }
-                    if (y < -.2) null else Vec(cos(an) * rr, y, sin(an) * rr)
+                    if (y < .25) { val gg = f - (.1 + sqrt(.01 + .12 * y0)) / .06; y = if (gg < 4) max(.25, .25 + .06 * gg - .03 * gg * gg) else .25 - (gg - 4) * .07 }
+                    if (y < -.3) null else Vec(cos(an) * rr, y, sin(an) * rr)
                 }
             }
             if (p == null) m.teleport(g.add(0.0, -3.0, 0.0))
@@ -252,7 +252,7 @@ internal object CoreMageTornado {
             meta.setItemStack(ItemStack.of(if (i % 3 == 0) Material.STONE else Material.GRASS_BLOCK))
             meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
             meta.setPosRotInterpolationDuration(1)
-            meta.setScale(Vec(.25, .25, .25))
+            meta.setScale(Vec(.5, .5, .5))     // 藍「ブロックもっとでかくせん？これじゃちいさいな」(was .25)
         }
         e.setInstance(instance, g.add(0.0, -3.0, 0.0))
         return e
