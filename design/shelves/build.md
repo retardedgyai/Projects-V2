@@ -1,7 +1,7 @@
 # 建築の手本棚
 
 手本の動画・画像は `~/ProjectS/refs/build/` に置いたまま。決まりの全文は `~/ProjectS/refs/build/README.md` と `~/ProjectS/refs/build/rana/RULES.md`（らーなろっその22本から、2本以上に出た決まり28個）。
-組み立てと検査の道具は `~/ProjectS/refs/build/tools/`（Python でブロックを置き、HTML で回して見る。マイクラは起動しない）。
+組み立てと検査の道具は `scripts/buildkit/`（手順は `scripts/buildkit/README.md`。Python でブロックを置き、HTML で回して見る。マイクラは起動しない）。手本の動画と作業の記録は `~/ProjectS/refs/build/`。
 
 ## 手本
 
