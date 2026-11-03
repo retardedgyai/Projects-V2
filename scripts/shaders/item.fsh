@@ -248,21 +248,34 @@ vec3 lightProbePixel(int x, int slot, int code, int palette) {
 // funnel stands (0..1, the server grows it and undoes it from the top).
 const float TW_W = 4.8, TW_H = 4.8, TW_TOP = 4.4;
 float twHash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+// One stair line through (px, qy)? Lines climb a pixel every two round; every third is drawn, in uneven bands, broken
+// into runs of 10-25 pixels. along / len: where on its run the pixel is (the head is the last pixel).
+bool twLine(float px, float qy, float rim, out float along, out float len, out float line) {
+    line = qy - floor(px / 2.0);
+    if (mod(line, 3.0) > .5 || twHash(vec2(floor(line / 5.0), 9.0)) <= .3) return false;
+    float sh = px + twHash(vec2(line, 1.0)) * 97.0, seg = floor(sh / 28.0);
+    along = mod(sh, 28.0);
+    len = 10.0 + floor(twHash(vec2(line, seg + 2.0)) * 16.0);
+    return twHash(vec2(line, seg + 3.0)) < .65 + rim * .35 && along < len;
+}
+// The surface at (ang, r, py): a wind line pixel (bright pale green, a white head), its glow (a translucent pale pixel
+// just above and below it: the glow drawn in pixels, since the game has no bloom), or a loose dust pixel (pale and
+// translucent, so the funnel reads as light in daylight too, not as dirt; sandy near the ground). 2026-11-03: 藍 saw it
+// in the game「まるですべてが違うな」, dark dust pixels on a bright day; it should glow by day as by night (「そうだね」).
 vec4 twPattern(float ang, float r, float py, float y, float tt, float rim) {
     float N = floor(6.2832 * r * 16.0);
     float turn = floor(tt / 20.0 * (26.0 - y * 2.5)), rise = floor(tt / 20.0 * 7.0);
     float px = mod(floor(ang * N) + turn, N), qy = py - rise;
-    float line = qy - floor(px / 2.0);
-    bool lineRow = mod(line, 3.0) < .5 && twHash(vec2(floor(line / 5.0), 9.0)) > .3;
-    float sh = px + twHash(vec2(line, 1.0)) * 97.0, seg = floor(sh / 28.0), along = mod(sh, 28.0);
-    float len = 10.0 + floor(twHash(vec2(line, seg + 2.0)) * 16.0);
-    if (lineRow && twHash(vec2(line, seg + 3.0)) < .65 + rim * .35 && along < len) {
-        vec3 g = vec3(.486, .808, .588) * (.75 + .25 * twHash(vec2(line, 5.0)));
-        return vec4(along > len - 1.0 ? vec3(1.0) : (along > len - 4.0 ? vec3(.847, 1.0, .894) : g), 1.0);
+    float along, len, line;
+    if (twLine(px, qy, rim, along, len, line)) {
+        vec3 g = mix(vec3(.62, .92, .72), vec3(.78, 1.0, .84), twHash(vec2(line, 5.0)));
+        return vec4(along > len - 1.0 ? vec3(1.0) : (along > len - 5.0 ? vec3(.9, 1.0, .93) : g), 1.0);
     }
-    if (twHash(vec2(px, py) + vec2(3.1, 7.7)) < .2 + rim * .45) {
+    if (twLine(px, qy + 1.0, rim, along, len, line) || twLine(px, qy - 1.0, rim, along, len, line))
+        return vec4(.86, 1.0, .9, .38);
+    if (twHash(vec2(px, py) + vec2(3.1, 7.7)) < .08 + rim * .3) {
         float k = twHash(vec2(px, py) + vec2(5.0, 2.0));
-        return vec4(mix(vec3(.337, .408, .353), vec3(.541, .51, .439), smoothstep(1.4, .2, y)) * (.7 + .3 * k), 1.0);
+        return vec4(mix(vec3(.84, .95, .87), vec3(.9, .86, .74), smoothstep(1.4, .2, y)), .28 + .2 * k);
     }
     return vec4(0.0);
 }
@@ -280,10 +293,11 @@ vec4 mageFunnel(vec4 data, float stand) {
     float rim = smoothstep(.55, .95, 1.0 - sqrt(1.0 - d * d));
     float s = asin(d) / 6.2832;
     vec4 front = twPattern(fract(s), r, py, y, tt, rim);
-    if (front.a > .5) return front;
+    if (front.a > .99) return front;
+    // the far side shows through, faint (translucent, not darkened: dark reads as dirt by day)
     vec4 back = twPattern(fract(.5 - s), r, py, y, tt, rim);
-    if (back.a > .5) return vec4(back.rgb * .32, 1.0);
-    return vec4(0.0);
+    back.a *= .35;
+    return front.a > back.a ? front : back;
 }
 
 // 竜巻's mark on the ground (marker 84, kind 2): a flat 8 x 8 block plate, the same coordinate map. tint red = ticks since
@@ -345,7 +359,7 @@ void main() {
     }
     if (markerB == 84 && (kind == 1 || kind == 2)) {
         vec4 fx = kind == 1 ? mageFunnel(color, rawColor.r) : mageGround(color, rawColor.r * 255.0);
-        if (fx.a < .5) {
+        if (fx.a < .02) {
             discard;
         }
         finishUnlit(fx);
