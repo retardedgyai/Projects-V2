@@ -437,7 +437,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 event.isCancelled = true
                 return@addListener
             }
-            if (event.hand == PlayerHand.MAIN && useAction(event.player, event.itemStack)) event.isCancelled = true
+            // A held skill item (轟進, 全力の一振り) keeps being used until let go: PlayerCancelItemUseEvent releases it.
+            if (event.hand == PlayerHand.MAIN && useAction(event.player, event.itemStack) && !CoreLoopItems.heldSkill(event.itemStack)) event.isCancelled = true
         }
         events.addListener(PlayerStartDiggingEvent::class.java) { event ->
             val colony = colonies[event.player.uuid] ?: return@addListener
@@ -445,7 +446,11 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             event.isCancelled = true
             pickUpColonyItem(event.player, colony, event.blockPosition)
         }
-        events.addListener(PlayerCancelItemUseEvent::class.java) { event -> if (event.hand == PlayerHand.MAIN) questMaps.cancelGathering(event.player) }
+        events.addListener(PlayerCancelItemUseEvent::class.java) { event ->
+            if (event.hand != PlayerHand.MAIN) return@addListener
+            questMaps.cancelGathering(event.player)
+            actor(event.player)?.release()
+        }
         events.addListener(PlayerHandAnimationEvent::class.java) { event ->
             if (event.hand == PlayerHand.MAIN && event.player.itemInMainHand.getTag(CoreLoopItems.actionTag) == "weapon") actor(event.player)?.attack()
         }
@@ -694,8 +699,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             action == "currency" -> menus.affixes(player)
             action == "armor" -> menus.gearMods(player, CoreGearSlot.equipped(CoreLoopItems.gearSlot(item) ?: CoreGearSlot.CHEST))
             // The mage's staff casts the grand chant (CoreMageRules.GRAND); for the others the weapon casts slot 1.
-            action == "weapon" -> actor(player)?.let { it.skill(if (it.classId == CoreClass.MAGE) CoreMageRules.GRAND else 0) }
-            action?.startsWith("skill:") == true -> action.substringAfter(':').toIntOrNull()?.let { actor(player)?.skill(it) }
+            action == "weapon" -> actor(player)?.let { it.press(if (it.classId == CoreClass.MAGE) CoreMageRules.GRAND else 0, held = false) }
+            action?.startsWith("skill:") == true -> action.substringAfter(':').toIntOrNull()?.let { actor(player)?.press(it, CoreLoopItems.heldSkill(item)) }
             action == "potion" -> consume(player, CoreResource.POTION)
             action == "whetstone" -> consume(player, CoreResource.WHETSTONE)
         }

@@ -65,6 +65,47 @@ internal object CoreWarriorRules {
     const val FULL_SWING = "war_ult"  // 全力の一振り (ultimate, spends)
     const val ARMOR = "war_banner"    // 狂戦士の甲冑 (ultimate)
     const val AWAKEN = "war_awaken"   // 獣の目覚め (ultimate)
+    const val RUSH = "dash"           // 轟進 (builds, held)
+    /** Held down (the skill item is a consumable that never finishes); letting go releases them. */
+    val held = setOf(RUSH, FULL_SWING)
+
+    // Leaning on Lost Ark's Destroyer (Creator 2026-11-03: 「一旦デストロイヤーに寄せてみて」): spending pays a shield,
+    // a committed swing is not stopped, the enemies are pulled in rather than chased, the big blows are held.
+    /** A spender pays out a shield for the stacks it took (Destroyer's cores): this share of max HP per stack. */
+    const val BEAST_SHIELD_PERCENT_PER_STACK = 8.0
+    const val BEAST_SHIELD_TICKS = 120
+    /** While a spender is out, crowd control does not take hold and blows land at this share. */
+    const val SWING_DAMAGE_TAKEN = .7
+    /** 轟進: held, the warrior runs where it looks and carries what it meets; let go, the shoulder crashes. */
+    const val RUSH_MIN_TICKS = 6
+    const val RUSH_MAX_TICKS = 30
+    const val RUSH_SPEED = 9.0
+    const val RUSH_HIT_EVERY = 6
+    const val RUSH_HIT_MULTIPLIER = .3
+    const val RUSH_REACH = 2.4
+    const val RUSH_KNOCKBACK_MILLIS = 400L
+    /** 全力の一振り: held up to 2 s; the levels it reaches and what each multiplies; the lunge on release. */
+    val CHARGE_TICKS = listOf(20, 40)
+    val CHARGE_MULTIPLIER = listOf(1.0, 1.5, 2.2)
+    /** Ticks it may be held past full before it swings by itself. */
+    const val CHARGE_GRACE = 10
+    const val CHARGE_LUNGE = 8.0
+    /** 天落とし: the landing pulls in what stands within this. */
+    const val SKYFALL_PULL = 6.0
+    /** 大地崩し: planted this long, taking blows at this share; each blow grows the eruption (radius +1, damage +15%). */
+    const val ENDURE_TICKS = 30
+    const val ENDURE_DAMAGE_TAKEN = .5
+    const val ENDURE_GROWTH_MAX = 3
+    const val ENDURE_GROWTH_PERCENT = 15
+    /** 獣の目覚め (Destroyer's hypergravity): a shield, less taken, no crowd control; around, enemies slow and are drawn in; normal hits speed up. */
+    const val AWAKEN_SHIELD_PERCENT = 30.0
+    const val AWAKEN_DAMAGE_TAKEN = .8
+    const val AWAKEN_RADIUS = 6.0
+    const val AWAKEN_SLOW = .6
+    const val AWAKEN_HASTE_PER_HIT = .1
+    const val AWAKEN_HASTE_MAX = .5
+    /** 狂戦士の甲冑: the beast builds this many times as fast. */
+    const val ARMOR_BEAST_GAIN = 2.0
     /** 狂戦士の甲冑: faster moves and swings, and the health it burns each second (never below 1). */
     const val ARMOR_HASTE = 1.3
     const val ARMOR_BURN_PERCENT_PER_SECOND = 2.0
@@ -126,7 +167,7 @@ internal object CoreWarriorRules {
             "slam" -> slam(definition, n)
             FRENZY -> definition.copy(pulses = 2 + n)
             SKYFALL -> definition.copy(pulses = maxOf(1, n))
-            SHATTER -> definition.copy(radius = 4.0 + n, crowdMillis = 450L + 150L * n, stunAfterMillis = if (n == 3) 1600L else 0L)
+            SHATTER -> definition.copy(radius = 4.0 + n, crowdMillis = 600L + 200L * n)
             else -> definition
         }
     }

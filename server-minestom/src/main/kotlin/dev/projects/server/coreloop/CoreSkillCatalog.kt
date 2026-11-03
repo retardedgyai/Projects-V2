@@ -40,6 +40,12 @@ data class CoreSkillDefinition(
     }
     fun tooltip(sheet: CoreCombatSheet, journey: CoreJourney? = null): List<String> = buildList {
         add(description)
+        if (icon == CoreWarriorRules.ARMOR || icon == CoreWarriorRules.AWAKEN) {
+            // The warrior's buff ultimates: no damage, no allies' shield (SHIELD only places them in the catalog).
+            add(if (icon == CoreWarriorRules.AWAKEN) "獣：3つ使う（3つの時だけ使える）" else "獣：使わない")
+            add("マナ $mana / 再使用 ${CoreCombatMath.number(cooldownTicks(sheet.mods) / 20.0)}秒")
+            return@buildList
+        }
         add(when(motion) { CoreSkillMotion.HEAL -> "周囲の仲間を回復"; CoreSkillMotion.SHIELD -> "周囲の仲間へ障壁"; CoreSkillMotion.GUARD -> "防御姿勢 / ${type.label}"; else -> type.label })
         add("${formula.label()}${if(motion in setOf(CoreSkillMotion.HEAL, CoreSkillMotion.SHIELD)) " + 回復力100%" else ""}${if (pulses > 1) " × $pulses 回（1回ごと）" else ""}")
         val conversion = CoreSkillCatalog.healConversion(journey, sheet.mods)
@@ -48,12 +54,12 @@ data class CoreSkillDefinition(
         } else add("現在 ${CoreCombatMath.number(preview(sheet))}${if (pulses > 1) " / 全命中 ${CoreCombatMath.number(preview(sheet) * pulses)}" else ""}（装備・技能補正込み）")
         add(if(motion in setOf(CoreSkillMotion.HEAL,CoreSkillMotion.SHIELD)) "対象の被回復・星・守護聖人は別 / 障壁は最大HPの75%まで" else "敵防御・会心・弱点・固有効果・砥石は別計算")
         add(if (journey?.job == CoreClass.WARRIOR) when (icon) {
-                in CoreWarriorRules.spenders -> "獣：全部使う（0でも撃てる）"
-                CoreWarriorRules.AWAKEN -> "獣：3つの時だけ使える"
-                CoreWarriorRules.ARMOR -> "獣：使わない"
+                in CoreWarriorRules.spenders -> "獣：全部使う（0でも撃てる）。1つごとに最大HP${CoreCombatMath.number(CoreWarriorRules.BEAST_SHIELD_PERCENT_PER_STACK)}%の障壁"
                 else -> "獣：当たると1つ溜まる"
             }
             else "${journey?.job?.resourceName ?: "固有資源"}：必要 $spend / 命中で +$gain")
+        if (journey?.job == CoreClass.WARRIOR && icon in CoreWarriorRules.spenders)
+            add("出している間：CCが効かず、受けるダメージ-${CoreCombatMath.number((1 - CoreWarriorRules.SWING_DAMAGE_TAKEN) * 100)}%")
         add("マナ $mana / 再使用 ${CoreCombatMath.number(cooldownTicks(sheet.mods) / 20.0)}秒")
         add("発生 ${CoreCombatMath.number(startupTicks(sheet) / 20.0)}秒 / ${if (type == CoreDamageType.MAGICAL) "詠唱速度" else "攻撃速度"}で短縮")
         if(crowd != null) add("${crowd.label} ${CoreCombatMath.number(crowdMillis / 1000.0)}秒" +
@@ -146,7 +152,8 @@ object CoreSkillCatalog {
             if (gravity > 0) { radius *= 1 + gravity.coerceAtMost(10.0) * .1; power *= .8; notes += "重力MOD" }
         }
         return s.copy(formula = CoreDamageFormula(s.formula.base * power, s.formula.ad * power, s.formula.ap * power),
-            pulses = pulses.coerceAtMost(8), radius = radius.coerceAtMost(10.5),
+            // The 10.5 cap bounds what 余波 grows; it never shrinks a skill that is that wide by itself (全力の一振り, 12).
+            pulses = pulses.coerceAtMost(8), radius = if (radius > s.radius) radius.coerceAtMost(maxOf(10.5, s.radius)) else radius,
             description = s.description + if (notes.isEmpty()) "" else " / ${notes.joinToString("・")}適用")
     }
     private fun CoreSkillDefinition.cc(kind: CrowdControl, millis: Long) = copy(crowd = kind, crowdMillis = millis)
@@ -164,23 +171,23 @@ object CoreSkillCatalog {
             // 2026-10 rework (cooldown first): link 5s / heavy 10-12s / situational 16-20s / ultimate 60s.
             // The beast (CoreWarriorRules) never gates a skill: building skills feed it, the slam takes every stack.
             CoreClass.WARRIOR -> listOf(
-                s("轟進", "dash", "鉄塊の刃を突き出して突っ込み、敵を怯ませる。獣を溜める", CoreSkillMotion.LUNGE, 6.0, 1.2, mana=8, cd=100, startup=5).cc(CrowdControl.FLINCH, 300),
+                s("轟進", "dash", "押している間、見ている方へ走り続け（最大1.5秒）、ぶつかった敵を押して運ぶ。離すと肩から当たって吹き飛ばす。獣を溜める", CoreSkillMotion.LUNGE, 6.0, 1.2, mana=8, cd=100, startup=3).cc(CrowdControl.FLINCH, 300),
                 s("地割り", "slam", "溜めた獣を全部叩き込んで地を割る。獣が多いほど亀裂が長く、敵は高く打ち上がり長くスタン。獣3つなら亀裂の先でもう一度割れる。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE).cc(CrowdControl.AIRBORNE, 700).copy(stunAfterMillis = 1500),
                 // 狂乱 / 天落とし / 大地崩し (Creator 2026-10-23) take the dropped 押し薙ぎ / 根張り and the retired 返し刃's
                 // slots and ids, so their HUD art slots stay; their icons are still to be drawn.
-                s("狂乱", "whirl", "踏み込みながら続けて振り、最後は真上から振り下ろす。獣の数だけ振りが増える。振っている間は怯まない", CoreSkillMotion.CONE, 6.0, 1.1, mana=12, cd=200, startup=4, gain=0, radius=3.6).cc(CrowdControl.FLINCH, 300),
-                s("天落とし", "war_guard", "高く跳び上がって叩き落とす。着地の衝撃が輪になって外へ広がる。獣の数だけ輪が増える（最大3重）。空中で少し曲げられる", CoreSkillMotion.CONE, 14.0, 2.4, mana=15, cd=280, startup=6, gain=0, range=CoreWarriorLeap.MAX_REACH, radius=8.0).cc(CrowdControl.AIRBORNE, 600),
+                s("狂乱", "whirl", "踏み込みながら続けて振り、最後は真上から2倍の力で振り下ろす。獣の数だけ振りが増える", CoreSkillMotion.CONE, 4.0, .75, mana=12, cd=200, startup=4, gain=0, radius=3.6).cc(CrowdControl.FLINCH, 300),
+                s("天落とし", "war_guard", "高く跳び上がって叩き落とす。着地で周り6mの敵を足元へ引き寄せ、衝撃が輪になって外へ広がる。獣の数だけ輪が増える（最大3重）。空中で少し曲げられる", CoreSkillMotion.CONE, 14.0, 2.4, mana=15, cd=280, startup=6, gain=0, range=CoreWarriorLeap.MAX_REACH, radius=8.0).cc(CrowdControl.STUN, 500),
                 // 跳び叩き (Creator 2026-10-22) takes the retired 地走り's slot and id (CoreWarriorLeap).
                 s("跳び叩き", "war_wound", "狙った地点へ弧を描いて跳び、着地の周りを叩いて短くスタン。空中で少し曲げられる。獣を溜める", CoreSkillMotion.CONE, 6.0, 1.4, mana=10, cd=180, startup=4, range=CoreWarriorLeap.MAX_REACH, radius=CoreWarriorLeap.LANDING_RADIUS).cc(CrowdControl.STUN, 600),
-                s("大地崩し", "war_counter", "大剣を地面に突き立て、周り一面の地面を砕いて敵をまとめて打ち上げる。獣が多いほど広く高い", CoreSkillMotion.NOVA, 12.0, 2.0, mana=15, cd=320, startup=14, gain=0, radius=5.0).cc(CrowdControl.AIRBORNE, 600),
+                s("大地崩し", "war_counter", "大剣を地面に突き立てて1.5秒踏ん張り、周りの敵を引きつける。その間は受けるダメージが半分で、受けた打撃の数だけ（最大3）割れが広く重くなる。最後に周り一面を砕いて敵を転ばせる。獣が多いほど広い", CoreSkillMotion.NOVA, 16.0, 2.4, mana=15, cd=320, startup=4, gain=0, radius=5.0).cc(CrowdControl.STUN, 600),
                 // 引き摺り (Creator 2026-10-23) takes the retired 雄叫び's slot and id.
                 s("引き摺り", "war_cry", "大剣を片手で引きずって2秒歩く（自分で動ける）。刃に触れた雑魚は引っかかってついて来て、最後の振り抜きでまとめて叩きつける。獣を溜める", CoreSkillMotion.CONE, 10.0, 1.8, mana=12, cd=240, startup=3, radius=3.6).cc(CrowdControl.STUN, 700),
                 // 斬り上げ (Creator 2026-10-23) takes the retired 破城突き's slot and id.
                 s("斬り上げ", "war_breach", "大剣を引きずって真上へ振り上げ、正面の敵を高く打ち上げる。ジャンプを押していれば自分も追って跳ぶ。打ち上げた敵に地割りを当てると叩き落とし。獣を溜める", CoreSkillMotion.CONE, 9.0, 1.8, mana=10, cd=180, startup=8, radius=3.4).cc(CrowdControl.AIRBORNE, 1200),
                 // Ultimates (Creator 2026-10-23): 全力の一振り, 狂戦士の甲冑 and 獣の目覚め. The warrior alone has three.
-                s("全力の一振り", "war_ult", "大剣を担いで溜め（押している間、最大2秒）、離すと真上から渾身の一振り。地面が前へ大きく割れ、線上を打ち上げる。溜め中は怯まない。獣を全部使う", CoreSkillMotion.CONE, 30.0, 4.0, mana=20, cd=1200, startup=10, gain=0, radius=12.0, ult=true).cc(CrowdControl.AIRBORNE, 1000),
-                s("狂戦士の甲冑", "war_banner", "10秒間、体から血が流れ、鼓動のたびに血しぶきが散る。CCも怯みも効かず、動きと振りが速くなり、獣が満ちたまま減らない。代わりに体力が毎秒2%ずつ減る（1で止まる）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=20, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
-                s("獣の目覚め", "war_awaken", "獣3つの時だけ使える。8秒間、獣が減らず、獣を使う技の再使用が半分になる", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=15, cd=1200, startup=2, gain=0, radius=0.0, duration=160, ult=true))
+                s("全力の一振り", "war_ult", "大剣を担いで溜め（押している間、最大2秒。1秒で1.5倍、2秒で2.2倍）、離すと踏み込んで真上から渾身の一振り。地面が前へ大きく割れ、線上を打ち上げる。獣を全部使う", CoreSkillMotion.CONE, 30.0, 4.0, mana=20, cd=1200, startup=4, gain=0, radius=12.0, ult=true).cc(CrowdControl.AIRBORNE, 1000),
+                s("狂戦士の甲冑", "war_banner", "10秒間、体から血が流れ、鼓動のたびに血しぶきが散る。CCも怯みも効かず、動きと振りが速くなり、獣が2倍の速さで溜まる。代わりに体力が毎秒2%ずつ減る（1で止まる）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=20, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
+                s("獣の目覚め", "war_awaken", "獣3つを使って8秒の超重力に入る。最大HP30%の障壁、受けるダメージ-20%、CCが効かない。周り6mの敵は遅くなり、少しずつ引き寄せられる。通常攻撃は当てるたびに速くなる（最大+50%）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=15, cd=1200, startup=2, gain=0, radius=0.0, duration=160, ult=true))
             // 2026-10-27 rework (docs/development/mage-rework.md): fire, ice, lightning and wind, every spell one button.
             // Spells mix on the ground (CoreMageField) and carve the sigil circle the grand chant (大詠唱, the staff,
             // CoreMageRules) releases. Slots keep the old art; the retired 氷の庭 keeps index 5 for saves, so the mage

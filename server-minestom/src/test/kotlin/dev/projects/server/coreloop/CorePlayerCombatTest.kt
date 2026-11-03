@@ -95,7 +95,8 @@ class CorePlayerCombatTest {
 
     @Test fun `training refill clears costs but never repeats the single thrust`() = arena(bossDistance = 2.0) { h ->
         h.actor.skill(0)
-        repeat(4) { h.actor.refillTraining(); h.ticks(1) }
+        // 轟進 tapped: the shortest run, then the crash.
+        repeat(2 + CoreWarriorRules.RUSH_MIN_TICKS) { h.actor.refillTraining(); h.ticks(1) }
         assertEquals(300.0, h.bossHealth())
         repeat(3) { h.actor.refillTraining(); h.ticks(1) }
         val after = h.bossHealth(); assertTrue(after < 300.0)
@@ -226,17 +227,18 @@ class CorePlayerCombatTest {
     }
 
     @Test
-    fun `lunge spends mana once hits after startup and respects its cooldown`() = arena { h ->
+    fun `the rush spends mana once crashes when the tap's short run ends and respects its cooldown`() = arena { h ->
         h.actor.skill(0)
         h.actor.skill(0)
         assertEquals(92, h.actor.mana)
         assertEquals(5L, h.actor.cooldownSeconds(0))
         h.ticks(4)
-        assertEquals(300.0, h.bossHealth())
+        assertTrue(h.player.velocity.z() > 5.0, "running: ${h.player.velocity}")
+        h.ticks(4)
+        assertEquals(300.0, h.bossHealth()) // a boss takes only the crash
         h.ticks(1)
         assertEquals(279.6, h.bossHealth(), 0.00001)
-        assertTrue(h.player.position.z() > 10.6)
-        h.ticks(11)
+        h.ticks(7)
         val manaDuringCooldown = h.actor.mana
         h.actor.skill(0)
         assertEquals(manaDuringCooldown, h.actor.mana)
@@ -248,10 +250,11 @@ class CorePlayerCombatTest {
     }
 
     @Test
-    fun `lunge stops before a close enemy and still connects instead of passing through`() = arena(bossDistance = 1.5) { h ->
-        h.actor.skill(0)
-        h.ticks(5)
-        assertEquals(9.0, h.player.position.z(), 0.00001)
+    fun `the rush runs while held and crashes when let go`() = arena(bossDistance = 1.5) { h ->
+        h.actor.press(0, held = true)
+        h.ticks(20)
+        assertEquals(300.0, h.bossHealth(), 0.00001) // still running
+        h.actor.release(); h.ticks(1)
         assertEquals(279.6, h.bossHealth(), 0.00001)
         h.ticks(15)
         assertEquals(279.6, h.bossHealth(), 0.00001)
@@ -1025,7 +1028,35 @@ class CorePlayerCombatTest {
         val id = h.combat.combatTargets().single().id
         h.actor.skill(2); h.ticks(40)
         assertEquals(0.0, h.actor.resource)
-        assertEquals(100.0 - 5 * 4.0 - 3 * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT * 5, h.combat.breakGauge(id)!!, .0001) // five swings
+        // Five swings share one cast's break.
+        assertEquals(100.0 - 4.0 - 3 * CoreWarriorRules.BEAST_BREAK_PER_STACK_SPENT, h.combat.breakGauge(id)!!, .0001)
+    }
+
+    @Test fun `the full swing hits harder the longer it is held`() {
+        fun swing(holdTicks: Int): Double {
+            var taken = 0.0
+            arena(bossDistance = 3.0) { h ->
+                assertEquals(CoreWarriorRules.FULL_SWING, h.actor.skillDefinitions[4].icon)
+                h.actor.press(4, held = holdTicks > 0)
+                h.ticks(4 + holdTicks); h.actor.release(); h.ticks(2)
+                taken = 300.0 - h.bossHealth()
+            }
+            return taken
+        }
+        val tap = swing(0); val full = swing(CoreWarriorRules.CHARGE_TICKS.last())
+        assertTrue(tap > 0.0)
+        assertEquals(CoreWarriorRules.CHARGE_MULTIPLIER.last(), full / tap, 1e-6)
+    }
+
+    @Test fun `a spender pays its stacks out as a shield and is not stopped while it swings`() = arena(bossDistance = 2.5) { h ->
+        h.actor.classState.gain(3.0, h.journey.job)
+        h.actor.skill(2); h.ticks(1)
+        assertEquals(h.actor.maxHealth * 3 * CoreWarriorRules.BEAST_SHIELD_PERCENT_PER_STACK / 100.0, h.actor.classState.shield, 1e-9)
+        assertEquals(0, h.actor.receiveCrowdControl(CrowdControl.STUN, 2000, null))
+        h.actor.classState.shield = 0.0
+        val before = h.actor.health
+        h.actor.hurt(10.0, CoreDamageType.TRUE)
+        assertEquals(10.0 * CoreWarriorRules.SWING_DAMAGE_TAKEN, before - h.actor.health, 1e-9)
     }
 
     @Test fun `skyfall sends one ring per stack out from where it lands`() = arena { h ->
@@ -1043,12 +1074,18 @@ class CorePlayerCombatTest {
         assertTrue(afterFirst >= h.combat.breakGauge(id)!!)
     }
 
-    @Test fun `shatter launches everything round the planted blade`() = arena { h ->
+    @Test fun `shatter is planted, takes blows at half, and erupts all round grown by them`() = arena { h ->
         h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 5)); h.actor.reset()
         h.actor.classState.gain(3.0, h.journey.job)
         val id = h.combat.combatTargets().single().id
         h.player.teleport(h.player.position.withView(180f, 0f)) // facing away: it is all round, not a cone
-        h.actor.skill(3); h.ticks(16)
+        h.actor.skill(3); h.ticks(6)
+        h.actor.classState.shield = 0.0
+        val before = h.actor.health
+        h.actor.hurt(10.0, CoreDamageType.TRUE)
+        assertEquals(10.0 * CoreWarriorRules.ENDURE_DAMAGE_TAKEN, before - h.actor.health, 1e-9)
+        assertEquals(100.0, h.combat.breakGauge(id)!!) // still planted
+        h.ticks(CoreWarriorRules.ENDURE_TICKS)
         assertTrue(h.combat.breakGauge(id)!! < 100.0)
     }
 
@@ -1083,7 +1120,7 @@ class CorePlayerCombatTest {
         assertTrue(h.actor.cooldownRemaining(3) > 0)
     }
 
-    @Test fun `the awakening needs three stacks and then keeps them while spenders cool twice as fast`() = arena { h ->
+    @Test fun `the awakening takes three stacks into a hypergravity that shields and hardens without a free beast`() = arena { h ->
         h.journey = CoreJourney.legacy(build = CoreClassBuild(ultimate = 2)); h.actor.reset()
         assertEquals(CoreWarriorRules.AWAKEN, h.actor.skillDefinitions[4].icon)
         h.actor.skill(4); h.ticks(1)
@@ -1091,9 +1128,11 @@ class CorePlayerCombatTest {
         h.actor.classState.gain(3.0, h.journey.job)
         h.actor.skill(4); h.ticks(4)
         assertTrue(h.actor.awakened)
+        assertEquals(0.0, h.actor.resource) // the three went into it
+        assertEquals(h.actor.maxHealth * CoreWarriorRules.AWAKEN_SHIELD_PERCENT / 100.0, h.actor.classState.shield, 1e-9)
+        assertEquals(0, h.actor.receiveCrowdControl(CrowdControl.STUN, 2000, null))
         h.actor.skill(1); h.ticks(12)
-        assertEquals(3.0, h.actor.resource) // the slam took all three and kept them
-        assertTrue(h.actor.cooldownRemaining(1) <= h.actor.cooldownTicks(1) / 2)
+        assertTrue(h.actor.cooldownRemaining(1) > h.actor.cooldownTicks(1) / 2) // spenders cool as usual
     }
 
     @Test fun `the berserker armor shrugs off crowd control and staggers and burns health down to one`() = arena { h ->
@@ -1103,7 +1142,7 @@ class CorePlayerCombatTest {
         assertTrue(h.actor.armored)
         assertEquals(0, h.actor.receiveCrowdControl(CrowdControl.STUN, 2000, null))
         h.actor.hurt(h.actor.maxHealth * .5); assertFalse(h.actor.staggered)
-        assertEquals(CoreWarriorRules.BEAST_MAX, h.actor.resource)
+        assertEquals(0.0, h.actor.resource) // the beast is not handed over; it builds twice as fast
         val before = h.actor.health
         h.ticks(20); assertTrue(h.actor.health < before, "it burns")
         h.actor.hurt(h.actor.health - 1.5, CoreDamageType.TRUE); h.ticks(40); assertTrue(h.actor.health in 1.0..2.0, "${h.actor.health}") // never below one; regeneration lifts it by 1/s
@@ -1303,7 +1342,8 @@ class CorePlayerCombatTest {
             h.actor.refillTraining()
             val s=h.actor.skillDefinitions[0];h.actor.skill(0)
             val finish=CoreCombatFeel.finish(job,s,s.startupTicks(h.actor.sheet))
-            h.ticks(finish-3);val afterSkill=h.bossHealth()
+            // 轟進 lands with the crash at the end of its run.
+            h.ticks(if(s.icon==CoreWarriorRules.RUSH) s.startupTicks(h.actor.sheet)+CoreWarriorRules.RUSH_MIN_TICKS+1 else finish-3);val afterSkill=h.bossHealth()
             assertTrue(afterSkill<300.0,"$job skill landed")
             repeat(5) { h.actor.attack() }
             h.ticks(40)
