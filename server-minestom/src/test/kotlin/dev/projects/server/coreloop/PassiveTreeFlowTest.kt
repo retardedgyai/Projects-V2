@@ -44,16 +44,56 @@ class PassiveTreeFlowTest {
         assertTrue(scene.nodes.size < 400, "only what is on screen is drawn: ${scene.nodes.size}")
     }
 
-    @Test fun `first click selects, second click takes the path`() {
+    @Test fun `first click selects, second click plans the path, and 確定 takes it in one request`() {
         val target = CorePassiveTree.nodes.first { it.kind == CorePassiveKind.NOTABLE &&
             (CorePassiveTree.pathTo(CoreClass.MAGE, emptySet(), it.id)?.size ?: 99) in 2..4 }
+        val path = CorePassiveTree.pathTo(CoreClass.MAGE, emptySet(), target.id)!!.toSet()
         pointAt(target.id)
         assertTrue(flow.action("tree"))
         assertTrue(sent.isEmpty())
         assertTrue(flow.scene().nodes.any { it.id == "sel" })
+        assertTrue(flow.scene().nodes.any { it.id.startsWith("dl-n") }, "the change it would make is shown")
         pointAt(target.id)
         assertTrue(flow.action("tree"))
-        assertEquals(CoreAction.TakePassive(target.id), sent.single())
+        assertTrue(sent.isEmpty(), "planning sends nothing")
+        val scene = flow.scene()
+        assertTrue(path.all { n -> scene.nodes.any { it.id == "f$n" } }, "planned nodes are drawn lit")
+        assertTrue(scene.nodes.any { it.action == "commit" } && scene.nodes.any { it.action == "cancel" })
+        assertTrue(flow.action("commit"))
+        assertEquals(CoreAction.TakePassives(path, emptyMap()), sent.single())
+        assertFalse(flow.scene().nodes.any { it.action == "commit" }, "a confirmed plan is cleared")
+    }
+
+    @Test fun `a planned node is dropped for free, with what only it reached`() {
+        val target = CorePassiveTree.nodes.first { it.kind == CorePassiveKind.NOTABLE &&
+            (CorePassiveTree.pathTo(CoreClass.MAGE, emptySet(), it.id)?.size ?: 99) in 3..4 }
+        val path = CorePassiveTree.pathTo(CoreClass.MAGE, emptySet(), target.id)!!
+        pointAt(target.id); flow.action("tree"); flow.action("confirm")
+        pointAt(path.first()); flow.action("tree")
+        assertTrue(flow.action("confirm"))
+        assertTrue(sent.isEmpty())
+        assertFalse(flow.scene().nodes.any { it.action == "commit" }, "dropping the first node drops the whole plan")
+        pointAt(target.id); flow.action("tree"); flow.action("confirm")
+        assertTrue(flow.action("cancel"))
+        assertFalse(flow.action("commit"))
+        assertTrue(sent.isEmpty())
+    }
+
+    @Test fun `the outermost nodes can be brought clear of both panels`() {
+        // Where the tree's origin is drawn (design px) and the zoom, read off any drawn tile ("t-<x>-<y>").
+        fun view(): Pair<Double, Double> {
+            val t = flow.scene().nodes.first { it.id.startsWith("t-") }
+            val tx = t.id.removePrefix("t-").substringBefore('-').toDouble()
+            val zoom = t.box.w / scale / t.sprite!!.width
+            return t.box.x / scale - tx * zoom to zoom
+        }
+        fun glide(x: Double): Pair<Double, Double> { flow.pointer(x, top + 540 * scale); repeat(800) { flow.tick() }; return view() }
+        val (leftPan, zoom) = glide(1.0)
+        val leftAt = leftPan + art.spots.minOf { it.x } * zoom
+        assertTrue(leftAt > 56 + 380 + 4, "leftmost node at $leftAt")
+        val (rightPan, _) = glide(799.0)
+        val rightAt = rightPan + art.spots.maxOf { it.x } * zoom
+        assertTrue(rightAt < 1920 - 56 - 460, "rightmost node at $rightAt")
     }
 
     @Test fun `a taken node offers a refund and zoom keeps working`() {
@@ -86,12 +126,14 @@ class PassiveTreeFlowTest {
         val buttons = flow.scene().nodes.filter { it.action?.startsWith("choice:") == true }
         assertEquals(3, buttons.size)
         assertTrue(flow.action("choice:1"))
-        assertEquals(CoreAction.TakeMastery(mastery.id, 1), sent.single())
+        assertTrue(flow.action("choice:2"), "a planned option can be switched")
+        assertTrue(flow.action("commit"))
+        assertEquals(CoreAction.TakePassives(setOf(mastery.id), mapOf(mastery.id to 2)), sent.single())
     }
 
     /**
      * The still that scripts/build_passive_tree_assets.py preview renders: a warrior who walked 14 points outward,
-     * one reachable notable selected so the right panel has content. Written to build/passive-tree-preview/scene.json.
+     * planned the path to a nearby notable and selected the node past it, so the panel shows its change and 確定. Written to build/passive-tree-preview/scene.json.
      */
     @Test fun `a warrior's screen for the preview`() {
         val job = CoreClass.WARRIOR
@@ -121,6 +163,14 @@ class PassiveTreeFlowTest {
         val sx = face.box.x + face.box.w / 2; val sy = face.box.y + face.box.h / 2
         val s = art.spots[ref]; val n = art.spots[target.id]
         preview.pointer(sx + (n.x - s.x) * scale, sy + (n.y - s.y) * scale)
+        assertTrue(preview.action("tree"))
+        // Plan it (second click), then select the next node out so the panel shows what that one would change.
+        assertTrue(preview.action("tree"))
+        val held = taken + CorePassiveTree.pathTo(job, taken, target.id)!!
+        val next = held.flatMap { CorePassiveTree.nodes[it].links }.filter { it !in held && CorePassiveTree.nodes[it].ready }
+            .minBy { kotlin.math.hypot(CorePassiveTree.nodes[it].x - target.x.toDouble(), CorePassiveTree.nodes[it].y - target.y.toDouble()) }
+        val n3 = art.spots[next]
+        preview.pointer(sx + (n3.x - s.x) * scale, sy + (n3.y - s.y) * scale)
         assertTrue(preview.action("tree"))
         preview.pointer(1600 * scale, top + 600 * scale)  // rest on the right panel: no hover, no scrolling
         val scene = preview.scene()
