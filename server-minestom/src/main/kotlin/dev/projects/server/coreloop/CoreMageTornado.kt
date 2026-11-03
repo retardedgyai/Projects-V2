@@ -114,7 +114,7 @@ internal object CoreMageTornado {
             bit(1000 + j, cos(an) * d, .1 + R.nextDouble() * 1.4 + a * .6, sin(an) * d, "px_dot1")
         }
         // leaves and grass bits: torn up round the area, sucked in along a spiral, carried up round the funnel
-        for (j in 0 until 60) {
+        for (j in 0 until 100) {
             val R = rnd(400 + j); val born = (R.nextDouble() * (END - 6)).toInt(); val l = a - born
             if (l < 0 || l >= 26) continue
             val an = R.nextDouble() * 6.28 + l * .35; val r0 = 1.6 + R.nextDouble() * 2
@@ -125,9 +125,9 @@ internal object CoreMageTornado {
             bit(2000 + j, wobX(y, tt) + cos(an) * rr, y, wobZ(y, tt) + sin(an) * rr, if (j % 5 == 0) "px_dot2" else "px_dot1", LEAF[j % 3])
         }
         // grass and stone blocks torn up and carried round and up; when it stops they drop, bounce once and sink
-        while (chunks.size < 9 && a >= 0) chunks += spawnChunk(instance, g, chunks.size) ?: break
+        while (chunks.size < 14 && a >= 0) chunks += spawnChunk(instance, g, chunks.size) ?: break
         chunks.forEachIndexed { i, m ->
-            val R = rnd(500 + i); val st0 = 2 + i * 5; val l = a - st0
+            val R = rnd(500 + i); val st0 = 2 + i * 3; val l = a - st0
             if (l < 0) { m.teleport(g.add(0.0, -3.0, 0.0)); return@forEachIndexed }
             val an0 = R.nextDouble() * 6.28; val r0 = 1.4 + R.nextDouble() * 1.6; val hy = 1.2 + R.nextDouble() * 2.6
             val p: Vec? = if (a < END) {
@@ -144,6 +144,12 @@ internal object CoreMageTornado {
             }
             if (p == null) m.teleport(g.add(0.0, -3.0, 0.0))
             else m.teleport(Pos(g.x() + p.x(), g.y() + p.y(), g.z() + p.z(), (a * 23f + i * 40) % 360f, (a * 17f) % 360f))
+        }
+        // white wind streaks racing round the funnel just outside it, at every height (2026-11-03: 「もう少し派手に」
+        // 「トルネード出てはいるんだけどわかりづらい」): they show the spin and the funnel's size even where it is faint
+        if (a >= 2 && a < END) for (j in 0 until 36) {
+            val y = .3 + (j + .5) / 36.0 * (TOP - .5); val rr = r(y) * 1.3 + .15; val an = j * 2.39 + a * .42
+            bit(5000 + j, wobX(y, tt) + cos(an) * rr, y + sin(a * .2 + j) * .08, wobZ(y, tt) + sin(an) * rr, if (j % 3 == 0) "px_streak3" else "px_streak4")
         }
         // blocky dust turning at the foot
         if (a >= 0 && a < END + 14) for (k in 0 until 6) {

@@ -253,11 +253,11 @@ float twHash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5
 // into runs of 10-25 pixels. along / len: where on its run the pixel is (the head is the last pixel).
 bool twLine(float px, float qy, float rim, out float along, out float len, out float line) {
     line = qy - floor(px / 2.0);
-    if (mod(line, 3.0) > .5 || twHash(vec2(floor(line / 5.0), 9.0)) <= .3) return false;
+    if (mod(line, 2.0) > .5 || twHash(vec2(floor(line / 5.0), 9.0)) <= .15) return false;
     float sh = px + twHash(vec2(line, 1.0)) * 97.0, seg = floor(sh / 28.0);
     along = mod(sh, 28.0);
-    len = 10.0 + floor(twHash(vec2(line, seg + 2.0)) * 16.0);
-    return twHash(vec2(line, seg + 3.0)) < .65 + rim * .35 && along < len;
+    len = 12.0 + floor(twHash(vec2(line, seg + 2.0)) * 15.0);
+    return twHash(vec2(line, seg + 3.0)) < .75 + rim * .25 && along < len;
 }
 // The surface at (ang, r, py): a wind line pixel (bright pale green, a white head), its glow (a translucent pale pixel
 // just above and below it: the glow drawn in pixels, since the game has no bloom), or a loose dust pixel (pale and
@@ -265,7 +265,7 @@ bool twLine(float px, float qy, float rim, out float along, out float len, out f
 // in the game「まるですべてが違うな」, dark dust pixels on a bright day; it should glow by day as by night (「そうだね」).
 vec4 twPattern(float ang, float r, float py, float y, float tt, float rim) {
     float N = floor(6.2832 * r * 16.0);
-    float turn = floor(tt / 20.0 * (26.0 - y * 2.5)), rise = floor(tt / 20.0 * 7.0);
+    float turn = floor(tt / 20.0 * (38.0 - y * 3.5)), rise = floor(tt / 20.0 * 10.0);
     float px = mod(floor(ang * N) + turn, N), qy = py - rise;
     float along, len, line;
     if (twLine(px, qy, rim, along, len, line)) {
@@ -314,7 +314,12 @@ vec4 mageFunnel3D(vec4 data, float stand) {
     float pxs = floor(data.b * N);
     if (y > TW_TOP - .45 && twHash(vec2(pxs, py) + vec2(9.0, 1.0)) < (y - (TW_TOP - .45)) / .45) return vec4(0.0);
     vec3 n = normalize(cross(dFdx(vfxPosition), dFdy(vfxPosition)));
-    float rim = smoothstep(.55, .95, 1.0 - abs(dot(n, normalize(-vfxPosition))));
+    float slant = 1.0 - abs(dot(n, normalize(-vfxPosition)));
+    float rim = smoothstep(.55, .95, slant);
+    // the outline: bright pixels along the funnel's edge as seen, so its shape reads at a glance (2026-11-03,
+    // 「トルネード出てはいるんだけどわかりづらい」「もう少し派手に」)
+    if (data.r > .75 && slant > .9 && twHash(vec2(pxs, py) + vec2(floor(tt * .5), 4.0)) < .7)
+        return vec4(twHash(vec2(pxs, py) + vec2(2.0, 8.0)) < .4 ? vec3(1.0) : vec3(.72, 1.0, .82), 1.0);
     vec4 c = twPattern(data.b, r, py, y, tt, rim);
     if (data.r < .75) c.a *= c.a > .99 ? .3 : 0.0;   // inner faces: only the lines, faint
     return c;
@@ -333,6 +338,19 @@ vec4 mageGround(vec4 data, float tick) {
         float rr = 3.5 - tick * .05;
         if (abs(dist - rr) < .5 / 16.0 + .01 && twHash(vec2(floor((ang + 3.1416) * rr * 16.0), tick)) < .6)
             return vec4(mod(tick, 2.0) > .5 ? vec3(.486, .808, .588) : vec3(.651, .91, .729), 1.0);
+    }
+    // while it stands: two broken rings of pixels turning fast round its foot (radius 1.2 and 1.7)
+    if (a >= 0.0 && a < 60.0) {
+        float T = GameTime * 24000.0;
+        for (int k = 0; k < 2; k++) {
+            float rr = k == 0 ? 1.2 : 1.7;
+            if (abs(dist - rr) < .5 / 16.0 + .01) {
+                float ar = fract((ang + T * (k == 0 ? .3 : -.22)) / 6.2832);
+                float seg = floor(ar * (k == 0 ? 9.0 : 13.0));
+                if (fract(ar * (k == 0 ? 9.0 : 13.0)) < .55 && twHash(vec2(seg, float(k))) < .8)
+                    return vec4(fract(ar * (k == 0 ? 9.0 : 13.0)) > .45 ? vec3(1.0) : vec3(.72, 1.0, .82), 1.0);
+            }
+        }
     }
     if (a < 62.0) {
         float T = GameTime * 24000.0;
