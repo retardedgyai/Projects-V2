@@ -233,6 +233,8 @@ sealed interface CoreAction {
     data object ResetPassives : CoreAction
     /** Takes mastery [node] with option [choice] (one point; refund it like any node). */
     data class TakeMastery(val node: Int, val choice: Int) : CoreAction
+    /** Confirms a plan made on the tree screen: path nodes and masteries (with their [masteries] options) in one go. */
+    data class TakePassives(val nodes: Set<Int>, val masteries: Map<Int, Int>) : CoreAction
     /** Emitted only from authoritative server gameplay, never a menu's arbitrary completion claim. */
     data class LearnCombat(val lesson: Int) : CoreAction
     data class TemperEquipment(val slot: CoreGearSlot) : CoreAction

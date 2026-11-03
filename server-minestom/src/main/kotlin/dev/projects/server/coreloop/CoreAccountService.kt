@@ -115,6 +115,14 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             account.copy(journey = journey.copy(build = journey.build.copy(passives = taken, masteries = masteries))) to
                 "極意「${CorePassiveTree.nodes[action.node].choices[action.choice].text}」を取得しました"
         }
+        is CoreAction.TakePassives -> {
+            requireHub(account)
+            val journey = account.journey
+            val (taken, masteries) = CorePassiveTree.takeAll(journey.job, journey.build.passives, journey.build.masteries, action.nodes,
+                action.masteries, CorePassiveTree.budget(account))
+            account.copy(journey = journey.copy(build = journey.build.copy(passives = taken, masteries = masteries))) to
+                "${action.nodes.size}点を取得しました"
+        }
         is CoreAction.RefundPassive -> {
             requireHub(account)
             val journey = account.journey
