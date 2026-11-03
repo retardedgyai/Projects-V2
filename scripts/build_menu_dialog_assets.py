@@ -16,7 +16,12 @@ How the screen is drawn (checked against the 26.3 client):
   - The client hit-tests clicks against the rectangle each glyph is drawn in (ActiveTextCollector), so an invisible
     sprite (alpha 1, below the 0.1 cut) over a baked button makes exactly that rectangle clickable.
 Everything that never changes (backdrop, panels, tab row, labels, button plates) is baked into one sprite per page
-at 4x (GUI scale 4 = one screen pixel). Words, numbers, rings, the selected row and hit areas are placed per player.
+at 4 texture px per design px. Words, numbers, rings, the selected row and hit areas are placed per player.
+
+The server cannot see a player's GUI scale, so each player tells it once (PlayerDisplaySettings). Every page exists
+in three SIZES, one per GUI scale 2 / 3 / 4: the same design (in design px, laid out for GUI scale 4) multiplied by
+a unit of 2, 4/3 and 1 GUI px per design px, so it covers the same screen pixels at each scale. Textures are shared;
+only glyph heights, ascents, font sizes and the title band (fixed 33 GUI px tall, as wide as the screen) differ.
 """
 from __future__ import annotations
 
@@ -32,13 +37,12 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "server-minestom/src/main/resources/polish05"
 NS = "projects_ui_polish05"
-K = 4                      # texture pixels per GUI pixel (GUI scale 4 at 1080p)
-OVERSAMPLE = 4.0
-CANVAS_W, LINES = 464, 21  # body canvas: 464 x 189 GUI px
-CANVAS_H = LINES * 9
-TITLE_W = 434              # title advance: puts the vanilla warning button at the right edge of a 480 px screen
-TITLE_X = 8                # where the title starts on a 480 px screen ((480 - TITLE_W - 30) / 2)
-TITLE_TOP = 12             # the title line's top on screen
+K = 4                      # texture pixels per design pixel (= one screen pixel at every size)
+CANVAS_W, CANVAS_H = 464, 189  # body canvas in design px
+SCREEN_W = 480             # design px across a 1080p screen
+TITLE_X = 8                # where the title starts on screen; its advance puts the vanilla warning mark at the right
+TITLE_TOP = 12             # the title line's top on screen (GUI px; the header is 33 GUI px at every scale)
+SIZES = {"4": 1.0, "3": 4 / 3, "2": 2.0}  # GUI scale -> GUI px per design px
 
 TEXT_SOURCES = ["server-minestom/src/main/kotlin/dev/projects/server/coreloop/PlayerMenuDialog.kt",
                 "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreJourney.kt",
@@ -107,13 +111,13 @@ def build_fonts(src: Path, chars: set[int]) -> dict[str, bytes]:
     return files
 
 
-def advances(ttf: bytes, size: int, chars: set[int]) -> dict[str, float]:
+def advances(ttf: bytes, size: float, oversample: float, chars: set[int]) -> dict[str, float]:
     """Advance per character in GUI px exactly as the 26.3 client gets it: FreeType at round(size * oversample) px,
     FT_Load_Glyph(NO_BITMAP | BITMAP_METRICS_ONLY), hinted advance.x / 64 / oversample (TrueTypeGlyphProvider).
     Pillow's getlength differed enough to wrap the lines in game (2026-11-02)."""
     import freetype
     face = freetype.Face(io.BytesIO(ttf))
-    px = int(round(size * OVERSAMPLE))
+    px = int(round(size * oversample))
     face.set_pixel_sizes(px, px)
     flags = freetype.FT_LOAD_NO_BITMAP | 0x400000
     out = {}
@@ -121,51 +125,55 @@ def advances(ttf: bytes, size: int, chars: set[int]) -> dict[str, float]:
         index = face.get_char_index(cp)
         if index:
             face.load_glyph(index, flags)
-            out[str(cp)] = face.glyph.advance.x / 64 / OVERSAMPLE
+            out[str(cp)] = face.glyph.advance.x / 64 / oversample
     return out
 
 
 class Sprites:
-    """Bitmap glyphs: one private-use char per (sprite, ascent)."""
+    """Bitmap glyphs for one size: one private-use char per (sprite, ascent). Textures are shared by every size."""
 
-    def __init__(self):
-        self.next = 0xE000
-        self.images: dict[str, Image.Image] = {}
+    textures: dict[str, Image.Image] = {}
+
+    def __init__(self, unit: float, first: int):
+        self.unit = unit
+        self.next = first
         self.meta: dict[str, dict] = {}
         self.providers: list[dict] = []
 
-    def add(self, name: str, image: Image.Image, gui_h: int, ascents: set[int]):
-        self.images[name] = image
+    def add(self, name: str, image: Image.Image, h: float, tops: list[float], origin: int = 0, unit: float | None = None):
+        """`h` and `tops` in design px (or GUI px when `unit` is 1); the glyph is round(h * unit) GUI px tall."""
+        u = self.unit if unit is None else unit
+        Sprites.textures[name] = image
+        gui_h = max(1, round(h * u))
         alpha = image.getchannel("A")
         bbox = alpha.point(lambda a: 255 if a > 0 else 0).getbbox()
         actual = bbox[2] if bbox else 0
         scale = gui_h / image.height
-        entry = {"advance": int(0.5 + actual * scale) + 1, "w": round(image.width * scale), "h": gui_h, "chars": {}}
-        for ascent in sorted(ascents):
+        entry = {"advance": int(0.5 + actual * scale) + 1, "chars": {}}
+        for ascent in sorted({ascent_for(round(t * u), origin, gui_h) for t in tops}):
             ch = self.next; self.next += 1
             self.providers.append({"type": "bitmap", "file": f"{NS}:menu/{name}.png", "ascent": ascent,
                                    "height": gui_h, "chars": [chr(ch)]})
             entry["chars"][str(ascent)] = ch
         self.meta[name] = entry
 
-    def add_tiled(self, name: str, image: Image.Image, gui_h: int, tops: list[int], origin: int = 0):
-        """A sprite bigger than the client's 256 px font texture page, cut into TILE x TILE GUI px pieces."""
-        scale = image.height // gui_h
-        gui_w = image.width // scale
+    def add_tiled(self, name: str, image: Image.Image, h: int, tops: list[int], origin: int = 0, unit: float | None = None):
+        """A sprite bigger than the client's 256 px font texture page, cut into TILE x TILE pieces (same units as h)."""
+        w = image.width // K
         tiles = []
-        for ty in range(0, gui_h, TILE):
-            for tx in range(0, gui_w, TILE):
-                w, h = min(TILE, gui_w - tx), min(TILE, gui_h - ty)
-                piece = image.crop((tx * scale, ty * scale, (tx + w) * scale, (ty + h) * scale))
+        for ty in range(0, h, TILE):
+            for tx in range(0, w, TILE):
+                tw, th = min(TILE, w - tx), min(TILE, h - ty)
+                piece = image.crop((tx * K, ty * K, (tx + tw) * K, (ty + th) * K))
                 if piece.getchannel("A").getbbox() is None:
                     continue
                 tile = f"{name}_{tx}_{ty}"
-                self.add(tile, piece, h, {ascent_for(top + ty, origin, h) for top in tops})
+                self.add(tile, piece, th, [t + ty for t in tops], origin, unit)
                 tiles.append({"sprite": tile, "dx": tx, "dy": ty})
         self.meta[name] = {"tiles": tiles}
 
 
-TILE = 60  # GUI px; 240 texture px at 4x fits the client's 256 x 256 font texture page
+TILE = 60  # 240 texture px: fits the client's 256 x 256 font texture page
 
 
 def ascent_for(top: int, origin: int, h: int) -> int:
@@ -175,13 +183,6 @@ def ascent_for(top: int, origin: int, h: int) -> int:
     line = max(0, y // 9)
     ascent = 7 - (y - 9 * line)
     return ascent if ascent <= h else ascent - 9
-
-
-def body_ascents(top: int, h: int) -> set[int]:
-    """Ascent for a sprite whose top is `top` px below the canvas top. The client rejects ascent > height, so a short
-    sprite hangs from the line above instead (PlayerMenuCanvas tries the same two lines in the same order)."""
-    r = top % 9
-    return {7 - r if 7 - r <= h else 7 - r - 9}
 
 
 def font_for(fonts, key, size):
@@ -270,8 +271,9 @@ def bake_page(fonts, icons) -> Image.Image:
     return img, tab_boxes
 
 
-def bake_band(fonts, book) -> Image.Image:
-    w, h = 480, 33
+def bake_band(fonts, book, w: int) -> Image.Image:
+    """The title band in GUI px (4 texture px each): as wide as the screen at that GUI scale, 33 px tall."""
+    h = 33
     img = Image.new("RGBA", (w * K, h * K))
     d = ImageDraw.Draw(img)
     for yy in range(h * K):
@@ -280,9 +282,9 @@ def bake_band(fonts, book) -> Image.Image:
     img.alpha_composite(book.resize((24 * K, 25 * K), Image.NEAREST), (12 * K, 4 * K))
     draw_text(d, fonts, "b9", 42, 19, "冒険の手帳", C["text"])
     # wallet chip: the number is drawn per player, right-aligned at WALLET_RIGHT
-    rounded(d, (352, 9, 92, 15), fill=(232, 200, 120, 18), outline=(232, 200, 120, 64), r=2)
-    draw_text(d, fonts, "dot9", 357, 20, "◆", C["gold"])
-    draw_text(d, fonts, "m6", 423, 20, "銀貨", C["muted"])
+    rounded(d, (w - 128, 9, 92, 15), fill=(232, 200, 120, 18), outline=(232, 200, 120, 64), r=2)
+    draw_text(d, fonts, "dot9", w - 123, 20, "◆", C["gold"])
+    draw_text(d, fonts, "m6", w - 57, 20, "銀貨", C["muted"])
     return img
 
 
@@ -315,71 +317,76 @@ def main() -> None:
              "class_warrior": Image.open(ROOT / "assets/core-ui/proposals/2026-10-16-class-emblems/warrior-32.png").convert("RGBA")}
     book = raw(pack, f"assets/{NS}/textures/raw/book_ui.png")
 
-    # fonts: one TTF file per weight, one definition per (style, line offset 0..8)
     for key, data in fonts.items():
         files[f"assets/{NS}/font/menu_{key}.ttf"] = data
-    metrics = {"canvasWidth": CANVAS_W, "lines": LINES, "titleWidth": TITLE_W, "titleX": TITLE_X, "titleTop": TITLE_TOP,
-               "styles": {}, "sprites": {}, "space": {}, "layout": {}}
-    for style, (key, size) in STYLES.items():
-        for r in range(9):
-            files[f"assets/{NS}/font/menu_{style}_{r}.json"] = json.dumps({"providers": [
-                {"type": "ttf", "file": f"{NS}:menu_{key}.ttf", "size": float(size), "oversample": OVERSAMPLE, "shift": [0.0, float(r)]},
-            ]}).encode()
-        metrics["styles"][style] = {"font": f"{NS}:menu_{style}_", "advances": advances(fonts[key], size, chars)}
-
-    # space font: powers of two both ways plus quarters
-    steps = [2 ** i for i in range(10)] + [0.5, 0.25]
+    # space font (GUI px, shared): powers of two both ways plus quarters
+    metrics = {"space": {}, "sizes": {}}
     advances_map = {}
     cp = 0xF000
-    for s in steps:
+    for step in [2 ** i for i in range(11)] + [0.5, 0.25]:
         for sign in (1, -1):
-            advances_map[chr(cp)] = s * sign; metrics["space"][str(s * sign)] = cp; cp += 1
+            advances_map[chr(cp)] = step * sign; metrics["space"][str(step * sign)] = cp; cp += 1
     files[f"assets/{NS}/font/menu_space.json"] = json.dumps({"providers": [{"type": "space", "advances": advances_map}]}).encode()
 
-    sprites = Sprites()
     page, tab_boxes = bake_page(fonts, icons)
-    sprites.add_tiled("page_self", page, CANVAS_H, [0])
-    sprites.add_tiled("band", bake_band(fonts, book), 33, [0], TITLE_TOP)
-    for c in CLASSES:
-        path = ROOT / f"assets/core-ui/proposals/2026-10-16-class-emblems/{c}-32.png"
-        sprites.add(f"emblem_{c}", Image.open(path).convert("RGBA").resize((EMBLEM[2] * K, EMBLEM[2] * K), Image.NEAREST), EMBLEM[2], body_ascents(EMBLEM[1], EMBLEM[2]))
-    for i, (pid, name, icon, colour) in enumerate(PATHS):
-        top = ROW_Y0 + i * ROW_STEP
-        bar = Image.new("RGBA", (2 * K, BAR_H * K), hexc(colour))
-        sprites.add(f"bar_{pid}", bar, BAR_H, body_ascents(top + BAR_DY, BAR_H))
-        for step in range(11):
-            sprites.add(f"ring_{pid}_{step}", ring(colour, step), RING, body_ascents(RING_Y, RING))
     sel = Image.new("RGBA", (ROW_W * K, ROW_H * K)); sd = ImageDraw.Draw(sel)
     for xx in range(ROW_W * K):
         # the client drops texels under 0.1 alpha, so the fade stays above 26/255 or it ends in a hard edge (2026-11-02)
         sd.line([(xx, 0), (xx, ROW_H * K)], fill=(239, 230, 210, int(44 - 16 * xx / (ROW_W * K))))
     sd.rectangle((0, 0, 2 * K - 1, ROW_H * K - 1), fill=hexc(C["ivory"]))
-    sprites.add_tiled("row_sel", sel, ROW_H, [ROW_Y0 + i * ROW_STEP for i in range(4)])
     halo = Image.new("RGBA", ((RING + 4) * K, (RING + 4) * K)); hd = ImageDraw.Draw(halo)
     hd.ellipse((0, 0, (RING + 4) * K - 1, (RING + 4) * K - 1), outline=hexc(C["ivory"]), width=K)
-    sprites.add("ring_sel", halo, RING + 4, body_ascents(RING_Y - 2, RING + 4))
-    # invisible hit areas (alpha 1: under the client's 0.1 cut, but the glyph rectangle still takes clicks)
-    hits = {"row": (ROW_W, ROW_H, {a for i in range(4) for a in body_ascents(ROW_Y0 + i * ROW_STEP, ROW_H)}),
-            "edit": (EDIT[2], EDIT[3], body_ascents(EDIT[1], EDIT[3])), "primary": (PRIMARY[2], PRIMARY[3], body_ascents(PRIMARY[1], PRIMARY[3]))}
-    for i, (x, y, w, h) in enumerate(tab_boxes):
-        hits[f"tab{i}"] = (w, h, body_ascents(y, h))
-    for name, (w, h, asc) in hits.items():
-        sprites.add(f"hit_{name}", Image.new("RGBA", (w, h), (0, 0, 0, 1)), h, asc)
-        # a fully transparent column at the right would shrink the advance; alpha 1 everywhere keeps it = w + 1
-    for name, image in sprites.images.items():
+    rows = [ROW_Y0 + i * ROW_STEP for i in range(4)]
+    glyphs = 0
+    for n, (tag, unit) in enumerate(SIZES.items()):
+        sprites = Sprites(unit, 0xE000 + n * 0x400)
+        screen = round(SCREEN_W * unit)
+        size = {"unit": unit, "canvasWidth": round(CANVAS_W * unit), "lines": -(-round(CANVAS_H * unit) // 9),
+                "titleWidth": screen - 2 * TITLE_X - 30, "titleX": TITLE_X, "titleTop": TITLE_TOP,
+                "art": f"{NS}:menu{tag}_art", "styles": {}, "sprites": {}, "layout": {}}
+        oversample = K / unit
+        for style, (key, pt) in STYLES.items():
+            for r in range(9):
+                files[f"assets/{NS}/font/menu{tag}_{style}_{r}.json"] = json.dumps({"providers": [
+                    {"type": "ttf", "file": f"{NS}:menu_{key}.ttf", "size": pt * unit, "oversample": oversample, "shift": [0.0, float(r)]},
+                ]}).encode()
+            size["styles"][style] = {"font": f"{NS}:menu{tag}_{style}_", "advances": advances(fonts[key], pt * unit, oversample, chars)}
+        sprites.add_tiled("page_self", page, CANVAS_H, [0])
+        sprites.add_tiled(f"band{tag}", bake_band(fonts, book, screen), 33, [0], TITLE_TOP, unit=1.0)
+        size["sprites"]["band"] = None  # filled below
+        for c in CLASSES:
+            path = ROOT / f"assets/core-ui/proposals/2026-10-16-class-emblems/{c}-32.png"
+            sprites.add(f"emblem_{c}", Image.open(path).convert("RGBA").resize((EMBLEM[2] * K, EMBLEM[2] * K), Image.NEAREST), EMBLEM[2], [EMBLEM[1]])
+        for i, (pid, name, icon, colour) in enumerate(PATHS):
+            sprites.add(f"bar_{pid}", Image.new("RGBA", (2 * K, BAR_H * K), hexc(colour)), BAR_H, [rows[i] + BAR_DY])
+            for step in range(11):
+                sprites.add(f"ring_{pid}_{step}", ring(colour, step), RING, [RING_Y])
+        sprites.add_tiled("row_sel", sel, ROW_H, rows)
+        sprites.add("ring_sel", halo, RING + 4, [RING_Y - 2])
+        # invisible hit areas (alpha 1: under the client's 0.1 cut, but the glyph rectangle still takes clicks)
+        hits = {"row": (ROW_W, ROW_H, rows), "edit": (EDIT[2], EDIT[3], [EDIT[1]]), "primary": (PRIMARY[2], PRIMARY[3], [PRIMARY[1]])}
+        for i, (x, y, w, h) in enumerate(tab_boxes):
+            hits[f"tab{i}"] = (w, h, [y])
+        for name, (w, h, tops) in hits.items():
+            sprites.add(f"hit_{name}", Image.new("RGBA", (w, h), (0, 0, 0, 1)), h, tops)
+        sprites.meta["band"] = sprites.meta.pop(f"band{tag}")
+        del size["sprites"]["band"]
+        files[f"assets/{NS}/font/menu{tag}_art.json"] = json.dumps({"providers": sprites.providers}).encode()
+        size["sprites"] = sprites.meta
+        size["layout"] = {"tabs": [list(b) for b in tab_boxes], "left": LEFT_X, "rowY": ROW_Y0, "rowStep": ROW_STEP, "rowW": ROW_W,
+                          "barDx": BAR_DX, "barDy": BAR_DY, "barW": BAR_W, "barH": BAR_H, "card": list(CARD), "emblem": list(EMBLEM),
+                          "ringY": RING_Y, "ring": RING, "ringGap": RING_GAP, "edit": list(EDIT), "panel": list(PANEL),
+                          "primary": list(PRIMARY), "wallet": [screen - 58, 20]}
+        metrics["sizes"][tag] = size
+        glyphs += len(sprites.providers)
+    for name, image in Sprites.textures.items():
         assert image.width <= 256 and image.height <= 256, name
         png(f"assets/{NS}/textures/menu/{name}.png", image)
-    files[f"assets/{NS}/font/menu_art.json"] = json.dumps({"providers": sprites.providers}).encode()
-    metrics["sprites"] = sprites.meta
-    metrics["layout"] = {"tabs": [list(b) for b in tab_boxes], "left": LEFT_X, "rowY": ROW_Y0, "rowStep": ROW_STEP, "rowW": ROW_W,
-                         "barDx": BAR_DX, "barDy": BAR_DY, "barW": BAR_W, "card": list(CARD), "emblem": list(EMBLEM),
-                         "ringY": RING_Y, "ring": RING, "ringGap": RING_GAP, "edit": list(EDIT), "panel": list(PANEL),
-                         "primary": list(PRIMARY), "wallet": [440 - 18, 20]}
     with zipfile.ZipFile(OUT / "menu.zip", "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name in sorted(files):
             archive.writestr(zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0)), files[name])
     (OUT / "menu-metrics.json").write_text(json.dumps(metrics, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"menu.zip {sum(len(v) for v in files.values()) // 1024} KB, {len(chars)} chars, {len(sprites.providers)} sprite glyphs")
+    print(f"menu.zip {sum(len(v) for v in files.values()) // 1024} KB, {len(chars)} chars, {glyphs} sprite glyphs")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 package dev.projects.server.coreloop
 
+import com.google.gson.JsonObject
 import dev.projects.server.coreloop.ui.DialogCanvas
 import dev.projects.server.coreloop.ui.DialogCanvas.Align
 import dev.projects.server.questmap.QuestGatheringDiscipline
@@ -30,6 +31,10 @@ internal class PlayerMenuDialog(
     private val metrics: DialogCanvas.Metrics,
     private val host: CoreMenuHost,
     private val open: (Player, Target) -> Unit,
+    /** The GUI scale the player told us (PlayerDisplaySettings); null until they have. */
+    private val guiScale: (Player) -> Int?,
+    /** Asks for the GUI scale first; the settings dialog reopens the menu when it is saved. */
+    private val askSettings: (Player) -> Unit,
 ) {
     enum class Target { SKILLS, PASSIVES, STORAGE, JOURNAL, ATLAS, MASTERY, WORKSHOP, GRIMOIRE }
 
@@ -45,11 +50,11 @@ internal class PlayerMenuDialog(
 
     private val selected = mutableMapOf<UUID, Path>()
     private val notices = mutableMapOf<UUID, String>()
-    private val layout = metrics.layout
 
     @Synchronized fun show(player: Player) {
         val account = host.account(player) ?: return
-        player.showDialog(dialog(player, account))
+        val scale = guiScale(player) ?: return askSettings(player)
+        player.showDialog(dialog(player, account, metrics.forScale(scale)))
     }
 
     @Synchronized fun click(player: Player, key: Key, @Suppress("UNUSED_PARAMETER") payload: BinaryTag?): Boolean {
@@ -72,53 +77,52 @@ internal class PlayerMenuDialog(
         open(player, target)
     }
 
-    // ------------------------------------------------------------------ drawing
+    // ------------------------------------------------------------------ drawing (design px: the layout for GUI scale 4)
 
-    private fun dialog(player: Player, account: CoreAccount): Dialog {
-        val meta = DialogMetadata(title(account), Component.text("冒険の手帳"), true, false, DialogAfterAction.NONE,
+    private fun dialog(player: Player, account: CoreAccount, size: DialogCanvas.Size): Dialog {
+        val meta = DialogMetadata(title(account, size), Component.text("冒険の手帳"), true, false, DialogAfterAction.NONE,
             // The width includes the text widget's 4 px padding on each side, so lines need canvas + 8 or they wrap; but a
             // body wider than the screen (474 at GUI scale 4) is pushed to its left edge instead of centred (2026-11-02, in game).
-            listOf(DialogBody.PlainMessage(body(player, account), metrics.canvasWidth + 9)), emptyList())
+            listOf(DialogBody.PlainMessage(body(player, account, size), size.canvasWidth + 9)), emptyList())
         val close = DialogActionButton(Component.text("閉じる", MUTED).font(DIALOG_FONT), null, 80,
             DialogAction.Custom(Key.key(NS, "close"), null))
         return Dialog.Notice(meta, close)
     }
 
-    /** The title band: baked art, plus the purse. Measured from the screen's top-left on a 480 px wide screen. */
-    private fun title(account: CoreAccount): Component {
-        val canvas = DialogCanvas(metrics, metrics.titleWidth.toDouble(), 1, metrics.titleTop)
-        val x0 = metrics.titleX.toDouble()
-        canvas.background("band", -x0, 0)
-        val wallet = layout.getAsJsonArray("wallet")
-        canvas.text("d9", wallet[0].asDouble - x0, wallet[1].asInt, "%,d".format(account.silver), TEXT, Align.RIGHT)
+    /** The title band, in GUI px from the screen's top-left: the header is 33 GUI px at every scale. */
+    private fun title(account: CoreAccount, size: DialogCanvas.Size): Component {
+        val canvas = DialogCanvas(size, metrics.space, size.titleWidth.toDouble(), 1, size.titleTop, 1.0, metrics.forScale(4).styles)
+        val x0 = size.titleX.toDouble()
+        canvas.background("band", -x0, 0.0)
+        val wallet = size.layout.getAsJsonArray("wallet")
+        canvas.text("d9", wallet[0].asDouble - x0, wallet[1].asDouble, "%,d".format(account.silver), TEXT, Align.RIGHT)
         return canvas.buildLine()
     }
 
-    private fun body(player: Player, account: CoreAccount): Component {
-        val canvas = DialogCanvas(metrics, metrics.canvasWidth.toDouble(), metrics.lines)
-        canvas.background("page_self", 0.0, 0)
+    private fun body(player: Player, account: CoreAccount, size: DialogCanvas.Size): Component {
+        val canvas = DialogCanvas(size, metrics.space, size.canvasWidth.toDouble(), size.lines)
+        val layout = size.layout
+        canvas.background("page_self", 0.0, 0.0)
         val tabs = layout.getAsJsonArray("tabs")
         for (i in 1 until tabs.size()) {
             val box = tabs[i].asJsonArray
-            canvas.sprite("hit_tab$i", box[0].asDouble, box[1].asInt, click("tab_$i"))
+            canvas.sprite("hit_tab$i", box[0].asDouble, box[1].asDouble, click("tab_$i"))
         }
         val path = selected[player.uuid] ?: Path.COMBAT
         val progress = Path.entries.associateWith { progress(player, account, it) }
-        paths(canvas, path, progress)
-        card(canvas, player, account, path, progress)
-        panel(canvas, player, account, path)
+        paths(canvas, layout, path, progress)
+        card(canvas, layout, player, account, path, progress)
+        panel(canvas, layout, player, account, path)
         return canvas.build()
     }
 
-    private fun paths(canvas: DialogCanvas, chosen: Path, progress: Map<Path, Progress>) {
+    private fun paths(canvas: DialogCanvas, layout: JsonObject, chosen: Path, progress: Map<Path, Progress>) {
         val left = layout["left"].asDouble
-        val rowY = layout["rowY"].asInt
-        val step = layout["rowStep"].asInt
         val barDx = layout["barDx"].asDouble
-        val barDy = layout["barDy"].asInt
+        val barDy = layout["barDy"].asDouble
         val barW = layout["barW"].asInt
         for (path in Path.entries) {
-            val top = rowY + path.ordinal * step
+            val top = layout["rowY"].asDouble + path.ordinal * layout["rowStep"].asDouble
             val p = progress.getValue(path)
             if (path == chosen) canvas.sprite("row_sel", left, top)
             val nameW = canvas.width("b7", path.label)
@@ -129,47 +133,48 @@ internal class PlayerMenuDialog(
         }
     }
 
-    private fun card(canvas: DialogCanvas, player: Player, account: CoreAccount, chosen: Path, progress: Map<Path, Progress>) {
+    private fun card(canvas: DialogCanvas, layout: JsonObject, player: Player, account: CoreAccount, chosen: Path, progress: Map<Path, Progress>) {
         val box = layout.getAsJsonArray("card")
         val cx = box[0].asDouble + box[2].asDouble / 2
         val emblem = layout.getAsJsonArray("emblem")
-        canvas.sprite("emblem_${account.journey.job.name.lowercase()}", emblem[0].asDouble, emblem[1].asInt)
-        // Face and name: the face is the vanilla player-head object, 8 px wide on its line.
+        canvas.sprite("emblem_${account.journey.job.name.lowercase()}", emblem[0].asDouble, emblem[1].asDouble)
+        // Face and name: the face is the vanilla player-head object, 8 GUI px wide on its line at every scale.
         val name = player.username
+        val face = canvas.design(8.0)
         val nameW = canvas.width("b14", name)
-        val start = cx - (8 + 4 + nameW) / 2
-        canvas.inline(start, 80, 8.0, head(player))
-        canvas.text("b14", start + 12, 84, name, TEXT)
-        canvas.text("m7", cx, 97, "称号はまだありません", FAINT, Align.CENTER)
+        val start = cx - (face + 4 + nameW) / 2
+        canvas.inline(start, 80.0, 8.0, head(player))
+        canvas.text("b14", start + face + 4, 84.0, name, TEXT)
+        canvas.text("m7", cx, 97.0, "称号はまだありません", FAINT, Align.CENTER)
         val job = account.journey.job.displayName + " "
         val lv = "Lv ${account.journey.level}"
         val jobW = canvas.width("b9", job) + canvas.width("d9", lv)
-        canvas.text("b9", cx - jobW / 2, 111, job, TEXT)
-        canvas.text("d9", cx - jobW / 2 + canvas.width("b9", job), 111, lv, TEXT)
-        val ring = layout["ring"].asInt
-        val gap = layout["ringGap"].asInt
-        val ringY = layout["ringY"].asInt
-        val first = cx - (4 * ring + 3 * gap) / 2.0
+        canvas.text("b9", cx - jobW / 2, 111.0, job, TEXT)
+        canvas.text("d9", cx - jobW / 2 + canvas.width("b9", job), 111.0, lv, TEXT)
+        val ring = layout["ring"].asDouble
+        val gap = layout["ringGap"].asDouble
+        val ringY = layout["ringY"].asDouble
+        val first = cx - (4 * ring + 3 * gap) / 2
         for (path in Path.entries) {
             val x = first + path.ordinal * (ring + gap)
             val p = progress.getValue(path)
             if (path == chosen) canvas.sprite("ring_sel", x - 2, ringY - 2)
             canvas.sprite("ring_${path.id}_${(p.next * 10).roundToInt().coerceIn(0, 10)}", x, ringY, click("path_${path.ordinal}"),
                 Component.text("${path.label}　${p.value}", TEXT))
-            canvas.text("d6", x + ring / 2.0, ringY + ring + 9, p.short, if (path == chosen) IVORY else SOFT, Align.CENTER)
+            canvas.text("d6", x + ring / 2, ringY + ring + 9, p.short, if (path == chosen) IVORY else SOFT, Align.CENTER)
         }
         val clears = account.zoneRecords.values.sumOf { it.clears }
-        canvas.text("m6", cx, 160, "踏破 $clears　開放 T${account.unlockedMapTier}", MUTED, Align.CENTER)
+        canvas.text("m6", cx, 160.0, "踏破 $clears　開放 T${account.unlockedMapTier}", MUTED, Align.CENTER)
         val edit = layout.getAsJsonArray("edit")
-        canvas.sprite("hit_edit", edit[0].asDouble, edit[1].asInt, click("edit"))
+        canvas.sprite("hit_edit", edit[0].asDouble, edit[1].asDouble, click("edit"))
     }
 
-    private fun panel(canvas: DialogCanvas, player: Player, account: CoreAccount, path: Path) {
+    private fun panel(canvas: DialogCanvas, layout: JsonObject, player: Player, account: CoreAccount, path: Path) {
         val box = layout.getAsJsonArray("panel")
         val x = box[0].asDouble + 7
         val width = box[2].asDouble - 14
-        canvas.text("m6", x, 32, "${path.label}の次の一歩", MUTED)
-        var baseline = 46
+        canvas.text("m6", x, 32.0, "${path.label}の次の一歩", MUTED)
+        var baseline = 46.0
         for ((text, color) in details(player, account, path)) {
             for (line in wrap(canvas, text, width)) {
                 if (baseline > 150) break
@@ -177,10 +182,10 @@ internal class PlayerMenuDialog(
                 baseline += 11
             }
         }
-        notices[player.uuid]?.let { canvas.text("m6", x, 160, it, HEAT) }
+        notices[player.uuid]?.let { canvas.text("m6", x, 160.0, it, HEAT) }
         val primary = layout.getAsJsonArray("primary")
-        canvas.text("b7", primary[0].asDouble + primary[2].asDouble / 2, primary[1].asInt + 11, path.button, DARK, Align.CENTER)
-        canvas.sprite("hit_primary", primary[0].asDouble, primary[1].asInt, click("primary"))
+        canvas.text("b7", primary[0].asDouble + primary[2].asDouble / 2, primary[1].asDouble + 11, path.button, DARK, Align.CENTER)
+        canvas.sprite("hit_primary", primary[0].asDouble, primary[1].asDouble, click("primary"))
     }
 
     private fun details(player: Player, account: CoreAccount, path: Path): List<Pair<String, TextColor>> = when (path) {
