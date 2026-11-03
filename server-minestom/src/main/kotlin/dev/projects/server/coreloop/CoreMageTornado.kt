@@ -51,7 +51,7 @@ internal object CoreMageTornado {
     private const val END = 60
     private const val UNR = 14
     private const val TOP = 4.4
-    private const val BANDS = 8                 // the funnel's bands (build_boss_vfx.py TORNADO_BANDS)
+    private const val BANDS = 16                // the funnel's bands (build_boss_vfx.py TORNADO_BANDS)
     private const val MARKER_B = 84
     private val LEAF = intArrayOf(0x3c8c28, 0x50a834, 0x2e6e1e)
 
@@ -64,6 +64,10 @@ internal object CoreMageTornado {
     fun play(owner: Player, at: Pos) {
         val instance = owner.instance ?: return
         val foot = Pos(at.x(), at.y(), at.z())
+        // the mage glow post effect, which now also picks up the wind's mint lines: on for the packed players near, and
+        // left on (switching it on and off per spell is the 「Valorant でフラッシュ」 of ng.md)
+        instance.players.filter { CoreCombatPresentation.packed(it) && it.position.distanceSquared(foot) < 48.0 * 48.0 }
+            .forEach { dev.projects.server.mob.PlayerPostEffects.set(it, "tornado-test", listOf(CoreMageLight.GLOW)) }
         val bands = ArrayList<Entity>()
         var plate: Entity? = null
         val chunks = ArrayList<Entity>()

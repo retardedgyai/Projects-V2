@@ -269,14 +269,13 @@ vec4 twPattern(float ang, float r, float py, float y, float tt, float rim) {
     float px = mod(floor(ang * N) + turn, N), qy = py - rise;
     float along, len, line;
     if (twLine(px, qy, rim, along, len, line)) {
-        vec3 g = mix(vec3(.62, .92, .72), vec3(.78, 1.0, .84), twHash(vec2(line, 5.0)));
+        vec3 g = mix(vec3(.55, .95, .7), vec3(.72, 1.0, .8), twHash(vec2(line, 5.0)));
         return vec4(along > len - 1.0 ? vec3(1.0) : (along > len - 5.0 ? vec3(.9, 1.0, .93) : g), 1.0);
     }
-    if (twLine(px, qy + 1.0, rim, along, len, line) || twLine(px, qy - 1.0, rim, along, len, line))
-        return vec4(.86, 1.0, .9, .38);
-    if (twHash(vec2(px, py) + vec2(3.1, 7.7)) < .08 + rim * .3) {
-        float k = twHash(vec2(px, py) + vec2(5.0, 2.0));
-        return vec4(mix(vec3(.84, .95, .87), vec3(.9, .86, .74), smoothstep(1.4, .2, y)), .28 + .2 * k);
+    // (2026-11-03, in the game:「あまり光ってる感じがない」. The translucent halo and dust mixed with what was behind
+    // into dull glass. Now the glow is the mage glow post effect picking up the mint lines; only a few dust pixels.)
+    if (twHash(vec2(px, py) + vec2(3.1, 7.7)) < .03 + rim * .12) {
+        return vec4(mix(vec3(.8, .96, .86), vec3(.9, .86, .74), smoothstep(1.4, .2, y)), .5);
     }
     return vec4(0.0);
 }
@@ -317,7 +316,7 @@ vec4 mageFunnel3D(vec4 data, float stand) {
     vec3 n = normalize(cross(dFdx(vfxPosition), dFdy(vfxPosition)));
     float rim = smoothstep(.55, .95, 1.0 - abs(dot(n, normalize(-vfxPosition))));
     vec4 c = twPattern(data.b, r, py, y, tt, rim);
-    if (data.r < .75) c.a *= .35;
+    if (data.r < .75) c.a *= c.a > .99 ? .3 : 0.0;   // inner faces: only the lines, faint
     return c;
 }
 

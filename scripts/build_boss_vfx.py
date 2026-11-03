@@ -279,12 +279,12 @@ def pixel_sprites(pack):
             path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
 
 
-# メイジの竜巻, 3D (2026-11-03, 藍「あとこれ3dではない」 of the billboard): the funnel as eight bands, each a model of 20
+# メイジの竜巻, 3D (2026-11-03, 藍「あとこれ3dではない」 of the billboard): the funnel as sixteen bands, each a model of 32
 # upright panels round the axis (a stave barrel), so it is a real solid you can look round. Each panel's two faces map
 # to their own patch of one coordinate texture: G = height up the whole funnel (0..1 of TORNADO_TOP), B = angle round it
 # (0..1), R = 255 on the outer face, 128 on the inner. item.fsh (marker 84 kind 3) draws the funnel's pattern from
 # those, so the panels join up into one surface. Display scale TORNADO_TOP: 16 model units = the funnel's height.
-TORNADO_TOP, TORNADO_BANDS, TORNADO_PANELS = 4.4, 8, 20
+TORNADO_TOP, TORNADO_BANDS, TORNADO_PANELS = 4.4, 16, 32
 
 
 def tornado_r(y):
