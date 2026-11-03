@@ -207,3 +207,40 @@ def woodpile(x, z, g, f='s'):
         put(cx, g + 3, cz, slab('spruce_planks'))
     cx, cz = at(x, z, f, 0, 3); put(cx, g + 1, cz, log('oak_log')); cells.append((cx, cz))   # 切り株
     return cells
+
+
+# ---- 道の街灯：暗い石の塀2段の台、柵の柱、板の頭、逆さ階段とハーフの腕、腕の先にランタンを吊る。
+#      3本並べるときは高さを変える（柱4〜6段）。腕は道の上へ向ける。 [そろんご 道作り 12:12〜12:30・learn3/props-notes.md C5]
+def path_lamp(x, z, g, arm='e', posts=5):
+    ax, az = D[arm]
+    put(x, g + 1, z, wall('cobbled_deepslate')); put(x, g + 2, z, wall('cobbled_deepslate'))
+    for y in range(g + 3, g + 3 + posts): put(x, y, z, fence('spruce_planks'))
+    top = g + 3 + posts
+    put(x, top, z, full('spruce_planks'))
+    put(x + ax, top, z + az, stair('spruce_planks', OPP[arm], 'top'))
+    put(x + ax * 2, top, z + az * 2, slab('spruce_planks', 'top'))
+    put(x + ax * 2, top - 1, z + az * 2, HANG)
+    return [(x, z)]
+
+
+# ---- 木陰の休みどころ：丸石の階段2つの座面、片端に丸石の塀とランタン。隣に、1段盛った粗い土を
+#      暗い石の塀で縁取った花壇（4×2）。木の根元に置く。 [そろんご 道作り 13:04〜13:50・props-notes.md C9・C12]
+def rest_spot(x, z, g, f, flowers=('red_tulip', 'orange_tulip', 'cornflower', 'oxeye_daisy')):
+    cells = []
+    for i in range(2):
+        cx, cz = at(x, z, f, 0, i)
+        put(cx, g + 1, cz, stair('cobblestone', OPP[f])); cells.append((cx, cz))
+    ex, ez = at(x, z, f, 0, -1)
+    put(ex, g + 1, ez, wall('cobblestone')); put(ex, g + 2, ez, LANTERN); cells.append((ex, ez))
+    for i in range(4):                                                   # 花壇：ベンチの右隣から奥へ
+        for j in range(2):
+            cx, cz = at(x, z, f, -j, 3 + i)
+            put(cx, g + 1, cz, full('coarse_dirt')); put(cx, g + 2, cz, cross(flowers[(i + j) % len(flowers)])); cells.append((cx, cz))
+    for i in range(-1, 5):                                               # 縁の塀：長辺の前後と短辺
+        for j in (1, -2):
+            cx, cz = at(x, z, f, j, 3 + i)
+            if get(cx, g + 1, cz) is None: put(cx, g + 1, cz, wall('cobbled_deepslate')); cells.append((cx, cz))
+    for j in (0, -1):
+        cx, cz = at(x, z, f, j, 7)
+        if get(cx, g + 1, cz) is None: put(cx, g + 1, cz, wall('cobbled_deepslate')); cells.append((cx, cz))
+    return cells

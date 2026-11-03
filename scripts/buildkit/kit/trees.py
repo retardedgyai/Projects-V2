@@ -3,8 +3,9 @@
 どれも (x, z, g, seed) を取る。g は根元の地面の一番上のブロックの高さ。
   spruce(x, z, g, seed, h)    トウヒ：垂れた腕の層を重ねる [DiddiHD]
   small_spruce(x, z, g, seed) 小さいトウヒ：柵の幹に葉の段と幹の見える段を交互に [Broken Orbit]
-  oak(x, z, g, seed, size)    広葉樹：ずらした幹、分かれるたびに細る枝、レンズ形の葉の板、濃淡 [Calven・Broken Orbit]
-  birch(x, z, g, seed)        白樺：細い幹、小さな葉の板
+  oak(x, z, g, seed, size)    広葉樹：ずらした幹、冠の下に見える枝、こぶの集まりの丸い山の冠、濃淡 [maaaaagarin・Calven]
+  birch(x, z, g, seed)        白樺：高い白い幹、細長い丸い山の冠
+  bush(x, z, g, seed, big)    茂み：2×2〜3×3の葉の塊
   big_tree(x, z, g, seed)     大木：細い筋のらせんの幹、根、ジグザグの枝 [らーなろっそ 巨大樹]
 木を置く前に、置ける所か（根元が平らで、上が空いているか）を呼ぶ側で確かめる。
 """
@@ -29,7 +30,7 @@ def spruce(x, z, g, seed, h=None):
     r = random.Random(seed)
     h = h or r.randint(13, 18)
     lt = 'spruce_leaves'
-    for y in range(g + 1, g + h): put(x, y, z, log('spruce_log'))
+    for y in range(g + 1, g + h - 3): put(x, y, z, log('spruce_log'))                 # 幹は先の3段手前で止め、先は葉だけにする
     y0, y1 = g + 3, g + h - 1
     for y in range(y0, y1 + 1):
         t = (y - y0) / max(1, y1 - y0)
@@ -54,7 +55,7 @@ def small_spruce(x, z, g, seed):
     """小さいトウヒ：細い幹に、広い段（半径1.5〜2）と狭い段（幹の4方だけ）を交互に。上ほど狭く、頂は葉の柱。"""
     r = random.Random(seed)
     h = r.randint(7, 10)
-    for y in range(g + 1, g + h): put(x, y, z, log('spruce_log') if y < g + 3 else fence('spruce_planks'))
+    for y in range(g + 1, g + h - 2): put(x, y, z, log('spruce_log') if y < g + 3 else fence('spruce_planks'))
     for i, y in enumerate(range(g + 2, g + h)):
         t = i / max(1, h - 3)
         rad = (1.6 * (1 - t) + 1.2) if i % 2 == 0 else (0.6 * (1 - t) + 1.0)        # 狭い段も幹の4方は必ず埋める
@@ -70,13 +71,10 @@ def _roots(x, z, g, r, logt, plank, n):
     """根：幹と同じ材料の階段とハーフを、地面に這わせる。"""
     dirs = r.sample([(1, 0), (-1, 0), (0, 1), (0, -1)], n)
     for (dx, dz) in dirs:
-        L = r.randint(1, 3)
-        for k in range(1, L + 1):
+        for k in range(1, r.randint(1, 2) + 1):                                          # 根は横に寝かせた原木1〜2つ（明るい板の階段は箱に見える）
             X, Z = x + dx * k, z + dz * k
             if get(X, g + 1, Z) is not None and get(X, g + 1, Z)['s'] != 'cross': break
-            if k == 1 and L > 1: put(X, g + 1, Z, log(logt, 'x' if dx else 'z'))
-            elif k < L: put(X, g + 1, Z, stair(plank + '_planks', FACE[(-dx, -dz)]))
-            else: put(X, g + 1, Z, slab(plank + '_planks'))
+            put(X, g + 1, Z, log(logt, 'x' if dx else 'z'))
 
 
 def _lens(cx, cy, cz, rad, r, dark, mid, light, flat=True):
@@ -110,57 +108,89 @@ def _branch(x, y, z, dx, dz, length, rise, r, logt, plank, tips):
             cx += sx; cz += sz; path.append((cx, cy, cz))
     n = len(path)
     for i, (px, py, pz) in enumerate(path):
-        frac = (i + 1) / n
-        if frac <= 0.6: wood(px, py, pz, log(logt, 'x' if dx else 'z'))
-        elif frac < 1.0: wood(px, py, pz, full(plank + '_planks') if r.random() < 0.5 else log(logt, 'x' if dx else 'z'))
-        else: wood(px, py, pz, slab(plank + '_planks', 'top'))
+        if i < n - 1: wood(px, py, pz, log(logt, 'x' if dx else 'z'))                   # 板や箱の形を見せない：原木でつなぎ、
+        else: wood(px, py, pz, fence(plank + '_planks'))                                 # 先だけ柵で細らせる
     tips.append((cx, cy, cz))
 
+def _dome(cx, cy, cz, W, Hh, r, leaves):
+    """広葉樹の冠：背の高い丸い山（幅 W・高さ Hh、cy は冠の下の縁）を、小さなこぶ（葉の塊）の集まりで作る。
+    こぶは頂に1つ、中ほどに輪で5〜7、下に輪で4〜6。輪郭はこぶの数だけでこぼこになり、こぶの間に影のくぼみができる。
+    下面はほぼ平ら。葉は下3割と内側を暗く、上を明るく（暗:明 ≒ 1:2）。こぶの中心を返す（枝の先に使う）。 [rules 35]"""
+    dark, mid, light = leaves
+    R = W / 2.0
+    lumps = [(0, Hh - 2.2, 0, r.uniform(2.0, 2.6))]
+    for (yy, rr, n, sz) in ((Hh * 0.55, R - 2.0, r.randint(5, 7), (2.0, 2.7)), (Hh * 0.22, R - 2.3, r.randint(4, 6), (1.8, 2.4))):
+        a0 = r.uniform(0, 2 * math.pi)
+        for i in range(n):
+            a = a0 + i * 2 * math.pi / n + r.uniform(-0.35, 0.35)
+            d = rr * r.uniform(0.8, 1.05)
+            lumps.append((math.cos(a) * d, yy + r.uniform(-0.8, 0.8), math.sin(a) * d, r.uniform(*sz)))
+    lumps.append((0, Hh * 0.45, 0, R - 1.2))                                             # 芯（中を埋めて、向こうが透けないように）
+    Rb = int(R + 3)
+    for dy in range(0, int(Hh) + 2):
+        for dx in range(-Rb, Rb + 1):
+            for dz in range(-Rb, Rb + 1):
+                best = 9.0
+                for (lx, ly, lz, lr) in lumps:
+                    q = math.sqrt((dx - lx) ** 2 + ((dy - ly) * 1.15) ** 2 + (dz - lz) ** 2) / lr
+                    if q < best: best = q
+                if best > 1.0 + r.uniform(-0.12, 0.08): continue
+                if dy == 0 and math.hypot(dx, dz) > R - 1.5: continue                       # 下の縁は内へ引っ込める
+                t = dy / max(1.0, Hh)
+                if t < 0.3 or best < 0.55 and t < 0.7: lt = dark if r.random() < 0.8 else mid
+                elif t > 0.6: lt = light if r.random() < 0.6 else mid
+                else: lt = mid if r.random() < 0.65 else (light if r.random() < 0.5 else dark)
+                leaf(cx + dx, cy + dy, cz + dz, lt)
+    return [(cx + int(round(lx)), cy + int(round(ly)), cz + int(round(lz))) for (lx, ly, lz, lr) in lumps[:-1]]
+
+
 def oak(x, z, g, seed, size=1.0, logt='oak_log', plank='oak', leaves=('dark_oak_leaves', 'oak_leaves', 'azalea_leaves')):
-    """広葉樹：幹は1〜2段ごとに横へずらし、根元は太い。上で3〜5本の枝に分かれ、枝先にレンズ形の葉の板を高さを変えて乗せる。"""
+    """広葉樹：幹は1〜2段ごとに横へずらし、根元は太い。冠は背の高い丸い山（幅8〜12・高さ7〜10）で、下の縁は地面から4〜5マス上。
+    幹の上で3〜5本の枝に分かれ、中ほどのこぶへ伸びる。 [rules 2・4・35]"""
     r = random.Random(seed)
-    th = int(round(r.randint(5, 7) * size))
+    W = r.uniform(8.0, 10.5) * size
+    Hh = W * r.uniform(0.8, 0.95)
+    base = int(round(r.uniform(3.5, 5.0) * min(1.2, size)))
+    th = base + int(Hh * 0.4)
     cx, cz = x, z
     lean = r.choice([(1, 0), (-1, 0), (0, 1), (0, -1), (0, 0)])
     for i, y in enumerate(range(g + 1, g + th + 1)):
         put(cx, y, cz, log(logt))
-        if size >= 1.2 and i < 2:                                                      # 根元を太く
+        if size >= 1.15 and i < 2:                                                     # 根元を太く
             for (dx, dz) in ((1, 0), (0, 1)): put(cx + dx, y, cz + dz, log(logt))
-        if i in (2, 4) and lean != (0, 0) and r.random() < 0.7:                        # 1マスずらし、段差は階段で埋める
+        if i in (2, 4) and lean != (0, 0) and r.random() < 0.6:                       # 1マスずらし、段差は階段で埋める
             put(cx + lean[0], y, cz + lean[1], stair(plank + '_planks', FACE[(-lean[0], -lean[1])]))
             cx += lean[0]; cz += lean[1]
-    top = g + th
     tips = []
-    nb = r.randint(3, 5) if size >= 1 else r.randint(2, 3)
-    a0 = r.uniform(0, 2 * math.pi)
-    for i in range(nb):
-        a = a0 + i * 2 * math.pi / nb + r.uniform(-0.4, 0.4)
-        dx, dz = (1 if math.cos(a) > 0.38 else -1 if math.cos(a) < -0.38 else 0), (1 if math.sin(a) > 0.38 else -1 if math.sin(a) < -0.38 else 0)
+    for i in range(r.randint(3, 5)):                                                   # 冠の下に見える枝
+        a = r.uniform(0, 2 * math.pi)
+        dx, dz = round(math.cos(a)), round(math.sin(a))
         if (dx, dz) == (0, 0): dx = 1
-        by = top - r.randint(0, 2)
-        _branch(cx, by, cz, dx, dz, int(round(r.randint(2, 4) * size)), 0.45, r, logt, plank, tips)
-    for y in range(top + 1, top + 3): put(cx, y, cz, log(logt))                       # 真ん中の芯
-    tips.append((cx, top + 2, cz))
-    dark, mid, light = leaves
-    for (tx, ty, tz) in tips:
-        _lens(tx, ty + 1, tz, r.uniform(2.0, 2.8) * size, r, dark, mid, light)
-    _lens(cx, top + 3, cz, 3.0 * size, r, dark, mid, light)                        # 真ん中の大きな塊で、枝の塊を1つの樹冠にまとめる
-    _roots(cx if False else x, z, g, r, logt, plank, 3 if size >= 1 else 2)
+        _branch(cx, g + base - r.randint(0, 1), cz, dx, dz, max(2, int(W * 0.22)), 0.8, r, logt, plank, tips)   # 上向きに伸ばし、冠の中へ消す
+    _dome(cx, g + base + 1, cz, W, Hh, r, leaves)
+    _roots(x, z, g, r, logt, plank, 3 if size >= 1 else 2)
 
 
 def birch(x, z, g, seed):
-    """白樺：細い幹（白い原木）、小さな枝、小さなレンズの葉の板を2〜3枚。"""
+    """白樺：細い幹（白い原木）を高く見せ、冠は細長い丸い山（幅5〜6・高さ6〜8）。 [maaaaagarin：森の縁の白い幹の列]"""
     r = random.Random(seed)
-    th = r.randint(6, 8)
-    for y in range(g + 1, g + th + 1): put(x, y, z, log('birch_log'))
-    tips = [(x, g + th + 1, z)]
-    for i in range(2):
-        a = r.uniform(0, 2 * math.pi)
-        dx, dz = round(math.cos(a)), round(math.sin(a))
-        if (dx, dz) == (0, 0): continue
-        _branch(x, g + th - 2 - i * 2, z, dx, dz, 2, 0.5, r, 'birch_log', 'birch', tips)
-    for (tx, ty, tz) in tips: _lens(tx, ty, tz, r.uniform(1.6, 2.2), r, 'birch_leaves', 'birch_leaves', 'azalea_leaves')
-    _roots(x, z, g, r, 'birch_log', 'birch', 2)
+    W = r.uniform(5.0, 6.5); Hh = W * r.uniform(1.1, 1.3)
+    base = r.randint(5, 7)
+    for y in range(g + 1, g + base + int(Hh * 0.6)): put(x, y, z, log('birch_log'))
+    # 白樺は枝を見せない（白い幹の上に、板の端が出ると目立つ）
+    _dome(x, g + base + 1, z, W, Hh, r, ('birch_leaves', 'birch_leaves', 'azalea_leaves'))
+
+
+def bush(x, z, g, seed, big=False):
+    """茂み：2×2〜3×3、高さ1〜2の葉の塊。一番数が多い木。 [rules 31・36]"""
+    r = random.Random(seed)
+    lv = r.choice(['oak_leaves', 'azalea_leaves', 'dark_oak_leaves', 'flowering_azalea_leaves', 'oak_leaves'])
+    n = 3 if big else 2
+    for dx in range(n):
+        for dz in range(n):
+            if n == 3 and (dx, dz) in ((0, 0), (2, 2), (0, 2), (2, 0)) and r.random() < 0.6: continue
+            if get(x + dx, g + 1, z + dz) is None: put(x + dx, g + 1, z + dz, full(lv))
+            if (dx, dz) == (n // 2, n // 2) or r.random() < 0.25: leaf(x + dx, g + 2, z + dz, lv)
 
 
 def cherry(x, z, g, seed):

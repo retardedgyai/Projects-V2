@@ -115,9 +115,15 @@ T.steps()
 # ================================================================ 構造物と小物
 yb = T.stone_bridge(BRIDGE_Z, bxa, bxb, axis='x', base=int(round(river_w(BRIDGE_Z))))
 T.fire_pit(VX, VZ, VY)
+def place_near(fn, x, z, g, *rest):
+    """(x, z) から1〜2マスずらしながら、置ける所に置く（広場の縁の柱や段にかからない所）。"""
+    for (dx, dz) in [(0, 0), (-1, 0), (0, -1), (-1, -1), (1, 0), (0, 1), (-2, 0), (0, -2), (-2, -1), (-1, -2)]:
+        cs = T.cells_of(fn, x + dx, z + dz, g, *rest)
+        if T.spot_ok(cs, g): fn(x + dx, z + dz, g, *rest); return True
+    print('置けない', fn.__name__, (x, z)); return False
 for (x, z, f, c) in [(VX + 6, VZ - 5, 'w', 'yellow_wool'), (VX - 6, VZ + 4, 'e', 'lime_wool')]:
-    T.try_place(P.stall, (x, z, VY, f, c, 'white_wool', [P.MELON, P.HAY]), VY)
-T.try_place(P.cargo, (VX + 5, VZ + 6, VY, 'n'), VY)
+    place_near(P.stall, x, z, VY, f, c, 'white_wool', [P.MELON, P.HAY])
+place_near(P.cargo, VX + 5, VZ + 6, VY, 'n')
 for (x, z, arm) in [(VX - 8, VZ - 3, 'e'), (VX + 8, VZ + 3, 'w')]:
     if T.spot_ok([(x, z)], VY, allow=('plaza', 'lane', 'lane_edge')): P.lamp_post(x, z, VY, arm)
 print('畑', T.fields(range(VX - 40, VX + 40, 11), range(VZ + 20, VZ + 50, 8), n=6))
@@ -145,8 +151,15 @@ def tree_kind(x, z, r):
     return 'big' if r < 0.02 else 'cherry' if r < 0.07 else 'birch' if r < 0.28 else 'oak' if r < 0.75 else 'spruce'
 def skip(x, z):
     return tree_kind(x, z, 0.5) is None or KIND.get((x, z)) in ('flowers', 'stream') or abs(x - river_x(z)) < 7
-print('trees', T.forest(skip=skip, kind=lambda x, z, r: tree_kind(x, z, r) or 'spruce'))
-T.greens(flowers=42000, rocks=4000)
+# 森の踏み跡：村 → 湖、湖 → 山すその森、館の丘 → 東の森、村 → 南の森。木は道の両脇2マスまで残す [rules 32]
+T.trail([(VX - 20, VZ - 12), (-60, 52), (-66, 42)])
+T.trail([(-84, 30), (-92, 6), (-84, -18), (-66, -40), (-44, -56)], w=2.5)
+T.trail([(HILL[0] + 22, HILL[1] + 6), (78, -6), (96, -26), (104, -52)], w=2.5)
+T.trail([(-48, 96), (-30, 112), (-6, 116), (16, 106)], w=2.5)
+print('trees, bushes', T.woods(skip=skip, kind=lambda x, z, r: tree_kind(x, z, r) or 'spruce'))
+print('fallen logs', T.fallen_logs(40))
+print('lamps', sum(T.trail_lamps(l) for l in T.TRAIL_LINES[:2]), 'rest', T.rest_near(-62, 46), T.rest_near(-86, 26))
+T.ground_cover()
 
 # ================================================================ 検査と書き出し
 T.walk_check((VX, VZ - 6))
@@ -159,6 +172,10 @@ print('書き出し', save('open_world', {
     'bridge': [V(river_x(BRIDGE_Z) - 10, yb + 26, BRIDGE_Z + 30), V(river_x(BRIDGE_Z), yb, BRIDGE_Z)],
     'lake': [V(LAKE[0] - 30, 46, LAKE[1] + 44), V(LAKE[0], 12, LAKE[1])],
     'mountains': [V(0, 70, 60), V(0, 70, -110)],
+    'woods': [V(112, H[(112, 60)] + 30, 60), V(80, H[(80, 20)], 20)],
+    'trail': [V(-50, H[(-50, 62)] + 3, 62), V(-64, H[(-64, 44)] + 1, 44)],
+    'rest': [V(-68, H[(-68, 56)] + 3, 56), V(-75, H[(-75, 49)] + 1, 49)],
+    'eastpath': [V(76, H[(76, -4)] + 3, -4), V(96, H[(96, -26)] + 2, -26)],
     'top': [V(0, 320, 0), V(0, 0, 1)],
     'night': [V(VX + 24, VY + 34, VZ + 52), V(VX, VY + 2, VZ), {'night': True}],
 }, V(0, 20, 0), shadowR=170, fog=(200, 700)))
