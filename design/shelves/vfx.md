@@ -22,7 +22,7 @@
 
 ## Dungeons もとの技の作り方（手順）
 
-2026-11-02 に突風・氷槍の列・流星と落雷で決まった作り方。手本の版は `../canon/mage-harness-trio.md`・`../canon/lightning-v6.md`・`../canon/tornado-v7.md`（どれも正典候補）、
+2026-11-02 に突風・氷槍の列・流星と落雷で決まった作り方。手本の版は `../canon/mage-harness-trio.md`・`../canon/lightning-v6.md`（正典候補）・`../canon/tornado-v7.md`（正典）・`../canon/lightning-dash-v1.md`（移動の技、正典候補）、
 火炎弾は `../canon/fire-bolt-v21.md`、氷は `../canon/frost-nova-v12.md`。
 
 1. **技の中身を読む。** `server-minestom/.../coreloop/CoreSkillCatalog.kt` の説明・範囲（radius）・発生（startup、tick）・元素。何が起きる技かを一言にする。
@@ -42,10 +42,14 @@
    - 半球で範囲を見せない。プレイヤーのまわりに半球を出さない。
    - 列で並ぶ物は、まっすぐ奥へ並べると1つの束に重なるので、扇に広げる。
    - 空から来る物は、視線に入る高さに置く（必要なら見本のカメラを少し上げる）。
+   - **自分が動く技**（走る・跳ぶ・退く）は、見本では視点を数tickかけて動かす（雷走り 1版目は3tickで8ブロック。ゲームでは一瞬で移るので、見せ方は実機で決める）。印で行き先（地面の点線と小さな輪）を見せ、着いた先で割れてほどける。通った道には短く欠けて消える跡を残す。白い1コマは出発の1回だけで、着いた時は弱い色だけ。手前2ブロックは、動いている今の視点から測る。
+   - 体ごと走る技は、杖から撃つメイジらしさから外れる（雷走り 1版目「メイジっぽくはないからレンジ系のスキルにしよう」）。どの職の技かは藍に聞く。
 7. **地面に属性を残さない。** 状態は敵だけに付ける（`../ng.md`「なんで魔法使ったら地面に属性がのこるの？」）。焦げや飛んだブロックのように、物が2秒ほどで欠けて消えるのはよい。
 8. **同じ見本ページに足す。** `~/ProjectS/refs/mage-vfx/preview/`。新しい技は `src_mage2.js` と同じ書き方で、**技ごとに新しいファイル** `src_<名前>.js` を作る（手本：`src_tornado.js`）。
    - 使える部品：`kitBegin`/`kitEnd`、`tint`、`pixRing`、`puff`、`streak`、`crawl`（`src_thunder.js`）、`board`/`pix`/`bill`、`light`。火炎弾の絵 `LICK`・`TALL`・`BURST`（`src_fire.js`）、氷の `iceM`・`flakeTex`（`src_frost.js`）。
-   - 技の登録は5か所：`build.py`（組む一覧の `src_mage2.js` の後）、`src_thunder.js` の `DKIT` の一覧（`kitBegin` が使う線や輪の部品がここで作られる）、`src_head.html`（技の節・敵の置き場所 `placeMob`・`setCam` のカメラの傾き）、`src_tail.html`（呼び出し）。2版目からは、前の版を `src_<名前>_vN.js` に残す。
+   - 技の登録は7か所：`build.py`（組む一覧の最後、`src_tail.html` の前）、`src_thunder.js` の `DKIT` の一覧（`kitBegin` が使う線や輪の部品がここで作られる）、`src_head.html` の4か所（技の節、敵の置き場所 `placeMob`、`setCam` のカメラの傾き、光のにじみの `Cold`／`Wind`：冷たい色（氷・雷）の技は `Cold`、風は `Wind` に技の名前を足さないと色がにじまない）、`src_tail.html`（呼び出し）。2版目からは、前の版を `src_<名前>_vN.js` に残す。
+   - 見本のサーバーは見本のフォルダで `python3 -m http.server 8732 --bind 127.0.0.1` を裏で立てる（`shot.sh` が `127.0.0.1:8732` を読む）。終わったら止める。
+   - 1tickごとの GIF は、`shot.sh` で1tickずつ撮って PIL でつなぐ（手本：`out/raibashiri/run.sh`。ffmpeg は使わない）。出力は `out/<技>/` に置く（/tmp は再起動で消える）。
    - 名前がぶつからないよう、技の中の物は `O.<技の名前>…` のように技ごとの名前にする（`O.rings`・`O.lines` などは共通の部品が使っている）。
    - 撮るのは**一人称（cam=0）・夜（scene=night）**。`python3 build.py` で組み、`python3 sheet.py <出力> <技> 0 night <tick…>` で並べて撮る。1枚は `shot.sh <出力> "t=<tick>&cam=0&only=<技>&scene=night"`。どちらも1本ずつしか動かない（PC が重くなるので並べて走らせない）。
    - カメラの傾きは、技の物が画面に入る最小に（地面の技は下向き -0.1〜-0.24、空から来る技は上向き 0.02〜0.06）。
