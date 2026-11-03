@@ -121,7 +121,7 @@ internal class PlayerMenuDialog(
         val x0 = size.titleX.toDouble()
         canvas.background("band", -x0, 0.0)
         val wallet = size.layout.getAsJsonArray("wallet")
-        canvas.text("d9", wallet[0].asDouble - x0, wallet[1].asDouble, "%,d".format(account.silver), TEXT, Align.RIGHT)
+        canvas.text("d9", wallet[0].asDouble - x0, wallet[1].asDouble, "%,d".format(account.silver), TEXT)
         return canvas.buildLine()
     }
 
@@ -185,7 +185,8 @@ internal class PlayerMenuDialog(
         }
         val bar = layout.getAsJsonArray("pathBar")
         val p = progress.getValue(chosen)
-        canvas.text("m6", bar[0].asDouble, bar[1].asDouble - 4, "${chosen.label} · ${p.sub}　${p.value}", MUTED)
+        canvas.text("m6", bar[0].asDouble, bar[1].asDouble - 4, "${chosen.label}の進み", MUTED)
+        canvas.text("d7", bar[0].asDouble + bar[2].asDouble, bar[1].asDouble - 4, p.value, TEXT, Align.RIGHT)
         val width = bar[2].asInt
         repeat((p.next * width / 2).roundToInt().coerceIn(0, width / 2)) { canvas.sprite("bar_${chosen.id}", bar[0].asDouble + it * 2, bar[1].asDouble) }
     }
@@ -348,7 +349,7 @@ internal class PlayerMenuDialog(
         if (gear > 0) x += canvas.text("d9", x + 3, 40.0, "+$gear", HEAT) + 3
         canvas.text("m6", x + 4, 40.0, "/ ${CoreSkillLevels.MAX_BASE}", MUTED)
         canvas.text("dot16", rx, 58.0, fit(canvas, "dot16", shown.name, 104.0), TEXT)
-        role(shown)?.let { canvas.text("m6", rx, 69.0, "◆ $it", SOFT) }
+        role(shown)?.let { canvas.text("m6", rx, 69.0, it, SOFT) }
         wrap(canvas, description(shown), 104.0, "m6").take(2).forEachIndexed { i, line -> canvas.text("m6", rx, 79.0 + i * 9, line, MUTED) }
         val bars = layout.getAsJsonArray("bars")
         val barW = layout["barW"].asInt
@@ -361,7 +362,7 @@ internal class PlayerMenuDialog(
         fill(0, power(shown) / (all.maxOf(::power).takeIf { it > 0 } ?: 1.0))
         fill(1, 1 - shown.cooldown.toDouble() / (all.maxOf { it.cooldown }.takeIf { it > 0 } ?: 1))
         fill(2, shown.radius / all.maxOf { it.radius })
-        canvas.text("m6", rx + 32, 122.0, "×%.2f → 次 ×%.2f".format(CoreSkillLevels.multiplier(shown, base + gear),
+        canvas.text("m6", rx + 32, 122.0, "×%.2f　次の Lv で ×%.2f".format(CoreSkillLevels.multiplier(shown, base + gear),
             CoreSkillLevels.multiplier(shown, base + gear + 1)), MUTED)
         val dias = layout.getAsJsonArray("dias")
         for (i in 0 until minOf(10, base + gear)) {

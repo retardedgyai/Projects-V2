@@ -161,8 +161,10 @@ class Sprites:
         self.meta: dict[str, dict] = {}
         self.providers: list[dict] = []
 
-    def add(self, name: str, image: Image.Image, h: float, tops: list[float], origin: int = 0, unit: float | None = None):
-        """`h` and `tops` in design px (or GUI px when `unit` is 1); the glyph is round(h * unit) GUI px tall."""
+    def add(self, name: str, image: Image.Image, h: float, tops: list[float], origin: int = 0, unit: float | None = None,
+            first_line: bool = False):
+        """`h` and `tops` in design px (or GUI px when `unit` is 1); the glyph is round(h * unit) GUI px tall.
+        [first_line]: hang it from the canvas's first line (backgrounds; see DialogCanvas.background)."""
         u = self.unit if unit is None else unit
         Sprites.textures[name] = image
         gui_h = max(1, round(h * u))
@@ -171,14 +173,15 @@ class Sprites:
         actual = bbox[2] if bbox else 0
         scale = gui_h / image.height
         entry = {"advance": int(0.5 + actual * scale) + 1, "chars": {}}
-        for ascent in sorted({ascent_for(round(t * u), origin, gui_h) for t in tops}):
+        for ascent in sorted({(7 - (round(t * u) - origin)) if first_line else ascent_for(round(t * u), origin, gui_h) for t in tops}):
             ch = self.next; self.next += 1
             self.providers.append({"type": "bitmap", "file": f"{NS}:menu/{name}.png", "ascent": ascent,
                                    "height": gui_h, "chars": [chr(ch)]})
             entry["chars"][str(ascent)] = ch
         self.meta[name] = entry
 
-    def add_tiled(self, name: str, image: Image.Image, h: int, tops: list[int], origin: int = 0, unit: float | None = None):
+    def add_tiled(self, name: str, image: Image.Image, h: int, tops: list[int], origin: int = 0, unit: float | None = None,
+                  first_line: bool = False):
         """A sprite bigger than the client's 256 px font texture page, cut into TILE x TILE pieces (same units as h)."""
         w = image.width // K
         tiles = []
@@ -189,7 +192,7 @@ class Sprites:
                 if piece.getchannel("A").getbbox() is None:
                     continue
                 tile = f"{name}_{tx}_{ty}"
-                self.add(tile, piece, th, [t + ty for t in tops], origin, unit)
+                self.add(tile, piece, th, [t + ty for t in tops], origin, unit, first_line)
                 tiles.append({"sprite": tile, "dx": tx, "dy": ty})
         self.meta[name] = {"tiles": tiles}
 
@@ -244,18 +247,21 @@ def bigpixel(w, h, block=10, seed=7):
     """The Dungeons ground: a warm crimson glow from the upper middle fading to violet-black, drawn in big blocks."""
     import math, random
     rng = random.Random(seed)
-    img = Image.new("RGBA", (w * K, h * K))
+    pad = block
+    img = Image.new("RGBA", ((w + 2 * pad) * K, (h + 2 * pad) * K))
     d = ImageDraw.Draw(img)
-    for by in range(0, h, block):
-        for bx in range(0, w, block):
+    for by in range(-pad, h + pad, block):
+        for bx in range(-pad, w + pad, block):
             cx, cy = (bx + block / 2) / w, (by + block / 2) / h
             dist = math.hypot((cx - .5) * 1.3, (cy - .15) * 1.1)
             t = max(0.0, 1 - dist * 1.35)
             base, mid, hot = (14, 10, 16), (36, 14, 30), (78, 22, 38)
             c = [base[i] + (mid[i] - base[i]) * min(1, t * 1.6) + (hot[i] - mid[i]) * max(0, t - .45) * 1.4 for i in range(3)]
             k = 1 + rng.uniform(-.09, .09)
-            d.rectangle((bx * K, by * K, (bx + block) * K - 1, (by + block) * K - 1), fill=tuple(max(0, min(255, int(v * k))) for v in c) + (255,))
-    return img.filter(ImageFilter.GaussianBlur(K * 1.2))
+            d.rectangle(((bx + pad) * K, (by + pad) * K, (bx + pad + block) * K - 1, (by + pad + block) * K - 1),
+                        fill=tuple(max(0, min(255, int(v * k))) for v in c) + (255,))
+    # blurred with a margin so the edges do not fade dark
+    return img.filter(ImageFilter.GaussianBlur(K * 1.2)).crop((pad * K, pad * K, (pad + w) * K, (pad + h) * K))
 
 
 def slot_frame(d, x, y, size=SLOT):
@@ -412,9 +418,10 @@ def main() -> None:
                     {"type": "ttf", "file": f"{NS}:menu_{key}.ttf", "size": pt * unit, "oversample": oversample, "shift": [0.0, float(r)]},
                 ]}).encode()
             size["styles"][style] = {"font": f"{NS}:menu{tag}_{style}_", "advances": advances(fonts[key], pt * unit, oversample, chars)}
-        sprites.add_tiled("page_self", page_self, CANVAS_H, [0])
-        sprites.add_tiled("page_skills", page_skills, CANVAS_H, [0])
-        sprites.add_tiled(f"band{tag}", bake_band(fonts, book, screen), 33, [0], TITLE_TOP, unit=1.0)
+        # Opaque now: a tile hung from a lower line would be drawn after (and over) everything on the lines above.
+        sprites.add_tiled("page_self", page_self, CANVAS_H, [0], first_line=True)
+        sprites.add_tiled("page_skills", page_skills, CANVAS_H, [0], first_line=True)
+        sprites.add_tiled(f"band{tag}", bake_band(fonts, book, screen), 33, [0], TITLE_TOP, unit=1.0, first_line=True)
         for c in CLASSES:
             art = Image.open(ROOT / f"assets/core-ui/proposals/2026-10-16-class-emblems/{c}-32.png").convert("RGBA")
             sprites.add(f"emblem64_{c}", art.resize((64 * K, 64 * K), Image.NEAREST).resize((256, 256), Image.NEAREST), 64, [EMBLEM64[1]])
@@ -449,7 +456,7 @@ def main() -> None:
                           "rx": RX, "big": list(BIG), "bars": [list(b) for b in BARS], "barW": BAR_W, "dias": [list(x) for x in DIAS],
                           "acts": [list(a) for a in ACTS], "reset": list(RESET), "emblem48": list(EMBLEM48), "hexSelf": [list(h) for h in HEX_SELF],
                           "pathD": [list(p) for p in PATH_D], "pathBar": list(PATH_BAR), "steps": list(STEPS), "primary": list(PRIMARY),
-                          "edit": list(EDIT), "wallet": [screen - 20, 21]}
+                          "edit": list(EDIT), "wallet": [screen - 100, 21]}
         metrics["sizes"][tag] = size
         glyphs += len(sprites.providers)
     for name, image in Sprites.textures.items():

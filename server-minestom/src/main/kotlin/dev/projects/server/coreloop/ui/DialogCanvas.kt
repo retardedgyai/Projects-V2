@@ -68,7 +68,8 @@ internal class DialogCanvas(private val size: Size, private val space: Map<Doubl
         val y = (top * unit).roundToInt() - originTop
         val line = maxOf(0, floor(y / 9.0).toInt())
         // Short sprites hang from the line above (the client rejects ascent > height); the script baked the same choice.
-        val choice = listOf(line to 7 - (y - line * 9), line - 1 to 7 - (y - (line - 1) * 9))
+        // Backgrounds hang from the first line, so they are drawn before every line below them (layer 0 first on it).
+        val choice = (if (layer == 0) listOf(0 to 7 - y) else listOf(line to 7 - (y - line * 9), line - 1 to 7 - (y - (line - 1) * 9)))
             .firstOrNull { (l, ascent) -> l >= 0 && sprite.chars.containsKey(ascent) }
             ?: error("Sprite $name was not baked for y=$top")
         var component = Component.text(String(Character.toChars(sprite.chars.getValue(choice.second)))).font(size.art)
