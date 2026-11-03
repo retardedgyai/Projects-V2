@@ -1,7 +1,10 @@
 #version 330
 #extension GL_ARB_separate_shader_objects : require
 
-// ProjectS combat VFX on vanilla 26.3 core/item. Two independent markers, every other item renders as vanilla:
+// ProjectS combat VFX on vanilla 26.3 core/item. Independent markers, every other item renders as vanilla:
+// - メイジの竜巻 (CoreMageTornado.kt): tint blue == 84; green 1 = the funnel (red = how much stands, see mageFunnel),
+//   green 2 = its mark on the ground (red = ticks since the cast, see mageGround), green 3 = the funnel in 3D
+//   (red = how much stands, see mageFunnel3D).
 // - 黒翳竜 (scripts/build_boss_vfx.py): items whose tint is blue == 77, green == the effect kind (1..6). The
 //   texture is a data map (R = shape mask, G = flow coordinate along the effect, B = across), the tint red is the
 //   effect's progress (0..1, driven by the server every tick) and the colour is computed here: emissive, moving
@@ -237,6 +240,135 @@ vec3 lightProbePixel(int x, int slot, int code, int palette) {
     return (local & 1) == 0 ? floatHigh(f) : vec3(float(floatBitsToUint(f) & 255u), 0.0, 0.0);
 }
 
+// メイジの竜巻 (marker 84, CoreMageTornado.kt; the preview is refs/mage-vfx/preview/src_tornado.js version 7, 藍
+// 「いいね　マシになった求台点だね」 2026-11-03). One upright billboard quad; the data map gives G = height, B = across. The
+// funnel is drawn here: 16 px a block, every pixel snapped to the 1/16-block grid on the funnel's surface. One-pixel wind
+// lines climb round it in stairs (a white head pixel), in uneven bands; dull dust pixels between, sandy near the
+// ground; denser toward the outline (the shading); the far side shows darker through the gaps. The lines turn and rise a
+// whole pixel at a time with GameTime, so they move between server ticks; the axis snakes. tint red = how much of the
+// funnel stands (0..1, the server grows it and undoes it from the top).
+const float TW_W = 4.8, TW_H = 4.8, TW_TOP = 4.4;
+float twHash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+// One stair line through (px, qy)? Lines climb a pixel every two round; every third is drawn, in uneven bands, broken
+// into runs of 10-25 pixels. along / len: where on its run the pixel is (the head is the last pixel).
+bool twLine(float px, float qy, float rim, out float along, out float len, out float line) {
+    line = qy - floor(px / 2.0);
+    if (mod(line, 2.0) > .5 || twHash(vec2(floor(line / 5.0), 9.0)) <= .15) return false;
+    float sh = px + twHash(vec2(line, 1.0)) * 97.0, seg = floor(sh / 28.0);
+    along = mod(sh, 28.0);
+    len = 12.0 + floor(twHash(vec2(line, seg + 2.0)) * 15.0);
+    return twHash(vec2(line, seg + 3.0)) < .75 + rim * .25 && along < len;
+}
+// The surface at (ang, r, py): a wind line pixel (bright pale green, a white head), its glow (a translucent pale pixel
+// just above and below it: the glow drawn in pixels, since the game has no bloom), or a loose dust pixel (pale and
+// translucent, so the funnel reads as light in daylight too, not as dirt; sandy near the ground). 2026-11-03: 藍 saw it
+// in the game「まるですべてが違うな」, dark dust pixels on a bright day; it should glow by day as by night (「そうだね」).
+vec4 twPattern(float ang, float r, float py, float y, float tt, float rim) {
+    float N = floor(6.2832 * r * 16.0);
+    float turn = floor(tt / 20.0 * (38.0 - y * 3.5)), rise = floor(tt / 20.0 * 10.0);
+    float px = mod(floor(ang * N) + turn, N), qy = py - rise;
+    float along, len, line;
+    if (twLine(px, qy, rim, along, len, line)) {
+        vec3 g = mix(vec3(.55, .95, .7), vec3(.72, 1.0, .8), twHash(vec2(line, 5.0)));
+        return vec4(along > len - 1.0 ? vec3(1.0) : (along > len - 5.0 ? vec3(.9, 1.0, .93) : g), 1.0);
+    }
+    // (2026-11-03, in the game:「あまり光ってる感じがない」. The translucent halo and dust mixed with what was behind
+    // into dull glass. Now the glow is the mage glow post effect picking up the mint lines; only a few dust pixels.)
+    if (twHash(vec2(px, py) + vec2(3.1, 7.7)) < .03 + rim * .12) {
+        return vec4(mix(vec3(.8, .96, .86), vec3(.9, .86, .74), smoothstep(1.4, .2, y)), .5);
+    }
+    return vec4(0.0);
+}
+vec4 mageFunnel(vec4 data, float stand) {
+    float tt = GameTime * 24000.0;
+    float py = floor(data.g * TW_H * 16.0), y = py / 16.0;
+    float pxs = floor(data.b * TW_W * 16.0);
+    if (y > stand * TW_TOP) return vec4(0.0);
+    if (y > TW_TOP - .45 && twHash(vec2(pxs, py) + vec2(9.0, 1.0)) < (y - (TW_TOP - .45)) / .45) return vec4(0.0);
+    float x = (pxs + .5) / 16.0 - TW_W * .5;
+    float cx = (sin(y * 1.1 + tt * .22) * .3 + sin(y * 2.3 - tt * .13) * .1) * (y / TW_TOP);
+    float r = .28 + pow(max(0.0, y) / TW_TOP, 1.35) * 1.55;
+    float d = (x - cx) / r;
+    if (abs(d) > 1.0) return vec4(0.0);
+    float rim = smoothstep(.55, .95, 1.0 - sqrt(1.0 - d * d));
+    float s = asin(d) / 6.2832;
+    vec4 front = twPattern(fract(s), r, py, y, tt, rim);
+    if (front.a > .99) return front;
+    // the far side shows through, faint (translucent, not darkened: dark reads as dirt by day)
+    vec4 back = twPattern(fract(.5 - s), r, py, y, tt, rim);
+    back.a *= .35;
+    return front.a > back.a ? front : back;
+}
+
+// 竜巻 in 3D (marker 84, kind 3; 藍「あとこれ3dではない」 of the billboard): the funnel built of eight bands of upright
+// panels (build_boss_vfx.py tornado_funnel). The texture gives each pixel its place on the whole funnel: G = height,
+// B = angle round it, R = outer (255) or inner (128) face. The outline shading comes from the surface's slant to the
+// eye (its normal from screen derivatives of the camera-relative position). The inner faces (the far wall seen through
+// the gaps, or the inside) are faint. tint red = how much of the funnel stands.
+vec4 mageFunnel3D(vec4 data, float stand) {
+    float tt = GameTime * 24000.0;
+    float y = floor(data.g * TW_TOP * 16.0) / 16.0, py = floor(data.g * TW_TOP * 16.0);
+    if (y > stand * TW_TOP) return vec4(0.0);
+    float r = .28 + pow(max(0.0, y) / TW_TOP, 1.35) * 1.55;
+    float N = floor(6.2832 * r * 16.0);
+    float pxs = floor(data.b * N);
+    if (y > TW_TOP - .45 && twHash(vec2(pxs, py) + vec2(9.0, 1.0)) < (y - (TW_TOP - .45)) / .45) return vec4(0.0);
+    vec3 n = normalize(cross(dFdx(vfxPosition), dFdy(vfxPosition)));
+    float slant = 1.0 - abs(dot(n, normalize(-vfxPosition)));
+    float rim = smoothstep(.55, .95, slant);
+    // the outline: bright pixels along the funnel's edge as seen, so its shape reads at a glance (2026-11-03,
+    // 「トルネード出てはいるんだけどわかりづらい」「もう少し派手に」)
+    if (data.r > .75 && slant > .9 && twHash(vec2(pxs, py) + vec2(floor(tt * .5), 4.0)) < .7)
+        return vec4(twHash(vec2(pxs, py) + vec2(2.0, 8.0)) < .4 ? vec3(1.0) : vec3(.72, 1.0, .82), 1.0);
+    vec4 c = twPattern(data.b, r, py, y, tt, rim);
+    if (data.r < .75) c.a *= c.a > .99 ? .3 : 0.0;   // inner faces: only the lines, faint
+    return c;
+}
+
+// 竜巻's mark on the ground (marker 84, kind 2): a flat 8 x 8 block plate, the same coordinate map. tint red = ticks since
+// the cast (0..255). While the funnel starts up, a sparse ring of pale pixels closes in (radius 3.5); until it ends,
+// short pixel lines run inward over the ground (the pull). 16 px a block like everything else.
+vec4 mageGround(vec4 data, float tick) {
+    const float GW = 8.0;
+    float px = floor(data.b * GW * 16.0), pz = floor(data.g * GW * 16.0);
+    vec2 c = (vec2(px, pz) + .5) / 16.0 - GW * .5;
+    float dist = length(c), ang = atan(c.y, c.x);
+    float a = tick - 8.0;
+    if (tick < 9.0) {
+        float rr = 3.5 - tick * .05;
+        if (abs(dist - rr) < .5 / 16.0 + .01 && twHash(vec2(floor((ang + 3.1416) * rr * 16.0), tick)) < .6)
+            return vec4(mod(tick, 2.0) > .5 ? vec3(.486, .808, .588) : vec3(.651, .91, .729), 1.0);
+    }
+    // while it stands: two broken rings of pixels turning fast round its foot (radius 1.2 and 1.7)
+    if (a >= 0.0 && a < 60.0) {
+        float T = GameTime * 24000.0;
+        for (int k = 0; k < 2; k++) {
+            float rr = k == 0 ? 1.2 : 1.7;
+            if (abs(dist - rr) < .5 / 16.0 + .01) {
+                float ar = fract((ang + T * (k == 0 ? .3 : -.22)) / 6.2832);
+                float seg = floor(ar * (k == 0 ? 9.0 : 13.0));
+                if (fract(ar * (k == 0 ? 9.0 : 13.0)) < .55 && twHash(vec2(seg, float(k))) < .8)
+                    return vec4(fract(ar * (k == 0 ? 9.0 : 13.0)) > .45 ? vec3(1.0) : vec3(.72, 1.0, .82), 1.0);
+            }
+        }
+    }
+    if (a < 62.0) {
+        float T = GameTime * 24000.0;
+        float n = a < 0.0 ? 8.0 : 14.0;
+        for (int k = 0; k < 14; k++) {
+            if (float(k) >= n) break;
+            float an = twHash(vec2(float(k), 60.0)) * 6.2832 + max(0.0, a) * .03 - 3.1416;
+            float d = 3.6 - mod(T * .22 + twHash(vec2(float(k), 61.0)) * 2.6, 2.6);
+            if (d < .6) continue;
+            vec2 dir = vec2(cos(an), sin(an));
+            float along = dot(c, dir), side = abs(dot(c, vec2(-dir.y, dir.x)));
+            if (side < .5 / 16.0 && along <= d + .5 / 16.0 && along > d - 3.5 / 16.0)
+                return vec4(along < d - 2.5 / 16.0 ? vec3(.949, 1.0, .965) : vec3(.612, .894, .706), 1.0);
+        }
+    }
+    return vec4(0.0);
+}
+
 void main() {
     vec4 color = texture(Sampler0, texCoord0);
     int markerB = int(rawColor.b * 255.0 + .5);
@@ -258,6 +390,14 @@ void main() {
         vec4 fx = markerB == 77 && kind >= 7 ? heatCut(color, float(kind), rawColor.r)
             : shadeVfx(color, float(kind), rawColor.r, markerB == 79);
         if (fx.a < .01) {
+            discard;
+        }
+        finishUnlit(fx);
+        return;
+    }
+    if (markerB == 84 && kind >= 1 && kind <= 3) {
+        vec4 fx = kind == 1 ? mageFunnel(color, rawColor.r) : kind == 2 ? mageGround(color, rawColor.r * 255.0) : mageFunnel3D(color, rawColor.r);
+        if (fx.a < .02) {
             discard;
         }
         finishUnlit(fx);

@@ -31,5 +31,8 @@ void main() {
     // as high as blue and red low (the sky and the fog are bluer than green, so they stay out).
     float warm = smoothstep(Threshold + .1, Threshold + .3, c.r) * smoothstep(.25, .4, c.r - c.g) * smoothstep(.4, .6, c.r - c.b);
     float cold = smoothstep(.8, .92, c.g) * smoothstep(-.06, -.01, c.g - c.b) * (1.0 - smoothstep(.4, .55, c.r));
-    fragColor = vec4(c * max(warm, cold) * Strength, 1.0);
+    // Wind (the tornado, 2026-11-03, the Creator「あまり光ってる感じがない」): the bright mint of its lines, green well
+    // above both red and blue. Grass and leaves are darker than this, the sky bluer, so they stay out.
+    float wind = smoothstep(.78, .9, c.g) * smoothstep(.08, .16, c.g - c.b) * smoothstep(.14, .24, c.g - c.r);
+    fragColor = vec4(c * max(max(warm, cold), wind) * Strength, 1.0);
 }
