@@ -23,9 +23,10 @@ import java.util.UUID
 import kotlin.math.roundToInt
 
 /**
- * The player menu (冒険の手帳) drawn inside a vanilla dialog: the 自分 page, a name card with the four paths
- * (戦闘・採取・鍛冶・魔術). The other tabs still open the existing screens. Picture: design/log.md 2026-11-02 and the
- * 「プレイヤーメニュー ダイアログ案」 page; look and positions: scripts/build_menu_dialog_assets.py.
+ * The player menu (冒険の手帳) drawn inside a vanilla dialog, in the 7版 C look (港の窓): the 自分 page is three
+ * windows, the name card, the four paths (戦闘・採取・鍛冶・魔術) as banners, and the chosen path's next step; the 技
+ * page picks and raises skills. The other tabs still open the existing screens. Picture: the 「プレイヤーメニュー
+ * ダイアログ案」 page (7版 C); look and positions: scripts/build_menu_dialog_assets.py.
  */
 internal class PlayerMenuDialog(
     private val metrics: DialogCanvas.Metrics,
@@ -38,14 +39,14 @@ internal class PlayerMenuDialog(
 ) {
     enum class Target { SKILLS, PASSIVES, STORAGE, JOURNAL, ATLAS, MASTERY, WORKSHOP, GRIMOIRE }
 
-    private enum class Path(val id: String, val label: String, val target: Target, val button: String) {
-        COMBAT("combat", "戦闘", Target.ATLAS, "地図台を開く"),
-        GATHER("gather", "採取", Target.MASTERY, "採取の育成を開く"),
-        SMITH("smith", "鍛冶", Target.WORKSHOP, "工房を開く"),
-        MAGIC("magic", "魔術", Target.GRIMOIRE, "魔術書を開く"),
+    private enum class Path(val id: String, val label: String, val target: Target, val button: String, val color: TextColor) {
+        COMBAT("combat", "戦闘", Target.ATLAS, "地図台を開く", TextColor.color(0xFF8A3D)),
+        GATHER("gather", "採取", Target.MASTERY, "採取の育成を開く", TextColor.color(0x79E0D2)),
+        SMITH("smith", "鍛冶", Target.WORKSHOP, "工房を開く", TextColor.color(0xF2C84B)),
+        MAGIC("magic", "魔術", Target.GRIMOIRE, "魔術書を開く", TextColor.color(0xB9A0FF)),
     }
 
-    /** What one path shows: the short line beside its name, the number, how far to the next step (0..1). */
+    /** What one path shows: the line under its name, the value in its tooltip, the number on its banner, how far to the next step (0..1). */
     private class Progress(val sub: String, val value: String, val short: String, val next: Double)
 
     private val selected = mutableMapOf<UUID, Path>()
@@ -150,68 +151,70 @@ internal class PlayerMenuDialog(
         }
     }
 
-    /** Left: the class emblem in its glow, the player's face and name, title, and two hex plates. */
+    /** Left window, the name card: the class in its slot, face and name, title, and the numbers beside the baked labels. */
     private fun portrait(canvas: DialogCanvas, layout: JsonObject, player: Player, account: CoreAccount) {
-        val emblem = layout.getAsJsonArray("emblem48")
-        canvas.sprite("emblem48_${account.journey.job.name.lowercase()}", emblem[0].asDouble, emblem[1].asDouble)
-        val cx = 84.0
-        val top = emblem[1].asDouble
+        val emblem = layout.getAsJsonArray("emblem24")
+        canvas.sprite("emblem24_${account.journey.job.name.lowercase()}", emblem[0].asDouble, emblem[1].asDouble)
         // The face is the vanilla player-head object, 8 GUI px wide on its line at every scale.
-        val name = player.username
-        val face = canvas.design(8.0)
-        val nameW = canvas.width("dot16", name)
-        val start = cx - (face + 4 + nameW) / 2
-        canvas.inline(start, top + 66, 8.0, head(player))
-        canvas.text("dot16", start + face + 4, top + 70, name, TEXT)
-        canvas.text("m7", cx, top + 81, "称号はまだありません", FAINT, Align.CENTER)
-        val hexes = layout.getAsJsonArray("hexSelf")
+        val name = layout.getAsJsonArray("name")
+        val x = name[0].asDouble; val baseline = name[1].asDouble
+        canvas.inline(x, baseline - 1, 8.0, head(player))
+        canvas.text("dot16", x + canvas.design(8.0) + 4, baseline + 3, fit(canvas, "dot16", player.username, 90.0), TEXT)
+        canvas.text("m6", x, baseline + 13, "称号はまだありません", FAINT)
+        val kv = layout.getAsJsonArray("kv")
+        val right = kv[0].asDouble + kv[2].asDouble
         val clears = account.zoneRecords.values.sumOf { it.clears }
-        for ((i, pair) in listOf(account.journey.job.displayName to "${account.journey.level}", "踏破" to "$clears").withIndex()) {
-            val hex = hexes[i].asJsonArray
-            canvas.text("m6", hex[0].asDouble + 13, hex[1].asDouble + 11, pair.first, MUTED, Align.CENTER)
-            canvas.text("d9", hex[0].asDouble + 13, hex[1].asDouble + 21, pair.second, TEXT, Align.CENTER)
-        }
+        val passives = CorePassiveTree.budget(account) - account.journey.build.passives.size
+        val skillPoints = CoreSkillLevels.available(account)
+        listOf(account.journey.job.displayName to TEXT, "${account.journey.level}" to TEXT, "$clears" to TEXT,
+            "$skillPoints" to if (skillPoints > 0) GOLD else TEXT, "$passives" to if (passives > 0) GOLD else TEXT)
+            .forEachIndexed { i, (value, color) -> canvas.text("d7", right, kv[1].asDouble + i * kv[3].asDouble, value, color, Align.RIGHT) }
         val edit = layout.getAsJsonArray("edit")
-        canvas.sprite("hit_edit", edit[0].asDouble, edit[1].asDouble - 1, click("edit"))
+        canvas.sprite("hit_edit", edit[0].asDouble, edit[1].asDouble, click("edit"))
     }
 
-    /** Middle: the four paths as diamonds (the icons are baked), the chosen one lit, and its bar to the next step. */
+    /** Middle window: the four path banners (baked) with each one's step and number, the chosen one framed. */
     private fun paths(canvas: DialogCanvas, layout: JsonObject, chosen: Path, progress: Map<Path, Progress>) {
-        val diamonds = layout.getAsJsonArray("pathD")
+        val rows = layout.getAsJsonArray("rows")
         for (path in Path.entries) {
-            val d = diamonds[path.ordinal].asJsonArray
+            val r = rows[path.ordinal].asJsonArray
+            val x = r[0].asDouble; val top = r[1].asDouble
             val p = progress.getValue(path)
-            if (path == chosen) canvas.sprite("dia_sel", d[0].asDouble, d[1].asDouble)
-            canvas.text("d7", d[0].asDouble + 13, d[1].asDouble + 44, p.short, if (path == chosen) TEXT else MUTED, Align.CENTER)
-            canvas.sprite("hit_dia", d[0].asDouble, d[1].asDouble, click("path_${path.ordinal}"), Component.text("${path.label}　${p.value}", TEXT))
+            if (path == chosen) canvas.sprite("row_on", x, top)
+            canvas.text("m6", x + 6, top + 21, fit(canvas, "m6", p.sub, 100.0), SOFT)
+            canvas.text("d9", x + 134, top + 16, p.short, if (path == Path.MAGIC) MUTED else TEXT, Align.RIGHT)
+            canvas.sprite("hit_row", x, top, click("path_${path.ordinal}"), Component.text("${path.label}　${p.value}", TEXT))
         }
         val bar = layout.getAsJsonArray("pathBar")
         val p = progress.getValue(chosen)
-        canvas.text("m6", bar[0].asDouble, bar[1].asDouble - 4, "${chosen.label}の進み", MUTED)
-        canvas.text("d7", bar[0].asDouble + bar[2].asDouble, bar[1].asDouble - 4, p.value, TEXT, Align.RIGHT)
+        val bx = bar[0].asDouble; val by = bar[1].asDouble
+        val w = canvas.text("b7", bx, by - 4, "いまの道 ・ ", TEXT)
+        canvas.text("b7", bx + w, by - 4, chosen.label, chosen.color)
+        canvas.text("d7", bx + bar[2].asDouble, by - 4, p.value, TEXT, Align.RIGHT)
         val width = bar[2].asInt
-        repeat((p.next * width / 2).roundToInt().coerceIn(0, width / 2)) { canvas.sprite("bar_${chosen.id}", bar[0].asDouble + it * 2, bar[1].asDouble) }
+        repeat((p.next * width / 2).roundToInt().coerceIn(0, width / 2)) { canvas.sprite("bar_${chosen.id}", bx + it * 2, by) }
+        val primary = layout.getAsJsonArray("primary")
+        canvas.text("b7", primary[0].asDouble + 6, primary[1].asDouble + 10, chosen.button, DARK)
+        canvas.sprite("hit_go", primary[0].asDouble, primary[1].asDouble, click("primary"))
     }
 
-    /** Right: the chosen path's next steps and the gold action. */
+    /** Right window: the chosen path's next steps. */
     private fun panel(canvas: DialogCanvas, layout: JsonObject, player: Player, account: CoreAccount, path: Path) {
         val steps = layout.getAsJsonArray("steps")
         val x = steps[0].asDouble
         var baseline = steps[1].asDouble
         val step = steps[2].asDouble
+        val lines = steps[3].asInt
         var row = 0
         for ((text, color) in details(player, account, path)) {
-            for ((i, line) in wrap(canvas, text, 104.0).withIndex()) {
-                if (row >= 7) break
+            for ((i, line) in wrap(canvas, text, 130.0).withIndex()) {
+                if (row >= lines) break
                 if (i == 0) canvas.sprite("ms_now", x, baseline - 6)
                 canvas.text("m7", x + 10, baseline, line, color)
                 baseline += step; row++
             }
         }
-        notices[player.uuid]?.let { canvas.text("m6", x, 150.0, it, HEAT) }
-        val primary = layout.getAsJsonArray("primary")
-        canvas.text("b7", primary[0].asDouble + 42, primary[1].asDouble + 8, path.button, GOLD)
-        canvas.sprite("hit_act", primary[0].asDouble, primary[1].asDouble - 2, click("primary"))
+        notices[player.uuid]?.let { canvas.text("m6", x, 182.0, it, HEAT) }
     }
 
     private fun details(player: Player, account: CoreAccount, path: Path): List<Pair<String, TextColor>> = when (path) {
@@ -246,7 +249,8 @@ internal class PlayerMenuDialog(
                 val from = CoreJourneyRules.threshold(level); val to = CoreJourneyRules.threshold(level + 1)
                 (account.journey.xp - from).toDouble() / (to - from)
             }
-            Progress("冒険 Lv", "Lv $level", "$level", next)
+            val sub = if (level >= CoreJourneyRules.MAX_LEVEL) "冒険 Lv は上限" else "次の Lv まで ${"%,d".format(CoreJourneyRules.threshold(level + 1) - account.journey.xp)}"
+            Progress(sub, "Lv $level", "$level", next)
         }
         Path.GATHER -> {
             val mastery = host.gatheringMastery(player)
@@ -254,14 +258,14 @@ internal class PlayerMenuDialog(
             val level = mastery.level(best)
             val xp = mastery.experience(best)
             val next = (xp - 10.0 * level * level) / (10.0 * ((level + 1) * (level + 1) - level * level))
-            Progress(best.displayName, "Lv $level", "$level", next)
+            Progress("いちばんは${best.displayName}", "Lv $level", "$level", next)
         }
         Path.SMITH -> {
             val rank = CoreEnhancementCatalog.masteryRank(account.smithingXp)
-            Progress("熟練", "Rank $rank", "$rank",
+            Progress("強化するたびに熟練が上がる", "Rank $rank", "$rank",
                 CoreEnhancementCatalog.masteryProgress(account.smithingXp).toDouble() / CoreEnhancementCatalog.XP_PER_RANK)
         }
-        Path.MAGIC -> Progress("準備中", "—", "—", 0.0)
+        Path.MAGIC -> Progress("まだ開いていない", "—", "–", 0.0)
     }
 
     // ------------------------------------------------------------------ 技 page
@@ -378,13 +382,13 @@ internal class PlayerMenuDialog(
             else -> "Lv を上げる（1 ポイント）"
         }
         val raise = acts[0].asJsonArray
-        canvas.text("b7", raise[0].asDouble + 42, raise[1].asDouble + 8, raiseLabel, if (raiseLabel.startsWith("Lv を")) GOLD else MUTED)
-        canvas.sprite("hit_act", raise[0].asDouble, raise[1].asDouble - 2, click("raise"))
+        canvas.text("b7", raise[0].asDouble + 6, raise[1].asDouble + 10, raiseLabel, if (raiseLabel.startsWith("Lv を")) DARK else DIM_DARK)
+        canvas.sprite("hit_act", raise[0].asDouble, raise[1].asDouble, click("raise"))
         val equip = acts[1].asJsonArray
         val candidate = pick.candidate
         val equipLabel = if (candidate != null && candidate != equipped[pick.slot]) "キー${pick.slot + 2} に入れる" else "キー${pick.slot + 2} の技"
-        canvas.text("b7", equip[0].asDouble + 42, equip[1].asDouble + 8, equipLabel, if (equipLabel.endsWith("入れる")) TEXT else MUTED)
-        canvas.sprite("hit_act", equip[0].asDouble, equip[1].asDouble - 2, click("equip"))
+        canvas.text("b7", equip[0].asDouble + 6, equip[1].asDouble + 10, equipLabel, if (equipLabel.endsWith("入れる")) TEXT else MUTED)
+        canvas.sprite("hit_act", equip[0].asDouble, equip[1].asDouble, click("equip"))
         val spent = CoreSkillLevels.spent(build)
         if (spent > 0) {
             val reset = layout.getAsJsonArray("reset")
@@ -435,7 +439,8 @@ internal class PlayerMenuDialog(
         private val MUTED = TextColor.color(0x8F8A82)
         private val FAINT = TextColor.color(0x6E6A64)
         private val HEAT = TextColor.color(0xFF9A4A)
-        private val DARK = TextColor.color(0x16181C)
+        private val DARK = TextColor.color(0x2A1A06)
+        private val DIM_DARK = TextColor.color(0x6B5320)
         private val GOLD = TextColor.color(0xF2C84B)
 
         /** Null when the menu art was never built (the old chest journal stays the only menu). */

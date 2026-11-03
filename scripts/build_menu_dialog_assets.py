@@ -32,7 +32,7 @@ import re
 import zipfile
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "server-minestom/src/main/resources/polish05"
@@ -52,51 +52,56 @@ TEXT_SOURCES = ["server-minestom/src/main/kotlin/dev/projects/server/coreloop/Pl
                 "server-minestom/src/main/kotlin/dev/projects/server/questmap/QuestGathering.kt"]
 
 # style -> (font file key, size)
-# Dungeons look (5版): headings and numbers in DotGothic16 (d*, dot*), small text in M PLUS 2 (m*, b*).
-STYLES = {"m6": ("m", 6), "m7": ("m", 7), "b7": ("b", 7), "b9": ("b", 9),
+# Headings and numbers in DotGothic16 (d*, dot*), small text and names in M PLUS 2 (m*, b*).
+STYLES = {"m6": ("m", 6), "m7": ("m", 7), "b7": ("b", 7), "b8": ("b", 8), "b9": ("b", 9),
           "d6": ("d", 6), "d7": ("d", 7), "d9": ("d", 9), "dot6": ("d", 6), "dot9": ("d", 9), "dot16": ("d", 16)}
 
-C = dict(ink="#f1ece4", muted="#9b8f96", faint="#5c5258", gold="#f2c84b", heat="#ff9a4a", line=(255, 240, 230, 46),
-         slot=(10, 7, 10, 190), slot_line=(255, 240, 230, 48))
-PATHS = [  # id, name, icon, colour
-    ("combat", "戦闘", "class_warrior", "#ff9a4a"),
-    ("gather", "採取", "ore", "#6fd0c0"),
-    ("smith", "鍛冶", "ingot", "#ffd166"),
-    ("magic", "魔術", "book", "#a98cf0")]
+C = dict(ink="#ece6dc", muted="#9a948c", faint="#6e6a64", gold="#f2c84b", heat="#ff9a4a", line=(255, 255, 255, 18), dark="#2a1a06")
+PATHS = [  # id, name, colour (the banners are assets/core-ui/menu-banners/ban_<id>.png)
+    ("combat", "戦闘", "#ff8a3d"),
+    ("gather", "採取", "#79e0d2"),
+    ("smith", "鍛冶", "#f2c84b"),
+    ("magic", "魔術", "#b9a0ff")]
 CLASSES = ["warrior", "ranger", "mage", "assassin", "templar", "healer"]
 
 # ---------------------------------------------------------------- layout (design px; exported for PlayerMenuDialog)
-# 2026-11-03 藍 chose the Minecraft Dungeons look (5版): no boxed panels, everything floats on a big-pixel gradient;
-# headings and numbers in DotGothic16, small text in M PLUS 2; slots are dark squares with a thin light line.
+# 2026-11-03 藍 chose 7版 C (港の窓): framed windows with iron rims and bronze corners over the darkened world, pixel
+# buttons in gold / charcoal, sunken slots, and each path as a banner of that path being done (assets/core-ui/menu-banners).
 TABS = ["自分", "技", "パッシブ", "持ち物"]
-TAB_ICONS = ["class_warrior", "skill_slam", "book", "ore"]
-TAB_Y, TAB_GAP, TAB_W = 2, 30, 30                  # icon top; tab boxes TAB_W wide
+TAB_Y, TAB_H, TAB_GAP = 1, 14, 3                   # pill tabs centred along the top
 SLOT = 26
-TOP = 32                                           # content starts under the tab row
+TOP = 32                                           # 技: content starts here, inside the windows
+WIN_Y, WIN_H = 19, 169                             # every window runs from under the tabs to the canvas bottom
 # 技
+SKILL_WINS = [(2, 156), (162, 104), (272, 190)]    # x, width
 EMBLEM64 = (51, TOP + 2)                           # x, y of the 64 px class emblem
-HEX = [(15, TOP + 18), (121, TOP + 18)]            # left hex frames (26 x 28): Lv, ポイント
+HEX = [(15, TOP + 18), (121, TOP + 18)]            # left plates (26 x 28): Lv, ポイント
 KEYS = [(10 + i * 29, TOP + 90) for i in range(5)] # key slots 2..6
 GRID = [(172 + c * 29, TOP + 4 + r * 29) for r in range(3) for c in range(3)]   # normal skills
 ULTS = [(172 + c * 29, TOP + 101) for c in range(3)]
-DIV = [270]
 RX = 284                                           # right column
 BIG = (392, TOP - 2)                               # 64 px skill art
 BARS = [(RX, TOP + 72), (RX + 56, TOP + 72), (RX + 112, TOP + 72)]   # 48 wide tracks
 BAR_W = 48
 DIAS = [(RX + 3 + i * 10, TOP + 93) for i in range(10)]
-ACTS = [(RX, TOP + 112), (RX, TOP + 128)]          # gold (raise), white (equip); 160 x 14 hit areas
+ACTS = [(RX, TOP + 109), (RX, TOP + 126)]          # gold (raise), charcoal (equip); 168 x 14 buttons
+ACT_W, BTN_H = 168, 14
 RESET = (RX, TOP + 144)
 # 自分
-EMBLEM48 = (60, TOP + 4)
-HEX_SELF = [(56, TOP + 92), (86, TOP + 92)]
-DIV_SELF = [178, 334]
-PATH_D = [(196 + i * 34, TOP + 14) for i in range(4)]   # 26 x 26 diamond boxes
-PATH_BAR = (192, TOP + 76, 130)
-STEPS = (348, TOP + 24, 15)                        # x, first baseline, line step
-PRIMARY = (348, TOP + 128)                         # the gold action line
-EDIT = (40, TOP + 132)
-BAKED = "".join(TABS) + "冒険の手帳いまの組枠を押してから技を選ぶ奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨"
+SELF_WINS = [(0, 150), (156, 150), (312, 152)]     # 名刺, 道, 次の一歩
+CARD = (4, WIN_Y + 4, 142, 32)                     # the harbour banner on the name card
+EMBLEM24 = (11, WIN_Y + 29)                        # the class emblem in its slot (slot 30 x 30 at -3)
+NAME = (46, WIN_Y + 47)                            # face + name baseline; the title 10 below
+KV = (8, WIN_Y + 70, 134, 11)                      # x, first baseline, width, step
+KV_LABELS = ["職", "冒険 Lv", "踏破", "技ポイント", "パッシブポイント"]
+EDIT = (8, WIN_Y + 147, 134)                       # charcoal button
+ROWS = [(161, WIN_Y + 14 + i * 28) for i in range(4)]   # 140 x 26 path banners
+ROW_W, ROW_H = 140, 26
+PATH_BAR = (161, WIN_Y + 136, 140)                 # x, y, width; the label 4 above, the next-step line 9 below
+PRIMARY = (161, WIN_Y + 147, 140)                  # gold button
+STEPS = (320, WIN_Y + 26, 13)                      # x, first baseline, line step
+STEP_LINES = 10
+BAKED = "".join(TABS) + "".join(KV_LABELS) + "冒険の手帳いまの組枠を押してから技を選ぶ奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨"
 
 def hexc(v, a=255):
     if isinstance(v, tuple):
@@ -240,46 +245,6 @@ def glow(w, h, cx, cy, rx, ry, colour, peak):
     return img
 
 
-def rounded(d, box, fill=None, outline=None, r=3, width=1):
-    x, y, w, h = box
-    d.rounded_rectangle((x * K, y * K, (x + w) * K - 1, (y + h) * K - 1), radius=r * K, fill=fill, outline=outline, width=width * K)
-
-
-
-def bigpixel(w, h, block=10, seed=7, k=K, centre=(.5, .15)):
-    """The Dungeons ground: a warm crimson glow from the upper middle fading to violet-black, drawn in big blocks."""
-    import math, random
-    rng = random.Random(seed)
-    pad = block
-    img = Image.new("RGBA", ((w + 2 * pad) * k, (h + 2 * pad) * k))
-    d = ImageDraw.Draw(img)
-    for by in range(-pad, h + pad, block):
-        for bx in range(-pad, w + pad, block):
-            cx, cy = (bx + block / 2) / w, (by + block / 2) / h
-            dist = math.hypot((cx - centre[0]) * 1.3, (cy - centre[1]) * 1.1)
-            t = max(0.0, 1 - dist * 1.35)
-            base, mid, hot = (14, 10, 16), (36, 14, 30), (78, 22, 38)
-            c = [base[i] + (mid[i] - base[i]) * min(1, t * 1.6) + (hot[i] - mid[i]) * max(0, t - .45) * 1.4 for i in range(3)]
-            jitter = 1 + rng.uniform(-.09, .09)
-            d.rectangle(((bx + pad) * k, (by + pad) * k, (bx + pad + block) * k - 1, (by + pad + block) * k - 1),
-                        fill=tuple(max(0, min(255, int(v * jitter))) for v in c) + (255,))
-    # blurred with a margin so the edges do not fade dark
-    return img.filter(ImageFilter.GaussianBlur(k * 1.2)).crop((pad * k, pad * k, (pad + w) * k, (pad + h) * k))
-
-
-def slot_frame(d, x, y, size=SLOT):
-    d.rectangle((x * K, y * K, (x + size) * K - 1, (y + size) * K - 1), fill=C["slot"], outline=C["slot_line"], width=K // 2)
-
-
-def hex_frame(img, x, y):
-    w, h = 26, 28
-    hx = Image.new("RGBA", (w * K, h * K)); hd = ImageDraw.Draw(hx)
-    pts = lambda inset: [((w / 2) * K, inset * K), ((w - inset) * K, (h * .25) * K), ((w - inset) * K, (h * .75) * K),
-                         ((w / 2) * K, (h - inset) * K), (inset * K, (h * .75) * K), (inset * K, (h * .25) * K)]
-    hd.polygon(pts(0), fill=(255, 240, 230, 128)); hd.polygon(pts(1), fill=(10, 7, 10, 215))
-    img.alpha_composite(hx, (x * K, y * K))
-
-
 def diamond(size, fill, outline=None, glow_colour=None):
     img = Image.new("RGBA", (size * K, size * K)); d = ImageDraw.Draw(img)
     c = size * K / 2; r = c - K
@@ -289,80 +254,180 @@ def diamond(size, fill, outline=None, glow_colour=None):
     return img
 
 
-def tabs_row(img, d, fonts, icons, selected):
-    total = len(TABS) * TAB_W + (len(TABS) - 1) * (TAB_GAP - TAB_W)
-    x0 = (CANVAS_W - total) / 2
+# ---------------------------------------------------------------- 7版 C: frames and buttons
+# Drawn as small pixel tiles at 2 texture px per design px, then nine-sliced at K (each tile px becomes K / 2 px).
+BLACK, IRON_HI, IRON_LO = (0, 0, 0, 255), (92, 84, 74, 255), (38, 34, 30, 255)
+BRONZE, BRONZE_HI = (168, 112, 56, 255), (232, 170, 96, 255)
+
+
+def window_tile(n=24, fill=(17, 17, 19, 240)):
+    """Iron rim with a bronze L-bracket and a rivet on each corner."""
+    im = Image.new("RGBA", (n, n), fill); d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, n - 1, n - 1), outline=BLACK)
+    d.line((1, 1, n - 2, 1), fill=IRON_HI); d.line((1, 1, 1, n - 2), fill=IRON_HI)
+    d.line((1, n - 2, n - 2, n - 2), fill=IRON_LO); d.line((n - 2, 1, n - 2, n - 2), fill=IRON_LO)
+    d.rectangle((2, 2, n - 3, n - 3), outline=(10, 10, 11, 255))
+    for cx, cy, sx, sy in ((0, 0, 1, 1), (n - 1, 0, -1, 1), (0, n - 1, 1, -1), (n - 1, n - 1, -1, -1)):
+        for i in range(6):
+            d.point((cx + sx * i, cy + sy), fill=BRONZE); d.point((cx + sx, cy + sy * i), fill=BRONZE)
+            d.point((cx + sx * i, cy), fill=BLACK); d.point((cx, cy + sy * i), fill=BLACK)
+        d.point((cx + sx, cy + sy), fill=BRONZE_HI)
+        d.point((cx + sx * 3, cy + sy * 3), fill=BRONZE)
+    return im
+
+
+def button_tile(top, body, bottom, side, n=16):
+    """A raised plate with cut corners: light top, dark bottom."""
+    im = Image.new("RGBA", (n, n), body); d = ImageDraw.Draw(im)
+    d.rectangle((0, 1, n - 1, 2), fill=top); d.rectangle((0, n - 3, n - 1, n - 2), fill=bottom)
+    d.line((1, 1, 1, n - 2), fill=side); d.line((n - 2, 1, n - 2, n - 2), fill=side)
+    d.rectangle((0, 0, n - 1, n - 1), outline=BLACK)
+    for c in ((0, 0), (n - 1, 0), (0, n - 1), (n - 1, n - 1)): d.point(c, fill=(0, 0, 0, 0))
+    for c in ((1, 1), (n - 2, 1), (1, n - 2), (n - 2, n - 2)): d.point(c, fill=BLACK)
+    return im
+
+
+def slot_tile(on=False, n=12):
+    """Sunken: dark top-left edge, light bottom-right; bronze outline when chosen."""
+    im = Image.new("RGBA", (n, n), (20, 20, 22, 255)); d = ImageDraw.Draw(im)
+    d.line((1, 1, n - 2, 1), fill=(8, 8, 9, 255)); d.line((1, 1, 1, n - 2), fill=(8, 8, 9, 255))
+    d.line((1, n - 2, n - 2, n - 2), fill=(62, 60, 66, 255)); d.line((n - 2, 1, n - 2, n - 2), fill=(62, 60, 66, 255))
+    d.rectangle((0, 0, n - 1, n - 1), outline=BRONZE_HI if on else BLACK)
+    return im
+
+
+def row_tile(on=False, n=12):
+    """The frame over a path banner (no fill)."""
+    im = Image.new("RGBA", (n, n)); d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, n - 1, n - 1), outline=BLACK)
+    d.rectangle((1, 1, n - 2, n - 2), outline=(255, 160, 80, 255) if on else (74, 68, 61, 255))
+    if on: d.rectangle((2, 2, n - 3, n - 3), outline=(255, 138, 61, 90))
+    return im
+
+
+GOLD_BTN = button_tile((248, 228, 168, 255), (228, 192, 104, 255), (150, 112, 44, 255), (206, 168, 82, 255))
+DARK_BTN = button_tile((74, 74, 82, 255), (43, 43, 48, 255), (22, 22, 25, 255), (56, 56, 62, 255))
+
+
+def tint(img, x0, y0, x1, y1, rgba):
+    """A translucent rectangle laid over what is there (ImageDraw would replace the pixels, alpha and all)."""
+    box = (round(x0 * K), round(y0 * K), round(x1 * K), round(y1 * K))
+    img.alpha_composite(Image.new("RGBA", (box[2] - box[0], box[3] - box[1]), rgba), box[:2])
+
+
+def nine(tile, cut, w, h):
+    """`tile` (2 texture px per design px) stretched to w x h design px at K; `cut` tile px kept at each edge."""
+    s = K // 2
+    src = tile.resize((tile.width * s, tile.height * s), Image.NEAREST)
+    c, W, H = cut * s, w * K, h * K
+    out = Image.new("RGBA", (W, H))
+    xs = [(0, c, 0, c), (c, src.width - c, c, W - c), (src.width - c, src.width, W - c, W)]
+    ys = [(0, c, 0, c), (c, src.height - c, c, H - c), (src.height - c, src.height, H - c, H)]
+    for sx0, sx1, dx0, dx1 in xs:
+        for sy0, sy1, dy0, dy1 in ys:
+            if dx1 > dx0 and dy1 > dy0:
+                out.alpha_composite(src.crop((sx0, sy0, sx1, sy1)).resize((dx1 - dx0, dy1 - dy0), Image.NEAREST), (dx0, dy0))
+    return out
+
+
+def window(img, d, fonts, x, w, title=None):
+    img.alpha_composite(nine(window_tile(), 8, w, WIN_H), (x * K, WIN_Y * K))
+    if title:
+        draw_text(d, fonts, "b7", x + 7, WIN_Y + 11, title, "#f2e6d2")
+
+
+def slot_frame(img, x, y, w=SLOT, h=SLOT, on=False):
+    img.alpha_composite(nine(slot_tile(on), 4, w, h), (round(x * K), round(y * K)))
+
+
+def button(img, d, fonts, x, y, w, plate, kbd=None):
+    """A plate with its key hint at the right end; the words are placed per player."""
+    img.alpha_composite(nine(plate, 5, w, BTN_H), (x * K, y * K))
+    if kbd:
+        ink = C["dark"] if plate is GOLD_BTN else C["muted"]
+        kw = text_w(fonts, "dot6", kbd) + 4
+        tint(img, x + w - kw - 4, y + 3, x + w - 4, y + 11, (0, 0, 0, 56))
+        draw_text(d, fonts, "dot6", x + w - kw - 2, y + 9.5, kbd, ink)
+
+
+def tabs_row(img, d, fonts, selected):
+    """Pill tabs centred along the top: the open one gold, the others charcoal. Returns their boxes."""
+    widths = [text_w(fonts, "b7", t) + 18 for t in TABS]
+    x = (CANVAS_W - sum(widths) - TAB_GAP * (len(TABS) - 1)) / 2
     boxes = []
-    for i, (t, ic) in enumerate(zip(TABS, TAB_ICONS)):
-        x = x0 + i * TAB_GAP
+    for t, w in zip(TABS, widths):
         on = t == selected
-        art = icons[ic].resize((12 * K, 12 * K), Image.NEAREST)
-        if not on:
-            a = art.getchannel("A").point(lambda v: v * 6 // 10); art.putalpha(a)
-        img.alpha_composite(art, (int((x + (TAB_W - 12) / 2) * K), TAB_Y * K))
-        draw_text(d, fonts, "m6", x + TAB_W / 2, TAB_Y + 20, t, C["ink"] if on else C["muted"], anchor="ms")
-        if on:
-            d.rectangle(((x + TAB_W / 2 - 1.5) * K, (TAB_Y + 23) * K, (x + TAB_W / 2 + 1.5) * K - 1, (TAB_Y + 26) * K - 1), fill=hexc(C["ink"]))
-        boxes.append((round(x), TAB_Y - 1, TAB_W, 26))
+        if img is not None:
+            img.alpha_composite(nine(GOLD_BTN if on else DARK_BTN, 5, round(w), TAB_H), (round(x * K), TAB_Y * K))
+            draw_text(d, fonts, "b7", x + w / 2, TAB_Y + 10, t, C["dark"] if on else C["muted"], anchor="ms")
+        boxes.append((round(x), TAB_Y, round(w), TAB_H))
+        x += w + TAB_GAP
     return boxes
 
 
-def bake_skills(fonts, icons):
+def banner(name, dim=False):
+    art = Image.open(ROOT / f"assets/core-ui/menu-banners/{name}.png").convert("RGBA")
+    if dim:
+        from PIL import ImageEnhance
+        art = ImageEnhance.Brightness(ImageEnhance.Color(art).enhance(0.3)).enhance(0.6)
+    return art
+
+
+def bake_skills(fonts):
     img = Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K)); d = ImageDraw.Draw(img)
-    tabs_row(img, d, fonts, icons, "技")
-    img.alpha_composite(glow(110, 110, 55, 55, 55, 55, (255, 170, 110), 90), ((EMBLEM64[0] - 23) * K, (EMBLEM64[1] - 23) * K))
+    tabs_row(img, d, fonts, "技")
+    for x, w in SKILL_WINS: window(img, d, fonts, x, w)
+    img.alpha_composite(glow(110, 110, 55, 55, 55, 55, (255, 170, 110), 70), ((EMBLEM64[0] - 23) * K, (EMBLEM64[1] - 23) * K))
     for (x, y), label in zip(HEX, ["Lv", "ポイント"]):
-        hex_frame(img, x, y); draw_text(d, fonts, "m6", x + 13, y + 11, label, C["muted"], anchor="ms")
-    draw_text(d, fonts, "dot9", 83, TOP + 85, "いまの組", C["ink"], anchor="ms")
-    for x, y in KEYS: slot_frame(d, x, y)
+        slot_frame(img, x - 2, y, 30, 28); draw_text(d, fonts, "m6", x + 13, y + 11, label, C["muted"], anchor="ms")
+    draw_text(d, fonts, "b7", 83, TOP + 85, "いまの組", C["ink"], anchor="ms")
+    for x, y in KEYS: slot_frame(img, x, y)
     draw_text(d, fonts, "m6", 83, TOP + 128, "枠を押してから、技を選ぶ", C["muted"], anchor="ms")
-    for x, y in GRID + ULTS: slot_frame(d, x, y)
+    for x, y in GRID + ULTS: slot_frame(img, x, y)
     draw_text(d, fonts, "m6", 172, TOP + 98, "奥義", C["muted"])
-    for x in DIV: d.rectangle((x * K, (TOP + 2) * K, x * K + K // 2, 184 * K), fill=C["line"])
     for (x, y), label in zip(BARS, ["威力", "再使用", "範囲"]):
         draw_text(d, fonts, "m6", x, y - 4, label, C["muted"])
-        d.rectangle((x * K, y * K, (x + BAR_W) * K - 1, (y + 2) * K - 1), fill=(255, 240, 230, 46))
+        tint(img, x, y, x + BAR_W, y + 2, (255, 255, 255, 26))
     draw_text(d, fonts, "b7", RX, TOP + 90, "技の Lv", C["ink"])
     for x, y in DIAS: img.alpha_composite(diamond(10, (10, 7, 10, 150), (255, 240, 230, 80)), (x * K, y * K))
-    for (x, y), (label, colour) in zip(ACTS, [("左クリック", C["gold"]), ("右クリック", C["ink"])]):
-        w = text_w(fonts, "dot6", label) + 6
-        d.rectangle((x * K, y * K, (x + w) * K - 1, (y + 10) * K - 1), fill=hexc(colour))
-        draw_text(d, fonts, "dot6", x + 3, y + 8, label, "#1a1306")
+    button(img, d, fonts, ACTS[0][0], ACTS[0][1], ACT_W, GOLD_BTN, "左クリック")
+    button(img, d, fonts, ACTS[1][0], ACTS[1][1], ACT_W, DARK_BTN, "右クリック")
     return img
 
 
-def bake_self(fonts, icons):
+def bake_self(fonts):
     img = Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K)); d = ImageDraw.Draw(img)
-    tabs_row(img, d, fonts, icons, "自分")
-    img.alpha_composite(glow(120, 120, 60, 60, 60, 60, (255, 170, 110), 90), ((EMBLEM48[0] - 36) * K, (EMBLEM48[1] - 36) * K))
-    for x, y in HEX_SELF: hex_frame(img, x, y)
-    for x in DIV_SELF: d.rectangle((x * K, (TOP + 2) * K, x * K + K // 2, 184 * K), fill=C["line"])
-    draw_text(d, fonts, "dot9", 192, TOP + 9, "道", C["ink"])
-    for (x, y), (pid, name, icon, colour) in zip(PATH_D, PATHS):
-        img.alpha_composite(diamond(26, (10, 7, 10, 200), (255, 240, 230, 90)), (x * K, y * K))
-        img.alpha_composite(icons[icon].resize((12 * K, 12 * K), Image.NEAREST), ((x + 7) * K, (y + 7) * K))
-        draw_text(d, fonts, "m6", x + 13, y + 34, name, C["ink"], anchor="ms")
+    tabs_row(img, d, fonts, "自分")
+    (lx, lw), (mx, mw), (rx, rw) = SELF_WINS
+    window(img, d, fonts, lx, lw)
+    x, y, w, h = CARD
+    card = Image.open(ROOT / "assets/core-ui/menu-banners/card_harbor.png").convert("RGBA")
+    img.alpha_composite(card.crop((0, 0, w * K, h * K)), (x * K, y * K))
+    slot_frame(img, EMBLEM24[0] - 3, EMBLEM24[1] - 3, 30, 30, on=True)
+    kx, ky, kw, step = KV
+    for i, label in enumerate(KV_LABELS):
+        draw_text(d, fonts, "m6", kx, ky + i * step, label, C["muted"])
+        tint(img, kx, ky + i * step + 3, kx + kw, ky + i * step + 3.5, C["line"])
+    button(img, d, fonts, EDIT[0], EDIT[1], EDIT[2], DARK_BTN, "右クリック")
+    draw_text(d, fonts, "b7", EDIT[0] + 6, EDIT[1] + 9.5, "名刺を整える", C["ink"])
+    window(img, d, fonts, mx, mw, "道")
+    for (x, y), (pid, name, colour) in zip(ROWS, PATHS):
+        img.alpha_composite(banner(f"ban_{pid}", dim=pid == "magic"), (x * K, y * K))
+        img.alpha_composite(nine(row_tile(), 4, ROW_W, ROW_H), (x * K, y * K))
+        draw_text(d, fonts, "b8", x + 6, y + 11, name, colour if pid != "magic" else C["muted"])
     px, py, pw = PATH_BAR
-    d.rectangle((px * K, py * K, (px + pw) * K - 1, (py + 2) * K - 1), fill=(255, 240, 230, 46))
-    draw_text(d, fonts, "dot9", STEPS[0], TOP + 9, "次の一歩", C["ink"])
-    x, y = PRIMARY
-    w = text_w(fonts, "dot6", "左クリック") + 6
-    d.rectangle((x * K, y * K, (x + w) * K - 1, (y + 10) * K - 1), fill=hexc(C["gold"]))
-    draw_text(d, fonts, "dot6", x + 3, y + 8, "左クリック", "#1a1306")
-    x, y = EDIT
-    w = text_w(fonts, "dot6", "右クリック") + 6
-    d.rectangle((x * K, y * K, (x + w) * K - 1, (y + 10) * K - 1), fill=hexc(C["ink"]))
-    draw_text(d, fonts, "dot6", x + 3, y + 8, "右クリック", "#1a1306")
-    draw_text(d, fonts, "m6", x + w + 4, y + 8, "名刺を整える", C["muted"])
+    tint(img, px, py, px + pw, py + 2, (255, 255, 255, 26))
+    button(img, d, fonts, PRIMARY[0], PRIMARY[1], PRIMARY[2], GOLD_BTN, "左クリック")
+    window(img, d, fonts, rx, rw, "次の一歩")
     return img
 
 
 def bake_band(fonts, book, w: int) -> Image.Image:
-    """The title band in GUI px (4 texture px each): a darker strip over the ground, the book, the purse."""
+    """The title band in GUI px (4 texture px each): a darker strip over the world, the book, the purse."""
     h = 33
-    img = Image.new("RGBA", (w * K, h * K), (8, 5, 10, 150))
+    img = Image.new("RGBA", (w * K, h * K), (8, 8, 10, 170))
     d = ImageDraw.Draw(img)
-    d.rectangle((0, (h - 1) * K, w * K - 1, h * K - 1), fill=(255, 240, 230, 30))
+    d.rectangle((0, (h - 1) * K, w * K - 1, h * K - 1), fill=(255, 138, 61, 70))
     img.alpha_composite(book.resize((16 * K, 17 * K), Image.NEAREST), (12 * K, 9 * K))
     draw_text(d, fonts, "m7", 32, 20, "冒険の手帳", C["muted"])
     draw_text(d, fonts, "dot9", w - 108, 21, "◆", C["gold"])
@@ -381,11 +446,6 @@ def main() -> None:
 
     pack = zipfile.ZipFile(OUT / "pack.zip")
     raw = lambda z, p: Image.open(io.BytesIO(z.read(p))).convert("RGBA")
-    icons = {"ore": raw(pack, f"assets/{NS}/textures/forge_materials/ore.png"),
-             "ingot": raw(pack, f"assets/{NS}/textures/forge_materials/ingot.png"),
-             "book": raw(zipfile.ZipFile(OUT / "grimoire.zip"), f"assets/{NS}/textures/grimoire/ic_book.png"),
-             "skill_slam": Image.open(ROOT / "assets/core-ui/skills/slam.png").convert("RGBA"),
-             "class_warrior": Image.open(ROOT / "assets/core-ui/proposals/2026-10-16-class-emblems/warrior-32.png").convert("RGBA")}
     book = raw(pack, f"assets/{NS}/textures/raw/book_ui.png")
     for key, data in fonts.items():
         files[f"assets/{NS}/font/menu_{key}.ttf"] = data
@@ -397,15 +457,16 @@ def main() -> None:
             advances_map[chr(cp)] = step * sign; metrics["space"][str(step * sign)] = cp; cp += 1
     files[f"assets/{NS}/font/menu_space.json"] = json.dumps({"providers": [{"type": "space", "advances": advances_map}]}).encode()
 
-    page_self, page_skills = bake_self(fonts, icons), bake_skills(fonts, icons)
-    ground = bigpixel(SCREEN_W, SCREEN_H, k=GROUND_K, centre=(.5, .3))
-    tab_boxes = tabs_row(Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K)), ImageDraw.Draw(Image.new("RGBA", (4, 4))), fonts, icons, "")
+    page_self, page_skills = bake_self(fonts), bake_skills(fonts)
+    # The world stays in sight, darkened, behind the windows (7版 C).
+    ground = Image.new("RGBA", (SCREEN_W * GROUND_K, SCREEN_H * GROUND_K), (6, 6, 8, 150))
+    tab_boxes = tabs_row(None, None, fonts, "")
     skill_source = (ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreSkillCatalog.kt").read_text(encoding="utf-8")
     skill_icons = sorted(set(re.findall(r's\("[^"]*", "([a-z_]+)"', skill_source)))
     skill_art = {icon: Image.open(ROOT / f"assets/core-ui/skills/{icon}.png").convert("RGBA") for icon in skill_icons}
     slot_tops = sorted({y for _, y in KEYS + GRID + ULTS})
-    sel = Image.new("RGBA", (SLOT * K, SLOT * K)); ImageDraw.Draw(sel).rectangle((0, 0, SLOT * K - 1, SLOT * K - 1), outline=hexc(C["ink"]), width=K // 2 + 1)
-    dim = Image.new("RGBA", (SLOT * K, SLOT * K), (10, 7, 10, 160))
+    sel = nine(row_tile(True), 4, SLOT, SLOT)
+    dim = Image.new("RGBA", (SLOT * K, SLOT * K), (10, 10, 11, 170))
     cross = Image.new("RGBA", (SLOT * K, SLOT * K)); cd = ImageDraw.Draw(cross)
     cd.line((2 * K, 2 * K, (SLOT - 2) * K, (SLOT - 2) * K), fill=(255, 240, 230, 40), width=K // 2); cd.line(((SLOT - 2) * K, 2 * K, 2 * K, (SLOT - 2) * K), fill=(255, 240, 230, 40), width=K // 2)
     tri = Image.new("RGBA", (9 * K, 9 * K)); ImageDraw.Draw(tri).polygon([(0, 0), (9 * K, 0), (0, 9 * K)], fill=hexc(C["gold"]))
@@ -432,7 +493,7 @@ def main() -> None:
         for c in CLASSES:
             art = Image.open(ROOT / f"assets/core-ui/proposals/2026-10-16-class-emblems/{c}-32.png").convert("RGBA")
             sprites.add(f"emblem64_{c}", art.resize((64 * K, 64 * K), Image.NEAREST).resize((256, 256), Image.NEAREST), 64, [EMBLEM64[1]])
-            sprites.add(f"emblem48_{c}", art.resize((48 * K, 48 * K), Image.NEAREST), 48, [EMBLEM48[1]])
+            sprites.add(f"emblem24_{c}", art.resize((24 * K, 24 * K), Image.NEAREST), 24, [EMBLEM24[1]])
         for icon, art in skill_art.items():
             sprites.add(f"sk20_{icon}", art.resize((20 * K, 20 * K), Image.NEAREST), 20, [t + 3 for t in slot_tops])
             sprites.add(f"skb_{icon}", art.resize((64 * K, 64 * K), Image.NEAREST).resize((256, 256), Image.NEAREST), 64, [BIG[1]])
@@ -442,15 +503,15 @@ def main() -> None:
         sprites.add("key_tri", tri, 9, slot_tops)
         sprites.add("dia_on", diamond(10, (233, 221, 208, 255), None, (255, 230, 200)), 10, [DIAS[0][1]])
         sprites.add("dia_gear", diamond(10, hexc(C["heat"]), None, (255, 150, 80)), 10, [DIAS[0][1]])
-        sprites.add("dia_sel", diamond(26, None, hexc(C["ink"]), (255, 230, 200)), 26, [PATH_D[0][1]])
+        sprites.add_tiled("row_on", nine(row_tile(True), 4, ROW_W, ROW_H), ROW_H, [y for _, y in ROWS])
         sprites.add("bar_fill", Image.new("RGBA", (2 * K, 2 * K), hexc(C["ink"])), 2, [BARS[0][1]])
-        for pid, name, icon, colour in PATHS:
+        for pid, name, colour in PATHS:
             sprites.add(f"bar_{pid}", Image.new("RGBA", (2 * K, 2 * K), hexc(colour)), 2, [PATH_BAR[1]])
         bullet = lambda colour: diamond(6, colour)
-        sprites.add("ms_now", bullet(hexc(C["ink"])), 6, [STEPS[1] - 6 + i * STEPS[2] for i in range(7)])
+        sprites.add("ms_now", bullet(hexc(C["ink"])), 6, [STEPS[1] - 6 + i * STEPS[2] for i in range(STEP_LINES)])
         # invisible hit areas (alpha 1: under the client's 0.1 cut, but the glyph rectangle still takes clicks)
-        hits = {"slot": (SLOT, SLOT, slot_tops), "dia": (26, 26, [PATH_D[0][1]]), "act": (160, 14, [y - 2 for _, y in ACTS] + [PRIMARY[1] - 2]),
-                "edit": (100, 12, [EDIT[1] - 1]), "reset": (110, 10, [RESET[1]])}
+        hits = {"slot": (SLOT, SLOT, slot_tops), "row": (ROW_W, ROW_H, [y for _, y in ROWS]), "act": (ACT_W, BTN_H, [y for _, y in ACTS]),
+                "go": (PRIMARY[2], BTN_H, [PRIMARY[1]]), "edit": (EDIT[2], BTN_H, [EDIT[1]]), "reset": (110, 10, [RESET[1]])}
         for i, (x, y, w, h) in enumerate(tab_boxes):
             hits[f"tab{i}"] = (w, h, [y])
         for name, (w, h, tops) in hits.items():
@@ -461,9 +522,9 @@ def main() -> None:
         size["layout"] = {"tabs": [list(b) for b in tab_boxes], "emblem64": list(EMBLEM64), "hex": [list(h) for h in HEX],
                           "keys": [list(k) for k in KEYS], "grid": [list(g) for g in GRID], "ults": [list(u) for u in ULTS],
                           "rx": RX, "big": list(BIG), "bars": [list(b) for b in BARS], "barW": BAR_W, "dias": [list(x) for x in DIAS],
-                          "acts": [list(a) for a in ACTS], "reset": list(RESET), "emblem48": list(EMBLEM48), "hexSelf": [list(h) for h in HEX_SELF],
-                          "pathD": [list(p) for p in PATH_D], "pathBar": list(PATH_BAR), "steps": list(STEPS), "primary": list(PRIMARY),
-                          "edit": list(EDIT), "wallet": [screen - 100, 21]}
+                          "acts": [list(a) for a in ACTS], "reset": list(RESET), "emblem24": list(EMBLEM24), "name": list(NAME),
+                          "kv": list(KV), "rows": [list(r) for r in ROWS], "pathBar": list(PATH_BAR), "steps": list(STEPS) + [STEP_LINES],
+                          "primary": list(PRIMARY), "edit": list(EDIT), "wallet": [screen - 100, 21]}
         metrics["sizes"][tag] = size
         glyphs += len(sprites.providers)
     for name, image in Sprites.textures.items():
