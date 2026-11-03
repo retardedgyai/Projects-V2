@@ -24,7 +24,7 @@ import kotlin.math.roundToInt
 
 /**
  * The player menu (冒険の手帳) drawn inside a vanilla dialog, in the 7版 C look (港の窓): the 自分 page is three
- * windows, the name card, the four paths (戦闘・採取・鍛冶・魔術) as banners, and the chosen path's next step; the 技
+ * windows, the name card, the four paths (戦闘・採取・鍛冶・魔術) as banners, and the chosen path's numbers; the 技
  * page picks and raises skills. The other tabs still open the existing screens. Picture: the 「プレイヤーメニュー
  * ダイアログ案」 page (7版 C); look and positions: scripts/build_menu_dialog_assets.py.
  */
@@ -152,7 +152,6 @@ internal class PlayerMenuDialog(
         val x = name[0].asDouble; val baseline = name[1].asDouble
         canvas.inline(x, baseline - 1, 8.0, head(player))
         canvas.text("dot16", x + canvas.design(8.0) + 4, baseline + 3, fit(canvas, "dot16", player.username, 90.0), TEXT)
-        canvas.text("m6", x, baseline + 13, "称号はまだありません", FAINT)
         val kv = layout.getAsJsonArray("kv")
         val right = kv[0].asDouble + kv[2].asDouble
         val clears = account.zoneRecords.values.sumOf { it.clears }
@@ -191,48 +190,43 @@ internal class PlayerMenuDialog(
         canvas.sprite("hit_go", primary[0].asDouble, primary[1].asDouble, click("primary"))
     }
 
-    /** Right window: the chosen path's next steps. */
+    /** Right window: the chosen path's own numbers, a label on the left and its value on the right. No sentences. */
     private fun panel(canvas: DialogCanvas, layout: JsonObject, player: Player, account: CoreAccount, path: Path) {
         val steps = layout.getAsJsonArray("steps")
         val x = steps[0].asDouble
-        var baseline = steps[1].asDouble
         val step = steps[2].asDouble
-        val lines = steps[3].asInt
-        var row = 0
-        for ((text, color) in details(player, account, path)) {
-            for ((i, line) in wrap(canvas, text, 130.0).withIndex()) {
-                if (row >= lines) break
-                if (i == 0) canvas.sprite("ms_now", x, baseline - 6)
-                canvas.text("m7", x + 10, baseline, line, color)
-                baseline += step; row++
-            }
+        canvas.text("b8", x - 6, steps[1].asDouble - 14, path.label, path.color)
+        numbers(player, account, path).take(steps[3].asInt).forEachIndexed { i, (label, value) ->
+            val baseline = steps[1].asDouble + i * step
+            canvas.text("m6", x, baseline, label, MUTED)
+            canvas.text("d7", x + 136, baseline, value, TEXT, Align.RIGHT)
         }
         notices[player.uuid]?.let { canvas.text("m6", x, 182.0, it, HEAT) }
     }
 
-    private fun details(player: Player, account: CoreAccount, path: Path): List<Pair<String, TextColor>> = when (path) {
+    private fun numbers(player: Player, account: CoreAccount, path: Path): List<Pair<String, String>> = when (path) {
         Path.COMBAT -> {
             val level = account.journey.level
             buildList {
-                add("冒険 Lv $level / ${CoreJourneyRules.MAX_LEVEL}" to TEXT)
-                if (level < CoreJourneyRules.MAX_LEVEL) add("次の Lv まで ${"%,d".format(CoreJourneyRules.threshold(level + 1) - account.journey.xp)}" to MUTED)
-                add(CoreJourneyRules.next(account) to TEXT)
+                add("冒険 Lv" to "$level / ${CoreJourneyRules.MAX_LEVEL}")
+                if (level < CoreJourneyRules.MAX_LEVEL) add("次の Lv まで" to "%,d".format(CoreJourneyRules.threshold(level + 1) - account.journey.xp))
+                add("開いた遠征" to "T${account.unlockedMapTier}")
+                add("踏破" to "${account.zoneRecords.values.sumOf { it.clears }}")
             }
         }
         Path.GATHER -> {
             val mastery = host.gatheringMastery(player)
-            QuestGatheringDiscipline.entries.map { "${it.displayName}　Lv ${mastery.level(it)}" to TEXT } + ("道具で採るたびに上がります" to MUTED)
+            QuestGatheringDiscipline.entries.map { it.displayName to "Lv ${mastery.level(it)}" }
         }
         Path.SMITH -> {
             val rank = CoreEnhancementCatalog.masteryRank(account.smithingXp)
             val max = (CoreEnhancementCatalog.MAX_SMITHING_XP / CoreEnhancementCatalog.XP_PER_RANK).toInt()
             buildList {
-                add("鍛冶熟練 Rank $rank / $max" to TEXT)
-                if (rank < max) add("次の Rank まで ${CoreEnhancementCatalog.XP_PER_RANK - CoreEnhancementCatalog.masteryProgress(account.smithingXp)}" to MUTED)
-                add("強化するたびに上がります" to MUTED)
+                add("鍛冶熟練" to "Rank $rank / $max")
+                if (rank < max) add("次の Rank まで" to "${CoreEnhancementCatalog.XP_PER_RANK - CoreEnhancementCatalog.masteryProgress(account.smithingXp)}")
             }
         }
-        Path.MAGIC -> listOf("魔術の進み方は準備中です" to MUTED)
+        Path.MAGIC -> emptyList()
     }
 
     private fun progress(player: Player, account: CoreAccount, path: Path): Progress = when (path) {
@@ -251,14 +245,16 @@ internal class PlayerMenuDialog(
             val level = mastery.level(best)
             val xp = mastery.experience(best)
             val next = (xp - 10.0 * level * level) / (10.0 * ((level + 1) * (level + 1) - level * level))
-            Progress("いちばんは${best.displayName}", "Lv $level", "$level", next)
+            Progress(best.displayName, "Lv $level", "$level", next)
         }
         Path.SMITH -> {
             val rank = CoreEnhancementCatalog.masteryRank(account.smithingXp)
-            Progress("強化するたびに熟練が上がる", "Rank $rank", "$rank",
+            val sub = if (rank >= (CoreEnhancementCatalog.MAX_SMITHING_XP / CoreEnhancementCatalog.XP_PER_RANK).toInt()) "Rank は上限"
+                else "次の Rank まで ${CoreEnhancementCatalog.XP_PER_RANK - CoreEnhancementCatalog.masteryProgress(account.smithingXp)}"
+            Progress(sub, "Rank $rank", "$rank",
                 CoreEnhancementCatalog.masteryProgress(account.smithingXp).toDouble() / CoreEnhancementCatalog.XP_PER_RANK)
         }
-        Path.MAGIC -> Progress("まだ開いていない", "—", "–", 0.0)
+        Path.MAGIC -> Progress("準備中", "—", "–", 0.0)
     }
 
     // ------------------------------------------------------------------ 技 page
@@ -430,7 +426,6 @@ internal class PlayerMenuDialog(
         private val TEXT = TextColor.color(0xECE6DC)
         private val SOFT = TextColor.color(0xC9C3B8)
         private val MUTED = TextColor.color(0x8F8A82)
-        private val FAINT = TextColor.color(0x6E6A64)
         private val HEAT = TextColor.color(0xFF9A4A)
         private val DARK = TextColor.color(0x2A1A06)
         private val DIM_DARK = TextColor.color(0x6B5320)

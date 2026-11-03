@@ -1,9 +1,11 @@
 """Bake the player menu (冒険の手帳) that is drawn inside a vanilla dialog.
 
-    python scripts/build_menu_dialog_assets.py --fonts DIR
+    python scripts/build_menu_dialog_assets.py
 
-DIR holds the full MPLUS2.ttf (variable) and DotGothic16(-Regular).ttf. The copies in web-ui-lab/ui/forge-v3-fonts
-are subsets made for the forge preview and miss many kanji, so they are not the default.
+Every word is MaruMinya, a rounded 12 px pixel gothic (the full TTF is cached in .tools/core-menu, see
+assets/core-ui/fonts/README.md), only ever at sizes where one of its dots is a whole number of screen pixels:
+6 design px (2 px a dot) and 9 (3 px a dot). 2026-11-03 藍 compared it with Minecraft Dungeons II, whose Japanese is
+a pixel font too; smooth M PLUS 2 and DotGothic16 at in-between sizes read as pasted on.
 
 Needs fontTools and Pillow. Writes server-minestom/src/main/resources/polish05/menu.zip (private-namespace fonts and
 sprites, merged into the UI pack by CoreUiPackServer) and polish05/menu-metrics.json, which PlayerMenuCanvas reads.
@@ -26,7 +28,6 @@ already blurs the world, and 藍 wanted it neither darkened nor topped with a ba
 """
 from __future__ import annotations
 
-import argparse
 import io
 import json
 import re
@@ -53,8 +54,11 @@ TEXT_SOURCES = ["server-minestom/src/main/kotlin/dev/projects/server/coreloop/Pl
 
 # style -> (font file key, size)
 # Headings and numbers in DotGothic16 (d*, dot*), small text and names in M PLUS 2 (m*, b*).
-STYLES = {"m6": ("m", 6), "m7": ("m", 7), "b7": ("b", 7), "b8": ("b", 8), "b9": ("b", 9),
-          "d6": ("d", 6), "d7": ("d", 7), "d9": ("d", 9), "dot6": ("d", 6), "dot9": ("d", 9), "dot16": ("d", 16)}
+# The names are roles kept from the earlier fonts; all of them are MaruMinya now, at 6 or 9 only.
+STYLES = {"m6": ("p", 6), "m7": ("p", 6), "b7": ("p", 6), "b8": ("p", 9), "b9": ("p", 6),
+          "d6": ("p", 6), "d7": ("p", 6), "d9": ("p", 9), "dot6": ("p", 6), "dot9": ("p", 6), "dot16": ("p", 9)}
+MARU = ROOT / ".tools/core-menu/x12y12pxMaruMinya.ttf"
+MARU_PX = 12               # the font's own pixel grid
 
 C = dict(ink="#ece6dc", muted="#9a948c", faint="#6e6a64", gold="#f2c84b", heat="#ff9a4a", line=(255, 255, 255, 18), dark="#2a1a06")
 PATHS = [  # id, name, colour (the banners are assets/core-ui/menu-banners/ban_<id>.png)
@@ -88,7 +92,7 @@ ACTS = [(RX, TOP + 109), (RX, TOP + 126)]          # gold (raise), charcoal (equ
 ACT_W, BTN_H = 168, 14
 RESET = (RX, TOP + 144)
 # 自分
-SELF_WINS = [(0, 150), (156, 150), (312, 152)]     # 名刺, 道, 次の一歩
+SELF_WINS = [(0, 150), (156, 150), (312, 152)]     # 名刺, 道, 
 CARD = (4, WIN_Y + 4, 142, 32)                     # the harbour banner on the name card
 EMBLEM24 = (11, WIN_Y + 29)                        # the class emblem in its slot (slot 30 x 30 at -3)
 NAME = (46, WIN_Y + 47)                            # face + name baseline; the title 10 below
@@ -99,9 +103,9 @@ ROWS = [(161, WIN_Y + 14 + i * 28) for i in range(4)]   # 140 x 26 path banners
 ROW_W, ROW_H = 140, 26
 PATH_BAR = (161, WIN_Y + 136, 140)                 # x, y, width; the label 4 above, the next-step line 9 below
 PRIMARY = (161, WIN_Y + 147, 140)                  # gold button
-STEPS = (320, WIN_Y + 26, 13)                      # x, first baseline, line step
+STEPS = (320, WIN_Y + 28, 13)                      # x, first baseline, line step (the path's name 14 above)
 STEP_LINES = 10
-BAKED = "".join(TABS) + "".join(KV_LABELS) + "冒険の手帳いまの組枠を押してから技を選ぶ奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨"
+BAKED = "".join(TABS) + "".join(KV_LABELS) + "冒険の手帳いまの組奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨"
 
 def hexc(v, a=255):
     if isinstance(v, tuple):
@@ -119,10 +123,9 @@ def text_chars() -> set[int]:
     return chars
 
 
-def build_fonts(src: Path, chars: set[int]) -> dict[str, bytes]:
+def build_fonts(chars: set[int]) -> dict[str, bytes]:
     from fontTools import subset
     from fontTools.ttLib import TTFont
-    from fontTools.varLib import instancer
 
     def cut(font, keep):
         options = subset.Options(); options.name_IDs = [0, 1, 2, 3, 4, 5, 6, 13, 14]; options.name_languages = [0x409]
@@ -130,12 +133,7 @@ def build_fonts(src: Path, chars: set[int]) -> dict[str, bytes]:
         sub = subset.Subsetter(options=options); sub.populate(unicodes=keep & font.getBestCmap().keys()); sub.subset(font)
         out = io.BytesIO(); font.save(out); return out.getvalue()
 
-    files = {}
-    for key, weight in (("m", 500), ("b", 700)):
-        files[key] = cut(instancer.instantiateVariableFont(TTFont(src / "MPLUS2.ttf"), {"wght": weight}), chars)
-    dot = src / "DotGothic16-Regular.ttf"
-    files["d"] = cut(TTFont(dot if dot.exists() else src / "DotGothic16.ttf"), chars)
-    return files
+    return {"p": cut(TTFont(MARU), chars)}
 
 
 def advances(ttf: bytes, size: float, oversample: float, chars: set[int]) -> dict[str, float]:
@@ -217,18 +215,35 @@ def ascent_for(top: int, origin: int, h: int) -> int:
     return ascent if ascent <= h else ascent - 9
 
 
-def font_for(fonts, key, size):
-    return ImageFont.truetype(io.BytesIO(fonts[key]), size * K)
+def pixel_text(fonts, style, text, fill):
+    """`text` drawn on the font's own 12 px grid, each dot then made a whole n x n block of texture px, with a one-dot
+    shadow under light words (none under dark ones on gold). Returns the image and its ascent in texture px."""
+    from PIL import ImageChops
+    key, size = STYLES[style]
+    n = size * K // MARU_PX
+    font = ImageFont.truetype(io.BytesIO(fonts[key]), MARU_PX)
+    w = max(1, int(font.getlength(text)) + 2)
+    mask = Image.new("L", (w, MARU_PX + 4))
+    ImageDraw.Draw(mask).text((0, MARU_PX), text, font=font, fill=255, anchor="ls")
+    mask = mask.point(lambda a: 255 if a > 110 else 0).resize((w * n, (MARU_PX + 4) * n), Image.NEAREST)
+    colour = hexc(fill)
+    out = Image.new("RGBA", (mask.width + n, mask.height + n))
+    if sum(colour[:3]) > 380:
+        out.paste(Image.new("RGBA", mask.size, (0, 0, 0, 200)), (n, n), mask)
+    out.paste(Image.new("RGBA", mask.size, colour), (0, 0), mask)
+    return out, MARU_PX * n
 
 
 def draw_text(d, fonts, style, x, base, text, fill, anchor="ls"):
-    key, size = STYLES[style]
-    d.text((x * K, base * K), text, font=font_for(fonts, key, size), fill=hexc(fill), anchor=anchor)
+    img, ascent = pixel_text(fonts, style, text, fill)
+    width = text_w(fonts, style, text) * K
+    left = x * K - (width / 2 if anchor == "ms" else width if anchor == "rs" else 0)
+    d._image.alpha_composite(img, (round(left), round(base * K - ascent)))
 
 
 def text_w(fonts, style, text):
     key, size = STYLES[style]
-    return font_for(fonts, key, size).getlength(text) / K
+    return ImageFont.truetype(io.BytesIO(fonts[key]), MARU_PX).getlength(text) * size / MARU_PX
 
 
 def glow(w, h, cx, cy, rx, ry, colour, peak):
@@ -382,7 +397,6 @@ def bake_skills(fonts):
         slot_frame(img, x - 2, y, 30, 28); draw_text(d, fonts, "m6", x + 13, y + 11, label, C["muted"], anchor="ms")
     draw_text(d, fonts, "b7", 83, TOP + 85, "いまの組", C["ink"], anchor="ms")
     for x, y in KEYS: slot_frame(img, x, y)
-    draw_text(d, fonts, "m6", 83, TOP + 128, "枠を押してから、技を選ぶ", C["muted"], anchor="ms")
     for x, y in GRID + ULTS: slot_frame(img, x, y)
     draw_text(d, fonts, "m6", 172, TOP + 98, "奥義", C["muted"])
     for (x, y), label in zip(BARS, ["威力", "再使用", "範囲"]):
@@ -418,15 +432,13 @@ def bake_self(fonts):
     px, py, pw = PATH_BAR
     tint(img, px, py, px + pw, py + 2, (255, 255, 255, 26))
     button(img, d, fonts, PRIMARY[0], PRIMARY[1], PRIMARY[2], GOLD_BTN, "左クリック")
-    window(img, d, fonts, rx, rw, "次の一歩")
+    window(img, d, fonts, rx, rw)
     return img
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(); parser.add_argument("--fonts", required=True)
-    src = Path(parser.parse_args().fonts)
     chars = text_chars()
-    fonts = build_fonts(src, chars)
+    fonts = build_fonts(chars)
     files: dict[str, bytes] = {}
 
     def png(path, image):

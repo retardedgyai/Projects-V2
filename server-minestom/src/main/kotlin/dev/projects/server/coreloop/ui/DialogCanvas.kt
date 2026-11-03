@@ -39,7 +39,9 @@ internal class DialogCanvas(private val size: Size, private val space: Map<Doubl
         require(shift in 0..8) { "Text at baseline $baseline is above the canvas" }
         val gx = x * unit
         val left = when (align) { Align.LEFT -> gx; Align.CENTER -> gx - advance / 2; Align.RIGHT -> gx - advance }
-        var component = Component.text(text, color).font(Key.key(font.font + shift)).shadowColor(ShadowColor.none())
+        // Light words get the client's own drop shadow, softened; dark words on gold plates get none.
+        val light = color.red() * 299 + color.green() * 587 + color.blue() * 114 > 128_000
+        var component = Component.text(text, color).font(Key.key(font.font + shift)).shadowColor(if (light) SHADOW else ShadowColor.none())
         if (click != null) component = component.clickEvent(click)
         if (hover != null) component = component.hoverEvent(HoverEvent.showText(hover))
         add(line, left, advance, component)
@@ -184,6 +186,7 @@ internal class DialogCanvas(private val size: Size, private val space: Map<Doubl
     companion object {
         private val SPACE = Key.key("projects_ui_polish05", "menu_space")
         private val WHITE = TextColor.color(0xFFFFFF)
+        private val SHADOW = ShadowColor.shadowColor(0xB4000000.toInt())
         private val SPACE_STEPS = listOf(1024.0, 512.0, 256.0, 128.0, 64.0, 32.0, 16.0, 8.0, 4.0, 2.0, 1.0, 0.5, 0.25)
     }
 }
