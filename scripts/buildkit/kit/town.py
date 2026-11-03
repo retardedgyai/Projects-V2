@@ -13,6 +13,7 @@ import json, math, os, random
 from collections import deque
 from vox import put, get, full, log, stair, slab, trap, cross, fence, door, vine, water, path, grass, write, vnoise, _h, W, LANTERN
 import props as P
+import trees as TR
 
 KIT = os.path.dirname(os.path.abspath(__file__))
 HOUSES = os.path.join(os.path.dirname(KIT), 'houses')
@@ -269,7 +270,12 @@ class Town:
                 for dx, dz, f in ((0, -1, 'n'), (0, 1, 's'), (1, 0, 'e'), (-1, 0, 'w')):
                     n = (x + dx, z + dz)
                     if self.KIND.get(n) in (k, 'lane', 'lane_edge', 'plaza', 'hall', 'cliffstair', 'harbor') and self.H[n] == g + 1 and get(x, g + 1, z) is None:
-                        put(x, g + 1, z, stair('cobblestone' if k in ('cliffstair', 'harbor') else 'spruce_planks', f)); break
+                        if k in ('cliffstair', 'harbor'): put(x, g + 1, z, stair('cobblestone', f))
+                        else:                                                       # 小道の段：石のハーフ（半段）、材料を混ぜ、ところどころ階段
+                            r = _h(x, z, 97)
+                            t = 'cobblestone' if r < 0.4 else 'andesite' if r < 0.65 else 'stone_bricks' if r < 0.85 else 'mossy_cobblestone'
+                            put(x, g + 1, z, slab(t) if r < 0.8 else stair(t, f))
+                        break
 
     def top_y(self, x, z):
         y = 80
@@ -529,12 +535,28 @@ class Town:
                 edge = min(x - self.X0, self.X1 - x, z - self.Z0, self.Z1 - z)
                 if edge > 26 and _h(x, z, 3) < 0.4: continue
                 k = kind(x, z, _h(x, z, 6))
-                if k == 'spruce': self.spruce_tree(x, z, 10 + int(_h(x, z, 4) * 6))
-                elif k == 'cherry': self.blob_tree(x, z, 6, 'cherry_leaves', 'cherry_log', 3.2)
-                elif k == 'birch': self.blob_tree(x, z, 6, 'birch_leaves', 'birch_log', 2.6)
-                else: self.blob_tree(x, z, 5 + int(_h(x, z, 7) * 2), 'oak_leaves', 'oak_log', 3.0)
+                g = self.top_y(x, z); sd = x * 7919 + z
+                if k == 'spruce': (TR.small_spruce if _h(x, z, 8) < 0.3 else TR.spruce)(x, z, g, sd)
+                elif k == 'cherry': TR.cherry(x, z, g, sd)
+                elif k == 'birch': TR.birch(x, z, g, sd)
+                elif k == 'big': TR.big_tree(x, z, g, sd)
+                else: TR.oak(x, z, g, sd, 0.8 + 0.5 * _h(x, z, 9))
                 trees += 1
         return trees
+
+    def rock(self, x, z, g, rng):
+        """岩：芯の石を半分埋め、周りに石の階段とハーフ、苔の石を少し。大きい岩は芯を2〜3つ。"""
+        mat = rng.choice(['stone', 'andesite', 'stone', 'cobblestone', 'tuff'])
+        cores = [(0, 0)] + ([(1, 0), (0, 1)][:rng.randint(0, 2)] if rng.random() < 0.4 else [])
+        for (dx, dz) in cores:
+            put(x + dx, g + 1, z + dz, full(mat if rng.random() < 0.8 else 'mossy_cobblestone'))
+            if len(cores) > 1 and (dx, dz) == (0, 0): put(x, g + 2, z, slab(mat))
+        for (dx, dz) in cores:
+            for (ox, oz, f) in ((1, 0, 'w'), (-1, 0, 'e'), (0, 1, 'n'), (0, -1, 's')):
+                X, Z = x + dx + ox, z + dz + oz
+                if (X - x, Z - z) in cores or get(X, g + 1, Z) not in (None,) and get(X, g + 1, Z)['s'] != 'cross': continue
+                if self.H.get((X, Z)) != g or rng.random() < 0.35: continue
+                put(X, g + 1, Z, stair(mat + ('_bricks' if mat == 'stone' and False else ''), f) if mat != 'tuff' else slab('tuff') if False else stair(mat, f)) if rng.random() < 0.6 else put(X, g + 1, Z, slab(mat))
 
     def greens(self, flowers=22000, rocks=2400):
         """草花、坂の岩と茂み（段のしまを崩す）、段の際の草と茂み（土の切り口を隠す）。"""
@@ -551,9 +573,8 @@ class Town:
             if KIND.get((x, z)) != 'nat' or self.town_zone(x, z): continue
             g = self.top_y(x, z)
             if g != H[(x, z)] or not self.free(x, g + 1, z): continue
-            if slope(x, z) >= 1 and rng.random() < 0.4:
-                for (dx, dz, dy) in [(0, 0, 1), (1, 0, 0), (0, 1, 0), (1, 1, 1), (-1, 0, 0)][:rng.randint(2, 5)]:
-                    put(x + dx, H.get((x + dx, z + dz), g) + dy, z + dz, full(rng.choice(['stone', 'andesite', 'mossy_cobblestone', 'cobblestone', 'tuff'])))
+            if slope(x, z) >= 1 and rng.random() < 0.18:
+                self.rock(x, z, g, rng)
             elif rng.random() < 0.5:
                 lv = rng.choice(['oak_leaves', 'azalea_leaves', 'flowering_azalea_leaves', 'spruce_leaves'])
                 for (dx, dz, dy) in [(0, 0, 1), (1, 0, 1), (0, 1, 1), (0, 0, 2), (-1, 0, 1)][:rng.randint(1, 5)]:

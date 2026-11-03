@@ -90,7 +90,10 @@ T.house('fancy', 90, (64, 24), None, None, True, '丘の東')
 BRIDGE_Z = 22                                                                     # 川を渡る所
 bxa, bxb = int(river_x(BRIDGE_Z)) - 7, int(river_x(BRIDGE_Z)) + 7
 T.lane([(VX + 8, VZ - 2, VY), (VX + 22, VZ - 12, None), (bxa - 14, 40, None), (bxa - 6, BRIDGE_Z + 2, None), (bxa - 1, BRIDGE_Z, None)])
-T.lane([(bxb + 1, BRIDGE_Z, None), (bxb + 8, BRIDGE_Z - 4, None), (HILL[0] - 6, mrect[3] + 10, None), (HILL[0], mrect[3] + 5, MY)])
+# 館への坂：まっすぐ上らず、丘の肩を回って折り返す（急な所ほど曲がりくねらせる）[rules/nature 19・22]
+GY = T.ny(bxb + 8, BRIDGE_Z - 4)
+T.lane([(bxb + 1, BRIDGE_Z, None), (bxb + 8, BRIDGE_Z - 4, None), (HILL[0] - 14, mrect[3] + 14, GY + (MY - GY) // 3),
+        (HILL[0] + 2, mrect[3] + 16, GY + (MY - GY) * 2 // 3), (HILL[0] + 12, mrect[3] + 9, MY - 1), (HILL[0] + 4, mrect[3] + 5, MY)])
 T.lane([(HILL[0] + 8, mrect[3] + 6, MY), (58, 20, None), (64, 30, None)])
 T.lane([(VX - 8, VZ, VY), (VX - 20, VZ - 6, None), (VX - 20, VZ - 12, None)])
 T.lane([(VX, VZ + 8, VY), (VX - 2, VZ + 18, None), (-48, 96, None), (-58, 100, None)])
@@ -139,7 +142,7 @@ def tree_kind(x, z, r):
     g = H[(x, z)]
     if g >= 56: return None
     if g >= 34 or z < -40: return 'spruce'
-    return 'cherry' if r < 0.06 else 'birch' if r < 0.28 else 'oak' if r < 0.75 else 'spruce'
+    return 'big' if r < 0.02 else 'cherry' if r < 0.07 else 'birch' if r < 0.28 else 'oak' if r < 0.75 else 'spruce'
 def skip(x, z):
     return tree_kind(x, z, 0.5) is None or KIND.get((x, z)) in ('flowers', 'stream') or abs(x - river_x(z)) < 7
 print('trees', T.forest(skip=skip, kind=lambda x, z, r: tree_kind(x, z, r) or 'spruce'))
