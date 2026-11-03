@@ -3,7 +3,8 @@
 
 // ProjectS combat VFX on vanilla 26.3 core/item. Independent markers, every other item renders as vanilla:
 // - メイジの竜巻 (CoreMageTornado.kt): tint blue == 84; green 1 = the funnel (red = how much stands, see mageFunnel),
-//   green 2 = its mark on the ground (red = ticks since the cast, see mageGround).
+//   green 2 = its mark on the ground (red = ticks since the cast, see mageGround), green 3 = the funnel in 3D
+//   (red = how much stands, see mageFunnel3D).
 // - 黒翳竜 (scripts/build_boss_vfx.py): items whose tint is blue == 77, green == the effect kind (1..6). The
 //   texture is a data map (R = shape mask, G = flow coordinate along the effect, B = across), the tint red is the
 //   effect's progress (0..1, driven by the server every tick) and the colour is computed here: emissive, moving
@@ -300,6 +301,26 @@ vec4 mageFunnel(vec4 data, float stand) {
     return front.a > back.a ? front : back;
 }
 
+// 竜巻 in 3D (marker 84, kind 3; 藍「あとこれ3dではない」 of the billboard): the funnel built of eight bands of upright
+// panels (build_boss_vfx.py tornado_funnel). The texture gives each pixel its place on the whole funnel: G = height,
+// B = angle round it, R = outer (255) or inner (128) face. The outline shading comes from the surface's slant to the
+// eye (its normal from screen derivatives of the camera-relative position). The inner faces (the far wall seen through
+// the gaps, or the inside) are faint. tint red = how much of the funnel stands.
+vec4 mageFunnel3D(vec4 data, float stand) {
+    float tt = GameTime * 24000.0;
+    float y = floor(data.g * TW_TOP * 16.0) / 16.0, py = floor(data.g * TW_TOP * 16.0);
+    if (y > stand * TW_TOP) return vec4(0.0);
+    float r = .28 + pow(max(0.0, y) / TW_TOP, 1.35) * 1.55;
+    float N = floor(6.2832 * r * 16.0);
+    float pxs = floor(data.b * N);
+    if (y > TW_TOP - .45 && twHash(vec2(pxs, py) + vec2(9.0, 1.0)) < (y - (TW_TOP - .45)) / .45) return vec4(0.0);
+    vec3 n = normalize(cross(dFdx(vfxPosition), dFdy(vfxPosition)));
+    float rim = smoothstep(.55, .95, 1.0 - abs(dot(n, normalize(-vfxPosition))));
+    vec4 c = twPattern(data.b, r, py, y, tt, rim);
+    if (data.r < .75) c.a *= .35;
+    return c;
+}
+
 // 竜巻's mark on the ground (marker 84, kind 2): a flat 8 x 8 block plate, the same coordinate map. tint red = ticks since
 // the cast (0..255). While the funnel starts up, a sparse ring of pale pixels closes in (radius 3.5); until it ends,
 // short pixel lines run inward over the ground (the pull). 16 px a block like everything else.
@@ -357,8 +378,8 @@ void main() {
         finishUnlit(fx);
         return;
     }
-    if (markerB == 84 && (kind == 1 || kind == 2)) {
-        vec4 fx = kind == 1 ? mageFunnel(color, rawColor.r) : mageGround(color, rawColor.r * 255.0);
+    if (markerB == 84 && kind >= 1 && kind <= 3) {
+        vec4 fx = kind == 1 ? mageFunnel(color, rawColor.r) : kind == 2 ? mageGround(color, rawColor.r * 255.0) : mageFunnel3D(color, rawColor.r);
         if (fx.a < .02) {
             discard;
         }

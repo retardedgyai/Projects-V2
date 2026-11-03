@@ -279,6 +279,56 @@ def pixel_sprites(pack):
             path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
 
 
+# メイジの竜巻, 3D (2026-11-03, 藍「あとこれ3dではない」 of the billboard): the funnel as eight bands, each a model of 20
+# upright panels round the axis (a stave barrel), so it is a real solid you can look round. Each panel's two faces map
+# to their own patch of one coordinate texture: G = height up the whole funnel (0..1 of TORNADO_TOP), B = angle round it
+# (0..1), R = 255 on the outer face, 128 on the inner. item.fsh (marker 84 kind 3) draws the funnel's pattern from
+# those, so the panels join up into one surface. Display scale TORNADO_TOP: 16 model units = the funnel's height.
+TORNADO_TOP, TORNADO_BANDS, TORNADO_PANELS = 4.4, 8, 20
+
+
+def tornado_r(y):
+    return .28 + (max(0.0, y) / TORNADO_TOP) ** 1.35 * 1.55
+
+
+def tornado_funnel(pack):
+    im = Image.new("RGBA", (512, 1024))
+    px = im.load()
+    for half, red in ((0, 255), (1, 128)):
+        for row in range(512):
+            g = round(255 * (1 - (row + .5) / 512))
+            for x in range(512):
+                px[x, half * 512 + row] = (red, g, round(255 * (x + .5) / 512), 255)
+    tex = pack / "assets/projects/textures/item/boss_vfx/mage_tornado.png"
+    tex.parent.mkdir(parents=True, exist_ok=True)
+    im.save(tex)
+    unit = TORNADO_TOP / 16                                  # blocks per model unit at display scale TORNADO_TOP
+    for b in range(TORNADO_BANDS):
+        y0, y1 = 16 * b / TORNADO_BANDS, 16 * (b + 1) / TORNADO_BANDS
+        rr = tornado_r(TORNADO_TOP * (b + 1) / TORNADO_BANDS) / unit     # the band's radius at its top, in units
+        half = rr * math.tan(math.pi / TORNADO_PANELS) * 1.03
+        elements = []
+        for k in range(TORNADO_PANELS):
+            ang = 360 * k / TORNADO_PANELS
+            ang = ang - 360 if ang > 180 else ang
+            u0, u1 = 16 * k / TORNADO_PANELS, 16 * (k + 1) / TORNADO_PANELS
+            v0, v1 = 8 * (1 - (b + 1) / TORNADO_BANDS), 8 * (1 - b / TORNADO_BANDS)
+            elements.append({"from": [8 - half, y0, 8 + rr], "to": [8 + half, y1, 8 + rr], "shade": False, "light_emission": 15,
+                             "rotation": {"origin": [8, y0, 8], "axis": "y", "angle": round(ang, 4)},
+                             "faces": {"south": {"texture": "#fx", "uv": [u0, v0, u1, v1], "tintindex": 0},
+                                       "north": {"texture": "#fx", "uv": [u1, v0 + 8, u0, v1 + 8], "tintindex": 0}}})
+        name = f"mage_tornado_{b}"
+        files = {"models": {"ambientocclusion": False, "elements": elements,
+                            "textures": {"fx": {"sprite": "projects:item/boss_vfx/mage_tornado", "force_translucent": True},
+                                         "particle": "projects:item/boss_vfx/mage_tornado"}},
+                 "items": {"model": {"type": "minecraft:model", "model": f"projects:boss_vfx/{name}",
+                                     "tints": [{"type": "minecraft:custom_model_data", "index": 0, "default": 16777215}]}}}
+        for sub, value in files.items():
+            path = pack / f"assets/projects/{sub}/boss_vfx/{name}.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
+
+
 def light_probe(pack):
     """The point-light probe (SakuraLight.kt): a tiny two-sided quad in the check colour item.fsh looks for. item.vsh
     moves it onto the screen's data row, so it is never seen where it stands."""
@@ -311,6 +361,7 @@ def build(pack=PACK):
             path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
     light_probe(pack)
     pixel_sprites(pack)
+    tornado_funnel(pack)
     # The arena glow (26.3 post effect, turned on per player by the server): our own namespace, no vanilla override.
     post = pack / "assets/projects/shaders/post"
     post.mkdir(parents=True, exist_ok=True)
