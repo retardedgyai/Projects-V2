@@ -205,3 +205,75 @@ def flow_cut(G, top=0.11):
     v = sorted(G.flow, reverse=True)
     G.flow_cut = v[int(len(v) * top)]
     return G.flow_cut
+
+
+# ================================================================ 大きな地図用（numpy でまとめて計算）
+def erode_np(h, drops=None, seed=5, inertia=0.05, capacity=4.0, min_slope=0.01, deposit=0.3, erode_rate=0.3,
+             evaporate=0.01, gravity=4.0, life=30, batch=20000, mask=None):
+    """erode と同じ雨粒の侵食を、雨粒をまとめて同時に流して速くしたもの（1000×1000 用）。
+    h は numpy の2次元配列（[z][x]、マス単位の高さ）。流れの地図も返す。削る筆は半径1（3×3）に簡略化。"""
+    import numpy as np
+    rng = np.random.default_rng(seed)
+    d, w = h.shape
+    top = float(h.max()) or 1.0
+    H = (h / top).astype(np.float64)
+    flow = np.zeros_like(H)
+    drops = drops or int(w * d * 1.5)
+    if mask is not None: mw = np.argwhere(mask)
+    done = 0
+    while done < drops:
+        n = min(batch, drops - done); done += n
+        if mask is not None:
+            pick = mw[rng.integers(0, len(mw), n)]
+            fz = pick[:, 0] + rng.random(n); fx = pick[:, 1] + rng.random(n)
+        else:
+            fx = rng.uniform(1, w - 2, n); fz = rng.uniform(1, d - 2, n)
+        dx = np.zeros(n); dz = np.zeros(n); speed = np.ones(n); water = np.ones(n); sed = np.zeros(n)
+        alive = np.ones(n, bool)
+        for step in range(life):
+            fx = np.clip(fx, 1, w - 2.001); fz = np.clip(fz, 1, d - 2.001)
+            ix = fx.astype(int); iz = fz.astype(int); u = fx - ix; v = fz - iz
+            a = H[iz, ix]; b = H[iz, ix + 1]; c = H[iz + 1, ix]; e = H[iz + 1, ix + 1]
+            gx = (b - a) * (1 - v) + (e - c) * v; gz = (c - a) * (1 - u) + (e - b) * u
+            hh = a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + e * u * v
+            np.add.at(flow, (iz[alive], ix[alive]), water[alive])
+            dx = dx * inertia - gx * (1 - inertia); dz = dz * inertia - gz * (1 - inertia)
+            ln = np.hypot(dx, dz); alive &= ln > 1e-9
+            ln[ln < 1e-9] = 1; dx /= ln; dz /= ln
+            nx, nz = fx + dx, fz + dz
+            ok = np.isfinite(nx) & np.isfinite(nz)
+            nx = np.where(ok, nx, fx); nz = np.where(ok, nz, fz); alive &= ok
+            alive &= (nx >= 1) & (nx < w - 2) & (nz >= 1) & (nz < d - 2)
+            nxc = np.clip(nx, 1, w - 2.001); nzc = np.clip(nz, 1, d - 2.001)
+            jx = nxc.astype(int); jz = nzc.astype(int); uu = nxc - jx; vv = nzc - jz
+            nh = H[jz, jx] * (1 - uu) * (1 - vv) + H[jz, jx + 1] * uu * (1 - vv) + H[jz + 1, jx] * (1 - uu) * vv + H[jz + 1, jx + 1] * uu * vv
+            dh = nh - hh
+            cap = np.maximum(-dh, min_slope) * speed * water * capacity
+            dep = alive & ((sed > cap) | (dh > 0))
+            amt = np.where(dh > 0, np.minimum(dh, sed), (sed - cap) * deposit) * dep
+            sed -= amt
+            for (oz, ox, wt) in ((0, 0, (1 - u) * (1 - v)), (0, 1, u * (1 - v)), (1, 0, (1 - u) * v), (1, 1, u * v)):
+                np.add.at(H, (iz + oz, ix + ox), amt * wt)
+            ero = alive & ~dep
+            amt = np.minimum((cap - sed) * erode_rate, -dh) * ero
+            amt = np.maximum(amt, 0)
+            for oz in (-1, 0, 1):                                                            # 3×3 の筆で削る
+                for ox in (-1, 0, 1):
+                    wt = 0.25 if (ox, oz) == (0, 0) else 0.125 if 0 in (ox, oz) else 0.0625
+                    np.add.at(H, (iz + oz, ix + ox), -amt * wt)
+            sed += amt
+            speed = np.sqrt(np.maximum(0, speed * speed - dh * gravity))
+            water *= 1 - evaporate
+            fx, fz = nx, nz
+    return H * top, flow
+
+
+def smooth_gentle_np(h, max_slope=0.58, strength=0.5, rounds=2):
+    """smooth_gentle の numpy 版。"""
+    import numpy as np
+    for _ in range(rounds):
+        p = np.pad(h, 1, mode='edge')
+        avg = sum(p[1 + dz:p.shape[0] - 1 + dz, 1 + dx:p.shape[1] - 1 + dx] for dz in (-1, 0, 1) for dx in (-1, 0, 1)) / 9.0
+        mx = np.maximum.reduce([np.abs(h - p[1 + dz:p.shape[0] - 1 + dz, 1 + dx:p.shape[1] - 1 + dx]) for (dz, dx) in ((0, 1), (0, -1), (1, 0), (-1, 0))])
+        h = np.where(mx < max_slope * 2, h + (avg - h) * strength, h)
+    return h
