@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8"><style>html,body{margin:0;height:100%;background:linear-gradient(#7fb2ec,#cfe3f7)}canvas{width:100%;height:100%;display:block}</style>
+<canvas id="c"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SSAOShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/SimplexNoise.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SSAOPass.js"></script>
+<script src="house.js"></script><script src="viewer.js"></script>
+<script>
+// #視点,night,ours|vanilla,輪切りのy
+const [vw, nt, lm, ct] = location.hash.slice(1).split(',');
+const v = buildHouseScene(document.getElementById('c'), 'atlas.png', () => {
+  v.lmReady.then(() => { if ((vw||'')[0] === '@') { const n = vw.slice(1).split(';').map(Number); window.HOUSE.views._c = [[-n[0], n[1], n[2]], [-n[3], n[4], n[5]]]; v.setView('_c'); } else v.setView(vw || 'angle'); if (nt === 'night') v.setNight(true, false, lm || 'ours'); if (ct) v.setCut(parseFloat(ct)); if (location.hash.includes('plain')) v.setShader(false); document.title = 'READY ' + (window.LIGHTMAP_READY || '') + (window.LIGHTMAP_ERROR || ''); });
+});
+</script>
