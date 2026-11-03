@@ -50,6 +50,11 @@ internal class PlayerMenuDialog(
 
     private val selected = mutableMapOf<UUID, Path>()
     private val notices = mutableMapOf<UUID, String>()
+    private enum class Page { SELF, SKILLS }
+    private val pages = mutableMapOf<UUID, Page>()
+    /** 技 page: the key being changed (0..3 normal skills, 4 the ultimate) and the candidate looked at, if any. */
+    private class SkillPick(var slot: Int = 0, var candidate: Int? = null)
+    private val picks = mutableMapOf<UUID, SkillPick>()
 
     @Synchronized fun show(player: Player) {
         val account = host.account(player) ?: return
@@ -65,12 +70,33 @@ internal class PlayerMenuDialog(
             action.startsWith("path_") -> { selected[player.uuid] = Path.entries[action.removePrefix("path_").toInt()]; show(player) }
             action == "edit" -> { notices[player.uuid] = "名刺を整える画面は準備中です"; show(player) }
             action == "primary" -> leave(player, (selected[player.uuid] ?: Path.COMBAT).target)
+            action == "tab_0" -> { pages[player.uuid] = Page.SELF; show(player) }
+            action == "tab_1" -> { pages[player.uuid] = Page.SKILLS; show(player) }
             action.startsWith("tab_") -> leave(player, TAB_TARGETS[action.removePrefix("tab_").toInt()])
+            action.startsWith("key_") -> { picks.getOrPut(player.uuid, ::SkillPick).apply { slot = action.removePrefix("key_").toInt(); candidate = null }; show(player) }
+            action.startsWith("cell_") -> { picks.getOrPut(player.uuid, ::SkillPick).candidate = action.removePrefix("cell_").toInt(); show(player) }
+            action == "equip" -> skillAction(player) { account, pick ->
+                val choice = pick.candidate ?: return@skillAction null
+                CoreAction.SelectSkill(pick.slot, if (pick.slot == 4) choice - CoreSkillCatalog.ultimateStart(account.journey.job) else choice)
+            }
+            action == "raise" -> skillAction(player) { account, pick -> CoreAction.RaiseSkill(chosen(account, pick).icon) }
+            action == "reset" -> skillAction(player) { _, _ -> CoreAction.ResetSkillLevels }
         }
         return true
     }
 
-    fun forget(player: UUID) { selected -= player; notices -= player }
+    /** Sends a 技 page change to the server (which decides), then redraws with the result. */
+    private fun skillAction(player: Player, action: (CoreAccount, SkillPick) -> CoreAction?) {
+        val account = host.account(player) ?: return
+        val pick = picks.getOrPut(player.uuid, ::SkillPick)
+        val request = action(account, pick) ?: return
+        host.mutate(player, request, account.revision, { show(player) }) {
+            if (request is CoreAction.SelectSkill) pick.candidate = null
+            show(player)
+        }
+    }
+
+    fun forget(player: UUID) { selected -= player; notices -= player; pages -= player; picks -= player }
 
     private fun leave(player: Player, target: Target) {
         player.closeDialog()
@@ -100,6 +126,7 @@ internal class PlayerMenuDialog(
     }
 
     private fun body(player: Player, account: CoreAccount, size: DialogCanvas.Size): Component {
+        if (pages[player.uuid] == Page.SKILLS) return skills(player, account, size)
         val canvas = DialogCanvas(size, metrics.space, size.canvasWidth.toDouble(), size.lines)
         val layout = size.layout
         canvas.background("page_self", 0.0, 0.0)
@@ -238,11 +265,131 @@ internal class PlayerMenuDialog(
         Path.MAGIC -> Progress("準備中", "—", "—", 0.0)
     }
 
-    private fun wrap(canvas: DialogCanvas, text: String, width: Double): List<String> {
+    // ------------------------------------------------------------------ 技 page
+
+    private fun equippedIndices(account: CoreAccount): List<Int> {
+        val build = account.journey.build
+        return build.skills + (CoreSkillCatalog.ultimateStart(account.journey.job) + build.ultimate)
+    }
+
+    private fun chosen(account: CoreAccount, pick: SkillPick): CoreSkillDefinition =
+        CoreSkillCatalog.skills(account.journey.job)[pick.candidate ?: equippedIndices(account)[pick.slot]]
+
+    private fun skills(player: Player, account: CoreAccount, size: DialogCanvas.Size): Component {
+        val canvas = DialogCanvas(size, metrics.space, size.canvasWidth.toDouble(), size.lines)
+        val layout = size.layout
+        canvas.background("page_skills", 0.0, 0.0)
+        val tabs = layout.getAsJsonArray("tabs")
+        for (i in 0 until tabs.size()) if (i != 1) {
+            val box = tabs[i].asJsonArray
+            canvas.sprite("hit_tab$i", box[0].asDouble, box[1].asDouble, click("tab_$i"))
+        }
+        val job = account.journey.job
+        val build = account.journey.build
+        val catalog = CoreSkillCatalog.skills(job)
+        val stats = CoreAffixCatalog.stats(account)
+        val equipped = equippedIndices(account)
+        val pick = picks.getOrPut(player.uuid, ::SkillPick)
+        if (!CoreJourneyRules.skillUnlocked(account, pick.slot)) { pick.slot = 0; pick.candidate = null }
+        val shown = chosen(account, pick)
+        fun lv(icon: String) = CoreSkillLevels.level(build, stats, icon)
+
+        // Left: the five keys.
+        val left = layout["left"].asDouble
+        for (slot in 0..4) {
+            val top = layout["keyY"].asDouble + slot * layout["keyStep"].asDouble
+            if (slot == pick.slot) canvas.sprite("row_sel", left, top)
+            if (CoreJourneyRules.skillUnlocked(account, slot)) {
+                val skill = catalog[equipped[slot]]
+                canvas.sprite("sk_${skill.icon}", left + 20, top + 5)
+                canvas.text("b7", left + 42, top + 11, fit(canvas, "b7", skill.name, 66.0), if (slot == pick.slot) IVORY else TEXT)
+                canvas.text("d7", left + 136, top + 11, "Lv ${lv(skill.icon)}", if (slot == pick.slot) IVORY else SOFT, Align.RIGHT)
+                role(skill)?.let { canvas.text("m6", left + 42, top + 21, fit(canvas, "m6", it, 92.0), MUTED) }
+                canvas.sprite("hit_key", left, top, click("key_$slot"))
+            } else {
+                canvas.text("m6", left + 42, top + 15, "冒険 Lv ${CoreSkillCatalog.unlockLevels[slot]} で使えます", FAINT)
+            }
+        }
+
+        // Middle: the skill looked at.
+        val card = layout.getAsJsonArray("card")
+        val cx = card[0].asDouble + card[2].asDouble / 2
+        val hero = layout.getAsJsonArray("hero")
+        canvas.sprite("skh_${shown.icon}", hero[0].asDouble, hero[1].asDouble)
+        canvas.text("b14", cx, 84.0, shown.name, TEXT, Align.CENTER)
+        role(shown)?.let { canvas.text("m6", cx, 96.0, it, HEAT, Align.CENTER) }
+        val base = CoreSkillLevels.base(build, shown.icon)
+        val gear = CoreSkillLevels.gear(stats, shown.icon)
+        val parts = listOf(Triple("b9", "Lv $base", TEXT)) + (if (gear > 0) listOf(Triple("b9", " +$gear", HEAT)) else emptyList()) +
+            Triple("m6", "  / ${CoreSkillLevels.MAX_BASE}", MUTED)
+        var x = cx - parts.sumOf { (style, text, _) -> canvas.width(style, text) } / 2
+        for ((style, text, color) in parts) x += canvas.text(style, x, 111.0, text, color)
+        canvas.text("m7", cx, 124.0, "威力 ×%.2f".format(CoreSkillLevels.multiplier(shown, base + gear)), SOFT, Align.CENTER)
+        wrap(canvas, description(shown), 156.0, "m6").take(2).forEachIndexed { i, line ->
+            canvas.text("m6", card[0].asDouble + 8, 137.0 + i * 10, line, MUTED)
+        }
+        val raise = layout.getAsJsonArray("raise")
+        val points = CoreSkillLevels.available(account)
+        val raiseLabel = when {
+            base >= CoreSkillLevels.MAX_BASE -> "Lv ${CoreSkillLevels.MAX_BASE}（上限）"
+            points <= 0 -> "点数がありません"
+            else -> "Lv を上げる"
+        }
+        canvas.text("b7", raise[0].asDouble + raise[2].asDouble / 2, raise[1].asDouble + 11, raiseLabel,
+            if (raiseLabel == "Lv を上げる") TEXT else FAINT, Align.CENTER)
+        canvas.sprite("hit_raise", raise[0].asDouble, raise[1].asDouble, click("raise"))
+        val equip = layout.getAsJsonArray("equip")
+        val candidate = pick.candidate
+        val equipLabel = if (candidate != null && candidate != equipped[pick.slot]) "キー${pick.slot + 2} に入れる" else "キー${pick.slot + 2} の技"
+        canvas.text("b7", equip[0].asDouble + equip[2].asDouble / 2, equip[1].asDouble + 11, equipLabel,
+            if (equipLabel.endsWith("入れる")) DARK else FAINT, Align.CENTER)
+        canvas.sprite("hit_equip", equip[0].asDouble, equip[1].asDouble, click("equip"))
+
+        // Right: what this key can take.
+        val panel = layout.getAsJsonArray("panel")
+        canvas.text("m6", panel[0].asDouble + 7, 30.0, if (pick.slot == 4) "選べる奥義" else "選べる技", MUTED)
+        canvas.text("d7", panel[0].asDouble + panel[2].asDouble - 7, 30.0, "点数 $points", if (points > 0) GOLD else MUTED, Align.RIGHT)
+        val start = CoreSkillCatalog.ultimateStart(job)
+        val choices = if (pick.slot == 4) CoreSkillCatalog.ultimateChoices(job).map { start + it } else CoreSkillCatalog.normalChoices(job)
+        val cell = layout.getAsJsonArray("cell")
+        for ((k, index) in choices.withIndex()) {
+            val cellX = cell[0].asDouble + (k % 2) * cell[4].asDouble
+            val cellTop = cell[1].asDouble + (k / 2) * cell[5].asDouble
+            val skill = catalog[index]
+            if (skill.icon == shown.icon) canvas.sprite("cell_sel", cellX, cellTop)
+            canvas.sprite("sk_${skill.icon}", cellX + 2, cellTop + 3)
+            canvas.text("m6", cellX + 21, cellTop + 9, fit(canvas, "m6", skill.name, 41.0), TEXT)
+            canvas.text("m6", cellX + 21, cellTop + 18, "Lv ${lv(skill.icon)}", MUTED)
+            if (index in equipped && index != equipped[pick.slot]) canvas.overlay("cell_dim", cellX, cellTop)
+            canvas.sprite("hit_cell", cellX, cellTop, click("cell_$index"))
+        }
+        val spent = CoreSkillLevels.spent(build)
+        if (spent > 0) {
+            val reset = layout.getAsJsonArray("reset")
+            val price = CorePassiveTree.refundPrice(account.journey) * spent
+            canvas.text("m6", reset[0].asDouble + reset[2].asDouble / 2, reset[1].asDouble + 9, "点数を全部戻す（銀貨 ${"%,d".format(price)}）",
+                MUTED, Align.CENTER)
+            canvas.sprite("hit_reset", reset[0].asDouble, reset[1].asDouble, click("reset"))
+        }
+        return canvas.build()
+    }
+
+    private fun role(skill: CoreSkillDefinition) = CoreWarriorSkillPresentation.skills[skill.icon]?.role
+    private fun description(skill: CoreSkillDefinition) = CoreWarriorSkillPresentation.skills[skill.icon]?.use ?: skill.description
+
+    /** [text] cut with … to fit [width] design px. */
+    private fun fit(canvas: DialogCanvas, style: String, text: String, width: Double): String {
+        if (canvas.width(style, text) <= width) return text
+        var cut = text
+        while (cut.isNotEmpty() && canvas.width(style, "$cut…") > width) cut = cut.dropLast(1)
+        return "$cut…"
+    }
+
+    private fun wrap(canvas: DialogCanvas, text: String, width: Double, style: String = "m7"): List<String> {
         val lines = mutableListOf<String>()
         var current = StringBuilder()
         for (ch in text) {
-            if (current.isNotEmpty() && canvas.width("m7", current.toString() + ch) > width) { lines += current.toString(); current = StringBuilder() }
+            if (current.isNotEmpty() && canvas.width(style, current.toString() + ch) > width) { lines += current.toString(); current = StringBuilder() }
             current.append(ch)
         }
         if (current.isNotEmpty()) lines += current.toString()
@@ -269,6 +416,7 @@ internal class PlayerMenuDialog(
         private val IVORY = TextColor.color(0xEFE6D2)
         private val HEAT = TextColor.color(0xFF9A4A)
         private val DARK = TextColor.color(0x16181C)
+        private val GOLD = TextColor.color(0xE8C878)
 
         /** Null when the menu art was never built (the old chest journal stays the only menu). */
         fun metrics(): DialogCanvas.Metrics? = PlayerMenuDialog::class.java.classLoader.getResourceAsStream("polish05/menu-metrics.json")

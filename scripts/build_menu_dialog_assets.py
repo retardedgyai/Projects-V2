@@ -45,6 +45,8 @@ TITLE_TOP = 12             # the title line's top on screen (GUI px; the header 
 SIZES = {"4": 1.0, "3": 4 / 3, "2": 2.0}  # GUI scale -> GUI px per design px
 
 TEXT_SOURCES = ["server-minestom/src/main/kotlin/dev/projects/server/coreloop/PlayerMenuDialog.kt",
+                "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreSkillCatalog.kt",
+                "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreWarriorSkillPresentation.kt",
                 "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreJourney.kt",
                 "server-minestom/src/main/kotlin/dev/projects/server/questmap/QuestGathering.kt"]
 
@@ -74,6 +76,14 @@ RING_Y, RING, RING_GAP = 120, 20, 12
 EDIT = (186, 168, 92, 14)
 PANEL = (324, 22, 136, 165)
 PRIMARY = (330, 166, 124, 16)
+# 技 page
+KEY_Y0, KEY_STEP = 32, 28              # five key rows (2..6), ROW_W x ROW_H each, at LEFT_X
+HERO = (215, 26, 40)                   # x, y, size of the chosen skill
+CELL_X0, CELL_Y0, CELL_W, CELL_H, CELL_DX, CELL_DY = 327, 34, 64, 22, 67, 24   # 2 x 5 candidates
+RAISE = (158, 166, 78, 16)
+EQUIP = (240, 166, 74, 16)
+RESET = (330, 160, 124, 13)
+SKILL_ICON_TOPS = [KEY_Y0 + i * KEY_STEP + 5 for i in range(5)] + [CELL_Y0 + r * CELL_DY + 3 for r in range(5)]
 
 
 def hexc(v, a=255):
@@ -218,24 +228,48 @@ def rounded(d, box, fill=None, outline=None, r=3, width=1):
     d.rounded_rectangle((x * K, y * K, (x + w) * K - 1, (y + h) * K - 1), radius=r * K, fill=fill, outline=outline, width=width * K)
 
 
-def bake_page(fonts, icons) -> Image.Image:
+def page_base(fonts, selected):
+    """Backdrop and tab row with [selected] lit; returns the image, its drawer and every tab's hit box."""
     img = Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K))
     back = Image.new("RGBA", img.size, (9, 10, 13, 150))
     img.alpha_composite(back)
     d = ImageDraw.Draw(img)
-    # tab row (自分 selected)
     widths = [text_w(fonts, "b8", t) for t in TABS]
     x = (CANVAS_W - (sum(widths) + TAB_GAP * (len(TABS) - 1))) / 2
     tab_boxes = []
     for t, w in zip(TABS, widths):
-        draw_text(d, fonts, "b8", x, TAB_BASE, t, C["ivory"] if t == "自分" else C["muted"])
+        draw_text(d, fonts, "b8", x, TAB_BASE, t, C["ivory"] if t == selected else C["muted"])
         tab_boxes.append((round(x) - 2, TAB_BASE - 9, round(w) + 4, 13))
-        if t == "自分":
+        if t == selected:
             g = glow(int(w) + 12, 8, (w + 12) / 2, 4, (w + 12) / 2, 4, (255, 170, 90), 140)
             img.alpha_composite(g, (int((x - 6) * K), (TAB_BASE + 1) * K))
             d.rectangle((x * K, (TAB_BASE + 3) * K, (x + w) * K, (TAB_BASE + 3) * K + 2 * K - 1), fill=hexc(C["ivory"]))
         x += w + TAB_GAP
     d.rectangle((0, 17 * K, CANVAS_W * K, 17 * K + K - 1), fill=C["line"])
+    return img, d, tab_boxes
+
+
+def bake_skills(fonts) -> Image.Image:
+    """The 技 page: the five keys on the left, the chosen skill lit in the middle, the candidates on the right."""
+    img, d, _ = page_base(fonts, "技")
+    draw_text(d, fonts, "m6", LEFT_X, 28, "いまの組", C["muted"])
+    for i in range(5):
+        draw_text(d, fonts, "b9", LEFT_X + 5, KEY_Y0 + i * KEY_STEP + 16, str(i + 2), C["muted"])
+    x0, y0, w, h = CARD
+    img.alpha_composite(glow(w, 90, w / 2, 26, 64, 40, (255, 130, 60), 130), (x0 * K, y0 * K))
+    hx, hy, hs = HERO
+    ring_box = ((hx - 8) * K, (hy + hs - 4) * K, (hx + hs + 8) * K - 1, (hy + hs + 6) * K - 1)
+    d.ellipse(ring_box, outline=(255, 160, 90, 150), width=K)
+    rounded(d, RAISE, fill=(11, 12, 15, 220), outline=(255, 255, 255, 40), r=2)
+    px, py, pw, ph = EQUIP
+    rounded(d, EQUIP, fill=hexc(C["ivory"]), r=2)
+    d.rectangle((px * K, (py + ph) * K - K, (px + pw) * K - 1, (py + ph) * K - 1), fill=hexc("#c9bea6"))
+    rounded(d, PANEL, fill=C["panel"], outline=(255, 255, 255, 20))
+    return img
+
+
+def bake_page(fonts, icons) -> Image.Image:
+    img, d, tab_boxes = page_base(fonts, "自分")
     # left: the paths
     draw_text(d, fonts, "m6", LEFT_X, 28, "道", C["muted"])
     for i, (pid, name, icon, colour) in enumerate(PATHS):
@@ -329,6 +363,15 @@ def main() -> None:
     files[f"assets/{NS}/font/menu_space.json"] = json.dumps({"providers": [{"type": "space", "advances": advances_map}]}).encode()
 
     page, tab_boxes = bake_page(fonts, icons)
+    skills_page = bake_skills(fonts)
+    skill_source = (ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreSkillCatalog.kt").read_text(encoding="utf-8")
+    skill_icons = sorted(set(re.findall(r's\("[^"]*", "([a-z_]+)"', skill_source)))
+    skill_art = {icon: Image.open(ROOT / f"assets/core-ui/skills/{icon}.png").convert("RGBA") for icon in skill_icons}
+    keys = [KEY_Y0 + i * KEY_STEP for i in range(5)]
+    cells = [CELL_Y0 + r * CELL_DY for r in range(5)]
+    cell_sel = Image.new("RGBA", (CELL_W * K, CELL_H * K)); cd = ImageDraw.Draw(cell_sel)
+    cd.rounded_rectangle((0, 0, CELL_W * K - 1, CELL_H * K - 1), radius=2 * K, fill=(239, 230, 210, 34), outline=hexc(C["ivory"]), width=K)
+    cell_dim = Image.new("RGBA", (CELL_W * K, CELL_H * K), (9, 10, 13, 150))
     sel = Image.new("RGBA", (ROW_W * K, ROW_H * K)); sd = ImageDraw.Draw(sel)
     for xx in range(ROW_W * K):
         # the client drops texels under 0.1 alpha, so the fade stays above 26/255 or it ends in a hard edge (2026-11-02)
@@ -361,10 +404,18 @@ def main() -> None:
             sprites.add(f"bar_{pid}", Image.new("RGBA", (2 * K, BAR_H * K), hexc(colour)), BAR_H, [rows[i] + BAR_DY])
             for step in range(11):
                 sprites.add(f"ring_{pid}_{step}", ring(colour, step), RING, [RING_Y])
-        sprites.add_tiled("row_sel", sel, ROW_H, rows)
+        sprites.add_tiled("row_sel", sel, ROW_H, rows + keys)
+        sprites.add_tiled("page_skills", skills_page, CANVAS_H, [0])
+        for icon, art in skill_art.items():
+            sprites.add(f"sk_{icon}", art.resize((16 * K, 16 * K), Image.NEAREST), 16, SKILL_ICON_TOPS)
+            sprites.add(f"skh_{icon}", art.resize((HERO[2] * K, HERO[2] * K), Image.NEAREST), HERO[2], [HERO[1]])
+        sprites.add_tiled("cell_sel", cell_sel, CELL_H, cells)
+        sprites.add_tiled("cell_dim", cell_dim, CELL_H, cells)
         sprites.add("ring_sel", halo, RING + 4, [RING_Y - 2])
         # invisible hit areas (alpha 1: under the client's 0.1 cut, but the glyph rectangle still takes clicks)
-        hits = {"row": (ROW_W, ROW_H, rows), "edit": (EDIT[2], EDIT[3], [EDIT[1]]), "primary": (PRIMARY[2], PRIMARY[3], [PRIMARY[1]])}
+        hits = {"row": (ROW_W, ROW_H, rows), "edit": (EDIT[2], EDIT[3], [EDIT[1]]), "primary": (PRIMARY[2], PRIMARY[3], [PRIMARY[1]]),
+                "key": (ROW_W, ROW_H, keys), "cell": (CELL_W, CELL_H, cells), "raise": (RAISE[2], RAISE[3], [RAISE[1]]),
+                "equip": (EQUIP[2], EQUIP[3], [EQUIP[1]]), "reset": (RESET[2], RESET[3], [RESET[1]])}
         for i, (x, y, w, h) in enumerate(tab_boxes):
             hits[f"tab{i}"] = (w, h, [y])
         for name, (w, h, tops) in hits.items():
@@ -376,7 +427,9 @@ def main() -> None:
         size["layout"] = {"tabs": [list(b) for b in tab_boxes], "left": LEFT_X, "rowY": ROW_Y0, "rowStep": ROW_STEP, "rowW": ROW_W,
                           "barDx": BAR_DX, "barDy": BAR_DY, "barW": BAR_W, "barH": BAR_H, "card": list(CARD), "emblem": list(EMBLEM),
                           "ringY": RING_Y, "ring": RING, "ringGap": RING_GAP, "edit": list(EDIT), "panel": list(PANEL),
-                          "primary": list(PRIMARY), "wallet": [screen - 58, 20]}
+                          "primary": list(PRIMARY), "wallet": [screen - 58, 20],
+                          "keyY": KEY_Y0, "keyStep": KEY_STEP, "hero": list(HERO), "cell": [CELL_X0, CELL_Y0, CELL_W, CELL_H, CELL_DX, CELL_DY],
+                          "raise": list(RAISE), "equip": list(EQUIP), "reset": list(RESET)}
         metrics["sizes"][tag] = size
         glyphs += len(sprites.providers)
     for name, image in Sprites.textures.items():

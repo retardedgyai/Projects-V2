@@ -55,6 +55,9 @@ internal class DialogCanvas(private val size: Size, private val space: Map<Doubl
      */
     fun background(name: String, x: Double, top: Double) = sprite(name, x, top, null, null, 0)
 
+    /** A sprite drawn over everything else on its line (a dimming veil over a used skill). */
+    fun overlay(name: String, x: Double, top: Double) = sprite(name, x, top, null, null, 2)
+
     private fun sprite(name: String, x: Double, top: Double, click: ClickEvent<*>?, hover: Component?, layer: Int) {
         val sprite = size.sprites[name] ?: error("Unknown menu sprite $name")
         if (sprite.tiles.isNotEmpty()) {

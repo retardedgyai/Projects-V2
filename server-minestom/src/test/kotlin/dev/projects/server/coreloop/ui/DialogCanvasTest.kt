@@ -55,7 +55,8 @@ class DialogCanvasTest {
     fun everyWordTheMenuCanShowHasAGlyph() {
         val words = CoreClass.entries.map { it.displayName } + QuestGatheringDiscipline.entries.map { it.displayName } +
             quoted(File("src/main/kotlin/dev/projects/server/coreloop/PlayerMenuDialog.kt").readText()) +
-            quoted(File("src/main/kotlin/dev/projects/server/coreloop/CoreJourney.kt").readText())
+            quoted(File("src/main/kotlin/dev/projects/server/coreloop/CoreJourney.kt").readText()) +
+            CoreClass.entries.flatMap { job -> dev.projects.server.coreloop.CoreSkillCatalog.skills(job).flatMap { listOf(it.name, it.description) } }
         val missing = words.flatMap { word -> word.codePoints().toArray().filter { it >= 0x80 && it !in metrics.forScale(4).styles.getValue("m7").advances } }
             .map { String(Character.toChars(it)) }.toSortedSet()
         assertTrue(missing.isEmpty(), "rerun scripts/build_menu_dialog_assets.py; missing: $missing")
@@ -66,7 +67,9 @@ class DialogCanvasTest {
         val names = listOf("page_self", "band", "row_sel", "ring_sel", "hit_row", "hit_edit", "hit_primary") +
             (1..3).map { "hit_tab$it" } + CoreClass.entries.map { "emblem_${it.name.lowercase()}" } +
             listOf("combat", "gather", "smith", "magic").flatMap { id -> listOf("bar_$id") + (0..10).map { "ring_${id}_$it" } }
-        metrics.sizes.forEach { (scale, size) -> names.forEach { assertTrue(it in size.sprites, "GUI scale $scale: sprite $it") } }
+        val skillPage = listOf("page_skills", "hit_key", "hit_cell", "hit_raise", "hit_equip", "hit_reset", "cell_sel", "cell_dim", "hit_tab0") +
+            CoreClass.entries.flatMap { job -> dev.projects.server.coreloop.CoreSkillCatalog.skills(job).flatMap { listOf("sk_${it.icon}", "skh_${it.icon}") } }
+        metrics.sizes.forEach { (scale, size) -> (names + skillPage).forEach { assertTrue(it in size.sprites, "GUI scale $scale: sprite $it") } }
     }
 
     private fun quoted(source: String) = Regex("\"([^\"\\\\$]*)\"").findAll(source).map { it.groupValues[1] }.toList()
