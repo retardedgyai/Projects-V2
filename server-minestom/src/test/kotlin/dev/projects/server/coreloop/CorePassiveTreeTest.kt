@@ -92,6 +92,23 @@ class CorePassiveTreeTest {
         assertEquals(CoreTransactionStatus.REJECTED, run(CoreAction.ResetPassives).let { if (it.account?.journey?.build?.passives?.isEmpty() == true) error("paid with 5 silver") else it.status }.let { CoreTransactionStatus.REJECTED })
     }
 
+    @Test fun `a confirmed plan is taken in one request, and only when it is legal`() {
+        val dir = Files.createTempDirectory("passive-"); val id = UUID.randomUUID()
+        val job = CoreClass.WARRIOR
+        Files.writeString(dir.resolve("$id.account"), CoreAccountCodec.encode(CoreAccount(id, journey = CoreJourney.legacy(job))))
+        val service = CoreAccountService(CoreAccountRepository(dir))
+        var revision = assertIs<CoreAccountLoadResult.Ready>(service.open(id)).account.revision
+        fun run(action: CoreAction) = service.transact(id, CoreOperation(UUID.randomUUID(), revision, action)).also { r -> r.account?.let { revision = it.revision } }
+        val plan = tree.nodes.indices.firstNotNullOf { n -> tree.pathTo(job, emptySet(), n)?.takeIf { it.size == 3 } }.toSet()
+        // A hole in the plan (the step next to the start left out), and nothing at all, are refused.
+        assertEquals(CoreTransactionStatus.REJECTED, run(CoreAction.TakePassives(plan.drop(1).toSet(), emptyMap())).status)
+        assertEquals(CoreTransactionStatus.REJECTED, run(CoreAction.TakePassives(emptySet(), emptyMap())).status)
+        val took = run(CoreAction.TakePassives(plan, emptyMap()))
+        assertEquals(CoreTransactionStatus.COMMITTED, took.status, took.message)
+        assertEquals(plan, took.account!!.journey.build.passives)
+        assertEquals(CoreTransactionStatus.REJECTED, run(CoreAction.TakePassives(plan, emptyMap())).status, "already taken")
+    }
+
     @Test fun `passives survive a save and old trees are refunded on load`() {
         val job = CoreClass.RANGER
         val taken = path(job, 3)

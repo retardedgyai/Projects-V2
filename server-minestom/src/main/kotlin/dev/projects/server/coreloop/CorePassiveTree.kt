@@ -143,6 +143,17 @@ object CorePassiveTree {
         return (taken + id) to (masteries + (id to choice))
     }
 
+    /** Takes a whole plan at once: [add] (path nodes and masteries) with [chosen] options, which must leave a legal allocation. */
+    fun takeAll(job: CoreClass, taken: Set<Int>, masteries: Map<Int, Int>, add: Set<Int>, chosen: Map<Int, Int>, budget: Int): Pair<Set<Int>, Map<Int, Int>> {
+        require(add.isNotEmpty()) { "取るノードがありません" }
+        require(add.none { it in taken }) { "取得済みのノードが含まれています" }
+        require(chosen.keys.all { it in add }) { "極意の選択が不正です" }
+        val all = taken + add
+        require(valid(job, all, masteries + chosen)) { "取得済みのノードとつながっていません" }
+        require(all.size <= budget) { "ポイントが足りません（${add.size}点必要）" }
+        return all to (masteries + chosen)
+    }
+
     /** Whether choice [choice] of [id] is held in another wheel already. */
     fun choiceTaken(masteries: Map<Int, Int>, id: Int, choice: Int): Boolean {
         val code = nodes[id].choices.getOrNull(choice)?.code ?: return false

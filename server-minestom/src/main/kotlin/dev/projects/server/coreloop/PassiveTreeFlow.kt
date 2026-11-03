@@ -16,8 +16,9 @@ import dev.projects.webui.UiSprite
  * panels float over it — totals on the left, the chosen node on the right. Pixel art is only the things (node
  * badges, the emblem); lines, rings, words and panels are smooth. Gold lines, lit badges, the dashed planned path
  * and the state rings for this player are drawn on top of the tiles. The tree pans when the pointer rests on an
- * edge of the view and zooms with the hotbar scroll. Clicking a node selects it; clicking it again takes the
- * whole path to it. Every rule lives in [CorePassiveTree] and the account service; this only asks.
+ * edge of the view and zooms with the hotbar scroll. Clicking a node selects it; clicking it again plans the
+ * whole path to it, free to undo until 確定 sends the plan in one go (PoE's pending allocation). Every rule
+ * lives in [CorePassiveTree] and the account service; this only asks.
  */
 internal class PassiveTreeFlow(
     private val art: Art,
@@ -101,6 +102,13 @@ internal class PassiveTreeFlow(
     private var selected: Int? = null
     private var busy = false
     private var failed = false
+    /** Planned but not confirmed: path nodes and masteries, and the planned masteries' options. */
+    private var planned = setOf<Int>()
+    private var plannedChoices = mapOf<Int, Int>()
+
+    // Pan far enough that every node, the outermost too, can sit in the open view between the panels.
+    private val spotsX = art.spots.minOf { it.x }..art.spots.maxOf { it.x }
+    private val spotsY = art.spots.minOf { it.y }..art.spots.maxOf { it.y }
 
     init { centreOnStart() }
 
@@ -110,11 +118,12 @@ internal class PassiveTreeFlow(
         centreOn(spot.x, spot.y)
     }
     private fun centreOn(x: Double, y: Double) {
-        panX = (VIEW_CX - x * zoom).coerceIn(minX(), MARGIN)
-        panY = (VIEW_CY - y * zoom).coerceIn(minY(), MARGIN)
+        panX = clampX(VIEW_CX - x * zoom)
+        panY = clampY(VIEW_CY - y * zoom)
     }
-    private fun minX() = minOf(0.0, 1920 - art.width * zoom) - MARGIN
-    private fun minY() = minOf(0.0, 1080 - art.height * zoom) - MARGIN
+    private fun clamp(v: Double, lo: Double, hi: Double) = if (lo <= hi) v.coerceIn(lo, hi) else (lo + hi) / 2
+    private fun clampX(v: Double) = clamp(v, VIEW_R - PAD - spotsX.endInclusive * zoom, VIEW_L + PAD - spotsX.start * zoom)
+    private fun clampY(v: Double) = clamp(v, PANEL_BOTTOM - PAD - spotsY.endInclusive * zoom, PANEL_TOP + PAD - spotsY.start * zoom)
 
     /** Over a floating panel or the header: not the tree. */
     private fun overChrome(x: Double, y: Double) = y < HEADER ||
@@ -139,8 +148,8 @@ internal class PassiveTreeFlow(
     override fun tick(nowMs: Long): dev.projects.webui.ForgeUiReceipt? {
         vx += (targetVx - vx) * 0.25
         vy += (targetVy - vy) * 0.25
-        panX = (panX + vx).coerceIn(minX(), MARGIN)
-        panY = (panY + vy).coerceIn(minY(), MARGIN)
+        panX = clampX(panX + vx)
+        panY = clampY(panY + vy)
         return null
     }
 
@@ -157,22 +166,31 @@ internal class PassiveTreeFlow(
 
     override fun action(action: String): Boolean {
         val a = account() ?: return false
-        val job = a.journey.job
+        prune(a)
         val taken = a.journey.build.passives
         when (action) {
             "tree" -> {
                 val id = nodeAt(pointerX, pointerY) ?: run { if (selected == null) return false; selected = null; return true }
-                if (id == selected && id !in taken && CorePassiveTree.pathTo(job, taken, id) != null) return confirm(a)
+                if (id == selected && id !in taken) return confirm(a)
                 selected = id; failed = false
             }
             "confirm" -> return confirm(a)
             "choice:0", "choice:1", "choice:2" -> {
                 val id = selected ?: return false
                 val choice = action.substringAfter(':').toInt()
-                if (busy || !masteryChoosable(a, id, choice)) return false
-                send(a, CoreAction.TakeMastery(id, choice))
+                if (!masteryChoosable(a, id, choice)) return false
+                planned = planned + id; plannedChoices = plannedChoices + (id to choice)
             }
-            "reset" -> { if (taken.isEmpty() || busy) return false; send(a, CoreAction.ResetPassives) }
+            "commit" -> {
+                if (planned.isEmpty() || busy || a.activeRun != null) return false
+                send(a, CoreAction.TakePassives(planned, plannedChoices)) { planned = emptySet(); plannedChoices = emptyMap() }
+            }
+            "cancel" -> { if (planned.isEmpty()) return false; planned = emptySet(); plannedChoices = emptyMap() }
+            "reset" -> {
+                if (taken.isEmpty() || busy) return false
+                planned = emptySet(); plannedChoices = emptyMap()
+                send(a, CoreAction.ResetPassives)
+            }
             "centre" -> centreOnStart()
             "zoom:in", "page:next" -> zoomBy(+1)
             "zoom:out", "page:prev" -> zoomBy(-1)
@@ -182,24 +200,54 @@ internal class PassiveTreeFlow(
         return true
     }
 
+    /**
+     * The button under the panel, for the selected node: refund a taken node (silver, at once), drop a planned one
+     * (free, with what only it reached), or plan the path to an open one.
+     */
     private fun confirm(a: CoreAccount): Boolean {
         val id = selected ?: return false
-        if (busy) return false
-        send(a, if (id in a.journey.build.passives) CoreAction.RefundPassive(id) else CoreAction.TakePassive(id))
+        val job = a.journey.job
+        val taken = a.journey.build.passives
+        when {
+            id in taken -> {
+                if (busy || planned.isNotEmpty()) return false
+                send(a, CoreAction.RefundPassive(id))
+            }
+            id in planned -> {
+                planned = CorePassiveTree.refund(job, taken + planned, id) - taken
+                plannedChoices = plannedChoices.filterKeys { it in planned }
+            }
+            else -> {
+                if (a.activeRun != null) return false
+                val path = CorePassiveTree.pathTo(job, taken + planned, id) ?: return false
+                if (taken.size + planned.size + path.size > CorePassiveTree.budget(a)) return false
+                planned = planned + path
+            }
+        }
         return true
     }
 
-    /** Whether option [choice] of mastery [id] can be taken now (the service re-checks everything). */
-    private fun masteryChoosable(a: CoreAccount, id: Int, choice: Int): Boolean {
+    /** Drops the plan once it no longer fits the account (a refund elsewhere, a commit seen twice, fewer points). */
+    private fun prune(a: CoreAccount) {
+        if (planned.isEmpty()) return
         val b = a.journey.build
-        return CorePassiveTree.isMastery(id) && a.activeRun == null && id !in b.passives && choice in CorePassiveTree.nodes[id].choices.indices &&
-            CorePassiveTree.wheelOpen(b.passives, id) && !CorePassiveTree.choiceTaken(b.masteries, id, choice) &&
-            b.passives.size < CorePassiveTree.budget(a)
+        val all = b.passives + planned
+        if (planned.any { it in b.passives } || all.size > CorePassiveTree.budget(a) ||
+            !CorePassiveTree.valid(a.journey.job, all, b.masteries + plannedChoices)) { planned = emptySet(); plannedChoices = emptyMap() }
     }
 
-    private fun send(a: CoreAccount, operation: CoreAction) {
+    /** Whether option [choice] of mastery [id] can be planned now (or switched to, while planned). */
+    private fun masteryChoosable(a: CoreAccount, id: Int, choice: Int): Boolean {
+        val b = a.journey.build
+        val all = b.passives + planned
+        return CorePassiveTree.isMastery(id) && a.activeRun == null && id !in b.passives && choice in CorePassiveTree.nodes[id].choices.indices &&
+            CorePassiveTree.wheelOpen(all, id) && !CorePassiveTree.choiceTaken(b.masteries + plannedChoices, id, choice) &&
+            (id in planned || all.size < CorePassiveTree.budget(a))
+    }
+
+    private fun send(a: CoreAccount, operation: CoreAction, onOk: () -> Unit = {}) {
         busy = true; failed = false
-        act(operation, a.revision) { ok -> busy = false; failed = !ok }
+        act(operation, a.revision) { ok -> busy = false; failed = !ok; if (ok) onOk() }
     }
 
     private fun zoomBy(step: Int) {
@@ -256,13 +304,17 @@ internal class PassiveTreeFlow(
     override fun scene(light: ForgeLightPhase): UiScene {
         nodes.clear()
         val a = account()
+        a?.let(::prune)
         val job = a?.journey?.job ?: CoreClass.WARRIOR
         val taken = a?.journey?.build?.passives.orEmpty()
+        // Everything below counts the plan as taken; only the gold lines and the refund button are for the confirmed.
+        val held = taken + planned
+        val choices = a?.journey?.build?.masteries.orEmpty() + plannedChoices
         val start = CorePassiveTree.start(job)
         val lit = taken + start
         val budget = a?.let { CorePassiveTree.budget(it) } ?: 0
         val hovered = nodeAt(pointerX, pointerY)
-        val path = (hovered ?: selected)?.let { CorePassiveTree.pathTo(job, taken, it) }.orEmpty().toSet()
+        val path = (hovered ?: selected)?.let { CorePassiveTree.pathTo(job, held, it) }.orEmpty().toSet()
 
         rect("bg", 0.0, 0.0, 1920.0, 1080.0, "#ff101116", 0)
         for (t in art.tiles) {
@@ -280,11 +332,12 @@ internal class PassiveTreeFlow(
             }
         }
         for ((pair, parts) in art.edges) if (pair.first in lit && pair.second in lit) lines("e${pair.first}-${pair.second}", parts, 2)
-        // The planned path: dashes on every link that the path would light.
-        if (path.isNotEmpty()) for ((pair, parts) in art.paths) {
+        // The plan and the path under the pointer: dashes on every link they would light.
+        val dashed = planned + path
+        if (dashed.isNotEmpty()) for ((pair, parts) in art.paths) {
             val (p, q) = pair
             if (p in lit && q in lit) continue
-            if ((p in path || p in lit) && (q in path || q in lit)) lines("d$p-$q", parts, 3)
+            if ((p in dashed || p in lit) && (q in dashed || q in lit)) lines("d$p-$q", parts, 3)
         }
         fun mark(id: String, name: String, node: Int, depth: Int) {
             val s = art.sprites[name] ?: return
@@ -293,15 +346,16 @@ internal class PassiveTreeFlow(
             if (x < -60 || y < -60 || x > 1980 || y > 1140) return
             sprite(id, s, x - s.width * zoom / 2, y - s.height * zoom / 2, s.width * zoom, s.height * zoom, depth)
         }
-        for (i in lit) mark("f$i", "lit_${CorePassiveTree.nodes[i].kind.name}_${art.icons[i]}", i, 4)
-        // State rings: selected, hovered, one step away, on the path, and masteries whose wheel is open.
+        for (i in lit + planned) mark("f$i", "lit_${CorePassiveTree.nodes[i].kind.name}_${art.icons[i]}", i, 4)
+        // State rings: selected, hovered, planned or on the path, one step away, and masteries whose wheel is open.
         val reach = mutableSetOf<Int>()
-        if (taken.size < budget) for (i in lit) for (m in CorePassiveTree.nodes[i].links) if (m !in lit && CorePassiveTree.nodes[m].ready) reach += m
-        val open = if (taken.size < budget) CorePassiveTree.nodes.indices.filter { CorePassiveTree.isMastery(it) && it !in taken && CorePassiveTree.wheelOpen(taken, it) }
+        val shown = lit + planned
+        if (held.size < budget) for (i in shown) for (m in CorePassiveTree.nodes[i].links) if (m !in shown && CorePassiveTree.nodes[m].ready) reach += m
+        val open = if (held.size < budget) CorePassiveTree.nodes.indices.filter { CorePassiveTree.isMastery(it) && it !in held && CorePassiveTree.wheelOpen(held, it) }
             else emptyList()
-        for (i in (reach + path + open + listOfNotNull(hovered)).distinct()) {
+        for (i in (planned + reach + path + open + listOfNotNull(hovered)).distinct()) {
             if (i == selected) continue
-            val ring = when { i == hovered -> "hover"; i in reach -> "reach"; i in path -> "path"; else -> "reach" }
+            val ring = when { i == hovered -> "hover"; i in planned || i in path -> "path"; else -> "reach" }
             mark("r$i", "ring_${ring}_${CorePassiveTree.nodes[i].kind.name}", i, 5)
         }
         selected?.let { mark("sel", "ring_sel_${CorePassiveTree.nodes[it].kind.name}", it, 6) }
@@ -314,9 +368,9 @@ internal class PassiveTreeFlow(
         rect("fade-b", 0.0, 1017.0, 1920.0, 63.0, "#ff121316", 8)
         label("legend", "legend", 470.0, 116.0, 9)
 
-        header(a, taken, budget)
-        totals(a, taken)
-        panel(a, job, taken, budget, hovered ?: selected, path)
+        header(a, held, budget)
+        totals(held, choices)
+        panel(a, job, taken, budget, hovered ?: selected, path, choices)
         art.sprites["zoom_in"]?.let { sprite("zoom-in", it, 460.0, 964.0, 44.0, 44.0, 10) }
         rect("zoom-in-hit", 460.0, 964.0, 44.0, 44.0, "#00000000", 11, "zoom:in", "#30ffffff")
         art.sprites["zoom_out"]?.let { sprite("zoom-out", it, 512.0, 964.0, 44.0, 44.0, 10) }
@@ -354,23 +408,28 @@ internal class PassiveTreeFlow(
         chip("chip-pts", "chip_points", "${budget - taken.size} / $budget", "#e8c878")
     }
 
-    /** The left panel: what the taken nodes add up to, and which keystones are held. */
-    private fun totals(a: CoreAccount?, taken: Set<Int>) {
-        framed("lp", LEFT_X, PANEL_TOP, LEFT_W, PANEL_BOTTOM - PANEL_TOP, 14.0, PANEL, 10)
-        val ix = LEFT_X + 22; val iw = LEFT_W - 44
-        label("lp-h", "totals", ix, 128.0, 12)
-        text("lp-n", ix, 131.5, iw, "${taken.size} 点", 16.0, "#a29e97", 12, "right", "v3b")
-        rect("lp-rule", ix, 168.0, iw, 1.5, "#ff" + LINE.removePrefix("#"), 12)
+    /** Stat name (as in the node texts) → summed percent, over [ids] with mastery options [choices]. */
+    private fun sums(ids: Set<Int>, choices: Map<Int, Int>): Map<String, Int> {
         val sum = linkedMapOf<String, Int>()
-        val masteries = a?.journey?.build?.masteries.orEmpty()
-        for (i in taken) {
+        for (i in ids) {
             val text = when (CorePassiveTree.nodes[i].kind) {
-                CorePassiveKind.MASTERY -> masteries[i]?.let { art.choiceTexts[i].getOrNull(it) } ?: ""
+                CorePassiveKind.MASTERY -> choices[i]?.let { art.choiceTexts[i].getOrNull(it) } ?: ""
                 CorePassiveKind.KEYSTONE, CorePassiveKind.START -> ""
                 else -> art.texts[i]
             }
             for (part in text.split(" / ")) STAT.matchEntire(part)?.let { m -> sum.merge(m.groupValues[1], m.groupValues[2].toInt(), Int::plus) }
         }
+        return sum
+    }
+
+    /** The left panel: what the taken (and planned) nodes add up to, and which keystones are held. */
+    private fun totals(taken: Set<Int>, choices: Map<Int, Int>) {
+        framed("lp", LEFT_X, PANEL_TOP, LEFT_W, PANEL_BOTTOM - PANEL_TOP, 14.0, PANEL, 10)
+        val ix = LEFT_X + 22; val iw = LEFT_W - 44
+        label("lp-h", "totals", ix, 128.0, 12)
+        text("lp-n", ix, 131.5, iw, "${taken.size} 点", 16.0, "#a29e97", 12, "right", "v3b")
+        rect("lp-rule", ix, 168.0, iw, 1.5, "#ff" + LINE.removePrefix("#"), 12)
+        val sum = sums(taken, choices)
         val keysTop = 860.0
         val rows = sum.entries.sortedByDescending { it.value }
         if (rows.isEmpty()) label("lp-empty", "totals_empty", ix, 180.0, 12)
@@ -390,9 +449,10 @@ internal class PassiveTreeFlow(
         }
     }
 
-    private fun panel(a: CoreAccount?, job: CoreClass, taken: Set<Int>, budget: Int, shown: Int?, path: Set<Int>) {
+    private fun panel(a: CoreAccount?, job: CoreClass, taken: Set<Int>, budget: Int, shown: Int?, path: Set<Int>, choices: Map<Int, Int>) {
         framed("rp", RIGHT_X, PANEL_TOP, RIGHT_W, PANEL_BOTTOM - PANEL_TOP, 14.0, PANEL, 10)
         val ix = RIGHT_X + 26; val iw = RIGHT_W - 52
+        val held = taken + planned
         val node = shown?.let { CorePassiveTree.nodes[it] }
         val head = node?.let { art.infos[it.id] } ?: art.noneInfo
         block("info", head, ix, PANEL_TOP + 24, 12)
@@ -404,12 +464,13 @@ internal class PassiveTreeFlow(
                 a.activeRun != null -> "hub"
                 node.kind == CorePassiveKind.START -> if (node.start == job) "here" else "other"
                 node.id in taken -> "taken"
-                mastery && !CorePassiveTree.wheelOpen(taken, node.id) -> "locked"
-                mastery && taken.size >= budget -> "nopoint"
+                node.id in planned && !mastery -> "planned"
+                mastery && !CorePassiveTree.wheelOpen(held, node.id) -> "locked"
+                mastery && node.id !in planned && held.size >= budget -> "nopoint"
                 mastery -> "pick"
                 !node.ready -> "soon"
                 path.isEmpty() -> "far"
-                taken.size + path.size > budget -> "short"
+                held.size + path.size > budget -> "short"
                 else -> "need"
             }
             when (status) {
@@ -428,16 +489,26 @@ internal class PassiveTreeFlow(
                 else -> label("st", "st_$status", ix, sy, 12)
             }
             if (mastery && a != null) masteryChoices(a, node, sy + 36)
+            else if (path.isNotEmpty()) delta(held, path, choices, sy + 40)
         }
-        // Confirm: take the path to the selected node, or refund it (with the silver it costs).
+        // The button: plan the path to the selected node, drop it from the plan, or refund it (with the silver it costs).
         val sel = selected?.let { CorePassiveTree.nodes[it] }
         val price = a?.journey?.let(CorePassiveTree::refundPrice) ?: 0L
         val owned = sel != null && sel.id in taken
-        val refundCount = if (owned && a != null) taken.size - CorePassiveTree.refund(job, taken, sel!!.id).size else 0
-        val cost = price * refundCount
-        val toTake = if (sel != null && !owned) CorePassiveTree.pathTo(job, taken, sel.id) else null
-        val ready = a != null && a.activeRun == null && !busy && sel != null && (
-            if (owned) a.silver >= cost else toTake != null && taken.size + toTake.size <= budget)
+        val inPlan = sel != null && sel.id in planned
+        val refundCount = when {
+            sel == null || a == null -> 0
+            owned -> taken.size - CorePassiveTree.refund(job, taken, sel.id).size
+            inPlan -> held.size - CorePassiveTree.refund(job, held, sel.id).size
+            else -> 0
+        }
+        val cost = if (owned) price * refundCount else 0L
+        val toTake = if (sel != null && !owned && !inPlan) CorePassiveTree.pathTo(job, held, sel.id) else null
+        val ready = a != null && a.activeRun == null && sel != null && when {
+            owned -> !busy && planned.isEmpty() && a.silver >= cost
+            inPlan -> true
+            else -> toTake != null && held.size + toTake.size <= budget
+        }
         if (owned) {
             label("cost-l", "cost", ix, 830.0, 12)
             val unit = width(art.labels["cost_unit"])
@@ -446,34 +517,63 @@ internal class PassiveTreeFlow(
         }
         if (failed) label("failed", "st_failed", ix, if (owned) 796.0 else 826.0, 12)
         val by = 862.0
-        val state = when { !ready -> "off"; owned -> "refund"; else -> "take" }
+        val state = when { !ready -> "off"; owned || inPlan -> "refund"; else -> "take" }
         for (k in 0 until 2) art.sprites["go_${state}_$k"]?.let { sprite("go-$k", it, ix + k * 256, by, it.width.toDouble(), 72.0, 12) }
         if (ready) rect("go", ix, by, iw, 72.0, "#00000000", 13, "confirm", "#30ffffff")
         val goText = when {
+            owned && planned.isNotEmpty() -> "戻すのは確定のあと"
             owned -> if (refundCount > 1) "戻す（先の ${refundCount - 1} 個も）" else "戻す"
-            toTake != null -> "取る（${toTake.size} 点）"
+            inPlan -> if (refundCount > 1) "外す（先の ${refundCount - 1} 個も）" else "外す"
+            toTake != null -> "仮に取る（${toTake.size} 点）"
             else -> "取る"
         }
         text("go-t", ix, by + 21, iw, goText, 24.0, when (state) { "take" -> "#2a1406"; "refund" -> "#e58b80"; else -> "#5e5a54" }, 14, "center", "v3b")
-        // Reset everything, back to the start, close.
-        val resetOk = a != null && a.activeRun == null && !busy && taken.isNotEmpty() && a.silver >= price * taken.size
+        // With a plan: confirm it (one request) or drop it. Without: reset everything, back to the start. And close.
         val bw = (iw - 20) / 3
-        listOf(Triple("reset", "全部戻す", resetOk), Triple("centre", "起点へ戻る", true), Triple("close", "閉じる", true)).forEachIndexed { k, (act, word, on) ->
+        val row = if (planned.isNotEmpty()) {
+            val commitOk = a != null && a.activeRun == null && !busy
+            listOf(Triple("commit", "確定（${planned.size} 点）", commitOk), Triple("cancel", "取り消し", true), Triple("close", "閉じる", true))
+        } else {
+            val resetOk = a != null && a.activeRun == null && !busy && taken.isNotEmpty() && a.silver >= price * taken.size
+            listOf(Triple("reset", "全部戻す", resetOk), Triple("centre", "起点へ戻る", true), Triple("close", "閉じる", true))
+        }
+        row.forEachIndexed { k, (act, word, on) ->
             val x = ix + k * (bw + 10)
-            framed("b-$act", x, 946.0, bw, 48.0, 10.0, "#1b1c20", 12)
+            if (act == "commit" && on) framed("b-$act", x, 946.0, bw, 48.0, 10.0, "#2b1e17", 12, "#f07a2a")
+            else framed("b-$act", x, 946.0, bw, 48.0, 10.0, "#1b1c20", 12)
             if (on) rect("b-$act-hit", x, 946.0, bw, 48.0, "#00000000", 14, act, "#30ffffff")
-            text("b-$act-t", x, 960.0, bw, word, 16.0, if (on) "#ece6dc" else "#5e5a54", 15, "center", "v3b")
+            text("b-$act-t", x, 960.0, bw, word, 16.0, when { !on -> "#5e5a54"; act == "commit" -> "#f5c08a"; else -> "#ece6dc" }, 15, "center", "v3b")
+        }
+    }
+
+    /** What taking [path] would change: each stat it touches, from the current total to the new one. */
+    private fun delta(held: Set<Int>, path: Set<Int>, choices: Map<Int, Int>, top: Double) {
+        val before = sums(held, choices)
+        val after = sums(held + path, choices)
+        val rows = after.filter { (k, v) -> v != (before[k] ?: 0) }.keys.toList()
+        if (rows.isEmpty()) return
+        val ix = RIGHT_X + 26; val iw = RIGHT_W - 52
+        label("dl-h", "delta", ix, top, 12)
+        val arrow = width(art.labels["arrow"])
+        rows.take(((780 - top - 34) / ROW).toInt()).forEachIndexed { k, name ->
+            val y = top + 34 + k * ROW
+            art.statLabels[name]?.let { label("dl-s$k", it, ix, y, 12) }
+            val now = "+${after.getValue(name)}%"; val was = "+${before[name] ?: 0}%"
+            val nw = measure(now, "v3b", 16.0)
+            text("dl-n$k", ix, y + 2.5, iw, now, 16.0, "#9af0a0", 12, "right", "v3b")
+            label("dl-a$k", "arrow", ix + iw - nw - 8 - arrow, y, 12)
+            text("dl-w$k", ix, y + 2.5, iw - nw - 16 - arrow, was, 16.0, "#a29e97", 12, "right", "v3b")
         }
     }
 
     /** The options of a mastery as buttons; the chosen one stays lit once taken. */
     private fun masteryChoices(a: CoreAccount, node: CorePassiveNode, top: Double) {
         val ix = RIGHT_X + 26; val w = RIGHT_W - 52
-        val chosen = a.journey.build.masteries[node.id]
+        val chosen = a.journey.build.masteries[node.id] ?: plannedChoices[node.id]
         var y = top
         for ((k, key) in art.choiceLabels[node.id].withIndex()) {
             val open = node.id == selected && !busy && masteryChoosable(a, node.id, k)
-            val dup = chosen == null && CorePassiveTree.choiceTaken(a.journey.build.masteries, node.id, k)
+            val dup = chosen == null && CorePassiveTree.choiceTaken(a.journey.build.masteries + plannedChoices, node.id, k)
             val h = if (dup) 62.0 else 46.0
             if (chosen == k) framed("ch$k", ix, y, w, h, 10.0, "#2b1e17", 12, "#f07a2a") else framed("ch$k", ix, y, w, h, 10.0, "#17181b", 12)
             if (open) rect("ch$k-hit", ix, y, w, h, "#00000000", 14, "choice:$k", "#30ffffff")
@@ -502,7 +602,8 @@ internal class PassiveTreeFlow(
         private const val ROW = 27.0
         private const val EDGE = 56.0
         private const val SPEED = 30.0
-        private const val MARGIN = 200.0
+        /** How far inside the open view the outermost node can be brought. */
+        private const val PAD = 90.0
         private const val LINE = "#25262a"
         private const val PANEL = "#101114"
         private val STAT = Regex("^(.*)\\+(\\d+)%$")
