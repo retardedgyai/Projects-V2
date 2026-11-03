@@ -3,7 +3,7 @@
 #   視点は save() に書いた名前か、@x;y;z;tx;ty;tz（カメラと注視点、x はそのまま）。
 #   out/ を http://127.0.0.1:8767 で配り、まっさらなブラウザで1枚ずつ撮って並べる。配るサーバーは撮り終えたら止める
 #   （止めずに残すと、flock の重い処理の順番を握ったままになり、ほかのセッションを待たせる）。
-#   重い処理なので flock ~/ProjectS/.heavy.lock で包んで呼ぶ。
+#   重い処理なので ~/ProjectS/bin/heavy で包んで呼ぶ。
 KIT=$(cd "$(dirname "$0")" && pwd); OUTROOT="$KIT/../out"; D=$1; OUT=$2; shift 2
 SRV=""
 if ! ss -ltn | grep -q ':8767 '; then (cd "$OUTROOT" && exec python3 -m http.server 8767 >/dev/null 2>&1) & SRV=$!; sleep 1; fi
