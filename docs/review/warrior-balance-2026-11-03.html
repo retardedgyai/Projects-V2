@@ -1,0 +1,100 @@
+<title>ウォーリアーの数値表</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; a wide numbers table scrolls on its own; findings tagged by severity. */
+:root {
+  --bg: #f6f4f1; --surface: #ffffff; --fg: #231e1b; --muted: #6d625b; --line: #ddd5ce;
+  --accent: #8e2a1f; --bad: #b3261e; --warn: #a65f00; --ok: #2f6b3a; --chip: #efe7e1;
+  --display: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #181412; --surface: #221c19; --fg: #eee6e0; --muted: #a8998f; --line: #3a302b;
+  --accent: #e0705f; --bad: #ff8a80; --warn: #f0b35a; --ok: #8fcf98; --chip: #2e2522; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #181412; --surface: #221c19; --fg: #eee6e0; --muted: #a8998f; --line: #3a302b;
+  --accent: #e0705f; --bad: #ff8a80; --warn: #f0b35a; --ok: #8fcf98; --chip: #2e2522; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 64px; }
+main { max-width: 980px; margin: 0 auto; display: grid; gap: 36px; }
+h1 { font-family: var(--display); font-weight: 900; font-size: 1.9rem; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 700; font-size: 1.25rem; margin: 0 0 12px; text-wrap: balance; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); }
+.facts { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+.fact b { display: block; font-size: 1.02rem; margin-bottom: 4px; }
+.fact .tag { font-size: .75rem; letter-spacing: .06em; color: var(--muted); }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 860px; font-size: .9rem; }
+th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { font-size: .75rem; letter-spacing: .06em; color: var(--muted); font-weight: 700; background: var(--chip); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kind { font-size: .72rem; padding: 1px 7px; border-radius: 99px; background: var(--chip); color: var(--muted); white-space: nowrap; }
+.sev { font-weight: 700; }
+.sev.bad { color: var(--bad); } .sev.warn { color: var(--warn); } .sev.ok { color: var(--ok); }
+.group td { background: var(--chip); font-weight: 700; font-size: .8rem; letter-spacing: .05em; color: var(--muted); }
+ol.plan { margin: 0; padding-left: 1.3em; display: grid; gap: 10px; max-width: 72ch; }
+.note { font-size: .82rem; color: var(--muted); }
+.ask { border-left: 4px solid var(--accent); padding: 10px 16px; background: var(--surface); border-radius: 0 6px 6px 0; }
+code { font-family: var(--mono); font-size: .85em; }
+</style>
+
+<main>
+  <header style="display:grid;gap:10px">
+    <h1>ウォーリアーの数値表</h1>
+    <p class="lead">2026-11-03 の main を読んだ結果。ダメージは攻撃力 AD=12（始めの大剣）で計算。獣は1つごとに威力+25%。</p>
+  </header>
+
+  <section>
+    <h2>結論</h2>
+    <div class="facts">
+      <div class="fact"><span class="tag">8秒減らないもの</span><b>獣の目覚めの「獣」</b>打ち間違いではなかった。8秒間、使う技がすべて獣3として撃て、獣は減らず、再使用も半分。溜める→使うの流れが消える。</div>
+      <div class="fact"><span class="tag">ウルト3つの差</span><b>目覚め ≒ 一振りの5倍</b>8秒で約750ダメージ・崩し約270（ボスが崩れっぱなし）。甲冑は10秒で約400。全力の一振りは1発136。</div>
+      <div class="fact"><span class="tag">技の中の偏り</span><b>狂乱が突出</b>獣3で168（振り数と獣の倍率が掛け算）。地割りの1.6倍、大地崩しの2.7倍。崩しも1振りごとに乗って80。</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>全スキルの数値</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>技</th><th>種類</th><th>ダメージ 獣0 → 獣3</th><th>再使用</th><th>崩し</th><th>おかしい点</th><th>直す案</th></tr></thead>
+      <tbody>
+        <tr class="group"><td colspan="7">獣を溜める技（当たると獣+1）</td></tr>
+        <tr><td>轟進</td><td><span class="kind">溜める</span></td><td class="num">20</td><td class="num">5秒</td><td class="num">4</td><td><span class="sev ok">問題なし</span></td><td>そのまま</td></tr>
+        <tr><td>跳び叩き</td><td><span class="kind">溜める・移動</span></td><td class="num">23</td><td class="num">9秒</td><td class="num">6</td><td><span class="sev ok">問題なし</span></td><td>そのまま</td></tr>
+        <tr><td>引き摺り</td><td><span class="kind">溜める</span></td><td class="num">32</td><td class="num">12秒</td><td class="num">0</td><td><span class="sev warn">不具合</span> 崩しの表に無く、ボスの崩しが0</td><td>崩し6</td></tr>
+        <tr><td>斬り上げ</td><td><span class="kind">溜める</span></td><td class="num">31</td><td class="num">9秒</td><td class="num">0</td><td><span class="sev warn">不具合</span> 同じく崩し0</td><td>崩し6</td></tr>
+        <tr class="group"><td colspan="7">獣を全部使う技</td></tr>
+        <tr><td>地割り</td><td><span class="kind">使う</span></td><td class="num">58 → 102<br>（獣3は割れが2回）</td><td class="num">12秒</td><td class="num">12 → 24<br>3段目直後×1.5</td><td><span class="sev ok">基準</span></td><td>そのまま（ほかをこれに合わせる）</td></tr>
+        <tr><td>狂乱</td><td><span class="kind">使う</span></td><td class="num">38 → 168<br>（2振り → 5振り）</td><td class="num">10秒</td><td class="num">8 → 80</td><td><span class="sev bad">強すぎ</span> 振り数×獣の倍率で4.4倍に伸びる。崩しも1振りごとに全部乗る。最後の振り下ろしの2倍は効いていない</td><td>1振り 4+0.75AD、最後は2倍を効かせる → 獣0 39 / 獣3 137。崩しは合計で 4+4/獣</td></tr>
+        <tr><td>天落とし</td><td><span class="kind">使う・移動</span></td><td class="num">43 → 75</td><td class="num">14秒</td><td class="num">8 → 20</td><td><span class="sev warn">不具合</span> 外側の輪の0.7倍が効かず全力</td><td>0.7倍を効かせる</td></tr>
+        <tr><td>大地崩し</td><td><span class="kind">使う</span></td><td class="num">36 → 63</td><td class="num">16秒</td><td class="num">12 → 24</td><td><span class="sev warn">弱い</span> 発生0.7秒・再使用最長なのに一番低い</td><td>16+2.4AD → 獣3で 78</td></tr>
+        <tr class="group"><td colspan="7">ウルト（1つだけ付けられる）</td></tr>
+        <tr><td>全力の一振り</td><td><span class="kind">使う</span></td><td class="num">78 → 137</td><td class="num">60秒</td><td class="num">15 → 27</td><td><span class="sev bad">弱すぎ</span> ほかの2つの1/3〜1/5。説明の「押して溜める（最大2秒）」は作られていない。半径12が装備すると10.5に縮む</td><td>40+7AD（獣3で 217）。半径の縮みを直す。溜めは作るか説明を直すか</td></tr>
+        <tr><td>狂戦士の甲冑</td><td><span class="kind">強化 10秒</span></td><td class="num">10秒で約400</td><td class="num">60秒</td><td class="num">—</td><td><span class="sev bad">壊れ</span> 獣が満ちたまま。CC無効・速さ1.3倍・毎秒HP-2%。さらに意図していない味方への障壁と3秒の防御姿勢が付く</td><td>獣は満たさず「溜まり方2倍」にする。障壁と防御姿勢は外す</td></tr>
+        <tr><td>獣の目覚め</td><td><span class="kind">強化 8秒</span></td><td class="num">8秒で約750</td><td class="num">60秒</td><td class="num">約270</td><td><span class="sev bad">壊れ</span> 8秒間、獣が減らず再使用半分。使う技を7回ほど全力で撃て、ボスが崩れっぱなし</td><td>「次の使う技3回だけ獣3として撃てる（獣は減らない、8秒以内）」。再使用半分は残す</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note">普通の通常攻撃3段は 12 / 14 / 22（2.25秒で48）。約400・約750は、使う技4つ（地割り・狂乱・天落とし・大地崩し）を付けて撃てるだけ撃った見積もり。</p>
+  </section>
+
+  <section>
+    <h2>このPRで直したもの（数値は変えていない）</h2>
+    <ol class="plan">
+      <li><b>「奥義」→「ウルト」</b>：技選び、ツールチップ、冒険の画面（「ウルト Lv16」）、戦闘ラボ、HUD の副題。6職共通の表示なので全職そろう。パッシブの「魔弾の奥義」は技の枠ではないので残した。</li>
+      <li><b>ウルト中の音</b>：甲冑と目覚めの「体にまとう演出」が0.1〜0.2秒ごとに鳴り、そのたびに呪文＋鈴＋爆発の3音が出ていた（甲冑で爆発60回、目覚めで80回）。全力の一振りの血しぶきも一振りの音を8回鳴らしていた。いまは甲冑の鼓動が1秒に1回（ウォーデンの心音）だけ。発動の声は1回、甲冑はウィザーの出現音をやめてラヴェジャーの咆哮に。</li>
+      <li><b>ツールチップ</b>：甲冑と目覚めに出ていた「獣：当たると1つ溜まる」を、それぞれ「獣：使わない」「獣：3つの時だけ使える」に。</li>
+    </ol>
+  </section>
+
+  <section class="ask">
+    <h2>藍に聞きたいこと</h2>
+    <p>獣の目覚めを撃った8秒で、何が起きていたら「強いけど壊れていない」と感じる？ 上の案（使う技3回だけ全力）でよければ、表の「直す案」をそのまま入れる。</p>
+  </section>
+</main>
