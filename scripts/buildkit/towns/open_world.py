@@ -29,14 +29,24 @@ def mountains(x, z):
     """峰を1つずつ立てる（円錐を揺らして尾根でつなぐ）。手前の裾は森に沈む。"""
     h = 0.0
     for (px, pz, ph, pr) in PEAKS:
-        d = math.hypot(x - px, (z - pz) * 1.15) / (pr * (0.8 + 0.4 * vnoise(x, z, 18, 61)))
+        d = math.hypot(x - px, (z - pz) * 1.15) / (pr * 1.7 * (0.8 + 0.4 * vnoise(x, z, 18, 61)))   # 裾を広く：勾配を1マスずつの段々に近づけ、雪の乗る上面を見せる
         if d < 1.8:
             sh = max(0.0, 1 - d / 1.8) ** 0.95                                         # 裾の広い山塊（細い牙にしない）
             crag = (1 - abs(2 * fbm(x, z, 22, 81) - 1)) * 18 + (fbm(x, z, 9, 83) - 0.5) * 14   # 尾根と岩の起伏（なめらかな円錐にしない）
-            h = max(h, ph * sh + crag * sh)
+            h = max(h, 0.72 * ph * sh + crag * sh)
     ridge = 1 - abs(2 * fbm(x, z, 36, 11) - 1)
     mf = smooth((-z - 50) / 60.0)
-    return h * (0.82 + 0.3 * ridge) + mf * 10 * ridge
+    return terrace(h * (0.82 + 0.3 * ridge) + mf * 10 * ridge, x, z)
+def terrace(m, x, z):
+    """岩山を段にする：垂直な岩の板（高さ5〜12）と、雪の乗る狭い棚を交互に重ねる。段の高さと位置は場所でずらし、
+    同心の輪にしない（らーなろっその尖った峰：RgH1E52D1cA 8:50「垂直な板が重なり、棚の雪が斜めの白い線になる」）。"""
+    if m < 12: return m
+    T = 5 + 7 * vnoise(x, z, 38, 91)
+    mm = m + 6 * vnoise(x, z, 17, 92)
+    k, f = divmod(mm, T)
+    edge = 0.62 + 0.2 * vnoise(x, z, 9, 93)                                           # 棚の奥行き：段の6〜8割は緩い棚
+    rise = f / edge * 0.35 if f < edge * T and False else (0.35 * f / T if f / T < edge else 0.35 * edge + (1 - 0.35 * edge) * (f / T - edge) / (1 - edge))
+    return k * T + rise * T - 6 * vnoise(x, z, 17, 92)
 def base(x, z):
     h = 16 + (fbm(x, z, 70, 3) - 0.5) * 12 + mountains(x, z)
     h += 14 * math.exp(-((x - HILL[0]) ** 2 + (z - HILL[1]) ** 2) / 420.0)        # 館の丘
@@ -46,6 +56,9 @@ def nat(x, z):
     if -75 <= z:                                                                   # 川の谷：川に向かって下がる
         d = abs(x - river_x(z)); w = river_w(z)
         if d > 4: h = min(h, w + 1 + (d - 4) * (0.35 + 0.4 * fbm(x, z, 30, 21)))
+    else:                                                                          # 川の源：谷は山の奥へ上りながら細っていく（谷の削りを途中で切ると高さ70の壁ができた）
+        d = abs(x - river_x(z)); w = river_w(-75) + (-75 - z) * 1.3
+        h = min(h, w + 1 + max(0, d - 4) * (0.6 + 0.5 * fbm(x, z, 30, 21)))
     lx, lz, lr, lw = LAKE
     dl = math.hypot(x - lx, (z - lz) * 1.2) - lr * (0.85 + 0.3 * vnoise(x, z, 9, 31))
     if dl < 10: h = min(h, lw + 1 + max(0, dl) * 0.5)
@@ -56,21 +69,38 @@ def in_lake(x, z):
     return math.hypot(x - lx, (z - lz) * 1.2) - lr * (0.85 + 0.3 * vnoise(x, z, 9, 31)) < 0
 
 class World(Town):
-    """雪と岩：雪の線より上は雪、急な所は岩。"""
-    def snow(self, x, z, g): return g >= 54 + 8 * vnoise(x, z, 12, 41)
+    """山の岩肌と雪（らーなろっその自然の山：learn4/MKw4LbDT4Zk・RgH1E52D1cA・Pti0n-5whR4）。
+    ・雪は上面にだけ乗せる：雪の線より上の柱は、一番上の1マスを必ず雪にする（まだらに岩を混ぜない）。その下は岩なので、
+      1段ずつの所は白い段々、2段以上落ちる壁の下だけ灰色の岩が見え、壁の棚の雪が斜めの白い線になる。
+    ・岩は石を地にして、安山岩・閃緑岩を大きな塊で入れる（細かく混ぜると斑点になる）。
+    ・山すそは、岩と草の段々の間に土の厚い帯をはさむ。"""
+    def snow(self, x, z, g): return g >= 44 + 8 * vnoise(x, z, 12, 41)
+    def foot(self, x, z, g): return 32 <= g < 44 + 4 * vnoise(x, z, 14, 49)
     def steep_top(self, x, z):
         g = self.H[(x, z)]
-        if self.snow(x, z, g): return full('snow') if vnoise(x, z, 4, 43) > 0.45 else full('stone' if vnoise(x, z, 3, 47) < 0.6 else 'andesite')   # 急な面は岩を見せる
-        return super().steep_top(x, z) if g < 40 else full(['stone', 'andesite', 'stone', 'gravel', 'tuff'][int(vnoise(x, z, 5, 44) * 5)])
+        if self.snow(x, z, g): return full('snow')
+        if g >= 44: return full(self.rock_at(x, g, z))
+        if self.foot(x, z, g): return full('coarse_dirt') if vnoise(x, z, 4, 46) < 0.5 else full('dirt')
+        return super().steep_top(x, z)
     def ground_top(self, x, z, k, g, sand=lambda x, z, g: False):
         if k == 'nat' and self.snow(x, z, g): return full('snow')
-        if k == 'nat' and g >= 44 and vnoise(x, z, 6, 45) > 0.55: return full('stone')
+        if k == 'nat' and g >= 46: return full(self.rock_at(x, g, z))
+        if k == 'nat' and self.foot(x, z, g) and vnoise(x, z, 6, 45) > 0.62: return full('coarse_dirt')
         return super().ground_top(x, z, k, g, sand)
     def rock_at(self, x, y, z):
-        if y > 28:                                                                # 山の岩：横じまにせず、まだらの塊
-            n = vnoise(x + y * 0.7, z - y * 0.5, 6, 71)
-            return 'stone' if n < 0.45 else 'andesite' if n < 0.62 else 'tuff' if n < 0.72 else 'cobblestone' if n < 0.8 else 'diorite' if n < 0.86 else 'stone'
+        g = self.H.get((x, z), -99)
+        if y > 26 and self.foot(x, z, g) and y >= g - 3 and g < 46: return 'dirt'      # 山すその土の帯
+        if y > 26:                                                                 # 石を地に、安山岩と閃緑岩は大きな塊
+            n = vnoise(x + y * 0.3, z - y * 0.2, 6, 71)
+            return 'andesite' if n < 0.28 else 'gravel' if 0.5 < n < 0.54 else 'tuff' if 0.62 < n < 0.66 else 'stone'   # 閃緑岩は雪の斑に見えるので使わない
         return super().rock_at(x, y, z)
+    def snow_caps(self):
+        """雪の線より上の柱の上面に、薄い雪の層を1枚（水平な面にだけ雪）。"""
+        n = 0
+        for (x, z), g in self.H.items():
+            if self.KIND.get((x, z)) == 'nat' and self.snow(x, z, g) and get(x, g + 1, z) is None:
+                put(x, g + 1, z, {'s': 'carpet', 't': 'snow'}); n += 1
+        return n
 
 T = World((-B, B - 1, -B, B - 1), nat, lambda x, z: False)
 

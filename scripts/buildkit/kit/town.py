@@ -547,7 +547,7 @@ class Town:
         return trees
 
     # ================================================================ 森の並べ方と地面 [rules/nature.md 28〜39]
-    TREE_R = {'oak': 5.4, 'birch': 3.0, 'cherry': 4.0, 'spruce': 4.0, 'small_spruce': 2.3, 'big': 9.0}
+    TREE_R = {'oak': 6.0, 'birch': 3.0, 'cherry': 4.0, 'spruce': 4.0, 'small_spruce': 2.3, 'big': 9.0}
 
     def trail(self, pts, w=3.0):
         """森の小道（踏み跡）：折れ線を幅 w で通す。縁はギザギザ。地面は ground_cover で塗る。 [rules 32]"""
@@ -671,7 +671,7 @@ class Town:
             elif k == 'cherry': TR.cherry(x, z, g, sd)
             elif k == 'birch': TR.birch(x, z, g, sd)
             elif k == 'big': TR.big_tree(x, z, g, sd)
-            else: TR.oak(x, z, g, sd, R / self.TREE_R['oak'], tall=(x, z) in getattr(self, 'TALL', ()))
+            else: TR.rana_oak(x, z, g, sd, R / self.TREE_R['oak'])                        # らーなろっその木（腕ごとの丸い葉の塊）
         self.TREES = trees
         # 茂み：森の縁から草地へ、6〜10マスおきに散らして薄くする。水際の草の帯の外にも。 [rules 31]
         bushes = 0

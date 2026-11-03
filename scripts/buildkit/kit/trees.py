@@ -298,3 +298,75 @@ def big_tree(x, z, g, seed, h=22):
     for (tx, ty, tz) in tips:
         _lens(tx, ty + 1, tz, r.uniform(3.0, 4.2), r, 'dark_oak_leaves', 'oak_leaves', 'azalea_leaves')
         if r.random() < 0.6: _lens(tx + r.choice((-2, 2)), ty + 3, tz + r.choice((-2, 2)), r.uniform(2.0, 2.8), r, 'dark_oak_leaves', 'oak_leaves', 'azalea_leaves')
+
+
+# ================================================================ らーなろっその広葉樹 [rules 55〜]
+def rana_oak(x, z, g, seed, size=1.0, logt='oak_log', leaves=('dark_oak_leaves', 'oak_leaves', 'azalea_leaves')):
+    """らーなろっその木（learn4：巨大樹 -GqohqH0BwA、ツリーハウス D2-UmSlGiBQ、桜 wpDqNHxgm2U）。
+    骨を先に：幹（大きい木は2×2）を立て、上で太い腕3〜4本に分ける。腕は1マス幅のジグザグの原木の線で、
+    まず上へ出てから外へ折れ、先がまた上を向く。幹は1種類の原木で、向きを混ぜて切り口を5〜6マスに1つ見せる。
+    葉は腕ごとに丸い塊（径5〜8）で包み、塊どうしの間を空けて、左右非対称の冠にする。下と内側は暗い葉。
+    根は幹の筋がそのまま外へ這い下りる（外ほど早く地面に着く）。"""
+    r = random.Random(seed)
+    big = size >= 1.1
+    th = int(round(r.randint(5, 7) * size))
+    cells = [(0, 0), (1, 0), (0, 1), (1, 1)] if big else [(0, 0)]
+    for y in range(g + 1, g + th + 1):
+        for (dx, dz) in cells:
+            ax = ('x' if r.random() < 0.5 else 'z') if r.random() < 0.18 else 'y'        # 切り口を点々と
+            put(x + dx, y, z + dz, log(logt, ax))
+    for (dx, dz) in cells:                                                               # 筋の上端は高さをそろえない
+        if r.random() < 0.6: put(x + dx, g + th + 1, z + dz, log(logt))
+    for (dx, dz) in ((-1, 0), (2 if big else 1, 0), (0, -1), (0, 2 if big else 1)):     # 根：幹の筋が外へ這い下りる
+        if r.random() < 0.75:
+            L = r.randint(1, 3 if big else 2)
+            sx, sz = (1 if dx > 0 else -1 if dx < 0 else 0), (1 if dz > 0 else -1 if dz < 0 else 0)
+            for k in range(L):
+                X, Z = x + dx + sx * k, z + dz + sz * k
+                hy = g + max(1, (2 if big else 1) - k)
+                for yy in range(g + 1, hy + 1):
+                    if get(X, yy, Z) is None or get(X, yy, Z)['s'] == 'cross': put(X, yy, Z, log(logt, 'x' if sx else 'z') if yy == g + 1 else log(logt))
+    cx, cz = x + (0.5 if big else 0), z + (0.5 if big else 0)
+    top = g + th
+    n = r.randint(3, 4)
+    a0 = r.uniform(0, 2 * math.pi)
+    dark, mid, light = leaves
+    for i in range(n):
+        a = a0 + i * 2 * math.pi / n + r.uniform(-0.35, 0.35)
+        dx, dz = math.cos(a), math.sin(a)
+        px, py, pz = cx + dx * (0.6 if big else 0), float(top - r.randint(0, 1)), cz + dz * (0.6 if big else 0)
+        reach = r.uniform(3.0, 4.5) * size
+        up = r.randint(1, 3)
+        path = []
+        for k in range(up):                                                             # まず上へ
+            py += 1; path.append((px, py, pz))
+            if r.random() < 0.5: px += dx * 0.7; pz += dz * 0.7; path.append((px, py, pz))
+        for k in range(int(reach * 1.5)):                                                # 外へ折れて、ジグザグに
+            px += dx * 0.7; pz += dz * 0.7; path.append((px, py, pz))
+            if k % 2 == 1: py += 1; path.append((px, py, pz))
+        for (qx, qy, qz) in path:
+            X, Y, Z = int(round(qx)), int(round(qy)), int(round(qz))
+            wood(X, Y, Z, log(logt, 'x' if abs(dx) > abs(dz) else 'z') if qy == path[-1][1] or r.random() < 0.5 else log(logt))
+        ex, ey, ez = path[-1]
+        ey += 1                                                                          # 先がまた上を向く
+        wood(int(round(ex)), int(round(ey)), int(round(ez)), log(logt))
+        R = r.uniform(2.4, 3.3) * size                                                   # 腕ごとの丸い葉の塊
+        bx, by, bz = int(round(ex)), int(round(ey)), int(round(ez))                       # 中心は整数に（半端だと1段おきに抜けた）
+        Ri = int(R) + 1
+        for ox in range(-Ri, Ri + 1):
+            for oy in range(-Ri, Ri + 1):
+                for oz in range(-Ri, Ri + 1):
+                    d = math.sqrt(ox * ox + (oy * 1.25) ** 2 + oz * oz) + r.uniform(-0.45, 0.35)
+                    if d > R or oy < -2: continue
+                    X, Y, Z = bx + ox, by + oy, bz + oz
+                    if get(X, Y, Z) is not None: continue
+                    t = (oy + Ri) / (2.0 * Ri)
+                    q = r.random()
+                    lt = dark if t < 0.4 or d < R * 0.45 else (light if q < 0.35 else mid)
+                    put(X, Y, Z, full(lt))
+    # 真ん中の小さな塊で、腕の付け根の上を隠す（冠の芯）
+    for ox in range(-2, 3):
+        for oy in range(0, 3):
+            for oz in range(-2, 3):
+                if ox * ox + oz * oz + oy * oy * 1.5 <= 4.5 and get(int(cx) + ox, top + 2 + oy, int(cz) + oz) is None:
+                    put(int(cx) + ox, top + 2 + oy, int(cz) + oz, full(mid if oy else dark))
