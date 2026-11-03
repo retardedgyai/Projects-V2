@@ -24,7 +24,7 @@ internal object CoreSkillTooltip {
             if(part.isNotEmpty()) add(part)
         }
         val lore=buildList {
-            add(CoreUiComponents.text("${j.job.displayName}  ·  ${if(skill.ultimate) "奥義" else "選択技能"}",rarity.color,true))
+            add(CoreUiComponents.text("${j.job.displayName}  ·  ${if(skill.ultimate) "ウルト" else "選択技能"}",rarity.color,true))
             add(Component.empty())
             lines.forEachIndexed { index,line ->
                 val heading = if(warrior) index in setOf(0,3,4) else index==2

@@ -300,7 +300,7 @@ internal class CorePlayerCombat(
         readyAt[id] = tickNumber + if (awakened && definition.icon in CoreWarriorRules.spenders && !definition.ultimate) cooldownTicks(id) / 2 else cooldownTicks(id)
         if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.ARMOR) {
             armorUntil = tickNumber + definition.duration; classState.fill(classId); crowd.clear(); staggerUntil = -1
-            notice("狂戦士の甲冑"); sound(SoundEvent.ENTITY_WITHER_SPAWN, .5f, .6f)
+            notice("狂戦士の甲冑"); sound(SoundEvent.ENTITY_RAVAGER_ROAR, .8f, .6f)
         }
         if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN) {
             awakenUntil = tickNumber + definition.duration; notice("獣の目覚め"); sound(SoundEvent.ENTITY_WARDEN_ROAR, .6f, .8f)

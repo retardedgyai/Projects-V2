@@ -12,9 +12,9 @@ internal object CoreWarriorSkillPresentation {
         "war_counter" to Identity("大地崩し", "獣を使う・範囲", "突き立てて周り一面を砕き、まとめて打ち上げる"),
         "war_cry" to Identity("引き摺り", "獣を溜める・巻き込み", "大剣を引きずって歩き、引っかけた敵をまとめて叩きつける"),
         "war_breach" to Identity("斬り上げ", "獣を溜める・打ち上げ", "真上へ振り上げて打ち上げ、地割りで叩き落とす"),
-        "war_ult" to Identity("全力一振", "奥義・一撃", "担いで溜め、渾身の一振りで地面を大きく割る"),
-        "war_banner" to Identity("狂戦士甲冑", "奥義・暴走", "10秒、CCも怯みも効かず速く、獣が満ちたまま"),
-        "war_awaken" to Identity("獣の目覚め", "奥義・解放", "獣3つで撃つ。8秒、獣が減らず使う技の再使用が半分")
+        "war_ult" to Identity("全力一振", "ウルト・一撃", "担いで溜め、渾身の一振りで地面を大きく割る"),
+        "war_banner" to Identity("狂戦士甲冑", "ウルト・暴走", "10秒、CCも怯みも効かず速く、獣が満ちたまま"),
+        "war_awaken" to Identity("獣の目覚め", "ウルト・解放", "獣3つで撃つ。8秒、獣が減らず使う技の再使用が半分")
     )
     // Rows: enter or heavy / crowd or reach / hold. Retired catalog entries (5, 6, 7) are not offered.
     val candidateOrder = listOf(0, 1, 4, 7, 6, 2, 3, 5)

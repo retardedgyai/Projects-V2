@@ -53,6 +53,27 @@ internal object CoreSkillAudio {
         }
     }
 
+    /**
+     * The warrior ultimates' running pictures (狂戦士の甲冑's blood, 獣の目覚め's clinging smoke, 全力の一振り's blood
+     * burst along the rift) are drawn 5-10 times a second; they are not new blows (Creator 2026-11-03: far too loud).
+     * Only 狂戦士の甲冑's heartbeat is heard, once a second; the cast is voiced once by its roar (CorePlayerCombat).
+     * Null when [effect] is none of these.
+     */
+    internal fun warriorUltimateCues(effect: CoreSkillEffect): List<Cue>? {
+        if(effect.job!=CoreClass.WARRIOR || effect.phase!=CoreSkillVisualPhase.PULSE) return null
+        return when(effect.sceneId) {
+            CoreWarriorRules.ARMOR -> when {
+                effect.pulse>=CoreWarriorRules.ARMOR_BEAT_PULSE -> listOf(Cue(SoundEvent.ENTITY_WARDEN_HEARTBEAT,.7f,1.1f))
+                effect.pulse>=CoreWarriorRules.ARMOR_BLEED_PULSE -> emptyList()
+                else -> listOf(Cue(SoundEvent.BLOCK_STONE_BREAK,.6f,.6f))  // the ground breaks under the feet
+            }
+            CoreWarriorRules.AWAKEN ->
+                if(effect.pulse>=CoreWarriorRules.AWAKEN_CLING_PULSE) emptyList() else listOf(Cue(SoundEvent.BLOCK_STONE_BREAK,.6f,.6f))
+            CoreWarriorRules.FULL_SWING -> if(effect.pulse>=CoreWarriorRules.FULL_SWING_GEYSER_PULSE) emptyList() else null
+            else -> null
+        }
+    }
+
     private fun warriorSupportCues(effect: CoreSkillEffect): List<Cue> = when(effect.phase) {
         CoreSkillVisualPhase.PREPARE -> listOf(when(effect.sceneId) {
             "war_banner" -> Cue(SoundEvent.BLOCK_WOOL_PLACE,.7f,.9f)
@@ -89,6 +110,7 @@ internal object CoreSkillAudio {
             }
             return
         }
+        warriorUltimateCues(effect)?.let { cues -> cues.forEach { cue(it.event,it.volume,it.pitch) }; return }
         val scene = CoreSkillScenes.get(effect.sceneId)
         if(effect.job==CoreClass.WARRIOR && (effect.sceneId in CoreWarriorBladeChoreography.sceneIds ||
                 effect.sceneId in CoreWarriorSupportChoreography.sceneIds)) {

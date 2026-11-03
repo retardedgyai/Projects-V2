@@ -246,7 +246,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val a = game.account(player) ?: return
         view(player, "旅の始まり / 成長と職業", { career(player) }) { v ->
             v.canvas.left("${a.journey.job.displayName} Lv${a.journey.level}",
-                lines("経験 ${a.journey.xp}", if (a.journey.level < 40) "次まで ${CoreJourneyRules.threshold(a.journey.level + 1) - a.journey.xp}" else "冒険Lv最大", "T1 Lv1〜10", "T2 Lv11〜20", "T3 Lv21〜30", "T4 Lv31〜40", "技 Lv1/4/8/12", "奥義 Lv16"), hero = CoreMenuArt.GEAR)
+                lines("経験 ${a.journey.xp}", if (a.journey.level < 40) "次まで ${CoreJourneyRules.threshold(a.journey.level + 1) - a.journey.xp}" else "冒険Lv最大", "T1 Lv1〜10", "T2 Lv11〜20", "T3 Lv21〜30", "T4 Lv31〜40", "技 Lv1/4/8/12", "ウルト Lv16"), hero = CoreMenuArt.GEAR)
             v.canvas.right("次の一歩", paragraph(CoreJourneyRules.next(a)) + lines("", "導入 ${(0..5).count(a.journey::knows)}/6", "港で職業を変更可能", "装備と経験は保持", "採取でも経験を獲得"), hero = CoreMenuArt.EXPEDITION)
             CoreClass.entries.forEachIndexed { i, job ->
                 val slot = listOf(9, 12, 15, 18, 21, 24)[i]
@@ -260,7 +260,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             }
             card(v, 30, 3, 1, "武器型", CoreMenuArt.FORGE) { weaponBases(player, CoreForgeLayout.Selection(tab = CoreForgeLayout.Tab.CRAFT, tier = a.weaponTier)) }
             card(v, 33, 3, 1, "鍛錬", CoreMenuArt.WEAPON) { temper(player) }
-            card(v, 36, 3, 1, "技選び", CoreMenuArt.ARCANE, CoreLoopItems.icon(Material.BOOK, "四つの技と奥義を選ぶ")) { skillBuild(player) }
+            card(v, 36, 3, 1, "技選び", CoreMenuArt.ARCANE, CoreLoopItems.icon(Material.BOOK, "四つの技とウルトを選ぶ")) { skillBuild(player) }
             card(v, 39, 3, 1, "成長樹", CoreMenuArt.GEAR, CoreLoopItems.icon(Material.EXPERIENCE_BOTTLE, "成長の分岐を選ぶ")) { talentTree(player) }
             card(v, 42, 3, 1, "能力値", CoreMenuArt.WEAPON, CoreLoopItems.icon(Material.PAPER, "今のAD・AP・防御を確認")) { combatDetails(player) }
             back(v, player, "手帳")
@@ -299,7 +299,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val pages = (choices.size + 3) / 4
         val choice = candidate.takeIf { it in choices }
         val preview = choice?.let { CoreSkillCatalog.modify(candidates[it],a.journey,sheet.mods) } ?: current
-        val target = if(slot==4) "奥義" else "技能${slot+1}"
+        val target = if(slot==4) "ウルト" else "技能${slot+1}"
         val selectedPage=page.coerceIn(0,pages-1)
         val canEquip=a.activeRun==null && CoreJourneyRules.skillUnlocked(a,slot) && choice!=null
         view(player, "${a.journey.job.displayName} / 技能編成", { skillBuild(player, slot, candidate, selectedPage) }) { v ->
@@ -363,9 +363,9 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             else -> "$target に装備"
         }
         view(player,"戦士 / 技の組み合わせ",{ warriorSkills(player,slot,candidate) }) { v ->
-            v.canvas.left(if(slot==4) "奥義 / $target" else "$target の技", buildList {
+            v.canvas.left(if(slot==4) "ウルト / $target" else "$target の技", buildList {
                 addAll(lines("装備中"));addAll(paragraph(equipped[slot].name));addAll(lines(""))
-                if(choice==null) addAll(lines("上段で枠を選び", "中央から技を選ぶ", "", "2〜5：技能", "6：奥義"))
+                if(choice==null) addAll(lines("上段で枠を選び", "中央から技を選ぶ", "", "2〜5：技能", "6：ウルト"))
                 else if(!changed) addAll(lines("この枠に装備済み"))
                 else {
                     add(emphasis("変更後"));addAll(paragraph(preview.name))
