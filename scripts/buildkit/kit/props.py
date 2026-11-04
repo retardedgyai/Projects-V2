@@ -358,3 +358,89 @@ def lighthouse(x, z, g, r=4, h=22):
             for yy in range(ry, ry + hh): put(x + i, yy, z + j, full('deepslate_tiles'))
             put(x + i, ry + hh, z + j, slab('deepslate_tiles') if d > 0.5 else full('deepslate_tiles'))
     put(x, ry + 7, z, fence('dark_oak_planks')); put(x, ry + 8, z, LANTERN)
+
+
+# ---- 高床の茅葺き小屋：白っぽい木の柱と床、背と片脇は布、屋根は干し草を段に積んだ寄棟（軒は1マス出す） [南の港 11/04]
+def hut(x0, z0, y, w=7, d=6, cloth='red_wool', bed=-4, open_side='s'):
+    """(x0, z0) は床の北西の角、y は床の高さ。bed は柱を下ろす底の高さ。open_side の面は開けて、ほかの面は腰の高さまで板の手すり。"""
+    for x in range(x0, x0 + w):
+        for z in range(z0, z0 + d):
+            put(x, y, z, full('birch_planks'))
+            edge = x in (x0, x0 + w - 1) or z in (z0, z0 + d - 1)
+            corner = x in (x0, x0 + w - 1) and z in (z0, z0 + d - 1)
+            if corner or edge and ((x - x0) % 3 == 0 and z in (z0, z0 + d - 1) or (z - z0) % 3 == 0 and x in (x0, x0 + w - 1)):
+                for yy in range(bed + 1, y): put(x, yy, z, log('stripped_birch_log'))
+                for yy in range(y + 1, y + 4): put(x, yy, z, log('stripped_birch_log'))
+            elif edge:
+                side = 'n' if z == z0 else 's' if z == z0 + d - 1 else 'w' if x == x0 else 'e'
+                if side == open_side: continue
+                if side == 'n': put(x, y + 1, z, trap('birch_trapdoor', 's')); put(x, y + 2, z, {'s': 'trap', 't': cloth, 'f': 's'}); put(x, y + 3, z, {'s': 'trap', 't': cloth, 'f': 's'})
+                else: put(x, y + 1, z, fence('birch_planks'))
+    ry = y + 4
+    k = -1
+    while True:                                                             # 屋根：段ごとに1マス内へ。最初の段は軒として外へ1マス
+        xa, xb, za, zb = x0 + k, x0 + w - 1 - k, z0 + k, z0 + d - 1 - k
+        if xa > xb or za > zb: break
+        for x in range(xa, xb + 1):
+            for z in range(za, zb + 1):
+                if k == -1 or x in (xa, xb) or z in (za, zb) or xb - xa <= 1 or zb - za <= 1:
+                    put(x, ry + k + 1, z, full('hay_block_side', top='hay_block_top'))
+        k += 1
+    put(x0 + w // 2, y + 3, z0 + d // 2, HANG)
+
+
+# ---- 旗の綱：2点の間に細い綱（上のトラップドア）を張り、1マスおきに色の布を下げる [南の港 11/04]
+def bunting(a, b, y, colors=('red_wool', 'yellow_wool', 'light_blue_wool', 'white_wool'), sag=2):
+    """a, b = (x, z)。綱は真ん中で sag だけ下がる。旗は綱の下のマスに縦の薄い布。"""
+    import math as _m
+    n = int(max(abs(b[0] - a[0]), abs(b[1] - a[1])))
+    f = 'n' if abs(b[0] - a[0]) >= abs(b[1] - a[1]) else 'e'
+    for i in range(n + 1):
+        t = i / max(1, n)
+        x = int(round(a[0] + (b[0] - a[0]) * t)); z = int(round(a[1] + (b[1] - a[1]) * t))
+        yy = y - int(round(sag * _m.sin(_m.pi * t)))
+        if get(x, yy, z) is None: put(x, yy, z, trap('spruce_trapdoor', 'top'))
+        if i % 2 == 1 and get(x, yy - 1, z) is None: put(x, yy - 1, z, {'s': 'trap', 't': colors[(i // 2) % len(colors)], 'f': f})
+
+
+# ---- 帆船：長さ n の船体を z 方向に。腹は暗い木で太く、舳先は細く上がり、艫は一段高い楼。帆柱2本と白い大きな帆（赤い帯） [南の港 11/04]
+def ship(x, z0, wy, n=32, wmax=5):
+    """x は船の芯、z0 は舳先（北）の端、wy は水面の高さ。甲板は wy+3。"""
+    import math as _m
+    dk = wy + 3
+    for k in range(n):
+        t = k / (n - 1)
+        hw = wmax * min(1.0, _m.sin(_m.pi * min(1.0, t * 1.15)) ** 0.6 + 0.15) if t < 0.95 else wmax * 0.7
+        hw = max(1.0, hw if t > 0.15 else wmax * (t / 0.15) ** 0.7 + 0.6)
+        z = z0 + k
+        bow = max(0, int(round((0.18 - t) * 18))) if t < 0.18 else 0                  # 舳先は上がる
+        stern = 3 if t > 0.82 else 0                                                   # 艫の楼
+        top = dk + bow
+        for i in range(-int(hw), int(hw) + 1):
+            d = abs(i) / max(0.5, hw)
+            bot = wy - 2 + int(round(d * d * 2))                                       # 腹は丸く
+            for yy in range(bot, top + 1):
+                shell = abs(i) == int(hw) or yy == bot
+                if shell: put(x + i, yy, z, full('dark_oak_planks' if yy != dk - 1 else 'spruce_planks'))
+                elif yy == top: put(x + i, yy, z, full('spruce_planks' if bow == 0 else 'dark_oak_planks'))
+                else: put(x + i, yy, z, None) if yy > wy else put(x + i, yy, z, full('dark_oak_planks'))
+            if abs(i) == int(hw):
+                put(x + i, top + 1, z, fence('dark_oak_planks'))
+        if stern:                                                                      # 艫の楼：甲板の上に3段、窓、上に手すり
+            for i in range(-int(hw), int(hw) + 1):
+                for yy in range(dk + 1, dk + stern + 1):
+                    wall = abs(i) == int(hw) or k == n - 1 or k == int(0.82 * (n - 1)) + 1
+                    if wall: put(x + i, yy, z, {'s': 'pane', 't': 'glass', 'ax': 'z' if abs(i) == int(hw) else 'x'} if yy == dk + 2 and (k + i) % 3 == 0 else full('dark_oak_planks'))
+                put(x + i, dk + stern + 1, z, full('spruce_planks'))
+                if abs(i) == int(hw) or k == n - 1: put(x + i, dk + stern + 2, z, fence('dark_oak_planks'))
+    put(x, dk + 2 + 8, z0 + 1, fence('dark_oak_planks'))                              # 舳先の斜檣の先
+    for (mz, mh, sw) in ((z0 + int(n * 0.36), 20, 6), (z0 + int(n * 0.64), 17, 5)):  # 帆柱と帆
+        for yy in range(dk + 1, dk + mh + 1): put(x, yy, mz, log('dark_oak_log'))
+        put(x, dk + mh + 1, mz, {'s': 'trap', 't': 'red_wool', 'f': 'e'})
+        for (yt, half) in ((dk + mh - 1, sw), (dk + mh - 9, sw + 1)):
+            for i in range(-half - 1, half + 2): put(x + i, yt, mz, log('dark_oak_log', 'x'))
+            for yy in range(yt - 7, yt):
+                for i in range(-half, half + 1):
+                    c = 'red_wool' if yy == yt - 4 else 'white_wool'
+                    put(x + i, yy, mz + 1, {'s': 'trap', 't': c, 'f': 'n'})
+    put(x, dk + 1, z0 + n // 2, BARREL); put(x + 1, dk + 1, z0 + n // 2, BARREL); put(x - 1, dk + 1, z0 + n // 2 + 1, CRATE)
