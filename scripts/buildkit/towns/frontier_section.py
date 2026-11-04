@@ -81,9 +81,11 @@ def build(X0, Z0, X1, Z1, logs=20):
         return 'big' if rr < 0.015 else 'oak' if rr < 0.8 else 'birch'
     def skip(x, z):
         st = REG[int(RG[z, x])]['style']; a = slope(x, z)[0]
-        return a >= 35 or st in ('volcano', 'harbor', 'cliffs') or GR[z, x] in (G['sand'], G['gravel'], G['rock'], G['basalt'])
+        if st == 'harbor' and math.hypot(x - REG[0]['x'], z - REG[0]['z']) < 60: return True     # 町の敷地は空ける（外は林と並木）
+        return a >= 35 or st in ('volcano', 'cliffs') or GR[z, x] in (G['sand'], G['gravel'], G['rock'], G['basalt'])
     def clear(x, z):
         st = REG[int(RG[z, x])]['style']
+        if st == 'harbor': return vnoise(x, z, 45, 23) < 0.68                                   # 港の外は林が点々（草原の7割は空ける）
         return (st in ('meadow', 'highland') and vnoise(x, z, 40, 21) < 0.62) or (st == 'marsh' and vnoise(x, z, 30, 22) < 0.5)
     T.TRAIL = getattr(T, 'TRAILC', set())                                                    # 小道は木を置かない（woods は TRAIL の両脇2マスを空ける）
     POI = [p for p in INFO['pois'] if X0 + 6 <= p['x'] <= X1 - 6 and Z0 + 6 <= p['z'] <= Z1 - 6]

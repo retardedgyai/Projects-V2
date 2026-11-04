@@ -245,6 +245,9 @@ def secret(x, z, g, rng, get_h, style):
         put(x, g + 1, z, log('oak_log')); put(x, g + 2, z, full('carved_pumpkin') if False else log('stripped_oak_log')); put(x, g + 3, z, slab('oak_planks'))
     elif style == 'snow':                                                                            # 凍った鐘
         put(x, g + 1, z, full('packed_ice')); put(x, g + 2, z, full('blue_ice')); put(x, g + 3, z, P.LANTERN)
+    elif style == 'harbor':                                                                          # 開拓の碑（石の台に2段の碑と冠、脇に灯り）
+        put(x, g + 1, z, full('stone_bricks')); put(x, g + 2, z, full('chiseled_stone_bricks')); put(x, g + 3, z, slab('stone_bricks'))
+        put(x + 1, g + 1, z, stair('stone_bricks', 'w')); put(x - 1, g + 1, z, stair('stone_bricks', 'e')); put(x, g + 1, z + 1, P.LANTERN)
     elif style == 'volcano':
         put(x, g + 1, z, full('obsidian')); put(x, g + 2, z, full('crying_obsidian'))
     else:                                                                                            # 牙の石・羽の碑

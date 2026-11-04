@@ -312,6 +312,8 @@ for i, (key, name, style, tier, cx, cz, fl, gid) in enumerate(REG):
     pts.append(b_)
     if math.hypot(a_[0] - b_[0], a_[1] - b_[1]) < 40: pts.append(road_near(cx, cz + 60))
     TRAILS['loop_' + key] = pts
+TRAILS['loop_harbor_w'] = [(492, 858), (450, 850), (395, 862), (360, 840), (390, 805), (430, 788)]   # 港の小道：町から西の浜と丘を回って街道へ（最初の寄り道）
+TRAILS['loop_harbor_e'] = [(572, 796), (565, 840), (590, 880), (628, 862), (632, 808)]               # 東：川の向こうは街道から入って浜と丘の陰を回る（橋がまだ無いので川を渡らない）
 TRAILS['cross_deitan_hitsuji'] = [(225, 790), (210, 700), (250, 640), (290, 600)]          # 横の近道（数珠の間をつなぐ）
 TRAILS['cross_shunrai_ryokufu'] = [(785, 780), (790, 700), (750, 640), (720, 600)]
 TRAILS['cross_kirinuma_ryokufu'] = [(560, 520), (640, 560), (700, 580)]
@@ -464,10 +466,11 @@ NAMES = {
     'cliffs': ['鷹の巣', '崖の洞窟', '落石の野', '風の通り穴', '古い見張り台', '赤岩の割れ目'],
     'highland': ['岩の座', '狼の巣穴', '古い烽火台', '石積みの墓', '尾根の祠', '風見の岩'],
     'snow': ['凍った荷車', '雪の洞窟', '崩れた見張り塔', '氷柱の谷間', '遭難者の野営の跡', '霜の祭壇'],
+    'harbor': ['開拓者の墓', '漁師の小屋の跡', '古い見張り台', '丘の洞', '崩れた石垣', '最初の開拓地の跡'],
     'volcano': ['黒曜の割れ目', '溶岩の洞', '焦げた砦の跡', '硫黄の泉', '灰の墓所', '溶岩の橋'],
 }
 SECRET = {'sakura': '石灯籠', 'marsh': '古い錨', 'meadow': '羊の石像', 'forest': '木彫りの梟', 'cliffs': '鷹の羽の碑',
-          'highland': '狼の牙の石', 'snow': '凍った鐘', 'volcano': '黒曜の欠片'}
+          'highland': '狼の牙の石', 'snow': '凍った鐘', 'volcano': '黒曜の欠片', 'harbor': '開拓の碑'}
 hills = [f for f in FEAT if f['kind'] in ('hill', 'vantage', 'dome', 'forthill', 'pinnacle')]
 empty = noise(60, 70) < 0.27                                                                 # 何も置かない所（遊ぶ面積の2〜3割）[theory 12]
 ok = play & ~water & ~ice & ~lava & (S < 20) & ~on_road
@@ -488,7 +491,24 @@ def pick(i, rmin_road, rmax_road, spacing, prefer_hill=True, extra=None, tries=6
     return best
 for i, (key, name, style, tier, cx, cz, fl, gid) in enumerate(REG):
     if style == 'harbor':
-        pois.append({'kind': 'town', 'name': name, 'x': cx, 'z': cz, 'region': key}); pois.append({'kind': 'waypoint', 'name': '港の近道の地点', 'x': cx, 'z': cz - 30, 'region': key}); continue
+        pois.append({'kind': 'town', 'name': name, 'x': cx, 'z': cz, 'region': key}); pois.append({'kind': 'waypoint', 'name': '港の近道の地点', 'x': cx, 'z': cz - 30, 'region': key})
+        # 町の外（町の敷地の半径 55 より外）：最初の2分がいちばん濃い所。町を出て 30 秒で最初の狩り場と名所が見える [single-player 1、mmo 4]
+        town_out = np.hypot(X - cx, Z - cz) > 55
+        prg_state = prg.bit_generator.state                                                  # 港の分の乱数は、ほかの区域の配置をずらさないよう後で戻す
+        for j, (lo_, hi_) in enumerate(((20, 50), (45, 100))):                               # 最初の狩り場：町のすぐ外は Lv1〜2、少し先は Lv2〜4
+            sp = pick(i, lo_, hi_, 32, prefer_hill=False, extra=town_out & (np.hypot(X - cx, Z - cz) < 95 + 45 * j) & (Z < cz - 25))   # 町を出る向き（北）に
+            if sp: pois.append({'kind': 'hunt', 'name': '港の外の狩り場', 'x': sp[0], 'z': sp[1], 'region': key, 'lv': [1 + j, 2 + 2 * j]})
+        names = list(NAMES['harbor']); prg.shuffle(names)
+        for j in range(5):
+            sp = pick(i, 12, 90, 45, extra=town_out & (np.hypot(X - cx, Z - cz) < 170) & (trail_d < 28))   # 港の小道の脇に
+            if not sp: break
+            pois.append({'kind': 'cave' if '洞' in names[j] else 'place', 'name': names[j], 'x': sp[0], 'z': sp[1], 'region': key})
+            a_ = prg.uniform(0, 2 * math.pi); sx, sz = int(sp[0] + math.cos(a_) * 14), int(sp[1] + math.sin(a_) * 14)
+            if ok[sz, sx]: pois.append({'kind': 'small', 'name': '小さな見つけ物', 'x': sx, 'z': sz, 'region': key})
+        sp = pick(i, 15, 60, 40, extra=town_out & (np.hypot(X - cx, Z - cz) < 120) & (Z < coast - 20) & (h > SEA + 2))     # 最初の秘密は町から見える所に（集める遊びを教える）
+        if sp: pois.append({'kind': 'secret', 'name': SECRET['harbor'], 'x': sp[0], 'z': sp[1], 'region': key})
+        prg.bit_generator.state = prg_state
+        continue
     for f in FEAT:                                                                          # 大きな地形は区域の目印
         if f['region'] == key and f.get('name') and f['kind'] not in ('waterfall',):
             pois.append({'kind': 'landmark', 'name': f['name'], 'x': int(f['x']), 'z': int(f['z']), 'region': key})
@@ -533,7 +553,7 @@ for i, (key, name, style, tier, cx, cz, fl, gid) in enumerate(REG):
         sp = pick(i, lo_, hi_, 40, prefer_hill=True)
         if sp: pois.append({'kind': 'secret', 'name': SECRET[style], 'x': sp[0], 'z': sp[1], 'region': key})
 # 小さな見つけ物を散らす：45〜60マスおき、何も無い所は除く（印は地図に出さない種類）
-cand = np.argwhere(ok & ~empty & (region != reg('harbor')))
+cand = np.argwhere(ok & ~empty & ~((region == reg('harbor')) & (np.hypot(X - REG[0][4], Z - REG[0][5]) < 55)))   # 町の敷地だけ除く
 GRID = {}
 for p in pois: GRID.setdefault((p['x'] // 50, p['z'] // 50), []).append((p['x'], p['z']))
 def free50(x, z):
@@ -573,6 +593,9 @@ def visible_from(x, z, rmax=150):
 pts = np.argwhere(play & ~water)[::997]
 vis_n = [len(visible_from(int(c[1]), int(c[0]))) for c in pts]
 vis_ok = float(np.mean([1 <= v for v in vis_n])); vis_many = float(np.mean([v >= 5 for v in vis_n]))
+hb = [c for c in np.argwhere(play & ~water & (region == reg('harbor')) & (np.hypot(X - REG[0][4], Z - REG[0][5]) > 55))[::97]]
+hb_n = [len(visible_from(int(c[1]), int(c[0]), 100)) for c in hb]
+print('港の外（町の敷地の外）：100マス以内に行きたい物が見える %.0f%%、平均 %.1f 個' % (np.mean([v >= 1 for v in hb_n]) * 100, np.mean(hb_n)))
 mp = paths['main']; seg_ = np.hypot(np.diff(mp[:, 0]), np.diff(mp[:, 1])); cum = np.concatenate([[0], np.cumsum(seg_)])
 seen_all = set(); last = 0.0; gaps = []
 for dist in np.arange(0, cum[-1], 8.0):
