@@ -35,7 +35,7 @@ MP = (hexc("143478"), hexc("2c6fe0"), hexc("78bcff")); MP_EMPTY = (10, 16, 36, 2
 BOSS = (hexc("7a1212"), hexc("d23a1e"), hexc("ff9a50")); BOSS_EMPTY = (36, 10, 8, 255)
 RAGE = (hexc("8a3a06"), hexc("f08a1a"), hexc("ffd25a")); RAGE_EMPTY = (44, 30, 20, 255)
 TRAIL = hexc("f6e2d2")
-BARRIER = (hexc("e3a91c"), hexc("ffe066"))
+BARRIER = (hexc("b9c2cf"), hexc("f4f7fb"))  # white, as in LoL (Creator 2026-11-04)
 BUFF_LINE = hexc("4fd06e")
 
 CLASSES = ("warrior", "ranger", "mage", "assassin", "templar", "healer")

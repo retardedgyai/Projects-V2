@@ -4,20 +4,20 @@ package dev.projects.server.coreloop
 internal object CoreWarriorSkillPresentation {
     data class Identity(val shortName: String, val role: String, val use: String)
     val skills = mapOf(
-        "dash" to Identity("轟進", "獣を溜める・突進", "押している間走って敵を運び、離すと肩で吹き飛ばす"),
-        "slam" to Identity("地割り", "獣を使う・重撃", "獣を全部使って地を割る。3段目の直後なら速い"),
+        "dash" to Identity("轟進", "獣を溜める・突進", "一気に走り抜けて、すれ違う敵を斬る"),
+        "slam" to Identity("地割り", "獣を使う・重撃", "獣を全部使って地を割る。獣3つで全力の一振り"),
         "whirl" to Identity("狂乱", "獣を使う・連撃", "踏み込みながら振り続け、最後に振り下ろす"),
-        "war_guard" to Identity("天落とし", "獣を使う・引き寄せ", "高く跳んで叩き落とし、周りの敵を足元へ引き寄せる"),
+        "war_guard" to Identity("天落とし", "獣を使う・とどめ", "跳びかかって叩き込む。浮いた敵・倒れたボスに2倍"),
         "war_wound" to Identity("跳び叩き", "移動・着地", "狙った地点へ跳び、着地の周りを叩いて止める"),
-        "war_counter" to Identity("大地崩し", "獣を使う・踏ん張り", "突き立てて敵を引きつけ、受けた分だけ大きく砕く"),
-        "war_cry" to Identity("引き摺り", "獣を溜める・巻き込み", "大剣を引きずって歩き、引っかけた敵をまとめて叩きつける"),
+        "war_counter" to Identity("大地崩し", "使えない技", "（引退）"),
+        "war_cry" to Identity("受け止め", "獣を溜める・守り", "シールドで受けるほど大剣が熱く、殴りが強くなる"),
         "war_breach" to Identity("斬り上げ", "獣を溜める・打ち上げ", "真上へ振り上げて打ち上げ、地割りで叩き落とす"),
-        "war_ult" to Identity("全力一振", "ウルト・溜め", "押して溜め、離すと踏み込んで渾身の一振り"),
+        "war_ult" to Identity("全力一振", "使えない技", "（地割りの獣3つになった）"),
         "war_banner" to Identity("狂戦士甲冑", "ウルト・暴走", "10秒、CCも怯みも効かず速く、獣が2倍で溜まる"),
         "war_awaken" to Identity("獣の目覚め", "ウルト・超重力", "獣3つで8秒。障壁と硬さ、周りの敵を遅くして引き寄せる")
     )
-    // Rows: enter or heavy / crowd or reach / hold. Retired catalog entries (5, 6, 7) are not offered.
-    val candidateOrder = listOf(0, 1, 4, 7, 6, 2, 3, 5)
+    // Rows: enter or heavy / crowd or reach / hold. The retired 大地崩し (5) is not offered.
+    val candidateOrder = listOf(0, 1, 4, 7, 6, 2, 3)
     val candidateSlots = listOf(9, 14, 18, 23, 27, 32, 36, 41)
     val loadoutSlots = listOf(0, 2, 4, 6, 8)
 
@@ -34,8 +34,8 @@ internal object CoreWarriorSkillPresentation {
             add(identity.role)
             add(identity.use)
             add("")
-            if (s.icon == CoreWarriorRules.ARMOR || s.icon == CoreWarriorRules.AWAKEN) {
-                // Buff ultimates: their catalog tooltip is already short (no damage, no shield for allies).
+            if (s.icon == CoreWarriorRules.ARMOR || s.icon == CoreWarriorRules.AWAKEN || s.icon == CoreWarriorRules.BRACE) {
+                // Self buffs: their catalog tooltip is already short (no damage, no shield for allies).
                 add("自分の強化")
                 addAll(mechanical.drop(1))
                 return@buildList

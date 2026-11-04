@@ -28,8 +28,8 @@ internal object CoreCombatFeel {
         CoreClass.MAGE, CoreClass.HEALER -> Profile(6, 0, immediateNormal = false, recovery = 5, attackBreaksGuard = true)
     }
     fun recovery(job: CoreClass, s: CoreSkillDefinition) = when {
-        s.icon == "dash" || s.icon == "war_wound" -> 3
-        s.icon in setOf("war_breach", "war_cry", "war_banner", "war_awaken") -> 4
+        s.icon == "dash" || s.icon == "war_wound" || s.icon == "war_cry" -> 3
+        s.icon in setOf("war_breach", "war_banner", "war_awaken") -> 4
         s.icon == CoreWarriorRules.FRENZY -> 6
         s.icon == CoreWarriorRules.SHATTER -> 7
         s.motion == CoreSkillMotion.GUARD -> 0
@@ -56,47 +56,46 @@ internal object CoreCombatFeel {
  */
 internal object CoreWarriorRules {
     /** Skills that take every stack; everything else builds. */
-    val spenders = setOf("slam", FRENZY, SKYFALL, SHATTER, FULL_SWING)
+    val spenders = setOf("slam", FRENZY, SKYFALL)
     const val FRENZY = "whirl"        // 狂乱
     const val SKYFALL = "war_guard"   // 天落とし
-    const val SHATTER = "war_counter" // 大地崩し
+    const val SHATTER = "war_counter" // 大地崩し (retired 2026-11-04)
     const val LAUNCHER = "war_breach" // 斬り上げ (builds)
-    const val DRAG = "war_cry"        // 引き摺り (builds)
-    const val FULL_SWING = "war_ult"  // 全力の一振り (ultimate, spends)
+    const val BRACE = "war_cry"       // 受け止め (builds; takes the retired 引き摺り's slot and id)
+    const val FULL_SWING = "war_ult"  // 全力の一振り: retired as an ultimate, now 地割り with three stacks (its look stays)
     const val ARMOR = "war_banner"    // 狂戦士の甲冑 (ultimate)
     const val AWAKEN = "war_awaken"   // 獣の目覚め (ultimate)
-    const val RUSH = "dash"           // 轟進 (builds, held)
-    /** Held down (the skill item is a consumable that never finishes); letting go releases them. */
-    val held = setOf(RUSH, FULL_SWING)
+    const val RUSH = "dash"           // 轟進 (builds)
 
-    // Leaning on Lost Ark's Destroyer (Creator 2026-11-03: 「一旦デストロイヤーに寄せてみて」): spending pays a shield,
-    // a committed swing is not stopped, the enemies are pulled in rather than chased, the big blows are held.
+    // First person (Creator 2026-11-04): every skill happens in front of the eyes or moves the body, comes out on
+    // the press, and pays the one who uses it well. Spending still pays a shield (Destroyer's cores).
     /** A spender pays out a shield for the stacks it took (Destroyer's cores): this share of max HP per stack. */
     const val BEAST_SHIELD_PERCENT_PER_STACK = 8.0
     const val BEAST_SHIELD_TICKS = 120
     /** While a spender is out, crowd control does not take hold and blows land at this share. */
     const val SWING_DAMAGE_TAKEN = .7
-    /** 轟進: held, the warrior runs where it looks and carries what it meets; let go, the shoulder crashes. */
-    const val RUSH_MIN_TICKS = 6
-    const val RUSH_MAX_TICKS = 30
+    /** 轟進: a run through what stands in front, on the press; each enemy passed is cut once; blows land at half meanwhile. */
+    const val RUSH_TICKS = 10
     const val RUSH_SPEED = 9.0
-    const val RUSH_HIT_EVERY = 6
-    const val RUSH_HIT_MULTIPLIER = .3
-    const val RUSH_REACH = 2.4
-    const val RUSH_KNOCKBACK_MILLIS = 400L
-    /** 全力の一振り: held up to 2 s; the levels it reaches and what each multiplies; the lunge on release. */
-    val CHARGE_TICKS = listOf(20, 40)
-    val CHARGE_MULTIPLIER = listOf(1.0, 1.5, 2.2)
-    /** Ticks it may be held past full before it swings by itself. */
-    const val CHARGE_GRACE = 10
-    const val CHARGE_LUNGE = 8.0
-    /** 天落とし: the landing pulls in what stands within this. */
-    const val SKYFALL_PULL = 6.0
-    /** 大地崩し: planted this long, taking blows at this share; each blow grows the eruption (radius +1, damage +15%). */
-    const val ENDURE_TICKS = 30
-    const val ENDURE_DAMAGE_TAKEN = .5
-    const val ENDURE_GROWTH_MAX = 3
-    const val ENDURE_GROWTH_PERCENT = 15
+    const val RUSH_REACH = 3.0
+    const val RUSH_DAMAGE_TAKEN = .5
+    /** 地割り with three stacks is 全力の一振り: the crack this long, each enemy in it hit this many times as hard. */
+    const val FULL_SWING_RADIUS = 12.0
+    const val FULL_SWING_MULTIPLIER = 2.0
+    /** 天落とし: kept for the moment the enemy is down. Plain targets take this share; one in the air or broken, this. */
+    const val SKYFALL_PLAIN = .7
+    const val SKYFALL_DOWN = 2.0
+    /**
+     * 受け止め (Creator 2026-11-04, Overwatch's Zarya): a shield of this share of max HP for [BRACE_TICKS]. What it
+     * stops heats the blade: stopping [HEAT_FULL_PERCENT] of max HP makes normal hits [HEAT_MAX_BONUS] harder, cooling
+     * over [HEAT_COOL_TICKS]; every [BRACE_BEAST_PERCENT] of max HP stopped feeds one beast stack. It never heals.
+     */
+    const val BRACE_SHIELD_PERCENT = 20.0
+    const val BRACE_TICKS = 60
+    const val HEAT_FULL_PERCENT = 20.0
+    const val HEAT_MAX_BONUS = .5
+    const val HEAT_COOL_TICKS = 120
+    const val BRACE_BEAST_PERCENT = 10.0
     /** 獣の目覚め (Destroyer's hypergravity): a shield, less taken, no crowd control; around, enemies slow and are drawn in; normal hits speed up. */
     const val AWAKEN_SHIELD_PERCENT = 30.0
     const val AWAKEN_DAMAGE_TAKEN = .8
@@ -117,20 +116,11 @@ internal object CoreWarriorRules {
     /** 全力の一振り's blood burst runs out along the rift over [FULL_SWING_GEYSER_STEPS] ticks, two places a tick. */
     const val FULL_SWING_GEYSER_PULSE = 200
     const val FULL_SWING_GEYSER_STEPS = 8
-    /** 引き摺り: how long the blade is dragged, how fast the warrior walks meanwhile, how far the hook reaches. */
-    const val DRAG_TICKS = 40
-    const val DRAG_SPEED = .8
-    const val DRAG_HOOK = 1.5
-    /** The effect pulse that marks 引き摺り's final swing (the drag's own pulses count up from 1). */
-    const val DRAG_FINISH_PULSE = 99
     /** How long an enemy 斬り上げ threw up counts as in the air for 叩き落とし. */
     const val LAUNCHED_TICKS = 36L
     /** 叩き落とし: 地割り on an enemy 斬り上げ threw up. */
     const val SMASH_DOWN_PERCENT = 50
     const val SMASH_DOWN_STUN_MILLIS = 2000L
-    /** 天落とし: the rings the landing sends out, inside to outside. */
-    val SKYFALL_RINGS = listOf(3.5, 6.0, 8.0)
-    const val SKYFALL_RING_TICKS = 4
     const val BEAST_MAX = 3.0
     /** A building skill that lands, once per cast, whatever it hits (Lost Ark's cores, Creator 2026-10-23). */
     const val BEAST_PER_SKILL = 1.0
@@ -151,23 +141,21 @@ internal object CoreWarriorRules {
     const val FINISHER_BONUS_PERCENT = 30
     /**
      * 地割り by the stacks it took (Creator 2026-10-23): the more beast, the longer and deeper the crack.
-     * 0 ≈4 m, regulars flinch / 1 ≈6 m, a low launch / 2 ≈8 m, launch then stun / 3 ≈8 m, a high launch and a longer
-     * stun, and the crack splits a second time at its head (a second pulse).
+     * 0 ≈4 m, regulars flinch / 1 ≈6 m, a low launch / 2 ≈8 m, launch then stun / 3 is 全力の一振り (Creator 2026-11-04):
+     * the 12 m rift, a high launch and a longer stun, hit [FULL_SWING_MULTIPLIER] times as hard.
      */
     fun slam(definition: CoreSkillDefinition, stacks: Int): CoreSkillDefinition = when (stacks.coerceIn(0, 3)) {
         0 -> definition.copy(radius = 4.0, stunAfterMillis = 0).copy(crowd = CrowdControl.FLINCH, crowdMillis = FLINCH_MILLIS)
         1 -> definition.copy(radius = 6.0, stunAfterMillis = 0).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 450)
         2 -> definition.copy(radius = 8.0, stunAfterMillis = 1500).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 700)
-        else -> definition.copy(radius = 8.0, stunAfterMillis = 2000, pulses = 2).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 1000)
+        else -> definition.copy(radius = FULL_SWING_RADIUS, stunAfterMillis = 2000).copy(crowd = CrowdControl.AIRBORNE, crowdMillis = 1000)
     }
-    /** Every spender by the stacks it took: 地割り reaches further, 狂乱 swings more, 天落とし sends more rings, 大地崩し breaks wider. */
+    /** Every spender by the stacks it took: 地割り reaches further, 狂乱 swings more. */
     fun shape(definition: CoreSkillDefinition, stacks: Int): CoreSkillDefinition {
         val n = stacks.coerceIn(0, 3)
         return when (definition.icon) {
             "slam" -> slam(definition, n)
             FRENZY -> definition.copy(pulses = 2 + n)
-            SKYFALL -> definition.copy(pulses = maxOf(1, n))
-            SHATTER -> definition.copy(radius = 4.0 + n, crowdMillis = 600L + 200L * n)
             else -> definition
         }
     }

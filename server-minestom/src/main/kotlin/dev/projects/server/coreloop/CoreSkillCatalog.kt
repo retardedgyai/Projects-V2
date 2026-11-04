@@ -40,9 +40,9 @@ data class CoreSkillDefinition(
     }
     fun tooltip(sheet: CoreCombatSheet, journey: CoreJourney? = null): List<String> = buildList {
         add(description)
-        if (icon == CoreWarriorRules.ARMOR || icon == CoreWarriorRules.AWAKEN) {
-            // The warrior's buff ultimates: no damage, no allies' shield (SHIELD only places them in the catalog).
-            add(if (icon == CoreWarriorRules.AWAKEN) "獣：3つ使う（3つの時だけ使える）" else "獣：使わない")
+        if (icon == CoreWarriorRules.ARMOR || icon == CoreWarriorRules.AWAKEN || icon == CoreWarriorRules.BRACE) {
+            // The warrior's self buffs: no damage, no allies' shield (SHIELD only places them in the catalog).
+            add(when (icon) { CoreWarriorRules.AWAKEN -> "獣：3つ使う（3つの時だけ使える）"; CoreWarriorRules.BRACE -> "獣：止めた量で溜まる（最大3つ）"; else -> "獣：使わない" })
             add("マナ $mana / 再使用 ${CoreCombatMath.number(cooldownTicks(sheet.mods) / 20.0)}秒")
             return@buildList
         }
@@ -79,7 +79,7 @@ data class CoreSkillDefinition(
         }
         if (journey?.job == CoreClass.WARRIOR && icon in CoreWarriorRules.spenders) {
             add("獣1つごとに威力+${CoreWarriorRules.BEAST_DAMAGE_PERCENT_PER_STACK}%・ダウン中の敵にはさらに+${CoreWarriorRules.BEAST_DOWN_PERCENT_PER_STACK}%")
-            if (icon == "slam") add("獣0：約4m・怯み / 1：約6m・低く打ち上げ / 2：約8m・打ち上げ→スタン / 3：約8m・高く打ち上げ→長いスタン＋2度目の割れ")
+            if (icon == "slam") add("獣0：約4m・怯み / 1：約6m・低く打ち上げ / 2：約8m・打ち上げ→スタン / 3：全力の一振り（12m・2倍・高く打ち上げ→長いスタン）")
             add("振っている間は怯まない")
             if (icon == "slam") add("通常3段目の命中から${CoreCombatMath.number(CoreWarriorRules.FINISHER_TICKS/20.0)}秒以内：発生${CoreCombatMath.number(copy(startup = CoreWarriorRules.FINISHER_STARTUP).startupTicks(sheet)/20.0)}秒・威力+${CoreWarriorRules.FINISHER_BONUS_PERCENT}%")
         }
@@ -119,16 +119,22 @@ object CoreSkillCatalog {
         if (slot == 4) choice in ultimateChoices(job) else slot in 0..3 && choice in normalChoices(job)
     /**
      * Old saves store catalog indices. A retired pick becomes the first selectable skill not already equipped,
-     * keeping slot order, passives and every still-valid pick. Idempotent; the save columns are unchanged.
+     * keeping slot order, passives and every still-valid pick (the ultimate is resolved by [ultimate]). Idempotent;
+     * the save columns are unchanged.
      */
     fun migrate(job: CoreClass, build: CoreClassBuild): CoreClassBuild {
         val picks = build.skills.toMutableList()
         for (slot in picks.indices) if (picks[slot] !in normalChoices(job))
             picks[slot] = normalChoices(job).first { it !in picks }
-        val ultimate = if (build.ultimate in ultimateChoices(job)) build.ultimate else ultimateChoices(job).first()
-        return build.copy(first = picks[0], second = picks[1], third = picks[2], fourth = picks[3], ultimate = ultimate)
+        return build.copy(first = picks[0], second = picks[1], third = picks[2], fourth = picks[3])
     }
-    fun equipped(j: CoreJourney, stats: CoreAffixStats = CoreAffixStats()) = (j.build.skills.map { skills(j.job)[it] } + skills(j.job)[ultimateStart(j.job) + j.build.ultimate]).map { modify(it, j, stats) }
+    /**
+     * The ultimate a build casts. A retired one (the warrior's 全力の一振り, 2026-11-04) stands for the first selectable,
+     * read here rather than rewritten into the save, so every build (and the default one) keeps its stored value.
+     */
+    fun ultimate(job: CoreClass, build: CoreClassBuild) = if (build.ultimate in ultimateChoices(job)) build.ultimate else ultimateChoices(job).first()
+    fun equipped(j: CoreJourney, stats: CoreAffixStats = CoreAffixStats()) = (j.build.skills.map { skills(j.job)[it] } +
+        skills(j.job)[ultimateStart(j.job) + ultimate(j.job, j.build)]).map { modify(it, j, stats) }
     fun modify(s: CoreSkillDefinition, j: CoreJourney, stats: CoreAffixStats): CoreSkillDefinition {
         var pulses = s.pulses
         var power = 1.0
@@ -152,7 +158,7 @@ object CoreSkillCatalog {
             if (gravity > 0) { radius *= 1 + gravity.coerceAtMost(10.0) * .1; power *= .8; notes += "重力MOD" }
         }
         return s.copy(formula = CoreDamageFormula(s.formula.base * power, s.formula.ad * power, s.formula.ap * power),
-            // The 10.5 cap bounds what 余波 grows; it never shrinks a skill that is that wide by itself (全力の一振り, 12).
+            // The 10.5 cap bounds what 余波 grows; it never shrinks a skill that is that wide by itself.
             pulses = pulses.coerceAtMost(8), radius = if (radius > s.radius) radius.coerceAtMost(maxOf(10.5, s.radius)) else radius,
             description = s.description + if (notes.isEmpty()) "" else " / ${notes.joinToString("・")}適用")
     }
@@ -171,21 +177,23 @@ object CoreSkillCatalog {
             // 2026-10 rework (cooldown first): link 5s / heavy 10-12s / situational 16-20s / ultimate 60s.
             // The beast (CoreWarriorRules) never gates a skill: building skills feed it, the slam takes every stack.
             CoreClass.WARRIOR -> listOf(
-                s("轟進", "dash", "押している間、見ている方へ走り続け（最大1.5秒）、ぶつかった敵を押して運ぶ。離すと肩から当たって吹き飛ばす。獣を溜める", CoreSkillMotion.LUNGE, 6.0, 1.2, mana=8, cd=100, startup=3).cc(CrowdControl.FLINCH, 300),
-                s("地割り", "slam", "溜めた獣を全部叩き込んで地を割る。獣が多いほど亀裂が長く、敵は高く打ち上がり長くスタン。獣3つなら亀裂の先でもう一度割れる。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE).cc(CrowdControl.AIRBORNE, 700).copy(stunAfterMillis = 1500),
+                s("轟進", "dash", "見ている方へ一気に走り抜ける（0.5秒）。すれ違う敵を1回ずつ斬り、走っている間は受けるダメージが半分。獣を溜める", CoreSkillMotion.LUNGE, 6.0, 1.2, mana=8, cd=100, startup=3).cc(CrowdControl.FLINCH, 300),
+                s("地割り", "slam", "溜めた獣を全部叩き込んで地を割る。獣が多いほど亀裂が長く、敵は高く打ち上がり長くスタン。獣3つなら全力の一振り：大地が前へ12m割れ、2倍の重さで叩く。通常3段目の直後なら速く重い", CoreSkillMotion.CONE, 20.0, 3.2, mana=12, cd=240, startup=12, gain=0, status=CoreSkillStatus.EXPOSE).cc(CrowdControl.AIRBORNE, 700).copy(stunAfterMillis = 1500),
                 // 狂乱 / 天落とし / 大地崩し (Creator 2026-10-23) take the dropped 押し薙ぎ / 根張り and the retired 返し刃's
                 // slots and ids, so their HUD art slots stay; their icons are still to be drawn.
                 s("狂乱", "whirl", "踏み込みながら続けて振り、最後は真上から2倍の力で振り下ろす。獣の数だけ振りが増える", CoreSkillMotion.CONE, 4.0, .75, mana=12, cd=200, startup=4, gain=0, radius=3.6).cc(CrowdControl.FLINCH, 300),
-                s("天落とし", "war_guard", "高く跳び上がって叩き落とす。着地で周り6mの敵を足元へ引き寄せ、衝撃が輪になって外へ広がる。獣の数だけ輪が増える（最大3重）。空中で少し曲げられる", CoreSkillMotion.CONE, 14.0, 2.4, mana=15, cd=280, startup=6, gain=0, range=CoreWarriorLeap.MAX_REACH, radius=8.0).cc(CrowdControl.STUN, 500),
+                s("天落とし", "war_guard", "狙った先へ高く跳びかかり、真下へ叩き込む。浮いた敵と崩れて倒れたボスには2倍、それ以外には0.7倍。倒れた瞬間まで取っておく技。空中で少し曲げられる", CoreSkillMotion.CONE, 14.0, 2.4, mana=15, cd=320, startup=6, gain=0, range=CoreWarriorLeap.MAX_REACH, radius=3.5).cc(CrowdControl.STUN, 500),
                 // 跳び叩き (Creator 2026-10-22) takes the retired 地走り's slot and id (CoreWarriorLeap).
                 s("跳び叩き", "war_wound", "狙った地点へ弧を描いて跳び、着地の周りを叩いて短くスタン。空中で少し曲げられる。獣を溜める", CoreSkillMotion.CONE, 6.0, 1.4, mana=10, cd=180, startup=4, range=CoreWarriorLeap.MAX_REACH, radius=CoreWarriorLeap.LANDING_RADIUS).cc(CrowdControl.STUN, 600),
-                s("大地崩し", "war_counter", "大剣を地面に突き立てて1.5秒踏ん張り、周りの敵を引きつける。その間は受けるダメージが半分で、受けた打撃の数だけ（最大3）割れが広く重くなる。最後に周り一面を砕いて敵を転ばせる。獣が多いほど広い", CoreSkillMotion.NOVA, 16.0, 2.4, mana=15, cd=320, startup=4, gain=0, radius=5.0).cc(CrowdControl.STUN, 600),
-                // 引き摺り (Creator 2026-10-23) takes the retired 雄叫び's slot and id.
-                s("引き摺り", "war_cry", "大剣を片手で引きずって2秒歩く（自分で動ける）。刃に触れた雑魚は引っかかってついて来て、最後の振り抜きでまとめて叩きつける。獣を溜める", CoreSkillMotion.CONE, 10.0, 1.8, mana=12, cd=240, startup=3, radius=3.6).cc(CrowdControl.STUN, 700),
+                // 大地崩し retired 2026-11-04 (Creator: all around and planted, it reads poorly in first person and adds nothing on a boss).
+                s("大地崩し", "war_counter", "大剣を地面に叩きつけて周り一面を砕く", CoreSkillMotion.NOVA, 16.0, 2.4, mana=15, cd=320, startup=14, gain=0, radius=5.0, retired=true).cc(CrowdControl.STUN, 600),
+                // 受け止め (Creator 2026-11-04, Zarya's barrier) takes the retired 引き摺り's (before it 雄叫び's) slot and id.
+                s("受け止め", "war_cry", "3秒間、最大HPの20%のシールドを張る（動けるし殴れる）。止めた分だけ大剣が熱くなり、通常攻撃が最大+50%（6秒で冷める）。最大HPの10%を止めるごとに獣を1つ溜める", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=10, cd=200, startup=1, radius=0.0, duration=CoreWarriorRules.BRACE_TICKS),
                 // 斬り上げ (Creator 2026-10-23) takes the retired 破城突き's slot and id.
                 s("斬り上げ", "war_breach", "大剣を引きずって真上へ振り上げ、正面の敵を高く打ち上げる。ジャンプを押していれば自分も追って跳ぶ。打ち上げた敵に地割りを当てると叩き落とし。獣を溜める", CoreSkillMotion.CONE, 9.0, 1.8, mana=10, cd=180, startup=8, radius=3.4).cc(CrowdControl.AIRBORNE, 1200),
-                // Ultimates (Creator 2026-10-23): 全力の一振り, 狂戦士の甲冑 and 獣の目覚め. The warrior alone has three.
-                s("全力の一振り", "war_ult", "大剣を担いで溜め（押している間、最大2秒。1秒で1.5倍、2秒で2.2倍）、離すと踏み込んで真上から渾身の一振り。地面が前へ大きく割れ、線上を打ち上げる。獣を全部使う", CoreSkillMotion.CONE, 30.0, 4.0, mana=20, cd=1200, startup=4, gain=0, radius=12.0, ult=true).cc(CrowdControl.AIRBORNE, 1000),
+                // Ultimates: 狂戦士の甲冑 and 獣の目覚め. 全力の一振り is retired (2026-11-04: it is 地割り with three stacks
+                // now) but keeps index 8 for saves and its look.
+                s("全力の一振り", "war_ult", "地割りを獣3つで撃つと出る、大地を前へ大きく割る一振り", CoreSkillMotion.CONE, 30.0, 4.0, mana=20, cd=1200, startup=4, gain=0, radius=12.0, ult=true, retired=true).cc(CrowdControl.AIRBORNE, 1000),
                 s("狂戦士の甲冑", "war_banner", "10秒間、体から血が流れ、鼓動のたびに血しぶきが散る。CCも怯みも効かず、動きと振りが速くなり、獣が2倍の速さで溜まる。代わりに体力が毎秒2%ずつ減る（1で止まる）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=20, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
                 s("獣の目覚め", "war_awaken", "獣3つを使って8秒の超重力に入る。最大HP30%の障壁、受けるダメージ-20%、CCが効かない。周り6mの敵は遅くなり、少しずつ引き寄せられる。通常攻撃は当てるたびに速くなる（最大+50%）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=15, cd=1200, startup=2, gain=0, radius=0.0, duration=160, ult=true))
             // 2026-10-27 rework (docs/development/mage-rework.md): fire, ice, lightning and wind, every spell one button.

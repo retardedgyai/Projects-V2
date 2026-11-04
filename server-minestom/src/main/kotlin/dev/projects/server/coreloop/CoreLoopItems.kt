@@ -11,9 +11,6 @@ import net.minestom.server.entity.Player
 import net.minestom.server.item.ItemStack
 import net.minestom.server.item.Material
 import net.minestom.server.item.component.SwingAnimation
-import net.minestom.server.item.component.Consumable
-import net.minestom.server.item.ItemAnimation
-import net.minestom.server.sound.SoundEvent
 import net.minestom.server.tag.Tag
 import java.util.UUID
 import kotlin.math.roundToInt
@@ -29,12 +26,6 @@ internal object CoreLoopItems {
     val fragmentTag: Tag<String> = Tag.String("projects_core_fragment")
     val silverTag: Tag<Boolean> = Tag.Boolean("projects_core_silver")
     val colors = listOf(NamedTextColor.WHITE, NamedTextColor.GREEN, NamedTextColor.AQUA, NamedTextColor.LIGHT_PURPLE)
-    /**
-     * A skill that is held down (CoreWarriorRules.held): the item is a consumable that never finishes, with no animation
-     * and no eating sound, so the client keeps using it and says when it is let go (as the gathering tools do).
-     */
-    private val HOLD = Consumable(3_600f, ItemAnimation.NONE, SoundEvent.ENTITY_GENERIC_EAT, false, emptyList())
-    fun heldSkill(item: ItemStack) = item.getTag(actionTag)?.startsWith("skill:") == true && item.has(DataComponents.CONSUMABLE)
 
     fun text(value: String, color: NamedTextColor = NamedTextColor.GRAY): Component =
         Component.text(value, color).decoration(TextDecoration.ITALIC, false)
@@ -317,7 +308,6 @@ internal object CoreLoopItems {
             val definition = CoreSkillCatalog.equipped(account.journey, combatSheet.mods)[id]
             val item = CoreSkillTooltip.item(definition, combatSheet, account.journey, packed, !available)
                 .withTag(actionTag, "skill:$id")
-                .let { if (account.journey.job == CoreClass.WARRIOR && definition.icon in CoreWarriorRules.held) it.with(DataComponents.CONSUMABLE, HOLD) else it }
             player.inventory.setItemStack(id + 1, item)
         }
         val potions = account.amount(CoreResource.POTION)

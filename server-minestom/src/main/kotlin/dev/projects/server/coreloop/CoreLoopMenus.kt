@@ -315,7 +315,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             choices.map { IndexedValue(it, candidates[it]) }.drop(selectedPage*4).take(4).forEachIndexed { shown, (i,raw) ->
                 val skill = CoreSkillCatalog.modify(raw, a.journey, sheet.mods)
                 val item = CoreSkillTooltip.item(skill,sheet,a.journey,v.packed)
-                val owned = if(slot == 4) a.journey.build.ultimate == i else a.journey.build.skills[slot] == i
+                val owned = if(slot == 4) CoreSkillCatalog.ultimate(a.journey.job, a.journey.build) == i else a.journey.build.skills[slot] == i
                 val label=when(skill.icon) { "hunt_storm" -> "狩場支配"; "mage_ult" -> "天火術式"; else -> skill.name }
                 tile(v, listOf(18,22,27,31)[shown], 4, label, item,
                     if(choice==i) Tone.SELECTED else if(owned) Tone.PRIMARY else Tone.NEUTRAL, icon=true) {
@@ -385,7 +385,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
             val order=if(slot==4) CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR) else CoreWarriorSkillPresentation.candidateOrder
             order.forEachIndexed { index,i ->
                 val skill=CoreSkillCatalog.modify(candidates[i],a.journey,sheet.mods)
-                val equippedHere=if(slot==4) a.journey.build.ultimate==i else a.journey.build.skills[slot]==i
+                val equippedHere=if(slot==4) CoreSkillCatalog.ultimate(a.journey.job,a.journey.build)==i else a.journey.build.skills[slot]==i
                 val other=if(slot<4) a.journey.build.skills.indexOf(i).takeIf { it>=0 && it!=slot } else null
                 tile(v,CoreWarriorSkillPresentation.candidateSlots[index],4,CoreWarriorSkillPresentation.skills.getValue(skill.icon).shortName,
                     CoreSkillTooltip.item(skill,sheet,a.journey,v.packed,footer=if(equippedHere) "$target に装備中" else
