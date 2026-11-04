@@ -308,3 +308,53 @@ def cart(x, z, g, f):
         cx, cz = at(x, z, f, fw, rt); put(cx, g + 2, cz, b)
     cx, cz = at(x, z, f, 0, 1); put(cx, g + 2, cz, LANTERN)
     return cells
+
+
+# ---- 灯台：海に立つ岩の上の白い塔。下ほど太く、赤い帯2本、縦長の窓、持ち送りの回廊、ガラスの火の部屋、尖った屋根 [港町 11/04]
+def lighthouse(x, z, g, r=4, h=22):
+    """(x, z) は塔の芯、g は立つ岩の上面。塔は下で半径 r、上で r-1。上に回廊（g+h+1）・火の部屋・屋根。"""
+    import math as _m
+    def ring(cx, cz, rad, fn):
+        for i in range(-int(rad) - 2, int(rad) + 3):
+            for j in range(-int(rad) - 2, int(rad) + 3):
+                d = _m.hypot(i, j)
+                fn(cx + i, cz + j, i, j, d)
+    for k in range(2):                                                      # 土台：2段の石の台、上の段の縁は階段
+        rad = r + 2 - k
+        ring(x, z, rad, lambda X, Z, i, j, d: put(X, g + 1 + k, Z, full('stone_bricks' if (i * 3 + j) % 5 else 'mossy_stone_bricks')) if d <= rad + 0.3 else None)
+    for y in range(g + 3, g + h + 1):
+        t = (y - g - 3) / max(1, h - 3)
+        rad = r - t * 1.0
+        band = (y - g) in (8, 9, 16, 17)
+        lvl = (y - g) in (5, 6, 12, 13, 19, 20)
+        def wall(X, Z, i, j, d, rad=rad, band=band, lvl=lvl):
+            if not (rad - 1.0 < d <= rad + 0.4): return
+            win = lvl and ((i == 0 and abs(j) > 0) or (j == 0 and abs(i) > 0))
+            if win: put(X, y, Z, {'s': 'pane', 't': 'glass', 'ax': 'x' if i == 0 else 'z'}); return
+            put(X, y, Z, full('red_sandstone' if band else 'calcite'))
+        ring(x, z, rad, wall)
+        ring(x, z, rad, lambda X, Z, i, j, d, rad=rad: put(X, y, Z, None) if d <= rad - 1.0 and get(X, y, Z) is None else None)
+    gy = g + h + 1
+    rt = r - 1.0
+    ring(x, z, rt + 1, lambda X, Z, i, j, d: put(X, gy - 1, Z, stair('stone_bricks', 'w' if i > abs(j) else 'e' if -i > abs(j) else 's' if j > 0 else 'n', 'top')) if rt + 0.4 < d <= rt + 1.4 else None)   # 持ち送り
+    def gal(X, Z, i, j, d):
+        if d <= rt + 1.4:
+            put(X, gy, Z, full('polished_andesite' if d > rt - 0.5 else 'stone_bricks'))
+            if d > rt + 0.5: put(X, gy + 1, Z, fence('dark_oak_planks'))
+    ring(x, z, rt + 1, gal)
+    for y in range(gy + 1, gy + 4):                                         # 火の部屋：四隅の柱とガラス、真ん中に火の籠
+        for i in range(-2, 3):
+            for j in range(-2, 3):
+                if max(abs(i), abs(j)) == 2:
+                    put(x + i, y, z + j, log('dark_oak_log') if abs(i) == 2 and abs(j) == 2 else {'s': 'pane', 't': 'glass', 'ax': 'z' if abs(i) == 2 else 'x'})
+    put(x, gy + 1, z, full('netherrack')); put(x, gy + 2, z, cross('fire_0'))
+    for (i, j) in ((1, 1), (-1, 1), (1, -1), (-1, -1)): put(x + i, gy + 1, z + j, full('chiseled_stone_bricks')); put(x + i, gy + 2, z + j, LANTERN)
+    ry = gy + 4                                                             # 屋根：軒は1マス出し、芯からの距離で柱を積んで尖らせる
+    for i in range(-3, 4):
+        for j in range(-3, 4):
+            d = _m.hypot(i, j)
+            if d > 3.3: continue
+            hh = int(round((3.3 - d) * 1.7))
+            for yy in range(ry, ry + hh): put(x + i, yy, z + j, full('deepslate_tiles'))
+            put(x + i, ry + hh, z + j, slab('deepslate_tiles') if d > 0.5 else full('deepslate_tiles'))
+    put(x, ry + 7, z, fence('dark_oak_planks')); put(x, ry + 8, z, LANTERN)
