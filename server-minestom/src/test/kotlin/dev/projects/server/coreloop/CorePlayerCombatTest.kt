@@ -411,7 +411,10 @@ class CorePlayerCombatTest {
             assertEquals(icon,h.actor.skillDefinitions[slot].icon)
             h.actor.classState.gain(if(Regex("_b[0-3]$").containsMatchIn(run)) run.last().digitToInt().toDouble() else 100.0,h.journey.job)
             val frames=mutableListOf<Map<String,Any>>()
+            // The swing in hand (beat, ticks into it, its length, its blow), for the first-person preview.
+            val combo=CorePlayerCombat::class.java.getDeclaredField("normal").apply { isAccessible=true }.get(h.actor) as GreatswordCombo
             fun record() { frames+=mapOf("player" to xyz(h.player.position)+h.player.position.yaw().toDouble(),
+                "swing" to (combo.swing?.let { listOf(it.beat, combo.elapsed, it.totalTicks, it.impactTick) } ?: emptyList()),
                 "targets" to h.combat.combatTargets().map { xyz(it.position) },
                 "displays" to h.instance.entities.filter { it.entityType==net.minestom.server.entity.EntityType.ITEM_DISPLAY }.mapNotNull { e ->
                     val m=e.entityMeta as net.minestom.server.entity.metadata.display.ItemDisplayMeta
@@ -427,9 +430,9 @@ class CorePlayerCombatTest {
             h.actor.skill(slot)
             // 跳び叩き: replay the arc the client flies (CoreWarriorLeap.path) so the preview shows the body in the air.
             var arc: Iterator<net.minestom.server.coordinate.Pos>? = null
-            repeat(76) { step -> record()
-                // 衝撃: three swings after the press, so the preview shows the second blows coming down.
-                if (icon == CoreWarriorRules.IMPACT && step in setOf(12, 30, 48)) h.actor.attack()
+            repeat(if (icon == CoreWarriorRules.IMPACT) 96 else 76) { step -> record()
+                // 衝撃: clicking on after the press, so the preview shows the three beats and their second blows.
+                if (icon == CoreWarriorRules.IMPACT && step in 10..54) h.actor.attack()
                 h.ticks(1)
                 if (icon == CoreWarriorLeap.ICON && arc == null && h.player.velocity.y() > 0)
                     arc = CoreWarriorLeap.path(h.player.position, h.player.velocity.div(20.0)).iterator()
