@@ -444,3 +444,31 @@ def ship(x, z0, wy, n=32, wmax=5):
                     c = 'red_wool' if yy == yt - 4 else 'white_wool'
                     put(x + i, yy, mz + 1, {'s': 'trap', 't': c, 'f': 'n'})
     put(x, dk + 1, z0 + n // 2, BARREL); put(x + 1, dk + 1, z0 + n // 2, BARREL); put(x - 1, dk + 1, z0 + n // 2 + 1, CRATE)
+
+
+# ---- 依頼の掲示板：2本の柱に横木、板の面に紙（白樺のトラップドア）を散らし、上に小屋根とランタン [冒険者の街]
+def notice_board(x, z, g, f='s'):
+    """(x, z) は左の柱。f は板の面が向く向き。幅4。"""
+    rx, rz = D[RIGHT[f]]
+    for s in (0, 3):
+        for y in range(g + 1, g + 5): put(x + rx * s, y, z + rz * s, log('dark_oak_log'))
+    for s in (1, 2):
+        for y in (g + 2, g + 3): put(x + rx * s, y, z + rz * s, full('spruce_planks'))
+    fx, fz = D[f]
+    for (s, y) in ((1, g + 2), (2, g + 3), (1, g + 3)):                    # 紙
+        put(x + rx * s + fx, y, z + rz * s + fz, trap('birch_trapdoor', OPP[f]))
+    for s in range(-1, 5):                                                 # 小屋根：板の上に階段を前後に
+        put(x + rx * s, g + 5, z + rz * s, stair('dark_oak_planks', OPP[f]))
+        put(x + rx * s - fx, g + 5, z + rz * s - fz, stair('dark_oak_planks', f))
+    put(x + rx * 1, g + 1, z + rz * 1, slab('spruce_planks')); put(x + rx * 2, g + 1, z + rz * 2, slab('spruce_planks'))
+    return [(x + rx * s, z + rz * s) for s in range(4)] + [(x + rx * s + fx, z + rz * s + fz) for s in (1, 2)]
+
+
+# ---- 訓練の的：柵の柱に干し草の胴、くり抜いたカボチャの頭、横木の腕 [冒険者の街の訓練場]
+def dummy(x, z, g, f='s'):
+    rx, rz = D[RIGHT[f]]
+    put(x, g + 1, z, fence('spruce_planks'))
+    put(x, g + 2, z, HAY)
+    put(x, g + 3, z, PUMPKIN)
+    put(x + rx, g + 2, z + rz, fence('spruce_planks')); put(x - rx, g + 2, z - rz, fence('spruce_planks'))
+    return [(x, z)]
