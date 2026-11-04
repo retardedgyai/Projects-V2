@@ -77,7 +77,7 @@ data class CoreHudState(
 )
 
 enum class CoreHudBuffKind(val glyph: String, val label: String) {
-    WHETSTONE("whetstone", "砥石"), POTION("potion", "回復薬"), DODGE("dodge", "回避"),
+    WHETSTONE("whetstone", "砥石"), POTION("potion", "回復薬"), DODGE("dodge", "回避"), HEAT("heat", "熱"),
 }
 
 /** [cooldown] buffs darken while recovering; others are active effects counting down. */

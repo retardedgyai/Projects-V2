@@ -82,20 +82,24 @@ internal object CoreWarriorRules {
     /** 地割り with three stacks is 全力の一振り: the crack this long, each enemy in it hit this many times as hard. */
     const val FULL_SWING_RADIUS = 12.0
     const val FULL_SWING_MULTIPLIER = 2.0
-    /** 天落とし: kept for the moment the enemy is down. Plain targets take this share; one in the air or broken, this. */
+    /**
+     * 天落とし: a low, fast dive onto the aimed enemy (unlike 跳び叩き's high arc to a point), kept for the moment the enemy is
+     * down. Plain targets take this share; one in the air or broken, this. One in the air when the dive leaves counts
+     * as in the air until it lands.
+     */
     const val SKYFALL_PLAIN = .7
     const val SKYFALL_DOWN = 2.0
     /**
      * 受け止め (Creator 2026-11-04, Overwatch's Zarya): a shield of this share of max HP for [BRACE_TICKS]. What it
      * stops heats the blade: stopping [HEAT_FULL_PERCENT] of max HP makes normal hits [HEAT_MAX_BONUS] harder, cooling
-     * over [HEAT_COOL_TICKS]; every [BRACE_BEAST_PERCENT] of max HP stopped feeds one beast stack. It never heals.
+     * over [HEAT_COOL_TICKS]; every third of the shield stopped feeds one beast stack. It never heals.
      */
     const val BRACE_SHIELD_PERCENT = 20.0
     const val BRACE_TICKS = 60
     const val HEAT_FULL_PERCENT = 20.0
     const val HEAT_MAX_BONUS = .5
     const val HEAT_COOL_TICKS = 120
-    const val BRACE_BEAST_PERCENT = 10.0
+    const val BRACE_BEAST_PERCENT = BRACE_SHIELD_PERCENT / 3  // a broken-through shield is all three stacks
     /** 獣の目覚め (Destroyer's hypergravity): a shield, less taken, no crowd control; around, enemies slow and are drawn in; normal hits speed up. */
     const val AWAKEN_SHIELD_PERCENT = 30.0
     const val AWAKEN_DAMAGE_TAKEN = .8

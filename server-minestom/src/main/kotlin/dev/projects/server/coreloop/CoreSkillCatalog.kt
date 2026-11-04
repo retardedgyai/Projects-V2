@@ -182,13 +182,13 @@ object CoreSkillCatalog {
                 // 狂乱 / 天落とし / 大地崩し (Creator 2026-10-23) take the dropped 押し薙ぎ / 根張り and the retired 返し刃's
                 // slots and ids, so their HUD art slots stay; their icons are still to be drawn.
                 s("狂乱", "whirl", "踏み込みながら続けて振り、最後は真上から2倍の力で振り下ろす。獣の数だけ振りが増える", CoreSkillMotion.CONE, 4.0, .75, mana=12, cd=200, startup=4, gain=0, radius=3.6).cc(CrowdControl.FLINCH, 300),
-                s("天落とし", "war_guard", "狙った先へ高く跳びかかり、真下へ叩き込む。浮いた敵と崩れて倒れたボスには2倍、それ以外には0.7倍。倒れた瞬間まで取っておく技。空中で少し曲げられる", CoreSkillMotion.CONE, 14.0, 2.4, mana=15, cd=320, startup=6, gain=0, range=CoreWarriorLeap.MAX_REACH, radius=3.5).cc(CrowdControl.STUN, 500),
+                s("天落とし", "war_guard", "狙った敵へ低く速く飛びかかり（約0.5秒）、真下へ叩き込む。浮いた敵と崩れて倒れたボスには2倍、それ以外には0.7倍。跳んだ時に浮いていた敵は着地まで浮いた扱い。倒れた瞬間まで取っておく技", CoreSkillMotion.CONE, 14.0, 2.4, mana=15, cd=320, startup=3, gain=0, range=CoreWarriorLeap.MAX_REACH, radius=3.5).cc(CrowdControl.STUN, 500),
                 // 跳び叩き (Creator 2026-10-22) takes the retired 地走り's slot and id (CoreWarriorLeap).
                 s("跳び叩き", "war_wound", "狙った地点へ弧を描いて跳び、着地の周りを叩いて短くスタン。空中で少し曲げられる。獣を溜める", CoreSkillMotion.CONE, 6.0, 1.4, mana=10, cd=180, startup=4, range=CoreWarriorLeap.MAX_REACH, radius=CoreWarriorLeap.LANDING_RADIUS).cc(CrowdControl.STUN, 600),
                 // 大地崩し retired 2026-11-04 (Creator: all around and planted, it reads poorly in first person and adds nothing on a boss).
                 s("大地崩し", "war_counter", "大剣を地面に叩きつけて周り一面を砕く", CoreSkillMotion.NOVA, 16.0, 2.4, mana=15, cd=320, startup=14, gain=0, radius=5.0, retired=true).cc(CrowdControl.STUN, 600),
                 // 受け止め (Creator 2026-11-04, Zarya's barrier) takes the retired 引き摺り's (before it 雄叫び's) slot and id.
-                s("受け止め", "war_cry", "3秒間、最大HPの20%のシールドを張る（動けるし殴れる）。止めた分だけ大剣が熱くなり、通常攻撃が最大+50%（6秒で冷める）。最大HPの10%を止めるごとに獣を1つ溜める", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=10, cd=200, startup=1, radius=0.0, duration=CoreWarriorRules.BRACE_TICKS),
+                s("受け止め", "war_cry", "3秒間、最大HPの20%のシールドを張る（動けるし殴れる）。止めた分だけ大剣が熱くなり、通常攻撃が最大+50%（6秒で冷める）。シールドの1/3を止めるごとに獣を1つ溜める（割り切れば3つ）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=10, cd=200, startup=1, radius=0.0, duration=CoreWarriorRules.BRACE_TICKS),
                 // 斬り上げ (Creator 2026-10-23) takes the retired 破城突き's slot and id.
                 s("斬り上げ", "war_breach", "大剣を引きずって真上へ振り上げ、正面の敵を高く打ち上げる。ジャンプを押していれば自分も追って跳ぶ。打ち上げた敵に地割りを当てると叩き落とし。獣を溜める", CoreSkillMotion.CONE, 9.0, 1.8, mana=10, cd=180, startup=8, radius=3.4).cc(CrowdControl.AIRBORNE, 1200),
                 // Ultimates: 狂戦士の甲冑 and 獣の目覚め. 全力の一振り is retired (2026-11-04: it is 地割り with three stacks

@@ -1061,7 +1061,7 @@ class CorePlayerCombatTest {
                 val id = h.combat.combatTargets().single().id
                 h.player.teleport(h.player.position.withView(0f, 75f)) // straight down: lands next to the boss
                 val from = h.player.position
-                h.actor.skill(3); h.ticks(8)
+                h.actor.skill(3); h.ticks(4) // the dive leaves after its short wind-up
                 if (broken) h.combat.applyBreak(id, 1000.0, h.player)
                 val before = h.bossHealth()
                 for (p in CoreWarriorLeap.path(from, h.player.velocity.div(20.0), ground = from.y())) { h.player.teleport(p); h.ticks(1) }
@@ -1079,16 +1079,16 @@ class CorePlayerCombatTest {
         h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 6)); h.actor.reset()
         assertEquals(CoreWarriorRules.BRACE, h.actor.skillDefinitions[3].icon)
         h.actor.skill(3); h.ticks(2)
-        val tenth = h.actor.maxHealth * CoreWarriorRules.BRACE_BEAST_PERCENT / 100.0
-        assertEquals(2 * tenth, h.actor.classState.shield, 1e-9)
+        val third = h.actor.maxHealth * CoreWarriorRules.BRACE_BEAST_PERCENT / 100.0
+        assertEquals(3 * third, h.actor.classState.shield, 1e-9)
         val health = h.actor.health
-        h.actor.hurt(tenth, CoreDamageType.TRUE)
+        h.actor.hurt(third, CoreDamageType.TRUE)
         assertEquals(health, h.actor.health, 1e-9) // the shield took it, nothing healed or lost
         assertEquals(1.0, h.actor.resource, 1e-9)
-        h.actor.hurt(tenth * 1.5, CoreDamageType.TRUE)
-        assertEquals(2.0, h.actor.resource, 1e-9)
+        h.actor.hurt(third * 2.5, CoreDamageType.TRUE)
+        assertEquals(3.0, h.actor.resource, 1e-9) // broken through: all three
         assertEquals(0.0, h.actor.classState.shield, 1e-9)
-        assertEquals(health - tenth * .5, h.actor.health, 1e-9)
+        assertEquals(health - third * .5, h.actor.health, 1e-9)
     }
 
     @Test fun `what brace stops heats the blade - normal hits land harder for a while`() {

@@ -27,7 +27,7 @@ internal object CoreWarriorLeap {
     private const val AIR_FRICTION = .91
 
     /** 天落とし jumps high whatever the reach. */
-    const val SKYFALL_APEX = 5.0
+    const val SKYFALL_APEX = 1.6
     /** Arc height for a leap of [reach] blocks: about 2.7 blocks over 6. */
     fun apex(reach: Double) = 1.2 + .25 * reach
 

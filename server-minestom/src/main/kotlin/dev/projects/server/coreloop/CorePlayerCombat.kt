@@ -402,7 +402,7 @@ internal class CorePlayerCombat(
             // 受け止め's heat: embers come off the blade in the right hand, more the hotter it is.
             val f = flatFacing(); val right = Vec(-f.z(), 0.0, f.x())
             vfx.particles(Particle.SMALL_FLAME, player.position.add(0.0, 1.2, 0.0).add(f.mul(.6)).add(right.mul(.45)),
-                1 + (heatNow * 4).toInt(), Vec(.15, .3, .15), .01f)
+                2 + (heatNow * 6).toInt(), Vec(.15, .3, .15), .01f)
         }
         geyser?.let { g ->
             vfx.playSkill(CoreSkillEffect(g.job, g.skill, g.origin, g.direction, pulse = CoreWarriorRules.FULL_SWING_GEYSER_PULSE + geyserStep))
@@ -894,7 +894,8 @@ internal class CorePlayerCombat(
         // The beast let loose on a downed enemy: the window the warrior builds toward.
         if (beastSpender && enemies.isBroken(id)) classMultiplier *= 1 + skillAction!!.empowered * CoreWarriorRules.BEAST_DOWN_PERCENT_PER_STACK / 100.0
         // 受け止め's heat: the blade hits harder with normal swings while it is hot.
-        if (!skill && classId == CoreClass.WARRIOR) classMultiplier *= 1 + CoreWarriorRules.HEAT_MAX_BONUS * heatNow
+        val hot = !skill && classId == CoreClass.WARRIOR && heatNow > .05
+        if (hot) classMultiplier *= 1 + CoreWarriorRules.HEAT_MAX_BONUS * heatNow
         val consumeMark = skill && classId != CoreClass.WARRIOR && classState.marked(id, tickNumber) && definition!!.spend > 0
         if (consumeMark) classMultiplier *= 1.35
         // the spell's elements land only once the hit is taken (a sealed boss, an invulnerable enemy keep no state);
@@ -978,6 +979,11 @@ internal class CorePlayerCombat(
             vfx.impactSound(heavy)
             if (classId == CoreClass.WARRIOR) {
                 if (visualContactsThisTick++ < 3) vfx.normalContact(position, normalDirection)
+                if (hot) {
+                    // The hot blade bites: a burst of fire where it lands, louder the hotter it is.
+                    vfx.particles(Particle.FLAME, position.add(0.0, 1.0, 0.0), 4 + (heatNow * 10).toInt(), Vec(.3, .4, .3), .04f)
+                    sound(SoundEvent.ITEM_FIRECHARGE_USE, .3f + .4f * heatNow.toFloat(), 1.2f)
+                }
             } else vfx.play(GreatswordVisual.HIT, position, normalDirection)
             vfx.holdContact(if (heavy) 3 else 2)
         } else {
@@ -1103,7 +1109,13 @@ internal class CorePlayerCombat(
     private fun leap(action: PendingSkill, high: Boolean = false) {
         val instance = player.instance ?: return
         val eye = player.position.add(0.0, player.eyeHeight, 0.0)
-        val target = CoreWarriorLeap.aim(eye, player.position.direction()) { instance.getBlock(it).solid() }
+        val enemies = encounter()
+        // 天落とし dives onto the aimed enemy; who is in the air as it leaves stays "in the air" until it lands.
+        val prey = if (high && enemies != null) aimedEnemy(action.definition, enemies) else null
+        if (high && enemies != null) for (target in enemies.combatTargets())
+            if (CrowdControl.AIRBORNE in enemies.crowdControl(target.id) && target.distanceTo(player.position) <= CoreWarriorLeap.MAX_REACH + 2)
+                launched[target.id] = maxOf(launched[target.id] ?: -1L, tickNumber + CoreWarriorLeap.MAX_AIR_TICKS)
+        val target = prey?.asVec() ?: CoreWarriorLeap.aim(eye, player.position.direction()) { instance.getBlock(it).solid() }
         val velocity = CoreWarriorLeap.launch(player.position, target, if (high) CoreWarriorLeap.SKYFALL_APEX else null)
         player.velocity = velocity.mul(20.0)  // Minestom velocity is blocks per second
         action.leapTick = tickNumber
@@ -1118,7 +1130,8 @@ internal class CorePlayerCombat(
             val p = enemies.positionOf(target.id) ?: continue
             val d = kotlin.math.hypot(p.x() - centre.x(), p.z() - centre.z())
             if (d > action.definition.radius + target.halfExtent.x() || p.y() - centre.y() > 6.0 || centre.y() - p.y() > 3.0 || !visibleTo(target.id, enemies)) continue
-            val down = CrowdControl.AIRBORNE in enemies.crowdControl(target.id) || enemies.isBroken(target.id)
+            val down = CrowdControl.AIRBORNE in enemies.crowdControl(target.id) || enemies.isBroken(target.id) ||
+                (launched[target.id] ?: -1L) >= tickNumber
             hit(enemies, target.id, if (down) CoreWarriorRules.SKYFALL_DOWN else CoreWarriorRules.SKYFALL_PLAIN, skill = true, skillAction = action)
             if (!actionsValid(enemies, epoch)) return
         }
@@ -1150,15 +1163,7 @@ internal class CorePlayerCombat(
     private fun aimedGround(s: CoreSkillDefinition, enemies: QuestEncounterCombat): Pos {
         val from=player.position.add(0.0,1.0,0.0);val direction=player.position.direction()
         val maximum=minOf(s.range,24.0-s.radius).coerceAtLeast(1.0)
-        val aimed=enemies.combatTargets().mapNotNull { target ->
-            val position=enemies.positionOf(target.id) ?: return@mapNotNull null
-            if(target.parts.isNotEmpty()) return@mapNotNull target.parts.rayHit(from,direction,maximum,.8)
-                ?.takeIf { visibleTo(target.id,enemies) }?.let { position to it }
-            val offset=position.add(0.0,1.0,0.0).sub(from)
-            val along=offset.x()*direction.x()+offset.y()*direction.y()+offset.z()*direction.z()
-            if(along in 0.0..maximum && from.add(direction.mul(along)).distance(position.add(0.0,1.0,0.0)) < target.halfExtent.x()+.8 && visibleTo(target.id,enemies)) position to along else null
-        }.minByOrNull { it.second }
-        if(aimed!=null) return aimed.first
+        aimedEnemy(s, enemies)?.let { return it }
         var previous=from
         for(step in 1..ceil(maximum*4).toInt()) {
             val point=from.add(direction.mul(step*.25))
@@ -1166,6 +1171,19 @@ internal class CorePlayerCombat(
             previous=point
         }
         return player.position.add(flatFacing().mul(minOf(maximum,7.0)))
+    }
+    /** The nearest visible enemy under the crosshair within [s]'s reach, where it stands; null when none is aimed at. */
+    private fun aimedEnemy(s: CoreSkillDefinition, enemies: QuestEncounterCombat): Pos? {
+        val from=player.position.add(0.0,1.0,0.0);val direction=player.position.direction()
+        val maximum=minOf(s.range,24.0-s.radius).coerceAtLeast(1.0)
+        return enemies.combatTargets().mapNotNull { target ->
+            val position=enemies.positionOf(target.id) ?: return@mapNotNull null
+            if(target.parts.isNotEmpty()) return@mapNotNull target.parts.rayHit(from,direction,maximum,.8)
+                ?.takeIf { visibleTo(target.id,enemies) }?.let { position to it }
+            val offset=position.add(0.0,1.0,0.0).sub(from)
+            val along=offset.x()*direction.x()+offset.y()*direction.y()+offset.z()*direction.z()
+            if(along in 0.0..maximum && from.add(direction.mul(along)).distance(position.add(0.0,1.0,0.0)) < target.halfExtent.x()+.8 && visibleTo(target.id,enemies)) position to along else null
+        }.minByOrNull { it.second }?.first
     }
 
     /**
@@ -1507,7 +1525,7 @@ internal class CorePlayerCombat(
         braceStopped += stopped
         heat = maxOf(heatNow, (braceStopped / (maxHealth * CoreWarriorRules.HEAT_FULL_PERCENT / 100.0)).coerceAtMost(1.0))
         heatAt = tickNumber
-        val stacks = (braceStopped / (maxHealth * CoreWarriorRules.BRACE_BEAST_PERCENT / 100.0)).toInt().coerceAtMost(CoreWarriorRules.BEAST_MAX.toInt())
+        val stacks = (braceStopped / (maxHealth * CoreWarriorRules.BRACE_BEAST_PERCENT / 100.0) + 1e-9).toInt().coerceAtMost(CoreWarriorRules.BEAST_MAX.toInt())
         if (stacks > braceStacks) {
             classState.gain((stacks - braceStacks).toDouble(), classId); braceStacks = stacks
             sound(SoundEvent.ENTITY_WARDEN_HEARTBEAT, .8f, .7f + .15f * classState.resource.toInt())
@@ -1535,6 +1553,10 @@ internal class CorePlayerCombat(
         val whetstone = whetstoneUntil - tickNumber
         if (whetstone > 0) add(dev.projects.server.coreloop.ui.CoreHudBuff(dev.projects.server.coreloop.ui.CoreHudBuffKind.WHETSTONE,
             whetstone / 20.0, WHETSTONE_TICKS / 20.0, cooldown = false))
+        // 受け止め's heat, cooling (the tile empties as it cools).
+        val cooling = if (heatNow > .05) CoreWarriorRules.HEAT_COOL_TICKS - (tickNumber - heatAt) else 0L
+        if (cooling > 0) add(dev.projects.server.coreloop.ui.CoreHudBuff(dev.projects.server.coreloop.ui.CoreHudBuffKind.HEAT,
+            cooling / 20.0, CoreWarriorRules.HEAT_COOL_TICKS / 20.0, cooldown = false))
         val dodge = nextDodge - tickNumber
         if (dodge > 0) add(dev.projects.server.coreloop.ui.CoreHudBuff(dev.projects.server.coreloop.ui.CoreHudBuffKind.DODGE,
             dodge / 20.0, dodgeCooldown / 20.0, cooldown = true))
