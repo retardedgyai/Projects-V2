@@ -11,11 +11,11 @@ import dev.projects.webui.UiSprite
 
 /**
  * パッシブツリー（星の盤）: the shared passive tree on the camera + display-entity screen, like the 開拓大陸 map.
- * Drawn in 1920×1080 design units after docs/proposals/skill-tree-2026-10/screen-prototype.template.html:
- * the tree fills the screen (baked into 256 px tiles by scripts/build_passive_tree_assets.py) and Forge-style
- * panels float over it — totals on the left, the chosen node on the right. Pixel art is only the things (node
- * badges, the emblem); lines, rings, words and panels are smooth. Gold lines, lit badges, the dashed planned path
- * and the state rings for this player are drawn on top of the tiles. The tree pans when the pointer rests on an
+ * Drawn in 1920×1080 design units, all pixel art in the 冒険の手帳's look (scripts/build_passive_tree_assets.py):
+ * the tree on one art grid of [DOT] px, baked into 256 px tiles, under the 手帳's iron windows — totals on the left,
+ * the chosen node on the right. Words are the MaruMinya dot font ("ptdot"), so any string can be written. Gold
+ * lines, lit badges, the dashed planned path and the state rings for this player are drawn on top of the tiles.
+ * The tree pans when the pointer rests on an
  * edge of the view and zooms with the hotbar scroll. Clicking a node selects it; clicking it again plans the
  * whole path to it, free to undo until 確定 sends the plan in one go (PoE's pending allocation). Every rule
  * lives in [CorePassiveTree] and the account service; this only asks.
@@ -43,14 +43,8 @@ internal class PassiveTreeFlow(
         val texts: List<String>
         val choiceTexts: List<List<String>>
         val sprites: Map<String, UiSprite>
-        val infos: Map<Int, List<Placed>>
-        /** The right panel's head when nothing is chosen. */
-        val noneInfo: List<Placed>
-        val labels: Map<String, List<Placed>>
-        /** Stat name (as written in node texts) → the label key of its baked name. */
-        val statLabels: Map<String, String>
-        /** Per node: the label keys of its mastery options (empty for other kinds). */
-        val choiceLabels: List<List<String>>
+        /** Fixed plates (panels, buttons, chips, the footer), each in pieces of at most 256 px. */
+        val plates: Map<String, List<Placed>>
         init {
             val root = JsonParser.parseString(json.toString(Charsets.UTF_8)).asJsonObject
             sprites = root.getAsJsonObject("sprites").entrySet().associate { (name, v) ->
@@ -70,15 +64,10 @@ internal class PassiveTreeFlow(
             icons = nodes.map { it["icon"].asString }
             texts = nodes.map { it["text"].asString }
             choiceTexts = nodes.map { n -> n.getAsJsonArray("choiceTexts")?.map { it.asString }.orEmpty() }
-            choiceLabels = nodes.map { n -> n.getAsJsonArray("choiceLabels")?.map { it.asString }.orEmpty() }
             require(spots.size == CorePassiveTree.nodes.size) { "passive-tree.json と passive-tree.tsv のノード数が違います" }
             fun blocks(o: com.google.gson.JsonObject) = o.entrySet().associate { (k, v) -> k to v.asJsonArray.map { placed(it.asJsonObject, "sprite") } }
-            val heads = blocks(root.getAsJsonObject("infos"))
-            infos = heads.filterKeys { it != "none" }.mapKeys { it.key.toInt() }
-            noneInfo = heads.getValue("none")
-            labels = blocks(root.getAsJsonObject("labels"))
-            statLabels = root.getAsJsonObject("statLabels").entrySet().associate { (k, v) -> k to v.asString }
-            require(CorePassiveTree.nodes.all { choiceLabels[it.id].size == it.choices.size }) { "passive-tree.json の極意の選択肢が passive-tree.tsv と違います" }
+            plates = blocks(root.getAsJsonObject("plates"))
+            require(CorePassiveTree.nodes.all { choiceTexts[it.id].size == it.choices.size }) { "passive-tree.json の極意の選択肢が passive-tree.tsv と違います" }
             require(CorePassiveTree.nodes.all { "lit_${it.kind.name}_${icons[it.id]}" in sprites }) { "passive-tree.json に光ったノードの絵がありません" }
         }
     }
@@ -270,35 +259,30 @@ internal class PassiveTreeFlow(
     private fun sprite(id: String, s: UiSprite, x: Double, y: Double, w: Double, h: Double, depth: Int, tint: String? = null) {
         nodes += UiNode(id, box(x, y, w, h), "", if (tint != null) mapOf("sprite-color" to tint) else emptyMap(), null, null, true, depth, s)
     }
-    private fun block(id: String, parts: List<Art.Placed>?, x: Double, y: Double, depth: Int, tint: String? = null) =
-        parts?.forEachIndexed { k, p -> sprite("$id-$k", p.sprite, x + p.x, y + p.y, p.sprite.width.toDouble(), p.sprite.height.toDouble(), depth, tint) }
-    private fun width(parts: List<Art.Placed>?) = parts?.sumOf { it.sprite.width.toDouble() } ?: 0.0
-    private fun height(parts: List<Art.Placed>?) = parts?.maxOfOrNull { it.sprite.height.toDouble() } ?: 0.0
-    private fun label(id: String, key: String, x: Double, y: Double, depth: Int, tint: String? = null) = block(id, art.labels[key], x, y, depth, tint)
-    private fun text(id: String, x: Double, y: Double, w: Double, value: String, size: Double, color: String, depth: Int,
-                     align: String = "left", family: String = "v3b") {
-        val page = "$family${size.toInt()}".takeIf(Polish05FontMetrics::has) ?: family
+    private fun block(id: String, parts: List<Art.Placed>?, x: Double, y: Double, depth: Int) =
+        parts?.forEachIndexed { k, p -> sprite("$id-$k", p.sprite, x + p.x, y + p.y, p.sprite.width.toDouble(), p.sprite.height.toDouble(), depth) }
+    /** A baked plate (panel, button, chip) with its top-left at [x], [y]. */
+    private fun plate(id: String, name: String, x: Double, y: Double, depth: Int) = block(id, art.plates[name], x, y, depth)
+
+    /**
+     * Dot words: [size] is the font's 12-dot em ([BODY] = 2 px a dot, [NAME] = 3), [y] the top of the letters' cell
+     * (their baseline is [size] below it). [shadow] false for dark words on gold.
+     */
+    private fun text(id: String, x: Double, y: Double, value: String, color: String, depth: Int, size: Double = BODY,
+                     align: String = "left", w: Double = measure(value, size), shadow: Boolean = true) {
         nodes += UiNode(id, box(x, y, w, size * 1.25), value,
-            mapOf("font-size" to "${size * SCALE}px", "color" to color, "text-align" to align, "font-family" to "projects_ui_polish05:$page"),
-            null, null, true, depth)
+            mapOf("font-size" to "${size * SCALE}px", "color" to color, "text-align" to align,
+                "font-family" to "projects_ui_polish05:" + if (shadow) "ptdot" else "ptdotn"), null, null, true, depth)
     }
-    private fun measure(value: String, family: String, size: Double): Double {
-        val page = "$family${size.toInt()}".takeIf(Polish05FontMetrics::has) ?: family
-        return Polish05FontMetrics.advance(value, page) / Polish05FontMetrics.SIZE * size
-    }
-    /** Forge-style rounded fill: a cross of panels plus four tinted quarter discs (opaque colours only). */
-    private fun round(id: String, x: Double, y: Double, w: Double, h: Double, r: Double, color: String, depth: Int) {
-        val argb = "#ff" + color.removePrefix("#")
-        rect("$id-c", x + r, y, w - 2 * r, h, argb, depth)
-        rect("$id-l", x, y + r, r, h - 2 * r, argb, depth)
-        rect("$id-r", x + w - r, y + r, r, h - 2 * r, argb, depth)
-        for ((k, cx, cy) in listOf(Triple("tl", x, y), Triple("tr", x + w - r, y), Triple("bl", x, y + h - r), Triple("br", x + w - r, y + h - r)))
-            art.sprites["round_$k"]?.let { sprite("$id-$k", it, cx, cy, r, r, depth, color) }
-    }
-    /** A rounded box with the Forge 1px light border. */
-    private fun framed(id: String, x: Double, y: Double, w: Double, h: Double, r: Double, fill: String, depth: Int, border: String = LINE) {
-        round("$id-o", x, y, w, h, r, border, depth)
-        round("$id-i", x + 1.5, y + 1.5, w - 3, h - 3, r - 1.5, fill, depth + 1)
+    private fun measure(value: String, size: Double = BODY) = Polish05FontMetrics.advance(value, "ptdot") / Polish05FontMetrics.SIZE * size
+    /** [value] broken into lines no wider than [width] (Japanese breaks anywhere). */
+    private fun wrap(value: String, width: Double, size: Double = BODY): List<String> {
+        val lines = mutableListOf<String>(); var line = ""
+        for (ch in value) {
+            if (line.isNotEmpty() && measure(line + ch, size) > width) { lines += line; line = "" }
+            line += ch
+        }
+        return if (line.isEmpty()) lines else lines + line
     }
 
     override fun scene(light: ForgeLightPhase): UiScene {
@@ -366,46 +350,32 @@ internal class PassiveTreeFlow(
         for (k in 0 until 6) rect("fade-t$k", 0.0, 52.0 + k * 16.4, 1920.0, 16.4, alpha(1 - (k + 0.5) / 6), 8)
         for (k in 0 until 3) rect("fade-b$k", 0.0, 990.0 + k * 9, 1920.0, 9.0, alpha((k + 0.5) / 3), 8)
         rect("fade-b", 0.0, 1017.0, 1920.0, 63.0, "#ff121316", 8)
-        label("legend", "legend", 470.0, 116.0, 9)
+        plate("legend", "legend", 470.0, 118.0, 9)
 
         header(a, held, budget)
         totals(held, choices)
         panel(a, job, taken, budget, hovered ?: selected, path, choices)
-        art.sprites["zoom_in"]?.let { sprite("zoom-in", it, 460.0, 964.0, 44.0, 44.0, 10) }
+        plate("zoom-in", "zoom_in", 460.0, 964.0, 10)
         rect("zoom-in-hit", 460.0, 964.0, 44.0, 44.0, "#00000000", 11, "zoom:in", "#30ffffff")
-        art.sprites["zoom_out"]?.let { sprite("zoom-out", it, 512.0, 964.0, 44.0, 44.0, 10) }
+        plate("zoom-out", "zoom_out", 512.0, 964.0, 10)
         rect("zoom-out-hit", 512.0, 964.0, 44.0, 44.0, "#00000000", 11, "zoom:out", "#30ffffff")
-        label("footer", "footer", LEFT_X, 1030.0, 10)
+        plate("footer", "footer", LEFT_X, 1031.0, 10)
         return UiScene(800.0, 480.0, nodes.toList())
     }
 
     private fun alpha(a: Double) = String.format("#%02x121316", (a * 255).toInt().coerceIn(0, 255))
 
-    /** 星の盤: emblem and name, the growth tabs, and the points / silver chips. */
+    /** The emblem and the screen's name, and the points / silver chips. */
     private fun header(a: CoreAccount?, taken: Set<Int>, budget: Int) {
-        art.sprites["brand_slot"]?.let { sprite("brand-slot", it, LEFT_X, 34.0, 52.0, 52.0, 12) }
-        label("brand", "brand", LEFT_X + 66, 30.0, 12)
-        label("brand-sub", "brand_sub", LEFT_X + 66, 64.0, 12)
-        val tabs = listOf("tab_passive", "tab_skills", "tab_stats")
-        var tx = 960 - (tabs.sumOf { width(art.labels[it]) } + 32 * (tabs.size - 1)) / 2
-        for (key in tabs) {
-            val w = width(art.labels[key])
-            label(key, key, tx, 77 - height(art.labels[key]), 12)
-            if (key == "tab_passive") rect("tab-line", tx + w / 2 - 13, 87.0, 26.0, 3.0, "#fff07a2a", 12)
-            tx += w + 32
+        plate("brand-slot", "brand_slot", LEFT_X, 34.0, 12)
+        text("brand", LEFT_X + 68, 36.0, "パッシブ", INK, 12, NAME)
+        fun chip(id: String, x: Double, label: String, value: String, color: String) {
+            plate(id, "chip", x, 38.0, 12)
+            text("$id-l", x + 14, 47.0, label, MUTE, 14)
+            text("$id-n", x, 47.0, value, color, 14, align = "right", w = CHIP_W - 14)
         }
-        var right = 1920 - LEFT_X
-        fun chip(id: String, key: String, value: String, color: String) {
-            val lw = width(art.labels[key]); val nw = measure(value, "v3b", 20.0)
-            val w = 18 + lw + 10 + nw + 18
-            val x = right - w
-            framed(id, x, 39.0, w, 42.0, 21.0, PANEL, 12)
-            label("$id-l", key, x + 18, 60 - height(art.labels[key]) / 2, 14)
-            text("$id-n", x + 18 + lw + 10, 43.5, nw + 4, value, 20.0, color, 14, family = "v3b")
-            right = x - 10
-        }
-        chip("chip-silver", "chip_silver", "%,d".format(a?.silver ?: 0), "#ece6dc")
-        chip("chip-pts", "chip_points", "${budget - taken.size} / $budget", "#e8c878")
+        chip("chip-silver", 1920 - LEFT_X - CHIP_W, "銀貨", "%,d".format(a?.silver ?: 0), INK)
+        chip("chip-pts", 1920 - LEFT_X - 2 * CHIP_W - 10, "ポイント", "${budget - taken.size} / $budget", GOLD)
     }
 
     /** Stat name (as in the node texts) → summed percent, over [ids] with mastery options [choices]. */
@@ -424,72 +394,67 @@ internal class PassiveTreeFlow(
 
     /** The left panel: what the taken (and planned) nodes add up to, and which keystones are held. */
     private fun totals(taken: Set<Int>, choices: Map<Int, Int>) {
-        framed("lp", LEFT_X, PANEL_TOP, LEFT_W, PANEL_BOTTOM - PANEL_TOP, 14.0, PANEL, 10)
-        val ix = LEFT_X + 22; val iw = LEFT_W - 44
-        label("lp-h", "totals", ix, 128.0, 12)
-        text("lp-n", ix, 131.5, iw, "${taken.size} 点", 16.0, "#a29e97", 12, "right", "v3b")
-        rect("lp-rule", ix, 168.0, iw, 1.5, "#ff" + LINE.removePrefix("#"), 12)
-        val sum = sums(taken, choices)
+        plate("lp", "panel_left", LEFT_X, PANEL_TOP, 10)
+        val ix = LEFT_X + 24; val iw = LEFT_W - 48
+        text("lp-h", ix, PANEL_TOP + 22, "合計", INK, 12)
+        text("lp-n", ix, PANEL_TOP + 22, "${taken.size} 点", MUTE, 12, align = "right", w = iw)
+        rect("lp-rule", ix, PANEL_TOP + 58, iw, 2.0, RULE, 12)
         val keysTop = 860.0
-        val rows = sum.entries.sortedByDescending { it.value }
-        if (rows.isEmpty()) label("lp-empty", "totals_empty", ix, 180.0, 12)
-        val fit = ((keysTop - 64 - 180) / ROW).toInt()
+        val rows = sums(taken, choices).entries.sortedByDescending { it.value }
+        val fit = ((keysTop - 60 - (PANEL_TOP + 72)) / ROW).toInt()
         rows.take(fit).forEachIndexed { k, (name, value) ->
-            val y = 180 + k * ROW
-            art.statLabels[name]?.let { label("lp-s$k", it, ix, y, 12) }
-            text("lp-v$k", ix, y + 2.5, iw, "+$value%", 16.0, "#ece6dc", 12, "right", "v3b")
+            val y = PANEL_TOP + 72 + k * ROW
+            text("lp-s$k", ix, y, name, INK, 12, w = iw - 70)
+            text("lp-v$k", ix, y, "+$value%", INK, 12, align = "right", w = iw)
         }
-        rect("lp-rule2", ix, keysTop - 52, iw, 1.5, "#ff" + LINE.removePrefix("#"), 12)
-        label("lp-k", "keystones", ix, keysTop - 42, 12)
-        label("lp-ks", "keystones_sub", ix + iw - width(art.labels["keystones_sub"]), keysTop - 39, 12)
+        rect("lp-rule2", ix, keysTop - 54, iw, 2.0, RULE, 12)
+        text("lp-k", ix, keysTop - 44, "キーストーン", INK, 12)
         CorePassiveTree.nodes.filter { it.kind == CorePassiveKind.KEYSTONE }.forEachIndexed { k, n ->
-            art.sprites[if (n.id in taken) "key_on" else "key_off"]?.let {
-                sprite("lp-key$k", it, ix + (k % 7) * 48, keysTop + (k / 7) * 48, 38.0, 38.0, 12)
-            }
+            plate("lp-key$k", if (n.id in taken) "key_on" else "key_off", ix + (k % 7) * 48, keysTop + (k / 7) * 48, 12)
         }
     }
 
     private fun panel(a: CoreAccount?, job: CoreClass, taken: Set<Int>, budget: Int, shown: Int?, path: Set<Int>, choices: Map<Int, Int>) {
-        framed("rp", RIGHT_X, PANEL_TOP, RIGHT_W, PANEL_BOTTOM - PANEL_TOP, 14.0, PANEL, 10)
+        plate("rp", "panel_right", RIGHT_X, PANEL_TOP, 10)
         val ix = RIGHT_X + 26; val iw = RIGHT_W - 52
         val held = taken + planned
         val node = shown?.let { CorePassiveTree.nodes[it] }
-        val head = node?.let { art.infos[it.id] } ?: art.noneInfo
-        block("info", head, ix, PANEL_TOP + 24, 12)
         if (node != null) {
             val mastery = node.kind == CorePassiveKind.MASTERY
-            val sy = PANEL_TOP + 24 + height(head) + 10
+            val kind = KIND_LABEL.getValue(node.kind).takeIf { it != node.name }
+            kind?.let { text("kind", ix, PANEL_TOP + 22, it, MUTE, 12) }
+            var y = PANEL_TOP + if (kind != null) 54 else 22
+            wrap(node.name, iw, NAME).forEachIndexed { k, line -> text("name$k", ix, y, line, INK, 12, NAME); y += NAME + 8 }
+            y += 8
+            // Stat lines: the name, then its value in the heat colour; anything else (keystones) as plain lines.
+            val body = when (node.kind) { CorePassiveKind.SMALL, CorePassiveKind.NOTABLE -> art.texts[node.id].split(" / ")
+                CorePassiveKind.KEYSTONE -> listOf(art.texts[node.id]); else -> emptyList() }
+            for ((p, part) in body.withIndex()) {
+                val m = STAT.matchEntire(part)
+                val lines = wrap(m?.groupValues?.get(1)?.trimEnd() ?: part, iw - if (m != null) 80 else 0)
+                for ((k, line) in lines.withIndex()) {
+                    text("b$p-$k", ix, y, line, if (m != null) INK else SOFT, 12)
+                    if (m != null && k == lines.lastIndex) text("b$p-v", ix + measure(line) + 10, y, "+${m.groupValues[2]}%", HEAT, 12)
+                    y += ROW
+                }
+            }
             val status = when {
                 a == null -> null
-                a.activeRun != null -> "hub"
-                node.kind == CorePassiveKind.START -> if (node.start == job) "here" else "other"
-                node.id in taken -> "taken"
-                node.id in planned && !mastery -> "planned"
-                mastery && !CorePassiveTree.wheelOpen(held, node.id) -> "locked"
-                mastery && node.id !in planned && held.size >= budget -> "nopoint"
-                mastery -> "pick"
-                !node.ready -> "soon"
-                path.isEmpty() -> "far"
-                held.size + path.size > budget -> "short"
-                else -> "need"
+                a.activeRun != null -> "港でのみ変更" to DANGER
+                node.kind == CorePassiveKind.START -> (if (node.start == job) "自分の起点" else "ほかの職の起点") to MUTE
+                node.id in taken -> "取得済み" to GOLD
+                node.id in planned && !mastery -> "仮に取った" to OK
+                mastery && !CorePassiveTree.wheelOpen(held, node.id) -> "主要ノードが先" to MUTE
+                mastery && node.id !in planned && held.size >= budget -> "ポイント不足" to DANGER
+                mastery -> "1つ選ぶ" to OK
+                !node.ready -> "準備中" to MUTE
+                path.isEmpty() -> "届かない" to DANGER
+                held.size + path.size > budget -> "${held.size + path.size - budget} 点足りない" to DANGER
+                else -> "あと ${path.size} 点" to OK
             }
-            when (status) {
-                null -> {}
-                "need" -> {
-                    label("st", "st_need_a", ix, sy, 12)
-                    val nx = ix + width(art.labels["st_need_a"]) + 4; val n = "${path.size}"
-                    text("st-n", nx, sy + 2.5, 60.0, n, 16.0, "#9af0a0", 12, family = "v3b")
-                    label("st-b", "st_need_b", nx + measure(n, "v3b", 16.0) + 4, sy, 12)
-                }
-                "short" -> {
-                    val n = "${path.size}"
-                    text("st-n", ix, sy + 2.5, 60.0, n, 16.0, "#e58b80", 12, family = "v3b")
-                    label("st", "st_short", ix + measure(n, "v3b", 16.0) + 4, sy, 12)
-                }
-                else -> label("st", "st_$status", ix, sy, 12)
-            }
-            if (mastery && a != null) masteryChoices(a, node, sy + 36)
-            else if (path.isNotEmpty()) delta(held, path, choices, sy + 40)
+            status?.let { (word, color) -> text("st", ix, y + 4, word, color, 12) }
+            if (mastery && a != null) masteryChoices(a, node, y + 44)
+            else if (path.isNotEmpty()) delta(held, path, choices, y + 44)
         }
         // The button: plan the path to the selected node, drop it from the plan, or refund it (with the silver it costs).
         val sel = selected?.let { CorePassiveTree.nodes[it] }
@@ -510,39 +475,38 @@ internal class PassiveTreeFlow(
             else -> toTake != null && held.size + toTake.size <= budget
         }
         if (owned) {
-            label("cost-l", "cost", ix, 830.0, 12)
-            val unit = width(art.labels["cost_unit"])
-            label("cost-u", "cost_unit", ix + iw - unit, 830.0, 12)
-            text("cost", ix, 827.0, iw - unit - 6, "%,d".format(cost), 20.0, if (a != null && a.silver >= cost) "#ece6dc" else "#e58b80", 12, "right", "v3b")
+            text("cost-l", ix, 822.0, "代金", MUTE, 12)
+            text("cost", ix, 822.0, "%,d 銀貨".format(cost), if (a != null && a.silver >= cost) INK else DANGER, 12, align = "right", w = iw)
         }
-        if (failed) label("failed", "st_failed", ix, if (owned) 796.0 else 826.0, 12)
+        if (failed) text("failed", ix, if (owned) 790.0 else 822.0, "できなかった", DANGER, 12)
         val by = 862.0
         val state = when { !ready -> "off"; owned || inPlan -> "refund"; else -> "take" }
-        for (k in 0 until 2) art.sprites["go_${state}_$k"]?.let { sprite("go-$k", it, ix + k * 256, by, it.width.toDouble(), 72.0, 12) }
-        if (ready) rect("go", ix, by, iw, 72.0, "#00000000", 13, "confirm", "#30ffffff")
+        plate("go", "go_$state", ix, by, 12)
+        if (ready) rect("go-hit", ix, by, GO_W, GO_H, "#00000000", 13, "confirm", "#30ffffff")
         val goText = when {
-            owned && planned.isNotEmpty() -> "戻すのは確定のあと"
-            owned -> if (refundCount > 1) "戻す（先の ${refundCount - 1} 個も）" else "戻す"
-            inPlan -> if (refundCount > 1) "外す（先の ${refundCount - 1} 個も）" else "外す"
+            owned && planned.isNotEmpty() -> "確定のあとで"
+            owned -> if (refundCount > 1) "戻す（${refundCount} 個）" else "戻す"
+            inPlan -> if (refundCount > 1) "外す（${refundCount} 個）" else "外す"
             toTake != null -> "仮に取る（${toTake.size} 点）"
             else -> "取る"
         }
-        text("go-t", ix, by + 21, iw, goText, 24.0, when (state) { "take" -> "#2a1406"; "refund" -> "#e58b80"; else -> "#5e5a54" }, 14, "center", "v3b")
+        text("go-t", ix, by + (GO_H - NAME * 1.25) / 2 + 2, goText, when (state) { "take" -> DARK; "refund" -> INK; else -> DIM }, 14, NAME,
+            "center", GO_W, shadow = state != "take")
         // With a plan: confirm it (one request) or drop it. Without: reset everything, back to the start. And close.
-        val bw = (iw - 20) / 3
         val row = if (planned.isNotEmpty()) {
             val commitOk = a != null && a.activeRun == null && !busy
-            listOf(Triple("commit", "確定（${planned.size} 点）", commitOk), Triple("cancel", "取り消し", true), Triple("close", "閉じる", true))
+            listOf(Triple("commit", "確定 (${planned.size})", commitOk), Triple("cancel", "取り消し", true), Triple("close", "閉じる", true))
         } else {
             val resetOk = a != null && a.activeRun == null && !busy && taken.isNotEmpty() && a.silver >= price * taken.size
-            listOf(Triple("reset", "全部戻す", resetOk), Triple("centre", "起点へ戻る", true), Triple("close", "閉じる", true))
+            listOf(Triple("reset", "全部戻す", resetOk), Triple("centre", "起点へ", true), Triple("close", "閉じる", true))
         }
         row.forEachIndexed { k, (act, word, on) ->
-            val x = ix + k * (bw + 10)
-            if (act == "commit" && on) framed("b-$act", x, 946.0, bw, 48.0, 10.0, "#2b1e17", 12, "#f07a2a")
-            else framed("b-$act", x, 946.0, bw, 48.0, 10.0, "#1b1c20", 12)
-            if (on) rect("b-$act-hit", x, 946.0, bw, 48.0, "#00000000", 14, act, "#30ffffff")
-            text("b-$act-t", x, 960.0, bw, word, 16.0, when { !on -> "#5e5a54"; act == "commit" -> "#f5c08a"; else -> "#ece6dc" }, 15, "center", "v3b")
+            val x = ix + k * (BTN_W + 10)
+            val gold = act == "commit" && on
+            plate("b-$act", when { !on -> "btn_off"; gold -> "btn_gold"; else -> "btn" }, x, 946.0, 12)
+            if (on) rect("b-$act-hit", x, 946.0, BTN_W, BTN_H, "#00000000", 14, act, "#30ffffff")
+            text("b-$act-t", x, 946.0 + (BTN_H - BODY * 1.25) / 2 + 1, word, when { !on -> DIM; gold -> DARK; else -> INK }, 15,
+                align = "center", w = BTN_W, shadow = !gold)
         }
     }
 
@@ -553,32 +517,33 @@ internal class PassiveTreeFlow(
         val rows = after.filter { (k, v) -> v != (before[k] ?: 0) }.keys.toList()
         if (rows.isEmpty()) return
         val ix = RIGHT_X + 26; val iw = RIGHT_W - 52
-        label("dl-h", "delta", ix, top, 12)
-        val arrow = width(art.labels["arrow"])
-        rows.take(((780 - top - 34) / ROW).toInt()).forEachIndexed { k, name ->
-            val y = top + 34 + k * ROW
-            art.statLabels[name]?.let { label("dl-s$k", it, ix, y, 12) }
+        rect("dl-rule", ix, top, iw, 2.0, RULE, 12)
+        val arrow = measure("→")
+        rows.take(((780 - top - 14) / ROW).toInt()).forEachIndexed { k, name ->
+            val y = top + 14 + k * ROW
             val now = "+${after.getValue(name)}%"; val was = "+${before[name] ?: 0}%"
-            val nw = measure(now, "v3b", 16.0)
-            text("dl-n$k", ix, y + 2.5, iw, now, 16.0, "#9af0a0", 12, "right", "v3b")
-            label("dl-a$k", "arrow", ix + iw - nw - 8 - arrow, y, 12)
-            text("dl-w$k", ix, y + 2.5, iw - nw - 16 - arrow, was, 16.0, "#a29e97", 12, "right", "v3b")
+            val nw = measure(now)
+            text("dl-s$k", ix, y, name, INK, 12)
+            text("dl-n$k", ix, y, now, OK, 12, align = "right", w = iw)
+            text("dl-a$k", ix + iw - nw - 8 - arrow, y, "→", MUTE, 12)
+            text("dl-w$k", ix, y, was, MUTE, 12, align = "right", w = iw - nw - 16 - arrow)
         }
     }
 
     /** The options of a mastery as buttons; the chosen one stays lit once taken. */
     private fun masteryChoices(a: CoreAccount, node: CorePassiveNode, top: Double) {
-        val ix = RIGHT_X + 26; val w = RIGHT_W - 52
+        val ix = RIGHT_X + 26
         val chosen = a.journey.build.masteries[node.id] ?: plannedChoices[node.id]
         var y = top
-        for ((k, key) in art.choiceLabels[node.id].withIndex()) {
+        for ((k, option) in art.choiceTexts[node.id].withIndex()) {
             val open = node.id == selected && !busy && masteryChoosable(a, node.id, k)
             val dup = chosen == null && CorePassiveTree.choiceTaken(a.journey.build.masteries + plannedChoices, node.id, k)
-            val h = if (dup) 62.0 else 46.0
-            if (chosen == k) framed("ch$k", ix, y, w, h, 10.0, "#2b1e17", 12, "#f07a2a") else framed("ch$k", ix, y, w, h, 10.0, "#17181b", 12)
-            if (open) rect("ch$k-hit", ix, y, w, h, "#00000000", 14, "choice:$k", "#30ffffff")
-            label("ch$k-t", key, ix + 12, y + 9, 15, if (open || chosen == k) null else "#6b6b6b")
-            if (dup) label("ch$k-d", "dup", ix + 12, y + 37, 15)
+            val lines = wrap(option, GO_W - 24).take(3)
+            val h = choiceHeight(lines.size, dup)
+            plate("ch$k", if (chosen == k) "choice_on_${h.toInt()}" else "choice_${h.toInt()}", ix, y, 12)
+            if (open) rect("ch$k-hit", ix, y, GO_W, h, "#00000000", 14, "choice:$k", "#30ffffff")
+            lines.forEachIndexed { l, line -> text("ch$k-t$l", ix + 12, y + 8 + l * CHOICE_LINE, line, if (open || chosen == k) INK else DIM, 15, w = GO_W - 24) }
+            if (dup) text("ch$k-d", ix + 12, y + 8 + lines.size * CHOICE_LINE, "選び済み", DANGER, 15)
             y += h + 8
         }
     }
@@ -599,13 +564,34 @@ internal class PassiveTreeFlow(
         private const val VIEW_R = RIGHT_X
         private const val VIEW_CX = (VIEW_L + VIEW_R) / 2
         private const val VIEW_CY = 580.0
-        private const val ROW = 27.0
+        private const val ROW = 30.0
         private const val EDGE = 56.0
         private const val SPEED = 30.0
         /** How far inside the open view the outermost node can be brought. */
         private const val PAD = 90.0
-        private const val LINE = "#25262a"
-        private const val PANEL = "#101114"
+        /** Dot words: the font's 12-dot em at 2 and 3 design px a dot. */
+        private const val BODY = 24.0
+        private const val NAME = 36.0
+        private const val INK = "#ece6dc"
+        private const val SOFT = "#c9c3b8"
+        private const val MUTE = "#9a948c"
+        private const val DIM = "#5e5a54"
+        private const val GOLD = "#f2c84b"
+        private const val HEAT = "#ff9a4a"
+        private const val OK = "#9af0a0"
+        private const val DANGER = "#e58b80"
+        private const val DARK = "#2a1a06"
+        private const val RULE = "#ff2a2a2e"
+        private const val CHIP_W = 236.0
+        private const val GO_W = 408.0
+        private const val GO_H = 72.0
+        private const val BTN_W = 129.0
+        private const val BTN_H = 48.0
+        /** A mastery option's plate: 1 to 3 lines, and one more for 選び済み (scripts/build_passive_tree_assets.py bakes each). */
+        private const val CHOICE_LINE = 28.0
+        private fun choiceHeight(lines: Int, dup: Boolean) = 18 + CHOICE_LINE * (lines + if (dup) 1 else 0)
+        private val KIND_LABEL = mapOf(CorePassiveKind.SMALL to "ノード", CorePassiveKind.NOTABLE to "主要ノード",
+            CorePassiveKind.KEYSTONE to "キーストーン", CorePassiveKind.START to "起点", CorePassiveKind.MASTERY to "極意")
         private val STAT = Regex("^(.*)\\+(\\d+)%$")
         /** Half badge sizes in art pixels, for picking (the prototype's R). */
         private val PICK = mapOf(CorePassiveKind.SMALL to 6, CorePassiveKind.NOTABLE to 9, CorePassiveKind.KEYSTONE to 14,

@@ -141,7 +141,11 @@ for _, _, kind, n in items:
                     gx, gy = round((x0 + ox) * K), round((top + oy) * K)
                     sz = (max(1, round(gw * K)), max(1, round(gh * K)))
                     a = g.getchannel("A").point(lambda v: 255 if v >= CUT else 0).resize(sz, Image.NEAREST)
-                    solid = Image.new("RGBA", sz, col); solid.putalpha(a)
+                    # The client multiplies a glyph's own colour by the text colour (white pages take the colour,
+                    # a baked black shadow stays black).
+                    from PIL import ImageChops
+                    solid = ImageChops.multiply(g.convert("RGB").resize(sz, Image.NEAREST), Image.new("RGB", sz, col[:3])).convert("RGBA")
+                    solid.putalpha(a)
                     layer.alpha_composite(solid, (gx, gy))
                 x0 += widths.get(str(ord(ch)), 32 if ord(ch) > 255 else 18) * pixel
         if st.get("text-shadow") == "true":
