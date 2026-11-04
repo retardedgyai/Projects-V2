@@ -427,7 +427,10 @@ class CorePlayerCombatTest {
             h.actor.skill(slot)
             // 跳び叩き: replay the arc the client flies (CoreWarriorLeap.path) so the preview shows the body in the air.
             var arc: Iterator<net.minestom.server.coordinate.Pos>? = null
-            repeat(76) { record(); h.ticks(1)
+            repeat(76) { step -> record()
+                // 衝撃: three swings after the press, so the preview shows the second blows coming down.
+                if (icon == CoreWarriorRules.IMPACT && step in setOf(12, 30, 48)) h.actor.attack()
+                h.ticks(1)
                 if (icon == CoreWarriorLeap.ICON && arc == null && h.player.velocity.y() > 0)
                     arc = CoreWarriorLeap.path(h.player.position, h.player.velocity.div(20.0)).iterator()
                 arc?.let { if (it.hasNext()) h.player.teleport(it.next()) } }
