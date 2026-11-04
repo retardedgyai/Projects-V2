@@ -147,6 +147,7 @@ HILL = [f for f in T.FOOT if f[0] == '丘'][0]
 bx0 = max(x for x in range(30, 70) if KIND.get((x, BZ)) in ('nat', 'lane', 'lane_edge', 'yard') and T.h(x, BZ) > 10 and x < RAV(BZ) - 8)
 T.timber_bridge(bx0, HILL[1][0] - 2, BZ, T.h(bx0, BZ), HILL[2])
 T.curtain_wall(range(-20, 57), lambda x: int(round(-48 + 5 * math.sin(x / 13.0))))   # 館の裏の稜線の城壁
+T.dress_walls()                                                                  # 大階段の脇と館の段の擁壁に、控え柱・張り出し・幅木・灯りの窪み
 
 # ================================================================ 5. 小物
 STALLS = [(-9, -5, 'e', 'purple_wool'), (-11, 3, 'e', 'yellow_wool'), (9, -6, 'w', 'lime_wool'), (11, 2, 'w', 'light_blue_wool'), (-6, 9, 'n', 'red_wool')]

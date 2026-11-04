@@ -343,14 +343,26 @@ class Town:
         put(x + fx, y + h - 1, z + fz, fence('dark_oak_planks')); self.banner(x + fx, z + fz, y + h - 2, f)
 
     def arch_gate(self, z, y, half=4):
-        """大階段の踊り場の石のアーチ門。"""
-        for x in (-half, half):
-            for yy in range(y + 1, y + 8): put(x, yy, z, full('stone_bricks')); put(x, yy, z - 1, full('stone_bricks'))
-        for x in range(-half, half + 1):
-            for zz in (z, z - 1):
-                put(x, y + 8, zz, full('stone_bricks'))
-                if abs(x) == half - 1: put(x, y + 7, zz, stair('stone_bricks', 'w' if x < 0 else 'e', 'top'))
-        put(0, y + 9, z, full('chiseled_stone_bricks')); put(-half, y + 9, z, slab('stone_bricks')); put(half, y + 9, z, slab('stone_bricks'))
+        """大階段の踊り場の石のアーチ門。柱は2列で外へ厚く、足は前後へ広げ、上は濃い張り出しと小さな寄棟の笠（11/04 平たい箱に見えたので）。"""
+        Z = (z, z - 1)
+        for x in (-half - 1, -half, half, half + 1):
+            for zz in Z:
+                for yy in range(min(y + 1, self.h(x, zz) + 1), y + 8): put(x, yy, zz, full('stone_bricks' if _h(x, yy, zz) < 0.7 else 'mossy_stone_bricks'))   # 外の柱は地面から
+            for zz, f in ((z + 1, 'n'), (z - 2, 's')):                          # 柱の足
+                g = self.h(x, zz)
+                if g <= y + 1 and get(x, g + 1, zz) is None: put(x, g + 1, zz, stair('stone_bricks', f))
+        for x in range(-half - 1, half + 2):
+            for zz in Z: put(x, y + 8, zz, full('chiseled_stone_bricks' if x == 0 else 'stone_bricks'))
+            put(x, y + 8, z + 1, stair('deepslate_bricks', 'n', 'top')); put(x, y + 8, z - 2, stair('deepslate_bricks', 's', 'top'))   # 上の張り出し
+            for zz in Z: put(x, y + 9, zz, full('deepslate_bricks'))
+            put(x, y + 9, z + 1, stair('deepslate_bricks', 'n')); put(x, y + 9, z - 2, stair('deepslate_bricks', 's'))
+            if abs(x) == half - 1:
+                for zz in Z: put(x, y + 7, zz, stair('stone_bricks', 'w' if x < 0 else 'e', 'top'))
+        for x in (-half - 2, half + 2):                                          # 笠の妻：横へも1マス張り出す
+            for zz in (z + 1,) + Z + (z - 2,): put(x, y + 9, zz, stair('deepslate_bricks', 'e' if x < 0 else 'w'))
+        for x in range(-half - 1, half + 2):
+            for zz in Z: put(x, y + 10, zz, slab('deepslate_bricks'))
+        put(0, y + 10, z, full('chiseled_stone_bricks')); put(0, y + 11, z, LANTERN)
         put(0, y + 7, z, P.HANG)
 
     def deck(self, x0, x1, z0, z1, y, keep_open=('stairs', 'stairs_wall', 'landing')):
@@ -430,6 +442,39 @@ class Town:
                     for dz in (-1, 0, 1, 2):
                         for y in range(self.h(x + dx, z + dz) + 1, g + 7): put(x + dx, y, z + dz, full('stone_bricks'))
                 put(x, g + 7, z, LANTERN)
+
+    def dress_walls(self, kinds=('stairs_wall', 'hall', 'landing'), min_h=3, every=4):
+        """擁壁の平らな面に厚みを付ける（藍 11/04「この平坦な感じだけ直したい」）。
+        段の縁から自然の地面へ min_h 以上落ちる面に：every マスおきに1マス出た控え柱（上に階段の笠）、
+        柱の間は上の縁に逆さ階段の張り出しと足元の幅木、高い面（6以上）は柱の間の真ん中に灯りの窪み（上は模様の石）。"""
+        TO = {(1, 0): 'w', (-1, 0): 'e', (0, 1): 'n', (0, -1): 's'}                 # 外のマスから見て壁のある向き（階段の高い側）
+        for (x, z), k in list(self.KIND.items()):
+            if k not in kinds: continue
+            g = self.H[(x, z)]
+            for (dx, dz), f in TO.items():
+                n = (x + dx, z + dz)
+                if self.KIND.get(n) not in ('nat', 'garden') or (n in self.HOUSE_CELLS): continue
+                lo = self.h(*n)
+                if g - lo < min_h: continue
+                par = (z if dx else x) + 1000
+                if par % every == 0:                                             # 控え柱：外へ1マス、笠は壁の上端より1上
+                    for y in range(lo + 1, g + 1):
+                        if get(n[0], y, n[1]) is None: put(n[0], y, n[1], full(self.masonry(n[0], y, n[1], lo)))
+                    if get(n[0], g + 1, n[1]) is None:
+                        if par % (every * 2) == 0: put(n[0], g + 1, n[1], full('chiseled_stone_bricks')); put(n[0], g + 2, n[1], LANTERN)   # 1本おきに灯り
+                        else: put(n[0], g + 1, n[1], stair('stone_bricks', f))
+                    m = (n[0] + dx, n[1] + dz)                                    # 柱の足：もう1マス外へ広げる
+                    if self.KIND.get(m) in ('nat', 'garden') and self.h(*m) == lo and get(m[0], lo + 1, m[1]) is None: put(m[0], lo + 1, m[1], stair('stone_bricks', f))
+                    continue
+                if get(n[0], g, n[1]) is None: put(n[0], g, n[1], stair('deepslate_bricks', f, 'top'))     # 上の縁の張り出し（濃い帯で縁取る）
+                if g - lo >= 4 and get(n[0], lo + 1, n[1]) is None:                                          # 足元の幅木
+                    put(n[0], lo + 1, n[1], stair('mossy_cobblestone' if _h(x, z, 83) < 0.5 else 'cobblestone', f))
+                if g - lo >= 6 and par % every == every // 2:                    # 灯りの窪み：壁を1マス掘り、上に逆さ階段
+                    ys = (lo + 2, lo + 3)
+                    if all(get(x, y, z) and get(x, y, z)['s'] == 'full' for y in ys + (lo + 4,)):
+                        for y in ys: put(x, y, z, None)
+                        put(x, lo + 2, z, LANTERN)
+                        put(x, lo + 4, z, full('chiseled_stone_bricks'))
 
     # ================================================================ 小物：置ける所か確かめてから置く [小物10〜15]
     def spot_ok(self, cells, g, allow=('plaza', 'yard', 'nat', 'garden', 'lane_edge', 'hall', 'harbor')):
