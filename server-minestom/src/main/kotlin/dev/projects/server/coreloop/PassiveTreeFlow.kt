@@ -350,7 +350,6 @@ internal class PassiveTreeFlow(
         for (k in 0 until 6) rect("fade-t$k", 0.0, 52.0 + k * 16.4, 1920.0, 16.4, alpha(1 - (k + 0.5) / 6), 8)
         for (k in 0 until 3) rect("fade-b$k", 0.0, 990.0 + k * 9, 1920.0, 9.0, alpha((k + 0.5) / 3), 8)
         rect("fade-b", 0.0, 1017.0, 1920.0, 63.0, "#ff121316", 8)
-        plate("legend", "legend", 470.0, 118.0, 9)
 
         header(a, held, budget)
         totals(held, choices)

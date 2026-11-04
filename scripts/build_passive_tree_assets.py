@@ -35,7 +35,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_menu_dialog_assets import BLACK, BRONZE, BRONZE_HI, DARK_BTN, GOLD_BTN, MARU, MARU_PX, button_tile, slot_tile, window_tile  # noqa: E402
+from build_menu_dialog_assets import BRONZE, BRONZE_HI, DARK_BTN, GOLD_BTN, MARU, MARU_PX, button_tile, slot_tile, window_tile  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/ui/passive-tree/tree.json"
@@ -373,13 +373,12 @@ class TreeBake:
         return img * (1 - m) + np.asarray(layer, np.float32) * m
 
     def labels(self, pil):
-        """Names under notables, keystones and starts: dot words with a dark ring, region-tinted."""
+        """The class names under the starts, as dot words with a dark ring. Other nodes go unnamed on the tree (their
+        names crowded it, 藍 2026-11-04 「Notableとかのところ文字いらない」); the right panel names the selected one."""
         for n in self.nodes:
-            if n["kind"] not in ("NOTABLE", "KEYSTONE", "START"):
+            if n["kind"] != "START":
                 continue
-            label = n["name"].replace("の起点", "") if n["kind"] == "START" else n["name"]
-            fill = INK if n["kind"] == "START" else tuple(min(255, v + 40) for v in n["rgb"])
-            im = word(label, fill, 3 if n["kind"] == "START" else PLATE, outline=OUTLINE)
+            im = word(n["name"].replace("の起点", ""), INK, 3, outline=OUTLINE)
             x = round(n["cx"] - im.width / 2); y = round(n["cy"] + FRAME_SIZE[n["kind"]] * DOT / 2 + 2)
             pil.alpha_composite(im.crop((max(0, -x), max(0, -y), im.width, im.height)), (max(0, x), max(0, y)))
 
@@ -495,14 +494,6 @@ def footer():
     return strip(parts, 26)
 
 
-def legend():
-    parts = []
-    for _, name, _, c in CLASSES:
-        sw = Image.new("RGBA", (10, 10), BLACK); ImageDraw.Draw(sw).rectangle([2, 2, 7, 7], fill=hexrgb(c) + (255,))
-        parts.append(strip([sw, word(name, MUTE)], 6))
-    return strip(parts, 18)
-
-
 def chrome():
     """Every fixed plate the flow lays out: name -> image."""
     out = {"panel_left": nine(window_tile(fill=(17, 17, 19, 255)), 8, LEFT_W, PANEL_H),
@@ -511,7 +502,7 @@ def chrome():
            "go_take": nine(GOLD_BTN, 5, GO_W, GO_H), "go_refund": nine(RED_BTN, 5, GO_W, GO_H), "go_off": nine(OFF_BTN, 5, GO_W, GO_H),
            "btn": nine(DARK_BTN, 5, BTN_W, BTN_H), "btn_gold": nine(GOLD_BTN, 5, BTN_W, BTN_H), "btn_off": nine(OFF_BTN, 5, BTN_W, BTN_H),
            "brand_slot": brand(), "key_off": keystone_slot(False), "key_on": keystone_slot(True),
-           "zoom_in": zoom_button("+"), "zoom_out": zoom_button("-"), "footer": footer(), "legend": legend()}
+           "zoom_in": zoom_button("+"), "zoom_out": zoom_button("-"), "footer": footer()}
     for h in CHOICE_H:
         out[f"choice_{h}"] = nine(slot_tile(), 4, GO_W, h)
         out[f"choice_on_{h}"] = nine(slot_tile(True), 4, GO_W, h)
