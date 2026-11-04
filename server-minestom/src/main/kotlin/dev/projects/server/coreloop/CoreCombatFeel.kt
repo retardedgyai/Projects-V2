@@ -56,9 +56,9 @@ internal object CoreCombatFeel {
  */
 internal object CoreWarriorRules {
     /** Skills that take every stack; everything else builds. */
-    val spenders = setOf("slam", FRENZY, SKYFALL)
+    val spenders = setOf("slam", FRENZY)
     const val FRENZY = "whirl"        // 狂乱
-    const val SKYFALL = "war_guard"   // 天落とし
+    const val IMPACT = "war_guard"    // 衝撃 (builds; takes the retired 天落とし's slot and id)
     const val SHATTER = "war_counter" // 大地崩し (retired 2026-11-04)
     const val LAUNCHER = "war_breach" // 斬り上げ (builds)
     const val BRACE = "war_cry"       // 受け止め (builds; takes the retired 引き摺り's slot and id)
@@ -83,12 +83,17 @@ internal object CoreWarriorRules {
     const val FULL_SWING_RADIUS = 12.0
     const val FULL_SWING_MULTIPLIER = 2.0
     /**
-     * 天落とし: a low, fast dive onto the aimed enemy (unlike 跳び叩き's high arc to a point), kept for the moment the enemy is
-     * down. Plain targets take this share; one in the air or broken, this. One in the air when the dive leaves counts
-     * as in the air until it lands.
+     * 衝撃 (Creator 2026-11-04, Monster Hunter's impact burst): the blade driven into the ground once, then the next
+     * [IMPACT_SWINGS] normal swings each bring a second blow down where they landed, [IMPACT_DELAY] ticks later, at
+     * [IMPACT_SHARE] of the swing in [IMPACT_RADIUS]; the heavy third swing's in [IMPACT_HEAVY_RADIUS], staggering.
+     * A swing that misses spends its count all the same. Each blow is a hit of its own (it builds the beast like a swing).
      */
-    const val SKYFALL_PLAIN = .7
-    const val SKYFALL_DOWN = 2.0
+    const val IMPACT_SWINGS = 8
+    const val IMPACT_DELAY = 4L
+    const val IMPACT_SHARE = .4
+    const val IMPACT_RADIUS = 1.5
+    const val IMPACT_HEAVY_RADIUS = 3.0
+    const val IMPACT_HEAVY_STUN_MILLIS = 300L
     /**
      * 受け止め (Creator 2026-11-04, Overwatch's Zarya): a shield of this share of max HP for [BRACE_TICKS]. What it
      * stops heats the blade: stopping [HEAT_FULL_PERCENT] of max HP makes normal hits [HEAT_MAX_BONUS] harder, cooling

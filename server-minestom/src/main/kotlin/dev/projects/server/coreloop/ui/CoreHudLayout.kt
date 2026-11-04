@@ -181,7 +181,7 @@ internal object CoreHudLayout {
         // Buff tiles left to right above the HP plate: icon, then the timer.
         var bx = BUFF_LEFT
         state.buffs.take(4).forEach { buff ->
-            val seconds = buff.remainingSeconds.takeIf { it.isFinite() && it > 0.0 }?.let { "${ceil(it).toInt().coerceIn(1, 999)}s" } ?: ""
+            val seconds = buff.remainingSeconds.takeIf { it.isFinite() && it > 0.0 }?.let { "${ceil(it).toInt().coerceIn(1, 999)}${if (buff.counted) "" else "s"}" } ?: ""
             val ink = gaugeDigitsWidth(seconds)
             val tile = ink + 18
             line.put(bx, "buff_left")

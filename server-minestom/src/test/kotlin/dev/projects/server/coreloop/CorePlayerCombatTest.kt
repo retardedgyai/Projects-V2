@@ -396,7 +396,7 @@ class CorePlayerCombatTest {
         val runs=casts.map { Triple(it.first,it.second,false) }+casts.filter { it.first in CoreWarriorIronChoreography.sceneIds }.map { Triple(it.first,it.second,true) }
         // 地割り by the beast it takes (0..3) as extra scenes "slam_b<n>".
         val beastRuns=(0..3).map { n -> Triple("slam_b$n",1,false) } +
-            listOf("whirl" to 2, "war_guard" to 3).flatMap { (icon, slot) -> listOf(0, 3).map { n -> Triple("${icon}_b$n", slot, false) } } +
+            listOf("whirl" to 2).flatMap { (icon, slot) -> listOf(0, 3).map { n -> Triple("${icon}_b$n", slot, false) } } +
             listOf(Triple("war_breach_b0", 3, false)) +
             // The ultimates (slot 4): 狂戦士の甲冑, 獣の目覚め (needs three). 全力の一振り is slam_b3.
             listOf(Triple("war_banner_b0", 4, false), Triple("war_awaken_b3", 4, false))
@@ -408,7 +408,6 @@ class CorePlayerCombatTest {
             if(icon=="war_breach") { h.journey=CoreJourney.legacy(build=CoreClassBuild(fourth=7)); h.actor.reset() }
             if(icon=="war_banner") { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=1)); h.actor.reset() }
             if(icon==CoreWarriorRules.AWAKEN) { h.journey=CoreJourney.legacy(build=CoreClassBuild(ultimate=2)); h.actor.reset() }
-            if(icon=="war_guard") h.player.teleport(h.player.position.withView(0f, 30f))
             assertEquals(icon,h.actor.skillDefinitions[slot].icon)
             h.actor.classState.gain(if(Regex("_b[0-3]$").containsMatchIn(run)) run.last().digitToInt().toDouble() else 100.0,h.journey.job)
             val frames=mutableListOf<Map<String,Any>>()
@@ -429,7 +428,7 @@ class CorePlayerCombatTest {
             // 跳び叩き: replay the arc the client flies (CoreWarriorLeap.path) so the preview shows the body in the air.
             var arc: Iterator<net.minestom.server.coordinate.Pos>? = null
             repeat(76) { record(); h.ticks(1)
-                if ((icon == CoreWarriorLeap.ICON || icon == CoreWarriorRules.SKYFALL) && arc == null && h.player.velocity.y() > 0)
+                if (icon == CoreWarriorLeap.ICON && arc == null && h.player.velocity.y() > 0)
                     arc = CoreWarriorLeap.path(h.player.position, h.player.velocity.div(20.0)).iterator()
                 arc?.let { if (it.hasNext()) h.player.teleport(it.next()) } }
             scene=mapOf("id" to if(shader) "${icon}_shader" else run,"name" to h.actor.skillDefinitions[slot].name,"castTick" to 4,"startup" to h.actor.skillDefinitions[slot].startupTicks(h.actor.sheet),"pulses" to h.actor.skillDefinitions[slot].pulses,"frames" to frames)
@@ -1012,7 +1011,7 @@ class CorePlayerCombatTest {
     @Test fun `the new spenders grow with the beast they take`() {
         val skills = CoreSkillCatalog.skills(CoreClass.WARRIOR).associateBy { it.icon }
         assertEquals(listOf(2, 3, 4, 5), (0..3).map { CoreWarriorRules.shape(skills.getValue(CoreWarriorRules.FRENZY), it).pulses })
-        assertEquals(setOf("slam", CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL), CoreWarriorRules.spenders)
+        assertEquals(setOf("slam", CoreWarriorRules.FRENZY), CoreWarriorRules.spenders)
     }
 
     @Test fun `frenzy swings once more per stack and takes them all`() = arena(bossDistance = 2.5) { h ->
@@ -1053,26 +1052,32 @@ class CorePlayerCombatTest {
         assertEquals(10.0 * CoreWarriorRules.SWING_DAMAGE_TAKEN, before - h.actor.health, 1e-9)
     }
 
-    @Test fun `skyfall is kept for the boss on the ground - twice there, less on its feet`() {
-        fun skyfall(broken: Boolean): Double {
-            var taken = 0.0
+    @Test fun `impact brings a second blow down after each swing that lands - eight swings, a miss spends one`() {
+        fun swing(impact: Boolean): Pair<Double, Double> {
+            var taken = 0.0; var built = 0.0
             arena(bossDistance = 2.5) { h ->
-                h.journey = CoreJourney.legacy(build = CoreClassBuild(fourth = 3)); h.actor.reset()
-                val id = h.combat.combatTargets().single().id
-                h.player.teleport(h.player.position.withView(0f, 75f)) // straight down: lands next to the boss
-                val from = h.player.position
-                h.actor.skill(3); h.ticks(4) // the dive leaves after its short wind-up
-                if (broken) h.combat.applyBreak(id, 1000.0, h.player)
-                val before = h.bossHealth()
-                for (p in CoreWarriorLeap.path(from, h.player.velocity.div(20.0), ground = from.y())) { h.player.teleport(p); h.ticks(1) }
-                h.ticks(2)
-                taken = before - h.bossHealth()
+                assertEquals(CoreWarriorRules.IMPACT, h.actor.skillDefinitions[3].icon)
+                if (impact) { h.actor.skill(3); h.ticks(20) }
+                val before = h.bossHealth(); val beast = h.actor.resource
+                h.actor.attack(); h.ticks(20)
+                taken = before - h.bossHealth(); built = h.actor.resource - beast
             }
-            return taken
+            return taken to built
         }
-        val standing = skyfall(false); val down = skyfall(true)
-        assertTrue(standing > 0.0)
-        assertTrue(down / standing >= CoreWarriorRules.SKYFALL_DOWN / CoreWarriorRules.SKYFALL_PLAIN - 1e-9, "$down / $standing")
+        val (plain, plainBeast) = swing(false); val (doubled, doubledBeast) = swing(true)
+        assertTrue(plain > 0.0)
+        assertTrue(doubled / plain in 1.3..1.5, "$doubled / $plain")
+        assertEquals(2 * plainBeast, doubledBeast, 1e-9) // the second blow builds the beast like a swing
+    }
+
+    @Test fun `impact lasts eight swings and shows them on the hud`() = arena(bossDistance = 30.0) { h ->
+        h.actor.skill(3); h.ticks(20)
+        fun left() = h.actor.hudBuffs().firstOrNull { it.kind == dev.projects.server.coreloop.ui.CoreHudBuffKind.IMPACT }?.remainingSeconds
+        assertEquals(CoreWarriorRules.IMPACT_SWINGS.toDouble(), left())
+        h.actor.attack(); h.ticks(20) // nothing in reach: the swing is spent all the same
+        assertEquals(CoreWarriorRules.IMPACT_SWINGS - 1.0, left())
+        repeat(CoreWarriorRules.IMPACT_SWINGS - 1) { h.actor.attack(); h.ticks(40) }
+        assertEquals(null, left())
     }
 
     @Test fun `brace shields, feeds the beast with what it stops and shatters when broken through`() = arena { h ->

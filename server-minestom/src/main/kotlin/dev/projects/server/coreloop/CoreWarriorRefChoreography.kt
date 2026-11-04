@@ -15,8 +15,8 @@ internal object CoreWarriorRefChoreography {
     private const val DIR = "combat_vfx/warrior_ref"
     @Volatile var enabled = true
     private val sceneIds = setOf("slam", "war_wound")
-    /** 狂乱 / 天落とし / 大地崩し: every phase is drawn here (their ids still carry older choreographies elsewhere). */
-    private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.SKYFALL, CoreWarriorRules.SHATTER, CoreWarriorRules.LAUNCHER,
+    /** 狂乱 / 衝撃 / 大地崩し: every phase is drawn here (their ids still carry older choreographies elsewhere). */
+    private val ownedIds = setOf(CoreWarriorRules.FRENZY, CoreWarriorRules.IMPACT, CoreWarriorRules.SHATTER, CoreWarriorRules.LAUNCHER,
         CoreWarriorRules.FULL_SWING, CoreWarriorRules.ARMOR, CoreWarriorRules.AWAKEN)
 
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
@@ -271,9 +271,9 @@ internal object CoreWarriorRefChoreography {
             }
             return out
         }
-        if (e.sceneId == CoreWarriorRules.SKYFALL) {
-            // 天落とし: the landing caves the ground in and each ring heaves a circle of turf up, tipped outward, a
-            // moment after the one inside it. Ring 0 also throws the biggest slabs right round the blow.
+        if (e.sceneId == CoreWarriorRules.IMPACT) {
+            // 衝撃 (the old 天落とし's landing): pulse 0 is the blade driven in, pulse 1 each second blow. The ground caves
+            // in and a circle of turf heaves up, tipped outward. Ring 0 also throws the biggest slabs right round the blow.
             val r = e.skill.radius
             // Each ring heaves up and drops back quickly, so the eye follows a wave going out, not a bullseye.
             if (e.pulse == 0) {

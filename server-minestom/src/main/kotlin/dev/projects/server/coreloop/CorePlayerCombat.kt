@@ -104,6 +104,10 @@ internal class CorePlayerCombat(
     /** 獣の目覚め: how much faster normal swings come from the hits that connected, and when the last one did. */
     private var gravityHaste = 0.0
     private var gravityHitAt = -1L
+    /** 衝撃: swings left that bring a second blow, and the blows on their way down. */
+    private var impactSwings = 0
+    private val impacts = mutableListOf<ImpactBlow>()
+    private class ImpactBlow(val at: Long, val centre: Pos, val multiplier: Double, val heavy: Boolean)
     val armored get() = classId == CoreClass.WARRIOR && tickNumber < armorUntil
     val awakened get() = classId == CoreClass.WARRIOR && tickNumber < awakenUntil
     /** 斬り上げ: enemies it threw up and until when they count as in the air (叩き落とし). */
@@ -199,7 +203,7 @@ internal class CorePlayerCombat(
         val boost: Double = 1.0, val gardenCells: List<Pos>? = null,
         /** Break gauge damage each hit on a boss does (CoreBreak), fixed at the cast. */
         val breakAmount: Double = 0.0,
-        /** 跳び叩き / 天落とし: the tick the body was launched; the action lasts until it lands. */
+        /** 跳び叩き: the tick the body was launched; the action lasts until it lands. */
         var leapTick: Long = -1L,
         /** 轟進: when the run began, and the enemies it has cut on the way. */
         var rushTick: Long = -1L, val passed: MutableSet<UUID> = mutableSetOf())
@@ -398,6 +402,7 @@ internal class CorePlayerCombat(
                 vfx.playSkill(CoreSkillEffect(classId, d, player.position, flatFacing(), pulse = CoreWarriorRules.AWAKEN_CLING_PULSE + (tickNumber / 2 % 97).toInt()))
             }
         }
+        if (impacts.isNotEmpty()) encounter()?.let { landImpacts(it) }
         if (heatNow > .05 && tickNumber % 4 == 0L) {
             // 受け止め's heat: embers come off the blade in the right hand, more the hotter it is.
             val f = flatFacing(); val right = Vec(-f.z(), 0.0, f.x())
@@ -486,12 +491,6 @@ internal class CorePlayerCombat(
                 val air = tickNumber - action.leapTick
                 if (air >= CoreWarriorLeap.MIN_AIR_TICKS && grounded() || air >= CoreWarriorLeap.MAX_AIR_TICKS) {
                     action.leapTick = -1
-                    if (action.definition.icon == CoreWarriorRules.SKYFALL) {
-                        skyfall(enemies, action)
-                        if (!actionsValid(enemies, epoch)) return
-                        pending = null
-                        return@let
-                    }
                     emitSkillPulse(player.position, CoreWarriorLeap.LANDING_RADIUS)
                     strike(enemies, player.position, action.direction, CoreWarriorLeap.LANDING_RADIUS, -1.0, 1.0)
                     if (!actionsValid(enemies, epoch)) return
@@ -650,12 +649,20 @@ internal class CorePlayerCombat(
         else vfx.play(CoreClassEffect(classId, CoreSkillMotion.CONE, player.position, normalDirection,
             reach(), swing.finisher, reverse = swing.beat == 2))
         var connected = false
+        var landed: Pos? = null
         for (target in enemies.combatTargets()) {
             if (swing.attack.reaches(player.position, normalDirection, target, reach()) && visibleTo(target.id, enemies)) {
+                if (landed == null) landed = enemies.positionOf(target.id)
                 hit(enemies, target.id, swing.multiplier * normalEmpowerment, skill = false, heavy = swing.finisher)
                 connected = true
                 if (!actionsValid(enemies, epoch)) return false
             }
+        }
+        if (classId == CoreClass.WARRIOR && impactSwings > 0) {
+            // 衝撃: a miss spends the swing all the same; a hit brings the second blow down where the first one landed.
+            impactSwings--
+            landed?.let { impacts += ImpactBlow(tickNumber + CoreWarriorRules.IMPACT_DELAY, it,
+                swing.multiplier * normalEmpowerment * CoreWarriorRules.IMPACT_SHARE, swing.finisher) }
         }
         if (connected && swing.finisher && weaponBase() == CoreWeaponBase.FLOW) manaValue = min(maxMana.toDouble(), manaValue + 8)
         if (connected && awakened) {
@@ -678,7 +685,16 @@ internal class CorePlayerCombat(
         }
         if (classId == CoreClass.MAGE && mageExecute(enemies, action)) return
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorLeap.ICON) { leap(action); return }
-        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.SKYFALL) { leap(action, high = true); return }
+        if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.IMPACT) {
+            // 衝撃: the blade driven into the ground in front; the swings after it bring a second blow (releaseNormal).
+            val centre = player.position.add(flatFacing().mul(1.2))
+            vfx.playSkill(CoreSkillEffect(classId, s, centre, action.direction, pulse = 0))
+            strike(enemies, centre, action.direction, s.radius, -1.0, 1.0)
+            if (!actionsValid(enemies, epoch)) return
+            impactSwings = CoreWarriorRules.IMPACT_SWINGS
+            sound(SoundEvent.BLOCK_ANVIL_LAND, .7f, .6f)
+            return
+        }
         if (classId == CoreClass.WARRIOR && s.icon == CoreWarriorRules.RUSH) {
             action.rushTick = tickNumber
             emitSkillPulse(player.position, CoreWarriorRules.RUSH_REACH, at = 0)  // the lean into the run
@@ -882,7 +898,7 @@ internal class CorePlayerCombat(
             "fire" -> stats.fireFlat > 0 || skillElement == 1; "ice" -> stats.iceFlat > 0 || skillElement == 2
             "lightning" -> stats.lightningFlat > 0 || skillElement == 3; else -> false
         }
-        // A warrior skill's own multiplier counts (狂乱's last swing ×2, 天落とし's outer rings ×0.7, the charge levels).
+        // A warrior skill's own multiplier counts (狂乱's last swing ×2, the charge levels).
         // Other classes' skills still drop theirs (the mage's mixes pass .5-.7): left as it was, see warrior-balance-2026-11-03.
         val baseDamage = definition?.baseDamage(sheet)?.let { if (classId == CoreClass.WARRIOR) it * multiplier else it }
             ?: (formula.evaluate(sheet) * multiplier + element)
@@ -1106,34 +1122,34 @@ internal class CorePlayerCombat(
     }
 
     /** 跳び叩き: launch toward the aimed point with vanilla physics (CoreWarriorLeap); never a teleport. */
-    private fun leap(action: PendingSkill, high: Boolean = false) {
+    private fun leap(action: PendingSkill) {
         val instance = player.instance ?: return
         val eye = player.position.add(0.0, player.eyeHeight, 0.0)
-        val enemies = encounter()
-        // 天落とし dives onto the aimed enemy; who is in the air as it leaves stays "in the air" until it lands.
-        val prey = if (high && enemies != null) aimedEnemy(action.definition, enemies) else null
-        if (high && enemies != null) for (target in enemies.combatTargets())
-            if (CrowdControl.AIRBORNE in enemies.crowdControl(target.id) && target.distanceTo(player.position) <= CoreWarriorLeap.MAX_REACH + 2)
-                launched[target.id] = maxOf(launched[target.id] ?: -1L, tickNumber + CoreWarriorLeap.MAX_AIR_TICKS)
-        val target = prey?.asVec() ?: CoreWarriorLeap.aim(eye, player.position.direction()) { instance.getBlock(it).solid() }
-        val velocity = CoreWarriorLeap.launch(player.position, target, if (high) CoreWarriorLeap.SKYFALL_APEX else null)
+        val target = CoreWarriorLeap.aim(eye, player.position.direction()) { instance.getBlock(it).solid() }
+        val velocity = CoreWarriorLeap.launch(player.position, target)
         player.velocity = velocity.mul(20.0)  // Minestom velocity is blocks per second
         action.leapTick = tickNumber
         sound(SoundEvent.ENTITY_PLAYER_ATTACK_KNOCKBACK, .8f, .6f)
     }
-    /** 天落とし: the landing drives down on what is under it; twice on what is in the air or broken, less on the rest. */
-    private fun skyfall(enemies: QuestEncounterCombat, action: PendingSkill) {
-        val centre = player.position
-        vfx.playSkill(CoreSkillEffect(classId, action.definition, centre, action.direction, pulse = 0))
+    /** 衝撃: the second blows come down where their swings landed, each a hit of its own. */
+    private fun landImpacts(enemies: QuestEncounterCombat) {
+        val due = impacts.filter { it.at <= tickNumber }
+        if (due.isEmpty()) return
+        impacts.removeAll(due)
+        val look = skillDefinitions.firstOrNull { it.icon == CoreWarriorRules.IMPACT } ?: return
         val epoch = actionEpoch
-        for (target in enemies.combatTargets()) {
-            val p = enemies.positionOf(target.id) ?: continue
-            val d = kotlin.math.hypot(p.x() - centre.x(), p.z() - centre.z())
-            if (d > action.definition.radius + target.halfExtent.x() || p.y() - centre.y() > 6.0 || centre.y() - p.y() > 3.0 || !visibleTo(target.id, enemies)) continue
-            val down = CrowdControl.AIRBORNE in enemies.crowdControl(target.id) || enemies.isBroken(target.id) ||
-                (launched[target.id] ?: -1L) >= tickNumber
-            hit(enemies, target.id, if (down) CoreWarriorRules.SKYFALL_DOWN else CoreWarriorRules.SKYFALL_PLAIN, skill = true, skillAction = action)
-            if (!actionsValid(enemies, epoch)) return
+        for (blow in due) {
+            val r = if (blow.heavy) CoreWarriorRules.IMPACT_HEAVY_RADIUS else CoreWarriorRules.IMPACT_RADIUS
+            vfx.playSkill(CoreSkillEffect(classId, look.copy(radius = r), blow.centre, flatFacing(), pulse = 1))
+            sound(SoundEvent.ENTITY_GENERIC_EXPLODE, if (blow.heavy) .6f else .35f, if (blow.heavy) .7f else 1.3f)
+            for (target in enemies.combatTargets()) {
+                val p = enemies.positionOf(target.id) ?: continue
+                if (kotlin.math.hypot(p.x() - blow.centre.x(), p.z() - blow.centre.z()) > r + target.halfExtent.x() ||
+                    kotlin.math.abs(p.y() - blow.centre.y()) > 3.0 || !visibleTo(target.id, enemies)) continue
+                hit(enemies, target.id, blow.multiplier, skill = false, heavy = blow.heavy)
+                if (!actionsValid(enemies, epoch)) return
+                if (blow.heavy) enemies.applyCrowdControl(target.id, CrowdControl.STUN, CoreWarriorRules.IMPACT_HEAVY_STUN_MILLIS, player)
+            }
         }
     }
     /** 叩き落とし: the launched enemy is driven into the ground and stunned longer (the damage bonus is in hit()). */
@@ -1426,7 +1442,7 @@ internal class CorePlayerCombat(
         lightningRun = null; lightningRunHit.clear(); mixing = false; blasting = false
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0; braceUntil = -1; braceStopped = 0.0; braceStacks = 0; heat = 0.0; heatAt = -1; gravityHaste = 0.0
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0; braceUntil = -1; braceStopped = 0.0; braceStacks = 0; heat = 0.0; heatAt = -1; gravityHaste = 0.0; impactSwings = 0; impacts.clear()
         CoreArmamentPresentation.show(player)
         classState.reset()
         crowd.clear()
@@ -1557,6 +1573,9 @@ internal class CorePlayerCombat(
         val cooling = if (heatNow > .05) CoreWarriorRules.HEAT_COOL_TICKS - (tickNumber - heatAt) else 0L
         if (cooling > 0) add(dev.projects.server.coreloop.ui.CoreHudBuff(dev.projects.server.coreloop.ui.CoreHudBuffKind.HEAT,
             cooling / 20.0, CoreWarriorRules.HEAT_COOL_TICKS / 20.0, cooldown = false))
+        // 衝撃: swings left (the tile empties swing by swing).
+        if (impactSwings > 0) add(dev.projects.server.coreloop.ui.CoreHudBuff(dev.projects.server.coreloop.ui.CoreHudBuffKind.IMPACT,
+            impactSwings.toDouble(), CoreWarriorRules.IMPACT_SWINGS.toDouble(), cooldown = false, counted = true))
         val dodge = nextDodge - tickNumber
         if (dodge > 0) add(dev.projects.server.coreloop.ui.CoreHudBuff(dev.projects.server.coreloop.ui.CoreHudBuffKind.DODGE,
             dodge / 20.0, dodgeCooldown / 20.0, cooldown = true))

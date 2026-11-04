@@ -600,6 +600,9 @@ BUFF_ART = {
     # 受け止め's heat: a flame, yellow tip over a red body.
     "heat": (["...#....", "...##...", "..###...", "..####..", ".#####..", ".######.", ".######.", "..####.."],
              ("ffd25a", "f0441c")),
+    # 衝撃: the blade point driven down onto a burst of ground.
+    "impact": (["...##...", "...##...", "...##...", "#..##..#", ".#.##.#.", "........", "#.####.#", "########"],
+               ("f4f7fb", "c08a4a")),
 }
 BUFF_STEPS = 12
 

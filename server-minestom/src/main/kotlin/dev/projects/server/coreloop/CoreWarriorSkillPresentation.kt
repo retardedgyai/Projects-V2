@@ -7,7 +7,7 @@ internal object CoreWarriorSkillPresentation {
         "dash" to Identity("轟進", "獣を溜める・突進", "一気に走り抜けて、すれ違う敵を斬る"),
         "slam" to Identity("地割り", "獣を使う・重撃", "獣を全部使って地を割る。獣3つで全力の一振り"),
         "whirl" to Identity("狂乱", "獣を使う・連撃", "踏み込みながら振り続け、最後に振り下ろす"),
-        "war_guard" to Identity("天落とし", "獣を使う・とどめ", "狙った敵へ低く飛びかかる。浮いた敵・倒れたボスに2倍"),
+        "war_guard" to Identity("衝撃", "獣を溜める・連打", "地面に打ち込み、次の8振りに2発目の衝撃が乗る"),
         "war_wound" to Identity("跳び叩き", "移動・着地", "狙った地点へ跳び、着地の周りを叩いて止める"),
         "war_counter" to Identity("大地崩し", "使えない技", "（引退）"),
         "war_cry" to Identity("受け止め", "獣を溜める・守り", "シールドで受けるほど大剣が熱く、殴りが強くなる"),

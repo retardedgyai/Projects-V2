@@ -12,7 +12,7 @@ class CoreWarriorReworkTest {
         val byIcon = warrior.filterNot { it.retired }.associateBy { it.icon }
         assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_cry", "war_breach", "war_banner", "war_awaken"), byIcon.keys)
         assertEquals(100, byIcon.getValue("dash").cooldown)
-        assertTrue(listOf("slam", "whirl", "war_guard").all { byIcon.getValue(it).cooldown in 200..320 }, "spenders")
+        assertTrue(listOf("slam", "whirl").all { byIcon.getValue(it).cooldown in 200..320 }, "spenders")
         assertTrue(byIcon.getValue("war_wound").cooldown in 160..240, "the leap moves")
         assertTrue(listOf("war_banner", "war_awaken").all { byIcon.getValue(it).cooldown >= 1200 })
         assertTrue(byIcon.values.all { it.spend == 0 }, "no warrior skill needs the beast to be cast")

@@ -94,7 +94,7 @@ class CoreHudLayoutTest {
             Triple("actionbar", "combat", CoreUiComponents.hud(combat(), true)),
             // 受け止め (2026-11-04): the white shield on the HP bar and the heat tile cooling.
             Triple("actionbar", "brace", CoreUiComponents.hud(CoreHudState(170.0, 240.0, 80.0, skills = loadout, resource = 2.0, shield = 48.0,
-                healthTrail = 200.0, level = 12, experience = .42, buffs = listOf(CoreHudBuff(CoreHudBuffKind.HEAT, 4.2, 6.0, false))), true)),
+                healthTrail = 200.0, level = 12, experience = .42, buffs = listOf(CoreHudBuff(CoreHudBuffKind.HEAT, 4.2, 6.0, false), CoreHudBuff(CoreHudBuffKind.IMPACT, 5.0, 8.0, false, counted = true))), true)),
             Triple("actionbar", "counter", CoreUiComponents.hud(CoreHudState(180.0, 240.0, 80.0, skills = loadout.mapIndexed { i, s ->
                 s.copy(remainingSeconds = if (i == 3) 3.0 else 0.0) }, resource = 100.0, level = 7, experience = .9,
                 combatCue = "反撃の好機 3秒", classKey = "templar"), true)),
