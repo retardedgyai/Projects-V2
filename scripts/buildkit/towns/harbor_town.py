@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""開拓港（11/04、二回目）。藍「タンジアの雰囲気を感じないな、ただ崖にある街って感じだな今は」。
+"""開拓港（11/04、三回目）。決まりは rules/harbor.md（85〜105）、部品は kit/harbor.py（見本の場 towns/harbor_parts.py）。
 
-一回目は崖の上の草地に欧州の木組みの家を並べた。それでは「崖の町」にしかならない。
-タンジアの画面写真を見て読んだ、雰囲気の出どころ（形や配置は写さない）：
-  1. 町が海の高さにある。浅い青緑の海の上に、杭の上の板張りの床と、低い岩の上の石の丸い広場。
-  2. 大きな帆船が町のすぐ横に着いていて、帆柱と白い帆が空の輪郭の主役。
-  3. 布だらけ：色の旗の綱が頭の上を渡り、日よけの布、垂れ幕。
-  4. 白っぽい木（日に焼けた板）と縄と樽。屋根は茅葺き（干し草）。
-  5. 海から白い岩の柱が何本も立つ。いちばん高い柱の上に灯台。
-色：白い岩と砂、焼けた白い木、干し草の黄、差し色に赤・青・黄の布。
+一回目「ただ崖にある街って感じ」。二回目は空気（海の高さ・帆船・布・茅葺き・白い岩の柱）は合ったが、
+部品を手本なしで式から作り「建築の作りとか全部がおわってしまった」。三回目は手本17本の決まりで作った部品だけで組む。
 
-座標：北（-z）が本土の浜、南が沖。海面 -1（浅い：底 -4）、板の床 1、広場 1。
-実行：python3 towns/harbor_town.py（out/harbor_town/ に書き出す）。
+配置（決まりの番号）：
+  - 高さの段 [85]：水面 -1 → 板の足場 0（+1）→ 石の道 1（+2）→ 広場と家の床 2（+3）。
+  - 真ん中は石の護岸の丸い広場 [86]。浜から石の土手道（芯は石、両脇に木の足場）[89]。
+  - 西は高床の茅葺きの家の群れ [94〜98]、板の足場でつなぐ。枠の色を変え、壁は地味に [101 の家版・fI0KI93UrBo]。
+  - 東は船着き場：深い水路に、港には大きすぎるくらいの帆船 [91・99〜104]、クレーン2基 [90]、荷の流れ。
+  - 南は大きな集会所（2階建ての高床）、南西の岩の島に灯台 [105]。
+  - 街の床は白い石、港まわりは木 [87]。強い差し色は屋台の縞と帆だけ [92]。
+座標：北（-z）が本土の浜、南が沖。
 """
 import math, os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'kit'))
@@ -20,122 +20,120 @@ from town import Town, save
 import vox
 from vox import put, get, full, log, stair, slab, trap, fence, cross, vnoise, _h, LANTERN
 import props as P
+import harbor as HB
 
 vox.TINT['water_still'] = (0x3A, 0xC4, 0xC8)                                     # 浅い南の海の青緑
+WY, BED, DEEP = -1, -5, -9
 
-# ================================================================ 1. 地形：浜と白い崖（北）、広場の岩、海の岩の柱
-STACKS = [(-46, 52, 7, 34, True), (64, 58, 5, 22, False), (-74, 4, 6, 26, False), (34, 92, 4, 16, False), (-20, 96, 3, 12, False)]   # x, z, 半径, 高さ, 灯台
-PLAZA = (0, 8, 15)
+# ================================================================ 1. 地形：浅い海、北の浜と白い丘、岩の小島、船の通る深い水路
+ISLETS = [(-58, 58, 7, 4, True), (66, 70, 5, 14, False), (-80, 10, 6, 12, False)]   # x, z, 半径, 高さ, 灯台
 def nat(x, z):
-    for (sx, sz, sr, sh, _) in STACKS:                                           # 岩の柱：上ほど少し細く、縁は欠ける
-        d = math.hypot(x - sx, z - sz) + (vnoise(x, z, 3, 21) - 0.5) * 2.5
-        if d < sr: return sh - max(0, d - sr + 2) * 3
-        if d < sr + 2.5: return max(-4, -1 - (d - sr) * 1.2 + 1)
-    px, pz, pr = PLAZA
-    if math.hypot(x - px, z - pz) < pr + 3: return 0.6                          # 広場の岩（低い）
-    if z < -24:                                                                  # 浜 → 白い崖の背
-        b = -24 - z
-        h = -1 + b * 0.35 + (vnoise(x, z, 9, 4) - 0.5) * 1.5
-        if b > 22: h += min(18, (b - 22) * 0.9) * (0.55 + vnoise(x, z, 24, 6)) + (vnoise(x, z, 6, 8) - 0.5) * 3   # 背の丘は低く、高さを場所で変える（白い壁にしない）
+    for (sx, sz, sr, sh, _) in ISLETS:
+        d = math.hypot(x - sx, z - sz) + (vnoise(x, z, 3, 21) - 0.5) * 2
+        if d < sr: return sh - max(0, d - sr + 3) * 1.2
+    if z < -30:
+        b = -30 - z
+        h = -1 + b * 0.3 + (vnoise(x, z, 9, 4) - 0.5) * 1.2
+        if b > 20: h += min(14, (b - 20) * 0.7) * (0.5 + vnoise(x, z, 24, 6))
         return h
-    return -4
+    if 30 <= x <= 52 and -40 < z < 60: return DEEP                                # 船の水路（座礁しない深さ）[7EX7a 17:53]
+    return BED - (vnoise(x, z, 12, 3) - 0.5) * 1.5
 def in_sea(x, z): return nat(x, z) < -1.2
 
-T = Town((-96, 96, -70, 112), nat, in_sea)
-PALE = ['calcite', 'diorite', 'calcite', 'sandstone_top', 'calcite', 'diorite', 'sandstone', 'calcite']
-def rock_pale(x, y, z):                                                          # 白い岩の層（灰色の石を使わない）
-    return PALE[int(y * 0.5 + vnoise(x, z, 9, 2) * 3) % len(PALE)]
-T.rock_at = rock_pale
-_gt = T.ground_top
-SANDSTONE = full('sandstone', top='sandstone_top', bottom='sandstone_bottom')
+T = Town((-100, 100, -64, 100), nat, in_sea)
 def ground_south(x, z, k, g, sand=lambda x, z, g: False):
-    if k == 'river': return full('sand')
-    if k == 'nat' and g < 8: return full('sand') if _h(x, z, 5) < 0.85 else SANDSTONE
-    if k == 'nat': return full('calcite') if vnoise(x, z, 5, 3) < 0.5 else TW.grass() if vnoise(x, z, 6, 9) > 0.6 else full('diorite')
-    if k == 'plaza':
-        r = _h(x, z, 41)
-        return full('sandstone_top') if r < 0.5 else full('cut_sandstone', top='sandstone_top') if r < 0.8 else full('smooth_stone')
-    return _gt(x, z, k, g, sand)
+    if k == 'river': return full('sand') if g > DEEP + 1 else full('gravel')
+    if k == 'nat' and g < 6: return full('sand')
+    if k == 'nat': return TW.grass() if vnoise(x, z, 6, 9) > 0.45 else full('calcite')
+    return TW.Town.ground_top(T, x, z, k, g, sand)
 T.ground_top = ground_south
+T.rock_at = lambda x, y, z: ('calcite', 'diorite', 'calcite', 'sandstone')[int(y * 0.5 + vnoise(x, z, 9, 2) * 3) % 4]
 T.steep_top = lambda x, z: full('calcite') if vnoise(x, z, 5, 67) < 0.6 else full('diorite')
-
-# ================================================================ 2. 段：広場・浜の小道
-px, pz, pr = PLAZA
-T.pad_disc(px, pz, pr, 1, 'plaza')
-T.street([(0, -60, 14), (0, -36, 2), (0, -25, 0)], 2, 'lane')                    # 崖の背から浜へ下りる道
+T.street([(0, -60, 12), (0, -40, 2), (0, -31, 1)], 2, 'lane')
 T.resolve(blend_kinds=('lane', 'lane_edge'))
-H, KIND = T.H, T.KIND
 T.fill()
 T.steps()
+for (x, z), k in list(T.KIND.items()):                                          # 水底の砂の上に水を満たす（水路も）
+    if k == 'river':
+        for y in range(T.H[(x, z)] + 1, WY + 1):
+            if get(x, y, z) is None: put(x, y, z, vox.water())
 
-# ================================================================ 3. 板の床（杭の上）：浜から広場、西の市場、東の船着き場、南の集会所
-DECK = {}
-def deck(x0, x1, z0, z1, y=1, rail=True):
-    for x in range(x0, x1 + 1):
-        for z in range(z0, z1 + 1):
-            if KIND.get((x, z)) == 'plaza' or H.get((x, z), -9) >= y: continue
-            put(x, y, z, full('birch_planks'))
-            DECK[(x, z)] = y; KIND[(x, z)] = 'deck'
-            if (x % 4 == 0 and z % 4 == 0) or (x in (x0, x1) or z in (z0, z1)) and (x + z) % 3 == 0:
-                for yy in range(H.get((x, z), -4) + 1, y): put(x, yy, z, log('stripped_birch_log'))
-    if rail:
-        for (x, z) in list(DECK):
-            if not (x0 <= x <= x1 and z0 <= z <= z1): continue
-            if any((x + dx, z + dz) not in DECK and KIND.get((x + dx, z + dz)) not in ('plaza', 'lane', 'lane_edge') and H.get((x + dx, z + dz), -9) < 1 for dx, dz in TW.N4):
-                if get(x, y + 1, z) is None: put(x, y + 1, z, fence('birch_planks'))
-deck(-3, 3, -26, -7)                                                             # 浜 → 広場
-deck(-42, -14, -8, 22)                                                           # 西の市場
-deck(14, 26, -12, 36)                                                            # 東の船着き場
-deck(-14, 14, 22, 44)                                                            # 南の集会所の床
-deck(-6, 6, 44, 70)                                                              # 沖へ伸びる桟橋
-for (x, z) in list(DECK): H[(x, z)] = DECK[(x, z)]
-for (x, z) in list(DECK):                                                        # 床と床・広場・浜の継ぎ目の柵を外す
-    near = [KIND.get((x + dx, z + dz)) for dx, dz in TW.N4] + [KIND.get((x + 2 * dx, z + 2 * dz)) for dx, dz in TW.N4]
-    if any(k in ('plaza', 'lane', 'lane_edge') for k in near) or H.get((x, z - 1), -9) >= 0 and KIND.get((x, z - 1)) == 'nat':
-        if get(x, 2, z) and get(x, 2, z)['s'] == 'fence': put(x, 2, z, None)
+# ================================================================ 2. 真ん中の丸い広場（石の護岸）と土手道
+PX, PZ, PR = 0, 4, 14
+edge = HB.round_quay(PX, PZ, PR, 2, WY, BED - 1)
+for i in range(-PR, PR + 1):                                                     # 広場の床：白い石のタイル（滑らかな石・砂岩）
+    for j in range(-PR, PR + 1):
+        d = math.hypot(i, j)
+        if d <= PR - 0.7:
+            r = _h(PX + i, PZ + j, 41)
+            put(PX + i, 2, PZ + j, full('smooth_stone') if r < 0.45 else full('cut_sandstone', top='sandstone_top') if r < 0.8 else full('chiseled_stone_bricks') if d < 3 else full('stone_bricks'))
+T.floor_marks(PX, PZ, 2)
+OPEN = lambda x, z: abs(x - PX) <= 2 or abs(z - PZ) <= 2                           # 東西南北の口
+for (x, z) in edge:                                                              # 手すり：縁の内側に柵、口は空ける
+    if not OPEN(x, z) and get(x, 3, z) is None: put(x, 3, z, fence('spruce_planks'))
+# 土手道：浜 → 広場の北の口。芯は石レンガ幅3（+2）、両脇に木の足場幅2（+1）
+for z in range(-31, PZ - PR + 1):
+    for x in range(-2, 3):
+        if abs(x) <= 1:
+            for y in range(BED - 1, 1): put(x, y, z, full('stone_bricks'))
+            put(x, 1, z, full('stone_bricks' if (x + z) % 3 else 'polished_andesite'))
+        else:
+            if get(x, 0, z) is None or get(x, 0, z)['s'] == 'water': put(x, 0, z, full('spruce_planks'))
+    for x in (-3, 3):
+        if z % 4 == 0: HB.pile_post(x, z, BED - 1, 0)
+        elif get(x, 1, z) is None: put(x, 1, z, fence('spruce_planks'))
+for x in (-1, 0, 1): put(x, 2, PZ - PR, stair('stone_bricks', 's'))             # 広場へ上がる1段
 
-# ================================================================ 4. 広場：縁、方位の床、真ん中の帆柱（旗の綱の芯）
-T.plaza_rim(px, pz, pr, 1, open_cell=lambda x, z: abs(x - px) <= 3 or abs(z - pz) <= 3)
-T.floor_marks(px, pz, 1)
-for yy in range(2, 18): put(px, yy, pz, log('stripped_spruce_log'))
-put(px, 18, pz, {'s': 'trap', 't': 'red_wool', 'f': 'e'}); put(px, 19, pz, LANTERN)
-for (dx, dz), f in (((1, 0), 'w'), ((-1, 0), 'e'), ((0, 1), 'n'), ((0, -1), 's')): put(px + dx, 2, pz + dz, stair('cut_sandstone', f))
+# ================================================================ 3. 西：高床の茅葺きの家の群れと板の足場
+WEST = [(-46, -14, 9, 7, 's', 'spruce', 'birch_planks', 1), (-34, -16, 7, 7, 's', 'dark_oak', 'calcite', 2), (-58, -2, 7, 9, 'e', 'oak', 'mushroom_stem', 1),
+        (-46, 14, 9, 7, 'n', 'mangrove', 'birch_planks', 1), (-32, 18, 7, 7, 'n', 'spruce', 'sandstone', 2), (-62, 20, 7, 7, 'e', 'dark_oak', 'calcite', 1)]
+HB.boardwalk(-50, -1, -16, 3, WY, BED - 1)                                        # 家々の間の板の道（東西）
+HB.boardwalk(-50, -6, -46, 12, WY, BED - 1)                                       # 南北の枝
+for x in range(-16, -13):                                                        # 広場の西の口へ：板から石へ2段
+    put(x, 0, PZ - 1, full('spruce_planks')); put(x, 0, PZ, full('spruce_planks')); put(x, 0, PZ + 1, full('spruce_planks'))
+for j in (-1, 0, 1): put(-PR - 1, 1, PZ + j, stair('stone_bricks', 'e')); put(-PR - 2, 0, PZ + j, full('spruce_planks'))
+for (x0, z0, w, d, f, fr, inf, fl) in WEST: HB.stilt_house(x0, z0, w, d, WY, f, fr, inf, fl, BED - 1, seed=x0)
 
-# ================================================================ 5. 茅葺きの小屋（市場・船着き場・集会所）
-HUTS = [(-40, -6, 7, 6, 'red_wool', 's'), (-31, -6, 7, 6, 'light_blue_wool', 's'), (-22, -6, 6, 6, 'yellow_wool', 's'),
-        (-40, 14, 7, 7, 'light_blue_wool', 'n'), (-29, 15, 8, 6, 'red_wool', 'n'), (19, -10, 7, 6, 'yellow_wool', 'w'), (18, 26, 8, 8, 'red_wool', 'w')]
-for (x0, z0, w, d, c, o) in HUTS: P.hut(x0, z0, 1, w, d, c, -4, o)
-P.hut(-11, 28, 1, 23, 15, 'red_wool', -4, 'n')                                   # 集会所：大きな茅葺きの屋根、壁は布、北は開いている
+# ================================================================ 4. 東：船着き場・帆船・クレーン・荷
+HB.boardwalk(PR + 1, -14, 29, 24, WY, BED - 1)                                    # 広場の東から水路まで
+for j in (-1, 0, 1): put(PR + 1, 1, PZ + j, stair('stone_bricks', 'w'))
+HB.ship(41, -34, WY, 44)
+HB.crane(27, -8, 0, 'e', 6, 9)
+HB.crane(27, 14, 0, 'e', 6, 9)
+for (x, z, f) in [(19, -12, 's'), (22, -4, 'w'), (19, 18, 'n'), (23, 22, 'w')]: P.cargo(x, z, 0, f)
+for (x, z) in [(26, 2), (26, 6)]:                                                # タラップ（船の脇へ渡す板）
+    for i in range(29, 36): put(i, 1 + (i - 29) // 3, z, slab('spruce_planks')) if False else None
 
-# ================================================================ 6. 帆船・灯台・旗・屋台・小物
-P.ship(40, -10, -1, 34, 5)
-for (sx, sz, sr, sh, lit) in STACKS:
-    if lit: P.lighthouse(sx, sz, int(T.h(sx, sz)), 3, 12)
-for (a, b, y) in [((px, pz), (-31, -6), 14), ((px, pz), (19, -10), 14), ((px, pz), (0, 28), 13), ((px, pz), (-3, -24), 12), ((px, pz), (-29, 21), 12),
-                  ((px, pz), (26, 30), 13), ((-40, -6), (-40, 20), 7)]:
-    P.bunting(a, b, y)
-for (x, z, f, c) in [(-17, 2, 'w', 'red_wool'), (-17, 9, 'w', 'light_blue_wool'), (-36, 3, 'e', 'yellow_wool')]:
-    P.stall(x, z, 1, f, c, 'white_wool', [P.BARREL_OPEN, P.MELON])
-for (x, z, f) in [(-26, 4, 's'), (23, 4, 'e'), (23, 16, 'e'), (9, 46, 'n'), (-12, 46, 'n')]:
-    P.cargo(x, z, 1, f)
-for z in range(-24, -6, 6):
-    for x in (-3, 3): put(x, 2, z, log('stripped_birch_log')); put(x, 3, z, LANTERN)
-for (x, z) in [(-6, 70), (6, 70), (26, 36), (14, 36), (-42, 22)]:
-    put(x, 2, z, log('stripped_birch_log')); put(x, 3, z, log('stripped_birch_log')); put(x, 4, z, LANTERN)
-for (x, z) in [(-10, 52), (10, 60)]: P.boat(x, z, -1, 'z', P.CRATE)
+# ================================================================ 5. 南：集会所（2階建ての高床）と広場からの道、南西の灯台
+for z in range(PZ + PR, 34):
+    for x in range(-2, 3):
+        if abs(x) <= 1:
+            for y in range(BED - 1, 2): put(x, y, z, full('stone_bricks'))
+            put(x, 2, z, full('smooth_stone' if (x + z) % 3 else 'stone_bricks'))
+        elif get(x, 3, z) is None: put(x, 3, z, fence('spruce_planks'))
+HB.stilt_house(-9, 34, 19, 11, WY, 'n', 'dark_oak', 'calcite', 2, BED - 1, seed=7)
+sx, sz, sr, sh, _ = ISLETS[0]
+HB.lighthouse(sx, sz, int(T.h(sx, sz)), 18, 3)
+
+# ================================================================ 6. 広場の屋台・荷・小舟
+for (x, z, f, c) in [(-8, -6, 's', 'red_wool'), (5, -6, 's', 'white_wool'), (-9, 12, 'n', 'white_wool'), (6, 12, 'n', 'red_wool')]:
+    P.stall(x, z, 2, f, c, 'white_wool' if c != 'white_wool' else 'red_wool', [P.BARREL_OPEN, P.MELON])
+for (x, z, f) in [(-11, 1, 'e'), (10, 1, 'w')]: P.cargo(x, z, 2, f)
+for (x, z, al) in [(-30, 8, 'x'), (-24, -6, 'z'), (8, -20, 'z'), (-10, 30, 'x')]: P.boat(x, z, WY, al, P.CRATE)
+for (x, z) in [(PX + 10, PZ + 10), (PX - 10, PZ + 10), (PX + 10, PZ - 10), (PX - 10, PZ - 10)]: P.lamp_post(x, z, 2, 'e')
 
 # ================================================================ 7. 書き出し
 V = lambda x, y, z: [-x, y, z]
 out = save('harbor_town', {
-    'arrive': [V(0, 12, -44), V(0, 6, 0)],
-    'over': [V(70, 50, 100), V(-4, 6, 16)],
-    'sea': [V(10, 14, 120), V(0, 10, 20)],
-    'plaza': [V(-6, 4, -6), V(4, 7, 20)],
-    'market': [V(-12, 4, -2), V(-34, 4, 6)],
-    'ship': [V(8, 6, 40), V(40, 12, 6)],
-    'hall': [V(0, 4, 14), V(0, 5, 36)],
-    'top': [V(0, 220, 20), V(0, 0, 21)],
-    'night': [V(70, 50, 100), V(-4, 6, 16), {'night': True}],
-    'nightplaza': [V(-6, 4, -6), V(4, 7, 20), {'night': True}],
-}, V(0, 4, 10))
+    'over': [V(80, 50, 90), V(-6, 6, 4)],
+    'west': [V(-90, 40, 60), V(-20, 4, 4)],
+    'arrive': [V(0, 10, -46), V(0, 5, 0)],
+    'plaza': [V(-4, 4, -6), V(4, 6, 24)],
+    'houses': [V(-20, 3, 1), V(-46, 6, -6)],
+    'dock': [V(18, 3, 22), V(36, 12, -8)],
+    'hall': [V(0, 4, 18), V(0, 8, 40)],
+    'light': [V(-36, 10, 40), V(-58, 14, 58)],
+    'top': [V(0, 220, 10), V(0, 0, 11)],
+    'night': [V(80, 50, 90), V(-6, 6, 4), {'night': True}],
+}, V(0, 4, 4))
 print('書き出し', out)
