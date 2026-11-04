@@ -94,6 +94,7 @@ DIAS = [(RX + 3 + i * 10, TOP + 93) for i in range(10)]
 ACTS = [(RX, TOP + 109), (RX, TOP + 126)]          # gold (raise), charcoal (equip); 168 x 14 buttons
 ACT_W, BTN_H = 168, 14
 RESET = (RX, TOP + 144)
+CLOSE_W = 60                                       # the dialog's own 閉じる button (20 GUI px tall at every size), covered by our plate
 # 自分
 SELF_WINS = [(0, 150), (156, 150), (312, 152)]     # 名刺, 道, 能力値 (藍 kept three windows of one width: two were lopsided)
 CARD = (4, WIN_Y + 4, 142, 32)                     # the harbour banner on the name card
@@ -109,7 +110,7 @@ STAT_GROUPS = [("攻め", ["物理攻撃 AD", "魔法攻撃 AP", "攻撃速度",
                ("守り", ["最大HP", "最大マナ", "物理防御 AR", "魔法防御 MR", "追加軽減"])]
 STATS = (320, [WIN_Y + 28, WIN_Y + 107], 136, 11)   # x, each group's first baseline (its heading 13 above), width, step
 NOTICE = (8, WIN_Y + 139)                          # one short line above the edit button
-BAKED = "".join(SELF_TABS + COMBAT_TABS) + "".join(h + "".join(l) for h, l in STAT_GROUPS) + "".join(KV_LABELS) + "冒険の手帳いまの組奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨"
+BAKED = "".join(SELF_TABS + COMBAT_TABS) + "".join(h + "".join(l) for h, l in STAT_GROUPS) + "".join(KV_LABELS) + "冒険の手帳いまの組奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨閉じる"
 
 def hexc(v, a=255):
     if isinstance(v, tuple):
@@ -525,6 +526,13 @@ def main() -> None:
         for name, (w, h, tops) in hits.items():
             q = 2 if w > 256 else 1                # the glyph keeps the texture's aspect, so a wide one is drawn at half
             sprites.add(f"hit_{name}", Image.new("RGBA", (w // q, h // q), (0, 0, 0, 1)), h, tops)
+        # The vanilla button's label is drawn after its sprite and unclipped, so a label the button's size covers it.
+        # Its text line starts 6 GUI px below the button's top (the canvas origin), so the glyph hangs 6 px above it.
+        close_h = round(20 / unit)                 # 20, 15, 10 design px
+        close = nine(DARK_BTN, 5, CLOSE_W, close_h)
+        draw_text(ImageDraw.Draw(close), fonts, "b7", CLOSE_W / 2, close_h / 2 + 3, "閉じる", C["muted"], anchor="ms")
+        sprites.add(f"close{tag}", close, 20, [0], origin=6, unit=1)
+        sprites.meta["close"] = sprites.meta.pop(f"close{tag}")
         files[f"assets/{NS}/font/menu{tag}_art.json"] = json.dumps({"providers": sprites.providers}).encode()
         size["sprites"] = sprites.meta
         size["layout"] = {"tabsSelf": [list(b) for b in self_tabs], "tabsCombat": [list(b) for b in combat_boxes], "emblem64": list(EMBLEM64), "hex": [list(h) for h in HEX],
@@ -532,7 +540,7 @@ def main() -> None:
                           "rx": RX, "big": list(BIG), "bars": [list(b) for b in BARS], "barW": BAR_W, "dias": [list(x) for x in DIAS],
                           "acts": [list(a) for a in ACTS], "reset": list(RESET), "emblem24": list(EMBLEM24), "name": list(NAME),
                           "kv": list(KV), "rows": [list(r) for r in ROWS], "rowW": ROW_W, "rowH": ROW_H, "stats": [STATS[0], STATS[1][0], STATS[1][1], STATS[2], STATS[3]], "notice": list(NOTICE),
-                          "edit": list(EDIT)}
+                          "edit": list(EDIT), "closeW": CLOSE_W}
         metrics["sizes"][tag] = size
         glyphs += len(sprites.providers)
     for name, image in Sprites.textures.items():

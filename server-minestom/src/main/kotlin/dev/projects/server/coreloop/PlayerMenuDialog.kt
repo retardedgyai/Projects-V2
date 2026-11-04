@@ -109,10 +109,14 @@ internal class PlayerMenuDialog(
             // The width includes the text widget's 4 px padding on each side, so lines need canvas + 8 or they wrap; but a
             // body wider than the screen (474 at GUI scale 4) is pushed to its left edge instead of centred (2026-11-02, in game).
             listOf(DialogBody.PlainMessage(body(player, account, size), size.canvasWidth + 9)), emptyList())
-        val close = DialogActionButton(Component.text("閉じる", MUTED).font(DIALOG_FONT), null, 80,
-            DialogAction.Custom(Key.key(NS, "close"), null))
+        val closeW = (size.layout["closeW"].asInt * size.unit).roundToInt()
+        val close = DialogActionButton(closeLabel(size, closeW), null, closeW, DialogAction.Custom(Key.key(NS, "close"), null))
         return Dialog.Notice(meta, close)
     }
+
+    /** The vanilla button's frame doesn't match the book, so its label is our plate, centred on it and covering it. */
+    private fun closeLabel(size: DialogCanvas.Size, width: Int): Component =
+        DialogCanvas(size, metrics.space, 0.0, 1, 6, 1.0).apply { sprite("close", -width / 2.0, 0.0) }.buildLine()
 
     /** The title is left empty (only its width, which keeps the vanilla warning mark at the right). */
     private fun title(size: DialogCanvas.Size): Component =
@@ -381,7 +385,6 @@ internal class PlayerMenuDialog(
 
     companion object {
         const val NS = "projects_menu"
-        private val DIALOG_FONT = Key.key("projects_ui_polish05", "dialog")
         private val TEXT = TextColor.color(0xECE6DC)
         private val SOFT = TextColor.color(0xC9C3B8)
         private val MUTED = TextColor.color(0x8F8A82)
