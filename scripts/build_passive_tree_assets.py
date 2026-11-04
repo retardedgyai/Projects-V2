@@ -41,6 +41,11 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/ui/passive-tree/tree.json"
 ICONS = ROOT / "assets/ui/passive-tree/icons.json"
 FLOW = ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/PassiveTreeFlow.kt"
+# The harbor forge writes in the same dot font (scripts/build_forge_dot_assets.py): its strings and the names it shows.
+CORE = ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop"
+FORGE_SOURCES = [ROOT / "web-ui-lab/src/main/kotlin/dev/projects/webui/ForgeV3Scene.kt",
+                 *(CORE / f for f in ("CorePolish05ForgeFlow.kt", "CoreAccount.kt", "CoreEnhancementCatalog.kt", "CoreAffixCatalog.kt",
+                                       "CoreEconomy.kt", "CoreJourney.kt"))]
 OUT = ROOT / "server-minestom/src/main/resources/polish05"
 METRICS = ROOT / "web-ui-lab/src/main/resources/polish05-font-metrics.json"
 NS = "projects_ui_polish05"
@@ -143,8 +148,10 @@ def text_chars():
         chars |= set(n["name"]) | set(n["text"])
         for t in n.get("choiceTexts", []):
             chars |= set(t)
-    for literal in re.findall(r'"([^"\\]*)"', FLOW.read_text(encoding="utf-8")):
-        chars |= set(literal)
+    for source in [FLOW, *FORGE_SOURCES]:
+        if source.exists():
+            for literal in re.findall(r'"([^"\\]*)"', source.read_text(encoding="utf-8")):
+                chars |= set(literal)
     return sorted(c for c in chars if not c.isspace())
 
 

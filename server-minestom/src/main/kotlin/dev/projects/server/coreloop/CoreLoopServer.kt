@@ -116,7 +116,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val uiPack = CoreUiPackServer.start()
     private val polishScene = runCatching {
         val loader = javaClass.classLoader
-        ForgeV3Scene(requireNotNull(loader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
+        ForgeV3Scene(requireNotNull(loader.getResourceAsStream("polish05/forge.json")).use { it.readBytes() })
     }.onFailure { System.err.println("POLISH05_SCENE_DISABLED: ${it.message}") }.getOrNull()
     private val polishSessions = if(uiPack != null && polishScene != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
         { player -> uiPack.enabled(player) }, null,

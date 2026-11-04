@@ -169,6 +169,8 @@ class CoreUiPackServer private constructor(
             val grimoireBytes = loader.getResourceAsStream("polish05/grimoire.zip")?.use { it.readBytes() }
             // パッシブツリー: baked tree tiles, gold overlays and panel text (scripts/build_passive_tree_assets.py).
             val passiveTreeBytes = loader.getResourceAsStream("polish05/passive-tree.zip")?.use { it.readBytes() }
+            // The harbor forge's plates in the 手帳's pixel look (scripts/build_forge_dot_assets.py).
+            val forgeBytes = loader.getResourceAsStream("polish05/forge.zip")?.use { it.readBytes() }
             // Dialog look: ProjectS widget frames plus the private dialog fonts.
             val dialogBytes = loader.getResourceAsStream("polish05/dialog.zip")?.use { it.readBytes() }
             // The player menu drawn inside a dialog: its fonts, baked pages and sprites (scripts/build_menu_dialog_assets.py).
@@ -183,7 +185,7 @@ class CoreUiPackServer private constructor(
                 // Vanilla client reload twice and could leave the forge unavailable until rejoin.
                 val seen = paths.toMutableSet()
                 var privateAssets = 0
-                listOfNotNull(polishBytes, atlasBytes, grimoireBytes, passiveTreeBytes, dialogBytes, menuBytes).forEach { archive -> ZipInputStream(archive.inputStream()).use { source ->
+                listOfNotNull(polishBytes, atlasBytes, grimoireBytes, passiveTreeBytes, forgeBytes, dialogBytes, menuBytes).forEach { archive -> ZipInputStream(archive.inputStream()).use { source ->
                     while (true) {
                         val entry = source.nextEntry ?: break
                         val path = entry.name
