@@ -414,6 +414,10 @@ internal class CorePlayerCombat(
             vfx.particles(Particle.SMALL_FLAME, player.position.add(0.0, 1.2, 0.0).add(f.mul(.6)).add(right.mul(.45)),
                 2 + (heatNow * 6).toInt(), Vec(.15, .3, .15), .01f)
         }
+        geyser?.let { g ->
+            vfx.playSkill(CoreSkillEffect(g.job, g.skill, g.origin, g.direction, pulse = CoreWarriorRules.FULL_SWING_GEYSER_PULSE + geyserStep))
+            if (++geyserStep >= CoreWarriorRules.FULL_SWING_GEYSER_STEPS) { geyser = null; geyserStep = 0 }
+        }
         visualContactsThisTick = 0
         boltSprites.tick()
         if (classId == CoreClass.MAGE) mageField.tick(tickNumber)
@@ -728,12 +732,12 @@ internal class CorePlayerCombat(
                 val d = kotlin.math.hypot(dx, dz)
                 d <= s.radius && (dx * action.direction.x() + dz * action.direction.z()) >= .5 * d
             }.toSet()
-            // Three stacks make it 全力の一振り: its own look (the long rift; the blood burst along it is gone, Creator
-            // 2026-11-05: カッコ悪い) and twice the weight.
+            // Three stacks make it 全力の一振り: its own look (the rift and the blood that runs out along it) and twice the weight.
             val full = action.empowered >= CoreWarriorRules.BEAST_MAX
             if (full) {
                 val look = CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == CoreWarriorRules.FULL_SWING }.copy(radius = s.radius)
                 vfx.playSkill(CoreSkillEffect(classId, look, player.position, action.direction))
+                geyser = CoreSkillEffect(classId, look, player.position, action.direction)
                 notice("全力の一振り")
             } else emitSkillPulse(player.position, s.radius)
             val hitBefore = hitThisStrike.also { it.clear() }
@@ -1172,6 +1176,9 @@ internal class CorePlayerCombat(
         CoreSkillEffect(classId, action.definition.copy(radius = radius), centre, action.direction,
             pulse = pulse, endpoint = endpoint).let { if (action.definition.icon in OWN_PICTURE) vfx.skillCue(it) else vfx.playSkill(it) }
     }
+    /** 全力の一振り's blood burst, played out along the rift a step a tick after the blow (see tick()). */
+    private var geyser: CoreSkillEffect? = null
+    private var geyserStep = 0
 
     /** Lock a ground cast to the visible aimed enemy/block, not a fixed point seven blocks ahead. */
     private fun aimedGround(s: CoreSkillDefinition, enemies: QuestEncounterCombat): Pos {
@@ -1440,7 +1447,7 @@ internal class CorePlayerCombat(
         lightningRun = null; lightningRunHit.clear(); mixing = false; blasting = false
         normal.reset(); pending = null; shot = null; lastConduitGain = -1; skillBoost = 1.0; burns.clear()
         normalEmpowerment = 1.0
-        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1; braceUntil = -1; braceStopped = 0.0; braceStacks = 0; heat = 0.0; heatAt = -1; gravityHaste = 0.0; impactSwings = 0; impacts.clear()
+        queued = null; queueUntil = -1; nextNormalAt = -1; finisherUntil = -1; beastTick = -1; beastThisTick = 0.0; launched.clear(); smashTargets = emptySet(); armorUntil = -1; awakenUntil = -1; geyser = null; geyserStep = 0; braceUntil = -1; braceStopped = 0.0; braceStacks = 0; heat = 0.0; heatAt = -1; gravityHaste = 0.0; impactSwings = 0; impacts.clear()
         CoreArmamentPresentation.show(player)
         classState.reset()
         crowd.clear()

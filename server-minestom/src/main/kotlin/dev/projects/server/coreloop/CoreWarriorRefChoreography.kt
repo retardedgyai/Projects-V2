@@ -22,7 +22,7 @@ internal object CoreWarriorRefChoreography {
     fun owns(p: CoreCombatMeshPart) = p.shape.startsWith(PREFIX)
     /** Camera-facing pieces whose pose moves them (the meshes carry these by moving the entity). */
     fun drifts(p: CoreCombatMeshPart) = owns(p) && p.shape.removePrefix(PREFIX).let {
-        it == "bdrop" || it == "bfling" || it == "bsmoke" || it.startsWith("scale") || it.startsWith("sgather") }
+        it == "bdrop" || it == "bfling" || it == "bsmoke" || it == "bmistup" || it.startsWith("scale") || it.startsWith("sgather") }
     fun handles(e: CoreSkillEffect) = enabled && e.job == CoreClass.WARRIOR && e.valid &&
         (e.phase == CoreSkillVisualPhase.PULSE && e.sceneId in sceneIds || e.sceneId in ownedIds)
 
@@ -355,6 +355,22 @@ internal object CoreWarriorRefChoreography {
         val weight = ((reach - 4.0) / 4.0).coerceIn(0.0, 1.0)      // 0 at ≈4 m (no beast) .. 1 at ≈8 m
         val furrow = reach - .8
         val head = impact - .6 + furrow
+        if (full && e.pulse >= CoreWarriorRules.FULL_SWING_GEYSER_PULSE) {
+            // 全力の一振り (Creator 2026-10-24, 案B 血の噴き上げ): blood bursts up out of the rift, from the near end to the
+            // far, in a wall, and leaves the line soaked (the drops it threw into the air are gone, Creator 2026-11-05).
+            // Played a step a tick (two places each) after the blow, so no one effect carries more than the piece budget.
+            val count = 2 * CoreWarriorRules.FULL_SWING_GEYSER_STEPS
+            val step = e.pulse - CoreWarriorRules.FULL_SWING_GEYSER_PULSE
+            for (i in 2 * step until 2 * step + 2) {
+                val z = impact + (head - impact) * i / (count - 1)
+                val delay = i % 2
+                for (j in 0 until 2)
+                    out += part("bmistup", local((hash(i, j, 501) - .5) * .5, .4 + j * .5, z), 1.6 * (1 - .02 * i), 0.0, 10, ground = false,
+                        billboard = true, delay = delay, roll = hash(i, j, 502) * 6.0)
+                out += part("bsplat", local((hash(i, 507) - .5) * .8, .03, z), .8, yaw + hash(i, 508) * 6.0, 54, delay = delay + 6)
+            }
+            return out
+        }
         if (e.pulse >= 1) {
             // The second split at the head (three stacks): the ground bursts open where the furrow ended and forks.
             for ((n, turn) in listOf(-.55, .55).withIndex())
@@ -491,6 +507,8 @@ internal object CoreWarriorRefChoreography {
                 val k = name.removePrefix("sgather").toInt()
                 CoreMeshPose(p.offset.add(p.travel.mul(u * u)), p.scale.mul(1 - .5 * u), 0.0, 0.0, 0.0, "$DIR/scale_${(t.toInt() + k) % 4}", live)
             }
+            name == "bmistup" -> CoreMeshPose(p.offset.add(0.0, t.coerceAtLeast(0.0) * .16, 0.0), p.scale.mul(1.0 + t.coerceAtLeast(0.0) * .09),
+                0.0, 0.0, p.roll, "$DIR/bmist_${(tick / 2).coerceAtMost(4)}", live)
             name == "beye" -> CoreMeshPose(p.offset, p.scale.mul(if ((t.toInt() / 3) % 7 == 0) .7 else 1.0), 0.0, 0.0, 0.0, "$DIR/ember_0", live)
             name == "rhalo" -> {
                 val ph = (t.coerceAtLeast(0.0) % 20) / 20

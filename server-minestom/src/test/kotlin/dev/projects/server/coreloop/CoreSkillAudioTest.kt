@@ -51,6 +51,9 @@ class CoreSkillAudioTest {
         val awaken=(0 until 160 step 2).flatMap { t ->
             CoreSkillAudio.warriorUltimateCues(effect(CoreWarriorRules.AWAKEN,CoreWarriorRules.AWAKEN_CLING_PULSE+t/2%97))!! }
         assertTrue(awaken.isEmpty())
+        val geyser=(0 until CoreWarriorRules.FULL_SWING_GEYSER_STEPS).flatMap {
+            CoreSkillAudio.warriorUltimateCues(effect(CoreWarriorRules.FULL_SWING,CoreWarriorRules.FULL_SWING_GEYSER_PULSE+it))!! }
+        assertTrue(geyser.isEmpty())
         // The blow itself keeps its own voice.
         assertNull(CoreSkillAudio.warriorUltimateCues(effect(CoreWarriorRules.FULL_SWING)))
         for(id in listOf(CoreWarriorRules.ARMOR,CoreWarriorRules.AWAKEN))

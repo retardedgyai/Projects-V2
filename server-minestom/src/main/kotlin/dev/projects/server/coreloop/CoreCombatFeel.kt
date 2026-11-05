@@ -130,6 +130,9 @@ internal object CoreWarriorRules {
     const val ARMOR_BEAT_PULSE = 300
     /** 獣の目覚め's look while it lasts: smoke clinging to the body, pulse numbers from here (one every 2 ticks). */
     const val AWAKEN_CLING_PULSE = 100
+    /** 全力の一振り's blood burst runs out along the rift over [FULL_SWING_GEYSER_STEPS] ticks, two places a tick. */
+    const val FULL_SWING_GEYSER_PULSE = 200
+    const val FULL_SWING_GEYSER_STEPS = 8
     /** How long an enemy 斬り上げ threw up counts as in the air for 叩き落とし. */
     const val LAUNCHED_TICKS = 36L
     /** 叩き落とし: 地割り on an enemy 斬り上げ threw up. */
