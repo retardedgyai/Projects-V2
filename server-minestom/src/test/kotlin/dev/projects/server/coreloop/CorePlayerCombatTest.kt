@@ -132,14 +132,15 @@ class CorePlayerCombatTest {
         repeat(window) { h.ticks(1); val now = h.bossHealth(); if (now < before) return before - now; before = now }
         return 0.0
     }
-    @Test fun `mage frost then fire shatters the chilled boss for more`() = arena { h ->
+    @Test fun `two frost novas fill the boss's ice, it freezes, and fire shatters it for more`() = arena { h ->
         h.journey = CoreJourney.legacy(job = CoreClass.MAGE); h.base = CoreWeaponBase.STAFF; h.actor.reset()
         val alone = nextHit(h) { h.actor.skill(0) }
         assertTrue(alone > 0, "火炎弾 lands")
-        h.ticks(100); h.actor.refillTraining()  // its fire floor burns out
+        h.ticks(100); h.actor.refillTraining()  // its burning ends
         val beforeFrost = h.bossHealth()
         h.actor.skill(1); h.ticks(15)
         assertTrue(h.bossHealth() < beforeFrost, "霜の波紋 lands")
+        h.actor.refillTraining(); h.actor.skill(1); h.ticks(15)  // 60 + 60: full, the boss freezes
         h.actor.refillTraining()
         val beforeFire = h.bossHealth()
         h.actor.skill(0); h.ticks(10)
@@ -565,7 +566,7 @@ class CorePlayerCombatTest {
     fun `ice mod exploits enemy elemental weakness with actual damage`() = arena(stats = CoreAffixStats(iceFlat = 8.0)) { h ->
         assertEquals("ice", h.combat.weaknessOf(h.combat.combatTargets().single().id))
         h.actor.attack(); h.ticks(8)
-        assertEquals(300.0 - (12.0 + 8.0 * 0.65) * 1.25, h.bossHealth(), 0.00001)
+        assertEquals(300.0 - (12.0 + 8.0 * 0.65) * CorePlayerCombat.WEAK, h.bossHealth(), 0.00001)
     }
 
     @Test

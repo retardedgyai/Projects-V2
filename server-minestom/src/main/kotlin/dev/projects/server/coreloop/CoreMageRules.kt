@@ -19,6 +19,10 @@ internal enum class MageReaction(val label: String) {
     CONDUCT("伝導"),
     /** 過負荷: lightning on a burning enemy explodes and throws back. */
     OVERLOAD("過負荷"),
+    /** 凍結: the ice built up on an enemy filled it; it freezes (a boss once, for a short down). */
+    FREEZE("凍結"),
+    /** 破裂: the charge built up on an enemy filled it; it bursts for a big hit. */
+    BURST("破裂"),
 }
 
 /**
@@ -53,33 +57,46 @@ internal class CoreMageSigils {
 }
 
 /**
- * The enemies as the mage's elements left them: frozen and burning. Nothing is left on the ground (Creator
- * 2026-10-28: states sit on enemies only). Server state only, in ticks. Bosses never freeze: ice only chills them,
- * which still lets fire shatter (weaker).
+ * The enemies as the mage's elements left them (Creator 2026-11-03, docs/development/mage-rework.md): the element
+ * itself only strikes a weakness, the same for a weapon's element; what ice and lightning do is the mage's spells'.
+ * Ice builds up on an enemy (slower the fuller) and freezes it when full; lightning builds a charge that bursts when
+ * full. A boss freezes or bursts once and then needs [GROW] times as much the next time. Fire burns (4 s) and
+ * finishes what the others set up. Nothing is left on the ground. Server state only, in ticks.
  */
 internal class CoreMageField {
-    private data class Mark(val until: Long, val boss: Boolean)
+    /** An element building up on one enemy: [value] of [need]; it starts to fade [FADE_AFTER] ticks after the last. */
+    private class Gauge(var value: Double = 0.0, var need: Double = FULL, var lastAt: Long = 0)
 
-    private val frozen = HashMap<UUID, Mark>()
+    private val frozen = HashMap<UUID, Long>()
     private val burning = HashMap<UUID, Long>()
+    private val ice = HashMap<UUID, Gauge>()
+    private val charge = HashMap<UUID, Gauge>()
 
     fun tick(now: Long) {
-        frozen.values.removeAll { it.until <= now }
+        frozen.values.removeAll { it <= now }
         burning.values.removeAll { it <= now }
+        for (gauges in listOf(ice, charge)) gauges.values.removeAll { g ->
+            if (now - g.lastAt > FADE_AFTER) g.value = (g.value - FADE_PER_TICK).coerceAtLeast(0.0)
+            g.value <= 0.0 && g.need <= FULL
+        }
     }
 
-    fun isFrozen(id: UUID, now: Long) = (frozen[id]?.until ?: 0) > now
+    fun isFrozen(id: UUID, now: Long) = (frozen[id] ?: 0) > now
     fun isBurning(id: UUID, now: Long) = (burning[id] ?: 0) > now
-    fun frozenIds(now: Long) = frozen.filterValues { it.until > now }.keys
+    fun frozenIds(now: Long) = frozen.filterValues { it > now }.keys
     fun burningIds(now: Long) = burning.filterValues { it > now }.keys
     /** Ticks this enemy still burns (0 when it does not). */
     fun burnLeft(id: UUID, now: Long) = ((burning[id] ?: 0) - now).coerceAtLeast(0)
+    /** How full the ice on this enemy is, 0..1 (its slow). */
+    fun chill(id: UUID) = ice[id]?.let { it.value / it.need } ?: 0.0
+    /** How full the charge on this enemy is, 0..1. */
+    fun charged(id: UUID) = charge[id]?.let { it.value / it.need } ?: 0.0
 
     /**
-     * [element] lands on enemy [id]. Applies the element's own state (fire burns, ice freezes or chills) and returns
-     * the mixes it set off. A shatter uses up the freeze.
+     * [element] lands on enemy [id] with [amount] of build-up (ice and lightning; a grand chant's ice brings [FILL]).
+     * Applies the element's own state and returns what it set off. A shatter uses up the freeze.
      */
-    fun land(element: MageElement, id: UUID, boss: Boolean, now: Long): Set<MageReaction> {
+    fun land(element: MageElement, id: UUID, boss: Boolean, now: Long, amount: Double = 0.0): Set<MageReaction> {
         val out = mutableSetOf<MageReaction>()
         when (element) {
             MageElement.FIRE -> {
@@ -87,16 +104,31 @@ internal class CoreMageField {
                 burning[id] = now + BURN_TICKS
             }
             MageElement.ICE -> {
-                frozen[id] = Mark(now + if (boss) CHILL_TICKS else FREEZE_TICKS, boss)
                 burning.remove(id)
+                if (!isFrozen(id, now) && fill(ice, id, boss, now, amount)) { freeze(id, boss, now); out += MageReaction.FREEZE }
             }
             MageElement.LIGHTNING -> {
                 if (isFrozen(id, now)) out += MageReaction.CONDUCT
                 if (isBurning(id, now)) out += MageReaction.OVERLOAD
+                if (fill(charge, id, boss, now, amount)) out += MageReaction.BURST
             }
             MageElement.WIND -> Unit
         }
         return out
+    }
+
+    /** Frozen now, whatever the ice (元素の極み's ice after a shatter). */
+    fun freeze(id: UUID, boss: Boolean, now: Long) { frozen[id] = now + if (boss) BOSS_FREEZE_TICKS else FREEZE_TICKS }
+
+    /** Adds [amount]; true when that filled it (then it empties, and a boss's next fill needs more). */
+    private fun fill(gauges: HashMap<UUID, Gauge>, id: UUID, boss: Boolean, now: Long, amount: Double): Boolean {
+        if (amount <= 0) return false
+        val g = gauges.getOrPut(id) { Gauge() }
+        g.value += amount; g.lastAt = now
+        if (g.value < g.need) return false
+        g.value = 0.0
+        if (boss) g.need *= GROW
+        return true
     }
 
     /**
@@ -110,14 +142,24 @@ internal class CoreMageField {
 
     fun shatterMultiplier(boss: Boolean) = if (boss) BOSS_SHATTER else SHATTER
 
-    fun clear() { frozen.clear(); burning.clear() }
+    fun clear() { frozen.clear(); burning.clear(); ice.clear(); charge.clear() }
 
     companion object {
+        const val FULL = 100.0
+        /** A grand chant's ice: full at once, whatever is still needed. */
+        const val FILL = 1e6
+        const val GROW = 1.5            // a boss needs this much more each time it froze or burst
+        const val FADE_AFTER = 80L      // 4 s without that element and its build-up starts to fade
+        const val FADE_PER_TICK = 1.25  // ... emptying a full gauge in 4 s more
         const val FREEZE_TICKS = 40     // 2 s frozen solid (a stun on regular enemies)
-        const val CHILL_TICKS = 60      // a boss is only chilled, a little longer
+        const val BOSS_FREEZE_TICKS = 30 // 1.5 s, a short down for a boss
         const val BURN_TICKS = 80       // 4 s burning, a hit every second
-        const val SHATTER = 2.0         // the hit that shatters deals this many times its damage
-        const val BOSS_SHATTER = 1.5
+        const val SHATTER = 3.0         // the hit that shatters deals this many times its damage
+        const val BOSS_SHATTER = 2.0
+        /** The most a full ice slows (a boss resists half, QuestEncounterCombat.applySlow). */
+        const val CHILL_SLOW = .4
+        /** A burst: this many times the hit that set it off. */
+        const val BURST_POWER = 2.5
     }
 }
 
@@ -135,33 +177,49 @@ internal object CoreMageRules {
     /** 元素の極み (lightning): a conduct also reaches what stands this near a frozen enemy. */
     const val PEAK_CONDUCT_REACH = 3.0
 
+    /** Ice or charge a spell builds on each enemy it hits (CoreMageField.FULL is full). 落雷's jumps: [JUMP_BUILDUP]. */
+    fun buildup(icon: String, grand: Boolean) = when {
+        grand && icon == GRAND_ICE -> CoreMageField.FILL
+        grand -> STORM_BOLT
+        else -> when (icon) { "frost_nova" -> 60.0; "mage_burst" -> 50.0; "mage_mark" -> 40.0; "mage_blink" -> 20.0; else -> 30.0 }
+    }
+    const val JUMP_BUILDUP = 25.0
+    /** One bolt of the grand chant's thunderstorm. */
+    const val STORM_BOLT = 35.0
+    const val OVERLOAD_POWER = 1.2
+    /** The grand chant's ice draws the frost nova's own picture where it lands. */
+    const val GRAND_ICE = "frost_nova"
+    /** How far a wind field draws a regular enemy in each pulse (竜巻, the typhoon). */
+    const val WIND_DRAW = 1.2
+
     fun element(skill: CoreSkillDefinition): MageElement? = when (skill.element) {
         1 -> MageElement.FIRE; 2 -> MageElement.ICE; 3 -> MageElement.LIGHTNING; 4 -> MageElement.WIND; else -> null
     }
     fun code(element: MageElement) = element.ordinal + 1
 
     /**
-     * 大詠唱 made of the marks it spends: one wave a mark (a small one with none), its element the circle's most
-     * common mark (all three different: every element at once). Art reuses the old mage scenes for now.
+     * 大詠唱 made of the marks it spends (Creator 2026-11-03): cast where the mage aims, about three times a spell's
+     * damage, and each element does its own big thing. Its element is the circle's most common mark; all three
+     * different is every element at once. More marks make it a little stronger. Art reuses the spells' for now.
+     * - fire, 大流星: one huge meteor. - ice, 氷河: fills every enemy's ice at once (a boss freezes once).
+     * - lightning, 雷雨: bolts fall again and again, building charge until enemies burst.
+     * - wind, 大台風: a long storm that draws enemies in. - mixed, 四元の爆発: three blasts of fire, ice and lightning.
      */
     fun grand(spent: List<MageElement>, dominant: MageElement?): CoreSkillDefinition {
         val mixed = spent.size == CoreMageSigils.MAX && dominant == null
-        val name = when {
-            mixed -> "大詠唱：四元の爆発"
-            dominant == MageElement.FIRE -> "大詠唱：火柱の雨"
-            dominant == MageElement.ICE -> "大詠唱：氷の棺"
-            dominant == MageElement.LIGHTNING -> "大詠唱：雷の檻"
-            dominant == MageElement.WIND -> "大詠唱：大竜巻"
-            else -> "大詠唱"
+        val scale = .7 + .1 * spent.size
+        fun g(name: String, icon: String, ad: Double, ap: Double, pulses: Int, radius: Double, startup: Int) =
+            CoreSkillDefinition(name, icon, "陣の紋を全部使って、狙った所に解き放つ。一番多い紋で中身が変わり、紋が多いほど強い",
+                CoreDamageFormula(ad * scale, ap = ap * scale), CoreDamageType.MAGICAL, mana = 20, cooldown = 240, startup = startup,
+                pulses = pulses, area = true, motion = CoreSkillMotion.FIELD, range = 18.0, radius = radius,
+                element = dominant?.let(::code) ?: 0)
+        return when {
+            mixed -> g("大詠唱：四元の爆発", "mage_burst", 18.0, 2.6, 3, 5.0, 20)
+            dominant == MageElement.FIRE -> g("大詠唱：大流星", "meteor", 54.0, 7.8, 1, 5.5, 24)
+            dominant == MageElement.ICE -> g("大詠唱：氷河", GRAND_ICE, 40.0, 6.0, 1, 5.0, 18)
+            dominant == MageElement.LIGHTNING -> g("大詠唱：雷雨", "mage_mark", 9.0, 1.3, 6, 5.5, 16)
+            dominant == MageElement.WIND -> g("大詠唱：大台風", "mage_gale", 7.0, 1.0, 6, 6.5, 16)
+            else -> g("大詠唱", "mage_burst", 10.0, 1.6, 1, 3.0, 20)
         }
-        val scene = when (dominant) {
-            MageElement.FIRE -> "mage_ult"; MageElement.ICE -> "mage_zero"; MageElement.LIGHTNING -> "mage_mark"
-            MageElement.WIND -> "mage_ward"; null -> "mage_burst"
-        }
-        val power = 1.0 + .5 * spent.size
-        return CoreSkillDefinition(name, scene, "陣の紋を全部使って解き放つ。一番多い紋で中身が変わり、紋が多いほど大きい",
-            CoreDamageFormula(10.0 * power, ap = 1.6 * power), CoreDamageType.MAGICAL, mana = 20, cooldown = 240, startup = 20,
-            pulses = spent.size.coerceAtLeast(1), area = true, motion = CoreSkillMotion.NOVA, radius = 4.0 + spent.size,
-            element = dominant?.let(::code) ?: 0)
     }
 }
