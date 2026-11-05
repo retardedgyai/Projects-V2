@@ -101,7 +101,8 @@ object CoreCraftingCatalog {
             val used = list.map { it.stone.modId }.toSet()
             val groups = list.groupingBy { CoreAffixCatalog.definition(it.stone)!!.group }.eachCount()
             val eligible = CoreAffixCatalog.definitions.filter {
-                gear in it.allowedGear && it.id !in used && (groups[it.group] ?: 0) < target.groupCapacity && (!elemental || it.stat in elements)
+                gear in it.allowedGear && it.id !in used && (groups[it.group] ?: 0) < target.groupCapacity && (!elemental || it.stat in elements) &&
+                    CoreAffixCatalog.craftable(it)
             }
             require(eligible.isNotEmpty()) { "追加できるMODがありません" }
             var choice = random.nextInt(eligible.sumOf { it.weight })

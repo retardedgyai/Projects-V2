@@ -144,7 +144,8 @@ class CoreCraftingCurrencyTest {
             assertEquals(result.equippedAffixes, retry.equippedAffixes)
             assertEquals(result.currencies, retry.currencies)
         }
-        assertEquals(CoreAffixCatalog.definitions.map { it.id }.toSet(), seen)
+        // Skill level stones only drop; crafting never rolls them (2026-11-03).
+        assertEquals(CoreAffixCatalog.definitions.filter(CoreAffixCatalog::craftable).map { it.id }.toSet(), seen)
     }
 
     @Test fun `wrong rarity full slots missing balance active run and stale operations spend nothing`() {
