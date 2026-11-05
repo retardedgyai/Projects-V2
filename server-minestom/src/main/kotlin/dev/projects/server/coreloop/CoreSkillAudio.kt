@@ -69,7 +69,6 @@ internal object CoreSkillAudio {
             }
             CoreWarriorRules.AWAKEN ->
                 if(effect.pulse>=CoreWarriorRules.AWAKEN_CLING_PULSE) emptyList() else listOf(Cue(SoundEvent.BLOCK_STONE_BREAK,.6f,.6f))
-            CoreWarriorRules.FULL_SWING -> if(effect.pulse>=CoreWarriorRules.FULL_SWING_GEYSER_PULSE) emptyList() else null
             else -> null
         }
     }
