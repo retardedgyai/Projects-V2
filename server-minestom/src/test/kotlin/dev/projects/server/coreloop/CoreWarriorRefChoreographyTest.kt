@@ -29,21 +29,17 @@ class CoreWarriorRefChoreographyTest {
         }
     }
 
-    @Test fun `the beast it took sets the crack's reach and three stacks split it again ahead`() {
+    @Test fun `the beast it took sets the crack's reach`() {
         val base = CoreSkillCatalog.skills(CoreClass.WARRIOR).first { it.icon == "slam" }
         fun furrowEnd(stacks: Int): Double {
             val e = CoreSkillEffect(CoreClass.WARRIOR, CoreWarriorRules.slam(base, stacks), Vec.ZERO, Vec(0.0, 0.0, 1.0), CoreSkillVisualPhase.PULSE)
             val f = CoreWarriorRefChoreography.parts(e)!!.first { it.shape.endsWith("furrow") }
             return f.offset.z() + f.scale.z() / 2
         }
-        val ends = (0..3).map(::furrowEnd)
+        // Three stacks play 全力の一振り's own look instead (CorePlayerCombat).
+        val ends = (0..2).map(::furrowEnd)
         assertTrue(ends[0] < ends[1] && ends[1] < ends[2], "$ends")
-        assertEquals(ends[2], ends[3], 1e-9)
         assertTrue(ends[0] in 3.5..5.0 && ends[2] in 7.5..9.0, "$ends")
-        val split = CoreWarriorRefChoreography.parts(CoreSkillEffect(CoreClass.WARRIOR, CoreWarriorRules.slam(base, 3), Vec.ZERO,
-            Vec(0.0, 0.0, 1.0), CoreSkillVisualPhase.PULSE, pulse = 1))!!
-        assertTrue(split.isNotEmpty() && split.none { it.shape.endsWith("wind") }, "the second split is only the head")
-        assertTrue(split.filter { it.shape.contains("turf") }.all { it.offset.z() > ends[3] - 1.0 }, "it bursts forward at the head")
     }
 
     @Test fun `only 地割り is taken over`() {

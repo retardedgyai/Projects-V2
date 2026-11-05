@@ -89,7 +89,7 @@ object CoreUiComponents {
                 .append(text("  $cooldowns" + (state.resource?.let { "  資源 ${number(it)}/${number(state.resourceMaximum)}" } ?: "") + if(state.shield > 0) "  障壁 ${number(state.shield)}" else "", IVORY))
                 .append(if(state.combatCue.isBlank()) Component.empty() else text("  ${state.combatCue}", IVORY))
                 .append(if(state.buffs.isEmpty()) Component.empty() else text("  " + state.buffs.joinToString(" ") {
-                    "${it.kind.label}${if (it.cooldown) "待ち" else ""} ${kotlin.math.ceil(it.remainingSeconds.coerceAtLeast(0.0)).toInt()}秒" }, MUTED))
+                    "${it.kind.label}${if (it.cooldown) "待ち" else ""} ${kotlin.math.ceil(it.remainingSeconds.coerceAtLeast(0.0)).toInt()}${if (it.counted) "回" else "秒"}" }, MUTED))
                 .append(if(state.notice.isBlank()) Component.empty() else text("  ${state.notice}", NamedTextColor.YELLOW))
                 .append(if (state.hint.isBlank()) Component.empty() else text("  ${state.hint}", MUTED))
         }

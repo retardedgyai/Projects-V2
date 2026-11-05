@@ -77,8 +77,10 @@ data class CoreHudState(
 )
 
 enum class CoreHudBuffKind(val glyph: String, val label: String) {
-    WHETSTONE("whetstone", "砥石"), POTION("potion", "回復薬"), DODGE("dodge", "回避"),
+    WHETSTONE("whetstone", "砥石"), POTION("potion", "回復薬"), DODGE("dodge", "回避"), HEAT("heat", "熱"), IMPACT("impact", "衝撃"),
 }
 
 /** [cooldown] buffs darken while recovering; others are active effects counting down. */
-data class CoreHudBuff(val kind: CoreHudBuffKind, val remainingSeconds: Double, val totalSeconds: Double, val cooldown: Boolean)
+/** [counted]: the numbers are uses left (衝撃's swings), not seconds. */
+data class CoreHudBuff(val kind: CoreHudBuffKind, val remainingSeconds: Double, val totalSeconds: Double, val cooldown: Boolean,
+    val counted: Boolean = false)

@@ -271,7 +271,7 @@ internal class CoreCombatLab(
             val start = CoreSkillCatalog.ultimateStart(state.journey.job)
             val slot = if (i < start) 18 + i else 27 + i - start
             items[slot] = CoreSkillTooltip.item(skill, actor.sheet, state.journey, packed(player),
-                footer = if (i < start) "クリック：枠${state.selectedSlot + 1}へ設定" else "クリック：奥義へ設定")
+                footer = if (i < start) "クリック：枠${state.selectedSlot + 1}へ設定" else "クリック：ウルトへ設定")
             actions[slot] = { state.equip(i); changed() }
         }
         button(36, Material.POTION, "全回復・再使用を補充", "HP・マナ・固有ゲージ・クールダウンを補充") { actor.refillTraining(); player.closeInventory() }
