@@ -250,6 +250,16 @@
       if (b.hang) planeCross(cut, x, y, z, 'iron_chain', 3 / 16, 11 * S, 1);
     } else if (b.s === 'chain') {
       planeCross(cut, x, y, z, T, 3 / 16, 0, 1);
+    } else if (b.s === 'cross' && T.startsWith('fire')) {
+      // 火：ゲームと同じく、マスの4つの側面の内側に立つ板＋十字。背は1.4マス、光る材質で描く（小さな十字だけだと焦げた山に見えた）
+      planeCross(glow, x, y, z, T, 1, 0, 1.4);
+      const [tu, tv] = texRect(T), e = 0.06, H1 = 1.4, Lc = 15, Sc = skyAt(x, y, z);
+      const uv = [[tu, tv], [tu + TW, tv], [tu + TW, tv + TH], [tu, tv + TH]];
+      for (const [p0, p1] of [[[e, e], [1 - e, e]], [[1 - e, e], [1 - e, 1 - e]], [[1 - e, 1 - e], [e, 1 - e]], [[e, 1 - e], [e, e]]]) {
+        const v = [[x + p0[0], y, z + p0[1]], [x + p1[0], y, z + p1[1]], [x + p1[0], y + H1, z + p1[1]], [x + p0[0], y + H1, z + p0[1]]];
+        quad(glow, v, [0, 1, 0], uv, [1, 1, 1, 1], Lc, Sc);
+        quad(glow, [v[1], v[0], v[3], v[2]], [0, 1, 0], [uv[1], uv[0], uv[3], uv[2]], [1, 1, 1, 1], Lc, Sc);
+      }
     } else if (b.s === 'cross') {
       planeCross(cut, x, y, z, T, 1, 0, 1);
     }
@@ -318,7 +328,7 @@
     tex.encoding = THREE.sRGBEncoding; tex.generateMipmaps = false;
     const matLit = new THREE.MeshLambertMaterial({ map: tex, vertexColors: true, alphaTest: 0.5 });
     const matCut = new THREE.MeshLambertMaterial({ map: tex, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide });
-    const matGlow = new THREE.MeshBasicMaterial({ map: tex });
+    const matGlow = new THREE.MeshBasicMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide });   // 火の板の透けを抜く
     const depthCut = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: tex, alphaTest: 0.5 });
     const matWat = new THREE.MeshLambertMaterial({ map: tex, vertexColors: true, transparent: true, opacity: 0.82, side: THREE.DoubleSide });
     // 夜は光を使わず、頂点の色（月明かり＋光源のレベル）だけで描く

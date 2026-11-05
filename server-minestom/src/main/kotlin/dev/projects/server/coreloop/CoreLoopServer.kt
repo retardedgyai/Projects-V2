@@ -513,6 +513,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         MinecraftServer.getCommandManager().register(Command("colony").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { enterColony(it) } }
         })
+        // Development: walk the exported 1000×1000 開拓大陸 (scripts/buildkit/towns/frontier_export.py). /hub returns.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("frontier").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
+                if (!FrontierWorld.enter(player))
+                    player.sendMessage(CoreLoopItems.text("開拓大陸のワールドがまだ書き出されていません", NamedTextColor.YELLOW))
+            } }
+        })
         // Test-only: refills every research material and ink. Local dev launchers pass -Dprojects.devCommands=true.
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("researchtest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
