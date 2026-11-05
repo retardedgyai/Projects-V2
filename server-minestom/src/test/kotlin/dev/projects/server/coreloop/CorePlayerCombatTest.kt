@@ -1142,11 +1142,40 @@ class CorePlayerCombatTest {
         h.actor.classState.gain(3.0, h.journey.job)
         h.actor.skill(4); h.ticks(4)
         assertTrue(h.actor.awakened)
-        assertEquals(0.0, h.actor.resource) // the three went into it
+        assertTrue(h.actor.resource in 2.8..3.0, "${h.actor.resource}") // the three are its fuel, burning
+        h.actor.skill(4); h.ticks(1); assertTrue(h.actor.awakened) // not again while it lasts (no fresh shield)
         assertEquals(h.actor.maxHealth * CoreWarriorRules.AWAKEN_SHIELD_PERCENT / 100.0, h.actor.classState.shield, 1e-9)
         assertEquals(0, h.actor.receiveCrowdControl(CrowdControl.STUN, 2000, null))
         h.actor.skill(1); h.ticks(12)
         assertTrue(h.actor.cooldownRemaining(1) > h.actor.cooldownTicks(1) / 2) // spenders cool as usual
+    }
+
+    /** Ticks the awakening lasts for a warrior clicking on with 衝撃 on cooldown (the boss kept alive). */
+    private fun awakeTicks(stats: CoreAffixStats, impact: Boolean = true, limit: Int = 1200, extraBurn: Double = 0.0): Int {
+        var lasted = limit
+        arena(bossDistance = 2.5, stats = stats) { h ->
+            h.journey = CoreJourney.legacy(build = CoreClassBuild(ultimate = 2)); h.actor.reset()
+            val life = h.combat.javaClass.getDeclaredField("mobs").apply { isAccessible = true }.get(h.combat) as Map<*, *>
+            fun healBoss() = life.values.forEach { m -> m!!.javaClass.getDeclaredField("life").apply { isAccessible = true }.get(m).let { (it as dev.projects.server.mob.QuestMobLife).heal(1e9) } }
+            h.actor.classState.gain(3.0, h.journey.job)
+            h.actor.skill(4); h.ticks(3)
+            assertTrue(h.actor.awakened)
+            for (t in 0 until limit) {
+                healBoss(); h.actor.classState.burn(extraBurn / 20)
+                if (impact && t % 20 == 0) h.actor.skill(3)
+                h.actor.attack(); h.ticks(1)
+                if (!h.actor.awakened) { lasted = t; break }
+            }
+        }
+        return lasted
+    }
+
+    @Test fun `the awakening ends on the bare kit and stays for good only on an endgame build`() {
+        fun beast(p: Double) = CoreAffixStats(additional = mapOf(CoreAffixStat.WAR_BEAST to p))
+        assertTrue(awakeTicks(CoreAffixStats()) in 200..500, "the bare kit with 衝撃 burns out in about 18 s")
+        assertTrue(awakeTicks(CoreAffixStats(attackSpeedPercent = 60.0)) < 1200, "attack speed alone does not keep it")
+        assertTrue(awakeTicks(beast(CoreWarriorRules.BEAST_GAIN_BONUS_MAX)) >= 1200, "three high 獣の刻印石 and 衝撃 keep it")
+        assertTrue(awakeTicks(beast(CoreWarriorRules.BEAST_GAIN_BONUS_MAX), impact = false) < 1200, "not without 衝撃 landing")
     }
 
     @Test fun `the berserker armor shrugs off crowd control and staggers and burns health down to one`() = arena { h ->

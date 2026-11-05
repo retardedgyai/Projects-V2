@@ -14,7 +14,8 @@ class CoreWarriorReworkTest {
         assertEquals(100, byIcon.getValue("dash").cooldown)
         assertTrue(listOf("slam", "whirl").all { byIcon.getValue(it).cooldown in 200..320 }, "spenders")
         assertTrue(byIcon.getValue("war_wound").cooldown in 160..240, "the leap moves")
-        assertTrue(listOf("war_banner", "war_awaken").all { byIcon.getValue(it).cooldown >= 1200 })
+        assertTrue(byIcon.getValue("war_banner").cooldown >= 1200)
+        assertTrue(byIcon.getValue("war_awaken").cooldown <= 20, "the awakening is held back by the beast, not a cooldown")
         assertTrue(byIcon.values.all { it.spend == 0 }, "no warrior skill needs the beast to be cast")
     }
 

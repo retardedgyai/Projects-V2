@@ -27,6 +27,8 @@ internal class CoreClassState {
     }
     /** Warrior spender: takes every whole beast stack (a part-built one stays); returns how many. */
     fun takeStacks(): Int = resource.toInt().also { resource -= it }
+    /** 獣の目覚め burns the beast as it goes. */
+    fun burn(amount: Double) { resource = (resource - amount).coerceAtLeast(0.0) }
     /** Dev cast and labs: everything full. */
     fun fill(job: CoreClass) { resource = cap(job) }
     /** Takes [amount] only when it is all there; never leaves a partial spend. */

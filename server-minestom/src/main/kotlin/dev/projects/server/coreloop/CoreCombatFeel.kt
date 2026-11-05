@@ -107,6 +107,14 @@ internal object CoreWarriorRules {
     const val BRACE_BEAST_PERCENT = BRACE_SHIELD_PERCENT / 3  // a broken-through shield is all three stacks
     /** 獣の目覚め (Destroyer's hypergravity): a shield, less taken, no crowd control; around, enemies slow and are drawn in; normal hits speed up. */
     const val AWAKEN_SHIELD_PERCENT = 30.0
+    /**
+     * 獣の目覚め runs on the beast (Creator 2026-11-05): three to go in, no cooldown, then it burns this much a second
+     * and ends at none. Hits still feed it, so a warrior who builds faster than it burns stays awake for good; that
+     * is an endgame build (獣の刻印石 stacked, 衝撃 kept landing), not the bare kit.
+     */
+    const val AWAKEN_BURN_PER_SECOND = .5
+    /** 獣の刻印石: the beast builds this much faster at most (three high stones; the endgame road to staying awake). */
+    const val BEAST_GAIN_BONUS_MAX = 60.0
     const val AWAKEN_DAMAGE_TAKEN = .8
     const val AWAKEN_RADIUS = 6.0
     const val AWAKEN_SLOW = .6

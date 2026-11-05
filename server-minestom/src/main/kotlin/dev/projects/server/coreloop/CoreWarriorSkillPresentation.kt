@@ -14,7 +14,7 @@ internal object CoreWarriorSkillPresentation {
         "war_breach" to Identity("斬り上げ", "獣を溜める・打ち上げ", "真上へ振り上げて打ち上げ、地割りで叩き落とす"),
         "war_ult" to Identity("全力一振", "使えない技", "（地割りの獣3つになった）"),
         "war_banner" to Identity("狂戦士甲冑", "ウルト・暴走", "10秒、CCも怯みも効かず速く、獣が2倍で溜まる"),
-        "war_awaken" to Identity("獣の目覚め", "ウルト・超重力", "獣3つで8秒。障壁と硬さ、周りの敵を遅くして引き寄せる")
+        "war_awaken" to Identity("獣の目覚め", "ウルト・超重力", "獣を燃やして続く。殴って溜め続ければ切れない")
     )
     // Rows: enter or heavy / crowd or reach / hold. The retired 大地崩し (5) is not offered.
     val candidateOrder = listOf(0, 1, 4, 7, 6, 2, 3)
