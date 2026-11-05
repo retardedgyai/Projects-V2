@@ -202,13 +202,25 @@ def petal_curtain(u, v):
     return m * smooth(0, .15, u) * smooth(0, .15, 1 - u), u, 1 - v
 
 
+def ground(u, v):
+    """メイジの竜巻's mark on the ground (marker 84, kind 2): the same plain coordinate map, flat. G = along +Z, B = across."""
+    return 1.0, 1.0 - v, u
+
+
+def funnel(u, v):
+    """メイジの竜巻 (CoreMageTornado.kt, marker 84): a plain coordinate map on an upright billboard. The shader draws the
+    funnel itself from it; G = height (0 at the foot, 1 at the top), B = across (0 at the left)."""
+    return 1.0, 1.0 - v, u
+
+
 SPRITES = {"slash": (128, 128, slash, "flat"), "war_slash": (128, 128, war_slash, "flat"), "ring": (64, 64, ring, "flat"), "beam": (32, 128, beam, "flat"),
            "beam_up": (128, 32, lambda u, v: beam(v, u), "upright"), "ring_up": (64, 64, ring, "upright"), "puff": (32, 32, puff, "upright"), "smoke": (32, 32, puff, "upright"), "disc": (32, 32, puff, "flat"),
            "curtain": (32, 64, curtain, "upright"),
            "sakura_streak": (16, 80, streak, "cross"),
            "sakura_crest": (128, 128, crest, "flat"), "sakura_ring": (128, 128, petal_ring, "flat"),
            "sakura_slash": (128, 128, petal_slash, "flat"), "sakura_trail": (32, 128, petal_trail, "flat"),
-           "sakura_blossom": (64, 64, blossom, "upright"), "sakura_curtain": (64, 64, petal_curtain, "upright")}
+           "sakura_blossom": (64, 64, blossom, "upright"), "sakura_curtain": (64, 64, petal_curtain, "upright"),
+           "mage_funnel": (512, 512, funnel, "upright"), "mage_ground": (512, 512, ground, "flat")}
 
 
 def model(name, kind):
@@ -229,6 +241,92 @@ def model(name, kind):
     return {"ambientocclusion": False, "elements": [element],
             "textures": {"fx": {"sprite": f"projects:item/boss_vfx/{name}", "force_translucent": True},
                          "particle": f"projects:item/boss_vfx/{name}"}}
+
+
+# メイジの竜巻's loose pixels (CoreMageTornado.kt): small upright sprites in real colours, one texel = 1/16 block at
+# display scale 1, so they are the preview's one-pixel dots and streaks, not vanilla's soft dust. White ones are tinted
+# by the server (custom_model_data); none of the tints it uses is an item.fsh marker.
+PIXELS = {
+    "px_dot1": ["W"], "px_dot2": ["WW", "WW"],
+    "px_streak2": ["WG"], "px_streak3": ["WPG"], "px_streak4": ["WPGG"],
+    "px_streak2d": ["DD"], "px_streak3d": ["DDD"],
+    "px_puff": ["..WW..", ".WWWW.", "WWWWWW", "WWWWWW", ".WWWW.", "..WW.."],
+}
+PIXEL_COLOURS = {"W": (255, 255, 255, 255), "P": (216, 255, 228, 255), "G": (124, 206, 150, 255), "D": (86, 104, 90, 255)}
+
+
+def pixel_sprites(pack):
+    for name, rows in PIXELS.items():
+        im = Image.new("RGBA", (16, 16))
+        h, w = len(rows), len(rows[0])
+        x0, y0 = 8 - w // 2, 8 - h // 2
+        for y, row in enumerate(rows):
+            for x, c in enumerate(row):
+                if c != ".":
+                    im.putpixel((x0 + x, y0 + y), PIXEL_COLOURS[c])
+        tex = pack / f"assets/projects/textures/item/boss_vfx/{name}.png"
+        tex.parent.mkdir(parents=True, exist_ok=True)
+        im.save(tex)
+        face = {"texture": "#fx", "uv": [0, 0, 16, 16], "tintindex": 0}
+        files = {"models": {"ambientocclusion": False, "textures": {"fx": f"projects:item/boss_vfx/{name}", "particle": f"projects:item/boss_vfx/{name}"},
+                            "elements": [{"from": [0, 0, 8], "to": [16, 16, 8], "shade": False, "light_emission": 15,
+                                          "faces": {"north": face, "south": face}}]},
+                 "items": {"model": {"type": "minecraft:model", "model": f"projects:boss_vfx/{name}",
+                                     "tints": [{"type": "minecraft:custom_model_data", "index": 0, "default": 16777215}]}}}
+        for sub, value in files.items():
+            path = pack / f"assets/projects/{sub}/boss_vfx/{name}.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
+
+
+# メイジの竜巻, 3D (2026-11-03, 藍「あとこれ3dではない」 of the billboard): the funnel as sixteen bands, each a model of 32
+# upright panels round the axis (a stave barrel), so it is a real solid you can look round. Each panel's two faces map
+# to their own patch of one coordinate texture: G = height up the whole funnel (0..1 of TORNADO_TOP), B = angle round it
+# (0..1), R = 255 on the outer face, 128 on the inner. item.fsh (marker 84 kind 3) draws the funnel's pattern from
+# those, so the panels join up into one surface. Display scale TORNADO_TOP: 16 model units = the funnel's height.
+TORNADO_TOP, TORNADO_BANDS, TORNADO_PANELS = 4.4, 16, 32
+
+
+def tornado_r(y):
+    return .28 + (max(0.0, y) / TORNADO_TOP) ** 1.35 * 1.55
+
+
+def tornado_funnel(pack):
+    im = Image.new("RGBA", (512, 1024))
+    px = im.load()
+    for half, red in ((0, 255), (1, 128)):
+        for row in range(512):
+            g = round(255 * (1 - (row + .5) / 512))
+            for x in range(512):
+                px[x, half * 512 + row] = (red, g, round(255 * (x + .5) / 512), 255)
+    tex = pack / "assets/projects/textures/item/boss_vfx/mage_tornado.png"
+    tex.parent.mkdir(parents=True, exist_ok=True)
+    im.save(tex)
+    unit = TORNADO_TOP / 16                                  # blocks per model unit at display scale TORNADO_TOP
+    for b in range(TORNADO_BANDS):
+        y0, y1 = 16 * b / TORNADO_BANDS, 16 * (b + 1) / TORNADO_BANDS
+        rr = tornado_r(TORNADO_TOP * (b + 1) / TORNADO_BANDS) / unit     # the band's radius at its top, in units
+        half = rr * math.tan(math.pi / TORNADO_PANELS) * 1.03
+        elements = []
+        for k in range(TORNADO_PANELS):
+            ang = 360 * k / TORNADO_PANELS
+            ang = ang - 360 if ang > 180 else ang
+            u0, u1 = 16 * k / TORNADO_PANELS, 16 * (k + 1) / TORNADO_PANELS
+            v0, v1 = 8 * (1 - (b + 1) / TORNADO_BANDS), 8 * (1 - b / TORNADO_BANDS)
+            elements.append({"from": [8 - half, y0, 8 + rr], "to": [8 + half, y1, 8 + rr], "shade": False, "light_emission": 15,
+                             "rotation": {"origin": [8, y0, 8], "axis": "y", "angle": round(ang, 4)},
+                             "faces": {"south": {"texture": "#fx", "uv": [u0, v0, u1, v1], "tintindex": 0},
+                                       "north": {"texture": "#fx", "uv": [u1, v0 + 8, u0, v1 + 8], "tintindex": 0}}})
+        name = f"mage_tornado_{b}"
+        files = {"models": {"ambientocclusion": False, "elements": elements,
+                            "textures": {"fx": {"sprite": "projects:item/boss_vfx/mage_tornado", "force_translucent": True},
+                                         "particle": "projects:item/boss_vfx/mage_tornado"}},
+                 "items": {"model": {"type": "minecraft:model", "model": f"projects:boss_vfx/{name}",
+                                     "tints": [{"type": "minecraft:custom_model_data", "index": 0, "default": 16777215}]}}}
+        for sub, value in files.items():
+            path = pack / f"assets/projects/{sub}/boss_vfx/{name}.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
 
 
 def light_probe(pack):
@@ -262,6 +360,8 @@ def build(pack=PACK):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(value, indent=1) + "\n", encoding="utf-8")
     light_probe(pack)
+    pixel_sprites(pack)
+    tornado_funnel(pack)
     # The arena glow (26.3 post effect, turned on per player by the server): our own namespace, no vanilla override.
     post = pack / "assets/projects/shaders/post"
     post.mkdir(parents=True, exist_ok=True)

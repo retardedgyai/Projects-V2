@@ -139,6 +139,9 @@ class CoreAccount(
         require(zoneRecords.keys.all { it in 0..CoreZoneRecord.MAX_ZONE_ID })
         val passiveBudget = CorePassiveTree.budget(journey) + CorePassiveTree.bonusPoints(zoneRecords.keys)
         require((journey.savedBuilds.values + journey.build).all { it.passives.size <= passiveBudget }) { "パッシブの割り振りが不正です" }
+        // Skill points come in like passive points, as a separate purse per class build.
+        require((journey.savedBuilds + (journey.job to journey.build)).all { (job, build) ->
+            CoreSkillLevels.spent(build) <= passiveBudget && CoreSkillLevels.valid(job, build) }) { "技のLvの割り振りが不正です" }
         require(buyOrders.size <= CoreEconomy.MAX_OFFERS && buyOrders.map { it.id }.distinct().size == buyOrders.size)
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
         require(smithingXp in 0..CoreEnhancementCatalog.MAX_SMITHING_XP)
@@ -231,6 +234,10 @@ sealed interface CoreAction {
     /** Refunds cost silver (a gold sink); taking a node is free. */
     data class RefundPassive(val node: Int) : CoreAction
     data object ResetPassives : CoreAction
+    /** Spends one skill point on the skill with this icon (current class). */
+    data class RaiseSkill(val icon: String) : CoreAction
+    /** Gives every skill point of the current class back; costs silver like passive refunds. */
+    data object ResetSkillLevels : CoreAction
     /** Takes mastery [node] with option [choice] (one point; refund it like any node). */
     data class TakeMastery(val node: Int, val choice: Int) : CoreAction
     /** Confirms a plan made on the tree screen: path nodes and masteries (with their [masteries] options) in one go. */

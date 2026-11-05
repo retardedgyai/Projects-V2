@@ -1,0 +1,156 @@
+<title>Monumenta の戦士</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; findings first, then the warrior proposal as tables; sources at the foot. */
+:root {
+  --bg: #f3f4f1; --surface: #ffffff; --fg: #1f2320; --muted: #5f675f; --line: #d6dbd4;
+  --accent: #2f6b4f; --chip: #e7ece5; --warn: #9a5b00;
+  --display: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141815; --surface: #1c211d; --fg: #e6ebe5; --muted: #9aa49a; --line: #323a33;
+  --accent: #7fc8a2; --chip: #252c26; --warn: #f0b35a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #141815; --surface: #1c211d; --fg: #e6ebe5; --muted: #9aa49a; --line: #323a33;
+  --accent: #7fc8a2; --chip: #252c26; --warn: #f0b35a; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.75;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 64px; }
+main { max-width: 940px; margin: 0 auto; display: grid; gap: 40px; }
+h1 { font-family: var(--display); font-weight: 900; font-size: 1.9rem; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 700; font-size: 1.25rem; margin: 0 0 12px; text-wrap: balance; }
+h3 { font-size: 1rem; margin: 0 0 6px; }
+p { margin: 0; max-width: 68ch; }
+section { display: grid; gap: 12px; }
+.lead { color: var(--muted); }
+.facts { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+.fact b { display: block; margin-bottom: 4px; }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: .9rem; }
+th, td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+th { font-size: .75rem; letter-spacing: .06em; color: var(--muted); background: var(--chip); }
+tr:last-child td { border-bottom: 0; }
+.kind { font-size: .72rem; padding: 1px 8px; border-radius: 99px; background: var(--chip); color: var(--muted); white-space: nowrap; }
+.kind.press { color: var(--accent); font-weight: 700; }
+ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; max-width: 72ch; }
+.note { font-size: .82rem; color: var(--muted); }
+.guess { color: var(--warn); font-size: .8rem; font-weight: 700; }
+.ask { border-left: 4px solid var(--accent); padding: 12px 16px; background: var(--surface); border-radius: 0 6px 6px 0; }
+code { font-family: var(--mono); font-size: .85em; }
+a { color: var(--accent); }
+</style>
+
+<main>
+  <header style="display:grid;gap:10px">
+    <h1>Monumenta の戦士</h1>
+    <p class="lead">一人称なのに技がいい感じに作れている理由を、公式のソースコードと wiki で確かめた。最後にウォーリアーの作り直し案。2026-11-04。</p>
+  </header>
+
+  <section>
+    <h2>結論</h2>
+    <div class="facts">
+      <div class="fact"><b>押す技は8つ中2つだけ</b>戦士の基本の技8つのうち、押して出すのは盾の2つ。残り6つは会心・撃破・被弾・常時で勝手に出る。押す技は専門職（狂戦士・守護者）で3つ足される。</div>
+      <div class="fact"><b>技が通常攻撃を強くする</b>技を使うと「次の1撃」や「直後の会心」が大きくなる作りが多い。技と通常攻撃が交互に流れて、殴りが主役のまま。</div>
+      <div class="fact"><b>ホットバーを使わない</b>武器を持ったまま、持ち替え(F)・捨てる(Q)・しゃがみ・視線の上下・2度押しの組み合わせで出す。技ごとに付け替えられる。</div>
+    </div>
+    <p>昨日の「一人称の近接ゲームは技を減らし、深さを振りに入れる」と同じ方向で、Monumenta はその上で<b>技を「殴っている時に起きること」に変えて</b>数を保っている。</p>
+  </section>
+
+  <section>
+    <h2>戦士の基本8技</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>技</th><th>出し方</th><th>種類</th><th>中身（Lv1）</th></tr></thead>
+      <tbody>
+        <tr><td>Shield Bash（盾打ち）</td><td>盾を構える</td><td><span class="kind press">押す</span></td><td>6ダメージ・1秒スタン・半径3、10秒</td></tr>
+        <tr><td>Defensive Line（防御陣）</td><td>しゃがみ＋盾を構える</td><td><span class="kind press">押す</span></td><td>周り8マスの味方の被ダメ-20%（10秒）、敵を押し返す、30秒</td></tr>
+        <tr><td>Riposte（受け流し）</td><td>殴られる</td><td><span class="kind">被弾</span></td><td>15秒ごとに近接1撃を防ぐ。Lv2 で直後の1撃+100%</td></tr>
+        <tr><td>Counter Strike（反撃）</td><td>殴られる</td><td><span class="kind">被弾</span></td><td>殴ってきた敵への次の1撃+10%（4秒以内）</td></tr>
+        <tr><td>Brute Force（剛力）</td><td>会心</td><td><span class="kind">会心</span></td><td>周り2マスに追加ダメージ＋ノックバック</td></tr>
+        <tr><td>Frenzy（狂乱）</td><td>敵を倒す</td><td><span class="kind">撃破</span></td><td>攻撃速度+30%（5秒）</td></tr>
+        <tr><td>Weapon Mastery（武器熟達）</td><td>剣か斧を持つ</td><td><span class="kind">常時</span></td><td>近接ダメージが上がる（wiki では「必須」）</td></tr>
+        <tr><td>Toughness（頑強）</td><td>常時</td><td><span class="kind">常時</span></td><td>体力が上がる</td></tr>
+      </tbody>
+    </table></div>
+    <h3>狂戦士（専門職）</h3>
+    <ul>
+      <li><b>Meteor Slam</b>（しゃがみ＋F）：高く跳び、落ちた高さに応じて着地が重くなる。自分の跳躍と落下が溜めの代わり。</li>
+      <li><b>Glorious Battle</b>（F）：突進して体当たり。空中か着地後1.5秒以内の会心が、周りへの大振りになる。</li>
+      <li><b>Rampage</b>（下を見て右クリック）：溜めた Bloodlust を使って6秒暴れる。暴れている間にさらに使うと延びる。</li>
+      <li>Bloodlust：近接で一定のダメージを与えるたびに1溜まる（最大10）。上の技はこれを使う。ウォーリアーの獣と同じ形。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>一人称で流れを止めない工夫</h2>
+    <ul>
+      <li><b>手は武器のまま</b>：技を出す時に持ち物を替えない。</li>
+      <li><b>殴りに乗る技</b>：会心・撃破・被弾で勝手に出る。普段の殴りが技の引き金になる。</li>
+      <li><b>技の後の1撃が変わる</b>：受け流した直後の1撃+100%、突進後の会心が大振り、技の後の1撃+20%。技→通常攻撃→技と交互に流れる。</li>
+      <li><b>詠唱がない</b>：押した瞬間に出る。待つ時間は、跳んで落ちる時間のように体が動いている時間だけ。</li>
+      <li><b>守りも普段の動作</b>：盾を構える、殴られる、がそのまま合図。守るためのボタンを増やしていない。</li>
+      <li><b>見た目と音はバニラだけ</b>：パーティクルと効果音を重ねている。Meteor Slam の着地は9つの音を低く同時に鳴らす。</li>
+    </ul>
+    <p class="note"><span class="guess">推測</span> 開発者が理由を語った発言は見つからなかった。「殴りを主役に保つため」は作りから読んだもの。</p>
+  </section>
+
+  <section>
+    <h2>育て方</h2>
+    <ul>
+      <li>技ポイント10、専門職ポイント4、強化ポイント3。経験値ではなく、ダンジョンのクリアで増える。</li>
+      <li>8技それぞれに Lv1・Lv2 があり、全部取ると16必要。10では3〜6技しか持てず、<b>押す技とパッシブが同じポイントを取り合う</b>。ここがビルドの幅になる。</li>
+      <li>専門職は2つから1つ。振り直しは無料で何度でも。装備（Charm）が技ごとの数値を変える。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>ウォーリアーの作り直し案</h2>
+    <p>技の中身は藍が決めるので、これは叩き台。方向は「押す技を減らし、殴っていると起きることを増やす」「どの技も、次の通常攻撃を変えて終わる」。</p>
+
+    <h3>枠：押す技4つ＋ウルト1つは変えない。枠に「条件パッシブ」も入れられるようにする</h3>
+    <p>Monumenta で押す技とパッシブが同じポイントを取り合うのと同じ形。枠の数を変えないので、セーブの形は変わらない。押す技を4つ持つ人も、2つにしてパッシブを2つ持つ人もいる。</p>
+
+    <h3>押す技の候補（5つ）</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>技</th><th>獣</th><th>体の動き</th><th>次の通常攻撃がどう変わるか</th></tr></thead>
+      <tbody>
+        <tr><td>狂乱</td><td>使う</td><td>踏み込みながら振り続ける</td><td>そのまま（楽しいと言われた唯一の技）</td></tr>
+        <tr><td>地割り</td><td>使う</td><td>振り下ろす</td><td>今ある「3段目の直後なら速く重い」を残す</td></tr>
+        <tr><td>跳び叩き</td><td>溜める</td><td>跳ぶ・避ける</td><td>着地後1.5秒の振りが周りへの大振りになる（Glorious Battle と同じ）</td></tr>
+        <tr><td>斬り上げ</td><td>溜める</td><td>打ち上げる</td><td>浮いた敵への次の振りが叩き落としになる（今は地割りだけ）</td></tr>
+        <tr><td>轟進</td><td>溜める</td><td>走り抜ける・避ける</td><td>抜けた直後の1撃が重い。運ぶのはやめる</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">消す：引き摺り（決定済み）。大地崩しと全力の一振りの溜めは、止まって待つ時間が長いので見直す。天落としは未決。</p>
+
+    <h3>条件パッシブの候補（押さない、枠に入れる）</h3>
+    <div class="scroll"><table>
+      <thead><tr><th>名前（仮）</th><th>いつ</th><th>何が起きる</th><th>仕事</th></tr></thead>
+      <tbody>
+        <tr><td>受け流し</td><td>殴られた時（12秒に1回）</td><td>その1撃を防ぎ、直後の1撃+100%</td><td>守る（守りの技はボタンを増やさずにこれで）</td></tr>
+        <tr><td>剛力</td><td>3段目が当たった時</td><td>周りに衝撃。当たった数だけ獣が少し溜まる</td><td>群れ</td></tr>
+        <tr><td>血の昂り</td><td>敵を倒した時</td><td>5秒間、振りが速くなる</td><td>暴れまわる</td></tr>
+        <tr><td>反撃</td><td>殴られた時</td><td>殴ってきた敵への次の1撃が重い</td><td>ボスとの殴り合い</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>出し方は、今は変えない</h3>
+    <p>Monumenta の F・Q・しゃがみの組み合わせは Java 版のキーボード向けで、統合版のスマホには F も Q もない。今のホットバーのまま、技が通常攻撃につながる形だけ先に入れるのがいいと思う。</p>
+  </section>
+
+  <section class="ask">
+    <h2>藍に聞きたいこと</h2>
+    <p>押す技を2つに減らして、受け流しと血の昂りを付けたウォーリアーを想像した時、何が足りないと感じる？</p>
+  </section>
+
+  <section>
+    <h2>出典</h2>
+    <ul class="note">
+      <li>公式の公開ソース（2026-09-17 時点）：<a href="https://github.com/TeamMonumenta/monumenta-plugins-public">TeamMonumenta/monumenta-plugins-public</a>（<code>abilities/warrior/</code>、<code>AbilityTrigger.java</code>、<code>cosmetics/skills/warrior/</code>）。wiki と食い違う所はソースを優先した。</li>
+      <li><a href="https://monumenta.wiki.gg/wiki/Warrior">monumenta.wiki.gg/wiki/Warrior</a>、<a href="https://monumenta.wiki.gg/wiki/Classes">Classes</a>、<a href="https://monumenta.wiki.gg/wiki/Rogue">Rogue</a></li>
+      <li>動画：<a href="https://www.youtube.com/watch?v=OmFuXRF81q8">Warrior GB Crit Tutorial</a></li>
+    </ul>
+  </section>
+</main>

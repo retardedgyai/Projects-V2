@@ -513,6 +513,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         MinecraftServer.getCommandManager().register(Command("colony").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { enterColony(it) } }
         })
+        // Development: walk the exported 1000×1000 開拓大陸 (scripts/buildkit/towns/frontier_export.py). /hub returns.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("frontier").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
+                if (!FrontierWorld.enter(player))
+                    player.sendMessage(CoreLoopItems.text("開拓大陸のワールドがまだ書き出されていません", NamedTextColor.YELLOW))
+            } }
+        })
         // Test-only: refills every research material and ink. Local dev launchers pass -Dprojects.devCommands=true.
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("researchtest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
@@ -555,6 +562,15 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 net.minestom.server.command.builder.arguments.ArgumentType.Literal("orbit"))
             addSyntax({ sender, _ -> (sender as? Player)?.let { clearLightTest(it) } },
                 net.minestom.server.command.builder.arguments.ArgumentType.Literal("off"))
+        })
+        // Test-only: /tornadotest plays the mage's 竜巻 look (CoreMageTornado) six blocks ahead of you, to see the shader
+        // funnel in the game (藍「みてみようか」 2026-11-03). It only draws; nothing is pulled or hit.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("tornadotest").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
+                val yaw = Math.toRadians(player.position.yaw().toDouble())
+                val at = player.position.add(-kotlin.math.sin(yaw) * 6.0, 0.0, kotlin.math.cos(yaw) * 6.0).withView(0f, 0f)
+                CoreMageTornado.play(player, at)
+            } }
         })
         // Test-only: /night and /day set the time of the instance you stand in (its clock stays paused), to see lights.
         if (java.lang.Boolean.getBoolean("projects.devCommands")) for ((name, time) in listOf("night" to 18_000L, "day" to 6_000L))

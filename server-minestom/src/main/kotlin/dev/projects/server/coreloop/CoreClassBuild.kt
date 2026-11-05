@@ -4,10 +4,13 @@ package dev.projects.server.coreloop
 data class CoreClassBuild(val first: Int = 0, val second: Int = 1, val third: Int = 2, val fourth: Int = 3,
     val ultimate: Int = 0, val passives: Set<Int> = emptySet(),
     /** Mastery node -> chosen option index; its keys are the masteries among [passives]. */
-    val masteries: Map<Int, Int> = emptyMap()) {
+    val masteries: Map<Int, Int> = emptyMap(),
+    /** Skill icon -> level bought with skill points (2..[CoreSkillLevels.MAX_BASE]); absent = 1. */
+    val skillLevels: Map<String, Int> = emptyMap()) {
     val skills get() = listOf(first, second, third, fourth)
     init {
         require(skills.all { it in 0..8 } && skills.distinct().size == 4 && ultimate in 0..2)  // the mage has nine normals, the warrior three ultimates
+        require(skillLevels.values.all { it in 2..CoreSkillLevels.MAX_BASE }) { "技のLvが不正です" }
     }
     fun equip(slot: Int, choice: Int): CoreClassBuild {
         require(slot in 0..4)

@@ -134,6 +134,22 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             require(account.journey.build.passives.isNotEmpty()) { "戻すノードがありません" }
             refundPassives(account, emptySet(), "パッシブをすべて戻しました")
         }
+        is CoreAction.RaiseSkill -> {
+            requireHub(account)
+            val build = CoreSkillLevels.raise(account, action.icon)
+            val name = CoreSkillCatalog.skills(account.journey.job).first { it.icon == action.icon }.name
+            account.copy(journey = account.journey.copy(build = build)) to "${name}を Lv ${CoreSkillLevels.base(build, action.icon)} にしました"
+        }
+        CoreAction.ResetSkillLevels -> {
+            requireHub(account)
+            val journey = account.journey
+            val points = CoreSkillLevels.spent(journey.build)
+            require(points > 0) { "戻す技の点数がありません" }
+            val price = CorePassiveTree.refundPrice(journey) * points
+            require(account.silver >= price) { "銀貨が足りません（${price}枚必要）" }
+            account.copy(silver = account.silver - price, journey = journey.copy(build = journey.build.copy(skillLevels = emptyMap()))) to
+                "技の点数をすべて戻しました（銀貨${price}枚）"
+        }
         is CoreAction.ChooseClass -> {
             requireHub(account)
             var selected = account.copy(journey = account.journey.changeClass(action.job))

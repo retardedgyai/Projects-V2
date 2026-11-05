@@ -10,19 +10,19 @@ class CoreWarriorReworkTest {
 
     @Test fun `warrior skills sit in cooldown tiers and the beast gates nothing`() {
         val byIcon = warrior.filterNot { it.retired }.associateBy { it.icon }
-        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_counter", "war_cry", "war_breach", "war_ult", "war_banner", "war_awaken"), byIcon.keys)
+        assertEquals(setOf("dash", "slam", "whirl", "war_guard", "war_wound", "war_cry", "war_breach", "war_banner", "war_awaken"), byIcon.keys)
         assertEquals(100, byIcon.getValue("dash").cooldown)
-        assertTrue(listOf("slam", "whirl", "war_guard", "war_counter").all { byIcon.getValue(it).cooldown in 200..320 }, "spenders")
+        assertTrue(listOf("slam", "whirl").all { byIcon.getValue(it).cooldown in 200..320 }, "spenders")
         assertTrue(byIcon.getValue("war_wound").cooldown in 160..240, "the leap moves")
-        assertTrue(byIcon.getValue("war_ult").cooldown >= 1200)
+        assertTrue(listOf("war_banner", "war_awaken").all { byIcon.getValue(it).cooldown >= 1200 })
         assertTrue(byIcon.values.all { it.spend == 0 }, "no warrior skill needs the beast to be cast")
     }
 
     @Test fun `retired entries keep catalog order and art but are never selectable`() {
         assertEquals(62, CoreSkillCatalog.artNames.size)
-        assertEquals(listOf(0, 1, 2, 3, 4, 5, 6, 7), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
-        assertEquals(listOf(0, 1, 2), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
-        assertEquals(emptyList<String>(), warrior.filter { it.retired }.map { it.icon })
+        assertEquals(listOf(0, 1, 2, 3, 4, 6, 7), CoreSkillCatalog.normalChoices(CoreClass.WARRIOR))
+        assertEquals(listOf(1, 2), CoreSkillCatalog.ultimateChoices(CoreClass.WARRIOR))
+        assertEquals(listOf("war_counter", "war_ult"), warrior.filter { it.retired }.map { it.icon })
         for (job in CoreClass.entries) {
             assertEquals(CoreClassBuild(), CoreSkillCatalog.migrate(job, CoreClassBuild()), "$job default build stays valid")
             assertFalse(CoreSkillCatalog.selectable(job, 0, CoreSkillCatalog.ultimateStart(job)))

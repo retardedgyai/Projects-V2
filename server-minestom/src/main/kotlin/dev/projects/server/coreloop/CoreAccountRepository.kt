@@ -313,6 +313,9 @@ internal object CoreAccountCodec {
             account.journey.savedBuilds.entries.sortedBy { it.key.ordinal }.forEach { (job, b) ->
                 if (b.passives.isNotEmpty()) append("passive\t$job\t${passiveRow(b)}\n")
             }
+            ((account.journey.savedBuilds + (account.journey.job to account.journey.build)).entries.sortedBy { it.key.ordinal }).forEach { (job, b) ->
+                if (b.skillLevels.isNotEmpty()) append("skill-level\t$job\t${b.skillLevels.entries.sortedBy { it.key }.joinToString(",") { "${it.key}:${it.value}" }}\n")
+            }
             (account.storedGear.map { it.identity } + account.weaponIdentity + account.armorIdentity + account.armorParts.values.map { it.identity }).forEach { append("gear-base\t${it.id}\t${it.base}\t${it.itemLevel}\n") }
             (account.maps + listOfNotNull(account.activeRun?.map)).forEach { append("map-level\t${it.id}\t${it.level}\n") }
             (account.maps + listOfNotNull(account.activeRun?.map)).forEach { map -> map.zone?.let { append("map-zone\t${map.id}\t$it\n") } }
@@ -386,6 +389,7 @@ internal object CoreAccountCodec {
         }
         val savedBuilds = mutableMapOf<CoreClass, CoreClassBuild>()
         val passives = mutableMapOf<CoreClass, Pair<Set<Int>, Map<Int, Int>>>()
+        val skillLevels = mutableMapOf<CoreClass, Map<String, Int>>()
         var passiveTree: String? = null
         // The retired Starweaver class loads as Mage; its own loadout cannot carry over.
         var retiredStarweaver = false
@@ -407,6 +411,11 @@ internal object CoreAccountCodec {
             "passive-tree" -> { require(version >= 13 && row.size == 2 && passiveTree == null); passiveTree = row[1] }
             "passive" -> { require(version >= 13 && row.size == 3); val job = CoreClass.valueOf(row[1])
                 require(passives.put(job, decodePassives(row[2])) == null) }
+            // 2026-11-03: skill levels per class build (icon:level). Written only when some point is spent, so saves
+            // without them stay byte-identical; a save from before simply has every skill at Lv 1.
+            "skill-level" -> { require(version >= 13 && row.size == 3); val job = CoreClass.valueOf(row[1])
+                require(skillLevels.put(job, row[2].split(',').associate { cell ->
+                    val (icon, level) = cell.split(':').also { require(it.size == 2) }; icon to level.toInt() }) == null) }
             "journey" -> { require(version >= 8 && row.size == 6 && journey == null); retiredStarweaver = row[1] == RETIRED_STARWEAVER
                 journey = CoreJourney(if (retiredStarweaver) CoreClass.MAGE else CoreClass.valueOf(row[1]), row[2].toBooleanStrict(), row[3].toLong(), row[4].toInt(), row[5].toBooleanStrict()) }
             "gear-base" -> { require(version >= 8 && row.size == 4); require(bases.put(UUID.fromString(row[1]), CoreWeaponBase.valueOf(row[2]) to row[3].toInt()) == null) }
@@ -515,7 +524,9 @@ internal object CoreAccountCodec {
             // given back, free. The ids would otherwise point at other nodes, or at nothing.
             if (passiveTree != CorePassiveTree.fingerprint) passives.replaceAll { _, _ -> emptySet<Int>() to emptyMap() }
             require(passives.keys.all { it == existingJourney.job || it in savedBuilds }) { "パッシブの職業が構成と一致しません" }
-            fun withPassives(job: CoreClass, b: CoreClassBuild) = passives[job]?.let { (ids, masteries) -> b.copy(passives = ids, masteries = masteries) } ?: b
+            require(skillLevels.keys.all { it == existingJourney.job || it in savedBuilds }) { "技のLvの職業が構成と一致しません" }
+            fun withPassives(job: CoreClass, b: CoreClassBuild) = (passives[job]?.let { (ids, masteries) -> b.copy(passives = ids, masteries = masteries) } ?: b)
+                .let { built -> skillLevels[job]?.let { built.copy(skillLevels = it) } ?: built }
             journey = existingJourney.copy(build = withPassives(existingJourney.job, CoreSkillCatalog.migrate(existingJourney.job, build)),
                 savedBuilds = savedBuilds.mapValues { (job, saved) -> withPassives(job, CoreSkillCatalog.migrate(job, saved)) })
         }

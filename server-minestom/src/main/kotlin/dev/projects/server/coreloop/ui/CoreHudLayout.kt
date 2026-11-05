@@ -134,7 +134,7 @@ internal object CoreHudLayout {
     fun render(state: CoreHudState): Component {
         val line = CoreHudLine()
         line.put(CONSOLE_X, "console")
-        // HP: health, then the absorption barrier in vanilla gold, then the pale trail of recent damage.
+        // HP: health, then the absorption barrier in white (as in LoL), then the pale trail of recent damage.
         val filled = fillWidth(state.health, state.maxHealth, HP_W)
         val barrier = fillWidth(state.shield, state.maxHealth, HP_W).coerceAtMost(HP_W - filled)
         val trailing = fillWidth(maxOf(state.health, state.healthTrail.takeIf { it.isFinite() } ?: state.health), state.maxHealth, HP_W)
@@ -181,7 +181,7 @@ internal object CoreHudLayout {
         // Buff tiles left to right above the HP plate: icon, then the timer.
         var bx = BUFF_LEFT
         state.buffs.take(4).forEach { buff ->
-            val seconds = buff.remainingSeconds.takeIf { it.isFinite() && it > 0.0 }?.let { "${ceil(it).toInt().coerceIn(1, 999)}s" } ?: ""
+            val seconds = buff.remainingSeconds.takeIf { it.isFinite() && it > 0.0 }?.let { "${ceil(it).toInt().coerceIn(1, 999)}${if (buff.counted) "" else "s"}" } ?: ""
             val ink = gaugeDigitsWidth(seconds)
             val tile = ink + 18
             line.put(bx, "buff_left")
