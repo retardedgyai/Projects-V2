@@ -9,6 +9,7 @@ import net.minestom.server.coordinate.Pos
 import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.instance.InstanceContainer
+import net.minestom.server.instance.block.Block
 import net.minestom.server.network.ConnectionState
 import net.minestom.server.network.packet.server.SendablePacket
 import net.minestom.server.network.player.GameProfile
@@ -23,46 +24,66 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class InstanceDungeonTest {
-    /** Cells a player can stand in at y 40, flooded from [from] (gates block as they are set). */
-    private fun reachable(instance: InstanceContainer, from: Pos): Set<Pair<Int, Int>> {
-        val seen = hashSetOf(from.blockX() to from.blockZ())
-        val queue = ArrayDeque(seen)
+    /**
+     * Where a player can walk from [from] (the walk check, in the game's own blocks): up one block, down three, two
+     * free blocks to stand in. Barriers, walls and closed gates stop it.
+     */
+    private class Walk(val stand: Map<Pair<Int, Int>, Int>, val from: Map<Pair<Int, Int>, Pair<Int, Int>>) {
+        fun near(p: Pos) = (-2..2).any { dx -> (-2..2).any { dz -> (p.blockX() + dx to p.blockZ() + dz) in stand } }
+        /** The way there, every 12th step, to say where a wall is missing. */
+        fun way(p: Pos): String {
+            var at = (-2..2).flatMap { dx -> (-2..2).map { dz -> p.blockX() + dx to p.blockZ() + dz } }.firstOrNull { it in stand } ?: return "-"
+            val steps = mutableListOf(at)
+            while (true) { at = from[at] ?: break; steps += at }
+            return steps.reversed().filterIndexed { i, _ -> i % 12 == 0 }.joinToString(" ") { "(${it.first},${stand[it]},${it.second})" }
+        }
+    }
+
+    private fun reachable(instance: InstanceContainer, start: Pos): Walk {
+        fun open(x: Int, y: Int, z: Int) = !instance.getBlock(x, y, z).solid() && !instance.getBlock(x, y, z).liquid()
+        // Fences and walls (1.5 high) are not stood on: a player cannot step up onto them.
+        fun stands(x: Int, y: Int, z: Int) = instance.getBlock(x, y - 1, z).let { it.solid() && it.registry().collisionShape().relativeEnd().y() <= 1.0 } &&
+            open(x, y, z) && open(x, y + 1, z)
+        val stand = hashMapOf((start.blockX() to start.blockZ()) to start.blockY())
+        val from = hashMapOf<Pair<Int, Int>, Pair<Int, Int>>()
+        val queue = ArrayDeque(listOf(Triple(start.blockX(), start.blockY(), start.blockZ())))
         while (queue.isNotEmpty()) {
-            val (x, z) = queue.removeFirst()
+            val (x, y, z) = queue.removeFirst()
             for ((dx, dz) in listOf(1 to 0, -1 to 0, 0 to 1, 0 to -1)) {
-                val next = x + dx to z + dz
-                if (next.first !in -16..95 || next.second !in -48..95 || next in seen) continue
-                if (!instance.getBlock(next.first, 39, next.second).solid() || instance.getBlock(next.first, 40, next.second).solid() ||
-                    instance.getBlock(next.first, 41, next.second).solid()) continue
-                seen += next; queue += next
+                val nx = x + dx; val nz = z + dz
+                if (nx !in -112..111 || nz !in -112..111 || (nx to nz) in stand) continue
+                val ny = (1 downTo -3).map { y + it }.firstOrNull { stands(nx, it, nz) && (it <= y || open(x, y + 2, z)) } ?: continue
+                stand[nx to nz] = ny; from[nx to nz] = x to z; queue += Triple(nx, ny, nz)
             }
         }
-        return seen
+        return Walk(stand, from)
     }
 
     @Test
-    fun `the building leads from the hall through both rooms into the glade only as each gate opens`() {
+    fun `the map leads from the entrance through each room into the glade only as each gate opens`() {
         MinecraftServer.init(Auth.Offline())
         val dungeon = InstanceDungeonFactory.create(1)
         val instance = dungeon.arena.instance
         val layout = dungeon.layout
         try {
+            assertEquals(4, layout.rooms.size)
             assertTrue(QuestCombatPlacement.clear(instance, layout.spawn))
             assertTrue(QuestCombatPlacement.clear(instance, layout.bossSpawn))
-            assertEquals(listOf(true, false, false), layout.gates.map { it.isOpen(instance) })
-            fun cell(p: Pos) = p.blockX() to p.blockZ()
-            var open = reachable(instance, layout.spawn)
-            assertTrue(cell(layout.rooms[0].center) in open)
-            assertFalse(cell(layout.rooms[1].center) in open)
-            layout.gates[1].set(instance, open = true)
-            open = reachable(instance, layout.spawn)
-            assertTrue(cell(layout.rooms[1].center) in open)
-            assertFalse(cell(layout.bossSpawn) in open, "The glade leaks into the rooms")
-            layout.arenaGate.set(instance, open = true)
-            assertTrue(cell(layout.bossSpawn) in reachable(instance, layout.spawn))
-            // Every wave can be placed where the room says.
-            for (room in layout.rooms) for (dx in listOf(-4.0, 0.0, 4.0)) for (dz in listOf(3.0, 5.0, 7.0))
-                assertTrue(room.holds(QuestCombatPlacement.resolve(instance, room.center.add(dx, 0.0, dz))), "${room.name} spawn outside")
+            assertEquals(listOf(true, false, false, false, false), layout.gates.map { it.isOpen(instance) })
+            for (i in layout.rooms.indices) {
+                val open = reachable(instance, layout.spawn)
+                assertTrue(open.near(layout.rooms[i].center), "${layout.rooms[i].name} cannot be reached with its gate open")
+                layout.rooms.drop(i + 1).forEach { assertFalse(open.near(it.center), "${it.name} leaks past the gate before ${layout.rooms[i].name}: ${open.way(it.center)}") }
+                assertFalse(open.near(layout.bossSpawn), "The glade leaks into ${layout.rooms[i].name}: ${open.way(layout.bossSpawn)}")
+                layout.gates[i + 1].set(instance, open = true)
+            }
+            assertTrue(reachable(instance, layout.spawn).near(layout.bossSpawn))
+            // Every wave can be placed inside its room; whoever lagged behind is brought in on floor.
+            for (room in layout.rooms) {
+                assertTrue(room.holds(room.entry, margin = 2.5), "${room.name}: the entry does not start the waves")
+                assertTrue(QuestCombatPlacement.clear(instance, room.entry), "${room.name}: the entry is in a wall")
+            }
+            assertTrue(layout.inArena(layout.arenaEntry) && QuestCombatPlacement.clear(instance, layout.arenaEntry))
         } finally { dungeon.arena.dispose(); assertFalse(instance.isRegistered) }
     }
 
@@ -84,7 +105,7 @@ class InstanceDungeonTest {
             run.tick()
             assertEquals(DungeonRun.Stage.WALKING, run.stage)
             for ((index, room) in layout.rooms.withIndex()) {
-                player.teleport(room.center).join()
+                player.teleport(room.entry).join()
                 run.tick()
                 assertEquals(DungeonRun.Stage.FIGHTING, run.stage)
                 assertFalse(layout.gates[index].isOpen(instance), "The door stays open behind ${room.name}")
@@ -100,8 +121,11 @@ class InstanceDungeonTest {
                 assertEquals(DungeonRun.Stage.WALKING, run.stage)
                 assertTrue(layout.gates[index + 1].isOpen(instance), "${room.name} did not open the next door")
             }
+            // 古い祠の森 and 滝裏の洞 lit their seals and the two before the gatehouse.
+            assertEquals(4, layout.rooms.sumOf { it.seals.size })
+            layout.rooms.flatMap { it.seals }.forEach { assertEquals(Block.LANTERN.name(), instance.getBlock(it).name()) }
             assertFalse(run.bossEngaged)
-            player.teleport(layout.arenaCenter.add(0.0, 0.0, -10.0)).join()
+            player.teleport(layout.arenaEntry).join()
             run.tick()
             assertTrue(run.bossEngaged)
             assertFalse(layout.arenaGate.isOpen(instance))
