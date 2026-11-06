@@ -186,7 +186,7 @@ for i in range(8):
     a = i * math.pi / 4 + math.pi / 8
     PO.stone_lantern(int(round(19.5 * math.cos(a))), int(round(19.5 * math.sin(a))), ground)
 # --- ボスの庭を豪華に（藍 11/06「最後のボスが湧くであろう場所をもっと豪華に」）。戦う床は静かなまま [rules 110]、豪華さは縁・入口・奥に寄せる
-RED, BLACK = 'red_concrete', 'polished_blackstone'
+RED, BLACK, WHITE = 'red_terracotta', 'polished_blackstone', 'white_concrete_powder'   # [rules 117〜119]
 HALL = (21, 33, -8, 8)                                                            # 拝殿の基壇（x0, x1, z0, z1）
 def in_hall(x, z): return HALL[0] <= x <= HALL[1] and HALL[2] <= z <= HALL[3]
 # 真ん中の紋：ボスが湧く所。床と同じ高さの象嵌で、桜の花（花びら5枚）
@@ -224,6 +224,7 @@ def torii(x, z, g, half=4, h=7):
     P_(0, g + h - 1, full('dark_oak_planks'))                                                                  # 額束
     for s_ in (-half + 1, half - 1): P_(s_, g + h - 3, P.HANG)                                                 # 貫から吊り灯籠
 torii(-20, -1, ground(-20, -1), half=4, h=8)
+torii(-60, -2, ground(-60, -2), half=3, h=6)                                      # 鳥居を並べて区切りに：橋の手前と庭の口 [rules 121]
 def tall_lantern(x, z, g):
     """大きな石灯籠：台・竿・火袋・笠・宝珠。高さ5。"""
     put(x, g + 1, z, full('stone_bricks')); put(x, g + 2, z, P.wall('stone_bricks')); put(x, g + 3, z, full('chiseled_stone_bricks'))
@@ -258,32 +259,51 @@ for x in range(hx0, hx1 + 1):
         for y in range(fy, fy + 5):
             if post: put(x, y, z, full(RED))
             elif wallc:
-                put(x, y, z, full('dark_oak_planks') if y in (fy, fy + 4) else full('white_concrete') if x != 26 else trap('dark_oak_trapdoor', 'w') if y < fy + 3 else full('white_concrete'))
+                put(x, y, z, full('dark_oak_planks') if y in (fy, fy + 4) else full(WHITE) if x != 26 else trap('dark_oak_trapdoor', 'w') if y < fy + 3 else full(WHITE))
 for z in range(hz0, hz1 + 1):                                                     # 長押：柱の上の黒い横木
     for x in (hx0, 26):
         if get(x, fy + 4, z) is None: put(x, fy + 4, z, full('dark_oak_planks'))
 put(30, fy, 0, full('gold_block')); put(30, fy + 1, 0, P.LANTERN)                # 奥の御神体（金の鏡と灯り）
 for z in (-1, 1): put(30, fy, z, full('chiseled_stone_bricks')); put(30, fy + 1, z, {'s': 'lantern', 't': 'soul_lantern'})
-ry = fy + 5                                                                       # 屋根：軒は基壇の外へ、両端（z）の軒先を1段反らす
-for i in range(6):
-    xa, xb = 21 + i, 34 - i
-    for z in range(-9, 10):
-        up = 1 if abs(z) >= 8 and i == 0 else 0
-        put(xa, ry + i + up, z, stair('deepslate_tiles', 'e')); put(xb, ry + i + up, z, stair('deepslate_tiles', 'w'))
-        if i > 0 and abs(z) <= 8:
-            for x in (xa, xb):
-                if get(x, ry + i - 1, z) is None: put(x, ry + i - 1, z, full('dark_oak_planks'))
-    for x in range(xa + 1, xb):                                                   # 妻（三角の壁）
-        for z in (-8, 8):
-            if get(x, ry + i, z) is None: put(x, ry + i, z, full('white_concrete') if 0 < i < 5 and abs(x - 27.5) < 4 - i * 0.6 else full('dark_oak_planks'))
-for z in range(-9, 10): put(27, ry + 6, z, full('deepslate_tiles')); put(28, ry + 6, z, full('deepslate_tiles'))
-for z in range(-10, 11): put(27, ry + 7, z, slab('deepslate_tiles')); put(28, ry + 7, z, slab('deepslate_tiles'))
-for z in (-10, 10):                                                               # 鬼瓦：棟の両端
-    for x in (27, 28): put(x, ry + 6, z, full(BLACK)); put(x, ry + 7, z, full(BLACK)); put(x, ry + 8, z, slab(BLACK))
-for z in (-6, -2, 2, 6): put(22, ry - 1, z, P.HANG)                              # 軒の吊り灯籠
-for z in range(-6, 7):                                                            # 注連縄：正面の柱の外、真ん中が垂れる
-    put(23, fy + 3 if abs(z) < 4 else fy + 4, z, {**full('hay_block_side', top='hay_block_top'), 'axis': 'z'})
-    if z in (-3, 0, 3): put(23, fy + 2, z, full('white_wool'))                    # 紙垂
+# 屋根：入母屋 [rules 111〜116]。下は本体をぐるっと囲む腰屋根（1マス外へ出るごとに半マス下がる、ハーフを上下交互、軒は柱から3マス、四隅だけ1段反る）、
+# 上に切妻（上は少し急）。軒の下は白樺の逆さ階段の組物で、黒い屋根と朱の柱の間を明るい帯にする。棟と鬼瓦は控えめ
+def ring(x, z):
+    ex, ez = max(hx0 - x, x - hx1, 0), max(hz0 - z, z - hz1, 0); return ex, ez, max(ex, ez)
+OUT = {'e': (1, 0), 'w': (-1, 0), 's': (0, 1), 'n': (0, -1)}
+def outward(x, z):
+    ex, ez, o = ring(x, z)
+    if ex >= ez: return 'e' if x > hx1 else 'w'
+    return 's' if z > hz1 else 'n'
+y0 = fy + 5
+for x in range(hx0 - 3, hx1 + 4):
+    for z in range(hz0 - 3, hz1 + 4):
+        ex, ez, o = ring(x, z)
+        if o == 0 and hx0 < x < hx1 and hz0 < z < hz1: continue                 # 本体の内側は上の切妻がかぶる
+        k = 3 - o                                                                 # 0 が軒先
+        yy = y0 + k // 2; half = 'bottom' if k % 2 == 0 else 'top'
+        corner = ex >= 2 and ez >= 2
+        if corner: yy += 1
+        put(x, yy, z, slab('deepslate_tiles', half))
+        if half == 'top' and get(x, yy - 1, z) is None and o <= 1: put(x, yy - 1, z, full('dark_oak_planks'))
+        if 1 <= o <= 2 and not corner:                                            # 組物
+            put(x, y0 - 1, z, stair('birch_planks', P.OPP[outward(x, z)], 'top'))
+for x in range(hx0, hx1 + 1):                                                     # 切妻：棟は南北（z）。両端は1マス張り出す
+    d = min(x - hx0, hx1 - x)                                                     # 0 が外の列
+    yy = y0 + 2 + d
+    for z in range(hz0 - 1, hz1 + 2):
+        if d < 3: put(x, yy, z, stair('deepslate_tiles', 'e' if x < (hx0 + hx1) / 2 else 'w'))
+        else: put(x, yy, z, full('deepslate_tiles')); put(x, yy + 1, z, slab(BLACK))
+        for y in range(y0 + 1, yy):
+            if get(x, y, z) is None and hz0 <= z <= hz1: put(x, y, z, full('dark_oak_planks'))
+    for z in (hz0, hz1):                                                          # 妻：三角の面は明るい木、真ん中に灯り
+        for y in range(y0 + 1, yy):
+            put(x, y, z, full('birch_planks') if 0 < d else full('dark_oak_planks'))
+for z in (hz0, hz1): put((hx0 + hx1) // 2, y0 + 3, z, P.LANTERN)
+for (cx, cz) in ((hx0 - 3, hz0 - 3), (hx0 - 3, hz1 + 3), (hx1 + 3, hz0 - 3), (hx1 + 3, hz1 + 3)): put(cx, y0, cz, P.HANG)   # 反った隅の吊り灯籠
+for z in (-6, -2, 2, 6): put(hx0 - 2, y0 - 2, z, P.HANG)                         # 軒の吊り灯籠（組物の下）
+for z in range(-2, 3):                                                            # 注連縄：入口の柱（z=±2）の間だけに1本、真ん中が垂れる
+    put(hx0 - 1, fy + 2 if abs(z) < 2 else fy + 3, z, {**full('hay_block_side', top='hay_block_top'), 'axis': 'z'})
+put(hx0 - 1, fy + 1, 0, P.HANG)                                                   # 真ん中に吊り灯り（紙垂の代わり。白い羊毛の四角は重かった）
 for i in range(11):                                                               # 大きな桜：円の縁のすぐ外（西の口は空ける）
     a = math.pi * (0.22 + 1.56 * i / 10)
     rr = 24.5 + 1.5 * _h(i, 0, 55)
