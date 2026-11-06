@@ -386,6 +386,12 @@ internal class ShadeWyrmShaderFx(private val instance: Instance, private val mar
     }
     private var addingTag: String? = null
 
+    /** Adds [block]'s pieces under [tag], so one [endTag] ends them together (a mini-boss's warning). */
+    fun tagged(tag: String, block: () -> Unit) {
+        addingTag = tag
+        try { block() } finally { addingTag = null }
+    }
+
     /** Ends every piece added under [tag] (a pool) on the next tick. */
     fun endTag(tag: String) {
         pieces.forEach { if (it.tag == tag) it.life2 = minOf(it.life2, now - it.start + 1) }

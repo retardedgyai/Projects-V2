@@ -45,6 +45,9 @@ enum class MobMod(val label: String) {
 }
 
 internal object MobGrades {
+    /** A mini-boss's fixed grade: 希少, no MODs, so each fight with it is the same (its health is set with this in mind). */
+    val MINIBOSS = MobGrade.RARE
+
     /** Weights per grade for plain mobs and for elite archetypes (never below 精鋭). */
     private val NORMAL_WEIGHTS = intArrayOf(70, 18, 8, 3, 1)
     private val ELITE_WEIGHTS = intArrayOf(0, 60, 25, 11, 4)
@@ -52,6 +55,7 @@ internal object MobGrades {
     /** Deterministic per spawn: the same map seed and spawn slot always roll the same grade and MODs. */
     fun roll(seed: Long, archetype: QuestMobArchetype): Pair<MobGrade, List<MobMod>> {
         if (archetype.rarity == QuestMobRarity.BOSS) return MobGrade.COMMON to emptyList()
+        if (archetype.rarity == QuestMobRarity.MINIBOSS) return MINIBOSS to emptyList()
         val random = Random(seed)
         val weights = if (archetype.rarity == QuestMobRarity.ELITE) ELITE_WEIGHTS else NORMAL_WEIGHTS
         var pick = random.nextInt(weights.sum())
@@ -77,6 +81,8 @@ internal data class MobHud(
     val notice: String? = null,
     /** A boss with its own boss bar frame (e.g. "shade_wyrm"); null = the graded bar. */
     val dedicated: String? = null,
+    /** A mini-boss: drawn on a boss bar whose tag reads ミニボス instead of the grade. */
+    val miniBoss: Boolean = false,
 )
 
 /** Boss bar look per boss (Creator 2026-10-19): bosses carry a grade from 精鋭 up; some have their own frame. */

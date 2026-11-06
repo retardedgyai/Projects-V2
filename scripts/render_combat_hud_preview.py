@@ -203,7 +203,7 @@ def mob_hud(fonts, snapshots):
 def boss_sheet(fonts, snapshots):
     """boss-bars-4x.png: every boss bar state (grades, broken, the shade wyrm) on the field, cropped to the bar."""
     keys = [k for k in ("boss-grade-elite", "boss-grade-rare", "boss-grade-unique", "boss-grade-calamity", "boss-broken",
-                        "boss-wyrm", "boss-wyrm-broken", "boss-wyrm-erosion", "boss-sakura") if k in snapshots]
+                        "boss-wyrm", "boss-wyrm-broken", "boss-wyrm-erosion", "boss-sakura", "boss-miniboss") if k in snapshots]
     if not keys:
         return
     crops = []

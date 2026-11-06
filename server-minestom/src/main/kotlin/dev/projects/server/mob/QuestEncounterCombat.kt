@@ -119,6 +119,8 @@ class QuestEncounterCombat(
         val definition: QuestMobDefinition,
     ) {
         val life = QuestMobLife(definition.maximumHealth)
+        /** A room's guardian (QuestMobRarity.MINIBOSS): its own boss bar ([miniBossHud]) and sakura warnings. */
+        val miniBoss: Boolean get() = definition.archetype.rarity == QuestMobRarity.MINIBOSS
         val abilities = MobAbilityManager(definition.abilities, Random(entity.uuid.leastSignificantBits))
         /** Picks the moves between attacks and the breathers (桜牙獣). */
         val moveRandom = Random(entity.uuid.mostSignificantBits)
@@ -724,6 +726,7 @@ class QuestEncounterCombat(
             mob.model?.dispose()
             mob.view?.die()
             if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) sakuraFx?.death()
+            if (mob.miniBoss) miniBossDown(mob)
             // Health is already terminal before this callback can re-enter the runtime.
             onMobDefeated(attacker, mob.boss)
         } else {
@@ -757,7 +760,7 @@ class QuestEncounterCombat(
             fx.tick(if (mob.maneuver != null) mob.entity.position.withView(mob.faceYaw, 0f) else mob.entity.position, mob.enraged) { bone, px -> view?.point(bone, px) }
             (sakuraStrike ?: SakuraStrikeFx(instance).also { sakuraStrike = it }).tick()
             tickSakuraLight(mob)
-        }
+        } ?: sakuraStrike?.tick()                                  // a mini-boss's warnings, with no 桜牙獣 in the fight
         val players = instance.players.filter { canTarget(it) }
         if (actionsStoppedForReturn) {
             if (players.isEmpty()) return
@@ -836,8 +839,11 @@ class QuestEncounterCombat(
         val base = QuestMobContent.definition(tier, archetype)
         val rank = encounterLevel - ((tier - 1) * 10 + 1)
         val balance = dev.projects.server.coreloop.CoreMmoTuning.balance
-        val (grade, mods) = if (rollGrades) MobGrades.roll(gradeSeed * 31 + encounterIndex * 1_000_003L + position.hashCode(), archetype)
-            else MobGrade.COMMON to emptyList()
+        val (grade, mods) = when {
+            archetype.rarity == QuestMobRarity.MINIBOSS -> MobGrades.MINIBOSS to emptyList()
+            rollGrades -> MobGrades.roll(gradeSeed * 31 + encounterIndex * 1_000_003L + position.hashCode(), archetype)
+            else -> MobGrade.COMMON to emptyList()
+        }
         val might = if (MobMod.MIGHT in mods) MobMod.MIGHT_DAMAGE else 1.0
         val definition = base.copy(
             maximumHealth = base.maximumHealth * healthMultiplier * grade.health * (1 + rank * balance.mobRankHealthPermille / 1000.0),
@@ -1373,6 +1379,22 @@ class QuestEncounterCombat(
         vfx.cancel(vfxHandles.remove(id))
         shaderFx.cancelWindup()
         sakuraStrike?.cancelWindup()
+        sakuraStrike?.endWarning(warningTag(id))
+    }
+
+    private fun warningTag(id: UUID) = "warn-$id"
+    private fun sakuraStrike(): SakuraStrikeFx = sakuraStrike ?: SakuraStrikeFx(instance).also { sakuraStrike = it }
+
+    /** A mini-boss falls: the fanfare, a burst of blossoms where it stood and its name on everyone's screen. */
+    private fun miniBossDown(mob: Mob) {
+        val at = mob.entity.position
+        sound(at, "minecraft:ui.toast.challenge_complete", 0.8f, 1.0f)
+        particle(at.add(0.0, 1.2, 0.0), Particle.CHERRY_LEAVES, 40)
+        sakuraStrike().bloom(at)
+        val title = net.kyori.adventure.title.Title.title(Component.text("${mob.definition.name}を討った", NamedTextColor.LIGHT_PURPLE),
+            Component.text("ミニボス撃破", NamedTextColor.WHITE), net.kyori.adventure.title.Title.Times.times(
+                java.time.Duration.ofMillis(150), java.time.Duration.ofMillis(1600), java.time.Duration.ofMillis(500)))
+        instance.players.filter { it.position.distanceSquared(at) < 56.0 * 56.0 }.forEach { it.showTitle(title) }
     }
 
     /** Model bosses only: the wind-up cue is cut when the ability is, the strike always plays out. */
@@ -1849,6 +1871,7 @@ class QuestEncounterCombat(
                     cancelWarning(mob)
                     return false
                 }
+                if (mob.miniBoss) sakuraStrike().warn(event.frame, warningTag(mob.entity.uuid))
                 playVfx(mob, ShadeWyrmVfx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
                 if (mob.shade) shaderFx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
                 if (event.frame.ability.id == ORB) mob.view?.point("skull", ShadeWyrmVfx.SNOUT)?.let {
@@ -1900,6 +1923,7 @@ class QuestEncounterCombat(
                     sakuraBurst(event.frame)
                     sakuraStrike?.strike(event.frame.ability.id, event.frame) { bone, px -> mob.view?.point(bone, px) }
                 }
+                if (mob.miniBoss) sakuraBurst(event.frame)
             }
             is MobAbilityEvent.Finished -> {
                 clearWarning(mob.entity.uuid); updateName(mob)
@@ -1978,14 +2002,14 @@ class QuestEncounterCombat(
             mob.grade == MobGrade.COMMON && mob.definition.archetype.rarity == QuestMobRarity.NORMAL -> NamedTextColor.GOLD
             else -> NamedTextColor.LIGHT_PURPLE
         }
-        val grade = if (mob.grade == MobGrade.COMMON || mob.boss) "" else "［${mob.grade.label}］"
+        val grade = if (mob.miniBoss) "［ミニボス］" else if (mob.grade == MobGrade.COMMON || mob.boss) "" else "［${mob.grade.label}］"
         mob.entity.customName = Component.text("Lv$encounterLevel $grade" + base + suffix, color)
     }
 
-    /** Pixel HUD: bosses draw on the boss bar (see [bossHud]), every other mob on its overhead plate. */
+    /** Pixel HUD: bosses and mini-boss draw on a boss bar (see [bossHud], [miniBossHud]), every other mob on its overhead plate. */
     private fun showHud(mob: Mob) {
         mob.entity.isCustomNameVisible = false
-        if (mob.boss || !mob.life.isAlive || !isSpawned(mob)) return
+        if (mob.boss || mob.miniBoss || !mob.life.isAlive || !isSpawned(mob)) return
         plates.show(mob.entity, dev.projects.server.coreloop.ui.CoreMobNameplate.render(hud(mob)))
     }
 
@@ -2007,11 +2031,15 @@ class QuestEncounterCombat(
             broken = if (now < mob.brokenUntil) ((mob.brokenUntil - now).toDouble() / BREAK_MILLIS).coerceIn(0.0, 1.0) else null,
             effects = effects,
             notice = mob.notice ?: if (mob.life.phase == QuestMobPhase.RETURNING) "帰還中" else null,
-            dedicated = if (mob.boss) BossBars.dedicated(mob.definition.archetype) else null)
+            dedicated = if (mob.boss) BossBars.dedicated(mob.definition.archetype) else null,
+            miniBoss = mob.miniBoss)
     }
 
     /** What the boss bar shows for the boss (null once there is none). */
     internal fun bossHud(): MobHud? = mobs.values.firstOrNull { it.boss }?.let(::hud)
+
+    /** What the mini-boss bar shows: the first mini-boss of the fight still standing (null while there is none). */
+    internal fun miniBossHud(): MobHud? = mobs.values.firstOrNull { it.miniBoss && it.life.isAlive && isSpawned(it) }?.let(::hud)
 
     internal fun hudOf(targetId: UUID): MobHud? = mobs[targetId]?.let(::hud)
     /** Tests: give a spawned mob a grade and MODs without its rolled health (stats stay as spawned). */
