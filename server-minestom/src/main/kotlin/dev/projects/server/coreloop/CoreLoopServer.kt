@@ -183,7 +183,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
     }
     private val returnDialog = ReturnDialog(::returnToHarbor) { player -> playerMenu?.show(player) ?: menus.journal(player) }
-    /** The smith's forge screen from wherever the workshop is asked for (the smith, its building, the 手帳). */
+    /** The smith's forge screen (強化 only). The workshop's building and the 手帳's 工房 keep the chest workshop: it alone
+     *  has 制作 and 刻印, which 導入 steps 5 and 6 send the player to (2026-11-07: #224 had sent them here by mistake). */
     private fun openForge(player: Player) {
         if (polishSessions != null && uiPack?.enabled(player) == true) { if (requireHub(player)) polishSessions.open(player) }
         else menus.workshop(player)
@@ -856,7 +857,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             PlayerMenuDialog.Target.JOURNAL -> menus.journal(player)
             PlayerMenuDialog.Target.ATLAS -> openFacility(player, HarborFacilityKind.EXPEDITIONS)
             PlayerMenuDialog.Target.MASTERY -> menus.mastery(player)
-            PlayerMenuDialog.Target.WORKSHOP -> openForge(player)
+            PlayerMenuDialog.Target.WORKSHOP -> menus.workshop(player)
             PlayerMenuDialog.Target.GRIMOIRE -> MinecraftServer.getCommandManager().execute(player, "grimoire")
         }
     }
@@ -864,7 +865,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private fun openFacility(player: Player, kind: HarborFacilityKind) = when (kind) {
         HarborFacilityKind.EXPEDITIONS ->
             if (atlasSessions != null && uiPack?.enabled(player) == true && requireHub(player)) atlasSessions.open(player) else menus.expeditions(player)
-        HarborFacilityKind.WORKSHOP -> openForge(player)
+        HarborFacilityKind.WORKSHOP -> menus.workshop(player)
         HarborFacilityKind.STORAGE -> menus.storage(player)
         HarborFacilityKind.SUPPLIES -> menus.supplies(player)
         HarborFacilityKind.MASTERY -> menus.mastery(player)
