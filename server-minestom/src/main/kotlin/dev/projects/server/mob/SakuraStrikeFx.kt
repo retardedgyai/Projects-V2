@@ -5,6 +5,7 @@ import net.minestom.server.coordinate.Pos
 import net.minestom.server.coordinate.Vec
 import net.minestom.server.instance.Instance
 import kotlin.math.PI
+import kotlin.math.ceil
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.sin
@@ -259,6 +260,57 @@ internal class SakuraStrikeFx(instance: Instance) {
         fx.add("sakura_blossom", 4, at.add(0.0, 3.0, 0.0), 0, 12, Vec(3.0, 3.0, 1.0), IDENTITY, grow = Vec(7.0, 7.0, 1.0), moveTicks = 10, billboard = true)
     }
 
+    /**
+     * A mini-boss's wind-up, drawn in sakura shapes over the area it will strike, for any of its skills by the skill's
+     * shape: a ring of petals round a circle (both edges of a ring with a safe middle) and a crest opening under a mark;
+     * crests blooming one after another along a band from the caster to its end, along a fan's edge from its middle out,
+     * and down both strips of a cross. The pieces carry [tag] and end with the mob's warning ([endWarning]).
+     */
+    fun warn(frame: MobAbilityFrame, tag: String) {
+        val ticks = (frame.ability.telegraphMillis / 50).toInt().coerceAtLeast(4)
+        val o = frame.origin
+        val f = horizontal(frame.facing)
+        val side = Vec(-f.z(), 0.0, f.x())
+        fun bud(at: Pos, size: Double, delay: Int) = fx.add("sakura_crest", 2, at.add(0.0, .14, 0.0), delay, ticks - delay,
+            Vec(size * .4, 1.0, size * .4), IDENTITY, grow = Vec(size, 1.0, size), moveTicks = 6) { .08 + .37 * it * it }
+        fx.tagged(tag) {
+            when (val shape = frame.ability.shape) {
+                is MobAttackShape.Ring -> {
+                    for (r in listOf(shape.radius, shape.innerRadius).filter { it > 0.0 })
+                        fx.add("sakura_ring", 2, o.add(0.0, .1, 0.0), 0, ticks, Vec(r * 2.05, 1.0, r * 2.05), IDENTITY) { .2 + .3 * it }
+                    if (frame.ability.anchor == MobAbilityAnchor.TARGET) bud(o, shape.radius * 1.6, 0)
+                }
+                is MobAttackShape.Slam -> {
+                    val n = ceil(shape.length / CREST_STEP).toInt().coerceIn(1, MAX_CRESTS)
+                    for (i in 0 until n) bud(o.add(f.mul((i + .5) * shape.length / n)), minOf(shape.halfWidth * 2.0, CREST_STEP * 1.2), i * ticks / (2 * n))
+                }
+                is MobAttackShape.Sweep -> {
+                    val half = Math.toRadians(shape.halfAngleDegrees)
+                    val n = ceil(2 * half * shape.radius * .85 / CREST_STEP).toInt().coerceIn(1, MAX_CRESTS)
+                    for (i in 0 until n) {
+                        val off = i - (n - 1) / 2.0
+                        bud(o.add(f.rotateAroundY(2 * half * off / n).mul(shape.radius * .85)), CREST_STEP * 1.1,
+                            ((if (off < 0) -off else off) * ticks / (2.0 * n)).toInt())
+                    }
+                }
+                is MobAttackShape.Cross -> {
+                    val n = ceil(shape.armLength / CREST_STEP).toInt().coerceIn(1, MAX_CRESTS / 2)
+                    for (dir in listOf(f, side, f.mul(-1.0), side.mul(-1.0))) for (i in 1..n)
+                        bud(o.add(dir.mul(i * shape.armLength / n - CREST_STEP / 2)), minOf(shape.halfWidth * 2.0, CREST_STEP * 1.2), i * ticks / (2 * n))
+                    bud(o, shape.halfWidth * 2.4, 0)
+                }
+            }
+        }
+    }
+
+    fun endWarning(tag: String) = fx.endTag(tag)
+
+    /** A mini-boss falls: a crest blooms open where it stood and a blossom bursts over it. */
+    fun bloom(at: Pos) {
+        crest(at, 6.0, IDENTITY, life = 24)
+        fx.add("sakura_blossom", 4, at.add(0.0, 2.2, 0.0), 0, 16, Vec(1.6, 1.6, 1.0), IDENTITY, grow = Vec(4.6, 4.6, 1.0), moveTicks = 14, billboard = true)
+    }
+
     /** A sakura crest of light blooms open on the ground (grows fast, then fades and turns slowly). */
     private fun crest(at: Pos, size: Double, rotation: FloatArray, life: Int = 18) {
         fx.add("sakura_crest", 2, at.add(0.0, .14, 0.0), 0, life, Vec(size * .3, 1.0, size * .3), rotation,
@@ -274,6 +326,9 @@ internal class SakuraStrikeFx(instance: Instance) {
 
     companion object {
         const val MARKER = 79
+        /** A mini-boss's warning: crests this far apart along a band, a fan's edge or a cross, at most [MAX_CRESTS] a line. */
+        const val CREST_STEP = 1.8
+        const val MAX_CRESTS = 12
         private val IDENTITY = floatArrayOf(0f, 0f, 0f, 1f)
         private fun abs(k: Int) = if (k < 0) -k else k
         private fun horizontal(v: Vec): Vec {

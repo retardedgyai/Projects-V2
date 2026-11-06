@@ -67,6 +67,9 @@ internal object CoreBossBarHud {
     /** The plate glyph carries a margin for its corner pieces and grade tag (boss_bar_art.PLATE_PAD). */
     const val PLATE_PAD = 9
     const val TAG_X = PLATE_X + 12
+    /** A mini-boss's tag is wider (boss_bar_art.MINI_TAG_W): it reads ミニボス instead of the grade. */
+    const val MINI_TAG_W = 44
+    const val MINI_TAG = "ミニボス"
     const val PLATE_W = 237
     const val EMBLEM_X = -40
     /** Ornament glyphs (wings, mane, tails) come in two 180 px halves: x -180..-1 and 0..179. */
@@ -139,7 +142,11 @@ internal object CoreBossBarHud {
             line.put(ORNAMENT_X, "${ornament}_back_l")
             line.put(0, "${ornament}_back_r")
         }
-        line.put(PLATE_X - PLATE_PAD, if (ornament != null && grade == MobGrade.CALAMITY) "boss_plate_calamity_bare" else "boss_plate_$key")
+        line.put(PLATE_X - PLATE_PAD, when {
+            ornament != null && grade == MobGrade.CALAMITY -> "boss_plate_calamity_bare"
+            hud.miniBoss -> "boss_plate_${key}_mini"
+            else -> "boss_plate_$key"
+        })
         line.put(EMBLEM_X, "boss_emblem_$key")
         if (ornament != null) line.put(EMBLEM_X, "${ornament}_front")
         val fill = when {
@@ -151,7 +158,7 @@ internal object CoreBossBarHud {
         for (q in 1..3) line.put(HP_X + HP_W * q / 4, "boss_tick")
         line.cells("boss", hud)
         hud.effects.take(MAX_ICONS).forEachIndexed { i, effect -> line.put(PLATE_X + 2 + i * ICON_PITCH, "boss_icon_${effect.icon}") }
-        line.uni(TAG_X + 4, grade.label, CoreHudGlyphs.BOSS_TAG, CoreMobNameplate.color(grade))
+        line.uni(TAG_X + 4, if (hud.miniBoss) MINI_TAG else grade.label, CoreHudGlyphs.BOSS_TAG, CoreMobNameplate.color(grade))
         val lv = hud.level.coerceIn(0, 999).toString()
         line.uni(centred(CoreHudGlyphs.uniWidth(lv)), lv, CoreHudGlyphs.BOSS_LV, LEVEL)
         val nameColor = when (ornament) { "wyrm" -> WYRM_NAME; "sakura" -> SAKURA_NAME; else -> WHITE }

@@ -117,6 +117,8 @@ class CoreHudLayoutTest {
                 dedicated = "shade_wyrm"), 14900.0, erosion = .64)),
             Triple("boss", "sakura", CoreBossBarHud.render(bossHud().copy(name = "桜牙獣", grade = MobGrade.CALAMITY,
                 dedicated = "sakura_fang"), 14900.0)),
+            // 散り桜の社's mini-bosses: the graded bar with the wide ミニボス tag
+            Triple("boss", "miniboss", CoreBossBarHud.render(bossHud().copy(name = "仮の花守・一", grade = MobGrade.RARE, miniBoss = true), 14900.0)),
         ) + plates.flatMap { (name, hud) -> CoreMobNameplate.lines(hud).mapIndexed { i, line -> Triple("plate", "$name-$i", line) } } + listOf(
             Triple("damage", "normal", CoreDamageNumbers.render(482.0, false, dev.projects.server.coreloop.CoreDamageType.PHYSICAL)),
             Triple("damage", "critical", CoreDamageNumbers.render(1260.0, true, dev.projects.server.coreloop.CoreDamageType.PHYSICAL)),

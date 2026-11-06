@@ -235,6 +235,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         var dungeonReturnAt = 0L
         var anomalies: FirstMagicField? = null
         val bossTrail = CoreHudTrail()
+        /** A dungeon room's mini-boss, on its own bar while it stands. */
+        val miniBossBar = CoreMiniBossBar(owner)
     }
 
     override fun account(player: Player): CoreAccount? = accounts[player.uuid]
@@ -623,6 +625,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             // /bosstest sakura: 桜牙獣 in 散り桜の庭 instead of the shade wyrm.
             addSyntax({ sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR, "sakura") } },
                 net.minestom.server.command.builder.arguments.ArgumentType.Literal("sakura"))
+        })
+        // Test-only: /minibosstest 1|2: 散り桜の社's mini-boss of that room alone in a boss lab arena (no reward, no save).
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("minibosstest").apply {
+            setDefaultExecutor { sender, _ -> sender.sendMessage(Component.text("/minibosstest 1 か 2（散り桜の社のミニボス1・2）", NamedTextColor.GRAY)) }
+            val slot = net.minestom.server.command.builder.arguments.ArgumentType.Integer("slot").between(1, 2)
+            addSyntax({ sender, context -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR,
+                "miniboss${context.get(slot)}") } }, slot)
         })
         // Test-only: /dungeontest opens ダンジョンの門 from anywhere in the harbor; inside, /dungeontest clear ends the
         // room's wave and /dungeontest boss drops 桜牙獣 (to its 千本桜 first, with you at the glade's edge; again to finish).
@@ -1332,7 +1341,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                                     sessions.remove(player.uuid, failed)
                                     failed.returning = true
                                     failed.combat.dispose(); failed.loot.dispose()
-                                    player.hideBossBar(failed.bossBar)
+                                    player.hideBossBar(failed.bossBar); failed.miniBossBar.hide()
                                 }
                                 moveToHub(player).whenComplete { _, returnFailure ->
                                     MinecraftServer.getSchedulerManager().scheduleNextTick {
@@ -1450,7 +1459,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         session.combat.latestDefeat?.let { defeated ->
             val kind = when (defeated.rarity) {
                 QuestMobRarity.BOSS -> CoreLootKind.BOSS
-                QuestMobRarity.ELITE -> CoreLootKind.ELITE
+                QuestMobRarity.ELITE, QuestMobRarity.MINIBOSS -> CoreLootKind.ELITE
                 else -> CoreLootKind.NORMAL
             }
             session.loot.spawn(defeated.sourceId, kind, defeated.position)
@@ -1508,6 +1517,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         session.ticks++
         if (session.combat.bossDefeated && session.ticks % 100 == 0L) awardBoss(session)
         if (session.ticks % 5 == 0L && !session.combat.bossDefeated) updateBossBar(session.owner, session.combat, session.bossBar, session)
+        if (session.ticks % 5 == 0L) session.miniBossBar.update(session.combat.miniBossHud(), packed(session.owner), System.currentTimeMillis())
         if (session.ticks % 20 != 0L) return
         if (actors[session.owner.uuid]?.defeated == true && !session.rewardPending) {
             returnToHarbor(session.owner)
@@ -1567,7 +1577,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     player.sendMessage(CoreLoopItems.text("帰還を保存できません。もう一度操作してください。", NamedTextColor.RED))
                     return@scheduleNextTick
                 }
-                player.hideBossBar(session.bossBar)
+                player.hideBossBar(session.bossBar); session.miniBossBar.hide()
                 session.combat.dispose()
                 session.loot.dispose(); session.caches?.dispose()
                 val transfer = if (session.arena != null) moveToHub(player) else questMaps.returnToHub(player)

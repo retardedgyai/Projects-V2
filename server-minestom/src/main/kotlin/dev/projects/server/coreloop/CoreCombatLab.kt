@@ -7,6 +7,7 @@ import dev.projects.server.mob.MobGrade
 import dev.projects.server.mob.MobMod
 import dev.projects.server.mob.QuestCombatEncounter
 import dev.projects.server.mob.QuestEncounterCombat
+import dev.projects.server.mob.QuestMobRarity
 import dev.projects.server.questmap.VerdantRoadQuestRuntime
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
@@ -67,6 +68,9 @@ internal class CoreCombatLab(
         var combat: QuestEncounterCombat? = null
         var returning = false
         var transferring = false
+        /** /minibosstest: the mini-boss's own bar (the lab shows no boss bar otherwise). */
+        val miniBar = CoreMiniBossBar(player)
+        var ticks = 0
     }
     private val entries = ConcurrentHashMap<UUID, Entry>()
     private val screens = CoreMenuInventory()
@@ -92,7 +96,7 @@ internal class CoreCombatLab(
     /** [tier]: the boss's tier and the test character's gear tier (1-4), so difficulty can be measured at that tier. */
     fun enter(player: Player, job: CoreClass, bossId: String? = null, tier: Int = 1) {
         if (contains(player)) { menu(player); return }
-        val command = if (bossId != null) "/bosstest" else "/skilltest"
+        val command = if (bossId?.startsWith("miniboss") == true) "/minibosstest" else if (bossId != null) "/bosstest" else "/skilltest"
         if (!eligible(player)) { player.sendMessage(CoreLoopItems.text("港へ帰還してから $command を実行してください。")); return }
         val entry = Entry(player, CoreLabLoadout(player.uuid, job), bossId, tier.coerceIn(1, 4))
         if (bossId != null) { entry.loadout.free = false; entry.loadout.retaliation = true }
@@ -143,7 +147,7 @@ internal class CoreCombatLab(
                         entry.actor?.reset(); entry.actor?.refillTraining()
                         refresh(player)
                         player.sendMessage(CoreLoopItems.text(if (bossId != null)
-                            "${entry.arena?.displayName}に到着（Tier${entry.tier}）。${entry.combat?.bossName()}が待っています。ポーションは${LAB_POTIONS}個・再使用10秒。手帳 [9] で職業・スキル・再配置、帰還は /hub。"
+                            "${entry.arena?.displayName}に到着（Tier${entry.tier}）。${entry.arena?.archetype?.displayName}が待っています。ポーションは${LAB_POTIONS}個・再使用10秒。手帳 [9] で職業・スキル・再配置、帰還は /hub。"
                             else "試験場に到着。手帳 [9] または /skilltest で職業・スキル・敵を変更できます。帰還は /hub。"))
                         println("CORE_SKILL_LAB_ENTERED player=${player.username} " +
                             (entry.runtime?.let { "seed=${it.plan.seed}" } ?: "boss=$bossId"))
@@ -156,8 +160,11 @@ internal class CoreCombatLab(
 
     private fun spawnTargets(entry: Entry) {
         entry.arena?.let { arena ->
-            val next = QuestEncounterCombat(arena.instance, entry.tier, emptyList(), arena.bossSpawn,
-                onMobDefeated = { _, boss -> if (boss) nextTick {
+            // A mini-boss fights as a one-mob wave (as in its dungeon room), a boss as the arena's boss.
+            val mini = arena.archetype.rarity == QuestMobRarity.MINIBOSS
+            val next = QuestEncounterCombat(arena.instance, entry.tier,
+                if (mini) listOf(QuestCombatEncounter(listOf(arena.bossSpawn), listOf(arena.archetype))) else emptyList(), arena.bossSpawn,
+                onMobDefeated = { _, boss -> if (boss || mini) nextTick {
                     entry.player.sendMessage(CoreLoopItems.text("${arena.displayName}の主を討伐（テストのため報酬なし）。手帳 [9] で再配置できます。"))
                 } },
                 damagePlayer = { _, damage -> if (!entry.loadout.free) entry.actor?.hurt(damage) },
@@ -165,7 +172,7 @@ internal class CoreCombatLab(
                 crowdPlayer = { _, kind, millis, from -> if (!entry.loadout.free) entry.actor?.receiveCrowdControl(kind, millis, from) },
                 evading = { entry.actor?.evading == true },
                 canTarget = { it === entry.player && !entry.returning },
-                explicitBossArchetype = arena.archetype)
+                explicitBossArchetype = arena.archetype.takeUnless { mini }, spawnBoss = !mini)
             next.pixelNameplates = packed(entry.player)
             entry.actor?.resetActions(); entry.combat?.dispose(); entry.combat = next
             return
@@ -205,6 +212,7 @@ internal class CoreCombatLab(
         if (player.position.y() < 15) { entry.actor?.reset(); player.teleport(spawn); return }
         if (entry.loadout.free) entry.actor?.refillTraining()
         if (entry.loadout.retaliation) entry.combat?.tick(System.currentTimeMillis())
+        if (++entry.ticks % 5 == 0) entry.miniBar.update(entry.combat?.miniBossHud(), packed(player), System.currentTimeMillis())
     }
 
     fun refresh(player: Player): Boolean {
@@ -302,7 +310,7 @@ internal class CoreCombatLab(
     fun leave(player: Player): Boolean {
         val entry = entries[player.uuid]?.takeIf { it.player === player } ?: return false
         if (entry.returning) return true
-        entry.returning = true; entry.actor?.resetActions(); entry.combat?.dispose(); player.closeInventory()
+        entry.returning = true; entry.actor?.resetActions(); entry.combat?.dispose(); entry.miniBar.hide(); player.closeInventory()
         // Serialize outgoing transfer after any in-flight incoming transfer; never close its destination early.
         if (!entry.transferring) returnEntry(entry)
         return true
@@ -324,7 +332,7 @@ internal class CoreCombatLab(
     fun disconnect(player: Player) {
         val entry = entries[player.uuid]?.takeIf { it.player === player } ?: return
         entries.remove(player.uuid, entry); screens.forget(player.uuid)
-        entry.returning = true; entry.actor?.resetActions(); entry.combat?.dispose()
+        entry.returning = true; entry.actor?.resetActions(); entry.combat?.dispose(); entry.miniBar.hide()
         // While transferring, the transfer callback sees the removed entry and closes the map itself.
         entry.instance?.takeUnless { entry.transferring }?.let { instance -> nextTick {
             if (!player.isOnline && player.instance === instance) player.remove()
