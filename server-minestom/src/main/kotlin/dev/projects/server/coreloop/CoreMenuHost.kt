@@ -25,6 +25,8 @@ internal interface CoreMenuHost {
     fun gatheringMastery(player: Player): QuestGatheringMastery
     fun unlockMastery(player: Player, discipline: QuestGatheringDiscipline, node: QuestGatheringMasteryNode)
     fun departTrial(player: Player, kind: CoreActivityKind, tier: Int, revision: Long)
+    /** Enters an instance dungeon ([CoreDungeons]) alone; free and repeatable. */
+    fun departDungeon(player: Player, dungeonId: String, revision: Long) = Unit
     /** Opens the full passive tree screen; false when this player cannot see it (no UI pack, away from the hub). */
     fun openPassiveTree(player: Player): Boolean = false
 }

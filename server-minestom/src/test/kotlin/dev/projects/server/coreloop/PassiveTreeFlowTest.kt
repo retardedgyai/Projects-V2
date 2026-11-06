@@ -34,7 +34,7 @@ class PassiveTreeFlowTest {
         assertEquals(CorePassiveTree.nodes.size, art.spots.size)
         assertTrue(art.sprites.values.all { it.width <= 256 && it.height <= 256 })
         assertEquals(CorePassiveTree.nodes.sumOf { n -> n.links.count { it > n.id } }, art.edges.size)
-        assertTrue(CorePassiveTree.nodes.all { it.id in art.infos })
+        assertTrue(listOf("panel_left", "panel_right", "go_take", "btn", "footer").all { it in art.plates })
     }
 
     @Test fun `the screen opens on the class start and stays inside the scene`() {
@@ -116,8 +116,7 @@ class PassiveTreeFlowTest {
         fun notable(m: CorePassiveNode) = CorePassiveTree.nodes.filter { it.kind == CorePassiveKind.NOTABLE && it.group == m.group }
             .minBy { CorePassiveTree.pathTo(job, emptySet(), it.id)?.size ?: 999 }
         val mastery = masteries.minBy { CorePassiveTree.pathTo(job, emptySet(), notable(it).id)?.size ?: 999 }
-        assertEquals(mastery.choices.size, art.choiceLabels[mastery.id].size)
-        assertTrue(art.choiceLabels[mastery.id].all { it in art.labels })
+        assertEquals(mastery.choices.size, art.choiceTexts[mastery.id].size)
         val taken = CorePassiveTree.take(job, emptySet(), notable(mastery).id, 999)
         account = account.copy(journey = account.journey.copy(build = account.journey.build.copy(passives = taken)))
         flow.action("zoom:out")

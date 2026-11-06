@@ -112,41 +112,8 @@ object BossArenaFactory {
             unit.modifier().fillHeight(0, 39, Block.DEEPSLATE)
             val start = unit.absoluteStart()
             val end = unit.absoluteEnd()
-            for (x in start.blockX() until end.blockX()) for (z in start.blockZ() until end.blockZ()) {
-                val dx = x - 32.0
-                val dz = z - 32.0
-                val distance = sqrt(dx * dx + dz * dz)
-                val floor = when (bossId) {
-                    "rift" -> if (abs(dx) < 2 || abs(dz) < 2) Block.POLISHED_BLACKSTONE else Block.RED_NETHER_BRICKS
-                    "ritual" -> if (distance in 4.5..5.5 || distance in 15.5..16.5) Block.BLUE_ICE else Block.SMOOTH_QUARTZ
-                    // The wyrm's nest: pale tuff (it takes the violet light), sculk drifts, amethyst stains and a sparse grid
-                    // of crying obsidian (light 10) so the violet light of its effects is what lights the floor.
-                    "shade" -> when {
-                        Math.floorMod(x, 8) == 0 && Math.floorMod(z, 8) == 0 -> Block.CRYING_OBSIDIAN
-                        distance < 3.5 || Math.floorMod(x * 31 + z * 17, 11) == 0 -> Block.SCULK
-                        Math.floorMod(x * 7 + z * 13, 9) == 0 -> Block.AMETHYST_BLOCK
-                        else -> Block.POLISHED_TUFF
-                    }
-                    // 桜牙獣's glade: moss and grass strewn with fallen petals, a ring of cherry planks.
-                    "sakura" -> when {
-                        distance in 9.5..10.5 -> Block.CHERRY_PLANKS
-                        Math.floorMod(x * 7 + z * 13, 5) == 0 -> Block.PINK_WOOL
-                        Math.floorMod(x * 11 + z * 3, 4) == 0 -> Block.MOSS_BLOCK
-                        else -> Block.GRASS_BLOCK
-                    }
-                    else -> if ((x + z) % 7 == 0) Block.SEA_LANTERN else Block.PRISMARINE_BRICKS
-                }
-                unit.modifier().setBlock(x, 39, z, floor)
-                if (distance in 22.0..23.5) for (y in 40..43) unit.modifier().setBlock(x, y, z,
-                    when (bossId) { "ritual" -> Block.BLUE_ICE; "sakura" -> Block.CHERRY_LEAVES; else -> Block.POLISHED_DEEPSLATE })
-                // 散り桜の庭's pillars are wider: they are the cover from 桜牙獣's 千本桜
-                val pillar = if (bossId == "sakura") 1.6 else 1.0
-                if (distance in 19.0..20.5 && (abs(dx) < pillar || abs(dz) < pillar)) {
-                    for (y in 40..44) unit.modifier().setBlock(x, y, z, Block.POLISHED_DEEPSLATE)
-                    unit.modifier().setBlock(x, 45, z, when (bossId) {
-                        "rift" -> Block.SHROOMLIGHT; "shade" -> Block.PEARLESCENT_FROGLIGHT; "sakura" -> Block.PEARLESCENT_FROGLIGHT; else -> Block.SEA_LANTERN })
-                }
-            }
+            for (x in start.blockX() until end.blockX()) for (z in start.blockZ() until end.blockZ())
+                paintColumn(bossId, x, z) { bx, by, bz, block -> unit.modifier().setBlock(bx, by, bz, block) }
         }
         try {
             val chunks = (-1..5).flatMap { x -> (-1..5).map { z -> instance.loadChunk(x, z) } }
@@ -156,6 +123,46 @@ object BossArenaFactory {
         } catch (failure: Throwable) {
             MinecraftServer.getInstanceManager().unregisterInstance(instance)
             throw failure
+        }
+    }
+
+    /**
+     * One column of an arena around (32, 32): the floor at y 39, its wall ring (radius 22-23.5) and pillars (19-20.5).
+     * The instance dungeon paints 散り桜の庭 with this too, so its last room is the same arena.
+     */
+    internal fun paintColumn(bossId: String, x: Int, z: Int, set: (Int, Int, Int, Block) -> Unit) {
+        val dx = x - 32.0
+        val dz = z - 32.0
+        val distance = sqrt(dx * dx + dz * dz)
+        val floor = when (bossId) {
+            "rift" -> if (abs(dx) < 2 || abs(dz) < 2) Block.POLISHED_BLACKSTONE else Block.RED_NETHER_BRICKS
+            "ritual" -> if (distance in 4.5..5.5 || distance in 15.5..16.5) Block.BLUE_ICE else Block.SMOOTH_QUARTZ
+            // The wyrm's nest: pale tuff (it takes the violet light), sculk drifts, amethyst stains and a sparse grid
+            // of crying obsidian (light 10) so the violet light of its effects is what lights the floor.
+            "shade" -> when {
+                Math.floorMod(x, 8) == 0 && Math.floorMod(z, 8) == 0 -> Block.CRYING_OBSIDIAN
+                distance < 3.5 || Math.floorMod(x * 31 + z * 17, 11) == 0 -> Block.SCULK
+                Math.floorMod(x * 7 + z * 13, 9) == 0 -> Block.AMETHYST_BLOCK
+                else -> Block.POLISHED_TUFF
+            }
+            // 桜牙獣's glade: moss and grass strewn with fallen petals, a ring of cherry planks.
+            "sakura" -> when {
+                distance in 9.5..10.5 -> Block.CHERRY_PLANKS
+                Math.floorMod(x * 7 + z * 13, 5) == 0 -> Block.PINK_WOOL
+                Math.floorMod(x * 11 + z * 3, 4) == 0 -> Block.MOSS_BLOCK
+                else -> Block.GRASS_BLOCK
+            }
+            else -> if ((x + z) % 7 == 0) Block.SEA_LANTERN else Block.PRISMARINE_BRICKS
+        }
+        set(x, 39, z, floor)
+        if (distance in 22.0..23.5) for (y in 40..43) set(x, y, z,
+            when (bossId) { "ritual" -> Block.BLUE_ICE; "sakura" -> Block.CHERRY_LEAVES; else -> Block.POLISHED_DEEPSLATE })
+        // 散り桜の庭's pillars are wider: they are the cover from 桜牙獣's 千本桜
+        val pillar = if (bossId == "sakura") 1.6 else 1.0
+        if (distance in 19.0..20.5 && (abs(dx) < pillar || abs(dz) < pillar)) {
+            for (y in 40..44) set(x, y, z, Block.POLISHED_DEEPSLATE)
+            set(x, 45, z, when (bossId) {
+                "rift" -> Block.SHROOMLIGHT; "shade" -> Block.PEARLESCENT_FROGLIGHT; "sakura" -> Block.PEARLESCENT_FROGLIGHT; else -> Block.SEA_LANTERN })
         }
     }
 }

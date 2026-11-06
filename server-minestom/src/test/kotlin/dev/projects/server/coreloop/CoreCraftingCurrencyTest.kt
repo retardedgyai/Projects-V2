@@ -268,6 +268,34 @@ class CoreCraftingCurrencyTest {
         }
     }
 
+    @Test fun `the instance dungeon is free repeatable survives a reload and pays exalted and a trial fragment`() {
+        val f = Fixture(initial())
+        assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.StartDungeon("unknown", 1, UUID.randomUUID())).status)
+        assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.StartDungeon(CoreDungeons.SAKURA, 2, UUID.randomUUID())).status)
+        val lost = UUID.randomUUID()
+        f.commit(CoreAction.StartDungeon(CoreDungeons.SAKURA, 1, lost))
+        assertTrue(f.account.activeRun!!.dungeon)
+        assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.StartDungeon(CoreDungeons.SAKURA, 1, UUID.randomUUID())).status)
+        f.commit(CoreAction.FinishRun(lost))            // fell in the dungeon: home with nothing, and in again
+        val run = UUID.randomUUID()
+        f.commit(CoreAction.StartDungeon(CoreDungeons.SAKURA, 1, run))
+        f.service.forget(f.player); f.service.open(f.player)
+        assertEquals(CoreDungeons.SAKURA, f.account.activeRun!!.trialId)
+        val exalted = f.account.amount(CoreCraftingCurrency.EXALTED)
+        f.commit(CoreAction.BossReward(run))
+        assertEquals(exalted + 1, f.account.amount(CoreCraftingCurrency.EXALTED))
+        assertEquals(1, f.account.amount(CoreActivityKind.TRIAL))
+        assertEquals(2, f.account.amount(CoreResource.BOSS_SIGIL))
+        assertTrue(f.account.maps.isEmpty())
+        assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.BossReward(run)).status)
+        assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.AbortRun(run)).status)
+        f.commit(CoreAction.FinishRun(run))
+        val aborted = UUID.randomUUID()
+        f.commit(CoreAction.StartDungeon(CoreDungeons.SAKURA, 1, aborted))
+        f.commit(CoreAction.AbortRun(aborted))
+        assertEquals(null, f.account.activeRun)
+    }
+
     @Test fun `activity queue persists rewards and deduplicates before drain`() {
         val f = Fixture(initial())
         val run = f.start()

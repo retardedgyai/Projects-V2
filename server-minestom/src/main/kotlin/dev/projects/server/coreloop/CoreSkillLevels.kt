@@ -39,7 +39,7 @@ object CoreSkillLevels {
         val build = account.journey.build
         require(icon in levelable(account.journey.job)) { "この技は上げられません" }
         require(base(build, icon) < MAX_BASE) { "この技はもう Lv $MAX_BASE です" }
-        require(available(account) > 0) { "技の点数が足りません" }
+        require(available(account) > 0) { "技ポイントが足りません" }
         return build.copy(skillLevels = build.skillLevels + (icon to base(build, icon) + 1))
     }
 }

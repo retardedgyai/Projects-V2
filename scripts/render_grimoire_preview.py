@@ -11,7 +11,7 @@ scene = json.load(open(src, encoding="utf-8"))
 # --- sprites: char -> image cell, from the font providers in the packs
 cells = {}
 for z in ("server-minestom/src/main/resources/polish05/pack.zip", "server-minestom/src/main/resources/polish05/grimoire.zip",
-          "server-minestom/src/main/resources/polish05/passive-tree.zip"):
+          "server-minestom/src/main/resources/polish05/passive-tree.zip", "server-minestom/src/main/resources/polish05/forge.zip"):
     with zipfile.ZipFile(f"{repo}/{z}") as a:
         names = set(a.namelist())
         for n in names:
@@ -70,6 +70,37 @@ def tfont(family, px):
         fonts[key] = f
     return fonts[key]
 
+JAR = os.path.expanduser("~/.minecraft/versions/26.3/26.3.jar")
+_icons = {}
+def item_icon(spec):
+    if spec in _icons:
+        return _icons[spec]
+    base, _, model = spec.partition("|")
+    im = None
+    pack = f"{repo}/server-minestom/src/main/resources/core-ui-pack/assets"
+    try:
+        if model:
+            ns, path = model.split(":", 1)
+            ref = json.load(open(f"{pack}/{ns}/items/{path}.json"))["model"].get("model")
+            mns, mpath = ref.split(":", 1)
+            m = json.load(open(f"{pack}/{mns}/models/{mpath}.json"))
+            if "elements" not in m and "layer0" in m.get("textures", {}):
+                tns, tpath = m["textures"]["layer0"].split(":", 1)
+                im = Image.open(f"{pack}/{tns}/textures/{tpath}.png").convert("RGBA")
+    except Exception:
+        im = None
+    if im is None and os.path.exists(JAR):
+        name = base.split(":")[-1]
+        with zipfile.ZipFile(JAR) as a:
+            for kind in ("item", "block"):
+                path = f"assets/minecraft/textures/{kind}/{name}.png"
+                if path in a.namelist():
+                    im = Image.open(io.BytesIO(a.read(path))).convert("RGBA")
+                    im = im.crop((0, 0, im.width, im.width))
+                    break
+    _icons[spec] = im
+    return im
+
 def color(hexs):
     h = hexs.lstrip("#")
     if len(h) == 8:
@@ -85,11 +116,20 @@ for i, n in enumerate(scene["nodes"]):
         items.append((n["depth"] * 0.005, i, "fill", n))
     if n.get("sprite") or n.get("text"):
         items.append((n["depth"] * 0.005 + 0.025, i, "glyph", n))
+    if n.get("item"):
+        items.append((n["depth"] * 0.005 + 0.05, i, "item", n))
 items.sort(key=lambda t: (t[0], t[1]))
 
 for _, _, kind, n in items:
     b = n["box"]; st = n.get("style", {})
     x, y, w, h = b["x"] * K, b["y"] * K, b["w"] * K, b["h"] * K
+    if kind == "item":
+        # Flat items only: the pack's own flat model if it has one, else the vanilla texture from a local client jar.
+        icon = item_icon(n["item"])
+        if icon is not None:
+            side = max(1, round(min(w, h) * 0.8))
+            canvas.alpha_composite(icon.resize((side, side), Image.NEAREST), (round(x + (w - side) / 2), round(y + (h - side) / 2)))
+        continue
     if kind == "fill":
         c = color(st["background-color"])
         if c[3] == 0 or round(x + w) <= round(x) or round(y + h) <= round(y):
@@ -141,7 +181,11 @@ for _, _, kind, n in items:
                     gx, gy = round((x0 + ox) * K), round((top + oy) * K)
                     sz = (max(1, round(gw * K)), max(1, round(gh * K)))
                     a = g.getchannel("A").point(lambda v: 255 if v >= CUT else 0).resize(sz, Image.NEAREST)
-                    solid = Image.new("RGBA", sz, col); solid.putalpha(a)
+                    # The client multiplies a glyph's own colour by the text colour (white pages take the colour,
+                    # a baked black shadow stays black).
+                    from PIL import ImageChops
+                    solid = ImageChops.multiply(g.convert("RGB").resize(sz, Image.NEAREST), Image.new("RGB", sz, col[:3])).convert("RGBA")
+                    solid.putalpha(a)
                     layer.alpha_composite(solid, (gx, gy))
                 x0 += widths.get(str(ord(ch)), 32 if ord(ch) > 255 else 18) * pixel
         if st.get("text-shadow") == "true":
