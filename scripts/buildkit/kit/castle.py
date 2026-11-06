@@ -7,6 +7,7 @@
   chidori    千鳥破風：腰屋根の各面の真ん中に載る三角の屋根。中は白壁と格子窓
   gable      入母屋の上の切妻：棟の両端に鯱
   tenshu     天守：石垣 → 板張りの1層 → 白い2層 → 廻縁の最上階、層ごとに腰屋根と千鳥破風、上は入母屋
+  ring_wall  四角い石垣の輪（城壁の土台）、tamon 多聞櫓（輪の上の長屋の回廊）、gatehouse 櫓門
 """
 import vox
 from vox import put, get, full, log, stair, slab, fence
@@ -171,19 +172,110 @@ def gable(cx, cz, y0, hx, hz, along='x'):
         put(x, top + 1, z, EGG)
     return top
 
-def tenshu(cx, cz, g, ground, base=10, base_h=8, levels=3):
-    """天守・櫓。石垣（底の半幅 base、高さ base_h）の上に levels 層。
+def tenshu(cx, cz, g, ground, base=10, base_h=8, levels=3, flush=False):
+    """天守・櫓。石垣（底の半幅 base、高さ base_h）の上に levels 層。flush なら層の壁を石垣の上の面と面一に（城壁の輪に組み込むとき）。
     3層：板張りの1層（高さ6）→ 腰屋根＋千鳥破風 → 白い2層（5）→ 腰屋根＋千鳥破風 → 廻縁の最上階（4）→ 入母屋。
-    2層：板張り（5）→ 腰屋根＋千鳥破風 → 白（4）→ 入母屋。1層：板張り（5）→ 入母屋。層ごとに半幅を2ずつ小さく。いちばん上の高さを返す。"""
+    2層：板張り（6）→ 腰屋根＋千鳥破風 → 白（5）→ 入母屋。1層：板張り（6）→ 入母屋。層ごとに半幅を2ずつ小さく。いちばん上の高さを返す。"""
     top = ishigaki(cx, cz, g + 1, base, base_h, ground)
     y = g + 1 + base_h
-    h = top - 1
-    plan = {3: [('wood', 6), ('white', 5), ('dark', 4)], 2: [('wood', 5), ('white', 4)], 1: [('wood', 5)]}[levels]
+    h = top if flush else top - 1
+    plan = {3: [('wood', 6), ('white', 5), ('dark', 4)], 2: [('wood', 6), ('white', 5)], 1: [('wood', 6)]}[levels]
     for i, (style, hh) in enumerate(plan):
         storey(cx, cz, y, h, h, hh, style); y += hh
-        y_eave = y
         y = skirt(cx, cz, y, h, h, out=3, inner=2)
         if i < len(plan) - 1:
             chidori(cx, cz, y - 3, h, h, 3 if i == 0 else 4)
             h -= 2
     return gable(cx, cz, y, max(1, h - 1), max(1, h - 1), 'x')
+
+
+# ================================================================ 城壁：石垣の輪・多聞櫓・櫓門（藍 11/06「壁というよりはただの城をならべただけ」）
+def _stone(x, y, z, seed=402):
+    n = vox._h(x * 31 + y, z, seed)
+    return 'cobblestone' if n < 0.45 else 'andesite' if n < 0.7 else 'stone' if n < 0.85 else 'tuff' if n < 0.95 else 'mossy_cobblestone'
+
+SIDE_XY = {'e': lambda cx, cz, a, c: (cx + c, cz + a), 'w': lambda cx, cz, a, c: (cx - c, cz + a),
+           's': lambda cx, cz, a, c: (cx + a, cz + c), 'n': lambda cx, cz, a, c: (cx + a, cz - c)}   # 辺に沿う a、外への c → (x, z)
+
+def _gate_cell(u, v, side, half):
+    if side == 'e': return u > 0 and abs(v) <= half
+    if side == 'w': return u < 0 and abs(v) <= half
+    if side == 's': return v > 0 and abs(u) <= half
+    return v < 0 and abs(u) <= half
+
+def ring_wall(cx, cz, W, g, ground, gate=None):
+    """四角い石垣の輪。外の面は max(|u|,|v|) = W、上の3段（g+5〜g+7）は1マス引っ込む。内の面は W-3。崖の上では地面まで積む。
+    上の縁（g+7）に磨いた深層岩の帯を1マス張り出し、その下に2マスおきの支え。gate=(辺, 半幅)：その辺の真ん中に幅 2*半幅+1・高さ5の通路。
+    上の面の高さ（g+7）を返す。"""
+    top = g + 7
+    for u in range(-W, W + 1):
+        for v in range(-W, W + 1):
+            m = max(abs(u), abs(v))
+            if m < W - 3 or m > W: continue
+            x, z = cx + u, cz + v
+            ing = gate is not None and _gate_cell(u, v, *gate)
+            for y in range(min(ground(x, z) - 1, g), top + 1):
+                if m == W and y >= g + 5: continue
+                if ing and g + 1 <= y <= g + 5: put(x, y, z, None); continue
+                face = m == W or (m == W - 1 and y >= g + 5) or m == W - 3
+                put(x, y, z, full(_stone(x, y, z) if face else 'stone'))
+            if m == W:
+                put(x, top, z, full('polished_deepslate'))
+                if (u + v) % 2 == 0: put(x, top - 1, z, wall('polished_deepslate'))
+    return top
+
+def tamon(cx, cz, W, y0, side, a0, a1):
+    """多聞櫓：石垣の輪の1辺（side）の上、辺に沿う a0〜a1 に建つ長屋。床 y0（石垣の上の面 +1）、幅は内の面 W-3 から外の面 W-1 の3マス。
+    外側は白壁に3マスおきの濃い柱、1つおきの間に格子窓。内側（中庭の側）は柱と手すりで開ける。天井の上に黒い切妻（棟は辺に沿う、1マスごとに1段、軒は両側へ1マス）。
+    両端は妻（白い三角）で閉じる。隣の櫓の壁に突き当てて終わらせる。"""
+    XY = SIDE_XY[side]
+    def P(a, c, y, b):
+        x, z = XY(cx, cz, a, c); put(x, y, z, b)
+    out_f, in_f = INWARD[side], side                                              # 階段の背を棟へ向ける
+    for a in range(a0, a1 + 1):
+        end = a in (a0, a1); post = end or a % 3 == 0; bay = (abs(a) // 3) % 2 == 0
+        for c in (W - 1, W - 2, W - 3):
+            P(a, c, y0, full('dark_oak_planks'))                                  # 床
+            for y in range(y0 + 1, y0 + 4):
+                if c == W - 1: b = log('dark_oak_log') if post else fence('dark_oak_planks') if (y == y0 + 2 and bay) else full(WHITE)
+                elif c == W - 3: b = log('dark_oak_log') if post else fence('dark_oak_planks') if y == y0 + 1 else None
+                else: b = full(WHITE) if end else None
+                P(a, c, y, b)
+            P(a, c, y0 + 4, full('dark_oak_planks'))                              # 天井
+        P(a, W, y0 + 4, stair(ROOF, out_f)); P(a, W - 1, y0 + 5, stair(ROOF, out_f))
+        P(a, W - 2, y0 + 6, full(ROOF)); P(a, W - 2, y0 + 7, slab(ROOF))
+        P(a, W - 3, y0 + 5, stair(ROOF, in_f)); P(a, W - 4, y0 + 4, stair(ROOF, in_f))
+        if end: P(a, W - 2, y0 + 5, full(WHITE))                                  # 妻：棟の下の三角
+
+def gatehouse(cx, cz, W, g, ground, side, half=3, span=8):
+    """櫓門：輪の1辺の真ん中。通路（幅 2*half+1・高さ5、ring_wall が開けたもの）の両脇に石垣を外へ2マス張り出し、
+    通路の口に濃い木の柱と横木、吊り灯り。その上に辺に沿って長い2階（白壁、幅5・長さ 2*span+1）、腰屋根、切妻。いちばん上の高さを返す。"""
+    XY = SIDE_XY[side]
+    top = g + 7
+    for a in range(-span, span + 1):
+        for c in (W + 1, W + 2):
+            x, z = XY(cx, cz, a, c)
+            for y in range(min(ground(x, z) - 1, g), top + 1):
+                if c == W + 2 and y >= g + 5: continue
+                if abs(a) <= half and g + 1 <= y <= g + 5: put(x, y, z, None); continue
+                put(x, y, z, full(_stone(x, y, z, 403)))
+            if c == W + 2:
+                put(x, top, z, full('polished_deepslate'))
+                if a % 2 == 0: put(x, top - 1, z, wall('polished_deepslate'))
+    for a in range(-half, half + 1):                                              # 通路の床
+        for c in range(W - 3, W + 3):
+            x, z = XY(cx, cz, a, c); put(x, g, z, full('stone_bricks' if vox._h(x, z, 404) < 0.7 else 'mossy_stone_bricks'))
+    for c in (W - 3, W + 2):                                                      # 口の枠：柱と横木、真ん中に吊り灯り
+        for s in (-1, 1):
+            x, z = XY(cx, cz, s * (half + 1), c)
+            for y in range(g + 1, g + 6): put(x, y, z, log('dark_oak_log'))
+        for a in range(-half - 1, half + 2):
+            x, z = XY(cx, cz, a, c); put(x, g + 6, z, full('dark_oak_planks'))
+        x, z = XY(cx, cz, 0, c); put(x, g + 5, z, HANG)
+    xc, zc = XY(cx, cz, 0, W - 1)
+    along = 'z' if side in 'ew' else 'x'
+    hx, hz = (2, span) if along == 'z' else (span, 2)
+    y = top + 1
+    storey(xc, zc, y, hx, hz, 6, 'white'); y += 6
+    y = skirt(xc, zc, y, hx, hz, out=2, inner=1)
+    return gable(xc, zc, y, max(1, hx - 1), max(1, hz - 1), along)
