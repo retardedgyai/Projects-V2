@@ -14,7 +14,7 @@ import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
 
-internal enum class HarborFacilityKind { EXPEDITIONS, WORKSHOP, STORAGE, SUPPLIES, MASTERY, COLONY }
+internal enum class HarborFacilityKind { EXPEDITIONS, WORKSHOP, STORAGE, SUPPLIES, MASTERY, COLONY, DUNGEON }
 
 internal data class HarborFacility(
     val kind: HarborFacilityKind,
@@ -48,6 +48,7 @@ internal object HarborScene {
             facility(HarborFacilityKind.SUPPLIES, "交易市場", 16, 9, listOf(15 to 9, 17 to 9)),
             facility(HarborFacilityKind.MASTERY, "熟練の手引き", 16, -9, listOf(15 to -9, 17 to -9)),
             facility(HarborFacilityKind.COLONY, "自分のコロニー", 6, 15, listOf(5 to 15, 7 to 15)),
+            facility(HarborFacilityKind.DUNGEON, "ダンジョンの門", 24, 1, listOf(21 to -2, 21 to 4)),
         )
         val labels = facilities.map { facility ->
             Entity(EntityType.TEXT_DISPLAY).apply {
@@ -128,6 +129,24 @@ internal object HarborScene {
             put(17, 41, -9, Block.BOOKSHELF)
             box(14, 17, 41, 42, -16, -16, Block.BOOKSHELF)
             box(20, 21, 41, 41, -11, -10, Block.SPRUCE_STAIRS.withProperty("facing", "west"))
+            dungeonGate()
+        }
+
+        /** ダンジョンの門 where the cross street meets the east quay: a cherry torii over the street, and the stone the dungeon is chosen at. */
+        private fun dungeonGate() {
+            // The posts stand just outside the street (z -1..3 stays clear); the stone is past its east end.
+            for (z in listOf(-2, 4)) {
+                box(21, 21, 41, 44, z, z, Block.CHERRY_LOG)
+                put(21, 40, z, Block.STRIPPED_CHERRY_WOOD)
+            }
+            box(21, 21, 43, 43, -1, 3, Block.CHERRY_PLANKS)
+            put(21, 44, 1, Block.CHERRY_PLANKS)
+            for (z in -3..5) if (instance.getBlock(21, 45, z).air()) put(21, 45, z, Block.STRIPPED_CHERRY_WOOD)
+            put(21, 46, -3, Block.CHERRY_SLAB)
+            box(21, 21, 46, 46, -2, 4, Block.CHERRY_LEAVES.withProperty("persistent", "true"))
+            put(24, 41, 1, Block.LODESTONE)
+            put(24, 42, 1, Block.PINK_PETALS.withProperty("flower_amount", "4"))
+            for ((x, z) in listOf(20 to -2, 23 to -2, 24 to -1, 22 to -3, 19 to 4)) put(x, 41, z, Block.PINK_PETALS.withProperty("flower_amount", "${1 + Math.floorMod(x + z, 4)}"))
         }
 
         fun paths() {

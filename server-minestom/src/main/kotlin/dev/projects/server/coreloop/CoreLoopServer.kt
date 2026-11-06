@@ -50,6 +50,7 @@ import kotlin.math.roundToInt
 
 /** Recovery potion reuse delay; also the length of its HUD cooldown icon. */
 private const val POTION_COOLDOWN_MILLIS = 10_000L
+private const val DUNGEON_RETURN_MILLIS = 10_000L
 
 /** Entry point for the playable solo loop. The original combat laboratory remains opt-in. */
 object CoreLoopServer {
@@ -198,6 +199,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val discoveries = hashSetOf<Int>()
         var caches: CoreMapCaches? = null
         var adventures: AdventureRuntime? = null
+        var dungeon: DungeonRun? = null
+        /** A cleared dungeon sends its players home at this time (0 = not yet). */
+        var dungeonReturnAt = 0L
         var anomalies: FirstMagicField? = null
         val bossTrail = CoreHudTrail()
     }
@@ -561,6 +565,49 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             addSyntax({ sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR, "sakura") } },
                 net.minestom.server.command.builder.arguments.ArgumentType.Literal("sakura"))
         })
+        // Test-only: /dungeontest opens ダンジョンの門 from anywhere in the harbor; inside, /dungeontest clear ends the
+        // room's wave and /dungeontest boss drops 桜牙獣 (to its 千本桜 first, with you behind a pillar; again to finish).
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("dungeontest").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { menus.dungeons(it) } }
+            addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
+                val combat = sessions[player.uuid]?.takeIf { it.dungeon != null && !it.returning }?.combat ?: return@scheduleNextTick
+                combat.entities().filter { !combat.isBoss(it.uuid) }.forEach { combat.applyEffectDamage(it.uuid, player, 1e6) }
+            } } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("clear"))
+            addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
+                val session = sessions[player.uuid]?.takeIf { it.dungeon?.bossEngaged == true && !it.returning } ?: return@scheduleNextTick
+                val boss = session.combat.entities().firstOrNull { session.combat.isBoss(it.uuid) } ?: return@scheduleNextTick
+                session.combat.applyEffectDamage(boss.uuid, player, 1e6)
+                if (session.combat.isAlive(boss.uuid)) {
+                    player.teleport(session.dungeon!!.layout.arenaCenter.add(0.0, 0.0, -21.0))
+                    player.sendMessage(CoreLoopItems.text("千本桜が来る。柱の陰でやり過ごし、終わったらもう一度 /dungeontest boss", NamedTextColor.GRAY))
+                }
+            } } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("boss"))
+        })
+        // Filming only (-Dprojects.dungeonTour=true): the joining player is walked through 散り桜の社 on a timer and each
+        // view is announced as DUNGEON_TOUR_SHOT so a screen grabber can take it. No input is needed from the client.
+        if (java.lang.Boolean.getBoolean("projects.dungeonTour")) events.addListener(PlayerSpawnEvent::class.java) { event ->
+            if (!event.isFirstSpawn) return@addListener
+            val player = event.player
+            fun run(command: String) = MinecraftServer.getCommandManager().execute(player, command)
+            fun shot(name: String) { println("DUNGEON_TOUR_SHOT $name"); System.out.flush() }
+            listOf<Pair<Long, () -> Unit>>(
+                100L to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }, 160L to { shot("harbor_gate") },
+                220L to { menus.dungeons(player) }, 280L to { shot("menu") },
+                340L to { player.closeInventory(); account(player)?.let { departDungeon(player, CoreDungeons.SAKURA, it.revision) } },
+                500L to { player.teleport(Pos(32.5, 40.0, -36.5, 0f, 5f)) }, 540L to { shot("hall") },
+                620L to { player.teleport(Pos(32.5, 40.0, -25.5, 0f, 10f)) }, 670L to { shot("room1_wave") },
+                740L to { run("dungeontest clear") }, 800L to { run("dungeontest clear") },
+                860L to { player.teleport(Pos(32.5, 40.0, -19.5, 0f, 5f)) }, 900L to { shot("room1_open") },
+                960L to { player.teleport(Pos(32.5, 40.0, -7.5, 0f, 10f)) }, 1010L to { shot("room2_wave") },
+                1080L to { run("dungeontest clear") }, 1140L to { run("dungeontest clear") },
+                1200L to { player.teleport(Pos(32.5, 40.0, 2.5, 0f, 0f)) }, 1240L to { shot("room2_open") },
+                1300L to { player.teleport(Pos(28.5, 40.0, 15.5, -14f, -5f)) }, 1360L to { shot("arena_boss") },
+                1440L to { shot("boss_fight") },
+                1500L to { run("dungeontest boss") }, 1620L to { shot("finale") },
+                1740L to { run("dungeontest boss") }, 1770L to { run("dungeontest boss") }, 1800L to { shot("cleared") },
+                2140L to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }, 2180L to { shot("back_harbor") },
+            ).forEach { (at, step) -> player.scheduler().buildTask { if (player.isOnline) step() }.delay(TaskSchedule.tick(at.toInt())).schedule() }
+        }
         // Test-only: the coloured point-light prototype (SakuraLight). /lighttest puts a glowing blossom with a pink light
         // at your feet, /lighttest orbit sends one round you, /lighttest off clears yours.
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("lighttest").apply {
@@ -724,6 +771,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         HarborFacilityKind.SUPPLIES -> menus.supplies(player)
         HarborFacilityKind.MASTERY -> menus.mastery(player)
         HarborFacilityKind.COLONY -> enterColony(player)
+        HarborFacilityKind.DUNGEON -> menus.dungeons(player)
     }
 
     private fun placeColonyItem(player: Player, colony: FirstMagicColony, kind: ColonyPlaceable,
@@ -1127,15 +1175,27 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         return true
     }
 
-    override fun departTrial(player: Player, kind: CoreActivityKind, tier: Int, revision: Long) {
+    override fun departTrial(player: Player, kind: CoreActivityKind, tier: Int, revision: Long) =
+        departArena(player, revision, "${kind.displayName}の境界を開いています…", { CoreAction.StartTrial(kind.bossId, tier, it) },
+            { BossArenaFactory.create(kind.bossId, tier) to null }) { arena, runId, dungeon -> attachTrial(player, arena, runId, tier, dungeon) }
+
+    override fun departDungeon(player: Player, dungeonId: String, revision: Long) {
+        val tier = account(player)?.let { (((it.journey.level - 1) / 10) + 1).coerceIn(1, it.unlockedMapTier) } ?: return
+        departArena(player, revision, "${InstanceDungeonFactory.DISPLAY_NAME}の扉を開いています…", { CoreAction.StartDungeon(dungeonId, tier, it) },
+            { InstanceDungeonFactory.create(tier).let { it.arena to it.layout } }) { arena, runId, layout -> attachTrial(player, arena, runId, tier, layout) }
+    }
+
+    /** A trial boss or an instance dungeon: its own instance, entered from the harbor, left through returnToHarbor. */
+    private fun departArena(player: Player, revision: Long, opening: String, start: (UUID) -> CoreAction,
+                            build: () -> Pair<BossArena, DungeonLayout?>, attach: (BossArena, UUID, DungeonLayout?) -> Unit) {
         if (account(player)?.journey?.chosen != true) { menus.career(player); return }
         if (!requireHub(player) || !busy.add(player.uuid)) return
         val runId = UUID.randomUUID()
         departing[player.uuid] = runId
         player.closeInventory()
         actors[player.uuid]?.resetActions()
-        player.sendMessage(CoreLoopItems.text("${kind.displayName}の境界を開いています…", NamedTextColor.LIGHT_PURPLE))
-        transact(player.uuid, CoreAction.StartTrial(kind.bossId, tier, runId), revision).whenComplete { result, failure ->
+        player.sendMessage(CoreLoopItems.text(opening, NamedTextColor.LIGHT_PURPLE))
+        transact(player.uuid, start(runId), revision).whenComplete { result, failure ->
             if (failure != null || result?.successful != true) {
                 player.scheduler().scheduleNextTick {
                     if (connections[player.uuid] !== player || !departing.remove(player.uuid, runId)) return@scheduleNextTick
@@ -1144,7 +1204,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 }
                 return@whenComplete
             }
-            CompletableFuture.supplyAsync({ BossArenaFactory.create(kind.bossId, tier) }, mapBuilder).whenComplete { arena, buildFailure ->
+            CompletableFuture.supplyAsync(build, mapBuilder).whenComplete { built, buildFailure ->
+                val arena = built?.first
                 MinecraftServer.getSchedulerManager().scheduleNextTick {
                     if (connections[player.uuid] !== player || !player.isOnline || departing[player.uuid] != runId) {
                         arena?.dispose()
@@ -1170,12 +1231,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                             }
                             try {
                                 if (transferFailure != null) throw IllegalStateException("Trial transfer failed", transferFailure)
-                                attachTrial(player, arena, runId, tier)
+                                attach(arena, runId, built.second)
                                 pendingTrialArenas.remove(player.uuid, arena)
                                 departing.remove(player.uuid, runId); busy.remove(player.uuid)
                                 actors[player.uuid]?.reset(); refresh(player)
-                                player.sendMessage(CoreLoopItems.text("${arena.displayName}へ到着。${sessions[player.uuid]?.combat?.bossName()}を討伐せよ！", NamedTextColor.GOLD))
-                                println("CORE_TRIAL_STARTED player=${player.username} run=$runId kind=${kind.name} tier=$tier transfer=complete")
+                                player.sendMessage(CoreLoopItems.text(if (built.second != null) "${arena.displayName}へ。部屋の敵を退け、奥の庭で${sessions[player.uuid]?.combat?.bossName()}を討伐せよ！"
+                                    else "${arena.displayName}へ到着。${sessions[player.uuid]?.combat?.bossName()}を討伐せよ！", NamedTextColor.GOLD))
+                                println("CORE_TRIAL_STARTED player=${player.username} run=$runId arena=${arena.bossId} transfer=complete")
                             } catch (error: Exception) {
                                 System.err.println("CORE_TRIAL_SETUP_FAILURE run=$runId: $error")
                                 sessions[player.uuid]?.takeIf { it.runId == runId }?.let { failed ->
@@ -1203,7 +1265,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
     }
 
-    private fun attachTrial(player: Player, arena: BossArena, runId: UUID, tier: Int) {
+    private fun attachTrial(player: Player, arena: BossArena, runId: UUID, tier: Int, dungeon: DungeonLayout? = null) {
         val run = requireNotNull(account(player)?.activeRun).also { check(it.id == runId && it.trialId == arena.bossId) }
         val bar = BossBar.bossBar(CoreLoopItems.text(arena.displayName, NamedTextColor.RED), 1f, bossBarColor(player), BossBar.Overlay.PROGRESS)
         val combat = QuestEncounterCombat(arena.instance, tier, emptyList(), arena.bossSpawn,
@@ -1211,13 +1273,18 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
             canTarget = { target -> target === player && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
             contentSeed = run.map.seed, explicitBossArchetype = arena.archetype,
+            encounterLevel = run.map.level,
             typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) },
             crowdPlayer = { target, kind, millis, from -> actors[target.uuid]?.receiveCrowdControl(kind, millis, from) },
-            evading = { actors[it.uuid]?.evading == true })
+            evading = { actors[it.uuid]?.evading == true }, rollGrades = dungeon != null)
         try {
             val loot = CoreWorldLoot(player, arena.instance, run, { rewards.submit(player.uuid, it) }, { refresh(player) })
             combat.pixelNameplates = packed(player)
-            sessions[player.uuid] = Session(player, runId, null, combat, bar, loot, arena)
+            val session = Session(player, runId, null, combat, bar, loot, arena)
+            if (dungeon != null) session.dungeon = DungeonRun(arena.instance, combat, dungeon) {
+                listOf(player).filter { it.instance === arena.instance && actors[it.uuid]?.defeated == false && !session.returning }
+            }
+            sessions[player.uuid] = session
         } catch (failure: Exception) { combat.dispose(); throw failure }
     }
 
@@ -1333,7 +1400,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     session.owner.hideBossBar(session.bossBar)
                     refresh(session.owner)
                     session.owner.showTitle(Title.title(CoreLoopItems.text("討伐達成", NamedTextColor.GOLD), CoreLoopItems.text(
-                        if (session.arena == null) "討伐証・次の地図・試練の欠片を保存" else "専用オーブ2個・高揚1個・討伐証を保存")))
+                        if (session.arena == null) "討伐証・次の地図・試練の欠片を保存" else if (session.dungeon != null) "高揚1個・試練の欠片1個・討伐証を保存"
+                        else "専用オーブ2個・高揚1個・討伐証を保存")))
                     session.owner.playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.6f, 1f))
                     session.owner.sendMessage(CoreLoopItems.text("羅針盤から港へ帰還し、工房で装備を更新しよう。探索は続けても構いません。", NamedTextColor.GREEN))
                     println("CORE_BOSS_REWARD_COMMITTED player=${session.owner.username} run=${session.runId} revision=${result.account?.revision}")
@@ -1347,6 +1415,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         session.combat.tick(System.currentTimeMillis())
         if (session.returning) return
         session.adventures?.tick(System.currentTimeMillis())
+        session.dungeon?.tick()
         session.loot.tick()
         session.ticks++
         if (session.combat.bossDefeated && session.ticks % 100 == 0L) awardBoss(session)
@@ -1357,7 +1426,14 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             return
         }
         val p = session.owner
-        if (session.combat.bossDefeated) p.hideBossBar(session.bossBar)
+        if (session.dungeon != null && session.combat.bossDefeated && accounts[p.uuid]?.activeRun?.bossDefeated == true) {
+            val now = System.currentTimeMillis()
+            if (session.dungeonReturnAt == 0L) {
+                session.dungeonReturnAt = now + DUNGEON_RETURN_MILLIS
+                p.sendMessage(CoreLoopItems.text("${DUNGEON_RETURN_MILLIS / 1000}秒後に港へ戻ります。落ちた戦利品を拾っておこう。", NamedTextColor.GREEN))
+            } else if (now >= session.dungeonReturnAt) { returnToHarbor(p); return }
+        }
+        if (session.combat.bossDefeated || session.dungeon?.bossEngaged == false) p.hideBossBar(session.bossBar)
         else if (session.arena != null || p.position.distanceSquared(requireNotNull(session.runtime).plan.boss.let { Pos(it.x.toDouble(), p.position.y(), it.z.toDouble()) }) < 45 * 45) {
             p.showBossBar(session.bossBar)
         } else p.hideBossBar(session.bossBar)
@@ -1390,7 +1466,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         if (session.combat.bossDefeated && account(player)?.activeRun?.bossDefeated != true) { awardBoss(session); return }
         session.returning = true
         session.combat.stopActionsForReturn()
-        session.adventures?.failAll(); session.adventures?.dispose(); session.anomalies?.dispose()
+        session.adventures?.failAll(); session.adventures?.dispose(); session.anomalies?.dispose(); session.dungeon?.dispose()
         questMaps.cancelGathering(player)
         actors[player.uuid]?.resetActions()
         player.closeInventory()
