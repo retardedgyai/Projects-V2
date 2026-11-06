@@ -368,6 +368,9 @@ def build_combat_hud(assets, pack, source, write_json, chars):
     boss.group("hud_boss_emblem", [(f"boss_emblem_{g}", boss_art.emblem(g)) for g in boss_art.GRADES], 10)
     boss.group("hud_boss_plate", [(f"boss_plate_{g}", boss_art.plate(g)) for g in boss_art.GRADES],
                10 - (boss_art.PLATE_TOP - boss_art.PLATE_PAD), columns=1)
+    # mini-bosses: the same plate with a tag wide enough for ミニボス
+    boss.group("hud_boss_plate_mini", [(f"boss_plate_{g}_mini", boss_art.plate(g, tag_w=boss_art.MINI_TAG_W)) for g in boss_art.GRADES],
+               10 - (boss_art.PLATE_TOP - boss_art.PLATE_PAD), columns=1)
     rows = [(f"boss_fill_{w}", art.gauge_fill(w, boss_art.HP_ROWS, art.BOSS)) for w in BINARY]
     rows += [(f"boss_fillc_{w}", art.gauge_fill(w, boss_art.HP_ROWS, boss_art.CALAMITY_HP)) for w in BINARY]
     rows += [(f"boss_trail_{w}", art.flat(w, boss_art.HP_ROWS, boss_art.TRAIL)) for w in BINARY]

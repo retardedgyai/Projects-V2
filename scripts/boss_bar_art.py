@@ -26,6 +26,8 @@ PLATE_PAD = 9                   # the plate glyph's margin for corner brackets, 
 NAME_TOP = PLATE_TOP + 4        # name / percentage row (8 px text)
 TAG_TOP = PLATE_TOP - 6         # grade label on the tag
 TAG_X = PLATE_X + 12            # tag plate left; its label starts 4 px in
+TAG_W = 26                      # the grade tag (two characters)
+MINI_TAG_W = 44                 # the mini-boss tag: ミニボス (CoreBossBarHud.MINI_TAG_W)
 HP_X, HP_W, HP_TOP, HP_ROWS = -112, 225, PLATE_TOP + 13, 9
 HP_TEXT_TOP = HP_TOP + 1        # the HP number inside the gauge
 LV_TOP = EMBLEM_CY - 3          # the level number on the diamond's plaque
@@ -114,9 +116,9 @@ def _thorns(img, x, y, sx, sy):
     img.alpha_composite(layer)
 
 
-def plate(grade, corners=True):
+def plate(grade, corners=True, tag_w=TAG_W):
     """Plate with its frame, corner pieces, grade tag, HP well and empty break cells.
-    Glyph x = PLATE_X - PLATE_PAD, top = PLATE_TOP - PLATE_PAD."""
+    Glyph x = PLATE_X - PLATE_PAD, top = PLATE_TOP - PLATE_PAD. [tag_w]: the tag's width (MINI_TAG_W for a mini-boss)."""
     st = STYLE[grade]
     P = PLATE_PAD
     img = new(PLATE_W + 2 * P, PLATE_H + 2 * P)
@@ -142,8 +144,8 @@ def plate(grade, corners=True):
         for (x, y, sx, sy) in ((x0 + 1, y0 + 1, 1, 1), (x1 - 2, y0 + 1, -1, 1), (x0 + 1, y1 - 2, 1, -1), (x1 - 2, y1 - 2, -1, -1)):
             _thorns(img, x, y, sx, sy)
     tx = x0 + TAG_X - PLATE_X
-    step_plate(img, tx, y0 - 8, tx + 26, y0 + 4, cut=1)
-    rect(img, tx + 1, y0 - 7, tx + 25, y0 - 6, hexc(st["tag"]))
+    step_plate(img, tx, y0 - 8, tx + tag_w, y0 + 4, cut=1)
+    rect(img, tx + 1, y0 - 7, tx + tag_w - 1, y0 - 6, hexc(st["tag"]))
     return img
 
 

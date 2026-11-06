@@ -6,7 +6,8 @@ import net.minestom.server.item.Material
 import java.util.UUID
 import kotlin.math.pow
 
-enum class QuestMobRarity { NORMAL, ELITE, BOSS }
+/** MINIBOSS: a room's guardian in an instance dungeon. It fights in a wave like any mob and has its own boss bar (ミニボス). */
+enum class QuestMobRarity { NORMAL, ELITE, BOSS, MINIBOSS }
 enum class QuestMobDropKind { SOLDIER, GUARD, CASTER, ELITE, BOSS }
 
 enum class QuestMobArchetype(val displayName: String, val rarity: QuestMobRarity, val weakness: String) {
@@ -25,6 +26,10 @@ enum class QuestMobArchetype(val displayName: String, val rarity: QuestMobRarity
     ECLIPSE_REGENT("星蝕の王", QuestMobRarity.BOSS, "lightning"),
     SHADE_WYRM("黒翳竜", QuestMobRarity.BOSS, "fire"),
     SAKURA_FANG("桜牙獣", QuestMobRarity.BOSS, "fire"),
+    // 散り桜の社's two mini-bosses (ミニボス1 after 花守の回廊, ミニボス2 after 散華の間). The dungeon's rooms name these two; until
+    // 藍 picks which two of the proposals they are, they are stand-ins (vanilla bodies, three skills), replaced behind the same names.
+    SAKURA_MINIBOSS_1("仮の花守・一", QuestMobRarity.MINIBOSS, "ice"),
+    SAKURA_MINIBOSS_2("仮の花守・二", QuestMobRarity.MINIBOSS, "lightning"),
 }
 
 data class QuestMobInfo(
@@ -81,7 +86,8 @@ internal data class QuestMobDefinition(
     val boss: Boolean get() = archetype.rarity == QuestMobRarity.BOSS
     val soundFamily: String get() = when (archetype) {
         QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.IRON_WARDEN, QuestMobArchetype.GLACIAL_COLOSSUS -> "husk"
-        QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE, QuestMobArchetype.TEMPEST_HIEROPHANT, QuestMobArchetype.TIDE_ARCHIVIST -> "evoker"
+        QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE, QuestMobArchetype.TEMPEST_HIEROPHANT, QuestMobArchetype.TIDE_ARCHIVIST,
+        QuestMobArchetype.SAKURA_MINIBOSS_2 -> "evoker"
         QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.CINDER_REGENT, QuestMobArchetype.FORGE_SENTINEL -> "piglin_brute"
         QuestMobArchetype.ECLIPSE_REGENT -> "wither_skeleton"
         QuestMobArchetype.SHADE_WYRM, QuestMobArchetype.SAKURA_FANG -> "ravager"
@@ -91,7 +97,7 @@ internal data class QuestMobDefinition(
         QuestMobArchetype.SOLDIER -> QuestMobDropKind.SOLDIER
         QuestMobArchetype.SHIELD_GUARD -> QuestMobDropKind.GUARD
         QuestMobArchetype.RIFT_CASTER -> QuestMobDropKind.CASTER
-        QuestMobArchetype.ELITE_BRUTE -> QuestMobDropKind.ELITE
+        QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.SAKURA_MINIBOSS_1, QuestMobArchetype.SAKURA_MINIBOSS_2 -> QuestMobDropKind.ELITE
         else -> QuestMobDropKind.BOSS
     }
 }
@@ -132,7 +138,8 @@ internal object QuestMobContent {
                     "forge-cross", "forge-mark", "tide-ray", "tide-ring", "tide-center", "eclipse-mark", "eclipse-cross",
                     "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross",
                     "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "shade-orb", "shade-channel", "shade-shell",
-                    "sakura-scatter", "sakura-bloom", "sakura-howl", "sakura-rain"))
+                    "sakura-scatter", "sakura-bloom", "sakura-howl", "sakura-rain",
+                    "miniboss1-ring", "miniboss2-mark", "miniboss2-fan", "miniboss2-ring"))
                 dev.projects.server.coreloop.CoreDamageType.MAGICAL
             else if (id in setOf("shade-channel", "shade-shell")) dev.projects.server.coreloop.CoreDamageType.TRUE   // a failed gimmick
             else dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
@@ -239,6 +246,26 @@ internal object QuestMobContent {
                     attack("sakura-claw3", "桜爪・止め", MobAttackShape.Slam(7.0, 3.0), 6.0, 28.0,
                         900, 300, 1300, 0, health = .5, scripted = true),
                 )).copy(model = "sakura_fang", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2)
+            // Stand-ins for the two mini-bosses (see QuestMobArchetype). A mini-boss is always 希少 (MobGrades.MINIBOSS, health x2.1),
+            // so these come to about 4 tenths of 桜牙獣's health: 107 and 95 here, 225 and 200 in the fight at tier 1.
+            QuestMobArchetype.SAKURA_MINIBOSS_1 -> definition(EntityType.VINDICATOR, 107.0, 0.15, 2.0, 1.5,
+                Material.IRON_AXE, attacks = listOf(
+                    attack("miniboss1-slash", "踏み込み斬り・横へ", MobAttackShape.Slam(7.0, 1.4), 6.5, 16.0,
+                        1100, 400, 900, 4500, weight = 3),
+                    attack("miniboss1-sweep", "薙ぎ払い・下がれ", MobAttackShape.Sweep(4.5, 75.0), 4.0, 14.0,
+                        900, 350, 850, 3500, weight = 3),
+                    attack("miniboss1-ring", "花の輪・離れろ", MobAttackShape.Ring(5.5), 5.0, 18.0,
+                        1500, 0, 1100, 8000, health = .5, weight = 2),
+                ))
+            QuestMobArchetype.SAKURA_MINIBOSS_2 -> definition(EntityType.EVOKER, 95.0, 0.13, 7.0, 1.4,
+                Material.AIR, attacks = listOf(
+                    attack("miniboss2-mark", "花冠落とし・印から出ろ", MobAttackShape.Ring(3.0), 14.0, 16.0,
+                        1600, 1200, 800, 5000, minimumRange = 3.0, target = true, weight = 3),
+                    attack("miniboss2-fan", "花びらの扇・扇の外へ", MobAttackShape.Sweep(10.0, 35.0), 9.5, 15.0,
+                        1400, 500, 900, 6500, weight = 2),
+                    attack("miniboss2-ring", "袖の輪・離れろ", MobAttackShape.Ring(4.5), 4.0, 14.0,
+                        1000, 0, 1000, 4500, weight = 2),
+                ))
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,
                 Material.IRON_AXE, attacks = listOf(sweep(), slam()))
             QuestMobArchetype.SHIELD_GUARD -> definition(EntityType.HUSK, 66.0, 0.105, 2.0, 1.0,

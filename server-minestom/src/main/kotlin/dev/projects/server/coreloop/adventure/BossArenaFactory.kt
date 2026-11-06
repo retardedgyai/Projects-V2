@@ -1,6 +1,7 @@
 package dev.projects.server.coreloop.adventure
 
 import dev.projects.server.mob.QuestMobArchetype
+import dev.projects.server.mob.QuestMobRarity
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
 import net.minestom.server.instance.InstanceContainer
@@ -99,8 +100,12 @@ object BossArenaFactory {
             // Dev-only so far (/bosstest); no fragment/currency entry exists for it yet.
             "shade" -> QuestMobArchetype.SHADE_WYRM
             "sakura" -> QuestMobArchetype.SAKURA_FANG
+            // Dev-only (/minibosstest): 散り桜の社's mini-boss of that room, alone on 散り桜の庭's floor.
+            "miniboss1" -> QuestMobArchetype.SAKURA_MINIBOSS_1
+            "miniboss2" -> QuestMobArchetype.SAKURA_MINIBOSS_2
             else -> error("Unknown trial boss: $bossId")
         }
+        val look = if (archetype.rarity == QuestMobRarity.MINIBOSS) "sakura" else bossId
         val instance = if (bossId == "shade") MinecraftServer.getInstanceManager().createInstanceContainer(registerDimensions())
             else MinecraftServer.getInstanceManager().createInstanceContainer()
         instance.setChunkSupplier(::LightingChunk)
@@ -113,13 +118,14 @@ object BossArenaFactory {
             val start = unit.absoluteStart()
             val end = unit.absoluteEnd()
             for (x in start.blockX() until end.blockX()) for (z in start.blockZ() until end.blockZ())
-                paintColumn(bossId, x, z) { bx, by, bz, block -> unit.modifier().setBlock(bx, by, bz, block) }
+                paintColumn(look, x, z) { bx, by, bz, block -> unit.modifier().setBlock(bx, by, bz, block) }
         }
         try {
             val chunks = (-1..5).flatMap { x -> (-1..5).map { z -> instance.loadChunk(x, z) } }
             CompletableFuture.allOf(*chunks.toTypedArray()).join()
             return BossArena(instance, Pos(32.5, 40.0, 16.5), Pos(32.5, 40.0, 32.5), archetype, bossId,
-                when (bossId) { "rift" -> "灰燼の溶炉"; "ritual" -> "氷獄の円庭"; "shade" -> "翳の巣"; "sakura" -> "散り桜の庭"; else -> "天雷の祭壇" })
+                when (bossId) { "rift" -> "灰燼の溶炉"; "ritual" -> "氷獄の円庭"; "shade" -> "翳の巣"; "sakura" -> "散り桜の庭"
+                    "miniboss1", "miniboss2" -> "花守の試し場"; else -> "天雷の祭壇" })
         } catch (failure: Throwable) {
             MinecraftServer.getInstanceManager().unregisterInstance(instance)
             throw failure
