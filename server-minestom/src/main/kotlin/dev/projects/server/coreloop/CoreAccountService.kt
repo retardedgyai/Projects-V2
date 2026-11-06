@@ -144,11 +144,11 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             requireHub(account)
             val journey = account.journey
             val points = CoreSkillLevels.spent(journey.build)
-            require(points > 0) { "戻す技の点数がありません" }
+            require(points > 0) { "戻す技ポイントがありません" }
             val price = CorePassiveTree.refundPrice(journey) * points
             require(account.silver >= price) { "銀貨が足りません（${price}枚必要）" }
             account.copy(silver = account.silver - price, journey = journey.copy(build = journey.build.copy(skillLevels = emptyMap()))) to
-                "技の点数をすべて戻しました（銀貨${price}枚）"
+                "技ポイントをすべて戻しました（銀貨${price}枚）"
         }
         is CoreAction.ChooseClass -> {
             requireHub(account)

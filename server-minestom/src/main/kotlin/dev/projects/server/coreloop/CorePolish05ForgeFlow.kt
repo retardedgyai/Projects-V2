@@ -69,11 +69,8 @@ internal class CorePolish05ForgeFlow(
             CoreGearSlot.WEAPON -> null
         }
         val greatsword = weapon && identity.base.family == "greatsword"
-        val icon = when {
-            part != null -> "minecraft:leather_$part|projects:armor/${job}_t${tier}_$part"
-            greatsword -> null
-            else -> "minecraft:iron_sword|${CoreArmamentPresentation.model(identity.base, a.journey.job, tier)}"
-        }
+        val icon = if (part != null) "minecraft:leather_$part|projects:armor/${job}_t${tier}_$part"
+            else "minecraft:iron_sword|${CoreArmamentPresentation.model(identity.base, a.journey.job, tier)}"
         val mods = a.equippedAffixes.filter { it.gear == slot }.sortedBy { it.index }.map { affix ->
             val definition = CoreAffixCatalog.definition(affix.stone)
             ForgeV3Mod(definition?.group?.displayName ?: "—", CoreAffixCatalog.describe(affix.stone),
@@ -96,7 +93,6 @@ internal class CorePolish05ForgeFlow(
             mods = mods,
             modCapacity = CoreAffixCatalog.capacity(a, slot),
             iconItem = icon,
-            weaponArt = greatsword,
             kindLabel = if (weapon) "大剣".takeIf { greatsword } ?: identity.base.displayName else "防具",
         )
     }
@@ -105,19 +101,8 @@ internal class CorePolish05ForgeFlow(
         val q = quote(a)
         val maxed = q.currentLevel >= CoreEnhancementCatalog.MAX_LEVEL
         val costs = q.recipe.costs.map { (material, required) ->
-            ForgeV3Cost(material.resource.displayName, "T${material.tier}", a.amount(material), required, when (material.resource) {
-                CoreResource.WOOD -> "forge_material_wood"
-                CoreResource.ORE -> "forge_material_ore"
-                CoreResource.STONE -> "forge_material_stone"
-                CoreResource.HIDE -> "forge_material_hide"
-                CoreResource.FIBER -> "forge_material_fiber"
-                CoreResource.INGOT -> "forge_material_ingot"
-                CoreResource.BOARD -> "forge_material_board"
-                CoreResource.STONE_BLOCK -> "forge_material_cut_stone"
-                CoreResource.LEATHER -> "forge_material_leather"
-                CoreResource.CLOTH -> "forge_material_cloth"
-                else -> "forge_material_affix_dust"
-            })
+            ForgeV3Cost(material.resource.displayName, "T${material.tier}", a.amount(material), required,
+                CoreLoopItems.resourceMaterial(material.resource).name())
         }
         val shortage = costs.firstOrNull { it.owned < it.required }?.let { "${it.tierLabel} ${it.name}があと${it.required - it.owned}個" }
         val broken = CoreEconomy.broken(a, selected)
@@ -139,9 +124,9 @@ internal class CorePolish05ForgeFlow(
             focused = focused,
             focusAvailable = !maxed && !broken && !CoreEnhancementCatalog.quote(a, selected).guaranteed,
             blockedReason = when {
-                broken -> "破損中は強化できません"
+                broken -> "破損中"
                 q.blockedReason != null -> q.blockedReason
-                shortage != null -> "素材が足りません"
+                shortage != null -> "素材が足りない"
                 else -> null
             },
             history = history,
@@ -229,9 +214,9 @@ internal class CorePolish05ForgeFlow(
                 else -> ForgeV3MotionKind.SHAKE
             }, now, after)
             banner = when {
-                success -> ForgeV3Banner("成功！ +$after", "${ForgeV3Scene.heatName(after)}の輝きを帯びた", ForgeV3Scene.heat(after), now + 2600)
-                result.broken -> ForgeV3Banner("破損…", "強化値 +${result.before} とMODは残っています", "#E58B80", now + 2600)
-                else -> ForgeV3Banner("失敗", "強化値 +${result.before} は維持", "#C9C3B8", now + 2600)
+                success -> ForgeV3Banner("成功 +$after", "", ForgeV3Scene.heat(after), now + 2600)
+                result.broken -> ForgeV3Banner("破損", "", "#E58B80", now + 2600)
+                else -> ForgeV3Banner("失敗", "", "#C9C3B8", now + 2600)
             }
             history = when {
                 success -> "${result.slot.displayName}  +${result.before} → +$after  成功"

@@ -117,7 +117,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val uiPack = CoreUiPackServer.start()
     private val polishScene = runCatching {
         val loader = javaClass.classLoader
-        ForgeV3Scene(requireNotNull(loader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
+        ForgeV3Scene(requireNotNull(loader.getResourceAsStream("polish05/forge.json")).use { it.readBytes() })
     }.onFailure { System.err.println("POLISH05_SCENE_DISABLED: ${it.message}") }.getOrNull()
     private val polishSessions = if(uiPack != null && polishScene != null) UiSessions(MinecraftServer.getGlobalEventHandler(), null,
         { player -> uiPack.enabled(player) }, null,
@@ -151,6 +151,19 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             leave = { player.scheduler().scheduleNextTick { passiveTreeSessions?.close(player) } }) },
         { Pos(0.0,100.0,0.0,0f,0f) })
     else null
+    // 冒険の手帳のダイアログ版（試作）: /menu で開く。絵が無ければ null で、今の手帳だけが残る。
+    // GUI scale and FOV, asked once on the first join (the client never sends them).
+    private val displaySettings = PlayerDisplaySettings(Path.of("config", "projects", "core-loop", "display"))
+    private val displayDialog = DisplaySettingsDialog(displaySettings) { player, openMenu ->
+        when {
+            openMenu -> playerMenu?.show(player)
+            account(player)?.journey?.chosen == false -> menus.career(player)
+        }
+    }
+    private val playerMenu: PlayerMenuDialog? = PlayerMenuDialog.metrics()?.let { metrics ->
+        PlayerMenuDialog(metrics, this, ::openFromMenu, { displaySettings.get(it.uuid)?.guiScale },
+            { displayDialog.show(it, required = true, openMenuAfter = true) })
+    }
     private val grimoireArt = runCatching {
         GrimoireFlow.Art(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/grimoire.json")).use { it.readBytes() },
             requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
@@ -323,12 +336,18 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 player.sendMessage(CoreLoopItems.text("ホットバー9番の「冒険の手帳」を右クリックすると、一周の流れを確認できます。"))
                 player.sendMessage(CoreLoopItems.text("海側の『自分のコロニー』から、小さな観測工房へ入れます。遠征路には未知の素材も眠っています。", NamedTextColor.AQUA))
                 a.maps.firstOrNull()?.let { preparedMaps.warm(player.uuid, it) }
-                if (!a.journey.chosen) player.scheduler().scheduleNextTick { if (connections[player.uuid] === player) menus.career(player) }
+                // Screen settings first (the career screen follows once they are saved), then the first class choice.
+                if (displaySettings.get(player.uuid) == null) player.scheduler().scheduleNextTick {
+                    if (connections[player.uuid] === player) displayDialog.show(player, required = true) }
+                else if (!a.journey.chosen) player.scheduler().scheduleNextTick { if (connections[player.uuid] === player) menus.career(player) }
             }
             println("Player connected: ${player.username} uuid=${player.uuid} firstSpawn=${event.isFirstSpawn} coreLoop=true")
         }
         events.addListener(PlayerDisconnectEvent::class.java) { event -> disconnect(event.player) }
-        events.addListener(PlayerCustomClickEvent::class.java) { event -> partyDialogs.click(event.player, event.key, event.payload) }
+        events.addListener(PlayerCustomClickEvent::class.java) { event ->
+            if (displayDialog.click(event.player, event.key, event.payload)) return@addListener
+            if (playerMenu?.click(event.player, event.key, event.payload) != true) partyDialogs.click(event.player, event.key, event.payload)
+        }
         events.addListener(InventoryPreClickEvent::class.java) { event ->
             if (combatLab.click(event)) return@addListener
             if (magicMenus.click(event)) return@addListener
@@ -485,6 +504,14 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
         MinecraftServer.getCommandManager().register(Command("projects").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { if (combatLab.contains(it)) combatLab.menu(it) else menus.journal(it) } }
+        })
+        MinecraftServer.getCommandManager().register(Command("menu").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
+                if (playerMenu != null && uiPack?.enabled(player) == true) playerMenu.show(player) else menus.journal(player)
+            } }
+        })
+        MinecraftServer.getCommandManager().register(Command("settings").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { displayDialog.show(it, required = false) } }
         })
         MinecraftServer.getCommandManager().register(Command("skilltest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR) } }
@@ -754,6 +781,19 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             action == "whetstone" -> consume(player, CoreResource.WHETSTONE)
         }
         return true
+    }
+
+    private fun openFromMenu(player: Player, target: PlayerMenuDialog.Target) {
+        when (target) {
+            PlayerMenuDialog.Target.SKILLS -> menus.skillBuild(player)
+            PlayerMenuDialog.Target.PASSIVES -> if (!openPassiveTree(player)) menus.passiveList(player)
+            PlayerMenuDialog.Target.STORAGE -> menus.storage(player)
+            PlayerMenuDialog.Target.JOURNAL -> menus.journal(player)
+            PlayerMenuDialog.Target.ATLAS -> openFacility(player, HarborFacilityKind.EXPEDITIONS)
+            PlayerMenuDialog.Target.MASTERY -> menus.mastery(player)
+            PlayerMenuDialog.Target.WORKSHOP -> menus.workshop(player)
+            PlayerMenuDialog.Target.GRIMOIRE -> MinecraftServer.getCommandManager().execute(player, "grimoire")
+        }
     }
 
     private fun openFacility(player: Player, kind: HarborFacilityKind) = when (kind) {
@@ -1574,6 +1614,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     private fun disconnect(player: Player) {
         partyDialogs.disconnect(player.uuid)
+        playerMenu?.forget(player.uuid)
+        displayDialog.forget(player.uuid)
         if (!connections.remove(player.uuid, player)) return
         magicMenus.forget(player.uuid)
         magicBusy.remove(player.uuid)
