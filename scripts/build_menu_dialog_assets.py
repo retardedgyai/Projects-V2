@@ -51,7 +51,9 @@ TEXT_SOURCES = ["server-minestom/src/main/kotlin/dev/projects/server/coreloop/Pl
                 "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreWarriorSkillPresentation.kt",
                 "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreJourney.kt",
                 "server-minestom/src/main/kotlin/dev/projects/server/questmap/QuestGathering.kt",
-                "server-minestom/src/main/kotlin/dev/projects/server/coreloop/DungeonGateDialog.kt"]
+                "server-minestom/src/main/kotlin/dev/projects/server/coreloop/DungeonGateDialog.kt",
+                "server-minestom/src/main/kotlin/dev/projects/server/coreloop/ClassSelectScene.kt",
+                "server-minestom/src/main/kotlin/dev/projects/server/coreloop/FirstStepsGuide.kt"]
 
 # style -> (font file key, size)
 # Headings and numbers in DotGothic16 (d*, dot*), small text and names in M PLUS 2 (m*, b*).

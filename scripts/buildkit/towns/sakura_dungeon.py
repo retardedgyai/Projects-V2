@@ -171,12 +171,12 @@ for x in range(-58, -47, 6):
     for u in (-1, 1):
         for y in range(ground(x, u), 39): put(x, y, u, full('stone_bricks' if _h(x, y, u) < 0.7 else 'mossy_stone_bricks'))
 # 門（ゲームではここを閉じる）。庭の門は城の櫓門（下）
-GATE_AT = {}
+GATE_AT, DOORS = {}, {}                                                          # DOORS：ゲームが口を閉じる面（axis の向きに通る、中心から ±half）
 for (name, z, cx, axis, half) in [('苔の窪', 50, 79, 'x', 4), ('散華の間', 11, 79, 'z', 4), ('古い祠の森', 17, -87, 'x', 4), ('滝裏の洞', -15, -81, 'z', 4)]:
     gx, gz = (cx, z) if axis == 'z' else (z, cx)
     T.arch_gate(z, ground(gx, gz), half=half, cx=cx, axis=axis)
-    GATE_AT[name] = [gx, ground(gx, gz) + 1, gz]
-GATE_AT['庭'] = [-38, 41, 0]
+    GATE_AT[name] = [gx, ground(gx, gz) + 1, gz]; DOORS[name] = {'axis': axis, 'half': half - 1}
+GATE_AT['庭'] = [-38, 41, 0]; DOORS['庭'] = {'axis': 'x', 'half': 3}
 def torii(x, z, g, half=4, h=7):
     """大鳥居（明神鳥居）：朱の柱（足元は黒い亀腹）、貫、島木、黒い笠木の両端を反らせ、真ん中に額束。柱は z 方向に並ぶ。"""
     P_ = lambda u, y, b: put(x, y, z + u, b)
@@ -197,7 +197,7 @@ def tall_lantern(x, z, g):
     for dx, dz, f in ((1, 0, 'w'), (-1, 0, 'e'), (0, 1, 'n'), (0, -1, 's')): put(x + dx, g + 4, z + dz, stair('stone_bricks', f, 'top'))
     put(x, g + 5, z, slab('stone_bricks'))
 SEALS = {}
-for sz in (-3, 3): seal(-44, sz)                                                  # 櫓門の前の枡形：封印の灯り（ゲームでは2つそろうと門が開く）
+for sz, k in ((-3, '枡形の北'), (3, '枡形の南')): SEALS[k] = seal(-44, sz)                                                 # 櫓門の前の枡形：封印の灯り（ゲームでは2つそろうと門が開く）
 # 庭：城の中庭の闘技場（藍 11/06「真ん中狭いかも、もっとひろく」「外側の雰囲気こういうのが良い」、手本は ~/ProjectS/refs/build/sakura_outer）。
 # 広い草の円（半径30）→ 縁に3段の花壇 → 木の高い塀（半径34）→ 四角い石垣の輪の上に多聞櫓の回廊と櫓 → 櫓のあいだから大きな桜。外へ行くほど高い器 [rules 106]
 RED, BLACK, WHITE = 'red_terracotta', 'polished_blackstone', 'white_concrete_powder'   # [rules 117〜119]
@@ -450,8 +450,8 @@ print('落ちたら戻れない所', EC.clusters(traps)[:8] or 'なし')
 print('地図の外へ出られる所', EC.clusters(edge)[:5] or 'なし')
 RC = {(x, z) for (x, z, y) in reach}
 print('壁を立てても行ける', [k for k, (x, z) in want.items() if any((x + dx, z + dz) in RC for dx in range(-3, 4) for dz in range(-3, 4))])
-ROOMS = {'spawn': [START[0], ground(*START) + 1, START[1]], 'gates': GATE_AT, 'arena_center': [0, 41, 0], 'arena_r': AR - 1, 'seals': SEALS,
-         'secret': [85, ground(85, -64) + 1, -64], 'rooms': {k: (list(geo) if isinstance(geo, tuple) and isinstance(geo[0], int) else None) for (k, kind, geo, *_ ) in AREAS if kind == 'disc'},
+ROOMS = {'spawn': [START[0], ground(*START) + 1, START[1]], 'gates': GATE_AT, 'doors': DOORS, 'arena_center': [0, 41, 0], 'arena_r': AR - 1, 'seals': SEALS,
+         'secret': [85, ground(85, -64) + 1, -64], 'rooms': {k: [*geo, size] for (k, kind, geo, size, *_ ) in AREAS if kind == 'disc'},   # 円の区域：[x, z, 半径]
          'order': '入口の野 →（沢道｜尾根道）→ 苔の窪 → 滝の九十九折 → 散華の間 → 崖道（隠れた空き地）→ 古い祠の森（封印）→ 西の岩棚 → 滝裏の洞（封印）→ 谷の石橋 → 散り桜の庭'}
 V = lambda x, y, z: [-x, y, z]
 def look_from_ravine(cx, cz, back=22, up=34):

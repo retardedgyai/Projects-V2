@@ -157,7 +157,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val displayDialog = DisplaySettingsDialog(displaySettings) { player, openMenu ->
         when {
             openMenu -> playerMenu?.show(player)
-            account(player)?.journey?.chosen == false -> menus.career(player)
+            account(player)?.journey?.chosen == false -> classSelect.open(player)
         }
     }
     private val playerMenu: PlayerMenuDialog? = PlayerMenuDialog.metrics()?.let { metrics ->
@@ -200,6 +200,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     /** The class camp (ClassSelectScene): figures on log benches, A / D between them. */
     private val classSelect = ClassSelectScene()
+    private val firstSteps = FirstStepsGuide()
     private val combatLab = CoreCombatLab(mapBuilder,
         eligible = { player -> player.instance === hub && accounts[player.uuid]?.activeRun == null && accounts.containsKey(player.uuid) &&
             !busy.contains(player.uuid) && !isDeparting(player) },
@@ -346,7 +347,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 // Screen settings first (the career screen follows once they are saved), then the first class choice.
                 if (displaySettings.get(player.uuid) == null) player.scheduler().scheduleNextTick {
                     if (connections[player.uuid] === player) displayDialog.show(player, required = true) }
-                else if (!a.journey.chosen) player.scheduler().scheduleNextTick { if (connections[player.uuid] === player) menus.career(player) }
+                else if (!a.journey.chosen) player.scheduler().scheduleNextTick { if (connections[player.uuid] === player) classSelect.open(player) }
                 // Development: film the class camp without keys (open on join, step east every 3 s, back at the end).
                 if (System.getenv("PROJECTS_CLASS_SELECT_DEMO") == "1") player.scheduler().buildTask {
                     player.closeInventory(); classSelect.open(player)
@@ -355,9 +356,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
             println("Player connected: ${player.username} uuid=${player.uuid} firstSpawn=${event.isFirstSpawn} coreLoop=true")
         }
-        events.addListener(PlayerDisconnectEvent::class.java) { event -> classSelect.close(event.player, leave = false); disconnect(event.player) }
+        events.addListener(PlayerDisconnectEvent::class.java) { event ->
+            classSelect.close(event.player, leave = false); firstSteps.hide(event.player); disconnect(event.player)
+        }
         events.addListener(PlayerCustomClickEvent::class.java) { event ->
             if (displayDialog.click(event.player, event.key, event.payload)) return@addListener
+            if (classSelect.click(event.player, event.key, event.payload)) return@addListener
             if (dungeonGate?.click(event.player, event.key, event.payload) == true) return@addListener
             if (playerMenu?.click(event.player, event.key, event.payload) != true) partyDialogs.click(event.player, event.key, event.payload)
         }
@@ -510,7 +514,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             if (hudDirty || player.aliveTicks % 5 == 0L) updateHud(player)
             if (player.instance === hub && player.position.y() < 38) { player.teleport(harbor.spawn); actors[player.uuid]?.reset() }
             colonies[player.uuid]?.let { colony -> if (player.instance === colony.instance && player.position.y() < 37) player.teleport(colony.spawn) }
-            if (player.instance !== hub && player.position.y() < 15 && !isDeparting(player)) returnToHarbor(player)
+            // Fallen out of the arena. 散り桜の社's valley floor runs down to y -12, so its line is lower.
+            val voidY = if (sessions[player.uuid]?.dungeon != null) -20.0 else 15.0
+            if (player.instance !== hub && player.position.y() < voidY && !isDeparting(player)) returnToHarbor(player)
         }
         events.addListener(InstanceTickEvent::class.java) { event ->
             sessions.values.filter { it.instance === event.instance }.forEach { session -> tickSession(session) }
@@ -535,9 +541,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             addSyntax({ sender, context -> (sender as? Player)?.let { partyDialogs.joinByName(it, context.get(leader)) } },
                 net.minestom.server.command.builder.arguments.ArgumentType.Literal("join"), leader)
         })
-        classSelect.onLeave = { returnToHarbor(it) }
+        classSelect.onLeave = { player, back -> player.setInstance(hub, back).thenRun { refresh(player) } }
+        classSelect.onChoose = { player, job ->
+            account(player)?.let { a -> mutate(player, CoreAction.ChooseClass(job), a.revision, {}) { classSelect.close(player) } }
+        }
         classSelect.install()
-        // Development: the class camp, before it replaces the career menu.
+        // Development: the class camp at any time (it opens by itself for a player who has not chosen yet).
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("classselect").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { classSelect.open(it) } }
         })
@@ -612,7 +621,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 net.minestom.server.command.builder.arguments.ArgumentType.Literal("sakura"))
         })
         // Test-only: /dungeontest opens ダンジョンの門 from anywhere in the harbor; inside, /dungeontest clear ends the
-        // room's wave and /dungeontest boss drops 桜牙獣 (to its 千本桜 first, with you behind a pillar; again to finish).
+        // room's wave and /dungeontest boss drops 桜牙獣 (to its 千本桜 first, with you at the glade's edge; again to finish).
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("dungeontest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { openDungeonGate(it) } }
             addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
@@ -624,8 +633,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 val boss = session.combat.entities().firstOrNull { session.combat.isBoss(it.uuid) } ?: return@scheduleNextTick
                 session.combat.applyEffectDamage(boss.uuid, player, 1e6)
                 if (session.combat.isAlive(boss.uuid)) {
-                    player.teleport(session.dungeon!!.layout.arenaCenter.add(0.0, 0.0, -21.0))
-                    player.sendMessage(CoreLoopItems.text("千本桜が来る。柱の陰でやり過ごし、終わったらもう一度 /dungeontest boss", NamedTextColor.GRAY))
+                    player.teleport(session.dungeon!!.layout.arenaEntry)
+                    player.sendMessage(CoreLoopItems.text("千本桜が来る。庭の縁でやり過ごし、終わったらもう一度 /dungeontest boss", NamedTextColor.GRAY))
                 }
             } } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("boss"))
         })
@@ -636,23 +645,39 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             val player = event.player
             fun run(command: String) = MinecraftServer.getCommandManager().execute(player, command)
             fun shot(name: String) { println("DUNGEON_TOUR_SHOT $name"); System.out.flush() }
-            listOf<Pair<Long, () -> Unit>>(
+            fun look(from: Pos, to: Pos) = from.withDirection(to.sub(from)).withPitch(8f)
+            fun inside(step: (DungeonLayout) -> Unit): () -> Unit = { sessions[player.uuid]?.dungeon?.layout?.let(step) }
+            /** Six blocks before gate [i] on the side the path comes from, facing it. */
+            fun before(layout: DungeonLayout, i: Int): Pos {
+                val gate = layout.gates[i].center
+                val toward = if (i < layout.rooms.size) layout.rooms[i].center else layout.arenaCenter
+                val back = gate.sub(toward).withY(0.0).asVec().normalize().mul(6.0)
+                val instance = player.instance as InstanceContainer
+                val stand = gate.add(back).let { it.withY(InstanceDungeonFactory.floorAt(instance, it.blockX(), it.blockZ(), gate.blockY()).toDouble()) }
+                return look(stand, gate.add(0.0, 1.5, 0.0))
+            }
+            val steps = mutableListOf<Pair<Long, () -> Unit>>(
                 100L to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }, 160L to { shot("harbor_gate") },
                 220L to { openDungeonGate(player) }, 280L to { shot("menu") },
                 340L to { player.closeInventory(); account(player)?.let { departDungeon(player, CoreDungeons.SAKURA, it.revision) } },
-                500L to { player.teleport(Pos(32.5, 40.0, -36.5, 0f, 5f)) }, 540L to { shot("hall") },
-                620L to { player.teleport(Pos(32.5, 40.0, -25.5, 0f, 10f)) }, 670L to { shot("room1_wave") },
-                740L to { run("dungeontest clear") }, 800L to { run("dungeontest clear") },
-                860L to { player.teleport(Pos(32.5, 40.0, -19.5, 0f, 5f)) }, 900L to { shot("room1_open") },
-                960L to { player.teleport(Pos(32.5, 40.0, -7.5, 0f, 10f)) }, 1010L to { shot("room2_wave") },
-                1080L to { run("dungeontest clear") }, 1140L to { run("dungeontest clear") },
-                1200L to { player.teleport(Pos(32.5, 40.0, 2.5, 0f, 0f)) }, 1240L to { shot("room2_open") },
-                1300L to { player.teleport(Pos(28.5, 40.0, 15.5, -14f, -5f)) }, 1360L to { shot("arena_boss") },
-                1440L to { shot("boss_fight") },
-                1500L to { run("dungeontest boss") }, 1620L to { shot("finale") },
-                1740L to { run("dungeontest boss") }, 1770L to { run("dungeontest boss") }, 1800L to { shot("cleared") },
-                2140L to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }, 2180L to { shot("back_harbor") },
-            ).forEach { (at, step) -> player.scheduler().buildTask { if (player.isOnline) step() }.delay(TaskSchedule.tick(at.toInt())).schedule() }
+                520L to { shot("enter") },
+            )
+            var t = 600L
+            for (i in InstanceDungeonFactory.ROOM_NAMES.indices) {
+                steps += t to inside { player.teleport(before(it, i)) }; steps += t + 50 to { shot("gate${i}") }
+                steps += t + 100 to inside { player.teleport(look(it.rooms[i].entry, it.rooms[i].center.add(0.0, 1.0, 0.0))) }
+                steps += t + 170 to { shot("room${i}_wave") }
+                steps += t + 220 to { run("dungeontest clear") }; steps += t + 280 to { run("dungeontest clear") }
+                steps += t + 340 to { shot("room${i}_clear") }
+                t += 400
+            }
+            steps += t to inside { player.teleport(before(it, it.rooms.size)) }; steps += t + 50 to { shot("gatehouse") }
+            steps += t + 100 to inside { player.teleport(look(it.arenaEntry, it.arenaCenter.add(0.0, 2.0, 0.0))) }
+            steps += t + 160 to { shot("arena_boss") }; steps += t + 240 to { shot("boss_fight") }
+            steps += t + 300 to { run("dungeontest boss") }; steps += t + 420 to { shot("finale") }
+            steps += t + 540 to { run("dungeontest boss") }; steps += t + 570 to { run("dungeontest boss") }; steps += t + 600 to { shot("cleared") }
+            steps += t + 940 to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }; steps += t + 980 to { shot("back_harbor") }
+            steps.forEach { (at, step) -> player.scheduler().buildTask { if (player.isOnline) step() }.delay(TaskSchedule.tick(at.toInt())).schedule() }
         }
         // Test-only: the coloured point-light prototype (SakuraLight). /lighttest puts a glowing blossom with a pink light
         // at your feet, /lighttest orbit sends one round you, /lighttest off clears yours.
@@ -1164,7 +1189,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }
 
     override fun depart(player: Player, mapId: UUID, revision: Long) {
-        if (account(player)?.journey?.chosen != true) { menus.career(player); return }
+        if (account(player)?.journey?.chosen != true) { classSelect.open(player); return }
         if (!requireHub(player) || !busy.add(player.uuid)) return
         val runId = UUID.randomUUID()
         departing[player.uuid] = runId
@@ -1247,7 +1272,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     /** A trial boss or an instance dungeon: its own instance, entered from the harbor, left through returnToHarbor. */
     private fun departArena(player: Player, revision: Long, opening: String, start: (UUID) -> CoreAction,
                             build: () -> Pair<BossArena, DungeonLayout?>, attach: (BossArena, UUID, DungeonLayout?) -> Unit) {
-        if (account(player)?.journey?.chosen != true) { menus.career(player); return }
+        if (account(player)?.journey?.chosen != true) { classSelect.open(player); return }
         if (!requireHub(player) || !busy.add(player.uuid)) return
         val runId = UUID.randomUUID()
         departing[player.uuid] = runId
@@ -1591,8 +1616,11 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         // The smith's forge covers the whole view; the action-bar HUD would sit on top of it.
         if (polishSessions?.isOpen(player) == true || atlasSessions?.isOpen(player) == true || grimoireSessions?.isOpen(player) == true ||
             passiveTreeSessions?.isOpen(player) == true || classSelect.isOpen(player)) {
-            player.sendActionBar(Component.empty()); return
+            player.sendActionBar(if (classSelect.isOpen(player)) classSelect.hint() else Component.empty())
+            firstSteps.update(player, null, visible = false, packed = false)
+            return
         }
+        firstSteps.update(player, account(player), visible = true, packed = packed(player))
         val a = combatLab.account(player) ?: account(player) ?: return
         val actor = actor(player) ?: return
         player.food = 20

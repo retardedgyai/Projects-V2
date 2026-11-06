@@ -1517,7 +1517,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         if (!game.requireHub(player)) return
         val tier = ((a.journey.level - 1) / 10 + 1).coerceIn(1, a.unlockedMapTier)
         view(player, "ダンジョンの門", { dungeons(player) }) { v ->
-            v.canvas.left(InstanceDungeonFactory.DISPLAY_NAME, lines("T$tier・ひとりで挑戦", "部屋2つ・波4つ", "最奥に桜牙獣", "", "入場は無料", "倒れたら港へ", "何度でも挑める"), hero = CoreMenuArt.BOSS)
+            v.canvas.left(InstanceDungeonFactory.DISPLAY_NAME, lines("T$tier・ひとりで挑戦", "部屋4つ・波8つ", "最奥に桜牙獣", "", "入場は無料", "倒れたら港へ", "何度でも挑める"), hero = CoreMenuArt.BOSS)
             v.canvas.right("踏破の報酬", lines("討伐証・戦利品券", "高揚のオーブ 1個", "試練の欠片 1個", "部屋の敵の戦利品", "", "倒すと10秒後に港へ"))
             card(v, 21, 3, 2, "散り桜の社", CoreMenuArt.BOSS, CoreLoopItems.icon(Material.CHERRY_SAPLING, InstanceDungeonFactory.DISPLAY_NAME,
                 "花守の回廊 → 散華の間 → 散り桜の庭", "ボス：桜牙獣", "クリック：入る"), Tone.PRIMARY) { game.departDungeon(player, CoreDungeons.SAKURA, a.revision) }
