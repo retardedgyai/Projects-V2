@@ -240,7 +240,7 @@ internal class ClassSelectScene {
             word("  防御 ", MUTED), word("${job.baseArmor.toInt()}", INK),
             word("  魔防 ", MUTED), word("${job.baseResist.toInt()}", INK), nl,
             word("スキル ", MUTED), word("${skills.size}", INK), word("  ウルト ", MUTED), word("${ults.size}", INK), nl,
-            word(skills.joinToString(" ・ ") { it.name }, FAINT), nl, nl,
+            nl,
             if (job in PLAYABLE) Component.text().append(word("Space", GOLD), word("  選ぶ", MUTED)).build() else word("開発中", MUTED),
         ).build()
     }
@@ -249,7 +249,7 @@ internal class ClassSelectScene {
         Entity(EntityType.TEXT_DISPLAY).apply {
             setNoGravity(true)
             (entityMeta as TextDisplayMeta).apply {
-                text = content; lineWidth = 230; backgroundColor = background; isShadow = background == 0
+                text = content; lineWidth = 200; backgroundColor = background; isShadow = background == 0
                 billboardRenderConstraints = AbstractDisplayMeta.BillboardConstraints.CENTER
                 scale = Vec(size)
             }
@@ -328,14 +328,14 @@ internal class ClassSelectScene {
         private const val RIDE = 0.05
         private const val SLIDE = 14
         /** Offsets from a figure (x from its block centre, y from the log top, z absolute): east of it, west of it, above. */
-        private val WEAPON = Vec(1.45, 0.95, 1.1)
-        private val CARD = Vec(-0.85, 0.35, 1.3)
-        private val NAME = Vec(0.25, 1.55, 0.6)
-        private const val WEAPON_SCALE = 1.3
-        private const val PLATE_SCALE = 0.32
-        private const val PLATE_RING = 0.62
-        private const val NAME_SCALE = 0.55
-        private const val CARD_SCALE = 0.32
+        private val WEAPON = Vec(1.75, 0.85, 0.45)
+        private val CARD = Vec(-1.45, 0.3, 1.25)
+        private val NAME = Vec(0.25, 1.5, 0.6)
+        private const val WEAPON_SCALE = 0.85
+        private const val PLATE_SCALE = 0.19
+        private const val PLATE_RING = 0.52
+        private const val NAME_SCALE = 0.9
+        private const val CARD_SCALE = 0.62
         private const val CARD_BACK = 0xD8101014.toInt()
         /** Ticks per animation step, and per full weapon turn / plate orbit. */
         private const val TURN = 4

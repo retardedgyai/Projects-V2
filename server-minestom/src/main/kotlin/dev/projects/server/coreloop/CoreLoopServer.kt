@@ -350,9 +350,10 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 menus.refreshTheme(player)
                 actors[player.uuid]?.reset()
                 player.setHeldItemSlot(0)
-                player.sendMessage(CoreLoopItems.text("開拓港へようこそ。正面の地図台から遠征へ出発できます。", NamedTextColor.GOLD))
-                player.sendMessage(CoreLoopItems.text("ホットバー9番の「冒険の手帳」を右クリックすると、一周の流れを確認できます。"))
-                player.sendMessage(CoreLoopItems.text("海側の『自分のコロニー』から、小さな観測工房へ入れます。遠征路には未知の素材も眠っています。", NamedTextColor.AQUA))
+                if (a.journey.chosen) {
+                    player.sendMessage(CoreLoopItems.text("開拓者の町へようこそ。", NamedTextColor.GOLD))
+                    player.sendMessage(CoreLoopItems.text("ホットバー9番の「冒険の手帳」を右クリックすると、一周の流れを確認できます。"))
+                }
                 a.maps.firstOrNull()?.let { preparedMaps.warm(player.uuid, it) }
                 // Screen settings first (the career screen follows once they are saved), then the first class choice.
                 if (displaySettings.get(player.uuid) == null) player.scheduler().scheduleNextTick {
@@ -367,6 +368,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     for (k in 1..5) at(20_000L + 1_500L * k) { classSelect.step(player, -1) }
                     at(30_000L) { classSelect.ask(player, CoreClass.WARRIOR) }
                     at(34_000L) { classSelect.onChoose(player, CoreClass.WARRIOR) }
+                    at(44_000L) { openDungeonGate(player) }
+                    at(52_000L) { player.closeDialog(); openJournal(player) }
                 }.delay(TaskSchedule.seconds(3)).schedule()
             }
             println("Player connected: ${player.username} uuid=${player.uuid} firstSpawn=${event.isFirstSpawn} coreLoop=true")
@@ -1629,7 +1632,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             firstSteps.update(player, null, visible = false, packed = false)
             return
         }
-        firstSteps.update(player, account(player), visible = true, packed = packed(player))
+        firstSteps.update(player, account(player), visible = true, packed = packed(player), guiScale = displaySettings.get(player.uuid)?.guiScale)
         val a = combatLab.account(player) ?: account(player) ?: return
         val actor = actor(player) ?: return
         player.food = 20
