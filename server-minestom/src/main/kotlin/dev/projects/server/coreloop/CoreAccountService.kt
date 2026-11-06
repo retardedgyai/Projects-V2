@@ -98,7 +98,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
         is CoreAction.SelectSkill -> {
             requireHub(account)
             require(action.slot in 0..4 && CoreJourneyRules.skillUnlocked(account, action.slot)) { "このスキル枠は未解放です" }
-            require(CoreSkillCatalog.selectable(account.journey.job, action.slot, action.choice)) { "この技は選べません" }
+            require(CoreSkillCatalog.selectable(account.journey.job, action.slot, action.choice)) { "このスキルは選べません" }
             account.copy(journey = account.journey.copy(build = account.journey.build.equip(action.slot, action.choice))) to "スキル構成を保存しました"
         }
         is CoreAction.TakePassive -> {
@@ -144,11 +144,11 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             requireHub(account)
             val journey = account.journey
             val points = CoreSkillLevels.spent(journey.build)
-            require(points > 0) { "戻す技ポイントがありません" }
+            require(points > 0) { "戻すスキルポイントがありません" }
             val price = CorePassiveTree.refundPrice(journey) * points
             require(account.silver >= price) { "銀貨が足りません（${price}枚必要）" }
             account.copy(silver = account.silver - price, journey = journey.copy(build = journey.build.copy(skillLevels = emptyMap()))) to
-                "技ポイントをすべて戻しました（銀貨${price}枚）"
+                "スキルポイントをすべて戻しました（銀貨${price}枚）"
         }
         is CoreAction.ChooseClass -> {
             requireHub(account)

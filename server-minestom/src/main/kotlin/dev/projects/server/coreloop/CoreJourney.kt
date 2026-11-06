@@ -19,12 +19,12 @@ enum class CoreClass(val displayName: String, val description: String) {
     val baseArmor get() = when (this) { WARRIOR -> 40.0; TEMPLAR -> 70.0; HEALER -> 20.0; ASSASSIN -> 10.0; RANGER -> 10.0; MAGE -> 5.0 }
     val baseResist get() = when (this) { WARRIOR -> 25.0; TEMPLAR -> 50.0; HEALER -> 40.0; ASSASSIN -> 10.0; RANGER -> 15.0; MAGE -> 35.0 }
     val passive get() = when(this) {
-        WARRIOR -> "溜める技が当たると獣が1つ、通常攻撃でも少し溜まる（最大3）。地割りは獣を全部使い、1つごとに重くなる。使う技は振っている間怯まない。"
+        WARRIOR -> "溜めるスキルが当たると獣が1つ、通常攻撃でも少し溜まる（最大3）。地割りは獣を全部使い、1つごとに重くなる。使うスキルは振っている間怯まない。"
         RANGER -> "同じ獲物への通常攻撃で集中が育ち、威力が最大20%増す。獲物変更で集中半減。"
-        MAGE -> "属性を変えて生成技を当てると術式を追加15獲得。集めた術式を大技に使う。"
-        ASSASSIN -> "通常攻撃で機会を得る。印を付けた敵への消費技は最初の命中が35%強化。"
+        MAGE -> "属性を変えて生成スキルを当てると術式を追加15獲得。集めた術式を消費スキルに使う。"
+        ASSASSIN -> "通常攻撃で機会を得る。印を付けた敵への消費スキルは最初の命中が35%強化。"
         TEMPLAR -> "攻撃と防御で決意を得る。命中した敵の狙いを2秒引きつけ、味方を守る。"
-        HEALER -> "通常攻撃と光の技で信仰を得る。回復・障壁・裁きに同じ信仰を振り分ける。"
+        HEALER -> "通常攻撃と光のスキルで信仰を得る。回復・障壁・裁きに同じ信仰を振り分ける。"
     }
     val icons get() = CoreSkillCatalog.skills(this).map { it.icon }
     val skills get() = CoreSkillCatalog.skills(this).map { it.name }
@@ -35,7 +35,7 @@ enum class CoreWeaponBase(val displayName: String, val detail: String, val power
     STANDARD("開拓の大剣", "癖のない基準型。三連撃で戦う"),
     FLOW("連撃大剣", "回避後も連撃を保持。三段目でマナ回復", .88, 1.18),
     CLEAVER("重断大剣", "三段目は狭い縦斬り。締めの一撃が強い", 1.12, .88),
-    CONDUIT("導脈大剣", "通常命中で固有資源を追加4獲得。資源消費技の威力+12%", .94),
+    CONDUIT("導脈大剣", "通常命中で固有資源を追加4獲得。資源消費スキルの威力+12%", .94),
     LONGBOW("潮風の長弓", "狙った射線へ矢を放つ", .95),
     STAFF("灯火の杖", "遠距離の魔弾と属性術式", .92),
     DAGGERS("影縫い短剣", "素早く印を仕込む。接近戦用の短い間合い", .78, 1.35),

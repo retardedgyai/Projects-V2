@@ -10,7 +10,7 @@ data class CoreClassBuild(val first: Int = 0, val second: Int = 1, val third: In
     val skills get() = listOf(first, second, third, fourth)
     init {
         require(skills.all { it in 0..8 } && skills.distinct().size == 4 && ultimate in 0..2)  // the mage has nine normals, the warrior three ultimates
-        require(skillLevels.values.all { it in 2..CoreSkillLevels.MAX_BASE }) { "技のLvが不正です" }
+        require(skillLevels.values.all { it in 2..CoreSkillLevels.MAX_BASE }) { "スキル Lv が不正です" }
     }
     fun equip(slot: Int, choice: Int): CoreClassBuild {
         require(slot in 0..4)
