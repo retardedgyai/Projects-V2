@@ -54,8 +54,16 @@ data class CoreZoneRecord(val clears: Int, val bestLevel: Int) {
     }
 }
 
+/** [trialId]: a 専用ボス (CoreActivityKind.bossId) or an instance dungeon ([CoreDungeons]); null = an expedition map. */
 data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: Boolean = false, val trialId: String? = null) {
-    init { require(trialId == null || CoreActivityKind.entries.any { it.bossId == trialId }) }
+    init { require(trialId == null || trialId in CoreDungeons.ids || CoreActivityKind.entries.any { it.bossId == trialId }) }
+    val dungeon: Boolean get() = trialId in CoreDungeons.ids
+}
+
+/** Instance dungeons entered from the harbor (InstanceDungeon). Free and repeatable; the run row stores the id as trialId. */
+object CoreDungeons {
+    const val SAKURA = "sakura-dungeon"
+    val ids = setOf(SAKURA)
 }
 data class CoreReceipt(val fingerprint: String, val revision: Long, val message: String)
 private val RECEIPT_FINGERPRINT = Regex("[0-9a-f]{64}")
@@ -139,6 +147,9 @@ class CoreAccount(
         require(zoneRecords.keys.all { it in 0..CoreZoneRecord.MAX_ZONE_ID })
         val passiveBudget = CorePassiveTree.budget(journey) + CorePassiveTree.bonusPoints(zoneRecords.keys)
         require((journey.savedBuilds.values + journey.build).all { it.passives.size <= passiveBudget }) { "パッシブの割り振りが不正です" }
+        // Skill points come in like passive points, as a separate purse per class build.
+        require((journey.savedBuilds + (journey.job to journey.build)).all { (job, build) ->
+            CoreSkillLevels.spent(build) <= passiveBudget && CoreSkillLevels.valid(job, build) }) { "技のLvの割り振りが不正です" }
         require(buyOrders.size <= CoreEconomy.MAX_OFFERS && buyOrders.map { it.id }.distinct().size == buyOrders.size)
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
         require(smithingXp in 0..CoreEnhancementCatalog.MAX_SMITHING_XP)
@@ -231,6 +242,10 @@ sealed interface CoreAction {
     /** Refunds cost silver (a gold sink); taking a node is free. */
     data class RefundPassive(val node: Int) : CoreAction
     data object ResetPassives : CoreAction
+    /** Spends one skill point on the skill with this icon (current class). */
+    data class RaiseSkill(val icon: String) : CoreAction
+    /** Gives every skill point of the current class back; costs silver like passive refunds. */
+    data object ResetSkillLevels : CoreAction
     /** Takes mastery [node] with option [choice] (one point; refund it like any node). */
     data class TakeMastery(val node: Int, val choice: Int) : CoreAction
     /** Confirms a plan made on the tree screen: path nodes and masteries (with their [masteries] options) in one go. */
@@ -260,6 +275,7 @@ sealed interface CoreAction {
     data class ConvertLegacyStone(val stoneId: UUID) : CoreAction
     data class ActivityReward(val runId: UUID, val sourceId: String, val kind: CoreActivityKind) : CoreAction
     data class StartTrial(val bossId: String, val tier: Int, val runId: UUID) : CoreAction
+    data class StartDungeon(val dungeonId: String, val tier: Int, val runId: UUID) : CoreAction
     /** Replacing an occupied slot requires its exact currently displayed identity. */
     data class ApplyAffix(val gear: CoreGearSlot, val index: Int, val stoneId: UUID, val expectedReplacedStoneId: UUID? = null) : CoreAction
     data class ExtractAffix(val gear: CoreGearSlot, val index: Int, val expectedStoneId: UUID) : CoreAction

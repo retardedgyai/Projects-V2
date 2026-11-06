@@ -44,7 +44,7 @@ GRASS = (0x91, 0xBD, 0x59); FOLIAGE = (0x77, 0xAB, 0x2F); SPRUCE = (0x61, 0x99, 
 WATER = (0x3F, 0x76, 0xE4)
 TINT = {'water_still': WATER, 'sugar_cane': GRASS, 'lily_pad': (0x20, 0x80, 0x30), 'oak_leaves': FOLIAGE, 'dark_oak_leaves': FOLIAGE, 'vine': FOLIAGE, 'spruce_leaves': SPRUCE,
         'short_grass': GRASS, 'tall_grass_bottom': GRASS, 'tall_grass_top': GRASS, 'fern': GRASS, 'grass_top': GRASS,
-        'birch_leaves': (0x80, 0xA7, 0x55)}
+        'birch_leaves': (0x80, 0xA7, 0x55), 'bush': FOLIAGE}
 
 def _tint(im, rgb):
     px = im.load(); out = im.copy(); po = out.load()
@@ -77,7 +77,10 @@ def write(out_dir, extra=None):
         atlas.paste(im, ((i % cols) * 16, (i // cols) * 16)); index[n] = i
     atlas.save(os.path.join(out_dir, 'atlas.png'))
     pal, palidx, blocks = [], {}, []
+    def solid(b): return b is not None and b['s'] == 'full' and not any(k in b.get('t', '') for k in ('leaves', 'glass', 'ice', 'barrier'))
     for (x, y, zz), b in W.items():
+        if solid(b) and all(solid(W.get(p)) for p in ((x + 1, y, zz), (x - 1, y, zz), (x, y + 1, zz), (x, y - 1, zz), (x, y, zz + 1), (x, y, zz - 1))):
+            continue                                                       # 6面とも囲まれて見えない中身は書き出さない（ページが重くて固まった）
         key = json.dumps(b, sort_keys=True)
         if key not in palidx: palidx[key] = len(pal); pal.append(b)
         blocks.append([x, y, zz, palidx[key]])

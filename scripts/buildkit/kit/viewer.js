@@ -29,29 +29,37 @@
   // 空の光：上から 15 で降り、不透明な物で止まる。葉と水は1段ずつ減る。そこから横へ1マスごとに1段暗く
   let bx0 = 1e9, bx1 = -1e9, by1 = -1e9, bz0 = 1e9, bz1 = -1e9, by0 = 1e9;
   for (const [x, y, z] of H.blocks) { bx0 = Math.min(bx0, x); bx1 = Math.max(bx1, x); by0 = Math.min(by0, y); by1 = Math.max(by1, y); bz0 = Math.min(bz0, z); bz1 = Math.max(bz1, z); }
-  const SKY = new Map(); const sq = [];
-  const DIM = (b) => b && (CLEAR.has(b.t) || b.s === 'water') ? 1 : 0;
-  for (let x = bx0 - 1; x <= bx1 + 1; x++) for (let z = bz0 - 1; z <= bz1 + 1; z++) {
-    let l = 15;
-    for (let y = by1 + 1; y >= by0; y--) {
-      const b = get(x, y, z);
-      if (!passes(b) || EMIT[b && b.t] && b.s === 'full') break;
-      l -= DIM(b); if (l <= 0) break;
-      SKY.set(x + ',' + y + ',' + z, l); sq.push([x, y, z, l]);
+  const BIG = (bx1 - bx0 + 3) * (bz1 - bz0 + 3) * (by1 - by0 + 2) > 6e6;   // 手本の地図（数百マス四方）は空の光を1マスずつ覚えると固まるので、柱の高さで決める
+  let skyAt;
+  if (BIG) {
+    const TOP = new Map();
+    for (const [x, y, z, p] of H.blocks) { if (!opaque(H.pal[p])) continue; const k = x + ',' + z; if ((TOP.get(k) ?? -1e9) < y) TOP.set(k, y); }
+    skyAt = (x, y, z) => { const t = TOP.get(x + ',' + z); return t === undefined || y > t ? 15 : y >= t - 2 ? 11 : 7; };
+  } else {
+    const SKY = new Map(); const sq = [];
+    const DIM = (b) => b && (CLEAR.has(b.t) || b.s === 'water') ? 1 : 0;
+    for (let x = bx0 - 1; x <= bx1 + 1; x++) for (let z = bz0 - 1; z <= bz1 + 1; z++) {
+      let l = 15;
+      for (let y = by1 + 1; y >= by0; y--) {
+        const b = get(x, y, z);
+        if (!passes(b) || EMIT[b && b.t] && b.s === 'full') break;
+        l -= DIM(b); if (l <= 0) break;
+        SKY.set(x + ',' + y + ',' + z, l); sq.push([x, y, z, l]);
+      }
     }
-  }
-  for (let qi = 0; qi < sq.length; qi++) {
-    const [x, y, z, l] = sq[qi]; if (l <= 1) continue;
-    for (const d of DIRS6) {
-      const nx = x + d[0], ny = y + d[1], nz = z + d[2];
-      if (nx < bx0 - 1 || nx > bx1 + 1 || nz < bz0 - 1 || nz > bz1 + 1 || ny < by0 || ny > by1 + 1) continue;
-      const b = get(nx, ny, nz); if (!passes(b) || EMIT[b && b.t] && b.s === 'full') continue;
-      const nl = l - 1 - DIM(b), k = nx + ',' + ny + ',' + nz;
-      if ((SKY.get(k) || 0) >= nl) continue;
-      SKY.set(k, nl); sq.push([nx, ny, nz, nl]);
+    for (let qi = 0; qi < sq.length; qi++) {
+      const [x, y, z, l] = sq[qi]; if (l <= 1) continue;
+      for (const d of DIRS6) {
+        const nx = x + d[0], ny = y + d[1], nz = z + d[2];
+        if (nx < bx0 - 1 || nx > bx1 + 1 || nz < bz0 - 1 || nz > bz1 + 1 || ny < by0 || ny > by1 + 1) continue;
+        const b = get(nx, ny, nz); if (!passes(b) || EMIT[b && b.t] && b.s === 'full') continue;
+        const nl = l - 1 - DIM(b), k = nx + ',' + ny + ',' + nz;
+        if ((SKY.get(k) || 0) >= nl) continue;
+        SKY.set(k, nl); sq.push([nx, ny, nz, nl]);
+      }
     }
+    skyAt = (x, y, z) => (y > by1 ? 15 : (SKY.get(x + ',' + y + ',' + z) || 0));
   }
-  const skyAt = (x, y, z) => (y > by1 ? 15 : (SKY.get(x + ',' + y + ',' + z) || 0));
   // 面の向きの明るさ（バニラと同じ：上1.0、下0.5、南北0.8、東西0.6）
   const FACE_SHADE = (n) => n[1] > 0 ? 1.0 : n[1] < 0 ? 0.5 : n[2] !== 0 ? 0.8 : 0.6;
   const MOON = [0.35, 0.75, -0.55];
@@ -250,6 +258,16 @@
       if (b.hang) planeCross(cut, x, y, z, 'iron_chain', 3 / 16, 11 * S, 1);
     } else if (b.s === 'chain') {
       planeCross(cut, x, y, z, T, 3 / 16, 0, 1);
+    } else if (b.s === 'cross' && T.startsWith('fire')) {
+      // 火：ゲームと同じく、マスの4つの側面の内側に立つ板＋十字。背は1.4マス、光る材質で描く（小さな十字だけだと焦げた山に見えた）
+      planeCross(glow, x, y, z, T, 1, 0, 1.4);
+      const [tu, tv] = texRect(T), e = 0.06, H1 = 1.4, Lc = 15, Sc = skyAt(x, y, z);
+      const uv = [[tu, tv], [tu + TW, tv], [tu + TW, tv + TH], [tu, tv + TH]];
+      for (const [p0, p1] of [[[e, e], [1 - e, e]], [[1 - e, e], [1 - e, 1 - e]], [[1 - e, 1 - e], [e, 1 - e]], [[e, 1 - e], [e, e]]]) {
+        const v = [[x + p0[0], y, z + p0[1]], [x + p1[0], y, z + p1[1]], [x + p1[0], y + H1, z + p1[1]], [x + p0[0], y + H1, z + p0[1]]];
+        quad(glow, v, [0, 1, 0], uv, [1, 1, 1, 1], Lc, Sc);
+        quad(glow, [v[1], v[0], v[3], v[2]], [0, 1, 0], [uv[1], uv[0], uv[3], uv[2]], [1, 1, 1, 1], Lc, Sc);
+      }
     } else if (b.s === 'cross') {
       planeCross(cut, x, y, z, T, 1, 0, 1);
     }
@@ -318,7 +336,7 @@
     tex.encoding = THREE.sRGBEncoding; tex.generateMipmaps = false;
     const matLit = new THREE.MeshLambertMaterial({ map: tex, vertexColors: true, alphaTest: 0.5 });
     const matCut = new THREE.MeshLambertMaterial({ map: tex, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide });
-    const matGlow = new THREE.MeshBasicMaterial({ map: tex });
+    const matGlow = new THREE.MeshBasicMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide });   // 火の板の透けを抜く
     const depthCut = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: tex, alphaTest: 0.5 });
     const matWat = new THREE.MeshLambertMaterial({ map: tex, vertexColors: true, transparent: true, opacity: 0.82, side: THREE.DoubleSide });
     // 夜は光を使わず、頂点の色（月明かり＋光源のレベル）だけで描く

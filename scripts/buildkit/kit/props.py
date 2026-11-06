@@ -3,7 +3,7 @@
 どれも (x, z, g, 向き) を取り、g は立つ地面の一番上のブロックの高さ。向き f は「正面（人が来る側）」。
 手本：らーなろっそ 冒険者の街（露店 4:53、船着き場 15:20）、港町（20:50）、領主邸（街灯・ベンチ）。
 """
-from vox import put, get, full, log, stair, slab, trap, cross, fence, door
+from vox import put, get, full, log, stair, slab, trap, cross, fence, door, water, CHAIN
 
 D = {'n': (0, -1), 's': (0, 1), 'e': (1, 0), 'w': (-1, 0)}
 OPP = {'n': 's', 's': 'n', 'e': 'w', 'w': 'e'}
@@ -207,3 +207,268 @@ def woodpile(x, z, g, f='s'):
         put(cx, g + 3, cz, slab('spruce_planks'))
     cx, cz = at(x, z, f, 0, 3); put(cx, g + 1, cz, log('oak_log')); cells.append((cx, cz))   # 切り株
     return cells
+
+
+# ---- 道の街灯：暗い石の塀2段の台、柵の柱、板の頭、逆さ階段とハーフの腕、腕の先にランタンを吊る。
+#      3本並べるときは高さを変える（柱4〜6段）。腕は道の上へ向ける。 [そろんご 道作り 12:12〜12:30・learn3/props-notes.md C5]
+def path_lamp(x, z, g, arm='e', posts=5):
+    ax, az = D[arm]
+    put(x, g + 1, z, wall('cobbled_deepslate')); put(x, g + 2, z, wall('cobbled_deepslate'))
+    for y in range(g + 3, g + 3 + posts): put(x, y, z, fence('spruce_planks'))
+    top = g + 3 + posts
+    put(x, top, z, full('spruce_planks'))
+    put(x + ax, top, z + az, stair('spruce_planks', OPP[arm], 'top'))
+    put(x + ax * 2, top, z + az * 2, slab('spruce_planks', 'top'))
+    put(x + ax * 2, top - 1, z + az * 2, HANG)
+    return [(x, z)]
+
+
+# ---- 木陰の休みどころ：丸石の階段2つの座面、片端に丸石の塀とランタン。隣に、1段盛った粗い土を
+#      暗い石の塀で縁取った花壇（4×2）。木の根元に置く。 [そろんご 道作り 13:04〜13:50・props-notes.md C9・C12]
+def rest_spot(x, z, g, f, flowers=('red_tulip', 'orange_tulip', 'cornflower', 'oxeye_daisy')):
+    cells = []
+    for i in range(2):
+        cx, cz = at(x, z, f, 0, i)
+        put(cx, g + 1, cz, stair('cobblestone', OPP[f])); cells.append((cx, cz))
+    ex, ez = at(x, z, f, 0, -1)
+    put(ex, g + 1, ez, wall('cobblestone')); put(ex, g + 2, ez, LANTERN); cells.append((ex, ez))
+    for i in range(4):                                                   # 花壇：ベンチの右隣から奥へ
+        for j in range(2):
+            cx, cz = at(x, z, f, -j, 3 + i)
+            put(cx, g + 1, cz, full('coarse_dirt')); put(cx, g + 2, cz, cross(flowers[(i + j) % len(flowers)])); cells.append((cx, cz))
+    for i in range(-1, 5):                                               # 縁の塀：長辺の前後と短辺
+        for j in (1, -2):
+            cx, cz = at(x, z, f, j, 3 + i)
+            if get(cx, g + 1, cz) is None: put(cx, g + 1, cz, wall('cobbled_deepslate')); cells.append((cx, cz))
+    for j in (0, -1):
+        cx, cz = at(x, z, f, j, 7)
+        if get(cx, g + 1, cz) is None: put(cx, g + 1, cz, wall('cobbled_deepslate')); cells.append((cx, cz))
+    return cells
+
+
+# ---- 踏み跡の行き止まりの休み場：切り株の上にランタン、横に寝かせた丸太の腰掛け、足元に花2〜3本とキノコ。
+#      小道の行き先になる。 [Mr CozyCraft 1:20 小道の突き当たりの空き地・One Team 小物の足元のキノコ]
+def trail_end(x, z, g, f):
+    cells = []
+    put(x, g + 1, z, log('spruce_log')); put(x, g + 2, z, LANTERN); cells.append((x, z))
+    for i in (1, 2):
+        cx, cz = at(x, z, f, 1, i - 1)
+        put(cx, g + 1, cz, log('oak_log', 'x' if f in ('n', 's') else 'z')); cells.append((cx, cz))
+    for (fw, rt, plant) in ((0, 1, 'brown_mushroom'), (-1, 0, 'oxeye_daisy'), (-1, 1, 'cornflower'), (0, -1, 'fern')):
+        cx, cz = at(x, z, f, fw, rt)
+        if get(cx, g + 1, cz) is None: put(cx, g + 1, cz, cross(plant))
+    return cells
+
+
+# ---- 井戸：3×3。地面の高さの輪は四隅が石レンガで、口と四方は水。その上の縁は前後が低い石レンガの階段（背は内側）、
+#      左右が石レンガ、四隅が塀。左右の柱は塀 → トウヒの柵、上にトウヒの階段の屋根と庇のトラップドア、
+#      真ん中に上付きのハーフ、その下に砥石を吊り、鎖を口へ下ろす。縁にランタン。f は正面（人が来る側）。
+#      [ごをくんな 庭の装飾 0:31〜1:38・props-notes.md D16]
+def well(x, z, g, f):
+    cells = []
+    put(x, g - 1, z, full('stone_bricks'))
+    for fw in (-1, 0, 1):
+        for rt in (-1, 0, 1):
+            cx, cz = at(x, z, f, fw, rt); cells.append((cx, cz))
+            corner = fw != 0 and rt != 0
+            put(cx, g, cz, full('stone_bricks') if corner else water())
+            if fw == 0 and rt == 0: continue
+            if corner: put(cx, g + 1, cz, wall('stone_bricks'))
+            elif rt != 0: put(cx, g + 1, cz, full('stone_bricks'))
+            else: put(cx, g + 1, cz, stair('stone_bricks', f if fw < 0 else OPP[f]))   # 前後は低い縁、背は内側
+    for rt in (-1, 1):
+        cx, cz = at(x, z, f, 0, rt)
+        put(cx, g + 2, cz, wall('stone_bricks')); put(cx, g + 3, cz, fence('spruce_planks'))
+        side = RIGHT[f] if rt > 0 else OPP[RIGHT[f]]
+        put(cx, g + 4, cz, stair('spruce_planks', OPP[side]))                     # 屋根：外へ下がる
+        ox, oz = at(x, z, f, 0, rt * 2)
+        put(ox, g + 4, oz, stair('spruce_planks', side, 'top')); put(ox, g + 3, oz, trap('spruce_trapdoor', 'top'))
+    put(x, g + 4, z, slab('spruce_planks', 'top'))
+    put(x, g + 3, z, {'s': 'grindstone', 't': 'grindstone_side'})
+    put(x, g + 2, z, CHAIN); put(x, g + 1, z, CHAIN)
+    lx, lz = at(x, z, f, -1, -1); put(lx, g + 2, lz, LANTERN)
+    return cells
+
+
+# ---- 荷車：トウヒの上付きハーフ 3×2 の荷台、両側面に開いたオークのトラップドアの車輪 2 つずつ（1マス空け）、
+#      前に引き手（柵）、後ろにトラップドア、荷台に樽と木箱とランタン。f は引き手の向き。
+#      [ごをくんな 庭の装飾 1:43〜2:27・props-notes.md D17]
+def cart(x, z, g, f):
+    cells = []
+    for fw in (0, 1, 2):
+        for rt in (0, 1):
+            cx, cz = at(x, z, f, -fw, rt); put(cx, g + 1, cz, slab('spruce_planks', 'top')); cells.append((cx, cz))
+    side = RIGHT[f]
+    for fw in (0, 2):                                                    # 車輪：側面に貼った開いたトラップドア
+        cx, cz = at(x, z, f, -fw, -1); put(cx, g + 1, cz, trap('oak_trapdoor', side)); cells.append((cx, cz))
+        cx, cz = at(x, z, f, -fw, 2); put(cx, g + 1, cz, trap('oak_trapdoor', OPP[side])); cells.append((cx, cz))
+    hx, hz = at(x, z, f, 1, 0); put(hx, g + 1, hz, fence('spruce_planks')); cells.append((hx, hz))
+    bx, bz = at(x, z, f, -3, 0); put(bx, g + 1, bz, trap('spruce_trapdoor', f)); cells.append((bx, bz))
+    for (fw, rt, b) in ((-1, 0, BARREL), (-2, 1, CRATE), (-2, 0, HAY)):
+        cx, cz = at(x, z, f, fw, rt); put(cx, g + 2, cz, b)
+    cx, cz = at(x, z, f, 0, 1); put(cx, g + 2, cz, LANTERN)
+    return cells
+
+
+# ---- 灯台：海に立つ岩の上の白い塔。下ほど太く、赤い帯2本、縦長の窓、持ち送りの回廊、ガラスの火の部屋、尖った屋根 [港町 11/04]
+def lighthouse(x, z, g, r=4, h=22):
+    """(x, z) は塔の芯、g は立つ岩の上面。塔は下で半径 r、上で r-1。上に回廊（g+h+1）・火の部屋・屋根。"""
+    import math as _m
+    def ring(cx, cz, rad, fn):
+        for i in range(-int(rad) - 2, int(rad) + 3):
+            for j in range(-int(rad) - 2, int(rad) + 3):
+                d = _m.hypot(i, j)
+                fn(cx + i, cz + j, i, j, d)
+    for k in range(2):                                                      # 土台：2段の石の台、上の段の縁は階段
+        rad = r + 2 - k
+        ring(x, z, rad, lambda X, Z, i, j, d: put(X, g + 1 + k, Z, full('stone_bricks' if (i * 3 + j) % 5 else 'mossy_stone_bricks')) if d <= rad + 0.3 else None)
+    for y in range(g + 3, g + h + 1):
+        t = (y - g - 3) / max(1, h - 3)
+        rad = r - t * 1.0
+        band = (y - g) in (8, 9, 16, 17)
+        lvl = (y - g) in (5, 6, 12, 13, 19, 20)
+        def wall(X, Z, i, j, d, rad=rad, band=band, lvl=lvl):
+            if not (rad - 1.0 < d <= rad + 0.4): return
+            win = lvl and ((i == 0 and abs(j) > 0) or (j == 0 and abs(i) > 0))
+            if win: put(X, y, Z, {'s': 'pane', 't': 'glass', 'ax': 'x' if i == 0 else 'z'}); return
+            put(X, y, Z, full('red_sandstone' if band else 'calcite'))
+        ring(x, z, rad, wall)
+        ring(x, z, rad, lambda X, Z, i, j, d, rad=rad: put(X, y, Z, None) if d <= rad - 1.0 and get(X, y, Z) is None else None)
+    gy = g + h + 1
+    rt = r - 1.0
+    ring(x, z, rt + 1, lambda X, Z, i, j, d: put(X, gy - 1, Z, stair('stone_bricks', 'w' if i > abs(j) else 'e' if -i > abs(j) else 's' if j > 0 else 'n', 'top')) if rt + 0.4 < d <= rt + 1.4 else None)   # 持ち送り
+    def gal(X, Z, i, j, d):
+        if d <= rt + 1.4:
+            put(X, gy, Z, full('polished_andesite' if d > rt - 0.5 else 'stone_bricks'))
+            if d > rt + 0.5: put(X, gy + 1, Z, fence('dark_oak_planks'))
+    ring(x, z, rt + 1, gal)
+    for y in range(gy + 1, gy + 4):                                         # 火の部屋：四隅の柱とガラス、真ん中に火の籠
+        for i in range(-2, 3):
+            for j in range(-2, 3):
+                if max(abs(i), abs(j)) == 2:
+                    put(x + i, y, z + j, log('dark_oak_log') if abs(i) == 2 and abs(j) == 2 else {'s': 'pane', 't': 'glass', 'ax': 'z' if abs(i) == 2 else 'x'})
+    put(x, gy + 1, z, full('netherrack')); put(x, gy + 2, z, cross('fire_0'))
+    for (i, j) in ((1, 1), (-1, 1), (1, -1), (-1, -1)): put(x + i, gy + 1, z + j, full('chiseled_stone_bricks')); put(x + i, gy + 2, z + j, LANTERN)
+    ry = gy + 4                                                             # 屋根：軒は1マス出し、芯からの距離で柱を積んで尖らせる
+    for i in range(-3, 4):
+        for j in range(-3, 4):
+            d = _m.hypot(i, j)
+            if d > 3.3: continue
+            hh = int(round((3.3 - d) * 1.7))
+            for yy in range(ry, ry + hh): put(x + i, yy, z + j, full('deepslate_tiles'))
+            put(x + i, ry + hh, z + j, slab('deepslate_tiles') if d > 0.5 else full('deepslate_tiles'))
+    put(x, ry + 7, z, fence('dark_oak_planks')); put(x, ry + 8, z, LANTERN)
+
+
+# ---- 高床の茅葺き小屋：白っぽい木の柱と床、背と片脇は布、屋根は干し草を段に積んだ寄棟（軒は1マス出す） [南の港 11/04]
+def hut(x0, z0, y, w=7, d=6, cloth='red_wool', bed=-4, open_side='s'):
+    """(x0, z0) は床の北西の角、y は床の高さ。bed は柱を下ろす底の高さ。open_side の面は開けて、ほかの面は腰の高さまで板の手すり。"""
+    for x in range(x0, x0 + w):
+        for z in range(z0, z0 + d):
+            put(x, y, z, full('birch_planks'))
+            edge = x in (x0, x0 + w - 1) or z in (z0, z0 + d - 1)
+            corner = x in (x0, x0 + w - 1) and z in (z0, z0 + d - 1)
+            if corner or edge and ((x - x0) % 3 == 0 and z in (z0, z0 + d - 1) or (z - z0) % 3 == 0 and x in (x0, x0 + w - 1)):
+                for yy in range(bed + 1, y): put(x, yy, z, log('stripped_birch_log'))
+                for yy in range(y + 1, y + 4): put(x, yy, z, log('stripped_birch_log'))
+            elif edge:
+                side = 'n' if z == z0 else 's' if z == z0 + d - 1 else 'w' if x == x0 else 'e'
+                if side == open_side: continue
+                if side == 'n': put(x, y + 1, z, trap('birch_trapdoor', 's')); put(x, y + 2, z, {'s': 'trap', 't': cloth, 'f': 's'}); put(x, y + 3, z, {'s': 'trap', 't': cloth, 'f': 's'})
+                else: put(x, y + 1, z, fence('birch_planks'))
+    ry = y + 4
+    k = -1
+    while True:                                                             # 屋根：段ごとに1マス内へ。最初の段は軒として外へ1マス
+        xa, xb, za, zb = x0 + k, x0 + w - 1 - k, z0 + k, z0 + d - 1 - k
+        if xa > xb or za > zb: break
+        for x in range(xa, xb + 1):
+            for z in range(za, zb + 1):
+                if k == -1 or x in (xa, xb) or z in (za, zb) or xb - xa <= 1 or zb - za <= 1:
+                    put(x, ry + k + 1, z, full('hay_block_side', top='hay_block_top'))
+        k += 1
+    put(x0 + w // 2, y + 3, z0 + d // 2, HANG)
+
+
+# ---- 旗の綱：2点の間に細い綱（上のトラップドア）を張り、1マスおきに色の布を下げる [南の港 11/04]
+def bunting(a, b, y, colors=('red_wool', 'yellow_wool', 'light_blue_wool', 'white_wool'), sag=2):
+    """a, b = (x, z)。綱は真ん中で sag だけ下がる。旗は綱の下のマスに縦の薄い布。"""
+    import math as _m
+    n = int(max(abs(b[0] - a[0]), abs(b[1] - a[1])))
+    f = 'n' if abs(b[0] - a[0]) >= abs(b[1] - a[1]) else 'e'
+    for i in range(n + 1):
+        t = i / max(1, n)
+        x = int(round(a[0] + (b[0] - a[0]) * t)); z = int(round(a[1] + (b[1] - a[1]) * t))
+        yy = y - int(round(sag * _m.sin(_m.pi * t)))
+        if get(x, yy, z) is None: put(x, yy, z, trap('spruce_trapdoor', 'top'))
+        if i % 2 == 1 and get(x, yy - 1, z) is None: put(x, yy - 1, z, {'s': 'trap', 't': colors[(i // 2) % len(colors)], 'f': f})
+
+
+# ---- 帆船：長さ n の船体を z 方向に。腹は暗い木で太く、舳先は細く上がり、艫は一段高い楼。帆柱2本と白い大きな帆（赤い帯） [南の港 11/04]
+def ship(x, z0, wy, n=32, wmax=5):
+    """x は船の芯、z0 は舳先（北）の端、wy は水面の高さ。甲板は wy+3。"""
+    import math as _m
+    dk = wy + 3
+    for k in range(n):
+        t = k / (n - 1)
+        hw = wmax * min(1.0, _m.sin(_m.pi * min(1.0, t * 1.15)) ** 0.6 + 0.15) if t < 0.95 else wmax * 0.7
+        hw = max(1.0, hw if t > 0.15 else wmax * (t / 0.15) ** 0.7 + 0.6)
+        z = z0 + k
+        bow = max(0, int(round((0.18 - t) * 18))) if t < 0.18 else 0                  # 舳先は上がる
+        stern = 3 if t > 0.82 else 0                                                   # 艫の楼
+        top = dk + bow
+        for i in range(-int(hw), int(hw) + 1):
+            d = abs(i) / max(0.5, hw)
+            bot = wy - 2 + int(round(d * d * 2))                                       # 腹は丸く
+            for yy in range(bot, top + 1):
+                shell = abs(i) == int(hw) or yy == bot
+                if shell: put(x + i, yy, z, full('dark_oak_planks' if yy != dk - 1 else 'spruce_planks'))
+                elif yy == top: put(x + i, yy, z, full('spruce_planks' if bow == 0 else 'dark_oak_planks'))
+                else: put(x + i, yy, z, None) if yy > wy else put(x + i, yy, z, full('dark_oak_planks'))
+            if abs(i) == int(hw):
+                put(x + i, top + 1, z, fence('dark_oak_planks'))
+        if stern:                                                                      # 艫の楼：甲板の上に3段、窓、上に手すり
+            for i in range(-int(hw), int(hw) + 1):
+                for yy in range(dk + 1, dk + stern + 1):
+                    wall = abs(i) == int(hw) or k == n - 1 or k == int(0.82 * (n - 1)) + 1
+                    if wall: put(x + i, yy, z, {'s': 'pane', 't': 'glass', 'ax': 'z' if abs(i) == int(hw) else 'x'} if yy == dk + 2 and (k + i) % 3 == 0 else full('dark_oak_planks'))
+                put(x + i, dk + stern + 1, z, full('spruce_planks'))
+                if abs(i) == int(hw) or k == n - 1: put(x + i, dk + stern + 2, z, fence('dark_oak_planks'))
+    put(x, dk + 2 + 8, z0 + 1, fence('dark_oak_planks'))                              # 舳先の斜檣の先
+    for (mz, mh, sw) in ((z0 + int(n * 0.36), 20, 6), (z0 + int(n * 0.64), 17, 5)):  # 帆柱と帆
+        for yy in range(dk + 1, dk + mh + 1): put(x, yy, mz, log('dark_oak_log'))
+        put(x, dk + mh + 1, mz, {'s': 'trap', 't': 'red_wool', 'f': 'e'})
+        for (yt, half) in ((dk + mh - 1, sw), (dk + mh - 9, sw + 1)):
+            for i in range(-half - 1, half + 2): put(x + i, yt, mz, log('dark_oak_log', 'x'))
+            for yy in range(yt - 7, yt):
+                for i in range(-half, half + 1):
+                    c = 'red_wool' if yy == yt - 4 else 'white_wool'
+                    put(x + i, yy, mz + 1, {'s': 'trap', 't': c, 'f': 'n'})
+    put(x, dk + 1, z0 + n // 2, BARREL); put(x + 1, dk + 1, z0 + n // 2, BARREL); put(x - 1, dk + 1, z0 + n // 2 + 1, CRATE)
+
+
+# ---- 依頼の掲示板：2本の柱に横木、板の面に紙（白樺のトラップドア）を散らし、上に小屋根とランタン [冒険者の街]
+def notice_board(x, z, g, f='s'):
+    """(x, z) は左の柱。f は板の面が向く向き。幅4。"""
+    rx, rz = D[RIGHT[f]]
+    for s in (0, 3):
+        for y in range(g + 1, g + 5): put(x + rx * s, y, z + rz * s, log('dark_oak_log'))
+    for s in (1, 2):
+        for y in (g + 2, g + 3): put(x + rx * s, y, z + rz * s, full('spruce_planks'))
+    fx, fz = D[f]
+    for (s, y) in ((1, g + 2), (2, g + 3), (1, g + 3)):                    # 紙
+        put(x + rx * s + fx, y, z + rz * s + fz, trap('birch_trapdoor', OPP[f]))
+    for s in range(-1, 5):                                                 # 小屋根：板の上に階段を前後に
+        put(x + rx * s, g + 5, z + rz * s, stair('dark_oak_planks', OPP[f]))
+        put(x + rx * s - fx, g + 5, z + rz * s - fz, stair('dark_oak_planks', f))
+    put(x + rx * 1, g + 1, z + rz * 1, slab('spruce_planks')); put(x + rx * 2, g + 1, z + rz * 2, slab('spruce_planks'))
+    return [(x + rx * s, z + rz * s) for s in range(4)] + [(x + rx * s + fx, z + rz * s + fz) for s in (1, 2)]
+
+
+# ---- 訓練の的：柵の柱に干し草の胴、くり抜いたカボチャの頭、横木の腕 [冒険者の街の訓練場]
+def dummy(x, z, g, f='s'):
+    rx, rz = D[RIGHT[f]]
+    put(x, g + 1, z, fence('spruce_planks'))
+    put(x, g + 2, z, HAY)
+    put(x, g + 3, z, PUMPKIN)
+    put(x + rx, g + 2, z + rz, fence('spruce_planks')); put(x - rx, g + 2, z - rz, fence('spruce_planks'))
+    return [(x, z)]

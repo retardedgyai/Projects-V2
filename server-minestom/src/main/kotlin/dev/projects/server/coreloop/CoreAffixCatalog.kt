@@ -44,6 +44,10 @@ enum class CoreAffixStat(val displayName: String, val percent: Boolean = true) {
     HEAL_ON_KILL("撃破時HP回復"), OVERHEAL_SHIELD("溢れた回復をシールドに"),
     WAR_AFTERSHOCK("戦士・余波", false), WAR_BEAST("戦士・獣"), MAGE_ECHO("メイジ・残響", false), HUNT_RETURN("狩人・追矢", false),
     ASS_VENOM("暗殺者・毒印", false), TEMP_GRAVITY("聖騎士・重力", false), HEAL_CONVERSION("治療師・予防", false),
+    /** Levels on every skill ([CoreSkillLevels]); past the cap points can reach. */
+    SKILL_LEVEL("全部の技 Lv", false),
+    /** Levels on the one skill the stone names ([CoreAffixCatalog.skillOf]); summed per skill, not here. */
+    ONE_SKILL_LEVEL("技 Lv", false),
 }
 
 /** Identity and roll are server-owned. Unknown definitions remain serializable but inert. */
@@ -102,6 +106,8 @@ data class CoreAffixStats(
     /** Passive values that only count while their condition holds (added before the caps, see [under]). */
     val conditional: Map<CorePassiveCondition, Map<CoreAffixStat, Double>> = emptyMap(),
     val keystones: Set<CoreKeystone> = emptySet(),
+    /** Skill icon -> levels from stones naming that skill (the +1-to-every-skill stones are [CoreAffixStat.SKILL_LEVEL]). */
+    val skillLevels: Map<String, Int> = emptyMap(),
 ) {
     fun bonus(stat: CoreAffixStat): Double = CoreCombatMath.safe(additional[stat] ?: 0.0)
     fun has(keystone: CoreKeystone) = keystone in keystones
@@ -116,7 +122,7 @@ data class CoreAffixStats(
         conditional.forEach { (condition, values) ->
             if (relevant and condition.bit != 0) values.forEach { (stat, value) -> totals.merge(stat, value, Double::plus) }
         }
-        return CoreAffixCatalog.capped(totals, conditional, keystones).also { variants[relevant] = it }
+        return CoreAffixCatalog.capped(totals, conditional, keystones).copy(skillLevels = skillLevels).also { variants[relevant] = it }
     }
     val criticalChance: Double get() = (0.05 * (1.0 + CoreCombatMath.safe(critChanceIncreasedPercent) / 100.0)).coerceAtMost(0.75)
     val criticalMultiplier: Double get() = (CoreCombatMath.BASE_CRITICAL_MULTIPLIER + CoreCombatMath.safe(critMultiplierBonusPercent) / 100.0).coerceAtMost(4.0)
@@ -177,7 +183,28 @@ object CoreAffixCatalog {
         CoreAffixDefinition("projects:venom-mark", "毒印の刻印石", CoreAffixStat.ASS_VENOM, CoreAffixCategory.OFFENSE, 1, 4, 1, weight=3),
         CoreAffixDefinition("projects:gravity-well", "重力の刻印石", CoreAffixStat.TEMP_GRAVITY, CoreAffixCategory.UTILITY, 1, 4, 1, weight=3),
         CoreAffixDefinition("projects:preventive-prayer", "予防の刻印石", CoreAffixStat.HEAL_CONVERSION, CoreAffixCategory.DEFENSE, 1, 4, 1, weight=3),
-    ))
+    ) + skillStones())
+    /**
+     * Skill level stones (2026-11-03 藍: "the strongest MOD is +1 to a skill of your class"): weapon only, +1 or +2 at
+     * every tier, and rare: weight 1 each against 10 for an ordinary stone. One per skill of every class, plus one for
+     * every skill. A stone naming another class's skill does nothing for this class.
+     */
+    private fun skillStones(): List<CoreAffixDefinition> = listOf(
+        CoreAffixDefinition("projects:skill-all", "万技の刻印石", CoreAffixStat.SKILL_LEVEL, CoreAffixCategory.OFFENSE, 1, 2, 0,
+            setOf(CoreGearSlot.WEAPON), weight = 1)) +
+        CoreClass.entries.flatMap { job -> CoreSkillLevels.levelable(job).map { icon -> job to icon } }.distinctBy { it.second }.map { (job, icon) ->
+            CoreAffixDefinition(skillStoneId(icon), "${CoreSkillCatalog.skills(job).first { it.icon == icon }.name}の刻印石",
+                CoreAffixStat.ONE_SKILL_LEVEL, CoreAffixCategory.OFFENSE, 1, 2, 0, setOf(CoreGearSlot.WEAPON), weight = 1)
+        }
+    private fun skillStoneId(icon: String) = "projects:skill-${icon.replace('_', '-')}"
+    private val skillByStone: Map<String, String> by lazy {
+        CoreClass.entries.flatMap { CoreSkillLevels.levelable(it) }.associateBy(::skillStoneId)
+    }
+    /** Skill level stones only drop (from expeditions); the workshop's currencies never roll them. */
+    fun craftable(definition: CoreAffixDefinition) = definition.stat != CoreAffixStat.SKILL_LEVEL && definition.stat != CoreAffixStat.ONE_SKILL_LEVEL
+    /** The skill icon a skill level stone names, or null. */
+    fun skillOf(stone: CoreAffixStone): String? = skillByStone[stone.modId]
+    private fun skillName(icon: String) = CoreClass.entries.firstNotNullOfOrNull { job -> CoreSkillCatalog.skills(job).firstOrNull { it.icon == icon } }?.name ?: icon
     // Kept outside the normal loot/currency candidate list. Same budget; no additional firepower.
     private val ritualOnly = CoreAffixDefinition("projects:glacial-attunement", "霜転の調律（試作）",
         CoreAffixStat.ICE, CoreAffixCategory.OFFENSE, 2, 4, 2, setOf(CoreGearSlot.WEAPON), weight = 0)
@@ -223,6 +250,8 @@ object CoreAffixCatalog {
             CoreAffixStat.ASS_VENOM -> return "暗殺者：印を付けた敵に${10 + v * 2}% ADの毒を3回"
             CoreAffixStat.TEMP_GRAVITY -> return "聖騎士：吸引+${v * 10}% / 威力80%"
             CoreAffixStat.HEAL_CONVERSION -> return "治療師：回復の${25 + v * 3}%を同量の障壁に変換"
+            CoreAffixStat.SKILL_LEVEL -> return "全部の技 Lv +$v"
+            CoreAffixStat.ONE_SKILL_LEVEL -> return "${skillName(skillOf(stone) ?: "")} Lv +$v"
             else -> Unit
         }
         val value = if (stone.value % 1.0 == 0.0) stone.value.toInt().toString() else java.lang.String.format(java.util.Locale.ROOT, "%.1f", stone.value)
@@ -260,18 +289,20 @@ object CoreAffixCatalog {
 
     fun stats(account: CoreAccount): CoreAffixStats {
         val totals = mutableMapOf<CoreAffixStat, Double>()
+        val skills = mutableMapOf<String, Int>()
         account.equippedAffixes.forEach { installed ->
             val definition = definition(installed.stone)
             if (!CoreEconomy.broken(account, installed.gear) && definition != null && valid(installed.stone) && installed.gear in definition.allowedGear &&
                 installed.index < capacity(account, installed.gear) && installed.stone.tier <= gearTier(account, installed.gear)) {
                 totals.merge(definition.stat, installed.stone.value, Double::plus)
+                skillOf(installed.stone)?.let { skills.merge(it, installed.stone.value.toInt(), Int::plus) }
             }
         }
         val build = account.journey.build
         val passive = CorePassiveTree.effects(account.journey.job, build.passives, build.masteries)
         passive.stats.forEach { (stat, value) -> totals.merge(stat, value, Double::plus) }
         if (CoreKeystone.MANA_CYCLE in passive.keystones) totals.merge(CoreAffixStat.COOLDOWN_REDUCTION, CoreKeystone.MANA_CYCLE_COOLDOWN, Double::plus)
-        return capped(totals, passive.conditional, passive.keystones)
+        return capped(totals, passive.conditional, passive.keystones).copy(skillLevels = skills.toMap())
     }
 
     /**

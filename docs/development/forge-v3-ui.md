@@ -1,5 +1,7 @@
 # 強化画面 v3（Playground）
 
+> 2026-11-04 から、強化画面の見た目は手帳と同じドット（鉄の窓・板・MaruMinya のドット字、説明の文なし）になった。部品は `scripts/build_forge_dot_assets.py` が `polish05/forge.zip` と `forge.json` に焼き、字はパッシブツリーのドット字（`ptdot`）を使う。アイテムはゲームのアイテムモデルで出す。下の v3 の仕組み（Chrome で描いた板と M PLUS 2）は、強化画面ではもう使っていない（地図と魔術書は v3 の字をまだ使う）。
+
 港の鍛冶屋で開く強化画面を、Creator が承認したデザイン案 v3（`assets/ui/forge-v3/Forge3.dc.html`）と同じ見た目で Vanilla に出す。
 
 ## 仕組み

@@ -379,6 +379,37 @@ class QuestEncounterCombat(
         mob.tauntedUntil = now + 2000
         return true
     }
+    /**
+     * A mage's wind draws a regular enemy [distance] toward [point] (竜巻, the grand chant's typhoon) along a clear
+     * grounded path, without breaking off what it is doing. Bosses are not moved.
+     */
+    fun drawToward(targetId: UUID, point: Pos, distance: Double, source: Player): Boolean {
+        val mob = mobs[targetId] ?: return false
+        if (mob.boss || !mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING || mob.guardianIds.any(::isAlive) ||
+            source.instance !== instance || !canTarget(source)) return false
+        val delta = point.sub(mob.entity.position)
+        val horizontal = Vec(delta.x(), 0.0, delta.z())
+        if (horizontal.length() < 1.0) return true
+        slide(mob, horizontal.normalize(), minOf(distance, horizontal.length() - .8))
+        return true
+    }
+
+    /**
+     * A mage's ice filled a boss (coreloop/CoreMageField): it stands frozen for [millis] like a short down (no attacks,
+     * no movement, +30% damage taken), the window the party pours its burst into. Not while sealed, already down, or
+     * during a cast or shell (those end by their own rule).
+     */
+    fun freezeBoss(targetId: UUID, millis: Long, source: Player): Boolean {
+        if (disposed) return false
+        val mob = mobs[targetId] ?: return false
+        if (!mob.boss || !mob.life.isAlive || mob.life.phase == QuestMobPhase.RETURNING || bossSealed || mob.guardianIds.any(::isAlive) ||
+            source.instance !== instance || !canTarget(source)) return false
+        val now = if (lastTickAt == Long.MIN_VALUE) System.currentTimeMillis() else lastTickAt
+        if (now < mob.brokenUntil || mob.abilities.current?.ability?.id in GIMMICKS) return false
+        knockDown(mob, now, "凍結・殴り放題", millis)
+        return true
+    }
+
     /** Pulls only along a clear grounded path. Bosses resist displacement and instead take a short interrupt. */
     fun pull(targetId: UUID, attacker: Player, maximumDistance: Double = 3.0): Boolean {
         val mob = mobs[targetId] ?: return false

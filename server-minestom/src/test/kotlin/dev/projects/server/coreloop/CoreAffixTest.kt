@@ -34,7 +34,10 @@ class CoreAffixTest {
     }
 
     @Test fun `catalog deterministic source rolls span all live stats and four ranks`() {
-        assertEquals(49, CoreAffixCatalog.definitions.size)
+        // 49 ordinary stones (獣の刻印石 2026-11-05), plus the skill level stones: one for every skill and one for all (2026-11-03).
+        val skillStones = setOf(CoreAffixStat.SKILL_LEVEL, CoreAffixStat.ONE_SKILL_LEVEL)
+        assertEquals(49, CoreAffixCatalog.definitions.count { it.stat !in skillStones })
+        assertEquals(1 + CoreClass.entries.sumOf { CoreSkillLevels.levelable(it).size }, CoreAffixCatalog.definitions.count { it.stat in skillStones })
         // The passive tree also grants these; no stone rolls them (2026-10-31).
         val treeOnly = setOf(CoreAffixStat.CC_DURATION, CoreAffixStat.BREAK_POWER, CoreAffixStat.DOT_DAMAGE,
             CoreAffixStat.DODGE_RECOVERY, CoreAffixStat.ELEMENT_EFFECT, CoreAffixStat.HEAL_ON_KILL, CoreAffixStat.OVERHEAL_SHIELD)
