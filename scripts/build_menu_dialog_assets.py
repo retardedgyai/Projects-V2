@@ -50,7 +50,8 @@ TEXT_SOURCES = ["server-minestom/src/main/kotlin/dev/projects/server/coreloop/Pl
                 "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreSkillCatalog.kt",
                 "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreWarriorSkillPresentation.kt",
                 "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreJourney.kt",
-                "server-minestom/src/main/kotlin/dev/projects/server/questmap/QuestGathering.kt"]
+                "server-minestom/src/main/kotlin/dev/projects/server/questmap/QuestGathering.kt",
+                "server-minestom/src/main/kotlin/dev/projects/server/coreloop/DungeonGateDialog.kt"]
 
 # style -> (font file key, size)
 # Headings and numbers in DotGothic16 (d*, dot*), small text and names in M PLUS 2 (m*, b*).
@@ -111,6 +112,23 @@ STAT_GROUPS = [("攻め", ["物理攻撃 AD", "魔法攻撃 AP", "攻撃速度",
 STATS = (320, [WIN_Y + 28, WIN_Y + 107], 136, 11)   # x, each group's first baseline (its heading 13 above), width, step
 NOTICE = (8, WIN_Y + 139)                          # one short line above the edit button
 BAKED = "".join(SELF_TABS + COMBAT_TABS) + "".join(h + "".join(l) for h, l in STAT_GROUPS) + "".join(KV_LABELS) + "冒険の手帳いまの組奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨閉じる"
+
+# ---- ダンジョンの門 (DungeonGateDialog): Aion 2's dungeon screen (藍 2026-11-06 「アイオン2のインスタンスダンジョンと同じ構図で」):
+# the boss fills the page, darkened towards the left; the list of dungeons down the left edge, a star rank over each name;
+# beside it the open dungeon's stars, name and difficulty, then headed sections (入場条件・道のり・報酬); 入る at the bottom right.
+DG_KEYART = "assets/core-ui/dungeons/sakura_keyart.png"   # scripts/build_dungeon_keyart.py, 2 design px a dot
+DG_LIST = (4, 24, 78, 26)                          # the one entry: x, top, w, h
+DG_X = 96                                          # the info column
+DG_W = 140
+DG_HEADS = [(66, "入場条件"), (96, "道のり"), (126, "踏破の報酬")]
+DG_TIER = (100, 86)                                # runtime: the tier, then the baked rest of the line
+DG_REWARDS = [("echo_shard", "討伐証", "2"), ("gold_nugget", "戦利品券", "12"), ("nether_star", "高揚のオーブ", "1"), ("experience_bottle", "経験", "")]
+DG_REWARD_Y = 139
+DG_ENTER = (366, 166, 92, 19)
+DG_NOTICE = (DG_X, 184)
+TEAL = "#8fd3cf"
+BAKED += "ダンジョン散り桜の社ふつう入場条件道のり踏破の報酬入るひとり無料部屋波ボス桜牙獣討伐証戦利品券高揚のオーブ経験"
+
 
 def hexc(v, a=255):
     if isinstance(v, tuple):
@@ -458,6 +476,66 @@ def bake_self(fonts):
     return img
 
 
+def star(img, x, y, on=True):
+    """A 7-dot star at 1 design px a dot."""
+    px = Image.new("RGBA", (7, 7)); d = ImageDraw.Draw(px)
+    c = hexc(C["gold"]) if on else (70, 66, 60, 255)
+    for (a, b) in ((3, 0), (3, 1), (2, 2), (3, 2), (4, 2), (0, 3), (1, 3), (2, 3), (3, 3), (4, 3), (5, 3), (6, 3),
+                   (1, 4), (2, 4), (3, 4), (4, 4), (5, 4), (2, 5), (4, 5), (1, 6), (5, 6)):
+        d.point((a, b), fill=c)
+    img.alpha_composite(px.resize((7 * K, 7 * K), Image.NEAREST), (x * K, y * K))
+
+
+def item_icon(name):
+    """A vanilla item texture from the local 26.2 client jar (the same picture the game shows)."""
+    import zipfile as zf
+    jar = Path.home() / ".minecraft/versions/26.2/26.2.jar"
+    with zf.ZipFile(jar) as a:
+        im = Image.open(io.BytesIO(a.read(f"assets/minecraft/textures/item/{name}.png"))).convert("RGBA")
+    return im.crop((0, 0, 16, 16))
+
+
+def bake_dungeon(fonts):
+    img = Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K)); d = ImageDraw.Draw(img)
+    art = Image.open(ROOT / DG_KEYART).convert("RGBA")
+    art = art.resize((art.width * 2 * K, art.height * 2 * K), Image.NEAREST)
+    img.alpha_composite(art.crop((0, 0, CANVAS_W * K, CANVAS_H * K)))
+    # Darken towards the left so the list and the text read over the art (Aion 2's left shade), in dithered steps.
+    for x in range(0, 280, 2):
+        a = round(232 * max(0.0, 1 - x / 280) ** 1.2)
+        tint(img, x, 0, x + 2, CANVAS_H, (10, 8, 12, a))
+    draw_text(d, fonts, "b8", 8, 14, "ダンジョン", C["ink"])
+    tint(img, 4, 19, 250, 19.5, (255, 255, 255, 30))
+    # The list: one entry, open (white, a bronze bar at its left edge).
+    x, top, w, h = DG_LIST
+    tint(img, x, top, x + w, top + h, (255, 255, 255, 14)); tint(img, x, top, x + 1, top + h, hexc(C["gold"]))
+    for i in range(2): star(img, x + 5 + i * 8, top + 4)
+    draw_text(d, fonts, "m6", x + 5, top + 21, "散り桜の社", C["ink"])
+    tint(img, 86, 24, 86.5, 186, (255, 255, 255, 22))
+    # The open dungeon.
+    for i in range(2): star(img, DG_X + i * 8, 24)
+    draw_text(d, fonts, "b8", DG_X, 44, "散り桜の社", C["ink"])
+    img.alpha_composite(nine(slot_tile(True), 4, 46, 12), (DG_X * K, 49 * K))
+    draw_text(d, fonts, "m6", DG_X + 23, 57.5, "ふつう", C["ink"], anchor="ms")
+    for y, head in DG_HEADS:
+        tint(img, DG_X, y, DG_X + DG_W, y + 11, (40, 90, 96, 70))
+        img.alpha_composite(diamond(7, hexc(TEAL), None, (140, 220, 215)), ((DG_X + 1) * K, (y + 2) * K))
+        draw_text(d, fonts, "m6", DG_X + 11, y + 8.5, head, TEAL)
+    draw_text(d, fonts, "m6", DG_TIER[0] + 11, DG_TIER[1], "・ ひとり ・ 入場 無料", C["ink"])
+    draw_text(d, fonts, "m6", DG_X + 4, 116, "部屋 2 ・ 波 4 ・ ボス 桜牙獣", C["ink"])
+    for i, (name, _, count) in enumerate(DG_REWARDS):
+        sx = DG_X + 4 + i * 24
+        slot_frame(img, sx, DG_REWARD_Y, 20, 20)
+        img.alpha_composite(item_icon(name).resize((16 * K, 16 * K), Image.NEAREST), ((sx + 2) * K, (DG_REWARD_Y + 2) * K))
+        if count: draw_text(d, fonts, "m6", sx + 19, DG_REWARD_Y + 19, count, C["ink"], anchor="rs")
+    # The 手帳's iron rim around the whole page, so the art sits in a window rather than pasted on.
+    img.alpha_composite(nine(window_tile(fill=(0, 0, 0, 0)), 8, CANVAS_W, CANVAS_H))
+    ex, ey, ew, eh = DG_ENTER
+    img.alpha_composite(nine(GOLD_BTN, 5, ew, eh), (ex * K, ey * K))
+    draw_text(d, fonts, "b8", ex + ew / 2, ey + 13.5, "入る", C["dark"], anchor="ms")
+    return img
+
+
 def main() -> None:
     chars = text_chars()
     fonts = build_fonts(chars)
@@ -476,7 +554,8 @@ def main() -> None:
             advances_map[chr(cp)] = step * sign; metrics["space"][str(step * sign)] = cp; cp += 1
     files[f"assets/{NS}/font/menu_space.json"] = json.dumps({"providers": [{"type": "space", "advances": advances_map}]}).encode()
 
-    page_self, page_skills = bake_self(fonts), bake_skills(fonts)
+    page_self, page_skills, page_dungeon = bake_self(fonts), bake_skills(fonts), bake_dungeon(fonts)
+    page_dungeon.save(ROOT / "build/dungeon_page.png")
     self_tabs, combat_boxes = tabs_row(None, None, fonts, SELF_TABS, ""), combat_tabs(None, None, fonts)
     skill_source = (ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreSkillCatalog.kt").read_text(encoding="utf-8")
     skill_icons = sorted(set(re.findall(r's\("[^"]*", "([a-z_]+)"', skill_source)))
@@ -503,6 +582,7 @@ def main() -> None:
             size["styles"][style] = {"font": f"{NS}:menu{tag}_{style}_", "advances": advances(fonts[key], pt * unit, oversample, chars)}
         sprites.add_tiled("page_self", page_self, CANVAS_H, [0], first_line=True)
         sprites.add_tiled("page_skills", page_skills, CANVAS_H, [0], first_line=True)
+        sprites.add_tiled("page_dungeon", page_dungeon, CANVAS_H, [0], first_line=True)
         for c in CLASSES:
             art = Image.open(ROOT / f"assets/core-ui/proposals/2026-10-16-class-emblems/{c}-32.png").convert("RGBA")
             sprites.add(f"emblem64_{c}", art.resize((64 * K, 64 * K), Image.NEAREST).resize((256, 256), Image.NEAREST), 64, [EMBLEM64[1]])
@@ -519,7 +599,8 @@ def main() -> None:
         sprites.add("bar_fill", Image.new("RGBA", (2 * K, 2 * K), hexc(C["ink"])), 2, [BARS[0][1]])
         # invisible hit areas (alpha 1: under the client's 0.1 cut, but the glyph rectangle still takes clicks)
         hits = {"slot": (SLOT, SLOT, slot_tops), "row": (ROW_W, ROW_H, [y for _, y in ROWS]), "act": (ACT_W, BTN_H, [y for _, y in ACTS]),
-                "edit": (EDIT[2], BTN_H, [EDIT[1]]), "reset": (110, 10, [RESET[1]])}
+                "edit": (EDIT[2], BTN_H, [EDIT[1]]), "reset": (110, 10, [RESET[1]]),
+                "enter": (DG_ENTER[2], DG_ENTER[3], [DG_ENTER[1]]), "reward": (20, 20, [DG_REWARD_Y])}
         for page, boxes in (("self", self_tabs), ("combat", combat_boxes)):
             for i, (x, y, w, h) in enumerate(boxes):
                 hits[f"tab_{page}{i}"] = (w, h, [y])
@@ -540,7 +621,9 @@ def main() -> None:
                           "rx": RX, "big": list(BIG), "bars": [list(b) for b in BARS], "barW": BAR_W, "dias": [list(x) for x in DIAS],
                           "acts": [list(a) for a in ACTS], "reset": list(RESET), "emblem24": list(EMBLEM24), "name": list(NAME),
                           "kv": list(KV), "rows": [list(r) for r in ROWS], "rowW": ROW_W, "rowH": ROW_H, "stats": [STATS[0], STATS[1][0], STATS[1][1], STATS[2], STATS[3]], "notice": list(NOTICE),
-                          "edit": list(EDIT), "closeW": CLOSE_W}
+                          "edit": list(EDIT), "closeW": CLOSE_W,
+                          "dgTier": list(DG_TIER), "dgEnter": list(DG_ENTER), "dgRewards": [[DG_X + 4 + i * 24, DG_REWARD_Y] for i in range(len(DG_REWARDS))],
+                          "dgRewardNames": [n for _, n, _ in DG_REWARDS], "dgNotice": list(DG_NOTICE)}
         metrics["sizes"][tag] = size
         glyphs += len(sprites.providers)
     for name, image in Sprites.textures.items():

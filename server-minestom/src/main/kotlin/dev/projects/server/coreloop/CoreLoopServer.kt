@@ -164,6 +164,11 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         PlayerMenuDialog(metrics, this, ::openFromMenu, { displaySettings.get(it.uuid)?.guiScale },
             { displayDialog.show(it, required = true, openMenuAfter = true) })
     }
+    /** ダンジョンの門 as a dialog (Aion 2's composition); null without the menu art, and the chest screen stays. */
+    private val dungeonGate: DungeonGateDialog? = PlayerMenuDialog.metrics()?.let { metrics ->
+        DungeonGateDialog(metrics, this, { displaySettings.get(it.uuid)?.guiScale }, { displayDialog.show(it, required = true) })
+    }
+    private fun openDungeonGate(player: Player) { dungeonGate?.show(player) ?: menus.dungeons(player) }
     private val grimoireArt = runCatching {
         GrimoireFlow.Art(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/grimoire.json")).use { it.readBytes() },
             requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
@@ -346,6 +351,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         events.addListener(PlayerDisconnectEvent::class.java) { event -> disconnect(event.player) }
         events.addListener(PlayerCustomClickEvent::class.java) { event ->
             if (displayDialog.click(event.player, event.key, event.payload)) return@addListener
+            if (dungeonGate?.click(event.player, event.key, event.payload) == true) return@addListener
             if (playerMenu?.click(event.player, event.key, event.payload) != true) partyDialogs.click(event.player, event.key, event.payload)
         }
         events.addListener(InventoryPreClickEvent::class.java) { event ->
@@ -588,7 +594,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         // Test-only: /dungeontest opens ダンジョンの門 from anywhere in the harbor; inside, /dungeontest clear ends the
         // room's wave and /dungeontest boss drops 桜牙獣 (to its 千本桜 first, with you behind a pillar; again to finish).
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("dungeontest").apply {
-            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { menus.dungeons(it) } }
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { openDungeonGate(it) } }
             addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
                 val combat = sessions[player.uuid]?.takeIf { it.dungeon != null && !it.returning }?.combat ?: return@scheduleNextTick
                 combat.entities().filter { !combat.isBoss(it.uuid) }.forEach { combat.applyEffectDamage(it.uuid, player, 1e6) }
@@ -612,7 +618,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             fun shot(name: String) { println("DUNGEON_TOUR_SHOT $name"); System.out.flush() }
             listOf<Pair<Long, () -> Unit>>(
                 100L to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }, 160L to { shot("harbor_gate") },
-                220L to { menus.dungeons(player) }, 280L to { shot("menu") },
+                220L to { openDungeonGate(player) }, 280L to { shot("menu") },
                 340L to { player.closeInventory(); account(player)?.let { departDungeon(player, CoreDungeons.SAKURA, it.revision) } },
                 500L to { player.teleport(Pos(32.5, 40.0, -36.5, 0f, 5f)) }, 540L to { shot("hall") },
                 620L to { player.teleport(Pos(32.5, 40.0, -25.5, 0f, 10f)) }, 670L to { shot("room1_wave") },
@@ -804,7 +810,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         HarborFacilityKind.SUPPLIES -> menus.supplies(player)
         HarborFacilityKind.MASTERY -> menus.mastery(player)
         HarborFacilityKind.COLONY -> enterColony(player)
-        HarborFacilityKind.DUNGEON -> menus.dungeons(player)
+        HarborFacilityKind.DUNGEON -> openDungeonGate(player)
     }
 
     private fun placeColonyItem(player: Player, colony: FirstMagicColony, kind: ColonyPlaceable,
