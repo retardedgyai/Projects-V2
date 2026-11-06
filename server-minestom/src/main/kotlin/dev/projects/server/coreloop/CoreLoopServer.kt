@@ -169,6 +169,16 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         DungeonGateDialog(metrics, this, { displaySettings.get(it.uuid)?.guiScale }, { displayDialog.show(it, required = true) })
     }
     private fun openDungeonGate(player: Player) { dungeonGate?.show(player) ?: menus.dungeons(player) }
+    /** The 手帳 in town is the dialog book; out on a run (or without the pack) the chest one, which has 帰還. */
+    private fun openJournal(player: Player) {
+        if (playerMenu != null && uiPack?.enabled(player) == true && player.instance === hub && sessions[player.uuid] == null) playerMenu.show(player)
+        else menus.journal(player)
+    }
+    /** The smith's forge screen from wherever the workshop is asked for (the smith, its building, the 手帳). */
+    private fun openForge(player: Player) {
+        if (polishSessions != null && uiPack?.enabled(player) == true) { if (requireHub(player)) polishSessions.open(player) }
+        else menus.workshop(player)
+    }
     private val grimoireArt = runCatching {
         GrimoireFlow.Art(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/grimoire.json")).use { it.readBytes() },
             requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/font-map.json")).use { it.readBytes() })
@@ -449,11 +459,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             if(event.hand == PlayerHand.MAIN && event.target === harbor.smith &&
                 event.player.instance === hub && event.player.position.distance(harbor.smith.position) <= 5.0) {
                 if(!requireHub(event.player)) return@addListener
-                if(polishSessions != null && uiPack?.enabled(event.player) == true) polishSessions.open(event.player)
-                else {
-                    event.player.sendMessage(CoreLoopItems.text("工房UI素材の読込前は通常の工房を開きます。", NamedTextColor.YELLOW))
-                    menus.workshop(event.player)
-                }
+                openForge(event.player)
                 return@addListener
             }
             if (event.hand == PlayerHand.MAIN && sessions[event.player.uuid]?.loot?.interact(event.player, event.target) == true) return@addListener
@@ -522,17 +528,15 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             sessions.values.filter { it.instance === event.instance }.forEach { session -> tickSession(session) }
         }
         MinecraftServer.getCommandManager().register(Command("projects").apply {
-            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { if (combatLab.contains(it)) combatLab.menu(it) else menus.journal(it) } }
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { if (combatLab.contains(it)) combatLab.menu(it) else openJournal(it) } }
         })
         MinecraftServer.getCommandManager().register(Command("menu").apply {
-            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
-                if (playerMenu != null && uiPack?.enabled(player) == true) playerMenu.show(player) else menus.journal(player)
-            } }
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { openJournal(it) } }
         })
         MinecraftServer.getCommandManager().register(Command("settings").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { displayDialog.show(it, required = false) } }
         })
-        MinecraftServer.getCommandManager().register(Command("skilltest").apply {
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("skilltest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR) } }
         })
         MinecraftServer.getCommandManager().register(Command("party", "p").apply {
@@ -827,7 +831,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
         when {
             mapId != null -> account(player)?.let { depart(player, mapId, it.revision) }
-            action == "journal" -> menus.journal(player)
+            action == "journal" -> openJournal(player)
             action == "affix" -> CoreLoopItems.stoneId(item)?.let { menus.stoneDetail(player, it) }
             action == "currency" -> menus.affixes(player)
             action == "armor" -> menus.gearMods(player, CoreGearSlot.equipped(CoreLoopItems.gearSlot(item) ?: CoreGearSlot.CHEST))
@@ -848,7 +852,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             PlayerMenuDialog.Target.JOURNAL -> menus.journal(player)
             PlayerMenuDialog.Target.ATLAS -> openFacility(player, HarborFacilityKind.EXPEDITIONS)
             PlayerMenuDialog.Target.MASTERY -> menus.mastery(player)
-            PlayerMenuDialog.Target.WORKSHOP -> menus.workshop(player)
+            PlayerMenuDialog.Target.WORKSHOP -> openForge(player)
             PlayerMenuDialog.Target.GRIMOIRE -> MinecraftServer.getCommandManager().execute(player, "grimoire")
         }
     }
@@ -856,7 +860,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private fun openFacility(player: Player, kind: HarborFacilityKind) = when (kind) {
         HarborFacilityKind.EXPEDITIONS ->
             if (atlasSessions != null && uiPack?.enabled(player) == true && requireHub(player)) atlasSessions.open(player) else menus.expeditions(player)
-        HarborFacilityKind.WORKSHOP -> menus.workshop(player)
+        HarborFacilityKind.WORKSHOP -> openForge(player)
         HarborFacilityKind.STORAGE -> menus.storage(player)
         HarborFacilityKind.SUPPLIES -> menus.supplies(player)
         HarborFacilityKind.MASTERY -> menus.mastery(player)
@@ -1144,7 +1148,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                         player.playSound(Sound.sound(sound, Sound.Source.MASTER, 0.45f, if (enhanced == false) 0.75f else 1.2f))
                     }
                     refresh(player)
-                    if (result.successful) after() else (onRejected ?: { menus.journal(player) })()
+                    if (result.successful) after() else (onRejected ?: { openJournal(player) })()
                 }
             }
         }
@@ -1178,7 +1182,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         val base = java.util.concurrent.ThreadLocalRandom.current().nextLong() ushr 4
         // Quest terrain style is chosen by seed mod 6; the candidate search keeps it.
         val seed = base - Math.floorMod(base, QuestTerrainStyle.entries.size.toLong()) + zone.terrain.ordinal
-        mutate(player, CoreAction.ClaimMap(zone.tier, seed, zone = zone.id), a.revision, { menus.expeditions(player) }) {
+        mutate(player, CoreAction.ClaimMap(zone.tier, seed, zone = zone.id), a.revision, { openFacility(player, HarborFacilityKind.EXPEDITIONS) }) {
             val map = account(player)?.maps?.firstOrNull { it.seed == seed } ?: return@mutate
             account(player)?.let { depart(player, map.id, it.revision) }
         }
@@ -1585,7 +1589,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                             session.arena?.dispose()
                             actors[player.uuid]?.reset(); refresh(player)
                             player.sendMessage(CoreLoopItems.text("採取素材を精製 → 工房で装備を制作 → 装備庫から使う・売る。市場で素材の売買もできます。", NamedTextColor.GOLD))
-                            menus.journal(player)
+                            openJournal(player)
                             println("CORE_RUN_RETURNED player=${player.username} run=${session.runId}")
                         } else {
                             System.err.println("CORE_RETURN_TRANSFER_FAILURE run=${session.runId}: $failure")
