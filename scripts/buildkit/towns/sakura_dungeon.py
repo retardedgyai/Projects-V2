@@ -42,10 +42,10 @@ AREAS = [   # (名前, 形, 線/中心, 大きさ, 床, 縁の急さ, 進み 0�
     ('W', 'disc', (-80, 0), 14, lambda x, z, t: 36, 2.8, 0.88),                  # ミニボス2の間（滝の前、半径14）。奥（西）に滝裏の洞
     # 道の途中の開けた所（藍 11/06「細道が長いかも」：細い所を20〜30マスで切る）
     ('q1', 'disc', (-8, 68), 6, lambda x, z, t: 20.5, 1.8, 0.14),                  # 尾根の見晴らし
-    ('q3', 'disc', (62, -66), 8, lambda x, z, t: 25.5, 2.0, 0.6),                  # 崖道の見晴らし台
+    ('q3', 'disc', (62, -66), 11, lambda x, z, t: 25.5, 2.0, 0.6),                 # 崖道の穢れ場（見晴らし台。決まった数を倒すまで敵が湧き続ける）
     ('q4', 'disc', (34, -82), 7, lambda x, z, t: 28.5, 2.0, 0.66),                   # 崖道の野営跡
     ('q5', 'disc', (-48, -74), 8, lambda x, z, t: 32, 2.0, 0.77),                  # 岩棚の崩れた見張り台
-    ('q6', 'disc', (-72, -44), 7, lambda x, z, t: 35, 2.0, 0.83),                  # 岩棚の湧き水
+    ('q6', 'disc', (-72, -44), 11, lambda x, z, t: 35, 2.0, 0.83),                 # 岩棚の穢れ場（湧き水の跡）
     ('D', 'disc', (0, 0), 46, lambda x, z, t: 40, 0.0, 1.0),
     # 切り通し：(始め, 終わり), 半幅, (始めの床, 終わりの床)
     ('gR1', 'cut', ((45, 82), (54, 76)), 3.5, (10, 10), 3.0, 0.2),
@@ -173,10 +173,11 @@ for x in range(-58, -47, 6):
         for y in range(ground(x, u), 39): put(x, y, u, full('stone_bricks' if _h(x, y, u) < 0.7 else 'mossy_stone_bricks'))
 # 門（ゲームではここを閉じる）。庭の門は城の櫓門（下）
 GATE_AT, DOORS = {}, {}                                                          # DOORS：ゲームが口を閉じる面（axis の向きに通る、中心から ±half）
-for (name, z, cx, axis, half) in [('花守の回廊', 50, 79, 'x', 4), ('ミニボス1の間', 52, 84, 'z', 4), ('散華の間', 16, 84, 'z', 4), ('古い祠の森', 17, -87, 'x', 4), ('ミニボス2の間', -17, -81, 'z', 4)]:
+for (name, z, cx, axis, half) in [('花守の回廊', 50, 79, 'x', 4), ('ミニボス1の間', 52, 84, 'z', 4), ('散華の間', 16, 84, 'z', 4),
+                                  ('崖道の穢れ場', -48, 73, 'z', 4), ('古い祠の森', 17, -87, 'x', 4), ('岩棚の穢れ場', -56, -65, 'x', 4), ('ミニボス2の間', -17, -81, 'z', 4)]:
+    # 散華の間からミニボス2の間までの約330歩を走り抜けられないよう、穢れ場3つの手前にも門（報告「インスタンスダンジョンの敵配置と進行」）
     gx, gz = (cx, z) if axis == 'z' else (z, cx)
     T.arch_gate(z, ground(gx, gz), half=half, cx=cx, axis=axis)
-    if name == '古い祠の森': continue                                              # 祠の森は戦わない道になった（門は飾りに残す）
     GATE_AT[name] = [gx, ground(gx, gz) + 1, gz]; DOORS[name] = {'axis': axis, 'half': half - 1}
 GATE_AT['庭'] = [-38, 41, 0]; DOORS['庭'] = {'axis': 'x', 'half': 3}
 def torii(x, z, g, half=4, h=7):
@@ -309,7 +310,7 @@ put(WX - 1, fl + 3, WZ, {'s': 'lantern', 't': 'soul_lantern'}); SEALS['西'] = [
 big_cherry(87, -66, 99)
 put(83, ground(83, -61) + 1, -61, P.BARREL)
 # 道の途中の開けた所の中身：見晴らしには石灯籠と腰掛け、踊り場と野営跡には荷と灯り、見張り台には崩れた石の台、湧き水には小さな池
-for (x, z) in [(-8, 64), (62, -70)]:                                              # 見晴らし（谷の側に灯籠2つ）
+for (x, z) in [(-8, 64)]:                                                         # 見晴らし（谷の側に灯籠2つ）。崖道の見晴らし台は穢れ場になった
     PO.stone_lantern(x - 3, z, ground); PO.stone_lantern(x + 3, z, ground)
     T.try_place(P.bench, (x, z + 4, ground(x, z + 4), 'n', 2), ground(x, z + 4))
 for (x, z, f) in [(36, -78, 's')]:                                                # 野営跡
@@ -321,11 +322,11 @@ T.try_place(P.woodpile, (31, -86, ground(31, -86), 'n'), ground(31, -86))
 for (x, z) in [(-52, -78), (-51, -78), (-50, -78), (-52, -77), (-50, -77), (-52, -76), (-51, -76), (-50, -76)]:   # 崩れた見張り台の石の台
     g = ground(x, z); hh = 1 + int(_h(x, z, 71) * 3)
     for y in range(g + 1, g + hh + 1): put(x, y, z, full('mossy_stone_bricks' if _h(x, y, z) < 0.5 else 'cracked_stone_bricks'))
-for x in range(-75, -70):                                                         # 湧き水の池
-    for z in range(-48, -43):
-        if math.hypot(x + 72.5, z + 45.5) < 2.4: put(x, ground(x, z), z, water())
+for x in range(-83, -80):                                                         # 湧き水の池：穢れ場の床から外し、縁の外へ
+    for z in range(-53, -50):
+        if math.hypot(x + 81.5, z + 51.5) < 1.6: put(x, ground(x, z), z, water())
 # 遺跡のアーチ：開けた所の縁に目印として [rules 109]
-for (x, z, f) in [(-80, 70, 'e'), (-58, 86, 's'), (0, 86, 'e'), (92, 0, 'e'), (60, -66, 'n'), (-10, -94, 'e'), (-62, -60, 'n')]:   # 戦う部屋（回廊・ミニボスの間）の中には置かない
+for (x, z, f) in [(-80, 70, 'e'), (-58, 86, 's'), (0, 86, 'e'), (92, 0, 'e'), (-10, -94, 'e')]:   # 戦う部屋（回廊・ミニボスの間）の中には置かない
     PO.white_arch(x, z, rng, ground, f)
 
 # ================================================================ 4. 木：道を進むほど桜（入口 0 → 庭 1）[藍 11/06]
@@ -392,7 +393,7 @@ while q:
         gn = stand(*n)
         if gn is not None and gn - g <= 1 and g - gn <= 2: seen.add(n); far[n] = far[(x, z)] + 1; q.append(n)
 want = {'沢道': (15, 92), '尾根道': (10, 70), '花守の回廊': (62, 69), 'ミニボス1の間': (84, 36), '散華の間': (84, -6), '隠れた空き地': (85, -62),
-        '古い祠の森': (0, -88), '西の岩棚': (-70, -50), '滝裏の洞の封印': (WX, WZ), '橋': (-52, 0), '櫓門': (-37, 0), '庭': (0, 0)}
+        '崖道の穢れ場': (62, -66), '古い祠の森': (0, -88), '岩棚の穢れ場': (-72, -44), '滝裏の洞の封印': (WX, WZ), '橋': (-52, 0), '櫓門': (-37, 0), '庭': (0, 0)}
 res = {k: min((far[(x + dx, z + dz)] for dx in range(-3, 4) for dz in range(-3, 4) if (x + dx, z + dz) in far), default=None) for k, (x, z) in want.items()}
 print('歩いて行けない所', [k for k, v in res.items() if v is None] or 'なし')
 print('入口からの歩数', {k: v for k, v in res.items() if v is not None})
@@ -456,7 +457,7 @@ RC = {(x, z) for (x, z, y) in reach}
 print('壁を立てても行ける', [k for k, (x, z) in want.items() if any((x + dx, z + dz) in RC for dx in range(-3, 4) for dz in range(-3, 4))])
 ROOMS = {'spawn': [START[0], ground(*START) + 1, START[1]], 'gates': GATE_AT, 'doors': DOORS, 'arena_center': [0, 41, 0], 'arena_r': AR - 1, 'seals': SEALS,
          'secret': [85, ground(85, -64) + 1, -64], 'rooms': {k: [*geo, size] for (k, kind, geo, size, *_ ) in AREAS if kind == 'disc'},   # 円の区域：[x, z, 半径]
-         'order': '入口の野 →（沢道｜尾根道）→ 花守の回廊（敵の波）→ 坂 → ミニボス1の間 → 散華の間（敵の波）→ 崖道（隠れた空き地）→ 古い祠の森 → 西の岩棚 → ミニボス2の間（滝の前、奥に滝裏の洞）→ 谷の石橋 → 散り桜の庭（ボス）'}
+         'order': '入口の野（慣らしの群れ）→（沢道｜尾根道）→ 花守の回廊（敵の波）→ 坂 → ミニボス1の間 → 散華の間（敵の波）→ 崖道の穢れ場（隠れた空き地）→ 古い祠の森（穢れ場）→ 岩棚の穢れ場 → ミニボス2の間（滝の前、奥に滝裏の洞）→ 谷の石橋（休み）→ 散り桜の庭（ボス）'}
 def _room(key, name, kind, gate, cx, cz, r, spawn=None, seals=()):
     """rooms.json の flow の1つ：kind は waves（敵の波）・miniboss・boss。gate はその部屋へ入る門（gates / doors の名前）。
     miniboss_spawn はミニボスの出る所（門から見て奥、中心から4マス）。"""
@@ -467,9 +468,16 @@ ROOMS['flow'] = [
     _room('R1', '花守の回廊', 'waves', '花守の回廊', 62, 69, 9),
     _room('MB1', 'ミニボス1の間', 'miniboss', 'ミニボス1の間', 84, 36, 13, spawn=(84, 32), seals=('枡形の北',)),
     _room('H', '散華の間', 'waves', '散華の間', 84, -6, 17),
+    _room('q3', '崖道の穢れ場', 'spawner', '崖道の穢れ場', 62, -66, 11),
+    _room('N', '古い祠の森', 'spawner', '古い祠の森', 0, -88, 14, seals=('北',)),
+    _room('q6', '岩棚の穢れ場', 'spawner', '岩棚の穢れ場', -72, -44, 11),
     _room('MB2', 'ミニボス2の間', 'miniboss', 'ミニボス2の間', -80, 0, 14, spawn=(-80, 4), seals=('西', '枡形の南')),
     _room('D', '散り桜の庭', 'boss', '庭', 0, 0, AR - 1),
 ]
+for r_ in ROOMS['flow']:                                                          # 穢れ場：決まった数を倒すまで、敵が数秒ごとに湧き続ける（数は推論の目安、試遊で決める）
+    if r_['kind'] == 'spawner': r_['spawner'] = {'kill_target': '8 + 4 * 人数', 'alive_cap': '3 + 人数', 'interval_s': 3.5, 'last': '精鋭1体', 'respawn_after_clear': False}
+ROOMS['packs'] = [{'name': '入口の野の群れ', 'at': [-60, ground(-60, 82) + 1, 82], 'count': '3 + 人数', 'gate': None, 'chase': True,
+                   'note': '慣らし。門は閉じない。追ってくるので、走り抜けると回廊の門の中まで付いてくる'}]
 ROOMS['rooms']['R1'] = [62, 69, 9]                                              # 回廊は長い形：ここは内側に収まる円（中心と半径）。形は flow を見る
 V = lambda x, y, z: [-x, y, z]
 def look_from_ravine(cx, cz, back=22, up=34):
