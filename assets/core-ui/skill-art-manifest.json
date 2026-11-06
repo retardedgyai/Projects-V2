@@ -36,8 +36,8 @@
       "frameless": true
     },
     "whirl": {
-      "source_sha256": "233569745ed3cd2986be31f3bdcce314d3910156351cece31d32fbedb1c5f6a8",
-      "master_sha256": "e7624340d2713c848b68a75b15d6b6bcbfd1fe06bddd7b22fde42dd057f4b791",
+      "source_sha256": "8b007e9deb8808e92e30bd2d6243eacad19c8f8a84fbd60a9b3d49b0aaea5b51",
+      "master_sha256": "d8d800f9cbf0e8a9dc76744fa867c66aff41a2ebd9245a86f81b4827879fb512",
       "source_size": [
         16,
         16
@@ -52,8 +52,8 @@
       "frameless": true
     },
     "war_guard": {
-      "source_sha256": "7a562aa3b7381e8d89a9735b686907042d7e72cbe738ae3eebe04310bca38f72",
-      "master_sha256": "923f1ca3c1927dfbe6af65f00404701846d2c40e7d3838439e9d9d9f2849225b",
+      "source_sha256": "bc358de6a5a919905c76adcd86491ce197d77c202c6b6ee8aae953d0f94dde5b",
+      "master_sha256": "0ccb360d3429534e28899b9601c0a067cc773093c64eaf95506ecf723a8eabbd",
       "source_size": [
         16,
         16
@@ -68,8 +68,8 @@
       "frameless": true
     },
     "war_wound": {
-      "source_sha256": "3a03e7777ad0125ae4272dfd4ccc921df095e220c0e649e45446dd7d301157ca",
-      "master_sha256": "57a6ab18e0348802ad99a78c2e0e79280a6733a7a000acb4cbfb924912d67fa7",
+      "source_sha256": "d770c4b39b60d514f30a95fbd7ab6247eab24b625d7c9ce49d63882d9a3275c7",
+      "master_sha256": "1c25d6d9a7bd0b1405f3b6652f5dee923b6a4d659219c21e577ea0eb9b45df44",
       "source_size": [
         16,
         16
@@ -97,30 +97,36 @@
       "preapproved": false
     },
     "war_cry": {
-      "source_sha256": "2e54914c19d7eb71153fd0b72d48bf1a2291dbcdcaf42de3570309851305dfa1",
-      "master_sha256": "4c0d14d106c7b661f6b5e3335a7a190e1ac05bde01449c41fb6717a3144555d7",
+      "source_sha256": "091af4b81bee6c94816ccdf8eacfdc3be0aa3c33eac37067f0e190ef84d931d9",
+      "master_sha256": "194842833a6da1ae9acd19607c45143c77642eb6ec00f02e342c2ba161da8b25",
       "source_size": [
-        1254,
-        1254
+        16,
+        16
       ],
       "master_size": [
         32,
         32
       ],
-      "preapproved": false
+      "preapproved": false,
+      "source": "assets/core-ui/skills/warrior-diamond/war_cry.png",
+      "authored_by": "scripts/build_diamond_skill_icons.py",
+      "frameless": true
     },
     "war_breach": {
-      "source_sha256": "e70b631442990f22c03a66e140d0868e5f82d1029f48755ff252c6fea3f18edc",
-      "master_sha256": "f242566c86d26e83c001b3e46a858832e720ac1188eb9ac976cb96f9ea92105b",
+      "source_sha256": "5752b701188632f655cd80cd3fd25450fb5480c4304d4c97fa51aad960594f3d",
+      "master_sha256": "71ffc0b34bd67d330e1e0d5328817d422a8d355961ce6044c08b783e24e7f390",
       "source_size": [
-        1254,
-        1254
+        16,
+        16
       ],
       "master_size": [
         32,
         32
       ],
-      "preapproved": false
+      "preapproved": false,
+      "source": "assets/core-ui/skills/warrior-diamond/war_breach.png",
+      "authored_by": "scripts/build_diamond_skill_icons.py",
+      "frameless": true
     },
     "war_ult": {
       "source_sha256": "f99de3c274559900fbbf83beb4dd9fbbe7286eb3f4d5ef3454f5506c53e9c74b",
@@ -139,21 +145,8 @@
       "frameless": true
     },
     "war_banner": {
-      "source_sha256": "77a7010dd62df59b0fe7bfeea1f576d11804d09e031050918ee996b25da2f6fa",
-      "master_sha256": "97a5405f64bfdfde3c5ea9887f74518f6d88a366c5930a13774dbf4633255aed",
-      "source_size": [
-        1254,
-        1254
-      ],
-      "master_size": [
-        32,
-        32
-      ],
-      "preapproved": false
-    },
-    "war_awaken": {
-      "source_sha256": "7ad9b97f83a771c3f96d226b9cc67ec4c1b0cc16fcbf71751ad137ba6710ca38",
-      "master_sha256": "492516abcf6aa7c14c5f07cefffe1ee00f4fcaed87668f8cce53efa3ef47e4db",
+      "source_sha256": "03c2731db142bfc4e1e5a2700f6a7124b3402d1e2016cd600a76d4ec52b6e955",
+      "master_sha256": "e46547f5e915adf9a3c75a3a26cb9bd07ddf757f08361367771de2d8e3ff57bd",
       "source_size": [
         16,
         16
@@ -163,8 +156,25 @@
         32
       ],
       "preapproved": false,
-      "source": "assets/core-ui/skills/warrior-16/war_ult.png",
-      "authored_by": "scripts/build_warrior_iron_icons.py"
+      "source": "assets/core-ui/skills/warrior-diamond/war_banner.png",
+      "authored_by": "scripts/build_diamond_skill_icons.py",
+      "frameless": true
+    },
+    "war_awaken": {
+      "source_sha256": "db25f32bf5d5b7e79c5d14b9917a521771fc95e81af9496f20ef56f5482f0e2a",
+      "master_sha256": "3c6fff56ec7c7cc6e3906f2843ea7d2e163e52b5beec1212c83d63db316b5b9b",
+      "source_size": [
+        16,
+        16
+      ],
+      "master_size": [
+        32,
+        32
+      ],
+      "preapproved": false,
+      "source": "assets/core-ui/skills/warrior-diamond/war_awaken.png",
+      "authored_by": "scripts/build_diamond_skill_icons.py",
+      "frameless": true
     },
     "pierce": {
       "source_sha256": "f5b608a89352f8c8e15ce0b2985ae14a3ba4663cc57f33478f7a305e0578eddc",

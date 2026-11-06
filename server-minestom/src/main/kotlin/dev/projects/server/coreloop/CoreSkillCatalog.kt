@@ -198,7 +198,7 @@ object CoreSkillCatalog {
                 // now) but keeps index 8 for saves and its look.
                 s("全力の一振り", "war_ult", "地割りを獣3つで撃つと出る、大地を前へ大きく割る一振り", CoreSkillMotion.CONE, 30.0, 4.0, mana=20, cd=1200, startup=4, gain=0, radius=12.0, ult=true, retired=true).cc(CrowdControl.AIRBORNE, 1000),
                 s("狂戦士の甲冑", "war_banner", "10秒間、体から血が流れ、鼓動のたびに血しぶきが散る。CCも怯みも効かず、動きと振りが速くなり、獣が2倍の速さで溜まる。代わりに体力が毎秒2%ずつ減る（1で止まる）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=20, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
-                s("獣の目覚め", "war_awaken", "獣3つを使って8秒の超重力に入る。最大HP30%の障壁、受けるダメージ-20%、CCが効かない。周り6mの敵は遅くなり、少しずつ引き寄せられる。通常攻撃は当てるたびに速くなる（最大+50%）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=15, cd=1200, startup=2, gain=0, radius=0.0, duration=160, ult=true))
+                s("獣の目覚め", "war_awaken", "獣3つで超重力に入る（再使用なし）。獣を毎秒0.5ずつ燃やし、0で切れる。殴れば獣は溜まるので、溜まる速さが上回れば続く。入った時に最大HP20%の障壁（8秒）、受けるダメージ-15%、CCが効かない。周り6mの敵は遅くなり、少しずつ引き寄せられる。通常攻撃は当てるたびに速くなる（最大+50%）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=15, cd=20, startup=2, gain=0, radius=0.0, duration=160, ult=true))
             // 2026-10-27 rework (docs/development/mage-rework.md): fire, ice, lightning and wind, every spell one button.
             // Spells mix on the ground (CoreMageField) and carve the sigil circle the grand chant (大詠唱, the staff,
             // CoreMageRules) releases. Slots keep the old art; the retired 氷の庭 keeps index 5 for saves, so the mage

@@ -68,47 +68,6 @@ SLAM = ('cols', {  # 地割り: a beam falling straight down and bursting where 
     15: (7, "3 33 3"),
     16: (8, "3  3"),
 })
-WHIRL = ('rows', {  # 押し薙ぎ: a heavy crescent swept from left to right, its head bright and turning down
-    4: (7, "334455"),
-    5: (6, "34445566"),
-    6: (5, "344    6677"),
-    7: (4, "34       7777"),
-    8: (3, "3  3344    77"),
-    9: (11, "45   76"),
-    10: (12, "5  776"),
-    11: (15, "65"),
-    12: (14, "5"),
-})
-WOUND = ('cols', {  # 地走り: a glowing crack running away from the feet, wide near, thin far
-    3: (10, "3"),
-    4: (9, "35"),
-    5: (9, "46"),
-    6: (8, "356"),
-    7: (8, "4673"),
-    8: (9, "4673"),
-    9: (10, "4773"),
-    10: (9, "35774"),
-    11: (8, "35776 43"),
-    12: (4, "34 356773"),
-    13: (7, "3567763"),
-    14: (7, "4677765"),
-    15: (7, "567776"),
-    16: (8, "5776"),
-})
-GUARD = ('cols', {  # 根張り: a dome of light reaching the ground, a planted pillar under it, roots below
-    4: (8, "6776"),
-    5: (6, "56777765"),
-    6: (5, "566    665"),
-    7: (4, "45   56   54"),
-    8: (4, "45   67   54"),
-    9: (3, "345   67   543"),
-    10: (3, "34    67    43"),
-    11: (3, "3     67     3"),
-    12: (9, "56"),
-    13: (8, "4454"),
-    14: (7, "3 34 3"),
-    15: (8, "3  3"),
-})
 ULT = ('rows', {  # 鉄槌: a great block falling, speed lines above it, the shockwave flat along the ground
     3: (8, "3  3"),
     4: (7, "4 34 4"),
@@ -137,9 +96,93 @@ RAMPAGE = ('cols', {  # 赤熱: a flame rising, white-hot at the heart
     14: (7, "334433"),
 })
 
-WARRIOR = [('dash', '轟進', DASH), ('slam', '地割り', SLAM), ('whirl', '押し薙ぎ', WHIRL),
-           ('war_wound', '地走り', WOUND), ('war_guard', '根張り', GUARD), ('war_ult', '鉄槌', ULT),
-           ('war_rampage', '赤熱', RAMPAGE)]
+FRENZY = ('rows', {  # 狂乱: three claw cuts falling right to left, white at their heads, the last one the widest (the closing downswing)
+    4: (11, "4"),
+    5: (10, "54"),
+    6: (9, "65  4"),
+    7: (8, "76  54"),
+    8: (7, "76  65  4"),
+    9: (10, "76  54"),
+    10: (9, "76  65"),
+    11: (8, "76  76"),
+    12: (11, "76"),
+    13: (10, "76"),
+    14: (9, "76"),
+})
+IMPACT = ('cols', {  # 衝撃: the blade driven straight down into the blow, a ring going out round it
+    3: (9, "44"),
+    4: (9, "55"),
+    5: (9, "66"),
+    6: (6, "566  665"),
+    7: (5, "6   77   6"),
+    8: (4, "6   6776   6"),
+    9: (4, "7  677776  7"),
+    10: (4, "7  677776  7"),
+    11: (4, "6   6666   6"),
+    12: (5, "6        6"),
+    13: (6, "566  665"),
+})
+LEAP = ('rows', {  # 跳び叩き: one heavy arc up from the left and down onto the right, bursting where it lands
+    5: (8, "777"),
+    6: (7, "76 77"),
+    7: (6, "66   76"),
+    8: (6, "65    76"),
+    9: (5, "66     76"),
+    10: (5, "65     77 4"),
+    11: (5, "55   4 77 5"),
+    12: (5, "54   56776"),
+    13: (6, "4    566"),
+})
+BRACE = ('cols', {  # 受け止め: a white shield bowed toward the blows, three blows driven into it and stopped there
+    4: (9, "76"),
+    5: (8, "76"),
+    6: (7, "76"),
+    7: (6, "76 7654"),
+    8: (6, "76"),
+    9: (5, "76"),
+    10: (5, "76 7765543"),
+    11: (6, "76"),
+    12: (6, "76 7654"),
+    13: (7, "76"),
+    14: (8, "76"),
+    15: (9, "76"),
+})
+LAUNCH = ('rows', {  # 斬り上げ: a heavy cut rising from the ground and curling over the top
+    4: (9, "76"),
+    5: (7, "777657"),
+    6: (6, "776    6"),
+    7: (6, "76     5"),
+    8: (5, "66      4"),
+    9: (5, "66"),
+    10: (5, "65"),
+    11: (5, "55"),
+    12: (6, "54"),
+    13: (7, "44"),
+    14: (8, "43"),
+})
+AWAKEN = ('rows', {  # 獣の目覚め: everything around drawn in toward a white-hot heart
+    3: (9, "33"),
+    4: (9, "44"),
+    5: (9, "55"),
+    6: (6, "3  55  3"),
+    7: (7, "456654"),
+    8: (7, "567765"),
+    9: (3, "34556777765543"),
+    10: (3, "34556777765543"),
+    11: (7, "567765"),
+    12: (7, "456654"),
+    13: (6, "3  55  3"),
+    14: (9, "55"),
+    15: (9, "44"),
+    16: (9, "33"),
+})
+
+# 2026-11-05 (Creator: line every skill icon up): the skill set after the first-person rework. 狂戦士の甲冑 burns
+# the body, so it takes 赤熱's flame; 鉄槌 (retired 全力の一振り) keeps its drawing.
+WARRIOR = [('dash', '轟進', DASH), ('slam', '地割り', SLAM), ('whirl', '狂乱', FRENZY),
+           ('war_wound', '跳び叩き', LEAP), ('war_guard', '衝撃', IMPACT), ('war_cry', '受け止め', BRACE),
+           ('war_breach', '斬り上げ', LAUNCH), ('war_banner', '狂戦士の甲冑', RAMPAGE), ('war_awaken', '獣の目覚め', AWAKEN),
+           ('war_ult', '鉄槌', ULT), ('war_rampage', '赤熱', RAMPAGE)]
 
 
 def r_of(x, y):

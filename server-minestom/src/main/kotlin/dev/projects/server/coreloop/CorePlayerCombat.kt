@@ -260,6 +260,7 @@ internal class CorePlayerCombat(
         if (tickNumber < readyAt[id]) { notice("${definitionAt(id).name}：あと${cooldownSeconds(id)}秒"); return }
         if (!crowd.canCast(tickNumber)) { notice("${crowd.cue(tickNumber) ?: "行動不能"}：技を使えません"); return }
         val definition = definitionAt(id)
+        if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN && awakened) { notice("獣の目覚めの最中です"); return }
         if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN && classState.resource < CoreWarriorRules.BEAST_MAX) {
             notice("獣が3つ必要です"); return
         }
@@ -325,9 +326,9 @@ internal class CorePlayerCombat(
             notice("狂戦士の甲冑"); sound(SoundEvent.ENTITY_RAVAGER_ROAR, .8f, .6f)
         }
         if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN) {
-            // Hypergravity: the three stacks go into it.
-            classState.takeStacks(); crowd.clear(); staggerUntil = -1; gravityHaste = 0.0
-            awakenUntil = tickNumber + definition.duration
+            // Hypergravity: it lasts as long as the beast does (tick() burns it); the shield is the entry's.
+            crowd.clear(); staggerUntil = -1; gravityHaste = 0.0
+            awakenUntil = Long.MAX_VALUE
             receiveShield(maxHealth * CoreWarriorRules.AWAKEN_SHIELD_PERCENT / 100.0, definition.duration)
             notice("獣の目覚め"); sound(SoundEvent.ENTITY_WARDEN_ROAR, .6f, .8f)
         }
@@ -376,6 +377,10 @@ internal class CorePlayerCombat(
     fun tick() {
         tickNumber++
         if (armorUntil >= 0 && !armored) armorUntil = -1
+        if (awakened) {
+            classState.burn(CoreWarriorRules.AWAKEN_BURN_PER_SECOND / 20.0)
+            if (classState.resource <= 0.0) { awakenUntil = tickNumber; notice("獣の目覚めが切れた") }
+        }
         if (armored) {
             // 狂戦士の甲冑: the body burns for it, never below 1.
             if (tickNumber % 10 == 0L && health > 1.0) {
@@ -1530,7 +1535,8 @@ internal class CorePlayerCombat(
     private fun feedBeast(amount: Double) {
         if (beastTick != tickNumber) { beastTick = tickNumber; beastThisTick = 0.0 }
         // 狂戦士の甲冑: everything builds faster, the per-action cap with it.
-        val rate = if (armored) CoreWarriorRules.ARMOR_BEAST_GAIN else 1.0
+        val rate = (if (armored) CoreWarriorRules.ARMOR_BEAST_GAIN else 1.0) *
+            (1 + sheet.mods.bonus(CoreAffixStat.WAR_BEAST).coerceIn(0.0, CoreWarriorRules.BEAST_GAIN_BONUS_MAX) / 100.0)
         val add = (amount * rate).coerceAtMost(CoreWarriorRules.BEAST_PER_ACTION * rate - beastThisTick)
         if (add <= 0.0) return
         beastThisTick += add
