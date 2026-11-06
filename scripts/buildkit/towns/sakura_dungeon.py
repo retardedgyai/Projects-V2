@@ -7,7 +7,8 @@
 庭は入口から谷越しに見えているのに、着くのは最後。
   入口の野（南西、14）
   →（沢道〈谷底の小川沿い〉｜ 尾根道〈谷を見下ろす細道〉）… 2本は並んで走り、苔の窪で合う
-  → 苔の窪（南東、10、波）→ 滝の九十九折（崖を折り返して上る、10→24）→ 散華の間（東のすり鉢、波）
+  → 花守の回廊（南東、10、敵の波）→ 坂 → ミニボス1の間（東、18）→ 散華の間（東のすり鉢、敵の波）
+  （11/06 藍「ミニボスみたいなの2体作って…二匹出そうか」：入口の野 → 花守の回廊 → ミニボス1 → 散華の間 → ミニボス2 → 庭）
   → 崖道（谷の縁、24→30）… 脇に隠れた空き地 → 古い祠の森（北、封印1）
   → 西の岩棚（30→36）→ 滝裏の洞（西、封印2）→ 谷の石橋（38）→ 散り桜の庭（山の上、40、ボス）
 """
@@ -30,17 +31,17 @@ AREAS = [   # (名前, 形, 線/中心, 大きさ, 床, 縁の急さ, 進み 0�
     ('A', 'ellipse', (-70, 78), (20, 14), lambda x, z, t: 14 + 2.5 * vnoise(x, z, 18, 44) + 1.2 * vnoise(x, z, 6, 45), 1.1, 0.0),
     ('P1', 'capsule', [(-52, 88), (-20, 94), (15, 92), (45, 82)], 6.5, lambda x, z, t: 14 - 4 * t + 0.8 * vnoise(x, z, 9, 46), 1.6, 0.1),
     ('P1b', 'capsule', [(-55, 70), (-25, 68), (10, 70), (42, 66)], 3.8, lambda x, z, t: ridge_f(t), 2.0, 0.12),
-    ('R1', 'disc', (62, 70), 11, lambda x, z, t: 10 + 0.8 * vnoise(x, z, 6, 47), 1.8, 0.25),
-    ('P2', 'capsule', [(68, 56), (90, 47), (72, 37), (92, 26), (77, 15)], 4.8, lambda x, z, t: 10 + 14 * t, 2.4, 0.35),
+    ('R1', 'capsule', [(55, 75), (69, 63)], 8, lambda x, z, t: 10 + 0.8 * vnoise(x, z, 6, 47), 1.8, 0.25),   # 花守の回廊（敵の波）：長い回廊の形
+    ('P2', 'capsule', [(70, 62), (84, 62), (84, 52)], 4.0, lambda x, z, t: 10 + 8 * t, 2.4, 0.33),      # 回廊からミニボス1の間への坂
+    ('MB1', 'disc', (84, 36), 13, lambda x, z, t: 18, 2.6, 0.4),                 # ミニボス1の間：一人称の近接で1体と戦う広さ（半径13）、床は平ら
     ('H', 'disc', (84, -6), 17, lambda x, z, t: 18 + max(0, int((math.hypot(x - 84, z + 6) + (vnoise(x, z, 5, 48) - 0.5) * 2 - 8) / 3)), 2.6, 0.5),
     ('P3', 'capsule', [(80, -26), (72, -52), (50, -74), (22, -86)], 5.0, lambda x, z, t: 20 + 10 * t, 2.2, 0.6),
     ('S', 'disc', (85, -64), 6, lambda x, z, t: 27, 2.6, 0.62),
     ('N', 'disc', (0, -88), 14, lambda x, z, t: 30 + 1.2 * vnoise(x, z, 8, 49), 1.7, 0.7),
     ('P4', 'capsule', [(-16, -86), (-48, -74), (-70, -50), (-80, -24)], 5.0, lambda x, z, t: 30 + 6 * t, 2.2, 0.8),
-    ('W', 'disc', (-82, 0), 11, lambda x, z, t: 36, 2.8, 0.88),
+    ('W', 'disc', (-80, 0), 14, lambda x, z, t: 36, 2.8, 0.88),                  # ミニボス2の間（滝の前、半径14）。奥（西）に滝裏の洞
     # 道の途中の開けた所（藍 11/06「細道が長いかも」：細い所を20〜30マスで切る）
     ('q1', 'disc', (-8, 68), 6, lambda x, z, t: 20.5, 1.8, 0.14),                  # 尾根の見晴らし
-    ('q2', 'disc', (74, 37), 7, lambda x, z, t: 17, 2.0, 0.35),                    # 九十九折の踊り場
     ('q3', 'disc', (62, -66), 8, lambda x, z, t: 25.5, 2.0, 0.6),                  # 崖道の見晴らし台
     ('q4', 'disc', (34, -82), 7, lambda x, z, t: 28.5, 2.0, 0.66),                   # 崖道の野営跡
     ('q5', 'disc', (-48, -74), 8, lambda x, z, t: 32, 2.0, 0.77),                  # 岩棚の崩れた見張り台
@@ -49,7 +50,7 @@ AREAS = [   # (名前, 形, 線/中心, 大きさ, 床, 縁の急さ, 進み 0�
     # 切り通し：(始め, 終わり), 半幅, (始めの床, 終わりの床)
     ('gR1', 'cut', ((45, 82), (54, 76)), 3.5, (10, 10), 3.0, 0.2),
     ('gR1b', 'cut', ((42, 66), (53, 68)), 2.5, (12, 10), 3.0, 0.2),
-    ('gH', 'cut', ((77, 15), (81, 7)), 3.5, (24, 21), 3.0, 0.45),
+    ('gH', 'cut', ((84, 23), (84, 10)), 3.5, (18, 18), 3.0, 0.45),
     ('gS', 'cut', ((75, -55), (81, -61)), 1.8, (24, 27), 3.0, 0.6),
     ('gW', 'cut', ((-80, -24), (-81, -12)), 3.2, (36, 36), 3.0, 0.85),
     ('gB', 'cut', ((-71, 0), (-61, 0)), 2.5, (36, 38), 3.0, 0.92),
@@ -124,7 +125,7 @@ for (x, z), k in list(KIND.items()):                                            
 G = {k: geo for (k, kind, geo, *_ ) in AREAS}
 T.trail([(-84, 80), (-62, 82), (-52, 88)] + G['P1'][1:] + [(54, 76), (62, 70)], w=4.0)   # 沢道
 T.trail([(-62, 76), (-55, 70)] + G['P1b'][1:] + [(53, 68), (62, 70)], w=2.6)          # 尾根道
-T.trail([(62, 70), (68, 56)] + G['P2'][1:] + [(81, 7), (84, -6)], w=3.6)              # 九十九折
+T.trail([(62, 69)] + G['P2'] + [(84, 36), (84, 10), (84, -6)], w=3.6)               # 回廊 → 坂 → ミニボス1の間 → 散華の間
 T.trail([(84, -6), (80, -26)] + G['P3'][1:] + [(0, -88)], w=3.8)                      # 崖道
 T.trail([(75, -55), (81, -61), (85, -64)], w=1.8)                                   # 隠れた空き地へ（茂みの隙間）
 T.trail([(0, -88)] + G['P4'] + [(-81, -12), (-82, 0), (-71, 0), (-61, 0)], w=3.8)   # 岩棚 → 洞 → 橋（入口から天守へ通る軸 z = 0）
@@ -172,9 +173,10 @@ for x in range(-58, -47, 6):
         for y in range(ground(x, u), 39): put(x, y, u, full('stone_bricks' if _h(x, y, u) < 0.7 else 'mossy_stone_bricks'))
 # 門（ゲームではここを閉じる）。庭の門は城の櫓門（下）
 GATE_AT, DOORS = {}, {}                                                          # DOORS：ゲームが口を閉じる面（axis の向きに通る、中心から ±half）
-for (name, z, cx, axis, half) in [('苔の窪', 50, 79, 'x', 4), ('散華の間', 11, 79, 'z', 4), ('古い祠の森', 17, -87, 'x', 4), ('滝裏の洞', -15, -81, 'z', 4)]:
+for (name, z, cx, axis, half) in [('花守の回廊', 50, 79, 'x', 4), ('ミニボス1の間', 52, 84, 'z', 4), ('散華の間', 16, 84, 'z', 4), ('古い祠の森', 17, -87, 'x', 4), ('ミニボス2の間', -17, -81, 'z', 4)]:
     gx, gz = (cx, z) if axis == 'z' else (z, cx)
     T.arch_gate(z, ground(gx, gz), half=half, cx=cx, axis=axis)
+    if name == '古い祠の森': continue                                              # 祠の森は戦わない道になった（門は飾りに残す）
     GATE_AT[name] = [gx, ground(gx, gz) + 1, gz]; DOORS[name] = {'axis': axis, 'half': half - 1}
 GATE_AT['庭'] = [-38, 41, 0]; DOORS['庭'] = {'axis': 'x', 'half': 3}
 def torii(x, z, g, half=4, h=7):
@@ -310,7 +312,7 @@ put(83, ground(83, -61) + 1, -61, P.BARREL)
 for (x, z) in [(-8, 64), (62, -70)]:                                              # 見晴らし（谷の側に灯籠2つ）
     PO.stone_lantern(x - 3, z, ground); PO.stone_lantern(x + 3, z, ground)
     T.try_place(P.bench, (x, z + 4, ground(x, z + 4), 'n', 2), ground(x, z + 4))
-for (x, z, f) in [(76, 40, 'w'), (36, -78, 's')]:                                 # 踊り場・野営跡
+for (x, z, f) in [(36, -78, 's')]:                                                # 野営跡
     for (ox, oz) in ((0, 0), (-3, 0), (3, 0), (0, 3), (0, -3), (-4, 3), (4, -3)):
         cs = T.cells_of(P.cargo, x + ox, z + oz, ground(x + ox, z + oz), f)
         if T.spot_ok(cs, ground(x + ox, z + oz)): P.cargo(x + ox, z + oz, ground(x + ox, z + oz), f); break
@@ -323,7 +325,7 @@ for x in range(-75, -70):                                                       
     for z in range(-48, -43):
         if math.hypot(x + 72.5, z + 45.5) < 2.4: put(x, ground(x, z), z, water())
 # 遺跡のアーチ：開けた所の縁に目印として [rules 109]
-for (x, z, f) in [(-80, 70, 'e'), (-58, 86, 's'), (0, 86, 'e'), (68, 66, 'n'), (92, 0, 'e'), (60, -66, 'n'), (-10, -94, 'e'), (-62, -60, 'n'), (-76, 6, 'e')]:
+for (x, z, f) in [(-80, 70, 'e'), (-58, 86, 's'), (0, 86, 'e'), (92, 0, 'e'), (60, -66, 'n'), (-10, -94, 'e'), (-62, -60, 'n')]:   # 戦う部屋（回廊・ミニボスの間）の中には置かない
     PO.white_arch(x, z, rng, ground, f)
 
 # ================================================================ 4. 木：道を進むほど桜（入口 0 → 庭 1）[藍 11/06]
@@ -338,7 +340,7 @@ def fight_floor(x, z):                                                          
     k, (d, f, rim) = nearest(x, z)
     if math.hypot(x, z) < MR + 3: return True
     if k == 'N': return math.hypot(x, z + 88) < 8 or d < -11
-    return d < (1 if k in ('H', 'R1', 'W', 'S') or k[0] in 'gq' else -1.5)
+    return d < (1 if k in ('H', 'R1', 'W', 'S', 'MB1') or k[0] in 'gq' else -1.5)
 for (x, z) in [(-54, 15), (-49, -26), (-26, 51), (18, 54), (51, 26), (49, -28), (15, -54), (-31, -51)]:
     big_cherry(x, z, x * 7 + z)                                                  # 谷底の大きな桜（山を桃色に囲む）
 print('木・茂み', T.woods(kind=kind, skip=fight_floor))
@@ -389,7 +391,7 @@ while q:
         if n in seen: continue
         gn = stand(*n)
         if gn is not None and gn - g <= 1 and g - gn <= 2: seen.add(n); far[n] = far[(x, z)] + 1; q.append(n)
-want = {'沢道': (15, 92), '尾根道': (10, 70), '苔の窪': (62, 70), '九十九折の上': (77, 15), '散華の間': (84, -6), '隠れた空き地': (85, -62),
+want = {'沢道': (15, 92), '尾根道': (10, 70), '花守の回廊': (62, 69), 'ミニボス1の間': (84, 36), '散華の間': (84, -6), '隠れた空き地': (85, -62),
         '古い祠の森': (0, -88), '西の岩棚': (-70, -50), '滝裏の洞の封印': (WX, WZ), '橋': (-52, 0), '櫓門': (-37, 0), '庭': (0, 0)}
 res = {k: min((far[(x + dx, z + dz)] for dx in range(-3, 4) for dz in range(-3, 4) if (x + dx, z + dz) in far), default=None) for k, (x, z) in want.items()}
 print('歩いて行けない所', [k for k, v in res.items() if v is None] or 'なし')
@@ -414,12 +416,14 @@ def top_at(x, z, ymax):
     return -12
 N8 = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
 need, lips = {}, set()
+SURF = EC.surfaces(vox.W)                                                         # 立てる面（木の葉の上も）
 for (x, z) in M:
     fl_ = FL[(x, z)]
+    reach_top = max([y for y in SURF.get((x, z), ()) if y <= fl_ + 12] + [fl_])   # その柱で登れるいちばん上（木の葉の上など）
     for dx, dz in N8:
         n = (x + dx, z + dz)
         if n in M: continue
-        lo, hi = need.get(n, (999, -999)); need[n] = (min(lo, fl_ + 1), max(hi, fl_ + 6))   # +6：木や縁石を伝って壁の上へ乗らない高さ
+        lo, hi = need.get(n, (999, -999)); need[n] = (min(lo, fl_ + 1), max(hi, fl_ + 6, reach_top + 3))   # 木や縁石を伝って壁の上へ乗らない高さ
         if abs(dx) + abs(dz) == 1 and top_at(*n, fl_) < fl_ - 3 and math.hypot(x, z) > 34 and T.BRIDGE.get((x, z)) is None: lips.add((x, z))
 for (x, z) in lips:                                                               # 縁石：落ちる縁の最後の1マス
     g = FL[(x, z)]; r_ = _h(x, z, 91)
@@ -452,14 +456,29 @@ RC = {(x, z) for (x, z, y) in reach}
 print('壁を立てても行ける', [k for k, (x, z) in want.items() if any((x + dx, z + dz) in RC for dx in range(-3, 4) for dz in range(-3, 4))])
 ROOMS = {'spawn': [START[0], ground(*START) + 1, START[1]], 'gates': GATE_AT, 'doors': DOORS, 'arena_center': [0, 41, 0], 'arena_r': AR - 1, 'seals': SEALS,
          'secret': [85, ground(85, -64) + 1, -64], 'rooms': {k: [*geo, size] for (k, kind, geo, size, *_ ) in AREAS if kind == 'disc'},   # 円の区域：[x, z, 半径]
-         'order': '入口の野 →（沢道｜尾根道）→ 苔の窪 → 滝の九十九折 → 散華の間 → 崖道（隠れた空き地）→ 古い祠の森（封印）→ 西の岩棚 → 滝裏の洞（封印）→ 谷の石橋 → 散り桜の庭'}
+         'order': '入口の野 →（沢道｜尾根道）→ 花守の回廊（敵の波）→ 坂 → ミニボス1の間 → 散華の間（敵の波）→ 崖道（隠れた空き地）→ 古い祠の森 → 西の岩棚 → ミニボス2の間（滝の前、奥に滝裏の洞）→ 谷の石橋 → 散り桜の庭（ボス）'}
+def _room(key, name, kind, gate, cx, cz, r, spawn=None, seals=()):
+    """rooms.json の flow の1つ：kind は waves（敵の波）・miniboss・boss。gate はその部屋へ入る門（gates / doors の名前）。
+    miniboss_spawn はミニボスの出る所（門から見て奥、中心から4マス）。"""
+    d = {'key': key, 'name': name, 'kind': kind, 'gate': gate, 'center': [cx, ground(cx, cz) + 1, cz], 'radius': r, 'seals': list(seals)}
+    if spawn: d['miniboss_spawn'] = [spawn[0], ground(*spawn) + 1, spawn[1]]
+    return d
+ROOMS['flow'] = [
+    _room('R1', '花守の回廊', 'waves', '花守の回廊', 62, 69, 9),
+    _room('MB1', 'ミニボス1の間', 'miniboss', 'ミニボス1の間', 84, 36, 13, spawn=(84, 32), seals=('枡形の北',)),
+    _room('H', '散華の間', 'waves', '散華の間', 84, -6, 17),
+    _room('MB2', 'ミニボス2の間', 'miniboss', 'ミニボス2の間', -80, 0, 14, spawn=(-80, 4), seals=('西', '枡形の南')),
+    _room('D', '散り桜の庭', 'boss', '庭', 0, 0, AR - 1),
+]
+ROOMS['rooms']['R1'] = [62, 69, 9]                                              # 回廊は長い形：ここは内側に収まる円（中心と半径）。形は flow を見る
 V = lambda x, y, z: [-x, y, z]
 def look_from_ravine(cx, cz, back=22, up=34):
     """区域を、谷の側（山の方、低い側）の空から見下ろす視点。"""
     r = math.hypot(cx, cz); ux, uz = -cx / r, -cz / r
     g = ground(cx, cz)
     return [V(cx + ux * back, g + up, cz + uz * back), V(cx, g + 1, cz)]
-EXTRA_VIEWS = {n: look_from_ravine(*G[n]) for n in ('q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'R1', 'H', 'N', 'W', 'S')}
+EXTRA_VIEWS = {n: look_from_ravine(*G[n]) for n in ('q1', 'q3', 'q4', 'q5', 'q6', 'MB1', 'H', 'N', 'W', 'S')}
+EXTRA_VIEWS['R1'] = look_from_ravine(62, 69)
 out = save('sakura_dungeon', {**EXTRA_VIEWS,
     'over': [V(-150, 150, 150), V(0, 10, 0)],
     'top': [V(0, 380, 1), V(0, 0, 0)],
@@ -468,6 +487,7 @@ out = save('sakura_dungeon', {**EXTRA_VIEWS,
     'ridge': [V(-20, 30, 60), V(20, 18, 72)],
     'room1': [V(48, 26, 86), V(64, 10, 68)],
     'switchback': [V(60, 60, 30), V(82, 18, 36)],
+    'flow': [V(10, 300, 1), V(10, 0, 0)],
     'bowl': [V(70, 36, 14), V(84, 18, -6)],
     'cliffpath': [V(90, 40, -40), V(50, 26, -74)],
     'secret': [V(76, 36, -52), V(86, 28, -64)],
