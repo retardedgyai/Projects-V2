@@ -27,21 +27,28 @@ def ridge_f(t): return 15 + 7 * math.sin(math.pi * t) - 3 * t                   
 AREAS = [   # (名前, 形, 線/中心, 大きさ, 床, 縁の急さ, 進み 0〜1)
     ('A', 'ellipse', (-70, 78), (20, 14), lambda x, z, t: 14 + 2.5 * vnoise(x, z, 18, 44) + 1.2 * vnoise(x, z, 6, 45), 1.1, 0.0),
     ('P1', 'capsule', [(-52, 88), (-20, 94), (15, 92), (45, 82)], 6.5, lambda x, z, t: 14 - 4 * t + 0.8 * vnoise(x, z, 9, 46), 1.6, 0.1),
-    ('P1b', 'capsule', [(-55, 70), (-25, 68), (10, 70), (42, 66)], 3.2, lambda x, z, t: ridge_f(t), 2.0, 0.12),
+    ('P1b', 'capsule', [(-55, 70), (-25, 68), (10, 70), (42, 66)], 3.8, lambda x, z, t: ridge_f(t), 2.0, 0.12),
     ('R1', 'disc', (62, 70), 11, lambda x, z, t: 10 + 0.8 * vnoise(x, z, 6, 47), 1.8, 0.25),
-    ('P2', 'capsule', [(68, 56), (90, 47), (72, 37), (92, 26), (77, 15)], 3.4, lambda x, z, t: 10 + 14 * t, 2.4, 0.35),
+    ('P2', 'capsule', [(68, 56), (90, 47), (72, 37), (92, 26), (77, 15)], 4.8, lambda x, z, t: 10 + 14 * t, 2.4, 0.35),
     ('H', 'disc', (84, -6), 17, lambda x, z, t: 18 + max(0, int((math.hypot(x - 84, z + 6) + (vnoise(x, z, 5, 48) - 0.5) * 2 - 8) / 3)), 2.6, 0.5),
-    ('P3', 'capsule', [(80, -26), (72, -52), (50, -74), (22, -86)], 3.0, lambda x, z, t: 22 + 8 * t, 2.2, 0.6),
-    ('S', 'disc', (85, -64), 6, lambda x, z, t: 28, 2.6, 0.62),
+    ('P3', 'capsule', [(80, -26), (72, -52), (50, -74), (22, -86)], 5.0, lambda x, z, t: 20 + 10 * t, 2.2, 0.6),
+    ('S', 'disc', (85, -64), 6, lambda x, z, t: 27, 2.6, 0.62),
     ('N', 'disc', (0, -88), 14, lambda x, z, t: 30 + 1.2 * vnoise(x, z, 8, 49), 1.7, 0.7),
-    ('P4', 'capsule', [(-16, -86), (-48, -74), (-70, -50), (-80, -24)], 3.2, lambda x, z, t: 30 + 6 * t, 2.2, 0.8),
+    ('P4', 'capsule', [(-16, -86), (-48, -74), (-70, -50), (-80, -24)], 5.0, lambda x, z, t: 30 + 6 * t, 2.2, 0.8),
     ('W', 'disc', (-82, -2), 11, lambda x, z, t: 36, 2.8, 0.88),
+    # 道の途中の開けた所（藍 11/06「細道が長いかも」：細い所を20〜30マスで切る）
+    ('q1', 'disc', (-8, 68), 6, lambda x, z, t: 20.5, 1.8, 0.14),                  # 尾根の見晴らし
+    ('q2', 'disc', (74, 37), 7, lambda x, z, t: 17, 2.0, 0.35),                    # 九十九折の踊り場
+    ('q3', 'disc', (62, -66), 8, lambda x, z, t: 25.5, 2.0, 0.6),                  # 崖道の見晴らし台
+    ('q4', 'disc', (34, -82), 7, lambda x, z, t: 28.5, 2.0, 0.66),                   # 崖道の野営跡
+    ('q5', 'disc', (-48, -74), 8, lambda x, z, t: 32, 2.0, 0.77),                  # 岩棚の崩れた見張り台
+    ('q6', 'disc', (-72, -44), 7, lambda x, z, t: 35, 2.0, 0.83),                  # 岩棚の湧き水
     ('D', 'disc', (0, 0), 25, lambda x, z, t: 40, 0.0, 1.0),
     # 切り通し：(始め, 終わり), 半幅, (始めの床, 終わりの床)
     ('gR1', 'cut', ((45, 82), (54, 76)), 3.5, (10, 10), 3.0, 0.2),
     ('gR1b', 'cut', ((42, 66), (53, 68)), 2.5, (12, 10), 3.0, 0.2),
     ('gH', 'cut', ((77, 15), (81, 7)), 3.5, (24, 21), 3.0, 0.45),
-    ('gS', 'cut', ((75, -55), (81, -61)), 1.8, (25, 28), 3.0, 0.6),
+    ('gS', 'cut', ((75, -55), (81, -61)), 1.8, (24, 27), 3.0, 0.6),
     ('gW', 'cut', ((-80, -24), (-81, -12)), 3.2, (36, 36), 3.0, 0.85),
     ('gB', 'cut', ((-71, -2), (-50, -2)), 2.5, (36, 38), 3.0, 0.92),
 ]
@@ -115,10 +122,10 @@ for (x, z), k in list(KIND.items()):                                            
 G = {k: geo for (k, kind, geo, *_ ) in AREAS}
 T.trail([(-84, 80), (-62, 82), (-52, 88)] + G['P1'][1:] + [(54, 76), (62, 70)], w=4.0)   # 沢道
 T.trail([(-62, 76), (-55, 70)] + G['P1b'][1:] + [(53, 68), (62, 70)], w=2.6)          # 尾根道
-T.trail([(62, 70), (68, 56)] + G['P2'][1:] + [(81, 7), (84, -6)], w=3.0)              # 九十九折
-T.trail([(84, -6), (80, -26)] + G['P3'][1:] + [(0, -88)], w=3.0)                      # 崖道
+T.trail([(62, 70), (68, 56)] + G['P2'][1:] + [(81, 7), (84, -6)], w=3.6)              # 九十九折
+T.trail([(84, -6), (80, -26)] + G['P3'][1:] + [(0, -88)], w=3.8)                      # 崖道
 T.trail([(75, -55), (81, -61), (85, -64)], w=1.8)                                   # 隠れた空き地へ（茂みの隙間）
-T.trail([(0, -88)] + G['P4'] + [(-81, -12), (-82, -2), (-71, -2), (-50, -2)], w=3.0)   # 岩棚 → 洞 → 橋
+T.trail([(0, -88)] + G['P4'] + [(-81, -12), (-82, -2), (-71, -2), (-50, -2)], w=3.8)   # 岩棚 → 洞 → 橋
 P1BROOK = [(-48, 92), (-20, 98), (15, 96), (44, 86)]                              # 沢道の小川：道の南脇を流れる
 for (x, z), k in list(KIND.items()):
     if k == 'nat' and _line_d(x, z, P1BROOK)[0] < 1.3 and shapes(x, z)['P1'][0] < -1:
@@ -221,6 +228,22 @@ put(WX - 1, fl + 3, WZ, {'s': 'lantern', 't': 'soul_lantern'}); SEALS['西'] = [
 # 隠れた空き地：崖道の脇の茂みの隙間の先に、古い大桜と宝の樽
 big_cherry(87, -66, 99)
 put(83, ground(83, -61) + 1, -61, P.BARREL)
+# 道の途中の開けた所の中身：見晴らしには石灯籠と腰掛け、踊り場と野営跡には荷と灯り、見張り台には崩れた石の台、湧き水には小さな池
+for (x, z) in [(-8, 64), (62, -70)]:                                              # 見晴らし（谷の側に灯籠2つ）
+    PO.stone_lantern(x - 3, z, ground); PO.stone_lantern(x + 3, z, ground)
+    T.try_place(P.bench, (x, z + 4, ground(x, z + 4), 'n', 2), ground(x, z + 4))
+for (x, z, f) in [(76, 40, 'w'), (36, -78, 's')]:                                 # 踊り場・野営跡
+    for (ox, oz) in ((0, 0), (-3, 0), (3, 0), (0, 3), (0, -3), (-4, 3), (4, -3)):
+        cs = T.cells_of(P.cargo, x + ox, z + oz, ground(x + ox, z + oz), f)
+        if T.spot_ok(cs, ground(x + ox, z + oz)): P.cargo(x + ox, z + oz, ground(x + ox, z + oz), f); break
+    P.lamp_post(x - 3, z - 2, ground(x - 3, z - 2), 'e')
+T.try_place(P.woodpile, (31, -86, ground(31, -86), 'n'), ground(31, -86))
+for (x, z) in [(-52, -78), (-51, -78), (-50, -78), (-52, -77), (-50, -77), (-52, -76), (-51, -76), (-50, -76)]:   # 崩れた見張り台の石の台
+    g = ground(x, z); hh = 1 + int(_h(x, z, 71) * 3)
+    for y in range(g + 1, g + hh + 1): put(x, y, z, full('mossy_stone_bricks' if _h(x, y, z) < 0.5 else 'cracked_stone_bricks'))
+for x in range(-75, -70):                                                         # 湧き水の池
+    for z in range(-48, -43):
+        if math.hypot(x + 72.5, z + 45.5) < 2.4: put(x, ground(x, z), z, water())
 # 遺跡のアーチ：開けた所の縁に目印として [rules 109]
 for (x, z, f) in [(-80, 70, 'e'), (-58, 86, 's'), (0, 86, 'e'), (68, 66, 'n'), (92, 0, 'e'), (60, -66, 'n'), (-10, -94, 'e'), (-62, -60, 'n'), (-76, 6, 'e')]:
     PO.white_arch(x, z, rng, ground, f)
@@ -237,7 +260,7 @@ def fight_floor(x, z):                                                          
     k, (d, f, rim) = nearest(x, z)
     if math.hypot(x, z) < 27: return True
     if k == 'N': return math.hypot(x, z + 88) < 8 or d < -11
-    return d < (1 if k in ('H', 'R1', 'W', 'S') or k.startswith('g') else -1.5)
+    return d < (1 if k in ('H', 'R1', 'W', 'S') or k[0] in 'gq' else -1.5)
 for (x, z) in [(-42, 12), (-38, -20), (-20, 40), (14, 42), (40, 20), (38, -22), (12, -42), (-24, -40)]:
     big_cherry(x, z, x * 7 + z)                                                  # 谷底の大きな桜（山を桃色に囲む）
 print('木・茂み', T.woods(kind=kind, skip=fight_floor))
@@ -296,7 +319,13 @@ ROOMS = {'spawn': [START[0], ground(*START) + 1, START[1]], 'gates': GATE_AT, 'a
          'secret': [85, ground(85, -64) + 1, -64], 'rooms': {k: (list(geo) if isinstance(geo, tuple) and isinstance(geo[0], int) else None) for (k, kind, geo, *_ ) in AREAS if kind == 'disc'},
          'order': '入口の野 →（沢道｜尾根道）→ 苔の窪 → 滝の九十九折 → 散華の間 → 崖道（隠れた空き地）→ 古い祠の森（封印）→ 西の岩棚 → 滝裏の洞（封印）→ 谷の石橋 → 散り桜の庭'}
 V = lambda x, y, z: [-x, y, z]
-out = save('sakura_dungeon', {
+def look_from_ravine(cx, cz, back=22, up=34):
+    """区域を、谷の側（山の方、低い側）の空から見下ろす視点。"""
+    r = math.hypot(cx, cz); ux, uz = -cx / r, -cz / r
+    g = ground(cx, cz)
+    return [V(cx + ux * back, g + up, cz + uz * back), V(cx, g + 1, cz)]
+EXTRA_VIEWS = {n: look_from_ravine(*G[n]) for n in ('q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'R1', 'H', 'N', 'W', 'S')}
+out = save('sakura_dungeon', {**EXTRA_VIEWS,
     'over': [V(-150, 150, 150), V(0, 10, 0)],
     'top': [V(0, 380, 1), V(0, 0, 0)],
     'enter': [V(-96, 26, 84), V(0, 40, 0)],
@@ -318,3 +347,10 @@ out = save('sakura_dungeon', {
 }, V(0, 20, 0), shadowR=200, fog=(260, 620))
 json.dump(ROOMS, open(os.path.join(out, 'rooms.json'), 'w'), ensure_ascii=False, indent=1)
 print('書き出し', out)
+if False:
+    pts = [(84, -6), (82, -16), (80, -26), (76, -39), (72, -52), (66, -58), (61, -63), (56, -69), (50, -74)]
+    for (ax, az), (bx, bz) in zip(pts, pts[1:]):
+        for i in range(6):
+            x = int(ax + (bx - ax) * i / 6); z = int(az + (bz - az) * i / 6)
+            print((x, z), stand(x, z), H.get((x, z)), (x, z) in seen, nearest(x, z)[0], end=' | ')
+        print()
