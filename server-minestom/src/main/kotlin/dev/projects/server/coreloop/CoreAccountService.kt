@@ -358,6 +358,7 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             val zone = CoreFrontierZones.expedition(run.map.zone ?: -1)?.takeIf { run.trialId == null }
             val firstClear = zone != null && zone.id !in account.zoneRecords
             val message = if (run.trialId == null) (if (firstClear) "${zone?.name}を初踏破！ " else "") + "討伐完了！ T$nextTier の地図・討伐証・試練の欠片を獲得しました"
+                else if (run.dungeon) "ダンジョン踏破！ 高揚1個・試練の欠片1個・討伐証を獲得しました"
                 else "専用ボス討伐！ 専用オーブ2個・高揚1個・討伐証を獲得しました"
             val outputs = if (run.trialId == null)
                 mapOf(CoreMaterial(CoreResource.BOSS_SIGIL, run.map.tier) to 2L,
@@ -374,6 +375,9 @@ class CoreAccountService(private val repository: CoreAccountRepository,
                     level = if (nextTier != run.map.tier) CoreJourneyRules.floor(nextTier) else (run.map.level + 2).coerceAtMost(CoreJourneyRules.ceiling(nextTier)))
                 grantFragments(rewarded, CoreActivityKind.TRIAL, 1L).copy(unlockedMapTier = maxOf(account.unlockedMapTier, nextTier),
                     maps = account.maps + rewardMap, activeRun = run.copy(bossDefeated = true)) to message
+            } else if (run.dungeon) {
+                grantFragments(grantCurrencies(rewarded, mapOf(CoreCraftingCurrency.EXALTED to 1L)), CoreActivityKind.TRIAL, 1L)
+                    .copy(activeRun = run.copy(bossDefeated = true)) to message
             } else {
                 val kind = CoreActivityKind.entries.single { it.bossId == run.trialId }
                 grantCurrencies(rewarded, mapOf(kind.currency to 2L, CoreCraftingCurrency.EXALTED to 1L))
@@ -448,6 +452,16 @@ class CoreAccountService(private val repository: CoreAccountRepository,
                 fragments = account.fragments + (kind to account.amount(kind) - CoreCraftingCatalog.TRIAL_ENTRY_FRAGMENTS),
                 activeRun = CoreActiveRun(action.runId, map, trialId = kind.bossId)) to "${kind.displayName}の専用ボス戦を準備しています"
         }
+        is CoreAction.StartDungeon -> {
+            requireHub(account)
+            require(action.dungeonId in CoreDungeons.ids) { "未対応のダンジョンです" }
+            require(action.tier in 1..account.unlockedMapTier) { "そのTierはまだ解放されていません" }
+            require(account.claimedSources.none { it.startsWith("run/${action.runId}/") }) { "その遠征番号は使用済みです" }
+            val level = account.journey.level.coerceIn(CoreJourneyRules.floor(action.tier), CoreJourneyRules.ceiling(action.tier))
+            val map = CoreOwnedMap(derived(requestId, "dungeon-map"), account.craftingSeed xor requestId.leastSignificantBits, action.tier, level = level)
+            addSource(recentRuns(account), source("run", action.runId, "started")).copy(
+                activeRun = CoreActiveRun(action.runId, map, trialId = action.dungeonId)) to "ダンジョンへの扉を開いています"
+        }
         is CoreAction.AbortRun -> {
             val run = requireRun(account, action.runId)
             require(!run.bossDefeated && account.claimedSources.none { it.startsWith("gather/${run.id}/") || it.startsWith("combat/${run.id}/") || it.startsWith("affix/${run.id}/") || it.startsWith("activity/${run.id}/") || it.startsWith("dungeon/${run.id}/") }) {
@@ -456,6 +470,8 @@ class CoreAccountService(private val repository: CoreAccountRepository,
             if (run.trialId == null) {
                 require(account.maps.size < CoreLoopCatalog.MAX_MAPS) { "地図の保管庫が満杯です" }
                 account.copy(maps = account.maps + run.map, activeRun = null) to "遠征の準備に失敗したため地図を返却しました"
+            } else if (run.dungeon) {
+                account.copy(activeRun = null) to "ダンジョンの準備に失敗しました。もう一度入れます"
             } else {
                 val kind = CoreActivityKind.entries.single { it.bossId == run.trialId }
                 grantFragments(account, kind, CoreCraftingCatalog.TRIAL_ENTRY_FRAGMENTS).copy(activeRun = null) to "準備に失敗したため入場の欠片3個を返却しました"

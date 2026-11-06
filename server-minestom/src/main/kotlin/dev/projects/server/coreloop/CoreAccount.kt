@@ -54,8 +54,16 @@ data class CoreZoneRecord(val clears: Int, val bestLevel: Int) {
     }
 }
 
+/** [trialId]: a 専用ボス (CoreActivityKind.bossId) or an instance dungeon ([CoreDungeons]); null = an expedition map. */
 data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: Boolean = false, val trialId: String? = null) {
-    init { require(trialId == null || CoreActivityKind.entries.any { it.bossId == trialId }) }
+    init { require(trialId == null || trialId in CoreDungeons.ids || CoreActivityKind.entries.any { it.bossId == trialId }) }
+    val dungeon: Boolean get() = trialId in CoreDungeons.ids
+}
+
+/** Instance dungeons entered from the harbor (InstanceDungeon). Free and repeatable; the run row stores the id as trialId. */
+object CoreDungeons {
+    const val SAKURA = "sakura-dungeon"
+    val ids = setOf(SAKURA)
 }
 data class CoreReceipt(val fingerprint: String, val revision: Long, val message: String)
 private val RECEIPT_FINGERPRINT = Regex("[0-9a-f]{64}")
@@ -267,6 +275,7 @@ sealed interface CoreAction {
     data class ConvertLegacyStone(val stoneId: UUID) : CoreAction
     data class ActivityReward(val runId: UUID, val sourceId: String, val kind: CoreActivityKind) : CoreAction
     data class StartTrial(val bossId: String, val tier: Int, val runId: UUID) : CoreAction
+    data class StartDungeon(val dungeonId: String, val tier: Int, val runId: UUID) : CoreAction
     /** Replacing an occupied slot requires its exact currently displayed identity. */
     data class ApplyAffix(val gear: CoreGearSlot, val index: Int, val stoneId: UUID, val expectedReplacedStoneId: UUID? = null) : CoreAction
     data class ExtractAffix(val gear: CoreGearSlot, val index: Int, val expectedStoneId: UUID) : CoreAction
