@@ -1,5 +1,8 @@
 package dev.projects.server.coreloop
 
+import com.google.gson.JsonArray
+import com.google.gson.JsonParser
+import java.nio.file.Files
 import java.util.concurrent.CompletableFuture
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -12,6 +15,7 @@ import net.minestom.server.entity.metadata.display.TextDisplayMeta
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
+import net.minestom.server.instance.anvil.AnvilLoader
 import net.minestom.server.instance.block.Block
 
 internal enum class HarborFacilityKind { EXPEDITIONS, WORKSHOP, STORAGE, SUPPLIES, MASTERY, COLONY, DUNGEON }
@@ -24,9 +28,17 @@ internal data class HarborFacility(
     val interactionRadius: Double = 3.25,
 )
 
-/** A small, reusable social hub. Call once during startup, before players enter the instance. */
+/**
+ * The lobby: 開拓者の町, drawn in scripts/buildkit/towns/first_town.py and shipped as region files (resources/lobby/first_town).
+ * Where players arrive, the facilities, their click blocks and the smith come from its rooms.json
+ * (towns/first_town_places.py). Call once during startup, before players enter the instance; nothing is saved back.
+ */
 internal object HarborScene {
     data class Result(val spawn: Pos, val facilities: List<HarborFacility>, val labels: List<Entity>, val scenery: List<Entity>, val smith: Entity)
+
+    private const val MAP = "lobby/first_town"
+    /** Below the river bed: whoever falls this far is put back where players arrive. */
+    const val FALL_Y = -12.0
 
     fun build(instance: InstanceContainer): Result {
         instance.setTime(6000)
@@ -34,22 +46,25 @@ internal object HarborScene {
         instance.setWeather(Weather.CLEAR)
         instance.setChunkSupplier(::LightingChunk)
         instance.viewDistance(10)
-        instance.setGenerator(HarborBackdrop::generate)
-        val loads = (-4..3).flatMap { x -> (-4..3).map { z -> instance.loadChunk(x, z) } }
+        val folder = ShippedMap.folder(MAP)
+        instance.chunkLoader = AnvilLoader(folder)
+        // The town spans x -92..104 and z -92..84; its chunks carry no light until relit here.
+        val loads = (-6..6).flatMap { x -> (-6..5).map { z -> instance.loadChunk(x, z) } }
         CompletableFuture.allOf(*loads.toTypedArray()).join()
-        val builder = Builder(instance)
-        val scenery = HarborDistrictArchitecture(instance).build()
-        builder.furnishings()
-        builder.paths()
-        val facilities = listOf(
-            facility(HarborFacilityKind.EXPEDITIONS, "遠征受付", 0, -15, listOf(-1 to -15, 1 to -15)),
-            facility(HarborFacilityKind.WORKSHOP, "鍛冶工房", -16, -6, listOf(-18 to -6, -14 to -6)),
-            facility(HarborFacilityKind.STORAGE, "所持品目録", -15, 10, listOf(-16 to 10, -14 to 10)),
-            facility(HarborFacilityKind.SUPPLIES, "交易市場", 16, 9, listOf(15 to 9, 17 to 9)),
-            facility(HarborFacilityKind.MASTERY, "熟練の手引き", 16, -9, listOf(15 to -9, 17 to -9)),
-            facility(HarborFacilityKind.COLONY, "自分のコロニー", 6, 15, listOf(5 to 15, 7 to 15)),
-            facility(HarborFacilityKind.DUNGEON, "ダンジョンの門", 24, 1, listOf(21 to -2, 21 to 4)),
-        )
+        LightingChunk.relight(instance, instance.chunks)
+        val places = JsonParser.parseString(Files.readString(folder.resolve("rooms.json"))).asJsonObject
+        fun nums(a: JsonArray) = a.map { it.asDouble }
+        val facilities = places.getAsJsonObject("facilities").entrySet().map { (key, value) ->
+            val facility = value.asJsonObject
+            facility.getAsJsonArray("place")?.forEach { spot ->
+                val p = spot.asJsonArray
+                val block = requireNotNull(Block.fromKey("minecraft:" + p[3].asString)) { p[3].asString }
+                instance.setBlock(p[0].asInt, p[1].asInt, p[2].asInt, if (block.compare(Block.LECTERN)) block.withProperty("facing", "south") else block)
+            }
+            val (x, y, z) = nums(facility.getAsJsonArray("at"))
+            HarborFacility(HarborFacilityKind.valueOf(key), facility["name"].asString, Pos(x + .5, y, z + .5),
+                facility.getAsJsonArray("click").map { c -> nums(c.asJsonArray).let { (a, b, d) -> Vec(a, b, d) } }.toSet())
+        }
         val labels = facilities.map { facility ->
             Entity(EntityType.TEXT_DISPLAY).apply {
                 setHasPhysics(false)
@@ -67,109 +82,15 @@ internal object HarborScene {
                 setInstance(instance, facility.position.add(0.0, 1.65, 0.0)).join()
             }
         }
+        val (sx, sy, sz, syaw) = nums(places.getAsJsonArray("smith"))
         val smith = Entity(EntityType.VILLAGER).apply {
             setHasPhysics(false)
             setNoGravity(true)
             customName = Component.text("鍛冶師  │  話しかける", NamedTextColor.GOLD)
             isCustomNameVisible = true
-            setInstance(instance, Pos(-16.5,41.0,-4.5,180f,0f)).join()
+            setInstance(instance, Pos(sx, sy, sz, syaw.toFloat(), 0f)).join()
         }
-        return Result(Pos(0.5, 41.0, 7.5, 180f, 0f), facilities, labels, scenery, smith)
-    }
-
-    private fun facility(
-        kind: HarborFacilityKind,
-        name: String,
-        x: Int,
-        z: Int,
-        extra: List<Pair<Int, Int>>,
-    ) = HarborFacility(
-        kind, name, Pos(x + 0.5, 41.5, z + 0.5),
-        (extra + (x to z)).map { (px, pz) -> Vec(px.toDouble(), 41.0, pz.toDouble()) }.toSet(),
-    )
-
-    private class Builder(private val instance: InstanceContainer) {
-        private fun put(x: Int, y: Int, z: Int, block: Block) = instance.setBlock(x, y, z, block)
-        private fun box(x1: Int, x2: Int, y1: Int, y2: Int, z1: Int, z2: Int, block: Block) {
-            for (x in x1..x2) for (z in z1..z2) for (y in y1..y2) put(x, y, z, block)
-        }
-
-        fun furnishings() {
-            // The harbor's seaward threshold leads to the player's private prototype colony.
-            box(4, 8, 40, 40, 14, 17, Block.SPRUCE_PLANKS)
-            for (x in listOf(4, 8)) box(x, x, 41, 44, 16, 16, Block.STRIPPED_SPRUCE_LOG)
-            box(4, 8, 44, 44, 16, 16, Block.CUT_COPPER)
-            put(6, 41, 15, Block.LECTERN.withProperty("facing", "north"))
-            put(5, 41, 15, Block.BARREL)
-            put(7, 41, 15, Block.BARREL)
-            put(0, 41, -15, Block.CARTOGRAPHY_TABLE)
-            put(-1, 41, -15, Block.CARTOGRAPHY_TABLE)
-            put(1, 41, -15, Block.CARTOGRAPHY_TABLE)
-            box(-3, 3, 42, 43, -22, -22, Block.STRIPPED_OAK_WOOD)
-            for (x in listOf(-5, 5)) {
-                box(x, x, 41, 41, -20, -17, Block.SPRUCE_STAIRS.withProperty("facing", if (x < 0) "east" else "west"))
-            }
-            put(-16, 41, -6, Block.SMITHING_TABLE)
-            put(-18, 41, -6, Block.ANVIL)
-            put(-14, 41, -6, Block.CRAFTING_TABLE)
-            for (x in -20..-18) put(x, 41, -14, Block.FURNACE.withProperty("facing", "south").withProperty("lit", "true"))
-            put(-13, 41, -13, Block.GRINDSTONE)
-            put(-13, 41, -12, Block.CAULDRON)
-            for (x in -16..-14) put(x, 41, 10, Block.BARREL.withProperty("facing", "north"))
-            box(-21, -19, 41, 42, 11, 12, Block.BARREL)
-            put(-20, 43, 12, Block.LANTERN)
-            put(16, 41, 9, Block.SMOKER.withProperty("facing", "north"))
-            put(15, 41, 9, Block.BARREL)
-            put(17, 41, 9, Block.CRAFTING_TABLE)
-            box(20, 22, 41, 41, 10, 11, Block.HAY_BLOCK)
-            put(20, 42, 11, Block.MELON)
-            put(21, 42, 11, Block.PUMPKIN)
-            put(16, 41, -9, Block.LECTERN.withProperty("facing", "south"))
-            put(15, 41, -9, Block.BOOKSHELF)
-            put(17, 41, -9, Block.BOOKSHELF)
-            box(14, 17, 41, 42, -16, -16, Block.BOOKSHELF)
-            box(20, 21, 41, 41, -11, -10, Block.SPRUCE_STAIRS.withProperty("facing", "west"))
-            dungeonGate()
-        }
-
-        /** ダンジョンの門 where the cross street meets the east quay: a cherry torii over the street, and the stone the dungeon is chosen at. */
-        private fun dungeonGate() {
-            // The posts stand just outside the street (z -1..3 stays clear); the stone is past its east end.
-            for (z in listOf(-2, 4)) {
-                box(21, 21, 41, 44, z, z, Block.CHERRY_LOG)
-                put(21, 40, z, Block.STRIPPED_CHERRY_WOOD)
-            }
-            box(21, 21, 43, 43, -1, 3, Block.CHERRY_PLANKS)
-            put(21, 44, 1, Block.CHERRY_PLANKS)
-            for (z in -3..5) if (instance.getBlock(21, 45, z).air()) put(21, 45, z, Block.STRIPPED_CHERRY_WOOD)
-            put(21, 46, -3, Block.CHERRY_SLAB)
-            box(21, 21, 46, 46, -2, 4, Block.CHERRY_LEAVES.withProperty("persistent", "true"))
-            put(24, 41, 1, Block.LODESTONE)
-            put(24, 42, 1, Block.PINK_PETALS.withProperty("flower_amount", "4"))
-            for ((x, z) in listOf(20 to -2, 23 to -2, 24 to -1, 22 to -3, 19 to 4)) put(x, 41, z, Block.PINK_PETALS.withProperty("flower_amount", "${1 + Math.floorMod(x + z, 4)}"))
-        }
-
-        fun paths() {
-            road(-2, 2, -14, 18)
-            road(-22, 23, -1, 3)
-            road(-18, -14, -5, 3)
-            road(14, 18, -8, 3)
-            road(-17, -13, 3, 9)
-            road(14, 18, 3, 8)
-            for (x in -6..6) for (z in -4..8) {
-                if (x * x + (z - 2) * (z - 2) <= 35) put(x, 40, z, paving(x, z))
-            }
-        }
-
-        private fun road(x1: Int, x2: Int, z1: Int, z2: Int) {
-            for (x in x1..x2) for (z in z1..z2) put(x, 40, z, paving(x, z))
-        }
-
-        private fun paving(x: Int, z: Int) = when (Math.floorMod(x * 13 + z * 7, 11)) {
-            0, 1 -> Block.COBBLESTONE
-            2 -> Block.ANDESITE
-            else -> Block.STONE_BRICKS
-        }
-
+        val (x, y, z, yaw) = nums(places.getAsJsonArray("spawn"))
+        return Result(Pos(x + .5, y, z + .5, yaw.toFloat(), 0f), facilities, labels, emptyList(), smith)
     }
 }

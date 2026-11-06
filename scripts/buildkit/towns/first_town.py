@@ -167,7 +167,7 @@ for (x, along, load) in [(-30, 'x', P.CRATE), (-12, 'x', None), (24, 'x', P.BARR
     if zq is None: continue
     cs = T.cells_of(P.boat, x, zq + 2, -1, along, load)
     if all(KIND.get(c) == 'river' and c not in T.PIERS for c in cs): P.boat(x, zq + 2, -1, along, load)
-for x in (-40, -26, 26):
+for x in (-40, -26):                                                             # 26 は東の歩道をふさいで、広場の下の歩道が行き止まりになった（歩ける検査）
     zq = min((z for z in range(0, 80) if (x, z) in T.HARBOR), default=None)
     if zq is not None: T.try_place(P.cargo, (x, zq, 0, 's'), 0, allow=('harbor',))
 T.try_place(P.notice_board, (PCX - 10, PCZ - 9, PY, 's'), PY)                  # 依頼の掲示板：大階段の脇
@@ -184,6 +184,15 @@ print('trees', T.forest(skip=lambda x, z: cliff_top(x) - 3 < z < river_c(x) + 6 
 for (x, z, lv, lg) in [(-16, PCZ + 6, 'cherry_leaves', 'cherry_log'), (hx0 - 6, hz1 + 2, 'oak_leaves', 'oak_log'), (hx1 + 6, hz1 + 2, 'birch_leaves', 'birch_log'), (-44, 20, 'oak_leaves', 'oak_log'), (40, 18, 'cherry_leaves', 'cherry_log')]:
     if KIND.get((x, z)) in ('nat', 'yard'): T.blob_tree(x, z, 6, lv, lg, 3.0)
 T.greens()
+for (x, z), k in list(KIND.items()):                                             # 道の上の頭の高さにかかる葉を払う（坂道の上の唐檜の葉で通れなかった）
+    if k in ('lane', 'stairs', 'landing', 'cliffstair', 'harbor', 'hall'):
+        f = T.floor(x, z)
+        if f is None: continue
+        for y in (f + 1, f + 2):
+            b = get(x, y, z)
+            if b and b['s'] == 'full' and b['t'].endswith('_leaves'): put(x, y, z, None)
+bf = T.h(bx0 - 1, BZ)                                                            # 丘への木の橋の口：石が1つ乗って段が2になり、丘へ渡れなかった
+for y in (bf + 1, bf + 2): put(bx0 - 1, y, BZ, None)
 
 # ================================================================ 7. 検査と書き出し
 T.walk_check((PCX, PCZ - 7))

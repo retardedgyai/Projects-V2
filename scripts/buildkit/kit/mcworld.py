@@ -82,7 +82,8 @@ def nbt_bytes(root, name=""):
 # ---------------- ハーネスのブロック -> マイクラのブロックの状態 ----------------
 FULL_FIX = {'grass_side': 'grass_block', 'grass_top': 'grass_block', 'podzol_side': 'podzol', 'barrel_side': 'barrel', 'hay_block_side': 'hay_block',
             'composter_side': 'composter', 'melon_side': 'melon', 'pumpkin_side': 'pumpkin', 'basalt_side': 'basalt', 'snow': 'snow_block', 'lava_still': 'lava',
-            'water_still': 'water'}
+            'water_still': 'water', 'smithing_table_side': 'smithing_table', 'crafting_table_side': 'crafting_table', 'blast_furnace_side': 'blast_furnace',
+            'smoker_side': 'smoker', 'quartz_block_bottom': 'quartz_block', 'magma': 'magma_block'}   # 横の面の絵の名前 → ブロックの名前
 FACE = {'n': 'north', 's': 'south', 'e': 'east', 'w': 'west'}
 CROSS_FIX = {'tall_grass_bottom': ('tall_grass', {'half': 'lower'}), 'tall_grass_top': ('tall_grass', {'half': 'upper'}),
              'fire_0': ('fire', {'age': '0', 'north': 'false', 'south': 'false', 'east': 'false', 'west': 'false', 'up': 'false'}),
@@ -115,6 +116,8 @@ def to_state(b):
     elif s == 'trap':
         n = t; f = b.get('f')
         P = {'facing': FACE.get(f, 'north'), 'half': 'top' if f == 'top' else 'bottom', 'open': 'true' if f in FACE else 'false', 'powered': 'false', 'waterlogged': 'false'}
+        if not t.endswith('_trapdoor'):                                           # 布の日よけ（戸の形の羊毛）：寝かせたものは絨毯、立てたものは羊毛のまま
+            n, P = (t.replace('_wool', '_carpet'), {}) if f not in FACE and t.endswith('_wool') else (t, {})   # 戸の性質を付けるとサーバーがチャンクごと読めない
     elif s == 'cross':
         if t in CROSS_FIX: n, P = CROSS_FIX[t]; P = dict(P)
         else: n = t

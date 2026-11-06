@@ -3,6 +3,7 @@ package dev.projects.server.coreloop.adventure
 import com.google.gson.JsonParser
 import dev.projects.server.coreloop.CoreDungeons
 import dev.projects.server.coreloop.QuestCombatPlacement
+import dev.projects.server.coreloop.ShippedMap
 import dev.projects.server.mob.QuestCombatEncounter
 import dev.projects.server.mob.QuestEncounterCombat
 import dev.projects.server.mob.QuestMobArchetype
@@ -89,16 +90,7 @@ internal object InstanceDungeonFactory {
     )
     val ROOM_NAMES get() = PLANS.map { it.name }
 
-    /** The map's files, copied once out of the jar: AnvilLoader reads plain files. */
-    private val folder: Path by lazy {
-        val dir = Files.createTempDirectory("projects-$MAP")
-        for (name in listOf("rooms.json") + (-1..0).flatMap { x -> (-1..0).map { z -> "region/r.$x.$z.mca" } }) {
-            val target = dir.resolve(name).also { Files.createDirectories(it.parent) }
-            requireNotNull(InstanceDungeonFactory::class.java.getResourceAsStream("/dungeons/$MAP/$name")) { "Missing dungeons/$MAP/$name" }
-                .use { Files.copy(it, target) }
-        }
-        dir
-    }
+    private val folder: Path get() = ShippedMap.folder("dungeons/$MAP")
 
     fun create(tier: Int): InstanceDungeon {
         require(tier in 1..4)
