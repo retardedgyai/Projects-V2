@@ -21,6 +21,7 @@ import trees as TR
 import poi as PO
 import props as P
 import escape_check as EC
+import castle as CS
 
 # ================================================================ 1. 区域の形と床の高さ
 MR, CLIFF, RAV_OUT = 45, 52, 60                                                  # 山の頂の半径・山の崖の外・谷の外の縁
@@ -250,121 +251,26 @@ for zz in (-6, 2):                                                              
 for x in range(-36, -33):                                                         # 塀の口の上の横木と小屋根
     for z in range(-6, 3):
         put(x, 46, z, full('dark_oak_planks')); put(x, 47, z, slab('deepslate_tiles'))
-def skirt(x0, x1, z0, z1, y0, out=2, inner=1):
-    """腰屋根：壁（x0..x1, z0..z1）の外 out マスから内側 inner マスまで、1マスごとに半マス上がる（ハーフを上下交互）。
-    四隅だけ1段反らせ、軒の下に白樺の逆さ階段の組物 [rules 112〜113]。上の端の高さを返す。"""
-    for x in range(x0 - out, x1 + out + 1):
-        for z in range(z0 - out, z1 + out + 1):
-            ex, ez = max(x0 - x, x - x1, 0), max(z0 - z, z - z1, 0); o = max(ex, ez)
-            if o == 0:
-                dep = min(x - x0, x1 - x, z - z0, z1 - z)
-                if dep >= inner: continue
-                k = out + dep
-            else: k = out - o
-            yy = y0 + k // 2; half = 'bottom' if k % 2 == 0 else 'top'
-            corner = o == out and ex >= out - 1 and ez >= out - 1
-            if corner: yy += 1
-            put(x, yy, z, slab('deepslate_tiles', half))
-            if half == 'top' and get(x, yy - 1, z) is None and o <= 1: put(x, yy - 1, z, full('dark_oak_planks'))
-            if 1 <= o < out and not corner:
-                f = ('e' if x > x1 else 'w') if ex >= ez else ('s' if z > z1 else 'n')
-                put(x, y0 - 1, z, stair('birch_planks', P.OPP[f], 'top'))
-    return y0 + (out + inner - 1) // 2
-def gable(x0, x1, z0, z1, y0, along='z'):
-    """切妻：棟は along の向き、1マスごとに1段上がる（上は少し急）。両端は1マス張り出し、妻の三角は明るい木に灯り。棟の両端に小さな黒いとげ。"""
-    if along == 'z':
-        n = x1 - x0; cells = lambda d, u: [(x0 + d, u), (x1 - d, u)]; us = range(z0 - 1, z1 + 2); ends = (z0, z1); fs = ('e', 'w')
-    else:
-        n = z1 - z0; cells = lambda d, u: [(u, z0 + d), (u, z1 - d)]; us = range(x0 - 1, x1 + 2); ends = (x0, x1); fs = ('s', 'n')
-    top = y0
-    for d in range((n + 2) // 2):
-        yy = y0 + d; top = yy
-        for u in us:
-            (a, b) = cells(d, u)
-            if a == b or (along == 'z' and abs(a[0] - b[0]) == 1 and False):
-                put(a[0], yy, a[1], full('deepslate_tiles')); put(a[0], yy + 1, a[1], slab(BLACK)); continue
-            put(a[0], yy, a[1], stair('deepslate_tiles', fs[0])); put(b[0], yy, b[1], stair('deepslate_tiles', fs[1]))
-            if a[0] + (1 if along == 'z' else 0) == b[0] and along == 'z' or along == 'x' and a[1] + 1 == b[1]:
-                put(a[0], yy + 1, a[1], slab(BLACK)); put(b[0], yy + 1, b[1], slab(BLACK))
-        for e in ends:
-            for (p, q) in cells(d, e):
-                for y in range(y0, yy):
-                    X, Z = (p, e) if along == 'z' else (e, q)
-                    X, Z = (p, q)
-                    if get(X, y, Z) is None: put(X, y, Z, full('birch_planks'))
-    for e in (us[0], us[-1]):                                                     # 棟の両端のとげ（控えめに1つ）[rules 116]
-        X, Z = ((x0 + x1) // 2, e) if along == 'z' else (e, (z0 + z1) // 2)
-        put(X, top + 2, Z, P.wall('polished_blackstone'))
-    return top
-def storey(x0, x1, z0, z1, y0, h, red=True):
-    """櫓の1層：下に朱の帯、白い壁、角と3マスおきに濃い木の柱、柱の間に小さな黒い窓、上に濃い木の長押。"""
-    for x in range(x0, x1 + 1):
-        for z in range(z0, z1 + 1):
-            if not (x in (x0, x1) or z in (z0, z1)): continue
-            u = (x - x0) if z in (z0, z1) else (z - z0)
-            corner = x in (x0, x1) and z in (z0, z1)
-            post = corner or u % 3 == 0
-            for y in range(y0, y0 + h):
-                if y == y0 + h - 1: b = full('dark_oak_planks')
-                elif post: b = log('dark_oak_log')
-                elif y == y0 and red: b = full(RED)
-                elif y == y0 + h - 3 and u % 3 in (1, 2) and not (u % 6 in (4, 5)): b = full('black_concrete')   # 横長の窓（1マスずつだと顔に見えた）
-                else: b = full(WHITE)
-                put(x, y, z, b)
-        # 中は空ける（床だけ）
-BASE = 46                                                                         # 石垣の上の高さ：塀（上端47）と揃え、櫓の体を塀の上へ出す [手本 sakura_outer]
-def yagura(x0, x1, z0, z1, floors=2):
-    """櫓：石垣（建物より1マス広い、2段）→ 層を上ほど1マスずつ小さく、層ごとに腰屋根、いちばん上は入母屋（腰屋根＋切妻）[rules 114〜115, 128]。"""
-    gx = [ground(x, z) for x in range(x0 - 1, x1 + 2) for z in range(z0 - 1, z1 + 2)]
-    for x in range(x0 - 1, x1 + 2):
-        for z in range(z0 - 1, z1 + 2):
-            edge = x in (x0 - 1, x1 + 1) or z in (z0 - 1, z1 + 1)
-            for y in range(min(gx) - 8, BASE + 1):
-                put(x, y, z, full(('chiseled_stone_bricks' if x in (x0 - 1, x1 + 1) and z in (z0 - 1, z1 + 1) else 'stone_bricks' if _h(x, y, z) < 0.7 else 'mossy_stone_bricks' if _h(x, y, z) < 0.85 else 'cracked_stone_bricks') if edge else 'stone_bricks'))
-            for y in range(BASE + 1, 80):
-                b = get(x, y, z)
-                if b is not None: put(x, y, z, None)
-            H[(x, z)] = BASE; KIND[(x, z)] = 'yagura'
-    y = BASE + 1; a0, a1, b0, b1 = x0, x1, z0, z1
-    for f in range(floors):
-        h = 6 if f == 0 else 5
-        storey(a0, a1, b0, b1, y, h, red=(f == 0))
-        y += h
-        if f < floors - 1:
-            skirt(a0, a1, b0, b1, y, out=2, inner=1); y += 1
-            a0, a1, b0, b1 = a0 + 1, a1 - 1, b0 + 1, b1 - 1
-    yt = skirt(a0, a1, b0, b1, y, out=2, inner=1)
-    along = 'z' if (b1 - b0) >= (a1 - a0) else 'x'
-    gable(a0 + 1, a1 - 1, b0 + 1, b1 - 1, yt + 1, along)
-    for (cx, cz) in ((a0 - 2, b0 - 2), (a0 - 2, b1 + 2), (a1 + 2, b0 - 2), (a1 + 2, b1 + 2)): put(cx, y, cz, P.HANG)
-    return BASE + 7                                                               # 2層目の床の高さ（渡り廊下をつなぐ）
-TOWERS = [(36, 44, -6, 6, 3),                                                     # 東：天守（いちばん大きく、3層）
-          (26, 32, 26, 32, 2), (26, 32, -32, -26, 2), (-4, 4, 37, 43, 2), (-4, 4, -43, -37, 2),
-          (-32, -26, 26, 32, 2), (-32, -26, -32, -26, 2), (-41, -37, 6, 10, 1), (-41, -37, -14, -10, 1)]   # 西の2つは入口の脇の小さい櫓
-for i in range(8):                                                                # 大きな桜：櫓のあいだ、塀の外。冠を塀の上へかぶせる（先に植え、櫓と廊下が上書きする）
-    a = math.pi / 8 + i * math.pi / 4
-    big_cherry(int(round(43 * math.cos(a))), int(round(43 * math.sin(a))), 300 + i)
-for t_ in TOWERS: yagura(*t_)
-def corridor(a, b, y=BASE + 7):
-    """渡り廊下：2つの櫓の2層目をつなぐ。幅3、トウヒの床、柵の手すり、黒い小屋根。6マスおきに地面まで柱 [build-structural-integrity]。"""
-    (ax, az), (bx, bz) = a, b; L = math.hypot(bx - ax, bz - az); ux, uz = (bx - ax) / L, (bz - az) / L
-    done = set()
-    for i in range(int(L * 2) + 1):
-        px, pz = ax + ux * i / 2, az + uz * i / 2
-        for s_ in (-1.5, -0.75, 0, 0.75, 1.5):
-            x, z = int(round(px - uz * s_)), int(round(pz + ux * s_))
-            if (x, z) in done or KIND.get((x, z)) == 'yagura': continue
-            done.add((x, z)); side = abs(s_) > 1.2
-            put(x, y, z, full('spruce_planks'))
-            put(x, y + 1, z, fence('spruce_planks') if side else None)
-            put(x, y + 4, z, slab('deepslate_tiles'))
-            if side and i % 12 == 0:
-                for yy in range(ground(x, z) + 1, y): put(x, yy, z, log('dark_oak_log'))
-                for yy in range(y + 1, y + 4): put(x, yy, z, log('dark_oak_log'))
-    return done
-CEN = [((x0 + x1) / 2, (z0 + z1) / 2) for (x0, x1, z0, z1, _) in TOWERS]
-for (i, j) in ((0, 1), (0, 2), (1, 3), (2, 4), (3, 5), (4, 6)): corridor(CEN[i], CEN[j])
-for (x, z) in ((-38, -6), (-38, 2)): pass
+# 塀の外の城（藍 11/06「左右非対称」「作りが荒い」「もっと大きな規模で」）：kit/castle.py の天守・櫓（手本はらーなろっその黒牢城の天守）。
+# 入口から天守へ通る線（z = -2）で左右対称に置く。東に3層の天守、北・南と四隅に2層の櫓、入口の両脇に1層の櫓。石垣の上は塀（上端47）より上
+CZ = -2
+CASTLE = [(47, CZ, 10, 3),                                                        # (x, z, 石垣の底の半幅, 層の数)
+          (0, CZ + 46, 7, 2), (0, CZ - 46, 7, 2),
+          (33, CZ + 33, 6, 2), (33, CZ - 33, 6, 2), (-33, CZ + 33, 6, 2), (-33, CZ - 33, 6, 2),
+          (-42, CZ + 11, 5, 1), (-42, CZ - 11, 5, 1)]
+for i, deg in enumerate((22.5, 67.5, 112.5, 150)):                                # 大きな桜：櫓のあいだ、z = -2 の線で対称（先に植え、城が上書きする）
+    for sgn in (1, -1):
+        a_ = math.radians(deg)
+        big_cherry(int(round(44 * math.cos(a_))), CZ + sgn * int(round(44 * math.sin(a_))), 300 + i * 2 + (sgn > 0))
+for (cx, cz, base, lv) in CASTLE:
+    for x in range(cx - base - 4, cx + base + 5):                                 # 城の場所の木を払う
+        for z in range(cz - base - 4, cz + base + 5):
+            for y in range(36, 90):
+                b_ = get(x, y, z)
+                if b_ and ('leaves' in b_.get('t', '') or 'cherry_log' in b_.get('t', '')): put(x, y, z, None)
+    CS.tenshu(cx, cz, 40, ground, base=base, base_h=7, levels=lv)
+    for x in range(cx - base, cx + base + 1):
+        for z in range(cz - base, cz + base + 1): KIND[(x, z)] = 'castle'
 torii(-40, -2, ground(-40, -2), half=3, h=7)
 torii(-66, -2, ground(-66, -2), half=3, h=6)                                      # 鳥居を並べて区切りに：橋の手前と庭の口 [rules 121]
 for i in range(8):                                                                # 花壇のいちばん上に大きな石灯籠
@@ -575,7 +481,8 @@ out = save('sakura_dungeon', {**EXTRA_VIEWS,
     'ravine': [V(-20, 30, 64), V(0, 14, 40)],
     'garden': [V(-28, 50, 6), V(20, 46, 0)],
     'arena': [V(0, 100, -70), V(0, 40, 0)],
-    'keep': [V(-12, 46, 4), V(40, 54, 0)],
+    'keep': [V(-14, 46, 0), V(47, 62, -2)],
+    'castle': [V(-70, 120, 60), V(10, 50, -2)],
     'torii': [V(-24, 46, 2), V(-44, 46, -2)],
     'crest': [V(-22, 76, 0), V(2, 40, 0)],
     'edge': [V(-40, 50, 70), V(-20, 20, 58)],
