@@ -459,9 +459,17 @@ ROOMS = {'spawn': [START[0], ground(*START) + 1, START[1]], 'gates': GATE_AT, 'd
          'secret': [85, ground(85, -64) + 1, -64], 'rooms': {k: [*geo, size] for (k, kind, geo, size, *_ ) in AREAS if kind == 'disc'},   # 円の区域：[x, z, 半径]
          'order': '入口の野（慣らしの群れ）→（沢道｜尾根道）→ 花守の回廊（敵の波）→ 坂 → ミニボス1の間 → 散華の間（敵の波）→ 崖道の穢れ場（隠れた空き地）→ 古い祠の森（穢れ場）→ 岩棚の穢れ場 → ミニボス2の間（滝の前、奥に滝裏の洞）→ 谷の石橋（休み）→ 散り桜の庭（ボス）'}
 def _room(key, name, kind, gate, cx, cz, r, spawn=None, seals=()):
-    """rooms.json の flow の1つ：kind は waves（敵の波）・miniboss・boss。gate はその部屋へ入る門（gates / doors の名前）。
-    miniboss_spawn はミニボスの出る所（門から見て奥、中心から4マス）。"""
-    d = {'key': key, 'name': name, 'kind': kind, 'gate': gate, 'center': [cx, ground(cx, cz) + 1, cz], 'radius': r, 'seals': list(seals)}
+    """rooms.json の flow の1つ：kind は waves（敵の波）・spawner（穢れ場：倒しきるまで湧く）・miniboss・boss。
+    gate はその部屋へ入る門の名前、gate_at と door はその門の位置と閉じる面（gates / doors と同じ）。
+    spawns は敵の湧く所：門から見て奥の半分の、中心から 0.6×半径の弧に6か所（立てる高さ）。miniboss_spawn はミニボスの出る所（門から見て奥、中心から4マス）。"""
+    d = {'key': key, 'name': name, 'kind': kind, 'gate': gate, 'gate_at': GATE_AT[gate], 'door': DOORS[gate],
+         'center': [cx, ground(cx, cz) + 1, cz], 'radius': r, 'seals': list(seals)}
+    gx, _, gz = GATE_AT[gate]; a0 = math.atan2(cz - gz, cx - gx)                   # 門から中心へ向く角
+    pts = []
+    for i in range(6):
+        a = a0 + math.radians(-75 + 30 * i); x, z = int(round(cx + 0.6 * r * math.cos(a))), int(round(cz + 0.6 * r * math.sin(a)))
+        pts.append([x, stand(x, z) + 1 if stand(x, z) is not None else ground(x, z) + 1, z])
+    if kind in ('waves', 'spawner'): d['spawns'] = pts
     if spawn: d['miniboss_spawn'] = [spawn[0], ground(*spawn) + 1, spawn[1]]
     return d
 ROOMS['flow'] = [
@@ -474,6 +482,8 @@ ROOMS['flow'] = [
     _room('MB2', 'ミニボス2の間', 'miniboss', 'ミニボス2の間', -80, 0, 14, spawn=(-80, 4), seals=('西', '枡形の南')),
     _room('D', '散り桜の庭', 'boss', '庭', 0, 0, AR - 1),
 ]
+for old_, new_ in (('苔の窪', '花守の回廊'), ('滝裏の洞', 'ミニボス2の間')):       # 古い名前：今のゲーム（InstanceDungeon.kt の PLANS）が flow を読むまでの別名
+    ROOMS['gates'][old_] = GATE_AT[new_]; ROOMS['doors'][old_] = DOORS[new_]
 for r_ in ROOMS['flow']:                                                          # 穢れ場：決まった数を倒すまで、敵が数秒ごとに湧き続ける（数は推論の目安、試遊で決める）
     if r_['kind'] == 'spawner': r_['spawner'] = {'kill_target': '8 + 4 * 人数', 'alive_cap': '3 + 人数', 'interval_s': 3.5, 'last': '精鋭1体', 'respawn_after_clear': False}
 ROOMS['packs'] = [{'name': '入口の野の群れ', 'at': [-60, ground(-60, 82) + 1, 82], 'count': '3 + 人数', 'gate': None, 'chase': True,
