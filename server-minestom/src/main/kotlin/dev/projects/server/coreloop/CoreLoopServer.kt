@@ -520,6 +520,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     player.sendMessage(CoreLoopItems.text("開拓大陸のワールドがまだ書き出されていません", NamedTextColor.YELLOW))
             } }
         })
+        // Development: fly over the exported world (creative ⇄ adventure). Only inside /frontier; leaving puts adventure back.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("creative").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->
+                if (!FrontierWorld.toggleCreative(player))
+                    player.sendMessage(CoreLoopItems.text("/creative は /frontier の中で使ってください", NamedTextColor.YELLOW))
+            } }
+        })
         // Test-only: refills every research material and ink. Local dev launchers pass -Dprojects.devCommands=true.
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("researchtest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { player ->

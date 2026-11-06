@@ -286,3 +286,40 @@ def boss_ring(x, z, g, rng, get_h, style):
         hh = rng.randint(2, 6)
         _col(px, pz, g + 1, g + hh, full('stone_bricks' if style != 'volcano' else 'blackstone'))
         if hh >= 5: put(px, g + hh + 1, pz, P.LANTERN)
+
+
+def white_arch(x, z, rng, get_h, f='n', h=6, span=5, broken=True):
+    """白い石の遺跡のアーチ [Runeforge 緑の城塞の斜面の白い弧]：磨いた閃緑岩の柱2本（根元は苔の丸石の台）、
+    上は柱の頭から1段上がって真ん中が頂の弧（端は逆さ階段、中はハーフ）。broken なら片方の柱を3低くし、弧を途中で切って落ちた石を散らす。
+    f はアーチをくぐる向き（'n'/'s' なら柱は東西に並ぶ）。"""
+    ax, az = (1, 0) if f in ('n', 's') else (0, 1)
+    half = span // 2
+    tops = []
+    for s in (-1, 1):
+        px, pz = x + ax * s * half, z + az * s * half
+        g = get_h(px, pz)
+        top = g + h - (3 if broken and s == 1 else 0)
+        put(px, g + 1, pz, full('mossy_cobblestone'))
+        for y in range(g + 2, top + 1): put(px, y, pz, full('polished_diorite' if y % 3 else 'diorite'))
+        tops.append(top)
+    y0 = tops[0]
+    for i in range(1, span):
+        if broken and i >= span - 1: break
+        px, pz = x + ax * (i - half), z + az * (i - half)
+        if i == 1 or i == span - 1:
+            side = ('w' if i == 1 else 'e') if ax else ('n' if i == 1 else 's')    # 高い側を柱へ向け、下の欠けを開口へ
+            put(px, y0 + 1, pz, stair('polished_diorite', side, 'top'))
+        elif i == half: put(px, y0 + 1, pz, full('polished_diorite')); put(px, y0 + 2, pz, slab('polished_diorite'))   # 頂
+        else: put(px, y0 + 1, pz, slab('polished_diorite', 'top'))
+    ex, ez = x + ax * half, z + az * half
+    put(ex, tops[1] + 1, ez, slab('diorite'))
+    for k in range(rng.randint(2, 4)):                                            # 落ちた石と苔
+        px, pz = ex + rng.randint(-2, 2), ez + rng.randint(-2, 2)
+        g = get_h(px, pz)
+        if g is not None: put(px, g + 1, pz, slab('cobblestone') if rng.random() < 0.5 else full('mossy_cobblestone'))
+
+
+def stone_lantern(x, z, get_h):
+    """石灯籠：石の塀の柱・模様の石・灯り。"""
+    g = get_h(x, z)
+    put(x, g + 1, z, P.wall('stone_bricks')); put(x, g + 2, z, full('chiseled_stone_bricks')); put(x, g + 3, z, P.LANTERN)

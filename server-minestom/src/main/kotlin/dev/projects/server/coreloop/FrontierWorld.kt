@@ -2,7 +2,10 @@ package dev.projects.server.coreloop
 
 import net.minestom.server.MinecraftServer
 import net.minestom.server.coordinate.Pos
+import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
+import net.minestom.server.event.instance.InstanceChunkLoadEvent
+import net.minestom.server.event.instance.RemoveEntityFromInstanceEvent
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.anvil.AnvilLoader
@@ -13,7 +16,8 @@ import java.nio.file.Path
 /**
  * Development only: walk the 1000×1000 開拓大陸 written by scripts/buildkit/towns/frontier_export.py.
  * The world is read from region files (AnvilLoader) and shared by everyone who enters; nothing is saved back.
- * Folder: -Dprojects.frontierWorld, default ~/ProjectS/worlds/frontier1000.
+ * Folder: -Dprojects.frontierWorld, default ~/ProjectS/worlds/frontier1000 (any world from towns/dungeon_export.py works too).
+ * The exported chunks carry no light, so each chunk is relit when it loads. /creative flies over it; leaving puts adventure back.
  */
 internal object FrontierWorld {
     private var instance: InstanceContainer? = null
@@ -33,6 +37,10 @@ internal object FrontierWorld {
         created.setGenerator { unit -> unit.modifier().fillHeight(-64, 0, Block.DEEPSLATE) }   // outside the exported area
         created.time = 6_000L
         created.defaultClock()?.pause()
+        created.eventNode().addListener(InstanceChunkLoadEvent::class.java) { e -> LightingChunk.relight(e.instance, listOf(e.chunk)) }
+        created.eventNode().addListener(RemoveEntityFromInstanceEvent::class.java) { e ->
+            (e.entity as? Player)?.takeIf { it.gameMode == GameMode.CREATIVE }?.let { it.gameMode = GameMode.ADVENTURE }
+        }
         readSpawn(dir)?.let { spawn = it }
         instance = created
         return created
@@ -44,6 +52,13 @@ internal object FrontierWorld {
         val (x, y, z) = n.destructured
         Pos(x.toDouble() + 0.5, y.toDouble(), z.toDouble() + 0.5)
     }.getOrNull()
+
+    /** Creative ⇄ adventure, only inside this world. False when the player is elsewhere. */
+    fun toggleCreative(player: Player): Boolean {
+        if (instance == null || player.instance !== instance) return false
+        player.gameMode = if (player.gameMode == GameMode.CREATIVE) GameMode.ADVENTURE else GameMode.CREATIVE
+        return true
+    }
 
     fun enter(player: Player): Boolean {
         val world = world() ?: return false
