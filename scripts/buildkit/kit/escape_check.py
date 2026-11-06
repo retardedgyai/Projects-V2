@@ -28,6 +28,7 @@ def surfaces(W):
                 if a1 is None: out.append(y)                                       # 水面は泳いで浮ける
                 continue
             if k in NOSTAND: continue
+            if a1 == 'water': continue                                             # 水の底には立たない：泳いで水面へ浮く（落ちたら水面に止まる）
             out.append(y)
         if out: S[(x, z)] = out
     return S

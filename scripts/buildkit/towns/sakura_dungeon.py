@@ -184,6 +184,7 @@ def torii(x, z, g, half=4, h=7):
     """大鳥居（明神鳥居）：朱の柱（足元は黒い亀腹）、貫、島木、黒い笠木の両端を反らせ、真ん中に額束。柱は z 方向に並ぶ。"""
     P_ = lambda u, y, b: put(x, y, z + u, b)
     for s_ in (-half, half):
+        for y in range(ground(x, z + s_) + 1, g + 1): P_(s_, y, full('stone_bricks'))   # 柱の地面が低いときは石の台で下ろす（浮いていた）
         P_(s_, g + 1, full(BLACK))
         for y in range(g + 2, g + h + 1): P_(s_, y, full(RED))
     for u in range(-half - 1, half + 2): P_(u, g + h - 2, full(RED) if abs(u) <= half else slab(RED, 'top'))   # 貫

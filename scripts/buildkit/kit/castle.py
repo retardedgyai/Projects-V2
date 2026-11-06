@@ -172,6 +172,21 @@ def gable(cx, cz, y0, hx, hz, along='x'):
         put(x, top + 1, z, EGG)
     return top
 
+def settle(x0, x1, z0, z1, y0, y1, maxgap=3):
+    """隙間を埋める：屋根（深層岩の丸石）・白壁・柱の下に、3マス以下の空きがあって、その下に固い物があれば、白壁で埋めてつなぐ。
+    腰屋根は壁の上1段を空けて載り、上の階の壁は下の天井まで届かないので、そのままだと屋根と上の階が浮く（11/06 浮いた部品の点検で見つけた）。
+    階の中（天井が濃い板）と軒の下（下が遠い）は埋めない。"""
+    def hard(b): return b is not None and b['s'] not in ('cross', 'carpet', 'lantern', 'chain', 'vine', 'water', 'fence')
+    def top_kind(b): return b is not None and (b.get('t', '').startswith(ROOF) or b.get('t') in (WHITE, 'dark_oak_log'))
+    for x in range(x0, x1 + 1):
+        for z in range(z0, z1 + 1):
+            for y in range(y1, y0, -1):
+                if not top_kind(get(x, y, z)) or hard(get(x, y - 1, z)): continue
+                gap = next((d for d in range(1, maxgap + 2) if hard(get(x, y - d, z))), None)
+                if gap is None or gap > maxgap + 1 or gap == 1: continue
+                for d in range(1, gap):
+                    if get(x, y - d, z) is None: put(x, y - d, z, full(WHITE))   # 白で埋める（濃い板だと千鳥破風の白い三角が茶色になった）
+
 def tenshu(cx, cz, g, ground, base=10, base_h=8, levels=3, flush=False):
     """天守・櫓。石垣（底の半幅 base、高さ base_h）の上に levels 層。flush なら層の壁を石垣の上の面と面一に（城壁の輪に組み込むとき）。
     3層：板張りの1層（高さ6）→ 腰屋根＋千鳥破風 → 白い2層（5）→ 腰屋根＋千鳥破風 → 廻縁の最上階（4）→ 入母屋。
@@ -186,7 +201,9 @@ def tenshu(cx, cz, g, ground, base=10, base_h=8, levels=3, flush=False):
         if i < len(plan) - 1:
             chidori(cx, cz, y - 3, h, h, 3 if i == 0 else 4)
             h -= 2
-    return gable(cx, cz, y, max(1, h - 1), max(1, h - 1), 'x')
+    top = gable(cx, cz, y, max(1, h - 1), max(1, h - 1), 'x')
+    R = base + 4; settle(cx - R, cx + R, cz - R, cz + R, g + base_h, top + 3)
+    return top
 
 
 # ================================================================ 城壁：石垣の輪・多聞櫓・櫓門（藍 11/06「壁というよりはただの城をならべただけ」）
@@ -278,4 +295,6 @@ def gatehouse(cx, cz, W, g, ground, side, half=3, span=8):
     y = top + 1
     storey(xc, zc, y, hx, hz, 6, 'white'); y += 6
     y = skirt(xc, zc, y, hx, hz, out=2, inner=1)
-    return gable(xc, zc, y, max(1, hx - 1), max(1, hz - 1), along)
+    top_ = gable(xc, zc, y, max(1, hx - 1), max(1, hz - 1), along)
+    settle(xc - hx - 3, xc + hx + 3, zc - hz - 3, zc + hz + 3, g + 7, top_ + 3)
+    return top_
