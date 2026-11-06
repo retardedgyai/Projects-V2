@@ -634,12 +634,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 "miniboss${context.get(slot)}") } }, slot)
         })
         // Test-only: /dungeontest opens ダンジョンの門 from anywhere in the harbor; inside, /dungeontest clear ends the
-        // room's wave and /dungeontest boss drops 桜牙獣 (to its 千本桜 first, with you at the glade's edge; again to finish).
+        // room's wave (a 穢れ場 skips to its last enemy) and /dungeontest boss drops 桜牙獣 (to its 千本桜 first, with you at the glade's edge; again to finish).
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("dungeontest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { openDungeonGate(it) } }
             addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
-                val combat = sessions[player.uuid]?.takeIf { it.dungeon != null && !it.returning }?.combat ?: return@scheduleNextTick
-                combat.entities().filter { !combat.isBoss(it.uuid) }.forEach { combat.applyEffectDamage(it.uuid, player, 1e6) }
+                val session = sessions[player.uuid]?.takeIf { it.dungeon != null && !it.returning } ?: return@scheduleNextTick
+                session.combat.entities().filter { !session.combat.isBoss(it.uuid) }.forEach { session.combat.applyEffectDamage(it.uuid, player, 1e6) }
+                session.dungeon!!.skipToLast()
             } } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("clear"))
             addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
                 val session = sessions[player.uuid]?.takeIf { it.dungeon?.bossEngaged == true && !it.returning } ?: return@scheduleNextTick
