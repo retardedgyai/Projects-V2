@@ -86,7 +86,7 @@ internal class ClassSelectScene {
         }
         val s = Session(player, back, camera)
         sessions[player.uuid] = s
-        if (figures.isEmpty()) seat()
+        if (figures.isEmpty()) { relight(); seat() }
         player.setInstance(world, Pos(SEATS_X.first() + 0.5, SEAT_TOP, 6.5)).thenRun {
             player.isInvisible = true
             camera.setInstance(world, camera(0.0)).thenRun {
@@ -96,6 +96,8 @@ internal class ClassSelectScene {
             }
         }
     }
+
+    fun isOpen(player: Player) = player.uuid in sessions
 
     /** Slide the camera one figure to the east (+1) or west (-1). */
     fun step(player: Player, dir: Int) {
@@ -120,8 +122,8 @@ internal class ClassSelectScene {
     /** The camera for a (fractional) seat: south of the bench, a little to the east and above, looking at the figure's chest. */
     private fun camera(seat: Double): Pos {
         val x = SEATS_X.first() + 0.5 + seat * SEAT_GAP
-        val eye = Vec(x + 0.9, SEAT_TOP + 1.25, 0.5 + 3.6)
-        val look = Vec(x, SEAT_TOP + 0.55, 0.5)
+        val eye = Vec(x + 1.0, SEAT_TOP + 1.85, 0.5 + 2.4)
+        val look = Vec(x + 0.4, SEAT_TOP + 0.75, 0.5)
         val d = look.sub(eye)
         val yaw = Math.toDegrees(atan2(-d.x(), d.z())).toFloat()
         val pitch = Math.toDegrees(-atan2(d.y(), hypot(d.x(), d.z()))).toFloat()
@@ -145,6 +147,12 @@ internal class ClassSelectScene {
             }
             figures += seat; figures += figure
         }
+    }
+
+    /** The exported regions carry no light: load the camp's chunks and light them once, or the clearing is black. */
+    private fun relight() {
+        val chunks = (-4..3).flatMap { cx -> (-4..3).map { cz -> world.loadChunk(cx, cz).join() } }
+        LightingChunk.relight(world, chunks)
     }
 
     private fun weapon(job: CoreClass): ItemStack {
@@ -179,7 +187,7 @@ internal class ClassSelectScene {
         private const val SEAT_GAP = 8.0
         private const val SEAT_TOP = 66.0
         /** How far below the log top the marker sits so the rider's seat lands on the log. */
-        private const val RIDE = -0.6
+        private const val RIDE = 0.05
         private const val SLIDE = 14
     }
 }

@@ -1461,7 +1461,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private fun updateHud(player: Player) {
         // The smith's forge covers the whole view; the action-bar HUD would sit on top of it.
         if (polishSessions?.isOpen(player) == true || atlasSessions?.isOpen(player) == true || grimoireSessions?.isOpen(player) == true ||
-            passiveTreeSessions?.isOpen(player) == true) {
+            passiveTreeSessions?.isOpen(player) == true || classSelect.isOpen(player)) {
             player.sendActionBar(Component.empty()); return
         }
         val a = combatLab.account(player) ?: account(player) ?: return
