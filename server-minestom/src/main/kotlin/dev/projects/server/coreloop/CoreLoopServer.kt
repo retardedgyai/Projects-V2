@@ -437,7 +437,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             } else if (event.player.instance === hub) {
                 val point = event.blockPosition
                 harbor.facilities.firstOrNull { facility ->
-                    facility.blockPositions.any { it.sameBlock(point) } && event.player.position.distance(facility.position) <= 6.0
+                    facility.blockPositions.any { it.sameBlock(point) } && event.player.position.distance(point.add(.5, .5, .5)) <= 6.0
                 }?.let { facility ->
                     event.isCancelled = true
                     openFacility(event.player, facility.kind)
@@ -512,7 +512,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             // A notice refreshes the HUD at once; otherwise every 5 ticks.
             val hudDirty = actor(player)?.consumeHudDirty() == true
             if (hudDirty || player.aliveTicks % 5 == 0L) updateHud(player)
-            if (player.instance === hub && player.position.y() < 38) { player.teleport(harbor.spawn); actors[player.uuid]?.reset() }
+            if (player.instance === hub && player.position.y() < HarborScene.FALL_Y) { player.teleport(harbor.spawn); actors[player.uuid]?.reset() }
             colonies[player.uuid]?.let { colony -> if (player.instance === colony.instance && player.position.y() < 37) player.teleport(colony.spawn) }
             // Fallen out of the arena. 散り桜の社's valley floor runs down to y -12, so its line is lower.
             val voidY = if (sessions[player.uuid]?.dungeon != null) -20.0 else 15.0
@@ -657,7 +657,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 return look(stand, gate.add(0.0, 1.5, 0.0))
             }
             val steps = mutableListOf<Pair<Long, () -> Unit>>(
-                100L to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }, 160L to { shot("harbor_gate") },
+                100L to { player.teleport(harbor.spawn) }, 160L to { shot("harbor_gate") },
                 220L to { openDungeonGate(player) }, 280L to { shot("menu") },
                 340L to { player.closeInventory(); account(player)?.let { departDungeon(player, CoreDungeons.SAKURA, it.revision) } },
                 520L to { shot("enter") },
@@ -676,7 +676,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             steps += t + 160 to { shot("arena_boss") }; steps += t + 240 to { shot("boss_fight") }
             steps += t + 300 to { run("dungeontest boss") }; steps += t + 420 to { shot("finale") }
             steps += t + 540 to { run("dungeontest boss") }; steps += t + 570 to { run("dungeontest boss") }; steps += t + 600 to { shot("cleared") }
-            steps += t + 940 to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }; steps += t + 980 to { shot("back_harbor") }
+            steps += t + 940 to { player.teleport(harbor.spawn) }; steps += t + 980 to { shot("back_harbor") }
             steps.forEach { (at, step) -> player.scheduler().buildTask { if (player.isOnline) step() }.delay(TaskSchedule.tick(at.toInt())).schedule() }
         }
         // Test-only: the coloured point-light prototype (SakuraLight). /lighttest puts a glowing blossom with a pink light
