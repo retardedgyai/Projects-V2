@@ -171,9 +171,18 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private fun openDungeonGate(player: Player) { dungeonGate?.show(player) ?: menus.dungeons(player) }
     /** The 手帳 in town is the dialog book; out on a run (or without the pack) the chest one, which has 帰還. */
     private fun openJournal(player: Player) {
-        if (playerMenu != null && uiPack?.enabled(player) == true && player.instance === hub && sessions[player.uuid] == null) playerMenu.show(player)
-        else menus.journal(player)
+        val packed = playerMenu != null && uiPack?.enabled(player) == true
+        val session = sessions[player.uuid]
+        when {
+            packed && player.instance === hub && session == null -> playerMenu!!.show(player)
+            // Out on a run or in a dungeon the way home comes first (the dialog book has none).
+            packed && session != null && session.instance === player.instance && !session.returning ->
+                returnDialog.show(player, ReturnDialog.Place(session.arena?.displayName ?: "遠征",
+                    session.combat.bossName().ifEmpty { null }, session.combat.bossDefeated))
+            else -> menus.journal(player)
+        }
     }
+    private val returnDialog = ReturnDialog(::returnToHarbor) { player -> playerMenu?.show(player) ?: menus.journal(player) }
     /** The smith's forge screen from wherever the workshop is asked for (the smith, its building, the 手帳). */
     private fun openForge(player: Player) {
         if (polishSessions != null && uiPack?.enabled(player) == true) { if (requireHub(player)) polishSessions.open(player) }
@@ -371,6 +380,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         }
         events.addListener(PlayerCustomClickEvent::class.java) { event ->
             if (displayDialog.click(event.player, event.key, event.payload)) return@addListener
+            if (returnDialog.click(event.player, event.key, event.payload)) return@addListener
             if (classSelect.click(event.player, event.key, event.payload)) return@addListener
             if (dungeonGate?.click(event.player, event.key, event.payload) == true) return@addListener
             if (playerMenu?.click(event.player, event.key, event.payload) != true) partyDialogs.click(event.player, event.key, event.payload)
