@@ -599,7 +599,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 net.minestom.server.command.builder.arguments.ArgumentType.Literal("sakura"))
         })
         // Test-only: /dungeontest opens ダンジョンの門 from anywhere in the harbor; inside, /dungeontest clear ends the
-        // room's wave and /dungeontest boss drops 桜牙獣 (to its 千本桜 first, with you behind a pillar; again to finish).
+        // room's wave and /dungeontest boss drops 桜牙獣 (to its 千本桜 first, with you at the glade's edge; again to finish).
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("dungeontest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { openDungeonGate(it) } }
             addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
@@ -611,8 +611,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 val boss = session.combat.entities().firstOrNull { session.combat.isBoss(it.uuid) } ?: return@scheduleNextTick
                 session.combat.applyEffectDamage(boss.uuid, player, 1e6)
                 if (session.combat.isAlive(boss.uuid)) {
-                    player.teleport(session.dungeon!!.layout.arenaCenter.add(0.0, 0.0, -21.0))
-                    player.sendMessage(CoreLoopItems.text("千本桜が来る。柱の陰でやり過ごし、終わったらもう一度 /dungeontest boss", NamedTextColor.GRAY))
+                    player.teleport(session.dungeon!!.layout.arenaEntry)
+                    player.sendMessage(CoreLoopItems.text("千本桜が来る。庭の縁でやり過ごし、終わったらもう一度 /dungeontest boss", NamedTextColor.GRAY))
                 }
             } } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("boss"))
         })
@@ -623,23 +623,39 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             val player = event.player
             fun run(command: String) = MinecraftServer.getCommandManager().execute(player, command)
             fun shot(name: String) { println("DUNGEON_TOUR_SHOT $name"); System.out.flush() }
-            listOf<Pair<Long, () -> Unit>>(
+            fun look(from: Pos, to: Pos) = from.withDirection(to.sub(from)).withPitch(8f)
+            fun inside(step: (DungeonLayout) -> Unit): () -> Unit = { sessions[player.uuid]?.dungeon?.layout?.let(step) }
+            /** Six blocks before gate [i] on the side the path comes from, facing it. */
+            fun before(layout: DungeonLayout, i: Int): Pos {
+                val gate = layout.gates[i].center
+                val toward = if (i < layout.rooms.size) layout.rooms[i].center else layout.arenaCenter
+                val back = gate.sub(toward).withY(0.0).asVec().normalize().mul(6.0)
+                val instance = player.instance as InstanceContainer
+                val stand = gate.add(back).let { it.withY(InstanceDungeonFactory.floorAt(instance, it.blockX(), it.blockZ(), gate.blockY()).toDouble()) }
+                return look(stand, gate.add(0.0, 1.5, 0.0))
+            }
+            val steps = mutableListOf<Pair<Long, () -> Unit>>(
                 100L to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }, 160L to { shot("harbor_gate") },
                 220L to { openDungeonGate(player) }, 280L to { shot("menu") },
                 340L to { player.closeInventory(); account(player)?.let { departDungeon(player, CoreDungeons.SAKURA, it.revision) } },
-                500L to { player.teleport(Pos(32.5, 40.0, -36.5, 0f, 5f)) }, 540L to { shot("hall") },
-                620L to { player.teleport(Pos(32.5, 40.0, -25.5, 0f, 10f)) }, 670L to { shot("room1_wave") },
-                740L to { run("dungeontest clear") }, 800L to { run("dungeontest clear") },
-                860L to { player.teleport(Pos(32.5, 40.0, -19.5, 0f, 5f)) }, 900L to { shot("room1_open") },
-                960L to { player.teleport(Pos(32.5, 40.0, -7.5, 0f, 10f)) }, 1010L to { shot("room2_wave") },
-                1080L to { run("dungeontest clear") }, 1140L to { run("dungeontest clear") },
-                1200L to { player.teleport(Pos(32.5, 40.0, 2.5, 0f, 0f)) }, 1240L to { shot("room2_open") },
-                1300L to { player.teleport(Pos(28.5, 40.0, 15.5, -14f, -5f)) }, 1360L to { shot("arena_boss") },
-                1440L to { shot("boss_fight") },
-                1500L to { run("dungeontest boss") }, 1620L to { shot("finale") },
-                1740L to { run("dungeontest boss") }, 1770L to { run("dungeontest boss") }, 1800L to { shot("cleared") },
-                2140L to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }, 2180L to { shot("back_harbor") },
-            ).forEach { (at, step) -> player.scheduler().buildTask { if (player.isOnline) step() }.delay(TaskSchedule.tick(at.toInt())).schedule() }
+                520L to { shot("enter") },
+            )
+            var t = 600L
+            for (i in InstanceDungeonFactory.ROOM_NAMES.indices) {
+                steps += t to inside { player.teleport(before(it, i)) }; steps += t + 50 to { shot("gate${i}") }
+                steps += t + 100 to inside { player.teleport(look(it.rooms[i].entry, it.rooms[i].center.add(0.0, 1.0, 0.0))) }
+                steps += t + 170 to { shot("room${i}_wave") }
+                steps += t + 220 to { run("dungeontest clear") }; steps += t + 280 to { run("dungeontest clear") }
+                steps += t + 340 to { shot("room${i}_clear") }
+                t += 400
+            }
+            steps += t to inside { player.teleport(before(it, it.rooms.size)) }; steps += t + 50 to { shot("gatehouse") }
+            steps += t + 100 to inside { player.teleport(look(it.arenaEntry, it.arenaCenter.add(0.0, 2.0, 0.0))) }
+            steps += t + 160 to { shot("arena_boss") }; steps += t + 240 to { shot("boss_fight") }
+            steps += t + 300 to { run("dungeontest boss") }; steps += t + 420 to { shot("finale") }
+            steps += t + 540 to { run("dungeontest boss") }; steps += t + 570 to { run("dungeontest boss") }; steps += t + 600 to { shot("cleared") }
+            steps += t + 940 to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }; steps += t + 980 to { shot("back_harbor") }
+            steps.forEach { (at, step) -> player.scheduler().buildTask { if (player.isOnline) step() }.delay(TaskSchedule.tick(at.toInt())).schedule() }
         }
         // Test-only: the coloured point-light prototype (SakuraLight). /lighttest puts a glowing blossom with a pink light
         // at your feet, /lighttest orbit sends one round you, /lighttest off clears yours.
