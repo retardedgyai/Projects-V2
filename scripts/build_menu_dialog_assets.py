@@ -123,6 +123,7 @@ BAKED = "".join(SELF_TABS + COMBAT_TABS) + "".join(h + "".join(l) for h, l in ST
 # rank over each name; beside it the open dungeon's stars, name and difficulty, then headed sections; 入る bottom right.
 DG_KEYART = "assets/core-ui/dungeons/sakura_keyart.png"   # scripts/build_dungeon_keyart.py, 240 x 135 dots, 2 design px a dot
 SCREEN_H = 270
+FOOTER = 33                                        # GUI px, the footer band the 閉じる button sits in
 HEADER = 33                                        # GUI px, the dialog's header (title row) and footer (button row) bands
 BLEED = 2                                          # GUI px the screen picture runs past each edge
 DG_LIST = (12, 44, 80, 26)                         # the one entry: x, top, w, h
@@ -541,22 +542,44 @@ def bake_dungeon(fonts):
     return img
 
 
-def add_screen(sprites, name, image, unit):
+def gate_footer(image, unit):
+    """The 閉じる plate sits in the dialog's footer band (FOOTER GUI px at every size), which on the gate is the key art:
+    the plate read as a bare vanilla button there (司令塔 2026-11-06). A dark band like the 手帳's ground under it, at
+    this size's footer height, with the book's hairline on top."""
+    k = K / unit                                   # texture px per GUI px
+    top = round(image.height - FOOTER * k)
+    out = image.copy()
+    band = Image.new("RGBA", (image.width, image.height - top), (12, 9, 16, 228))
+    out.alpha_composite(band, (0, top))
+    fade = round(10 * k)                           # a short fade above it, so it doesn't cut the art like a ruler
+    for i in range(fade):
+        out.alpha_composite(Image.new("RGBA", (image.width, 1), (12, 9, 16, round(228 * (i + 1) / (fade + 1)))), (0, top - fade + i))
+    out.alpha_composite(Image.new("RGBA", (image.width, max(1, round(k))), C["line"]), (0, top))
+    return out
+
+
+def add_screen(sprites, name, image, unit, base=None, tag=""):
     """[image] (the whole screen at K) as tiles hung from the title line: each 240 texture px square, its top in GUI px
-    below the screen top (the title canvas works in GUI px from TITLE_TOP). Tiles are shared between the sizes."""
+    below the screen top (the title canvas works in GUI px from TITLE_TOP). A tile that matches [base]'s is shared by
+    the sizes; one that differs (the footer band) gets this size's [tag] in its texture name."""
     k = round(K / unit)                            # texture px per GUI px: 4, 3, 2
     # A window a few px off 1080 (its border, a bar) moves the header by a pixel: bleed BLEED GUI px past every edge,
     # repeating the edge pixels, so no line of the world shows (2026-11-06, in game: a 1 px gap along the top).
     b = BLEED * k
-    big = Image.new("RGBA", (image.width + 2 * b, image.height + 2 * b))
-    big.paste(image.resize((image.width + 2 * b, image.height + 2 * b), Image.NEAREST))
-    big.paste(image, (b, b))
-    image = big
+
+    def bleed(im):
+        big = Image.new("RGBA", (im.width + 2 * b, im.height + 2 * b))
+        big.paste(im.resize((im.width + 2 * b, im.height + 2 * b), Image.NEAREST))
+        big.paste(im, (b, b))
+        return big
+    image = bleed(image)
+    base = bleed(base) if base is not None else image
     tiles = []
     for py in range(0, image.height, 240):
         for px in range(0, image.width, 240):
-            piece = image.crop((px, py, min(px + 240, image.width), min(py + 240, image.height)))
-            tile = f"{name}_{px}_{py}"
+            box = (px, py, min(px + 240, image.width), min(py + 240, image.height))
+            piece = image.crop(box)
+            tile = f"{name}_{px}_{py}" if piece.tobytes() == base.crop(box).tobytes() else f"{name}{tag}_{px}_{py}"
             sprites.add(tile, piece, piece.height / k, [py / k - BLEED], origin=TITLE_TOP, unit=1, first_line=True)
             tiles.append({"sprite": tile, "dx": px / k - BLEED, "dy": py / k - BLEED})
     sprites.meta[name] = {"tiles": tiles}
@@ -616,7 +639,7 @@ def main() -> None:
             size["styles"][style] = {"font": f"{NS}:menu{tag}_{style}_", "advances": advances(fonts[key], pt * unit, oversample, chars)}
         sprites.add_tiled("page_self", page_self, CANVAS_H, [0], first_line=True)
         sprites.add_tiled("page_skills", page_skills, CANVAS_H, [0], first_line=True)
-        add_screen(sprites, "gate_screen", gate_screen, unit)
+        add_screen(sprites, "gate_screen", gate_footer(gate_screen, unit), unit, base=gate_screen, tag=tag)
         gate_lines, gate_top = gate_body(unit)
         for c in CLASSES:
             art = Image.open(ROOT / f"assets/core-ui/proposals/2026-10-16-class-emblems/{c}-32.png").convert("RGBA")
