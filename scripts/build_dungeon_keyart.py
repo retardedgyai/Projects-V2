@@ -19,7 +19,7 @@ import build_boss_sakura_fang as fang  # noqa: E402
 
 ROOT = HERE.parent
 OUT = ROOT / "assets/core-ui/dungeons/sakura_keyart.png"
-W, H = 232, 95                      # dots: the canvas at 2 design px a dot
+W, H = 240, 135                     # dots: the whole 480 x 270 screen (GUI scale 4, 1080p) at 2 design px a dot
 BAYER = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) / 16.0
 SKY_TOP, SKY_LOW = np.array([22, 16, 34]), np.array([92, 38, 62])
 GLOW = np.array([236, 120, 150])
@@ -31,7 +31,7 @@ def sky():
     y, x = np.mgrid[0:H, 0:W]
     t = (y / (H - 1)) ** 1.3
     img = SKY_TOP * (1 - t[..., None]) + SKY_LOW * t[..., None]
-    glow = np.clip(1 - np.hypot((x - 168) / 70.0, (y - 52) / 48.0), 0, 1) ** 1.4
+    glow = np.clip(1 - np.hypot((x - 172) / 80.0, (y - 66) / 62.0), 0, 1) ** 1.4
     img = img * (1 - 0.55 * glow[..., None]) + GLOW * 0.55 * glow[..., None]
     step = 18.0                     # quantise to a small palette, dithered
     q = np.floor(img / step + BAYER[y % 4, x % 4][..., None]) * step
@@ -45,7 +45,7 @@ def ground(img):
     for x in range(W):
         img[edge[x]:, x] = (18, 12, 20)
         img[edge[x], x] = (46, 26, 40)
-        if 120 < x < 220 and rng.random() < 0.5:
+        if 110 < x < 236 and rng.random() < 0.5:
             img[edge[x] + rng.integers(0, 3), x] = PETALS[rng.integers(0, 2)]
     return img
 
@@ -59,15 +59,15 @@ def boss():
     sc = rbb.Scene(model)
     model.write_bytes(kept)
     opened = {n: (np.array(e, float), np.zeros(3), np.ones(3)) for n, e in fang.open_pose(b).items()}
-    size = (160, 92)
-    rgb, depth = rbb.render(sc, opened, az=50, el=14, size=size, scale=0.86, cy=.97, with_depth=True)
+    size = (178, 124)
+    rgb, depth = rbb.render(sc, opened, az=50, el=14, size=size, scale=1.16, cy=.97, with_depth=True)
     rgb = np.asarray(rgb.convert("RGB") if hasattr(rgb, "convert") else rgb)
     return rgb, depth > -1e8
 
 
 def petals(img):
     rng = np.random.default_rng(11)
-    for _ in range(70):
+    for _ in range(110):
         x, y = rng.integers(0, W), rng.integers(0, H - 16)
         img[y, x] = PETALS[rng.integers(0, 3)]
         if rng.random() < 0.3 and x + 1 < W:
@@ -78,9 +78,11 @@ def petals(img):
 def main():
     img = sky()
     rgb, mask = boss()
-    ox, oy = W - rgb.shape[1], H - rgb.shape[0] - 2
-    region = img[oy:oy + rgb.shape[0], ox:ox + rgb.shape[1]]
-    region[mask] = rgb[mask]
+    # Pushed past the right edge a little so the head clears the text column (the tail tip is what gets cut).
+    ox, oy = W - rgb.shape[1] + 10, H - rgb.shape[0] - 2
+    keep = W - ox
+    region = img[oy:oy + rgb.shape[0], ox:W]
+    region[mask[:, :keep]] = rgb[:, :keep][mask[:, :keep]]
     img = petals(ground(img))
     OUT.parent.mkdir(parents=True, exist_ok=True)
     Image.fromarray(img).save(OUT)

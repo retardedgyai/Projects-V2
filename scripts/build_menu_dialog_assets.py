@@ -113,19 +113,23 @@ STATS = (320, [WIN_Y + 28, WIN_Y + 107], 136, 11)   # x, each group's first base
 NOTICE = (8, WIN_Y + 139)                          # one short line above the edit button
 BAKED = "".join(SELF_TABS + COMBAT_TABS) + "".join(h + "".join(l) for h, l in STAT_GROUPS) + "".join(KV_LABELS) + "冒険の手帳いまの組奥義威力再使用範囲左クリック右クリック名刺を整える道次の一歩ポイント銀貨閉じる"
 
-# ---- ダンジョンの門 (DungeonGateDialog): Aion 2's dungeon screen (藍 2026-11-06 「アイオン2のインスタンスダンジョンと同じ構図で」):
-# the boss fills the page, darkened towards the left; the list of dungeons down the left edge, a star rank over each name;
-# beside it the open dungeon's stars, name and difficulty, then headed sections (入場条件・道のり・報酬); 入る at the bottom right.
-DG_KEYART = "assets/core-ui/dungeons/sakura_keyart.png"   # scripts/build_dungeon_keyart.py, 2 design px a dot
-DG_LIST = (4, 24, 78, 26)                          # the one entry: x, top, w, h
-DG_X = 96                                          # the info column
-DG_W = 140
-DG_HEADS = [(66, "入場条件"), (96, "道のり"), (126, "踏破の報酬")]
-DG_TIER = (100, 86)                                # runtime: the tier, then the baked rest of the line
+# ---- ダンジョンの門 (DungeonGateDialog): Aion 2's dungeon screen (藍 2026-11-06 「アイオン2のインスタンスダンジョンと同じ構図で」),
+# over the whole screen ("全画面にしたら変かな" → やってみよう, still a dialog). The dialog draws its header (the title line)
+# first and unclipped, so the page is one screen-sized picture hung from the title line: art, frames and words, laid out in
+# screen design px (480 x 270, GUI scale 4 on 1080p). The body underneath only carries the invisible hit areas, the
+# footer our 閉じる plate. The boss fills the screen, darkened towards the left; the list down the left edge with a star
+# rank over each name; beside it the open dungeon's stars, name and difficulty, then headed sections; 入る bottom right.
+DG_KEYART = "assets/core-ui/dungeons/sakura_keyart.png"   # scripts/build_dungeon_keyart.py, 240 x 135 dots, 2 design px a dot
+SCREEN_H = 270
+HEADER = 33                                        # GUI px, the dialog's header (title row) and footer (button row) bands
+DG_LIST = (12, 44, 80, 26)                         # the one entry: x, top, w, h
+DG_X = 112                                         # the info column
+DG_W = 124
+DG_HEADS = [(86, "入場条件"), (116, "道のり"), (146, "踏破の報酬")]
+DG_TIER = (116, 106)                               # the tier (a title glyph per tier), then the baked rest of the line
 DG_REWARDS = [("echo_shard", "討伐証", "2"), ("gold_nugget", "戦利品券", "12"), ("nether_star", "高揚のオーブ", "1"), ("experience_bottle", "経験", "")]
-DG_REWARD_Y = 139
-DG_ENTER = (366, 166, 92, 19)
-DG_NOTICE = (DG_X, 184)
+DG_REWARD_Y = 159
+DG_ENTER = (374, 206, 92, 19)
 TEAL = "#8fd3cf"
 BAKED += "ダンジョン散り桜の社ふつう入場条件道のり踏破の報酬入るひとり無料部屋波ボス桜牙獣討伐証戦利品券高揚のオーブ経験"
 
@@ -496,44 +500,64 @@ def item_icon(name):
 
 
 def bake_dungeon(fonts):
-    img = Image.new("RGBA", (CANVAS_W * K, CANVAS_H * K)); d = ImageDraw.Draw(img)
+    """The whole screen, 480 x 270 design px at K."""
+    img = Image.new("RGBA", (SCREEN_W * K, SCREEN_H * K)); d = ImageDraw.Draw(img)
     art = Image.open(ROOT / DG_KEYART).convert("RGBA")
-    art = art.resize((art.width * 2 * K, art.height * 2 * K), Image.NEAREST)
-    img.alpha_composite(art.crop((0, 0, CANVAS_W * K, CANVAS_H * K)))
-    # Darken towards the left so the list and the text read over the art (Aion 2's left shade), in dithered steps.
-    for x in range(0, 280, 2):
-        a = round(232 * max(0.0, 1 - x / 280) ** 1.2)
-        tint(img, x, 0, x + 2, CANVAS_H, (10, 8, 12, a))
-    draw_text(d, fonts, "b8", 8, 14, "ダンジョン", C["ink"])
-    tint(img, 4, 19, 250, 19.5, (255, 255, 255, 30))
-    # The list: one entry, open (white, a bronze bar at its left edge).
+    img.alpha_composite(art.resize((art.width * 2 * K, art.height * 2 * K), Image.NEAREST).crop((0, 0, SCREEN_W * K, SCREEN_H * K)))
+    # Darken towards the left so the list and the words read over the art (Aion 2's left shade).
+    for x in range(0, 300, 2):
+        a = round(236 * max(0.0, 1 - x / 300) ** 1.2)
+        tint(img, x, 0, x + 2, SCREEN_H, (10, 8, 12, a))
+    draw_text(d, fonts, "b8", 16, 22, "ダンジョン", C["ink"])
+    tint(img, 10, 32, 270, 32.5, (255, 255, 255, 30))
+    # The list: one entry, open (a gold bar at its left edge).
     x, top, w, h = DG_LIST
     tint(img, x, top, x + w, top + h, (255, 255, 255, 14)); tint(img, x, top, x + 1, top + h, hexc(C["gold"]))
     for i in range(2): star(img, x + 5 + i * 8, top + 4)
     draw_text(d, fonts, "m6", x + 5, top + 21, "散り桜の社", C["ink"])
-    tint(img, 86, 24, 86.5, 186, (255, 255, 255, 22))
+    tint(img, 100, 42, 100.5, 228, (255, 255, 255, 22))
     # The open dungeon.
-    for i in range(2): star(img, DG_X + i * 8, 24)
-    draw_text(d, fonts, "b8", DG_X, 44, "散り桜の社", C["ink"])
-    img.alpha_composite(nine(slot_tile(True), 4, 46, 12), (DG_X * K, 49 * K))
-    draw_text(d, fonts, "m6", DG_X + 23, 57.5, "ふつう", C["ink"], anchor="ms")
+    for i in range(2): star(img, DG_X + i * 8, 44)
+    draw_text(d, fonts, "b8", DG_X, 64, "散り桜の社", C["ink"])
+    img.alpha_composite(nine(slot_tile(True), 4, 46, 12), (DG_X * K, 69 * K))
+    draw_text(d, fonts, "m6", DG_X + 23, 77.5, "ふつう", C["ink"], anchor="ms")
     for y, head in DG_HEADS:
         tint(img, DG_X, y, DG_X + DG_W, y + 11, (40, 90, 96, 70))
         img.alpha_composite(diamond(7, hexc(TEAL), None, (140, 220, 215)), ((DG_X + 1) * K, (y + 2) * K))
         draw_text(d, fonts, "m6", DG_X + 11, y + 8.5, head, TEAL)
     draw_text(d, fonts, "m6", DG_TIER[0] + 11, DG_TIER[1], "・ ひとり ・ 入場 無料", C["ink"])
-    draw_text(d, fonts, "m6", DG_X + 4, 116, "部屋 2 ・ 波 4 ・ ボス 桜牙獣", C["ink"])
+    draw_text(d, fonts, "m6", DG_X + 4, 136, "部屋 2 ・ 波 4 ・ ボス 桜牙獣", C["ink"])
     for i, (name, _, count) in enumerate(DG_REWARDS):
         sx = DG_X + 4 + i * 24
         slot_frame(img, sx, DG_REWARD_Y, 20, 20)
         img.alpha_composite(item_icon(name).resize((16 * K, 16 * K), Image.NEAREST), ((sx + 2) * K, (DG_REWARD_Y + 2) * K))
         if count: draw_text(d, fonts, "m6", sx + 19, DG_REWARD_Y + 19, count, C["ink"], anchor="rs")
-    # The 手帳's iron rim around the whole page, so the art sits in a window rather than pasted on.
-    img.alpha_composite(nine(window_tile(fill=(0, 0, 0, 0)), 8, CANVAS_W, CANVAS_H))
     ex, ey, ew, eh = DG_ENTER
     img.alpha_composite(nine(GOLD_BTN, 5, ew, eh), (ex * K, ey * K))
     draw_text(d, fonts, "b8", ex + ew / 2, ey + 13.5, "入る", C["dark"], anchor="ms")
     return img
+
+
+def add_screen(sprites, name, image, unit):
+    """[image] (the whole screen at K) as tiles hung from the title line: each 240 texture px square, its top in GUI px
+    below the screen top (the title canvas works in GUI px from TITLE_TOP). Tiles are shared between the sizes."""
+    k = round(K / unit)                            # texture px per GUI px: 4, 3, 2
+    tiles = []
+    for py in range(0, image.height, 240):
+        for px in range(0, image.width, 240):
+            piece = image.crop((px, py, min(px + 240, image.width), min(py + 240, image.height)))
+            tile = f"{name}_{px}_{py}"
+            sprites.add(tile, piece, piece.height / k, [py / k], origin=TITLE_TOP, unit=1, first_line=True)
+            tiles.append({"sprite": tile, "dx": px / k, "dy": py / k})
+    sprites.meta[name] = {"tiles": tiles}
+
+
+def gate_body(unit):
+    """Where the body sits on a 1080p screen: the dialog centres it in the space between the header and footer bands, so
+    it is as many lines as fit there. Returns (lines, its top in design px)."""
+    area = round(SCREEN_H * unit) - 2 * HEADER
+    lines = (area - 8) // 9                        # the text widget pads 4 GUI px all round (FocusableTextWidget)
+    return lines, (HEADER + (area - lines * 9 - 8) // 2 + 4) / unit
 
 
 def main() -> None:
@@ -554,8 +578,8 @@ def main() -> None:
             advances_map[chr(cp)] = step * sign; metrics["space"][str(step * sign)] = cp; cp += 1
     files[f"assets/{NS}/font/menu_space.json"] = json.dumps({"providers": [{"type": "space", "advances": advances_map}]}).encode()
 
-    page_self, page_skills, page_dungeon = bake_self(fonts), bake_skills(fonts), bake_dungeon(fonts)
-    page_dungeon.save(ROOT / "build/dungeon_page.png")
+    page_self, page_skills, gate_screen = bake_self(fonts), bake_skills(fonts), bake_dungeon(fonts)
+    gate_screen.save(ROOT / "build/dungeon_page.png")
     self_tabs, combat_boxes = tabs_row(None, None, fonts, SELF_TABS, ""), combat_tabs(None, None, fonts)
     skill_source = (ROOT / "server-minestom/src/main/kotlin/dev/projects/server/coreloop/CoreSkillCatalog.kt").read_text(encoding="utf-8")
     skill_icons = sorted(set(re.findall(r's\("[^"]*", "([a-z_]+)"', skill_source)))
@@ -582,7 +606,12 @@ def main() -> None:
             size["styles"][style] = {"font": f"{NS}:menu{tag}_{style}_", "advances": advances(fonts[key], pt * unit, oversample, chars)}
         sprites.add_tiled("page_self", page_self, CANVAS_H, [0], first_line=True)
         sprites.add_tiled("page_skills", page_skills, CANVAS_H, [0], first_line=True)
-        sprites.add_tiled("page_dungeon", page_dungeon, CANVAS_H, [0], first_line=True)
+        add_screen(sprites, "gate_screen", gate_screen, unit)
+        gate_lines, gate_top = gate_body(unit)
+        for t in range(1, 5):                      # the tier, drawn in the title line like the screen
+            word, ascent = pixel_text(fonts, "m6", f"T{t}", C["ink"])
+            tier_top = round((DG_TIER[1] * K - ascent) / round(K / unit))
+            sprites.add(f"gate_tier{t}", word, word.height / round(K / unit), [tier_top], origin=TITLE_TOP, unit=1, first_line=True)
         for c in CLASSES:
             art = Image.open(ROOT / f"assets/core-ui/proposals/2026-10-16-class-emblems/{c}-32.png").convert("RGBA")
             sprites.add(f"emblem64_{c}", art.resize((64 * K, 64 * K), Image.NEAREST).resize((256, 256), Image.NEAREST), 64, [EMBLEM64[1]])
@@ -600,7 +629,7 @@ def main() -> None:
         # invisible hit areas (alpha 1: under the client's 0.1 cut, but the glyph rectangle still takes clicks)
         hits = {"slot": (SLOT, SLOT, slot_tops), "row": (ROW_W, ROW_H, [y for _, y in ROWS]), "act": (ACT_W, BTN_H, [y for _, y in ACTS]),
                 "edit": (EDIT[2], BTN_H, [EDIT[1]]), "reset": (110, 10, [RESET[1]]),
-                "enter": (DG_ENTER[2], DG_ENTER[3], [DG_ENTER[1]]), "reward": (20, 20, [DG_REWARD_Y])}
+                "enter": (DG_ENTER[2], DG_ENTER[3], [DG_ENTER[1] - gate_top]), "reward": (20, 20, [DG_REWARD_Y - gate_top])}
         for page, boxes in (("self", self_tabs), ("combat", combat_boxes)):
             for i, (x, y, w, h) in enumerate(boxes):
                 hits[f"tab_{page}{i}"] = (w, h, [y])
@@ -622,8 +651,9 @@ def main() -> None:
                           "acts": [list(a) for a in ACTS], "reset": list(RESET), "emblem24": list(EMBLEM24), "name": list(NAME),
                           "kv": list(KV), "rows": [list(r) for r in ROWS], "rowW": ROW_W, "rowH": ROW_H, "stats": [STATS[0], STATS[1][0], STATS[1][1], STATS[2], STATS[3]], "notice": list(NOTICE),
                           "edit": list(EDIT), "closeW": CLOSE_W,
-                          "dgTier": list(DG_TIER), "dgEnter": list(DG_ENTER), "dgRewards": [[DG_X + 4 + i * 24, DG_REWARD_Y] for i in range(len(DG_REWARDS))],
-                          "dgRewardNames": [n for _, n, _ in DG_REWARDS], "dgNotice": list(DG_NOTICE)}
+                          "gateTier": [DG_TIER[0], tier_top], "gateEnter": list(DG_ENTER), "gateLines": gate_lines, "gateTop": gate_top,
+                          "gateRewards": [[DG_X + 4 + i * 24, DG_REWARD_Y] for i in range(len(DG_REWARDS))],
+                          "gateRewardNames": [n for _, n, _ in DG_REWARDS], "titleX": TITLE_X}
         metrics["sizes"][tag] = size
         glyphs += len(sprites.providers)
     for name, image in Sprites.textures.items():
