@@ -26,10 +26,11 @@ enum class QuestMobArchetype(val displayName: String, val rarity: QuestMobRarity
     ECLIPSE_REGENT("星蝕の王", QuestMobRarity.BOSS, "lightning"),
     SHADE_WYRM("黒翳竜", QuestMobRarity.BOSS, "fire"),
     SAKURA_FANG("桜牙獣", QuestMobRarity.BOSS, "fire"),
-    // 散り桜の社's two mini-bosses (ミニボス1 after 花守の回廊, ミニボス2 after 散華の間). The dungeon's rooms name these two; until
-    // 藍 picks which two of the proposals they are, they are stand-ins (vanilla bodies, three skills), replaced behind the same names.
-    SAKURA_MINIBOSS_1("仮の花守・一", QuestMobRarity.MINIBOSS, "ice"),
-    SAKURA_MINIBOSS_2("仮の花守・二", QuestMobRarity.MINIBOSS, "lightning"),
+    // 散り桜の社's two mini-bosses (ミニボス1 after 花守の回廊, ミニボス2 after 散華の間). The dungeon's rooms name these two. Until 藍
+    // picks two of the proposals, they are the provisional first picks (docs/development/sakura-minibosses.md), the most unlike
+    // 桜牙獣 in shape; another pick is built behind the same names.
+    SAKURA_MINIBOSS_1("花守の鎧武者", QuestMobRarity.MINIBOSS, "lightning"),
+    SAKURA_MINIBOSS_2("石灯籠の番人", QuestMobRarity.MINIBOSS, "ice"),
 }
 
 data class QuestMobInfo(
@@ -86,8 +87,8 @@ internal data class QuestMobDefinition(
     val boss: Boolean get() = archetype.rarity == QuestMobRarity.BOSS
     val soundFamily: String get() = when (archetype) {
         QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.IRON_WARDEN, QuestMobArchetype.GLACIAL_COLOSSUS -> "husk"
-        QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE, QuestMobArchetype.TEMPEST_HIEROPHANT, QuestMobArchetype.TIDE_ARCHIVIST,
-        QuestMobArchetype.SAKURA_MINIBOSS_2 -> "evoker"
+        QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE, QuestMobArchetype.TEMPEST_HIEROPHANT, QuestMobArchetype.TIDE_ARCHIVIST -> "evoker"
+        QuestMobArchetype.SAKURA_MINIBOSS_2 -> "iron_golem"
         QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.CINDER_REGENT, QuestMobArchetype.FORGE_SENTINEL -> "piglin_brute"
         QuestMobArchetype.ECLIPSE_REGENT -> "wither_skeleton"
         QuestMobArchetype.SHADE_WYRM, QuestMobArchetype.SAKURA_FANG -> "ravager"
@@ -139,7 +140,7 @@ internal object QuestMobContent {
                     "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross",
                     "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "shade-orb", "shade-channel", "shade-shell",
                     "sakura-scatter", "sakura-bloom", "sakura-howl", "sakura-rain",
-                    "miniboss1-ring", "miniboss2-mark", "miniboss2-fan", "miniboss2-ring"))
+                    "armor-banner", "lantern-lob", "lantern-glare"))
                 dev.projects.server.coreloop.CoreDamageType.MAGICAL
             else if (id in setOf("shade-channel", "shade-shell")) dev.projects.server.coreloop.CoreDamageType.TRUE   // a failed gimmick
             else dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
@@ -246,26 +247,33 @@ internal object QuestMobContent {
                     attack("sakura-claw3", "桜爪・止め", MobAttackShape.Slam(7.0, 3.0), 6.0, 28.0,
                         900, 300, 1300, 0, health = .5, scripted = true),
                 )).copy(model = "sakura_fang", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2)
-            // Stand-ins for the two mini-bosses (see QuestMobArchetype). A mini-boss is always 希少 (MobGrades.MINIBOSS, health x2.1),
-            // so these come to about 4 tenths of 桜牙獣's health: 107 and 95 here, 225 and 200 in the fight at tier 1.
-            QuestMobArchetype.SAKURA_MINIBOSS_1 -> definition(EntityType.VINDICATOR, 107.0, 0.15, 2.0, 1.5,
-                Material.IRON_AXE, attacks = listOf(
-                    attack("miniboss1-slash", "踏み込み斬り・横へ", MobAttackShape.Slam(7.0, 1.4), 6.5, 16.0,
-                        1100, 400, 900, 4500, weight = 3),
-                    attack("miniboss1-sweep", "薙ぎ払い・下がれ", MobAttackShape.Sweep(4.5, 75.0), 4.0, 14.0,
-                        900, 350, 850, 3500, weight = 3),
-                    attack("miniboss1-ring", "花の輪・離れろ", MobAttackShape.Ring(5.5), 5.0, 18.0,
-                        1500, 0, 1100, 8000, health = .5, weight = 2),
-                ))
-            QuestMobArchetype.SAKURA_MINIBOSS_2 -> definition(EntityType.EVOKER, 95.0, 0.13, 7.0, 1.4,
+            // 散り桜の社's mini-bosses (scripts/build_boss_hanamori.py; clip lengths = telegraph + recovery). A mini-boss is always
+            // 希少 (MobGrades.MINIBOSS, health x2.1): 107 and 110 here, 225 and 231 in the fight at tier 1, about 4 tenths of 桜牙獣.
+            // 花守の鎧武者: the 上段 opens a counter window like 桜牙獣's big strikes (QuestEncounterCombat.MINIBOSS_COUNTERABLE).
+            QuestMobArchetype.SAKURA_MINIBOSS_1 -> definition(EntityType.VINDICATOR, 107.0, 0.15, 2.5, 1.0,
                 Material.AIR, attacks = listOf(
-                    attack("miniboss2-mark", "花冠落とし・印から出ろ", MobAttackShape.Ring(3.0), 14.0, 16.0,
-                        1600, 1200, 800, 5000, minimumRange = 3.0, target = true, weight = 3),
-                    attack("miniboss2-fan", "花びらの扇・扇の外へ", MobAttackShape.Sweep(10.0, 35.0), 9.5, 15.0,
-                        1400, 500, 900, 6500, weight = 2),
-                    attack("miniboss2-ring", "袖の輪・離れろ", MobAttackShape.Ring(4.5), 4.0, 14.0,
-                        1000, 0, 1000, 4500, weight = 2),
-                ))
+                    attack("armor-iai", "抜き打ち・横へ", MobAttackShape.Slam(8.5, 1.5), 8.0, 20.0,
+                        1300, 700, 900, 6500, minimumRange = 3.0, weight = 3),
+                    attack("armor-combo", "三段斬り・下がれ", MobAttackShape.Sweep(4.8, 70.0), 4.2, 11.0,
+                        1500, 400, 900, 5000, weight = 3, earlyHits = listOf(600L, 1050L)),
+                    attack("armor-jodan", "上段・正面から打て", MobAttackShape.Slam(10.0, 1.8), 8.0, 30.0,
+                        2000, 900, 1300, 9000, weight = 2),
+                    attack("armor-banner", "旗の花紋・離れろ", MobAttackShape.Ring(6.5), 5.5, 24.0,
+                        1500, 0, 900, 11000, health = .5, weight = 2),
+                )).copy(model = "hanamori_armor")
+            // 石灯籠の番人: 灯明 raises stone pillars and reaches only who can see it (QuestEncounterCombat.SIGHT_ONLY), the lesson
+            // for 桜牙獣's 千本桜; 倒れ込み leaves it lying on its face, the opening.
+            QuestMobArchetype.SAKURA_MINIBOSS_2 -> definition(EntityType.IRON_GOLEM, 110.0, 0.11, 3.0, 1.0,
+                Material.AIR, attacks = listOf(
+                    attack("lantern-stomp", "踏み鳴らし・離れろ", MobAttackShape.Ring(5.0), 4.5, 20.0,
+                        1200, 0, 1000, 5000, weight = 3),
+                    attack("lantern-lob", "灯の弾・印から出ろ", MobAttackShape.Ring(3.2), 15.0, 18.0,
+                        1600, 1100, 800, 5500, minimumRange = 4.0, target = true, weight = 3),
+                    attack("lantern-topple", "倒れ込み・横へ", MobAttackShape.Slam(8.0, 2.2), 7.0, 26.0,
+                        1400, 700, 2600, 9000, weight = 2),
+                    attack("lantern-glare", "灯明・柱の陰へ", MobAttackShape.Ring(18.0), 18.0, 34.0,
+                        4000, 0, 1200, 24000, health = .6, weight = 5),
+                )).copy(model = "stone_lantern")
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,
                 Material.IRON_AXE, attacks = listOf(sweep(), slam()))
             QuestMobArchetype.SHIELD_GUARD -> definition(EntityType.HUSK, 66.0, 0.105, 2.0, 1.0,
