@@ -11,7 +11,7 @@
 """
 import json, math, os, random
 from collections import deque
-from vox import put, get, full, log, stair, slab, trap, cross, fence, door, vine, water, path, grass, write, vnoise, _h, W, LANTERN
+from vox import put, get, put as _put, get as _get, full, log, stair, slab, trap, cross, fence, door, vine, water, path, grass, write, vnoise, _h, W, LANTERN
 import props as P
 import trees as TR
 
@@ -342,14 +342,23 @@ class Town:
         fx, fz = P.D[f]
         put(x + fx, y + h - 1, z + fz, fence('dark_oak_planks')); self.banner(x + fx, z + fz, y + h - 2, f)
 
-    def arch_gate(self, z, y, half=4):
-        """大階段の踊り場の石のアーチ門。柱は2列で外へ厚く、足は前後へ広げ、上は濃い張り出しと小さな寄棟の笠（11/04 平たい箱に見えたので）。"""
+    def arch_gate(self, z, y, half=4, cx=0, axis='z'):
+        """大階段の踊り場の石のアーチ門。柱は2列で外へ厚く、足は前後へ広げ、上は濃い張り出しと小さな寄棟の笠（11/04 平たい箱に見えたので）。
+        axis='z' は南北に通る門（x=cx を中心に東西へ広がる）、axis='x' は東西に通る門（z は門の x、cx は中心の z）。"""
+        ROT = {'n': 'w', 's': 'e', 'w': 'n', 'e': 's'}
+        def tr(x, zz): return (cx + x, zz) if axis == 'z' else (zz, cx + x)
+        def rf(b):
+            if axis == 'z' or not isinstance(b, dict) or 'f' not in b: return b
+            b = dict(b); b['f'] = ROT.get(b['f'], b['f']); return b
+        def put(x, yy, zz, b): wx, wz = tr(x, zz); _put(wx, yy, wz, rf(b))
+        def get(x, yy, zz): wx, wz = tr(x, zz); return _get(wx, yy, wz)
+        def hh(x, zz): return self.h(*tr(x, zz))
         Z = (z, z - 1)
         for x in (-half - 1, -half, half, half + 1):
             for zz in Z:
-                for yy in range(min(y + 1, self.h(x, zz) + 1), y + 8): put(x, yy, zz, full('stone_bricks' if _h(x, yy, zz) < 0.7 else 'mossy_stone_bricks'))   # 外の柱は地面から
+                for yy in range(min(y + 1, hh(x, zz) + 1), y + 8): put(x, yy, zz, full('stone_bricks' if _h(x, yy, zz) < 0.7 else 'mossy_stone_bricks'))   # 外の柱は地面から
             for zz, f in ((z + 1, 'n'), (z - 2, 's')):                          # 柱の足
-                g = self.h(x, zz)
+                g = hh(x, zz)
                 if g <= y + 1 and get(x, g + 1, zz) is None: put(x, g + 1, zz, stair('stone_bricks', f))
         for x in range(-half - 1, half + 2):
             for zz in Z: put(x, y + 8, zz, full('chiseled_stone_bricks' if x == 0 else 'stone_bricks'))
