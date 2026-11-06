@@ -147,7 +147,7 @@ internal class ClassSelectScene {
         word("  選ぶ   ", MUTED), word("Shift", GOLD), word("  戻る", MUTED)).build()
 
     /** Space on a figure: a short confirm for the playable classes, nothing for the rest. */
-    private fun ask(player: Player, job: CoreClass) {
+    fun ask(player: Player, job: CoreClass) {
         if (job !in PLAYABLE) return
         val yes = DialogActionButton(dialogText("決める", GOLD), null, 120, DialogAction.Custom(Key.key(NS, "choose"), StringBinaryTag.stringBinaryTag(job.name)))
         val no = DialogActionButton(dialogText("やめる", MUTED), null, 120, DialogAction.Custom(Key.key(NS, "cancel"), null))
