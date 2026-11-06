@@ -582,23 +582,23 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             if (!event.isFirstSpawn) return@addListener
             val player = event.player
             fun run(command: String) = MinecraftServer.getCommandManager().execute(player, command)
-            fun shot(name: String) = println("DUNGEON_TOUR_SHOT $name")
+            fun shot(name: String) { println("DUNGEON_TOUR_SHOT $name"); System.out.flush() }
             listOf<Pair<Long, () -> Unit>>(
-                100L to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }, 150L to { shot("harbor_gate") },
-                170L to { menus.dungeons(player) }, 210L to { shot("menu") },
-                250L to { player.closeInventory(); account(player)?.let { departDungeon(player, CoreDungeons.SAKURA, it.revision) } },
-                420L to { shot("hall") },
-                460L to { player.teleport(Pos(32.5, 40.0, -25.5, 0f, 10f)) }, 510L to { shot("room1_wave") },
-                540L to { run("dungeontest clear") }, 580L to { run("dungeontest clear") },
-                620L to { player.teleport(Pos(32.5, 40.0, -18.5, 0f, 0f)) }, 650L to { shot("room1_open") },
-                680L to { player.teleport(Pos(32.5, 40.0, -7.5, 0f, 10f)) }, 730L to { shot("room2_wave") },
-                760L to { run("dungeontest clear") }, 800L to { run("dungeontest clear") },
-                840L to { player.teleport(Pos(32.5, 40.0, 3.5, 0f, -5f)) }, 870L to { shot("room2_open") },
-                900L to { player.teleport(Pos(28.5, 40.0, 15.5, -14f, -5f)) }, 960L to { shot("arena_boss") },
-                1020L to { shot("boss_fight") },
-                1060L to { run("dungeontest boss") }, 1180L to { shot("finale") },
-                1300L to { run("dungeontest boss") }, 1330L to { run("dungeontest boss") }, 1360L to { shot("cleared") },
-                1700L to { shot("back_harbor") },
+                100L to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }, 160L to { shot("harbor_gate") },
+                220L to { menus.dungeons(player) }, 280L to { shot("menu") },
+                340L to { player.closeInventory(); account(player)?.let { departDungeon(player, CoreDungeons.SAKURA, it.revision) } },
+                500L to { player.teleport(Pos(32.5, 40.0, -36.5, 0f, 5f)) }, 540L to { shot("hall") },
+                620L to { player.teleport(Pos(32.5, 40.0, -25.5, 0f, 10f)) }, 670L to { shot("room1_wave") },
+                740L to { run("dungeontest clear") }, 800L to { run("dungeontest clear") },
+                860L to { player.teleport(Pos(32.5, 40.0, -19.5, 0f, 5f)) }, 900L to { shot("room1_open") },
+                960L to { player.teleport(Pos(32.5, 40.0, -7.5, 0f, 10f)) }, 1010L to { shot("room2_wave") },
+                1080L to { run("dungeontest clear") }, 1140L to { run("dungeontest clear") },
+                1200L to { player.teleport(Pos(32.5, 40.0, 2.5, 0f, 0f)) }, 1240L to { shot("room2_open") },
+                1300L to { player.teleport(Pos(28.5, 40.0, 15.5, -14f, -5f)) }, 1360L to { shot("arena_boss") },
+                1440L to { shot("boss_fight") },
+                1500L to { run("dungeontest boss") }, 1620L to { shot("finale") },
+                1740L to { run("dungeontest boss") }, 1770L to { run("dungeontest boss") }, 1800L to { shot("cleared") },
+                2140L to { player.teleport(Pos(16.5, 41.0, 1.5, -90f, -8f)) }, 2180L to { shot("back_harbor") },
             ).forEach { (at, step) -> player.scheduler().buildTask { if (player.isOnline) step() }.delay(TaskSchedule.tick(at.toInt())).schedule() }
         }
         // Test-only: the coloured point-light prototype (SakuraLight). /lighttest puts a glowing blossom with a pink light
@@ -1393,7 +1393,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                     session.owner.hideBossBar(session.bossBar)
                     refresh(session.owner)
                     session.owner.showTitle(Title.title(CoreLoopItems.text("討伐達成", NamedTextColor.GOLD), CoreLoopItems.text(
-                        if (session.arena == null) "討伐証・次の地図・試練の欠片を保存" else "専用オーブ2個・高揚1個・討伐証を保存")))
+                        if (session.arena == null) "討伐証・次の地図・試練の欠片を保存" else if (session.dungeon != null) "高揚1個・試練の欠片1個・討伐証を保存"
+                        else "専用オーブ2個・高揚1個・討伐証を保存")))
                     session.owner.playSound(Sound.sound(SoundEvent.UI_TOAST_CHALLENGE_COMPLETE, Sound.Source.MASTER, 0.6f, 1f))
                     session.owner.sendMessage(CoreLoopItems.text("羅針盤から港へ帰還し、工房で装備を更新しよう。探索は続けても構いません。", NamedTextColor.GREEN))
                     println("CORE_BOSS_REWARD_COMMITTED player=${session.owner.username} run=${session.runId} revision=${result.account?.revision}")
