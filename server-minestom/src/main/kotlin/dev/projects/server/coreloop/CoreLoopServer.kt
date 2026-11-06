@@ -348,10 +348,15 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 if (displaySettings.get(player.uuid) == null) player.scheduler().scheduleNextTick {
                     if (connections[player.uuid] === player) displayDialog.show(player, required = true) }
                 else if (!a.journey.chosen) player.scheduler().scheduleNextTick { if (connections[player.uuid] === player) classSelect.open(player) }
-                // Development: film the class camp without keys (open on join, step east every 3 s, back at the end).
+                // Development: film the class camp without keys. It opens on join; east every 3 s to the last figure,
+                // back west every 1.5 s, then Space on the warrior (the confirm) and, 4 s later, 決める.
                 if (System.getenv("PROJECTS_CLASS_SELECT_DEMO") == "1") player.scheduler().buildTask {
                     player.closeInventory(); classSelect.open(player)
-                    for (k in 1..5) player.scheduler().buildTask { classSelect.step(player, 1) }.delay(TaskSchedule.seconds(4L + 3 * k)).schedule()
+                    fun at(ms: Long, act: () -> Unit) = player.scheduler().buildTask(act).delay(TaskSchedule.millis(ms)).schedule()
+                    for (k in 1..5) at(4_000L + 3_000L * k) { classSelect.step(player, 1) }
+                    for (k in 1..5) at(20_000L + 1_500L * k) { classSelect.step(player, -1) }
+                    at(30_000L) { classSelect.ask(player, CoreClass.WARRIOR) }
+                    at(34_000L) { classSelect.onChoose(player, CoreClass.WARRIOR) }
                 }.delay(TaskSchedule.seconds(3)).schedule()
             }
             println("Player connected: ${player.username} uuid=${player.uuid} firstSpawn=${event.isFirstSpawn} coreLoop=true")
