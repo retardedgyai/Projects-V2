@@ -13,7 +13,7 @@ class CoreUiCompactTooltipTest {
 
     private val affixes = listOf(
         CoreTooltipAffix("接頭 · 剛力", "攻撃力 +22%", "17〜22%", 100, "R4"),
-        CoreTooltipAffix("接頭 · 技力", "スキルダメージ +29%", "23〜29%", 100, "R4"),
+        CoreTooltipAffix("接頭 · スキル威力", "スキルダメージ +29%", "23〜29%", 100, "R4"),
         CoreTooltipAffix("接頭 · 火炎", "火属性値 +8", "8〜10", 0, "R4"),
         CoreTooltipAffix("接尾 · 会心", "クリティカル率増加 +50%", "40〜50%", 100, "R4"),
         CoreTooltipAffix("接尾 · 痛撃", "クリティカル倍率 +30%", "23〜30%", 100, "R4"),

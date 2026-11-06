@@ -331,7 +331,7 @@ internal class PlayerMenuDialog(
         val acts = layout.getAsJsonArray("acts")
         val raiseLabel = when {
             base >= CoreSkillLevels.MAX_BASE -> "Lv ${CoreSkillLevels.MAX_BASE}（上限）"
-            points <= 0 -> "技ポイントがありません"
+            points <= 0 -> "スキルポイントがありません"
             else -> "Lv を上げる（1 ポイント）"
         }
         val raise = acts[0].asJsonArray
@@ -339,14 +339,14 @@ internal class PlayerMenuDialog(
         canvas.sprite("hit_act", raise[0].asDouble, raise[1].asDouble, click("raise"))
         val equip = acts[1].asJsonArray
         val candidate = pick.candidate
-        val equipLabel = if (candidate != null && candidate != equipped[pick.slot]) "キー${pick.slot + 2} に入れる" else "キー${pick.slot + 2} の技"
+        val equipLabel = if (candidate != null && candidate != equipped[pick.slot]) "キー${pick.slot + 2} に入れる" else "キー${pick.slot + 2} のスキル"
         canvas.text("b7", equip[0].asDouble + 6, equip[1].asDouble + 10, equipLabel, if (equipLabel.endsWith("入れる")) TEXT else MUTED)
         canvas.sprite("hit_act", equip[0].asDouble, equip[1].asDouble, click("equip"))
         val spent = CoreSkillLevels.spent(build)
         if (spent > 0) {
             val reset = layout.getAsJsonArray("reset")
             val price = CorePassiveTree.refundPrice(account.journey) * spent
-            canvas.text("m6", reset[0].asDouble, reset[1].asDouble + 8, "技ポイントを全部戻す（銀貨 ${"%,d".format(price)}）", MUTED)
+            canvas.text("m6", reset[0].asDouble, reset[1].asDouble + 8, "スキルポイントを全部戻す（銀貨 ${"%,d".format(price)}）", MUTED)
             canvas.sprite("hit_reset", reset[0].asDouble, reset[1].asDouble, click("reset"))
         }
         return canvas.build()

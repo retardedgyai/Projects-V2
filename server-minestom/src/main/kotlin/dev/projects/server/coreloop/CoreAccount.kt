@@ -149,7 +149,7 @@ class CoreAccount(
         require((journey.savedBuilds.values + journey.build).all { it.passives.size <= passiveBudget }) { "パッシブの割り振りが不正です" }
         // Skill points come in like passive points, as a separate purse per class build.
         require((journey.savedBuilds + (journey.job to journey.build)).all { (job, build) ->
-            CoreSkillLevels.spent(build) <= passiveBudget && CoreSkillLevels.valid(job, build) }) { "技のLvの割り振りが不正です" }
+            CoreSkillLevels.spent(build) <= passiveBudget && CoreSkillLevels.valid(job, build) }) { "スキル Lv の割り振りが不正です" }
         require(buyOrders.size <= CoreEconomy.MAX_OFFERS && buyOrders.map { it.id }.distinct().size == buyOrders.size)
         require(revision >= 0 && weaponTier in 1..4 && armorTier in 1..4 && unlockedMapTier in 1..4)
         require(smithingXp in 0..CoreEnhancementCatalog.MAX_SMITHING_XP)

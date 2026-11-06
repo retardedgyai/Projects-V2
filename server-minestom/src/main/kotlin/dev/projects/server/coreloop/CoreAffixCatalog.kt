@@ -45,9 +45,9 @@ enum class CoreAffixStat(val displayName: String, val percent: Boolean = true) {
     WAR_AFTERSHOCK("戦士・余波", false), WAR_BEAST("戦士・獣"), MAGE_ECHO("メイジ・残響", false), HUNT_RETURN("狩人・追矢", false),
     ASS_VENOM("暗殺者・毒印", false), TEMP_GRAVITY("聖騎士・重力", false), HEAL_CONVERSION("治療師・予防", false),
     /** Levels on every skill ([CoreSkillLevels]); past the cap points can reach. */
-    SKILL_LEVEL("全部の技 Lv", false),
+    SKILL_LEVEL("全部のスキル Lv", false),
     /** Levels on the one skill the stone names ([CoreAffixCatalog.skillOf]); summed per skill, not here. */
-    ONE_SKILL_LEVEL("技 Lv", false),
+    ONE_SKILL_LEVEL("スキル Lv", false),
 }
 
 /** Identity and roll are server-owned. Unknown definitions remain serializable but inert. */
@@ -134,7 +134,7 @@ object CoreAffixCatalog {
     val definitions: List<CoreAffixDefinition> = Collections.unmodifiableList(listOf(
         CoreAffixDefinition("projects:force", "剛力の刻印石", CoreAffixStat.DAMAGE, CoreAffixCategory.OFFENSE, 5, 10, 4),
         CoreAffixDefinition("projects:haste", "疾撃の刻印石", CoreAffixStat.ATTACK_SPEED, CoreAffixCategory.OFFENSE, 3, 6, 3),
-        CoreAffixDefinition("projects:technique", "技力の刻印石", CoreAffixStat.SKILL_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
+        CoreAffixDefinition("projects:technique", "スキル威力の刻印石", CoreAffixStat.SKILL_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
         CoreAffixDefinition("projects:reservoir", "魔力の刻印石", CoreAffixStat.MAX_MANA, CoreAffixCategory.RESOURCE, 8, 15, 5),
         CoreAffixDefinition("projects:renewal", "循環の刻印石", CoreAffixStat.MANA_REGEN, CoreAffixCategory.RESOURCE, 8, 15, 5),
         CoreAffixDefinition("projects:focus", "集中の刻印石", CoreAffixStat.COOLDOWN_REDUCTION, CoreAffixCategory.RESOURCE, 3, 5, 2),
@@ -158,7 +158,7 @@ object CoreAffixCatalog {
         CoreAffixDefinition("projects:bulwark", "堅牢の刻印石", CoreAffixStat.AR_PERCENT, CoreAffixCategory.DEFENSE, 10, 20, 6),
         CoreAffixDefinition("projects:ward", "結界の刻印石", CoreAffixStat.MR_FLAT, CoreAffixCategory.DEFENSE, 12, 24, 12),
         CoreAffixDefinition("projects:aegis", "抗魔の刻印石", CoreAffixStat.MR_PERCENT, CoreAffixCategory.DEFENSE, 10, 20, 6),
-        CoreAffixDefinition("projects:brutality", "武技の刻印石", CoreAffixStat.PHYSICAL_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
+        CoreAffixDefinition("projects:brutality", "武力の刻印石", CoreAffixStat.PHYSICAL_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
         CoreAffixDefinition("projects:arcane", "秘術の刻印石", CoreAffixStat.MAGICAL_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
         CoreAffixDefinition("projects:close-combat", "接戦の刻印石", CoreAffixStat.MELEE_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
         CoreAffixDefinition("projects:ballistics", "弾道の刻印石", CoreAffixStat.PROJECTILE_DAMAGE, CoreAffixCategory.OFFENSE, 8, 14, 5),
@@ -190,7 +190,7 @@ object CoreAffixCatalog {
      * every skill. A stone naming another class's skill does nothing for this class.
      */
     private fun skillStones(): List<CoreAffixDefinition> = listOf(
-        CoreAffixDefinition("projects:skill-all", "万技の刻印石", CoreAffixStat.SKILL_LEVEL, CoreAffixCategory.OFFENSE, 1, 2, 0,
+        CoreAffixDefinition("projects:skill-all", "全スキルの刻印石", CoreAffixStat.SKILL_LEVEL, CoreAffixCategory.OFFENSE, 1, 2, 0,
             setOf(CoreGearSlot.WEAPON), weight = 1)) +
         CoreClass.entries.flatMap { job -> CoreSkillLevels.levelable(job).map { icon -> job to icon } }.distinctBy { it.second }.map { (job, icon) ->
             CoreAffixDefinition(skillStoneId(icon), "${CoreSkillCatalog.skills(job).first { it.icon == icon }.name}の刻印石",
@@ -243,14 +243,14 @@ object CoreAffixCatalog {
         if (!valid(stone)) return "不正なMOD値（効果停止）"
         val v = stone.value.toInt()
         when (definition.stat) {
-            CoreAffixStat.WAR_AFTERSHOCK -> return "戦士：範囲+${v * 8}% / 範囲技の威力85%"
+            CoreAffixStat.WAR_AFTERSHOCK -> return "戦士：範囲+${v * 8}% / 範囲スキルの威力85%"
             CoreAffixStat.WAR_BEAST -> return "戦士：獣の溜まり+$v%"
             CoreAffixStat.MAGE_ECHO -> return "メイジ：起爆+1回 / 各${65 + v}%威力"
             CoreAffixStat.HUNT_RETURN -> return "狩人：スキル射撃+1回 / 各${60 + v}%威力"
             CoreAffixStat.ASS_VENOM -> return "暗殺者：印を付けた敵に${10 + v * 2}% ADの毒を3回"
             CoreAffixStat.TEMP_GRAVITY -> return "聖騎士：吸引+${v * 10}% / 威力80%"
             CoreAffixStat.HEAL_CONVERSION -> return "治療師：回復の${25 + v * 3}%を同量の障壁に変換"
-            CoreAffixStat.SKILL_LEVEL -> return "全部の技 Lv +$v"
+            CoreAffixStat.SKILL_LEVEL -> return "全部のスキル Lv +$v"
             CoreAffixStat.ONE_SKILL_LEVEL -> return "${skillName(skillOf(stone) ?: "")} Lv +$v"
             else -> Unit
         }

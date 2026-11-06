@@ -64,7 +64,7 @@ class CoreSkillLevelsTest {
         val stone = CoreAffixStone(UUID.randomUUID(), "projects:skill-war-guard", 2, 2.0)
         assertEquals("war_guard", CoreAffixCatalog.skillOf(stone))
         assertTrue(CoreAffixCatalog.describe(stone).endsWith("Lv +2"), CoreAffixCatalog.describe(stone))
-        assertEquals("全部の技 Lv +1", CoreAffixCatalog.describe(CoreAffixStone(UUID.randomUUID(), all.id, 1, 1.0)))
+        assertEquals("全部のスキル Lv +1", CoreAffixCatalog.describe(CoreAffixStone(UUID.randomUUID(), all.id, 1, 1.0)))
         // Every class's levelable skill has its stone.
         CoreClass.entries.forEach { job -> levels.levelable(job).forEach { icon ->
             assertNotNull(CoreAffixCatalog.definitions.singleOrNull { CoreAffixCatalog.skillOf(CoreAffixStone(UUID.randomUUID(), it.id, 1, 1.0)) == icon }, icon)

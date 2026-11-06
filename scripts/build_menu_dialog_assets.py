@@ -75,7 +75,7 @@ CLASSES = ["warrior", "ranger", "mage", "assassin", "templar", "healer"]
 # 2026-11-03 藍: a path is entered from its banner, and then the tabs are that path's growth (戦闘: 技, パッシブ; 採取 and 鍛冶
 # get theirs when their growth exists). 自分 keeps only what is not a path.
 SELF_TABS = ["自分", "持ち物"]
-COMBAT_TABS = ["技", "パッシブ"]                     # after the 自分 back button and the path's name
+COMBAT_TABS = ["スキル", "パッシブ"]                     # after the 自分 back button and the path's name
 TAB_Y, TAB_H, TAB_GAP = 1, 14, 3                   # pill tabs centred along the top
 SLOT = 26
 TOP = 32                                           # 技: content starts here, inside the windows
@@ -102,7 +102,7 @@ CARD = (4, WIN_Y + 4, 142, 32)                     # the harbour banner on the n
 EMBLEM24 = (11, WIN_Y + 29)                        # the class emblem in its slot (slot 30 x 30 at -3)
 NAME = (46, WIN_Y + 47)                            # face + name baseline; the title 10 below
 KV = (8, WIN_Y + 70, 134, 11)                      # x, first baseline, width, step
-KV_LABELS = ["職", "冒険 Lv", "踏破", "技ポイント", "パッシブポイント", "銀貨"]
+KV_LABELS = ["職", "冒険 Lv", "踏破", "スキルポイント", "パッシブポイント", "銀貨"]
 EDIT = (8, WIN_Y + 147, 134)                       # charcoal button
 ROWS = [(161, WIN_Y + 14 + i * 38) for i in range(4)]   # 140 x 35 path banners, each the way into its path
 ROW_W, ROW_H = 140, 35
@@ -417,10 +417,10 @@ def banner(name, dim=False):
 
 
 def combat_tabs(img, d, fonts):
-    """戦闘's tab row: the 自分 button at the left edge, then the path's name and its tabs centred. Returns [自分, 技, パッシブ] boxes."""
+    """戦闘's tab row: the 自分 button at the left edge, then the path's name and its tabs centred. Returns [自分, スキル, パッシブ] boxes."""
     name = PATHS[0][1]
     lead = text_w(fonts, "b8", name) + 8
-    tabs = tabs_row(img, d, fonts, COMBAT_TABS, "技", lead)
+    tabs = tabs_row(img, d, fonts, COMBAT_TABS, "スキル", lead)
     back = (2, TAB_Y, round(text_w(fonts, "b7", "自分") + 18), TAB_H)
     if img is not None:
         img.alpha_composite(nine(DARK_BTN, 5, back[2], TAB_H), (back[0] * K, TAB_Y * K))
@@ -443,7 +443,7 @@ def bake_skills(fonts):
     for (x, y), label in zip(BARS, ["威力", "再使用", "範囲"]):
         draw_text(d, fonts, "m6", x, y - 4, label, C["muted"])
         tint(img, x, y, x + BAR_W, y + 2, (255, 255, 255, 26))
-    draw_text(d, fonts, "b7", RX, TOP + 90, "技の Lv", C["ink"])
+    draw_text(d, fonts, "b7", RX, TOP + 90, "スキルの Lv", C["ink"])
     for x, y in DIAS: img.alpha_composite(diamond(10, (10, 7, 10, 150), (255, 240, 230, 80)), (x * K, y * K))
     button(img, d, fonts, ACTS[0][0], ACTS[0][1], ACT_W, GOLD_BTN, "左クリック")
     button(img, d, fonts, ACTS[1][0], ACTS[1][1], ACT_W, DARK_BTN, "右クリック")

@@ -9,7 +9,7 @@ import net.minestom.server.component.DataComponents
 /** Same rarity skin and centered headline as equipment, without irrelevant item-level fields. */
 internal object CoreSkillTooltip {
     fun item(skill: CoreSkillDefinition, sheet: CoreCombatSheet, j: CoreJourney, packed: Boolean, locked: Boolean = false,
-        footer: String = if(locked) "成長するとこの枠を使えます" else "港の成長と職業 → 技選びで変更"): ItemStack {
+        footer: String = if(locked) "成長するとこの枠を使えます" else "港の成長と職業 → スキル選びで変更"): ItemStack {
         val rarity = if(skill.ultimate) CoreUiRarity.EPIC else CoreUiRarity.RARE
         val warrior = j.job == CoreClass.WARRIOR
         val lines = if(warrior) CoreWarriorSkillPresentation.tooltip(skill,sheet,j) else skill.tooltip(sheet,j)
@@ -24,7 +24,7 @@ internal object CoreSkillTooltip {
             if(part.isNotEmpty()) add(part)
         }
         val lore=buildList {
-            add(CoreUiComponents.text("${j.job.displayName}  ·  ${if(skill.ultimate) "ウルト" else "選択技能"}",rarity.color,true))
+            add(CoreUiComponents.text("${j.job.displayName}  ·  ${if(skill.ultimate) "ウルト" else "選択スキル"}",rarity.color,true))
             add(Component.empty())
             lines.forEachIndexed { index,line ->
                 val heading = if(warrior) index in setOf(0,3,4) else index==2
