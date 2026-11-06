@@ -198,6 +198,8 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 }
         }, respawnResources = false, technicalMessages = false)
 
+    /** The class camp (ClassSelectScene): figures on log benches, A / D between them. */
+    private val classSelect = ClassSelectScene()
     private val combatLab = CoreCombatLab(mapBuilder,
         eligible = { player -> player.instance === hub && accounts[player.uuid]?.activeRun == null && accounts.containsKey(player.uuid) &&
             !busy.contains(player.uuid) && !isDeparting(player) },
@@ -345,10 +347,15 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 if (displaySettings.get(player.uuid) == null) player.scheduler().scheduleNextTick {
                     if (connections[player.uuid] === player) displayDialog.show(player, required = true) }
                 else if (!a.journey.chosen) player.scheduler().scheduleNextTick { if (connections[player.uuid] === player) menus.career(player) }
+                // Development: film the class camp without keys (open on join, step east every 3 s, back at the end).
+                if (System.getenv("PROJECTS_CLASS_SELECT_DEMO") == "1") player.scheduler().buildTask {
+                    player.closeInventory(); classSelect.open(player)
+                    for (k in 1..5) player.scheduler().buildTask { classSelect.step(player, 1) }.delay(TaskSchedule.seconds(4L + 3 * k)).schedule()
+                }.delay(TaskSchedule.seconds(3)).schedule()
             }
             println("Player connected: ${player.username} uuid=${player.uuid} firstSpawn=${event.isFirstSpawn} coreLoop=true")
         }
-        events.addListener(PlayerDisconnectEvent::class.java) { event -> disconnect(event.player) }
+        events.addListener(PlayerDisconnectEvent::class.java) { event -> classSelect.close(event.player, leave = false); disconnect(event.player) }
         events.addListener(PlayerCustomClickEvent::class.java) { event ->
             if (displayDialog.click(event.player, event.key, event.payload)) return@addListener
             if (dungeonGate?.click(event.player, event.key, event.payload) == true) return@addListener
@@ -529,6 +536,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             val leader = net.minestom.server.command.builder.arguments.ArgumentType.Word("leader")
             addSyntax({ sender, context -> (sender as? Player)?.let { partyDialogs.joinByName(it, context.get(leader)) } },
                 net.minestom.server.command.builder.arguments.ArgumentType.Literal("join"), leader)
+        })
+        classSelect.onLeave = { returnToHarbor(it) }
+        classSelect.install()
+        // Development: the class camp, before it replaces the career menu.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("classselect").apply {
+            setDefaultExecutor { sender, _ -> (sender as? Player)?.let { classSelect.open(it) } }
         })
         MinecraftServer.getCommandManager().register(Command("hub").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { returnToHarbor(it) } }
@@ -1595,7 +1608,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private fun updateHud(player: Player) {
         // The smith's forge covers the whole view; the action-bar HUD would sit on top of it.
         if (polishSessions?.isOpen(player) == true || atlasSessions?.isOpen(player) == true || grimoireSessions?.isOpen(player) == true ||
-            passiveTreeSessions?.isOpen(player) == true) {
+            passiveTreeSessions?.isOpen(player) == true || classSelect.isOpen(player)) {
             player.sendActionBar(Component.empty()); return
         }
         val a = combatLab.account(player) ?: account(player) ?: return
