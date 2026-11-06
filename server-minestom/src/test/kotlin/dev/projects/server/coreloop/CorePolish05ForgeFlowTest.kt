@@ -10,7 +10,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class CorePolish05ForgeFlowTest {
-    private fun scene() = ForgeV3Scene(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/font-map.json")).readBytes())
+    private fun scene() = ForgeV3Scene(requireNotNull(javaClass.classLoader.getResourceAsStream("polish05/forge.json")).readBytes())
     private var now = 10_000L
 
     private fun stocked(account: CoreAccount, slot: CoreGearSlot, mode: CoreEnhancementMode = CoreEnhancementMode.STANDARD) =
@@ -30,13 +30,11 @@ class CorePolish05ForgeFlowTest {
         fun text(id: String) = display.nodes.single { it.id == id }.text
         assertEquals("123", text("wallet"))
         assertEquals(recipe.costs.keys.first().resource.displayName, text("cost-name-0"))
-        assertEquals("100.0", text("chance-value"))
-        assertTrue(display.nodes.any { it.sprite?.font == "projects_ui_polish05:v3plates" && it.id.startsWith("chrome-") })
-        // UiRenderer puts sprites 0.025 in front of panels of the same depth: the plate must still be behind every live panel.
-        val plate = display.nodes.filter { it.id.startsWith("chrome-") }.maxOf { it.depth * 0.005 + 0.025 }
-        val panels = display.nodes.filter { it.background != null && it.id != "viewport-backdrop" }.minOf { it.depth * 0.005 }
-        assertTrue(plate < panels, "chrome plate z=$plate covers live panels z=$panels")
-        assertTrue(display.nodes.filter { it.text.isNotEmpty() }.all { it.style["font-family"]?.startsWith("projects_ui_polish05:v3") == true })
+        assertEquals("100.0%", text("chance-value"))
+        assertTrue(display.nodes.any { it.sprite?.font == "projects_ui_polish05:forge" && it.id.startsWith("rp-") })
+        // Every word is in the dot font, and the materials are items.
+        assertTrue(display.nodes.filter { it.text.isNotEmpty() }.all { it.style["font-family"]?.startsWith("projects_ui_polish05:ptdot") == true })
+        assertTrue(display.nodes.single { it.id == "cost-icon-0" }.item!!.startsWith("minecraft:"))
         assertFalse(display.nodes.any { it.text.contains("12,480") || it.text.contains("熾火") })
 
         val revision = current.revision
@@ -103,5 +101,15 @@ class CorePolish05ForgeFlowTest {
         val flow = CorePolish05ForgeFlow(scene(), { current }, { true }, { now }) { _, _, _, _ -> }
         assertFalse(flow.action("catalyst"))
         assertFalse(flow.scene().nodes.any { it.action == "catalyst" })
+    }
+
+    /** The still scripts/build_forge_v3_assets.py preview renders: a stocked weapon at +16, where a failure can break it. */
+    @Test fun `a forge screen for the preview`() {
+        val base = CoreAccount(UUID.randomUUID(), silver = 48_300, weaponEnhancement = CoreEnhancementState(16))
+        val flow = CorePolish05ForgeFlow(scene(), { stocked(base, CoreGearSlot.WEAPON) }, { true }, { now }) { _, _, _, _ -> }
+        val dir = java.io.File("build/forge-preview").apply { mkdirs() }
+        dir.resolve("screen.json").writeText(com.google.gson.Gson().toJson(flow.scene()))
+        assertTrue(flow.action("enhance"))
+        dir.resolve("confirm.json").writeText(com.google.gson.Gson().toJson(flow.scene()))
     }
 }
