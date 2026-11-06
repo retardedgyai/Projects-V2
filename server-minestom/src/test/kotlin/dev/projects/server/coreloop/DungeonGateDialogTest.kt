@@ -13,14 +13,14 @@ class DungeonGateDialogTest {
         error("host.${method.name} must not be called while drawing")
     } as CoreMenuHost
 
-    /** Every glyph is placed at a height the bake made for it, or DialogCanvas throws: the screen hung from the title, the
-     *  tier beside it and the body's hit areas, at each GUI scale. */
+    /** Every glyph is placed at a height the bake made for it, or DialogCanvas throws: the screen hung from the title, and
+     *  the body's tier and hit areas, at each GUI scale. */
     @Test fun `the gate builds at every GUI scale`() {
         val gate = DungeonGateDialog(metrics, host, { 4 }, {})
         for (scale in listOf(2, 3, 4)) {
             val size = metrics.forScale(scale)
             gate.dialog(CoreAccount(UUID.randomUUID()), size)
-            for (tier in 1..4) assertTrue("gate_tier$tier" in size.sprites, "gate_tier$tier at GUI scale $scale")
+            assertTrue(size.sprites.getValue("gate_screen").tiles.isNotEmpty(), "gate_screen at GUI scale $scale")
         }
     }
 }

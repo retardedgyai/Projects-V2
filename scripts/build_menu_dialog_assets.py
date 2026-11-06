@@ -122,6 +122,7 @@ BAKED = "".join(SELF_TABS + COMBAT_TABS) + "".join(h + "".join(l) for h, l in ST
 DG_KEYART = "assets/core-ui/dungeons/sakura_keyart.png"   # scripts/build_dungeon_keyart.py, 240 x 135 dots, 2 design px a dot
 SCREEN_H = 270
 HEADER = 33                                        # GUI px, the dialog's header (title row) and footer (button row) bands
+BLEED = 2                                          # GUI px the screen picture runs past each edge
 DG_LIST = (12, 44, 80, 26)                         # the one entry: x, top, w, h
 DG_X = 112                                         # the info column
 DG_W = 124
@@ -542,13 +543,20 @@ def add_screen(sprites, name, image, unit):
     """[image] (the whole screen at K) as tiles hung from the title line: each 240 texture px square, its top in GUI px
     below the screen top (the title canvas works in GUI px from TITLE_TOP). Tiles are shared between the sizes."""
     k = round(K / unit)                            # texture px per GUI px: 4, 3, 2
+    # A window a few px off 1080 (its border, a bar) moves the header by a pixel: bleed BLEED GUI px past every edge,
+    # repeating the edge pixels, so no line of the world shows (2026-11-06, in game: a 1 px gap along the top).
+    b = BLEED * k
+    big = Image.new("RGBA", (image.width + 2 * b, image.height + 2 * b))
+    big.paste(image.resize((image.width + 2 * b, image.height + 2 * b), Image.NEAREST))
+    big.paste(image, (b, b))
+    image = big
     tiles = []
     for py in range(0, image.height, 240):
         for px in range(0, image.width, 240):
             piece = image.crop((px, py, min(px + 240, image.width), min(py + 240, image.height)))
             tile = f"{name}_{px}_{py}"
-            sprites.add(tile, piece, piece.height / k, [py / k], origin=TITLE_TOP, unit=1, first_line=True)
-            tiles.append({"sprite": tile, "dx": px / k, "dy": py / k})
+            sprites.add(tile, piece, piece.height / k, [py / k - BLEED], origin=TITLE_TOP, unit=1, first_line=True)
+            tiles.append({"sprite": tile, "dx": px / k - BLEED, "dy": py / k - BLEED})
     sprites.meta[name] = {"tiles": tiles}
 
 
@@ -608,10 +616,6 @@ def main() -> None:
         sprites.add_tiled("page_skills", page_skills, CANVAS_H, [0], first_line=True)
         add_screen(sprites, "gate_screen", gate_screen, unit)
         gate_lines, gate_top = gate_body(unit)
-        for t in range(1, 5):                      # the tier, drawn in the title line like the screen
-            word, ascent = pixel_text(fonts, "m6", f"T{t}", C["ink"])
-            tier_top = round((DG_TIER[1] * K - ascent) / round(K / unit))
-            sprites.add(f"gate_tier{t}", word, word.height / round(K / unit), [tier_top], origin=TITLE_TOP, unit=1, first_line=True)
         for c in CLASSES:
             art = Image.open(ROOT / f"assets/core-ui/proposals/2026-10-16-class-emblems/{c}-32.png").convert("RGBA")
             sprites.add(f"emblem64_{c}", art.resize((64 * K, 64 * K), Image.NEAREST).resize((256, 256), Image.NEAREST), 64, [EMBLEM64[1]])
@@ -651,7 +655,7 @@ def main() -> None:
                           "acts": [list(a) for a in ACTS], "reset": list(RESET), "emblem24": list(EMBLEM24), "name": list(NAME),
                           "kv": list(KV), "rows": [list(r) for r in ROWS], "rowW": ROW_W, "rowH": ROW_H, "stats": [STATS[0], STATS[1][0], STATS[1][1], STATS[2], STATS[3]], "notice": list(NOTICE),
                           "edit": list(EDIT), "closeW": CLOSE_W,
-                          "gateTier": [DG_TIER[0], tier_top], "gateEnter": list(DG_ENTER), "gateLines": gate_lines, "gateTop": gate_top,
+                          "gateTier": list(DG_TIER), "gateEnter": list(DG_ENTER), "gateLines": gate_lines, "gateTop": gate_top,
                           "gateRewards": [[DG_X + 4 + i * 24, DG_REWARD_Y] for i in range(len(DG_REWARDS))],
                           "gateRewardNames": [n for _, n, _ in DG_REWARDS], "titleX": TITLE_X}
         metrics["sizes"][tag] = size

@@ -51,30 +51,29 @@ internal class DungeonGateDialog(
     }
 
     internal fun dialog(account: CoreAccount, size: DialogCanvas.Size): Dialog {
-        val meta = DialogMetadata(title(account, size), Component.text("ダンジョンの門"), true, false, DialogAfterAction.NONE,
-            listOf(DialogBody.PlainMessage(body(size), size.canvasWidth + 9)), emptyList())
+        val meta = DialogMetadata(title(size), Component.text("ダンジョンの門"), true, false, DialogAfterAction.NONE,
+            listOf(DialogBody.PlainMessage(body(account, size), size.canvasWidth + 9)), emptyList())
         val closeW = (size.layout["closeW"].asInt * size.unit).roundToInt()
         val close = DialogActionButton(DialogCanvas(size, metrics.space, 0.0, 1, 6, 1.0).apply { sprite("close", -closeW / 2.0, 0.0) }.buildLine(),
             null, closeW, DialogAction.Custom(Key.key(NS, "close"), null))
         return Dialog.Notice(meta, close)
     }
 
-    /** The screen and the tier, in GUI px from the screen's top left (the title starts titleX in). */
-    private fun title(account: CoreAccount, size: DialogCanvas.Size): Component {
-        val x0 = size.layout["titleX"].asDouble
-        val tier = size.layout.getAsJsonArray("gateTier")
-        return DialogCanvas(size, metrics.space, size.titleWidth.toDouble(), 1, size.titleTop, 1.0, metrics.forScale(4).styles).apply {
-            background("gate_screen", -x0, 0.0)
-            background("gate_tier${tier(account)}", tier[0].asDouble * size.unit - x0, tier[1].asDouble)
+    /** The screen, in GUI px from the screen's top left (the title starts titleX in). */
+    private fun title(size: DialogCanvas.Size): Component =
+        DialogCanvas(size, metrics.space, size.titleWidth.toDouble(), 1, size.titleTop, 1.0, metrics.forScale(4).styles).apply {
+            background("gate_screen", -size.layout["titleX"].asDouble, 0.0)
         }.buildLine()
-    }
 
-    /** Hit areas only, in screen design px less where the dialog puts the body (canvas x 8, gateTop down). */
-    private fun body(size: DialogCanvas.Size): Component {
+    /** The tier and the hit areas, in screen design px less where the dialog puts the body (canvas x 8, gateTop down);
+     *  the body is drawn after the title, so its words sit over the picture. */
+    private fun body(account: CoreAccount, size: DialogCanvas.Size): Component {
         val layout = size.layout
         val canvas = DialogCanvas(size, metrics.space, size.canvasWidth.toDouble(), layout["gateLines"].asInt)
         val left = (480 - size.canvasWidth / size.unit) / 2
         val top = layout["gateTop"].asDouble
+        val tier = layout.getAsJsonArray("gateTier")
+        canvas.text("m6", tier[0].asDouble - left, tier[1].asDouble - top, "T${tier(account)}", TEXT)
         val names = layout.getAsJsonArray("gateRewardNames")
         layout.getAsJsonArray("gateRewards").forEachIndexed { i, spot ->
             val s = spot.asJsonArray
