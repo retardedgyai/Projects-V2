@@ -25,7 +25,7 @@ import kotlin.math.roundToInt
 /**
  * The player menu (冒険の手帳) drawn inside a vanilla dialog, in the 7版 C look (港の窓): the 自分 page is three
  * windows, the name card, the four paths (戦闘・採取・鍛冶・魔術) as banners, and the 能力値. A banner is the way into its path, whose tabs are that
- * path's growth: 戦闘 is 技 (drawn here) and パッシブ; 採取 and 鍛冶 still open their existing screens until theirs exist. Picture: the 「プレイヤーメニュー
+ * path's growth: 戦闘 is スキル (drawn here) and パッシブ; 採取 and 鍛冶 still open their existing screens until theirs exist. Picture: the 「プレイヤーメニュー
  * ダイアログ案」 page (7版 C); look and positions: scripts/build_menu_dialog_assets.py.
  */
 internal class PlayerMenuDialog(
@@ -47,7 +47,7 @@ internal class PlayerMenuDialog(
     private val notices = mutableMapOf<UUID, String>()
     private enum class Page { SELF, SKILLS }
     private val pages = mutableMapOf<UUID, Page>()
-    /** 技 page: the key being changed (0..3 normal skills, 4 the ultimate) and the candidate looked at, if any. */
+    /** スキル page: the key being changed (0..3 normal skills, 4 the ultimate) and the candidate looked at, if any. */
     private class SkillPick(var slot: Int = 0, var candidate: Int? = null)
     private val picks = mutableMapOf<UUID, SkillPick>()
 
@@ -84,7 +84,7 @@ internal class PlayerMenuDialog(
         return true
     }
 
-    /** Sends a 技 page change to the server (which decides), then redraws with the result. */
+    /** Sends a スキル page change to the server (which decides), then redraws with the result. */
     private fun skillAction(player: Player, action: (CoreAccount, SkillPick) -> CoreAction?) {
         val account = host.account(player) ?: return
         val pick = picks.getOrPut(player.uuid, ::SkillPick)
@@ -221,7 +221,7 @@ internal class PlayerMenuDialog(
         Path.MAGIC -> Progress("準備中", "—", "–")
     }
 
-    // ------------------------------------------------------------------ 技 page
+    // ------------------------------------------------------------------ スキル page
 
     private fun equippedIndices(account: CoreAccount): List<Int> {
         val build = account.journey.build
