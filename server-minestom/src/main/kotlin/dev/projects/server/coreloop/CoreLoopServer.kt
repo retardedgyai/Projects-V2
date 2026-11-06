@@ -503,7 +503,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             if (hudDirty || player.aliveTicks % 5 == 0L) updateHud(player)
             if (player.instance === hub && player.position.y() < 38) { player.teleport(harbor.spawn); actors[player.uuid]?.reset() }
             colonies[player.uuid]?.let { colony -> if (player.instance === colony.instance && player.position.y() < 37) player.teleport(colony.spawn) }
-            if (player.instance !== hub && player.position.y() < 15 && !isDeparting(player)) returnToHarbor(player)
+            // Fallen out of the arena. 散り桜の社's valley floor runs down to y -12, so its line is lower.
+            val voidY = if (sessions[player.uuid]?.dungeon != null) -20.0 else 15.0
+            if (player.instance !== hub && player.position.y() < voidY && !isDeparting(player)) returnToHarbor(player)
         }
         events.addListener(InstanceTickEvent::class.java) { event ->
             sessions.values.filter { it.instance === event.instance }.forEach { session -> tickSession(session) }
