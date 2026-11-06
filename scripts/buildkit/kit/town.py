@@ -389,9 +389,9 @@ class Town:
         return cells
 
     # ================================================================ 橋と壁
-    def stone_bridge(self, bx, za, zb, axis='z', base=-1):
+    def stone_bridge(self, bx, za, zb, axis='z', base=-1, rail='slab'):
         """川を渡る石のアーチ橋（幅3）。axis='z' なら x=bx で z を za→zb、'x' なら z=bx で x を za→zb。base は水面の高さ。
-        両端に柱と灯り。橋の床の高さ（終わりの端）を返す。"""
+        両端に柱と灯り。橋の床の高さ（終わりの端）を返す。rail='wall' なら欄干を石の塀にする（跳び越せない高さ。谷を渡る橋）。"""
         P_ = (lambda u, v, y, b: put(u, y, v, b)) if axis == 'z' else (lambda u, v, y, b: put(v, y, u, b))
         key = (lambda u, v: (u, v)) if axis == 'z' else (lambda u, v: (v, u))
         f_lo, f_hi = ('s', 'n') if axis == 'z' else ('e', 'w')
@@ -406,7 +406,7 @@ class Town:
                     for yy in range(base - 2, y): P_(u, v, yy, full('stone_bricks'))
                 elif dep >= 1: P_(u, v, y - 1, stair('stone_bricks', f_lo if v < mid else f_hi, 'top'))
             for u in (bx - 2, bx + 2):
-                P_(u, v, y, full('stone_bricks')); P_(u, v, y + 1, slab('stone_bricks'))
+                P_(u, v, y, full('stone_bricks')); P_(u, v, y + 1, slab('stone_bricks') if rail == 'slab' else {'s': 'wall', 't': 'stone_bricks'})
                 if abs(v - mid) > half - 1.5:
                     for yy in range(base - 2, y): P_(u, v, yy, full('stone_bricks'))
         for (u, v) in [(bx - 2, za), (bx + 2, za), (bx - 2, zb), (bx + 2, zb)]:
