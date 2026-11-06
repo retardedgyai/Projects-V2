@@ -664,13 +664,16 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             val steps = mutableListOf<Pair<Long, () -> Unit>>(100L to { player.teleport(harbor.spawn.withPitch(-4f)) }, 160L to { shot("town_spawn") })
             var t = 200L
             for (facility in harbor.facilities) {
-                val toward = harbor.spawn.sub(facility.position).withY(0.0).asVec().normalize().mul(5.0)
-                steps += t to { player.teleport(look(facility.position.add(toward).add(0.0, 1.5, 0.0), facility.position.add(0.0, .5, 0.0))) }
+                // Seven blocks toward the arrival and up, lifted further while that spot is inside a wall or a roof.
+                val toward = harbor.spawn.sub(facility.position).withY(0.0).asVec().normalize().mul(7.0)
+                var eye = facility.position.add(toward).add(0.0, 2.0, 0.0)
+                while (eye.y() < facility.position.y() + 8 && (hub.getBlock(eye).solid() || hub.getBlock(eye.add(0.0, 1.0, 0.0)).solid())) eye = eye.add(0.0, 1.0, 0.0)
+                steps += t to { player.teleport(look(eye, facility.position.add(0.0, .5, 0.0)).withPitch(20f)) }
                 steps += t + 50 to { shot("town_" + facility.kind.name.lowercase()) }
                 t += 80
             }
             steps += t to { player.teleport(harbor.spawn) }; steps += t + 20 to { openDungeonGate(player) }; steps += t + 100 to { shot("menu") }
-            steps += t + 160 to { player.closeInventory(); account(player)?.let { departDungeon(player, CoreDungeons.SAKURA, it.revision) } }
+            steps += t + 160 to { player.closeDialog(); account(player)?.let { departDungeon(player, CoreDungeons.SAKURA, it.revision) } }
             steps += t + 340 to { shot("enter") }
             t += 420
             for (i in InstanceDungeonFactory.ROOM_NAMES.indices) {
