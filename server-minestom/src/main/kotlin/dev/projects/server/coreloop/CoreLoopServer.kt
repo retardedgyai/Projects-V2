@@ -157,7 +157,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private val displayDialog = DisplaySettingsDialog(displaySettings) { player, openMenu ->
         when {
             openMenu -> playerMenu?.show(player)
-            account(player)?.journey?.chosen == false -> menus.career(player)
+            account(player)?.journey?.chosen == false -> classSelect.open(player)
         }
     }
     private val playerMenu: PlayerMenuDialog? = PlayerMenuDialog.metrics()?.let { metrics ->
@@ -200,6 +200,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
 
     /** The class camp (ClassSelectScene): figures on log benches, A / D between them. */
     private val classSelect = ClassSelectScene()
+    private val firstSteps = FirstStepsGuide()
     private val combatLab = CoreCombatLab(mapBuilder,
         eligible = { player -> player.instance === hub && accounts[player.uuid]?.activeRun == null && accounts.containsKey(player.uuid) &&
             !busy.contains(player.uuid) && !isDeparting(player) },
@@ -346,7 +347,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 // Screen settings first (the career screen follows once they are saved), then the first class choice.
                 if (displaySettings.get(player.uuid) == null) player.scheduler().scheduleNextTick {
                     if (connections[player.uuid] === player) displayDialog.show(player, required = true) }
-                else if (!a.journey.chosen) player.scheduler().scheduleNextTick { if (connections[player.uuid] === player) menus.career(player) }
+                else if (!a.journey.chosen) player.scheduler().scheduleNextTick { if (connections[player.uuid] === player) classSelect.open(player) }
                 // Development: film the class camp without keys (open on join, step east every 3 s, back at the end).
                 if (System.getenv("PROJECTS_CLASS_SELECT_DEMO") == "1") player.scheduler().buildTask {
                     player.closeInventory(); classSelect.open(player)
@@ -355,9 +356,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             }
             println("Player connected: ${player.username} uuid=${player.uuid} firstSpawn=${event.isFirstSpawn} coreLoop=true")
         }
-        events.addListener(PlayerDisconnectEvent::class.java) { event -> classSelect.close(event.player, leave = false); disconnect(event.player) }
+        events.addListener(PlayerDisconnectEvent::class.java) { event ->
+            classSelect.close(event.player, leave = false); firstSteps.hide(event.player); disconnect(event.player)
+        }
         events.addListener(PlayerCustomClickEvent::class.java) { event ->
             if (displayDialog.click(event.player, event.key, event.payload)) return@addListener
+            if (classSelect.click(event.player, event.key, event.payload)) return@addListener
             if (dungeonGate?.click(event.player, event.key, event.payload) == true) return@addListener
             if (playerMenu?.click(event.player, event.key, event.payload) != true) partyDialogs.click(event.player, event.key, event.payload)
         }
@@ -537,9 +541,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             addSyntax({ sender, context -> (sender as? Player)?.let { partyDialogs.joinByName(it, context.get(leader)) } },
                 net.minestom.server.command.builder.arguments.ArgumentType.Literal("join"), leader)
         })
-        classSelect.onLeave = { returnToHarbor(it) }
+        classSelect.onLeave = { player, back -> player.setInstance(hub, back).thenRun { refresh(player) } }
+        classSelect.onChoose = { player, job ->
+            account(player)?.let { a -> mutate(player, CoreAction.ChooseClass(job), a.revision, {}) { classSelect.close(player) } }
+        }
         classSelect.install()
-        // Development: the class camp, before it replaces the career menu.
+        // Development: the class camp at any time (it opens by itself for a player who has not chosen yet).
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("classselect").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { classSelect.open(it) } }
         })
@@ -1182,7 +1189,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     }
 
     override fun depart(player: Player, mapId: UUID, revision: Long) {
-        if (account(player)?.journey?.chosen != true) { menus.career(player); return }
+        if (account(player)?.journey?.chosen != true) { classSelect.open(player); return }
         if (!requireHub(player) || !busy.add(player.uuid)) return
         val runId = UUID.randomUUID()
         departing[player.uuid] = runId
@@ -1265,7 +1272,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     /** A trial boss or an instance dungeon: its own instance, entered from the harbor, left through returnToHarbor. */
     private fun departArena(player: Player, revision: Long, opening: String, start: (UUID) -> CoreAction,
                             build: () -> Pair<BossArena, DungeonLayout?>, attach: (BossArena, UUID, DungeonLayout?) -> Unit) {
-        if (account(player)?.journey?.chosen != true) { menus.career(player); return }
+        if (account(player)?.journey?.chosen != true) { classSelect.open(player); return }
         if (!requireHub(player) || !busy.add(player.uuid)) return
         val runId = UUID.randomUUID()
         departing[player.uuid] = runId
@@ -1609,8 +1616,11 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         // The smith's forge covers the whole view; the action-bar HUD would sit on top of it.
         if (polishSessions?.isOpen(player) == true || atlasSessions?.isOpen(player) == true || grimoireSessions?.isOpen(player) == true ||
             passiveTreeSessions?.isOpen(player) == true || classSelect.isOpen(player)) {
-            player.sendActionBar(Component.empty()); return
+            player.sendActionBar(if (classSelect.isOpen(player)) classSelect.hint() else Component.empty())
+            firstSteps.update(player, null, visible = false, packed = false)
+            return
         }
+        firstSteps.update(player, account(player), visible = true, packed = packed(player))
         val a = combatLab.account(player) ?: account(player) ?: return
         val actor = actor(player) ?: return
         player.food = 20
