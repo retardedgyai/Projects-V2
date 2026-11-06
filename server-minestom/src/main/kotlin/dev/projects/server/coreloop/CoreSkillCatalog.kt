@@ -51,7 +51,7 @@ data class CoreSkillDefinition(
         val conversion = CoreSkillCatalog.healConversion(journey, sheet.mods)
         if(motion == CoreSkillMotion.HEAL && conversion > 0) {
             add("現在 回復 ${CoreCombatMath.number(preview(sheet)*(1-conversion))} / 障壁 ${CoreCombatMath.number(preview(sheet)*conversion*sheet.shieldMultiplier)}")
-        } else add("現在 ${CoreCombatMath.number(preview(sheet))}${if (pulses > 1) " / 全命中 ${CoreCombatMath.number(preview(sheet) * pulses)}" else ""}（装備・技能補正込み）")
+        } else add("現在 ${CoreCombatMath.number(preview(sheet))}${if (pulses > 1) " / 全命中 ${CoreCombatMath.number(preview(sheet) * pulses)}" else ""}（装備・スキル補正込み）")
         add(if(motion in setOf(CoreSkillMotion.HEAL,CoreSkillMotion.SHIELD)) "対象の被回復・星・守護聖人は別 / 障壁は最大HPの75%まで" else "敵防御・会心・弱点・固有効果・砥石は別計算")
         add(if (journey?.job == CoreClass.WARRIOR) when (icon) {
                 in CoreWarriorRules.spenders -> "獣：全部使う（0でも撃てる）。1つごとに最大HP${CoreCombatMath.number(CoreWarriorRules.BEAST_SHIELD_PERCENT_PER_STACK)}%の障壁"
@@ -71,7 +71,7 @@ data class CoreSkillDefinition(
                 else "ボスの崩し ${CoreCombatMath.number(breakPower)}${if (pulses > 1) "（1回ごと）" else ""}")
         }
         if(motion == CoreSkillMotion.GUARD) add("最初の0.6秒：被害80%軽減 / 以降55%軽減 / ${duration/20.0}秒")
-        if(status != CoreSkillStatus.NONE) add(when(status) { CoreSkillStatus.MARK -> "印6秒：消費技の最初の命中が35%強化"; CoreSkillStatus.EXPOSE -> "防御崩し4秒：敵のAR・MRを20%低下"; CoreSkillStatus.POISON -> "毒3秒：1秒ごとに係数の30%（重複しない）"; else -> "減速：敵の移動を40%低下" })
+        if(status != CoreSkillStatus.NONE) add(when(status) { CoreSkillStatus.MARK -> "印6秒：消費スキルの最初の命中が35%強化"; CoreSkillStatus.EXPOSE -> "防御崩し4秒：敵のAR・MRを20%低下"; CoreSkillStatus.POISON -> "毒3秒：1秒ごとに係数の30%（重複しない）"; else -> "減速：敵の移動を40%低下" })
         if(icon=="mage_garden") {
             add("床板が有効範囲 / 壁・段差・穴へは広がらない / 同時設置1つ")
             add("1体へ1秒間隔・最大4打 / 術式獲得は最初の命中だけ")
@@ -213,7 +213,7 @@ object CoreSkillCatalog {
                 s("氷槍の列", "mage_burst", "正面の地面から氷の槍が列で突き上がる。打ち上げて、氷を溜める", CoreSkillMotion.CONE, 12.0, 1.8, mana=16, cd=220, startup=10, gain=0, radius=7.0, element=2).cc(CrowdControl.AIRBORNE, 600),
                 s("突風", "mage_ward", "前へ風を吹いて敵を押し返す。燃えた敵・凍った敵の火や氷を巻き込んで、当たった敵みんなに広げる", CoreSkillMotion.CONE, 4.0, .7, mana=10, cd=140, startup=4, gain=0, radius=6.0, element=4).cc(CrowdControl.KNOCKBACK, 400),
                 s("竜巻", "mage_gale", "狙った所に竜巻を置き、周りの敵を吸い寄せる。燃えた敵・凍った敵を巻き込むと、その火や氷を周りに広げる", CoreSkillMotion.FIELD, 3.0, .5, mana=16, cd=240, startup=8, pulses=4, gain=0, radius=3.5, element=4, duration=60),
-                s("反響", "mage_ult", "10秒間、撃った技が2秒後に同じ場所でもう一度唱えられる（陣の紋の数だけ、最大3回・6割の威力）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=25, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
+                s("反響", "mage_ult", "10秒間、撃ったスキルが2秒後に同じ場所でもう一度唱えられる（陣の紋の数だけ、最大3回・6割の威力）", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=25, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true),
                 s("元素の極み", "mage_zero", "10秒間、陣に一番多い紋の元素を極める。体は変わらず、魔法の威力と性質だけが上がる", CoreSkillMotion.SHIELD, 0.0, 0.0, mana=25, cd=1200, startup=4, gain=0, radius=0.0, duration=200, ult=true))
             CoreClass.RANGER -> listOf(
                 s("狙い射ち", "pierce", "同じ獲物を狙い続けるほど集中を得る", CoreSkillMotion.RAY, 6.0, 1.7, cd=70, startup=8, radius=.5),
@@ -222,7 +222,7 @@ object CoreSkillCatalog {
                 s("後退射撃", "hunt_retreat", "後ろへ退きながら矢を放つ。逃げと攻撃を両立", CoreSkillMotion.EVADE, 4.0, .8, cd=120, range=-3.5),
                 s("貫き矢", "hunt_pierce", "集中30を消費して三体まで貫通", CoreSkillMotion.RAY, 8.0, 2.6, cd=110, startup=12, gain=0, spend=30, radius=.9).cc(CrowdControl.FLINCH, 300),
                 s("狩猟罠", "hunt_trap", "足元前方に減速と毒の罠。誘い込んで撃つ", CoreSkillMotion.FIELD, 3.0, .65, mana=18, cd=170, pulses=4, status=CoreSkillStatus.POISON, range=4.0, radius=3.5, duration=120),
-                s("獲物の印", "hunt_mark", "遠くの獲物に印。集中消費技が印を使って強化", CoreSkillMotion.RAY, 3.0, .6, mana=8, cd=80, gain=25, status=CoreSkillStatus.MARK),
+                s("獲物の印", "hunt_mark", "遠くの獲物に印。集中消費スキルが印を使って強化", CoreSkillMotion.RAY, 3.0, .6, mana=8, cd=80, gain=25, status=CoreSkillStatus.MARK),
                 s("速射", "hunt_volley", "集中20を使う三連射。照準を保つ必要がある", CoreSkillMotion.RAY, 2.0, .95, mana=14, cd=110, pulses=3, gain=0, spend=20),
                 s("終の一矢", "hunt_ult", "集中80を消費する精密射撃。長い構えを守り抜く", CoreSkillMotion.RAY, 35.0, 8.0, mana=30, cd=600, startup=28, gain=0, spend=80, range=23.0, ult=true),
                 s("狩場の支配者", "hunt_storm", "集中70を消費。広い範囲を六度撃ち、減速させる", CoreSkillMotion.FIELD, 5.0, 1.2, mana=32, cd=680, pulses=6, gain=0, spend=70, status=CoreSkillStatus.SLOW, radius=7.0, ult=true))
@@ -254,7 +254,7 @@ object CoreSkillCatalog {
                 s("断罪の柱", "heal_pillar", "信仰40を攻撃に回す。回復と同じ資源を取り合う", CoreSkillMotion.FIELD, 8.0, 1.6, mana=18, cd=140, pulses=2, gain=0, spend=40, radius=4.0).cc(CrowdControl.FLINCH, 300),
                 s("光の歩み", "heal_step", "前へ移動し、周囲に小さな障壁を渡す", CoreSkillMotion.EVADE, 0.0, 0.0, mana=12, cd=140, gain=0, range=3.5),
                 s("灯火", "heal_lamp", "地点に三度の光。敵を削り信仰を得る", CoreSkillMotion.FIELD, 3.0, .65, mana=16, cd=130, pulses=3, gain=20, radius=4.0),
-                s("祈りの盾", "heal_shield", "信仰25を予防に回す。回復できない大技に備える", CoreSkillMotion.SHIELD, 20.0, 1.0, mana=16, cd=140, gain=0, spend=25, radius=7.0, duration=120),
+                s("祈りの盾", "heal_shield", "信仰25を予防に回す。回復できない大きな攻撃に備える", CoreSkillMotion.SHIELD, 20.0, 1.0, mana=16, cd=140, gain=0, spend=25, radius=7.0, duration=120),
                 s("導きの印", "heal_mark", "敵へ印を刻み、信仰を得る。裁きの起点になる", CoreSkillMotion.RAY, 4.0, .8, mana=8, cd=70, gain=20, status=CoreSkillStatus.MARK),
                 s("清めの風", "heal_wind", "信仰20で軽く回復し、自分の回避を再使用可能に", CoreSkillMotion.HEAL, 12.0, .5, mana=12, cd=120, gain=0, spend=20, radius=5.0),
                 s("救済", "heal_ult", "信仰80を使い、周囲の仲間を大きく回復", CoreSkillMotion.HEAL, 70.0, 2.8, mana=30, cd=650, startup=16, gain=0, spend=80, radius=10.0, ult=true),

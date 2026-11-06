@@ -258,7 +258,7 @@ internal class CorePlayerCombat(
         if (id !in 0..4 && !(id == CoreMageRules.GRAND && classId == CoreClass.MAGE) || defeated || encounter() == null || player.openInventory != null || staggered) return
         if (!unlocked && !skillAvailable(id)) { notice("${skillNames[id]}はLv${CoreSkillCatalog.unlockLevels[id]}で解放されます"); return }
         if (tickNumber < readyAt[id]) { notice("${definitionAt(id).name}：あと${cooldownSeconds(id)}秒"); return }
-        if (!crowd.canCast(tickNumber)) { notice("${crowd.cue(tickNumber) ?: "行動不能"}：技を使えません"); return }
+        if (!crowd.canCast(tickNumber)) { notice("${crowd.cue(tickNumber) ?: "行動不能"}：スキルを使えません"); return }
         val definition = definitionAt(id)
         if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN && awakened) { notice("獣の目覚めの最中です"); return }
         if (classId == CoreClass.WARRIOR && definition.icon == CoreWarriorRules.AWAKEN && classState.resource < CoreWarriorRules.BEAST_MAX) {
@@ -1618,7 +1618,7 @@ internal class CorePlayerCombat(
         val s = action.definition
         if (s.ultimate && s.icon == CoreMageRules.ECHO) {
             echoUntil = tickNumber + s.duration; echoRepeats = sigils.size.coerceIn(1, CoreMageSigils.MAX)
-            notice("反響：技が${echoRepeats}回繰り返される"); sound(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE, 1f, .7f)
+            notice("反響：スキルが${echoRepeats}回繰り返される"); sound(SoundEvent.BLOCK_AMETHYST_BLOCK_RESONATE, 1f, .7f)
             emitSkillPulse(player.position, 2.0); return true
         }
         if (s.ultimate && s.icon == CoreMageRules.PEAK) {

@@ -385,7 +385,7 @@ internal object CoreAccountCodec {
                 for(i in 0..8) if(mask and (1 shl i)!=0 && i%3>0) require(mask and (1 shl (i-1))!=0)
                 require(listOf(2,5,8).count { mask and (1 shl it)!=0 }<=1)
                 legacyTreeMasks += mask
-            } else if(version>=13) require(mask==0) { "旧技能ツリーの保存値が不正です" }
+            } else if(version>=13) require(mask==0) { "旧スキルツリーの保存値が不正です" }
         }
         val savedBuilds = mutableMapOf<CoreClass, CoreClassBuild>()
         val passives = mutableMapOf<CoreClass, Pair<Set<Int>, Map<Int, Int>>>()
@@ -513,7 +513,7 @@ internal object CoreAccountCodec {
             val existingJourney = requireNotNull(journey)
             if(version==9) {
                 val oldBudget=if(existingJourney.legacy)6 else (2+existingJourney.level/8).coerceAtMost(6)
-                require(legacyTreeMasks.all { Integer.bitCount(it)<=oldBudget }) { "旧技能ポイントが不正です" }
+                require(legacyTreeMasks.all { Integer.bitCount(it)<=oldBudget }) { "旧スキルポイントが不正です" }
             }
             val saved = requireNotNull(classBuild) { "職業の構成データがありません" }
             val build = if (retiredStarweaver) savedBuilds.remove(CoreClass.MAGE) ?: CoreClassBuild() else saved
@@ -524,7 +524,7 @@ internal object CoreAccountCodec {
             // given back, free. The ids would otherwise point at other nodes, or at nothing.
             if (passiveTree != CorePassiveTree.fingerprint) passives.replaceAll { _, _ -> emptySet<Int>() to emptyMap() }
             require(passives.keys.all { it == existingJourney.job || it in savedBuilds }) { "パッシブの職業が構成と一致しません" }
-            require(skillLevels.keys.all { it == existingJourney.job || it in savedBuilds }) { "技のLvの職業が構成と一致しません" }
+            require(skillLevels.keys.all { it == existingJourney.job || it in savedBuilds }) { "スキル Lv の職業が構成と一致しません" }
             fun withPassives(job: CoreClass, b: CoreClassBuild) = (passives[job]?.let { (ids, masteries) -> b.copy(passives = ids, masteries = masteries) } ?: b)
                 .let { built -> skillLevels[job]?.let { built.copy(skillLevels = it) } ?: built }
             journey = existingJourney.copy(build = withPassives(existingJourney.job, CoreSkillCatalog.migrate(existingJourney.job, build)),

@@ -357,7 +357,7 @@ class CoreLoopMenusTest {
             assertEquals((0..8).toList(),bar.flatMap { (it.firstSlot until it.firstSlot+it.span).toList() })
             // The numeral next to an icon is part of the same click target.
             f.click(3)
-            assertEquals("キー3 の技",f.snapshot().leftPanel!!.title)
+            assertEquals("キー3 のスキル",f.snapshot().leftPanel!!.title)
             f.menus.skillBuild(f.player,0,before.skills[1])
             assertEquals("キー2と3を入替",f.snapshot().buttons.single { it.firstSlot==49 }.label)
             assertTrue(f.snapshot().leftPanel!!.lines.any { it.text=="キー3へ移動" })

@@ -7,7 +7,7 @@ slam|地割り|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|2.7|
 whirl|狂乱|CUT|steel|slash_short|speed_streak|edge_glint|cut_spark|2.4|1.0|1.0|獣を使う連撃。踏み込みながら振り続け、最後は真上から振り下ろす（見た目はCoreWarriorRefChoreography）
 war_guard|衝撃|GUARD|steel|parry_blade|edge_glint|edge_glint|cut_spark|0.9|1.0|1.0|大剣を地面へ打ち込み、続く振りに遅れて衝撃が落ちる（見た目はCoreWarriorRefChoreography）
 war_wound|跳び叩き|CUT|steel|slash_short|blood_notch|edge_glint|cut_spark|1.8|1.0|1.0|狙った地点へ弧を描いて跳び、着地の前方に短い溝と扇形に跳ねる土（見た目はCoreWarriorRefChoreography）
-war_counter|大地崩し|CUT|gold|slash_reverse|speed_streak|edge_glint|cut_spark|2.3|1.0|1.0|獣を使う範囲技。大剣を突き立てて周り一面の地面を砕き、まとめて打ち上げる（見た目はCoreWarriorRefChoreography）
+war_counter|大地崩し|CUT|gold|slash_reverse|speed_streak|edge_glint|cut_spark|2.3|1.0|1.0|獣を使う範囲スキル。大剣を突き立てて周り一面の地面を砕き、まとめて打ち上げる（見た目はCoreWarriorRefChoreography）
 war_cry|受け止め|SHIELD|gold|roar_wave|shield_arch|cast_spark|light_spark|1.2|1.0|1.0|獣を溜める守り。3秒のシールドで受け止め、止めた分だけ大剣が熱くなって通常攻撃が強くなる。割られるとガラスのように砕ける
 war_breach|斬り上げ|THRUST|steel|thrust_tip|speed_streak|edge_glint|armor_break|2.6|0.8|0.8|獣を溜める打ち上げ。引きずった跡から真上への軌跡、敵の足元から土が噴き上がる（見た目はCoreWarriorRefChoreography）
 war_ult|全力の一振り|CLEAVE|gold|slash_heavy|ground_crack|edge_glint|stone_impact|3.4|1.2|1.0|ウルト。担いで溜め、地割りの最大の形で前へ大きく割る（見た目はCoreWarriorRefChoreography）
@@ -19,7 +19,7 @@ meteor|流星|RAIN|fire|meteor_rock|fire_crater|cast_spark|fire_burst|0.9|1.0|1.
 mage_blink|雷走り|TELEPORT|lightning|lightning_gate|electric_shard|cast_spark|electric_spark|1.0|1.0|1.0|出発点で縮む裂け目と到着点で開く裂け目。斬撃は使わない
 mage_mark|落雷|RAY|lightning|lightning_fork|electric_thread|cast_spark|lightning_seal|0.8|0.7|0.7|細い分岐雷と命中した敵の雷印。空振りに印を出さない
 mage_garden|氷の庭|FIELD|ice|snowflake|ice_spike|cast_spark|ice_shatter|3.65|1.0|1.0|支えのある床板が一度だけ展開し6秒残る。敵の初回接触に氷片、終了前は結晶が縮み床の亀裂が開く
-mage_gale|竜巻|FIELD|gold|gravity_funnel|chain_hook|cast_spark|light_spark|3.5|1.0|1.0|仮：集束の形を借りる。竜巻の絵は技の見た目を決めてから描く
+mage_gale|竜巻|FIELD|gold|gravity_funnel|chain_hook|cast_spark|light_spark|3.5|1.0|1.0|仮：集束の形を借りる。竜巻の絵はスキルの見た目を決めてから描く
 mage_burst|氷槍の列|NOVA|lightning|lightning_burst|electric_shard|lightning_seal|electric_spark|3.6|1.0|1.0|中心の術式が破裂し四方向へ雷片。一本の光線にしない
 mage_ward|突風|SHIELD|lightning|arcane_shield|shield_arch|cast_spark|light_spark|1.0|1.0|1.0|本人の胴を守る魔力板。radiusゼロでも巨大な地面輪を作らない
 mage_ult|反響|RAIN|fire|meteor_crown|fire_crater|fire_seal|fire_burst|1.4|1.0|1.0|大術式の中心へ火冠を落とし放射状の火口。各爆発と同期

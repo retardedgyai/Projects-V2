@@ -9,10 +9,10 @@ internal object CoreWarriorSkillPresentation {
         "whirl" to Identity("狂乱", "獣を使う・連撃", "踏み込みながら振り続け、最後に振り下ろす"),
         "war_guard" to Identity("衝撃", "獣を溜める・連打", "地面に打ち込み、次の8振りに2発目の衝撃が乗る"),
         "war_wound" to Identity("跳び叩き", "移動・着地", "狙った地点へ跳び、着地の周りを叩いて止める"),
-        "war_counter" to Identity("大地崩し", "使えない技", "（引退）"),
+        "war_counter" to Identity("大地崩し", "使えないスキル", "（引退）"),
         "war_cry" to Identity("受け止め", "獣を溜める・守り", "シールドで受けるほど大剣が熱く、殴りが強くなる"),
         "war_breach" to Identity("斬り上げ", "獣を溜める・打ち上げ", "真上へ振り上げて打ち上げ、地割りで叩き落とす"),
-        "war_ult" to Identity("全力一振", "使えない技", "（地割りの獣3つになった）"),
+        "war_ult" to Identity("全力一振", "使えないスキル", "（地割りの獣3つになった）"),
         "war_banner" to Identity("狂戦士甲冑", "ウルト・暴走", "10秒、CCも怯みも効かず速く、獣が2倍で溜まる"),
         "war_awaken" to Identity("獣の目覚め", "ウルト・超重力", "獣を燃やして続く。殴って溜め続ければ切れない")
     )

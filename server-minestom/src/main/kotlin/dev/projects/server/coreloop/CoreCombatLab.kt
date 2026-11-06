@@ -143,8 +143,8 @@ internal class CoreCombatLab(
                         entry.actor?.reset(); entry.actor?.refillTraining()
                         refresh(player)
                         player.sendMessage(CoreLoopItems.text(if (bossId != null)
-                            "${entry.arena?.displayName}に到着（Tier${entry.tier}）。${entry.combat?.bossName()}が待っています。ポーションは${LAB_POTIONS}個・再使用10秒。手帳 [9] で職業・技・再配置、帰還は /hub。"
-                            else "試験場に到着。手帳 [9] または /skilltest で職業・技・敵を変更できます。帰還は /hub。"))
+                            "${entry.arena?.displayName}に到着（Tier${entry.tier}）。${entry.combat?.bossName()}が待っています。ポーションは${LAB_POTIONS}個・再使用10秒。手帳 [9] で職業・スキル・再配置、帰還は /hub。"
+                            else "試験場に到着。手帳 [9] または /skilltest で職業・スキル・敵を変更できます。帰還は /hub。"))
                         println("CORE_SKILL_LAB_ENTERED player=${player.username} " +
                             (entry.runtime?.let { "seed=${it.plan.seed}" } ?: "boss=$bossId"))
                     } catch (failure: Exception) {
@@ -212,7 +212,7 @@ internal class CoreCombatLab(
         val actor = entry.actor ?: return true
         CoreLoopItems.refresh(player, entry.loadout.account(), packed = packed(player), combatSheet = actor.sheet)
         player.inventory.setItemStack(8, ItemStack.of(Material.NETHER_STAR).withCustomName(CoreLoopItems.text("スキル試験場の設定"))
-            .withLore(CoreLoopItems.text("右クリック：職業・技・試験条件・敵の再配置"))
+            .withLore(CoreLoopItems.text("右クリック：職業・スキル・試験条件・敵の再配置"))
             .withTag(CoreLoopItems.actionTag, "journal"))
         val bossLab = entry.bossId != null && !entry.loadout.free
         player.inventory.setItemStack(6, if (bossLab) ItemStack.of(Material.POTION).withCustomName(CoreLoopItems.text("回復ポーション（残り${entry.potions}）"))
@@ -296,7 +296,7 @@ internal class CoreCombatLab(
             CoreCombatPresentation.cycle(player); menu(player)
         }
         button(49, Material.ARROW, "閉じて試す", "ホットバー2～6のスキルを右クリック。設定は手帳9") { player.closeInventory() }
-        screens.show(player, CoreMenuInventory.Screen(CoreLoopItems.text("スキル試験場：職業 → 枠 → 技"), items, actions) { menu(player) })
+        screens.show(player, CoreMenuInventory.Screen(CoreLoopItems.text("スキル試験場：職業 → 枠 → スキル"), items, actions) { menu(player) })
     }
 
     fun leave(player: Player): Boolean {
