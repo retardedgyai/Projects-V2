@@ -227,6 +227,8 @@ internal class DungeonRun(
     private val instance: InstanceContainer,
     private val combat: QuestEncounterCombat,
     val layout: DungeonLayout,
+    /** 段階 (CoreDungeons.stage): from 2 every waves room sends one more, a miniboss brings escorts, a 穢れ場 asks for more. */
+    val step: Int = 1,
     private val players: () -> List<Player>,
 ) {
     enum class Stage { WALKING, FIGHTING, BOSS }
@@ -253,7 +255,10 @@ internal class DungeonRun(
         ticks++
         val players = players()
         if (players.isEmpty()) return
-        if (!packsRisen) { packsRisen = true; risePacks(players.size) }
+        if (!packsRisen) {
+            packsRisen = true; risePacks(players.size)
+            if (step > 1) announce(players, "${layout.name}・段階$step", "敵は強く、部屋は手強くなった", NamedTextColor.GOLD)
+        }
         when (stage) {
             Stage.WALKING -> if (room < layout.rooms.size) {
                 val r = layout.rooms[room]
@@ -289,7 +294,7 @@ internal class DungeonRun(
     /** Development: a 穢れ場 skips to its last enemy (the rest of the room's enemies fall as /dungeontest clear does). */
     fun skipToLast() {
         val r = layout.rooms.getOrNull(room) ?: return
-        if (stage == Stage.FIGHTING && r.kind == RoomKind.SPAWNER) { val target = r.spawner!!.target(players().size); fallen = target; risen = target }
+        if (stage == Stage.FIGHTING && r.kind == RoomKind.SPAWNER) { val target = spawnerTarget(r, players().size); fallen = target; risen = target }
     }
 
     fun dispose() { combat.removeEncounter(spawned) }
@@ -314,9 +319,9 @@ internal class DungeonRun(
         if (down.isNotEmpty()) {
             if (!lastOut) fallen += down.size
             combat.removeEncounter(down); enemies = enemies - down
-            players().forEach { it.sendActionBar(Component.text(if (lastOut) "${r.name}・最後の穢れ" else "${r.name}・あと${(rule.target(party) - fallen).coerceAtLeast(0)}体", NamedTextColor.GOLD)) }
+            players().forEach { it.sendActionBar(Component.text(if (lastOut) "${r.name}・最後の穢れ" else "${r.name}・あと${(spawnerTarget(r, party) - fallen).coerceAtLeast(0)}体", NamedTextColor.GOLD)) }
         }
-        val target = rule.target(party)
+        val target = spawnerTarget(r, party)
         when {
             lastOut -> if (enemies.isEmpty()) cleared(r, players())
             fallen >= target && enemies.isEmpty() -> { lastOut = true; rise(r, rule.last) }
@@ -325,6 +330,20 @@ internal class DungeonRun(
                 // The room fills at once, then one at a time.
                 nextRise = if (risen < rule.cap(party)) ticks else ticks + rule.intervalTicks
             }
+        }
+    }
+
+    /** A 穢れ場 asks three more a 段階 past the first. */
+    internal fun spawnerTarget(r: DungeonRoom, party: Int) = r.spawner!!.target(party) + 3 * (step - 1)
+
+    /** The room's wave at this 段階: one more shield in a waves room (up to four), escorts beside a miniboss. */
+    internal fun waveAt(r: DungeonRoom, wave: Int): List<QuestMobArchetype> {
+        val types = r.waves[wave]
+        if (step < 2) return types
+        return when (r.kind) {
+            RoomKind.WAVES -> if (types.size < 4) types + QuestMobArchetype.SHIELD_GUARD else types
+            RoomKind.MINIBOSS -> types + List((step - 1).coerceAtMost(2)) { QuestMobArchetype.RIFT_CASTER }
+            RoomKind.SPAWNER -> types
         }
     }
 
@@ -347,12 +366,14 @@ internal class DungeonRun(
         QuestCombatPlacement.resolve(instance, at.withY(InstanceDungeonFactory.floorAt(instance, at.blockX(), at.blockZ(), near).toDouble()))
 
     private fun spawnWave(r: DungeonRoom) {
-        val types = r.waves[wave]
+        val types = waveAt(r, wave)
         // Where the map says, else across the middle and the far side of the room (the players come in at the gate side).
         val ahead = r.entry.direction().withY(0.0).normalize(); val side = Vec(-ahead.z(), 0.0, ahead.x())
         val offsets = listOf(-4.0 to 1.0, 4.0 to 1.0, 0.0 to 4.0, 0.0 to -2.0)
         val positions = types.indices.map { i ->
-            place(r.spawns.getOrNull((i + wave * 2) % r.spawns.size.coerceAtLeast(1)) ?: offsets[i].let { (u, v) -> r.center.add(side.mul(u)).add(ahead.mul(v)) }, r.floor)
+            // A miniboss's escorts stand four blocks to either side of it.
+            if (r.kind == RoomKind.MINIBOSS && i > 0) place(r.spawns[0].add(side.mul(if (i % 2 == 1) 4.0 else -4.0)), r.floor)
+            else place(r.spawns.getOrNull((i + wave * 2) % r.spawns.size.coerceAtLeast(1)) ?: offsets[i].let { (u, v) -> r.center.add(side.mul(u)).add(ahead.mul(v)) }, r.floor)
         }
         enemies = combat.spawnEncounter(QuestCombatEncounter(positions, types))
         spawned += enemies

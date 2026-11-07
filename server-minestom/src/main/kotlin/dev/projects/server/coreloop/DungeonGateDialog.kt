@@ -73,7 +73,7 @@ internal class DungeonGateDialog(
         val left = (480 - size.canvasWidth / size.unit) / 2
         val top = layout["gateTop"].asDouble
         val tier = layout.getAsJsonArray("gateTier")
-        canvas.text("m6", tier[0].asDouble - left, tier[1].asDouble - top, "T${tier(account)}", TEXT)
+        canvas.text("m6", tier[0].asDouble - left, tier[1].asDouble - top, "T${tier(account)}・段階${CoreDungeons.stage(account.dungeonClears[CoreDungeons.SAKURA] ?: 0)}", TEXT)
         val names = layout.getAsJsonArray("gateRewardNames")
         layout.getAsJsonArray("gateRewards").forEachIndexed { i, spot ->
             val s = spot.asJsonArray

@@ -64,6 +64,15 @@ data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: 
 object CoreDungeons {
     const val SAKURA = "sakura-dungeon"
     val ids = setOf(SAKURA)
+    const val MAX_STAGE = 5
+    /**
+     * 段階: each clear cuts the next run of the same dungeon one step harder, up to [MAX_STAGE] (藍「2回目は結構むずくでも良い」,
+     * PoE の Tier・Mythic+ の鍵 Lv). The map stays; enemies grow and the rooms add their gimmicks (DungeonRun).
+     */
+    fun stage(clears: Int) = (clears + 1).coerceIn(1, MAX_STAGE)
+    /** Enemy health and damage at [stage]: 段階2 is already a real step (×1.3 / ×1.2), then +0.3 / +0.2 a step. */
+    fun health(stage: Int) = 1.0 + .3 * (stage - 1)
+    fun damage(stage: Int) = 1.0 + .2 * (stage - 1)
 }
 data class CoreReceipt(val fingerprint: String, val revision: Long, val message: String)
 private val RECEIPT_FINGERPRINT = Regex("[0-9a-f]{64}")
@@ -114,7 +123,10 @@ class CoreAccount(
         .associateWith { slot -> CoreArmorPiece(CoreGearIdentity.legacy(playerId, slot).copy(quality = armorIdentity.quality),
             armorTier, CoreCraftingCatalog.inferRarity(equippedAffixes, slot), armorEnhancement, armorBroken) },
     zoneRecords: Map<Int, CoreZoneRecord> = emptyMap(),
+    dungeonClears: Map<String, Int> = emptyMap(),
 ) {
+    /** Times each instance dungeon was cleared (by its id, CoreDungeons); the next run is cut one 段階 harder. Saved since v14. */
+    val dungeonClears: Map<String, Int> = Collections.unmodifiableMap(LinkedHashMap(dungeonClears.toSortedMap()))
     /** Atlas clears by zone id. Unknown ids are kept so a removed zone never corrupts a save. */
     val zoneRecords: Map<Int, CoreZoneRecord> = Collections.unmodifiableMap(LinkedHashMap(zoneRecords.toSortedMap()))
     /** CHEST owns the v10 armor fields so older callers and fixtures remain readable. */
@@ -145,6 +157,7 @@ class CoreAccount(
     init {
         require(surveyPoints in 0..1_000_000_000L)
         require(zoneRecords.keys.all { it in 0..CoreZoneRecord.MAX_ZONE_ID })
+        require(dungeonClears.keys.all { it in CoreDungeons.ids } && dungeonClears.values.all { it in 1..CoreZoneRecord.MAX_CLEARS })
         val passiveBudget = CorePassiveTree.budget(journey) + CorePassiveTree.bonusPoints(zoneRecords.keys)
         require((journey.savedBuilds.values + journey.build).all { it.passives.size <= passiveBudget }) { "パッシブの割り振りが不正です" }
         // Skill points come in like passive points, as a separate purse per class build.
@@ -228,9 +241,10 @@ class CoreAccount(
         journey: CoreJourney = this.journey,
         armorParts: Map<CoreGearSlot, CoreArmorPiece> = this.armorParts,
         zoneRecords: Map<Int, CoreZoneRecord> = this.zoneRecords,
+        dungeonClears: Map<String, Int> = this.dungeonClears,
     ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes,
         weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed, weaponEnhancement, armorEnhancement, smithingXp,
-        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, journey, armorParts, zoneRecords)
+        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, journey, armorParts, zoneRecords, dungeonClears)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)

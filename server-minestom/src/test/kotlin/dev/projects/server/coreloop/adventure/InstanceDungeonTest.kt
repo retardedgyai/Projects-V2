@@ -152,6 +152,25 @@ class InstanceDungeonTest {
     }
 
     @Test
+    fun `from 段階2 every waves room sends one more, a miniboss brings escorts and a 穢れ場 asks for more`() {
+        MinecraftServer.init(Auth.Offline())
+        val dungeon = InstanceDungeonFactory.create(1)
+        val instance = dungeon.arena.instance
+        val combat = QuestEncounterCombat(instance, 1, emptyList(), dungeon.layout.bossSpawn,
+            { _, _ -> }, { _, _ -> }, explicitBossArchetype = QuestMobArchetype.SAKURA_FANG)
+        try {
+            val first = DungeonRun(instance, combat, dungeon.layout, 1) { emptyList() }
+            val second = DungeonRun(instance, combat, dungeon.layout, 2) { emptyList() }
+            for (room in dungeon.layout.rooms) when (room.kind) {
+                RoomKind.WAVES -> assertEquals(minOf(4, room.waves[0].size + 1), second.waveAt(room, 0).size)
+                RoomKind.MINIBOSS -> assertEquals(listOf(room.waves[0][0], QuestMobArchetype.RIFT_CASTER), second.waveAt(room, 0))
+                RoomKind.SPAWNER -> assertEquals(first.spawnerTarget(room, 1) + 3, second.spawnerTarget(room, 1))
+            }
+            dungeon.layout.rooms.filter { it.kind != RoomKind.SPAWNER }.forEach { assertEquals(it.waves[0], first.waveAt(it, 0)) }
+        } finally { combat.dispose(); dungeon.arena.dispose() }
+    }
+
+    @Test
     fun `a 穢れ場's counts grow with the party`() {
         assertEquals(8 to 4, InstanceDungeonFactory.perPlayers("8 + 4 * 人数"))
         assertEquals(3 to 1, InstanceDungeonFactory.perPlayers("3 + 人数"))
