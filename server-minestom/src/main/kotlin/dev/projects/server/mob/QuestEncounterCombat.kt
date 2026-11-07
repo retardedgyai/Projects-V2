@@ -732,6 +732,7 @@ class QuestEncounterCombat(
         if (disposed || nowMillis <= lastTickAt) return
         lastTickAt = nowMillis
         telegraphs.tick(nowMillis)
+        tickShots()
         vfx.tick()
         shaderFx.tick()
         lights.tick(nowMillis)
@@ -801,6 +802,8 @@ class QuestEncounterCombat(
         if (disposed) return
         disposed = true
         telegraphs.dispose()
+        shots.forEach { it.arrow?.remove() }
+        shots.clear()
         vfx.cancelAll()
         gimmicks.dispose()
         lights.dispose()
@@ -2005,13 +2008,21 @@ class QuestEncounterCombat(
                 // The sakura common enemies scatter petals instead of the wyrm's white wake and black dust (sakuraBurst below).
                 if (mob.definition.archetype !in SAKURA_COMMON) playVfx(mob, ShadeWyrmVfx.hit(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
                 if (mob.shade) shaderFx.strike(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
+                (event.frame.ability.shape as? MobAttackShape.Shot)?.let { shot ->
+                    // It looses the shot and is done; the shot strikes (or misses) on its own as it flies.
+                    loose(mob, event.frame, shot)
+                    return true
+                }
                 sound(event.frame.origin,
                     if (mob.entity.entityMeta is SpellcasterIllagerMeta) "minecraft:entity.evoker.cast_spell"
+                    else if (event.frame.ability.shape is MobAttackShape.Strike) "minecraft:entity.player.attack.strong"
                     else if (event.frame.ability.shape is MobAttackShape.Sweep) "minecraft:entity.player.attack.sweep"
                     else "minecraft:block.anvil.land", 0.8f, if (mob.boss) 0.7f else 1.0f)
                 for (player in players) {
                     if (player.instance !== instance || !canTarget(player)) continue
                     // Rings and the gimmicks reach round a pillar; the charge strikes along its path instead (see [travel]).
+                    // A blow (Strike) lands only on the one it is fighting.
+                    if (event.frame.ability.shape is MobAttackShape.Strike && player !== mob.target) continue
                     if (event.frame.ability.id != CHARGE && event.frame.ability.shape.contains(event.frame.origin, event.frame.facing, player.position) &&
                         (if (event.frame.ability.id in SIGHT_ONLY) mob.entity.hasLineOfSight(player)
                         else event.frame.ability.shape is MobAttackShape.Ring || event.frame.ability.id in GIMMICKS || mob.entity.hasLineOfSight(player))
@@ -2174,9 +2185,71 @@ class QuestEncounterCombat(
 
     private fun frenzied(mob: Mob) = MobMod.FRENZY in mob.mods && mob.life.health <= mob.life.maximumHealth * MobMod.FRENZY_HEALTH
 
+    /** A shot in flight (枝弓の骸's arrow, つぼみ's pollen): it moves each tick and strikes the first player it touches. */
+    private class Shot(val arrow: net.minestom.server.entity.Entity?, var at: Pos, val step: Vec, var ticksLeft: Int,
+                       val damage: Double, val type: CoreDamageType, val crowd: CrowdControl?, val crowdMillis: Long)
+    private val shots = mutableListOf<Shot>()
+
+    private fun loose(mob: Mob, frame: MobAbilityFrame, shape: MobAttackShape.Shot) {
+        val arrow = frame.ability.id == "archer-shot"
+        val from = mob.entity.position.add(0.0, 1.45, 0.0).add(normalizeHorizontal(frame.facing).mul(.6))
+        // Locked aim across the ground; up or down toward where the target's chest is now.
+        val chestY = (mob.target?.position?.y() ?: mob.entity.position.y()) + 1.1
+        val flat = normalizeHorizontal(frame.facing)
+        val run = horizontalLength((mob.target?.position ?: from).sub(from)).coerceAtLeast(1.0)
+        val dir = Vec(flat.x(), ((chestY - from.y()) / run).coerceIn(-.5, .5), flat.z()).normalize()
+        val step = dir.mul(shape.speed / 20.0)
+        val entity = if (!arrow) null else net.minestom.server.entity.Entity(net.minestom.server.entity.EntityType.ARROW).also {
+            it.setNoGravity(true)
+            it.setHasPhysics(false)
+            it.setInstance(instance, facing(from, dir))
+        }
+        val dealt = frame.ability.damage * (if (frenzied(mob)) MobMod.FRENZY_DAMAGE else 1.0)
+        shots += Shot(entity, from, step, kotlin.math.ceil(shape.range / (shape.speed / 20.0)).toInt(), dealt,
+            frame.ability.damageType, frame.ability.crowd, frame.ability.crowdMillis)
+        sound(from, if (arrow) "minecraft:entity.skeleton.shoot" else "minecraft:block.azalea_leaves.break", 1.0f, if (arrow) 1.0f else 1.4f)
+    }
+
+    private fun facing(at: Pos, dir: Vec): Pos {
+        val yaw = Math.toDegrees(kotlin.math.atan2(-dir.x(), dir.z())).toFloat()
+        val pitch = Math.toDegrees(-kotlin.math.asin(dir.y().coerceIn(-1.0, 1.0))).toFloat()
+        return at.withView(yaw, pitch)
+    }
+
+    private fun tickShots() {
+        if (shots.isEmpty()) return
+        val pink = Particle.DUST.withColor(net.kyori.adventure.text.format.TextColor.color(0xffb3d1)).withScale(1.2f)
+        val iterator = shots.iterator()
+        while (iterator.hasNext()) {
+            val shot = iterator.next()
+            var done = false
+            // Four checks along this tick's flight, so a fast arrow cannot pass through someone.
+            for (part in 1..4) {
+                val at = shot.at.add(shot.step.mul(part / 4.0))
+                if (instance.getBlock(at).solid()) { done = true; break }
+                val struck = instance.players.firstOrNull { p -> canTarget(p) &&
+                    horizontalLength(p.position.sub(at)) <= SHOT_RADIUS && at.y() in p.position.y() - .2..p.position.y() + 2.0 }
+                if (struck != null) {
+                    if (typedDamagePlayer != null) typedDamagePlayer.invoke(struck, shot.damage, shot.type) else damagePlayer(struck, shot.damage)
+                    shot.crowd?.let { crowdPlayer?.invoke(struck, it, shot.crowdMillis, at) }
+                    particle(at, Particle.CHERRY_LEAVES, 8)
+                    done = true
+                    break
+                }
+                if (shot.arrow == null) { particle(at, pink, 2); if (part == 4) particle(at, Particle.CHERRY_LEAVES, 1) }
+            }
+            shot.at = shot.at.add(shot.step)
+            if (--shot.ticksLeft <= 0) done = true
+            if (done) { shot.arrow?.remove(); iterator.remove(); continue }
+            shot.arrow?.teleport(facing(shot.at, shot.step))
+        }
+    }
+
     private fun drawWarning(mob: Mob, frame: MobAbilityFrame, impact: Boolean): Boolean {
         // B (2026-10-19): the small attacks show no floor; they are read from the wyrm's wind-up and its sound.
         if (mob.view != null && frame.ability.id in NO_FLOOR) return true
+        // The small enemies' blows and shots are read from their wind-up, as with vanilla mobs (Creator 2026-11-07).
+        if (mob.definition.archetype in SAKURA_COMMON) return true
         if (!telegraphs.show(mob.entity.uuid, frame, impact, lastTickAt)) return false
         val color = when {
             impact -> NamedTextColor.RED
@@ -2202,6 +2275,7 @@ class QuestEncounterCombat(
             is MobAttackShape.Slam -> (0..(shape.length / 1.5).toInt()).map { o.add(f.mul(it * 1.5)) }
             is MobAttackShape.Sweep -> (-4..4).flatMap { k -> listOf(.45, .9).map { d ->
                 o.add(f.rotateAroundY(Math.toRadians(shape.halfAngleDegrees * k / 4.0)).mul(shape.radius * d)) } }
+            is MobAttackShape.Strike -> listOf(o.add(f.mul(shape.reach * .7)).add(0.0, .9, 0.0))
             else -> listOf(o)
         }
         for (p in points) { particle(p, Particle.CHERRY_LEAVES, 6); particle(p, pink, 2) }
@@ -2464,6 +2538,8 @@ class QuestEncounterCombat(
         val SAKURA_COMMON = setOf(QuestMobArchetype.SAKURA_HUSK, QuestMobArchetype.SAKURA_ARCHER, QuestMobArchetype.SAKURA_BUD)
         /** つぼみ's bloom: it bursts, and is gone. */
         const val SELF_BURST = "bud-burst"
+        /** How near (blocks, across the ground) a flying shot must pass a player's body to strike. */
+        const val SHOT_RADIUS = .55
         /** 桜牙獣 answers someone at its back with the 360 tail spin. */
         const val SAKURA_TURN = "sakura-spin"
         /** 桜牙獣's breather between attack chains (ms), and the pause between its moves. */

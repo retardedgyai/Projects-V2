@@ -33,6 +33,7 @@ internal object MobGroundRaster {
 
     private fun raster(frame: MobAbilityFrame, step: Double, ground: (Pos) -> Double?): List<MobGroundTile> {
         val outline = frame.ability.shape.outline(frame.origin, frame.facing)
+        if (outline.isEmpty()) return emptyList()
         val minX = floor(outline.minOf { it.x() } / step).toInt()
         val maxX = ceil(outline.maxOf { it.x() } / step).toInt()
         val minZ = floor(outline.minOf { it.z() } / step).toInt()

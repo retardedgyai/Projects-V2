@@ -122,6 +122,26 @@ sealed interface MobAttackShape {
         }
     }
 
+    /**
+     * One blow at the one it is fighting (QuestEncounterCombat hits only the mob's target), within [reach] in front.
+     * No ground warning: the wind-up animation is the warning, as with a zombie's swing.
+     */
+    data class Strike(val reach: Double = 2.4, val halfAngleDegrees: Double = 55.0) : MobAttackShape {
+        init { require(reach > 0.0 && halfAngleDegrees in 1.0..180.0) }
+        override fun contains(origin: Point, facing: Vec, target: Point): Boolean = Sweep(reach, halfAngleDegrees).contains(origin, facing, target)
+        override fun outline(origin: Point, facing: Vec): List<Pos> = emptyList()
+    }
+
+    /**
+     * A shot that flies (QuestEncounterCombat.Shot): released at the hit, it travels [speed] blocks a second up to
+     * [range] and strikes the first player it touches. [contains] is the lane it could reach, for choosing the move only.
+     */
+    data class Shot(val range: Double, val speed: Double) : MobAttackShape {
+        init { require(range > 0.0 && speed > 0.0) }
+        override fun contains(origin: Point, facing: Vec, target: Point): Boolean = Slam(range, .6).contains(origin, facing, target)
+        override fun outline(origin: Point, facing: Vec): List<Pos> = emptyList()
+    }
+
     companion object {
         private const val EPSILON = 1.0e-8
         private fun groundPoint(origin: Point, x: Double, z: Double) =

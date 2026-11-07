@@ -76,6 +76,51 @@ class SakuraMobsTest {
         }
     }
 
+    @Test
+    fun `the archer's arrow flies to the player, with no ground warning`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("miniboss1", 1)
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "ArrowTest"))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        val at = arena.bossSpawn
+        player.setInstance(arena.instance, at.add(0.0, 0.0, 8.0)).join()
+        var hurt = 0.0
+        var hurtAt = 0L
+        val combat = QuestEncounterCombat(arena.instance, 1, listOf(QuestCombatEncounter(listOf(at), listOf(QuestMobArchetype.SAKURA_ARCHER))),
+            at, { _, _ -> }, { _, amount -> if (hurt == 0.0) hurtAt = -1; hurt += amount }, spawnBoss = false)
+        try {
+            var now = 1_000L
+            var warned = false
+            repeat(200) {
+                if (hurt == 0.0) {
+                    now += 50; combat.tick(now)
+                    if (combat.groundDisplayCount > 0) warned = true
+                    // hold the player still where it stood, so the arrow has a mark
+                    player.teleport(at.add(0.0, 0.0, 8.0))
+                }
+            }
+            assertTrue(hurt > 0.0, "the arrow never struck")
+            assertFalse(warned, "a small enemy drew a ground warning")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
+    fun `a blow and a shot strike one target and draw no area`() {
+        val strike = MobAttackShape.Strike(2.5)
+        val origin = net.minestom.server.coordinate.Pos(0.0, 0.0, 0.0)
+        val facing = net.minestom.server.coordinate.Vec(0.0, 0.0, 1.0)
+        assertTrue(strike.contains(origin, facing, net.minestom.server.coordinate.Pos(0.0, 0.0, 2.0)))
+        assertFalse(strike.contains(origin, facing, net.minestom.server.coordinate.Pos(0.0, 0.0, -2.0)))
+        assertTrue(strike.outline(origin, facing).isEmpty())
+        assertTrue(MobAttackShape.Shot(18.0, 22.0).outline(origin, facing).isEmpty())
+    }
+
     private class MemoryConnection : PlayerConnection() {
         override fun sendPacket(packet: SendablePacket) = Unit
         override fun getRemoteAddress(): SocketAddress = InetSocketAddress("127.0.0.1", 0)
