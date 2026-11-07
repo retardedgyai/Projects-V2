@@ -278,6 +278,31 @@ for i in range(8):                                                              
     a = math.pi / 8 + i * math.pi / 4
     lx, lz = int(round(32.6 * math.cos(a))), int(round(32.6 * math.sin(a)))
     if not in_gate(lx, lz): tall_lantern(lx, lz, H[(lx, lz)])
+def pillar_lantern(cx, cz):
+    """庭の大きな石灯籠（司令塔 11/07：桜牙獣の千本桜は柱の陰へ隠れる技なのに、隠れる所が0マスだった。sight.py の A 案）。3×3・高さ8。
+    庭の城に合わせる：台は石垣と同じ石（角は磨いた安山岩）、上の縁に磨いた深層岩の帯 → 竿 → 火袋（角に濃い木の柱、中に灯り）
+    → 笠は天守と同じ深層岩の丸石で、外へ1マス張り出して四隅を反らせる → 宝珠。床から3段は3×3で詰めて、陰を作る [rules 123]。"""
+    g = H[(cx, cz)]
+    for dx in (-1, 0, 1):
+        for dz in (-1, 0, 1):
+            x, z = cx + dx, cz + dz; corner = dx and dz
+            for y in range(min(ground(x, z), g) + 1, g + 1): put(x, y, z, full('stone'))   # 床の段差を埋める
+            for y in (g + 1, g + 2): put(x, y, z, full('polished_andesite' if corner else CS._stone(x, y, z, 406)))
+            put(x, g + 3, z, full('polished_deepslate'))
+            if corner: put(x, g + 5, z, log('dark_oak_log'))
+            put(x, g + 6, z, slab('cobbled_deepslate', 'top') if corner else full('polished_deepslate'))
+    put(cx, g + 4, cz, P.wall('polished_deepslate'))                             # 竿
+    put(cx, g + 5, cz, P.LANTERN)                                                  # 火袋の灯り
+    for dx in range(-2, 3):                                                       # 笠：1マス張り出し、四隅を1段反らせる
+        for dz in range(-2, 3):
+            if max(abs(dx), abs(dz)) == 2:
+                f = 'w' if dx == 2 else 'e' if dx == -2 else 'n' if dz == 2 else 's'
+                put(cx + dx, g + 6 + (abs(dx) == 2 and abs(dz) == 2), cz + dz, stair('cobbled_deepslate', f) if not (abs(dx) == 2 and abs(dz) == 2) else full('cobbled_deepslate'))
+            elif max(abs(dx), abs(dz)) == 1: put(cx + dx, g + 7, cz + dz, stair('cobbled_deepslate', 'w' if dx == 1 else 'e' if dx == -1 else 'n' if dz == 1 else 's') if not (dx and dz) else slab('cobbled_deepslate'))
+    put(cx, g + 7, cz, full('cobbled_deepslate'))
+    put(cx, g + 8, cz, P.wall('polished_deepslate'))                             # 宝珠
+PILLARS = [(11, 11), (-11, 11), (-11, -11), (11, -11)]                            # 半径16の斜め4方向（45/135/225/315°）。西の入口と東の天守の軸は空ける
+for (px_, pz_) in PILLARS: pillar_lantern(px_, pz_)
 # 散華の間（東のすり鉢）：北の段に木の桟敷
 for (x0, x1, z0, z1) in [(74, 80, -18, -13)]:
     yy = max(ground(x, z) for x in range(x0, x1 + 1) for z in range(z0, z1 + 1)) + 1
@@ -347,6 +372,16 @@ for (x, z) in [(-54, 15), (-49, -26), (-26, 51), (18, 54), (51, 26), (49, -28), 
     big_cherry(x, z, x * 7 + z)                                                  # 谷底の大きな桜（山を桃色に囲む）
 print('木・茂み', T.woods(kind=kind, skip=fight_floor))
 T.ground_cover()
+FIGHT_ROOMS = ('R1', 'MB1', 'H', 'q3', 'N', 'q6', 'W')                           # 戦う床：波・穢れ場・ミニボスの間（と庭の円）
+def fight_room(x, z):
+    if math.hypot(x, z) < AR: return True
+    sh = shapes(x, z); return any(sh[k][0] <= 1 for k in FIGHT_ROOMS)
+TALL = ('tall_grass_bottom', 'tall_grass_top', 'fern', 'large_fern_bottom', 'large_fern_top', 'bush')
+tall_n = 0
+for (x, y, z), b in list(vox.W.items()):                                          # 戦う床から背の高い草とシダを外し、低い草だけに（司令塔 11/07：敵や地面の予兆が草に隠れた）
+    if b['s'] == 'cross' and b.get('t') in TALL and fight_room(x, z):
+        put(x, y, z, cross('short_grass') if b['t'] in ('tall_grass_bottom', 'fern', 'large_fern_bottom', 'bush') else None); tall_n += 1
+print('戦う床の背の高い草', tall_n)
 for (x, z), k in KIND.items():                                                    # 斜面の段の縁は苔ブロック [rules 108]
     if k != 'nat': continue
     g = H[(x, z)]; b = get(x, g, z)
@@ -410,7 +445,7 @@ def designed(x, z):
     return d <= 2.5 and g <= f + 3
 M = {c for c in seen if designed(*c)}
 FL = {c: stand(*c) for c in M}                                                    # 床（縁石を置く前に読む）
-SOFT = ('carpet', 'cross', 'vine', 'lantern', 'chain')
+SOFT = ('carpet', 'cross', 'vine', 'chain')                                       # 灯りは柔らかくしない：見えない壁が灯りを上書きしていた（司令塔 11/07）
 def top_at(x, z, ymax):
     for y in range(ymax, -12, -1):
         b = get(x, y, z)
@@ -424,7 +459,7 @@ for (x, z) in M:
     reach_top = max([y for y in SURF.get((x, z), ()) if y <= fl_ + 12] + [fl_])   # その柱で登れるいちばん上（木の葉の上など）
     for dx, dz in N8:
         n = (x + dx, z + dz)
-        if n in M: continue
+        if n in M or math.hypot(*n) < WALL_R - 4: continue                       # 庭の中（石灯籠のまわり）には立てない：塀の内は外へ出る所がない
         lo, hi = need.get(n, (999, -999)); need[n] = (min(lo, fl_ + 1), max(hi, fl_ + 6, reach_top + 3))   # 木や縁石を伝って壁の上へ乗らない高さ
         if abs(dx) + abs(dz) == 1 and top_at(*n, fl_) < fl_ - 3 and math.hypot(x, z) > 34 and T.BRIDGE.get((x, z)) is None: lips.add((x, z))
 for (x, z) in lips:                                                               # 縁石：落ちる縁の最後の1マス
@@ -456,7 +491,7 @@ print('落ちたら戻れない所', EC.clusters(traps)[:8] or 'なし')
 print('地図の外へ出られる所', EC.clusters(edge)[:5] or 'なし')
 RC = {(x, z) for (x, z, y) in reach}
 print('壁を立てても行ける', [k for k, (x, z) in want.items() if any((x + dx, z + dz) in RC for dx in range(-3, 4) for dz in range(-3, 4))])
-ROOMS = {'spawn': [START[0], ground(*START) + 1, START[1]], 'gates': GATE_AT, 'doors': DOORS, 'arena_center': [0, 41, 0], 'arena_r': AR - 1, 'seals': SEALS,
+ROOMS = {'spawn': [START[0], ground(*START) + 1, START[1]], 'pillars': [[x, ground(x, z) + 1, z] for (x, z) in PILLARS], 'gates': GATE_AT, 'doors': DOORS, 'arena_center': [0, 41, 0], 'arena_r': AR - 1, 'seals': SEALS,
          'secret': [85, ground(85, -64) + 1, -64], 'rooms': {k: [*geo, size] for (k, kind, geo, size, *_ ) in AREAS if kind == 'disc'},   # 円の区域：[x, z, 半径]
          'order': '入口の野（慣らしの群れ）→（沢道｜尾根道）→ 花守の回廊（敵の波）→ 坂 → ミニボス1の間 → 散華の間（敵の波）→ 崖道の穢れ場（隠れた空き地）→ 古い祠の森（穢れ場）→ 岩棚の穢れ場 → ミニボス2の間（滝の前、奥に滝裏の洞）→ 谷の石橋（休み）→ 散り桜の庭（ボス）'}
 def _room(key, name, kind, gate, cx, cz, r, spawn=None, seals=()):
