@@ -249,7 +249,7 @@
         }
       }
     } else if (b.s === 'carpet') {
-      box(lit, x, y, z, [0, 0, 0, 1, 1 * S, 1], T, {});
+      box(lit, x, y, z, [0, 0, 0, 1, 1 * S, 1], T, b.ax === 'x' ? { rot: ['py', 'ny'] } : {});   // 線路など向きのある絵は ax:'x' で90°回す
     } else if (b.s === 'lantern') {
       // 吊るす灯り（hang）は上に短い鎖を付けて少し上へ
       const o = b.hang ? 1 : 0;
