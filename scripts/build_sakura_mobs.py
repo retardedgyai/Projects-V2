@@ -106,7 +106,15 @@ def panel(mat, face=None, lenticels=False, bands=0, key=""):
                     lvl = 3.6
                 elif row == 3 and (x + (y // 4) * 3) % 6 in (1, 2):
                     lvl = .6
-            return rgba(mat, lvl)
+            # the hue: patches lean warm or cool (judge of 2026-11-07: RuneForge's brown and green waver between warm
+            # and cool tones, ours read as one colour)
+            r, g_, bl, a = rgba(mat, lvl)
+            hue = _grain(x // 3, y // 2, salt + 31)
+            if hue < .22:
+                r, g_, bl = min(255, r + 10), min(255, g_ + 3), max(0, bl - 8)
+            elif hue > .78:
+                r, g_, bl = max(0, r - 8), g_, min(255, bl + 10)
+            return (r, g_, bl, a)
         return paint, ("panel2", mat, key, part, lenticels, bands, side, w, h)
     return painter
 
