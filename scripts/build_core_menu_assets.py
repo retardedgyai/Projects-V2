@@ -10,7 +10,7 @@ import json
 import math
 import random
 import shutil
-import urllib.request
+from pinned_download import fetch_pinned
 
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 from build_core_menu_art import build_art
@@ -47,12 +47,7 @@ def write_json(path, data):
 def source_font(style="EMPHASIS"):
     if style in ("BODY", "EMPHASIS"):
         target = ROOT / ".tools/core-menu/x12y12pxMaruMinya.ttf"
-        if not target.is_file():
-            target.parent.mkdir(parents=True, exist_ok=True)
-            with urllib.request.urlopen(DOT_FONT_URL, timeout=45) as response:
-                data = response.read()
-            assert hashlib.sha256(data).hexdigest() == DOT_FONT_SHA256
-            target.write_bytes(data)
+        fetch_pinned(DOT_FONT_URL, DOT_FONT_SHA256, target, timeout=45)
         assert hashlib.sha256(target.read_bytes()).hexdigest() == DOT_FONT_SHA256
         return ImageFont.truetype(str(target), 24)
     raise ValueError(f"Unknown menu text style: {style}")

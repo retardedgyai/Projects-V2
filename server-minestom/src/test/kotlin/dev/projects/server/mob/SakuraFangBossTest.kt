@@ -194,7 +194,10 @@ class SakuraFangBossTest {
             val boss = combat.entities().single()
             var now = 1000L
             var window: LongRange? = null
-            while (now < 60_000L && window == null) {
+            // Which strike comes next is random (its seeds come from the boss's random UUID), and between chains it
+            // rests, moves and throws small blows. Measured over 4000 fights: the first counterable strike came after
+            // 60 s in 37 (~1%, it failed CI once), the latest at 121 s. Game time only, so waiting long costs nothing.
+            while (now < 300_000L && window == null) {
                 player.teleport(boss.position.add(boss.position.direction().mul(3.0)).withY(boss.position.y()))
                 combat.tick(now)
                 window = combat.counterWindow(boss.uuid)?.takeIf { now in it }   // damage below lands at this tick's time
