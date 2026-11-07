@@ -107,6 +107,7 @@ for k in range(1, len(line) + len(line2) - 1):
 PLAY = '--play' in sys.argv
 if PLAY:
     import playmarks as PM
+    PM.BIG = '--big' in sys.argv
     PM.lay(L, rng, [
         ('town', 12, -48, '開拓者の町（死んだらここへ戻る）'),
         ('wood', -40, -28, ''), ('wood', -34, 8, ''), ('wood', -24, 46, ''),

@@ -272,10 +272,70 @@ for k in range(220 * (12 if REGION else 1)):
     if len(placed) >= (260 if REGION else 26): break
 L.plants(density=0.3, kinds=('short_grass', 'fern', 'fern', 'short_grass'), flowers=('azure_bluet', 'oxeye_daisy', 'lily_of_the_valley'))
 
+# ---------------------------------------------------------------- 地域の大きな見どころ（--landmarks）：遠くから読める城門と高い塔。木の後に置き、中の葉を払う
+def clear_box(x0, x1, z0, z1, y0, y1):
+    from vox import W as _W
+    for k in [k for k in _W if x0 <= k[0] <= x1 and z0 <= k[2] <= z1 and y0 <= k[1] <= y1 and 'leaves' in _W[k].get('t', '')]: del _W[k]
+
+def great_gate(cx, cz, g, span=13, h=26):
+    """東の道の入口の城門：7×7 の塔 2 本（背 h、上に狭間）を、背 18 のアーチの橋でつなぐ。北の塔の頭は崩れる。赤い旗を 4 枚。"""
+    clear_box(cx - 5, cx + 5, cz - span // 2 - 9, cz + span // 2 + 9, g - 2, g + h + 6)
+    S = [('stone_bricks', .45), ('mossy_stone_bricks', .25), ('cracked_stone_bricks', .15), ('andesite', .15)]
+    for side in (-1, 1):
+        tz = cz + side * (span // 2 + 4)
+        top = g + h - (6 if side < 0 else 0)
+        for y in range(g - 3, top):
+            for dx in range(-3, 4):
+                for dz in range(-3, 4):
+                    if max(abs(dx), abs(dz)) < 3 and y > g: continue
+                    if side < 0 and y > top - 5 and _h(dx, y, dz) < 0.45: continue
+                    put(cx + dx, y, tz + dz, full(L.pick(S, cx + dx, y, tz + dz, 81)))
+        if side > 0:
+            for dx in range(-3, 4):
+                for dz in range(-3, 4):
+                    if max(abs(dx), abs(dz)) == 3 and (dx + dz) % 2 == 0: put(cx + dx, top, tz + dz, full('stone_bricks'))
+        for y in (g + 6, g + 12, g + 18):
+            if y < top - 1:
+                for dx in (-3, 3): put(cx + dx, y, tz, full('black_concrete')); put(cx + dx, y + 1, tz, full('black_concrete'))
+        for dx in (-4, 4):
+            for k in range(1, 8): put(cx + dx, top - 2 - k, tz, full('red_wool' if k % 4 else 'yellow_wool'))
+    for dz in range(-(span // 2), span // 2 + 1):                     # アーチ：真ん中ほど高い
+        t = abs(dz) / (span / 2); ya = g + 13 + int(round(5 * (1 - t * t)))
+        for y in range(ya, g + 20):
+            for dx in range(-3, 4): put(cx + dx, y, cz + dz, full(L.pick(S, cx + dx, y, cz + dz, 82)))
+        put(cx - 3, g + 20, cz + dz, full('stone_bricks') if dz % 2 else slab('stone_bricks')); put(cx + 3, g + 20, cz + dz, full('stone_bricks') if dz % 2 else slab('stone_bricks'))
+    put(cx, g + 12, cz, {'s': 'lantern', 't': 'lantern', 'hang': True})
+
+def high_tower(cx, cz, g, r=6, h=38):
+    """北の頂の塔：丸い石の塔（背 38）、上 3 段は崩れ、南の面に縦の割れ目。頂に赤い旗。遠くから一本の柱に見える。"""
+    clear_box(cx - r - 2, cx + r + 2, cz - r - 2, cz + r + 2, g - 2, g + h + 8)
+    S = [('stone_bricks', .4), ('mossy_stone_bricks', .25), ('cracked_stone_bricks', .2), ('polished_andesite', .15)]
+    for y in range(g - 2, g + h):
+        t = (y - g) / h
+        for dx in range(-r - 1, r + 2):
+            for dz in range(-r - 1, r + 2):
+                d = math.hypot(dx, dz)
+                if not (r - 1.3 <= d <= r + 0.3): continue
+                if t > 0.85 and _h(dx, y, dz) < (t - 0.85) * 5: continue
+                if dz > r - 2 and abs(dx) <= 1 and 0.3 < t < 0.8: continue    # 南の割れ目
+                put(cx + dx, y, cz + dz, full(L.pick(S, cx + dx, y, cz + dz, 83)))
+        if (y - g) % 9 == 0 and y > g:                                   # 帯
+            for dx in range(-r - 1, r + 2):
+                for dz in range(-r - 1, r + 2):
+                    if r - 0.3 <= math.hypot(dx, dz) <= r + 1.2: put(cx + dx, y, cz + dz, full('polished_andesite'))
+    for y in range(g + h - 2, g + h + 6): put(cx, y, cz, fence('dark_oak_planks'))
+    for k in range(1, 5): put(cx + 1, g + h + 6 - k, cz, full('red_wool'))
+    put(cx, g + h - 3, cz, {'s': 'lantern', 't': 'soul_lantern'})
+
+if REGION and '--landmarks' in sys.argv:
+    great_gate(96, 10, L.h(96, 10))
+    high_tower(2, -112, L.h(2, -112))
+
 # ---------------------------------------------------------------- 遊び（--play、木の後に置いて木の並びを変えない）：T1 の終わり Lv8〜10。奥に T2 ダンジョンの入口、伐採が特産
 PLAY = '--play' in sys.argv
 if PLAY:
     import playmarks as PM
+    PM.BIG = '--big' in sys.argv
     PM.lay(L, rng, [
         ('dungeon', -44, -6, '遺跡の地下（T2 ダンジョンの入口）'), ('gather', -10, -6, '集まる広場（4 人）'),
         ('sign', -22, -15, '入口の目安の札'),

@@ -138,6 +138,7 @@ L.plants(density=0.22)
 PLAY = '--play' in sys.argv
 if PLAY:
     import playmarks as PM
+    PM.BIG = '--big' in sys.argv
     PM.lay(L, rng, [
         ('view', TOWER[0], TOWER[1], '見張り台（見晴らし：遺跡の森と岩柱の桜が見える）'),
         ('ore', -22, -32, ''), ('ore', 24, -40, ''), ('ore', -46, 30, ''),

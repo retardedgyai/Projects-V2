@@ -7,6 +7,7 @@ import json, math, os, random
 from vox import put, get, full, log, slab, stair, fence, cross, LANTERN
 
 PLAY = []          # (種類, x, z, 説明)
+BIG = False        # True：遠くから何の場所かわかる大きな形（2 版目）。False は 1 版目の小さな形（前の版を組み直すため）
 KINDS = {'skin': '皮剥ぎ', 'wood': '伐採', 'stone': '採石', 'ore': '採鉱', 'herb': '植物採取'}
 
 
@@ -81,6 +82,82 @@ def save_play(out_dir, route=None, notes=None):
     json.dump({'marks': PLAY, 'route': route or [], 'notes': notes or {}}, open(os.path.join(out_dir, 'play.json'), 'w'), ensure_ascii=False)
 
 
+# ================================================================ 2 版目：遠くから読める形
+CLOTH = {'wood': 'lime_wool', 'ore': 'orange_wool', 'stone': 'light_gray_wool', 'skin': 'white_wool', 'herb': 'magenta_wool'}
+HAY = {'s': 'full', 't': 'hay_block_side', 'top': 'hay_block_top', 'bot': 'hay_block_top'}
+BONE = {'s': 'full', 't': 'bone_block_side', 'top': 'bone_block_top', 'bot': 'bone_block_top'}
+
+def flag_post(x, z, g, cloth, h=7):
+    """採取場の旗：木の竿の先に横木、種類の色の布を 3 段垂らし、下に灯り。どの採取場も同じ形で、色だけ変える。"""
+    for y in range(g + 1, g + h + 1): put(x, y, z, fence('spruce_planks'))
+    put(x, g + h + 1, z, log('spruce_log')); put(x + 1, g + h + 1, z, log('spruce_log', 'x')); put(x + 2, g + h + 1, z, log('spruce_log', 'x'))
+    for k in range(1, 4): put(x + 2, g + h + 1 - k, z, full(cloth))
+    put(x + 1, g + h, z, {'s': 'lantern', 't': 'lantern', 'hang': True})
+
+def gather_big(kind, x, z, g, rng):
+    if kind == 'wood':                                                     # 伐採場：切り株 3 つ、積んだ丸太、薪割り台
+        for dx, dz, h in ((-3, 0, 2), (2, -3, 1), (2, 3, 2)):
+            for y in range(g + 1, g + 1 + h): put(x + dx, y, z + dz, log('oak_log'))
+        for k in range(5):
+            for a, b in ((0, 0), (0, 1), (1, 0)):
+                put(x + k - 1, g + 1 + a, z + b - 5, log('oak_log', 'x'))
+        put(x + 4, g + 1, z, log('oak_log')); put(x + 4, g + 2, z, slab('spruce_planks'))
+    elif kind == 'ore':                                                    # 鉱脈の岩：背 5 の岩に銅の筋、正面に坑木の枠
+        for dx in range(-2, 3):
+            for dz in range(-2, 2):
+                h = 5 - abs(dx) - (1 if dz == -2 else 0) - (1 if (dx + dz) % 3 == 0 else 0)
+                for y in range(g + 1, g + 1 + max(1, h)):
+                    put(x + dx, y, z + dz, full('copper_ore' if (dx * 2 + y + dz) % 3 == 0 else 'stone' if (dx + y) % 2 else 'andesite'))
+        for dx in (-1, 1):
+            for y in range(g + 1, g + 4): put(x + dx, y, z + 2, log('spruce_log'))
+        for dx in (-1, 0, 1): put(x + dx, g + 4, z + 2, log('spruce_log', 'x'))
+        put(x, g + 3, z + 2, {'s': 'lantern', 't': 'lantern', 'hang': True})
+    elif kind == 'stone':                                                  # 石切り場：切り出した安山岩の段 3 つと、割った石の板
+        for k, (w, d) in enumerate(((5, 4), (4, 3), (2, 2))):
+            for dx in range(w):
+                for dz in range(d): put(x - 2 + dx + k, g + 1 + k, z - 2 + dz, full('polished_andesite' if (dx + dz + k) % 4 == 0 else 'andesite'))
+        for dx, dz in ((4, 2), (5, 0), (-3, 2)): put(x + dx, g + 1, z + dz, slab('andesite'))
+    elif kind == 'skin':                                                   # 獣の骨の原：大きな肋骨のアーチ 3 本と頭の骨
+        for k in range(3):
+            zz = z - 2 + k * 2
+            for y in range(g + 1, g + 4): put(x - 2, y, zz, BONE); put(x + 2, y, zz, BONE)
+            put(x - 1, g + 4, zz, BONE); put(x, g + 4, zz, BONE); put(x + 1, g + 4, zz, BONE)
+        for dx in (-1, 0, 1): put(x + dx, g + 1, z - 4, BONE)
+        put(x, g + 2, z - 4, BONE)
+    elif kind == 'herb':                                                   # 薬草の群生地：苔の輪に背の高い花と干し草の乾燥台
+        for dx in range(-3, 4):
+            for dz in range(-3, 4):
+                if math.hypot(dx, dz) <= 3.2:
+                    put(x + dx, g, z + dz, full('moss_block'))
+                    if (dx, dz) != (0, 0) and rng.random() < 0.6: put(x + dx, g + 1, z + dz, cross(rng.choice(('allium', 'azure_bluet', 'fern', 'cornflower', 'oxeye_daisy'))))
+        for dz in (-1, 1):
+            for y in (g + 1, g + 2): put(x + 4, y, z + dz, fence('spruce_planks'))
+        put(x + 4, g + 3, z - 1, HAY); put(x + 4, g + 3, z, HAY); put(x + 4, g + 3, z + 1, HAY)
+    flag_post(x + 3, z + 3, g, CLOTH[kind])
+    PLAY.append((kind, x, z, KINDS[kind]))
+
+def hunt_gate(x, z, g, rng, label):
+    """狩り場の門：丸太の柱 2 本に横木、真ん中に骨、両側に赤い布。門の奥が湧く場所（踏み荒らした輪）。"""
+    for dz in (-3, 3):
+        for y in range(g + 1, g + 7): put(x, y, z + dz, log('dark_oak_log'))
+    for dz in range(-4, 5): put(x, g + 7, z + dz, log('stripped_dark_oak_log', 'z'))
+    put(x, g + 8, z, BONE); put(x, g + 8, z - 1, BONE); put(x, g + 8, z + 1, BONE)
+    for dz in (-2, 2):
+        for k in range(1, 4): put(x, g + 7 - k, z + dz, full('red_wool'))
+    for dx in range(2, 12):                                               # 門の奥：踏み荒らした輪
+        for dz in range(-5, 6):
+            if math.hypot(dx - 7, dz) < 5 and rng.random() < 0.55 and get(x + dx, g, z + dz) is not None: put(x + dx, g, z + dz, full('coarse_dirt'))
+    PLAY.append(('hunt', x + 7, z, label))
+
+def waystone_big(x, z, g, label):
+    """復帰点の候補：黒い石の尖塔（背 7）と青い魂の灯り。白い箱に見えないよう暗い石で、輪郭を細くする。"""
+    for dx in (-1, 0, 1):
+        for dz in (-1, 0, 1): put(x + dx, g, z + dz, full('polished_blackstone_bricks'))
+    for dx, dz, f in ((1, 0, 'w'), (-1, 0, 'e'), (0, 1, 'n'), (0, -1, 's')): put(x + dx, g + 1, z + dz, stair('polished_blackstone', f))
+    for y in range(g + 1, g + 6): put(x, y, z, full('polished_blackstone' if y < g + 5 else 'chiseled_polished_blackstone'))
+    put(x, g + 6, z, {'s': 'wall', 't': 'polished_blackstone'}); put(x, g + 7, z, {'s': 'lantern', 't': 'soul_lantern'})
+    PLAY.append(('way', x, z, label))
+
 def spot(L, x, z, r=7):
     """(x, z) の近くで、平らで空いた自然の地面を探す（渦を巻いて外へ）。"""
     for d in range(0, r + 1):
@@ -98,13 +175,13 @@ def lay(L, rng, plan):
     for kind, x, z, label in plan:
         if kind in KINDS:
             s = spot(L, x, z)
-            if s: gather(kind, s[0], s[1], s[2], rng)
+            if s: (gather_big if BIG else gather)(kind, s[0], s[1], s[2], rng)
         elif kind == 'hunt':
             s = spot(L, x, z)
-            if s: den(s[0], s[1], s[2], rng, label)
+            if s: (hunt_gate if BIG else den)(s[0], s[1], s[2], rng, label)
         elif kind == 'way':
             s = spot(L, x, z)
-            if s: waystone(s[0], s[1], s[2], label)
+            if s: (waystone_big if BIG else waystone)(s[0], s[1], s[2], label)
         elif kind == 'sign':
             s = spot(L, x, z)
             if s: sign_board(s[0], s[1], s[2], label=label)
