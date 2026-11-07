@@ -372,6 +372,16 @@ for (x, z) in [(-54, 15), (-49, -26), (-26, 51), (18, 54), (51, 26), (49, -28), 
     big_cherry(x, z, x * 7 + z)                                                  # 谷底の大きな桜（山を桃色に囲む）
 print('木・茂み', T.woods(kind=kind, skip=fight_floor))
 T.ground_cover()
+FIGHT_ROOMS = ('R1', 'MB1', 'H', 'q3', 'N', 'q6', 'W')                           # 戦う床：波・穢れ場・ミニボスの間（と庭の円）
+def fight_room(x, z):
+    if math.hypot(x, z) < AR: return True
+    sh = shapes(x, z); return any(sh[k][0] <= 1 for k in FIGHT_ROOMS)
+TALL = ('tall_grass_bottom', 'tall_grass_top', 'fern', 'large_fern_bottom', 'large_fern_top', 'bush')
+tall_n = 0
+for (x, y, z), b in list(vox.W.items()):                                          # 戦う床から背の高い草とシダを外し、低い草だけに（司令塔 11/07：敵や地面の予兆が草に隠れた）
+    if b['s'] == 'cross' and b.get('t') in TALL and fight_room(x, z):
+        put(x, y, z, cross('short_grass') if b['t'] in ('tall_grass_bottom', 'fern', 'large_fern_bottom', 'bush') else None); tall_n += 1
+print('戦う床の背の高い草', tall_n)
 for (x, z), k in KIND.items():                                                    # 斜面の段の縁は苔ブロック [rules 108]
     if k != 'nat': continue
     g = H[(x, z)]; b = get(x, g, z)
