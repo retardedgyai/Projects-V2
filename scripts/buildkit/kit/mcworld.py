@@ -134,6 +134,7 @@ def to_state(b):
     elif s == 'grindstone': n = 'grindstone'; P = {'face': 'ceiling', 'facing': 'north'}
     elif s == 'pot': n = ('potted_' + b['plant']) if b.get('plant') else 'flower_pot'
     elif s == 'vine': n = 'vine'; P = {k: 'false' for k in ('north', 'south', 'east', 'west', 'up')}; P[FACE.get(b.get('f'), 'north')] = 'true'
+    elif s == 'light': n = 'light'; P = {'level': str(b.get('lv', 15)), 'waterlogged': 'false'}   # 見えない灯り（map_audit.light_up、BAR に入れてプレビューには出さない）
     elif s == 'anvil': n = 'anvil'; P = {'facing': 'north'}
     elif s == 'pane': n = t if t.endswith('pane') or t == 'iron_bars' else t + '_pane'
     else: n = t
