@@ -7,7 +7,7 @@
 - 書き方だけが違う名前の組（自動）：36
 - 誤字の候補（自動の型）：2
 - はみ出し（コードに上限がある所）：0／測った 175
-- メニュー文字の幅表：`server-minestom/src/main/resources/core-ui-pack/assets/projects/menu`
+- メニュー文字の幅表：`.claude/worktrees/night-wording/server-minestom/src/main/resources/core-ui-pack/assets/projects/menu`
 
 ## はみ出し（上限がコードにある所）
 
