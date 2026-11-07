@@ -201,6 +201,8 @@ print('浮いた部品の隙間を埋めた', MA.close_gaps())
 BAR = MA.edge_barrier(-94, 106, -93, 84)
 traps_, edge_ = MA.fill_traps((PCX, PCZ + 7), (-94, 106, -93, 84), BAR)
 print('見えない壁', len(BAR), '落ちたら戻れない所', len(traps_), '地図の外へ出られる所', len(edge_))
+lit_, dark_ = MA.light_up((PCX, PCZ + 7), (-94, 106, -93, 84), BAR)               # 11/08 夜：南の森の厚い葉の下が昼でも明るさ 0〜4（サーバーの光の計算）。見えない灯りを足もとに
+print('見えない灯り', lit_, '残った暗い所', len(dark_))
 
 # ================================================================ 7. 検査と書き出し
 T.walk_check((PCX, PCZ - 7))
