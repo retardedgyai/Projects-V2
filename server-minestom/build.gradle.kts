@@ -119,3 +119,23 @@ tasks.named<JavaExec>("run") {
     systemProperty("projects.devCommands", "true")
     doFirst { workingDir.mkdirs() }
 }
+
+// Night playthrough (CorePlaythroughTest): bot players walk the town → ダンジョンの門 → 散り桜の社 → 桜牙獣 → town loop
+// in the real game, in a fresh save folder under build/. Not part of `test` (it plays for minutes): ./gradlew playthrough
+val playthrough by tasks.registering(Test::class) {
+    group = "verification"
+    description = "Bots play the whole dungeon loop as a warrior and a mage (CorePlaythroughTest)"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter { includeTestsMatching("*CorePlaythroughTest") }
+    val dir = layout.buildDirectory.dir("playthrough").get().asFile
+    workingDir = dir
+    doFirst { dir.deleteRecursively(); dir.mkdirs() }
+    systemProperty("projects.playthrough", "true")
+    systemProperty("projects.ui.port", "0")
+    providers.gradleProperty("playthroughRuns").orNull?.let { systemProperty("projects.playthrough.runs", it) }
+    providers.gradleProperty("playthroughTickMs").orNull?.let { systemProperty("projects.playthrough.tickMs", it) }
+    outputs.upToDateWhen { false }
+    maxHeapSize = "4g"
+}
