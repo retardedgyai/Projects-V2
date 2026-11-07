@@ -37,12 +37,21 @@ line, ys = L.path(main[:5], w=5, rise=3.0)
 line2, ys2 = L.path(main[4:], w=3, rise=3.0)
 L.path([(-12, 2), (2, 10), (14, 14)], w=2, rise=3.0)                  # 畑への踏み跡
 
+BIGHOUSE = '--bighouse' in sys.argv                                  # 4 周目：野原の真ん中に大きな L 字の館（判定役『建物の厚みと密度が足りない』）
+BIG_AT, BIG_Y = (44, -4), None
+if BIGHOUSE:
+    BIG_Y = int(L.H[L.idx(40, 6)]) + 1
+    L.rect(24, -14, 57, 19, BIG_Y, kind=4)
 YARD = (18, 2, 36, 14)                                                 # 作業場（v3 で試して戻した。--yard で入れる）：道と畑の間（x0, z0, x1, z1）
 if '--yard' in sys.argv: L.rect(*YARD, L.h(26, 8), kind=5)
-L.build(dict(T.MESA, pave=[('coarse_dirt', .35), ('dirt_path', .25), ('gravel', .15), ('packed_mud', .15), ('grass', .10)]))
+L.build(dict(T.MESA, mottle=T.GROUND_MESA if '--ground' in sys.argv else [], pave=[('coarse_dirt', .35), ('dirt_path', .25), ('gravel', .15), ('packed_mud', .15), ('grass', .10)]))
+if '--relief' in sys.argv: L.cliff_relief(T.MESA)
+if '--relief2' in sys.argv: L.cliff_relief2(T.MESA)              # 2 周目：3〜4 マス幅の柱・横の岩棚・草の垂れ                   # 崖の面の出入り・まだら・縁の欠け（11/08）
+if '--ground' in sys.argv: L.ground_extras()                      # 3 周目：縁の土・シダと小石・道の縁の砂利と花
 
 # ---------------------------------------------------------------- 家（及第点の家の型）
 t = Town((-64, 63, -64, 63), lambda x, z: 5)
+if BIGHOUSE: t.house('lhouse', 0, BIG_AT, y=BIG_Y, label='lhouse')
 for name, r, at in HOUSES:
     t.house(name, r, at, y=5, swap=BROWN if name == 'timber' and r == 180 else None, label=name)
 

@@ -25,6 +25,7 @@ MESA = dict(
     body=['terracotta'] * 7 + ['brown_terracotta'],
     rim=['granite', 'granite', 'coarse_dirt', 'brown_terracotta'],
     foot=['brown_terracotta'],
+    mix=['brown_terracotta', 'brown_terracotta', 'coarse_dirt', 'granite', 'light_gray_terracotta'],
     cap=[('grass', 0.70), ('moss_block', 0.16), ('green_wool', 0.14)],
     path=[('dirt_path', 0.72), ('coarse_dirt', 0.16), ('rooted_dirt', 0.12)],
     edge=[('coarse_dirt', 0.45), ('rooted_dirt', 0.25), ('brown_wool', 0.15), ('grass', 0.15)],
@@ -34,12 +35,19 @@ MOSSY = dict(
     body=['stone', 'andesite', 'stone', 'tuff', 'cobblestone', 'stone'],
     rim=['mossy_cobblestone', 'moss_block', 'mossy_cobblestone'],
     cliff_moss=['moss_block', 'mossy_cobblestone', 'mossy_stone_bricks'],   # 試して戻した（v3）。使うときは moss= にする
-    ledge=0.05, vines=0.22,
+    ledge=0.05, vines=0.22, mix=['moss_block', 'mossy_cobblestone', 'gravel', 'coarse_dirt', 'tuff'],
     foot=['cobbled_deepslate', 'tuff', 'mossy_cobblestone'],
     cap=[('grass', 0.45), ('moss_block', 0.25), ('green_terracotta', 0.20), ('lime_terracotta', 0.10)],
     path=[('dirt_path', 0.55), ('coarse_dirt', 0.25), ('packed_mud', 0.20)],
     edge=[('coarse_dirt', 0.40), ('moss_block', 0.30), ('rooted_dirt', 0.15), ('grass', 0.15)],
 )
+
+
+# 地表のまだら（11/08 の 3 周目、判定役 3 人とも『広い面が一色の草』）。(ブロック, 雑音の種, 塊の大きさ, しきい値)。大小の塊を重ねる
+GROUND_MESA = [('coarse_dirt', 71, 2.2, 0.76), ('rooted_dirt', 72, 3.5, 0.78), ('green_wool', 73, 6.0, 0.66), ('moss_block', 74, 2.8, 0.79),
+               ('packed_mud', 75, 2.0, 0.82), ('gravel', 76, 1.6, 0.85)]
+GROUND_MOSSY = [('coarse_dirt', 71, 2.2, 0.77), ('moss_block', 72, 4.5, 0.70), ('gravel', 73, 1.8, 0.82), ('rooted_dirt', 74, 3.0, 0.79),
+                ('mossy_cobblestone', 75, 1.5, 0.86), ('green_terracotta', 76, 6.0, 0.68)]
 
 
 def blk(name):
@@ -271,6 +279,98 @@ class Land:
                     if _h(x, z, 85) < pal.get('vines', 0):                  # 蔦：縁から 2〜6 段
                         for y in range(top, top - 2 - int(_h(x, z, 86) * 5), -1):
                             if y > nl and get(X, y, Z) is None: put(X, y, Z, vine(f))
+
+    def cliff_relief(self, pal):
+        """崖の面をのっぺりさせない（11/08、判定役 3 人とも一番の差に挙げた）。
+        1. 縦の出入り：縁の 4 割の柱で、外へ 1 マスの控え（下から積む）か、上 1〜3 段の庇を出す。隣どうしで長さを変えて縦の筋にする。
+        2. 材料のまだら：面に別の材料（pal['mix']）を 3〜4 マスの塊で混ぜる。
+        3. 上の縁の欠け：縁の 2 割で一番上を 1 段落とし、草を一段下に垂らす。蔦は pal['vines'] の割合。"""
+        from vox import W as _W
+        N, o = self.N, self.o
+        mix = pal.get('mix', [])
+        notch = []
+        for i in range(1, N - 1):
+            for j in range(1, N - 1):
+                x, z = j - o, i - o
+                top = int(self.H[i, j])
+                if self.K[i, j] in (1, 3, 5): continue
+                for dz, dx, f in ((1, 0, 'n'), (-1, 0, 's'), (0, 1, 'w'), (0, -1, 'e')):
+                    nl = int(self.H[i + dz, j + dx])
+                    face = top - nl
+                    if face < 3 or self.K[i + dz, j + dx] in (1, 2, 3, 4, 5): continue
+                    X, Z = x + dx, z + dz
+                    r = fbm(x * 1.0, z * 1.0, 2.5, self.seed + 91)
+                    if r > 0.6:                                             # 控え：下から、面の 4〜9 割の高さ
+                        hh = max(2, int(face * (0.4 + 0.5 * _h(x, z, 92))))
+                        for y in range(nl + 1, nl + 1 + hh): put(X, y, Z, T_BODY(pal, X, y, Z))
+                        if hh < face - 1: put(X, nl + 1 + hh, Z, blk('grass') if _h(x, z, 93) < 0.6 else blk(pal['rim'][0]))
+                    elif r < 0.32:                                          # 庇：上の 1〜3 段
+                        for k in range(1, 2 + int(_h(x, z, 94) * 2.5)):
+                            if top - k > nl + 1: put(X, top - k, Z, T_BODY(pal, X, top - k, Z) if k > 1 else blk(pal['rim'][int(_h(x, z, 95) * len(pal['rim']))]))
+                        if _h(x, z, 96) < 0.5: put(X, top, Z, blk('grass'))
+                    if _h(x, z, 97) < pal.get('vines', 0):
+                        for y in range(top, top - 2 - int(_h(x, z, 98) * 5), -1):
+                            if y > nl and get(X, y, Z) is None: put(X, y, Z, vine(f))
+                    if mix:                                                 # 面のまだら（自分の柱の面）
+                        for y in range(nl + 1, top - 1):
+                            if fbm(x + y * 0.8, z - y * 0.6, 3.2, self.seed + 99) > 0.66:
+                                put(x, y, z, blk(mix[int(_h(x, y, z + 7) * len(mix))]))
+                if self.K[i, j] == 0 and _h(x, z, 101) < 0.18:            # 縁の欠け
+                    if any(top - int(self.H[i + a, j + b]) >= 3 for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1))): notch.append((i, j, x, z, top))
+        for i, j, x, z, top in notch:                                       # 一番上を 1 段落とし、高さの表も合わせる
+            _W.pop((x, top, z), None); put(x, top - 1, z, blk('grass')); self.H[i, j] = top - 1
+
+    def cliff_relief2(self, pal):
+        """崖の面を強く崩す（11/08 の 2 周目、判定役 3 人とも『まだのっぺり』）。
+        1. 3〜4 マス幅の縦の柱：面の外へ 1〜2 マス出す（雑音を縁に沿って低い周波数で取り、隣の柱どうしで出方をそろえる）。
+        2. 高さ 6 以上の面は、中ほどに横の岩棚（外へ 1、上は草）を 5 割の長さで通す。
+        3. 上の縁の草を 1〜3 段、面に垂らす（自分の柱の上の段を草のブロックにする）。"""
+        N, o = self.N, self.o
+        H0 = self.H.copy()
+        for i in range(2, N - 2):
+            for j in range(2, N - 2):
+                x, z = j - o, i - o
+                top = int(H0[i, j])
+                if self.K[i, j] in (1, 3, 5): continue
+                for dz, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    nl = int(H0[i + dz, j + dx]); face = top - nl
+                    if face < 3 or self.K[i + dz, j + dx] in (1, 2, 3, 4, 5): continue
+                    c = fbm(x * 0.9 + z * 0.9, x * 0.3 - z * 0.3, 3.5, self.seed + 111)      # 縁に沿って 3〜4 マスで変わる
+                    depth = 2 if c > 0.66 else 1 if c > 0.5 else 0
+                    for d in range(1, depth + 1):
+                        X, Z = x + dx * d, z + dz * d
+                        if not self.inb(X, Z): break
+                        ii, jj = self.idx(X, Z)
+                        if int(H0[ii, jj]) > nl or self.K[ii, jj] in (1, 2, 3, 4, 5): break
+                        cut = int(_h(x, z, 112 + d) * 3) + (d - 1) * 2                       # 外ほど低く
+                        for y in range(nl + 1, top - cut + 1): put(X, y, Z, T_BODY(pal, X, y, Z))
+                        if top - cut > nl: put(X, top - cut, Z, blk('grass'))
+                    if face >= 6 and depth == 0 and fbm(x * 1.0, z * 1.0, 5, self.seed + 115) > 0.5:   # 横の岩棚
+                        X, Z = x + dx, z + dz; yl = nl + face // 2
+                        put(X, yl - 1, Z, T_BODY(pal, X, yl - 1, Z)); put(X, yl, Z, blk('grass'))
+                    drip = int(_h(x, z, 116) * 4)                                            # 草の垂れ 0〜3 段
+                    for k in range(1, drip + 1):
+                        if top - k > nl + 1: put(x, top - k, z, blk('grass'))
+
+    def ground_extras(self):
+        """地表の 2 段目：段の縁の土の垂れ、シダと小石、道の縁の砂利と花（3 周目）。"""
+        N, o = self.N, self.o
+        for i in range(1, N - 1):
+            for j in range(1, N - 1):
+                x, z = j - o, i - o
+                top = int(self.H[i, j]); k = self.K[i, j]
+                if k == 0:
+                    near = min(int(self.H[i + a, j + b]) for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+                    if top - near >= 3 and _h(x, z, 131) < 0.45:                 # 縁の土
+                        put(x, top, z, blk('coarse_dirt' if _h(x, z, 132) < 0.6 else 'rooted_dirt'))
+                    if get(x, top + 1, z) is None:
+                        r = _h(x, z, 133)
+                        if r < 0.012: put(x, top + 1, z, slab('cobblestone') if _h(x, z, 134) < 0.5 else full('andesite'))   # 小石
+                        elif r < 0.07 and fbm(x, z, 5, self.seed + 135) > 0.5: put(x, top + 1, z, cross('fern'))
+                elif k == 2 and get(x, top + 1, z) is None:                      # 道の縁
+                    r = _h(x, z, 136)
+                    if r < 0.18: put(x, top, z, blk('gravel'))
+                    elif r < 0.26: put(x, top + 1, z, cross(('dandelion', 'poppy', 'azure_bluet', 'oxeye_daisy')[int(_h(z, x, 137) * 4)]))
 
     def plants(self, density=0.10, kinds=('short_grass', 'short_grass', 'fern', 'short_grass'), flowers=('dandelion', 'poppy', 'azure_bluet', 'cornflower'), skip=lambda x, z: False):
         """草花：塊で。崖の縁 1 マスと道には置かない。"""

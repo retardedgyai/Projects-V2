@@ -38,7 +38,10 @@ L.flatten(TOWER[0], TOWER[1], 6, int(L.H[L.idx(*TOWER)]), kind=4, blend=2)
 side = [(-6, 2), (-20, 10), (-36, 22), (-46, 34)]            # 脇道：南西の台地へ
 L.path(side, w=2, rise=3.0)
 
-L.build(T.MESA)
+L.build(dict(T.MESA, mottle=T.GROUND_MESA) if '--ground' in sys.argv else T.MESA)
+if '--relief' in sys.argv: L.cliff_relief(T.MESA)
+if '--relief2' in sys.argv: L.cliff_relief2(T.MESA)              # 2 周目：3〜4 マス幅の柱・横の岩棚・草の垂れ                   # 崖の面の出入り・まだら・縁の欠け（11/08）
+if '--ground' in sys.argv: L.ground_extras()                      # 3 周目：縁の土・シダと小石・道の縁の砂利と花
 
 # ---------------------------------------------------------------- 見張り台（下 1/3 は石、上は木。最上階を 1 マス張り出す）
 def watchtower(cx, cz, g, door='s'):

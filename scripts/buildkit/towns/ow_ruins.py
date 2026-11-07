@@ -60,7 +60,11 @@ L.pond(36, -14, 5)
 
 PAVE = [('stone_bricks', .30), ('cracked_stone_bricks', .15), ('mossy_stone_bricks', .20), ('andesite', .10), ('cobblestone', .10), ('moss_block', .08), ('grass', .07)]
 pal = dict(T.MOSSY); pal['pave'] = PAVE
+if '--ground' in sys.argv: pal['mottle'] = T.GROUND_MOSSY
 L.build(pal)
+if '--relief' in sys.argv: L.cliff_relief(pal)
+if '--relief2' in sys.argv: L.cliff_relief2(pal)              # 2 周目：3〜4 マス幅の柱・横の岩棚・草の垂れ                   # 崖の面の出入り・まだら・縁の欠け（11/08）
+if '--ground' in sys.argv: L.ground_extras()                      # 3 周目：縁の土・シダと小石・道の縁の砂利と花
 T.waterfalls(L, falls)
 
 # ---------------------------------------------------------------- 柱の列：参道の両側、8 マスごと。折れた柱は高さを欠き、一部は倒す
@@ -194,6 +198,36 @@ if '--extras' in sys.argv or REGION:                               # v4 で足�
     puddles(5)
 
     P_hut(-26, 22, L.h(-23, 25), w=7, d=6, cloth='red_wool', open_side='n')
+
+# ---------------------------------------------------------------- 空き地の小物（--clutter、4 周目）：参道のまわり 20 マスの空き地に、低い石壁のかけら・樽・花の塊を 6〜9 マスおきに
+def clutter():
+    crng = random.Random(77)                                         # 木の乱数をずらさないよう別の乱数
+    BAR = {'s': 'full', 't': 'barrel_side', 'top': 'barrel_top', 'bot': 'barrel_bottom'}
+    placed_c = []
+    for k in range(400):
+        x, z = crng.randint(-46, 62), int(round(zc_at(0))) + crng.choice((-1, 1)) * crng.randint(7, 22)
+        if not L.inb(x, z) or L.K[L.idx(x, z)] != 0 or not L.slope_ok(x, z) or get(x, L.h(x, z) + 1, z) is not None: continue
+        if any(math.hypot(x - a, z - b) < 6 for a, b in placed_c): continue
+        g = L.h(x, z); r = crng.random()
+        if r < 0.4:                                                      # 低い石壁のかけら（2〜4 長、1〜2 高）
+            ax = crng.choice(((1, 0), (0, 1)))
+            for i in range(crng.randint(2, 4)):
+                X, Z = x + ax[0] * i, z + ax[1] * i
+                if not L.inb(X, Z): break
+                gg = L.h(X, Z)
+                for y in range(gg + 1, gg + 1 + crng.randint(1, 2)): put(X, y, Z, full(L.pick([('mossy_stone_bricks', .5), ('cracked_stone_bricks', .3), ('cobblestone', .2)], X, y, Z, 141)))
+        elif r < 0.65:                                                   # 樽と木箱の塊
+            put(x, g + 1, z, BAR); put(x + 1, g + 1, z, full('spruce_planks')); put(x, g + 2, z, BAR)
+        elif r < 0.85:                                                   # 花の塊
+            for dx in (-1, 0, 1):
+                for dz in (-1, 0, 1):
+                    if L.inb(x + dx, z + dz) and get(x + dx, L.h(x + dx, z + dz) + 1, z + dz) is None and crng.random() < 0.7:
+                        put(x + dx, L.h(x + dx, z + dz) + 1, z + dz, cross(crng.choice(('azure_bluet', 'oxeye_daisy', 'cornflower', 'allium'))))
+        else: banner_post(x, z, crng.choice(('s', 'n')))
+        placed_c.append((x, z))
+        if len(placed_c) >= 18: break
+
+if '--clutter' in sys.argv: clutter()
 
 # ---------------------------------------------------------------- 西の門：崩れたアーチ（幅 11、北の半分だけ残る）
 def gate(cx, cz, g):
