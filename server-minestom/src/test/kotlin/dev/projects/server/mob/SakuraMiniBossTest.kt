@@ -48,7 +48,7 @@ class SakuraMiniBossTest {
 
     @Test
     fun `each skill has its own once clip timed to its telegraph and recovery`() {
-        for ((slot, model) in slots.zip(listOf("hanamori_armor", "stone_lantern"))) {
+        for ((slot, model) in slots.zip(listOf("white_serpent", "stone_lantern"))) {
             val definition = QuestMobContent.definition(1, slot)
             assertEquals(model, definition.model)
             assertTrue(BossModelView.available(model), "boss-models missing: run :server-minestom:generateBossModels")
@@ -62,10 +62,8 @@ class SakuraMiniBossTest {
             for (loop in listOf("idle", "walk")) assertTrue(clips.getAsJsonObject(loop)["loop"].asBoolean, loop)
             assertFalse(clips.getAsJsonObject("death")["loop"].asBoolean)
         }
-        // the armour's counter clip lasts its stagger
-        val text = requireNotNull(javaClass.classLoader.getResourceAsStream("boss-models/models/hanamori_armor.bbmodel/model.animation.json")).use { it.readBytes().decodeToString() }
-        val countered = com.google.gson.JsonParser.parseString(text).asJsonObject.getAsJsonObject("animations").getAsJsonObject("countered")
-        assertEquals(QuestEncounterCombat.MINIBOSS_COUNTER_STAGGER_MILLIS / 1000.0, countered["animation_length"].asDouble, 0.051)
+        // the serpent's tail answers whoever stays at its back, never at random (like 桜牙獣's turn)
+        assertTrue(QuestMobContent.definition(1, QuestMobArchetype.SAKURA_MINIBOSS_1).abilities.single { it.id == QuestEncounterCombat.SERPENT_TAIL }.scripted)
     }
 
     @Test
@@ -89,7 +87,7 @@ class SakuraMiniBossTest {
             assertNull(combat.bossHud())
             val hud = assertNotNull(combat.miniBossHud())
             assertTrue(hud.miniBoss)
-            assertEquals("花守の鎧武者", hud.name)
+            assertEquals("花喰いの白蛇", hud.name)
             assertEquals(MobGrades.MINIBOSS, hud.grade)
             assertTrue(hud.mods.isEmpty())
             assertNotNull(hud.breakGauge, "a mini-boss can be broken like an elite")
@@ -110,7 +108,7 @@ class SakuraMiniBossTest {
 
     @Test
     fun `the boss bar reads ミニボス on a tag wide enough for it`() {
-        val hud = MobHud(5, "花守の鎧武者", MobGrades.MINIBOSS, emptyList(), 180.0, 225.0, .6, null, emptyList(), miniBoss = true)
+        val hud = MobHud(5, "花喰いの白蛇", MobGrades.MINIBOSS, emptyList(), 180.0, 225.0, .6, null, emptyList(), miniBoss = true)
         val text = flatten(CoreBossBarHud.render(hud, 200.0))
         assertTrue(CoreHudGlyphs.has("boss_plate_rare_mini"))
         assertTrue(CoreHudGlyphs["boss_plate_rare_mini"].char in text, "the wide-tag plate")

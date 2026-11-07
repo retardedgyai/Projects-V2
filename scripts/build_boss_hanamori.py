@@ -1,16 +1,16 @@
 """散り桜の社's two mini-bosses (the provisional first picks; docs/development/sakura-minibosses.md).
 
-    python scripts/build_boss_hanamori.py   # writes assets/bosses/hanamori_armor.bbmodel and stone_lantern.bbmodel
+    python scripts/build_boss_hanamori.py   # writes assets/bosses/white_serpent.bbmodel and stone_lantern.bbmodel
 
-花守の鎧武者 (ミニボス1): an empty suit of armour the fallen petals live in. Black lamellar with crimson lacing, a
-kabuto with gold horns and a five-petal crest, a nodachi on its shoulder, a banner with the crest on its back; petals
-pour out of the gaps at the neck and the shoulder boards. 石灯籠の番人 (ミニボス2): a kasuga stone lantern that walks
+花喰いの白蛇 (ミニボス1, 藍's pick 2026-11-07): the shrine's white serpent, coiled on the floor from its tail tip outside
+the coil inward, its neck rising forward from the middle; a full five-petal bloom opens behind its head, a shimenawa
+round its neck. 石灯籠の番人 (ミニボス2): a kasuga stone lantern that walks
 on its split base and leans on two arms of stacked stone; its fire box is the face, pink light behind the lattice.
 
 Front is +Z, +X is the model's left (WSEE shows it on the right), 16 px = 1 block. Every bone rests at rotation 0 and
 its cubes are placed in world space (scaled by K), so a bone turns about its pivot (the joint). Bone names carry a
-prefix (am_, sl_) so no boss-only bone list (ShadeWyrmHitbox) picks them up. Clip names are the server contract
-(docs/development/boss-model-pipeline.md): idle, walk, death, countered, and one once clip per skill id, as long as
+prefix (sn_, sl_) so no boss-only bone list (ShadeWyrmHitbox) picks them up. Clip names are the server contract
+(docs/development/boss-model-pipeline.md): idle, walk, death and one once clip per skill id, as long as
 its telegraph plus recovery, the blow landing at the telegraph's end.
 """
 import math
@@ -82,6 +82,11 @@ def _h(*k):
 
 # --- paint ------------------------------------------------------------------------------------------
 RAMPS = {
+    "white": ((146, 140, 152), (180, 176, 188), (210, 206, 216), (234, 232, 238), (250, 249, 252)),
+    "straw": ((90, 70, 38), (128, 100, 54), (164, 132, 74), (194, 164, 98), (220, 194, 128)),
+    "red": ((96, 18, 26), (136, 26, 36), (176, 40, 48), (206, 66, 66), (226, 100, 94)),
+    "pinkc": ((140, 56, 86), (180, 82, 112), (210, 116, 142), (230, 152, 172), (242, 186, 200)),
+    "pearl": ((150, 136, 148), (186, 172, 182), (214, 204, 210), (234, 228, 232), (248, 244, 246)),
     "lacq": ((14, 12, 18), (26, 22, 32), (42, 36, 52), (64, 56, 78), (92, 84, 108)),
     "ink": ((16, 18, 30), (26, 30, 48), (38, 44, 68), (54, 62, 90), (76, 86, 116)),
     "crim": ((60, 14, 26), (96, 24, 40), (138, 36, 56), (176, 58, 78), (206, 96, 110)),
@@ -152,20 +157,6 @@ def pattern(mat, fn, key):
             return out if out is not None else pick(ramp, lvl)
         return paint, (key, mat, side, w, h)
     return painter
-
-
-def lamellar(lace="crim"):
-    lr = RAMPS[lace]
-
-    def fn(x, y, w, hh, side, lvl):
-        if side in ("up", "down"):
-            return None
-        if y % 4 == 3:
-            return (*lr[2 + (1 if x % 3 == 0 else 0)], 255)
-        if x % 4 == 0 and y % 4 in (1, 2):
-            return (*lr[1], 255)
-        return None
-    return pattern("lacq", fn, "lam" + lace)
 
 
 def mossy():
@@ -239,25 +230,6 @@ def crest_plate(lit=False):
     return painter
 
 
-def crest_on(mat, scale=.84):
-    """A banner: the crest in a square at the top of the big faces, a light rim."""
-    ramp = RAMPS[mat]
-
-    def painter(side, w, h):
-        def paint(x, y, w_, hh):
-            if side in ("north", "south"):
-                m = min(w_, hh)
-                cy = m / 2 if hh > w_ * 1.3 else hh / 2
-                out = crest_rgba(((x + .5) - w_ / 2) / (m / 2) / scale, ((y + .5) - cy) / (m / 2) / scale)
-                if out:
-                    return out
-                lvl = 3.4 if x in (0, w_ - 1) or y in (0, hh - 1) else 1.4 + .6 * (1 - y / max(1, hh - 1))
-                return pick(ramp, lvl)
-            return pick(ramp, shade_lvl(mat, x, y, hh, side))
-        return paint, ("creston", mat, scale, side, w, h)
-    return painter
-
-
 def petal(kind="petal"):
     """A notched petal on the two big faces, tip at texture row 0."""
     def painter(side, w, h):
@@ -271,7 +243,7 @@ def petal(kind="petal"):
             half = (.22 + .78 * min(1, v / .7) ** .6) * math.sqrt(max(0, 1 - max(0, (v - .72) / .3) ** 2))
             if abs(u) > half or v > 1 - .2 * max(0, 1 - abs(u) / .3):
                 return (0, 0, 0, 0)
-            lvl = 1.2 + v * 3.2 - (1.1 if abs(u) > half - .14 or v < .06 else 0) + (.8 if kind == "pale" else 0)
+            lvl = 1.2 + v * 3.2 - (1.1 if abs(u) > half - .14 or v < .06 else 0) + (.8 if kind == "pale" else -1 if kind == "deep" else 0)
             return (*PINK[max(0, min(4, int(lvl)))], 255)
         return paint, (kind, big, w, h)
     return painter
@@ -336,13 +308,13 @@ class Builder:
     def crest(self, bone, c, normal, size, lit=True):
         self.plate(bone, c, normal, (0, 1, 0), (size, size), crest_plate(lit), thick=.6, name="glow_crest" if lit else "crest")
 
-    def petal(self, bone, c, normal, ang, length, width, kind="petal", up_hint=(0, 1, 0)):
-        c, length, width = self.K(c), length * self.k, width * self.k
+    def petal(self, bone, c, normal, ang, length, width, kind="petal", up_hint=(0, 1, 0), r0=0.0):
+        c, length, width, r0 = self.K(c), length * self.k, width * self.k, r0 * self.k
         n = norm(normal)
         F = basis(up_hint if abs(dot(norm(up_hint), n)) < .95 else (1, 0, 0), n)
         R = mat_mul(F, euler_matrix(0, 0, ang))
-        lo = [c[0] - width / 2, c[1], c[2] - .5]
-        hi = [c[0] + width / 2, c[1] + length, c[2] + .5]
+        lo = [c[0] - width / 2, c[1] + r0, c[2] - .5]
+        hi = [c[0] + width / 2, c[1] + r0 + length, c[2] + .5]
         self._cube(bone, lo, hi, petal(kind), "petal", rotation=matrix_euler(R), origin=c)
 
     def stream(self, bone, a, b, n, size=2.4, seed=0, grow=1.2):
@@ -471,7 +443,11 @@ def bake(b, name, length, keys, loop="once", overlay=None, springs=None):
     tracks = {}
     for t, pose in frames:
         for key, v in pose.items():
-            if key.endswith("@pos"):
+            if key.endswith("@scale"):
+                bone = key[:-6]
+                if bone in names:
+                    tracks.setdefault(bone, []).append((t, tuple(round(1 + c, 3) for c in v), "scale"))
+            elif key.endswith("@pos"):
                 bone = key[:-4]
                 if bone in names:
                     tracks.setdefault(bone, []).append((t, tuple(round(c * b.k, 3) for c in v), "position"))
@@ -485,200 +461,145 @@ def wave(t, period, phase=0.0):
 
 
 # ======================================================================================================
-# 花守の鎧武者 (hanamori_armor): ミニボス1
+# 花喰いの白蛇 (white_serpent): ミニボス1
 # ======================================================================================================
-ARMOR_ABILITIES = {          # id: (telegraph s, recovery s) — QuestMobContent.SAKURA_MINIBOSS_1
-    "armor-iai": (1.3, .9),
-    "armor-combo": (1.5, .9),
-    "armor-jodan": (2.0, 1.3),
-    "armor-banner": (1.5, .9),
+SERPENT_ABILITIES = {        # id: (telegraph s, recovery s) — QuestMobContent.SAKURA_MINIBOSS_1
+    "serpent-breath": (1.7, .9),
+    "serpent-bite": (.9, .8),
+    "serpent-tail": (.7, .7),
+    "serpent-coil": (1.6, 1.0),
 }
-D_SWORD = norm((.35, .55, -.75))        # rest: the nodachi on the right shoulder, edge up (katsugi)
-G_SWORD = (4.0, 38.0, 9.5)              # its guard
-HAND_R = add(G_SWORD, D_SWORD, -2.2)
-HAND_L = add(G_SWORD, D_SWORD, -9.5)
-ARMOR_SPRINGS = {
-    "am_banner": (2.2, .3, .25), "am_flag": (1.8, .25, .45),
-    "am_sode_r": (3.0, .35, .25), "am_sode_l": (3.0, .35, .25),
-    "am_kusa_f": (3.2, .4, .2), "am_kusa_b": (3.2, .4, .2), "am_kusa_r": (3.2, .4, .2), "am_kusa_l": (3.2, .4, .2),
-    "am_petals": (1.6, .25, .5),
-}
+SERPENT_SPRINGS = {"sn_neck2": (2.4, .35, .2), "sn_neck3": (2.2, .32, .28), "sn_neck4": (2.0, .3, .35),
+                   "sn_head": (2.6, .4, .25), "sn_ruff": (2.0, .28, .4), "sn_tail": (2.2, .3, .3)}
 
 
-def build_armor():
-    b = Builder("hanamori_armor", 1.3)
-    L = lamellar()
-    b.bone("am_body", None, (0, 26, 0))
-    for s, side in ((1, "r"), (-1, "l")):
-        x = 5.5 * s
-        leg = b.bone(f"am_leg_{side}", "am_body", (x, 24, 0))
-        b.seg(leg, (x, 13, 0), (x * .9, 24, .5), 6.5, 7, "ink")
-        b.box(leg, (x - 3.6, 13, 3.6), (x + 3.6, 23, 4.8), L)
-        shin = b.bone(f"am_shin_{side}", leg, (x, 13.5, .5))
-        b.seg(shin, (x, 2, 1), (x, 14, 0), 5, 5, "lacq")
-        b.box(shin, (x - 2.6, 0, -2), (x + 2.6, 2.4, 6), "black")
-    for nm, (cx, cz, nx, nz) in (("am_kusa_f", (0, 5, 0, 1)), ("am_kusa_b", (0, -5, 0, -1)), ("am_kusa_r", (8.6, 0, 1, 0)), ("am_kusa_l", (-8.6, 0, -1, 0))):
-        b.bone(nm, "am_body", (cx, 27.5, cz))
-        b.seg(nm, (cx, 27.5, cz), (cx * 1.18 + nx * 1.6, 15.5, cz * 1.18 + nz * 1.6), 16.5 if nz else 10.5, 2, L, z_hint=(nx, 0, nz))
-    b.box("am_body", (-8.5, 26, -5.5), (8.5, 28.4, 5.5), "crim")
-    t = b.bone("am_torso", "am_body", (0, 28, 0))
-    b.box(t, (-8, 27, -5), (8, 42, 5), L)
-    b.box(t, (-7, 35, 5), (7, 42, 6.2), "lacq")
-    b.box(t, (-7, 41.3, 5), (7, 42.2, 6.5), "gold")
-    b.box(t, (-3.6, 42, -3.6), (3.6, 45, 3.6), "black")
-    b.box(t, (-2.6, 42.6, 3.2), (2.6, 44.6, 3.9), GLOW2, name="neck")
-    for s, side in ((1, "r"), (-1, "l")):
-        sode = b.bone(f"am_sode_{side}", t, (10.5 * s, 44.5, .5))
-        b.seg(sode, (10.5 * s, 44.5, .5), (13.8 * s, 30, 1.5), 11, 2.2, L, z_hint=(s, 0, 0))
-        b.seg(sode, (10.5 * s, 44.5, .5), (11.2 * s, 43, .7), 11.6, 3, "gold", z_hint=(s, 0, 0))
-        b.stream(sode, (13.8 * s, 29, 1.5), (15.5 * s, 16, 4), 4, size=2.2, seed=3 + s)
-    # the arms hold the nodachi's grip at rest: the right hand at the guard, the left lower on the grip
-    for s, side, el, hand in ((1, "r", (11.5, 35, 6), HAND_R), (-1, "l", (-6.5, 32.5, 9.5), HAND_L)):
-        arm = b.bone(f"am_arm_{side}", t, (9 * s, 41, 0))
-        b.seg(arm, (9 * s, 41, 0), el, 4.6, 4.6, "ink")
-        fore = b.bone(f"am_fore_{side}", arm, el)
-        b.seg(fore, el, hand, 4.2, 4.2, L)
-        b.cbox(fore, hand, (3.6, 3.6, 3.6), "black", name="hand")
-    blade = b.bone("am_blade", "am_fore_r", HAND_R)
-    b.seg(blade, add(G_SWORD, D_SWORD, -13), G_SWORD, 2.3, 2.3, "crim", name="tsuka")
-    b.seg(blade, add(G_SWORD, D_SWORD, -.6), add(G_SWORD, D_SWORD, .6), 6.5, 6.5, "gold", name="tsuba")
-    tip = add(G_SWORD, D_SWORD, 52)
-    b.seg(blade, G_SWORD, tip, 3.8, 1.0, "steel", z_hint=(1, 0, 0), name="ha")
-    b.seg(blade, add(G_SWORD, D_SWORD, 3), add(tip, D_SWORD, -4), .9, 1.3, GLOW, z_hint=(1, 0, 0), name="hamon")
-    hm = b.bone("am_helm", t, (0, 44, 0))
-    b.box(hm, (-6, 45, -6), (6, 53, 6), "lacq")
-    b.box(hm, (-.6, 45, -6.3), (.6, 53.7, 6.3), "gold")
-    b.box(hm, (-8, 46, -8.2), (8, 48.6, 3.4), L)
-    b.box(hm, (-9.6, 43.8, -9.8), (9.6, 46.2, 2.4), L)
-    b.box(hm, (-11, 41.6, -11.4), (11, 44, 1.2), L)
+def serpent_path():
+    """The coil from the tail tip (outside, behind) spiralling in, then the neck rising forward to the head."""
+    coil = []
+    for k in range(16):
+        t = k / 15
+        a = math.radians(210 - 320 * t)
+        r = 28 - 15 * t
+        coil.append((r * math.cos(a) + 4, 3 + 4.5 * t, r * math.sin(a) - 8))
+    rise = [(-1, 14, -14), (0, 28, -6), (-3, 44, 0), (-4, 58, 2), (1, 70, 6), (4, 78, 12)]
+    return coil + rise
+
+
+def build_serpent():
+    b = Builder("white_serpent", 1.0)
+    pts = serpent_path()
+    n = len(pts)
+    b.bone("sn_coil", None, (4, 3, -8))
+    b.bone("sn_tail", "sn_coil", pts[5])
+    b.bone("sn_neck1", "sn_coil", pts[15])
+    b.bone("sn_neck2", "sn_neck1", pts[17])
+    b.bone("sn_neck3", "sn_neck2", pts[18])
+    b.bone("sn_neck4", "sn_neck3", pts[19])
+    S = pattern("pearl", scale_fn, "scales")
+    for i in range(n - 1):
+        w = 3 + 13 * min(1.0, (i + 1) / 9) if i < 9 else (16 if i < 16 else 14)
+        bone = "sn_tail" if i < 5 else "sn_coil" if i < 15 else "sn_neck1" if i < 17 else "sn_neck2" if i < 18 else "sn_neck3" if i < 19 else "sn_neck4"
+        b.seg(bone, pts[i], pts[i + 1], w, w * .9, S, over=w * .5)
+        if i >= 15:
+            d = norm([q - p for p, q in zip(pts[i], pts[i + 1])])
+            front = norm(cross(cross(d, (0, 0, 1)), d)) if abs(d[2]) < .95 else [0, -1, 0]
+            front = [-c for c in front] if front[2] < 0 else front
+            mid = lerp(pts[i], pts[i + 1], .5)
+            b.seg(bone, add(mid, front, w * .42), add(add(mid, front, w * .42), d, 1), w * .6, w * .25, "pinkc", z_hint=front, over=w * .9)
+    hb = pts[-1]
+    hd = b.bone("sn_head", "sn_neck4", hb)
+    b.seg(hd, hb, add(hb, (1, -1, 12)), 12, 8.5, S, z_hint=(0, 1, 0))
+    b.seg(hd, add(hb, (1, -1, 10)), add(hb, (2, -3.5, 23)), 8.5, 5.5, S, z_hint=(0, 1, 0))
     for s in (1, -1):
-        b.seg(hm, (6.6 * s, 50, 3.5), (10 * s, 46.5, 5.5), 4.2, 1.2, "lacq")
-        b.seg(hm, (2 * s, 52.8, 8.2), (5.5 * s, 60, 9.4), 2.3, 1.2, "gold")
-        b.seg(hm, (5.5 * s, 60, 9.4), (8.5 * s, 68, 9.0), 1.8, 1.1, "gold")
-    b.box(hm, (-6.4, 51, 5.6), (6.4, 52.6, 8.6), "lacq")
-    b.box(hm, (-6.4, 51, 8.2), (6.4, 52.6, 8.8), "gold")
-    b.box(hm, (-4.6, 44.4, 5), (4.6, 49.6, 7.2), "crim")
-    b.box(hm, (-2.4, 45.6, 7.1), (2.4, 46.2, 7.4), "black")
-    for s in (1, -1):
-        b.cbox(hm, (2.3 * s, 50.4, 6.9), (1.8, .9, .4), GLOW, name="eye")
-    b.crest(hm, (0, 59.5, 9.8), (0, 0, 1), 11.5)
-    ban = b.bone("am_banner", t, (0, 30, -7))
-    b.seg(ban, (0, 30, -6.6), (0, 84, -8), 1.4, 1.4, "wood")
-    b.seg(ban, (0, 82.5, -8), (-13, 82.5, -8), 1.2, 1.2, "wood")
-    flag = b.bone("am_flag", ban, (-.8, 82, -8.7))
-    b.box(flag, (-12.6, 56, -9.1), (-.8, 82, -8.3), crest_on("crim"))
-    pet = b.bone("am_petals", t, (0, 45, 0))
-    b.stream(pet, (0, 45, 0), (-7, 70, -16), 10, size=2.4, seed=1)
-    b.stream(pet, (3, 45, 2), (9, 64, -6), 6, size=2.2, seed=2)
-    b.tree = b.outliner()           # the bones exist before the clips name them
-    armor_clips(b)
+        b.cbox(hd, add(hb, (4.6 * s + 1, 2.5, 14.2)), (1.4, 1.4, 2.4), (255, 70, 110), name="eye")
+    jaw = b.bone("sn_jaw", hd, add(hb, (0, -5, 5)))
+    b.seg(jaw, add(hb, (0, -5, 5)), add(hb, (2, -7.5, 21)), 7.5, 3, "pinkc", z_hint=(0, 1, 0))
+    b.seg(jaw, add(hb, (2, -6, 21)), add(hb, (2.5, -7, 29)), .8, .5, "red", name="tongue")
+    ruff = b.bone("sn_ruff", hd, add(hb, (0, 0, 1)))
+    c = add(hb, (0, 0, 1))
+    nrm = norm((.05, .3, 1))
+    for k in range(5):
+        b.petal(ruff, c, nrm, k * 72 + 36, 24, 19, r0=6)
+    for k in range(5):
+        b.petal(ruff, add(c, nrm, -1), nrm, k * 72, 13, 8, kind="deep", r0=5)
+    ring_c = add(hb, (0, -12, -4))
+    for k in range(10):
+        a0, a1 = k / 10 * 2 * math.pi, (k + 1) / 10 * 2 * math.pi
+        b.seg("sn_neck4", add(ring_c, (math.cos(a0) * 8, 0, math.sin(a0) * 7)), add(ring_c, (math.cos(a1) * 8, 0, math.sin(a1) * 7)), 2.6, 2.6, rope(), over=1)
+    for x in (-3.5, 3.5):
+        for j in range(3):
+            b.box("sn_neck4", add(ring_c, (x - 1 + (j % 2) * 1.2, -2 - j * 2, 7)), add(ring_c, (x + .8 + (j % 2) * 1.2, -.4 - j * 2, 7.7)), "white", name="shide")
+    b.tree = b.outliner()
+    serpent_clips(b)
     return b
 
 
-def armor_clips(b):
-    sp = ARMOR_SPRINGS
+def scale_fn(x, y, w, hh, side, lvl):
+    r = y // 3
+    if y % 3 == 2 or ((x + (r % 2) * 2) % 4 == 0 and y % 3 == 1):
+        return pick(RAMPS["pearl"], lvl - 1.3)
+    if (x + (r % 2) * 2) % 4 == 2 and y % 3 == 0:
+        return pick(RAMPS["pearl"], lvl + .8)
+    return None
 
-    def breathe(t):
-        return {"am_torso": (1.2 * wave(t, 2.4), 0, 0), "am_helm": (-.8 * wave(t, 2.4, .1), 4 * wave(t, 4.8), 0),
-                "am_body@pos": (0, -.3 * wave(t, 2.4), 0), "am_petals": (3 * wave(t, 2.4, .3), 0, 4 * wave(t, 4.8, .2))}
-    bake(b, "idle", 2.4, [(0, {}, "lin"), (2.4, {}, "lin")], "loop", overlay=breathe, springs=sp)
 
-    def stride(t):
-        ph = 2 * math.pi * t / 1.2
-        sw = math.sin(ph)
-        return {"am_leg_r": (-24 * sw, 0, 0), "am_shin_r": (max(0.0, math.sin(ph + 1.2)) * 34, 0, 0),
-                "am_leg_l": (24 * sw, 0, 0), "am_shin_l": (max(0.0, math.sin(ph + 1.2 + math.pi)) * 34, 0, 0),
-                "am_body@pos": (0, -1.2 * abs(math.cos(ph)), 0), "am_torso": (4, 5 * sw, 0),
-                "am_helm": (-2, -4 * sw, 0), "am_arm_l": (-6 * sw, 0, 0)}
-    bake(b, "walk", 1.2, [(0, {}, "lin"), (1.2, {}, "lin")], "loop", overlay=stride, springs=sp)
+def rope():
+    return pattern("straw", lambda x, y, w, hh, side, lvl: pick(RAMPS["straw"], 3.4 if (x + y) % 4 < 2 else 1.8), "rope")
 
-    # 抜き打ち・花一文字: sinks into a drawing stance with the blade pulled back low at its right side, the grip
-    # gathering petals, then springs (the server carries it 7 blocks) and cuts across in one stroke; holds the cut.
-    crouch = {"am_body@pos": (0, -4.5, -2), "am_torso": (20, -25, 0), "am_helm": (-12, 20, 0),
-              "am_leg_r": (-30, 0, 0), "am_shin_r": (38, 0, 0), "am_leg_l": (25, 0, 0), "am_shin_l": (20, 0, 0),
-              "am_arm_r": (40, 0, 25), "am_fore_r": (-20, 0, 0), "am_blade": (75, 30, 0), "am_arm_l": (35, 0, -10)}
-    coil = merged(crouch, {"am_torso": (4, -10, 0), "am_blade": (10, 10, 0), "am_body@pos": (0, -1, -1)})
-    cut = {"am_body@pos": (0, -5, 6), "am_torso": (24, 50, 0), "am_helm": (-14, -35, 0),
-           "am_leg_r": (-50, 0, 0), "am_shin_r": (30, 0, 0), "am_leg_l": (40, 0, 0), "am_shin_l": (10, 0, 0),
-           "am_arm_r": (-70, -40, 60), "am_fore_r": (-10, 0, 0), "am_blade": (-40, -70, 0), "am_arm_l": (-40, 0, -40)}
-    zanshin = merged(cut, {"am_torso": (-4, 6, 0), "am_body@pos": (0, .6, 0)})
-    tl, rc = ARMOR_ABILITIES["armor-iai"]
-    bake(b, "armor-iai", tl + rc, [
-        (0, {}, "lin"), (.6, crouch, "smooth"), (1.0, coil, "smooth"), (tl, cut, "in"), (tl + .25, zanshin, "out"),
-        (tl + .6, zanshin, "hold"), (tl + rc, {}, "smooth")], springs=sp)
 
-    # 三段斬り: 袈裟 (high right to low left), 逆袈裟 (low left back up), 突き (a lunging thrust); each with its own
-    # step and twist so no two blows share a pose.
-    hits = (.6, 1.05, ARMOR_ABILITIES["armor-combo"][0])
-    raise_ = {"am_torso": (-6, -20, 0), "am_arm_r": (-120, 0, 20), "am_fore_r": (-20, 0, 0), "am_blade": (-30, 0, 0),
-              "am_arm_l": (-100, 0, -10), "am_leg_r": (-10, 0, 0), "am_leg_l": (8, 0, 0)}
-    kesa = {"am_torso": (18, 35, 0), "am_body@pos": (0, -2, 3), "am_arm_r": (-20, -30, -30), "am_fore_r": (-10, 0, 0),
-            "am_blade": (230, -130, 0), "am_arm_l": (-10, 0, -30), "am_leg_r": (-28, 0, 0), "am_shin_r": (20, 0, 0), "am_leg_l": (18, 0, 0)}
-    gyaku = {"am_torso": (-8, -35, 0), "am_body@pos": (0, -1, 5), "am_arm_r": (-150, 20, 40), "am_fore_r": (-30, 0, 0),
-             "am_blade": (-60, 40, 0), "am_arm_l": (-110, 0, 10), "am_leg_l": (-28, 0, 0), "am_shin_l": (20, 0, 0), "am_leg_r": (18, 0, 0)}
-    pull = {"am_torso": (6, 25, 0), "am_body@pos": (0, -2, 2), "am_arm_r": (-30, 0, 50), "am_fore_r": (-60, 0, 0),
-            "am_blade": (80, 0, 0), "am_arm_l": (-40, 0, -20), "am_leg_r": (-15, 0, 0), "am_leg_l": (15, 0, 0)}
-    tsuki = {"am_torso": (26, 0, 0), "am_body@pos": (0, -3.5, 9), "am_arm_r": (-85, 0, 0), "am_fore_r": (0, 0, 0),
-             "am_blade": (210, -45, 0), "am_arm_l": (-80, 0, -10), "am_leg_r": (-55, 0, 0), "am_shin_r": (25, 0, 0),
-             "am_leg_l": (40, 0, 0), "am_shin_l": (15, 0, 0), "am_helm": (-14, 0, 0)}
-    tl, rc = ARMOR_ABILITIES["armor-combo"]
-    bake(b, "armor-combo", tl + rc, [
-        (0, {}, "lin"), (.42, raise_, "smooth"), (hits[0], kesa, "in"), (.82, merged(kesa, {"am_torso": (-4, -10, 0)}), "out"),
-        (hits[1], gyaku, "in"), (1.25, pull, "out"), (hits[2], tsuki, "in"), (tl + .3, merged(tsuki, {"am_body@pos": (0, .5, 0)}), "out"),
-        (tl + .55, tsuki, "hold"), (tl + rc, {}, "smooth")], springs=sp)
+def necks(a, b_, c, d):
+    return {"sn_neck1": (a, 0, 0), "sn_neck2": (b_, 0, 0), "sn_neck3": (c, 0, 0), "sn_neck4": (d, 0, 0)}
 
-    # 上段・桜落とし: lifts the nodachi high over its head and holds it, trembling (the wreath turns, the counter
-    # window), then brings it down to the ground in front, the kneeling stance held as the crack runs out.
-    jodan = {"am_torso": (-10, 0, 0), "am_body@pos": (0, 1, -1), "am_arm_r": (-165, 0, 15), "am_fore_r": (-25, 0, 0),
-             "am_blade": (-125, 30, 0), "am_arm_l": (-160, 0, -15), "am_fore_l": (-25, 0, 0), "am_helm": (8, 0, 0),
-             "am_leg_r": (-12, 0, 0), "am_leg_l": (10, 0, 0)}
-    otoshi = {"am_torso": (38, 0, 0), "am_body@pos": (0, -6, 4), "am_arm_r": (-60, 0, 0), "am_fore_r": (0, 0, 0),
-              "am_blade": (195, -30, 0), "am_arm_l": (-55, 0, 0), "am_fore_l": (0, 0, 0), "am_helm": (-20, 0, 0),
-              "am_leg_r": (-45, 0, 0), "am_shin_r": (45, 0, 0), "am_leg_l": (35, 0, 0), "am_shin_l": (55, 0, 0)}
 
-    def tremble(t):
-        if 1.0 <= t < 1.95:
-            a = (t - 1.0) / .95
-            return {"am_arm_r": (1.6 * a * math.sin(t * 61), 0, 0), "am_arm_l": (1.6 * a * math.sin(t * 59 + 1), 0, 0),
-                    "am_torso": (.8 * a * math.sin(t * 43), 0, 0)}
-        return {}
-    tl, rc = ARMOR_ABILITIES["armor-jodan"]
-    bake(b, "armor-jodan", tl + rc, [
-        (0, {}, "lin"), (.9, jodan, "smooth"), (1.85, merged(jodan, {"am_torso": (-4, 0, 0), "am_body@pos": (0, .8, 0)}), "smooth"),
-        (tl, otoshi, "in"), (tl + .2, merged(otoshi, {"am_body@pos": (0, .8, 0)}), "out"), (tl + .7, otoshi, "hold"),
-        (tl + rc, {}, "smooth")], overlay=tremble, springs=sp)
+def serpent_clips(b):
+    sp = SERPENT_SPRINGS
 
-    # 旗の花紋: plants the nodachi in front of it, both hands on the pommel; the banner's crest swings round the pole
-    # twice, faster and faster, and bursts open as it stops.
-    plant = {"am_torso": (16, 0, 0), "am_body@pos": (0, -1.5, 0), "am_arm_r": (-50, 0, 20), "am_fore_r": (-40, 0, 0),
-             "am_blade": (290, 40, 0), "am_arm_l": (-55, 0, -20), "am_fore_l": (-35, 0, 0), "am_leg_r": (-10, 0, 0), "am_leg_l": (10, 0, 0)}
+    def sway(t):
+        return {"sn_neck2": (0, 0, 2.5 * wave(t, 2.4)), "sn_neck3": (0, 0, 3 * wave(t, 2.4, .15)), "sn_neck4": (1.5 * wave(t, 2.4, .1), 0, 3 * wave(t, 2.4, .3)),
+                "sn_head": (0, 8 * wave(t, 4.8), 0), "sn_ruff@scale": (.06 * wave(t, 2.4), .06 * wave(t, 2.4), 0),
+                "sn_tail": (0, 10 * wave(t, 2.4, .5), 0), "sn_jaw": (max(0.0, 6 * wave(t, 1.2)) if t > 1.8 else 0, 0, 0)}
+    bake(b, "idle", 2.4, [(0, {}, "lin"), (2.4, {}, "lin")], "loop", overlay=sway, springs=sp)
 
-    def spin(t):
-        tl_ = ARMOR_ABILITIES["armor-banner"][0]
-        if .4 <= t <= tl_:
-            f = (t - .4) / (tl_ - .4)
-            return {"am_flag": (0, 720 * f * f, 0), "am_helm": (-6 * f, 0, 0)}
-        return {}
-    tl, rc = ARMOR_ABILITIES["armor-banner"]
-    bake(b, "armor-banner", tl + rc, [
-        (0, {}, "lin"), (.45, plant, "smooth"), (tl - .1, merged(plant, {"am_torso": (6, 0, 0)}), "smooth"),
-        (tl, merged(plant, {"am_torso": (-10, 0, 0), "am_body@pos": (0, 1, 0)}), "out"), (tl + .45, plant, "smooth"),
-        (tl + rc, {}, "smooth")], overlay=spin, springs=sp)
+    def slither(t):
+        return {"sn_coil": (0, 6 * wave(t, 1.6), 0), "sn_neck1": (0, 0, 4 * wave(t, 1.6, .2)), "sn_neck2": (0, 0, 6 * wave(t, 1.6, .35)),
+                "sn_neck3": (0, 0, 6 * wave(t, 1.6, .5)), "sn_neck4": (0, 0, 4 * wave(t, 1.6, .65)), "sn_tail": (0, 22 * wave(t, 1.6, .5), 0),
+                "sn_coil@pos": (0, .4 * abs(wave(t, .8)), 0)}
+    bake(b, "walk", 1.6, [(0, {}, "lin"), (1.6, {}, "lin")], "loop", overlay=slither, springs=sp)
 
-    # カウンター: thrown out of the strike, it reels back and drops to one knee, the blade's point in the ground, then
-    # rises (3.5 s, QuestEncounterCombat.MINIBOSS_COUNTER_STAGGER_MILLIS).
-    reel = {"am_torso": (-26, 10, 0), "am_body@pos": (0, 0, -4), "am_helm": (-18, 15, 8), "am_arm_r": (-30, 0, 50),
-            "am_blade": (30, 30, 0), "am_arm_l": (20, 0, -40), "am_leg_r": (20, 0, 0), "am_leg_l": (-10, 0, 0)}
-    kneel = {"am_torso": (25, 0, 0), "am_body@pos": (0, -9, -2), "am_helm": (20, 0, 0), "am_arm_r": (-30, 0, 15),
-             "am_fore_r": (-20, 0, 0), "am_blade": (95, 0, 0), "am_arm_l": (10, 0, -10),
-             "am_leg_r": (-70, 0, 0), "am_shin_r": (75, 0, 0), "am_leg_l": (20, 0, 0), "am_shin_l": (95, 0, 0)}
-    bake(b, "countered", 3.5, [(0, {}, "lin"), (.35, reel, "out"), (.9, kneel, "smooth"), (2.8, merged(kneel, {"am_torso": (4, 0, 0)}), "smooth"),
-                               (3.5, {}, "smooth")], springs=sp)
+    # 花の吐息: rears back and up, the ruff opening wide; then the whole neck throws forward and the jaw drops as the fan
+    # of petals leaves it.
+    rear = merged(necks(-6, -10, -12, -10), {"sn_head": (-25, 0, 0), "sn_ruff@scale": (.35, .35, .1), "sn_coil@pos": (0, 1, -2)})
+    breath = merged(necks(4, 7, 9, 8), {"sn_head": (14, 0, 0), "sn_jaw": (35, 0, 0), "sn_ruff@scale": (.45, .45, .1), "sn_coil@pos": (0, 0, 2)})
+    tl, rc = SERPENT_ABILITIES["serpent-breath"]
+    bake(b, "serpent-breath", tl + rc, [(0, {}, "lin"), (1.1, rear, "smooth"), (1.45, merged(rear, {"sn_head": (-6, 0, 0)}), "smooth"),
+                                        (tl, breath, "in"), (tl + .35, merged(breath, {"sn_neck4": (-3, 0, 0)}), "out"), (tl + rc, {}, "smooth")], springs=sp)
 
-    # 倒れる: drops to its knees, the helm falls from the empty armour and the petals pour out; the last pose stays.
-    slump = merged(kneel, {"am_torso": (20, 0, 0), "am_arm_r": (40, 0, 10), "am_arm_l": (40, 0, -10), "am_blade": (60, 40, 0)})
-    fallen = merged(slump, {"am_helm": (60, 30, 40), "am_helm@pos": (6, -32, 10), "am_torso": (25, 0, 0), "am_body@pos": (0, -3, 0)})
-    bake(b, "death", 2.6, [(0, {}, "lin"), (.5, reel, "out"), (1.2, slump, "smooth"), (1.9, fallen, "in"), (2.6, fallen, "hold")], springs=sp)
+    # 突き噛み: draws its neck back into an S, then strikes low and long (the server carries it 3 blocks), jaw wide.
+    coil = merged(necks(-14, -16, 10, -8), {"sn_head": (-6, 0, 0), "sn_coil@pos": (0, 0, -2)})
+    strike = merged(necks(12, 14, 6, 8), {"sn_head": (10, 0, 0), "sn_jaw": (38, 0, 0), "sn_coil@pos": (0, -1, 4)})
+    tl, rc = SERPENT_ABILITIES["serpent-bite"]
+    bake(b, "serpent-bite", tl + rc, [(0, {}, "lin"), (.55, coil, "smooth"), (tl, strike, "in"), (tl + .25, merged(strike, {"sn_jaw": (-30, 0, 0)}), "out"),
+                                      (tl + rc, {}, "smooth")], springs=sp)
+
+    # 尾払い: someone behind: the tail draws back, then whips round behind the coil as the neck glances back.
+    wind = {"sn_tail": (0, -55, 0), "sn_coil": (0, -12, 0), "sn_neck3": (0, 0, -8), "sn_head": (0, -30, 0)}
+    whip = {"sn_tail": (0, 95, 0), "sn_coil": (0, 18, 0), "sn_neck3": (0, 0, 8), "sn_head": (0, 30, 0)}
+    tl, rc = SERPENT_ABILITIES["serpent-tail"]
+    bake(b, "serpent-tail", tl + rc, [(0, {}, "lin"), (.4, wind, "smooth"), (tl, whip, "in"), (tl + .25, merged(whip, {"sn_tail": (0, -10, 0)}), "out"),
+                                      (tl + rc, {}, "smooth")], springs=sp)
+
+    # 締めの輪: rises tall and the coil swells into a wide ring, then it tightens with the head slamming down at its middle;
+    # the space right by it is safe.
+    tall = merged(necks(-6, -8, -8, -6), {"sn_head": (-15, 0, 0), "sn_coil@scale": (.25, 0, .25), "sn_ruff@scale": (.2, .2, 0)})
+    tight = merged(necks(8, 10, 10, 8), {"sn_head": (22, 0, 0), "sn_coil@scale": (.6, -.1, .6), "sn_coil@pos": (0, -1, 0), "sn_jaw": (20, 0, 0)})
+    tl, rc = SERPENT_ABILITIES["serpent-coil"]
+    bake(b, "serpent-coil", tl + rc, [(0, {}, "lin"), (1.1, tall, "smooth"), (tl, tight, "in"), (tl + .3, merged(tight, {"sn_coil@scale": (-.15, 0, -.15)}), "out"),
+                                      (tl + rc, {}, "smooth")], springs=sp)
+
+    # 倒れる: the neck folds down segment by segment, the head comes to rest on the coil, the ruff closes.
+    slump = merged(necks(25, 30, 35, 25), {"sn_head": (25, 0, 0), "sn_ruff@scale": (-.3, -.3, 0), "sn_jaw": (15, 0, 0)})
+    bake(b, "death", 2.4, [(0, {}, "lin"), (.4, merged(necks(-8, -8, -8, -8), {"sn_head": (-20, 0, 0)}), "out"), (1.6, slump, "in"),
+                           (2.4, merged(slump, {"sn_ruff@scale": (-.5, -.5, 0)}), "smooth")], springs=sp)
 
 
 # ======================================================================================================
@@ -821,8 +742,8 @@ def write(b):
 
 
 if __name__ == "__main__":
-    which = sys.argv[1:] or ["armor", "lantern"]
-    if "armor" in which:
-        write(build_armor())
+    which = sys.argv[1:] or ["serpent", "lantern"]
+    if "serpent" in which:
+        write(build_serpent())
     if "lantern" in which:
         write(build_lantern())
