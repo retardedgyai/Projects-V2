@@ -8,6 +8,8 @@ import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.instance.LightingChunk
 import net.minestom.server.instance.Weather
 import net.minestom.server.instance.block.Block
+import net.minestom.server.thread.ThreadDispatcher
+import net.minestom.server.timer.Task
 import net.minestom.server.registry.RegistryKey
 import net.minestom.server.world.DimensionType
 import net.minestom.server.world.attribute.EnvironmentAttribute
@@ -39,6 +41,53 @@ data class BossArena(
         if (!disposed.compareAndSet(false, true)) return
         instance.entities.toList().forEach { it.remove() }
         MinecraftServer.getInstanceManager().unregisterInstance(instance)
+        if (!MinecraftServer.isStarted()) { drainIdleDispatcher(); pruneIdleScheduler() }
+    }
+
+    /**
+     * Without a running server (tests, tools), two Minestom queues that only the server tick empties kept every
+     * disposed arena reachable: ~0.5 MB per arena, ~8 MB per instance dungeon, ~0.5 MB more per boss fight; 6 GB ran
+     * out after ~750 dungeons (2026-11-08). A started server empties both every tick, so it never leaked there and this
+     * does nothing there. Minestom has no public call for either, hence reflection; if its internals change these do
+     * nothing and BossArenaLeakTest / BossFightLeakTest fail.
+     */
+    private companion object {
+        private fun field(owner: Any, name: String): Any =
+            owner.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(owner)
+        private fun method(owner: Any, name: String) = owner.javaClass.getMethod(name).apply { isAccessible = true }
+
+        /** Every chunk load/unload queues a dispatcher update holding its chunk: do the tick's bookkeeping (no ticking). */
+        fun drainIdleDispatcher() {
+            val dispatcher = MinecraftServer.process().dispatcher()
+            runCatching {
+                val queue = field(dispatcher, "updates")
+                val poll = method(queue, "relaxedPoll")
+                val process = dispatcher.javaClass.declaredMethods.single { m ->
+                    m.name.startsWith("lambda\$updateAndAwait") && m.parameterTypes.singleOrNull() == ThreadDispatcher.Update::class.java
+                }.apply { isAccessible = true }
+                synchronized(dispatcher) { while (true) process.invoke(dispatcher, poll.invoke(queue) ?: break) }
+            }
+        }
+
+        /** A cancelled task (a boss model's animation loop) stays queued until a tick: drop those, run nothing. */
+        fun pruneIdleScheduler() {
+            runCatching {
+                val scheduler = field(MinecraftServer.getSchedulerManager(), "scheduler")
+                synchronized(scheduler) {
+                    for (name in listOf("tasksToExecute", "tickEndTasksToExecute")) {
+                        val queue = field(scheduler, name)
+                        val poll = method(queue, "relaxedPoll")
+                        val offer = queue.javaClass.getMethod("relaxedOffer", Any::class.java).apply { isAccessible = true }
+                        generateSequence { poll.invoke(queue) }.toList().filter { (it as Task).isAlive }.forEach { offer.invoke(queue, it) }
+                    }
+                    for (name in listOf("tickStartTaskQueue", "tickEndTaskQueue")) {
+                        @Suppress("UNCHECKED_CAST") val byTick = field(scheduler, name) as MutableMap<Int, MutableList<Task>>
+                        byTick.values.forEach { tasks -> tasks.removeIf { !it.isAlive } }
+                        byTick.values.removeIf { it.isEmpty() }
+                    }
+                }
+            }
+        }
     }
 }
 
