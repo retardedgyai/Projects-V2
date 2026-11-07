@@ -29,7 +29,7 @@ enum class QuestMobArchetype(val displayName: String, val rarity: QuestMobRarity
     // 散り桜の社's two mini-bosses (ミニボス1 after 花守の回廊, ミニボス2 after 散華の間). The dungeon's rooms name these two. Until 藍
     // picks two of the proposals, they are the provisional first picks (docs/development/sakura-minibosses.md), the most unlike
     // 桜牙獣 in shape; another pick is built behind the same names.
-    SAKURA_MINIBOSS_1("花守の鎧武者", QuestMobRarity.MINIBOSS, "lightning"),
+    SAKURA_MINIBOSS_1("花喰いの白蛇", QuestMobRarity.MINIBOSS, "fire"),
     SAKURA_MINIBOSS_2("石灯籠の番人", QuestMobRarity.MINIBOSS, "ice"),
 }
 
@@ -91,7 +91,7 @@ internal data class QuestMobDefinition(
         QuestMobArchetype.SAKURA_MINIBOSS_2 -> "iron_golem"
         QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.CINDER_REGENT, QuestMobArchetype.FORGE_SENTINEL -> "piglin_brute"
         QuestMobArchetype.ECLIPSE_REGENT -> "wither_skeleton"
-        QuestMobArchetype.SHADE_WYRM, QuestMobArchetype.SAKURA_FANG -> "ravager"
+        QuestMobArchetype.SHADE_WYRM, QuestMobArchetype.SAKURA_FANG, QuestMobArchetype.SAKURA_MINIBOSS_1 -> "ravager"
         else -> "vindicator"
     }
     val dropKind: QuestMobDropKind get() = when (archetype) {
@@ -140,7 +140,7 @@ internal object QuestMobContent {
                     "cinder-mark", "furnace-cross", "frost-outside", "frost-inside", "tempest-ray", "tempest-mark", "tempest-cross",
                     "shade-dust", "shade-pulse", "shade-breath", "shade-storm", "shade-orb", "shade-channel", "shade-shell",
                     "sakura-scatter", "sakura-bloom", "sakura-howl", "sakura-rain",
-                    "armor-banner", "lantern-lob", "lantern-glare"))
+                    "serpent-breath", "serpent-coil", "lantern-lob", "lantern-glare"))
                 dev.projects.server.coreloop.CoreDamageType.MAGICAL
             else if (id in setOf("shade-channel", "shade-shell")) dev.projects.server.coreloop.CoreDamageType.TRUE   // a failed gimmick
             else dev.projects.server.coreloop.CoreDamageType.PHYSICAL,
@@ -249,18 +249,19 @@ internal object QuestMobContent {
                 )).copy(model = "sakura_fang", enrageHealthRatio = .5, enragedSpeedMultiplier = 1.2)
             // 散り桜の社's mini-bosses (scripts/build_boss_hanamori.py; clip lengths = telegraph + recovery). A mini-boss is always
             // 希少 (MobGrades.MINIBOSS, health x2.1): 107 and 110 here, 225 and 231 in the fight at tier 1, about 4 tenths of 桜牙獣.
-            // 花守の鎧武者: the 上段 opens a counter window like 桜牙獣's big strikes (QuestEncounterCombat.MINIBOSS_COUNTERABLE).
-            QuestMobArchetype.SAKURA_MINIBOSS_1 -> definition(EntityType.VINDICATOR, 107.0, 0.15, 2.5, 1.0,
+            // 花喰いの白蛇 (藍's pick, 2026-11-07): the fan of petals it breathes is 桜牙獣's 散華 small, and staying at its back
+            // brings the tail round (QuestEncounterCombat.SERPENT_TAIL), as staying at 桜牙獣's brings its turn.
+            QuestMobArchetype.SAKURA_MINIBOSS_1 -> definition(EntityType.RAVAGER, 107.0, 0.13, 3.0, 1.0,
                 Material.AIR, attacks = listOf(
-                    attack("armor-iai", "抜き打ち・横へ", MobAttackShape.Slam(8.5, 1.5), 8.0, 20.0,
-                        1300, 700, 900, 6500, minimumRange = 3.0, weight = 3),
-                    attack("armor-combo", "三段斬り・下がれ", MobAttackShape.Sweep(4.8, 70.0), 4.2, 11.0,
-                        1500, 400, 900, 5000, weight = 3, earlyHits = listOf(600L, 1050L)),
-                    attack("armor-jodan", "上段・正面から打て", MobAttackShape.Slam(10.0, 1.8), 8.0, 30.0,
-                        2000, 900, 1300, 9000, weight = 2),
-                    attack("armor-banner", "旗の花紋・離れろ", MobAttackShape.Ring(6.5), 5.5, 24.0,
-                        1500, 0, 900, 11000, health = .5, weight = 2),
-                )).copy(model = "hanamori_armor")
+                    attack("serpent-breath", "花の吐息・扇の外へ", MobAttackShape.Sweep(10.0, 35.0), 9.5, 20.0,
+                        1700, 600, 900, 7000, weight = 3),
+                    attack("serpent-bite", "突き噛み・横へ", MobAttackShape.Slam(7.0, 1.4), 6.5, 18.0,
+                        900, 500, 800, 4500, weight = 3),
+                    attack("serpent-tail", "尾払い・前へ出ろ", MobAttackShape.Sweep(6.0, 80.0), 6.5, 14.0,
+                        700, 300, 700, 4000, scripted = true),
+                    attack("serpent-coil", "締めの輪・内か外へ", MobAttackShape.Ring(7.5, 3.0), 7.0, 24.0,
+                        1600, 0, 1000, 10000, health = .5, weight = 2),
+                )).copy(model = "white_serpent")
             // 石灯籠の番人: 灯明 raises stone pillars and reaches only who can see it (QuestEncounterCombat.SIGHT_ONLY), the lesson
             // for 桜牙獣's 千本桜; 倒れ込み leaves it lying on its face, the opening.
             QuestMobArchetype.SAKURA_MINIBOSS_2 -> definition(EntityType.IRON_GOLEM, 110.0, 0.11, 3.0, 1.0,

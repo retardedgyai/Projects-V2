@@ -712,7 +712,6 @@ class QuestEncounterCombat(
             breakParts(mob, attacker, applied, now)
         }
         if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && applied > 0.0 && mob.life.isAlive) sakuraHit(mob, attacker, applied, now)
-        if (mob.miniBoss && applied > 0.0 && mob.life.isAlive) miniBossCounter(mob, attacker, now)
         if (!mob.life.isAlive) {
             endGimmick(mob)
             if (mob.shade) { gimmicks.dispose(); lights.hold("horns-${mob.entity.uuid}", null, 0) }
@@ -1027,7 +1026,11 @@ class QuestEncounterCombat(
                 mob.shade && channelDue -> CHANNEL
                 mob.combo != null -> mob.combo
                 mob.shade && behind >= TAIL_SLAP_AFTER_MILLIS && now - mob.tailslapAt > TAIL_SLAP_AGAIN_MILLIS -> TAIL_SLAP
-                behind >= TURN_AFTER_MILLIS -> if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) SAKURA_TURN else TURN_SWEEP
+                behind >= TURN_AFTER_MILLIS -> when (mob.definition.archetype) {
+                    QuestMobArchetype.SAKURA_FANG -> SAKURA_TURN
+                    QuestMobArchetype.SAKURA_MINIBOSS_1 -> SERPENT_TAIL
+                    else -> TURN_SWEEP
+                }
                 else -> null
             }
             val aim = aimAt(mob, target, now)
@@ -1389,51 +1392,12 @@ class QuestEncounterCombat(
 
     private fun warningTag(id: UUID) = "warn-$id"
 
-    /**
-     * A mini-boss's counter cue (花守の鎧武者's 上段, the lesson for 桜牙獣's): while the window is open a wreath of
-     * petals turns round its head; the glare's cue is the light gathering in the fire box.
-     */
+    /** 灯明's cue: light gathering in the lantern's fire box while it fills (with the stone walls rising round it). */
     private fun tickMiniBossCue(mob: Mob, now: Long) {
-        val head = mob.view?.point(if (mob.definition.model == "stone_lantern") "sl_firebox" else "am_helm",
-            if (mob.definition.model == "stone_lantern") Vec(0.0, 50.0, 0.0) else Vec(0.0, 64.0, 0.0))?.let(Pos::fromPoint)
-            ?: mob.entity.position.add(0.0, 3.6, 0.0)
-        val current = mob.abilities.current
-        if (current != null && current.ability.id in SIGHT_ONLY && current.phase != MobAbilityPhase.RECOVERY && (now / 50) % 2 == 0L)
-            particle(head, Particle.END_ROD, 4)
-        if (mob.counterTo == 0L || now < mob.counterFrom) return
-        if (now > mob.counterTo || !mob.abilities.isActive) { mob.counterFrom = 0L; mob.counterTo = 0L; updateName(mob); return }
-        if (now - mob.counterFrom < 60) {
-            updateName(mob, "花輪が回った！ 正面から打て")
-            sound(mob.entity.position, "minecraft:block.amethyst_block.resonate", 1.4f, 1.6f)
-            sound(mob.entity.position, "minecraft:block.cherry_leaves.break", 1.4f, .8f)
-            sakuraStrike().wreath(head, ((mob.counterTo - mob.counterFrom) / 50).toInt())
-        }
-        // without the pack too: cherry leaves turning round the helm
-        val a = now / 1000.0 * 6.0
-        for (k in 0 until 3) {
-            val b = a + k * 2.0 * Math.PI / 3
-            particle(head.add(kotlin.math.cos(b) * 1.3, 0.0, kotlin.math.sin(b) * 1.3), Particle.CHERRY_LEAVES, 1)
-        }
-    }
-
-    /** A hit from in front while the wreath turns throws the mini-boss out of its strike: it reels and kneels. */
-    private fun miniBossCounter(mob: Mob, attacker: Player, now: Long) {
-        if (mob.counterTo == 0L || now !in mob.counterFrom..mob.counterTo) return
-        val here = mob.entity.position
-        val yaw = Math.toRadians(here.yaw().toDouble())
-        val ahead = Vec(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw))
-        val off = Vec(attacker.position.x() - here.x(), 0.0, attacker.position.z() - here.z())
-        if (off.length() < 1e-6 || Math.toDegrees(kotlin.math.acos(off.normalize().dot(ahead).coerceIn(-1.0, 1.0))) > 80.0) return
-        mob.counterFrom = 0L; mob.counterTo = 0L
-        mob.abilities.cancel(); clearWarning(mob.entity.uuid); castingPose(mob, false); stopNavigation(mob)
-        mob.brokenUntil = now + MINIBOSS_COUNTER_STAGGER_MILLIS
-        mob.crowd[CrowdControl.STUN] = maxOf(mob.crowd[CrowdControl.STUN] ?: 0L, mob.brokenUntil)
-        mob.warningRetryAt = mob.brokenUntil
-        mob.view?.maneuver("countered")
-        updateName(mob, "カウンター！ 崩れた")
-        particle(here.add(0.0, 3.0, 0.0), Particle.CHERRY_LEAVES, 30)
-        sound(here, "minecraft:block.amethyst_block.break", 1.2f, .7f)
-        sound(here, "minecraft:entity.iron_golem.damage", 1.0f, .8f)
+        val current = mob.abilities.current ?: return
+        if (current.ability.id !in SIGHT_ONLY || current.phase == MobAbilityPhase.RECOVERY || (now / 50) % 2 != 0L) return
+        val box = mob.view?.point("sl_firebox", Vec(0.0, 50.0, 0.0))?.let(Pos::fromPoint) ?: mob.entity.position.add(0.0, 3.6, 0.0)
+        particle(box, Particle.END_ROD, 4)
     }
 
     /**
@@ -1817,7 +1781,7 @@ class QuestEncounterCombat(
         val window = when (frame.ability.id) {
             "shade-dive" -> DIVE_CARRY; "sakura-pounce" -> POUNCE_CARRY; "sakura-charge" -> CHARGE_CARRY
             "sakura-lunge" -> LUNGE_CARRY; "sakura-barge" -> BARGE_CARRY; "sakura-hopswipe" -> HOP_CARRY
-            "armor-iai" -> IAI_CARRY
+            "serpent-bite" -> BITE_CARRY
             else -> return
         }
         val from = mob.travelFrom ?: return
@@ -1834,8 +1798,8 @@ class QuestEncounterCombat(
             "sakura-lunge" -> safeRetreat(from.add(f.mul(3.0)), mob.home, leash) ?: return
             "sakura-barge" -> safeRetreat(from.add(f.mul(3.5)), mob.home, leash) ?: return
             "sakura-hopswipe" -> safeRetreat(from.add(Vec(-f.z(), 0.0, f.x()).mul(2.5)), mob.home, leash) ?: return
-            // 抜き打ち: the armour springs along its strip and cuts as it passes
-            "armor-iai" -> safeRetreat(from.add(f.mul(IAI_DISTANCE)), mob.home, leash) ?: return
+            // 突き噛み: the serpent's coil slides after its strike
+            "serpent-bite" -> safeRetreat(from.add(f.mul(BITE_DISTANCE)), mob.home, leash) ?: return
             else -> frame.origin
         }
         val ground = telegraphs.groundHeight(to) ?: from.y()
@@ -1965,13 +1929,7 @@ class QuestEncounterCombat(
                     return false
                 }
                 if (mob.miniBoss) {
-                    val id = event.frame.ability.id
-                    val t = event.frame.ability.telegraphMillis
-                    if (id in MINIBOSS_COUNTERABLE) {
-                        mob.counterFrom = event.frame.startedAt + t - COUNTER_LEAD_MILLIS
-                        mob.counterTo = event.frame.startedAt + t - COUNTER_CLOSE_MILLIS
-                    } else { mob.counterFrom = 0L; mob.counterTo = 0L }
-                    if (id in SIGHT_ONLY) { raisePillars(mob, event.frame); updateName(mob, "灯が満ちる・柱の陰へ") }
+                    if (event.frame.ability.id in SIGHT_ONLY) { raisePillars(mob, event.frame); updateName(mob, "灯が満ちる・柱の陰へ") }
                     else sakuraStrike().warn(event.frame, warningTag(mob.entity.uuid))
                 }
                 playVfx(mob, ShadeWyrmVfx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
@@ -2445,12 +2403,11 @@ class QuestEncounterCombat(
         /** Its small blows on the move, the only attacks it throws while it rests. */
         val SAKURA_LIGHT = setOf("sakura-lunge", "sakura-barge", "sakura-hopswipe")
         val LUNGE_CARRY = 200L..500L
-        /** 花守の鎧武者's 抜き打ち: the spring that carries it [IAI_DISTANCE] blocks along its strip (armor-iai clip). */
-        val IAI_CARRY = 1000L..1350L
-        const val IAI_DISTANCE = 7.0
-        /** Mini-boss strikes that open a counter window (the wreath round the head), as 桜牙獣's big strikes do. */
-        val MINIBOSS_COUNTERABLE = setOf("armor-jodan")
-        const val MINIBOSS_COUNTER_STAGGER_MILLIS = 3500L
+        /** 花喰いの白蛇's 突き噛み: the strike carries the coil [BITE_DISTANCE] blocks along its strip (serpent-bite clip). */
+        val BITE_CARRY = 550L..900L
+        const val BITE_DISTANCE = 3.0
+        /** 花喰いの白蛇's 尾払い: started when someone stays behind it, as 桜牙獣's turn (the lesson for it). */
+        const val SERPENT_TAIL = "serpent-tail"
         /** Strikes that reach only who can see the caster, rings included: 灯明 (shade behind its pillars). */
         val SIGHT_ONLY = setOf("lantern-glare")
         const val PILLAR_DISTANCE = 6.0
