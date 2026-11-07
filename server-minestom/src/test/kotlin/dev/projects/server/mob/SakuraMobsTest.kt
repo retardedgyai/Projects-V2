@@ -111,14 +111,9 @@ class SakuraMobsTest {
     }
 
     @Test
-    fun `a blow and a shot strike one target and draw no area`() {
-        val strike = MobAttackShape.Strike(2.5)
+    fun `a shot draws no ground`() {
         val origin = net.minestom.server.coordinate.Pos(0.0, 0.0, 0.0)
-        val facing = net.minestom.server.coordinate.Vec(0.0, 0.0, 1.0)
-        assertTrue(strike.contains(origin, facing, net.minestom.server.coordinate.Pos(0.0, 0.0, 2.0)))
-        assertFalse(strike.contains(origin, facing, net.minestom.server.coordinate.Pos(0.0, 0.0, -2.0)))
-        assertTrue(strike.outline(origin, facing).isEmpty())
-        assertTrue(MobAttackShape.Shot(18.0, 22.0).outline(origin, facing).isEmpty())
+        assertTrue(MobAttackShape.Shot(18.0, 22.0).outline(origin, net.minestom.server.coordinate.Vec(0.0, 0.0, 1.0)).isEmpty())
     }
 
     private class MemoryConnection : PlayerConnection() {

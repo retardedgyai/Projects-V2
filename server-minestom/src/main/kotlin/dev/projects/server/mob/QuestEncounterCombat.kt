@@ -2015,14 +2015,11 @@ class QuestEncounterCombat(
                 }
                 sound(event.frame.origin,
                     if (mob.entity.entityMeta is SpellcasterIllagerMeta) "minecraft:entity.evoker.cast_spell"
-                    else if (event.frame.ability.shape is MobAttackShape.Strike) "minecraft:entity.player.attack.strong"
                     else if (event.frame.ability.shape is MobAttackShape.Sweep) "minecraft:entity.player.attack.sweep"
                     else "minecraft:block.anvil.land", 0.8f, if (mob.boss) 0.7f else 1.0f)
                 for (player in players) {
                     if (player.instance !== instance || !canTarget(player)) continue
                     // Rings and the gimmicks reach round a pillar; the charge strikes along its path instead (see [travel]).
-                    // A blow (Strike) lands only on the one it is fighting.
-                    if (event.frame.ability.shape is MobAttackShape.Strike && player !== mob.target) continue
                     if (event.frame.ability.id != CHARGE && event.frame.ability.shape.contains(event.frame.origin, event.frame.facing, player.position) &&
                         (if (event.frame.ability.id in SIGHT_ONLY) mob.entity.hasLineOfSight(player)
                         else event.frame.ability.shape is MobAttackShape.Ring || event.frame.ability.id in GIMMICKS || mob.entity.hasLineOfSight(player))
@@ -2248,7 +2245,7 @@ class QuestEncounterCombat(
     private fun drawWarning(mob: Mob, frame: MobAbilityFrame, impact: Boolean): Boolean {
         // B (2026-10-19): the small attacks show no floor; they are read from the wyrm's wind-up and its sound.
         if (mob.view != null && frame.ability.id in NO_FLOOR) return true
-        // The small enemies' blows and shots are read from their wind-up, as with vanilla mobs (Creator 2026-11-07).
+        // The small enemies show no ground: their blows and shots are read from the wind-up, as with vanilla mobs (Creator 2026-11-07).
         if (mob.definition.archetype in SAKURA_COMMON) return true
         if (!telegraphs.show(mob.entity.uuid, frame, impact, lastTickAt)) return false
         val color = when {
@@ -2275,7 +2272,6 @@ class QuestEncounterCombat(
             is MobAttackShape.Slam -> (0..(shape.length / 1.5).toInt()).map { o.add(f.mul(it * 1.5)) }
             is MobAttackShape.Sweep -> (-4..4).flatMap { k -> listOf(.45, .9).map { d ->
                 o.add(f.rotateAroundY(Math.toRadians(shape.halfAngleDegrees * k / 4.0)).mul(shape.radius * d)) } }
-            is MobAttackShape.Strike -> listOf(o.add(f.mul(shape.reach * .7)).add(0.0, .9, 0.0))
             else -> listOf(o)
         }
         for (p in points) { particle(p, Particle.CHERRY_LEAVES, 6); particle(p, pink, 2) }
