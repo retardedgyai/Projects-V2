@@ -376,8 +376,10 @@ class CoreAccountService(private val repository: CoreAccountRepository,
                 grantFragments(rewarded, CoreActivityKind.TRIAL, 1L).copy(unlockedMapTier = maxOf(account.unlockedMapTier, nextTier),
                     maps = account.maps + rewardMap, activeRun = run.copy(bossDefeated = true)) to message
             } else if (run.dungeon) {
+                val id = requireNotNull(run.trialId)
                 grantFragments(grantCurrencies(rewarded, mapOf(CoreCraftingCurrency.EXALTED to 1L)), CoreActivityKind.TRIAL, 1L)
-                    .copy(activeRun = run.copy(bossDefeated = true)) to message
+                    .copy(activeRun = run.copy(bossDefeated = true), dungeonClears = account.dungeonClears + (id to (account.dungeonClears[id] ?: 0) + 1)) to
+                    ((if (id !in account.dungeonClears) "${CoreDungeons.names[id] ?: "ダンジョン"}を初踏破！ " else "") + message)
             } else {
                 val kind = CoreActivityKind.entries.single { it.bossId == run.trialId }
                 grantCurrencies(rewarded, mapOf(kind.currency to 2L, CoreCraftingCurrency.EXALTED to 1L))

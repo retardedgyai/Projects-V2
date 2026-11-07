@@ -1138,6 +1138,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             ledger.transact(playerId, CoreOperation(UUID.randomUUID(), revision ?: current.revision, action)).also { result ->
                 result.account?.let { next ->
                     accounts[playerId] = next
+                    // A milestone's sign (冒険 Lv, スキル Lv, 初踏破). After a boss it waits for 討伐達成 to go first.
+                    if (result.successful) MilestoneSigns.of(current, next)?.let { milestone ->
+                        connections[playerId]?.let { player -> player.scheduler().buildTask {
+                            if (connections[playerId] === player && player.isOnline)
+                                MilestoneSigns.show(player, milestone, displaySettings.get(playerId)?.guiScale, packed(player))
+                        }.delay(TaskSchedule.tick(if (action is CoreAction.BossReward) 50 else 1)).schedule() }
+                    }
                     if (result.successful && (next.journey.level != current.journey.level || CoreJourneyRules.next(next) != CoreJourneyRules.next(current))) {
                         connections[playerId]?.let { player -> player.scheduler().scheduleNextTick {
                             if (connections[playerId] === player && player.isOnline) {

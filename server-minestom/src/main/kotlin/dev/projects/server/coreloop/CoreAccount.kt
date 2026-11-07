@@ -64,6 +64,7 @@ data class CoreActiveRun(val id: UUID, val map: CoreOwnedMap, val bossDefeated: 
 object CoreDungeons {
     const val SAKURA = "sakura-dungeon"
     val ids = setOf(SAKURA)
+    val names = mapOf(SAKURA to "散り桜の社")
 }
 data class CoreReceipt(val fingerprint: String, val revision: Long, val message: String)
 private val RECEIPT_FINGERPRINT = Regex("[0-9a-f]{64}")
@@ -114,7 +115,10 @@ class CoreAccount(
         .associateWith { slot -> CoreArmorPiece(CoreGearIdentity.legacy(playerId, slot).copy(quality = armorIdentity.quality),
             armorTier, CoreCraftingCatalog.inferRarity(equippedAffixes, slot), armorEnhancement, armorBroken) },
     zoneRecords: Map<Int, CoreZoneRecord> = emptyMap(),
+    dungeonClears: Map<String, Int> = emptyMap(),
 ) {
+    /** Dungeon clears by dungeon id (the first one shows 初踏破). Saves before 2026-11-07 have none: an empty map. */
+    val dungeonClears: Map<String, Int> = Collections.unmodifiableMap(LinkedHashMap(dungeonClears.toSortedMap()))
     /** Atlas clears by zone id. Unknown ids are kept so a removed zone never corrupts a save. */
     val zoneRecords: Map<Int, CoreZoneRecord> = Collections.unmodifiableMap(LinkedHashMap(zoneRecords.toSortedMap()))
     /** CHEST owns the v10 armor fields so older callers and fixtures remain readable. */
@@ -228,9 +232,10 @@ class CoreAccount(
         journey: CoreJourney = this.journey,
         armorParts: Map<CoreGearSlot, CoreArmorPiece> = this.armorParts,
         zoneRecords: Map<Int, CoreZoneRecord> = this.zoneRecords,
+        dungeonClears: Map<String, Int> = this.dungeonClears,
     ) = CoreAccount(playerId, revision, balances, weaponTier, armorTier, unlockedMapTier, maps, activeRun, receipts, claimedSources, affixStones, equippedAffixes,
         weaponRarity, armorRarity, currencies, fragments, legacyLayouts, craftingSeed, weaponEnhancement, armorEnhancement, smithingXp,
-        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, journey, armorParts, zoneRecords)
+        silver, weaponIdentity, armorIdentity, storedGear, offers, deliveryDay, deliveries, weaponBroken, armorBroken, professions, surveyPoints, buyOrders, journey, armorParts, zoneRecords, dungeonClears)
 }
 
 data class CoreOperation(val requestId: UUID, val expectedRevision: Long, val action: CoreAction)

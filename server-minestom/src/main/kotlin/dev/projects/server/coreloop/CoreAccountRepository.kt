@@ -320,6 +320,7 @@ internal object CoreAccountCodec {
             (account.maps + listOfNotNull(account.activeRun?.map)).forEach { append("map-level\t${it.id}\t${it.level}\n") }
             (account.maps + listOfNotNull(account.activeRun?.map)).forEach { map -> map.zone?.let { append("map-zone\t${map.id}\t$it\n") } }
             account.zoneRecords.forEach { (zone, record) -> append("zone-record\t$zone\t${record.clears}\t${record.bestLevel}\n") }
+            account.dungeonClears.forEach { (id, clears) -> append("dungeon-clear\t$id\t$clears\n") }
             account.offers.forEach { append("offer\t${it.id}\t${it.price}\t${it.material?.resource ?: ""}\t${it.material?.tier ?: 1}\t${it.quantity}\t${it.gearId ?: ""}\n") }
             account.currencies.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("currency\t$key\t$amount\n") }
             account.fragments.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("fragment\t$key\t$amount\n") }
@@ -397,6 +398,7 @@ internal object CoreAccountCodec {
         val mapLevels = linkedMapOf<UUID, Int>()
         val mapZones = linkedMapOf<UUID, Int>()
         val zoneRecords = linkedMapOf<Int, CoreZoneRecord>()
+        val dungeonClears = linkedMapOf<String, Int>()
         rows.drop(2).forEach { row -> when (row[0]) {
             "class-build" -> { require(version >= 9 && row.size == 7 && classBuild == null); readTreeMask(row[6]); classBuild = CoreClassBuild(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt()) }
             "class-loadout" -> {
@@ -423,6 +425,9 @@ internal object CoreAccountCodec {
             "map-zone" -> { require(version >= 12 && row.size == 3); require(mapZones.put(UUID.fromString(row[1]), row[2].toInt()) == null) }
             "zone-record" -> { require(version >= 12 && row.size == 4 && zoneRecords.size <= CoreZoneRecord.MAX_ZONE_ID)
                 require(zoneRecords.put(row[1].toInt(), CoreZoneRecord(row[2].toInt(), row[3].toInt())) == null) }
+            // 2026-11-07: clears per dungeon, for 初踏破. Written by v13 saves from then on; older ones have none.
+            "dungeon-clear" -> { require(version >= 13 && row.size == 3 && row[1].isNotEmpty() && row[2].toInt() > 0 && dungeonClears.size < 64)
+                require(dungeonClears.put(row[1], row[2].toInt()) == null) }
             "map-level" -> { require(version >= 8 && row.size == 3); require(mapLevels.put(UUID.fromString(row[1]), row[2].toInt()) == null) }
             "survey" -> { require(version >= 7 && row.size == 2 && survey == null); survey = row[1].toLong() }
             "profession" -> { require(version >= 7 && row.size == 4); require(professions.put(CoreProfession.valueOf(row[1]), CoreProfessionProgress(row[2].toLong(), row[3].toInt())) == null) }
@@ -601,7 +606,7 @@ internal object CoreAccountCodec {
             armorBroken = economy?.get(5)?.let { readBroken(it, version) } ?: false,
             professions = professions, surveyPoints = survey ?: 0, buyOrders = migratedOrders,
             journey = journey ?: CoreJourney.legacy(xp = CoreJourneyRules.threshold(CoreJourneyRules.floor(gear[3].toInt()))), armorParts = parts,
-            zoneRecords = zoneRecords)
+            zoneRecords = zoneRecords, dungeonClears = dungeonClears)
     }
 
     /** Retired v5 wear is validated but never reinterpreted as enhancement damage. */

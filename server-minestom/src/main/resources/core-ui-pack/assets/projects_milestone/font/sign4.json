@@ -1,0 +1,1 @@
+{"providers": [{"type": "bitmap", "file": "projects_milestone:sign/level.png", "height": 24, "ascent": 12, "chars": ["\ue000"]}, {"type": "bitmap", "file": "projects_milestone:sign/skill.png", "height": 24, "ascent": 12, "chars": ["\ue001"]}, {"type": "bitmap", "file": "projects_milestone:sign/clear.png", "height": 18, "ascent": 9, "chars": ["\ue002"]}]}
