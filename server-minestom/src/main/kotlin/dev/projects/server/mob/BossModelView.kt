@@ -108,9 +108,12 @@ internal class BossModelView(
     internal var shownClip = "idle"; private set
     internal var shownSince = 0L; private set
     private var shownUntil = 0L
-    /** Clip lengths (s) from the generated animation file, so the preview knows when a once clip is over. */
-    private val lengths: Map<String, Double> by lazy {
-        BossModelView::class.java.classLoader.getResourceAsStream("${BossModelPack.DATA_ROOT}/models/$modelId.bbmodel/model.animation.json")
+    /**
+     * Clip lengths (s) from the generated animation file, so the preview knows when a once clip is over. Read once per
+     * model for the process: parsing the file took 70–150 ms of a fight's first tick (night MSPT bench, MsptBenchTest).
+     */
+    private val lengths: Map<String, Double> get() = clipLengths.computeIfAbsent(modelId) { id ->
+        BossModelView::class.java.classLoader.getResourceAsStream("${BossModelPack.DATA_ROOT}/models/$id.bbmodel/model.animation.json")
             ?.use { com.google.gson.JsonParser.parseString(it.readBytes().decodeToString()).asJsonObject.getAsJsonObject("animations") }
             ?.entrySet()?.associate { (k, v) -> k to v.asJsonObject["animation_length"].asDouble } ?: emptyMap()
     }
@@ -309,6 +312,8 @@ internal class BossModelView(
         private const val FANS_GROWN_MILLIS = 1850L
         /** shade_wyrm `awaken`: the roar peaks at 1.3 s; the glow comes in with it. */
         private const val AWAKEN_GLOW_MILLIS = 1300L
+        /** Clip lengths by model id ([lengths]). */
+        private val clipLengths = java.util.concurrent.ConcurrentHashMap<String, Map<String, Double>>()
         fun available(modelId: String) = modelId in BossModelLibrary.models()
         /**
          * Entity yaw -> WSEE model rotation. WSEE turns a model by (180 - rotation), so a Blockbench +Z front
