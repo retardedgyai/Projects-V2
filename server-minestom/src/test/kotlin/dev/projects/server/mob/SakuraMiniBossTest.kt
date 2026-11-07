@@ -47,6 +47,28 @@ class SakuraMiniBossTest {
     }
 
     @Test
+    fun `each skill has its own once clip timed to its telegraph and recovery`() {
+        for ((slot, model) in slots.zip(listOf("hanamori_armor", "stone_lantern"))) {
+            val definition = QuestMobContent.definition(1, slot)
+            assertEquals(model, definition.model)
+            assertTrue(BossModelView.available(model), "boss-models missing: run :server-minestom:generateBossModels")
+            val text = requireNotNull(javaClass.classLoader.getResourceAsStream("boss-models/models/$model.bbmodel/model.animation.json")).use { it.readBytes().decodeToString() }
+            val clips = com.google.gson.JsonParser.parseString(text).asJsonObject.getAsJsonObject("animations")
+            for (ability in definition.abilities) {
+                val clip = assertNotNull(clips.getAsJsonObject(ability.id), "missing clip ${ability.id}")
+                assertFalse(clip["loop"].asBoolean, ability.id)
+                assertEquals((ability.telegraphMillis + ability.recoveryMillis) / 1000.0, clip["animation_length"].asDouble, 0.051, ability.id)
+            }
+            for (loop in listOf("idle", "walk")) assertTrue(clips.getAsJsonObject(loop)["loop"].asBoolean, loop)
+            assertFalse(clips.getAsJsonObject("death")["loop"].asBoolean)
+        }
+        // the armour's counter clip lasts its stagger
+        val text = requireNotNull(javaClass.classLoader.getResourceAsStream("boss-models/models/hanamori_armor.bbmodel/model.animation.json")).use { it.readBytes().decodeToString() }
+        val countered = com.google.gson.JsonParser.parseString(text).asJsonObject.getAsJsonObject("animations").getAsJsonObject("countered")
+        assertEquals(QuestEncounterCombat.MINIBOSS_COUNTER_STAGGER_MILLIS / 1000.0, countered["animation_length"].asDouble, 0.051)
+    }
+
+    @Test
     fun `a mini-boss in a wave has its own bar with the tag and falls like a wave mob`() {
         MinecraftServer.init(Auth.Offline())
         val arena = BossArenaFactory.create("miniboss1", 1)
@@ -67,7 +89,7 @@ class SakuraMiniBossTest {
             assertNull(combat.bossHud())
             val hud = assertNotNull(combat.miniBossHud())
             assertTrue(hud.miniBoss)
-            assertEquals("仮の花守・一", hud.name)
+            assertEquals("花守の鎧武者", hud.name)
             assertEquals(MobGrades.MINIBOSS, hud.grade)
             assertTrue(hud.mods.isEmpty())
             assertNotNull(hud.breakGauge, "a mini-boss can be broken like an elite")
@@ -88,7 +110,7 @@ class SakuraMiniBossTest {
 
     @Test
     fun `the boss bar reads ミニボス on a tag wide enough for it`() {
-        val hud = MobHud(5, "仮の花守・一", MobGrades.MINIBOSS, emptyList(), 180.0, 225.0, .6, null, emptyList(), miniBoss = true)
+        val hud = MobHud(5, "花守の鎧武者", MobGrades.MINIBOSS, emptyList(), 180.0, 225.0, .6, null, emptyList(), miniBoss = true)
         val text = flatten(CoreBossBarHud.render(hud, 200.0))
         assertTrue(CoreHudGlyphs.has("boss_plate_rare_mini"))
         assertTrue(CoreHudGlyphs["boss_plate_rare_mini"].char in text, "the wide-tag plate")

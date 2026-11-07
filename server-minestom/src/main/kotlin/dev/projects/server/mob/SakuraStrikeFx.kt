@@ -305,6 +305,14 @@ internal class SakuraStrikeFx(instance: Instance) {
 
     fun endWarning(tag: String) = fx.endTag(tag)
 
+    /** A mini-boss's counter window: a ring of petals round its head with blossoms on it, lit while the window is open. */
+    fun wreath(at: Pos, ticks: Int) {
+        fx.add("sakura_ring", 2, at, 0, ticks, Vec(3.2, 1.0, 3.2), IDENTITY) { .35 + .3 * it }
+        ring(at, 1.6, 8) { dir, _ ->
+            fx.add("sakura_blossom", 4, at.add(dir.mul(1.6)), 0, ticks, Vec(.5, .5, 1.0), IDENTITY, grow = Vec(.9, .9, 1.0), moveTicks = 4, billboard = true) { .05 }
+        }
+    }
+
     /** A mini-boss falls: a crest blooms open where it stood and a blossom bursts over it. */
     fun bloom(at: Pos) {
         crest(at, 6.0, IDENTITY, life = 24)
