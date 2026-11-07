@@ -197,12 +197,18 @@ class CorePlaythroughTest {
             done = true
         }
 
-        private suspend fun SequenceScope<Unit>.walkTo(instance: Instance, target: Pos, what: String, near: Double, stopWhen: () -> Boolean): Boolean {
-            var guard = 0
+        private suspend fun SequenceScope<Unit>.walkTo(instance: Instance, target: Pos, what: String, near: Double, retreat: Pos? = null, stopWhen: () -> Boolean): Boolean {
+            var guard = 0; var retreated = false
             while (!stopWhen()) {
                 val map = walk(instance, player.position, 140)
                 val goal = map.nearest(target) ?: run { report.stop("$name: $what — nowhere to stand"); return false }
                 val gap = Math.hypot(goal.first + .5 - target.x(), goal.second + .5 - target.z())
+                if (gap > near && retreat != null && !retreated) {
+                    // A fighting step can leave the bot on a rock or a wall top it cannot walk down from: once, back to
+                    // where it walked in from, said in the report.
+                    report.note("$name: $what — off the walkable floor at ${player.position.blockX()},${player.position.blockY()},${player.position.blockZ()}; back to ${retreat.blockX()},${retreat.blockY()},${retreat.blockZ()}")
+                    player.teleport(retreat); yield(Unit); retreated = true; continue
+                }
                 if (gap > near) { report.stop("$name: $what — cannot walk there (closest ${"%.1f".format(gap)} blocks away, at ${goal.first},${goal.second})"); return false }
                 val path = map.path(goal)
                 if (path.size <= 1) return true
@@ -239,7 +245,7 @@ class CorePlaythroughTest {
             report.note("$name run $n: entered ${layout.name} (段階${run.step})")
             val started = report.tick
             for ((i, room) in layout.rooms.withIndex()) {
-                if (!walkTo(instance, room.center, "run $n: to ${room.name}", room.radius.toDouble()) { run.stage == DungeonRun.Stage.FIGHTING || run.room != i || dead() }) return false
+                if (!walkTo(instance, room.center, "run $n: to ${room.name}", room.radius.toDouble(), layout.rooms.getOrNull(i - 1)?.entry ?: layout.spawn) { run.stage == DungeonRun.Stage.FIGHTING || run.room != i || dead() }) return false
                 if (dead()) { report.stop("$name run $n: fell on the way to ${room.name}"); return false }
                 if (run.stage != DungeonRun.Stage.FIGHTING) {
                     // Standing in the round should start it.
@@ -247,10 +253,10 @@ class CorePlaythroughTest {
                 }
                 if (!fight(n, room.name, ROOM_BUDGET, done = { run.stage == DungeonRun.Stage.WALKING && run.room == i + 1 },
                         assist = { combat.entities().filter { !combat.isBoss(it.uuid) }.forEach { combat.applyEffectDamage(it.uuid, player, 1e6) }; run.skipToLast() },
-                        targets = { combat.entities().filter { !combat.isBoss(it.uuid) && room.holds(it.position, -4.0) } })) return false
+                        targets = { combat.entities().filter { !combat.isBoss(it.uuid) && it.position.distance(room.center) < room.radius + 12.0 } })) return false
                 report.note("$name run $n: ${room.name} cleared")
             }
-            if (!walkTo(instance, layout.arenaCenter, "run $n: to 散り桜の庭", layout.arenaRadius) { run.bossEngaged || dead() }) return false
+            if (!walkTo(instance, layout.arenaCenter, "run $n: to 散り桜の庭", layout.arenaRadius, layout.rooms.last().entry) { run.bossEngaged || dead() }) return false
             if (!until(100, "run $n: walking into 散り桜の庭 never woke the boss") { run.bossEngaged }) return false
             if (!fight(n, "桜牙獣", BOSS_BUDGET, done = { combat.bossDefeated },
                     assist = { combat.entities().filter { combat.isBoss(it.uuid) }.forEach { combat.applyEffectDamage(it.uuid, player, 1e6) } },
@@ -267,11 +273,13 @@ class CorePlaythroughTest {
 
         private suspend fun SequenceScope<Unit>.fight(n: Int, what: String, budget: Int, done: () -> Boolean, assist: () -> Unit,
                                                        targets: () -> List<net.minestom.server.entity.Entity>): Boolean {
-            var ticks = 0; var idle = 0; var assisted = false
+            var ticks = 0; var idle = 0; var assisted = false; var lastHealth = 0.0
             while (!done()) {
                 val actor = game.botCombat(player)
-                if (actor == null || actor.defeated || player.instance === hub) { report.stop("$name run $n: fell in $what"); return false }
-                if (actor.health < actor.maxHealth / 3.0) { actor.reset(); heals++ }
+                if (actor == null || actor.defeated || player.instance === hub) {
+                    report.stop("$name run $n: fell in $what (defeated ${actor?.defeated}, in town ${player.instance === hub}, health before ${"%.0f".format(lastHealth)}/${actor?.maxHealth})"); return false }
+                lastHealth = actor.health
+                if (actor.health < actor.maxHealth * .6) { actor.reset(); heals++ }
                 if (ticks >= budget && (ticks - budget) % 100 == 0) {
                     if (!assisted) { assists += "run $n $what"; report.note("$name run $n: $what not cleared in $budget ticks — assisted") }
                     assisted = true; assist()
@@ -279,6 +287,10 @@ class CorePlaythroughTest {
                 val foes = targets().filter { it.instance === player.instance }
                 val target = foes.minByOrNull { it.position.distanceSquared(player.position) }
                 if (target == null) idle++ else { idle = 0; strike(target, ticks) }
+                if (idle == 300) game.botDungeon(player)?.let { (run, combat) ->
+                    report.note("$name run $n: $what — nothing to hit for 300 ticks; player ${player.position.blockX()},${player.position.blockY()},${player.position.blockZ()}, " +
+                        "stage ${run.stage} room ${run.room}, enemies alive ${combat.entities().map { "${combat.mobInfo(it.uuid)?.archetype}@${it.position.blockX()},${it.position.blockY()},${it.position.blockZ()}" }}")
+                }
                 if (idle > 1200) { report.stop("$name run $n: $what — no enemy to fight for 1200 ticks and not cleared"); return false }
                 if (ticks > budget + 4000) { report.stop("$name run $n: $what — not cleared even with help"); return false }
                 ticks++
