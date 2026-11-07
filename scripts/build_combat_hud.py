@@ -236,13 +236,9 @@ def text_glyphs(chars):
 def unifont_glyphs(chars):
     """Non-ASCII characters drawn exactly as the client draws them: Unifont's 16 px bitmaps shown 8 GUI px
     tall. ASCII stays on minecraft:font/ascii.png. Returns [(char, 16x16 white image)] for drawable chars."""
-    import gzip, hashlib, urllib.request
-    if not UNIFONT_PATH.is_file():
-        UNIFONT_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with urllib.request.urlopen(UNIFONT_URL, timeout=60) as response:
-            data = response.read()
-        assert hashlib.sha256(data).hexdigest() == UNIFONT_SHA256
-        UNIFONT_PATH.write_bytes(data)
+    import gzip, hashlib
+    from pinned_download import fetch_pinned
+    fetch_pinned(UNIFONT_URL, UNIFONT_SHA256, UNIFONT_PATH)
     assert hashlib.sha256(UNIFONT_PATH.read_bytes()).hexdigest() == UNIFONT_SHA256
     wanted = {ord(c) for c in chars if ord(c) >= 0x80}
     bitmaps = {}
