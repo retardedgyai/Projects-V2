@@ -1,5 +1,7 @@
 package dev.projects.server.coreloop.adventure
 
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import dev.projects.server.coreloop.CoreDungeons
 import dev.projects.server.coreloop.QuestCombatPlacement
@@ -28,6 +30,7 @@ import java.nio.file.Path
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
+import kotlin.math.floor
 
 /** A doorway's blocks: closed they are a wall the wave cannot be left through, open they are what the map had there. */
 internal class DungeonGate(val name: String, val blocks: List<Vec>, private val closed: List<Block>, private val original: List<Block>) {
@@ -37,10 +40,24 @@ internal class DungeonGate(val name: String, val blocks: List<Vec>, private val 
     fun set(instance: InstanceContainer, open: Boolean) = blocks.forEachIndexed { i, it -> instance.setBlock(it, if (open) original[i] else closed[i]) }
 }
 
+/** What a room asks of the players before its far gate opens. */
+internal enum class RoomKind { WAVES, MINIBOSS, SPAWNER }
+
+/**
+ * 穢れ場: enemies keep rising from [spawns] until [target] of them have fallen (at most [cap] at once, one every
+ * [intervalTicks]), then the [last] one comes; it opens the gate. Both counts grow with the party: base + per × players.
+ */
+internal data class SpawnerRule(val target: Pair<Int, Int>, val cap: Pair<Int, Int>, val intervalTicks: Int,
+    val mobs: List<QuestMobArchetype>, val last: QuestMobArchetype) {
+    fun target(players: Int) = target.first + target.second * players
+    fun cap(players: Int) = cap.first + cap.second * players
+}
+
 /** A round area of the map (centre, radius, floor at the centre). Its waves come one after another. */
 internal data class DungeonRoom(val name: String, val cx: Int, val cz: Int, val radius: Int, val floor: Int,
-    val waves: List<List<QuestMobArchetype>>, val entry: Pos, val seals: List<Vec> = emptyList()) {
-    init { require(radius > 4 && waves.all { it.size in 1..4 }) }
+    val waves: List<List<QuestMobArchetype>>, val entry: Pos, val seals: List<Vec> = emptyList(),
+    val kind: RoomKind = RoomKind.WAVES, val spawns: List<Pos> = emptyList(), val spawner: SpawnerRule? = null) {
+    init { require(radius > 4 && waves.all { it.size in 1..4 } && (kind == RoomKind.SPAWNER) == (spawner != null)) }
     val center: Pos get() = Pos(cx + .5, floor.toDouble(), cz + .5)
     /** Inside the round, [margin] blocks in from its edge. */
     fun holds(p: Pos, margin: Double = 0.0): Boolean {
@@ -51,8 +68,8 @@ internal data class DungeonRoom(val name: String, val cx: Int, val cz: Int, val 
 
 /** gates[i] leads into rooms[i]; the last gate leads into the arena. */
 internal class DungeonLayout(val name: String, val spawn: Pos, val rooms: List<DungeonRoom>, val gates: List<DungeonGate>,
-    val arenaCenter: Pos, val arenaRadius: Double, val bossSpawn: Pos) {
-    init { require(gates.size == rooms.size + 1 && rooms.all { it.waves.isNotEmpty() }) }
+    val arenaCenter: Pos, val arenaRadius: Double, val bossSpawn: Pos, val packs: List<Pair<Pos, Pair<Int, Int>>> = emptyList()) {
+    init { require(gates.size == rooms.size + 1 && rooms.all { it.waves.isNotEmpty() || it.kind == RoomKind.SPAWNER }) }
     val arenaGate: DungeonGate get() = gates.last()
     /** Past the gatehouse and the flower beds, on the glade's grass. */
     fun inArena(p: Pos) = p.distanceSquared(arenaCenter.withY(p.y())) < (arenaRadius - 3) * (arenaRadius - 3) && p.y() > arenaCenter.y() - 4
@@ -64,37 +81,41 @@ internal class InstanceDungeon(val arena: BossArena, val layout: DungeonLayout)
 
 /**
  * 散り桜の社: the map drawn in scripts/buildkit/towns/sakura_dungeon.py, exported to region files beside rooms.json
- * (resources/dungeons/sakura_dungeon). Each run reads its own copy of the chunks; nothing is saved back. The path
- * climbs round the valley through 苔の窪, 散華の間, 古い祠の森 and 滝裏の洞, then crosses the bridge to 散り桜の庭 and 桜牙獣.
+ * (resources/dungeons/sakura_dungeon). Each run reads its own copy of the chunks; nothing is saved back. rooms.json's
+ * flow lists the rooms in order, each with its kind (waves, miniboss, spawner = 穢れ場, boss), its gate and where its
+ * enemies rise; the last is 散り桜の庭 and 桜牙獣.
  */
 internal object InstanceDungeonFactory {
     const val DISPLAY_NAME = "散り桜の社"
     private const val MAP = "sakura_dungeon"
 
     private val SOLDIERS = listOf(QuestMobArchetype.SOLDIER, QuestMobArchetype.SOLDIER, QuestMobArchetype.RIFT_CASTER)
-    /** rooms.json key, the gate leading in, waves, and the seals its clearing lights. */
-    private class Plan(val key: String, val name: String, val waves: List<List<QuestMobArchetype>>, val seals: List<String> = emptyList())
-    private val PLANS = listOf(
-        Plan("R1", "苔の窪", listOf(SOLDIERS,
-            listOf(QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.SOLDIER, QuestMobArchetype.RIFT_CASTER))),
-        Plan("H", "散華の間", listOf(
+    /** The waves of each waves room, by its rooms.json key; any other waves room gets two of soldiers. */
+    private val WAVES = mapOf(
+        "R1" to listOf(SOLDIERS, listOf(QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.SOLDIER, QuestMobArchetype.RIFT_CASTER)),
+        "H" to listOf(
             listOf(QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.SOLDIER, QuestMobArchetype.SOLDIER),
-            listOf(QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.SHIELD_GUARD))),
-        Plan("N", "古い祠の森", listOf(SOLDIERS,
-            listOf(QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.SOLDIER)),
-            listOf("北", "枡形の北")),
-        Plan("W", "滝裏の洞", listOf(
-            listOf(QuestMobArchetype.SOLDIER, QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_CASTER),
-            listOf(QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.SOLDIER)),
-            listOf("西", "枡形の南")),
+            listOf(QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.SHIELD_GUARD)),
     )
-    val ROOM_NAMES get() = PLANS.map { it.name }
+    /** The miniboss rooms in order: the first holds ミニボス1, the second ミニボス2. */
+    private val MINIBOSSES = listOf(QuestMobArchetype.SAKURA_MINIBOSS_1, QuestMobArchetype.SAKURA_MINIBOSS_2)
+    private val SPAWNED = listOf(QuestMobArchetype.SOLDIER, QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.SOLDIER, QuestMobArchetype.SHIELD_GUARD)
 
     private val folder: Path get() = ShippedMap.folder("dungeons/$MAP")
+    private val rooms: JsonObject by lazy { JsonParser.parseString(Files.readString(folder.resolve("rooms.json"))).asJsonObject }
+    /** The rooms before the glade, in the order they are walked. */
+    val ROOM_NAMES: List<String> get() = rooms.getAsJsonArray("flow").map { it.asJsonObject }.filter { it["kind"].asString != "boss" }.map { it["name"].asString }
+
+    /** "8 + 4 * 人数" → 8 to 4, "3 + 人数" → 3 to 1, "6" → 6 to 0. */
+    internal fun perPlayers(text: String): Pair<Int, Int> {
+        val parts = text.split('+').map { it.trim() }
+        val base = parts.filter { "人数" !in it }.sumOf { it.toInt() }
+        val per = parts.filter { "人数" in it }.sumOf { p -> p.substringBefore('*').trim().takeIf { it != p && it.isNotEmpty() }?.toInt() ?: 1 }
+        return base to per
+    }
 
     fun create(tier: Int): InstanceDungeon {
         require(tier in 1..4)
-        val rooms = JsonParser.parseString(Files.readString(folder.resolve("rooms.json"))).asJsonObject
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()
         instance.setChunkSupplier(::LightingChunk)
         instance.chunkLoader = AnvilLoader(folder)
@@ -106,32 +127,53 @@ internal object InstanceDungeonFactory {
             val chunks = (-8..7).flatMap { x -> (-8..7).map { z -> instance.loadChunk(x, z) } }
             CompletableFuture.allOf(*chunks.toTypedArray()).join()
             LightingChunk.relight(instance, instance.chunks)
-            fun xyz(key: String, at: com.google.gson.JsonElement) = at.asJsonArray.map { it.asInt }.also { require(it.size == 3) { key } }
-            val gateAt = rooms.getAsJsonObject("gates"); val doors = rooms.getAsJsonObject("doors")
+            fun ints(at: JsonElement) = at.asJsonArray.map { it.asInt }
+            fun pos(at: JsonElement) = ints(at).let { (x, y, z) -> Pos(x + .5, y.toDouble(), z + .5) }
             val seals = rooms.getAsJsonObject("seals")
-            fun gate(name: String): DungeonGate {
-                val (x, y, z) = xyz(name, gateAt[name]); val door = doors.getAsJsonObject(name)
-                return doorway(instance, name, x, y, z, door["axis"].asString == "x", door["half"].asInt)
+            val flow = rooms.getAsJsonArray("flow").map { it.asJsonObject }
+            val gates = flow.map { room ->
+                val (x, y, z) = ints(room["gate_at"]); val door = room.getAsJsonObject("door")
+                doorway(instance, room["name"].asString, x, y, z, door["axis"].asString == "x", door["half"].asInt)
             }
-            val gates = PLANS.map { gate(it.name) } + gate("庭")
-            val list = PLANS.mapIndexed { i, plan ->
-                val (cx, cz, radius) = rooms.getAsJsonObject("rooms")[plan.key].asJsonArray.map { it.asInt }
-                val floor = floorAt(instance, cx, cz, gates[i].center.blockY())
+            var miniboss = 0
+            val list = flow.dropLast(1).mapIndexed { i, room ->
+                require(room["kind"].asString != "boss") { "Only the last room of the flow is the boss's" }
+                val (cx, _, cz) = ints(room["center"]); val radius = room["radius"].asInt
+                val floor = floorAt(instance, cx, cz, ints(room["center"])[1])
                 // On the gate's side, well inside the round: where whoever lagged behind is brought in.
                 val door = gates[i].center
                 val inward = Vec(cx + .5 - door.x(), 0.0, cz + .5 - door.z()).normalize()
-                val ex = cx + .5 - inward.x() * (radius - 4); val ez = cz + .5 - inward.z() * (radius - 4)
-                val entry = Pos(ex, floorAt(instance, ex.toInt(), ez.toInt(), floor).toDouble(), ez).withDirection(inward)
-                DungeonRoom(plan.name, cx, cz, radius, floor, plan.waves, entry, plan.seals.map { xyz(it, seals[it]).let { (a, b, c) -> Vec(a.toDouble(), b.toDouble(), c.toDouble()) } })
+                // From radius - 4 toward the middle, the first spot a player can stand in (rocks and trees stand in some rooms).
+                val entry = (radius - 4 downTo 0).firstNotNullOfOrNull { d ->
+                    val ex = cx + .5 - inward.x() * d; val ez = cz + .5 - inward.z() * d
+                    Pos(ex, floorAt(instance, floor(ex).toInt(), floor(ez).toInt(), floor).toDouble(), ez).takeIf { QuestCombatPlacement.clear(instance, it) }
+                }?.withDirection(inward) ?: QuestCombatPlacement.resolve(instance, Pos(cx + .5, floor.toDouble(), cz + .5)).withDirection(inward)
+                val lit = room.getAsJsonArray("seals").map { name -> ints(seals[name.asString]).let { (a, b, c) -> Vec(a.toDouble(), b.toDouble(), c.toDouble()) } }
+                val spawns = room.getAsJsonArray("spawns")?.map(::pos).orEmpty()
+                val name = room["name"].asString
+                when (room["kind"].asString) {
+                    "waves" -> DungeonRoom(name, cx, cz, radius, floor, WAVES[room["key"].asString] ?: listOf(SOLDIERS, SOLDIERS), entry, lit,
+                        RoomKind.WAVES, spawns)
+                    "miniboss" -> DungeonRoom(name, cx, cz, radius, floor, listOf(listOf(MINIBOSSES[miniboss++])), entry, lit,
+                        RoomKind.MINIBOSS, listOf(pos(room["miniboss_spawn"])))
+                    "spawner" -> {
+                        val rule = room.getAsJsonObject("spawner")
+                        DungeonRoom(name, cx, cz, radius, floor, emptyList(), entry, lit, RoomKind.SPAWNER, spawns,
+                            SpawnerRule(perPlayers(rule["kill_target"].asString), perPlayers(rule["alive_cap"].asString),
+                                (rule["interval_s"].asDouble * 20).toInt(), SPAWNED, QuestMobArchetype.ELITE_BRUTE))
+                    }
+                    else -> error("Unknown room kind ${room["kind"]}")
+                }
             }
             gates.forEachIndexed { index, it -> it.set(instance, open = index == 0) }
-            val spawn = xyz("spawn", rooms["spawn"]).let { (x, y, z) -> Pos(x + .5, y.toDouble(), z + .5) }
-            val (ax, ay, az) = xyz("arena_center", rooms["arena_center"])
-            val center = Pos(ax + .5, ay.toDouble(), az + .5)
+            val spawn = pos(rooms["spawn"])
+            val boss = flow.last()
+            val center = pos(boss["center"])
+            val packs = rooms.getAsJsonArray("packs")?.map { it.asJsonObject }.orEmpty().map { pos(it["at"]) to perPlayers(it["count"].asString) }
             // Facing up the valley toward the first gate.
             val first = gates.first().center
             val layout = DungeonLayout(DISPLAY_NAME, spawn.withDirection(first.sub(spawn).withY(0.0)), list, gates,
-                center, rooms["arena_r"].asDouble, QuestCombatPlacement.resolve(instance, center))
+                center, boss["radius"].asDouble, QuestCombatPlacement.resolve(instance, center), packs)
             return InstanceDungeon(BossArena(instance, layout.spawn, layout.bossSpawn, QuestMobArchetype.SAKURA_FANG,
                 CoreDungeons.SAKURA, DISPLAY_NAME), layout)
         } catch (failure: Throwable) {
@@ -175,9 +217,11 @@ internal object InstanceDungeonFactory {
 }
 
 /**
- * One dungeon run's progress: each room's waves start when a player walks in (the door shuts behind them), and its
- * last wave opens the next door. Past the last room the glade is open; walking in shuts it and wakes the boss.
- * Combat, rewards and the boss itself stay with QuestEncounterCombat and the root's run.
+ * One dungeon run's progress. Walking into a room shuts the gate behind the party and starts it: a waves room sends
+ * its waves one after another, a miniboss room its miniboss, a 穢れ場 keeps raising enemies until enough have fallen
+ * and its last one is down. Clearing a room opens the next gate (it stays shut until then, so a room cannot be run
+ * past). Past the last room the glade is open; walking in shuts it and wakes the boss. The entrance's packs rise on
+ * the first tick and follow whoever they see. Combat, rewards and the boss itself stay with QuestEncounterCombat.
  */
 internal class DungeonRun(
     private val instance: InstanceContainer,
@@ -195,60 +239,124 @@ internal class DungeonRun(
         private set
     private var enemies = emptySet<UUID>()
     private val spawned = mutableSetOf<UUID>()
+    private var ticks = 0L
+    private var packsRisen = false
+    // 穢れ場: how many have fallen, risen, and whether the last one is out; when the next one may rise.
+    private var fallen = 0
+    private var risen = 0
+    private var lastOut = false
+    private var nextRise = 0L
     val bossEngaged: Boolean get() = stage == Stage.BOSS
     fun aliveEnemies() = enemies.count(combat::isAlive)
 
     fun tick() {
+        ticks++
         val players = players()
         if (players.isEmpty()) return
+        if (!packsRisen) { packsRisen = true; risePacks(players.size) }
         when (stage) {
             Stage.WALKING -> if (room < layout.rooms.size) {
                 val r = layout.rooms[room]
                 if (players.any { r.holds(it.position, margin = 2.5) }) {
                     gather(players, layout.gates[room], r.entry) { r.holds(it.position) }
                     stage = Stage.FIGHTING; wave = 0
-                    announce(players, r.name, "${r.waves.size}つの波を退けよ", NamedTextColor.LIGHT_PURPLE)
-                    spawnWave(r)
+                    when (r.kind) {
+                        RoomKind.WAVES -> { announce(players, r.name, "${r.waves.size}つの波を退けよ", NamedTextColor.LIGHT_PURPLE); spawnWave(r) }
+                        RoomKind.MINIBOSS -> { announce(players, r.name, "${r.waves[0][0].displayName}を討て", NamedTextColor.GOLD); spawnWave(r) }
+                        RoomKind.SPAWNER -> {
+                            announce(players, r.name, "湧き続ける穢れを祓え", NamedTextColor.DARK_PURPLE)
+                            fallen = 0; risen = 0; lastOut = false; nextRise = ticks
+                        }
+                    }
                 }
             } else if (players.any { layout.inArena(it.position) }) {
                 gather(players, layout.arenaGate, layout.arenaEntry.withDirection(layout.arenaCenter.sub(layout.arenaEntry))) { layout.inArena(it.position) }
                 stage = Stage.BOSS
                 announce(players, InstanceDungeonFactory.DISPLAY_NAME, "${combat.bossName()}が目を覚ました", NamedTextColor.RED)
             }
-            Stage.FIGHTING -> if (enemies.none(combat::isAlive)) {
+            Stage.FIGHTING -> {
                 val r = layout.rooms[room]
-                combat.removeEncounter(enemies); enemies = emptySet()
-                if (wave + 1 < r.waves.size) { wave++; spawnWave(r) }
-                else {
-                    room++; stage = Stage.WALKING
-                    val gate = layout.gates[room]
-                    gate.set(instance, open = true)
-                    sound(players, SoundEvent.BLOCK_IRON_DOOR_OPEN, .8f)
-                    // The room's seals light (the shrine's, and one of the two before the gatehouse).
-                    r.seals.forEach { at -> instance.setBlock(at, Block.LANTERN.withProperties(instance.getBlock(at).properties())); particle(Pos(at.x() + .5, at.y() + .5, at.z() + .5), Particle.FLAME) }
-                    if (r.seals.isNotEmpty()) sound(players, SoundEvent.BLOCK_BEACON_ACTIVATE, .6f)
-                    gate.blocks.forEach { particle(Pos(it.x() + .5, it.y() + .5, it.z() + .5), Particle.CHERRY_LEAVES) }
-                    players.forEach { it.sendActionBar(Component.text(if (room < layout.rooms.size) "${r.name}を制圧・次の扉が開いた" else "${r.name}を制圧・庭への道が開いた", NamedTextColor.GREEN)) }
+                if (r.kind == RoomKind.SPAWNER) tickSpawner(r, players.size)
+                else if (enemies.none(combat::isAlive)) {
+                    combat.removeEncounter(enemies); enemies = emptySet()
+                    if (wave + 1 < r.waves.size) { wave++; spawnWave(r) } else cleared(r, players)
                 }
             }
             Stage.BOSS -> Unit
         }
     }
 
+    /** Development: a 穢れ場 skips to its last enemy (the rest of the room's enemies fall as /dungeontest clear does). */
+    fun skipToLast() {
+        val r = layout.rooms.getOrNull(room) ?: return
+        if (stage == Stage.FIGHTING && r.kind == RoomKind.SPAWNER) { val target = r.spawner!!.target(players().size); fallen = target; risen = target }
+    }
+
     fun dispose() { combat.removeEncounter(spawned) }
+
+    private fun cleared(r: DungeonRoom, players: List<Player>) {
+        combat.removeEncounter(enemies); enemies = emptySet()
+        room++; stage = Stage.WALKING
+        val gate = layout.gates[room]
+        gate.set(instance, open = true)
+        sound(players, SoundEvent.BLOCK_IRON_DOOR_OPEN, .8f)
+        // The room's seals light (the shrine's, and one of the two before the gatehouse).
+        r.seals.forEach { at -> instance.setBlock(at, Block.LANTERN.withProperties(instance.getBlock(at).properties())); particle(Pos(at.x() + .5, at.y() + .5, at.z() + .5), Particle.FLAME) }
+        if (r.seals.isNotEmpty()) sound(players, SoundEvent.BLOCK_BEACON_ACTIVATE, .6f)
+        gate.blocks.forEach { particle(Pos(it.x() + .5, it.y() + .5, it.z() + .5), Particle.CHERRY_LEAVES) }
+        players.forEach { it.sendActionBar(Component.text(if (room < layout.rooms.size) "${r.name}を制圧・次の扉が開いた" else "${r.name}を制圧・庭への道が開いた", NamedTextColor.GREEN)) }
+    }
+
+    /** 穢れ場: count the fallen, raise the next while the room holds fewer than its cap, then the last; it ends the room. */
+    private fun tickSpawner(r: DungeonRoom, party: Int) {
+        val rule = r.spawner!!
+        val down = enemies.filterNot(combat::isAlive).toSet()
+        if (down.isNotEmpty()) {
+            if (!lastOut) fallen += down.size
+            combat.removeEncounter(down); enemies = enemies - down
+            players().forEach { it.sendActionBar(Component.text(if (lastOut) "${r.name}・最後の穢れ" else "${r.name}・あと${(rule.target(party) - fallen).coerceAtLeast(0)}体", NamedTextColor.GOLD)) }
+        }
+        val target = rule.target(party)
+        when {
+            lastOut -> if (enemies.isEmpty()) cleared(r, players())
+            fallen >= target && enemies.isEmpty() -> { lastOut = true; rise(r, rule.last) }
+            risen < target && enemies.size < rule.cap(party) && ticks >= nextRise -> {
+                rise(r, rule.mobs[risen % rule.mobs.size]); risen++
+                // The room fills at once, then one at a time.
+                nextRise = if (risen < rule.cap(party)) ticks else ticks + rule.intervalTicks
+            }
+        }
+    }
+
+    private fun rise(r: DungeonRoom, type: QuestMobArchetype) {
+        val at = place(r.spawns.getOrElse(risen % r.spawns.size.coerceAtLeast(1)) { r.center }, r.floor)
+        val ids = combat.spawnEncounter(QuestCombatEncounter(listOf(at), listOf(type)))
+        enemies = enemies + ids; spawned += ids
+        for (n in 0..6) particle(at.add(0.0, n * .35, 0.0), Particle.SQUID_INK)
+    }
+
+    private fun risePacks(party: Int) {
+        for ((at, count) in layout.packs) {
+            val n = (count.first + count.second * party).coerceIn(1, 4)
+            val positions = (0 until n).map { i -> place(at.add((i % 2) * 3.0 - 1.5, 0.0, (i / 2) * 3.0 - 1.5), at.blockY()) }
+            spawned += combat.spawnEncounter(QuestCombatEncounter(positions, (0 until n).map { if (it % 3 == 2) QuestMobArchetype.RIFT_CASTER else QuestMobArchetype.SOLDIER }))
+        }
+    }
+
+    private fun place(at: Pos, near: Int) =
+        QuestCombatPlacement.resolve(instance, at.withY(InstanceDungeonFactory.floorAt(instance, at.blockX(), at.blockZ(), near).toDouble()))
 
     private fun spawnWave(r: DungeonRoom) {
         val types = r.waves[wave]
-        // Across the middle and the far side of the room; the players come in at the gate side.
+        // Where the map says, else across the middle and the far side of the room (the players come in at the gate side).
         val ahead = r.entry.direction().withY(0.0).normalize(); val side = Vec(-ahead.z(), 0.0, ahead.x())
         val offsets = listOf(-4.0 to 1.0, 4.0 to 1.0, 0.0 to 4.0, 0.0 to -2.0)
-        val positions = offsets.take(types.size).map { (u, v) ->
-            val at = r.center.add(side.mul(u)).add(ahead.mul(v))
-            QuestCombatPlacement.resolve(instance, at.withY(InstanceDungeonFactory.floorAt(instance, at.blockX(), at.blockZ(), r.floor).toDouble()))
+        val positions = types.indices.map { i ->
+            place(r.spawns.getOrNull((i + wave * 2) % r.spawns.size.coerceAtLeast(1)) ?: offsets[i].let { (u, v) -> r.center.add(side.mul(u)).add(ahead.mul(v)) }, r.floor)
         }
         enemies = combat.spawnEncounter(QuestCombatEncounter(positions, types))
         spawned += enemies
-        players().forEach { it.sendActionBar(Component.text("${r.name}・第${wave + 1}/${r.waves.size}波", NamedTextColor.GOLD)) }
+        if (r.kind == RoomKind.WAVES) players().forEach { it.sendActionBar(Component.text("${r.name}・第${wave + 1}/${r.waves.size}波", NamedTextColor.GOLD)) }
         positions.forEach { at -> for (n in 0..6) particle(at.add(0.0, n * .35, 0.0), Particle.CHERRY_LEAVES) }
     }
 

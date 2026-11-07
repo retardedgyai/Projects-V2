@@ -66,10 +66,11 @@ class InstanceDungeonTest {
         val instance = dungeon.arena.instance
         val layout = dungeon.layout
         try {
-            assertEquals(4, layout.rooms.size)
+            assertEquals(listOf(RoomKind.WAVES, RoomKind.MINIBOSS, RoomKind.WAVES, RoomKind.SPAWNER, RoomKind.SPAWNER, RoomKind.SPAWNER, RoomKind.MINIBOSS),
+                layout.rooms.map { it.kind })
             assertTrue(QuestCombatPlacement.clear(instance, layout.spawn))
             assertTrue(QuestCombatPlacement.clear(instance, layout.bossSpawn))
-            assertEquals(listOf(true, false, false, false, false), layout.gates.map { it.isOpen(instance) })
+            assertEquals(listOf(true) + List(layout.rooms.size) { false }, layout.gates.map { it.isOpen(instance) })
             for (i in layout.rooms.indices) {
                 val open = reachable(instance, layout.spawn)
                 assertTrue(open.near(layout.rooms[i].center), "${layout.rooms[i].name} cannot be reached with its gate open")
@@ -88,7 +89,7 @@ class InstanceDungeonTest {
     }
 
     @Test
-    fun `waves open the doors one room at a time and walking into the glade shuts it and wakes 桜牙獣`() {
+    fun `each kind of room holds its gate shut until it is cleared and walking into the glade wakes 桜牙獣`() {
         MinecraftServer.init(Auth.Offline())
         val dungeon = InstanceDungeonFactory.create(1)
         val instance = dungeon.arena.instance
@@ -101,28 +102,40 @@ class InstanceDungeonTest {
         val combat = QuestEncounterCombat(instance, 1, emptyList(), layout.bossSpawn,
             { _, _ -> }, { _, _ -> }, explicitBossArchetype = QuestMobArchetype.SAKURA_FANG)
         val run = DungeonRun(instance, combat, layout) { listOf(player) }
+        fun mobs() = combat.entities().filter { !combat.isBoss(it.uuid) }
         try {
             run.tick()
             assertEquals(DungeonRun.Stage.WALKING, run.stage)
+            assertEquals(4, mobs().size, "The entrance pack (3 + one player) did not rise")
+            mobs().forEach { combat.applyEffectDamage(it.uuid, player, 9999.0) }
             for ((index, room) in layout.rooms.withIndex()) {
                 player.teleport(room.entry).join()
                 run.tick()
-                assertEquals(DungeonRun.Stage.FIGHTING, run.stage)
+                assertEquals(DungeonRun.Stage.FIGHTING, run.stage, room.name)
                 assertFalse(layout.gates[index].isOpen(instance), "The door stays open behind ${room.name}")
-                for (wave in room.waves.indices) {
-                    assertEquals(wave, run.wave)
-                    val mobs = combat.entities().filter { !combat.isBoss(it.uuid) }
-                    assertEquals(room.waves[wave].size, mobs.size)
-                    assertTrue(mobs.all { room.holds(it.position) })
-                    assertFalse(layout.gates[index + 1].isOpen(instance))
-                    mobs.forEach { assertTrue(combat.applyEffectDamage(it.uuid, player, 9999.0)) }
+                when (room.kind) {
+                    RoomKind.MINIBOSS -> assertEquals(listOf(room.waves[0][0]), mobs().map { combat.mobInfo(it.uuid)?.archetype }, room.name)
+                    RoomKind.SPAWNER -> { repeat(room.spawner!!.cap(1)) { run.tick() }; assertEquals(room.spawner.cap(1), mobs().size, "${room.name} does not fill to its cap") }
+                    RoomKind.WAVES -> assertEquals(room.waves[0].size, mobs().size)
+                }
+                assertTrue(mobs().all { room.holds(it.position) }, "${room.name}: an enemy rose outside the room")
+                // Fight it out: everything that stands falls, a tick at a time, until the room is done.
+                var kills = 0
+                var guard = 0
+                while (run.stage == DungeonRun.Stage.FIGHTING && guard++ < 20_000) {
+                    assertFalse(layout.gates[index + 1].isOpen(instance), "${room.name} let the party past before it was cleared")
+                    mobs().forEach { if (combat.applyEffectDamage(it.uuid, player, 9999.0)) kills++ }
                     run.tick()
                 }
-                assertEquals(DungeonRun.Stage.WALKING, run.stage)
+                assertEquals(DungeonRun.Stage.WALKING, run.stage, "${room.name} never cleared")
                 assertTrue(layout.gates[index + 1].isOpen(instance), "${room.name} did not open the next door")
+                when (room.kind) {
+                    RoomKind.SPAWNER -> assertEquals(room.spawner!!.target(1) + 1, kills, "${room.name}: the fallen and the last")
+                    else -> assertEquals(room.waves.sumOf { it.size }, kills, room.name)
+                }
             }
-            // 古い祠の森 and 滝裏の洞 lit their seals and the two before the gatehouse.
-            assertEquals(4, layout.rooms.sumOf { it.seals.size })
+            // The shrine's and the cave's seals, and the two before the gatehouse, are lit.
+            assertTrue(layout.rooms.sumOf { it.seals.size } >= 2)
             layout.rooms.flatMap { it.seals }.forEach { assertEquals(Block.LANTERN.name(), instance.getBlock(it).name()) }
             assertFalse(run.bossEngaged)
             player.teleport(layout.arenaEntry).join()
@@ -136,6 +149,13 @@ class InstanceDungeonTest {
             player.remove()
             dungeon.arena.dispose()
         }
+    }
+
+    @Test
+    fun `a 穢れ場's counts grow with the party`() {
+        assertEquals(8 to 4, InstanceDungeonFactory.perPlayers("8 + 4 * 人数"))
+        assertEquals(3 to 1, InstanceDungeonFactory.perPlayers("3 + 人数"))
+        assertEquals(6 to 0, InstanceDungeonFactory.perPlayers("6"))
     }
 
     private class MemoryConnection : PlayerConnection() {

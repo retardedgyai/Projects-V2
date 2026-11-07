@@ -645,12 +645,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 "miniboss${context.get(slot)}") } }, slot)
         })
         // Test-only: /dungeontest opens ダンジョンの門 from anywhere in the harbor; inside, /dungeontest clear ends the
-        // room's wave and /dungeontest boss drops 桜牙獣 (to its 千本桜 first, with you at the glade's edge; again to finish).
+        // room's wave (a 穢れ場 skips to its last enemy) and /dungeontest boss drops 桜牙獣 (to its 千本桜 first, with you at the glade's edge; again to finish).
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("dungeontest").apply {
             setDefaultExecutor { sender, _ -> (sender as? Player)?.let { openDungeonGate(it) } }
             addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
-                val combat = sessions[player.uuid]?.takeIf { it.dungeon != null && !it.returning }?.combat ?: return@scheduleNextTick
-                combat.entities().filter { !combat.isBoss(it.uuid) }.forEach { combat.applyEffectDamage(it.uuid, player, 1e6) }
+                val session = sessions[player.uuid]?.takeIf { it.dungeon != null && !it.returning } ?: return@scheduleNextTick
+                session.combat.entities().filter { !session.combat.isBoss(it.uuid) }.forEach { session.combat.applyEffectDamage(it.uuid, player, 1e6) }
+                session.dungeon!!.skipToLast()
             } } }, net.minestom.server.command.builder.arguments.ArgumentType.Literal("clear"))
             addSyntax({ sender, _ -> (sender as? Player)?.let { player -> player.scheduler().scheduleNextTick {
                 val session = sessions[player.uuid]?.takeIf { it.dungeon?.bossEngaged == true && !it.returning } ?: return@scheduleNextTick
@@ -680,13 +681,22 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 val stand = gate.add(back).let { it.withY(InstanceDungeonFactory.floorAt(instance, it.blockX(), it.blockZ(), gate.blockY()).toDouble()) }
                 return look(stand, gate.add(0.0, 1.5, 0.0))
             }
-            val steps = mutableListOf<Pair<Long, () -> Unit>>(
-                100L to { player.teleport(harbor.spawn) }, 160L to { shot("harbor_gate") },
-                220L to { openDungeonGate(player) }, 280L to { shot("menu") },
-                340L to { player.closeInventory(); account(player)?.let { departDungeon(player, CoreDungeons.SAKURA, it.revision) } },
-                520L to { shot("enter") },
-            )
-            var t = 600L
+            // The town first: where players arrive, then each facility from five blocks toward the arrival, a little above.
+            val steps = mutableListOf<Pair<Long, () -> Unit>>(100L to { player.teleport(harbor.spawn.withPitch(-4f)) }, 160L to { shot("town_spawn") })
+            var t = 200L
+            for (facility in harbor.facilities) {
+                // Seven blocks toward the arrival and up, lifted further while that spot is inside a wall or a roof.
+                val toward = harbor.spawn.sub(facility.position).withY(0.0).asVec().normalize().mul(7.0)
+                var eye = facility.position.add(toward).add(0.0, 2.0, 0.0)
+                while (eye.y() < facility.position.y() + 8 && (hub.getBlock(eye).solid() || hub.getBlock(eye.add(0.0, 1.0, 0.0)).solid())) eye = eye.add(0.0, 1.0, 0.0)
+                steps += t to { player.teleport(look(eye, facility.position.add(0.0, .5, 0.0)).withPitch(20f)) }
+                steps += t + 50 to { shot("town_" + facility.kind.name.lowercase()) }
+                t += 80
+            }
+            steps += t to { player.teleport(harbor.spawn) }; steps += t + 20 to { openDungeonGate(player) }; steps += t + 100 to { shot("menu") }
+            steps += t + 160 to { player.closeDialog(); account(player)?.let { departDungeon(player, CoreDungeons.SAKURA, it.revision) } }
+            steps += t + 340 to { shot("enter") }
+            t += 420
             for (i in InstanceDungeonFactory.ROOM_NAMES.indices) {
                 steps += t to inside { player.teleport(before(it, i)) }; steps += t + 50 to { shot("gate${i}") }
                 steps += t + 100 to inside { player.teleport(look(it.rooms[i].entry, it.rooms[i].center.add(0.0, 1.0, 0.0))) }
