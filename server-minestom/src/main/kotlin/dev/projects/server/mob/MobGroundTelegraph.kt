@@ -68,13 +68,23 @@ internal class MobGroundTelegraph(private val instance: InstanceContainer) {
     companion object {
         const val MAX_ACTIVE = 6
         const val MAX_DISPLAYS = MAX_ACTIVE * MobGroundRaster.MAX_TILES
-        const val TRACKING_COLOR: Int = 0x48E93838
-        const val LOCKED_COLOR: Int = 0x70FF3030
+        const val TRACKING_COLOR: Int = 0x60B8384A
+        val LOCKED_COLOR: Int = 0x80C83048.toInt()
         val IMPACT_COLOR: Int = 0xA0FF7070.toInt()
+        val TOOTH_COLOR: Int = 0xF0FF2A40.toInt()
+        /** Teeth every this many blocks round the edge, each five bars of these widths and this depth. */
+        const val TOOTH_SPACING = 1.25
+        val TOOTH_ROWS = listOf(.56, .44, .32, .2, .09)
+        const val TOOTH_ROW = .12
+        /** Teeth start a little inside the true edge, over the stepped fill's rim. */
+        const val TOOTH_START = -.12
+        const val MAX_TEETH = 20
     }
 
     private class Surface {
         val entities = mutableListOf<Entity>()
+        /** The bright teeth along the edge (Creator 2026-11-07: edges like PROJECT Spellforged's). */
+        val teeth = mutableListOf<Entity>()
         var expiresAt = Long.MAX_VALUE
         var tiles = emptyList<MobGroundTile>()
         var color = 0
@@ -123,14 +133,73 @@ internal class MobGroundTelegraph(private val instance: InstanceContainer) {
         }
         surface.tiles = tiles
         surface.color = color
+        showTeeth(surface, frame)
         return true
+    }
+
+    /**
+     * Spellforged's warning edge (refs/spellforged, 2026-11-07): along the rim of the dull red fill, bright red teeth,
+     * each a stepped fin of five flat bars (wide at the rim, narrow at the tip) pointing out of the danger and leaning
+     * along the edge, like a saw. The outward way is found from the shape itself, so every shape gets the same edge.
+     */
+    private fun showTeeth(surface: Surface, frame: MobAbilityFrame) {
+        val bars = mutableListOf<Pos>()
+        val widths = mutableListOf<Double>()
+        var last: Pos? = null
+        for (point in frame.ability.shape.outline(frame.origin, frame.facing)) {
+            if (last != null && last.distanceSquared(point) < TOOTH_SPACING * TOOTH_SPACING) continue
+            val out = outward(frame, point) ?: continue
+            val ground = groundHeight(point) ?: continue
+            last = point
+            val along = Vec(-out.z(), 0.0, out.x())
+            val yaw = Math.toDegrees(kotlin.math.atan2(-out.x(), out.z())).toFloat()
+            for ((row, width) in TOOTH_ROWS.withIndex()) {
+                // each row steps out from the rim and slides along it, so the tip leans like a saw tooth
+                val at = point.add(out.mul(TOOTH_START + (row + .5) * TOOTH_ROW)).add(along.mul((TOOTH_ROWS[0] - width) * .5))
+                bars += Pos(at.x(), ground + 0.015, at.z(), yaw, 0f)
+                widths += width
+            }
+            if (bars.size >= MAX_TEETH * TOOTH_ROWS.size) break
+        }
+        while (surface.teeth.size > bars.size) surface.teeth.removeLast().remove()
+        bars.forEachIndexed { index, at ->
+            val tile = MobGroundTile(at, widths[index], TOOTH_ROW)
+            val entity = surface.teeth.getOrNull(index)
+            if (entity == null) {
+                val tooth = Entity(EntityType.TEXT_DISPLAY)
+                tooth.setHasPhysics(false)
+                tooth.setNoGravity(true)
+                tooth.editEntityMeta(TextDisplayMeta::class.java) { meta -> configure(meta, tile, TOOTH_COLOR) }
+                // listed before it spawns: a loaded chunk completes the spawn at once
+                surface.teeth += tooth
+                tooth.setInstance(instance, at).whenComplete { _, error ->
+                    if (error != null) surface.failedToSpawn = true
+                    if (disposed || tooth !in surface.teeth) tooth.remove()
+                }
+            } else if (entity.instance === instance && entity.position != at) {
+                entity.editEntityMeta(TextDisplayMeta::class.java) { configure(it, tile, TOOTH_COLOR) }
+                entity.teleport(at)
+            }
+        }
+    }
+
+    /** The way out of the shape at this edge point: the mean of the probe directions that leave it. */
+    private fun outward(frame: MobAbilityFrame, point: Pos): Vec? {
+        var x = 0.0; var z = 0.0
+        for (k in 0 until 16) {
+            val a = k * Math.PI / 8
+            val dx = kotlin.math.cos(a); val dz = kotlin.math.sin(a)
+            if (!frame.ability.shape.contains(frame.origin, frame.facing, point.add(dx * .35, 0.0, dz * .35))) { x += dx; z += dz }
+        }
+        val length = sqrt(x * x + z * z)
+        return if (length < 1e-6) null else Vec(x / length, 0.0, z / length)
     }
 
     fun tick(now: Long) {
         surfaces.filterValues { it.expiresAt <= now }.keys.toList().forEach(::clear)
     }
 
-    fun clear(owner: UUID) { surfaces.remove(owner)?.entities?.forEach(Entity::remove) }
+    fun clear(owner: UUID) { surfaces.remove(owner)?.let { it.entities.forEach(Entity::remove); it.teeth.forEach(Entity::remove) } }
 
     fun dispose() {
         disposed = true

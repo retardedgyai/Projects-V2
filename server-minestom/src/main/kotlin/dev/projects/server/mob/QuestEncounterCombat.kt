@@ -2245,18 +2245,10 @@ class QuestEncounterCombat(
     private fun drawWarning(mob: Mob, frame: MobAbilityFrame, impact: Boolean): Boolean {
         // B (2026-10-19): the small attacks show no floor; they are read from the wyrm's wind-up and its sound.
         if (mob.view != null && frame.ability.id in NO_FLOOR) return true
-        // The small enemies show no ground: their blows and shots are read from the wind-up, as with vanilla mobs (Creator 2026-11-07).
-        if (mob.definition.archetype in SAKURA_COMMON) return true
+        // A shot marks no ground: it is seen flying (枝弓の骸's arrow, つぼみ's pollen).
+        if (frame.ability.shape is MobAttackShape.Shot) return true
+        // The fill and its toothed edge are the whole warning (Creator 2026-11-07: no particles, edges like Spellforged's).
         if (!telegraphs.show(mob.entity.uuid, frame, impact, lastTickAt)) return false
-        val color = when {
-            impact -> NamedTextColor.RED
-            frame.phase == MobAbilityPhase.LOCKED -> NamedTextColor.DARK_RED
-            else -> NamedTextColor.RED
-        }
-        val dust = Particle.DUST.withColor(color).withScale(if (impact) 1.5f else 1.0f)
-        for (point in frame.ability.shape.outline(frame.origin, frame.facing)) {
-            telegraphs.groundHeight(point)?.let { particle(point.withY(it + 0.075), dust) }
-        }
         return true
     }
 
