@@ -35,8 +35,9 @@ for _, _, (x, z) in HOUSES:
 
 # ---------------------------------------------------------------- 道：町（北東）から台地を坂で下り、南西へ。町側は幅 5、外は 3
 main = [(63, -26), (40, -24), (16, -26), (-4, -24), (-14, -14), (-12, 0), (-18, 14), (-30, 22), (-44, 26), (-63, 24)]
-line, ys = L.path(main[:5], w=5, rise=3.0)
-line2, ys2 = L.path(main[4:], w=3, rise=3.0)
+ROAD2 = '--road2' in sys.argv                                         # 8 周目：道を太く、縁を崩し、敷石と柵を沿わせる
+line, ys = L.path(main[:5], w=6 if ROAD2 else 5, rise=3.0)
+line2, ys2 = L.path(main[4:], w=4 if ROAD2 else 3, rise=3.0)
 L.path([(-12, 2), (2, 10), (14, 14)], w=2, rise=3.0)                  # 畑への踏み跡
 
 BIGHOUSE = '--bighouse' in sys.argv                                  # 4 周目：野原の真ん中に大きな L 字の館（判定役『建物の厚みと密度が足りない』）
@@ -46,7 +47,7 @@ if BIGHOUSE:
     L.rect(24, -14, 57, 19, BIG_Y, kind=4)
 YARD = (18, 2, 36, 14)                                                 # 作業場（v3 で試して戻した。--yard で入れる）：道と畑の間（x0, z0, x1, z1）
 if '--yard' in sys.argv: L.rect(*YARD, L.h(26, 8), kind=5)
-L.build(dict(T.MESA, mottle=T.GROUND_MESA if '--ground' in sys.argv else [], pave=[('coarse_dirt', .35), ('dirt_path', .25), ('gravel', .15), ('packed_mud', .15), ('grass', .10)]))
+L.build(dict(T.MESA, **({'path': [('dirt_path', .6), ('coarse_dirt', .15), ('gravel', .1), ('cobblestone', .08), ('rooted_dirt', .07)], 'edge': [('coarse_dirt', .3), ('cobblestone', .15), ('gravel', .15), ('rooted_dirt', .15), ('grass', .25)]} if ROAD2 else {}), mottle=T.GROUND_MESA if '--ground' in sys.argv else [], pave=[('coarse_dirt', .35), ('dirt_path', .25), ('gravel', .15), ('packed_mud', .15), ('grass', .10)]))
 if '--relief' in sys.argv: L.cliff_relief(T.MESA)
 if '--relief2' in sys.argv: L.cliff_relief2(T.MESA)              # 2 周目：3〜4 マス幅の柱・横の岩棚・草の垂れ                   # 崖の面の出入り・まだら・縁の欠け（11/08）
 if '--relief3' in sys.argv: L.cliff_relief3(T.MESA)              # 6 周目：面の材料のまだら・1 マスのこぶ・上の垂れ
@@ -127,6 +128,26 @@ if PLAY:
         ('hunt', -24, 32, '狩り場 Lv1〜2（甲虫）'), ('hunt', 42, 50, '狩り場 Lv2〜3（狼）'),
         ('way', -50, 30, '根の丘への出口（復帰点の候補）'),
     ])
+
+# ---------------------------------------------------------------- 道に沿う物（--road2）：所々に柵（3〜6 マス）と敷石、曲がり角に石の道しるべ
+if ROAD2:
+    rr = random.Random(88)
+    pts = line + line2
+    k = 12
+    while k < len(pts) - 12:
+        x, z = pts[k]; dx = pts[k + 1][0] - pts[k - 1][0]; dz = pts[k + 1][1] - pts[k - 1][1]; n = math.hypot(dx, dz) or 1
+        side = rr.choice((-1, 1)); off = (4.8 if k < len(line) else 3.8) * side
+        if rr.random() < 0.55:                                             # 柵
+            for ti in range(rr.randint(3, 6)):
+                q = pts[min(len(pts) - 1, k + ti * 2)]
+                fx, fz = int(round(q[0] - dz / n * off)), int(round(q[1] + dx / n * off))
+                if L.inb(fx, fz) and L.K[L.idx(fx, fz)] in (0, 2) and get(fx, L.h(fx, fz) + 1, fz) is None: put(fx, L.h(fx, fz) + 1, fz, fence('spruce_planks'))
+        else:                                                              # 敷石：道の中に 2〜4 枚
+            for ti in range(rr.randint(2, 4)):
+                q = pts[min(len(pts) - 1, k + ti * 3)]
+                sx, sz = int(round(q[0] + rr.uniform(-1.5, 1.5))), int(round(q[1] + rr.uniform(-1.5, 1.5)))
+                if L.inb(sx, sz) and L.K[L.idx(sx, sz)] == 1: put(sx, L.h(sx, sz), sz, full('polished_andesite' if rr.random() < 0.5 else 'stone_bricks'))
+        k += rr.randint(14, 24)
 
 # ---------------------------------------------------------------- 木：西の段の上にトウヒの群れ、町と畑のまわりにまばらな広葉樹
 CAMS = [(0, 50), (40, 30)]

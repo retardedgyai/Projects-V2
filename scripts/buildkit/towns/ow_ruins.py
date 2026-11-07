@@ -255,6 +255,22 @@ def plaza2(x0, z0, w=13, d=9):
     for x, z in ((x0, z0 + d - 1), (x0 + w - 1, z0 + d - 1)): put(x, g + 1, z, {'s': 'wall', 't': 'stone_bricks'}); put(x, g + 2, z, {'s': 'lantern', 't': 'lantern'})
 if '--plaza2' in sys.argv: plaza2(10, 6)
 
+def flora():
+    """空き地の草花と低木を群れで密に（8 周目）：シダ・花・草の群れ 40、小さな茂み 14、石片 20。木の乱数とは別。"""
+    fr = random.Random(99)
+    for k in range(40):
+        cx, cz = fr.randint(-60, 60), fr.randint(-60, 60)
+        for t in range(fr.randint(6, 14)):
+            x, z = cx + fr.randint(-3, 3), cz + fr.randint(-3, 3)
+            if L.inb(x, z) and L.K[L.idx(x, z)] == 0 and get(x, L.h(x, z) + 1, z) is None:
+                put(x, L.h(x, z) + 1, z, cross(fr.choice(('fern', 'fern', 'short_grass', 'azure_bluet', 'oxeye_daisy', 'lily_of_the_valley', 'allium'))))
+    for k in range(60):
+        x, z = fr.randint(-60, 60), fr.randint(-60, 60)
+        if not (L.inb(x, z) and L.K[L.idx(x, z)] == 0 and L.slope_ok(x, z) and get(x, L.h(x, z) + 1, z) is None): continue
+        if k < 20: TR.bush(x, z, L.h(x, z), fr.randint(0, 9999), big=fr.random() < 0.3)
+        else: put(x, L.h(x, z) + 1, z, slab('cobblestone') if fr.random() < 0.5 else full('mossy_cobblestone'))
+if '--flora' in sys.argv: flora()
+
 
 # ---------------------------------------------------------------- 西の門：崩れたアーチ（幅 11、北の半分だけ残る）
 def gate(cx, cz, g):
