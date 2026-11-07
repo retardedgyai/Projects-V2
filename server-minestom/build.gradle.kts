@@ -119,3 +119,29 @@ tasks.named<JavaExec>("run") {
     systemProperty("projects.devCommands", "true")
     doFirst { workingDir.mkdirs() }
 }
+
+// Night MSPT bench (MsptBenchTest): four players in 散り桜の社's heaviest moments, the time of one server tick.
+// Not part of `test`: ./gradlew :server-minestom:mspt (-PmsptJfr=true also records build/mspt/mspt.jfr).
+val mspt by tasks.registering(Test::class) {
+    group = "verification"
+    description = "Measures the server tick (MSPT) with four players in 千本桜, a full 穢れ場 and the mini-bosses (MsptBenchTest)"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter { includeTestsMatching("*MsptBenchTest") }
+    val dir = layout.buildDirectory.dir("mspt").get().asFile
+    workingDir = dir
+    doFirst { dir.mkdirs() }
+    systemProperty("projects.mspt", "true")
+    testLogging { showStandardStreams = true }
+    if (providers.gradleProperty("msptSample").orNull == "true") systemProperty("projects.mspt.sample", "true")
+    providers.gradleProperty("msptDepth").orNull?.let { systemProperty("projects.mspt.depth", it) }
+    if (providers.gradleProperty("msptJfr").orNull == "true")
+        jvmArgs("-XX:StartFlightRecording=filename=${dir.resolve("mspt.jfr")},settings=profile")
+    outputs.upToDateWhen { false }
+    // as scripts/start-core-loop.ps1 runs the server
+    maxHeapSize = "3g"
+    jvmArgs("-XX:ActiveProcessorCount=4", "-Xlog:gc:file=${dir.resolve("gc.log")}")
+    // -PmsptGc=zgc: the same bench on generational ZGC (for comparison; the server runs the default G1)
+    if (providers.gradleProperty("msptGc").orNull == "zgc") jvmArgs("-XX:+UseZGC")
+}
