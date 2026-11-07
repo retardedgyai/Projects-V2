@@ -58,7 +58,7 @@ class MobGroundTelegraphTest {
             val display = instance.entities.first { it.entityType == EntityType.TEXT_DISPLAY }
             val meta = display.entityMeta as TextDisplayMeta
             assertEquals(MobGroundTelegraph.TRACKING_COLOR, meta.backgroundColor)
-            assertEquals(0x48, meta.backgroundColor ushr 24)
+            assertEquals(0x60, meta.backgroundColor ushr 24)
             assertEquals(AbstractDisplayMeta.BillboardConstraints.FIXED, meta.billboardRenderConstraints)
             assertEquals(0, meta.textOpacity.toInt())
             assertFalse(meta.isSeeThrough)
@@ -80,10 +80,15 @@ class MobGroundTelegraphTest {
             val initialIds = instance.entities.map { it.uuid }.toSet()
             telegraph.show(owner, initial, false, 180)
             assertEquals(initialIds, instance.entities.map { it.uuid }.toSet())
+            // red arrows round the rim (Spellforged's warning edge)
+            val arrows = instance.entities.count { it.entityType == EntityType.ITEM_DISPLAY }
+            assertTrue(arrows >= 12, "arrows=$arrows of ${instance.entities.size}")
             telegraph.show(owner, initial.copy(phase = MobAbilityPhase.LOCKED), false, 400)
-            assertTrue(instance.entities.all { (it.entityMeta as TextDisplayMeta).backgroundColor == MobGroundTelegraph.LOCKED_COLOR })
+            val fill = instance.entities.filter { it.entityType == EntityType.TEXT_DISPLAY }.map { (it.entityMeta as TextDisplayMeta).backgroundColor }
+            assertTrue(fill.isNotEmpty() && fill.all { it == MobGroundTelegraph.LOCKED_COLOR })
             telegraph.show(owner, initial.copy(phase = MobAbilityPhase.LOCKED), true, 1000)
-            assertTrue(instance.entities.all { (it.entityMeta as TextDisplayMeta).backgroundColor == MobGroundTelegraph.IMPACT_COLOR })
+            val impactFill = instance.entities.filter { it.entityType == EntityType.TEXT_DISPLAY }.map { (it.entityMeta as TextDisplayMeta).backgroundColor }
+            assertTrue(impactFill.isNotEmpty() && impactFill.all { it == MobGroundTelegraph.IMPACT_COLOR })
             telegraph.tick(1179)
             assertTrue(telegraph.displayCount > 0)
             telegraph.tick(1180)

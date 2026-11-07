@@ -163,7 +163,7 @@ class InstanceDungeonTest {
             val second = DungeonRun(instance, combat, dungeon.layout, 2) { emptyList() }
             for (room in dungeon.layout.rooms) when (room.kind) {
                 RoomKind.WAVES -> assertEquals(minOf(4, room.waves[0].size + 1), second.waveAt(room, 0).size)
-                RoomKind.MINIBOSS -> assertEquals(listOf(room.waves[0][0], QuestMobArchetype.RIFT_CASTER), second.waveAt(room, 0))
+                RoomKind.MINIBOSS -> assertEquals(listOf(room.waves[0][0], QuestMobArchetype.SAKURA_ARCHER), second.waveAt(room, 0))
                 RoomKind.SPAWNER -> assertEquals(first.spawnerTarget(room, 1) + 3, second.spawnerTarget(room, 1))
             }
             dungeon.layout.rooms.filter { it.kind != RoomKind.SPAWNER }.forEach { assertEquals(it.waves[0], first.waveAt(it, 0)) }

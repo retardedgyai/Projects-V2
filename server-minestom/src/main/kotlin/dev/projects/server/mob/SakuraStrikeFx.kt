@@ -300,6 +300,8 @@ internal class SakuraStrikeFx(instance: Instance) {
                         bud(o.add(dir.mul(i * shape.armLength / n - CREST_STEP / 2)), minOf(shape.halfWidth * 2.0, CREST_STEP * 1.2), i * ticks / (2 * n))
                     bud(o, shape.halfWidth * 2.4, 0)
                 }
+                // a shot has no ground to mark
+                is MobAttackShape.Shot -> Unit
             }
         }
     }

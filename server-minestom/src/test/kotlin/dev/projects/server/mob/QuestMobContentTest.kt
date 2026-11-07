@@ -27,8 +27,8 @@ class QuestMobContentTest {
     @Test
     fun `all content has actual distinct equipment abilities weaknesses and tier scaling`() {
         val definitions = QuestMobArchetype.entries.map { QuestMobContent.definition(1, it) }
-        assertEquals(17, definitions.size)                         // with 散り桜の社's two mini-boss slots
-        assertEquals(7, definitions.map { it.entityType }.distinct().size)   // the stone lantern rides an iron golem
+        assertEquals(20, definitions.size)                         // with 散り桜の社's two mini-boss slots and its three common enemies
+        assertEquals(10, definitions.map { it.entityType }.distinct().size)   // the stone lantern rides an iron golem; zombie, skeleton, creeper
         assertEquals(setOf("fire", "ice", "lightning"), definitions.map { it.archetype.weakness }.toSet())
         for (definition in definitions) {
             val tier4 = QuestMobContent.definition(4, definition.archetype)

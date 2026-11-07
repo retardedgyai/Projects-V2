@@ -716,24 +716,7 @@ class QuestEncounterCombat(
         }
         if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && applied > 0.0 && mob.life.isAlive) sakuraHit(mob, attacker, applied, now)
         if (!mob.life.isAlive) {
-            endGimmick(mob)
-            if (mob.shade) { gimmicks.dispose(); lights.hold("horns-${mob.entity.uuid}", null, 0) }
-            mob.abilities.cancel()
-            clearWarning(mob.entity.uuid)
-            castingPose(mob, false)
-            stopNavigation(mob)
-            sound(mob.entity.position, "minecraft:entity.${mob.definition.soundFamily}.death", 1.0f, if (mob.boss) 0.65f else 1.0f)
-            particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.POOF, 8)
-            latestDefeat = QuestMobDefeat("mob:${mob.entity.uuid}", mob.entity.uuid, mob.definition.archetype,
-                mob.definition.archetype.rarity, mob.definition.dropKind, tier, mob.entity.position, attacker.uuid)
-            plates.hide(mob.entity.uuid)
-            mob.entity.kill()
-            mob.model?.dispose()
-            mob.view?.die()
-            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) sakuraFx?.death()
-            if (mob.miniBoss) { lowerPillars(mob); miniBossDown(mob) }
-            // Health is already terminal before this callback can re-enter the runtime.
-            onMobDefeated(attacker, mob.boss)
+            defeat(mob, attacker)
         } else {
             if(now >= mob.tauntedUntil || mob.target?.let { !canTarget(it) || it.instance !== instance } != false) mob.target = attacker
             if (mob.life.phase == QuestMobPhase.IDLE) mob.life.phase = QuestMobPhase.CHASING
@@ -749,6 +732,7 @@ class QuestEncounterCombat(
         if (disposed || nowMillis <= lastTickAt) return
         lastTickAt = nowMillis
         telegraphs.tick(nowMillis)
+        tickShots()
         vfx.tick()
         shaderFx.tick()
         lights.tick(nowMillis)
@@ -818,6 +802,8 @@ class QuestEncounterCombat(
         if (disposed) return
         disposed = true
         telegraphs.dispose()
+        shots.forEach { it.arrow?.remove() }
+        shots.clear()
         vfx.cancelAll()
         gimmicks.dispose()
         lights.dispose()
@@ -899,6 +885,29 @@ class QuestEncounterCombat(
             }
         }
         return entity.uuid
+    }
+
+    /** Its health is gone: the death clip, the drop and the room's count. [killer] is null only for a mob that burst itself. */
+    private fun defeat(mob: Mob, killer: Player?) {
+        endGimmick(mob)
+        if (mob.shade) { gimmicks.dispose(); lights.hold("horns-${mob.entity.uuid}", null, 0) }
+        mob.abilities.cancel()
+        clearWarning(mob.entity.uuid)
+        castingPose(mob, false)
+        stopNavigation(mob)
+        sound(mob.entity.position, "minecraft:entity.${mob.definition.soundFamily}.death", 1.0f, if (mob.boss) 0.65f else 1.0f)
+        particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.POOF, 8)
+        latestDefeat = QuestMobDefeat("mob:${mob.entity.uuid}", mob.entity.uuid, mob.definition.archetype,
+            mob.definition.archetype.rarity, mob.definition.dropKind, tier, mob.entity.position, killer?.uuid)
+        plates.hide(mob.entity.uuid)
+        mob.entity.kill()
+        mob.model?.dispose()
+        // A bud that burst lies open flat and fades (its `spent` clip) instead of wilting.
+        mob.view?.die(if (killer == null && mob.definition.archetype == QuestMobArchetype.SAKURA_BUD) "spent" else "death")
+        if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) sakuraFx?.death()
+        if (mob.miniBoss) { lowerPillars(mob); miniBossDown(mob) }
+        // Health is already terminal before this callback can re-enter the runtime.
+        onMobDefeated(killer, mob.boss)
     }
 
     private fun isSpawned(mob: Mob): Boolean = !mob.entity.isRemoved && mob.entity.instance === instance
@@ -1973,7 +1982,7 @@ class QuestEncounterCombat(
                     if (event.frame.ability.id in SIGHT_ONLY) { raisePillars(mob, event.frame); updateName(mob, "灯が満ちる・柱の陰へ") }
                     else sakuraStrike().warn(event.frame, warningTag(mob.entity.uuid))
                 }
-                playVfx(mob, ShadeWyrmVfx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
+                if (mob.definition.archetype !in SAKURA_COMMON) playVfx(mob, ShadeWyrmVfx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
                 if (mob.shade) shaderFx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
                 if (event.frame.ability.id == ORB) mob.view?.point("skull", ShadeWyrmVfx.SNOUT)?.let {
                     shaderFx.orb(Pos(it), event.frame.origin, ORB_RELEASE_TICKS, (event.frame.ability.telegraphMillis / 50).toInt() - ORB_RELEASE_TICKS)
@@ -1996,8 +2005,14 @@ class QuestEncounterCombat(
                 mob.entity.swingMainHand()
                 castingPose(mob, false)
                 if (!drawWarning(mob, event.frame, true)) { cancelWarning(mob); return false }
-                playVfx(mob, ShadeWyrmVfx.hit(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
+                // The sakura common enemies scatter petals instead of the wyrm's white wake and black dust (sakuraBurst below).
+                if (mob.definition.archetype !in SAKURA_COMMON) playVfx(mob, ShadeWyrmVfx.hit(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
                 if (mob.shade) shaderFx.strike(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
+                (event.frame.ability.shape as? MobAttackShape.Shot)?.let { shot ->
+                    // It looses the shot and is done; the shot strikes (or misses) on its own as it flies.
+                    loose(mob, event.frame, shot)
+                    return true
+                }
                 sound(event.frame.origin,
                     if (mob.entity.entityMeta is SpellcasterIllagerMeta) "minecraft:entity.evoker.cast_spell"
                     else if (event.frame.ability.shape is MobAttackShape.Sweep) "minecraft:entity.player.attack.sweep"
@@ -2028,6 +2043,15 @@ class QuestEncounterCombat(
                 if (mob.miniBoss) {
                     if (event.frame.ability.id in SIGHT_ONLY) particle(mob.entity.position.add(0.0, 3.6, 0.0), Particle.FLASH, 1)
                     else sakuraBurst(event.frame)
+                }
+                if (mob.definition.archetype in SAKURA_COMMON) sakuraBurst(event.frame)
+                if (event.frame.ability.id == SELF_BURST) {
+                    // つぼみ: the bloom was its whole life. It is spent, counted for the room, with no one's kill.
+                    sound(mob.entity.position, "minecraft:block.azalea_leaves.break", 1.0f, .7f)
+                    particle(mob.entity.position.add(0.0, 1.2, 0.0), Particle.CHERRY_LEAVES, 40)
+                    mob.life.damage(mob.life.health)
+                    defeat(mob, null)
+                    return false
                 }
             }
             is MobAbilityEvent.Finished -> {
@@ -2158,19 +2182,73 @@ class QuestEncounterCombat(
 
     private fun frenzied(mob: Mob) = MobMod.FRENZY in mob.mods && mob.life.health <= mob.life.maximumHealth * MobMod.FRENZY_HEALTH
 
+    /** A shot in flight (枝弓の骸's arrow, つぼみ's pollen): it moves each tick and strikes the first player it touches. */
+    private class Shot(val arrow: net.minestom.server.entity.Entity?, var at: Pos, val step: Vec, var ticksLeft: Int,
+                       val damage: Double, val type: CoreDamageType, val crowd: CrowdControl?, val crowdMillis: Long)
+    private val shots = mutableListOf<Shot>()
+
+    private fun loose(mob: Mob, frame: MobAbilityFrame, shape: MobAttackShape.Shot) {
+        val arrow = frame.ability.id == "archer-shot"
+        val from = mob.entity.position.add(0.0, 1.45, 0.0).add(normalizeHorizontal(frame.facing).mul(.6))
+        // Locked aim across the ground; up or down toward where the target's chest is now.
+        val chestY = (mob.target?.position?.y() ?: mob.entity.position.y()) + 1.1
+        val flat = normalizeHorizontal(frame.facing)
+        val run = horizontalLength((mob.target?.position ?: from).sub(from)).coerceAtLeast(1.0)
+        val dir = Vec(flat.x(), ((chestY - from.y()) / run).coerceIn(-.5, .5), flat.z()).normalize()
+        val step = dir.mul(shape.speed / 20.0)
+        val entity = if (!arrow) null else net.minestom.server.entity.Entity(net.minestom.server.entity.EntityType.ARROW).also {
+            it.setNoGravity(true)
+            it.setHasPhysics(false)
+            it.setInstance(instance, facing(from, dir))
+        }
+        val dealt = frame.ability.damage * (if (frenzied(mob)) MobMod.FRENZY_DAMAGE else 1.0)
+        shots += Shot(entity, from, step, kotlin.math.ceil(shape.range / (shape.speed / 20.0)).toInt(), dealt,
+            frame.ability.damageType, frame.ability.crowd, frame.ability.crowdMillis)
+        sound(from, if (arrow) "minecraft:entity.skeleton.shoot" else "minecraft:block.azalea_leaves.break", 1.0f, if (arrow) 1.0f else 1.4f)
+    }
+
+    private fun facing(at: Pos, dir: Vec): Pos {
+        val yaw = Math.toDegrees(kotlin.math.atan2(-dir.x(), dir.z())).toFloat()
+        val pitch = Math.toDegrees(-kotlin.math.asin(dir.y().coerceIn(-1.0, 1.0))).toFloat()
+        return at.withView(yaw, pitch)
+    }
+
+    private fun tickShots() {
+        if (shots.isEmpty()) return
+        val pink = Particle.DUST.withColor(net.kyori.adventure.text.format.TextColor.color(0xffb3d1)).withScale(1.2f)
+        val iterator = shots.iterator()
+        while (iterator.hasNext()) {
+            val shot = iterator.next()
+            var done = false
+            // Four checks along this tick's flight, so a fast arrow cannot pass through someone.
+            for (part in 1..4) {
+                val at = shot.at.add(shot.step.mul(part / 4.0))
+                if (instance.getBlock(at).solid()) { done = true; break }
+                val struck = instance.players.firstOrNull { p -> canTarget(p) &&
+                    horizontalLength(p.position.sub(at)) <= SHOT_RADIUS && at.y() in p.position.y() - .2..p.position.y() + 2.0 }
+                if (struck != null) {
+                    if (typedDamagePlayer != null) typedDamagePlayer.invoke(struck, shot.damage, shot.type) else damagePlayer(struck, shot.damage)
+                    shot.crowd?.let { crowdPlayer?.invoke(struck, it, shot.crowdMillis, at) }
+                    particle(at, Particle.CHERRY_LEAVES, 8)
+                    done = true
+                    break
+                }
+                if (shot.arrow == null) { particle(at, pink, 2); if (part == 4) particle(at, Particle.CHERRY_LEAVES, 1) }
+            }
+            shot.at = shot.at.add(shot.step)
+            if (--shot.ticksLeft <= 0) done = true
+            if (done) { shot.arrow?.remove(); iterator.remove(); continue }
+            shot.arrow?.teleport(facing(shot.at, shot.step))
+        }
+    }
+
     private fun drawWarning(mob: Mob, frame: MobAbilityFrame, impact: Boolean): Boolean {
         // B (2026-10-19): the small attacks show no floor; they are read from the wyrm's wind-up and its sound.
         if (mob.view != null && frame.ability.id in NO_FLOOR) return true
+        // A shot marks no ground: it is seen flying (枝弓の骸's arrow, つぼみ's pollen).
+        if (frame.ability.shape is MobAttackShape.Shot) return true
+        // The fill and its toothed edge are the whole warning (Creator 2026-11-07: no particles, edges like Spellforged's).
         if (!telegraphs.show(mob.entity.uuid, frame, impact, lastTickAt)) return false
-        val color = when {
-            impact -> NamedTextColor.RED
-            frame.phase == MobAbilityPhase.LOCKED -> NamedTextColor.DARK_RED
-            else -> NamedTextColor.RED
-        }
-        val dust = Particle.DUST.withColor(color).withScale(if (impact) 1.5f else 1.0f)
-        for (point in frame.ability.shape.outline(frame.origin, frame.facing)) {
-            telegraphs.groundHeight(point)?.let { particle(point.withY(it + 0.075), dust) }
-        }
         return true
     }
 
@@ -2444,6 +2522,12 @@ class QuestEncounterCombat(
         const val SEARCH_SPEED = .3
         const val SEARCH_BEYOND = 14.0
         const val TURN_SWEEP = "shade-turnsweep"
+        /** 散り桜の社's common enemies: petals scatter over each blow, as over the bosses'. */
+        val SAKURA_COMMON = setOf(QuestMobArchetype.SAKURA_HUSK, QuestMobArchetype.SAKURA_ARCHER, QuestMobArchetype.SAKURA_BUD)
+        /** つぼみ's bloom: it bursts, and is gone. */
+        const val SELF_BURST = "bud-burst"
+        /** How near (blocks, across the ground) a flying shot must pass a player's body to strike. */
+        const val SHOT_RADIUS = .55
         /** 桜牙獣 answers someone at its back with the 360 tail spin. */
         const val SAKURA_TURN = "sakura-spin"
         /** 桜牙獣's breather between attack chains (ms), and the pause between its moves. */

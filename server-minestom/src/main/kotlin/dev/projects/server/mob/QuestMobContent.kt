@@ -31,6 +31,10 @@ enum class QuestMobArchetype(val displayName: String, val rarity: QuestMobRarity
     // 桜牙獣 in shape; another pick is built behind the same names.
     SAKURA_MINIBOSS_1("花喰いの白蛇", QuestMobRarity.MINIBOSS, "fire"),
     SAKURA_MINIBOSS_2("石灯籠の番人", QuestMobRarity.MINIBOSS, "ice"),
+    // 散り桜の社's common enemies (scripts/build_sakura_mobs.py): a zombie, a skeleton archer and a creeper, made of the shrine's cherry.
+    SAKURA_HUSK("桜木の亡者", QuestMobRarity.NORMAL, "fire"),
+    SAKURA_ARCHER("枝弓の骸", QuestMobRarity.NORMAL, "lightning"),
+    SAKURA_BUD("つぼみ", QuestMobRarity.NORMAL, "fire"),
 }
 
 data class QuestMobInfo(
@@ -89,15 +93,18 @@ internal data class QuestMobDefinition(
         QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.IRON_WARDEN, QuestMobArchetype.GLACIAL_COLOSSUS -> "husk"
         QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.RIFT_ORACLE, QuestMobArchetype.TEMPEST_HIEROPHANT, QuestMobArchetype.TIDE_ARCHIVIST -> "evoker"
         QuestMobArchetype.SAKURA_MINIBOSS_2 -> "iron_golem"
+        QuestMobArchetype.SAKURA_HUSK -> "zombie"
+        QuestMobArchetype.SAKURA_ARCHER -> "skeleton"
+        QuestMobArchetype.SAKURA_BUD -> "creeper"
         QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.CINDER_REGENT, QuestMobArchetype.FORGE_SENTINEL -> "piglin_brute"
         QuestMobArchetype.ECLIPSE_REGENT -> "wither_skeleton"
         QuestMobArchetype.SHADE_WYRM, QuestMobArchetype.SAKURA_FANG, QuestMobArchetype.SAKURA_MINIBOSS_1 -> "ravager"
         else -> "vindicator"
     }
     val dropKind: QuestMobDropKind get() = when (archetype) {
-        QuestMobArchetype.SOLDIER -> QuestMobDropKind.SOLDIER
+        QuestMobArchetype.SOLDIER, QuestMobArchetype.SAKURA_HUSK, QuestMobArchetype.SAKURA_BUD -> QuestMobDropKind.SOLDIER
         QuestMobArchetype.SHIELD_GUARD -> QuestMobDropKind.GUARD
-        QuestMobArchetype.RIFT_CASTER -> QuestMobDropKind.CASTER
+        QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.SAKURA_ARCHER -> QuestMobDropKind.CASTER
         QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.SAKURA_MINIBOSS_1, QuestMobArchetype.SAKURA_MINIBOSS_2 -> QuestMobDropKind.ELITE
         else -> QuestMobDropKind.BOSS
     }
@@ -275,6 +282,34 @@ internal object QuestMobContent {
                     attack("lantern-glare", "灯明・柱の陰へ", MobAttackShape.Ring(18.0), 18.0, 34.0,
                         4000, 0, 1200, 24000, health = .6, weight = 5),
                 )).copy(model = "stone_lantern")
+            // 散り桜の社's common enemies. Clip lengths in their bbmodels = telegraph + recovery (scripts/build_sakura_mobs.py).
+            // No ground warning on small enemies (Creator 2026-11-07): the wind-up animation is the warning. The arrow flies.
+            // 桜木の亡者: the soldier's place, slower: a heavy two-armed blow, or a quick one-armed swipe.
+            QuestMobArchetype.SAKURA_HUSK -> definition(EntityType.ZOMBIE, 46.0, 0.12, 1.6, 1.0,
+                Material.AIR, attacks = listOf(
+                    attack("husk-grab", "枝の掴み", MobAttackShape.Slam(3.4, 1.6), 3.0, 12.0,
+                        750, 300, 550, 2200, weight = 2),
+                    attack("husk-swipe", "薙ぎ払い", MobAttackShape.Sweep(3.0, 70.0), 2.6, 8.0,
+                        600, 250, 500, 1800),
+                )).copy(model = "sakura_husk")
+            // 枝弓の骸: keeps its distance (it backs off a player who comes close) and looses an arrow that flies.
+            QuestMobArchetype.SAKURA_ARCHER -> definition(EntityType.SKELETON, 32.0, 0.13, 9.0, 1.0,
+                Material.AIR, attacks = listOf(
+                    attack("archer-shot", "枝矢", MobAttackShape.Shot(18.0, 22.0), 14.0, 11.0,
+                        1000, 650, 500, 2600, minimumRange = 3.0),
+                    // too close: it swings the bow round like a club
+                    attack("archer-bash", "弓打ち", MobAttackShape.Sweep(2.8, 80.0), 2.6, 7.0,
+                        600, 250, 600, 2400),
+                )).copy(model = "branch_archer")
+            // つぼみ: walks up and bursts into bloom (QuestEncounterCombat.SELF_BURST): a ring around it, and it is gone.
+            QuestMobArchetype.SAKURA_BUD -> definition(EntityType.CREEPER, 26.0, 0.15, 1.2, 1.0,
+                Material.AIR, attacks = listOf(
+                    attack("bud-burst", "開花", MobAttackShape.Ring(3.4), 2.4, 20.0,
+                        1500, 0, 300, 1000, weight = 3),
+                    // on the way in: a slow puff of pollen at the one it is after
+                    attack("bud-pollen", "花粉", MobAttackShape.Shot(7.0, 7.0), 5.0, 6.0,
+                        800, 400, 500, 3000, minimumRange = 2.6),
+                )).copy(model = "bud_creeper")
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,
                 Material.IRON_AXE, attacks = listOf(sweep(), slam()))
             QuestMobArchetype.SHIELD_GUARD -> definition(EntityType.HUSK, 66.0, 0.105, 2.0, 1.0,
