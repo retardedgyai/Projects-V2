@@ -686,8 +686,10 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 val toward = if (i < layout.rooms.size) layout.rooms[i].center else layout.arenaCenter
                 val back = gate.sub(toward).withY(0.0).asVec().normalize().mul(6.0)
                 val instance = player.instance as InstanceContainer
-                val stand = gate.add(back).let { it.withY(InstanceDungeonFactory.floorAt(instance, it.blockX(), it.blockZ(), gate.blockY()).toDouble()) }
-                return look(stand, gate.add(0.0, 1.5, 0.0))
+                var eye = gate.add(back).let { it.withY(InstanceDungeonFactory.floorAt(instance, it.blockX(), it.blockZ(), gate.blockY()).toDouble() + 2) }
+                // Lifted out of walls, leaves and tall grass, so the shot sees the gate.
+                while (eye.y() < gate.y() + 10 && (!instance.getBlock(eye).air() || !instance.getBlock(eye.add(0.0, 1.0, 0.0)).air())) eye = eye.add(0.0, 1.0, 0.0)
+                return look(eye, gate.add(0.0, 1.5, 0.0))
             }
             // The town first: where players arrive, then each facility from five blocks toward the arrival, a little above.
             val steps = mutableListOf<Pair<Long, () -> Unit>>(100L to { player.teleport(harbor.spawn.withPitch(-4f)) }, 160L to { shot("town_spawn") })
@@ -696,7 +698,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 // Seven blocks toward the arrival and up, lifted further while that spot is inside a wall or a roof.
                 val toward = harbor.spawn.sub(facility.position).withY(0.0).asVec().normalize().mul(7.0)
                 var eye = facility.position.add(toward).add(0.0, 2.0, 0.0)
-                while (eye.y() < facility.position.y() + 8 && (hub.getBlock(eye).solid() || hub.getBlock(eye.add(0.0, 1.0, 0.0)).solid())) eye = eye.add(0.0, 1.0, 0.0)
+                while (eye.y() < facility.position.y() + 10 && (!hub.getBlock(eye).air() || !hub.getBlock(eye.add(0.0, 1.0, 0.0)).air())) eye = eye.add(0.0, 1.0, 0.0)
                 steps += t to { player.teleport(look(eye, facility.position.add(0.0, .5, 0.0)).withPitch(20f)) }
                 steps += t + 50 to { shot("town_" + facility.kind.name.lowercase()) }
                 t += 80
