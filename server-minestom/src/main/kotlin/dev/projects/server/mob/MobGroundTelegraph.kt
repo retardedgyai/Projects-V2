@@ -7,7 +7,10 @@ import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
+import net.minestom.server.entity.metadata.display.ItemDisplayMeta
 import net.minestom.server.entity.metadata.display.TextDisplayMeta
+import net.minestom.server.item.ItemStack
+import net.minestom.server.item.Material
 import net.minestom.server.instance.InstanceContainer
 import java.util.UUID
 import kotlin.math.abs
@@ -71,21 +74,16 @@ internal class MobGroundTelegraph(private val instance: InstanceContainer) {
         const val TRACKING_COLOR: Int = 0x60B8384A
         val LOCKED_COLOR: Int = 0x80C83048.toInt()
         val IMPACT_COLOR: Int = 0xA0FF7070.toInt()
-        val DASH_COLOR: Int = 0xF0FF2A40.toInt()
-        val DASH_SHADOW_COLOR: Int = 0xF070101C.toInt()
-        /** A dash every this many blocks round the edge: this long, rows this deep (bright, then dark outside), each slid this far. */
-        const val DASH_SPACING = 1.25
-        const val DASH_LENGTH = .7
-        const val DASH_ROW = .08
-        const val DASH_BRIGHT_ROWS = 4
-        const val DASH_DARK_ROWS = 2
-        const val DASH_SLIDE = .09
-        const val MAX_DASHES = 20
+        const val ARROW_MODEL = "projects:core_ui/warn_arrow"
+        /** An arrow every this many blocks round the edge, at this scale (its 16 px sprite: 1 block at 1). */
+        const val ARROW_SPACING = 1.1
+        const val ARROW_SIZE = 1.1
+        const val MAX_ARROWS = 24
     }
 
     private class Surface {
         val entities = mutableListOf<Entity>()
-        /** The dashed rim (Creator 2026-11-07: an edge like PROJECT Spellforged's). */
+        /** The arrows round the rim (Creator 2026-11-07: an edge like PROJECT Spellforged's). */
         val rim = mutableListOf<Entity>()
         var expiresAt = Long.MAX_VALUE
         var tiles = emptyList<MobGroundTile>()
@@ -140,63 +138,56 @@ internal class MobGroundTelegraph(private val instance: InstanceContainer) {
     }
 
     /**
-     * Spellforged's warning edge (refs/spellforged, read 1:1 on 2026-11-07): the rim is outlined by short dashes, evenly
-     * spaced and all set the same way along the edge. Each dash is a slanted bar, bright red over the rim with a dark
-     * red band on its outer side, its slant drawn as pixel steps (each row slid a little along the edge). The outward
-     * way is found from the shape itself, so every shape gets the same edge.
+     * Spellforged's warning edge (refs/spellforged, read again on 2026-11-07 from the demo's skeleton strikes and spear
+     * throw): red arrows round the rim, evenly spaced, all set by one rule — along a strip they point the way the
+     * attack goes, round a ring or a fan they point outward. Each is a flat pixel arrow with thickness (the pack's
+     * `core_ui/warn_arrow`, an item/generated model, so its sides show darker).
      */
     private fun showRim(surface: Surface, frame: MobAbilityFrame) {
-        val bars = mutableListOf<Pos>()
-        val colors = mutableListOf<Int>()
-        val rows = DASH_BRIGHT_ROWS + DASH_DARK_ROWS
+        val arrows = mutableListOf<Pos>()
         var last: Pos? = null
+        val forward = Vec(frame.facing.x(), 0.0, frame.facing.z()).let { if (it.length() < 1e-6) Vec(0.0, 0.0, 1.0) else it.normalize() }
         for (point in frame.ability.shape.outline(frame.origin, frame.facing)) {
-            if (last != null && last.distanceSquared(point) < DASH_SPACING * DASH_SPACING) continue
-            val out = outward(frame, point) ?: continue
+            if (last != null && last.distanceSquared(point) < ARROW_SPACING * ARROW_SPACING) continue
             val ground = groundHeight(point) ?: continue
-            last = point
-            val along = Vec(-out.z(), 0.0, out.x())
-            val yaw = Math.toDegrees(kotlin.math.atan2(-out.x(), out.z())).toFloat()
-            for (row in 0 until rows) {
-                val across = -DASH_BRIGHT_ROWS * DASH_ROW / 2 + (row + .5) * DASH_ROW
-                val at = point.add(out.mul(across)).add(along.mul((row - rows / 2.0) * DASH_SLIDE))
-                bars += Pos(at.x(), ground + 0.015, at.z(), yaw, 0f)
-                colors += if (row < DASH_BRIGHT_ROWS) DASH_COLOR else DASH_SHADOW_COLOR
+            val radial = Vec(point.x() - frame.origin.x(), 0.0, point.z() - frame.origin.z())
+            val way = when (frame.ability.shape) {
+                is MobAttackShape.Slam, is MobAttackShape.Cross -> forward
+                else -> if (radial.length() < 1e-6) forward else radial.normalize()
             }
-            if (bars.size >= MAX_DASHES * rows) break
+            last = point
+            val yaw = Math.toDegrees(kotlin.math.atan2(-way.x(), way.z())).toFloat()
+            arrows += Pos(point.x(), ground + 0.03, point.z(), yaw, 0f)
+            if (arrows.size >= MAX_ARROWS) break
         }
-        while (surface.rim.size > bars.size) surface.rim.removeLast().remove()
-        bars.forEachIndexed { index, at ->
-            val tile = MobGroundTile(at, DASH_LENGTH, DASH_ROW)
+        while (surface.rim.size > arrows.size) surface.rim.removeLast().remove()
+        arrows.forEachIndexed { index, at ->
             val entity = surface.rim.getOrNull(index)
             if (entity == null) {
-                val dash = Entity(EntityType.TEXT_DISPLAY)
-                dash.setHasPhysics(false)
-                dash.setNoGravity(true)
-                dash.editEntityMeta(TextDisplayMeta::class.java) { meta -> configure(meta, tile, colors[index]) }
+                val arrow = Entity(EntityType.ITEM_DISPLAY)
+                arrow.setHasPhysics(false)
+                arrow.setNoGravity(true)
+                arrow.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
+                    meta.setItemStack(ItemStack.of(Material.PAPER).withItemModel(ARROW_MODEL))
+                    meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
+                    meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.FIXED)
+                    meta.setBrightness(15, 15)
+                    meta.setViewRange(0.75f)
+                    meta.setPosRotInterpolationDuration(0)
+                    meta.setScale(Vec(ARROW_SIZE, ARROW_SIZE, ARROW_SIZE))
+                    // lay the sprite flat, face up, its tip toward the entity's facing
+                    meta.setLeftRotation(floatArrayOf(sqrt(0.5).toFloat(), 0f, 0f, sqrt(0.5).toFloat()))
+                }
                 // listed before it spawns: a loaded chunk completes the spawn at once
-                surface.rim += dash
-                dash.setInstance(instance, at).whenComplete { _, error ->
+                surface.rim += arrow
+                arrow.setInstance(instance, at).whenComplete { _, error ->
                     if (error != null) surface.failedToSpawn = true
-                    if (disposed || dash !in surface.rim) dash.remove()
+                    if (disposed || arrow !in surface.rim) arrow.remove()
                 }
             } else if (entity.instance === instance && entity.position != at) {
-                entity.editEntityMeta(TextDisplayMeta::class.java) { configure(it, tile, colors[index]) }
                 entity.teleport(at)
             }
         }
-    }
-
-    /** The way out of the shape at this edge point: the mean of the probe directions that leave it. */
-    private fun outward(frame: MobAbilityFrame, point: Pos): Vec? {
-        var x = 0.0; var z = 0.0
-        for (k in 0 until 16) {
-            val a = k * Math.PI / 8
-            val dx = kotlin.math.cos(a); val dz = kotlin.math.sin(a)
-            if (!frame.ability.shape.contains(frame.origin, frame.facing, point.add(dx * .35, 0.0, dz * .35))) { x += dx; z += dz }
-        }
-        val length = sqrt(x * x + z * z)
-        return if (length < 1e-6) null else Vec(x / length, 0.0, z / length)
     }
 
     fun tick(now: Long) {

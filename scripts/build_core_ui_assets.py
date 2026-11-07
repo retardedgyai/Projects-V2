@@ -150,6 +150,12 @@ def build():
         item_model(name, f"skills/{name}")
     image("blank", 1, 1, [])
     item_model("blank", "core/blank")
+    # The arrows round an enemy's ground warning (MobGroundTelegraph, after PROJECT Spellforged's): one flat red
+    # pixel arrow, tip up; item/generated gives it thickness, its sides drawn darker.
+    image("warn_arrow", 16, 16, [(7, 2, 2, 1, "ff2a40"), (6, 3, 4, 1, "ff2a40"), (5, 4, 6, 1, "ff2a40"),
+                                 (4, 5, 8, 1, "ff2a40"), (3, 6, 10, 1, "ff2a40"), (2, 7, 12, 1, "ff2a40"),
+                                 (6, 8, 4, 5, "ff2a40")])
+    item_model("warn_arrow", "core/warn_arrow")
     build_menu()
     # After build_menu: it fetches the pinned MaruMinya font the HUD caption text is cut from.
     from build_core_menu_assets import repertoire
