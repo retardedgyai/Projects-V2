@@ -16,20 +16,21 @@ internal class FirstStepsGuide {
     private val shown = mutableMapOf<UUID, Shown>()
 
     /** Called with the HUD; [account] null or [visible] false hides it. */
-    fun update(player: Player, account: CoreAccount?, visible: Boolean, packed: Boolean) {
+    fun update(player: Player, account: CoreAccount?, visible: Boolean, packed: Boolean, guiScale: Int? = null) {
+        val size = when (guiScale) { 2 -> 2; 3 -> 3; else -> 4 }
         val done = account?.let { a -> (0 until STEPS).count(a.journey::knows) } ?: STEPS
         if (!visible || account == null || !account.journey.chosen || done >= STEPS) { hide(player); return }
         val step = CoreJourneyRules.next(account)
-        val title = word("導入 $done/$STEPS", GOLD, "b8", packed)
+        val title = word("導入 $done/$STEPS", GOLD, "b8", packed, size)
         val current = shown[player.uuid]
         if (current == null) {
             val sidebar = Sidebar(title)
-            sidebar.createLine(Sidebar.ScoreboardLine(LINE, word(step, INK, "m6", packed), 0, Sidebar.NumberFormat.blank()))
+            sidebar.createLine(Sidebar.ScoreboardLine(LINE, word(step, INK, "m6", packed, size), 0, Sidebar.NumberFormat.blank()))
             sidebar.addViewer(player)
             shown[player.uuid] = Shown(sidebar, step)
         } else if (current.step != step) {
             current.sidebar.setTitle(title)
-            current.sidebar.updateLineContent(LINE, word(step, INK, "m6", packed))
+            current.sidebar.updateLineContent(LINE, word(step, INK, "m6", packed, size))
             current.step = step
         }
     }
@@ -44,7 +45,8 @@ internal class FirstStepsGuide {
         val INK = TextColor.color(0xECE6DC)
         val GOLD = TextColor.color(0xF2C84B)
 
-        fun word(text: String, color: TextColor, style: String, packed: Boolean): Component =
-            if (packed) Component.text(text, color).font(Key.key("projects_ui_polish05", "menu4_${style}_0")) else Component.text(text, color)
+        /** The menu's MaruMinya baked for GUI scale [size] (2, 3 or 4): two screen pixels a dot at 1080p. */
+        fun word(text: String, color: TextColor, style: String, packed: Boolean, size: Int): Component =
+            if (packed) Component.text(text, color).font(Key.key("projects_ui_polish05", "menu${size}_${style}_0")) else Component.text(text, color)
     }
 }
