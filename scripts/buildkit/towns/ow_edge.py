@@ -37,9 +37,9 @@ line, ys = L.path(main[:5], w=5, rise=3.0)
 line2, ys2 = L.path(main[4:], w=3, rise=3.0)
 L.path([(-12, 2), (2, 10), (14, 14)], w=2, rise=3.0)                  # 畑への踏み跡
 
-PAL = dict(T.MESA)
-PAL['mottle'] = [('coarse_dirt', 71, 2.5, 0.74), ('packed_mud', 72, 3.0, 0.75), ('moss_block', 73, 3.0, 0.72), ('rooted_dirt', 74, 2.0, 0.78), ('green_wool', 75, 4.0, 0.68)]
-L.build(PAL)
+YARD = (18, 2, 36, 14)                                                 # 作業場：道と畑の間（x0, z0, x1, z1）
+L.rect(*YARD, L.h(26, 8), kind=5)
+L.build(dict(T.MESA, pave=[('coarse_dirt', .35), ('dirt_path', .25), ('gravel', .15), ('packed_mud', .15), ('grass', .10)]))
 
 # ---------------------------------------------------------------- 家（及第点の家の型）
 t = Town((-64, 63, -64, 63), lambda x, z: 5)
@@ -66,6 +66,31 @@ P.woodpile(20, 30, L.h(20, 30), 'w')
 P.cart(-6, -6, L.h(-6, -6), 'e')
 P.notice_board(-6, 8, L.h(-6, 8), 'e')
 
+# ---------------------------------------------------------------- 作業場：丸石の縁、干し草の山、樽、井戸、荷車、羊の囲い、物置
+def yard():
+    x0, z0, x1, z1 = YARD; g = L.h(x0, z0)
+    for x in range(x0, x1 + 1):                                          # 縁：丸石と苔の丸石の低い縁石、入口を 2 か所空ける
+        for z in (z0, z1):
+            if not (x0 + 6 <= x <= x0 + 8 and z == z0): put(x, g + 1, z, slab('cobblestone' if _h(x, z, 1) < .7 else 'mossy_cobblestone'))
+    for z in range(z0, z1 + 1):
+        for x in (x0, x1):
+            if not (z0 + 5 <= z <= z0 + 6 and x == x0): put(x, g + 1, z, slab('cobblestone' if _h(x, z, 2) < .7 else 'mossy_cobblestone'))
+    hay = [(x0 + 2, z1 - 2), (x0 + 3, z1 - 2), (x0 + 2, z1 - 3), (x0 + 3, z1 - 3), (x0 + 4, z1 - 2), (x0 + 2, z1 - 4)]   # 干し草：2 段の山
+    for i, (x, z) in enumerate(hay):
+        put(x, g + 1, z, {'s': 'full', 't': 'hay_block_side', 'top': 'hay_block_top', 'bot': 'hay_block_top'})
+        if i < 3: put(x, g + 2, z, {'s': 'full', 't': 'hay_block_side', 'top': 'hay_block_top', 'bot': 'hay_block_top'})
+    for x, z, h in ((x1 - 2, z0 + 2, 2), (x1 - 3, z0 + 2, 1), (x1 - 2, z0 + 3, 1), (x1 - 5, z0 + 2, 1)):   # 樽：壁際に塊で
+        for y in range(g + 1, g + 1 + h): put(x, y, z, {'s': 'full', 't': 'barrel_side', 'top': 'barrel_top', 'bot': 'barrel_bottom'})
+    P.well(x0 + 10, z0 + 7, g, 's')
+    P.cart(x1 - 7, z1 - 3, g, 'w')
+    P.woodpile(x0 + 2, z0 + 2, g, 's')
+    for x in range(x1 + 2, x1 + 12):                                     # 羊の囲い：作業場の東、柵で
+        for z in range(z0 + 1, z0 + 10):
+            if x in (x1 + 2, x1 + 11) or z in (z0 + 1, z0 + 9):
+                if L.inb(x, z) and not (x == x1 + 2 and z == z0 + 5): put(x, L.h(x, z) + 1, z, fence('spruce_planks'))
+    put(x1 + 7, L.h(x1 + 7, z0 + 5) + 1, z0 + 5, {'s': 'full', 't': 'hay_block_side', 'top': 'hay_block_top', 'bot': 'hay_block_top'})
+yard()
+
 # ---------------------------------------------------------------- 街灯：町側から 6・12・24 と間を広げ、外の 40 マスは無し
 acc, nxt, gap = 0, 6, 6
 for k in range(1, len(line) + len(line2) - 1):
@@ -80,10 +105,16 @@ for k in range(1, len(line) + len(line2) - 1):
 
 # ---------------------------------------------------------------- 木：西の段の上にトウヒの群れ、町と畑のまわりにまばらな広葉樹
 CAMS = [(0, 50), (40, 30)]
+SIGHT = [((0, 50), (0, 22)), ((40, 30), (21, 14))]                   # 比べる視点の見通し（手本と同じ向きの先 25 マス）は木で塞がない
+def off_sight(x, z):
+    for (ax, az), (bx, bz) in SIGHT:
+        t = max(0, min(1, ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / ((bx - ax) ** 2 + (bz - az) ** 2)))
+        if math.hypot(x - ax - t * (bx - ax), z - az - t * (bz - az)) < 7: return False
+    return True
 placed = []
 def ok(x, z, d):
     return (L.inb(x, z) and L.slope_ok(x, z) and all(math.hypot(x - a, z - b) >= d for a, b in placed)
-            and all(math.hypot(x - a, z - b) >= 9 for a, b in CAMS) and (x, z) not in t.HOUSE_CELLS and get(x, L.h(x, z) + 1, z) is None)
+            and all(math.hypot(x - a, z - b) >= 9 for a, b in CAMS) and off_sight(x, z) and (x, z) not in t.HOUSE_CELLS and get(x, L.h(x, z) + 1, z) is None)
 for cx, cz in ((-52, -14), (-48, 6), (-56, 30), (-40, 52), (-30, -38)):
     for k in range(6):
         x, z = cx + rng.randint(-7, 7), cz + rng.randint(-7, 7)
@@ -95,7 +126,7 @@ for k in range(120):
     else: TR.bush(x, z, L.h(x, z), rng.randint(0, 9999), big=rng.random() < 0.5)
     placed.append((x, z))
     if len(placed) >= 36: break
-L.plants(density=0.4, flowers=('dandelion', 'poppy', 'azure_bluet', 'cornflower', 'oxeye_daisy', 'allium'), skip=lambda x, z: (x, z) in t.HOUSE_CELLS)
+L.plants(density=0.25, skip=lambda x, z: (x, z) in t.HOUSE_CELLS)
 
 V = lambda x, y, z: [-x, y, z]
 save(NAME, {'overview': [V(0, 80, 95), V(0, 10, 0)]}, V(0, 10, 0), shadowR=100, fog=(150, 400))

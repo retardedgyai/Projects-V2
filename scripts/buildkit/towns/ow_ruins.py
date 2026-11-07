@@ -16,7 +16,9 @@ import trees as TR
 from props import hut as P_hut
 
 NAME = sys.argv[1] if len(sys.argv) > 1 else 'ow_ruins'
-L = T.Land(128, base=0, seed=8)
+REGION = '--region' in sys.argv                                      # 256×256 の地域：真ん中の 128 はそのまま、外に段の丘・道・見どころを足す
+R = 124 if REGION else 60
+L = T.Land(256 if REGION else 128, base=0, seed=8)
 rng = random.Random(8)
 
 # ---------------------------------------------------------------- 段の丘：参道（z≒-6）を挟んで北と南に台地
@@ -29,6 +31,11 @@ L.plateau(28, 38, 30, 11, rz=22, rot=0.3)
 L.plateau(-46, 50, 14, 17, steps=1)
 L.plateau(10, 52, 14, 18, steps=1)
 L.plateau(-58, -8, 10, 14, steps=0)                            # 西の門の背の岩
+if REGION:                                                      # 外の輪：大きな台地を 2〜3 段、北の頂に崩れた塔
+    for cx, cz, r, h, rz, st in ((-84, -96, 40, 12, 28, 1), (64, -98, 44, 15, 26, 1), (4, -108, 24, 24, 18, 1), (2, -112, 12, 32, 10, 0),
+                                 (104, 44, 30, 11, 34, 1), (108, -40, 20, 18, 16, 1), (-74, 92, 40, 11, 26, 1), (44, 102, 38, 13, 22, 1),
+                                 (-106, 44, 24, 15, 30, 1), (-102, -58, 22, 12, 18, 0), (100, 104, 18, 20, 16, 1), (-112, 108, 14, 22, 12, 0)):
+        L.plateau(cx, cz, r, h, rz=rz, steps=st, rot=rng.uniform(-0.6, 0.6))
 
 # ---------------------------------------------------------------- 参道（敷石の広い道、幅 9）と森の小道
 AX = [(63, -4), (36, -7), (10, -5), (-16, -6), (-42, -7)]
@@ -36,13 +43,19 @@ for i in range(L.N):
     for j in range(L.N):
         x, z = j - L.o, i - L.o
         zc = -6 + 1.5 * math.sin(x / 23.0)
-        if -48 <= x and abs(z - zc) <= 4.5 + (T.fbm(x, z, 5, 3) - 0.5) * 1.6:
+        if -48 <= x <= 66 and abs(z - zc) <= 4.5 + (T.fbm(x, z, 5, 3) - 0.5) * 1.6:
             L.H[i, j] = 1; L.K[i, j] = 5
-        elif -48 <= x and abs(z - zc) <= 6.5 and L.K[i, j] == 0 and L.H[i, j] <= 3:
+        elif -48 <= x <= 66 and abs(z - zc) <= 6.5 and L.K[i, j] == 0 and L.H[i, j] <= 3:
             L.H[i, j] = 1; L.K[i, j] = 2
 L.path([(0, -2), (-4, 10), (-12, 18), (-22, 24)], w=2, rise=2.5)          # 南の段へ登る小道
 L.path([(20, -10), (24, -20), (16, -28), (8, -34)], w=2, rise=2.5)        # 北の段へ
-falls = T.stream(L, [(30, -62), (28, -50), (22, -40), (20, -30), (24, -20), (30, -14)], w=1.6)
+if REGION:                                                      # 参道の先：東と西へ土の道、北の頂の塔へ登る道、南の野営地へ
+    L.path([(64, -5), (84, -2), (100, 12), (127, 16)], w=5, rise=3.0)
+    L.path([(-50, -7), (-70, -12), (-92, -20), (-127, -18)], w=4, rise=3.0)
+    L.path([(8, -34), (14, -60), (4, -80), (-10, -94), (0, -104)], w=3, rise=2.6)
+    L.path([(-22, 24), (-40, 48), (-62, 66), (-80, 74)], w=3, rise=2.8)
+    falls = T.stream(L, [(44, -127), (40, -100), (34, -80), (30, -62), (28, -50), (22, -40), (20, -30), (24, -20), (30, -14)], w=1.8)
+else: falls = T.stream(L, [(30, -62), (28, -50), (22, -40), (20, -30), (24, -20), (30, -14)], w=1.6)
 L.pond(36, -14, 5)
 
 PAVE = [('stone_bricks', .30), ('cracked_stone_bricks', .15), ('mossy_stone_bricks', .20), ('andesite', .10), ('cobblestone', .10), ('moss_block', .08), ('grass', .07)]
@@ -201,24 +214,64 @@ def gate(cx, cz, g):
         if L.inb(x, z): put(x, L.h(x, z) + 1, z, wb(x, 0, z) if k % 2 else full('cobblestone'))
 gate(-44, -6, 1)
 
+# ---------------------------------------------------------------- 地域だけ：北の頂の崩れた塔、南西の野営地
+def ruin_tower(cx, cz, g, r=4, h=22):
+    """丸い石の塔の残り：南の半分が崩れて中が見え、上ほど欠ける。足元に崩れた石。"""
+    for y in range(g + 1, g + h):
+        t = (y - g) / h
+        for dx in range(-r, r + 1):
+            for dz in range(-r, r + 1):
+                d = math.hypot(dx, dz)
+                if not (r - 1.2 <= d <= r + 0.3): continue
+                ang = math.atan2(dz, dx)
+                gap = 0.9 + 1.4 * t + (_h(dx, y, dz) - 0.5) * 0.6          # 崩れ：南（+z）側の弧が上ほど広く欠ける
+                if abs(ang - math.pi / 2) < gap and y > g + 3: continue
+                if t > 0.75 and _h(dx, y, dz) < (t - 0.75) * 3: continue
+                put(cx + dx, y, cz + dz, full(L.pick([('stone_bricks', .4), ('mossy_stone_bricks', .3), ('cracked_stone_bricks', .2), ('andesite', .1)], cx + dx, y, cz + dz, 71)))
+    for y in (g + 8, g + 15):                                          # 中の床の残り
+        for dx in range(-r + 1, r):
+            for dz in range(-r + 1, 0): put(cx + dx, y, cz + dz, slab('spruce_planks', 'top'))
+    for k in range(14):
+        x, z = cx + rng.randint(-2, 2) + rng.choice((-1, 1)) * rng.randint(0, 4), cz + rng.randint(4, 10)
+        if L.inb(x, z): put(x, L.h(x, z) + 1, z, full('cobblestone') if k % 3 else slab('stone_bricks'))
+    put(cx, g + 9, cz - 2, {'s': 'lantern', 't': 'soul_lantern'})
+def camp(cx, cz):
+    g = L.h(cx, cz)
+    P_hut(cx - 3, cz - 3, g + 1, w=7, d=6, cloth='brown_wool', open_side='e', bed=g)
+    put(cx + 7, g, cz, full('magma_block'))                            # 焚き火の跡：赤い炭と石の輪
+    for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)): put(cx + 7 + dx, g + 1, cz + dz, slab('cobblestone'))
+    for dx, dz in ((6, -2), (8, 2), (9, -1)): put(cx + dx, g + 1, cz + dz, {'s': 'full', 't': 'barrel_side', 'top': 'barrel_top', 'bot': 'barrel_bottom'})
+    banner_post(cx + 5, cz + 4, 's')
+if REGION:
+    ruin_tower(2, -112, L.h(2, -112))
+    camp(-86, 76)
+
 # ---------------------------------------------------------------- 木：段の上に大きな広葉樹とトウヒの群れ、参道の上は空ける
 placed = []
 CAMS = [(56, -6), (0, 30)]                                          # 比べる視点の立ち位置（手本と同じ）。木で塞がない
 def ok(x, z, d=6):
     return (L.inb(x, z) and L.slope_ok(x, z) and all(math.hypot(x - a, z - b) >= d for a, b in placed) and abs(z + 6) > 10
             and all(math.hypot(x - a, z - b) >= 10 for a, b in CAMS))
-for k in range(220):
-    x, z = rng.randint(-60, 60), rng.randint(-60, 60)
-    if not ok(x, z, 9 if L.h(x, z) > 6 else 13): continue
+for k in range(220 * (12 if REGION else 1)):
+    x, z = rng.randint(-R, R), rng.randint(-R, R)
     g = L.h(x, z)
+    if REGION and abs(x) > 60 or REGION and abs(z) > 60:            # 地域の外の輪：丘の間の草地も大きな木の群れで埋める（間 6〜8、空き地は雑音で残す）
+        if not ok(x, z, 7) or T.fbm(x, z, 30, 99) < 0.42: continue
+        if rng.random() < 0.65: TR.oak(x, z, g, rng.randint(0, 9999), size=rng.uniform(1.3, 1.8))
+        else: TR.spruce(x, z, g, rng.randint(0, 9999), h=rng.randint(17, 24))
+        placed.append((x, z))
+        if len(placed) >= 260: break
+        continue
+    if not ok(x, z, 9 if g > 6 else 13): continue
     if g >= 9 and rng.random() < 0.6: TR.oak(x, z, g, rng.randint(0, 9999), size=rng.uniform(1.1, 1.5))
     elif g >= 9: TR.spruce(x, z, g, rng.randint(0, 9999), h=rng.randint(14, 19))
     elif rng.random() < 0.5: TR.bush(x, z, g, rng.randint(0, 9999), big=True)
     else: continue
     placed.append((x, z))
-    if len(placed) >= 26: break
+    if len(placed) >= (260 if REGION else 26): break
 L.plants(density=0.3, kinds=('short_grass', 'fern', 'fern', 'short_grass'), flowers=('azure_bluet', 'oxeye_daisy', 'lily_of_the_valley'))
 
 V = lambda x, y, z: [-x, y, z]
-save(NAME, {'overview': [V(0, 80, 95), V(0, 10, 0)]}, V(0, 10, 0), shadowR=100, fog=(150, 400))
+if REGION: save(NAME, {'overview': [V(0, 150, 190), V(0, 10, 0)]}, V(0, 10, 0), shadowR=200, fog=(260, 700))
+else: save(NAME, {'overview': [V(0, 80, 95), V(0, 10, 0)]}, V(0, 10, 0), shadowR=100, fog=(150, 400))
 print('柱', cols, '木', len(placed), '滝', len(falls))
