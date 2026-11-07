@@ -716,24 +716,7 @@ class QuestEncounterCombat(
         }
         if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG && applied > 0.0 && mob.life.isAlive) sakuraHit(mob, attacker, applied, now)
         if (!mob.life.isAlive) {
-            endGimmick(mob)
-            if (mob.shade) { gimmicks.dispose(); lights.hold("horns-${mob.entity.uuid}", null, 0) }
-            mob.abilities.cancel()
-            clearWarning(mob.entity.uuid)
-            castingPose(mob, false)
-            stopNavigation(mob)
-            sound(mob.entity.position, "minecraft:entity.${mob.definition.soundFamily}.death", 1.0f, if (mob.boss) 0.65f else 1.0f)
-            particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.POOF, 8)
-            latestDefeat = QuestMobDefeat("mob:${mob.entity.uuid}", mob.entity.uuid, mob.definition.archetype,
-                mob.definition.archetype.rarity, mob.definition.dropKind, tier, mob.entity.position, attacker.uuid)
-            plates.hide(mob.entity.uuid)
-            mob.entity.kill()
-            mob.model?.dispose()
-            mob.view?.die()
-            if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) sakuraFx?.death()
-            if (mob.miniBoss) { lowerPillars(mob); miniBossDown(mob) }
-            // Health is already terminal before this callback can re-enter the runtime.
-            onMobDefeated(attacker, mob.boss)
+            defeat(mob, attacker)
         } else {
             if(now >= mob.tauntedUntil || mob.target?.let { !canTarget(it) || it.instance !== instance } != false) mob.target = attacker
             if (mob.life.phase == QuestMobPhase.IDLE) mob.life.phase = QuestMobPhase.CHASING
@@ -899,6 +882,29 @@ class QuestEncounterCombat(
             }
         }
         return entity.uuid
+    }
+
+    /** Its health is gone: the death clip, the drop and the room's count. [killer] is null only for a mob that burst itself. */
+    private fun defeat(mob: Mob, killer: Player?) {
+        endGimmick(mob)
+        if (mob.shade) { gimmicks.dispose(); lights.hold("horns-${mob.entity.uuid}", null, 0) }
+        mob.abilities.cancel()
+        clearWarning(mob.entity.uuid)
+        castingPose(mob, false)
+        stopNavigation(mob)
+        sound(mob.entity.position, "minecraft:entity.${mob.definition.soundFamily}.death", 1.0f, if (mob.boss) 0.65f else 1.0f)
+        particle(mob.entity.position.add(0.0, 1.0, 0.0), Particle.POOF, 8)
+        latestDefeat = QuestMobDefeat("mob:${mob.entity.uuid}", mob.entity.uuid, mob.definition.archetype,
+            mob.definition.archetype.rarity, mob.definition.dropKind, tier, mob.entity.position, killer?.uuid)
+        plates.hide(mob.entity.uuid)
+        mob.entity.kill()
+        mob.model?.dispose()
+        // A bud that burst lies open flat and fades (its `spent` clip) instead of wilting.
+        mob.view?.die(if (killer == null && mob.definition.archetype == QuestMobArchetype.SAKURA_BUD) "spent" else "death")
+        if (mob.definition.archetype == QuestMobArchetype.SAKURA_FANG) sakuraFx?.death()
+        if (mob.miniBoss) { lowerPillars(mob); miniBossDown(mob) }
+        // Health is already terminal before this callback can re-enter the runtime.
+        onMobDefeated(killer, mob.boss)
     }
 
     private fun isSpawned(mob: Mob): Boolean = !mob.entity.isRemoved && mob.entity.instance === instance
@@ -2029,6 +2035,15 @@ class QuestEncounterCombat(
                     if (event.frame.ability.id in SIGHT_ONLY) particle(mob.entity.position.add(0.0, 3.6, 0.0), Particle.FLASH, 1)
                     else sakuraBurst(event.frame)
                 }
+                if (mob.definition.archetype in SAKURA_COMMON) sakuraBurst(event.frame)
+                if (event.frame.ability.id == SELF_BURST) {
+                    // つぼみ: the bloom was its whole life. It is spent, counted for the room, with no one's kill.
+                    sound(mob.entity.position, "minecraft:block.azalea_leaves.break", 1.0f, .7f)
+                    particle(mob.entity.position.add(0.0, 1.2, 0.0), Particle.CHERRY_LEAVES, 40)
+                    mob.life.damage(mob.life.health)
+                    defeat(mob, null)
+                    return false
+                }
             }
             is MobAbilityEvent.Finished -> {
                 clearWarning(mob.entity.uuid); updateName(mob)
@@ -2444,6 +2459,10 @@ class QuestEncounterCombat(
         const val SEARCH_SPEED = .3
         const val SEARCH_BEYOND = 14.0
         const val TURN_SWEEP = "shade-turnsweep"
+        /** 散り桜の社's common enemies: petals scatter over each blow, as over the bosses'. */
+        val SAKURA_COMMON = setOf(QuestMobArchetype.SAKURA_HUSK, QuestMobArchetype.SAKURA_ARCHER, QuestMobArchetype.SAKURA_BUD)
+        /** つぼみ's bloom: it bursts, and is gone. */
+        const val SELF_BURST = "bud-burst"
         /** 桜牙獣 answers someone at its back with the 360 tail spin. */
         const val SAKURA_TURN = "sakura-spin"
         /** 桜牙獣's breather between attack chains (ms), and the pause between its moves. */

@@ -652,6 +652,13 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             addSyntax({ sender, context -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR,
                 "miniboss${context.get(slot)}") } }, slot)
         })
+        // Test-only: /mobtest husk|archer|bud: one of 散り桜の社's common enemies alone in the mini-boss lab (no reward, no save).
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("mobtest").apply {
+            setDefaultExecutor { sender, _ -> sender.sendMessage(Component.text("/mobtest husk か archer か bud（散り桜の社の雑魚）", NamedTextColor.GRAY)) }
+            val which = net.minestom.server.command.builder.arguments.ArgumentType.Word("mob").from("husk", "archer", "bud")
+            addSyntax({ sender, context -> (sender as? Player)?.let { combatLab.enter(it, account(it)?.journey?.job ?: CoreClass.WARRIOR,
+                "mob-${context.get(which)}") } }, which)
+        })
         // Test-only: /dungeontest opens ダンジョンの門 from anywhere in the harbor; inside, /dungeontest clear ends the
         // room's wave (a 穢れ場 skips to its last enemy) and /dungeontest boss drops 桜牙獣 (to its 千本桜 first, with you at the glade's edge; again to finish).
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("dungeontest").apply {
@@ -788,6 +795,30 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             repeat(presses) { i -> player.scheduler().buildTask { actor(player)?.attack() }.delay(TaskSchedule.tick(20 + i * gap)).schedule() }
             player.scheduler().buildTask { java.io.File("claude-demo.done").writeText("${System.currentTimeMillis()}") }
                 .delay(TaskSchedule.tick(20 + presses * gap + 30)).schedule()
+        }.repeat(TaskSchedule.tick(5)).schedule()
+        // Test-only (2026-11-07): claude-mobfilm.txt ("husk" | "archer" | "bud") films a common enemy without input: the test
+        // client's player enters /mobtest, stands 7 blocks before the enemy looking at it, and lets it come and attack; at
+        // 7 s and 7.8 s the enemy is struck lightly (its flinch), at 10 s killed (its fall). claude-mobfilm.done when over.
+        if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getSchedulerManager().buildTask {
+            val trigger = java.io.File("claude-mobfilm.txt")
+            if (!trigger.exists()) return@buildTask
+            val player = MinecraftServer.getConnectionManager().onlinePlayers.let { all -> all.firstOrNull { it.username == "ClaudeTest" } ?: all.firstOrNull() }
+                ?: return@buildTask
+            val which = trigger.readText().trim()
+            if (!combatLab.contains(player)) { combatLab.enter(player, CoreClass.WARRIOR, "mob-$which"); return@buildTask }
+            val combat = combatLab.combat(player)
+            val target = combat?.entities()?.firstOrNull()
+            if (!combatLab.ready(player) || combat == null || target == null) return@buildTask
+            trigger.delete()
+            val t = target.position
+            val stand = Pos(t.x(), t.y(), t.z() - 7.0)
+            player.teleport(stand.withView(0f, 12f))
+            fun strike(amount: Double, delay: Int) = player.scheduler().buildTask {
+                combat.entities().firstOrNull()?.let { combat.applyEffectDamage(it.uuid, player, amount) }
+            }.delay(TaskSchedule.tick(delay)).schedule()
+            strike(1.0, 140); strike(1.0, 156); strike(1e6, 200)
+            player.scheduler().buildTask { java.io.File("claude-mobfilm.done").writeText("${System.currentTimeMillis()}") }
+                .delay(TaskSchedule.tick(240)).schedule()
         }.repeat(TaskSchedule.tick(5)).schedule()
         // Test-only: /vm <beat 1-3> <ticks> plays the greatsword viewmodel swing slowly, to look at it frame by frame.
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getCommandManager().register(Command("vm").apply {
