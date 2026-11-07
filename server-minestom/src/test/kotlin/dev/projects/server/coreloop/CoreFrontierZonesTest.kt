@@ -138,7 +138,7 @@ class CoreFrontierZonesTest {
         val account = CoreAccount(id, revision = 3, unlockedMapTier = 2, maps = listOf(map),
             activeRun = CoreActiveRun(UUID.randomUUID(), active), zoneRecords = mapOf(26 to CoreZoneRecord(3, 7), zone.id to CoreZoneRecord(1, 13)))
         val encoded = CoreAccountCodec.encode(account)
-        assertTrue(encoded.startsWith("PROJECTS_CORE_LOOP\t13\t"))
+        assertTrue(encoded.startsWith("PROJECTS_CORE_LOOP\t14\t"))
         val decoded = CoreAccountCodec.decode(encoded, id)
         assertEquals(account.zoneRecords, decoded.zoneRecords)
         assertEquals(zone.id, decoded.maps.single().zone)
@@ -150,12 +150,12 @@ class CoreFrontierZonesTest {
             .joinToString("") { "%02x".format(it) } + "\n"
         val v11 = encoded.substringBefore("checksum\t").lineSequence()
             .filterNot { it.startsWith("map-zone\t") || it.startsWith("zone-record\t") || it.startsWith("passive") }
-            .joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t13\t", "PROJECTS_CORE_LOOP\t11\t")
+            .joinToString("\n").replaceFirst("PROJECTS_CORE_LOOP\t14\t", "PROJECTS_CORE_LOOP\t11\t")
         val migrated = CoreAccountCodec.decode(sealed(v11), id)
         assertTrue(migrated.zoneRecords.isEmpty())
         assertNull(migrated.maps.single().zone)
         assertNull(migrated.activeRun?.map?.zone)
-        assertTrue(CoreAccountCodec.encode(migrated).startsWith("PROJECTS_CORE_LOOP\t13\t"))
+        assertTrue(CoreAccountCodec.encode(migrated).startsWith("PROJECTS_CORE_LOOP\t14\t"))
         // v12 rows are not accepted in an older header, and a zone needs its map.
         assertFailsWith<IllegalArgumentException> {
             CoreAccountCodec.decode(sealed(v11 + "zone-record\t26\t1\t1\n"), id)
@@ -170,7 +170,7 @@ class CoreFrontierZonesTest {
         val id = UUID.randomUUID()
         val current = CoreAccountCodec.encode(CoreAccount(id, revision = 1)).substringBefore("checksum\t")
             .lineSequence().filterNot { it.startsWith("passive") }.joinToString("\n")
-            .replaceFirst("PROJECTS_CORE_LOOP\t13\t", "PROJECTS_CORE_LOOP\t11\t")
+            .replaceFirst("PROJECTS_CORE_LOOP\t14\t", "PROJECTS_CORE_LOOP\t11\t")
         val bytes = (current + "checksum\t" + MessageDigest.getInstance("SHA-256").digest(current.toByteArray(UTF_8))
             .joinToString("") { "%02x".format(it) } + "\n").toByteArray(UTF_8)
         Files.write(directory.resolve("$id.account"), bytes)

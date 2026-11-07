@@ -377,7 +377,8 @@ class CoreAccountService(private val repository: CoreAccountRepository,
                     maps = account.maps + rewardMap, activeRun = run.copy(bossDefeated = true)) to message
             } else if (run.dungeon) {
                 grantFragments(grantCurrencies(rewarded, mapOf(CoreCraftingCurrency.EXALTED to 1L)), CoreActivityKind.TRIAL, 1L)
-                    .copy(activeRun = run.copy(bossDefeated = true)) to message
+                    .copy(activeRun = run.copy(bossDefeated = true), dungeonClears = account.dungeonClears +
+                        (run.trialId!! to ((account.dungeonClears[run.trialId] ?: 0) + 1).coerceAtMost(CoreZoneRecord.MAX_CLEARS))) to message
             } else {
                 val kind = CoreActivityKind.entries.single { it.bossId == run.trialId }
                 grantCurrencies(rewarded, mapOf(kind.currency to 2L, CoreCraftingCurrency.EXALTED to 1L))

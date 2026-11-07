@@ -259,6 +259,7 @@ class CoreAccountRepository(
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t10\t") -> 10
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t11\t") -> 11
             bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t12\t") -> 12
+            bytes.toString(UTF_8).startsWith("PROJECTS_CORE_LOOP\t13\t") -> 13
             else -> return
         }
         val backup = directory.resolve("$playerId.account.v$version.bak")
@@ -283,7 +284,7 @@ class CoreAccountRepository(
 internal object CoreAccountCodec {
     fun encode(account: CoreAccount): String {
         val body = buildString {
-            append("PROJECTS_CORE_LOOP\t13\t${account.playerId}\t${account.revision}\n")
+            append("PROJECTS_CORE_LOOP\t14\t${account.playerId}\t${account.revision}\n")
             append("gear\t${account.weaponTier}\t${account.armorTier}\t${account.unlockedMapTier}\n")
             append("crafting\t${account.weaponRarity}\t${account.armorRarity}\t${account.craftingSeed}\n")
             append("enhancement\t${account.weaponEnhancement.level}\t${account.weaponEnhancement.failures}\t${account.armorEnhancement.level}\t${account.armorEnhancement.failures}\t${account.smithingXp}\n")
@@ -320,6 +321,7 @@ internal object CoreAccountCodec {
             (account.maps + listOfNotNull(account.activeRun?.map)).forEach { append("map-level\t${it.id}\t${it.level}\n") }
             (account.maps + listOfNotNull(account.activeRun?.map)).forEach { map -> map.zone?.let { append("map-zone\t${map.id}\t$it\n") } }
             account.zoneRecords.forEach { (zone, record) -> append("zone-record\t$zone\t${record.clears}\t${record.bestLevel}\n") }
+            account.dungeonClears.forEach { (dungeon, clears) -> append("dungeon-clear\t$dungeon\t$clears\n") }
             account.offers.forEach { append("offer\t${it.id}\t${it.price}\t${it.material?.resource ?: ""}\t${it.material?.tier ?: 1}\t${it.quantity}\t${it.gearId ?: ""}\n") }
             account.currencies.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("currency\t$key\t$amount\n") }
             account.fragments.entries.sortedBy { it.key.ordinal }.forEach { (key, amount) -> append("fragment\t$key\t$amount\n") }
@@ -345,7 +347,7 @@ internal object CoreAccountCodec {
         require(text.substring(checksumAt) == "checksum\t${digest(body)}\n") { "保存データの検証に失敗しました" }
         val rows = body.trimEnd('\n').split('\n').map { it.split('\t') }
         val header = rows.first()
-        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in (1..13).map(Int::toString)) { "未対応の保存形式です" }
+        require(header.size == 4 && header[0] == "PROJECTS_CORE_LOOP" && header[1] in (1..14).map(Int::toString)) { "未対応の保存形式です" }
         val version = header[1].toInt()
         require(UUID.fromString(header[2]) == playerId) { "保存データのプレイヤーが一致しません" }
         val gear = rows.getOrNull(1) ?: error("装備データがありません")
@@ -397,6 +399,7 @@ internal object CoreAccountCodec {
         val mapLevels = linkedMapOf<UUID, Int>()
         val mapZones = linkedMapOf<UUID, Int>()
         val zoneRecords = linkedMapOf<Int, CoreZoneRecord>()
+        val dungeonClears = linkedMapOf<String, Int>()
         rows.drop(2).forEach { row -> when (row[0]) {
             "class-build" -> { require(version >= 9 && row.size == 7 && classBuild == null); readTreeMask(row[6]); classBuild = CoreClassBuild(row[1].toInt(), row[2].toInt(), row[3].toInt(), row[4].toInt(), row[5].toInt()) }
             "class-loadout" -> {
@@ -423,6 +426,7 @@ internal object CoreAccountCodec {
             "map-zone" -> { require(version >= 12 && row.size == 3); require(mapZones.put(UUID.fromString(row[1]), row[2].toInt()) == null) }
             "zone-record" -> { require(version >= 12 && row.size == 4 && zoneRecords.size <= CoreZoneRecord.MAX_ZONE_ID)
                 require(zoneRecords.put(row[1].toInt(), CoreZoneRecord(row[2].toInt(), row[3].toInt())) == null) }
+            "dungeon-clear" -> { require(version >= 14 && row.size == 3); require(dungeonClears.put(row[1], row[2].toInt()) == null) }
             "map-level" -> { require(version >= 8 && row.size == 3); require(mapLevels.put(UUID.fromString(row[1]), row[2].toInt()) == null) }
             "survey" -> { require(version >= 7 && row.size == 2 && survey == null); survey = row[1].toLong() }
             "profession" -> { require(version >= 7 && row.size == 4); require(professions.put(CoreProfession.valueOf(row[1]), CoreProfessionProgress(row[2].toLong(), row[3].toInt())) == null) }
@@ -601,7 +605,7 @@ internal object CoreAccountCodec {
             armorBroken = economy?.get(5)?.let { readBroken(it, version) } ?: false,
             professions = professions, surveyPoints = survey ?: 0, buyOrders = migratedOrders,
             journey = journey ?: CoreJourney.legacy(xp = CoreJourneyRules.threshold(CoreJourneyRules.floor(gear[3].toInt()))), armorParts = parts,
-            zoneRecords = zoneRecords)
+            zoneRecords = zoneRecords, dungeonClears = dungeonClears)
     }
 
     /** Retired v5 wear is validated but never reinterpreted as enhancement damage. */

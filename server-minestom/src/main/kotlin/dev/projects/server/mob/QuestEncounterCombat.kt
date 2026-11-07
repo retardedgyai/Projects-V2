@@ -613,7 +613,10 @@ class QuestEncounterCombat(
         .map { mob ->
             val scale = mob.definition.scale
             // The wyrm's body reaches ~1 block ahead of its carrier; hits test the spheres on its bones (ShadeWyrmHitbox).
-            if (mob.view != null) CombatTarget(mob.entity.uuid, mob.entity.position.add(normalizeHorizontal(mob.entity.position.direction()))
+            if (mob.view != null && mob.definition.archetype == QuestMobArchetype.SAKURA_FANG)
+                // 桜牙獣: 2.75 wide, 5.9 high, 7 long; the box only gathers candidates, its bones' spheres decide (SakuraFangHitbox).
+                CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 2.95, 0.0), Vec(3.6, 2.95, 3.6), parts = SakuraFangHitbox.parts(mob.view!!))
+            else if (mob.view != null) CombatTarget(mob.entity.uuid, mob.entity.position.add(normalizeHorizontal(mob.entity.position.direction()))
                 .add(0.0, 1.8, 0.0), Vec(2.0, 1.8, 2.0), parts = ShadeWyrmHitbox.parts(mob.view!!))
             else if (mob.model != null) CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 1.8, 0.0), Vec(1.2, 1.8, .6))
             else CombatTarget(mob.entity.uuid, mob.entity.position.add(0.0, 0.9 * scale, 0.0), Vec(0.35 * scale, 0.9 * scale, 0.35 * scale))
@@ -1467,6 +1470,44 @@ class QuestEncounterCombat(
         sound(o, "minecraft:entity.iron_golem.repair", 1.2f, .5f)
     }
 
+    /**
+     * 千本桜's cover (藍「千本桜の技を出すときに、フィールドに桜の気とかそういうのが生えて、その裏にいたら」): five sakura
+     * blossoms of its 気 spring up on a ring half way to the arena's edge, each a short trunk under a 3×3 crown that
+     * reaches the ground, so a player crouched behind one is out of its sight. Built only on open floor, kept in
+     * [Mob.pillars], so [lowerPillars] puts every block back.
+     */
+    private fun raiseBlossomCover(mob: Mob, centre: Pos) {
+        lowerPillars(mob)
+        val trunk = net.minestom.server.instance.block.Block.CHERRY_LOG
+        val crown = net.minestom.server.instance.block.Block.CHERRY_LEAVES.withProperty("persistent", "true")
+        val ring = sakuraArenaRadius * .5
+        val turn = Math.random() * 2 * Math.PI
+        for (k in 0 until BLOSSOM_COVERS) {
+            val a = turn + k * 2 * Math.PI / BLOSSOM_COVERS
+            val c = centre.add(kotlin.math.cos(a) * ring, 0.0, kotlin.math.sin(a) * ring)
+            val ground = telegraphs.groundHeight(c) ?: continue
+            val y0 = floor(ground).toInt()
+            for (u in -1..1) for (w in -1..1) for (dy in 0..4) {
+                val core = u == 0 && w == 0
+                val corner = u != 0 && w != 0
+                val block = when {
+                    core && dy <= 1 -> trunk
+                    dy == 4 && corner -> continue                     // a rounded top
+                    dy == 0 && corner -> continue                     // and a narrower foot
+                    else -> crown
+                }
+                val x = floor(c.x()).toInt() + u; val z = floor(c.z()).toInt() + w; val y = y0 + dy
+                val old = instance.getBlock(x, y, z)
+                if (!old.air()) continue
+                mob.pillars += Vec(x.toDouble(), y.toDouble(), z.toDouble()) to old
+                instance.setBlock(x, y, z, block)
+            }
+            particle(c.add(0.0, 2.0, 0.0), Particle.CHERRY_LEAVES, 30)
+        }
+        sound(centre, "minecraft:block.cherry_leaves.place", 1.6f, .7f)
+        sound(centre, "minecraft:block.amethyst_block.chime", 1.4f, .6f)
+    }
+
     private fun lowerPillars(mob: Mob) {
         if (mob.pillars.isEmpty()) return
         for ((at, old) in mob.pillars.asReversed()) instance.setBlock(at, old)
@@ -2078,6 +2119,8 @@ class QuestEncounterCombat(
         return true
     }
 
+    /** How far 桜牙獣's rings reach (its roar, 千本桜): the arena's radius; the trial arena is 22, 散り桜の庭 29. Its blossoms of 気 stand half way. */
+    var sakuraArenaRadius = RAGE_WAVE_RADIUS
     /** Set by the server once the owner's UI pack is loaded; name tags then use the pixel nameplate. */
     var pixelNameplates = false
         set(value) {
@@ -2194,7 +2237,7 @@ class QuestEncounterCombat(
     private fun tickSakuraRoar(mob: Mob, now: Long) {
         if (mob.waveAt != -1L || now < mob.enrageHoldUntil - 2500) return
         mob.waveAt = now
-        sakuraStrike?.roar(mob.entity.position, RAGE_WAVE_RADIUS)
+        sakuraStrike?.roar(mob.entity.position, sakuraArenaRadius)
         val o = mob.entity.position.add(0.0, 2.5, 0.0)
         particle(o, Particle.CHERRY_LEAVES, 60)
         for (k in 0 until 32) {
@@ -2299,11 +2342,14 @@ class QuestEncounterCombat(
 
     /**
      * 千本桜 (桜牙獣 at 25%, once): it bounds to the middle of the arena, sits and howls while a sakura crest spreads over
-     * the whole floor and the petals spiral in; when it blows, everyone it can see is struck — the pillars are the only
-     * cover. Spent, it collapses.
+     * the whole floor and the petals spiral in, and blossoms of its 気 spring up round it; when it blows, everyone it can
+     * see is struck — behind a blossom is the only cover. Spent, it collapses and the blossoms wither.
      */
     private fun tickFinale(mob: Mob, now: Long): Boolean {
-        if (mob.finaleStarted && mob.finaleEndsAt == 0L) return false
+        if (mob.finaleStarted && mob.finaleEndsAt == 0L) {
+            if (mob.pillars.isNotEmpty() && now >= mob.brokenUntil) lowerPillars(mob)     // the blossoms wither once it rises
+            return false
+        }
         val players = instance.players.filter { canTarget(it) && it.position.distanceSquared(mob.home) <= mob.definition.leashRange * mob.definition.leashRange }
         if (!mob.finaleStarted) {
             if (mob.life.health > mob.life.maximumHealth * FINALE_RATIO || mob.sigilEndsAt != 0L || now < mob.enrageHoldUntil) return false
@@ -2316,7 +2362,8 @@ class QuestEncounterCombat(
             val facing = players.minByOrNull { it.position.distanceSquared(centre) }?.let { yawToward(centre, it.position) } ?: centre.yaw()
             mob.entity.teleport(Pos(centre.x(), centre.y(), centre.z(), facing, 0f))
             mob.view?.maneuver("finale")
-            sakuraStrike?.finale(centre, (FINALE_MILLIS / 50).toInt())
+            sakuraStrike?.finale(centre, (FINALE_MILLIS / 50).toInt(), sakuraArenaRadius)
+            raiseBlossomCover(mob, centre)
             sakuraFx?.finale(FINALE_MILLIS / 1000.0)
             sound(centre, "minecraft:entity.wolf.howl", 2.0f, .5f)
             return true
@@ -2326,7 +2373,7 @@ class QuestEncounterCombat(
             val left = (mob.finaleEndsAt - now + 999) / 1000
             if (left != mob.finaleShown) {
                 mob.finaleShown = left
-                updateName(mob, "千本桜・柱の陰へ（$left）")
+                updateName(mob, "千本桜・桜の陰へ（$left）")
                 if (left <= 3) sound(mob.entity.position, "minecraft:block.note_block.bell", 1.6f, .5f + .2f * (4 - left))
             }
             return true
@@ -2334,12 +2381,12 @@ class QuestEncounterCombat(
         mob.finaleEndsAt = 0L
         val scale = 1.65.pow(tier - 1) * damageMultiplier
         for (p in players) {
-            if (!mob.entity.hasLineOfSight(p)) continue                // behind a pillar: safe
+            if (!mob.entity.hasLineOfSight(p)) continue                // behind a blossom (or a pillar): safe
             val amount = FINALE_DAMAGE * scale
             if (typedDamagePlayer != null) typedDamagePlayer.invoke(p, amount, dev.projects.server.coreloop.CoreDamageType.MAGICAL)
             else damagePlayer(p, amount)
         }
-        sakuraStrike?.finaleBlow(mob.entity.position, RAGE_WAVE_RADIUS)
+        sakuraStrike?.finaleBlow(mob.entity.position, sakuraArenaRadius)
         sakuraFx?.finaleBlow()
         sound(mob.entity.position, "minecraft:entity.generic.explode", 2.0f, .6f)
         mob.brokenUntil = now + FINALE_SPENT_MILLIS
@@ -2350,6 +2397,9 @@ class QuestEncounterCombat(
         mob.sigilNextAt = maxOf(mob.sigilNextAt, now + FINALE_SPENT_MILLIS + 8000L)
         return false
     }
+
+    /** The blocks of 千本桜's blossoms of 気 standing now, for tests. */
+    internal fun blossomCover(targetId: UUID): List<Vec> = mobs[targetId]?.pillars?.map { it.first }.orEmpty()
 
     /** 千本桜's state, for tests: started, running. */
     internal fun finaleState(targetId: UUID): Pair<Boolean, Boolean>? = mobs[targetId]?.let { it.finaleStarted to (it.finaleEndsAt != 0L) }
@@ -2477,6 +2527,8 @@ class QuestEncounterCombat(
         const val SIGIL_BREAK_MILLIS = 4500L
         /** 千本桜: at this share of health, an 8 s howl, then a blow on everyone in its sight; spent for 5 s. */
         const val FINALE_RATIO = .25
+        /** The blossoms of 気 that spring up for 千本桜 (raiseBlossomCover). */
+        const val BLOSSOM_COVERS = 5
         const val FINALE_MILLIS = 8000L
         const val FINALE_DAMAGE = 70.0
         const val FINALE_SPENT_MILLIS = 5000L

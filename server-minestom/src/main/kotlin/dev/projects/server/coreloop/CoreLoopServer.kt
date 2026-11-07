@@ -1396,11 +1396,14 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
     private fun attachTrial(player: Player, arena: BossArena, runId: UUID, tier: Int, dungeon: DungeonLayout? = null) {
         val run = requireNotNull(account(player)?.activeRun).also { check(it.id == runId && it.trialId == arena.bossId) }
         val bar = BossBar.bossBar(CoreLoopItems.text(arena.displayName, NamedTextColor.RED), 1f, bossBarColor(player), BossBar.Overlay.PROGRESS)
+        // An instance dungeon's 段階 grows with its clears (CoreDungeons.stage): stronger enemies, and its rooms' gimmicks.
+        val stage = if (dungeon != null) CoreDungeons.stage(account(player)?.dungeonClears?.get(arena.bossId) ?: 0) else 1
         val combat = QuestEncounterCombat(arena.instance, tier, emptyList(), arena.bossSpawn,
             onMobDefeated = { _, boss -> onMobDefeated(player, boss) },
             damagePlayer = { target, damage -> actors[target.uuid]?.hurt(damage) },
             canTarget = { target -> target === player && actors[target.uuid]?.defeated == false && sessions[target.uuid]?.returning == false },
             contentSeed = run.map.seed, explicitBossArchetype = arena.archetype,
+            healthMultiplier = CoreDungeons.health(stage), damageMultiplier = CoreDungeons.damage(stage),
             encounterLevel = run.map.level,
             typedDamagePlayer = { target, damage, type -> actors[target.uuid]?.hurt(damage, type) },
             crowdPlayer = { target, kind, millis, from -> actors[target.uuid]?.receiveCrowdControl(kind, millis, from) },
@@ -1408,8 +1411,9 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         try {
             val loot = CoreWorldLoot(player, arena.instance, run, { rewards.submit(player.uuid, it) }, { refresh(player) })
             combat.pixelNameplates = packed(player)
+            if (dungeon != null) combat.sakuraArenaRadius = dungeon.arenaRadius
             val session = Session(player, runId, null, combat, bar, loot, arena)
-            if (dungeon != null) session.dungeon = DungeonRun(arena.instance, combat, dungeon) {
+            if (dungeon != null) session.dungeon = DungeonRun(arena.instance, combat, dungeon, stage) {
                 listOf(player).filter { it.instance === arena.instance && actors[it.uuid]?.defeated == false && !session.returning }
             }
             sessions[player.uuid] = session
