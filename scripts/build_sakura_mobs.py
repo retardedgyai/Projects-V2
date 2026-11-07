@@ -8,8 +8,9 @@
 skeleton, wolf, vex, vindicator, a stump) at 16 px a block and one texel a pixel, built the way RuneForge's own common
 enemies are (counted from its pack, nothing copied): 25-50 cubes on 6-12 bones; limbs 3 px thick with a joint knob at
 shoulder, elbow and knee; ribs and rings as separate bars; bands, cuffs and straps as boxes 0.3 px proud of the part
-under them; flat details (petals, paper streamers, fletching) as planes. Every face is painted clean, without noise:
-a dark 1 px rim, the mid tone, a light inner edge at the top. The sakura is in the shape (bark with cherry lenticels,
+under them; flat details (petals, paper streamers, fletching) as planes. Every face is painted as RuneForge's are (measured
+2026-11-07: no dark rim, half the neighbouring pixels differ): a volume ramp, light at the top and in the middle, dark
+toward the bottom, with a grain of the neighbouring tones; colours low in saturation, sockets dark with one lit pixel. The sakura is in the shape (bark with cherry lenticels,
 five-petal flowers, a bud in green sepals, a petal mane, a blossom shield), with the shrine's rope and paper (注連縄・紙垂)
 as the second material.
 
@@ -32,7 +33,7 @@ P = {
     "wood": ((74, 48, 30), (108, 72, 44), (140, 100, 62), (172, 130, 84), (204, 164, 112)),
     "bone": ((128, 112, 96), (176, 160, 138), (210, 198, 176), (232, 224, 204), (248, 244, 230)),
     "sepal": ((24, 48, 26), (42, 76, 38), (62, 104, 50), (90, 134, 64), (124, 164, 84)),
-    "bud": ((124, 34, 70), (176, 60, 102), (214, 96, 136), (238, 144, 174), (252, 196, 214)),
+    "bud": ((112, 52, 72), (158, 84, 106), (196, 118, 138), (222, 156, 170), (240, 196, 204)),
     "kstone": ((62, 64, 72), (96, 98, 106), (128, 130, 136), (160, 160, 164), (192, 190, 188)),
     "moss": ((32, 56, 30), (52, 84, 40), (74, 110, 50), (100, 138, 62), (132, 166, 80)),
     "cloth": ((56, 18, 28), (96, 30, 42), (134, 44, 56), (166, 64, 72), (196, 96, 100)),
@@ -40,12 +41,15 @@ P = {
     "white": ((150, 146, 156), (196, 192, 200), (222, 220, 228), (240, 238, 244), (252, 252, 254)),
     "straw": ((92, 70, 36), (134, 104, 56), (170, 136, 76), (200, 168, 100), (226, 200, 134)),
     "brass": ((90, 60, 22), (150, 108, 40), (196, 152, 64), (228, 196, 100), (250, 232, 160)),
-    "red": ((86, 14, 22), (138, 24, 34), (178, 40, 46), (210, 70, 70), (232, 112, 104)),
+    "red": ((78, 30, 32), (116, 46, 46), (146, 64, 60), (172, 90, 80), (196, 122, 108)),
     "black": ((10, 10, 14), (20, 20, 26), (32, 32, 40), (48, 48, 58), (66, 66, 78)),
 }
 hm.RAMPS.update(P)
-EYE = (255, 150, 190)       # self-lit pink eyes
-EYE_DIM = (150, 40, 84)
+# The petals (hm.petal paints from hm.PINK) quieter here than the mini-bosses': on a common enemy the sakura is an
+# accent, and RuneForge keeps its common enemies low in saturation.
+hm.PINK = ((128, 64, 86), (176, 104, 124), (210, 146, 160), (232, 186, 194), (246, 222, 224))
+EYE = (255, 168, 196)       # a self-lit pin of pink in the socket
+EYE_DIM = (70, 34, 46)      # the socket round it, dark
 CORE = (255, 228, 150)      # a flower's middle
 
 
@@ -53,35 +57,57 @@ def rgba(mat, lvl, a=255):
     return (*P[mat][max(0, min(4, int(round(lvl))))], a)
 
 
+def _grain(x, y, salt):
+    """A fixed pixel pattern in [0, 1): the painted grain of a face (the same face size paints the same)."""
+    h = (x * 73856093) ^ (y * 19349663) ^ (salt * 83492791)
+    h = (h ^ (h >> 13)) * 1274126177 & 0xffffffff
+    return (h & 0xffff) / 65536.0
+
+
+_PANELS = [0]
+
+
 def panel(mat, face=None, lenticels=False, bands=0, key=""):
-    """A clean RuneForge-style face: dark rim, mid fill, a light inner edge along the top and the left; the up face
-    lighter, the down face darker. face(x, y, w, h) -> rgba | None draws on the front (south). lenticels: cherry
-    bark's short pale dashes; bands: a dark ring every `bands` rows (joints, rope twists)."""
+    """A face painted the way RuneForge's common enemies are (measured 2026-11-07 against its pack: no dark rim — a
+    face's edge is as bright as its middle — and half the neighbouring pixels differ): a volume ramp, lighter at the
+    top and in the middle, darker toward the bottom where it meets the next part; a grain of the neighbouring tones
+    over it. The up face lighter, the down face darker. face(x, y, w, h) -> rgba | None draws on the front (south).
+    lenticels: cherry bark's short pale dashes; bands: a darker groove every `bands` rows (joints, rope twists)."""
+    _PANELS[0] += 1
+    part = _PANELS[0]       # each part its own grain (RuneForge paints every part; none shares a face)
+
     def painter(side, w, h):
+        salt = sum(map(ord, mat + side + key)) + part * 131
         def paint(x, y, w_, hh):
             if side == "south" and face is not None:
                 out = face(x, y, w_, hh)
                 if out is not None:
                     return out
-            base = {"up": 3, "down": 1}.get(side, 2)
-            if min(w_, hh) <= 2:
-                return rgba(mat, base + (1 if y == 0 and side != "down" else 0))
-            rim = x == 0 or y == 0 or x == w_ - 1 or y == hh - 1
-            lvl = base - 1 if rim else base
-            if not rim and (y == 1 or x == 1) and side != "down":
-                lvl += 1
-            if not rim and y == hh - 2:
-                lvl -= .6
-            if bands and not rim and y % bands == bands - 1:
-                lvl = base - 1
-            if lenticels and side not in ("up", "down") and not rim:
+            base = {"up": 2.9, "down": 1.2}.get(side, 2.2 if side in ("south", "north") else 1.9)
+            if min(w_, hh) <= 1:
+                return rgba(mat, base)
+            # the volume: down the face it darkens (the occlusion where it meets the part below), and it bulges
+            # lighter in the middle across it
+            t = y / max(1, hh - 1) if side not in ("up", "down") else .5
+            across = 1 - abs(2 * x / max(1, w_ - 1) - 1)
+            lvl = base + .55 - 1.25 * t * t + .35 * across
+            if side == "up":
+                lvl = base + .3 * across + .3 * (1 - abs(2 * y / max(1, hh - 1) - 1)) - .2
+            # the grain: patches of 2 px a step up or down (worn spots, not single-pixel noise), a few single pixels
+            g = _grain(x // 2, (y + (x // 2) % 2) // 2, salt)
+            lvl += .85 if g < .13 else -.85 if g > .85 else 0
+            g1 = _grain(x, y, salt + 7)
+            lvl += .7 if g1 < .04 else -.7 if g1 > .96 else 0
+            if bands and y % bands == bands - 1:
+                lvl -= 1.1
+            if lenticels and side not in ("up", "down"):
                 row = y % 4
                 if row == 2 and (x + (y // 4) * 3) % 6 in (1, 2):
-                    lvl = 4
+                    lvl = 3.6
                 elif row == 3 and (x + (y // 4) * 3) % 6 in (1, 2):
-                    lvl = 0
+                    lvl = .6
             return rgba(mat, lvl)
-        return paint, ("panel", mat, key, lenticels, bands, side, w, h)
+        return paint, ("panel2", mat, key, part, lenticels, bands, side, w, h)
     return painter
 
 
@@ -100,27 +126,40 @@ def rings(mat="wood"):
 
 
 def eyes(*boxes, mouth=(), dark="black"):
-    """Front-face features: each eye box is a dark socket with its lit core; mouth boxes are dark."""
+    """Front-face features: each eye box a dark socket (deepest at the bottom) with one lit pixel; mouths dark."""
     def face(x, y, w, h):
         for x0, y0, x1, y1 in boxes:
             if x0 <= x < x1 and y0 <= y < y1:
-                core = (x1 - x0 <= 2 or x0 < x < x1 - 1) and (y1 - y0 <= 2 or y == y1 - 2 or y1 - y0 == 1)
-                return (*EYE, SELF_LIT) if core else (*EYE_DIM, 255)
+                if x == (x0 + x1 - 1) // 2 and y == y1 - 1:
+                    return (*EYE, SELF_LIT)
+                return rgba(dark, 1 if y == y0 else 0) if y > y0 or x1 - x0 <= 2 else (*EYE_DIM, 255)
         for x0, y0, x1, y1 in mouth:
             if x0 <= x < x1 and y0 <= y < y1:
-                return rgba(dark, 1)
+                return rgba(dark, 0 if y > y0 else 1)
         return None
     return face
 
 
 def socket_face(x, y, w, h):
-    """The skull's front: two deep sockets with a pink pin of light, a nose notch, the brow ridge lit."""
-    if y in (2, 3) and (1 <= x <= 2 or w - 3 <= x <= w - 2):
-        return (*EYE, SELF_LIT) if y == 3 and x in (2, w - 3) else rgba("bone", 0)
-    if y == 4 and x in (w // 2 - 1, w // 2):
-        return rgba("bone", 0)
+    """The skull's front, painted in shapes: a lit brow, two sockets 3 px wide (rim mid-dark, the hollow darkest,
+    narrowing at the bottom) each with a pin of pink, a dark nose notch, the cheekbones lit."""
+    left, right = range(1, 4), range(w - 4, w - 1)
     if y == 1 and 1 <= x <= w - 2:
-        return rgba("bone", 4)
+        return rgba("bone", 3.6)
+    for xs in (left, right):
+        mid = xs[1]
+        if y == 2 and x in xs:
+            return rgba("bone", .4)
+        if y == 3 and x in xs:
+            return (*EYE, SELF_LIT) if x == mid else rgba("black", 1)
+        if y == 4 and x == mid:
+            return rgba("black", 2)
+        if y == 4 and x in xs:
+            return rgba("bone", .8)
+    if y == 5 and x in (w // 2 - 1, w // 2):
+        return rgba("bone", 0)
+    if y == 5 and x in (1, w - 2):
+        return rgba("bone", 3.4)
     return None
 
 
@@ -541,9 +580,9 @@ def build_archer():
     for s, side in ((1, "l"), (-1, "r")):
         arm = b.bone(f"ar_arm_{side}", body, (5 * s, 22, 0))
         cbox(b, arm, (5 * s, 22.5, -.6), (3.4, 3.4, 3.4), "bone")
-        limb(b, arm, (5 * s, 22, -.6), 11, 2.4, "bone", knob=(6, 3), cuff=(8.4, 1.4), cuff_mat="wood")
+        limb(b, arm, (5 * s, 22, -.6), 11, 3.0, "bone", knob=(6, 3.6), cuff=(8.4, 1.4), cuff_mat="wood")
         leg = b.bone(f"ar_leg_{side}", body, (2 * s, 12, 0))
-        limb(b, leg, (2 * s, 12, -.4), 12, 2.4, "bone", knob=(6, 3))
+        limb(b, leg, (2 * s, 12, -.4), 12, 3.0, "bone", knob=(6, 3.6))
         box(b, leg, (2 * s - 1.6, 0, -1.8), (2 * s + 1.6, 1.4, 2.2), "bone")
     # the bow, held in the left hand: a curved branch with blossoms at its tips and a pale string
     bow = b.bone("ar_bow", "ar_arm_l", (5, 12, 0))
