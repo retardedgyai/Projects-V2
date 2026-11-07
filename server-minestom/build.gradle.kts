@@ -142,6 +142,9 @@ val mspt by tasks.registering(Test::class) {
     // as scripts/start-core-loop.ps1 runs the server
     maxHeapSize = "3g"
     jvmArgs("-XX:ActiveProcessorCount=4", "-Xlog:gc:file=${dir.resolve("gc.log")}")
-    // -PmsptGc=zgc: the same bench on generational ZGC (for comparison; the server runs the default G1)
-    if (providers.gradleProperty("msptGc").orNull == "zgc") jvmArgs("-XX:+UseZGC")
+    // -PmsptGc=zgc | g1-15: the same bench on generational ZGC or G1 aiming at 15 ms pauses (the server runs plain G1)
+    when (providers.gradleProperty("msptGc").orNull) {
+        "zgc" -> jvmArgs("-XX:+UseZGC")
+        "g1-15" -> jvmArgs("-XX:MaxGCPauseMillis=15")
+    }
 }

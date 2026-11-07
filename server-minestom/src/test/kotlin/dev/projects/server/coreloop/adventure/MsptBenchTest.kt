@@ -12,6 +12,7 @@ import net.minestom.server.entity.GameMode
 import net.minestom.server.entity.Player
 import net.minestom.server.instance.InstanceContainer
 import net.minestom.server.network.ConnectionState
+import net.minestom.server.network.NetworkBuffer
 import net.minestom.server.network.packet.PacketWriting
 import net.minestom.server.network.packet.client.play.ClientChunkBatchReceivedPacket
 import net.minestom.server.network.packet.server.BufferedPacket
@@ -36,7 +37,8 @@ import kotlin.test.Test
  * One measured tick = what the game's session tick does for the fight (QuestEncounterCombat.tick + DungeonRun.tick) and
  * the whole Minestom tick (scheduler, instances, entities, viewers) — the same `ticker().tick` the server runs. Packets
  * the players receive are counted in the tick; their bytes are encoded after the tick's clock stops (the real server
- * encodes them on its network threads). Ticks run back to back (game time steps 50 ms a tick), after a warm-up.
+ * encodes them on its network threads). Ticks run back to back (game time steps 50 ms a tick), after a warm-up. The
+ * players stand still and take no damage (the fight's damage callbacks do nothing), so a scene lasts as long as it needs.
  *
  * Not part of `test`: `./gradlew :server-minestom:mspt` (writes build/mspt/mspt-report.txt).
  */
@@ -49,8 +51,8 @@ class MsptBenchTest {
         val sent = ArrayList<SendablePacket>()
         override fun sendPacket(packet: SendablePacket) {
             synchronized(sent) { sent += packet }
-            if (SendablePacket.extractServerPacket(ConnectionState.PLAY, packet) is ChunkBatchFinishedPacket)
-                player?.addPacketToQueue(ClientChunkBatchReceivedPacket(25f))
+            // (a real connection only queues the packet: chunk packets are built on its network thread, so not here)
+            if (packet is ChunkBatchFinishedPacket) player?.addPacketToQueue(ClientChunkBatchReceivedPacket(25f))
         }
         override fun getRemoteAddress(): SocketAddress = InetSocketAddress("127.0.0.1", 0)
     }
@@ -70,8 +72,8 @@ class MsptBenchTest {
 
     private companion object {
         /**
-         * Unrecorded ticks after the players are moved into a scene: the bench's connections never acknowledge chunk
-         * batches, so the move's chunks all go out in its first ticks (a real client paces them); not the scene's cost.
+         * Unrecorded ticks after the players are moved into a scene (its chunks stream in, its enemies close in): the
+         * scene is the fight, not the arrival; the arrival is the *_start line and f_enter.
          */
         const val SETTLE = 60
         val SAMPLE = System.getProperty("projects.mspt.sample") == "true"
@@ -117,7 +119,8 @@ class MsptBenchTest {
         for (i in 0 until ticks) {
             if (stop(i)) break
             now += 50
-            connections.forEach { synchronized(it.sent) { it.sent.clear() } }
+            // what was sent between ticks (a move into a new instance sends its first chunks at once) is encoded too
+            connections.forEach { synchronized(it.sent) { it.sent.forEach(::bytesOf); it.sent.clear() } }
             val sampled = HashMap<String, Int>()
             val sampler = if (SAMPLE) sample(Thread.currentThread(), sampled) else null
             val gc0 = gcMillis()
@@ -125,7 +128,8 @@ class MsptBenchTest {
             for (rig in rigs) { rig.combat.tick(now); rig.run?.tick() }
             val t1 = System.nanoTime()
             ticker.tick(System.nanoTime())
-            val dt = System.nanoTime() - t0
+            val t2 = System.nanoTime()
+            val dt = t2 - t0
             sampler?.let { it.interrupt(); it.join() }
             if (dt > 12_000_000L) sampled.entries.sortedByDescending { it.value }.take(10).forEach { println("SAMPLE $name tick=$i ${it.value} ${it.key}") }
             val gc = gcMillis() - gc0
@@ -133,17 +137,19 @@ class MsptBenchTest {
             if (dt > 25_000_000L) {
                 val kinds = connections.flatMap { c -> synchronized(c.sent) { c.sent.map { (SendablePacket.extractServerPacket(ConnectionState.PLAY, it) ?: it).javaClass.simpleName } } }
                     .groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.take(6)
-                println("SLOW $name tick=$i ms=%.1f fight=%.1f minestom=%.1f gcPause=${gc}ms packets=${kinds.sumOf { it.value }} kinds=$kinds".format(dt / 1e6, (t1 - t0) / 1e6, (System.nanoTime() - t1) / 1e6))
+                println("SLOW $name tick=$i ms=%.1f fight=%.1f minestom=%.1f gcPause=${gc}ms packets=${kinds.sumOf { it.value }} kinds=$kinds".format(dt / 1e6, (t1 - t0) / 1e6, (t2 - t1) / 1e6))
             }
-            if (!record) continue
-            times += dt
+            // Every tick's packets are encoded (outside the clock) as the server's network threads would: building a
+            // chunk's packet is also what works out its heightmap, which a later block change would otherwise redo.
             var count = 0; var size = 0L
             for (c in connections) synchronized(c.sent) {
                 count += c.sent.size
                 for (p in c.sent) size += bytesOf(p)
             }
+            if (!record) continue
+            times += dt
             packets += count; bytes += size
-            if (size > 200_000) {
+            if (SAMPLE && size > 200_000) {
                 val heavy = connections.flatMap { c -> synchronized(c.sent) { c.sent.map { (SendablePacket.extractServerPacket(ConnectionState.PLAY, it) ?: it).javaClass.simpleName to bytesOf(it) } } }
                     .groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.size to v.sum() }.entries.sortedByDescending { it.value.second }.take(4)
                 println("BIG $name tick=$i bytes=$size by=$heavy")
@@ -156,15 +162,18 @@ class MsptBenchTest {
     }
 
     /** Debug (-PmsptSample=true): where the tick thread is, every 0.5 ms, by project frame; printed for ticks over 12 ms. */
+    private val tickThreads by lazy { Thread.getAllStackTraces().keys.filter { it.name.startsWith("Ms-Tick") } }
+
     private fun sample(target: Thread, counts: HashMap<String, Int>): Thread = Thread {
         try {
-            while (true) {
-                val frames = target.stackTrace
+            while (true) for (thread in listOf(target) + tickThreads) {
+                val frames = thread.stackTrace
+                if (thread !== target && frames.firstOrNull()?.methodName == "park") continue
                 val mine = frames.filter { it.className.startsWith("dev.projects") && "MsptBench" !in it.className }.take(4)
                     .joinToString(" < ") { "${it.className.substringAfterLast('.')}.${it.methodName}:${it.lineNumber}" }
                 val top = frames.take(DEPTH).joinToString(" < ") { "${it.className.substringAfterLast('.')}.${it.methodName}" }
-                counts.merge("$mine || $top", 1, Int::plus)
-                Thread.sleep(0, 500_000)
+                counts.merge("${if (thread === target) "" else "[${thread.name}] "}$mine || $top", 1, Int::plus)
+                if (thread === target) Thread.sleep(0, 500_000)
             }
         } catch (_: InterruptedException) {}
     }.also { it.isDaemon = true; it.start() }
@@ -175,10 +184,14 @@ class MsptBenchTest {
     private fun gcMillis(): Long = java.lang.management.ManagementFactory.getGarbageCollectorMXBeans()
         .filter { "Pauses" in it.name || "Young" in it.name || "Old" in it.name || "Mixed" in it.name }.sumOf { it.collectionTime }
 
+    /** One reused buffer, as the network writer reuses its own (the bench should not make garbage the server does not). */
+    private val scratch = NetworkBuffer.resizableBuffer(1L shl 20, MinecraftServer.process())
+
     private fun bytesOf(packet: SendablePacket): Long = when (packet) {
         is BufferedPacket -> packet.length()
         else -> SendablePacket.extractServerPacket(ConnectionState.PLAY, packet)?.let {
-            runCatching { PacketWriting.allocateTrimmedPacket(ConnectionState.PLAY, it, 0).writeIndex() }.getOrDefault(0L)
+            scratch.clear()
+            runCatching { PacketWriting.writeFramedPacket(scratch, ConnectionState.PLAY, it, 0); scratch.writeIndex() }.getOrDefault(0L)
         } ?: 0L
     }
 
@@ -271,6 +284,13 @@ class MsptBenchTest {
             measure("settle", rigs, SETTLE, false)
             results += finale("e_four_solo", rigs, true)!!
             rigs.forEach(::dispose)
+            // (f) one player enters a fresh 散り桜の社 (a new run): its first 2 s (the others stay where (e) left them).
+            val fresh = InstanceDungeonFactory.create(1).also { extra += it }
+            players[0].setInstance(fresh.arena.instance, fresh.layout.spawn).join()
+            val entering = Rig(fresh.arena.instance, combat(fresh.arena.instance, fresh.layout) { it === players[0] },
+                null).let { Rig(it.instance, it.combat, DungeonRun(it.instance, it.combat, fresh.layout, stage) { listOf(players[0]) }) }
+            results += measure("f_enter", listOf(entering), 40)!!
+            dispose(entering)
 
             val cpu = runCatching { File("/proc/cpuinfo").readLines().first { it.startsWith("model name") }.substringAfter(":").trim() }.getOrDefault("?")
             val report = buildString {

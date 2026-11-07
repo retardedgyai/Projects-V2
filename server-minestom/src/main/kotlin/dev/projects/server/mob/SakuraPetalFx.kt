@@ -452,12 +452,19 @@ internal class SakuraPetalFx(private val instance: Instance, seed: Int = 7) {
         }
     }
 
-    private fun stack(fade: Double, heat: Double): ItemStack =
-        ItemStack.of(Material.PAPER).withItemModel("projects:boss_vfx/sakura_streak")
-            .with(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), emptyList(),
-                listOf(TextColor.color((fade.coerceIn(0.0, 1.0) * 255).toInt(), 100 + (heat * 100).toInt(), MARKER))))
+    /** The petal item for a fade and heat; the same tint is the same stack, so each is built once (night MSPT bench). */
+    private fun stack(fade: Double, heat: Double): ItemStack {
+        val red = (fade.coerceIn(0.0, 1.0) * 255).toInt()
+        val green = 100 + (heat * 100).toInt()
+        return STACKS.computeIfAbsent(red shl 16 or green) {
+            ItemStack.of(Material.PAPER).withItemModel("projects:boss_vfx/sakura_streak")
+                .with(DataComponents.CUSTOM_MODEL_DATA, CustomModelData(emptyList(), emptyList(), emptyList(),
+                    listOf(TextColor.color(red, green, MARKER))))
+        }
+    }
 
     companion object {
+        private val STACKS = java.util.concurrent.ConcurrentHashMap<Int, ItemStack>()
         const val MARKER = 78
         const val DT = .05
         const val SEND_EVERY = 3
