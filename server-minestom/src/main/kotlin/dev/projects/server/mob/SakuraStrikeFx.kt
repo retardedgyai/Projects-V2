@@ -198,10 +198,11 @@ internal class SakuraStrikeFx(instance: Instance) {
     }
 
     /** 千本桜: a crest of light spreads over the whole floor and brightens while it howls. */
-    fun finale(at: Pos, ticks: Int) {
-        fx.add("sakura_crest", 2, at.add(0.0, .15, 0.0), 0, ticks, Vec(4.0, 1.0, 4.0), IDENTITY, grow = Vec(44.0, 1.0, 44.0),
+    fun finale(at: Pos, ticks: Int, radius: Double = 22.0) {
+        val across = radius * 2
+        fx.add("sakura_crest", 2, at.add(0.0, .15, 0.0), 0, ticks, Vec(4.0, 1.0, 4.0), IDENTITY, grow = Vec(across, 1.0, across),
             moveTicks = ticks - 10) { .05 + .4 * it * it }
-        fx.add("sakura_ring", 2, at.add(0.0, .1, 0.0), 0, ticks, Vec(44.0, 1.0, 44.0), IDENTITY, grow = Vec(6.0, 1.0, 6.0), moveTicks = ticks) { .2 + .3 * it }
+        fx.add("sakura_ring", 2, at.add(0.0, .1, 0.0), 0, ticks, Vec(across, 1.0, across), IDENTITY, grow = Vec(6.0, 1.0, 6.0), moveTicks = ticks) { .2 + .3 * it }
         fx.add("sakura_blossom", 4, at.add(0.0, 5.0, 0.0), ticks / 2, ticks / 2, Vec(1.0, 1.0, 1.0), IDENTITY, grow = Vec(6.0, 6.0, 1.0),
             moveTicks = ticks / 2, billboard = true) { .05 }
     }

@@ -292,6 +292,52 @@ class SakuraFangBossTest {
     }
 
     @Test
+    fun `千本桜 raises blossoms of 気 round the arena, and the one hiding behind a blossom is spared`() {
+        MinecraftServer.init(Auth.Offline())
+        val arena = BossArenaFactory.create("sakura", 1)
+        val connection = MemoryConnection()
+        connection.setClientState(ConnectionState.PLAY)
+        connection.setServerState(ConnectionState.PLAY)
+        val player = Player(connection, GameProfile(UUID.randomUUID(), "SakuraBlossom"))
+        connection.player = player
+        player.gameMode = GameMode.ADVENTURE
+        player.setInstance(arena.instance, arena.bossSpawn.add(0.0, 0.0, 6.0)).join()
+        var hurt = 0.0
+        val combat = QuestEncounterCombat(arena.instance, 1, emptyList(), arena.bossSpawn, { _, _ -> }, { _, amount -> hurt += amount },
+            explicitBossArchetype = arena.archetype)
+        try {
+            val boss = combat.entities().single()
+            var now = 1000L
+            combat.tick(now)
+            player.teleport(boss.position.sub(boss.position.direction().mul(5.0)))
+            combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .52)
+            repeat(200) { now += 50; combat.tick(now) }
+            combat.applyEffectDamage(boss.uuid, player, combat.bossMaxHealth() * .9)
+            val open = arena.bossSpawn.add(0.0, 0.0, 8.0)
+            var started = false
+            while (now < 120_000L && !started) { now += 50; player.teleport(open); combat.tick(now); started = combat.finaleState(boss.uuid)?.first == true }
+            assertTrue(started)
+            val cover = combat.blossomCover(boss.uuid)
+            val trunks = cover.filter { arena.instance.getBlock(it).compare(net.minestom.server.instance.block.Block.CHERRY_LOG) }
+                .groupBy { it.blockX() to it.blockZ() }.keys
+            assertEquals(QuestEncounterCombat.BLOSSOM_COVERS, trunks.size, "each blossom stands on a trunk")
+            // Crouch behind the first: on the line from the middle through its trunk, three blocks past it.
+            val (tx, tz) = trunks.first()
+            val centre = arena.bossSpawn
+            val out = net.minestom.server.coordinate.Vec(tx + .5 - centre.x(), 0.0, tz + .5 - centre.z()).normalize()
+            val hide = net.minestom.server.coordinate.Pos(tx + .5 + out.x() * 3, centre.y(), tz + .5 + out.z() * 3)
+            val before = hurt
+            while (combat.finaleState(boss.uuid)?.second == true) { now += 50; player.teleport(hide); combat.tick(now) }
+            assertEquals(before, hurt, 1e-9, "behind a blossom: spared")
+            repeat(140) { now += 50; combat.tick(now) }
+            assertTrue(combat.blossomCover(boss.uuid).isEmpty(), "the blossoms wither once it rises")
+            assertTrue(cover.all { arena.instance.getBlock(it).air() }, "and leave the floor as it was")
+        } finally {
+            combat.dispose(); player.remove(); arena.dispose()
+        }
+    }
+
+    @Test
     fun `the petal storm follows each ability, stays under its cap and dies away after the death`() {
         MinecraftServer.init(Auth.Offline())
         val instance = MinecraftServer.getInstanceManager().createInstanceContainer()

@@ -290,6 +290,11 @@ class CoreCraftingCurrencyTest {
         assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.BossReward(run)).status)
         assertEquals(CoreTransactionStatus.REJECTED, f.perform(CoreAction.AbortRun(run)).status)
         f.commit(CoreAction.FinishRun(run))
+        // The clear is counted and saved (v14): the next run of the shrine is 段階2.
+        assertEquals(mapOf(CoreDungeons.SAKURA to 1), f.account.dungeonClears)
+        f.service.forget(f.player); f.service.open(f.player)
+        assertEquals(1, f.account.dungeonClears[CoreDungeons.SAKURA])
+        assertEquals(2, CoreDungeons.stage(1))
         val aborted = UUID.randomUUID()
         f.commit(CoreAction.StartDungeon(CoreDungeons.SAKURA, 1, aborted))
         f.commit(CoreAction.AbortRun(aborted))

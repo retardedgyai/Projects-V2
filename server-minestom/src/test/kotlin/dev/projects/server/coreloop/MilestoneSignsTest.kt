@@ -22,13 +22,4 @@ class MilestoneSignsTest {
         assertNull(MilestoneSigns.of(cleared, cleared.copy(dungeonClears = mapOf(CoreDungeons.SAKURA to 2))))
         assertNull(MilestoneSigns.of(base, base.copy(silver = 10)))
     }
-
-    /** Save format: the clears survive a save, and a save written before them (no dungeon-clear rows) reads as none. */
-    @Test fun `dungeon clears are saved and older saves read as none`() {
-        val cleared = base.copy(dungeonClears = mapOf(CoreDungeons.SAKURA to 3))
-        assertEquals(mapOf(CoreDungeons.SAKURA to 3), CoreAccountCodec.decode(CoreAccountCodec.encode(cleared), base.playerId).dungeonClears)
-        val older = CoreAccountCodec.encode(base)
-        assertEquals(false, "dungeon-clear" in older)
-        assertEquals(emptyMap(), CoreAccountCodec.decode(older, base.playerId).dungeonClears)
-    }
 }

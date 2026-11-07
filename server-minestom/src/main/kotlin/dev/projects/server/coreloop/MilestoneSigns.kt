@@ -21,10 +21,11 @@ internal object MilestoneSigns {
     enum class Kind(val glyph: String) { LEVEL(""), SKILL(""), CLEAR("") }
     data class Milestone(val kind: Kind, val line: String)
 
-    /** The one milestone between two snapshots of an account, if any: a first clear first, then 冒険 Lv, then スキル Lv. */
+    /** The one milestone between two snapshots of an account, if any: a first clear (a dungeon's clears going 0 → 1, counted
+     *  by #237's CoreAccount.dungeonClears) first, then 冒険 Lv, then スキル Lv. */
     fun of(before: CoreAccount, after: CoreAccount): Milestone? {
         (after.dungeonClears.keys - before.dungeonClears.keys).firstOrNull()?.let {
-            return Milestone(Kind.CLEAR, CoreDungeons.names[it] ?: "ダンジョン")
+            return Milestone(Kind.CLEAR, DUNGEON_NAMES[it] ?: "ダンジョン")
         }
         if (after.journey.level > before.journey.level) return Milestone(Kind.LEVEL, "冒険 Lv ${after.journey.level}")
         if (after.journey.job == before.journey.job) {
@@ -54,4 +55,5 @@ internal object MilestoneSigns {
     }
 
     private val INK = TextColor.color(0xECE6DC)
+    private val DUNGEON_NAMES = mapOf(CoreDungeons.SAKURA to "散り桜の社")
 }
