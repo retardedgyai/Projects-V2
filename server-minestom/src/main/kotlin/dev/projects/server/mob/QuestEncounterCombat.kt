@@ -1979,7 +1979,7 @@ class QuestEncounterCombat(
                     if (event.frame.ability.id in SIGHT_ONLY) { raisePillars(mob, event.frame); updateName(mob, "灯が満ちる・柱の陰へ") }
                     else sakuraStrike().warn(event.frame, warningTag(mob.entity.uuid))
                 }
-                playVfx(mob, ShadeWyrmVfx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
+                if (mob.definition.archetype !in SAKURA_COMMON) playVfx(mob, ShadeWyrmVfx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
                 if (mob.shade) shaderFx.windup(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
                 if (event.frame.ability.id == ORB) mob.view?.point("skull", ShadeWyrmVfx.SNOUT)?.let {
                     shaderFx.orb(Pos(it), event.frame.origin, ORB_RELEASE_TICKS, (event.frame.ability.telegraphMillis / 50).toInt() - ORB_RELEASE_TICKS)
@@ -2002,7 +2002,8 @@ class QuestEncounterCombat(
                 mob.entity.swingMainHand()
                 castingPose(mob, false)
                 if (!drawWarning(mob, event.frame, true)) { cancelWarning(mob); return false }
-                playVfx(mob, ShadeWyrmVfx.hit(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
+                // The sakura common enemies scatter petals instead of the wyrm's white wake and black dust (sakuraBurst below).
+                if (mob.definition.archetype !in SAKURA_COMMON) playVfx(mob, ShadeWyrmVfx.hit(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) })
                 if (mob.shade) shaderFx.strike(event.frame.ability.id, event.frame) { mob.view?.point("skull", it) }
                 sound(event.frame.origin,
                     if (mob.entity.entityMeta is SpellcasterIllagerMeta) "minecraft:entity.evoker.cast_spell"

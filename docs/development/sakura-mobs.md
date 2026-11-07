@@ -38,5 +38,8 @@
 
 - `/mobtest husk|archer|bud`（開発コマンド）：花守の試し場に1体だけ出る。
 - 撮影：サーバーの作業フォルダに `claude-mobfilm.txt`（中身 `husk` など）を置くと、テスト用クライアントがその試し場で7ブロック前に立ち、
-  敵が寄って撃つのを待ち、7秒と7.8秒に軽く当て（ひるみ）、10秒で倒す。`scripts/dev_film.sh` と同じ隠れた画面で録る。
+  敵が寄って撃つのを待ち、7秒と7.8秒に軽く当て（ひるみ）、10秒で倒す。`scripts/dev_film_mob.sh <名前>` が、`scripts/dev_film.sh` と同じ隠れた画面で録る。
+  - 隠れた画面の窓が小さい時（FILM 出力に並ぶと 924x468）：`hyprctl dispatch 'hl.dsp.window.float({action="enable", window="address:<窓>"})'` と
+    `hl.dsp.window.resize({x=1600, y=900, ...})`、クライアントの窓を広げるのは `python3 scripts/xkey.py :5 fit:<窓ID>`（`xwininfo -display :5 -root -children`）。
+  - 初回の画面設定・職業選びの窓、三人称（F5）、試し場から出る `/hub` も `scripts/xkey.py :5 click:x,y F5 t slash h u b Return` で送る（隠れた画面だけ）。
 - テスト：`SakuraMobsTest`（3体の定義と動きの長さ、つぼみが弾けて散る）。

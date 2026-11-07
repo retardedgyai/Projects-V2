@@ -797,7 +797,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
                 .delay(TaskSchedule.tick(20 + presses * gap + 30)).schedule()
         }.repeat(TaskSchedule.tick(5)).schedule()
         // Test-only (2026-11-07): claude-mobfilm.txt ("husk" | "archer" | "bud") films a common enemy without input: the test
-        // client's player enters /mobtest, stands 7 blocks before the enemy looking at it, and lets it come and attack; at
+        // client's player enters /mobtest, stands 7 blocks before the enemy (turned aside) and lets it come and attack; at
         // 7 s and 7.8 s the enemy is struck lightly (its flinch), at 10 s killed (its fall). claude-mobfilm.done when over.
         if (java.lang.Boolean.getBoolean("projects.devCommands")) MinecraftServer.getSchedulerManager().buildTask {
             val trigger = java.io.File("claude-mobfilm.txt")
@@ -810,9 +810,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
             val target = combat?.entities()?.firstOrNull()
             if (!combatLab.ready(player) || combat == null || target == null) return@buildTask
             trigger.delete()
+            // Turned 55° left of the enemy: the camera (the client in third person, F5) sees it come in from the right and
+            // strike beside the player, in profile, the player standing by for scale.
             val t = target.position
             val stand = Pos(t.x(), t.y(), t.z() - 7.0)
-            player.teleport(stand.withView(0f, 12f))
+            val yaw = Math.toDegrees(kotlin.math.atan2(-(t.x() - stand.x()), t.z() - stand.z())).toFloat() - 55f
+            player.teleport(stand.withView(yaw, 15f))
             fun strike(amount: Double, delay: Int) = player.scheduler().buildTask {
                 combat.entities().firstOrNull()?.let { combat.applyEffectDamage(it.uuid, player, amount) }
             }.delay(TaskSchedule.tick(delay)).schedule()
