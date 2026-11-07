@@ -116,18 +116,17 @@ for _ in range(4):
 cands = [(j - 64, i - 64) for i in range(4, 124, 3) for j in range(4, 124, 3) if near_cliff[i, j] and not cliffish[i, j] and H[i, j] >= 8]
 rng.shuffle(cands)
 placed = []
-CAMS = [(58, 6), (58, 58)]                                          # 比べる視点の立ち位置（手本と同じ）。木で塞がない
-def far(x, z, d): return all(math.hypot(x - a, z - b) >= d for a, b in placed) and all(math.hypot(x - a, z - b) >= 9 for a, b in CAMS)
+def far(x, z, d): return all(math.hypot(x - a, z - b) >= d for a, b in placed)
 groups = 0
 for x, z in cands:
-    if groups >= 10: break
-    if not far(x, z, 16) or math.hypot(x - TOWER[0], z - TOWER[1]) < 9: continue
+    if groups >= 7: break
+    if not far(x, z, 22) or math.hypot(x - TOWER[0], z - TOWER[1]) < 9: continue
     groups += 1
-    for k in range(rng.randint(5, 8)):                              # 密な群れ：幹の間 3〜4
-        tx, tz = x + rng.randint(-5, 5), z + rng.randint(-5, 5)
-        if not L.inb(tx, tz) or not L.slope_ok(tx, tz) or not far(tx, tz, 3): continue
-        TR.spruce(tx, tz, L.h(tx, tz), rng.randint(0, 9999), h=rng.randint(16, 25)); placed.append((tx, tz))
-for k in range(14):                                                  # 野原と低い所：小さいトウヒと茂み
+    for k in range(rng.randint(2, 4)):
+        tx, tz = x + rng.randint(-4, 4), z + rng.randint(-4, 4)
+        if not L.inb(tx, tz) or not L.slope_ok(tx, tz) or not all(math.hypot(tx - a, tz - b) >= 4 for a, b in placed): continue
+        TR.spruce(tx, tz, L.h(tx, tz), rng.randint(0, 9999), h=rng.randint(15, 22)); placed.append((tx, tz))
+for k in range(26):                                                  # 野原と低い所：小さいトウヒと茂み
     tx, tz = rng.randint(-60, 60), rng.randint(-60, 60)
     if not L.slope_ok(tx, tz) or not far(tx, tz, 7): continue
     if rng.random() < 0.5: TR.small_spruce(tx, tz, L.h(tx, tz), rng.randint(0, 9999))
@@ -135,6 +134,20 @@ for k in range(14):                                                  # 野原と
     placed.append((tx, tz))
 L.plants(density=0.22)
 
+# ---------------------------------------------------------------- 遊び（--play、木の後に置いて木の並びを変えない）：Lv5〜8 の採石と採鉱の丘。登るほど強い。頂は見晴らし
+PLAY = '--play' in sys.argv
+if PLAY:
+    import playmarks as PM
+    PM.lay(L, rng, [
+        ('view', TOWER[0], TOWER[1], '見張り台（見晴らし：遺跡の森と岩柱の桜が見える）'),
+        ('ore', -22, -32, ''), ('ore', 24, -40, ''), ('ore', -46, 30, ''),
+        ('stone', 48, 4, ''), ('stone', -8, -20, ''), ('stone', -52, 12, ''), ('herb', 20, 32, ''), ('wood', 52, 42, ''),
+        ('hunt', 36, 48, '狩り場 Lv5（野原の狼）'), ('hunt', -8, -6, '狩り場 Lv6〜7（段の上の猪）'), ('hunt', -30, -28, '狩り場 Lv8（頂の守り）'),
+        ('way', -30, -40, '見張り台の下（復帰点の候補）'),
+    ])
+
+
+if PLAY: PM.save_play(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'out', NAME))
 V = lambda x, y, z: [-x, y, z]
 save(NAME, {'overview': [V(0, 80, 95), V(0, 10, 0)]}, V(0, 10, 0), shadowR=100, fog=(150, 400))
 print('木', len(placed))

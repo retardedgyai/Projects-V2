@@ -37,8 +37,8 @@ line, ys = L.path(main[:5], w=5, rise=3.0)
 line2, ys2 = L.path(main[4:], w=3, rise=3.0)
 L.path([(-12, 2), (2, 10), (14, 14)], w=2, rise=3.0)                  # 畑への踏み跡
 
-YARD = (18, 2, 36, 14)                                                 # 作業場：道と畑の間（x0, z0, x1, z1）
-L.rect(*YARD, L.h(26, 8), kind=5)
+YARD = (18, 2, 36, 14)                                                 # 作業場（v3 で試して戻した。--yard で入れる）：道と畑の間（x0, z0, x1, z1）
+if '--yard' in sys.argv: L.rect(*YARD, L.h(26, 8), kind=5)
 L.build(dict(T.MESA, pave=[('coarse_dirt', .35), ('dirt_path', .25), ('gravel', .15), ('packed_mud', .15), ('grass', .10)]))
 
 # ---------------------------------------------------------------- 家（及第点の家の型）
@@ -89,7 +89,7 @@ def yard():
             if x in (x1 + 2, x1 + 11) or z in (z0 + 1, z0 + 9):
                 if L.inb(x, z) and not (x == x1 + 2 and z == z0 + 5): put(x, L.h(x, z) + 1, z, fence('spruce_planks'))
     put(x1 + 7, L.h(x1 + 7, z0 + 5) + 1, z0 + 5, {'s': 'full', 't': 'hay_block_side', 'top': 'hay_block_top', 'bot': 'hay_block_top'})
-yard()
+if '--yard' in sys.argv: yard()
 
 # ---------------------------------------------------------------- 街灯：町側から 6・12・24 と間を広げ、外の 40 マスは無し
 acc, nxt, gap = 0, 6, 6
@@ -103,15 +103,28 @@ for k in range(1, len(line) + len(line2) - 1):
         if L.inb(px, pz) and L.K[L.idx(px, pz)] in (0, 2): P.path_lamp(px, pz, L.h(px, pz), arm='e' if dz > 0 else 'w')
         gap = min(gap * 2, 24); nxt = acc + gap
 
+# ---------------------------------------------------------------- 遊び（--play）：開拓者の町の出口。Lv1〜3 の最初の採取と狩り
+PLAY = '--play' in sys.argv
+if PLAY:
+    import playmarks as PM
+    PM.lay(L, rng, [
+        ('town', 12, -48, '開拓者の町（死んだらここへ戻る）'),
+        ('wood', -40, -28, ''), ('wood', -34, 8, ''), ('wood', -24, 46, ''),
+        ('herb', 42, 20, ''), ('herb', 12, 50, ''), ('skin', -36, 36, ''), ('stone', 50, -8, ''),
+        ('hunt', -24, 32, '狩り場 Lv1〜2（甲虫）'), ('hunt', 42, 50, '狩り場 Lv2〜3（狼）'),
+        ('way', -50, 30, '根の丘への出口（復帰点の候補）'),
+    ])
+
 # ---------------------------------------------------------------- 木：西の段の上にトウヒの群れ、町と畑のまわりにまばらな広葉樹
 CAMS = [(0, 50), (40, 30)]
 SIGHT = [((0, 50), (0, 22)), ((40, 30), (21, 14))]                   # 比べる視点の見通し（手本と同じ向きの先 25 マス）は木で塞がない
 def off_sight(x, z):
+    if '--yard' not in sys.argv: return True                          # v1 は見通しを空けていない
     for (ax, az), (bx, bz) in SIGHT:
         t = max(0, min(1, ((x - ax) * (bx - ax) + (z - az) * (bz - az)) / ((bx - ax) ** 2 + (bz - az) ** 2)))
         if math.hypot(x - ax - t * (bx - ax), z - az - t * (bz - az)) < 7: return False
     return True
-placed = []
+placed = [(x, z) for _, x, z, _ in PM.PLAY] if PLAY else []          # 木は遊びの印から離す
 def ok(x, z, d):
     return (L.inb(x, z) and L.slope_ok(x, z) and all(math.hypot(x - a, z - b) >= d for a, b in placed)
             and all(math.hypot(x - a, z - b) >= 9 for a, b in CAMS) and off_sight(x, z) and (x, z) not in t.HOUSE_CELLS and get(x, L.h(x, z) + 1, z) is None)
@@ -128,6 +141,7 @@ for k in range(120):
     if len(placed) >= 36: break
 L.plants(density=0.25, skip=lambda x, z: (x, z) in t.HOUSE_CELLS)
 
+if PLAY: PM.save_play(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'out', NAME))
 V = lambda x, y, z: [-x, y, z]
 save(NAME, {'overview': [V(0, 80, 95), V(0, 10, 0)]}, V(0, 10, 0), shadowR=100, fog=(150, 400))
 print('木', len(placed), '家', [f[1] for f in t.FOOT])

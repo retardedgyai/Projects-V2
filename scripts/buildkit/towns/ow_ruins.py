@@ -186,13 +186,14 @@ def puddles(n):
             for dz in range(rng.randint(1, 3)):
                 if L.inb(x + dx, z + dz) and L.K[L.idx(x + dx, z + dz)] == 5: put(x + dx, L.h(x + dx, z + dz), z + dz, {'s': 'water', 't': 'water_still'})
 
-deck(-14, -22, L.h(-12, -20), hgt=3)
-deck(30, 14, L.h(32, 16), hgt=4)
-cliff_stair(-2, -12, -24)
-for bx, bz, f in ((8, -13, 's'), (24, 1, 'n'), (-20, 2, 'n')): banner_post(bx, bz, f)
-puddles(5)
+if '--extras' in sys.argv or REGION:                               # v4 で足した小さな造作（v2 には無い）
+    deck(-14, -22, L.h(-12, -20), hgt=3)
+    deck(30, 14, L.h(32, 16), hgt=4)
+    cliff_stair(-2, -12, -24)
+    for bx, bz, f in ((8, -13, 's'), (24, 1, 'n'), (-20, 2, 'n')): banner_post(bx, bz, f)
+    puddles(5)
 
-P_hut(-26, 22, L.h(-23, 25), w=7, d=6, cloth='red_wool', open_side='n')
+    P_hut(-26, 22, L.h(-23, 25), w=7, d=6, cloth='red_wool', open_side='n')
 
 # ---------------------------------------------------------------- 西の門：崩れたアーチ（幅 11、北の半分だけ残る）
 def gate(cx, cz, g):
@@ -271,6 +272,21 @@ for k in range(220 * (12 if REGION else 1)):
     if len(placed) >= (260 if REGION else 26): break
 L.plants(density=0.3, kinds=('short_grass', 'fern', 'fern', 'short_grass'), flowers=('azure_bluet', 'oxeye_daisy', 'lily_of_the_valley'))
 
+# ---------------------------------------------------------------- 遊び（--play、木の後に置いて木の並びを変えない）：T1 の終わり Lv8〜10。奥に T2 ダンジョンの入口、伐採が特産
+PLAY = '--play' in sys.argv
+if PLAY:
+    import playmarks as PM
+    PM.lay(L, rng, [
+        ('dungeon', -44, -6, '遺跡の地下（T2 ダンジョンの入口）'), ('gather', -10, -6, '集まる広場（4 人）'),
+        ('sign', -22, -15, '入口の目安の札'),
+        ('wood', -30, -40, ''), ('wood', 22, -44, ''), ('wood', -34, 34, ''), ('wood', 28, 40, ''),
+        ('skin', 46, 26, ''), ('skin', -52, 20, ''), ('herb', 36, -26, ''), ('herb', 12, 30, ''), ('ore', -56, -32, ''),
+        ('hunt', -16, -44, '狩り場 Lv8〜9（根の精）'), ('hunt', 34, 46, '狩り場 Lv9〜10（苔の獣）'),
+        ('way', 56, -16, '谷の入口（復帰点の候補）'),
+    ])
+
+
+if PLAY: PM.save_play(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'out', NAME))
 V = lambda x, y, z: [-x, y, z]
 if REGION: save(NAME, {'overview': [V(0, 150, 190), V(0, 10, 0)]}, V(0, 10, 0), shadowR=200, fog=(260, 700))
 else: save(NAME, {'overview': [V(0, 80, 95), V(0, 10, 0)]}, V(0, 10, 0), shadowR=100, fog=(150, 400))
