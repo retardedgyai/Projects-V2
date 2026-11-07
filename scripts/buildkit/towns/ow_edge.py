@@ -28,6 +28,8 @@ L.pond(28, 34, 8)
 
 # ---------------------------------------------------------------- 家の敷地（台地の上を均す）
 HOUSES = [('timber', 0, (-14, -50)), ('fancy', 0, (24, -48)), ('timber', 180, (44, -36))]
+if '--fancy' in sys.argv:                                             # 7 周目：家並みを盛りの家（屋根の段・張り出し・木組み）にそろえる
+    HOUSES = [('fancy', 0, (-16, -50)), ('fancy', 0, (24, -48)), ('fancy', 180, (44, -38))]
 for _, _, (x, z) in HOUSES:
     L.rect(x - 9, z - 7, x + 11, z + 8, 5, kind=4)
 
@@ -47,13 +49,14 @@ if '--yard' in sys.argv: L.rect(*YARD, L.h(26, 8), kind=5)
 L.build(dict(T.MESA, mottle=T.GROUND_MESA if '--ground' in sys.argv else [], pave=[('coarse_dirt', .35), ('dirt_path', .25), ('gravel', .15), ('packed_mud', .15), ('grass', .10)]))
 if '--relief' in sys.argv: L.cliff_relief(T.MESA)
 if '--relief2' in sys.argv: L.cliff_relief2(T.MESA)              # 2 周目：3〜4 マス幅の柱・横の岩棚・草の垂れ                   # 崖の面の出入り・まだら・縁の欠け（11/08）
+if '--relief3' in sys.argv: L.cliff_relief3(T.MESA)              # 6 周目：面の材料のまだら・1 マスのこぶ・上の垂れ
 if '--ground' in sys.argv: L.ground_extras()                      # 3 周目：縁の土・シダと小石・道の縁の砂利と花
 
 # ---------------------------------------------------------------- 家（及第点の家の型）
 t = Town((-64, 63, -64, 63), lambda x, z: 5)
 if BIGHOUSE: t.house('lhouse', 0, BIG_AT, y=BIG_Y, label='lhouse')
 for name, r, at in HOUSES:
-    t.house(name, r, at, y=5, swap=BROWN if name == 'timber' and r == 180 else None, label=name)
+    t.house(name, r, at, y=5, swap=BROWN if r == 180 else None, label=name)
 
 # ---------------------------------------------------------------- 畑（柵で囲む）と小屋、荷
 def farm(x0, z0, w, d, crop):

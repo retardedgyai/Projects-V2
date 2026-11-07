@@ -64,6 +64,7 @@ if '--ground' in sys.argv: pal['mottle'] = T.GROUND_MOSSY
 L.build(pal)
 if '--relief' in sys.argv: L.cliff_relief(pal)
 if '--relief2' in sys.argv: L.cliff_relief2(pal)              # 2 周目：3〜4 マス幅の柱・横の岩棚・草の垂れ                   # 崖の面の出入り・まだら・縁の欠け（11/08）
+if '--relief3' in sys.argv: L.cliff_relief3(pal)              # 6 周目：面の材料のまだら・1 マスのこぶ・上の垂れ
 if '--ground' in sys.argv: L.ground_extras()                      # 3 周目：縁の土・シダと小石・道の縁の砂利と花
 T.waterfalls(L, falls)
 
@@ -228,6 +229,32 @@ def clutter():
         if len(placed_c) >= 18: break
 
 if '--clutter' in sys.argv: clutter()
+
+def plaza2(x0, z0, w=13, d=9):
+    """参道の南の空き地に、一段上がった石畳の小広場：縁は石段、真ん中に石の水盤、北と東に低い塀、角に灯り（7 周目）。"""
+    g = max(L.h(x, z) for x in range(x0, x0 + w) for z in range(z0, z0 + d)) + 1
+    for x in range(x0 - 1, x0 + w + 1):
+        for z in range(z0 - 1, z0 + d + 1):
+            edge = x in (x0 - 1, x0 + w) or z in (z0 - 1, z0 + d)
+            for y in range(L.h(x, z) + 1, g): put(x, y, z, full('stone_bricks'))
+            if edge:
+                f = 'e' if x == x0 - 1 else 'w' if x == x0 + w else 's' if z == z0 - 1 else 'n'
+                put(x, g, z, stair(L.pick([('stone_bricks', .6), ('mossy_stone_bricks', .4)], x, g, z, 151), f))
+            else:
+                put(x, g, z, full(L.pick([('stone_bricks', .35), ('mossy_stone_bricks', .25), ('cracked_stone_bricks', .15), ('polished_andesite', .15), ('moss_block', .10)], x, g, z, 152)))
+    cx, cz = x0 + w // 2, z0 + d // 2
+    for dx in range(-2, 3):
+        for dz in range(-2, 3):
+            if max(abs(dx), abs(dz)) == 2: put(cx + dx, g + 1, cz + dz, slab('stone_bricks'))
+            else: put(cx + dx, g, cz + dz, {'s': 'water', 't': 'water_still'})
+    put(cx, g, cz, full('chiseled_stone_bricks')); put(cx, g + 1, cz, {'s': 'wall', 't': 'mossy_stone_bricks'}); put(cx, g + 2, cz, {'s': 'lantern', 't': 'lantern'})
+    for x in range(x0, x0 + w):
+        if _h(x, z0, 153) < 0.8: put(x, g + 1, z0, full('mossy_stone_bricks' if _h(x, 0, 154) < 0.5 else 'stone_bricks'))
+    for z in range(z0, z0 + d):
+        if _h(x0 + w - 1, z, 155) < 0.8: put(x0 + w - 1, g + 1, z, full('mossy_stone_bricks' if _h(0, z, 156) < 0.5 else 'stone_bricks'))
+    for x, z in ((x0, z0 + d - 1), (x0 + w - 1, z0 + d - 1)): put(x, g + 1, z, {'s': 'wall', 't': 'stone_bricks'}); put(x, g + 2, z, {'s': 'lantern', 't': 'lantern'})
+if '--plaza2' in sys.argv: plaza2(10, 6)
+
 
 # ---------------------------------------------------------------- 西の門：崩れたアーチ（幅 11、北の半分だけ残る）
 def gate(cx, cz, g):

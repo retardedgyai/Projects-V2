@@ -26,6 +26,7 @@ MESA = dict(
     rim=['granite', 'granite', 'coarse_dirt', 'brown_terracotta'],
     foot=['brown_terracotta'],
     mix=['brown_terracotta', 'brown_terracotta', 'coarse_dirt', 'granite', 'light_gray_terracotta'],
+    drape=['grass', 'grass', 'rooted_dirt', 'moss_block', 'vine'],
     cap=[('grass', 0.70), ('moss_block', 0.16), ('green_wool', 0.14)],
     path=[('dirt_path', 0.72), ('coarse_dirt', 0.16), ('rooted_dirt', 0.12)],
     edge=[('coarse_dirt', 0.45), ('rooted_dirt', 0.25), ('brown_wool', 0.15), ('grass', 0.15)],
@@ -36,6 +37,7 @@ MOSSY = dict(
     rim=['mossy_cobblestone', 'moss_block', 'mossy_cobblestone'],
     cliff_moss=['moss_block', 'mossy_cobblestone', 'mossy_stone_bricks'],   # 試して戻した（v3）。使うときは moss= にする
     ledge=0.05, vines=0.22, mix=['moss_block', 'mossy_cobblestone', 'gravel', 'coarse_dirt', 'tuff'],
+    drape=['vine', 'vine', 'vine', 'azalea_leaves', 'moss_block'],
     foot=['cobbled_deepslate', 'tuff', 'mossy_cobblestone'],
     cap=[('grass', 0.45), ('moss_block', 0.25), ('green_terracotta', 0.20), ('lime_terracotta', 0.10)],
     path=[('dirt_path', 0.55), ('coarse_dirt', 0.25), ('packed_mud', 0.20)],
@@ -371,6 +373,30 @@ class Land:
                     r = _h(x, z, 136)
                     if r < 0.18: put(x, top, z, blk('gravel'))
                     elif r < 0.26: put(x, top + 1, z, cross(('dandelion', 'poppy', 'azure_bluet', 'oxeye_daisy')[int(_h(z, x, 137) * 4)]))
+
+    def cliff_relief3(self, pal):
+        """崖の面の 3 回目（11/08 の 6 周目、判定役『材料が一色、出入りが粗い、垂れが無い』）。
+        面の 1 マスごとに：材料を細かいまだらで 3〜4 割入れ替え、1 割で外へ 1 マスのこぶ、上の 3 段に垂れ（pal['drape']）。"""
+        N, o = self.N, self.o
+        mix = pal.get('mix', []); drape = pal.get('drape', [])
+        for i in range(1, N - 1):
+            for j in range(1, N - 1):
+                x, z = j - o, i - o
+                top = int(self.H[i, j])
+                if self.K[i, j] in (1, 3, 5): continue
+                for dz, dx, f in ((1, 0, 'n'), (-1, 0, 's'), (0, 1, 'w'), (0, -1, 'e')):
+                    nl = int(self.H[i + dz, j + dx])
+                    if top - nl < 3 or self.K[i + dz, j + dx] in (1, 2, 3, 4, 5): continue
+                    X, Z = x + dx, z + dz
+                    for y in range(nl + 1, top):
+                        if mix and fbm(x + y * 1.3, z - y * 0.9, 1.6, self.seed + 141) > 0.56:
+                            put(x, y, z, blk(mix[int(_h(x, y, z + 3) * len(mix))]))
+                        if get(X, y, Z) is None:
+                            r = _h(x * 3 + dx, y, z * 3 + dz)
+                            if r < 0.10 and y < top - 1: put(X, y, Z, T_BODY(pal, X, y, Z))
+                            elif drape and y >= top - 3 and r < 0.10 + 0.35 * (y - top + 4) / 3:
+                                d = drape[int(_h(X, y, Z) * len(drape))]
+                                put(X, y, Z, vine(f) if d == 'vine' else blk(d))
 
     def plants(self, density=0.10, kinds=('short_grass', 'short_grass', 'fern', 'short_grass'), flowers=('dandelion', 'poppy', 'azure_bluet', 'cornflower'), skip=lambda x, z: False):
         """草花：塊で。崖の縁 1 マスと道には置かない。"""
