@@ -262,7 +262,7 @@ def limb(b, bone, top, length, w, mat, knob=None, knob_mat=None, cuff=None, cuff
 # ======================================================================================================
 # 1 桜木の亡者 (sakura_husk) — zombie: a dead cherry trunk that walks, arms held out, its crown in bloom
 # ======================================================================================================
-HUSK = {"husk-grab": (.75, .55)}
+HUSK = {"husk-grab": (.75, .55), "husk-swipe": (.6, .5)}
 
 
 def build_husk():
@@ -323,6 +323,12 @@ def build_husk():
     down = {"hk_arm_l": (35, 0, 0), "hk_arm_r": (35, 0, 0), "hk_top": (14, 0, 0), "hk_body": (16, 0, 0), "hk_body@pos": (0, -1, 2)}
     bake(b, "husk-grab", tl + rc, [(0, {}, "lin"), (tl * .7, up, "smooth"), (tl, down, "in"), (tl + .15, merged(down, {"hk_arm_l": (-6, 0, 0)}), "out"),
                                    (tl + rc, {}, "smooth")])
+    # 薙ぎ払い: the trunk twists away with the right arm drawn back wide, then the arm sweeps across in front.
+    tl, rc = HUSK["husk-swipe"]
+    wind = {"hk_body": (0, 35, 0), "hk_arm_r": (-20, 55, 0), "hk_arm_l": (10, 0, 0), "hk_top": (0, -15, 0)}
+    sweep = {"hk_body": (6, -35, 0), "hk_arm_r": (-5, -70, 0), "hk_arm_l": (15, 0, 0), "hk_top": (0, 20, 0), "hk_body@pos": (0, 0, 1.5)}
+    bake(b, "husk-swipe", tl + rc, [(0, {}, "lin"), (tl * .75, wind, "smooth"), (tl, sweep, "in"), (tl + .15, merged(sweep, {"hk_arm_r": (0, -8, 0)}), "out"),
+                                    (tl + rc, {}, "smooth")])
     hurt_clip(b, {"hk_body": (-10, 0, 0), "hk_top": (-12, 0, 0), "hk_arm_l": (-15, 0, 0), "hk_arm_r": (-15, 0, 0)})
     # 倒れる: sags at the knees and topples on its side.
     sag = {"hk_body": (10, 0, 0), "hk_body@pos": (0, -3, 0), "hk_arm_l": (40, 0, 0), "hk_arm_r": (40, 0, 0), "hk_top": (20, 0, 0)}
@@ -412,7 +418,7 @@ def build_spider():
 # ======================================================================================================
 # 3 つぼみ (bud_creeper) — creeper: a tall shut bud in green sepals; it swells and bursts open into a flower
 # ======================================================================================================
-BUD = {"bud-burst": (1.5, .3)}
+BUD = {"bud-burst": (1.5, .3), "bud-pollen": (.8, .5)}
 
 
 def build_bud():
@@ -473,6 +479,12 @@ def build_bud():
         burst[f"bd_petal{k}@scale"] = (.6, .5, .6)
     bake(b, "bud-burst", tl + rc, [(0, {}, "lin"), (tl * .6, peel, "smooth"), (tl - .05, peel, "lin"), (tl + .12, burst, "out"), (tl + rc, burst, "hold")],
          overlay=throb)
+    # 花粉: the bud rears back and swells a little, then nods sharply forward and puffs pollen ahead (petals part).
+    tl2, rc2 = BUD["bud-pollen"]
+    rear = merged({"bd_bud": (-28, 0, 0), "bd_bud@scale": (.1, .08, .1), "bd_body": (-6, 0, 0)}, {f"bd_petal{k}@scale": (.08, 0, .08) for k in range(5)})
+    nod = merged({"bd_bud": (32, 0, 0), "bd_bud@scale": (-.04, -.04, -.04), "bd_body": (8, 0, 0)}, {f"bd_petal{k}@scale": (.2, .1, .2) for k in range(5)})
+    bake(b, "bud-pollen", tl2 + rc2, [(0, {}, "lin"), (tl2 * .75, rear, "smooth"), (tl2, nod, "in"), (tl2 + .15, merged(nod, {"bd_bud": (-6, 0, 0)}), "out"),
+                                      (tl2 + rc2, {}, "smooth")])
     # 散る (after the burst, played by the server as its last clip): the open flower lies a moment, then fades away.
     gone = merged(burst, {"bd_body@scale": (-.97, -.97, -.97)})
     bake(b, "spent", .9, [(0, burst, "lin"), (.3, burst, "hold"), (.9, gone, "in")])
@@ -486,7 +498,7 @@ def build_bud():
 # ======================================================================================================
 # 4 枝弓の骸 (branch_archer) — skeleton: separate ribs and spine, a bow of bent cherry branch blooming at both tips
 # ======================================================================================================
-ARCHER = {"archer-shot": (1.0, .5)}
+ARCHER = {"archer-shot": (1.0, .5), "archer-bash": (.6, .6)}
 
 
 def build_archer():
@@ -562,6 +574,12 @@ def build_archer():
     loose = merged(aim, {"ar_arm_r": (-10, -90, 0), "ar_body": (-6, -8, 0), "ar_top": (-6, 0, 0)})
     bake(b, "archer-shot", tl + rc, [(0, aim, "lin"), (tl * .55, draw, "smooth"), (tl - .02, merged(draw, {"ar_body": (0, -4, 0)}), "lin"),
                                      (tl + .06, loose, "out"), (tl + rc, aim, "smooth")])
+    # 弓打ち: someone too close — it swings the bow round like a club, the blossoms at its tips leading.
+    tl, rc = ARCHER["archer-bash"]
+    back = merged(aim, {"ar_body": (0, 40, 0), "ar_arm_l": (10, 60, 0), "ar_top": (0, -20, 0)})
+    swat = merged(aim, {"ar_body": (8, -40, 0), "ar_arm_l": (20, -60, 0), "ar_top": (0, 15, 0), "ar_body@pos": (0, 0, 1.5)})
+    bake(b, "archer-bash", tl + rc, [(0, aim, "lin"), (tl * .75, back, "smooth"), (tl, swat, "in"), (tl + .15, merged(swat, {"ar_arm_l": (0, -8, 0)}), "out"),
+                                     (tl + rc, aim, "smooth")])
     hurt_clip(b, merged(aim, {"ar_body": (-10, 0, 0), "ar_top": (-15, 0, 0)}))
     # 崩れる: the bones fall apart — the skull drops and rolls, the limbs scatter, the bow clatters down.
     apart = {"ar_top@pos": (3, -20, 4), "ar_top": (30, 40, 70), "ar_arm_l@pos": (2, -10, 3), "ar_arm_l": (-90, 0, 40),

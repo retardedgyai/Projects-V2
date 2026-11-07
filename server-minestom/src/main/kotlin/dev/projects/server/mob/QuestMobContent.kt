@@ -287,19 +287,27 @@ internal object QuestMobContent {
             QuestMobArchetype.SAKURA_HUSK -> definition(EntityType.ZOMBIE, 46.0, 0.12, 1.6, 1.0,
                 Material.AIR, attacks = listOf(
                     attack("husk-grab", "枝の掴み", MobAttackShape.Slam(3.4, 1.6), 3.0, 12.0,
-                        750, 300, 550, 2200),
+                        750, 300, 550, 2200, weight = 2),
+                    attack("husk-swipe", "薙ぎ払い", MobAttackShape.Sweep(3.0, 70.0), 2.6, 8.0,
+                        600, 250, 500, 1800),
                 )).copy(model = "sakura_husk")
             // 枝弓の骸: keeps its distance (it backs off a player who comes close) and looses one long straight shot.
             QuestMobArchetype.SAKURA_ARCHER -> definition(EntityType.SKELETON, 32.0, 0.13, 9.0, 1.0,
                 Material.AIR, attacks = listOf(
                     attack("archer-shot", "枝矢・横へ", MobAttackShape.Slam(15.0, .8), 14.0, 11.0,
                         1000, 650, 500, 2600, minimumRange = 3.0),
+                    // too close: it swings the bow round like a club
+                    attack("archer-bash", "弓打ち", MobAttackShape.Sweep(2.8, 80.0), 2.6, 7.0,
+                        600, 250, 600, 2400),
                 )).copy(model = "branch_archer")
             // つぼみ: walks up and bursts into bloom (QuestEncounterCombat.SELF_BURST): a ring around it, and it is gone.
             QuestMobArchetype.SAKURA_BUD -> definition(EntityType.CREEPER, 26.0, 0.15, 1.2, 1.0,
                 Material.AIR, attacks = listOf(
                     attack("bud-burst", "開花・離れろ", MobAttackShape.Ring(3.4), 2.4, 20.0,
-                        1500, 0, 300, 1000),
+                        1500, 0, 300, 1000, weight = 3),
+                    // on the way in: a puff of pollen ahead
+                    attack("bud-pollen", "花粉・横へ", MobAttackShape.Slam(5.0, 1.2), 4.6, 6.0,
+                        800, 400, 500, 3000, minimumRange = 2.6),
                 )).copy(model = "bud_creeper")
             QuestMobArchetype.SOLDIER -> definition(EntityType.VINDICATOR, 44.0, 0.14, 2.0, 1.0,
                 Material.IRON_AXE, attacks = listOf(sweep(), slam()))
