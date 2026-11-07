@@ -1408,6 +1408,7 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         try {
             val loot = CoreWorldLoot(player, arena.instance, run, { rewards.submit(player.uuid, it) }, { refresh(player) })
             combat.pixelNameplates = packed(player)
+            if (dungeon != null) combat.sakuraArenaRadius = dungeon.arenaRadius
             val session = Session(player, runId, null, combat, bar, loot, arena)
             if (dungeon != null) session.dungeon = DungeonRun(arena.instance, combat, dungeon) {
                 listOf(player).filter { it.instance === arena.instance && actors[it.uuid]?.defeated == false && !session.returning }
