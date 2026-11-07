@@ -55,7 +55,7 @@ class MobGroundTelegraphTest {
         try {
             assertTrue(telegraph.show(owner, frame(MobAttackShape.Slam(6.0, 1.0)), false, 0))
             assertTrue(telegraph.displayCount > 0)
-            val display = instance.entities.first { it.entityType == EntityType.TEXT_DISPLAY && (it.entityMeta as TextDisplayMeta).backgroundColor != MobGroundTelegraph.TOOTH_COLOR }
+            val display = instance.entities.first { it.entityType == EntityType.TEXT_DISPLAY && (it.entityMeta as TextDisplayMeta).backgroundColor !in setOf(MobGroundTelegraph.DASH_COLOR, MobGroundTelegraph.DASH_SHADOW_COLOR) }
             val meta = display.entityMeta as TextDisplayMeta
             assertEquals(MobGroundTelegraph.TRACKING_COLOR, meta.backgroundColor)
             assertEquals(0x60, meta.backgroundColor ushr 24)
@@ -80,14 +80,14 @@ class MobGroundTelegraphTest {
             val initialIds = instance.entities.map { it.uuid }.toSet()
             telegraph.show(owner, initial, false, 180)
             assertEquals(initialIds, instance.entities.map { it.uuid }.toSet())
-            // the edge carries bright teeth (Spellforged's warning edge)
-            val teeth = instance.entities.count { (it.entityMeta as TextDisplayMeta).backgroundColor == MobGroundTelegraph.TOOTH_COLOR }
-            assertTrue(teeth >= 5 * 6, "teeth=$teeth of ${instance.entities.size}")
+            // the rim is dashed (Spellforged's warning edge)
+            val dashes = instance.entities.count { (it.entityMeta as TextDisplayMeta).backgroundColor == MobGroundTelegraph.DASH_COLOR }
+            assertTrue(dashes >= 4 * 6, "dashes=$dashes of ${instance.entities.size}")
             telegraph.show(owner, initial.copy(phase = MobAbilityPhase.LOCKED), false, 400)
-            val fill = instance.entities.map { (it.entityMeta as TextDisplayMeta).backgroundColor }.filter { it != MobGroundTelegraph.TOOTH_COLOR }
+            val fill = instance.entities.map { (it.entityMeta as TextDisplayMeta).backgroundColor }.filter { it !in setOf(MobGroundTelegraph.DASH_COLOR, MobGroundTelegraph.DASH_SHADOW_COLOR) }
             assertTrue(fill.isNotEmpty() && fill.all { it == MobGroundTelegraph.LOCKED_COLOR })
             telegraph.show(owner, initial.copy(phase = MobAbilityPhase.LOCKED), true, 1000)
-            val impactFill = instance.entities.map { (it.entityMeta as TextDisplayMeta).backgroundColor }.filter { it != MobGroundTelegraph.TOOTH_COLOR }
+            val impactFill = instance.entities.map { (it.entityMeta as TextDisplayMeta).backgroundColor }.filter { it !in setOf(MobGroundTelegraph.DASH_COLOR, MobGroundTelegraph.DASH_SHADOW_COLOR) }
             assertTrue(impactFill.isNotEmpty() && impactFill.all { it == MobGroundTelegraph.IMPACT_COLOR })
             telegraph.tick(1179)
             assertTrue(telegraph.displayCount > 0)

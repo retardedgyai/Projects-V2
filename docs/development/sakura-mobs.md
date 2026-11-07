@@ -29,7 +29,7 @@
 ## サーバー
 
 - 殴りは範囲（前の帯・扇・輪）で、地面の予兆を出す（藍 2026-11-07「範囲でいい」）。矢・花粉は `MobAttackShape.Shot`（`QuestEncounterCombat.loose` で放ち、`tickShots` が毎tick進めて最初に触れた人に当てる）で、地面は塗らない。
-- 予兆の見た目（全部の敵に共通、`MobGroundTelegraph`）：くすんだ赤の塗りに、縁は明るい赤の5段のトゲ（PROJECT Spellforged の範囲予告の縁、藍 2026-11-07「パーティクル消そう」）。縁の赤い粒（DUST）はやめた。
+- 予兆の見た目（全部の敵に共通、`MobGroundTelegraph`）：くすんだ赤の塗りに、縁は同じ間隔・同じ向きに並ぶ斜めの破線（明るい赤＋外側に暗い赤の影、段で斜めを描く。PROJECT Spellforged の範囲予告の縁、藍 2026-11-07「パーティクル消そう」）。縁の赤い粒（DUST）はやめた。
 
 - 定義は `QuestMobContent`（等級 NORMAL、普通の敵と同じく乱数で精鋭などになる）。描画は `ModelCarrier` と `BossModelView`（白蛇・石灯籠と同じ）。
 - 当たると花びらが散る（`QuestEncounterCombat.SAKURA_COMMON` → `sakuraBurst`）。

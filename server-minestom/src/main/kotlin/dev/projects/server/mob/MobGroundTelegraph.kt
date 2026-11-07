@@ -71,20 +71,22 @@ internal class MobGroundTelegraph(private val instance: InstanceContainer) {
         const val TRACKING_COLOR: Int = 0x60B8384A
         val LOCKED_COLOR: Int = 0x80C83048.toInt()
         val IMPACT_COLOR: Int = 0xA0FF7070.toInt()
-        val TOOTH_COLOR: Int = 0xF0FF2A40.toInt()
-        /** Teeth every this many blocks round the edge, each five bars of these widths and this depth. */
-        const val TOOTH_SPACING = 1.25
-        val TOOTH_ROWS = listOf(.56, .44, .32, .2, .09)
-        const val TOOTH_ROW = .12
-        /** Teeth start a little inside the true edge, over the stepped fill's rim. */
-        const val TOOTH_START = -.12
-        const val MAX_TEETH = 20
+        val DASH_COLOR: Int = 0xF0FF2A40.toInt()
+        val DASH_SHADOW_COLOR: Int = 0xF070101C.toInt()
+        /** A dash every this many blocks round the edge: this long, rows this deep (bright, then dark outside), each slid this far. */
+        const val DASH_SPACING = 1.25
+        const val DASH_LENGTH = .7
+        const val DASH_ROW = .08
+        const val DASH_BRIGHT_ROWS = 4
+        const val DASH_DARK_ROWS = 2
+        const val DASH_SLIDE = .09
+        const val MAX_DASHES = 20
     }
 
     private class Surface {
         val entities = mutableListOf<Entity>()
-        /** The bright teeth along the edge (Creator 2026-11-07: edges like PROJECT Spellforged's). */
-        val teeth = mutableListOf<Entity>()
+        /** The dashed rim (Creator 2026-11-07: an edge like PROJECT Spellforged's). */
+        val rim = mutableListOf<Entity>()
         var expiresAt = Long.MAX_VALUE
         var tiles = emptyList<MobGroundTile>()
         var color = 0
@@ -133,51 +135,53 @@ internal class MobGroundTelegraph(private val instance: InstanceContainer) {
         }
         surface.tiles = tiles
         surface.color = color
-        showTeeth(surface, frame)
+        showRim(surface, frame)
         return true
     }
 
     /**
-     * Spellforged's warning edge (refs/spellforged, 2026-11-07): along the rim of the dull red fill, bright red teeth,
-     * each a stepped fin of five flat bars (wide at the rim, narrow at the tip) pointing out of the danger and leaning
-     * along the edge, like a saw. The outward way is found from the shape itself, so every shape gets the same edge.
+     * Spellforged's warning edge (refs/spellforged, read 1:1 on 2026-11-07): the rim is outlined by short dashes, evenly
+     * spaced and all set the same way along the edge. Each dash is a slanted bar, bright red over the rim with a dark
+     * red band on its outer side, its slant drawn as pixel steps (each row slid a little along the edge). The outward
+     * way is found from the shape itself, so every shape gets the same edge.
      */
-    private fun showTeeth(surface: Surface, frame: MobAbilityFrame) {
+    private fun showRim(surface: Surface, frame: MobAbilityFrame) {
         val bars = mutableListOf<Pos>()
-        val widths = mutableListOf<Double>()
+        val colors = mutableListOf<Int>()
+        val rows = DASH_BRIGHT_ROWS + DASH_DARK_ROWS
         var last: Pos? = null
         for (point in frame.ability.shape.outline(frame.origin, frame.facing)) {
-            if (last != null && last.distanceSquared(point) < TOOTH_SPACING * TOOTH_SPACING) continue
+            if (last != null && last.distanceSquared(point) < DASH_SPACING * DASH_SPACING) continue
             val out = outward(frame, point) ?: continue
             val ground = groundHeight(point) ?: continue
             last = point
             val along = Vec(-out.z(), 0.0, out.x())
             val yaw = Math.toDegrees(kotlin.math.atan2(-out.x(), out.z())).toFloat()
-            for ((row, width) in TOOTH_ROWS.withIndex()) {
-                // each row steps out from the rim and slides along it, so the tip leans like a saw tooth
-                val at = point.add(out.mul(TOOTH_START + (row + .5) * TOOTH_ROW)).add(along.mul((TOOTH_ROWS[0] - width) * .5))
+            for (row in 0 until rows) {
+                val across = -DASH_BRIGHT_ROWS * DASH_ROW / 2 + (row + .5) * DASH_ROW
+                val at = point.add(out.mul(across)).add(along.mul((row - rows / 2.0) * DASH_SLIDE))
                 bars += Pos(at.x(), ground + 0.015, at.z(), yaw, 0f)
-                widths += width
+                colors += if (row < DASH_BRIGHT_ROWS) DASH_COLOR else DASH_SHADOW_COLOR
             }
-            if (bars.size >= MAX_TEETH * TOOTH_ROWS.size) break
+            if (bars.size >= MAX_DASHES * rows) break
         }
-        while (surface.teeth.size > bars.size) surface.teeth.removeLast().remove()
+        while (surface.rim.size > bars.size) surface.rim.removeLast().remove()
         bars.forEachIndexed { index, at ->
-            val tile = MobGroundTile(at, widths[index], TOOTH_ROW)
-            val entity = surface.teeth.getOrNull(index)
+            val tile = MobGroundTile(at, DASH_LENGTH, DASH_ROW)
+            val entity = surface.rim.getOrNull(index)
             if (entity == null) {
-                val tooth = Entity(EntityType.TEXT_DISPLAY)
-                tooth.setHasPhysics(false)
-                tooth.setNoGravity(true)
-                tooth.editEntityMeta(TextDisplayMeta::class.java) { meta -> configure(meta, tile, TOOTH_COLOR) }
+                val dash = Entity(EntityType.TEXT_DISPLAY)
+                dash.setHasPhysics(false)
+                dash.setNoGravity(true)
+                dash.editEntityMeta(TextDisplayMeta::class.java) { meta -> configure(meta, tile, colors[index]) }
                 // listed before it spawns: a loaded chunk completes the spawn at once
-                surface.teeth += tooth
-                tooth.setInstance(instance, at).whenComplete { _, error ->
+                surface.rim += dash
+                dash.setInstance(instance, at).whenComplete { _, error ->
                     if (error != null) surface.failedToSpawn = true
-                    if (disposed || tooth !in surface.teeth) tooth.remove()
+                    if (disposed || dash !in surface.rim) dash.remove()
                 }
             } else if (entity.instance === instance && entity.position != at) {
-                entity.editEntityMeta(TextDisplayMeta::class.java) { configure(it, tile, TOOTH_COLOR) }
+                entity.editEntityMeta(TextDisplayMeta::class.java) { configure(it, tile, colors[index]) }
                 entity.teleport(at)
             }
         }
@@ -199,7 +203,7 @@ internal class MobGroundTelegraph(private val instance: InstanceContainer) {
         surfaces.filterValues { it.expiresAt <= now }.keys.toList().forEach(::clear)
     }
 
-    fun clear(owner: UUID) { surfaces.remove(owner)?.let { it.entities.forEach(Entity::remove); it.teeth.forEach(Entity::remove) } }
+    fun clear(owner: UUID) { surfaces.remove(owner)?.let { it.entities.forEach(Entity::remove); it.rim.forEach(Entity::remove) } }
 
     fun dispose() {
         disposed = true
