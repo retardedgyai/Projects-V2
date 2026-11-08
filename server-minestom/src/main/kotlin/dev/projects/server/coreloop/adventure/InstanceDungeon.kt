@@ -89,17 +89,21 @@ internal object InstanceDungeonFactory {
     const val DISPLAY_NAME = "散り桜の社"
     private const val MAP = "sakura_dungeon"
 
-    private val SOLDIERS = listOf(QuestMobArchetype.SOLDIER, QuestMobArchetype.SOLDIER, QuestMobArchetype.RIFT_CASTER)
+    // The shrine's own common enemies (桜木の亡者, 枝弓の骸, つぼみ); the exiles' shield and their elite stay until sakura ones exist.
+    private val HUSK = QuestMobArchetype.SAKURA_HUSK
+    private val ARCHER = QuestMobArchetype.SAKURA_ARCHER
+    private val BUD = QuestMobArchetype.SAKURA_BUD
+    private val SOLDIERS = listOf(HUSK, HUSK, ARCHER)
     /** The waves of each waves room, by its rooms.json key; any other waves room gets two of soldiers. */
     private val WAVES = mapOf(
-        "R1" to listOf(SOLDIERS, listOf(QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.SOLDIER, QuestMobArchetype.RIFT_CASTER)),
+        "R1" to listOf(SOLDIERS, listOf(HUSK, BUD, ARCHER)),
         "H" to listOf(
-            listOf(QuestMobArchetype.SHIELD_GUARD, QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.SOLDIER, QuestMobArchetype.SOLDIER),
-            listOf(QuestMobArchetype.ELITE_BRUTE, QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.SHIELD_GUARD)),
+            listOf(QuestMobArchetype.SHIELD_GUARD, ARCHER, HUSK, BUD),
+            listOf(QuestMobArchetype.ELITE_BRUTE, ARCHER, BUD)),
     )
     /** The miniboss rooms in order: the first holds ミニボス1, the second ミニボス2. */
     private val MINIBOSSES = listOf(QuestMobArchetype.SAKURA_MINIBOSS_1, QuestMobArchetype.SAKURA_MINIBOSS_2)
-    private val SPAWNED = listOf(QuestMobArchetype.SOLDIER, QuestMobArchetype.RIFT_CASTER, QuestMobArchetype.SOLDIER, QuestMobArchetype.SHIELD_GUARD)
+    private val SPAWNED = listOf(HUSK, ARCHER, BUD, HUSK)
 
     private val folder: Path get() = ShippedMap.folder("dungeons/$MAP")
     private val rooms: JsonObject by lazy { JsonParser.parseString(Files.readString(folder.resolve("rooms.json"))).asJsonObject }
@@ -342,7 +346,7 @@ internal class DungeonRun(
         if (step < 2) return types
         return when (r.kind) {
             RoomKind.WAVES -> if (types.size < 4) types + QuestMobArchetype.SHIELD_GUARD else types
-            RoomKind.MINIBOSS -> types + List((step - 1).coerceAtMost(2)) { QuestMobArchetype.RIFT_CASTER }
+            RoomKind.MINIBOSS -> types + List((step - 1).coerceAtMost(2)) { QuestMobArchetype.SAKURA_ARCHER }
             RoomKind.SPAWNER -> types
         }
     }
@@ -358,7 +362,7 @@ internal class DungeonRun(
         for ((at, count) in layout.packs) {
             val n = (count.first + count.second * party).coerceIn(1, 4)
             val positions = (0 until n).map { i -> place(at.add((i % 2) * 3.0 - 1.5, 0.0, (i / 2) * 3.0 - 1.5), at.blockY()) }
-            spawned += combat.spawnEncounter(QuestCombatEncounter(positions, (0 until n).map { if (it % 3 == 2) QuestMobArchetype.RIFT_CASTER else QuestMobArchetype.SOLDIER }))
+            spawned += combat.spawnEncounter(QuestCombatEncounter(positions, (0 until n).map { if (it % 3 == 2) QuestMobArchetype.SAKURA_ARCHER else QuestMobArchetype.SAKURA_HUSK }))
         }
     }
 
