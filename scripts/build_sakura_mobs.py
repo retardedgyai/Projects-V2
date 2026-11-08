@@ -11,7 +11,7 @@ shoulder, elbow and knee; ribs and rings as separate bars; bands, cuffs and stra
 under them; flat details (petals, paper streamers, fletching) as planes. Every face is painted as RuneForge's are (measured
 2026-11-07: no dark rim, half the neighbouring pixels differ): a volume ramp, light at the top and in the middle, dark
 toward the bottom, with a grain of the neighbouring tones; colours low in saturation; eyes and mouths cut through as
-hollows (the part's colour in shadow set behind, one lit pixel). The sakura is in the shape (bark with cherry lenticels,
+hollows (the part's colour in shadow set behind, no glow). The sakura is in the shape (bark with cherry lenticels,
 five-petal flowers, a bud in green sepals, a petal mane, a blossom shield), with the shrine's rope and paper (注連縄・紙垂)
 as the second material.
 
@@ -221,11 +221,11 @@ def seg(b, bone, a, c, w, mat, d=None, over=.4, **kw):
     b.seg(bone, a, c, w, d or w, mat if not isinstance(mat, str) else panel(mat, **kw), over=over)
 
 
-def hollow(b, bone, lo, hi, mat, holes, pins=(), depth=.5, **kw):
+def hollow(b, bone, lo, hi, mat, holes, depth=.5, **kw):
     """Eyes and mouths cut into the front, not painted on it — the way RuneForge's skeleton head is built (read from
     its pack 2026-11-08): the front face has the sockets cut through (transparent), and a dark face set `depth` behind
     shows through them, so they read as hollows that shift as the head turns. holes: (x0, y0, x1, y1) in front-face
-    pixels; pins: the (x, y) pixels in the hollows that glow pink."""
+    pixels. No glowing eye in them (藍 2026-11-08: a forced pink pin cheapens the shading; the hollow alone is the eye)."""
     paint = kw.pop("face", None)    # what is painted round the holes
 
     def cut(x, y, w, h):
@@ -236,8 +236,6 @@ def hollow(b, bone, lo, hi, mat, holes, pins=(), depth=.5, **kw):
     def inside(x, y, w, h):
         # not black: the part's own colour in shadow (RuneForge's skeleton sockets measured 2026-11-08: half the face's
         # brightness, a step lighter on the floor of the hollow, lightest in the floor's corner nearest the middle)
-        if (x, y) in pins:
-            return (*EYE, SELF_LIT)
         k = .48
         for x0, y0, x1, y1 in holes:
             if x0 <= x < x1 and y == y1 - 1:
@@ -340,7 +338,7 @@ def build_husk():
     sprig(b, body, (3, 23, 0), (8.5, 30, -1.5), w=1.8, flowers=2, size=3.2, seed=4, bud=2)
     top = b.bone("hk_top", body, (0, 24, 0))
     hollow(b, top, (-4, 24, -4), (4, 31, 4), "bark", [(1, 2, 3, 4), (5, 2, 7, 4), (2, 5, 6, 6), (3, 6, 5, 7)],
-           pins=[(2, 3), (5, 3)], lenticels=True, key="hkface")
+           lenticels=True, key="hkface")
     # the head is a sawn stump: rings on top, a lip of bark round the cut, blossoms bursting out of the middle
     box(b, top, (-4.3, 30.4, -4.3), (4.3, 31.8, 4.3), rings())
     box(b, top, (-1.6, 31.8, -1.6), (1.6, 32.6, 1.6), "bark")
@@ -487,8 +485,7 @@ def build_bud():
     b = builder("bud_creeper", 1.0)
     body = b.bone("bd_body", None, (0, 6, 0))
     # the stem, its creeper face under the bud; two ridges down its sides and a leaf on a stalk
-    hollow(b, body, (-4, 6, -2.5), (4, 18, 2.5), "sepal", [(1, 1, 3, 3), (5, 1, 7, 3), (3, 3, 5, 6), (2, 4, 3, 7), (5, 4, 6, 7)],
-           pins=[(2, 2), (5, 2)], key="bdface")
+    hollow(b, body, (-4, 6, -2.5), (4, 18, 2.5), "sepal", [(1, 1, 3, 3), (5, 1, 7, 3), (3, 3, 5, 6), (2, 4, 3, 7), (5, 4, 6, 7)], key="bdface")
     for s in (1, -1):
         box(b, body, (4 * s - .3 * s, 7, -1), (4 * s + .7 * s, 17, 1), "sepal")
     seg(b, body, (-4.5, 11, 0), (-7.5, 13.5, .5), 1, "sepal")
@@ -590,7 +587,7 @@ def build_archer():
         b.petal(body, tip, (1, 0, 0), 0, 2.2, 1.6, kind="pale" if k % 2 else "petal", up_hint=(0, 1, 0))
     top = b.bone("ar_top", body, (0, 24, 0))
     hollow(b, top, (-4, 26, -3.5), (4, 32, 3.5), "bone", [(1, 3, 3, 5), (5, 3, 7, 5), (3, 5, 5, 6)],
-           pins=[(2, 4), (5, 4)], face=socket_face, key="skull")   # under the hachimaki (rows 1-2)
+           face=socket_face, key="skull")   # under the hachimaki (rows 1-2)
     hollow(b, top, (-3, 24.6, -2.5), (3, 26.4, 3.2), "bone", [(x, 0, x + 1, 1) for x in (1, 3, 5)], key="jaw")
     box(b, top, (-1, 24, -1), (1, 25, 1), "bone")
     # a red hachimaki round the brow, its tails out behind; a blossom grown from a crack in the crown
