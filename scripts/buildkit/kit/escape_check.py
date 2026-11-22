@@ -9,8 +9,8 @@
 from collections import deque, defaultdict
 import vox
 
-PASS = {None, 'carpet', 'cross', 'vine', 'lantern', 'chain', 'water', 'trap'}
-NOSTAND = {'fence', 'wall', 'carpet', 'cross', 'vine', 'lantern', 'chain', 'door', 'water', 'trap'}
+PASS = {None, 'carpet', 'cross', 'vine', 'lantern', 'chain', 'water', 'trap', 'light'}           # light：見えない灯り（体は通る）
+NOSTAND = {'fence', 'wall', 'carpet', 'cross', 'vine', 'lantern', 'chain', 'door', 'water', 'trap', 'light'}
 def _kind(b): return None if b is None else b['s']
 
 def surfaces(W):
@@ -25,7 +25,7 @@ def surfaces(W):
             a1, a2 = _kind(W.get((x, y + 1, z))), _kind(W.get((x, y + 2, z)))
             if a1 not in PASS or a2 not in PASS: continue
             if k == 'water':
-                if a1 is None: out.append(y)                                       # 水面は泳いで浮ける
+                if a1 in (None, 'light'): out.append(y)                                       # 水面は泳いで浮ける
                 continue
             if k in NOSTAND: continue
             if a1 == 'water': continue                                             # 水の底には立たない：泳いで水面へ浮く（落ちたら水面に止まる）

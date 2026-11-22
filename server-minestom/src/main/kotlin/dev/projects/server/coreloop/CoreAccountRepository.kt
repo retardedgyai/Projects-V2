@@ -530,7 +530,8 @@ internal object CoreAccountCodec {
             require(passives.keys.all { it == existingJourney.job || it in savedBuilds }) { "パッシブの職業が構成と一致しません" }
             require(skillLevels.keys.all { it == existingJourney.job || it in savedBuilds }) { "スキル Lv の職業が構成と一致しません" }
             fun withPassives(job: CoreClass, b: CoreClassBuild) = (passives[job]?.let { (ids, masteries) -> b.copy(passives = ids, masteries = masteries) } ?: b)
-                .let { built -> skillLevels[job]?.let { built.copy(skillLevels = it) } ?: built }
+                // Levels bought on a skill retired since (大地崩し / 全力の一振り, 2026-11-04) are given back: the points return to the purse.
+                .let { built -> skillLevels[job]?.let { built.copy(skillLevels = it.filterKeys { icon -> icon in CoreSkillLevels.levelable(job) }) } ?: built }
             journey = existingJourney.copy(build = withPassives(existingJourney.job, CoreSkillCatalog.migrate(existingJourney.job, build)),
                 savedBuilds = savedBuilds.mapValues { (job, saved) -> withPassives(job, CoreSkillCatalog.migrate(job, saved)) })
         }
@@ -546,7 +547,8 @@ internal object CoreAccountCodec {
         val stored = gearRows.map { (id, r) ->
             val slot = CoreGearSlot.valueOf(r[4])
             CoreStoredGear(readIdentity(r.subList(1, 4)).copy(quality = qualities[id] ?: 0, base = bases[id]?.first ?: CoreWeaponBase.STANDARD, itemLevel = bases[id]?.second ?: 0), slot, r[5].toInt(), CoreGearRarity.valueOf(r[6]),
-                CoreEnhancementState(r[7].toInt(), r[8].toInt()), storedAffixes[id].orEmpty().map { CoreEquippedAffix(slot, it.first, it.second) }, r[9].toBooleanStrict(), readBroken(r[10], version))
+                CoreEnhancementState(r[7].toInt(), r[8].toInt()), storedAffixes[id].orEmpty().map { CoreEquippedAffix(slot, it.first, it.second) },
+                r[9].toBooleanStrict() || storedAffixes[id].orEmpty().any { retiredMod(it.second) }, readBroken(r[10], version))
         }
         val migratedStored = if (version >= 11) stored else stored.flatMap { item ->
             if (item.slot != CoreGearSlot.ARMOR) listOf(item) else CoreGearSlot.armorSlots.map { slot ->
@@ -559,9 +561,10 @@ internal object CoreAccountCodec {
         val migratedAffixes = if (version >= 11) equipped else equipped.map {
             if (it.gear == CoreGearSlot.ARMOR) it.copy(gear = CoreGearSlot.CHEST) else it
         }
-        val migratedLegacy = if (version >= 11) legacy else legacy.mapTo(linkedSetOf()) {
+        // A gear holding a stone whose MOD was removed since (公転, 2026-10-16) keeps it, effect off, as an old layout to reroll.
+        val migratedLegacy = (if (version >= 11) legacy else legacy.mapTo(linkedSetOf()) {
             if (it == CoreGearSlot.ARMOR) CoreGearSlot.CHEST else it
-        }
+        }).apply { migratedAffixes.filter { retiredMod(it.stone) }.forEach { add(it.gear) } }
         // A v10 order bought a whole set, so never reinterpret it as a chest order. Refund
         // escrow where the silver cap permits; keep any remainder cancellable after spending.
         val oldSilver = economy?.get(1)?.toLong() ?: 0L
@@ -607,6 +610,8 @@ internal object CoreAccountCodec {
             journey = journey ?: CoreJourney.legacy(xp = CoreJourneyRules.threshold(CoreJourneyRules.floor(gear[3].toInt()))), armorParts = parts,
             zoneRecords = zoneRecords, dungeonClears = dungeonClears)
     }
+
+    private fun retiredMod(stone: CoreAffixStone) = CoreAffixCatalog.definition(stone) == null
 
     /** Retired v5 wear is validated but never reinterpreted as enhancement damage. */
     private fun readBroken(value: String, version: Int): Boolean {

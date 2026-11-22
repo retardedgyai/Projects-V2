@@ -91,7 +91,7 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
         live.removeAll { s ->
             s.age++
             if (s.age > s.life || s.entity.isRemoved) { s.entity.remove(); return@removeAll true }
-            s.move(s)?.let { p -> if (p != s.at) { s.at = p; s.entity.teleport(p) } } ?: run { s.entity.remove(); return@removeAll true }
+            s.move(s)?.let { p -> if (p != s.at) { s.at = p; if (s.entity.instance != null) s.entity.teleport(p) } } ?: run { s.entity.remove(); return@removeAll true }
             s.entity.editEntityMeta(ItemDisplayMeta::class.java) { it.setItemStack(stack(s.frame(s.age))) }
             false
         }
@@ -112,7 +112,7 @@ internal class CoreMageFire(private val owner: Player, private val light: CoreMa
             val wobble = Random(id.hashCode() * 31 + i * 7 + (b.age / 3)).nextDouble(.92, 1.08)
             val sink = if (left < sinkAt) (sinkAt - left) * .55 * sc else 0.0
             val p = Pos(at.x() + cos(an) * r * 1.3, at.y() + TALL * sc / 2 - sink, at.z() + sin(an) * r * 1.04)
-            f.at = p; f.entity.teleport(p)
+            f.at = p; if (f.entity.instance != null) f.entity.teleport(p)
             f.entity.editEntityMeta(ItemDisplayMeta::class.java) { it.setScale(Vec(TALL * sc * wobble)) }
         }
         if (left > 6) {

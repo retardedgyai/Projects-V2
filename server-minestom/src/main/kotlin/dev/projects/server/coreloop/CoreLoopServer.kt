@@ -230,6 +230,12 @@ internal class CoreLoopGame(private val hub: InstanceContainer, private val harb
         restored = ::refresh)
     private fun actor(player: Player) = combatLab.actor(player) ?: actors[player.uuid]
 
+    /** The playthrough bot (CorePlaythroughTest) reads where a run stands; nothing here changes the game. */
+    internal fun botCombat(player: Player): CorePlayerCombat? = actor(player)
+    internal fun botDungeon(player: Player): Pair<DungeonRun, dev.projects.server.mob.QuestEncounterCombat>? =
+        sessions[player.uuid]?.takeUnless { it.returning }?.let { s -> s.dungeon?.let { it to s.combat } }
+    internal fun botInRun(player: Player): Boolean = sessions.containsKey(player.uuid) || departing.containsKey(player.uuid)
+
     private class Session(val owner: Player, val runId: UUID, val runtime: VerdantRoadQuestRuntime?,
         val combat: QuestEncounterCombat, val bossBar: BossBar, val loot: CoreWorldLoot, val arena: BossArena? = null) {
         val instance: InstanceContainer get() = arena?.instance ?: requireNotNull(runtime).instance

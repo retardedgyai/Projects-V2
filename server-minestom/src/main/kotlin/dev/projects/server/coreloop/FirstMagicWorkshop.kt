@@ -125,7 +125,8 @@ internal class FirstMagicWorkshop(
                         CoreMenuCanvas.Line(if (progress.deskRestored) "観測盤は起動中" else "観測盤は休眠中"),
                         CoreMenuCanvas.Line(""),
                         CoreMenuCanvas.Line("紙上の小さな星図は"),
-                        CoreMenuCanvas.Line("持ち帰った未知に応える"),
+                        CoreMenuCanvas.Line("持ち帰った未知に"),
+                        CoreMenuCanvas.Line("応える"),
                         CoreMenuCanvas.Line(""),
                         CoreMenuCanvas.Line("未分析：分析は無料"),
                         CoreMenuCanvas.Line("分析済：インク調合"),
@@ -139,7 +140,8 @@ internal class FirstMagicWorkshop(
                         CoreMenuCanvas.Line("冷却管からJarへ"),
                         CoreMenuCanvas.Line(""),
                         CoreMenuCanvas.Line("素材1・燃料 銀貨${CoreMmoTuning.balance.researchDistillSilver}"),
-                        CoreMenuCanvas.Line("対応するJarを先に置く"),
+                        CoreMenuCanvas.Line("対応するJarを"),
+                        CoreMenuCanvas.Line("先に置く"),
                         CoreMenuCanvas.Line("Jar上限 16 / 性質"),
                     ))
                     canvas.right("炉の状態", listOf(
@@ -155,8 +157,10 @@ internal class FirstMagicWorkshop(
                     canvas.left("四つの保存瓶", listOf(
                         CoreMenuCanvas.Line("瓶ごとに一性質"),
                         CoreMenuCanvas.Line("中身と残量を見る"),
-                        CoreMenuCanvas.Line("Jarを持って棚を右クリック"),
-                        CoreMenuCanvas.Line("棚の瓶をクリックで取り出す"),
+                        CoreMenuCanvas.Line("Jarを持って"),
+                        CoreMenuCanvas.Line("棚を右クリック"),
+                        CoreMenuCanvas.Line("棚の瓶をクリックで"),
+                        CoreMenuCanvas.Line("取り出す"),
                         CoreMenuCanvas.Line(""),
                         CoreMenuCanvas.Line("初回抽出 ${if (progress.firstDistillation) "済" else "未"}"),
                     ))
@@ -176,38 +180,49 @@ internal class FirstMagicWorkshop(
                         CoreMenuCanvas.Line("封印区画の円形台座"),
                         CoreMenuCanvas.Line("まだ共鳴が足りない"),
                         CoreMenuCanvas.Line(""),
-                        CoreMenuCanvas.Line("四性質は入口にすぎない"),
+                        CoreMenuCanvas.Line("四性質は入口に"),
+                        CoreMenuCanvas.Line("すぎない"),
                     ))
                 }
                 Page.RESEARCH -> {
                     canvas.left("研究の手順", listOf(
-                        CoreMenuCanvas.Line("素材を分析し性質を発見"),
-                        CoreMenuCanvas.Line("二性質を合成して新発見"),
+                        CoreMenuCanvas.Line("素材を分析し"),
+                        CoreMenuCanvas.Line("性質を発見"),
+                        CoreMenuCanvas.Line("二性質を合成して"),
+                        CoreMenuCanvas.Line("新発見"),
                         CoreMenuCanvas.Line("六角盤の空欄に記す"),
-                        CoreMenuCanvas.Line("となりの性質をつなぐ"),
-                        CoreMenuCanvas.Line("固定点が全てつながれば解明"),
+                        CoreMenuCanvas.Line("となりの性質を"),
+                        CoreMenuCanvas.Line("つなぐ"),
+                        CoreMenuCanvas.Line("固定点が全て"),
+                        CoreMenuCanvas.Line("つながれば解明"),
                         CoreMenuCanvas.Line(""),
                         CoreMenuCanvas.Line("解明 ${progress.unlockedResearch.size} / ${ResearchCatalog.all.size}"),
                         CoreMenuCanvas.Line("解明で調合品が開く"),
                     ))
                     canvas.right("研究インク", listOf(
-                        CoreMenuCanvas.Line("所持した性質を一つ消費"),
+                        CoreMenuCanvas.Line("所持した性質を"),
+                        CoreMenuCanvas.Line("一つ消費"),
                         CoreMenuCanvas.Line("外せばインクは戻る"),
-                        CoreMenuCanvas.Line("合成で複合性質を4得る"),
+                        CoreMenuCanvas.Line("合成で複合性質を"),
+                        CoreMenuCanvas.Line("4得る"),
                         CoreMenuCanvas.Line(""),
                         CoreMenuCanvas.Line("発見 ${progress.discoveredResearchAspects.size} / ${AspectCatalog.all.size}"),
                     ))
                 }
                 Page.COMBINE -> {
                     canvas.left("性質の合成", listOf(
-                        CoreMenuCanvas.Line("発見済みの二性質を使う"),
+                        CoreMenuCanvas.Line("発見済みの"),
+                        CoreMenuCanvas.Line("二性質を使う"),
                         CoreMenuCanvas.Line("各インクを一つ消費"),
-                        CoreMenuCanvas.Line("新しい性質のインクを4得る"),
+                        CoreMenuCanvas.Line("新しい性質の"),
+                        CoreMenuCanvas.Line("インクを4得る"),
                         CoreMenuCanvas.Line(""),
-                        CoreMenuCanvas.Line("素材分析で基礎性質を補充"),
+                        CoreMenuCanvas.Line("素材分析で"),
+                        CoreMenuCanvas.Line("基礎性質を補充"),
                     ))
                     canvas.right("構成の結び", listOf(
-                        CoreMenuCanvas.Line("複合性質とその材料は"),
+                        CoreMenuCanvas.Line("複合性質と"),
+                        CoreMenuCanvas.Line("その材料は"),
                         CoreMenuCanvas.Line("研究盤で接続できる"),
                         CoreMenuCanvas.Line(""),
                         CoreMenuCanvas.Line("火 + 風 → 光"),
@@ -215,12 +230,16 @@ internal class FirstMagicWorkshop(
                 }
                 Page.CRAFT -> {
                     canvas.left("研究の調合台", listOf(
-                        CoreMenuCanvas.Line("解明した研究ごとに一品"),
-                        CoreMenuCanvas.Line("Essentia + 港の素材"),
+                        CoreMenuCanvas.Line("解明した研究ごとに"),
+                        CoreMenuCanvas.Line("一品"),
+                        CoreMenuCanvas.Line("Essentia +"),
+                        CoreMenuCanvas.Line("港の素材"),
                         CoreMenuCanvas.Line("調合料 銀貨${CoreMmoTuning.balance.researchCraftSilver}"),
                         CoreMenuCanvas.Line(""),
-                        CoreMenuCanvas.Line("完成品は市場で売れる"),
-                        CoreMenuCanvas.Line("解明そのものは売れない"),
+                        CoreMenuCanvas.Line("完成品は市場で"),
+                        CoreMenuCanvas.Line("売れる"),
+                        CoreMenuCanvas.Line("解明そのものは"),
+                        CoreMenuCanvas.Line("売れない"),
                     ))
                     canvas.right("誰が買うか", listOf(
                         CoreMenuCanvas.Line("星鉄の触媒"),
