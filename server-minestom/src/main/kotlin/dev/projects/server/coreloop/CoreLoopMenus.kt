@@ -247,7 +247,7 @@ internal class CoreLoopMenus(private val game: CoreMenuHost, private val inspect
         val a = game.account(player) ?: return
         view(player, "旅の始まり / 成長と職業", { career(player) }) { v ->
             v.canvas.left("${a.journey.job.displayName} Lv${a.journey.level}",
-                lines("経験 ${a.journey.xp}", if (a.journey.level < 40) "次まで ${CoreJourneyRules.threshold(a.journey.level + 1) - a.journey.xp}" else "冒険Lv最大", "T1 Lv1〜10", "T2 Lv11〜20", "T3 Lv21〜30", "T4 Lv31〜40", "スキル Lv1/4/8/12", "ウルト Lv16"), hero = CoreMenuArt.GEAR)
+                lines("経験 ${a.journey.xp}", if (a.journey.level < 40) "次まで ${CoreJourneyRules.threshold(a.journey.level + 1) - a.journey.xp}" else "冒険Lv最大", "T1 Lv1〜10", "T2 Lv11〜20", "T3 Lv21〜30", "T4 Lv31〜40", "スキル Lv" + CoreSkillCatalog.unlockLevels.dropLast(1).joinToString("/"), "ウルト Lv${CoreSkillCatalog.unlockLevels.last()}"), hero = CoreMenuArt.GEAR)
             v.canvas.right("次の一歩", paragraph(CoreJourneyRules.next(a)) + lines("", "導入 ${(0..5).count(a.journey::knows)}/6", "港で職業を変更可能", "装備と経験は保持", "採取でも経験を獲得"), hero = CoreMenuArt.EXPEDITION)
             CoreClass.entries.forEachIndexed { i, job ->
                 val slot = listOf(9, 12, 15, 18, 21, 24)[i]

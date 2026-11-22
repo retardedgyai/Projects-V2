@@ -93,7 +93,7 @@ object CoreSkillCatalog {
         val mod = stats.bonus(CoreAffixStat.HEAL_CONVERSION)
         return if(mod>0) (.25+mod*.03).coerceAtMost(.8) else 0.0
     }
-    val unlockLevels = listOf(1, 4, 8, 12, 16)
+    val unlockLevels = listOf(1, 2, 4, 6, 10)
     val basicFormula = CoreDamageFormula(ad = 1.0)
     fun basicType(job: CoreClass) = if (job.magic) CoreDamageType.MAGICAL else CoreDamageType.PHYSICAL
     fun basicTags(job: CoreClass) = setOf(CoreAttackTag.NORMAL,
