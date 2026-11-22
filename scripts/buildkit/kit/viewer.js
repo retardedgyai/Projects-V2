@@ -3,13 +3,13 @@
   const H = window.HOUSE;
   const S = 1 / 16;
   const CLEAR = new Set(['iron_bars', 'oak_leaves', 'azalea_leaves', 'flowering_azalea_leaves', 'spruce_leaves', 'dark_oak_leaves', 'birch_leaves', 'cherry_leaves', 'fire_0']);
-  const GLOW = new Set(['shroomlight', 'lantern', 'magma', 'lava_still', 'campfire_fire', 'fire_0']);
+  const GLOW = new Set(['shroomlight', 'lantern', 'sea_lantern', 'soul_lantern', 'magma', 'lava_still', 'campfire_fire', 'fire_0']);
   const map = new Map();
   for (const [x, y, z, p] of H.blocks) map.set(x + ',' + y + ',' + z, H.pal[p]);
   const get = (x, y, z) => map.get(x + ',' + y + ',' + z);
   const opaque = (b) => b && b.s === 'full' && !CLEAR.has(b.t);
   // ---- 夜の光：マイクラと同じ「明るさのレベル」。光源から1マスごとに1段暗くなる
-  const EMIT = { lantern: 15, shroomlight: 15, magma: 3, lava_still: 15, campfire_fire: 15, fire_0: 15 };
+  const EMIT = { lantern: 15, soul_lantern: 10, sea_lantern: 15, shroomlight: 15, magma: 3, lava_still: 15, campfire_fire: 15, fire_0: 15 };
   const emitOf = (b) => (!b ? 0 : EMIT[b.t] || (b.fr && /_on$/.test(b.fr) ? 13 : 0));
   const passes = (b) => !b || !(b.s === 'full' && !CLEAR.has(b.t) && !EMIT[b.t]);
   const DIRS6 = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
@@ -249,7 +249,7 @@
         }
       }
     } else if (b.s === 'carpet') {
-      box(lit, x, y, z, [0, 0, 0, 1, 1 * S, 1], T, {});
+      box(lit, x, y, z, [0, 0, 0, 1, 1 * S, 1], T, b.ax === 'x' ? { rot: ['py', 'ny'] } : {});   // 線路など向きのある絵は ax:'x' で90°回す
     } else if (b.s === 'lantern') {
       // 吊るす灯り（hang）は上に短い鎖を付けて少し上へ
       const o = b.hang ? 1 : 0;
