@@ -38,5 +38,11 @@ jobs:
           path: .tools/core-menu
           key: core-menu-${{ hashFiles('scripts/build_core_menu_assets.py') }}
           restore-keys: core-menu-
+      # unifoundry.com sometimes times out or truncates the download on runners; keep the pinned file.
+      - name: Cache pinned Unifont
+        uses: actions/cache@v4
+        with:
+          path: .tools/unifont
+          key: unifont-jp-17.0.04-a6195f525d998d88
       - name: Build
         run: ./gradlew build
