@@ -27,6 +27,8 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // The tests draw images with java.awt (PlayerPuppet); headless, so no test JVM opens a window on the desktop.
+    systemProperty("java.awt.headless", "true")
 }
 
 // Build-time part of core-ui-pack (see docs/assets/core-ui-pack.md). These paths are

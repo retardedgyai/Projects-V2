@@ -103,9 +103,13 @@ object BossArenaFactory {
             // Dev-only (/minibosstest): 散り桜の社's mini-boss of that room, alone on 散り桜の庭's floor.
             "miniboss1" -> QuestMobArchetype.SAKURA_MINIBOSS_1
             "miniboss2" -> QuestMobArchetype.SAKURA_MINIBOSS_2
+            // Dev-only (/mobtest): one of 散り桜の社's common enemies, alone on the same floor.
+            "mob-husk" -> QuestMobArchetype.SAKURA_HUSK
+            "mob-archer" -> QuestMobArchetype.SAKURA_ARCHER
+            "mob-bud" -> QuestMobArchetype.SAKURA_BUD
             else -> error("Unknown trial boss: $bossId")
         }
-        val look = if (archetype.rarity == QuestMobRarity.MINIBOSS) "sakura" else bossId
+        val look = if (archetype.rarity != QuestMobRarity.BOSS) "sakura" else bossId
         val instance = if (bossId == "shade") MinecraftServer.getInstanceManager().createInstanceContainer(registerDimensions())
             else MinecraftServer.getInstanceManager().createInstanceContainer()
         instance.setChunkSupplier(::LightingChunk)
@@ -125,7 +129,7 @@ object BossArenaFactory {
             CompletableFuture.allOf(*chunks.toTypedArray()).join()
             return BossArena(instance, Pos(32.5, 40.0, 16.5), Pos(32.5, 40.0, 32.5), archetype, bossId,
                 when (bossId) { "rift" -> "灰燼の溶炉"; "ritual" -> "氷獄の円庭"; "shade" -> "翳の巣"; "sakura" -> "散り桜の庭"
-                    "miniboss1", "miniboss2" -> "花守の試し場"; else -> "天雷の祭壇" })
+                    "miniboss1", "miniboss2", "mob-husk", "mob-archer", "mob-bud" -> "花守の試し場"; else -> "天雷の祭壇" })
         } catch (failure: Throwable) {
             MinecraftServer.getInstanceManager().unregisterInstance(instance)
             throw failure

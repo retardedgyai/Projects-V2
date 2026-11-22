@@ -7,7 +7,10 @@ import net.minestom.server.coordinate.Vec
 import net.minestom.server.entity.Entity
 import net.minestom.server.entity.EntityType
 import net.minestom.server.entity.metadata.display.AbstractDisplayMeta
+import net.minestom.server.entity.metadata.display.ItemDisplayMeta
 import net.minestom.server.entity.metadata.display.TextDisplayMeta
+import net.minestom.server.item.ItemStack
+import net.minestom.server.item.Material
 import net.minestom.server.instance.InstanceContainer
 import java.util.UUID
 import kotlin.math.abs
@@ -33,6 +36,7 @@ internal object MobGroundRaster {
 
     private fun raster(frame: MobAbilityFrame, step: Double, ground: (Pos) -> Double?): List<MobGroundTile> {
         val outline = frame.ability.shape.outline(frame.origin, frame.facing)
+        if (outline.isEmpty()) return emptyList()
         val minX = floor(outline.minOf { it.x() } / step).toInt()
         val maxX = ceil(outline.maxOf { it.x() } / step).toInt()
         val minZ = floor(outline.minOf { it.z() } / step).toInt()
@@ -67,13 +71,20 @@ internal class MobGroundTelegraph(private val instance: InstanceContainer) {
     companion object {
         const val MAX_ACTIVE = 6
         const val MAX_DISPLAYS = MAX_ACTIVE * MobGroundRaster.MAX_TILES
-        const val TRACKING_COLOR: Int = 0x48E93838
-        const val LOCKED_COLOR: Int = 0x70FF3030
+        const val TRACKING_COLOR: Int = 0x60B8384A
+        val LOCKED_COLOR: Int = 0x80C83048.toInt()
         val IMPACT_COLOR: Int = 0xA0FF7070.toInt()
+        const val ARROW_MODEL = "projects:core_ui/warn_arrow"
+        /** An arrow every this many blocks round the edge, at this scale (its 16 px sprite: 1 block at 1). */
+        const val ARROW_SPACING = 1.1
+        const val ARROW_SIZE = 1.1
+        const val MAX_ARROWS = 24
     }
 
     private class Surface {
         val entities = mutableListOf<Entity>()
+        /** The arrows round the rim (Creator 2026-11-07: an edge like PROJECT Spellforged's). */
+        val rim = mutableListOf<Entity>()
         var expiresAt = Long.MAX_VALUE
         var tiles = emptyList<MobGroundTile>()
         var color = 0
@@ -122,14 +133,68 @@ internal class MobGroundTelegraph(private val instance: InstanceContainer) {
         }
         surface.tiles = tiles
         surface.color = color
+        showRim(surface, frame)
         return true
+    }
+
+    /**
+     * Spellforged's warning edge (refs/spellforged, read again on 2026-11-07 from the demo's skeleton strikes and spear
+     * throw): red arrows round the rim, evenly spaced, all set by one rule — along a strip they point the way the
+     * attack goes, round a ring or a fan they point outward. Each is a flat pixel arrow with thickness (the pack's
+     * `core_ui/warn_arrow`, an item/generated model, so its sides show darker).
+     */
+    private fun showRim(surface: Surface, frame: MobAbilityFrame) {
+        val arrows = mutableListOf<Pos>()
+        var last: Pos? = null
+        val forward = Vec(frame.facing.x(), 0.0, frame.facing.z()).let { if (it.length() < 1e-6) Vec(0.0, 0.0, 1.0) else it.normalize() }
+        for (point in frame.ability.shape.outline(frame.origin, frame.facing)) {
+            if (last != null && last.distanceSquared(point) < ARROW_SPACING * ARROW_SPACING) continue
+            val ground = groundHeight(point) ?: continue
+            val radial = Vec(point.x() - frame.origin.x(), 0.0, point.z() - frame.origin.z())
+            val way = when (frame.ability.shape) {
+                is MobAttackShape.Slam, is MobAttackShape.Cross -> forward
+                else -> if (radial.length() < 1e-6) forward else radial.normalize()
+            }
+            last = point
+            val yaw = Math.toDegrees(kotlin.math.atan2(-way.x(), way.z())).toFloat()
+            arrows += Pos(point.x(), ground + 0.03, point.z(), yaw, 0f)
+            if (arrows.size >= MAX_ARROWS) break
+        }
+        while (surface.rim.size > arrows.size) surface.rim.removeLast().remove()
+        arrows.forEachIndexed { index, at ->
+            val entity = surface.rim.getOrNull(index)
+            if (entity == null) {
+                val arrow = Entity(EntityType.ITEM_DISPLAY)
+                arrow.setHasPhysics(false)
+                arrow.setNoGravity(true)
+                arrow.editEntityMeta(ItemDisplayMeta::class.java) { meta ->
+                    meta.setItemStack(ItemStack.of(Material.PAPER).withItemModel(ARROW_MODEL))
+                    meta.setDisplayContext(ItemDisplayMeta.DisplayContext.FIXED)
+                    meta.setBillboardRenderConstraints(AbstractDisplayMeta.BillboardConstraints.FIXED)
+                    meta.setBrightness(15, 15)
+                    meta.setViewRange(0.75f)
+                    meta.setPosRotInterpolationDuration(0)
+                    meta.setScale(Vec(ARROW_SIZE, ARROW_SIZE, ARROW_SIZE))
+                    // lay the sprite flat, face up, its tip toward the entity's facing
+                    meta.setLeftRotation(floatArrayOf(sqrt(0.5).toFloat(), 0f, 0f, sqrt(0.5).toFloat()))
+                }
+                // listed before it spawns: a loaded chunk completes the spawn at once
+                surface.rim += arrow
+                arrow.setInstance(instance, at).whenComplete { _, error ->
+                    if (error != null) surface.failedToSpawn = true
+                    if (disposed || arrow !in surface.rim) arrow.remove()
+                }
+            } else if (entity.instance === instance && entity.position != at) {
+                entity.teleport(at)
+            }
+        }
     }
 
     fun tick(now: Long) {
         surfaces.filterValues { it.expiresAt <= now }.keys.toList().forEach(::clear)
     }
 
-    fun clear(owner: UUID) { surfaces.remove(owner)?.entities?.forEach(Entity::remove) }
+    fun clear(owner: UUID) { surfaces.remove(owner)?.let { it.entities.forEach(Entity::remove); it.rim.forEach(Entity::remove) } }
 
     fun dispose() {
         disposed = true

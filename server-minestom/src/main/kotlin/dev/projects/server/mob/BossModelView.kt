@@ -207,11 +207,12 @@ internal class BossModelView(
     private fun under(names: Collection<String>) =
         model.getParts().filter { part -> names.any { part.name == it || part.name.startsWith("${it}_") } }
 
-    /** WSEE's generated red "hit" texture state, briefly. */
+    /** WSEE's generated red "hit" texture state, briefly, and the model's `hurt` flinch when no skill clip is playing. */
     fun hurt(now: Long) {
         if (disposed || dying) return
         if (hurtUntil == 0L) model.setState("hit")
         hurtUntil = now + 150
+        if (has("hurt") && animations.playing == animations.repeating) { animations.playOnce("hurt", 1) {}; lastNow = now; shown("hurt", once = true) }
     }
 
     fun ability(abilityId: String) {
@@ -277,11 +278,11 @@ internal class BossModelView(
         }
     }
 
-    /** Plays the death clip, then removes the bones even if the carrier is already gone. */
-    fun die() {
+    /** Plays the death clip (or another last clip), then removes the bones even if the carrier is already gone. */
+    fun die(last: String = "death") {
         if (disposed || dying) return
         dying = true
-        val clip = phased("death")
+        val clip = phased(last)
         if (has(clip)) animations.playOnce(clip, false) { dispose() } else dispose()
     }
 

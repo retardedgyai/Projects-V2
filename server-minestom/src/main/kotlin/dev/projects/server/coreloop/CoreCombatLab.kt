@@ -96,7 +96,7 @@ internal class CoreCombatLab(
     /** [tier]: the boss's tier and the test character's gear tier (1-4), so difficulty can be measured at that tier. */
     fun enter(player: Player, job: CoreClass, bossId: String? = null, tier: Int = 1) {
         if (contains(player)) { menu(player); return }
-        val command = if (bossId?.startsWith("miniboss") == true) "/minibosstest" else if (bossId != null) "/bosstest" else "/skilltest"
+        val command = if (bossId?.startsWith("miniboss") == true) "/minibosstest" else if (bossId?.startsWith("mob-") == true) "/mobtest" else if (bossId != null) "/bosstest" else "/skilltest"
         if (!eligible(player)) { player.sendMessage(CoreLoopItems.text("港へ帰還してから $command を実行してください。")); return }
         val entry = Entry(player, CoreLabLoadout(player.uuid, job), bossId, tier.coerceIn(1, 4))
         if (bossId != null) { entry.loadout.free = false; entry.loadout.retaliation = true }
@@ -160,8 +160,8 @@ internal class CoreCombatLab(
 
     private fun spawnTargets(entry: Entry) {
         entry.arena?.let { arena ->
-            // A mini-boss fights as a one-mob wave (as in its dungeon room), a boss as the arena's boss.
-            val mini = arena.archetype.rarity == QuestMobRarity.MINIBOSS
+            // A mini-boss (or a common enemy, /mobtest) fights as a one-mob wave (as in its dungeon room), a boss as the arena's boss.
+            val mini = arena.archetype.rarity != QuestMobRarity.BOSS
             val next = QuestEncounterCombat(arena.instance, entry.tier,
                 if (mini) listOf(QuestCombatEncounter(listOf(arena.bossSpawn), listOf(arena.archetype))) else emptyList(), arena.bossSpawn,
                 onMobDefeated = { _, boss -> if (boss || mini) nextTick {
