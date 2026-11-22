@@ -45,10 +45,13 @@ internal object CoreMageDisplay {
             meta.setBrightness(15, 15); meta.setViewRange(1.0f)
             meta.setScale(Vec(scale, scale, scale))
         }
+        // A loaded chunk places it at once, before the caller has kept it: [wanted] only means something once it has.
+        var placing = true
         entity.setInstance(instance, at).whenComplete { _, failure ->
-            if (failure != null || owner.instance !== instance || !wanted()) entity.remove()
+            if (failure != null || owner.instance !== instance || (!placing && !wanted())) entity.remove()
             else viewers(instance, at).forEach(entity::addViewer)
         }
+        placing = false
         if (life != null) entity.scheduleRemove(java.time.Duration.ofMillis(50L * (life + 4)))
         else entity.scheduler().buildTask { if (!alive()) entity.remove() }.delay(TaskSchedule.tick(20)).repeat(TaskSchedule.tick(20)).schedule()
         return entity
